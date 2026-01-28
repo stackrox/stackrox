@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
@@ -12,6 +13,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
+	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 const (
@@ -34,22 +36,29 @@ type roleManager struct {
 	roleStore    roleDatastore.DataStore
 }
 
-var (
-	generatedObjectTraits = &storage.Traits{Origin: storage.Traits_DYNAMIC}
-)
+// generateTraitsWithExpiry creates traits for dynamically generated RBAC
+// objects with an expiry time. The expiry time determines when these objects
+// are eligible for pruning by the garbage collector.
+func generateTraitsWithExpiry(expiresAt time.Time) (*storage.Traits, error) {
+	ts, err := protocompat.ConvertTimeToTimestampOrError(expiresAt)
+	return &storage.Traits{
+		Origin:    storage.Traits_DYNAMIC,
+		ExpiresAt: ts,
+	}, err
+}
 
-// createPermissionSet creates a dynamic permission set, granting the requested permissions.
-// The returned information is the ID of the created permission set, or an error if any occurred
-// in the creation process.
+// createPermissionSet creates a dynamic permission set, granting the requested
+// permissions. The returned information is the ID of the created permission
+// set, or an error if any occurred in the creation process.
 func (rm *roleManager) createPermissionSet(
 	ctx context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
+	traits *storage.Traits,
 ) (string, error) {
-	// TODO: Consider pruning the generated permission sets after some idle time.
 	permissionSet := &storage.PermissionSet{
 		Description:      permissionSetDescription,
 		ResourceToAccess: make(map[string]storage.Access),
-		Traits:           generatedObjectTraits.CloneVT(),
+		Traits:           traits,
 	}
 	var b strings.Builder
 	permissions := req.GetPermissions()
@@ -90,18 +99,18 @@ func convertAccess(in v1.Access) storage.Access {
 	}
 }
 
-// createAccessScope creates a dynamic access scope, granting the requested scope.
-// The returned information is the identifier of the created access scope,
-// or an error if any occurred in the creation process.
+// createAccessScope creates a dynamic access scope, granting the requested
+// scope. The returned information is the identifier of the created access
+// scope, or an error if any occurred in the creation process.
 func (rm *roleManager) createAccessScope(
 	ctx context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
+	traits *storage.Traits,
 ) (string, error) {
-	// TODO: Consider pruning the generated access scopes after some idle time.
 	accessScope := &storage.SimpleAccessScope{
 		Description: accessScopeDescription,
 		Rules:       &storage.SimpleAccessScope_Rules{},
-		Traits:      generatedObjectTraits.CloneVT(),
+		Traits:      traits,
 	}
 	var b strings.Builder
 	fullAccessClusters := make([]string, 0)
@@ -150,19 +159,19 @@ func (rm *roleManager) createAccessScope(
 	return accessScope.GetId(), nil
 }
 
-// createRole creates a dynamic role, granting the requested permissions and scope.
-// The returned information is the name of the created role, or an error if any occurred
-// in the creation process.
+// createRole creates a dynamic role, granting the requested permissions and
+// scope. The returned information is the name of the created role, or an error
+// if any occurred in the creation process.
 func (rm *roleManager) createRole(
 	ctx context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
+	traits *storage.Traits,
 ) (string, error) {
-	// TODO: Consider pruning the generated roles after some idle time.
-	permissionSetID, err := rm.createPermissionSet(ctx, req)
+	permissionSetID, err := rm.createPermissionSet(ctx, req, traits)
 	if err != nil {
 		return "", errors.Wrap(err, "creating permission set for role")
 	}
-	accessScopeID, err := rm.createAccessScope(ctx, req)
+	accessScopeID, err := rm.createAccessScope(ctx, req, traits)
 	if err != nil {
 		return "", errors.Wrap(err, "creating access scope for role")
 	}
@@ -171,7 +180,7 @@ func (rm *roleManager) createRole(
 		Description:     roleDescription,
 		PermissionSetId: permissionSetID,
 		AccessScopeId:   accessScopeID,
-		Traits:          generatedObjectTraits.CloneVT(),
+		Traits:          traits,
 	}
 	err = rm.roleStore.UpsertRole(ctx, resultRole)
 	if err != nil {
