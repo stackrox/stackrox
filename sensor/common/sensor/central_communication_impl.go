@@ -54,6 +54,7 @@ type centralCommunicationImpl struct {
 type clusterIDPeekSetter interface {
 	Set(string)
 	GetNoWait() string
+	SetFromCert() error
 }
 
 var (
@@ -209,37 +210,21 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	log.Info("Communication with central ended.")
 }
 
-func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream central.SensorService_CommunicateClient,
-	hello *central.SensorHello, configHandler config.Handler, detector detector.Detector,
-) error {
-	rawHdr, err := stream.Header()
-	if err != nil {
-		return errors.Wrap(err, "receiving headers from central")
-	}
-
+func (s *centralCommunicationImpl) hello(stream central.SensorService_CommunicateClient, hello *central.SensorHello) error {
 	var centralHello *central.CentralHello
-
-	hdr := metautils.MD(rawHdr)
-	if hdr.Get(centralsensor.SensorHelloMetadataKey) == "true" {
-		// Yay, central supports the "sensor hello" protocol!
-		err := stream.Send(&central.MsgFromSensor{Msg: &central.MsgFromSensor_Hello{Hello: hello}})
-		if err != nil {
-			return errors.Wrap(err, "sending SensorHello message to central")
-		}
-
-		firstMsg, err := stream.Recv()
-		if err != nil {
-			return errors.Wrap(err, "receiving first message from central")
-		}
-		centralHello = firstMsg.GetHello()
-		if centralHello == nil {
-			return errors.Errorf("first message received from central was not CentralHello but of type %T", firstMsg.GetMsg())
-		}
-	} else {
-		// No sensor hello :(
-		log.Warn("Central is running a legacy version that might not support all current features")
+	err := stream.Send(&central.MsgFromSensor{Msg: &central.MsgFromSensor_Hello{Hello: hello}})
+	if err != nil {
+		return errors.Wrap(err, "sending SensorHello message to central")
 	}
 
+	firstMsg, err := stream.Recv()
+	if err != nil {
+		return errors.Wrap(err, "receiving first message from central")
+	}
+	centralHello = firstMsg.GetHello()
+	if centralHello == nil {
+		return errors.Errorf("first message received from central was not CentralHello but of type %T", firstMsg.GetMsg())
+	}
 	clusterID := centralHello.GetClusterId()
 	s.clusterID.Set(clusterID)
 
@@ -266,6 +251,35 @@ func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream centr
 		if err := helmconfig.StoreCachedClusterID(clusterID); err != nil {
 			log.Warnf("Could not cache cluster ID: %v", err)
 		}
+	}
+	return nil
+}
+
+func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream central.SensorService_CommunicateClient,
+	hello *central.SensorHello, configHandler config.Handler, detector detector.Detector,
+) error {
+	rawHdr, err := stream.Header()
+	if err != nil {
+		return errors.Wrap(err, "receiving headers from central")
+	}
+
+	if metautils.MD(rawHdr).Get(centralsensor.SensorHelloMetadataKey) == "true" {
+		// Yay, central supports the "sensor hello" protocol!
+		err := s.hello(stream, hello)
+		if err != nil {
+			return errors.Wrap(err, "error while executing the sensor hello protocol")
+		}
+	} else {
+		// No sensor hello - Central is running a legacy version.
+		log.Warn("Central is running a legacy version that might not support all current features")
+
+		// Without hello protocol, we must have a real cluster ID in the certificate.
+		if err := s.clusterID.SetFromCert(); err != nil {
+			return errors.Wrap(err, "failed to derive cluster ID from Central certificate in legacy mode (no sensor hello)")
+		}
+
+		// Disable features that require hello protocol.
+		s.clientReconcile = false
 	}
 
 	// DO NOT CHANGE THE ORDER. Please refer to `Run()` at `central/sensor/service/connection/connection_impl.go`

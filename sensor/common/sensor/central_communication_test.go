@@ -402,6 +402,10 @@ func (f *fakeClusterIDPeekSetter) GetNoWait() string {
 	return "fake-cluster-id"
 }
 
+func (f *fakeClusterIDPeekSetter) SetFromCert() error {
+	return nil
+}
+
 func (c *centralCommunicationSuite) createCentralCommunication(clientReconcile bool) (chan *message.ExpiringMessage, func()) {
 	// Create a CentralCommunication with a fake SensorComponent
 	ret := make(chan *message.ExpiringMessage)
