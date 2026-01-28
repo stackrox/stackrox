@@ -26,6 +26,7 @@ const (
 	ProcessBaselineService_BulkLockProcessBaselines_FullMethodName   = "/v1.ProcessBaselineService/BulkLockProcessBaselines"
 	ProcessBaselineService_BulkUnlockProcessBaselines_FullMethodName = "/v1.ProcessBaselineService/BulkUnlockProcessBaselines"
 	ProcessBaselineService_DeleteProcessBaselines_FullMethodName     = "/v1.ProcessBaselineService/DeleteProcessBaselines"
+	ProcessBaselineService_GetProcessBaselineBulk_FullMethodName     = "/v1.ProcessBaselineService/GetProcessBaselineBulk"
 )
 
 // ProcessBaselineServiceClient is the client API for ProcessBaselineService service.
@@ -51,6 +52,8 @@ type ProcessBaselineServiceClient interface {
 	BulkUnlockProcessBaselines(ctx context.Context, in *BulkProcessBaselinesRequest, opts ...grpc.CallOption) (*BulkUpdateProcessBaselinesResponse, error)
 	// `DeleteProcessBaselines` deletes baselines.
 	DeleteProcessBaselines(ctx context.Context, in *DeleteProcessBaselinesRequest, opts ...grpc.CallOption) (*DeleteProcessBaselinesResponse, error)
+	// `GetProcessBaselineBulk` returns process baselines matching the provided query.
+	GetProcessBaselineBulk(ctx context.Context, in *GetProcessBaselinesBulkRequest, opts ...grpc.CallOption) (*GetProcessBaselinesBulkResponse, error)
 }
 
 type processBaselineServiceClient struct {
@@ -121,6 +124,16 @@ func (c *processBaselineServiceClient) DeleteProcessBaselines(ctx context.Contex
 	return out, nil
 }
 
+func (c *processBaselineServiceClient) GetProcessBaselineBulk(ctx context.Context, in *GetProcessBaselinesBulkRequest, opts ...grpc.CallOption) (*GetProcessBaselinesBulkResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetProcessBaselinesBulkResponse)
+	err := c.cc.Invoke(ctx, ProcessBaselineService_GetProcessBaselineBulk_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProcessBaselineServiceServer is the server API for ProcessBaselineService service.
 // All implementations should embed UnimplementedProcessBaselineServiceServer
 // for forward compatibility.
@@ -144,6 +157,8 @@ type ProcessBaselineServiceServer interface {
 	BulkUnlockProcessBaselines(context.Context, *BulkProcessBaselinesRequest) (*BulkUpdateProcessBaselinesResponse, error)
 	// `DeleteProcessBaselines` deletes baselines.
 	DeleteProcessBaselines(context.Context, *DeleteProcessBaselinesRequest) (*DeleteProcessBaselinesResponse, error)
+	// `GetProcessBaselineBulk` returns process baselines matching the provided query.
+	GetProcessBaselineBulk(context.Context, *GetProcessBaselinesBulkRequest) (*GetProcessBaselinesBulkResponse, error)
 }
 
 // UnimplementedProcessBaselineServiceServer should be embedded to have
@@ -170,6 +185,9 @@ func (UnimplementedProcessBaselineServiceServer) BulkUnlockProcessBaselines(cont
 }
 func (UnimplementedProcessBaselineServiceServer) DeleteProcessBaselines(context.Context, *DeleteProcessBaselinesRequest) (*DeleteProcessBaselinesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteProcessBaselines not implemented")
+}
+func (UnimplementedProcessBaselineServiceServer) GetProcessBaselineBulk(context.Context, *GetProcessBaselinesBulkRequest) (*GetProcessBaselinesBulkResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProcessBaselineBulk not implemented")
 }
 func (UnimplementedProcessBaselineServiceServer) testEmbeddedByValue() {}
 
@@ -299,6 +317,24 @@ func _ProcessBaselineService_DeleteProcessBaselines_Handler(srv interface{}, ctx
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProcessBaselineService_GetProcessBaselineBulk_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProcessBaselinesBulkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProcessBaselineServiceServer).GetProcessBaselineBulk(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProcessBaselineService_GetProcessBaselineBulk_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProcessBaselineServiceServer).GetProcessBaselineBulk(ctx, req.(*GetProcessBaselinesBulkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ProcessBaselineService_ServiceDesc is the grpc.ServiceDesc for ProcessBaselineService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -329,6 +365,10 @@ var ProcessBaselineService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteProcessBaselines",
 			Handler:    _ProcessBaselineService_DeleteProcessBaselines_Handler,
+		},
+		{
+			MethodName: "GetProcessBaselineBulk",
+			Handler:    _ProcessBaselineService_GetProcessBaselineBulk_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
