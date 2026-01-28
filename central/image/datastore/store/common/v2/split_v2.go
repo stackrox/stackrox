@@ -1,6 +1,8 @@
 package common
 
 import (
+	"slices"
+
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -98,8 +100,10 @@ func GenerateImageComponentV2(os string, image *storage.Image, index int, from *
 	}
 
 	ret.LayerType = storage.LayerType_APPLICATION
-	if len(image.GetBaseImageInfo()) > 0 {
-		ret.LayerType = storage.LayerType_BASE_IMAGE
+	if len(image.GetBaseImageInfo()) > 0 && from.GetDigest() != "" {
+		if slices.Contains(image.GetBaseImageInfo()[0].GetLayers(), from.GetDigest()) {
+			ret.LayerType = storage.LayerType_BASE_IMAGE
+		}
 	}
 	return ret, nil
 }
