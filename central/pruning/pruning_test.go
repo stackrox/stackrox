@@ -2617,6 +2617,91 @@ func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects() {
 	}
 }
 
+func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects_WhenDisabled() {
+	disableDynamicRBACPruningForTest(*s.T())
+
+	now := time.Now()
+	yesterday := now.Add(-24 * time.Hour)
+
+	// Create classic (non-expiring) access scope and permission set for roles to reference.
+	classicPS := &storage.PermissionSet{
+		Id:               uuid.NewV4().String(),
+		Name:             "classic-ps-disabled",
+		ResourceToAccess: map[string]storage.Access{"Cluster": storage.Access_READ_ACCESS},
+		Traits:           nil,
+	}
+	classicAS := &storage.SimpleAccessScope{
+		Id:     uuid.NewV4().String(),
+		Name:   "classic-as-disabled",
+		Rules:  &storage.SimpleAccessScope_Rules{},
+		Traits: nil,
+	}
+
+	roleStore := roleDataStore.GetTestPostgresDataStore(s.T(), s.pool)
+
+	// Add classic permission set and access scope for roles to reference.
+	s.Require().NoError(roleStore.AddPermissionSet(pruningCtx, classicPS))
+	s.Require().NoError(roleStore.AddAccessScope(pruningCtx, classicAS))
+	s.T().Cleanup(func() {
+		_ = roleStore.RemovePermissionSet(pruningCtx, classicPS.GetId())
+		_ = roleStore.RemoveAccessScope(pruningCtx, classicAS.GetId())
+	})
+
+	// Create expired RBAC objects.
+	expiredRole := &storage.Role{
+		Name:            "expired-role-disabled",
+		PermissionSetId: classicPS.GetId(),
+		AccessScopeId:   classicAS.GetId(),
+		Traits: &storage.Traits{
+			ExpiresAt: timestamppb.New(yesterday),
+		},
+	}
+	expiredPS := &storage.PermissionSet{
+		Id:   uuid.NewV4().String(),
+		Name: "expired-ps-disabled",
+		Traits: &storage.Traits{
+			ExpiresAt: timestamppb.New(yesterday),
+		},
+	}
+	expiredAS := &storage.SimpleAccessScope{
+		Id:    uuid.NewV4().String(),
+		Name:  "expired-as-disabled",
+		Rules: &storage.SimpleAccessScope_Rules{},
+		Traits: &storage.Traits{
+			ExpiresAt: timestamppb.New(yesterday),
+		},
+	}
+
+	s.Require().NoError(roleStore.AddRole(pruningCtx, expiredRole))
+	s.Require().NoError(roleStore.AddPermissionSet(pruningCtx, expiredPS))
+	s.Require().NoError(roleStore.AddAccessScope(pruningCtx, expiredAS))
+	s.T().Cleanup(func() {
+		_ = roleStore.RemoveRole(pruningCtx, expiredRole.GetName())
+		_ = roleStore.RemovePermissionSet(pruningCtx, expiredPS.GetId())
+		_ = roleStore.RemoveAccessScope(pruningCtx, expiredAS.GetId())
+	})
+
+	gc := &garbageCollectorImpl{
+		roleStore: roleStore,
+	}
+
+	// Call pruning - it should be a no-op since pruning is disabled.
+	gc.removeExpiredDynamicRBACObjects()
+
+	// Verify that none of the expired objects were deleted.
+	_, ok, err := roleStore.GetRole(pruningCtx, expiredRole.GetName())
+	s.NoError(err)
+	s.True(ok, "expired role should still exist when pruning is disabled")
+
+	_, ok, err = roleStore.GetPermissionSet(pruningCtx, expiredPS.GetId())
+	s.NoError(err)
+	s.True(ok, "expired permission set should still exist when pruning is disabled")
+
+	_, ok, err = roleStore.GetAccessScope(pruningCtx, expiredAS.GetId())
+	s.NoError(err)
+	s.True(ok, "expired access scope should still exist when pruning is disabled")
+}
+
 func (s *PruningTestSuite) addSomePods(podDS podDatastore.DataStore, clusterID string, numberPods int) {
 	for i := 0; i < numberPods; i++ {
 		pod := &storage.Pod{

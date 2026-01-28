@@ -3,6 +3,7 @@ package pruning
 import (
 	"context"
 	"sync/atomic"
+	"testing"
 	"time"
 
 	"github.com/pkg/errors"
@@ -90,6 +91,12 @@ var (
 // This should be called on requests to the internaltoken API service.
 func EnableDynamicRBACPruning() {
 	dynamicRBACPruningEnabled.Store(true)
+}
+
+// disableDynamicRBACPruningForTest disables pruning of expired dynamic RBAC objects.
+// This is for testing purposes only.
+func disableDynamicRBACPruningForTest(testing.T) {
+	dynamicRBACPruningEnabled.Store(false)
 }
 
 // GarbageCollector implements a generic garbage collection mechanism.
