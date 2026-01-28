@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/stackrox/rox/pkg/expiringcache"
@@ -15,6 +16,7 @@ import (
 	authv1 "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -101,11 +103,26 @@ func formatForbiddenErr(user, verb, resource, group, namespace string) error {
 
 // authenticate validates the bearer token using TokenReview and returns user information.
 func (a *k8sAuthorizer) authenticate(ctx context.Context, r *http.Request) (*authenticationv1.UserInfo, error) {
+	start := time.Now()
 	token, err := extractBearerToken(r)
 	if err != nil {
 		return nil, err
 	}
-	return a.validateToken(ctx, token)
+	userInfo, cached, err := a.validateToken(ctx, token)
+	duration := time.Since(start)
+
+	cachedStr := "false"
+	if cached {
+		cachedStr = "true"
+	}
+	authenticationDuration.WithLabelValues(cachedStr).Observe(duration.Seconds())
+
+	if err != nil {
+		log.Infof("Authentication failed: cached=%t duration=%s error=%v", cached, duration, err)
+		return nil, err
+	}
+	log.Infof("Authentication succeeded: user=%s cached=%t duration=%s", userInfo.Username, cached, duration)
+	return userInfo, nil
 }
 
 func extractBearerToken(r *http.Request) (string, error) {
@@ -119,9 +136,10 @@ func extractBearerToken(r *http.Request) (string, error) {
 
 // validateToken validates the bearer token using TokenReview and returns user information.
 // Successful authentications are cached to reduce API calls to the Kubernetes API server.
-func (a *k8sAuthorizer) validateToken(ctx context.Context, token string) (*authenticationv1.UserInfo, error) {
+// Returns the user info, whether it was a cache hit, and any error.
+func (a *k8sAuthorizer) validateToken(ctx context.Context, token string) (*authenticationv1.UserInfo, bool, error) {
 	if userInfo, ok := a.tokenCache.Get(token); ok {
-		return userInfo, nil
+		return userInfo, true, nil
 	}
 
 	tokenReview := &authenticationv1.TokenReview{
@@ -132,19 +150,19 @@ func (a *k8sAuthorizer) validateToken(ctx context.Context, token string) (*authe
 
 	result, err := a.client.AuthenticationV1().TokenReviews().Create(ctx, tokenReview, metav1.CreateOptions{})
 	if err != nil {
-		return nil, pkghttputil.Errorf(http.StatusInternalServerError, "performing token review: %v", err)
+		return nil, false, pkghttputil.Errorf(http.StatusInternalServerError, "performing token review: %v", err)
 	}
 
 	if result.Status.Error != "" {
-		return nil, pkghttputil.Errorf(http.StatusUnauthorized, "token validation error: %s", result.Status.Error)
+		return nil, false, pkghttputil.Errorf(http.StatusUnauthorized, "token validation error: %s", result.Status.Error)
 	}
 
 	if !result.Status.Authenticated {
-		return nil, pkghttputil.NewError(http.StatusUnauthorized, "token authentication failed")
+		return nil, false, pkghttputil.NewError(http.StatusUnauthorized, "token authentication failed")
 	}
 
 	a.tokenCache.Add(token, &result.Status.User)
-	return &result.Status.User, nil
+	return &result.Status.User, false, nil
 }
 
 // authorize checks if the authenticated user has required permissions.
@@ -154,25 +172,62 @@ func (a *k8sAuthorizer) validateToken(ctx context.Context, token string) (*authe
 //     access scope limited to the namespace.
 //   - FullClusterAccessScope ("*"): SubjectAccessReview for all namespaces and rox token
 //     with cluster-wide access scope.
+//
+// SAR checks are performed in parallel to reduce latency.
 func (a *k8sAuthorizer) authorize(ctx context.Context, userInfo *authenticationv1.UserInfo, r *http.Request) error {
+	start := time.Now()
 	namespace := r.Header.Get(stackroxNamespaceHeader)
 	// Skip authorization if the namespace header is empty or not set.
 	if namespace == "" {
 		return nil
 	}
 
+	// Use errgroup with context cancellation to short-circuit on first error/denial.
+	g, ctx := errgroup.WithContext(ctx)
+
+	// Track the first authorization failure for a consistent error message.
+	var (
+		firstDenial     error
+		firstDenialOnce sync.Once
+	)
+
 	for _, resource := range a.resourcesToCheck {
 		for _, verb := range a.verbsToCheck {
-			allowed, err := a.performSubjectAccessReview(ctx, userInfo, verb, namespace, resource)
-			if err != nil {
-				return pkghttputil.Errorf(http.StatusInternalServerError, "checking %s permission for %s: %v", verb, resource.Resource, err)
-			}
-			if !allowed {
-				return formatForbiddenErr(userInfo.Username, verb, resource.Resource, resource.Group, namespace)
-			}
+			// Capture loop variables for the goroutine.
+			resource := resource
+			verb := verb
+
+			g.Go(func() error {
+				allowed, err := a.performSubjectAccessReview(ctx, userInfo, verb, namespace, resource)
+				if err != nil {
+					return pkghttputil.Errorf(http.StatusInternalServerError, "checking %s permission for %s: %v", verb, resource.Resource, err)
+				}
+				if !allowed {
+					denial := formatForbiddenErr(userInfo.Username, verb, resource.Resource, resource.Group, namespace)
+					firstDenialOnce.Do(func() {
+						firstDenial = denial
+					})
+					return denial
+				}
+				return nil
+			})
 		}
 	}
 
+	if err := g.Wait(); err != nil {
+		duration := time.Since(start)
+		authorizationDuration.WithLabelValues("false").Observe(duration.Seconds())
+		log.Infof("Authorization denied: user=%s namespace=%s duration=%s", userInfo.Username, namespace, duration)
+		// Return the first denial if available (more user-friendly), otherwise the error.
+		if firstDenial != nil {
+			return firstDenial
+		}
+		return err
+	}
+
+	duration := time.Since(start)
+	authorizationDuration.WithLabelValues("true").Observe(duration.Seconds())
+	log.Infof("Authorization allowed: user=%s namespace=%s duration=%s", userInfo.Username, namespace, duration)
 	return nil
 }
 

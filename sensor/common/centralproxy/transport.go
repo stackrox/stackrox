@@ -211,10 +211,15 @@ func (p *tokenProvider) getTokenForScope(ctx context.Context, namespaceScope str
 	if err != nil {
 		return "", errors.Wrap(err, "building token request")
 	}
+	start := time.Now()
 	resp, err := (*client).GenerateTokenForPermissionsAndScope(ctx, req)
+	duration := time.Since(start)
+	tokenRequestDuration.Observe(duration.Seconds())
 	if err != nil {
+		log.Infof("Token request failed: scope=%q duration=%s error=%v", namespaceScope, duration, err)
 		return "", errors.Wrapf(err, "requesting token from Central for scope %q", namespaceScope)
 	}
+	log.Infof("Token request succeeded: scope=%q duration=%s", namespaceScope, duration)
 
 	token := resp.GetToken()
 	if token == "" {

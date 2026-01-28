@@ -6,9 +6,12 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strconv"
 	"sync/atomic"
+	"time"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
@@ -37,6 +40,18 @@ func proxyErrorHandler(w http.ResponseWriter, _ *http.Request, err error) {
 		return
 	}
 	http.Error(w, fmt.Sprintf("failed to contact central: %v", err), http.StatusInternalServerError)
+}
+
+// statusRecorder wraps http.ResponseWriter to capture the response status code.
+type statusRecorder struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+// WriteHeader captures the status code and delegates to the wrapped ResponseWriter.
+func (r *statusRecorder) WriteHeader(code int) {
+	r.statusCode = code
+	r.ResponseWriter.WriteHeader(code)
 }
 
 // Handler handles HTTP proxy requests to Central.
@@ -135,32 +150,52 @@ func checkInternalTokenAPISupport() error {
 
 // ServeHTTP handles incoming HTTP requests and proxies them to Central.
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	start := time.Now()
+
 	if err := checkInternalTokenAPISupport(); err != nil {
+		h.logAndRecordRequest(request, pkghttputil.StatusFromError(err), start)
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 
 	if err := h.validateRequest(request); err != nil {
+		h.logAndRecordRequest(request, pkghttputil.StatusFromError(err), start)
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 
 	if h.authorizer == nil {
 		log.Error("Authorizer is nil - this indicates a misconfiguration in the central proxy handler")
+		h.logAndRecordRequest(request, http.StatusInternalServerError, start)
 		http.Error(writer, "authorizer not configured", http.StatusInternalServerError)
 		return
 	}
 
 	userInfo, err := h.authorizer.authenticate(request.Context(), request)
 	if err != nil {
+		h.logAndRecordRequest(request, pkghttputil.StatusFromError(err), start)
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 
 	if err := h.authorizer.authorize(request.Context(), userInfo, request); err != nil {
+		h.logAndRecordRequest(request, pkghttputil.StatusFromError(err), start)
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 
-	h.proxy.ServeHTTP(writer, request)
+	wrapped := &statusRecorder{ResponseWriter: writer, statusCode: http.StatusOK}
+	h.proxy.ServeHTTP(wrapped, request)
+	h.logAndRecordRequest(request, wrapped.statusCode, start)
+}
+
+// logAndRecordRequest logs the request summary and records the duration metric.
+func (h *Handler) logAndRecordRequest(request *http.Request, statusCode int, start time.Time) {
+	duration := time.Since(start)
+	log.Infof("Proxy request: method=%s path=%s status=%d duration=%s",
+		request.Method, request.URL.Path, statusCode, duration)
+	proxyRequestDuration.With(prometheus.Labels{
+		"method":      request.Method,
+		"status_code": strconv.Itoa(statusCode),
+	}).Observe(duration.Seconds())
 }
