@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -30,6 +31,8 @@ const (
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	_ v1.TokenServiceServer = (*serviceImpl)(nil)
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
@@ -77,7 +80,17 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	ctx context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
 ) (*v1.GenerateTokenForPermissionsAndScopeResponse, error) {
-	// Calculate expiry first so we can set it on the RBAC objects.
+	start := time.Now()
+	defer func() {
+		duration := time.Since(start)
+		tokenGenerationDuration.Observe(duration.Seconds())
+		log.Infof("Generated internal token: cluster_scopes=%d duration=%s", len(req.GetClusterScopes()), duration)
+	}()
+
+	roleName, err := s.roleManager.createRole(ctx, req)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating and storing target role")
+	}
 	expiresAt, err := s.getExpiresAt(ctx, req)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting expiration time")
