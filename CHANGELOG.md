@@ -29,6 +29,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Deprecated Features
 
+- ROX-32851: The `roxctl netpol generate`, `roxctl netpol connectivity map`, and `roxctl netpol connectivity diff` commands are deprecated because they rely on the unmaintained NP-Guard library and will be removed in a future release.
+
 ### Technical Changes
 - ROX-30769: Update Node.js requirement for ui folder to 22.13.0
 - ROX-31295: The lower limit for `ROX_MAX_PARALLEL_IMAGE_SCAN_INTERNAL` on Sensor has been reduced to one (from 10).
