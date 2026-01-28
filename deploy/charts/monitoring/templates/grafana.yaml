@@ -29,7 +29,7 @@ data:
     admin_password = {{ required "A Grafana password is required" .Values.password }}
 
     [auth.anonymous]
-    # Enable anonymous access to remove toil of typing user/pass
+    # When enabled, user/pass is not needed to access with admin rights
     enabled = {{ .Values.anonymousAdminAccess }}
     org_role = Admin
 ---
