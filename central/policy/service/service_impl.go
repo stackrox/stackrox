@@ -12,9 +12,10 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/policy/datastore"
+	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -103,9 +104,10 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedPolicyServiceServer
 
-	policies          datastore.DataStore
+	policies          policyDataStore.DataStore
 	clusters          clusterDataStore.DataStore
 	deployments       deploymentDataStore.DataStore
+	namespaces        namespaceDataStore.DataStore
 	networkPolicies   networkPolicyDS.DataStore
 	notifiers         notifierDataStore.DataStore
 	mitreStore        mitreDS.AttackReadOnlyDataStore
@@ -492,7 +494,19 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 				return
 			}
 
-			if !compiledPolicy.AppliesTo(deployment, nil, nil) {
+			// Fetch cluster labels
+			var clusterLabels map[string]string
+			if cluster, exists, err := s.clusters.GetCluster(ctx, deployment.GetClusterId()); err == nil && exists {
+				clusterLabels = cluster.GetLabels()
+			}
+
+			// Fetch namespace labels
+			var namespaceLabels map[string]string
+			if namespace, exists, err := s.namespaces.GetNamespace(ctx, deployment.GetNamespaceId()); err == nil && exists {
+				namespaceLabels = namespace.GetLabels()
+			}
+
+			if !compiledPolicy.AppliesTo(deployment, clusterLabels, namespaceLabels) {
 				return
 			}
 

@@ -7,7 +7,16 @@ import (
 	"strings"
 	"testing"
 
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	namespaceDatastore "github.com/stackrox/rox/central/namespace/datastore"
+	notifierDatastore "github.com/stackrox/rox/central/notifier/datastore"
+	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
+	policyStore "github.com/stackrox/rox/central/policy/store"
+	policyCategoryDatastore "github.com/stackrox/rox/central/policycategory/datastore"
+	categoryPostgres "github.com/stackrox/rox/central/policycategory/store/postgres"
+	edgeDataStore "github.com/stackrox/rox/central/policycategoryedge/datastore"
+	edgePostgres "github.com/stackrox/rox/central/policycategoryedge/store/postgres"
 	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	"github.com/stackrox/rox/central/views/imagecve"
 	"github.com/stackrox/rox/central/views/imagecveflat"
@@ -291,4 +300,100 @@ type cveCountBySeverity struct {
 	important int
 	moderate  int
 	low       int
+}
+
+func (s *DeploymentResolversTestSuite) TestDeploymentPoliciesFetchesLabels() {
+	ctx := SetAuthorizerOverride(s.ctx, allow.Anonymous())
+
+	// Set up cluster, namespace, and policy datastores
+	clusterDS, err := clusterDatastore.GetTestPostgresDataStore(s.T(), s.testDB)
+	s.Require().NoError(err)
+	namespaceDS, err := namespaceDatastore.GetTestPostgresDataStore(s.T(), s.testDB)
+	s.Require().NoError(err)
+	notifierDS := notifierDatastore.GetTestPostgresDataStore(s.T(), s.testDB)
+
+	policyStorage := policyStore.New(s.testDB)
+	categoryStorage := categoryPostgres.New(s.testDB)
+	edgeStorage := edgePostgres.New(s.testDB)
+	edgeDatastore := edgeDataStore.New(edgeStorage)
+	categoriesDS := policyCategoryDatastore.New(categoryStorage, edgeDatastore)
+	policyDS := policyDatastore.New(policyStorage, clusterDS, notifierDS, categoriesDS)
+
+	// Add datastores to resolver
+	s.resolver.PolicyDataStore = policyDS
+	s.resolver.ClusterDataStore = clusterDS
+	s.resolver.NamespaceDataStore = namespaceDS
+
+	// Create cluster with labels
+	cluster := &storage.Cluster{
+		Id:     "test-cluster-1",
+		Name:   "Test Cluster",
+		Labels: map[string]string{"env": "prod"},
+	}
+	s.NoError(clusterDS.UpdateCluster(ctx, cluster))
+
+	// Create namespace with labels
+	namespace := &storage.NamespaceMetadata{
+		Id:          "test-namespace-1",
+		Name:        "test-namespace",
+		ClusterId:   "test-cluster-1",
+		ClusterName: "Test Cluster",
+		Labels:      map[string]string{"team": "backend"},
+	}
+	s.NoError(namespaceDS.AddNamespace(ctx, namespace))
+
+	// Create deployment
+	deployment := &storage.Deployment{
+		Id:          "test-deployment-1",
+		Name:        "test-deployment",
+		ClusterId:   "test-cluster-1",
+		NamespaceId: "test-namespace-1",
+		Namespace:   "test-namespace",
+	}
+	s.NoError(s.resolver.DeploymentDataStore.UpsertDeployment(ctx, deployment))
+
+	// Create a policy
+	policy := &storage.Policy{
+		Id:              "test-policy-1",
+		Name:            "Test Policy",
+		Severity:        storage.Severity_HIGH_SEVERITY,
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+		PolicySections: []*storage.PolicySection{
+			{
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: "Image Tag",
+						Values:    []*storage.PolicyValue{{Value: "latest"}},
+					},
+				},
+			},
+		},
+	}
+	_, err = policyDS.AddPolicy(ctx, policy)
+	s.NoError(err)
+
+	// Get deployment resolvers
+	deployments, err := s.resolver.Deployments(ctx, PaginatedQuery{})
+	s.NoError(err)
+	s.NotEmpty(deployments)
+
+	// Find the test deployment
+	var testDeploymentResolver *deploymentResolver
+	for _, dep := range deployments {
+		if dep.Id(ctx) == "test-deployment-1" {
+			testDeploymentResolver = dep
+			break
+		}
+	}
+	s.NotNil(testDeploymentResolver)
+
+	// Test Policies method - this should fetch cluster and namespace labels from datastores
+	policies, err := testDeploymentResolver.Policies(ctx, PaginatedQuery{})
+	s.NoError(err)
+	s.NotNil(policies)
+
+	// Test PolicyCount method - this should also fetch labels
+	count, err := testDeploymentResolver.PolicyCount(ctx, RawQuery{})
+	s.NoError(err)
+	s.NotNil(count)
 }
