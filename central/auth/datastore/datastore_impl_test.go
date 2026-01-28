@@ -475,7 +475,8 @@ func (s *datastorePostgresTestSuite) TestUpsertTokenExchangerFailureRollsBackTra
 	// Expect rollback operations to be called
 	mockSet.EXPECT().RemoveTokenExchanger(gomock.Any()).Return(nil).Times(1)
 
-	authDataStore := New(authStore, s.roleDataStore, mockSet)
+	issuerFetcher := mocks.NewMockServiceAccountIssuerFetcher(controller)
+	authDataStore := New(authStore, s.roleDataStore, mockSet, issuerFetcher)
 
 	testConfigID := uuid.NewV4().String()
 	testIssuerURL := "https://storage.googleapis.com/test-bucket"
@@ -506,7 +507,7 @@ func (s *datastorePostgresTestSuite) TestUpsertTokenExchangerFailureRollsBackTra
 	readMockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
 	readMockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
-	readDataStore := New(authStore, s.roleDataStore, readMockSet)
+	readDataStore := New(authStore, s.roleDataStore, readMockSet, issuerFetcher)
 
 	var foundConfig *storage.AuthMachineToMachineConfig
 	err = readDataStore.ForEachAuthM2MConfig(s.ctx, func(obj *storage.AuthMachineToMachineConfig) error {
