@@ -20,6 +20,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-30094, ROX-30610, ROX-30740: Add new namespaces to Layered Products default config regex.
 - ROX-31960, ROX-32449: include and exclude filters for custom metrics.
 - ROX-30641: Added a new policy criteria "Days Since CVE Fix Was Available".
+- ROX-32630: The OpenShift console plugin integrates the ACS vulnerability management view into OpenShift console. It is enabled by default for operator-deployed secured clusters.
 - Tech preview: operator-based installation available for community StackRox build. More information in [a separate README file](operator/install/README.md).
 - ROX-30585, ROX-30196 (Tech Preview): Added file activity monitoring, including new policy criteria for deployment or node file activity.
 
