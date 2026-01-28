@@ -1,0 +1,46 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central
+  namespace: stackrox
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: central
+  template:
+    metadata:
+      labels:
+        app: central
+    spec:
+      containers:
+      - name: central
+        image: quay.io/stackrox-io/main:4.5.0
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "1500m"
+          limits:
+            memory: "8Gi"
+            cpu: "4000m"
+        env:
+        - name: ROX_OFFLINE_MODE
+          value: "false"
+      nodeSelector:
+        kubernetes.io/os: linux
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: central
+  namespace: stackrox
+spec:
+  type: NodePort
+  ports:
+  - name: api
+    port: 443
+    targetPort: 8443
+    nodePort: 30443
+  selector:
+    app: central
