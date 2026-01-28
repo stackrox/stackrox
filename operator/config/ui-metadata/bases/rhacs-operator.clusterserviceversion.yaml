@@ -64,6 +64,9 @@ spec:
 
     2. **Secured Cluster Services** - Secured cluster services are placed on each cluster you manage and report back to Central. These services allow users to enforce policies and monitor your OpenShift and Kubernetes clusters. Secured Cluster Services come as two Deployments (Sensor and Admission Controller) and one DaemonSet (Collector).
 
+    **Console Plugin:** RHACS provides a dynamic plugin that displays vulnerability management information in the OpenShift web console. Install a SecuredCluster to deploy the plugin. Enable the plugin by selecting *Operators* > *Installed Operators* or by modifying the console Operator configuration.
+    **Important:** The Console Plugin requires OpenShift 4.19 or later.
+
     ### Central Services Explained
 
     | Service                          | Deployment Type | Description     |
