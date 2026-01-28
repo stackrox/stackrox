@@ -268,6 +268,10 @@ func (t Translator) checkRequiredTLSSecrets(ctx context.Context, sc platform.Sec
 }
 
 func (t Translator) checkClusterRegistrationSecret(ctx context.Context, sc platform.SecuredCluster) (*crs.CRS, error) {
+	if crs.IsFakeCRSEnabled() {
+		return crs.CreateFakeCRS(), nil
+	}
+
 	namespace := sc.Namespace
 	secret := &corev1.Secret{}
 	key := ctrlClient.ObjectKey{Namespace: namespace, Name: clusterRegistrationSecretName}
