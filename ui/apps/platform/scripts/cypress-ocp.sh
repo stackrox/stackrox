@@ -7,6 +7,9 @@ if [ "${ORCHESTRATOR_FLAVOR}" != "openshift" ]; then
     exit 0
 fi
 
+export CYPRESS_OSCI_OPENSHIFT_VERSION="${OPENSHIFT_VERSION}"
+echo "OPENSHIFT_VERSION is ${OPENSHIFT_VERSION}"
+
 
 # Opens cypress with environment variables for feature flags and auth
 OPENSHIFT_CONSOLE_URL="${OPENSHIFT_CONSOLE_URL:-http://localhost:9000}"
