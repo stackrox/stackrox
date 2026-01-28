@@ -6,9 +6,10 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
+	namespaceDatastore "github.com/stackrox/rox/central/namespace/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/policy/datastore"
+	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -29,9 +30,10 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(policies datastore.DataStore,
+func New(policies policyDataStore.DataStore,
 	clusters clusterDataStore.DataStore,
 	deployments deploymentDataStore.DataStore,
+	namespaces namespaceDatastore.DataStore,
 	networkPolicies networkPolicyDS.DataStore,
 	notifiers notifierDataStore.DataStore,
 	mitreStore mitreDS.AttackReadOnlyDataStore,
@@ -46,6 +48,7 @@ func New(policies datastore.DataStore,
 		policies:          policies,
 		clusters:          clusters,
 		deployments:       deployments,
+		namespaces:        namespaces,
 		reprocessor:       reprocessor,
 		notifiers:         notifiers,
 		mitreStore:        mitreStore,
