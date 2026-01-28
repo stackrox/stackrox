@@ -1,12 +1,56 @@
 #!/usr/bin/env bash
 
+# Only runs OpenShift Console plugin E2E tests when:
+# - ORCHESTRATOR_FLAVOR is 'openshift'
+# - OpenShift version is a supported version
+#
+# Version detection from CLUSTER_FLAVOR_VARIANT format: openshift-4-ocp/<prefix>-<major>.<minor>
+# See scripts/ci/jobs/ocp_qa_e2e_tests.py
+# Example: openshift-4-ocp/gcp-4.16 -> major=4, minor=16
+#
+# Edge cases default to RUNNING tests to avoid silently skipping them:
+# - If version cannot be parsed, tests run
+# - If CLUSTER_FLAVOR_VARIANT is empty, tests run
+# Only skips if we definitively know the version is too old to prevent breakages in CI resulting in no test coverage.
+
+set -eo pipefail
+
 export CYPRESS_ORCHESTRATOR_FLAVOR="${ORCHESTRATOR_FLAVOR}"
-# exit if ORCHESTRATOR_FLAVOR is not 'openshift' - these tests are only relevant for openshift
-if [ "${ORCHESTRATOR_FLAVOR}" != "openshift" ]; then
-    echo "ORCHESTRATOR_FLAVOR is not 'openshift', skipping cypress-ocp"
+
+if [[ "${ORCHESTRATOR_FLAVOR}" != "openshift" ]]; then
+    echo "ORCHESTRATOR_FLAVOR is not 'openshift', skipping cypress-ocp tests"
     exit 0
 fi
 
+MIN_MAJOR=4
+MIN_MINOR=19
+
+should_run=true
+major=""
+minor=""
+
+if [[ -z "${CLUSTER_FLAVOR_VARIANT:-}" ]]; then
+    echo "CLUSTER_FLAVOR_VARIANT is not set, running cypress-ocp (no version check possible)"
+elif [[ "${CLUSTER_FLAVOR_VARIANT}" =~ openshift-4-ocp/[^-]+-([0-9]+)\.([0-9]+) ]]; then
+    major="${BASH_REMATCH[1]}"
+    minor="${BASH_REMATCH[2]}"
+    export CYPRESS_OSCI_OPENSHIFT_VERSION="${major}.${minor}"
+
+    echo "Detected OpenShift version: ${CYPRESS_OSCI_OPENSHIFT_VERSION}"
+
+    # Only skip if we know the version is too old
+    if [[ "${major}" -lt ${MIN_MAJOR} ]] || { [[ "${major}" -eq ${MIN_MAJOR} ]] && [[ "${minor}" -lt ${MIN_MINOR} ]]; }; then
+        should_run=false
+    fi
+else
+    echo "CLUSTER_FLAVOR_VARIANT format not recognized: ${CLUSTER_FLAVOR_VARIANT}"
+    echo "Running anyway (defaulting to run on parse failure)"
+fi
+
+if [[ "${should_run}" == "false" ]]; then
+    echo "OpenShift ${CYPRESS_OSCI_OPENSHIFT_VERSION} < ${MIN_MAJOR}.${MIN_MINOR}, skipping cypress-ocp tests"
+    exit 0
+fi
 
 # Opens cypress with environment variables for feature flags and auth
 OPENSHIFT_CONSOLE_URL="${OPENSHIFT_CONSOLE_URL:-http://localhost:9000}"
