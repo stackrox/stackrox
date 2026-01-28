@@ -322,7 +322,7 @@ func benchmarkPruneOrphanedFlowsForDeployment(flowStore store.FlowStore, eStore 
 		setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, 1, numEntities, ts, startingIPIndex)
 
 		// Add flows and entities that will not be pruned
-		startingIPIndex = uint32(numEntities)
+		startingIPIndex = numEntities
 		deploymentId = addToUUID(deploymentId, 1)
 		setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, 1, numEntities, ts, startingIPIndex)
 		b.ResetTimer()
@@ -353,7 +353,7 @@ func benchmarkRemoveOrphanedFlows(flowStore store.FlowStore, eStore entityStore.
 		// Add flows and entities that will not be pruned
 		deploymentId = addToUUID(deploymentId, int64(numDeployments))
 		ts = timestamp.Now() + 10000000
-		startingIPIndex = uint32(numEntities)
+		startingIPIndex = numEntities
 		setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, numDeployments, numEntities, ts, startingIPIndex)
 
 		b.ResetTimer()
@@ -401,7 +401,7 @@ func benchmarkRemoveOrphanedFlowsWhileAddingFlows(flowStore store.FlowStore, eSt
 		wgUpsertRecent.Add(1)
 		go func() {
 			defer wgUpsertRecent.Done()
-			for startingIPIndex := uint32(numEntities); startingIPIndex < 2*numEntities; startingIPIndex += entitiesBatchSize {
+			for startingIPIndex := numEntities; startingIPIndex < 2*numEntities; startingIPIndex += entitiesBatchSize {
 				setupExternalFlowsWithEntities(b, flowStore, eStore, deploymentId, numDeployments, entitiesBatchSize, tsRecent, startingIPIndex)
 			}
 		}()
