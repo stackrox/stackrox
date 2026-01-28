@@ -1,6 +1,8 @@
 package filter
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -18,14 +20,21 @@ var (
 // Singleton returns a global, threadsafe process filter
 func Singleton() filter.Filter {
 	singletonInstance.Do(func() {
-		maxExactPathMatches := env.ProcessFilterMaxExactPathMatches.IntegerSetting()
-		maxUniqueProcesses := env.ProcessFilterMaxProcessPaths.IntegerSetting()
-		fanOutLevels, fanOutLevelsWarning := env.ProcessFilterFanOutLevels.IntegerArraySetting()
+		// Get effective configuration respecting both mode presets and individual overrides
+		config, warnStr := env.GetEffectiveProcessFilterConfig()
 
-		if fanOutLevelsWarning != "" {
-			log.Warn(fanOutLevelsWarning)
+		if warnStr != "" {
+			log.Warn(warnStr)
 		}
-		singletonFilter = filter.NewFilter(maxExactPathMatches, maxUniqueProcesses, fanOutLevels)
+
+		modeStr := ""
+		if modeConfig, _ := env.GetProcessFilterModeConfig(); modeConfig != nil {
+			modeStr = fmt.Sprintf("mode=%s, ", env.ProcessFilterMode.Setting())
+		}
+		log.Infof("Process filter configuration: %smaxExactPathMatches=%d, fanOutLevels=%v, maxProcessPaths=%d",
+			modeStr, config.MaxExactPathMatches, config.FanOutLevels, config.MaxProcessPaths)
+
+		singletonFilter = filter.NewFilter(config.MaxExactPathMatches, config.MaxProcessPaths, config.FanOutLevels)
 	})
 	return singletonFilter
 }
