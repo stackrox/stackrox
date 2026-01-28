@@ -2338,10 +2338,10 @@ func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects() {
 
 	// Create classic (non-expiring) access scope and permission set for roles to reference.
 	classicPS := &storage.PermissionSet{
-		Id:                 uuid.NewV4().String(),
-		Name:               "classic-ps",
-		ResourceToAccess:   map[string]storage.Access{"Cluster": storage.Access_READ_ACCESS},
-		Traits:             nil,
+		Id:               uuid.NewV4().String(),
+		Name:             "classic-ps",
+		ResourceToAccess: map[string]storage.Access{"Cluster": storage.Access_READ_ACCESS},
+		Traits:           nil,
 	}
 	classicAS := &storage.SimpleAccessScope{
 		Id:     uuid.NewV4().String(),
@@ -2376,24 +2376,24 @@ func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects() {
 			roles: []*storage.Role{
 				{
 					Name:            "role-1",
-					PermissionSetId: classicPS.Id,
-					AccessScopeId:   classicAS.Id,
+					PermissionSetId: classicPS.GetId(),
+					AccessScopeId:   classicAS.GetId(),
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(yesterday),
 					},
 				},
 				{
 					Name:            "role-2",
-					PermissionSetId: classicPS.Id,
-					AccessScopeId:   classicAS.Id,
+					PermissionSetId: classicPS.GetId(),
+					AccessScopeId:   classicAS.GetId(),
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(tomorrow),
 					},
 				},
 				{
 					Name:            "role-3",
-					PermissionSetId: classicPS.Id,
-					AccessScopeId:   classicAS.Id,
+					PermissionSetId: classicPS.GetId(),
+					AccessScopeId:   classicAS.GetId(),
 					Traits:          &storage.Traits{},
 				},
 			},
@@ -2460,16 +2460,16 @@ func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects() {
 			roles: []*storage.Role{
 				{
 					Name:            "role-expired",
-					PermissionSetId: classicPS.Id,
-					AccessScopeId:   classicAS.Id,
+					PermissionSetId: classicPS.GetId(),
+					AccessScopeId:   classicAS.GetId(),
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(yesterday),
 					},
 				},
 				{
 					Name:            "role-active",
-					PermissionSetId: classicPS.Id,
-					AccessScopeId:   classicAS.Id,
+					PermissionSetId: classicPS.GetId(),
+					AccessScopeId:   classicAS.GetId(),
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(tomorrow),
 					},
@@ -2514,8 +2514,8 @@ func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects() {
 			roles: []*storage.Role{
 				{
 					Name:            "role-1",
-					PermissionSetId: classicPS.Id,
-					AccessScopeId:   classicAS.Id,
+					PermissionSetId: classicPS.GetId(),
+					AccessScopeId:   classicAS.GetId(),
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(tomorrow),
 					},
