@@ -111,7 +111,7 @@ function FileAccessCardContent({ event }: FileAccessCardContentProps): ReactElem
                     {Number.isInteger(file.meta.mode) && (
                         <DescriptionListItem
                             term="Permissions"
-                            desc={`${formatFileMode(file.meta.mode as number)} (${Number(file.meta.mode).toString(8).padStart(4, '0')})`}
+                            desc={`${formatFileMode(Number(file.meta.mode))} (${Number(file.meta.mode).toString(8).padStart(4, '0')})`}
                         />
                     )}
                 </DescriptionList>
