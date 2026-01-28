@@ -947,21 +947,12 @@ func (ds *dataStoreImpl) RemoveFilteredRoles(ctx context.Context, filter func(*s
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	var rolesToDelete []string
+	rolesToDelete := make(map[string]*storage.Role)
 	walkFn := func() error {
-		rolesToDelete = rolesToDelete[:0]
 		return ds.roleStorage.Walk(ctx, func(role *storage.Role) error {
-			if !filter(role) {
-				return nil
+			if filter(role) {
+				rolesToDelete[role.GetName()] = role
 			}
-			// TODO: fix tests to not hang on checking for referenced groups:
-			/*
-				if err := ds.verifyRoleForDeletion(ctx, role); err != nil {
-					log.Debugf("Skipping role %q: %v", role.GetName(), err)
-					return nil
-				}
-			*/
-			rolesToDelete = append(rolesToDelete, role.GetName())
 			return nil
 		})
 	}
@@ -969,8 +960,15 @@ func (ds *dataStoreImpl) RemoveFilteredRoles(ctx context.Context, filter func(*s
 		return 0, err
 	}
 
+	for name, role := range rolesToDelete {
+		if err := ds.verifyRoleForDeletion(ctx, role); err != nil {
+			log.Debugf("Skipping role %q: %v", name, err)
+			delete(rolesToDelete, name)
+		}
+	}
+
 	deletedCount := 0
-	for _, name := range rolesToDelete {
+	for name := range rolesToDelete {
 		if err := ds.roleStorage.Delete(ctx, name); err != nil {
 			log.Errorf("Failed to delete filtered role %q: %v", name, err)
 		} else {
