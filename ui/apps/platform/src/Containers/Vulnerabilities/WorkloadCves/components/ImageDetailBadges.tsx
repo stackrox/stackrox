@@ -6,6 +6,12 @@ import type { SignatureVerificationResult } from '../../types';
 import SignatureCountLabel from './SignatureCountLabel';
 import VerifiedSignatureLabel, { getVerifiedSignatureInResults } from './VerifiedSignatureLabel';
 
+export type BaseImage = {
+    imageSha: string;
+    names: string[];
+    created?: string;
+};
+
 export type ImageDetails = {
     deploymentCount: number;
     operatingSystem: string;
@@ -22,6 +28,7 @@ export type ImageDetails = {
     signatureVerificationData: {
         results: SignatureVerificationResult[];
     } | null;
+    baseImage: BaseImage | null;
 };
 
 export const imageDetailsFragment = gql`
@@ -48,6 +55,11 @@ export const imageDetailsFragment = gql`
                 verifiedImageReferences
                 verifierId
             }
+        }
+        baseImage {
+            imageSha
+            names
+            created
         }
     }
 `;
@@ -76,6 +88,11 @@ export const imageV2DetailsFragment = gql`
                 verifiedImageReferences
                 verifierId
             }
+        }
+        baseImage {
+            imageSha
+            names
+            created
         }
     }
 `;
