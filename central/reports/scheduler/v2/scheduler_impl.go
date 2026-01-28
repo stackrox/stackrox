@@ -8,6 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/debugactions"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reports/common"
@@ -162,6 +163,7 @@ func (s *scheduler) runReports() {
 		case <-s.stopper.Flow().StopRequested():
 			return
 		case <-s.readyForReports.Done():
+			debugactions.ExecuteRegisteredAction("VMReports:SchedulerV2:RunReports")
 			reportRequest := s.selectNextRunnableReport()
 			if reportRequest == nil {
 				s.readyForReports.Reset()
