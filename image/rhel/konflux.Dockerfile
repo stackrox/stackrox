@@ -64,8 +64,7 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:2ddd6e10383981c7d
 ARG PG_VERSION=15
 
 RUN microdnf -y module enable postgresql:${PG_VERSION} && \
-    # find is used in /stackrox/import-additional-cas \
-    microdnf -y install findutils postgresql && \
+    microdnf -y install postgresql && \
     microdnf -y clean all && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum
@@ -123,8 +122,9 @@ COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/docs/api/v
 
 COPY LICENSE /licenses/LICENSE
 
-# The following paths are written to in Central.
-RUN chown -R 4000:4000 /etc/pki/ca-trust /etc/ssl && save-dir-contents /etc/pki/ca-trust /etc/ssl && \
+# Save system CA bundle for bundle-ca-trust (before emptyDir mount hides it)
+RUN mkdir -p /usr/share/pki && \
+    cp /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem /usr/share/pki/ca-trust-source.pem && \
     mkdir -p /var/lib/stackrox && chown -R 4000:4000 /var/lib/stackrox && \
     mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
     mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \

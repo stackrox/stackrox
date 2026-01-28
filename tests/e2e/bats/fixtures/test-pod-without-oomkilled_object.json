@@ -200,10 +200,6 @@
                         "name": "varlog"
                     },
                     {
-                        "mountPath": "/etc/ssl/",
-                        "name": "sensor-etc-ssl-volume"
-                    },
-                    {
                         "mountPath": "/etc/pki/ca-trust/",
                         "name": "sensor-etc-pki-volume"
                     },
@@ -286,10 +282,6 @@
                     ],
                     "secretName": "sensor-tls"
                 }
-            },
-            {
-                "emptyDir": {},
-                "name": "sensor-etc-ssl-volume"
             },
             {
                 "emptyDir": {},

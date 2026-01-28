@@ -83,13 +83,6 @@
                     "type": "EmptyDir"
                 },
                 {
-                    "name": "central-etc-ssl-volume",
-                    "source": "",
-                    "destination": "/etc/ssl",
-                    "readOnly": false,
-                    "type": "EmptyDir"
-                },
-                {
                     "name": "central-etc-pki-volume",
                     "source": "",
                     "destination": "/etc/pki/ca-trust",

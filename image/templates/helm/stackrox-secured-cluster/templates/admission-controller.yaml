@@ -108,8 +108,6 @@ spec:
             - name: certs
               mountPath: /run/secrets/stackrox.io/certs/
               readOnly: true
-            - name: ssl
-              mountPath: /etc/ssl
             - name: pki
               mountPath: /etc/pki/ca-trust/
             - name: additional-cas
@@ -143,8 +141,6 @@ spec:
             name: admission-control
             optional: true
         - name: config-store
-          emptyDir: {}
-        - name: ssl
           emptyDir: {}
         - name: pki
           emptyDir: {}

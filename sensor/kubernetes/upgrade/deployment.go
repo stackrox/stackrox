@@ -144,12 +144,6 @@ func (p *process) createDeployment(serviceAccountName string, sensorDeployment *
 							},
 						},
 						{
-							Name: "etc-ssl-volume",
-							VolumeSource: v1.VolumeSource{
-								EmptyDir: &v1.EmptyDirVolumeSource{},
-							},
-						},
-						{
 							Name: "etc-pki-trust-volume",
 							VolumeSource: v1.VolumeSource{
 								EmptyDir: &v1.EmptyDirVolumeSource{},
@@ -182,10 +176,6 @@ func (p *process) createDeployment(serviceAccountName string, sensorDeployment *
 									Name:      "additional-ca-volume",
 									ReadOnly:  true,
 									MountPath: "/usr/local/share/ca-certificates/",
-								},
-								{
-									Name:      "etc-ssl-volume",
-									MountPath: "/etc/ssl/",
 								},
 								{
 									Name:      "etc-pki-trust-volume",

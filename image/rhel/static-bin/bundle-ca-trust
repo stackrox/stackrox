@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# bundle-ca-trust: Fast CA bundle creation for containers
+# Replaces update-ca-trust with simple concatenation (~15ms vs ~1400ms)
+#
+# Reads the system CA bundle from a saved location (copied during image build)
+# and writes a merged bundle (system + custom CAs) to the standard location.
+# The standard location must be writable (typically an emptyDir mount).
+
+set -euo pipefail
+
+# System CA bundle saved during image build (read-only)
+SYSTEM_CA_BUNDLE="/usr/share/pki/ca-trust-source.pem"
+
+# Output location (standard RHEL path, must be writable via emptyDir mount)
+CA_BUNDLE_OUTPUT="/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"
+
+if [ ! -f "$SYSTEM_CA_BUNDLE" ]; then
+    echo >&2 "Error: System CA bundle not found at $SYSTEM_CA_BUNDLE"
+    exit 1
+fi
+
+# Create output directory (in case emptyDir mount is at parent)
+mkdir -p "$(dirname "$CA_BUNDLE_OUTPUT")"
+
+# Build merged CA bundle into temp file
+TEMP_FILE="${CA_BUNDLE_OUTPUT}.tmp"
+{
+    # System CA bundle (read-only from image)
+    cat "$SYSTEM_CA_BUNDLE"
+
+    # Append Helm additionalCAs (mounted at /usr/local/share/ca-certificates)
+    for cert in /usr/local/share/ca-certificates/*; do
+        [ -f "$cert" ] && cat "$cert"
+    done 2>/dev/null || true
+
+    # Append OpenShift injected CAs (mounted at /etc/pki/injected-ca-trust)
+    for cert in /etc/pki/injected-ca-trust/*; do
+        [ -f "$cert" ] && cat "$cert"
+    done 2>/dev/null || true
+} > "$TEMP_FILE"
+
+# Atomic replace (works even if target has restrictive permissions)
+chmod 0444 "$TEMP_FILE"
+mv -f "$TEMP_FILE" "$CA_BUNDLE_OUTPUT"

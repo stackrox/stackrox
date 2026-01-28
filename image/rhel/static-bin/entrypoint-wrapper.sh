@@ -3,6 +3,6 @@
 set -euo pipefail
 
 restore-all-dir-contents
-import-additional-cas
+bundle-ca-trust
 
 exec "/stackrox/bin/$(basename "$0")" "$@"

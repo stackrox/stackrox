@@ -157,13 +157,6 @@
             },
             "volumes": [
                 {
-                    "name": "etc-ssl",
-                    "source": "",
-                    "destination": "/etc/ssl/",
-                    "readOnly": false,
-                    "type": "EmptyDir"
-                },
-                {
                     "name": "etc-pki-volume",
                     "source": "",
                     "destination": "/etc/pki/ca-trust/",
