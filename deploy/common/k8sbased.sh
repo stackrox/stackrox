@@ -809,7 +809,22 @@ function launch_sensor {
         --set "clusterName=${CLUSTER}"
         --set "centralEndpoint=${CLUSTER_API_ENDPOINT}"
         --set "collector.collectionMethod=$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
+        --set "image.collector.name=collector"
+
       )
+
+      if [[ -n ${COLLECTOR_IMAGE_TAG:-} ]]; then
+	helm_args+=(
+          --set image.collector.tag="$COLLECTOR_IMAGE_TAG"
+	)
+      fi
+
+      if [[ -n ${COLLECTOR_IMAGE_REGISTRY:-} ]]; then
+	helm_args+=(
+          --set image.collector.registry="$COLLECTOR_IMAGE_REGISTRY"
+	)
+      fi
+
 
       if [[ -n "${ROX_OPENSHIFT_VERSION}" ]]; then
         helm_args+=(
