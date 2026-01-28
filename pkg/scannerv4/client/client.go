@@ -218,6 +218,7 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 		clientconn.ServerName(o.serverName),
 		clientconn.MaxMsgReceiveSize(maxRespMsgSize),
 		clientconn.WithDialOptions(dialOpts...),
+		clientconn.AddRootCAs(),
 	}
 	return clientconn.AuthenticatedGRPCConnection(ctx, address, o.mTLSSubject, connOpts...)
 }
