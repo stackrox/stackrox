@@ -26,6 +26,12 @@ func GetK8sInClusterConfig() (*rest.Config, error) {
 	}
 	restCfg.ContentType = clientContentType
 
+	// Set QPS and Burst to avoid client-side throttling.
+	// The default k8s client-go values (QPS=5, Burst=10) are quite conservative
+	// and can cause "client-side throttling, not priority and fairness" warnings.
+	restCfg.QPS = float32(env.KubernetesClientQPS.FloatSetting())
+	restCfg.Burst = env.KubernetesClientBurst.IntegerSetting()
+
 	// Replacing raw IP address with kubernetes.default.svc
 	// allows for easier proxy configuration.
 	if env.ManagedCentral.BooleanSetting() {
