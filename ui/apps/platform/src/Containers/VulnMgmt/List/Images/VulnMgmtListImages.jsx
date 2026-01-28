@@ -16,10 +16,10 @@ import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import { IMAGE_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import getImageScanMessage from 'Containers/VulnMgmt/VulnMgmt.utils/getImageScanMessage';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
-import removeEntityContextColumns from 'utils/tableUtils';
 import { imageSortFields } from 'constants/sortFields';
 import queryService from 'utils/queryService';
 import WorkflowListPage from '../WorkflowListPage';
+import removeEntityContextColumns from '../tableUtils';
 import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
 import ImageTableCountLinks from './ImageTableCountLinks';
 
