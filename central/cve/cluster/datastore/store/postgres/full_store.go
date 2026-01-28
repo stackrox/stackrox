@@ -62,10 +62,16 @@ func (s *fullStoreImpl) DeleteClusterCVEsForCluster(ctx context.Context, cluster
 
 	_, err = tx.Exec(ctx, "DELETE FROM "+clusterCVEEdgeTable+" WHERE clusterid = $1", uuid.FromStringOrNil(clusterID))
 	if err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
 		return err
 	}
 	_, err = tx.Exec(ctx, "DELETE FROM "+clusterCVEsTable+" WHERE not exists (select "+clusterCVEEdgeTable+".cveid from "+clusterCVEEdgeTable+" where "+clusterCVEEdgeTable+".cveid = "+clusterCVEsTable+".id)")
 	if err != nil {
+		if err := tx.Rollback(ctx); err != nil {
+			return err
+		}
 		return err
 	}
 	return tx.Commit(ctx)
