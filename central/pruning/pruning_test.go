@@ -2432,16 +2432,16 @@ func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects() {
 			name: "remove expired access scopes only",
 			accessScopes: []*storage.SimpleAccessScope{
 				{
-					Id:   as1ID,
-					Name: "as-1",
+					Id:    as1ID,
+					Name:  "as-1",
 					Rules: &storage.SimpleAccessScope_Rules{},
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(yesterday),
 					},
 				},
 				{
-					Id:   as2ID,
-					Name: "as-2",
+					Id:    as2ID,
+					Name:  "as-2",
 					Rules: &storage.SimpleAccessScope_Rules{},
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(tomorrow),
@@ -2494,16 +2494,16 @@ func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects() {
 			},
 			accessScopes: []*storage.SimpleAccessScope{
 				{
-					Id:   asExpiredID,
-					Name: "as-expired",
+					Id:    asExpiredID,
+					Name:  "as-expired",
 					Rules: &storage.SimpleAccessScope_Rules{},
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(yesterday),
 					},
 				},
 				{
-					Id:   asActiveID,
-					Name: "as-active",
+					Id:    asActiveID,
+					Name:  "as-active",
 					Rules: &storage.SimpleAccessScope_Rules{},
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(tomorrow),
@@ -2535,8 +2535,8 @@ func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects() {
 			},
 			accessScopes: []*storage.SimpleAccessScope{
 				{
-					Id:   uuid.NewV4().String(),
-					Name: "as-1",
+					Id:    uuid.NewV4().String(),
+					Name:  "as-1",
 					Rules: &storage.SimpleAccessScope_Rules{},
 					Traits: &storage.Traits{
 						ExpiresAt: timestamppb.New(tomorrow),
@@ -2570,21 +2570,21 @@ func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects() {
 			for _, role := range c.roles {
 				assert.NoError(t, roleStore.AddRole(pruningCtx, role))
 				t.Cleanup(func() {
-					roleStore.RemoveRole(pruningCtx, role.GetName())
+					_ = roleStore.RemoveRole(pruningCtx, role.GetName())
 				})
 			}
 
 			for _, ps := range c.permissionSets {
 				assert.NoError(t, roleStore.AddPermissionSet(pruningCtx, ps))
 				t.Cleanup(func() {
-					roleStore.RemovePermissionSet(pruningCtx, ps.GetId())
+					_ = roleStore.RemovePermissionSet(pruningCtx, ps.GetId())
 				})
 			}
 
 			for _, as := range c.accessScopes {
 				assert.NoError(t, roleStore.AddAccessScope(pruningCtx, as))
 				t.Cleanup(func() {
-					roleStore.RemoveAccessScope(pruningCtx, as.GetId())
+					_ = roleStore.RemoveAccessScope(pruningCtx, as.GetId())
 				})
 			}
 
