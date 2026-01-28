@@ -53,7 +53,7 @@ func benchmarkDatastoreUpsertFlows(ds *flowDataStoreImpl, numFlows uint32) func(
 		for i := uint32(0); i < numFlows; i++ {
 			id, err := testutils.ExtIdFromIPv4(fixtureconsts.Cluster1, i)
 			require.NoError(b, err)
-			flows = append(flows, testutils.ExtFlowIngress(fixtureconsts.Deployment1, id.String(), fixtureconsts.Cluster1))
+			flows = append(flows, testutils.ExtFlowEgress(fixtureconsts.Deployment1, id.String(), fixtureconsts.Cluster1))
 		}
 
 		// Create a context with appropriate SAC permissions for the benchmark
