@@ -3,8 +3,7 @@ ARG PG_VERSION=15
 
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.25@sha256:8f41beafefbb37e6c260a14cdd0f40c21c59dedb611c8851368243d06da982da AS go-builder
 
-# jq is required by scripts/mergeswag.sh and will be installed via RPM prefetch
-RUN dnf install -y jq
+RUN dnf -y install --allowerasing jq
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -38,7 +37,7 @@ RUN mkdir -p image/rhel/docs/api/v1 && \
 RUN make copy-go-binaries-to-image-dir
 
 
-FROM registry.redhat.io/ubi9/nodejs-22:9.6-1755075210 AS ui-builder
+FROM registry.access.redhat.com/ubi9/nodejs-22:latest@sha256:ec60ac766c3959176acb5a0d4237be73457e39f6b36faba1cbf16eb9625c04d0 AS ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
