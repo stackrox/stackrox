@@ -175,7 +175,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		networkFlowManager,
 		networkpolicies.NewCommandHandler(cfg.k8sClient.Kubernetes()),
 		clusterstatus.NewUpdater(cfg.k8sClient),
-		clusterhealth.NewUpdater(cfg.k8sClient.Kubernetes(), 0),
+		// Use introspection client for cluster health to check local Scanner/Collector/AdmissionControl
+		// even when monitoring a remote cluster
+		clusterhealth.NewUpdater(cfg.introspectionK8sClient.Kubernetes(), 0),
 		clustermetrics.New(clusterID, cfg.k8sClient.Kubernetes()),
 		complianceCommandHandler,
 		processSignals,

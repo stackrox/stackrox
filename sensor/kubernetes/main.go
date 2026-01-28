@@ -27,6 +27,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/crs"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/helm"
+	"github.com/stackrox/rox/sensor/kubernetes/remote"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"golang.org/x/sys/unix"
 )
@@ -74,14 +75,28 @@ func main() {
 
 	var sharedClientInterface client.Interface
 	var sharedClientInterfaceForFetchingPodOwnership client.Interface
+	var workloadManager *fake.WorkloadManager
 
-	// Workload manager is only non-nil when we are mocking out the k8s client
-	workloadManager := fake.NewWorkloadManager(fake.ConfigDefaults())
-	if workloadManager != nil {
-		sharedClientInterface = workloadManager.Client()
-		sharedClientInterfaceForFetchingPodOwnership = client.MustCreateInterface()
+	// Remote cluster manager is only non-nil when ROX_REMOTE_CLUSTER_SECRET is set
+	remoteClientManager := remote.NewRemoteClientManager()
+	if remoteClientManager != nil {
+		// We need local client access to read the secret containing the remote kubeconfig
+		localClient := client.MustCreateInterface()
+		if err := remoteClientManager.InitializeRemoteClient(localClient.Kubernetes()); err != nil {
+			utils.CrashOnError(errors.Wrap(err, "failed to initialize remote cluster client"))
+		}
+		sharedClientInterface = remoteClientManager.Client()
+		// Keep local client for introspection purposes
+		sharedClientInterfaceForFetchingPodOwnership = localClient
 	} else {
-		sharedClientInterface = client.MustCreateInterface()
+		// Workload manager is only non-nil when we are mocking out the k8s client
+		workloadManager = fake.NewWorkloadManager(fake.ConfigDefaults())
+		if workloadManager != nil {
+			sharedClientInterface = workloadManager.Client()
+			sharedClientInterfaceForFetchingPodOwnership = client.MustCreateInterface()
+		} else {
+			sharedClientInterface = client.MustCreateInterface()
+		}
 	}
 	clientconn.SetUserAgent(clientconn.Sensor)
 	centralClient, err := centralclient.NewClient(env.CentralEndpoint.Setting())
