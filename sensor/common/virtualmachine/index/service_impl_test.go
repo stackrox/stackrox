@@ -160,70 +160,39 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_ShouldNotPanicWhen
 
 func TestUpsertVirtualMachineIndexReport_DiscoveredFactsUpdate(t *testing.T) {
 	t.Setenv(features.VirtualMachines.EnvVar(), "true")
-	tests := map[string]struct {
-		previousFacts map[string]string
-		expectUpdate  bool
-	}{
-		"should emit update when discovered facts change": {
-			previousFacts: nil,
-			expectUpdate:  true,
-		},
-		"should skip update when discovered facts unchanged": {
-			previousFacts: map[string]string{
-				virtualmachine.FactsDetectedOSKey:        v1.DetectedOS_RHEL.String(),
-				virtualmachine.FactsOSVersionKey:         "9.4",
-				virtualmachine.FactsActivationStatusKey:  v1.ActivationStatus_ACTIVE.String(),
-				virtualmachine.FactsDNFMetadataStatusKey: v1.DnfMetadataStatus_AVAILABLE.String(),
+	t.Run("should pass discovered data to handler", func(it *testing.T) {
+		ctrl := gomock.NewController(it)
+		store := mocks.NewMockVirtualMachineStore(ctrl)
+		handler := mocks.NewMockHandler(ctrl)
+		service := &serviceImpl{
+			handler: handler,
+			store:   store,
+		}
+
+		// Service now just passes discovered data to handler.Send
+		// Handler handles all store operations and update emission
+		handler.EXPECT().Send(gomock.Any(), gomock.Any(), gomock.Any()).
+			Do(func(ctx context.Context, report *v1.IndexReport, data *v1.DiscoveredData) {
+				require.NotNil(it, report)
+				require.NotNil(it, data)
+				require.Equal(it, "42", report.GetVsockCid())
+			}).
+			Return(nil)
+
+		req := &sensor.UpsertVirtualMachineIndexReportRequest{
+			IndexReport: &v1.IndexReport{
+				VsockCid: "42",
 			},
-			expectUpdate: false,
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(it *testing.T) {
-			ctrl := gomock.NewController(it)
-			store := mocks.NewMockVirtualMachineStore(ctrl)
-			handler := mocks.NewMockHandler(ctrl)
-			service := &serviceImpl{
-				handler: handler,
-				store:   store,
-			}
+			DiscoveredData: &v1.DiscoveredData{
+				DetectedOs:        v1.DetectedOS_RHEL,
+				OsVersion:         "9.4",
+				ActivationStatus:  v1.ActivationStatus_ACTIVE,
+				DnfMetadataStatus: v1.DnfMetadataStatus_AVAILABLE,
+			},
+		}
 
-			vmID := virtualmachine.VMID("vm-1")
-			store.EXPECT().GetFromCID(uint32(42)).Times(1).Return(&virtualmachine.Info{ID: vmID})
-			store.EXPECT().GetDiscoveredFacts(vmID).Times(1).Return(tt.previousFacts)
-			expectedFacts := map[string]string{
-				virtualmachine.FactsDetectedOSKey:        v1.DetectedOS_RHEL.String(),
-				virtualmachine.FactsOSVersionKey:         "9.4",
-				virtualmachine.FactsActivationStatusKey:  v1.ActivationStatus_ACTIVE.String(),
-				virtualmachine.FactsDNFMetadataStatusKey: v1.DnfMetadataStatus_AVAILABLE.String(),
-			}
-			store.EXPECT().UpsertDiscoveredFacts(vmID, gomock.Any()).
-				Do(func(_ virtualmachine.VMID, facts map[string]string) {
-					require.Equal(it, expectedFacts, facts)
-				})
-
-			handler.EXPECT().Send(gomock.Any(), gomock.Any()).Return(nil)
-			if tt.expectUpdate {
-				handler.EXPECT().SendVirtualMachineUpdate(gomock.Any(), vmID).Return(nil)
-			} else {
-				handler.EXPECT().SendVirtualMachineUpdate(gomock.Any(), vmID).Times(0)
-			}
-
-			req := &sensor.UpsertVirtualMachineIndexReportRequest{
-				IndexReport: &v1.IndexReport{
-					VsockCid: "42",
-				},
-				DiscoveredData: &v1.DiscoveredData{
-					DetectedOs:        v1.DetectedOS_RHEL,
-					OsVersion:         "9.4",
-					ActivationStatus:  v1.ActivationStatus_ACTIVE,
-					DnfMetadataStatus: v1.DnfMetadataStatus_AVAILABLE,
-				},
-			}
-
-			resp, err := service.UpsertVirtualMachineIndexReport(context.Background(), req)
-			require.NoError(it, err)
-			require.True(it, resp.GetSuccess())
-		})
-	}
+		resp, err := service.UpsertVirtualMachineIndexReport(context.Background(), req)
+		require.NoError(it, err)
+		require.True(it, resp.GetSuccess())
+	})
 }

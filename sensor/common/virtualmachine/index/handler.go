@@ -14,8 +14,7 @@ import (
 type Handler interface {
 	common.SensorComponent
 
-	Send(ctx context.Context, vm *v1.IndexReport) error
-	SendVirtualMachineUpdate(ctx context.Context, vmID virtualmachine.VMID) error
+	Send(ctx context.Context, vm *v1.IndexReport, discoveredData *v1.DiscoveredData) error
 }
 
 type clusterIDGetter interface {

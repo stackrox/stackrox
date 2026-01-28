@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/sensor/common"
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/index/mocks"
 	vmmetrics "github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -66,7 +68,7 @@ func (s *virtualMachineHandlerSuite) TestSend() {
 	// Test that the goroutine processes sent VMs.
 	vm := &v1.IndexReport{VsockCid: cid}
 	go func() {
-		err := s.handler.Send(context.Background(), vm)
+		err := s.handler.Send(context.Background(), vm, nil)
 		s.Require().NoError(err)
 	}()
 
@@ -126,7 +128,7 @@ func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
 					}
 					cont++
 				})
-				err := s.handler.Send(ctx, req)
+				err := s.handler.Send(ctx, req, nil)
 				s.Require().NoError(err)
 			}
 		}(i)
@@ -156,27 +158,47 @@ func (s *virtualMachineHandlerSuite) TestVirtualMachineNotFound() {
 	cid := "1"
 	s.store.EXPECT().GetFromCID(gomock.Eq(uint32(1))).Times(1).Return(nil)
 
+	// Start draining messages to prevent sendToCentral from blocking
+	messageReceived := make(chan bool, 1)
+	go func() {
+		select {
+		case <-s.handler.ResponsesC():
+			messageReceived <- true
+		case <-time.After(500 * time.Millisecond):
+			messageReceived <- false
+		}
+	}()
+
 	// Test that the goroutine processes sent VMs.
 	vm := &v1.IndexReport{VsockCid: cid}
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err := s.handler.Send(context.Background(), vm)
+		err := s.handler.Send(context.Background(), vm, nil)
 		s.Require().NoError(err)
 	}()
 
 	wg.Wait()
 
-	// Read from ResponsesC to verify message was not sent.
+	// Verify no message was sent
+	received := <-messageReceived
+	s.Assert().False(received, "Unexpected message to be sent to central")
+
+	// Ensure goroutine has finished processing by draining any remaining messages
+	go func() {
+		for range s.handler.ResponsesC() {
+		}
+	}()
+	// Wait for goroutine to exit
 	select {
-	case <-s.handler.ResponsesC():
-		s.Fail("Unexpected message to be sent to central")
-	case <-time.After(500 * time.Millisecond):
+	case <-s.handler.stopper.Client().Stopped().Done():
+	case <-time.After(time.Second):
 	}
 }
 
-func (s *virtualMachineHandlerSuite) TestSendVirtualMachineUpdate() {
+func (s *virtualMachineHandlerSuite) TestSend_WithDiscoveredFacts_EmitsUpdate() {
+	s.T().Setenv(features.VirtualMachines.EnvVar(), "true")
 	err := s.handler.Start()
 	s.Require().NoError(err)
 	s.handler.Notify(common.SensorComponentEventCentralReachable)
@@ -190,21 +212,29 @@ func (s *virtualMachineHandlerSuite) TestSendVirtualMachineUpdate() {
 		Running:   true,
 		GuestOS:   "Red Hat Enterprise Linux",
 	}
-	s.store.EXPECT().Get(vmID).Times(1).Return(vmInfo)
+	cid := uint32(1)
+	// handleDiscoveredFacts calls GetFromCID, then newMessageToCentral also calls it
+	s.store.EXPECT().GetFromCID(cid).Times(2).Return(vmInfo)
+	// handleDiscoveredFacts gets previous facts, upserts, then gets again for the update message
+	s.store.EXPECT().GetDiscoveredFacts(vmID).Times(1).Return(map[string]string{})
+	s.store.EXPECT().UpsertDiscoveredFacts(vmID, gomock.Any()).Times(1)
 	s.store.EXPECT().GetDiscoveredFacts(vmID).Times(1).Return(map[string]string{
 		virtualmachine.FactsDetectedOSKey: "RHEL",
 	})
 
+	discoveredData := &v1.DiscoveredData{
+		DetectedOs: v1.DetectedOS_RHEL,
+	}
+
 	go func() {
-		err := s.handler.SendVirtualMachineUpdate(context.Background(), vmID)
+		err := s.handler.Send(context.Background(), &v1.IndexReport{VsockCid: "1"}, discoveredData)
 		s.Require().NoError(err)
 	}()
 
+	// First message should be the VM update (handleDiscoveredFacts sends it first)
 	select {
 	case msg := <-s.handler.ResponsesC():
 		s.Require().NotNil(msg)
-		s.Require().NotNil(msg.MsgFromSensor)
-
 		sensorEvent := msg.GetEvent()
 		s.Require().NotNil(sensorEvent)
 		s.Assert().Equal(string(vmID), sensorEvent.GetId())
@@ -218,69 +248,66 @@ func (s *virtualMachineHandlerSuite) TestSendVirtualMachineUpdate() {
 	case <-time.After(time.Second):
 		s.Fail("Expected update message to be sent to central")
 	}
-}
 
-func (s *virtualMachineHandlerSuite) TestSendVirtualMachineUpdate_ErrorPaths() {
-	newHandler := func(t *testing.T) (*gomock.Controller, *handlerImpl, *mocks.MockVirtualMachineStore) {
-		ctrl := gomock.NewController(t)
-		store := mocks.NewMockVirtualMachineStore(ctrl)
-		handler := &handlerImpl{
-			centralReady: concurrency.NewSignal(),
-			lock:         &sync.RWMutex{},
-			stopper:      concurrency.NewStopper(),
-			store:        store,
-		}
-		return ctrl, handler, store
+	// Second message should be the index report
+	select {
+	case msg := <-s.handler.ResponsesC():
+		s.Require().NotNil(msg)
+		sensorEvent := msg.GetEvent()
+		s.Require().NotNil(sensorEvent)
+		s.Assert().Equal(string(vmID), sensorEvent.GetId())
+		s.Assert().Equal(central.ResourceAction_SYNC_RESOURCE, sensorEvent.GetAction())
+		s.Assert().NotNil(sensorEvent.GetVirtualMachineIndexReport())
+	case <-time.After(time.Second):
+		s.Fail("Expected index report message to be sent to central")
 	}
 
+	// Drain any remaining messages to prevent goroutine leaks
+	go func() {
+		for range s.handler.ResponsesC() {
+		}
+	}()
+	time.Sleep(50 * time.Millisecond)
+}
+
+func (s *virtualMachineHandlerSuite) TestSend_ErrorPaths() {
 	cases := map[string]struct {
-		setup   func(t *testing.T, h *handlerImpl, store *mocks.MockVirtualMachineStore) (context.Context, virtualmachine.VMID)
+		setup   func(t *testing.T, h *handlerImpl, store *mocks.MockVirtualMachineStore) (context.Context, *v1.IndexReport, *v1.DiscoveredData)
 		wantErr error
 	}{
-		"vm not found": {
-			setup: func(t *testing.T, h *handlerImpl, store *mocks.MockVirtualMachineStore) (context.Context, virtualmachine.VMID) {
-				h.Notify(common.SensorComponentEventCentralReachable)
-				vmID := virtualmachine.VMID("vm-missing")
-				store.EXPECT().Get(vmID).Times(1).Return(nil)
-				return context.Background(), vmID
-			},
-			wantErr: errVirtualMachineNotFound,
-		},
-		"input channel closed": {
-			setup: func(t *testing.T, h *handlerImpl, store *mocks.MockVirtualMachineStore) (context.Context, virtualmachine.VMID) {
-				h.Notify(common.SensorComponentEventCentralReachable)
-				vmID := virtualmachine.VMID("vm-updates-nil")
-				store.EXPECT().Get(vmID).Times(1).Return(&virtualmachine.Info{ID: vmID})
-				return context.Background(), vmID
-			},
-			wantErr: errox.InvariantViolation,
-		},
 		"capability missing": {
-			setup: func(t *testing.T, h *handlerImpl, store *mocks.MockVirtualMachineStore) (context.Context, virtualmachine.VMID) {
+			setup: func(t *testing.T, h *handlerImpl, store *mocks.MockVirtualMachineStore) (context.Context, *v1.IndexReport, *v1.DiscoveredData) {
 				centralcaps.Set(nil)
-				vmID := virtualmachine.VMID("vm-cap-missing")
-				return context.Background(), vmID
+				return context.Background(), &v1.IndexReport{VsockCid: "1"}, nil
 			},
 			wantErr: errox.NotImplemented,
 		},
 		"central not ready": {
-			setup: func(t *testing.T, h *handlerImpl, store *mocks.MockVirtualMachineStore) (context.Context, virtualmachine.VMID) {
-				vmID := virtualmachine.VMID("vm-central-not-ready")
-				return context.Background(), vmID
+			setup: func(t *testing.T, h *handlerImpl, store *mocks.MockVirtualMachineStore) (context.Context, *v1.IndexReport, *v1.DiscoveredData) {
+				err := h.Start()
+				require.NoError(t, err)
+				// Don't notify central as reachable, so centralReady is not done
+				return context.Background(), &v1.IndexReport{VsockCid: "1"}, nil
 			},
 			wantErr: errox.ResourceExhausted,
 		},
-		"context canceled does not enqueue": {
-			setup: func(t *testing.T, h *handlerImpl, store *mocks.MockVirtualMachineStore) (context.Context, virtualmachine.VMID) {
+		"input channel closed": {
+			setup: func(t *testing.T, h *handlerImpl, store *mocks.MockVirtualMachineStore) (context.Context, *v1.IndexReport, *v1.DiscoveredData) {
 				h.Notify(common.SensorComponentEventCentralReachable)
-				concurrency.WithLock(h.lock, func() {
-					h.vmUpdates = make(chan *virtualmachine.Info)
-				})
-				vmID := virtualmachine.VMID("vm-context-canceled")
-				store.EXPECT().Get(vmID).Times(1).Return(&virtualmachine.Info{ID: vmID})
+				return context.Background(), &v1.IndexReport{VsockCid: "1"}, nil
+			},
+			wantErr: errox.InvariantViolation,
+		},
+		"context canceled": {
+			setup: func(t *testing.T, h *handlerImpl, store *mocks.MockVirtualMachineStore) (context.Context, *v1.IndexReport, *v1.DiscoveredData) {
+				h.Notify(common.SensorComponentEventCentralReachable)
+				err := h.Start()
+				require.NoError(t, err)
+				// Set up expectation in case the item gets enqueued before context check
+				store.EXPECT().GetFromCID(uint32(1)).Return(&virtualmachine.Info{ID: "vm-1"}).AnyTimes()
 				ctx, cancel := context.WithCancel(context.Background())
 				cancel()
-				return ctx, vmID
+				return ctx, &v1.IndexReport{VsockCid: "1"}, nil
 			},
 			wantErr: context.Canceled,
 		},
@@ -288,27 +315,59 @@ func (s *virtualMachineHandlerSuite) TestSendVirtualMachineUpdate_ErrorPaths() {
 
 	for name, tc := range cases {
 		s.Run(name, func() {
-			ctrl, handler, store := newHandler(s.T())
+			ctrl := gomock.NewController(s.T())
 			defer ctrl.Finish()
 			defer centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
 
-			ctx, vmID := tc.setup(s.T(), handler, store)
-			err := handler.SendVirtualMachineUpdate(ctx, vmID)
+			store := mocks.NewMockVirtualMachineStore(ctrl)
+			handler := &handlerImpl{
+				centralReady: concurrency.NewSignal(),
+				lock:         &sync.RWMutex{},
+				stopper:      concurrency.NewStopper(),
+				store:        store,
+			}
+
+			ctx, report, data := tc.setup(s.T(), handler, store)
+
+			// Start draining messages to prevent sendToCentral from blocking (only if handler is started)
+			drainDone := make(chan struct{})
+			if handler.indexReports != nil {
+				go func() {
+					defer close(drainDone)
+					for {
+						select {
+						case _, ok := <-handler.ResponsesC():
+							if !ok {
+								return
+							}
+						case <-time.After(100 * time.Millisecond):
+							// Timeout to prevent blocking forever
+							return
+						}
+					}
+				}()
+			} else {
+				close(drainDone)
+			}
+
+			err := handler.Send(ctx, report, data)
 			s.Require().Error(err)
 			s.ErrorIs(err, tc.wantErr)
-			if handler.vmUpdates != nil {
+
+			// Clean up: stop handler if it was started
+			if handler.indexReports != nil {
+				handler.Stop()
+				// Wait for goroutine to exit
 				select {
-				case <-handler.vmUpdates:
-					s.T().Fatalf("expected no virtual machine update enqueued")
-				default:
+				case <-handler.stopper.Client().Stopped().Done():
+				case <-time.After(time.Second):
+				}
+				// Wait for drain goroutine to exit
+				select {
+				case <-drainDone:
+				case <-time.After(200 * time.Millisecond):
 				}
 			}
-			concurrency.WithLock(handler.lock, func() {
-				if handler.vmUpdates != nil {
-					close(handler.vmUpdates)
-					handler.vmUpdates = nil
-				}
-			})
 		})
 	}
 }
@@ -328,7 +387,7 @@ func (s *virtualMachineHandlerSuite) TestInvalidCID() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err := s.handler.Send(context.Background(), vm)
+		err := s.handler.Send(context.Background(), vm, nil)
 		s.Require().NoError(err)
 	}()
 
@@ -349,13 +408,21 @@ func (s *virtualMachineHandlerSuite) TestStop() {
 	// Stop should not panic and should stop gracefully.
 	s.handler.Stop()
 
-	// Verify stopper is stopped.
+	// Drain any messages that might have been sent
+	go func() {
+		for range s.handler.ResponsesC() {
+		}
+	}()
+
+	// Verify stopper is stopped and wait for goroutine to exit
 	select {
 	case <-s.handler.stopper.Client().Stopped().Done():
 		// Expected.
 	case <-time.After(time.Second):
 		s.Fail("handler should have stopped")
 	}
+	// Give goroutine time to fully exit
+	time.Sleep(50 * time.Millisecond)
 }
 
 func (s *virtualMachineHandlerSuite) TestCapabilities() {
