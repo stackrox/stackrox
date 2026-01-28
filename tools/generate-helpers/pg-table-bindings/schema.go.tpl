@@ -104,6 +104,7 @@ var (
                 {{- if eq $indexconfig.IndexCategory "unique"}}uniqueIndex{{else}}index{{end -}}:{{- /**/ -}}
                     {{if gt (len $indexconfig.IndexName) 0}}{{$indexconfig.IndexName}}{{else}}{{$schema.Table|lowerCamelCase|lowerCase}}_{{$field.ColumnName|lowerCase}}{{end}}{{- /**/ -}}
                 {{- if ne $indexconfig.IndexCategory "unique"}},type:{{$indexconfig.IndexType}}{{end -}}{{- /**/ -}}
+                {{- if gt (len $indexconfig.IndexPriority) 0}},priority:{{$indexconfig.IndexPriority}}{{end -}}{{- /**/ -}}
             {{- end -}}
         {{end}}{{- /**/ -}}
         {{if $field|isSacScoping }};{{- /**/ -}}
