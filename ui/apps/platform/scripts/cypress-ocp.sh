@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
 
+export CYPRESS_OSCI_OPENSHIFT_VERSION="${OPENSHIFT_VERSION}"
+echo "OPENSHIFT_VERSION is ${OPENSHIFT_VERSION}"
+
+# echo all environment variables
+echo "Environment variables:"
+printenv | sort
+
+exit
+
+
 export CYPRESS_ORCHESTRATOR_FLAVOR="${ORCHESTRATOR_FLAVOR}"
 # exit if ORCHESTRATOR_FLAVOR is not 'openshift' - these tests are only relevant for openshift
 if [ "${ORCHESTRATOR_FLAVOR}" != "openshift" ]; then
     echo "ORCHESTRATOR_FLAVOR is not 'openshift', skipping cypress-ocp"
     exit 0
 fi
-
-export CYPRESS_OSCI_OPENSHIFT_VERSION="${OPENSHIFT_VERSION}"
-echo "OPENSHIFT_VERSION is ${OPENSHIFT_VERSION}"
-
-exit
-
 
 # Opens cypress with environment variables for feature flags and auth
 OPENSHIFT_CONSOLE_URL="${OPENSHIFT_CONSOLE_URL:-http://localhost:9000}"
