@@ -162,7 +162,7 @@ jobs:
     - name: Check Cache golangci-lint
       run: make golangci-lint-cache-status
 
-  check-collector-and-scanner-images-exist:
+  check-dependent-images-exist:
     # This job ensures that COLLECTOR_VERSION, FACT_VERSION or SCANNER_VERSION files cannot be updated to a version
     # for which the image was not successfully built on Konflux (suffix "-fast"). It also verifies that GHA-built image
     # is there (no suffix) so that the failure also happens in this job.
