@@ -40,6 +40,8 @@ spec:
     value: fact-tag
   - name: output-image-repo
     value: quay.io/rhacs-eng/fact
+  - name: image-tag-suffix
+    value: ''
 
   pipelineRef:
     name: retag-pipeline
