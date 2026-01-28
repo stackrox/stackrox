@@ -6,11 +6,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/npg"
 )
-
-const deprecationNotice = "This command is deprecated and will be removed in a future release."
 
 // Cmd represents 'netpol connectivity map' command
 type Cmd struct {
@@ -37,7 +36,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		Use:        "map <folder-path>",
 		Short:      "Analyze connectivity based on network policies and other resources",
 		Long:       `Based on a given folder containing deployment and network policy YAMLs, will analyze permitted cluster connectivity. Will write to stdout if no output flags are provided.`,
-		Deprecated: deprecationNotice,
+		Deprecated: common.DeprecatedCommandNotice,
 
 		Args: cobra.ExactArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {

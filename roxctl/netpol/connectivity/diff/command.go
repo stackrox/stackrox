@@ -7,11 +7,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/npg"
 )
-
-const deprecationNotice = "This command is deprecated and will be removed in a future release."
 
 type diffNetpolCommand struct {
 	// Properties that are bound to cobra flags.
@@ -35,7 +34,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		Use:        "diff",
 		Short:      "Report connectivity-diff based on two directories containing network policies and YAML manifests with workload resources",
 		Long:       `Based on two input folders containing Kubernetes workloads and network policy YAMLs, this command will report all differences in allowed connections between the resources.`,
-		Deprecated: deprecationNotice,
+		Deprecated: common.DeprecatedCommandNotice,
 
 		Args: cobra.ExactArgs(0),
 		RunE: func(c *cobra.Command, args []string) error {
