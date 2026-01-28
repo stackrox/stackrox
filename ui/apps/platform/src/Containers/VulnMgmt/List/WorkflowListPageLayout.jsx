@@ -60,7 +60,7 @@ const WorkflowListPageLayout = () => {
                 <PageHeader
                     header={header}
                     subHeader="Entity list"
-                    classes="pr-0 ignore-react-onclickoutside"
+                    classes="pr-0"
                 >
                     <div className="flex flex-1 justify-end h-full">
                         <div className="flex items-center pl-2">
