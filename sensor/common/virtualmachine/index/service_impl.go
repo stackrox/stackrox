@@ -55,6 +55,14 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 			Observe(metrics.StartTimeToMS(startTime))
 	}()
 
+	if !features.VirtualMachines.Enabled() {
+		// Swallow the request and exit if feature is disabled.
+		metrics.IndexReportsReceived.Inc()
+		return &sensor.UpsertVirtualMachineIndexReportResponse{
+			Success: true,
+		}, nil
+	}
+
 	ir := req.GetIndexReport()
 	if ir == nil {
 		return &sensor.UpsertVirtualMachineIndexReportResponse{
@@ -68,10 +76,9 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 	}
 
 	log.Debugf("Upserting virtual machine index report with vsock_cid=%q", ir.GetVsockCid())
-
 	data := req.GetDiscoveredData()
 	// Log discovered data if present
-	if features.VirtualMachines.Enabled() && data != nil {
+	if data != nil {
 		detectedOS := data.GetDetectedOs()
 		osVersion := data.GetOsVersion()
 		activationStatus := data.GetActivationStatus()
