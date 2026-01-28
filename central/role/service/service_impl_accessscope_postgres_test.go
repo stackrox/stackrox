@@ -46,12 +46,12 @@ func (s *serviceImplAccessScopeTestSuite) TestListAccessScopes() {
 	accessScopeName2 := "TestListAccessScopes_imperativeOriginTraits"
 	accessScopeName3 := "TestListAccessScopes_declarativeOriginTraits"
 	accessScopeName4 := "TestListAccessScopes_orphanedDeclarativeOriginTraits"
-	accessScopeName5 := "TestListAccessScopes_dynamicOriginTraits"
+	accessScopeName5 := "TestListAccessScopes_ephemeralOriginTraits"
 	scope1 := s.tester.createAccessScope(t, accessScopeName1, nilTraits)
 	scope2 := s.tester.createAccessScope(t, accessScopeName2, imperativeOriginTraits)
 	scope3 := s.tester.createAccessScope(t, accessScopeName3, declarativeOriginTraits)
 	scope4 := s.tester.createAccessScope(t, accessScopeName4, orphanedDeclarativeOriginTraits)
-	scope5 := s.tester.createAccessScope(t, accessScopeName5, dynamicOriginTraits)
+	scope5 := s.tester.createAccessScope(t, accessScopeName5, ephemeralOriginTraits)
 
 	scopes, err := s.tester.service.ListSimpleAccessScopes(ctx, &v1.Empty{})
 	s.NoError(err)
@@ -61,7 +61,7 @@ func (s *serviceImplAccessScopeTestSuite) TestListAccessScopes() {
 	protoassert.SliceContains(s.T(), scopes.GetAccessScopes(), scope2)
 	protoassert.SliceContains(s.T(), scopes.GetAccessScopes(), scope3)
 	protoassert.SliceContains(s.T(), scopes.GetAccessScopes(), scope4)
-	// Roles with dynamic origin are filtered out.
+	// Roles with ephemeral origin are filtered out.
 	protoassert.SliceNotContains(s.T(), scopes.GetAccessScopes(), scope5)
 }
 
@@ -77,9 +77,9 @@ func (s *serviceImplAccessScopeTestSuite) TestPostAccessScope() {
 		inputScope.Id = scope.GetId()
 		protoassert.Equal(s.T(), inputScope, scope)
 	})
-	s.Run("Dynamic scopes cannot be created by API", func() {
+	s.Run("ephemeral scopes cannot be created by API", func() {
 		inputScope := &storage.SimpleAccessScope{
-			Traits: dynamicOriginTraits,
+			Traits: ephemeralOriginTraits,
 		}
 		ctx := sac.WithAllAccess(s.T().Context())
 		scope, err := s.tester.service.PostSimpleAccessScope(ctx, inputScope)
@@ -98,9 +98,9 @@ func (s *serviceImplAccessScopeTestSuite) TestPutAccessScope() {
 		_, err := s.tester.service.PutSimpleAccessScope(ctx, updatedScope)
 		s.NoError(err)
 	})
-	s.Run("Dynamic scopes cannot be created by API", func() {
-		scopeName := "Dynamic access scope"
-		inputScope := s.tester.createAccessScope(s.T(), scopeName, dynamicOriginTraits)
+	s.Run("Ephemeral scopes cannot be created by API", func() {
+		scopeName := "Ephemeral access scope"
+		inputScope := s.tester.createAccessScope(s.T(), scopeName, ephemeralOriginTraits)
 		updatedScope := inputScope.CloneVT()
 		updatedScope.Description = "Updated description"
 		ctx := sac.WithAllAccess(s.T().Context())

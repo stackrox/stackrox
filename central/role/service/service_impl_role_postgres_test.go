@@ -132,12 +132,12 @@ func (s *serviceImplRoleTestSuite) TestGetRoles() {
 	roleName2 := "TestGetRoles_imperativeOriginTraits"
 	roleName3 := "TestGetRoles_declarativeOriginTraits"
 	roleName4 := "TestGetRoles_orphanedDeclarativeOriginTraits"
-	roleName5 := "TestGetRoles_dynamicOriginTraits"
+	roleName5 := "TestGetRoles_ephemeralOriginTraits"
 	role1 := s.tester.createRole(t, roleName1, nilTraits)
 	role2 := s.tester.createRole(t, roleName2, imperativeOriginTraits)
 	role3 := s.tester.createRole(t, roleName3, declarativeOriginTraits)
 	role4 := s.tester.createRole(t, roleName4, orphanedDeclarativeOriginTraits)
-	role5 := s.tester.createRole(t, roleName5, dynamicOriginTraits)
+	role5 := s.tester.createRole(t, roleName5, ephemeralOriginTraits)
 
 	roles, err := s.tester.service.GetRoles(ctx, &v1.Empty{})
 	s.NoError(err)
@@ -147,7 +147,7 @@ func (s *serviceImplRoleTestSuite) TestGetRoles() {
 	protoassert.SliceContains(s.T(), roles.GetRoles(), role2)
 	protoassert.SliceContains(s.T(), roles.GetRoles(), role3)
 	protoassert.SliceContains(s.T(), roles.GetRoles(), role4)
-	// Roles with dynamic origin are filtered out.
+	// Roles with ephemeral origin are filtered out.
 	protoassert.SliceNotContains(s.T(), roles.GetRoles(), role5)
 }
 
@@ -174,15 +174,15 @@ func (s *serviceImplRoleTestSuite) TestCreateRole() {
 		s.NoError(fetchErr)
 		protoassert.Equal(s.T(), roleCreationRequest.GetRole(), role)
 	})
-	s.Run("Dynamic roles cannot be created by API", func() {
-		roleName := "Dynamic test role"
+	s.Run("Ephemeral roles cannot be created by API", func() {
+		roleName := "Ephemeral test role"
 		roleCreationRequest := &v1.CreateRoleRequest{
 			Name: roleName,
 			Role: &storage.Role{
 				Name:            roleName,
 				PermissionSetId: accesscontrol.DefaultPermissionSetIDs[accesscontrol.Admin],
 				AccessScopeId:   accesscontrol.DefaultAccessScopeIDs[accesscontrol.UnrestrictedAccessScope],
-				Traits:          dynamicOriginTraits,
+				Traits:          ephemeralOriginTraits,
 			},
 		}
 		ctx := sac.WithAllAccess(s.T().Context())
@@ -201,9 +201,9 @@ func (s *serviceImplRoleTestSuite) TestUpdateRole() {
 		_, err := s.tester.service.UpdateRole(ctx, role)
 		s.NoError(err)
 	})
-	s.Run("Dynamic roles cannot be updated by API", func() {
-		roleName := "Test update of dynamic role"
-		role := s.tester.createRole(s.T(), roleName, dynamicOriginTraits)
+	s.Run("Ephemeral roles cannot be updated by API", func() {
+		roleName := "Test update of ephemeral role"
+		role := s.tester.createRole(s.T(), roleName, ephemeralOriginTraits)
 		updatedRole := role.CloneVT()
 		updatedRole.Description = "Updated description"
 		ctx := sac.WithAllAccess(s.T().Context())
