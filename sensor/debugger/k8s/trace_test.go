@@ -13,9 +13,8 @@ func BenchmarkWrite(b *testing.B) {
 	data := []byte("abc")
 	writer, err := NewTraceWriter(path.Join(dir, "test"))
 	assert.NoError(b, err)
-	b.ResetTimer()
 
-	for n := 0; n < b.N; n++ {
+	for b.Loop() {
 		_, err := writer.Write(data)
 		assert.NoError(b, err)
 	}

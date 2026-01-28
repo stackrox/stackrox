@@ -73,7 +73,7 @@ func BenchmarkNodeResolver(b *testing.B) {
 	}
 
 	b.Run("GetNodeComponentsInNodeScanResolver", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			response := schema.Exec(ctx,
 				nodeWithScanQuery,
 				"getNodes",
@@ -88,7 +88,7 @@ func BenchmarkNodeResolver(b *testing.B) {
 	})
 
 	b.Run("GetNodeComponentsWithoutNodeScanResolver", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			response := schema.Exec(ctx,
 				nodeWithoutScanQuery,
 				"getNodes",
@@ -103,7 +103,7 @@ func BenchmarkNodeResolver(b *testing.B) {
 	})
 
 	b.Run("GetNodeComponentsDerivedFieldsWithNodeScanResolver", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			response := schema.Exec(ctx,
 				nodeWithScanLongQuery,
 				"getNodes",
@@ -118,7 +118,7 @@ func BenchmarkNodeResolver(b *testing.B) {
 	})
 
 	b.Run("GetNodeComponentsDerivedWithoutNodeScanResolver", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			response := schema.Exec(ctx,
 				nodeWithoutScanLongQuery,
 				"getNodes",
@@ -133,7 +133,7 @@ func BenchmarkNodeResolver(b *testing.B) {
 	})
 
 	b.Run("GetNodeOnly", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			response := schema.Exec(ctx,
 				nodeOnlyQuery,
 				"getNodes",
@@ -148,7 +148,7 @@ func BenchmarkNodeResolver(b *testing.B) {
 	})
 
 	b.Run("GetNodeWithCounts", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			response := schema.Exec(ctx,
 				nodeWithCountsQuery,
 				"getNodes",

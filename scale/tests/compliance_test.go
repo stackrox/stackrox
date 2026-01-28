@@ -193,8 +193,8 @@ func BenchmarkCompliance(b *testing.B) {
 	log.Info("completed compliance run, beginning benchmark")
 	// Build the queries we are going to run
 	complianceQueries := makeComplianceQueries(complianceRuns)
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		// Run all queries asynchronously and wait for each to finish
 		loadComplianceResults(envVars, client, complianceQueries)
 	}

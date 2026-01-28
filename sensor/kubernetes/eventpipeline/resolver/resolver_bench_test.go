@@ -74,7 +74,7 @@ func BenchmarkProcessDeploymentReferences(b *testing.B) {
 		b.Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", value))
 		for _, bc := range cases {
 			b.Run(fmt.Sprintf("Benchmark with %d events and %d deployments per event and %q is %t", bc.numEvents, bc.numDeployments, features.SensorInternalPubSub.EnvVar(), value), func(b *testing.B) {
-				for i := 0; i < b.N; i++ {
+				for b.Loop() {
 					b.StopTimer()
 					doneSignal := concurrency.NewSignal()
 					setupMocks(b, &doneSignal, value)
@@ -98,7 +98,7 @@ func BenchmarkProcessRandomDeploymentReferences(b *testing.B) {
 		b.Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", value))
 		for _, bc := range cases {
 			b.Run(fmt.Sprintf("Benchmark with %d events and %d random deployments per event and %q is %t", bc.numEvents, bc.numDeployments, features.SensorInternalPubSub.EnvVar(), value), func(b *testing.B) {
-				for i := 0; i < b.N; i++ {
+				for b.Loop() {
 					b.StopTimer()
 					doneSignal := concurrency.NewSignal()
 					setupMocks(b, &doneSignal, value)

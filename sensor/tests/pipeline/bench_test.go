@@ -71,7 +71,6 @@ func randString(n int) string {
 }
 
 func Benchmark_Pipeline(b *testing.B) {
-	b.StopTimer()
 
 	setupOnce.Do(func() {
 		fakeClient = k8s.MakeFakeClient()
@@ -92,8 +91,7 @@ func Benchmark_Pipeline(b *testing.B) {
 		setupSensor(fakeCentral, fakeClient)
 	})
 
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		testNamespace := randString(10)
 		_, err := fakeClient.Kubernetes().CoreV1().Namespaces().Create(context.Background(), &core.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
