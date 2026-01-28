@@ -143,6 +143,7 @@ message EmbeddedImageScanComponent {
   // Values are cleared after moving to cache, remove them from the grpc return as well
   repeated Executable executables = 12; // @gotags: json:"-"
   string architecture = 13;
+  string digest = 14;
 }
 
 enum SourceType {
@@ -260,4 +261,5 @@ message BaseImageInfo {
   string base_image_full_name = 2;
   string base_image_digest = 3;
   google.protobuf.Timestamp created = 4;
+  repeated string layers = 5;
 }

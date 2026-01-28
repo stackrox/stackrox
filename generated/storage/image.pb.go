@@ -863,6 +863,7 @@ type EmbeddedImageScanComponent struct {
 	// Values are cleared after moving to cache, remove them from the grpc return as well
 	Executables   []*EmbeddedImageScanComponent_Executable `protobuf:"bytes,12,rep,name=executables,proto3" json:"-"` // @gotags: json:"-"
 	Architecture  string                                   `protobuf:"bytes,13,opt,name=architecture,proto3" json:"architecture,omitempty"`
+	Digest        string                                   `protobuf:"bytes,14,opt,name=digest,proto3" json:"digest,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1002,6 +1003,13 @@ func (x *EmbeddedImageScanComponent) GetExecutables() []*EmbeddedImageScanCompon
 func (x *EmbeddedImageScanComponent) GetArchitecture() string {
 	if x != nil {
 		return x.Architecture
+	}
+	return ""
+}
+
+func (x *EmbeddedImageScanComponent) GetDigest() string {
+	if x != nil {
+		return x.Digest
 	}
 	return ""
 }
@@ -1879,6 +1887,7 @@ type BaseImageInfo struct {
 	BaseImageFullName string                 `protobuf:"bytes,2,opt,name=base_image_full_name,json=baseImageFullName,proto3" json:"base_image_full_name,omitempty"`
 	BaseImageDigest   string                 `protobuf:"bytes,3,opt,name=base_image_digest,json=baseImageDigest,proto3" json:"base_image_digest,omitempty"`
 	Created           *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created,proto3" json:"created,omitempty"`
+	Layers            []string               `protobuf:"bytes,5,rep,name=layers,proto3" json:"layers,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -1937,6 +1946,13 @@ func (x *BaseImageInfo) GetBaseImageDigest() string {
 func (x *BaseImageInfo) GetCreated() *timestamppb.Timestamp {
 	if x != nil {
 		return x.Created
+	}
+	return nil
+}
+
+func (x *BaseImageInfo) GetLayers() []string {
+	if x != nil {
+		return x.Layers
 	}
 	return nil
 }
@@ -2071,7 +2087,7 @@ const file_storage_image_proto_rawDesc = "" +
 	"\x13FAILED_VERIFICATION\x10\x02\x12\x1a\n" +
 	"\x16INVALID_SIGNATURE_ALGO\x10\x03\x12\x17\n" +
 	"\x13CORRUPTED_SIGNATURE\x10\x04\x12\x11\n" +
-	"\rGENERIC_ERROR\x10\x05\"\xea\x04\n" +
+	"\rGENERIC_ERROR\x10\x05\"\x82\x05\n" +
 	"\x1aEmbeddedImageScanComponent\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12*\n" +
@@ -2088,7 +2104,8 @@ const file_storage_image_proto_rawDesc = "" +
 	" \x01(\x02R\triskScore\x12\x19\n" +
 	"\bfixed_by\x18\v \x01(\tR\afixedBy\x12P\n" +
 	"\vexecutables\x18\f \x03(\v2..storage.EmbeddedImageScanComponent.ExecutableR\vexecutables\x12\"\n" +
-	"\farchitecture\x18\r \x01(\tR\farchitecture\x1aD\n" +
+	"\farchitecture\x18\r \x01(\tR\farchitecture\x12\x16\n" +
+	"\x06digest\x18\x0e \x01(\tR\x06digest\x1aD\n" +
 	"\n" +
 	"Executable\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\"\n" +
@@ -2170,12 +2187,13 @@ const file_storage_image_proto_rawDesc = "" +
 	"\vset_fixableJ\x04\b\t\x10\n" +
 	"\"\"\n" +
 	"\fWatchedImage\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"\xc6\x01\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"\xde\x01\n" +
 	"\rBaseImageInfo\x12\"\n" +
 	"\rbase_image_id\x18\x01 \x01(\tR\vbaseImageId\x12/\n" +
 	"\x14base_image_full_name\x18\x02 \x01(\tR\x11baseImageFullName\x12*\n" +
 	"\x11base_image_digest\x18\x03 \x01(\tR\x0fbaseImageDigest\x124\n" +
-	"\acreated\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\acreated*s\n" +
+	"\acreated\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12\x16\n" +
+	"\x06layers\x18\x05 \x03(\tR\x06layers*s\n" +
 	"\n" +
 	"SourceType\x12\x06\n" +
 	"\x02OS\x10\x00\x12\n" +

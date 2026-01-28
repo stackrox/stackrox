@@ -9152,6 +9152,11 @@
                 "id": 13,
                 "name": "architecture",
                 "type": "string"
+              },
+              {
+                "id": 14,
+                "name": "digest",
+                "type": "string"
               }
             ],
             "messages": [
@@ -9491,6 +9496,12 @@
                 "id": 4,
                 "name": "created",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "layers",
+                "type": "string",
+                "is_repeated": true
               }
             ]
           }
