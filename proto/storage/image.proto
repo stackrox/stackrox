@@ -260,4 +260,5 @@ message BaseImageInfo {
   string base_image_full_name = 2;
   string base_image_digest = 3;
   google.protobuf.Timestamp created = 4;
+  int32 base_image_total_layers = 5;
 }

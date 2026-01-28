@@ -600,6 +600,10 @@
         "created": {
           "type": "string",
           "format": "date-time"
+        },
+        "baseImageTotalLayers": {
+          "type": "integer",
+          "format": "int32"
         }
       }
     },

@@ -9491,6 +9491,11 @@
                 "id": 4,
                 "name": "created",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "base_image_total_layers",
+                "type": "int32"
               }
             ]
           }
