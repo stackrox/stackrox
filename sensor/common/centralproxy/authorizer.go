@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/stackrox/rox/pkg/expiringcache"
@@ -15,6 +16,7 @@ import (
 	authv1 "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -154,6 +156,8 @@ func (a *k8sAuthorizer) validateToken(ctx context.Context, token string) (*authe
 //     access scope limited to the namespace.
 //   - FullClusterAccessScope ("*"): SubjectAccessReview for all namespaces and rox token
 //     with cluster-wide access scope.
+//
+// SAR checks are performed in parallel to reduce latency.
 func (a *k8sAuthorizer) authorize(ctx context.Context, userInfo *authenticationv1.UserInfo, r *http.Request) error {
 	namespace := r.Header.Get(stackroxNamespaceHeader)
 	// Skip authorization if the namespace header is empty or not set.
@@ -161,16 +165,44 @@ func (a *k8sAuthorizer) authorize(ctx context.Context, userInfo *authenticationv
 		return nil
 	}
 
+	// Use errgroup with context cancellation to short-circuit on first error/denial.
+	g, ctx := errgroup.WithContext(ctx)
+
+	// Track the first authorization failure for a consistent error message.
+	var (
+		firstDenial     error
+		firstDenialOnce sync.Once
+	)
+
 	for _, resource := range a.resourcesToCheck {
 		for _, verb := range a.verbsToCheck {
-			allowed, err := a.performSubjectAccessReview(ctx, userInfo, verb, namespace, resource)
-			if err != nil {
-				return pkghttputil.Errorf(http.StatusInternalServerError, "checking %s permission for %s: %v", verb, resource.Resource, err)
-			}
-			if !allowed {
-				return formatForbiddenErr(userInfo.Username, verb, resource.Resource, resource.Group, namespace)
-			}
+			// Capture loop variables for the goroutine.
+			resource := resource
+			verb := verb
+
+			g.Go(func() error {
+				allowed, err := a.performSubjectAccessReview(ctx, userInfo, verb, namespace, resource)
+				if err != nil {
+					return pkghttputil.Errorf(http.StatusInternalServerError, "checking %s permission for %s: %v", verb, resource.Resource, err)
+				}
+				if !allowed {
+					denial := formatForbiddenErr(userInfo.Username, verb, resource.Resource, resource.Group, namespace)
+					firstDenialOnce.Do(func() {
+						firstDenial = denial
+					})
+					return denial
+				}
+				return nil
+			})
 		}
+	}
+
+	if err := g.Wait(); err != nil {
+		// Return the first denial if available (more user-friendly), otherwise the error.
+		if firstDenial != nil {
+			return firstDenial
+		}
+		return err
 	}
 
 	return nil

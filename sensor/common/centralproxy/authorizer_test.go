@@ -196,7 +196,9 @@ func TestK8sAuthorizer_MissingPermission_Namespace(t *testing.T) {
 	err := authorizer.authorize(context.Background(), userInfo, req)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), `user "limited-user" lacks LIST permission for resource "pods.core" in namespace "my-namespace"`)
+	// With parallel execution, any resource could fail first - check for the general pattern.
+	assert.Contains(t, err.Error(), `user "limited-user" lacks LIST permission for resource`)
+	assert.Contains(t, err.Error(), `in namespace "my-namespace"`)
 }
 
 func TestK8sAuthorizer_MissingPermission_ClusterWide(t *testing.T) {
@@ -231,7 +233,8 @@ func TestK8sAuthorizer_MissingPermission_ClusterWide(t *testing.T) {
 	err := authorizer.authorize(context.Background(), userInfo, req)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), `user "namespace-admin" lacks cluster-wide LIST permission for resource "pods.core"`)
+	// With parallel execution, any resource could fail first - check for the general pattern.
+	assert.Contains(t, err.Error(), `user "namespace-admin" lacks cluster-wide LIST permission for resource`)
 }
 
 func TestK8sAuthorizer_SubjectAccessReviewError(t *testing.T) {
@@ -254,7 +257,9 @@ func TestK8sAuthorizer_SubjectAccessReviewError(t *testing.T) {
 	err := authorizer.authorize(context.Background(), userInfo, req)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "checking get permission")
+	// With parallel execution, any verb could fail first - check for the general pattern.
+	assert.Contains(t, err.Error(), "checking")
+	assert.Contains(t, err.Error(), "permission")
 	assert.Contains(t, err.Error(), "API server unavailable")
 }
 
