@@ -85,7 +85,7 @@ func (d *datastoreImpl) upsertAuthM2MConfigNoLock(ctx context.Context,
 	// Upsert the token exchanger first, ensuring the config is valid and a token exchanger can be successfully
 	// created from it.
 	if err := d.set.UpsertTokenExchanger(ctx, config); err != nil {
-		return nil, d.wrapRollBackSet(ctx, err, storedConfig, config, existingExchanger)
+		return nil, d.wrapRollback(ctx, tx, err, storedConfig, config, existingExchanger)
 	}
 
 	// Upsert the config to the DB after the token exchanger has been successfully added.
