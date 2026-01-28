@@ -22,7 +22,9 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule()
+	log            = logging.LoggerForModule()
+	k8sClientQPS   = 50.0
+	k8sClientBurst = 100
 
 	_ common.Notifiable           = (*Handler)(nil)
 	_ common.CentralGRPCConnAware = (*Handler)(nil)
@@ -74,6 +76,11 @@ func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certifi
 	if err != nil {
 		return nil, errors.Wrap(err, "getting in-cluster config")
 	}
+	// Set QPS and Burst to avoid client-side throttling.
+	// The default k8s client-go values (QPS=5, Burst=10) are quite conservative
+	// and can cause "client-side throttling, not priority and fairness" warnings.
+	restConfig.QPS = float32(k8sClientQPS)
+	restConfig.Burst = k8sClientBurst
 	retryablehttp.ConfigureRESTConfig(restConfig)
 
 	k8sClient, err := kubernetes.NewForConfig(restConfig)
