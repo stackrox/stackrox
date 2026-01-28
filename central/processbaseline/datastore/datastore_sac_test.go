@@ -5,18 +5,22 @@ package datastore
 import (
 	"context"
 	"testing"
+	"time"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -137,7 +141,9 @@ func (s *processBaselineSACTestSuite) TestUpdateProcessBaselineElements() {
 				ctx, processBaseline.GetKey(), nil, nil, false)
 			if c.ExpectError {
 				s.Require().Error(err)
-				s.ErrorIs(err, c.ExpectedError)
+				// if the requester does not have the necessary read permission,
+				// the error will be "no process baseline with id XXX"
+				// otherwise it will be "access to resource denied"
 			} else {
 				s.NoError(err)
 			}
@@ -184,11 +190,347 @@ func (s *processBaselineSACTestSuite) TestRemoveProcessBaseline() {
 
 			ctx := s.testContexts[c.ScopeKey]
 			err = s.datastore.RemoveProcessBaseline(ctx, processBaseline.GetKey())
+			s.NoError(err)
+
+			fetched, found, err := s.datastore.GetProcessBaseline(
+				s.testContexts[testutils.UnrestrictedReadWriteCtx],
+				processBaseline.GetKey(),
+			)
+			s.NoError(err)
+			if c.ExpectedFound {
+				s.True(found)
+				protoassert.Equal(s.T(), processBaseline, fetched)
+			} else {
+				s.False(found)
+				s.Nil(fetched)
+			}
+		})
+	}
+}
+
+func (s *processBaselineSACTestSuite) TestRemoveProcessBaselineByDeployment() {
+	cases := testutils.GenericNamespaceSACDeleteTestCases(s.T())
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			processBaseline := fixtures.GetScopedProcessBaseline(uuid.NewV4().String(), testconsts.Cluster2,
+				testconsts.NamespaceB)
+			deploymentID := uuid.NewV4().String()
+			processBaseline.Key.DeploymentId = deploymentID
+			_, err := s.datastore.AddProcessBaseline(s.testContexts[testutils.UnrestrictedReadWriteCtx], processBaseline)
+			s.Require().NoError(err)
+			s.testProcessBaselineIDs = append(s.testProcessBaselineIDs, processBaseline.GetId())
+			defer s.deleteProcessBaseline(processBaseline.GetId())
+
+			ctx := s.testContexts[c.ScopeKey]
+			err = s.datastore.RemoveProcessBaselinesByDeployment(ctx, deploymentID)
+			s.NoError(err)
+
+			fetched, found, err := s.datastore.GetProcessBaseline(
+				s.testContexts[testutils.UnrestrictedReadWriteCtx],
+				processBaseline.GetKey(),
+			)
+			s.NoError(err)
+			if c.ExpectedFound {
+				s.True(found)
+				protoassert.Equal(s.T(), processBaseline, fetched)
+			} else {
+				s.False(found)
+				s.Nil(fetched)
+			}
+		})
+	}
+}
+
+func (s *processBaselineSACTestSuite) TestRemoveProcessBaselineByDeploymentOtherDeployment() {
+	cases := testutils.GenericNamespaceSACDeleteTestCases(s.T())
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			processBaseline := fixtures.GetScopedProcessBaseline(uuid.NewV4().String(), testconsts.Cluster2,
+				testconsts.NamespaceB)
+			deploymentID := uuid.NewV4().String()
+			otherDeploymentID := uuid.NewV4().String()
+			s.Require().NotEqual(deploymentID, otherDeploymentID)
+			processBaseline.Key.DeploymentId = deploymentID
+			_, err := s.datastore.AddProcessBaseline(s.testContexts[testutils.UnrestrictedReadWriteCtx], processBaseline)
+			s.Require().NoError(err)
+			s.testProcessBaselineIDs = append(s.testProcessBaselineIDs, processBaseline.GetId())
+			defer s.deleteProcessBaseline(processBaseline.GetId())
+
+			ctx := s.testContexts[c.ScopeKey]
+			err = s.datastore.RemoveProcessBaselinesByDeployment(ctx, otherDeploymentID)
+			s.NoError(err)
+
+			fetched, found, err := s.datastore.GetProcessBaseline(
+				s.testContexts[testutils.UnrestrictedReadWriteCtx],
+				processBaseline.GetKey(),
+			)
+			s.NoError(err)
+			s.True(found)
+			protoassert.Equal(s.T(), processBaseline, fetched)
+		})
+	}
+}
+
+func (s *processBaselineSACTestSuite) TestUserLockProcessBaselineLock() {
+	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), "lock")
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			processBaseline := fixtures.GetScopedProcessBaseline(uuid.NewV4().String(), testconsts.Cluster2,
+				testconsts.NamespaceB)
+			id, err := keyToID(processBaseline.GetKey())
+			s.Require().NoError(err)
+			processBaseline.Id = id
+			ctx := s.testContexts[c.ScopeKey]
+			_, err = s.datastore.AddProcessBaseline(
+				s.testContexts[testutils.UnrestrictedReadWriteCtx],
+				processBaseline,
+			)
+			s.Require().NoError(err)
+			defer s.deleteProcessBaseline(processBaseline.GetId())
+			expectedUnchanged := processBaseline.CloneVT()
+
+			_, err = s.datastore.UserLockProcessBaseline(ctx, processBaseline.GetKey(), true)
+			fetched, found, fetchErr := s.datastore.GetProcessBaseline(
+				s.testContexts[testutils.UnrestrictedReadWriteCtx],
+				processBaseline.GetKey(),
+			)
+			s.NoError(fetchErr)
+			s.True(found)
+			if c.ExpectError {
+				s.Require().Error(err)
+				// if the requester does not have the necessary read permission,
+				// the error will be "no process baseline with id XXX"
+				// otherwise it will be "access to resource denied"
+
+				// Ensure the process baseline was not changed
+				protoassert.Equal(s.T(), expectedUnchanged, fetched)
+			} else {
+				s.NoError(err)
+
+				// Ensure the user lock timestamp was changed
+				assert.NotNil(s.T(), fetched.GetUserLockedTimestamp())
+				assert.Nil(s.T(), expectedUnchanged.GetUserLockedTimestamp())
+				// Ensure the last updated state was changed
+				assert.NotEqual(s.T(), expectedUnchanged.GetLastUpdate().GetNanos(), fetched.GetLastUpdate().GetNanos())
+				// Ensure the above two changes were the only changes
+				expectedUnchanged.LastUpdate = nil
+				expectedUnchanged.UserLockedTimestamp = nil
+				fetched.LastUpdate = nil
+				fetched.UserLockedTimestamp = nil
+				protoassert.Equal(s.T(), expectedUnchanged, fetched)
+			}
+		})
+	}
+}
+
+func (s *processBaselineSACTestSuite) TestUserLockProcessBaselineUnlock() {
+	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), "unlock")
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			processBaseline := fixtures.GetScopedProcessBaseline(uuid.NewV4().String(), testconsts.Cluster2,
+				testconsts.NamespaceB)
+			id, err := keyToID(processBaseline.GetKey())
+			s.Require().NoError(err)
+			processBaseline.Id = id
+			userLockTS := time.Date(2022, 3, 4, 5, 6, 0, 0, time.UTC)
+			userLockProtoTS := protocompat.ConvertTimeToTimestampOrNil(&userLockTS)
+			s.Require().NotNil(userLockProtoTS)
+			processBaseline.UserLockedTimestamp = userLockProtoTS
+			ctx := s.testContexts[c.ScopeKey]
+			_, err = s.datastore.AddProcessBaseline(
+				s.testContexts[testutils.UnrestrictedReadWriteCtx],
+				processBaseline,
+			)
+			s.Require().NoError(err)
+			defer s.deleteProcessBaseline(processBaseline.GetId())
+			expectedUnchanged := processBaseline.CloneVT()
+
+			_, err = s.datastore.UserLockProcessBaseline(ctx, processBaseline.GetKey(), false)
+			fetched, found, fetchErr := s.datastore.GetProcessBaseline(
+				s.testContexts[testutils.UnrestrictedReadWriteCtx],
+				processBaseline.GetKey(),
+			)
+			s.NoError(fetchErr)
+			s.True(found)
+			if c.ExpectError {
+				s.Require().Error(err)
+				// if the requester does not have the necessary read permission,
+				// the error will be "no process baseline with id XXX"
+				// otherwise it will be "access to resource denied"
+
+				// Ensure the process baseline was not changed
+				protoassert.Equal(s.T(), expectedUnchanged, fetched)
+			} else {
+				s.NoError(err)
+
+				// Ensure the user lock timestamp was changed
+				assert.Nil(s.T(), fetched.GetUserLockedTimestamp())
+				assert.NotNil(s.T(), expectedUnchanged.GetUserLockedTimestamp())
+				// Ensure the last updated state was changed
+				assert.NotEqual(s.T(), expectedUnchanged.GetLastUpdate().GetNanos(), fetched.GetLastUpdate().GetNanos())
+				// Ensure the above two changes were the only changes
+				expectedUnchanged.LastUpdate = nil
+				expectedUnchanged.UserLockedTimestamp = nil
+				fetched.LastUpdate = nil
+				fetched.UserLockedTimestamp = nil
+				protoassert.Equal(s.T(), expectedUnchanged, fetched)
+			}
+		})
+	}
+}
+
+func (s *processBaselineSACTestSuite) TestCreateUnlockedProcessBaseline() {
+	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), "create")
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			processBaseline := fixtures.GetScopedProcessBaseline(uuid.NewV4().String(), testconsts.Cluster2,
+				testconsts.NamespaceB)
+			id, err := keyToID(processBaseline.GetKey())
+			s.Require().NoError(err)
+			processBaseline.Id = id
+			processBaseline.Elements = []*storage.BaselineElement{}
+			ctx := s.testContexts[c.ScopeKey]
+			created, err := s.datastore.CreateUnlockedProcessBaseline(ctx, processBaseline.GetKey())
+			defer s.deleteProcessBaseline(processBaseline.GetId())
+
+			fetched, found, fetchErr := s.datastore.GetProcessBaseline(
+				s.testContexts[testutils.UnrestrictedReadWriteCtx],
+				processBaseline.GetKey(),
+			)
+			s.NoError(fetchErr)
 			if c.ExpectError {
 				s.Require().Error(err)
 				s.ErrorIs(err, c.ExpectedError)
+
+				s.False(found)
+				s.Nil(fetched)
 			} else {
 				s.NoError(err)
+
+				s.True(found)
+				s.NotNil(fetched.GetCreated())
+				s.NotNil(fetched.GetLastUpdate())
+				s.NotNil(fetched.GetStackRoxLockedTimestamp())
+				// Check the created baseline is empty
+				protoassert.Equal(s.T(), created, fetched)
+				fetched.Created = nil
+				fetched.LastUpdate = nil
+				fetched.StackRoxLockedTimestamp = nil
+				processBaseline.Created = nil
+				processBaseline.LastUpdate = nil
+				processBaseline.StackRoxLockedTimestamp = nil
+				protoassert.Equal(s.T(), processBaseline, fetched)
+			}
+		})
+	}
+}
+
+func (s *processBaselineSACTestSuite) TestRemoveProcessBaselinesByID() {
+	cases := testutils.GenericNamespaceSACDeleteTestCases(s.T())
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			processBaseline := fixtures.GetScopedProcessBaseline(uuid.NewV4().String(), testconsts.Cluster2,
+				testconsts.NamespaceB)
+			id, err := keyToID(processBaseline.GetKey())
+			s.Require().NoError(err)
+			processBaseline.Id = id
+			ctx := s.testContexts[c.ScopeKey]
+			_, err = s.datastore.AddProcessBaseline(
+				s.testContexts[testutils.UnrestrictedReadWriteCtx],
+				processBaseline,
+			)
+			s.Require().NoError(err)
+			defer s.deleteProcessBaseline(processBaseline.GetId())
+
+			err = s.datastore.RemoveProcessBaselinesByIDs(ctx, []string{id})
+			s.NoError(err)
+			fetched, found, fetchErr := s.datastore.GetProcessBaseline(
+				s.testContexts[testutils.UnrestrictedReadWriteCtx],
+				processBaseline.GetKey(),
+			)
+			s.NoError(fetchErr)
+			if c.ExpectedFound {
+				s.True(found)
+				protoassert.Equal(s.T(), processBaseline, fetched)
+			} else {
+				s.False(found)
+				s.Nil(fetched)
+			}
+		})
+	}
+}
+
+func (s *processBaselineSACTestSuite) TestClearProcessBaselines() {
+	cases := testutils.GenericNamespaceSACUpsertTestCases(s.T(), "clear")
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			processBaseline := fixtures.GetScopedProcessBaseline(uuid.NewV4().String(), testconsts.Cluster2,
+				testconsts.NamespaceB)
+			id, err := keyToID(processBaseline.GetKey())
+			s.Require().NoError(err)
+			processBaseline.Id = id
+			processBaseline.Elements = []*storage.BaselineElement{}
+			processBaseline.ElementGraveyard = []*storage.BaselineElement{}
+			ctx := s.testContexts[c.ScopeKey]
+			_, err = s.datastore.AddProcessBaseline(s.testContexts[testutils.UnrestrictedReadWriteCtx], processBaseline)
+			s.Require().NoError(err)
+			defer s.deleteProcessBaseline(processBaseline.GetId())
+
+			err = s.datastore.ClearProcessBaselines(ctx, []string{id})
+			fetched, found, fetchErr := s.datastore.GetProcessBaseline(
+				s.testContexts[testutils.UnrestrictedReadWriteCtx],
+				processBaseline.GetKey(),
+			)
+			s.NoError(fetchErr)
+			s.True(found)
+			if c.ExpectError {
+				// Depending whether the requester has read access to the target object or not,
+				// the error behaviour of ClearProcessBaselines will be different
+				// - If read is granted, the user will get an `access to resource denied` error
+				// - otherwise, there will be no error
+				if sac.ForResource(resources.DeploymentExtension).
+					ScopeChecker(ctx, storage.Access_READ_ACCESS).
+					ForNamespaceScopedObject(processBaseline.GetKey()).IsAllowed() {
+					s.Error(err)
+					s.ErrorIs(err, sac.ErrResourceAccessDenied)
+				} else {
+					s.NoError(err)
+				}
+
+				// Ensure the baseline was not changed
+				protoassert.Equal(s.T(), processBaseline, fetched)
+			} else {
+				s.NoError(err)
+
+				// Ensure the following fields were changed
+				// - LastUpdate
+				// - StackRoxLockedTimestamp
+				// - Elements
+				// - ElementGraveyard
+				s.NotNil(fetched.GetLastUpdate())
+				s.NotEqual(processBaseline.GetLastUpdate().GetNanos(), fetched.GetLastUpdate().GetNanos())
+				s.NotNil(fetched.GetStackRoxLockedTimestamp())
+				s.NotEqual(processBaseline.GetStackRoxLockedTimestamp().GetNanos(), fetched.GetStackRoxLockedTimestamp().GetNanos())
+				s.Nil(fetched.GetElements())
+				s.NotNil(processBaseline.GetElements())
+				s.Nil(fetched.GetElementGraveyard())
+				s.NotNil(processBaseline.GetElementGraveyard())
+				// Ensure these changes were the only changes
+				processBaseline.LastUpdate = nil
+				fetched.LastUpdate = nil
+				processBaseline.StackRoxLockedTimestamp = nil
+				fetched.StackRoxLockedTimestamp = nil
+				processBaseline.Elements = nil
+				processBaseline.ElementGraveyard = nil
+				protoassert.Equal(s.T(), processBaseline, fetched)
+
 			}
 		})
 	}
