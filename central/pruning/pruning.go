@@ -95,7 +95,7 @@ func EnableDynamicRBACPruning() {
 
 // disableDynamicRBACPruningForTest disables pruning of expired dynamic RBAC objects.
 // This is for testing purposes only.
-func disableDynamicRBACPruningForTest(testing.T) {
+func disableDynamicRBACPruningForTest(*testing.T) {
 	dynamicRBACPruningEnabled.Store(false)
 }
 

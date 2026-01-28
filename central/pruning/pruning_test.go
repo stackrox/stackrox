@@ -2618,7 +2618,7 @@ func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects() {
 }
 
 func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects_WhenDisabled() {
-	disableDynamicRBACPruningForTest(*s.T())
+	disableDynamicRBACPruningForTest(s.T())
 
 	now := time.Now()
 	yesterday := now.Add(-24 * time.Hour)
