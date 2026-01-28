@@ -129,31 +129,17 @@ func (mr *MockHandlerMockRecorder) ResponsesC() *gomock.Call {
 }
 
 // Send mocks base method.
-func (m *MockHandler) Send(ctx context.Context, vm *v1.IndexReport) error {
+func (m *MockHandler) Send(ctx context.Context, vm *v1.IndexReport, discoveredData *v1.DiscoveredData) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Send", ctx, vm)
+	ret := m.ctrl.Call(m, "Send", ctx, vm, discoveredData)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Send indicates an expected call of Send.
-func (mr *MockHandlerMockRecorder) Send(ctx, vm any) *gomock.Call {
+func (mr *MockHandlerMockRecorder) Send(ctx, vm, discoveredData any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockHandler)(nil).Send), ctx, vm)
-}
-
-// SendVirtualMachineUpdate mocks base method.
-func (m *MockHandler) SendVirtualMachineUpdate(ctx context.Context, vmID virtualmachine.VMID) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendVirtualMachineUpdate", ctx, vmID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendVirtualMachineUpdate indicates an expected call of SendVirtualMachineUpdate.
-func (mr *MockHandlerMockRecorder) SendVirtualMachineUpdate(ctx, vmID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendVirtualMachineUpdate", reflect.TypeOf((*MockHandler)(nil).SendVirtualMachineUpdate), ctx, vmID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockHandler)(nil).Send), ctx, vm, discoveredData)
 }
 
 // Start mocks base method.
