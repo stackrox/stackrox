@@ -424,13 +424,34 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	replicaSetIDs := w.getIDsForPrefix(replicaSetPrefix)
 	podIDs := w.getIDsForPrefix(podPrefix)
 	for _, deploymentWorkload := range w.workload.DeploymentWorkload {
-		for i := 0; i < deploymentWorkload.NumDeployments; i++ {
-			resource := w.getDeployment(deploymentWorkload, i, deploymentIDs, replicaSetIDs, podIDs)
-			resources = append(resources, resource)
+		if deploymentWorkload.PodWorkload.ContainerWorkload.UseImageCopies {
+			// When using image copies, create paired deployments (one with _orig, one with _copy)
+			for i := 0; i < deploymentWorkload.NumDeployments; i++ {
+				origResource, copyResource := w.getDeploymentPairFromImageCopies(deploymentWorkload, i, deploymentIDs, replicaSetIDs, podIDs)
 
-			objects = append(objects, resource.deployment, resource.replicaSet)
-			for _, p := range resource.pods {
-				objects = append(objects, p)
+				// Add _orig deployment
+				resources = append(resources, origResource)
+				objects = append(objects, origResource.deployment, origResource.replicaSet)
+				for _, p := range origResource.pods {
+					objects = append(objects, p)
+				}
+
+				// Add _copy deployment
+				resources = append(resources, copyResource)
+				objects = append(objects, copyResource.deployment, copyResource.replicaSet)
+				for _, p := range copyResource.pods {
+					objects = append(objects, p)
+				}
+			}
+		} else {
+			for i := 0; i < deploymentWorkload.NumDeployments; i++ {
+				resource := w.getDeployment(deploymentWorkload, i, deploymentIDs, replicaSetIDs, podIDs)
+				resources = append(resources, resource)
+
+				objects = append(objects, resource.deployment, resource.replicaSet)
+				for _, p := range resource.pods {
+					objects = append(objects, p)
+				}
 			}
 		}
 	}
