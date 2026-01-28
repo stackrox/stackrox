@@ -63,27 +63,27 @@ func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string) (
 		}
 
 		match := true
-		tempDigests := make([]string, 0, len(candidateLayers))
+		current := make([]string, 0, len(candidateLayers))
 		for i, l := range candidateLayers {
 			if layers[i] != l.GetLayerDigest() {
 				match = false
 				break
 			}
-			tempDigests = append(tempDigests, l.GetLayerDigest())
+			current = append(current, l.GetLayerDigest())
 		}
 
 		if match {
-			numCandidateLayers := len(candidateLayers)
+			n := len(candidateLayers)
 
 			// Found a deeper match: clear previous shallow matches
-			if numCandidateLayers > maxLayers {
-				maxLayers = numCandidateLayers
+			if n > maxLayers {
+				maxLayers = n
 				baseImages = baseImages[:0]
-				matchedLayerDigests = tempDigests
+				matchedLayerDigests = current
 			}
 
 			// Only add if it matches the current maximum depth
-			if numCandidateLayers == maxLayers {
+			if n == maxLayers {
 				baseImages = append(baseImages, &storage.BaseImageInfo{
 					BaseImageId:       c.GetId(),
 					BaseImageFullName: fmt.Sprintf("%s:%s", c.GetRepository(), c.GetTag()),
