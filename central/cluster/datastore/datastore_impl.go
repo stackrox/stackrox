@@ -623,6 +623,10 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 		log.Errorf("failed to delete external network graph entities for removed cluster %s: %v", cluster.GetId(), err)
 	}
 
+	if err := ds.netFlowsDataStore.RemoveFlowStore(ctx, cluster.GetId()); err != nil {
+		log.Errorf("failed to delete network flows for removed cluster %s: %v", cluster.GetId(), err)
+	}
+
 	if features.ComplianceEnhancements.Enabled() {
 		ds.compliancePruner.RemoveComplianceResourcesByCluster(ctx, cluster.GetId())
 	}

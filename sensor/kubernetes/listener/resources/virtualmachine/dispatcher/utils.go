@@ -1,6 +1,8 @@
 package dispatcher
 
 import (
+	"strings"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/virtualmachine"
@@ -45,6 +47,24 @@ func getFacts(vm *sensorVirtualMachine.Info) map[string]string {
 	}
 	if vm.GuestOS != "" {
 		facts[GuestOSKey] = vm.GuestOS
+	}
+	if vm.Description != "" {
+		facts[DescriptionKey] = vm.Description
+	}
+	if vm.NodeName != "" {
+		facts[NodeNameKey] = vm.NodeName
+	}
+	if len(vm.IPAddresses) > 0 {
+		facts[IPAddressesKey] = strings.Join(vm.IPAddresses, ", ")
+	}
+	if len(vm.ActivePods) > 0 {
+		facts[ActivePodsKey] = strings.Join(vm.ActivePods, ", ")
+	}
+	if len(vm.BootOrder) > 0 {
+		facts[BootOrderKey] = strings.Join(vm.BootOrder, ", ")
+	}
+	if len(vm.CDRomDisks) > 0 {
+		facts[CDRomDisksKey] = strings.Join(vm.CDRomDisks, ", ")
 	}
 	return facts
 }

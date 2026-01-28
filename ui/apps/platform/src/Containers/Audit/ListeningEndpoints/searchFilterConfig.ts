@@ -25,7 +25,7 @@ const entityForCluster: CompoundSearchFilterEntity = {
 };
 
 export const searchFilterConfig: CompoundSearchFilterConfig = [
+    entityForCluster,
     entityForDeployment,
     entityForNamespace,
-    entityForCluster,
 ];

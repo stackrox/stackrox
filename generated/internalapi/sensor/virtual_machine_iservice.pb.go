@@ -23,10 +23,12 @@ const (
 )
 
 type UpsertVirtualMachineIndexReportRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	IndexReport   *v1.IndexReport        `protobuf:"bytes,1,opt,name=index_report,json=indexReport,proto3" json:"index_report,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	IndexReport *v1.IndexReport        `protobuf:"bytes,1,opt,name=index_report,json=indexReport,proto3" json:"index_report,omitempty"`
+	// VM data discovered by roxagent
+	DiscoveredData *v1.DiscoveredData `protobuf:"bytes,2,opt,name=discovered_data,json=discoveredData,proto3" json:"discovered_data,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *UpsertVirtualMachineIndexReportRequest) Reset() {
@@ -62,6 +64,13 @@ func (*UpsertVirtualMachineIndexReportRequest) Descriptor() ([]byte, []int) {
 func (x *UpsertVirtualMachineIndexReportRequest) GetIndexReport() *v1.IndexReport {
 	if x != nil {
 		return x.IndexReport
+	}
+	return nil
+}
+
+func (x *UpsertVirtualMachineIndexReportRequest) GetDiscoveredData() *v1.DiscoveredData {
+	if x != nil {
+		return x.DiscoveredData
 	}
 	return nil
 }
@@ -114,9 +123,10 @@ var File_internalapi_sensor_virtual_machine_iservice_proto protoreflect.FileDesc
 
 const file_internalapi_sensor_virtual_machine_iservice_proto_rawDesc = "" +
 	"\n" +
-	"1internalapi/sensor/virtual_machine_iservice.proto\x12\x06sensor\x1a0internalapi/virtualmachine/v1/index_report.proto\"k\n" +
+	"1internalapi/sensor/virtual_machine_iservice.proto\x12\x06sensor\x1a0internalapi/virtualmachine/v1/index_report.proto\"\xb7\x01\n" +
 	"&UpsertVirtualMachineIndexReportRequest\x12A\n" +
-	"\findex_report\x18\x01 \x01(\v2\x1e.virtualmachine.v1.IndexReportR\vindexReport\"C\n" +
+	"\findex_report\x18\x01 \x01(\v2\x1e.virtualmachine.v1.IndexReportR\vindexReport\x12J\n" +
+	"\x0fdiscovered_data\x18\x02 \x01(\v2!.virtualmachine.v1.DiscoveredDataR\x0ediscoveredData\"C\n" +
 	"'UpsertVirtualMachineIndexReportResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess2\xa9\x01\n" +
 	" VirtualMachineIndexReportService\x12\x84\x01\n" +
@@ -139,16 +149,18 @@ var file_internalapi_sensor_virtual_machine_iservice_proto_goTypes = []any{
 	(*UpsertVirtualMachineIndexReportRequest)(nil),  // 0: sensor.UpsertVirtualMachineIndexReportRequest
 	(*UpsertVirtualMachineIndexReportResponse)(nil), // 1: sensor.UpsertVirtualMachineIndexReportResponse
 	(*v1.IndexReport)(nil),                          // 2: virtualmachine.v1.IndexReport
+	(*v1.DiscoveredData)(nil),                       // 3: virtualmachine.v1.DiscoveredData
 }
 var file_internalapi_sensor_virtual_machine_iservice_proto_depIdxs = []int32{
 	2, // 0: sensor.UpsertVirtualMachineIndexReportRequest.index_report:type_name -> virtualmachine.v1.IndexReport
-	0, // 1: sensor.VirtualMachineIndexReportService.UpsertVirtualMachineIndexReport:input_type -> sensor.UpsertVirtualMachineIndexReportRequest
-	1, // 2: sensor.VirtualMachineIndexReportService.UpsertVirtualMachineIndexReport:output_type -> sensor.UpsertVirtualMachineIndexReportResponse
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	3, // 1: sensor.UpsertVirtualMachineIndexReportRequest.discovered_data:type_name -> virtualmachine.v1.DiscoveredData
+	0, // 2: sensor.VirtualMachineIndexReportService.UpsertVirtualMachineIndexReport:input_type -> sensor.UpsertVirtualMachineIndexReportRequest
+	1, // 3: sensor.VirtualMachineIndexReportService.UpsertVirtualMachineIndexReport:output_type -> sensor.UpsertVirtualMachineIndexReportResponse
+	3, // [3:4] is the sub-list for method output_type
+	2, // [2:3] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_sensor_virtual_machine_iservice_proto_init() }

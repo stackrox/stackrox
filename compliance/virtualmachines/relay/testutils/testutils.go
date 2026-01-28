@@ -39,13 +39,34 @@ func (c *MockVsockConn) WithData(data []byte) *MockVsockConn {
 	return c
 }
 
-func (c *MockVsockConn) WithIndexReport(indexReport *v1.IndexReport) (*MockVsockConn, error) {
-	data, err := proto.Marshal(indexReport)
+func (c *MockVsockConn) WithVMReport(vmReport *v1.VMReport) (*MockVsockConn, error) {
+	data, err := proto.Marshal(vmReport)
 	if err != nil {
 		return nil, err
 	}
 	c.data = data
 	return c, nil
+}
+
+// Deprecated: Use WithVMReport instead
+func (c *MockVsockConn) WithIndexReport(indexReport *v1.IndexReport) (*MockVsockConn, error) {
+	vmReport := &v1.VMReport{
+		IndexReport: indexReport,
+	}
+	return c.WithVMReport(vmReport)
+}
+
+// NewTestVMReport creates a VMReport with default test values.
+func NewTestVMReport(vsockCID string) *v1.VMReport {
+	return &v1.VMReport{
+		IndexReport: &v1.IndexReport{VsockCid: vsockCID},
+		DiscoveredData: &v1.DiscoveredData{
+			DetectedOs:        v1.DetectedOS_UNKNOWN,
+			OsVersion:         "",
+			ActivationStatus:  v1.ActivationStatus_ACTIVATION_UNSPECIFIED,
+			DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED,
+		},
+	}
 }
 
 func (c *MockVsockConn) WithDelay(delay time.Duration) *MockVsockConn {

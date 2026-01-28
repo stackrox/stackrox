@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package central.v1;
+
+import weak "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
+
+option go_package = "./internalapi/central/v1;v1";
+
+// Access provides the level of allowed interactions with objects controlled
+// by a given resource (one of no access, read access or read-write access).
+enum Access {
+  NO_ACCESS = 0;
+  READ_ACCESS = 1;
+  READ_WRITE_ACCESS = 2;
+}
+
+message GenerateTokenForPermissionsAndScopeRequest {
+  // permissions is the level access granted to the various resources.
+  // The map key is the resource name, and the map value is the granted
+  // access level.
+  //
+  // For example, to grant read access to deployment-like objects,
+  // create a message of the form (example in golang):
+  //
+  //   &v1.GenerateTokenForPermissionsAndScopeRequest {
+  //     Permissions: map[string]v1.Access{
+  //       "Deployment": v1.Access_READ_ACCESS,
+  //     },
+  //   }
+  //
+  // Resources are listed in pkg/sac/resources/list.go
+  // The resource names can either be passed as direct string, or
+  // using resource.Xyz.String().
+  map<string, Access> permissions = 1;
+  repeated ClusterScope cluster_scopes = 2;
+  google.protobuf.Duration lifetime = 3;
+}
+
+// ClusterScope represents the access scope of a role within a cluster.
+//
+// To request full cluster access, provide the cluster_id and
+// set full_cluster_access to true.
+//
+// To request access to specific namespaces, provide the cluster_id,
+// set full_cluster_access to false or leave it empty, and
+// list the namespaces to grant access to in namespaces.
+message ClusterScope {
+  string cluster_id = 1;
+  bool full_cluster_access = 2;
+  repeated string namespaces = 3;
+}
+
+message GenerateTokenForPermissionsAndScopeResponse {
+  string token = 1;
+}
+
+// TokenService
+service TokenService {
+  // GenerateTokenForPermissionsAndScope creates a role that grants the requested access,
+  // and issues a ROX (JWT) token for that role, valid for the requested duration.
+  rpc GenerateTokenForPermissionsAndScope(GenerateTokenForPermissionsAndScopeRequest) returns (GenerateTokenForPermissionsAndScopeResponse) {
+    option (google.api.http) = {get: "/internal/v1/token"};
+  }
+}

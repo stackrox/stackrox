@@ -1,15 +1,21 @@
 import type { ReactElement } from 'react';
 import { DescriptionList, Divider, Flex, Title } from '@patternfly/react-core';
-import lowerCase from 'lodash/lowerCase';
-import upperFirst from 'lodash/upperFirst';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
 import { getDateTime } from 'utils/dateUtils';
 import type { FileAccess, FileOperation } from 'types/fileAccess.proto';
 
+const fileOperations: Map<FileOperation, string> = new Map([
+    ['OPEN', 'Open (Writable)'],
+    ['CREATE', 'Create'],
+    ['UNLINK', 'Delete'],
+    ['RENAME', 'Rename'],
+    ['PERMISSION_CHANGE', 'Permission change'],
+    ['OWNERSHIP_CHANGE', 'Ownership change'],
+]);
+
 function formatOperation(operation: FileOperation): string {
-    // Convert SCREAMING_SNAKE_CASE to Sentence case
-    return upperFirst(lowerCase(operation));
+    return fileOperations.get(operation) || 'Unknown';
 }
 
 type FileAccessCardContentProps = {
@@ -41,8 +47,14 @@ function FileAccessCardContent({ event }: FileAccessCardContentProps): ReactElem
                         desc={moved.effectivePath || moved.actualPath}
                     />
                 )}
+                {process?.signal?.name && (
+                    <DescriptionListItem term="Process name" desc={process.signal.name} />
+                )}
                 {process?.signal?.execFilePath && (
-                    <DescriptionListItem term="Process" desc={process.signal.execFilePath} />
+                    <DescriptionListItem
+                        term="Process executable"
+                        desc={process.signal.execFilePath}
+                    />
                 )}
                 {Number.isInteger(process?.signal?.uid) && (
                     <DescriptionListItem term="Process UID" desc={process.signal.uid} />

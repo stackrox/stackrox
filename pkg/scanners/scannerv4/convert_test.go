@@ -1431,6 +1431,119 @@ func TestOS(t *testing.T) {
 	}
 }
 
+func TestEnvOS(t *testing.T) {
+	testcases := []struct {
+		expected string
+		env      *v4.Environment
+		report   *v4.VulnerabilityReport
+	}{
+		{
+			expected: "",
+			env:      nil,
+			report:   nil,
+		},
+		{
+			expected: "",
+			env:      &v4.Environment{DistributionId: "-1"},
+			report:   nil,
+		},
+		{
+			expected: "",
+			env:      nil,
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: map[string]*v4.Distribution{
+						"-1": {
+							Did:       "rhel",
+							VersionId: "9",
+						},
+					},
+				},
+			},
+		},
+		{
+			expected: "",
+			env:      &v4.Environment{DistributionId: "noexist"},
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: map[string]*v4.Distribution{
+						"-1": {
+							Did:       "rhel",
+							VersionId: "9",
+						},
+					},
+				},
+			},
+		},
+		{
+			expected: "",
+			env:      &v4.Environment{DistributionId: "-1"},
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: map[string]*v4.Distribution{
+						"-1": {
+							Did: "rhel",
+							// VersionId missing
+						},
+					},
+				},
+			},
+		},
+		{
+			expected: "",
+			env:      &v4.Environment{DistributionId: "-1"},
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: map[string]*v4.Distribution{
+						"-1": {
+							// Did missing
+							VersionId: "9",
+						},
+					},
+				},
+			},
+		},
+		{
+			expected: "ubuntu:22.04",
+			env:      &v4.Environment{DistributionId: "0"},
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: map[string]*v4.Distribution{
+						"0": {
+							Did:       "ubuntu",
+							VersionId: "22.04",
+						},
+					},
+				},
+			},
+		},
+		{
+			expected: "alpine:3.18",
+			env:      &v4.Environment{DistributionId: "4"},
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: map[string]*v4.Distribution{
+						"4": {
+							Did:       "alpine",
+							VersionId: "3.18",
+						},
+						"idk": {
+							Did: "idk",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.expected, func(t *testing.T) {
+			name := envOS(testcase.env, testcase.report)
+			assert.Equal(t, testcase.expected, name)
+		})
+	}
+}
+
 func TestNotes(t *testing.T) {
 	testcases := []struct {
 		os       string
@@ -1462,6 +1575,56 @@ func TestNotes(t *testing.T) {
 		t.Run(testcase.os, func(t *testing.T) {
 			notes := notes(testcase.report)
 			assert.ElementsMatch(t, testcase.expected, notes)
+		})
+	}
+}
+
+// TestVulnDataSource
+//
+// If this test fails due to a datasource format change
+// a Central DB migration may be needed convert stored values to the
+// new format.
+func TestVulnDataSource(t *testing.T) {
+	testcases := []struct {
+		expected string
+		os       string
+		ccVuln   *v4.VulnerabilityReport_Vulnerability
+	}{
+		{
+			expected: "",
+			os:       "",
+			ccVuln:   nil,
+		},
+		{
+			expected: "",
+			os:       "os",
+			ccVuln:   nil,
+		},
+		{
+			expected: "",
+			os:       "os",
+			ccVuln:   &v4.VulnerabilityReport_Vulnerability{},
+		},
+		{
+			expected: "updater",
+			os:       "",
+			ccVuln: &v4.VulnerabilityReport_Vulnerability{
+				Updater: "updater",
+			},
+		},
+		{
+			expected: "updater::os",
+			os:       "os",
+			ccVuln: &v4.VulnerabilityReport_Vulnerability{
+				Updater: "updater",
+			},
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.expected, func(t *testing.T) {
+			name := vulnDataSource(testcase.ccVuln, testcase.os)
+			assert.Equal(t, testcase.expected, name)
 		})
 	}
 }

@@ -20,7 +20,7 @@ export const profileCheckSearchFilterConfig: CompoundSearchFilterEntity = {
 export const clusterSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Cluster',
     searchCategory: 'CLUSTERS',
-    attributes: [clusterIdAttribute, clusterNameAttribute, clusterLabelAttribute],
+    attributes: [clusterIdAttribute, clusterLabelAttribute, clusterNameAttribute],
 };
 
 export const attributeForComplianceCheckStatus: SelectSearchFilterAttribute = {

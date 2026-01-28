@@ -24,6 +24,8 @@ type clusterStoreImpl struct {
 	flowStore map[string]store.FlowStore
 }
 
+var _ store.ClusterStore = (*clusterStoreImpl)(nil)
+
 // GetFlowStore returns the FlowStore for the cluster ID, or nil if none exists.
 func (s *clusterStoreImpl) GetFlowStore(clusterID string) store.FlowStore {
 	s.lock.Lock()
@@ -44,4 +46,12 @@ func (s *clusterStoreImpl) CreateFlowStore(_ context.Context, clusterID string) 
 		return nil, errors.Errorf("unable to create store for cluster %s", clusterID)
 	}
 	return flowStore, nil
+}
+
+func (s *clusterStoreImpl) RemoveFlowStore(ctx context.Context, clusterID string) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	delete(s.flowStore, clusterID)
+	return dropPartition(ctx, s.db, clusterID)
 }

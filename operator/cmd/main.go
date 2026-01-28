@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/go-logr/zapr"
+	consolev1 "github.com/openshift/api/console/v1"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/internal/central/reconciler"
@@ -97,6 +98,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(platform.AddToScheme(scheme))
+	utilruntime.Must(consolev1.Install(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

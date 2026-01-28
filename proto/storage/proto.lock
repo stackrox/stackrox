@@ -1397,6 +1397,11 @@
                 "name": "layers",
                 "type": "BaseImageLayer",
                 "is_repeated": true
+              },
+              {
+                "id": 10,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           },
@@ -6610,6 +6615,11 @@
                 "id": 15,
                 "name": "image_id_v2",
                 "type": "string"
+              },
+              {
+                "id": 16,
+                "name": "fix_available_timestamp",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           },
@@ -8416,12 +8426,8 @@
                 "integer": 4
               },
               {
-                "name": "WRITE",
-                "integer": 5
-              },
-              {
                 "name": "OPEN",
-                "integer": 6
+                "integer": 5
               }
             ]
           }
@@ -9497,6 +9503,11 @@
                 "id": 3,
                 "name": "base_image_digest",
                 "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           }
@@ -9527,6 +9538,20 @@
     {
       "protopath": "image_component.proto",
       "def": {
+        "enums": [
+          {
+            "name": "LayerType",
+            "enum_fields": [
+              {
+                "name": "APPLICATION"
+              },
+              {
+                "name": "BASE_IMAGE",
+                "integer": 1
+              }
+            ]
+          }
+        ],
         "messages": [
           {
             "name": "ImageComponent",
@@ -9674,7 +9699,18 @@
               {
                 "id": 15,
                 "name": "from_base_image",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
+              },
+              {
+                "id": 16,
+                "name": "layer_type",
+                "type": "LayerType"
               }
             ]
           }
@@ -18596,6 +18632,10 @@
               {
                 "name": "DECLARATIVE_ORPHANED",
                 "integer": 3
+              },
+              {
+                "name": "DYNAMIC",
+                "integer": 4
               }
             ]
           }
@@ -18618,8 +18658,18 @@
                 "id": 3,
                 "name": "origin",
                 "type": "Origin"
+              },
+              {
+                "id": 4,
+                "name": "expires_at",
+                "type": "google.protobuf.Timestamp"
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -19738,6 +19788,11 @@
                 "id": 23,
                 "name": "epss",
                 "type": "EPSS"
+              },
+              {
+                "id": 26,
+                "name": "datasource",
+                "type": "string"
               }
             ],
             "reserved_ids": [

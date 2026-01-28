@@ -158,11 +158,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("AzureProviderMetadata", []string{
 		"subscriptionId: String!",
 	}))
-	utils.Must(builder.AddType("BaseImageInfo", []string{
-		"baseImageDigest: String!",
-		"baseImageFullName: String!",
-		"baseImageId: String!",
-	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.BooleanOperator(0)))
 	utils.Must(builder.AddType("CSCC", []string{
 		"serviceAccount: String!",
@@ -720,7 +715,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"value: String!",
 	}))
 	utils.Must(builder.AddType("Image", []string{
-		"baseImageInfo: [BaseImageInfo]!",
 		"id: ID!",
 		"isClusterLocal: Boolean!",
 		"lastUpdated: Time",
@@ -784,7 +778,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ImageSignatureVerificationResult_Status(0)))
 	utils.Must(builder.AddType("ImageV2", []string{
-		"baseImageInfo: [BaseImageInfo]!",
 		"digest: String!",
 		"id: ID!",
 		"isClusterLocal: Boolean!",
@@ -1499,6 +1492,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"disabled: Boolean!",
 	}))
 	utils.Must(builder.AddType("Traits", []string{
+		"expiresAt: Time",
 		"mutabilityMode: Traits_MutabilityMode!",
 		"origin: Traits_Origin!",
 		"visibility: Traits_Visibility!",
@@ -3017,63 +3011,6 @@ func (resolver *Resolver) wrapAzureProviderMetadatasWithContext(ctx context.Cont
 
 func (resolver *azureProviderMetadataResolver) SubscriptionId(ctx context.Context) string {
 	value := resolver.data.GetSubscriptionId()
-	return value
-}
-
-type baseImageInfoResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.BaseImageInfo
-}
-
-func (resolver *Resolver) wrapBaseImageInfo(value *storage.BaseImageInfo, ok bool, err error) (*baseImageInfoResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &baseImageInfoResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapBaseImageInfos(values []*storage.BaseImageInfo, err error) ([]*baseImageInfoResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*baseImageInfoResolver, len(values))
-	for i, v := range values {
-		output[i] = &baseImageInfoResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapBaseImageInfoWithContext(ctx context.Context, value *storage.BaseImageInfo, ok bool, err error) (*baseImageInfoResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &baseImageInfoResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapBaseImageInfosWithContext(ctx context.Context, values []*storage.BaseImageInfo, err error) ([]*baseImageInfoResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*baseImageInfoResolver, len(values))
-	for i, v := range values {
-		output[i] = &baseImageInfoResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *baseImageInfoResolver) BaseImageDigest(ctx context.Context) string {
-	value := resolver.data.GetBaseImageDigest()
-	return value
-}
-
-func (resolver *baseImageInfoResolver) BaseImageFullName(ctx context.Context) string {
-	value := resolver.data.GetBaseImageFullName()
-	return value
-}
-
-func (resolver *baseImageInfoResolver) BaseImageId(ctx context.Context) string {
-	value := resolver.data.GetBaseImageId()
 	return value
 }
 
@@ -8643,12 +8580,6 @@ func (resolver *imageResolver) ensureData(ctx context.Context) {
 	}
 }
 
-func (resolver *imageResolver) BaseImageInfo(ctx context.Context) ([]*baseImageInfoResolver, error) {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetBaseImageInfo()
-	return resolver.root.wrapBaseImageInfos(value, nil)
-}
-
 func (resolver *imageResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	if resolver.data == nil {
@@ -9344,12 +9275,6 @@ func (resolver *imageV2Resolver) ensureData(ctx context.Context) {
 	if resolver.data == nil {
 		resolver.data = resolver.root.getImageV2(ctx, resolver.list.GetId())
 	}
-}
-
-func (resolver *imageV2Resolver) BaseImageInfo(ctx context.Context) ([]*baseImageInfoResolver, error) {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetBaseImageInfo()
-	return resolver.root.wrapBaseImageInfos(value, nil)
 }
 
 func (resolver *imageV2Resolver) Digest(ctx context.Context) string {
@@ -16192,6 +16117,11 @@ func (resolver *Resolver) wrapTraitsesWithContext(ctx context.Context, values []
 		output[i] = &traitsResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *traitsResolver) ExpiresAt(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetExpiresAt()
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *traitsResolver) MutabilityMode(ctx context.Context) string {

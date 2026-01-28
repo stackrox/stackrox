@@ -1,4 +1,5 @@
 import type { AxiosError } from 'axios';
+import { ApolloError } from '@apollo/client';
 
 function isAxiosError(error: Error): error is AxiosError<{ message?: string }> {
     return (
@@ -15,6 +16,16 @@ export function getAxiosErrorMessage(error: unknown): string {
     // See https://axios-http.com/docs/handling_errors
 
     if (error instanceof Error) {
+        // Handle network errors from failed GraphQL requests
+        if (
+            error instanceof ApolloError &&
+            error.networkError &&
+            'result' in error.networkError &&
+            typeof error.networkError.result === 'string'
+        ) {
+            return `${error.networkError.message} [${error.networkError.result}]`;
+        }
+
         if (isAxiosError(error)) {
             if (error.response?.status === 403) {
                 return 'Please check that your role has the required permissions.';

@@ -33,6 +33,7 @@ type BaseImage struct {
 	Active                bool                   `protobuf:"varint,7,opt,name=active,proto3" json:"active,omitempty" search:"Base Image Active,hidden"`                                                               // @gotags: search:"Base Image Active,hidden"
 	FirstLayerDigest      string                 `protobuf:"bytes,8,opt,name=first_layer_digest,json=firstLayerDigest,proto3" json:"first_layer_digest,omitempty" search:"Base Image First Layer Digest,hidden" sql:"index=btree"`                  // @gotags: search:"Base Image First Layer Digest,hidden" sql:"index=btree"
 	Layers                []*BaseImageLayer      `protobuf:"bytes,9,rep,name=layers,proto3" json:"layers,omitempty"`
+	Created               *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created,proto3" json:"created,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -130,6 +131,13 @@ func (x *BaseImage) GetLayers() []*BaseImageLayer {
 	return nil
 }
 
+func (x *BaseImage) GetCreated() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Created
+	}
+	return nil
+}
+
 type BaseImageLayer struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                        // @gotags: sql:"pk,type(uuid)"
@@ -202,7 +210,7 @@ var File_storage_base_image_proto protoreflect.FileDescriptor
 
 const file_storage_base_image_proto_rawDesc = "" +
 	"\n" +
-	"\x18storage/base_image.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe7\x02\n" +
+	"\x18storage/base_image.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\x9d\x03\n" +
 	"\tBaseImage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x127\n" +
 	"\x18base_image_repository_id\x18\x02 \x01(\tR\x15baseImageRepositoryId\x12\x1e\n" +
@@ -214,7 +222,9 @@ const file_storage_base_image_proto_rawDesc = "" +
 	"\rdiscovered_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\fdiscoveredAt\x12\x16\n" +
 	"\x06active\x18\a \x01(\bR\x06active\x12,\n" +
 	"\x12first_layer_digest\x18\b \x01(\tR\x10firstLayerDigest\x12/\n" +
-	"\x06layers\x18\t \x03(\v2\x17.storage.BaseImageLayerR\x06layers\"}\n" +
+	"\x06layers\x18\t \x03(\v2\x17.storage.BaseImageLayerR\x06layers\x124\n" +
+	"\acreated\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\acreated\"}\n" +
 	"\x0eBaseImageLayer\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\"\n" +
 	"\rbase_image_id\x18\x02 \x01(\tR\vbaseImageId\x12!\n" +
@@ -243,11 +253,12 @@ var file_storage_base_image_proto_goTypes = []any{
 var file_storage_base_image_proto_depIdxs = []int32{
 	2, // 0: storage.BaseImage.discovered_at:type_name -> google.protobuf.Timestamp
 	1, // 1: storage.BaseImage.layers:type_name -> storage.BaseImageLayer
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	2, // 2: storage.BaseImage.created:type_name -> google.protobuf.Timestamp
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_storage_base_image_proto_init() }

@@ -93,3 +93,46 @@ func (suite *ServiceAccountDataStoreTestSuite) TestServiceAccountsDataStore() {
 
 	suite.assertSearchResults(validQ, nil)
 }
+
+// TestSearchServiceAccounts_NameAndNilQuery verifies that SearchServiceAccounts populates the Name field
+// and works correctly with a nil query as well as an exact name match query.
+func (suite *ServiceAccountDataStoreTestSuite) TestSearchServiceAccounts_NameAndNilQuery() {
+	// Insert two distinct service accounts
+	sa1 := fixtures.GetServiceAccount()
+	sa1.Name = "sa-1"
+	sa2 := fixtures.GetServiceAccount()
+	sa2.Id = uuid.NewV4().String()
+	sa2.Name = "sa-2"
+
+	for _, sa := range []*storage.ServiceAccount{sa1, sa2} {
+		suite.Require().NoError(suite.datastore.UpsertServiceAccount(suite.ctx, sa))
+		// Cleanup after test
+		suite.T().Cleanup(func() {
+			_ = suite.datastore.RemoveServiceAccount(suite.ctx, sa.GetId())
+		})
+	}
+
+	// 1. Nil query should return both service accounts with populated Name fields
+	results, err := suite.datastore.SearchServiceAccounts(suite.ctx, nil)
+	suite.Require().NoError(err)
+	ids := make(map[string]struct{})
+	var actualNames []string
+	for _, r := range results {
+		if r.GetId() == sa1.GetId() || r.GetId() == sa2.GetId() {
+			ids[r.GetId()] = struct{}{}
+			suite.NotEmpty(r.GetName())
+		}
+		actualNames = append(actualNames, r.GetName())
+	}
+	suite.Contains(ids, sa1.GetId())
+	suite.Contains(ids, sa2.GetId())
+	suite.ElementsMatch([]string{sa1.GetName(), sa2.GetName()}, actualNames)
+
+	// 2. Exact name query should return the matching service account
+	nameQ := search.NewQueryBuilder().AddExactMatches(search.ServiceAccountName, sa1.GetName()).ProtoQuery()
+	nameResults, err := suite.datastore.SearchServiceAccounts(suite.ctx, nameQ)
+	suite.Require().NoError(err)
+	suite.Len(nameResults, 1)
+	suite.Equal(sa1.GetId(), nameResults[0].GetId())
+	suite.Equal(sa1.GetName(), nameResults[0].GetName())
+}

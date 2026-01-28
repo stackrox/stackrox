@@ -25,4 +25,24 @@ var (
 	// index reports before they are sent to Central.
 	VirtualMachinesIndexReportsBufferSize = RegisterIntegerSetting("ROX_VIRTUAL_MACHINES_INDEX_REPORTS_BUFFER_SIZE", 100).
 						WithMinimum(0)
+
+	// VMIndexReportRateLimit defines the maximum number of VM index reports per second that Central will accept
+	// across all sensors that actually send VM index reports. Each such sensor gets an equal share (1/N) of this
+	// global capacity. The split happens when a new client ID registers in the VM index report pipeline; there is
+	// no additional selection or weighting mechanism at the moment.
+	// Supports fractional rates (e.g., "0.5" for one request every 2 seconds).
+	// Set to "0" to disable rate limiting (unlimited).
+	//
+	// As of ACS 4.9 & 4.10, the default size cluster should not exceed 1.0 requests per second.
+	// As VM scanning is only one of potentially many other workloads, we set the default to 0.3 requests per second.
+	// For larger clusters, the rate limit could be increased to up to 3.0 requests per second only if the
+	// scanner-v4-matcher and the scanner-v4-db are able to handle the load!
+	VMIndexReportRateLimit = RegisterFloatSetting("ROX_VM_INDEX_REPORT_RATE_LIMIT", 0.3)
+
+	// VMIndexReportBucketCapacity defines the token bucket capacity for VM index report rate limiting.
+	// This is the maximum number of requests that can be accepted in a burst before rate limiting kicks in.
+	// For example, with capacity=15 and rate=3 req/sec, a sensor can send up to 15 requests instantly,
+	// then must wait for 5 seconds for tokens to refill at the rate limit.
+	// Default: 200 tokens
+	VMIndexReportBucketCapacity = RegisterIntegerSetting("ROX_VM_INDEX_REPORT_BUCKET_CAPACITY", 200).WithMinimum(1)
 )

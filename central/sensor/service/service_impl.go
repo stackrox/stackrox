@@ -150,6 +150,9 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		if features.FlattenImageData.Enabled() {
 			capabilities = append(capabilities, centralsensor.FlattenImageData)
 		}
+		if features.OCPConsoleIntegration.Enabled() {
+			capabilities = append(capabilities, centralsensor.InternalTokenAPISupported.String())
+		}
 
 		preferences := s.manager.GetConnectionPreference(clusterID)
 

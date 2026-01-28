@@ -853,7 +853,7 @@ EOT
 
     # Install old version of the operator & deploy StackRox.
 
-    VERSION="${OPERATOR_VERSION_TAG}" make -C operator deploy-previous-via-olm
+    VERSION="${OPERATOR_VERSION_TAG}" make -C operator deploy-previous-via-olm TEST_NAMESPACE="rhacs-operator-system"
     _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}" "false"
 
     _begin "verify"
@@ -869,14 +869,14 @@ EOT
 
     # Upgrade operator
     info "Upgrading StackRox Operator to version ${OPERATOR_VERSION_TAG}..."
-    VERSION="${OPERATOR_VERSION_TAG}" make -C operator upgrade-via-olm
+    VERSION="${OPERATOR_VERSION_TAG}" make -C operator upgrade-via-olm TEST_NAMESPACE="rhacs-operator-system"
     info "Waiting for new rhacs-operator pods to become ready"
     # Give the old pods some time to terminate, otherwise we can end up
     # in a situation where the old pods are just about to terminate and this
     # would confuse the kubectl wait invocation below, which notices pods
     # vanishing while actually waiting for them to become ready.
     sleep 60
-    "${ORCH_CMD}" </dev/null -n stackrox-operator wait --for=condition=Ready --timeout=3m pods -l app=rhacs-operator
+    "${ORCH_CMD}" </dev/null -n rhacs-operator-system wait --for=condition=Ready --timeout=3m pods -l app=rhacs-operator
 
     _begin "verify"
 

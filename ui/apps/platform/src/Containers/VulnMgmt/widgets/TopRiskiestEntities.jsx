@@ -20,6 +20,7 @@ import {
     entityNounOrdinaryCasePlural,
     entityNounSentenceCaseSingular,
 } from '../entitiesForVulnerabilityManagement';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import NumberedList from './NumberedList';
 import ViewAllButton from './ViewAllButton';
@@ -324,6 +325,8 @@ const processData = (data, entityType, workflowState) => {
 };
 
 const TopRiskiestEntities = ({ entityContext, search, limit }) => {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isNewImageDataModelEnabled = isFeatureFlagEnabled('ROX_FLATTEN_IMAGE_DATA');
     const entities = getEntitiesByContext(entityContext);
     const [selectedEntity, setSelectedEntity] = useState(entities[0].value);
 
@@ -331,7 +334,10 @@ const TopRiskiestEntities = ({ entityContext, search, limit }) => {
         setSelectedEntity(value);
     }
 
-    const entityContextObject = queryService.entityContextToQueryObject(entityContext); // deals with BE inconsistency
+    const entityContextObject = queryService.entityContextToQueryObject(
+        entityContext,
+        isNewImageDataModelEnabled
+    ); // deals with BE inconsistency
 
     const queryObject = {
         ...entityContextObject,

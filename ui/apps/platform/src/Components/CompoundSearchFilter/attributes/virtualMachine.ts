@@ -9,14 +9,14 @@ export const VirtualMachineCVEName: CompoundSearchFilterAttribute = {
 
 export const VirtualMachineComponentName: CompoundSearchFilterAttribute = {
     displayName: 'Name',
-    filterChipLabel: 'Component name',
+    filterChipLabel: 'Virtual machine component name',
     searchTerm: 'Component',
     inputType: 'text',
 };
 
 export const VirtualMachineComponentVersion: CompoundSearchFilterAttribute = {
     displayName: 'Version',
-    filterChipLabel: 'Component version',
+    filterChipLabel: 'Virtual machine component version',
     searchTerm: 'Component Version',
     inputType: 'text',
 };

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/index/mocks"
+	vmmetrics "github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -223,10 +225,93 @@ func (s *virtualMachineHandlerSuite) TestCapabilities() {
 	s.Require().Empty(caps)
 }
 
+func (s *virtualMachineHandlerSuite) TestAccepts() {
+	// Should accept SensorACK with VM_INDEX_REPORT type
+	vmAckMsg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+			Action:      central.SensorACK_ACK,
+			MessageType: central.SensorACK_VM_INDEX_REPORT,
+			ResourceId:  "vm-1",
+		}},
+	}
+	s.Assert().True(s.handler.Accepts(vmAckMsg), "Handler should accept SensorACK for VM_INDEX_REPORT")
+
+	// Should not accept SensorACK with other types
+	nodeAckMsg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+			Action:      central.SensorACK_ACK,
+			MessageType: central.SensorACK_NODE_INDEX_REPORT,
+			ResourceId:  "node-1",
+		}},
+	}
+	s.Assert().False(s.handler.Accepts(nodeAckMsg), "Handler should not accept SensorACK for NODE_INDEX_REPORT")
+
+	// Should not accept other message types
+	otherMsg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ClusterConfig{},
+	}
+	s.Assert().False(s.handler.Accepts(otherMsg), "Handler should not accept other message types")
+}
+
 func (s *virtualMachineHandlerSuite) TestProcessMessage() {
-	msg := &central.MsgToSensor{}
-	err := s.handler.ProcessMessage(context.Background(), msg)
-	s.Require().NoError(err)
+	ctx := context.Background()
+
+	getMetric := func(label string) float64 {
+		return testutil.ToFloat64(vmmetrics.IndexReportAcksReceived.WithLabelValues(label))
+	}
+
+	cases := map[string]struct {
+		msg        *central.MsgToSensor
+		expectAck  int
+		expectNack int
+	}{
+		"ack increments ack metric": {
+			msg: &central.MsgToSensor{
+				Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+					Action:      central.SensorACK_ACK,
+					MessageType: central.SensorACK_VM_INDEX_REPORT,
+					ResourceId:  "vm-ack",
+				}},
+			},
+			expectAck:  1,
+			expectNack: 0,
+		},
+		"nack increments nack metric": {
+			msg: &central.MsgToSensor{
+				Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+					Action:      central.SensorACK_NACK,
+					MessageType: central.SensorACK_VM_INDEX_REPORT,
+					ResourceId:  "vm-nack",
+					Reason:      "rate limited",
+				}},
+			},
+			expectAck:  0,
+			expectNack: 1,
+		},
+		"non-VM message does not change metrics": {
+			msg: &central.MsgToSensor{
+				Msg: &central.MsgToSensor_SensorAck{SensorAck: &central.SensorACK{
+					Action:      central.SensorACK_ACK,
+					MessageType: central.SensorACK_NODE_INDEX_REPORT,
+					ResourceId:  "node-1",
+				}},
+			},
+			expectAck:  0,
+			expectNack: 0,
+		},
+	}
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			initialAck := getMetric(central.SensorACK_ACK.String())
+			initialNack := getMetric(central.SensorACK_NACK.String())
+
+			err := s.handler.ProcessMessage(ctx, tc.msg)
+			s.Require().NoError(err)
+			s.Equal(initialAck+float64(tc.expectAck), getMetric(central.SensorACK_ACK.String()))
+			s.Equal(initialNack+float64(tc.expectNack), getMetric(central.SensorACK_NACK.String()))
+		})
+	}
 }
 
 func (s *virtualMachineHandlerSuite) TestResponsesC_BeforeStart() {

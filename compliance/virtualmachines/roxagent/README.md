@@ -14,7 +14,7 @@ Scans the VM for installed packages (`rpm`/`dnf` databases), creates vulnerabili
 # Single scan
 sudo ./roxagent
 
-# Daemon mode (scans every 5 minutes)
+# Daemon mode (scans every 4 hours by default)
 sudo ./roxagent --daemon
 
 # Custom settings
@@ -24,9 +24,10 @@ sudo ./roxagent --daemon --index-interval 10m --host-path /custom/path --port 20
 ## Flags
 
 - `--daemon` - Run continuously (default: false).
-- `--index-interval` - Time between scans in daemon mode (default: 5m).
+- `--index-interval` - Time between scans in daemon mode (default: 4h).
 - `--host-path` - Where to look for package databases (default: /).
-- `--port` - VSock port (default: 1024).
+- `--max-initial-report-delay` - Max delay before starting to send in daemon mode (default: 20m).
+- `--port` - VSock port (default: 818).
 - `--repo-cpe-url` - URL for the repository to CPE mapping.
 - `--timeout` - VSock client timeout when sending index reports.
 - `--verbose` - Prints the index reports to stdout.
@@ -51,16 +52,19 @@ GOOS=linux GOARCH=amd64 go build -o roxagent-linux .
 
 ## Troubleshooting
 
-**Can't connect to host**
+### Can't connect to host
+
 - Check if vsock is enabled in the VM.
 - Verify the port isn't in use.
 - Make sure vsock kernel modules are loaded.
 
-**No packages found**
+### No packages found
+
 - Check `--host-path` points to the right place.
 - Verify `rpm`/`dnf` databases exist and are readable.
 - Use `--verbose` to examine the index report and compare with the content from `rpm`/`dnf` databases.
 
-**Scan failures**
+### Scan failures
+
 - Check internet access for repo-to-CPE downloads.
 - Look at logs for specific errors.

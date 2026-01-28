@@ -8,6 +8,7 @@ import (
 	postgresStore "github.com/stackrox/rox/central/apitoken/datastore/internal/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/authproviders/tokenbased"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -18,6 +19,8 @@ import (
 
 var (
 	integrationSAC = sac.ForResource(resources.Integration)
+
+	_ tokenbased.TokenStore = (*datastoreImpl)(nil)
 )
 
 type datastoreImpl struct {

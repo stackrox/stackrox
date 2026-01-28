@@ -67,6 +67,7 @@ func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string) (
 				BaseImageId:       c.GetId(),
 				BaseImageFullName: fmt.Sprintf("%s:%s", c.GetRepository(), c.GetTag()),
 				BaseImageDigest:   c.GetManifestDigest(),
+				Created:           c.GetCreated(),
 			})
 		}
 	}

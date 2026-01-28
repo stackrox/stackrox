@@ -15,8 +15,12 @@ import {
 } from '@patternfly/react-core';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import SearchFilterChips from 'Components/CompoundSearchFilter/components/SearchFilterChips';
-import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
+import type {
+    OnSearchCallback,
+    SelectSearchFilterAttribute,
+} from 'Components/CompoundSearchFilter/types';
+import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
@@ -31,14 +35,25 @@ import {
     applyVirtualMachineComponentsTableSort,
     getVirtualMachineComponentsTableData,
 } from '../aggregateUtils';
-import ComponentScannableStatusDropdown from '../../components/ComponentScannableStatusDropdown';
 import { virtualMachineComponentSearchFilterConfig } from '../../searchFilterConfig';
+import { scannableStatuses } from '../../types';
 import VirtualMachineComponentsPageTable from './VirtualMachineComponentsPageTable';
 
+export const attributeForScannable: SelectSearchFilterAttribute = {
+    displayName: 'Scan status',
+    filterChipLabel: 'Scan status',
+    searchTerm: 'SCANNABLE', // TODO can it become 'Scannable' instead of ALL CAPS before GA?
+    inputType: 'select',
+    inputProps: {
+        // TODO can value become true and file instead of Scanned and Not scanned before GA?
+        options: scannableStatuses.map((label) => ({ label, value: label })),
+    },
+};
+
 export type VirtualMachinePageComponentsProps = {
-    virtualMachineData: VirtualMachine | undefined;
-    isLoadingVirtualMachineData: boolean;
-    errorVirtualMachineData: Error | undefined;
+    virtualMachine: VirtualMachine | undefined;
+    isLoadingVirtualMachine: boolean;
+    errorVirtualMachine: Error | undefined;
     urlSearch: UseUrlSearchReturn;
     urlSorting: UseURLSortResult;
     urlPagination: UseURLPaginationResult;
@@ -47,9 +62,9 @@ export type VirtualMachinePageComponentsProps = {
 const searchFilterConfig = [virtualMachineComponentSearchFilterConfig];
 
 function VirtualMachinePageComponents({
-    virtualMachineData,
-    isLoadingVirtualMachineData,
-    errorVirtualMachineData,
+    virtualMachine,
+    isLoadingVirtualMachine,
+    errorVirtualMachine,
     urlSearch,
     urlSorting,
     urlPagination,
@@ -61,8 +76,8 @@ function VirtualMachinePageComponents({
     const isFiltered = getHasSearchApplied(searchFilter);
 
     const virtualMachineComponentsTableData = useMemo(
-        () => getVirtualMachineComponentsTableData(virtualMachineData),
-        [virtualMachineData]
+        () => getVirtualMachineComponentsTableData(virtualMachine),
+        [virtualMachine]
     );
 
     const filteredVirtualMachineComponentsTableData = useMemo(
@@ -95,9 +110,9 @@ function VirtualMachinePageComponents({
     }, [sortedVirtualMachineComponentsTableData, page, perPage]);
 
     const tableState = getTableUIState({
-        isLoading: isLoadingVirtualMachineData,
+        isLoading: isLoadingVirtualMachine,
         data: paginatedVirtualMachineComponentsTableData,
-        error: errorVirtualMachineData,
+        error: errorVirtualMachine,
         searchFilter,
     });
 
@@ -111,15 +126,8 @@ function VirtualMachinePageComponents({
         setPage(1);
     };
 
-    const onScannableStatusSelect = (
-        filterType: 'SCANNABLE',
-        checked: boolean,
-        selection: string
-    ) => {
-        const action = checked ? 'SELECT_INCLUSIVE' : 'REMOVE';
-        const category = filterType;
-        const value = selection;
-        setSearchFilter(updateSearchFilter(searchFilter, [{ action, category, value }]));
+    const onSearchScannable: OnSearchCallback = (payload) => {
+        setSearchFilter(updateSearchFilter(searchFilter, payload));
         setPage(1);
     };
 
@@ -136,21 +144,20 @@ function VirtualMachinePageComponents({
                             />
                         </ToolbarItem>
                         <ToolbarItem>
-                            <ComponentScannableStatusDropdown
+                            <SearchFilterSelectInclusive
+                                attribute={attributeForScannable}
+                                isSeparate
+                                onSearch={onSearchScannable}
                                 searchFilter={searchFilter}
-                                onSelect={onScannableStatusSelect}
                             />
                         </ToolbarItem>
                     </ToolbarGroup>
                     <ToolbarGroup className="pf-v5-u-w-100">
-                        <SearchFilterChips
+                        <CompoundSearchFilterLabels
+                            attributesSeparateFromConfig={[attributeForScannable]}
+                            config={searchFilterConfig}
                             searchFilter={searchFilter}
                             onFilterChange={setSearchFilter}
-                            filterChipGroupDescriptors={[
-                                { displayName: 'Scannable Status', searchFilterName: 'SCANNABLE' },
-                                { displayName: 'Component', searchFilterName: 'Component' },
-                                { displayName: 'Version', searchFilterName: 'Component Version' },
-                            ]}
                         />
                     </ToolbarGroup>
                 </ToolbarContent>
@@ -160,7 +167,7 @@ function VirtualMachinePageComponents({
                     <SplitItem isFilled>
                         <Flex alignItems={{ default: 'alignItemsCenter' }}>
                             <Title headingLevel="h2">
-                                {!isLoadingVirtualMachineData ? (
+                                {!isLoadingVirtualMachine ? (
                                     `${pluralize(filteredVirtualMachineComponentsTableData.length, 'result')} found`
                                 ) : (
                                     <Skeleton screenreaderText="Loading virtual machine vulnerability count" />

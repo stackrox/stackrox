@@ -12,15 +12,15 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import { useDefaultWorkloadCveViewContext } from '../hooks/useDefaultWorkloadCveViewContext';
 import { useWorkloadId } from '../hooks/useWorkloadId';
-import { useNamespaceScope } from '../ScopeContext';
+import { useAnalyticsPageView } from '../hooks/useAnalyticsPageView';
 
 export function WorkloadSecurityTab() {
+    useAnalyticsPageView();
+
     const context = useDefaultWorkloadCveViewContext();
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { searchFilter, setSearchFilter } = useURLSearch();
     const { ns, name } = useParams();
-    useNamespaceScope(ns);
-
     const { id, isLoading, error } = useWorkloadId({ ns, name });
 
     return (

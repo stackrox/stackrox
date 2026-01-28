@@ -109,6 +109,8 @@ func (s *baseSuite) TestAllGeneratableExplicit() {
 			s.Empty(v, "expected additional CAs to be empty")
 		} else if path.Base(k) == "cluster-registration-secret.yaml" {
 			s.Empty(v, "expected cluster-registration-secrets to be empty")
+		} else if path.Base(k) == "console-plugin.yaml" {
+			s.Empty(v, "expected console-plugin to be empty (operator-only)")
 		} else {
 			s.NotEmptyf(v, "unexpected empty rendered YAML %s", k)
 		}

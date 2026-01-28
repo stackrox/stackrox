@@ -7,11 +7,17 @@ import (
 	"github.com/stackrox/rox/central/apitoken/datastore"
 	"github.com/stackrox/rox/central/jwt"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/authproviders/tokenbased"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+)
+
+const (
+	id       = `https://stackrox.io/jwt-sources#api-tokens`
+	apiToken = "api-token"
 )
 
 var (
@@ -29,16 +35,21 @@ func Singleton() Backend {
 				sac.ResourceScopeKeys(resources.Integration)))
 
 		// Create and initialize source.
-		src := newSource()
-		err := src.initFromStore(ctx, datastore.Singleton())
+		provider := tokenbased.NewTokenAuthProvider(
+			id,
+			apiToken,
+			apiToken,
+			tokenbased.WithRevocationLayer(tokens.NewRevocationLayer()),
+		)
+		err := provider.InitFromStore(ctx, datastore.Singleton())
 		utils.Should(errors.Wrap(err, "could not initialize API tokens source"))
 
 		// Create token issuer.
-		issuer, err := jwt.IssuerFactorySingleton().CreateIssuer(src, tokens.WithDefaultTTL(defaultTTL))
+		issuer, err := jwt.IssuerFactorySingleton().CreateIssuer(provider, tokens.WithDefaultTTL(defaultTTL))
 		utils.Should(errors.Wrap(err, "could not create token issuer"))
 
 		// Create the final backend.
-		backendInstance = newBackend(issuer, src, datastore.Singleton())
+		backendInstance = newBackend(issuer, provider, datastore.Singleton())
 	})
 	return backendInstance
 }

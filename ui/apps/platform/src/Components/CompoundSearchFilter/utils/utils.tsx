@@ -1,6 +1,7 @@
 import type { SearchFilter } from 'types/search';
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import { searchValueAsArray } from 'utils/searchUtils';
+import { getDate } from 'utils/dateUtils';
+import { getValueByCaseInsensitiveKey, searchValueAsArray } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
 import { convertFromInternalToExternalConditionText } from '../components/SearchFilterConditionText';
@@ -11,10 +12,7 @@ import type {
     OnSearchPayload,
     OnSearchPayloadItem,
     OnSearchPayloadItemAdd,
-    SelectSearchFilterAttribute,
-    SelectSearchFilterGroupedOptions,
     SelectSearchFilterOption,
-    SelectSearchFilterOptions,
 } from '../types';
 
 export const conditionMap = {
@@ -37,109 +35,68 @@ export const dateConditions = Object.keys(
     dateConditionMap
 ) as unknown as (keyof typeof dateConditionMap)[];
 
-export function getEntity(
-    config: CompoundSearchFilterConfig,
-    entityName: string
-): CompoundSearchFilterEntity | undefined {
-    if (!config || !Array.isArray(config)) {
-        return undefined;
+/**
+ * Formats date picker value like CVE discovered time filter values into user-friendly text
+ * @param value - Filter value like ">2024-01-01" or "2024-01-01"
+ * @returns Formatted string like "After January 1, 2024"
+ */
+export function convertFromInternalToExternalDatePicker(value: string): string {
+    try {
+        // Parse the condition prefix and date
+        const match = value.match(/^([<>]?)(.+)$/);
+        if (!match) {
+            return value; // Return original if parsing fails
+        }
+
+        const [, condition, dateStr] = match;
+        const date = new Date(dateStr);
+
+        // Check if date is valid
+        if (Number.isNaN(date.getTime())) {
+            return value; // Return original if date is invalid
+        }
+
+        const formattedDate = getDate(date);
+
+        // Map conditions to user-friendly text
+        switch (condition) {
+            case '>':
+                return `After ${formattedDate}`;
+            case '<':
+                return `Before ${formattedDate}`;
+            default:
+                return `On ${formattedDate}`;
+        }
+    } catch {
+        // Return original value if any error occurs
+        return value;
     }
-    const entity = config.find((entity) => {
+}
+
+export function getEntityFromConfig(
+    config: CompoundSearchFilterConfig,
+    entityNameSelected: string | undefined,
+    entityNameDefault: string | undefined // when no entity is selected
+): CompoundSearchFilterEntity | undefined {
+    const entityName = entityNameSelected ?? entityNameDefault;
+    const entityFound = config.find((entity) => {
         return entity.displayName === entityName;
     });
-    return entity;
+
+    return entityFound ?? config[0]; // default to first entity
 }
 
-export function getAttribute(
-    config: CompoundSearchFilterConfig,
-    entityName: string,
-    attributeName: string
+export function getAttributeFromEntity(
+    entity: CompoundSearchFilterEntity | undefined,
+    attributeNameSelected: string | undefined,
+    attributeNameDefault: string | undefined // when no attribute is selected
 ): CompoundSearchFilterAttribute | undefined {
-    const entity = getEntity(config, entityName);
-    return entity?.attributes?.find((attribute) => {
+    const attributeName = attributeNameSelected ?? attributeNameDefault;
+    const attributeFound = entity?.attributes?.find((attribute) => {
         return attribute.displayName === attributeName;
     });
-}
 
-export function getDefaultEntityName(config: CompoundSearchFilterConfig): string | undefined {
-    if (!config || !Array.isArray(config)) {
-        return undefined;
-    }
-    return config?.[0]?.displayName;
-}
-
-export function getEntityAttributes(
-    config: CompoundSearchFilterConfig,
-    entityName: string
-): CompoundSearchFilterAttribute[] {
-    const entity = getEntity(config, entityName);
-    return entity?.attributes ?? [];
-}
-
-export function getDefaultAttributeName(
-    config: CompoundSearchFilterConfig,
-    entityName: string
-): string | undefined {
-    const attributes = getEntityAttributes(config, entityName);
-    return attributes?.[0]?.displayName;
-}
-
-export function ensureConditionNumber(value: unknown): { condition: string; number: number } {
-    if (
-        typeof value === 'object' &&
-        value !== null &&
-        'condition' in value &&
-        'number' in value &&
-        typeof value.condition === 'string' &&
-        typeof value.number === 'number'
-    ) {
-        return {
-            condition: value.condition,
-            number: value.number,
-        };
-    }
-    return {
-        condition: conditions[0],
-        number: 0,
-    };
-}
-
-export function ensureConditionDate(value: unknown): { condition: string; date: string } {
-    if (
-        typeof value === 'object' &&
-        value !== null &&
-        'condition' in value &&
-        'date' in value &&
-        typeof value.condition === 'string' &&
-        typeof value.date === 'string'
-    ) {
-        return {
-            condition: value.condition,
-            date: value.date,
-        };
-    }
-    return {
-        condition: dateConditions[1],
-        date: '',
-    };
-}
-
-export function isSelectType(
-    attribute: CompoundSearchFilterAttribute
-): attribute is SelectSearchFilterAttribute {
-    return attribute.inputType === 'select';
-}
-
-export function hasGroupedSelectOptions(
-    inputProps: SelectSearchFilterAttribute['inputProps']
-): inputProps is SelectSearchFilterGroupedOptions {
-    return 'groupOptions' in inputProps;
-}
-
-export function hasSelectOptions(
-    inputProps: SelectSearchFilterAttribute['inputProps']
-): inputProps is SelectSearchFilterOptions {
-    return 'options' in inputProps;
+    return attributeFound ?? entity?.attributes?.[0]; // default to first attribute
 }
 
 // Pure function returns searchFilter updated according to payload from interactions.
@@ -257,12 +214,12 @@ export function getCompoundSearchFilterLabelDescriptionOrNull(
         payload: payloadDeleteCategory,
     };
 
-    const values = searchValueAsArray(searchFilter[category]);
+    // For example, query might have FIXABLE as key but attribute might have Fixable as key.
+    const values = searchValueAsArray(getValueByCaseInsensitiveKey(searchFilter, category));
 
     switch (inputType) {
         case 'autocomplete':
         case 'condition-number':
-        case 'date-picker':
         case 'text': {
             if (values.length === 0) {
                 return null;
@@ -286,6 +243,19 @@ export function getCompoundSearchFilterLabelDescriptionOrNull(
                 group,
                 items: values.map((value) => ({
                     label: convertFromInternalToExternalConditionText(inputProps, value),
+                    payload: [{ action: 'REMOVE', category, value }],
+                })),
+            };
+        }
+        case 'date-picker': {
+            if (values.length === 0) {
+                return null;
+            }
+
+            return {
+                group,
+                items: values.map((value) => ({
+                    label: convertFromInternalToExternalDatePicker(value),
                     payload: [{ action: 'REMOVE', category, value }],
                 })),
             };
