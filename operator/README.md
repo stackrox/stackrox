@@ -171,7 +171,7 @@ $ make bundle-test-image
 # 0. Get the operator-sdk program.
 $ make operator-sdk
 
-# 1. Install OLM.
+# 1. Install OLM, unless running on OpenShift.
 $ make olm-install
 
 # 2. Create a namespace for testing bundle.
