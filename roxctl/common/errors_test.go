@@ -65,6 +65,9 @@ func TestMakeRetryable(t *testing.T) {
 }
 
 func TestEnhanceConnectionError(t *testing.T) {
+	// Note: This test focuses on error enhancement logic and the ROX_ENDPOINT environment variable.
+	// Testing the -e/--endpoint flag and kube context configuration requires integration with cobra
+	// and flag parsing, which is comprehensively covered by TestEndpointWasExplicitlyProvided in endpoint_test.go.
 	cases := []struct {
 		name              string
 		err               error
@@ -84,7 +87,7 @@ func TestEnhanceConnectionError(t *testing.T) {
 			expectEnhancement: true,
 		},
 		{
-			name:              "connection refused with explicit endpoint",
+			name:              "connection refused with ROX_ENDPOINT set",
 			err:               errors.New("dial tcp [::1]:8443: connect: connection refused"),
 			setEndpointEnv:    true,
 			expectEnhancement: false,

@@ -78,7 +78,7 @@ func EnhanceConnectionError(err error) error {
 
 	// Enhance the error with helpful guidance
 	return errors.Wrapf(err,
-		"Could not connect to Central at default endpoint (localhost:8443).\n"+
+		"Could not connect to Central at default endpoint (%s).\n"+
 			"HINT: Configure the Central endpoint using the -e/--endpoint flag or ROX_ENDPOINT environment variable.\n"+
-			"      Example: roxctl -e central.example.com:443 <command>")
+			"      Example: roxctl -e central.example.com:443 <command>", flags.DefaultEndpoint)
 }
