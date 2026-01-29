@@ -101,18 +101,18 @@ func TestDetermineConfigDirPermissionDenied(t *testing.T) {
 	// This test verifies that when directory creation fails (e.g., permission denied),
 	// a helpful error message is returned suggesting alternative authentication methods.
 
-	// Create a read-only directory to simulate permission issues
-	readOnlyDir := t.TempDir()
-	readOnlySubDir := filepath.Join(readOnlyDir, "readonly")
-	require.NoError(t, os.Mkdir(readOnlySubDir, 0555))
+	testDir := t.TempDir()
 
-	// Set HOME to a location under the read-only directory
-	impossibleHome := filepath.Join(readOnlySubDir, "home")
-	t.Setenv("HOME", impossibleHome)
+	// Create a file where HOME/.roxctl would be, which will cause mkdir to fail
+	homeFile := filepath.Join(testDir, "homefile")
+	require.NoError(t, os.WriteFile(homeFile, []byte("not a directory"), 0600))
+
+	// Set HOME to the file path - this will cause MkdirAll to fail when trying to create .roxctl
+	t.Setenv("HOME", homeFile)
 	t.Setenv(env.ConfigDirEnv.EnvVar(), "")
 	t.Setenv("XDG_RUNTIME_DIR", "")
 
-	expectedConfigPath := filepath.Join(impossibleHome, ".roxctl")
+	expectedConfigPath := filepath.Join(homeFile, ".roxctl")
 
 	_, err := determineConfigDir()
 	require.Error(t, err)
