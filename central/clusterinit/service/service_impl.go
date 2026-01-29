@@ -173,7 +173,7 @@ func (s *serviceImpl) GenerateCRSExtended(ctx context.Context, request *v1.CRSGe
 		validUntil = protocompat.NilOrNow(reqValidUntil).Add(reqValidFor.AsDuration())
 	}
 
-	reqMaxRegistrations := uint64(request.GetMaxRegistrations())
+	reqMaxRegistrations := request.GetMaxRegistrations()
 
 	generated, err := s.backend.IssueCRS(ctx, request.GetName(), validUntil, reqMaxRegistrations)
 	if err != nil {
