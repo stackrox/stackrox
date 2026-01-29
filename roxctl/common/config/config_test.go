@@ -4,7 +4,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/env"
@@ -113,17 +112,20 @@ func TestDetermineConfigDirPermissionDenied(t *testing.T) {
 	t.Setenv(env.ConfigDirEnv.EnvVar(), "")
 	t.Setenv("XDG_RUNTIME_DIR", "")
 
+	expectedConfigPath := filepath.Join(impossibleHome, ".roxctl")
+
 	_, err := determineConfigDir()
 	require.Error(t, err)
 
 	// Verify the error is a NoCredentials error
 	assert.True(t, errors.Is(err, errox.NoCredentials))
 
-	// Verify the error message contains helpful suggestions
+	// Verify the error message contains the expected config path and helpful suggestions
 	errMsg := err.Error()
-	assert.True(t, strings.Contains(errMsg, "No authentication credentials are available"))
-	assert.True(t, strings.Contains(errMsg, "--password"))
-	assert.True(t, strings.Contains(errMsg, "ROX_API_TOKEN"))
-	assert.True(t, strings.Contains(errMsg, "--token-file"))
-	assert.True(t, strings.Contains(errMsg, "roxctl central login"))
+	assert.Contains(t, errMsg, expectedConfigPath, "error should mention the config path that failed")
+	assert.Contains(t, errMsg, "No authentication credentials are available")
+	assert.Contains(t, errMsg, "--password")
+	assert.Contains(t, errMsg, "ROX_API_TOKEN")
+	assert.Contains(t, errMsg, "--token-file")
+	assert.Contains(t, errMsg, "roxctl central login")
 }
