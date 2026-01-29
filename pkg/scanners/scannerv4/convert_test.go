@@ -114,6 +114,7 @@ func TestConvert(t *testing.T) {
 						Version:       "1.2.3",
 						Source:        storage.SourceType_JAVA,
 						Location:      "opt/java/pkg.jar",
+						Digest:        "hash",
 						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
@@ -187,6 +188,7 @@ func TestConvert(t *testing.T) {
 						Version:       "1.2.3",
 						Source:        storage.SourceType_JAVA,
 						Location:      "opt/java/pkg.jar",
+						Digest:        "hash",
 						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
@@ -283,6 +285,7 @@ func TestConvert(t *testing.T) {
 						Version:       "1.2.3",
 						Source:        storage.SourceType_JAVA,
 						Location:      "opt/java/pkg.jar",
+						Digest:        "hash",
 						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
@@ -389,6 +392,7 @@ func TestComponents(t *testing.T) {
 					Name:     "glib2",
 					Version:  "2.68.4-14.el9",
 					Source:   storage.SourceType_OS,
+					Digest:   "layer1",
 					Location: "var/lib/rpm",
 					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
 						LayerIndex: 3,
@@ -547,6 +551,7 @@ func TestComponents(t *testing.T) {
 					Name:     "glib2",
 					Version:  "2.68.4-14.el9",
 					Source:   storage.SourceType_OS,
+					Digest:   "layer1",
 					Location: "var/lib/rpm",
 					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
 						LayerIndex: 3,
