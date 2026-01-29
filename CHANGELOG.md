@@ -13,6 +13,18 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
+### Removed Features
+
+### Deprecated Features
+
+### Technical Changes
+
+## [4.10.0]
+
+
+
+### Added Features
+
 - ROX-31443: Automatic HTTP to HTTPS redirection is now enabled for Central OpenShift routes (passthrough and reencrypt).
 - ROX-29582: A `kubectl get` on a Central CR now shows the following additional columns: Version, AdminPassword, Message, Available, Progressing.
 - ROX-32061: The `spec.configAsCode` field in the Central CR now supports `resources`, `nodeSelector`, `tolerations`, and `hostAliases` settings for the config-controller deployment.
