@@ -27,6 +27,10 @@ type Store interface {
 	WalkByQuery(ctx context.Context, q *v1.Query, fn func(img *storage.Image) error) error
 	WalkMetadataByQuery(ctx context.Context, q *v1.Query, fn func(img *storage.Image) error) error
 
+	// WalkListImagesByQuery iterates over images using optimized field selection.
+	// Only fetches columns needed for ListImage, avoiding serialized bytea deserialization.
+	WalkListImagesByQuery(ctx context.Context, q *v1.Query, fn func(view *views.ListImageView) error) error
+
 	Upsert(ctx context.Context, image *storage.Image) error
 	Delete(ctx context.Context, id string) error
 

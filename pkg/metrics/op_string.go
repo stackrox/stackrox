@@ -37,13 +37,14 @@ func _() {
 	_ = x[Walk-26]
 	_ = x[WalkByQuery-27]
 	_ = x[WalkMetadataByQuery-28]
-	_ = x[Unset-29]
-	_ = x[Dropped-30]
+	_ = x[WalkListImagesByQuery-29]
+	_ = x[Unset-30]
+	_ = x[Dropped-31]
 }
 
-const _Op_name = "AddAddManyCountDedupeExistsGetGetAllGetManyGetExternalFlowsForDeploymentGetFlowsForDeploymentGetByQueryGetGroupedGetProcessListeningOnPortListPruneResetRenameRemoveRemoveManyRemoveFlowsByDeploymentSearchSyncUpdateUpdateManyUpsertUpsertAllWalkWalkByQueryWalkMetadataByQueryUnsetDropped"
+const _Op_name = "AddAddManyCountDedupeExistsGetGetAllGetManyGetExternalFlowsForDeploymentGetFlowsForDeploymentGetByQueryGetGroupedGetProcessListeningOnPortListPruneResetRenameRemoveRemoveManyRemoveFlowsByDeploymentSearchSyncUpdateUpdateManyUpsertUpsertAllWalkWalkByQueryWalkMetadataByQueryWalkListImagesByQueryUnsetDropped"
 
-var _Op_index = [...]uint16{0, 3, 10, 15, 21, 27, 30, 36, 43, 72, 93, 103, 113, 138, 142, 147, 152, 158, 164, 174, 197, 203, 207, 213, 223, 229, 238, 242, 253, 272, 277, 284}
+var _Op_index = [...]uint16{0, 3, 10, 15, 21, 27, 30, 36, 43, 72, 93, 103, 113, 138, 142, 147, 152, 158, 164, 174, 197, 203, 207, 213, 223, 229, 238, 242, 253, 272, 293, 298, 305}
 
 func (i Op) String() string {
 	idx := int(i) - 0
