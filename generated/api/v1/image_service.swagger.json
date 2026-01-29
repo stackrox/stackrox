@@ -600,6 +600,12 @@
         "created": {
           "type": "string",
           "format": "date-time"
+        },
+        "layers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -882,6 +888,9 @@
           "title": "Values are cleared after moving to cache, remove them from the grpc return as well"
         },
         "architecture": {
+          "type": "string"
+        },
+        "digest": {
           "type": "string"
         }
       },

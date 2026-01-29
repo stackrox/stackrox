@@ -114,6 +114,7 @@ func TestConvert(t *testing.T) {
 						Version:       "1.2.3",
 						Source:        storage.SourceType_JAVA,
 						Location:      "opt/java/pkg.jar",
+						Digest:        "hash",
 						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
@@ -187,6 +188,7 @@ func TestConvert(t *testing.T) {
 						Version:       "1.2.3",
 						Source:        storage.SourceType_JAVA,
 						Location:      "opt/java/pkg.jar",
+						Digest:        "hash",
 						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
@@ -283,6 +285,7 @@ func TestConvert(t *testing.T) {
 						Version:       "1.2.3",
 						Source:        storage.SourceType_JAVA,
 						Location:      "opt/java/pkg.jar",
+						Digest:        "hash",
 						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
@@ -389,6 +392,7 @@ func TestComponents(t *testing.T) {
 					Name:     "glib2",
 					Version:  "2.68.4-14.el9",
 					Source:   storage.SourceType_OS,
+					Digest:   "layer1",
 					Location: "var/lib/rpm",
 					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
 						LayerIndex: 3,
@@ -547,9 +551,49 @@ func TestComponents(t *testing.T) {
 					Name:     "glib2",
 					Version:  "2.68.4-14.el9",
 					Source:   storage.SourceType_OS,
+					Digest:   "layer1",
 					Location: "var/lib/rpm",
 					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
 						LayerIndex: 3,
+					},
+				},
+			},
+		},
+		{
+			name: "digest matching map existence",
+			metadata: &storage.ImageMetadata{
+				// layerSHAToIndex will map "layer-1-hash" to Index 0
+				LayerShas: []string{"layer-1-hash"},
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{{Empty: false}},
+				},
+			},
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Packages: map[string]*v4.Package{
+						"pkg-id": {Id: "pkg-id", Name: "test-pkg", Version: "1.0"},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"pkg-id": {
+							Environments: []*v4.Environment{
+								{
+									PackageDb:    "maven:app.jar",
+									IntroducedIn: "layer-1-hash", // This matches LayerShas
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []*storage.EmbeddedImageScanComponent{
+				{
+					Name:     "test-pkg",
+					Version:  "1.2.3",
+					Source:   storage.SourceType_JAVA,
+					Location: "app.jar",
+					Digest:   "layer-1-hash", // Verify this is set
+					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+						LayerIndex: 0,
 					},
 				},
 			},

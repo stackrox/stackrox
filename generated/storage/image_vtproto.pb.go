@@ -265,6 +265,7 @@ func (m *EmbeddedImageScanComponent) CloneVT() *EmbeddedImageScanComponent {
 	r.RiskScore = m.RiskScore
 	r.FixedBy = m.FixedBy
 	r.Architecture = m.Architecture
+	r.Digest = m.Digest
 	if rhs := m.Vulns; rhs != nil {
 		tmpContainer := make([]*EmbeddedVulnerability, len(rhs))
 		for k, v := range rhs {
@@ -647,6 +648,11 @@ func (m *BaseImageInfo) CloneVT() *BaseImageInfo {
 	r.BaseImageFullName = m.BaseImageFullName
 	r.BaseImageDigest = m.BaseImageDigest
 	r.Created = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Created).CloneVT())
+	if rhs := m.Layers; rhs != nil {
+		tmpContainer := make([]string, len(rhs))
+		copy(tmpContainer, rhs)
+		r.Layers = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1155,6 +1161,9 @@ func (this *EmbeddedImageScanComponent) EqualVT(that *EmbeddedImageScanComponent
 		}
 	}
 	if this.Architecture != that.Architecture {
+		return false
+	}
+	if this.Digest != that.Digest {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1699,6 +1708,15 @@ func (this *BaseImageInfo) EqualVT(that *BaseImageInfo) bool {
 	}
 	if !(*timestamppb1.Timestamp)(this.Created).EqualVT((*timestamppb1.Timestamp)(that.Created)) {
 		return false
+	}
+	if len(this.Layers) != len(that.Layers) {
+		return false
+	}
+	for i, vx := range this.Layers {
+		vy := that.Layers[i]
+		if vx != vy {
+			return false
+		}
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -2366,6 +2384,13 @@ func (m *EmbeddedImageScanComponent) MarshalToSizedBufferVT(dAtA []byte) (int, e
 			return 0, err
 		}
 		i -= size
+	}
+	if len(m.Digest) > 0 {
+		i -= len(m.Digest)
+		copy(dAtA[i:], m.Digest)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Digest)))
+		i--
+		dAtA[i] = 0x72
 	}
 	if len(m.Architecture) > 0 {
 		i -= len(m.Architecture)
@@ -3301,6 +3326,15 @@ func (m *BaseImageInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.Layers) > 0 {
+		for iNdEx := len(m.Layers) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.Layers[iNdEx])
+			copy(dAtA[i:], m.Layers[iNdEx])
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Layers[iNdEx])))
+			i--
+			dAtA[i] = 0x2a
+		}
+	}
 	if m.Created != nil {
 		size, err := (*timestamppb1.Timestamp)(m.Created).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -3646,6 +3680,10 @@ func (m *EmbeddedImageScanComponent) SizeVT() (n int) {
 		}
 	}
 	l = len(m.Architecture)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.Digest)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -4028,6 +4066,12 @@ func (m *BaseImageInfo) SizeVT() (n int) {
 	if m.Created != nil {
 		l = (*timestamppb1.Timestamp)(m.Created).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if len(m.Layers) > 0 {
+		for _, s := range m.Layers {
+			l = len(s)
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
 	}
 	n += len(m.unknownFields)
 	return n
@@ -5841,6 +5885,38 @@ func (m *EmbeddedImageScanComponent) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Architecture = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Digest", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Digest = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -8070,6 +8146,38 @@ func (m *BaseImageInfo) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Layers", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Layers = append(m.Layers, string(dAtA[iNdEx:postIndex]))
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -9964,6 +10072,42 @@ func (m *EmbeddedImageScanComponent) UnmarshalVTUnsafe(dAtA []byte) error {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.Architecture = stringValue
+			iNdEx = postIndex
+		case 14:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Digest", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Digest = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -12281,6 +12425,42 @@ func (m *BaseImageInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 			if err := (*timestamppb1.Timestamp)(m.Created).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Layers", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Layers = append(m.Layers, stringValue)
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

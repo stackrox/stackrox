@@ -179,6 +179,7 @@ func testImages() []*storage.Image {
 					{
 						Name:    "comp1",
 						Version: "0.9",
+						Digest:  "sha256:layer-123",
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
 								Cve: "cve-2018-1",
@@ -238,6 +239,7 @@ func testImages() []*storage.Image {
 					BaseImageFullName: "busybox:latest",
 					BaseImageDigest:   "sha256:alpine312",
 					Created:           t3,
+					Layers:            []string{"sha256:layer-123", "sha256:layer-456"},
 				},
 				{
 					BaseImageId:       "base-sha3",

@@ -52,11 +52,15 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 			source   storage.SourceType
 			location string
 			layerIdx *storage.EmbeddedImageScanComponent_LayerIndex
+			digest   string
 		)
 		env := environment(report, id)
 		if env != nil {
 			source, location = ParsePackageDB(env.GetPackageDb())
 			layerIdx = layerIndex(layerSHAToIndex, env)
+			if _, ok := layerSHAToIndex[env.GetIntroducedIn()]; ok {
+				digest = env.GetIntroducedIn()
+			}
 		}
 
 		component := &storage.EmbeddedImageScanComponent{
@@ -67,6 +71,9 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 			FixedBy:      pkg.GetFixedInVersion(),
 			Source:       source,
 			Location:     location,
+		}
+		if digest != "" {
+			component.Digest = digest
 		}
 		// DO NOT BLINDLY SET THIS INSIDE THE STRUCT DECLARATION DIRECTLY ABOVE.
 		// IF layerIdx IS nil, IT DOES NOT MEAN HasLayerIndex WILL BE THE SAME nil.
