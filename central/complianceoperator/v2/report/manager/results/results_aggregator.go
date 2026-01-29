@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	benchmarksDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
 	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
@@ -33,7 +32,6 @@ type Aggregator struct {
 	scanDS           scanDS.DataStore
 	profileDS        profileDS.DataStore
 	remediationDS    remediationDS.DataStore
-	benchmarkDS      benchmarksDS.DataStore
 	complianceRuleDS complianceRuleDS.DataStore
 
 	aggreateResults aggregateResultsFn
@@ -44,7 +42,6 @@ func NewAggregator(
 	scanDS scanDS.DataStore,
 	profileDS profileDS.DataStore,
 	remediationDS remediationDS.DataStore,
-	benchmarksDS benchmarksDS.DataStore,
 	complianceRuleDS complianceRuleDS.DataStore,
 ) *Aggregator {
 	ret := &Aggregator{
@@ -52,7 +49,6 @@ func NewAggregator(
 		scanDS:           scanDS,
 		profileDS:        profileDS,
 		remediationDS:    remediationDS,
-		benchmarkDS:      benchmarksDS,
 		complianceRuleDS: complianceRuleDS,
 	}
 	ret.aggreateResults = ret.AggregateResults
@@ -193,7 +189,7 @@ func (g *Aggregator) getControlsInfo(ctx context.Context, checkResult *storage.C
 		log.Errorf("Unable to process compliance rule for result %q", checkResult.GetCheckName())
 		return DATA_NOT_AVAILABLE, nil
 	}
-	controls, err := utils.GetControlsForScanResults(ctx, g.complianceRuleDS, []string{rules[0].GetName()}, profileName, g.benchmarkDS)
+	controls, err := utils.GetControlsForScanResults(ctx, g.complianceRuleDS, []string{rules[0].GetName()}, profileName)
 	if err != nil {
 		log.Errorf("Unable to retrieve controls for result %q.Error %s", checkResult.GetCheckName(), err)
 		return DATA_NOT_AVAILABLE, err

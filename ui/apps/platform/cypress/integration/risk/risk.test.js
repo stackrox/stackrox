@@ -43,16 +43,16 @@ describe('Risk', () => {
             visitRiskDeployments();
             viewRiskDeploymentByName('collector');
 
-            cy.get('button[data-testid="tab"]:contains("Risk Indicators")');
-            cy.get('button[data-testid="tab"]:contains("Deployment Details")');
-            cy.get('button[data-testid="tab"]:contains("Process Discovery")');
+            cy.get('[role="tab"]:contains("Risk indicators")');
+            cy.get('[role="tab"]:contains("Deployment details")');
+            cy.get('[role="tab"]:contains("Process discovery")');
         });
 
         it('should navigate from Risk Page to Vulnerability Management Image Page', () => {
             visitRiskDeployments();
             viewRiskDeploymentByName('collector');
 
-            clickTab('Deployment Details');
+            clickTab('Deployment details');
             cy.get(RiskPageSelectors.imageLink).first().click();
 
             cy.location('pathname').should('contain', '/main/vulnerabilities/platform/image');
@@ -60,11 +60,10 @@ describe('Risk', () => {
     });
 
     describe('with actual API', () => {
-        // TODO fix uncaught exception in Network Graph 2.0
-        it.skip('should navigate to network page with selected deployment', () => {
+        it('should navigate to network page with selected deployment', () => {
             visitRiskDeployments();
             viewRiskDeploymentByName('collector');
-            viewRiskDeploymentInNetworkGraph();
+            viewRiskDeploymentInNetworkGraph('collector');
         });
 
         const searchPlaceholderSelector = `${RiskPageSelectors.search.valueContainer} input[placeholder="Filter deployments"]`;

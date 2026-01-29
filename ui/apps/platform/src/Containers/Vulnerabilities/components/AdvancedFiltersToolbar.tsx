@@ -3,42 +3,25 @@ import { Toolbar, ToolbarContent, ToolbarGroup } from '@patternfly/react-core';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import type { CompoundSearchFilterProps } from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import SearchFilterChips, {
-    FilterChip,
-    makeFilterChipDescriptors,
-} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
-import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
+import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
+import type {
+    CompoundSearchFilterAttribute,
+    OnSearchPayload,
+} from 'Components/CompoundSearchFilter/types';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import type { SearchFilter } from 'types/search';
-import { getHasSearchApplied } from 'utils/searchUtils';
+import { getHasSearchApplied, searchValueAsArray } from 'utils/searchUtils';
 
 import type { DefaultFilters } from '../types';
 import {
-    cveSeverityFilterDescriptor,
-    cveSnoozedDescriptor,
-    cveStatusClusterFixableDescriptor,
-    cveStatusFixableDescriptor,
-} from '../filterChipDescriptor';
-import CVESeverityDropdown from './CVESeverityDropdown';
-import CVEStatusDropdown from './CVEStatusDropdown';
+    attributeForClusterCveFixableInFrontend,
+    attributeForFixableInFrontendAndLocalStorage,
+    attributeForSeverityInFrontendAndLocalStorage,
+    attributeForSnoozed,
+} from '../searchFilterConfig';
 
 import './AdvancedFiltersToolbar.css';
-
-function makeDefaultFilterDescriptor(
-    defaultFilters: DefaultFilters,
-    { displayName, searchFilterName }: { displayName: string; searchFilterName: string }
-) {
-    return {
-        displayName,
-        searchFilterName,
-        render: (filter: string) => (
-            <FilterChip
-                isGlobal={defaultFilters[searchFilterName]?.some((value) => value === filter)}
-                name={filter}
-            />
-        ),
-    };
-}
 
 const emptyDefaultFilters = {
     SEVERITY: [],
@@ -72,24 +55,21 @@ function AdvancedFiltersToolbar({
     additionalContextFilter,
     children,
 }: AdvancedFiltersToolbarProps): ReactElement {
-    const baseDescriptors = makeFilterChipDescriptors(searchFilterConfig);
+    const attributesSeparateFromConfig: CompoundSearchFilterAttribute[] = [attributeForSnoozed];
+    if (includeCveSeverityFilters) {
+        attributesSeparateFromConfig.push(attributeForSeverityInFrontendAndLocalStorage);
+    }
+    if (includeCveStatusFilters) {
+        attributesSeparateFromConfig.push(
+            attributeForFixableInFrontendAndLocalStorage,
+            attributeForClusterCveFixableInFrontend
+        );
+    }
 
-    const severityDescriptors = includeCveSeverityFilters
-        ? [makeDefaultFilterDescriptor(defaultFilters, cveSeverityFilterDescriptor)]
-        : [];
-
-    const statusDescriptors = includeCveStatusFilters
-        ? [
-              makeDefaultFilterDescriptor(defaultFilters, cveStatusFixableDescriptor),
-              makeDefaultFilterDescriptor(defaultFilters, cveStatusClusterFixableDescriptor),
-          ]
-        : [];
-
-    const filterChipGroupDescriptors = baseDescriptors.concat(
-        cveSnoozedDescriptor,
-        severityDescriptors,
-        statusDescriptors
-    );
+    function isGlobalPredicate(category: string, value: string) {
+        const values = searchValueAsArray(defaultFilters[category]);
+        return values.some((valueDefault) => valueDefault === value);
+    }
 
     function onFilterApplied(payload: OnSearchPayload) {
         onFilterChange(updateSearchFilter(searchFilter, payload), payload);
@@ -111,34 +91,25 @@ function AdvancedFiltersToolbar({
                     />
                 </ToolbarGroup>
                 {(includeCveSeverityFilters || includeCveStatusFilters) && (
-                    <ToolbarGroup>
+                    <ToolbarGroup className="vm-filter-toolbar-dropdown">
                         {includeCveSeverityFilters && (
-                            <CVESeverityDropdown
+                            <SearchFilterSelectInclusive
+                                attribute={attributeForSeverityInFrontendAndLocalStorage}
+                                isSeparate
+                                onSearch={onFilterApplied}
                                 searchFilter={searchFilter}
-                                onSelect={(category, checked, value) =>
-                                    onFilterApplied([
-                                        {
-                                            category,
-                                            value,
-                                            action: checked ? 'SELECT_INCLUSIVE' : 'REMOVE',
-                                        },
-                                    ])
-                                }
                             />
                         )}
                         {includeCveStatusFilters && (
-                            <CVEStatusDropdown
-                                filterField={cveStatusFilterField}
-                                searchFilter={searchFilter}
-                                onSelect={(category, checked, value) =>
-                                    onFilterApplied([
-                                        {
-                                            category,
-                                            value,
-                                            action: checked ? 'SELECT_INCLUSIVE' : 'REMOVE',
-                                        },
-                                    ])
+                            <SearchFilterSelectInclusive
+                                attribute={
+                                    cveStatusFilterField === 'FIXABLE'
+                                        ? attributeForFixableInFrontendAndLocalStorage
+                                        : attributeForClusterCveFixableInFrontend
                                 }
+                                isSeparate
+                                onSearch={onFilterApplied}
+                                searchFilter={searchFilter}
                             />
                         )}
                     </ToolbarGroup>
@@ -146,10 +117,12 @@ function AdvancedFiltersToolbar({
                 {children}
                 {getHasSearchApplied(searchFilter) && (
                     <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
-                        <SearchFilterChips
-                            searchFilter={searchFilter}
+                        <CompoundSearchFilterLabels
+                            attributesSeparateFromConfig={attributesSeparateFromConfig}
+                            config={searchFilterConfig}
+                            isGlobalPredicate={isGlobalPredicate}
                             onFilterChange={onFilterChange}
-                            filterChipGroupDescriptors={filterChipGroupDescriptors}
+                            searchFilter={searchFilter}
                         />
                     </ToolbarGroup>
                 )}

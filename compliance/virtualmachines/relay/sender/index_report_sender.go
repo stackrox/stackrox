@@ -21,7 +21,7 @@ var log = logging.LoggerForModule()
 
 // IndexReportSender sends index reports to Sensor.
 type IndexReportSender interface {
-	Send(ctx context.Context, report *v1.IndexReport) error
+	Send(ctx context.Context, vmReport *v1.VMReport) error
 }
 
 type sensorIndexReportSender struct {
@@ -37,9 +37,14 @@ func New(sensorClient sensor.VirtualMachineIndexReportServiceClient) IndexReport
 	}
 }
 
-// Send sends the report to Sensor, retrying on transient errors.
-func (s *sensorIndexReportSender) Send(ctx context.Context, report *v1.IndexReport) error {
-	log.Infof("Sending index report to sensor (vsockCID: %s)", report.GetVsockCid())
+// Send sends the VM report to Sensor, retrying on transient errors.
+func (s *sensorIndexReportSender) Send(ctx context.Context, vmReport *v1.VMReport) error {
+	indexReport := vmReport.GetIndexReport()
+	if indexReport == nil {
+		return errors.New("VM report missing required index_report field")
+	}
+
+	log.Infof("Sending VM report to sensor (vsockCID: %s)", indexReport.GetVsockCid())
 
 	// This is the sending logic that will be retried if needed
 	sendFunc := func() error {
@@ -47,7 +52,8 @@ func (s *sensorIndexReportSender) Send(ctx context.Context, report *v1.IndexRepo
 		defer cancel()
 
 		req := &sensor.UpsertVirtualMachineIndexReportRequest{
-			IndexReport: report,
+			IndexReport:    indexReport,
+			DiscoveredData: vmReport.GetDiscoveredData(),
 		}
 
 		resp, err := s.sensorClient.UpsertVirtualMachineIndexReport(sendToSensorCtx, req)

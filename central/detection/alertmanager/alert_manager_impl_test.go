@@ -86,8 +86,8 @@ func getProcessIndicator(processTime time.Time) *storage.ProcessIndicator {
 func getFileAccess(accessTime time.Time) *storage.FileAccess {
 	return &storage.FileAccess{
 		File: &storage.FileAccess_File{
-			NodePath:    "/etc/passwd",
-			MountedPath: "/etc/passwd",
+			ActualPath:    "/etc/passwd",
+			EffectivePath: "/etc/passwd",
 		},
 		Operation: storage.FileAccess_OPEN,
 		Timestamp: protocompat.ConvertTimeToTimestampOrNil(&accessTime),
@@ -96,11 +96,13 @@ func getFileAccess(accessTime time.Time) *storage.FileAccess {
 }
 
 func getFakeFileAccessAlert(accesses ...*storage.FileAccess) *storage.Alert {
-	v := &storage.Alert_FileAccessViolation{Accesses: accesses}
-	printer.UpdateFileAccessAlertViolationMessage(v)
+	var violations []*storage.Alert_Violation
+	for _, access := range accesses {
+		violations = append(violations, printer.GenerateFileAccessViolation(access))
+	}
 	return &storage.Alert{
-		LifecycleStage:      storage.LifecycleStage_RUNTIME,
-		FileAccessViolation: v,
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+		Violations:     violations,
 	}
 }
 

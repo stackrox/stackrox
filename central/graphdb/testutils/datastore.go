@@ -7,6 +7,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	cveConverterV2 "github.com/stackrox/rox/central/cve/converter/v2"
+	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	imagePostgresV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
@@ -307,11 +308,13 @@ func NewTestGraphDataStore(t *testing.T) (TestGraphDataStore, error) {
 
 	s.pgtestbase = pgtest.ForT(t)
 	s.nodeStore = nodeDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+	imageCVEInfo := imageCVEInfoDS.GetTestPostgresDataStore(t, s.GetPostgresPool())
 	s.imageStore = imageDataStore.NewWithPostgres(
 		imagePostgresV2.New(s.GetPostgresPool(), false, concurrency.NewKeyFence()),
 		riskDS.GetTestPostgresDataStore(t, s.GetPostgresPool()),
 		ranking.NewRanker(),
 		ranking.NewRanker(),
+		imageCVEInfo,
 	)
 	s.deploymentStore, err = deploymentDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
 	if err != nil {

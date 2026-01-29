@@ -148,7 +148,7 @@ function ViolationsTablePanel({
     );
 
     function onToggleSelect() {
-        setIsSelectOpen(!isSelectOpen);
+        setIsSelectOpen((prev) => !prev);
     }
 
     // Handle setting confirmation modals for bulk actions

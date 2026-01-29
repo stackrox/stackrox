@@ -63,7 +63,7 @@ function DelegatedScanningSettings({
                             <MenuToggle
                                 aria-label="Select default cluster"
                                 ref={toggleRef}
-                                onClick={() => setIsOpen(!isOpen)}
+                                onClick={() => setIsOpen((prev) => !prev)}
                                 isDisabled={!isEditing}
                                 isExpanded={isOpen}
                             >

@@ -7,7 +7,7 @@ import (
 
 // VerifyReferencedResourceOrigin returns an error if resource is forbidden from referencing other resource.
 func VerifyReferencedResourceOrigin(referenced, referencing ResourceWithTraits, referencedName, referencingName string) error {
-	if !IsDeclarativeOrigin(referencing) || referenced.GetTraits().GetOrigin() != storage.Traits_IMPERATIVE {
+	if !IsDeclarativeOrigin(referencing) || (!IsImperativeOrigin(referenced) && !IsEphemeralOrigin(referenced)) {
 		return nil
 	}
 	// referenced is imperative or default, while referencing is not
@@ -17,4 +17,14 @@ func VerifyReferencedResourceOrigin(referenced, referencing ResourceWithTraits, 
 // IsDeclarativeOrigin returns whether origin of resource is declarative or not.
 func IsDeclarativeOrigin(resource ResourceWithTraits) bool {
 	return resource.GetTraits().GetOrigin() == storage.Traits_DECLARATIVE || resource.GetTraits().GetOrigin() == storage.Traits_DECLARATIVE_ORPHANED
+}
+
+// IsEphemeralOrigin returns whether origin of resource is ephemeral or not.
+func IsEphemeralOrigin(resource ResourceWithTraits) bool {
+	return resource.GetTraits().GetOrigin() == storage.Traits_EPHEMERAL
+}
+
+// IsImperativeOrigin returns whether origin of resource is imperative or not.
+func IsImperativeOrigin(resource ResourceWithTraits) bool {
+	return resource.GetTraits().GetOrigin() == storage.Traits_IMPERATIVE
 }

@@ -251,6 +251,10 @@
               {
                 "name": "NETWORK_POLICY",
                 "integer": 3
+              },
+              {
+                "name": "FILE_ACCESS",
+                "integer": 4
               }
             ]
           },
@@ -410,11 +414,6 @@
                 "id": 13,
                 "name": "process_violation",
                 "type": "ProcessViolation"
-              },
-              {
-                "id": 25,
-                "name": "file_access_violation",
-                "type": "FileAccessViolation"
               },
               {
                 "id": 6,
@@ -627,6 +626,12 @@
                     "oneof_parent": "MessageAttributes"
                   },
                   {
+                    "id": 8,
+                    "name": "file_access",
+                    "type": "FileAccess",
+                    "oneof_parent": "MessageAttributes"
+                  },
+                  {
                     "id": 5,
                     "name": "type",
                     "type": "Type"
@@ -736,22 +741,6 @@
                     "id": 2,
                     "name": "processes",
                     "type": "ProcessIndicator",
-                    "is_repeated": true
-                  }
-                ]
-              },
-              {
-                "name": "FileAccessViolation",
-                "fields": [
-                  {
-                    "id": 1,
-                    "name": "message",
-                    "type": "string"
-                  },
-                  {
-                    "id": 2,
-                    "name": "accesses",
-                    "type": "FileAccess",
                     "is_repeated": true
                   }
                 ]
@@ -1408,6 +1397,11 @@
                 "name": "layers",
                 "type": "BaseImageLayer",
                 "is_repeated": true
+              },
+              {
+                "id": 10,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           },
@@ -1556,6 +1550,12 @@
                 "id": 6,
                 "name": "created",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 8,
+                "name": "layer_digests",
+                "type": "string",
+                "is_repeated": true
               }
             ],
             "maps": [
@@ -5518,7 +5518,15 @@
                         "key_type": "string",
                         "field": {
                           "id": 2,
-                          "name": "filters",
+                          "name": "include_filters",
+                          "type": "string"
+                        }
+                      },
+                      {
+                        "key_type": "string",
+                        "field": {
+                          "id": 3,
+                          "name": "exclude_filters",
                           "type": "string"
                         }
                       }
@@ -6590,6 +6598,11 @@
                 "id": 15,
                 "name": "image_id_v2",
                 "type": "string"
+              },
+              {
+                "id": 16,
+                "name": "fix_available_timestamp",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           },
@@ -6857,6 +6870,26 @@
                 "id": 13,
                 "name": "severity",
                 "type": "Severity"
+              }
+            ]
+          },
+          {
+            "name": "ImageCVEInfo",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "fix_available_timestamp",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 3,
+                "name": "first_system_occurrence",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           }
@@ -8376,12 +8409,8 @@
                 "integer": 4
               },
               {
-                "name": "WRITE",
-                "integer": 5
-              },
-              {
                 "name": "OPEN",
-                "integer": 6
+                "integer": 5
               }
             ]
           }
@@ -8457,12 +8486,12 @@
                 "fields": [
                   {
                     "id": 1,
-                    "name": "mounted_path",
+                    "name": "effective_path",
                     "type": "string"
                   },
                   {
                     "id": 2,
-                    "name": "node_path",
+                    "name": "actual_path",
                     "type": "string"
                   },
                   {
@@ -9457,6 +9486,11 @@
                 "id": 3,
                 "name": "base_image_digest",
                 "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           }
@@ -9487,6 +9521,20 @@
     {
       "protopath": "image_component.proto",
       "def": {
+        "enums": [
+          {
+            "name": "LayerType",
+            "enum_fields": [
+              {
+                "name": "APPLICATION"
+              },
+              {
+                "name": "BASE_IMAGE",
+                "integer": 1
+              }
+            ]
+          }
+        ],
         "messages": [
           {
             "name": "ImageComponent",
@@ -9634,7 +9682,18 @@
               {
                 "id": 15,
                 "name": "from_base_image",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
+              },
+              {
+                "id": 16,
+                "name": "layer_type",
+                "type": "LayerType"
               }
             ]
           }
@@ -18556,6 +18615,10 @@
               {
                 "name": "DECLARATIVE_ORPHANED",
                 "integer": 3
+              },
+              {
+                "name": "EPHEMERAL",
+                "integer": 4
               }
             ]
           }
@@ -18578,8 +18641,18 @@
                 "id": 3,
                 "name": "origin",
                 "type": "Origin"
+              },
+              {
+                "id": 4,
+                "name": "expires_at",
+                "type": "google.protobuf.Timestamp"
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -19698,6 +19771,11 @@
                 "id": 23,
                 "name": "epss",
                 "type": "EPSS"
+              },
+              {
+                "id": 26,
+                "name": "datasource",
+                "type": "string"
               }
             ],
             "reserved_ids": [

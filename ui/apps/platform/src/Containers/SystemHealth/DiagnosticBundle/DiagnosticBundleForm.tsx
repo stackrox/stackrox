@@ -69,7 +69,7 @@ function DiagnosticBundleForm({
     }, [hasReadAccessForCluster]);
 
     function toggleClusterSelect() {
-        setClusterSelectOpen(!clusterSelectOpen);
+        setClusterSelectOpen((prev) => !prev);
     }
 
     function onSelect(_event: ReactMouseEvent | undefined, selection: string | number | undefined) {

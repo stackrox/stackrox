@@ -3,7 +3,6 @@ kind: Service
 metadata:
   labels:
     control-plane: controller-manager
-    app: rhacs-operator
   name: controller-manager-metrics-service
   namespace: system
 spec:
@@ -14,4 +13,3 @@ spec:
     targetPort: https
   selector:
     control-plane: controller-manager
-    app: rhacs-operator

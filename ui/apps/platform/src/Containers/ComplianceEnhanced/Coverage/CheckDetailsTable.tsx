@@ -15,15 +15,9 @@ import type { ClusterCheckStatus } from 'services/ComplianceResultsService';
 import type { TableUIState } from 'utils/getTableUIState';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import SearchFilterChips, {
-    makeFilterChipDescriptorFromAttribute,
-    makeFilterChipDescriptors,
-} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
-import type {
-    CompoundSearchFilterConfig,
-    OnSearchCallback,
-} from 'Components/CompoundSearchFilter/types';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import type { SearchFilter } from 'types/search';
 
 import { coverageClusterDetailsPath } from './compliance.coverage.routes';
@@ -33,7 +27,12 @@ import {
 } from './compliance.coverage.utils';
 import StatusIcon from './components/StatusIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
-import { attributeForComplianceCheckStatus } from '../searchFilterConfig';
+import {
+    attributeForComplianceCheckStatus,
+    clusterSearchFilterConfig,
+} from '../searchFilterConfig';
+
+const searchFilterConfig = [clusterSearchFilterConfig];
 
 export const tabContentIdForResults = 'check-details-Results-tab-section';
 
@@ -44,7 +43,6 @@ export type CheckDetailsTableProps = {
     profileName: string;
     tableState: TableUIState<ClusterCheckStatus>;
     getSortParams: UseURLSortResult['getSortParams'];
-    searchFilterConfig: CompoundSearchFilterConfig;
     searchFilter: SearchFilter;
     onFilterChange: (newFilter: SearchFilter) => void;
     onSearch: OnSearchCallback;
@@ -58,7 +56,6 @@ function CheckDetailsTable({
     profileName,
     tableState,
     getSortParams,
-    searchFilterConfig,
     searchFilter,
     onFilterChange,
     onSearch,
@@ -66,8 +63,6 @@ function CheckDetailsTable({
 }: CheckDetailsTableProps) {
     const { generatePathWithScanConfig } = useScanConfigRouter();
     const { page, perPage, setPage, setPerPage } = pagination;
-
-    const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 
     return (
         <div id={tabContentIdForResults}>
@@ -89,6 +84,16 @@ function CheckDetailsTable({
                                 searchFilter={searchFilter}
                             />
                         </ToolbarItem>
+                    </ToolbarGroup>
+                    <ToolbarGroup className="pf-v5-u-w-100">
+                        <CompoundSearchFilterLabels
+                            attributesSeparateFromConfig={[attributeForComplianceCheckStatus]}
+                            config={searchFilterConfig}
+                            onFilterChange={onFilterChange}
+                            searchFilter={searchFilter}
+                        />
+                    </ToolbarGroup>
+                    <ToolbarGroup className="pf-v5-u-w-100">
                         <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                             <Pagination
                                 itemCount={checkResultsCount}
@@ -98,18 +103,6 @@ function CheckDetailsTable({
                                 onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
                             />
                         </ToolbarItem>
-                    </ToolbarGroup>
-                    <ToolbarGroup className="pf-v5-u-w-100">
-                        <SearchFilterChips
-                            searchFilter={searchFilter}
-                            onFilterChange={onFilterChange}
-                            filterChipGroupDescriptors={[
-                                ...filterChipGroupDescriptors,
-                                makeFilterChipDescriptorFromAttribute(
-                                    attributeForComplianceCheckStatus
-                                ),
-                            ]}
-                        />
                     </ToolbarGroup>
                 </ToolbarContent>
             </Toolbar>

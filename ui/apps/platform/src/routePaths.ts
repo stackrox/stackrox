@@ -8,6 +8,7 @@ import type { HasReadAccess } from 'hooks/usePermissions';
 import type { ResourceName } from 'types/roleResources';
 import { allEnabled } from 'utils/featureFlagUtils';
 import type { FeatureFlagPredicate } from 'utils/featureFlagUtils';
+import { getQueryString } from 'utils/queryStringUtils';
 
 export const mainPath = '/main';
 export const loginPath = '/login';
@@ -372,7 +373,7 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     },
     'base-images': {
         featureFlagRequirements: allEnabled(['ROX_BASE_IMAGE_DETECTION']),
-        resourceAccessRequirements: everyResource(['Image']), // TODO: May need new resource type
+        resourceAccessRequirements: everyResource(['ImageAdministration']),
     },
     'vulnerability-management': {
         resourceAccessRequirements: everyResource([
@@ -501,3 +502,24 @@ export const workflowPaths = {
     LIST: `${mainPath}/:context/:pageEntityListType/:entityId1?/:entityType2?/:entityId2?`,
     ENTITY: `${mainPath}/:context/:pageEntityType/:pageEntityId?/:entityType1?/:entityId1?/:entityType2?/:entityId2?`,
 };
+
+type GetLinkToDeploymentInNetworkGraphParams = {
+    cluster: string;
+    namespace: string;
+    deploymentId: string;
+};
+
+export function getLinkToDeploymentInNetworkGraph({
+    cluster,
+    namespace,
+    deploymentId,
+}: GetLinkToDeploymentInNetworkGraphParams) {
+    const queryString = getQueryString({
+        s: {
+            Cluster: cluster,
+            Namespace: namespace,
+        },
+    });
+    const networkGraphLink = `${networkBasePath}/deployment/${deploymentId}${queryString}`;
+    return networkGraphLink;
+}

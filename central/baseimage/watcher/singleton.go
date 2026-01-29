@@ -1,7 +1,9 @@
 package watcher
 
 import (
+	baseImageDS "github.com/stackrox/rox/central/baseimage/datastore"
 	repoDS "github.com/stackrox/rox/central/baseimage/datastore/repository"
+	tagDS "github.com/stackrox/rox/central/baseimage/datastore/tag"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	delegatedRegistryConfigDS "github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/delegator"
@@ -11,6 +13,8 @@ import (
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -32,8 +36,14 @@ func Singleton() Watcher {
 
 		watcher = New(
 			repoDS.Singleton(),
+			tagDS.Singleton(),
+			baseImageDS.Singleton(),
 			imageintegration.Set().RegistrySet(),
 			scanDelegator,
+			env.BaseImageWatcherPollInterval.DurationSetting(),
+			env.BaseImageWatcherTagBatchSize.IntegerSetting(),
+			env.BaseImageWatcherPerRepoTagLimit.IntegerSetting(),
+			features.DelegatedBaseImageScanning.Enabled(),
 		)
 	})
 	return watcher

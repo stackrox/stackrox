@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	nodeMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
 	"github.com/stackrox/rox/pkg/protoassert"
+	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sac"
 	scannerMocks "github.com/stackrox/rox/pkg/scanners/mocks"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -511,5 +512,81 @@ func TestScannerV4Restrictions(t *testing.T) {
 
 		_, err := s.UpdateImageIntegration(context.Background(), &v1.UpdateImageIntegrationRequest{Config: iiNew})
 		assert.ErrorContains(t, err, "scanner V4")
+	})
+}
+
+func TestIAMRoleCapabilityValidation(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	testCtx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
+
+	integrationDatastore := integrationMocks.NewMockDataStore(ctrl)
+	clusterDatastore := clusterMocks.NewMockDataStore(ctrl)
+	clusterDatastore.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{}, nil).AnyTimes()
+
+	s := &serviceImpl{
+		clusterDatastore: clusterDatastore,
+		datastore:        integrationDatastore,
+	}
+
+	ecrIntegrationWithIAM := &storage.ImageIntegration{
+		Name: "ECR with IAM",
+		Type: registryTypes.ECRType,
+		Categories: []storage.ImageIntegrationCategory{
+			storage.ImageIntegrationCategory_REGISTRY,
+		},
+		IntegrationConfig: &storage.ImageIntegration_Ecr{
+			Ecr: &storage.ECRConfig{
+				RegistryId: "123456789012",
+				Region:     "us-east-1",
+				UseIam:     true,
+			},
+		},
+	}
+
+	ecrIntegrationWithoutIAM := &storage.ImageIntegration{
+		Name: "ECR without IAM",
+		Type: registryTypes.ECRType,
+		Categories: []storage.ImageIntegrationCategory{
+			storage.ImageIntegrationCategory_REGISTRY,
+		},
+		IntegrationConfig: &storage.ImageIntegration_Ecr{
+			Ecr: &storage.ECRConfig{
+				RegistryId:      "123456789012",
+				Region:          "us-east-1",
+				UseIam:          false,
+				AccessKeyId:     "AKIAIOSFODNN7EXAMPLE",
+				SecretAccessKey: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+			},
+		},
+	}
+
+	t.Run("allow ECR with IAM when not managed", func(t *testing.T) {
+		t.Setenv("ROX_MANAGED_CENTRAL", "false")
+
+		integrationDatastore.EXPECT().GetImageIntegrations(gomock.Any(), &v1.GetImageIntegrationsRequest{Name: "ECR with IAM"}).Return([]*storage.ImageIntegration{}, nil)
+
+		err := s.validateIntegration(testCtx, ecrIntegrationWithIAM)
+		assert.NoError(t, err)
+	})
+
+	t.Run("block ECR with IAM when managed", func(t *testing.T) {
+		t.Setenv("ROX_MANAGED_CENTRAL", "true")
+
+		integrationDatastore.EXPECT().GetImageIntegrations(gomock.Any(), &v1.GetImageIntegrationsRequest{Name: "ECR with IAM"}).Return([]*storage.ImageIntegration{}, nil)
+
+		err := s.validateIntegration(testCtx, ecrIntegrationWithIAM)
+		assert.Error(t, err)
+		assert.ErrorContains(t, err, "IAM role for ECR scanning")
+	})
+
+	t.Run("allow ECR without IAM when managed", func(t *testing.T) {
+		t.Setenv("ROX_MANAGED_CENTRAL", "true")
+
+		integrationDatastore.EXPECT().GetImageIntegrations(gomock.Any(), &v1.GetImageIntegrationsRequest{Name: "ECR without IAM"}).Return([]*storage.ImageIntegration{}, nil)
+
+		err := s.validateIntegration(testCtx, ecrIntegrationWithoutIAM)
+		assert.NoError(t, err)
 	})
 }

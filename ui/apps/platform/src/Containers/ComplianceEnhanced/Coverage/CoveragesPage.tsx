@@ -17,10 +17,7 @@ import ComplianceUsageDisclaimer, {
     COMPLIANCE_DISCLAIMER_KEY,
 } from 'Components/ComplianceUsageDisclaimer';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import SearchFilterChips, {
-    makeFilterChipDescriptorFromAttribute,
-    makeFilterChipDescriptors,
-} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
 import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
@@ -50,7 +47,7 @@ import {
     profileCheckSearchFilterConfig,
 } from '../searchFilterConfig';
 
-const searchFilterConfig = [profileCheckSearchFilterConfig, clusterSearchFilterConfig];
+const searchFilterConfig = [clusterSearchFilterConfig, profileCheckSearchFilterConfig];
 
 function CoveragesPage() {
     const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useBooleanLocalStorage(
@@ -66,8 +63,6 @@ function CoveragesPage() {
     const [selectedProfileStats, setSelectedProfileStats] = useState<
         undefined | ComplianceProfileScanStats
     >(undefined);
-
-    const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 
     const { searchFilter, setSearchFilter } = useURLSearch();
 
@@ -174,6 +169,7 @@ function CoveragesPage() {
                                         <ToolbarItem className="pf-v5-u-flex-1">
                                             <CompoundSearchFilter
                                                 config={searchFilterConfig}
+                                                defaultEntity="Profile check"
                                                 searchFilter={searchFilter}
                                                 onSearch={onSearch}
                                             />
@@ -188,15 +184,13 @@ function CoveragesPage() {
                                         </ToolbarItem>
                                     </ToolbarGroup>
                                     <ToolbarGroup className="pf-v5-u-w-100">
-                                        <SearchFilterChips
-                                            searchFilter={searchFilter}
-                                            onFilterChange={setSearchFilter}
-                                            filterChipGroupDescriptors={[
-                                                ...filterChipGroupDescriptors,
-                                                makeFilterChipDescriptorFromAttribute(
-                                                    attributeForComplianceCheckStatus
-                                                ),
+                                        <CompoundSearchFilterLabels
+                                            attributesSeparateFromConfig={[
+                                                attributeForComplianceCheckStatus,
                                             ]}
+                                            config={searchFilterConfig}
+                                            onFilterChange={setSearchFilter}
+                                            searchFilter={searchFilter}
                                         />
                                     </ToolbarGroup>
                                 </ToolbarContent>

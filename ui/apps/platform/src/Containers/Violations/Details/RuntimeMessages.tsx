@@ -1,23 +1,18 @@
 import type { ReactElement } from 'react';
 
-import type { FileAccessViolation, ProcessViolation, Violation } from 'types/alert.proto';
+import type { ProcessViolation, Violation } from 'types/alert.proto';
 import NetworkFlowCard from './NetworkFlowCard';
 import K8sCard from './K8sCard';
 import TimestampedEventCard from './TimestampedEventCard';
 import ProcessCardContent from './ProcessCardContent';
-import FileAccessCardContent from './FileAccessCardContent';
+import FileAccessCard from './FileAccessCard';
 
 type RuntimeMessagesProps = {
     processViolation: ProcessViolation | null;
-    fileAccessViolation: FileAccessViolation | null;
     violations?: Violation[];
 };
 
-function RuntimeMessages({
-    processViolation,
-    fileAccessViolation,
-    violations,
-}: RuntimeMessagesProps): ReactElement {
+function RuntimeMessages({ processViolation, violations }: RuntimeMessagesProps): ReactElement {
     const isPlainViolation = !!violations?.length;
     const plainViolations: ReactElement[] = [];
 
@@ -45,6 +40,15 @@ function RuntimeMessages({
                     time={time}
                 />
             );
+        } else if (violation.type === 'FILE_ACCESS') {
+            const { fileAccess } = violation;
+            plainViolations.push(
+                <FileAccessCard
+                    key={`${fileAccess.timestamp}-${fileAccess.operation}-${fileAccess.file.actualPath}`}
+                    fileAccess={fileAccess}
+                    message={message}
+                />
+            );
         }
     });
 
@@ -58,17 +62,6 @@ function RuntimeMessages({
                     getTimestamp={(process) => process.signal.time}
                     getEventKey={(process) => process.signal.id}
                     ContentComponent={ProcessCardContent}
-                />
-            )}
-            {!!fileAccessViolation?.accesses?.length && (
-                <TimestampedEventCard
-                    message={fileAccessViolation.message}
-                    events={fileAccessViolation.accesses}
-                    getTimestamp={(access) => access.timestamp}
-                    ContentComponent={FileAccessCardContent}
-                    getEventKey={(access) =>
-                        `${access.timestamp}-${access.operation}-${access.file.nodePath}`
-                    }
                 />
             )}
         </>

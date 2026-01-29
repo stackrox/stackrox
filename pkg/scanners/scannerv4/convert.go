@@ -16,6 +16,11 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
+// vulnDataSourceDelimiter separates the parts of a vuln's datasource.
+// IMPORTANT: This delimiter was chosen because it does not appear in any known
+// Claircore or StackRox updater names.
+const vulnDataSourceDelimiter = "::"
+
 func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, scannerVersion string) *storage.ImageScan {
 	scan := &storage.ImageScan{
 		ScannerVersion:  scannerVersion,
@@ -58,7 +63,7 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 			Name:         pkg.GetName(),
 			Version:      pkg.GetVersion(),
 			Architecture: pkg.GetArch(),
-			Vulns:        vulnerabilities(report.GetVulnerabilities(), vulnIDs),
+			Vulns:        vulnerabilities(report.GetVulnerabilities(), vulnIDs, envOS(env, report)),
 			FixedBy:      pkg.GetFixedInVersion(),
 			Source:       source,
 			Location:     location,
@@ -86,6 +91,22 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 	}
 
 	return components
+}
+
+// envOS will return the operating system name and version associated with an
+// environment.
+func envOS(env *v4.Environment, report *v4.VulnerabilityReport) string {
+	if env == nil {
+		return ""
+	}
+
+	dists := distributions(report)
+	dist, ok := dists[env.GetDistributionId()]
+	if !ok || dist.GetDid() == "" || dist.GetVersionId() == "" {
+		return ""
+	}
+
+	return dist.GetDid() + ":" + dist.GetVersionId()
 }
 
 func environment(report *v4.VulnerabilityReport, id string) *v4.Environment {
@@ -152,7 +173,7 @@ func layerIndex(layerSHAToIndex map[string]int32, env *v4.Environment) *storage.
 	}
 }
 
-func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability, ids []string) []*storage.EmbeddedVulnerability {
+func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability, ids []string, envOS string) []*storage.EmbeddedVulnerability {
 	if len(vulnerabilities) == 0 || len(ids) == 0 {
 		return nil
 	}
@@ -181,9 +202,11 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 			Link:        link(ccVuln.GetLink()),
 			PublishedOn: ccVuln.GetIssued(),
 			// LastModified: ,
-			VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-			Severity:          normalizedSeverity(ccVuln.GetNormalizedSeverity()),
-			Epss:              epss(ccVuln.GetEpssMetrics()),
+			VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+			Severity:              normalizedSeverity(ccVuln.GetNormalizedSeverity()),
+			Epss:                  epss(ccVuln.GetEpssMetrics()),
+			FixAvailableTimestamp: ccVuln.GetFixedDate(),
+			Datasource:            vulnDataSource(ccVuln, envOS),
 		}
 		if err := setScoresAndScoreVersions(vuln, ccVuln.GetCvssMetrics()); err != nil {
 			utils.Should(err)
@@ -199,6 +222,41 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 	}
 
 	return vulns
+}
+
+// vulnDataSource builds a string that uniquely identifies a vulnerability's datasource.
+// The datasource represents CVE uniqueness and can be used to associate a CVE with
+// other data, such as fixed date.
+//
+// IMPORTANT: The datasource value MUST be treated as an opaque string because it contains
+// the Claircore updater which is an 'internal' field with no guarantee it will be stable
+// between releases - do not parse or extract components from it. It should only be used for:
+//   - Equality comparisons
+//   - Storage/retrieval as a database key
+//
+// For Red Hat vulns the product (repo, cpe, etc.) is also needed to uniquely represent the
+// vuln which is NOT included in the returned datasource.
+//
+// Examples:
+//   - OS vulnerabilities: "updater::os" (e.g., "debian-bookworm-updater::debian:12")
+//   - Language vulnerabilities: "updater" (e.g., "osv/go", "nvd")
+//
+// When this format changes or ClairCore updater names change, a database migration may be required.
+func vulnDataSource(ccVuln *v4.VulnerabilityReport_Vulnerability, os string) string {
+	if ccVuln.GetUpdater() == "" {
+		return ""
+	}
+
+	if os == "" {
+		// ie: "osv/go", "nvd"
+		return ccVuln.GetUpdater()
+	}
+
+	// ie: "debian/updater::debian:12", "ubuntu/updater/focal::ubuntu:20.04"
+	return strings.Join([]string{
+		ccVuln.GetUpdater(),
+		os,
+	}, vulnDataSourceDelimiter)
 }
 
 func advisory(advisory *v4.VulnerabilityReport_Advisory) *storage.Advisory {
@@ -363,14 +421,7 @@ func normalizedSeverity(severity v4.VulnerabilityReport_Vulnerability_Severity) 
 // If there are zero known distributions for the image or if there are multiple distributions,
 // return "unknown", as StackRox only supports a single base-OS at this time.
 func os(report *v4.VulnerabilityReport) string {
-	dists := report.GetContents().GetDistributions()
-	if len(dists) == 0 {
-		// Fallback to the deprecated slice, if needed.
-		dists = make(map[string]*v4.Distribution, len(report.GetContents().GetDistributionsDEPRECATED()))
-		for _, dist := range report.GetContents().GetDistributionsDEPRECATED() {
-			dists[dist.GetId()] = dist
-		}
-	}
+	dists := distributions(report)
 	if len(dists) != 1 {
 		return "unknown"
 	}
@@ -381,6 +432,19 @@ func os(report *v4.VulnerabilityReport) string {
 		break
 	}
 	return dist.GetDid() + ":" + dist.GetVersionId()
+}
+
+func distributions(report *v4.VulnerabilityReport) map[string]*v4.Distribution {
+	dists := report.GetContents().GetDistributions()
+	if len(dists) == 0 {
+		// Fallback to the deprecated slice, if needed.
+		dists = make(map[string]*v4.Distribution, len(report.GetContents().GetDistributionsDEPRECATED()))
+		for _, dist := range report.GetContents().GetDistributionsDEPRECATED() {
+			dists[dist.GetId()] = dist
+		}
+	}
+
+	return dists
 }
 
 func notes(report *v4.VulnerabilityReport) []storage.ImageScan_Note {

@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/central/defaults"
+	"github.com/stackrox/rox/operator/internal/common"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,14 +52,9 @@ func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *
 		return errors.Wrap(err, "converting unstructured object to Central")
 	}
 
-	err := setDefaultsAndPersist(ctx, logger, &central, client)
+	err := setDefaultsAndPersist(ctx, logger, u, &central, client)
 	if err != nil {
 		return err
-	}
-
-	u.Object, err = runtime.DefaultUnstructuredConverter.ToUnstructured(&central)
-	if err != nil {
-		return errors.Wrap(err, "converting Central to unstructured object after extension execution")
 	}
 
 	if err := platform.AddCentralDefaultsToUnstructured(u, &central); err != nil {
@@ -68,43 +64,49 @@ func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *
 	return nil
 }
 
-func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, central *platform.Central, client ctrlClient.Client) error {
-	baseCentral := central.DeepCopy()
-	patch := ctrlClient.MergeFrom(baseCentral)
+// Sets Defaults in the typed central object by executing the defaulting flows and, if required, persists the resulting
+// defaulting annotations on the cluster. If no updating of the cluster object is necessary, the function returns nil.
+// If an update is necessary, it patches the object on the cluster and returns an error to indicate that reconciliation should be retried.
+// In this case the provided unstructured u will also be updated as part of the patching.
+func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, u *unstructured.Unstructured, central *platform.Central, client ctrlClient.Client) error {
+	uBase := u.DeepCopy()
+	patch := ctrlClient.MergeFrom(uBase)
 
-	// This may update central.Defaults and central's embedded annotations.
 	for _, flow := range defaultingFlows {
-		if err := executeSingleDefaultingFlow(logger, central, client, flow); err != nil {
+		if err := executeSingleDefaultingFlow(logger, u, central, flow); err != nil {
 			return err
 		}
 	}
-	centralDefaults := central.Defaults
+
+	if common.AnnotationsEqual(uBase, u) {
+		return nil
+	}
 
 	// We persist the annotations immediately during (first-time) execution of this extension to make sure
 	// that this information is already persisted in the Kubernetes resource before we
 	// can realistically end up in a situation where reconcilliation might need to be retried.
 	//
-	// This updates central both on the cluster and in memory, which is crucial since this object is used for the final
-	// updating within helm-operator and we have concurrently running controllers (the status controller),
-	// whose changes we must preserve.
-	err := client.Patch(ctx, central, patch)
+	// To keep the flow conceptually simple, we patch the annotations here and then return with an error, which
+	// will cause reconciliation to be requeued.
+	// This way, we avoid having to deal with generation changes and keeping the in-memory object in sync.
+	err := client.Patch(ctx, u, patch)
 	if err != nil {
 		return errors.Wrap(err, "patching Central annotations")
 	}
-
 	logger.Info("patched Central object",
-		"oldResourceVersion", baseCentral.GetResourceVersion(),
-		"newResourceVersion", central.GetResourceVersion(),
+		"oldResourceVersion", uBase.GetResourceVersion(),
+		"newResourceVersion", u.GetResourceVersion(),
 	)
 
-	// Retain the defaults, which are not in the patched object after cluster refresh.
-	central.Defaults = centralDefaults
-	return nil
+	return common.ErrorAnnotationsUpdated
 }
 
-func executeSingleDefaultingFlow(logger logr.Logger, central *platform.Central, client ctrlClient.Client, flow defaults.CentralDefaultingFlow) error {
+// Defaulting flows have two side-effects:
+// 1. They may update the metadata annotations (to be persisted on the cluster); this is happening in the unstructured u.
+// 2. They may update central.Defaults (they only exist in-memory, not on the cluster); this is happening in the typed central object.
+func executeSingleDefaultingFlow(logger logr.Logger, u *unstructured.Unstructured, central *platform.Central, flow defaults.CentralDefaultingFlow) error {
 	logger = logger.WithName(fmt.Sprintf("defaulting-flow-%s", flow.Name))
-	annotations := central.GetAnnotations()
+	annotations := u.GetAnnotations()
 	if annotations == nil {
 		annotations = make(map[string]string)
 	}
@@ -117,7 +119,7 @@ func executeSingleDefaultingFlow(logger logr.Logger, central *platform.Central, 
 	if err != nil {
 		return errors.Wrapf(err, "Central defaulting flow %s failed", flow.Name)
 	}
-	central.SetAnnotations(annotations)
+	u.SetAnnotations(annotations)
 
 	return nil
 }

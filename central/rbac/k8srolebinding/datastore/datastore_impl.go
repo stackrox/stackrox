@@ -2,9 +2,9 @@ package datastore
 
 import (
 	"context"
+	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -26,16 +26,30 @@ func (d *datastoreImpl) GetRoleBinding(ctx context.Context, id string) (*storage
 }
 
 func (d *datastoreImpl) SearchRoleBindings(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	results, err := d.Search(ctx, q)
+	if q == nil {
+		q = searchPkg.EmptyQuery()
+	}
+	qClone := q.CloneVT()
+
+	// Add name field to select columns
+	qClone.Selects = append(qClone.GetSelects(), searchPkg.NewQuerySelect(searchPkg.RoleBindingName).Proto())
+
+	results, err := d.Search(ctx, qClone)
 	if err != nil {
 		return nil, err
 	}
-	bindings, missingIndices, err := d.storage.GetMany(ctx, searchPkg.ResultsToIDs(results))
-	if err != nil {
-		return nil, err
+
+	// Extract name from FieldValues and populate Name in search results
+	searchTag := strings.ToLower(searchPkg.RoleBindingName.String())
+	for i := range results {
+		if results[i].FieldValues != nil {
+			if nameVal, ok := results[i].FieldValues[searchTag]; ok {
+				results[i].Name = nameVal
+			}
+		}
 	}
-	results = searchPkg.RemoveMissingResults(results, missingIndices)
-	return convertMany(bindings, results)
+
+	return searchPkg.ResultsToSearchResultProtos(results, &K8SRoleBindingSearchResultConverter{}), nil
 }
 
 func (d *datastoreImpl) SearchRawRoleBindings(ctx context.Context, request *v1.Query) ([]*storage.K8SRoleBinding, error) {
@@ -68,24 +82,21 @@ func (d *datastoreImpl) GetManyRoleBindings(ctx context.Context, ids []string) (
 	return d.storage.GetMany(ctx, ids)
 }
 
-func convertMany(bindings []*storage.K8SRoleBinding, results []searchPkg.Result) ([]*v1.SearchResult, error) {
-	if len(bindings) != len(results) {
-		return nil, errors.New("mismatch between search results and retrieved role bindings")
-	}
+type K8SRoleBindingSearchResultConverter struct{}
 
-	outputResults := make([]*v1.SearchResult, len(bindings))
-	for index, binding := range bindings {
-		outputResults[index] = convertOne(binding, &results[index])
-	}
-	return outputResults, nil
+func (c *K8SRoleBindingSearchResultConverter) BuildName(result *searchPkg.Result) string {
+	return result.Name
 }
 
-func convertOne(binding *storage.K8SRoleBinding, result *searchPkg.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_ROLEBINDINGS,
-		Id:             binding.GetId(),
-		Name:           binding.GetName(),
-		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+func (c *K8SRoleBindingSearchResultConverter) BuildLocation(result *searchPkg.Result) string {
+	// K8SRoleBinding does not have a location
+	return ""
+}
+
+func (c *K8SRoleBindingSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_ROLEBINDINGS
+}
+
+func (c *K8SRoleBindingSearchResultConverter) GetScore(result *searchPkg.Result) float64 {
+	return result.Score
 }

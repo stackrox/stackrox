@@ -44,9 +44,9 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 
-// local-sensor is an application that allows you to run sensor in your host machine, while mocking a
-// gRPC connection to central. This was introduced for testing and debugging purposes. At its current form,
-// it does not connect to a real central, but instead it dumps all gRPC messages that would be sent to central in a file.
+// local-sensor is an application that allows you to run sensor on your host machine for testing and
+// debugging purposes. It can either connect to a real Central instance using the -connect-central flag,
+// or use a fake Central that dumps all gRPC messages to a file.
 
 func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grpc.ClientConn, *centralDebug.FakeService, func()) {
 	buffer := 1024 * 1024

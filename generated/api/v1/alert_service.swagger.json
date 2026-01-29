@@ -625,21 +625,6 @@
       ],
       "default": "UNSET"
     },
-    "AlertFileAccessViolation": {
-      "type": "object",
-      "properties": {
-        "message": {
-          "type": "string"
-        },
-        "accesses": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/storageFileAccess"
-          }
-        }
-      }
-    },
     "AlertGroupAlertCounts": {
       "type": "object",
       "properties": {
@@ -704,6 +689,9 @@
         "networkFlowInfo": {
           "$ref": "#/definitions/ViolationNetworkFlowInfo"
         },
+        "fileAccess": {
+          "$ref": "#/definitions/storageFileAccess"
+        },
         "type": {
           "$ref": "#/definitions/AlertViolationType",
           "description": "'type' is for internal use only."
@@ -721,7 +709,8 @@
         "GENERIC",
         "K8S_EVENT",
         "NETWORK_FLOW",
-        "NETWORK_POLICY"
+        "NETWORK_POLICY",
+        "FILE_ACCESS"
       ],
       "default": "GENERIC"
     },
@@ -771,7 +760,6 @@
         "RENAME",
         "PERMISSION_CHANGE",
         "OWNERSHIP_CHANGE",
-        "WRITE",
         "OPEN"
       ],
       "default": "CREATE"
@@ -1025,9 +1013,6 @@
         "processViolation": {
           "$ref": "#/definitions/AlertProcessViolation"
         },
-        "fileAccessViolation": {
-          "$ref": "#/definitions/AlertFileAccessViolation"
-        },
         "enforcement": {
           "$ref": "#/definitions/AlertEnforcement"
         },
@@ -1278,13 +1263,13 @@
     "storageFileAccessFile": {
       "type": "object",
       "properties": {
-        "mountedPath": {
+        "effectivePath": {
           "type": "string",
-          "title": "Relevant to deployment-based events, this is the path of a file in the\ncontainer.\ne.g. if /etc/ is mounted to /tmp/etc/ in the container, and the passwd file\nis accessed from within the container: mounted_path will be /tmp/etc/passwd"
+          "title": "Relevant to deployment-based events, this is the path of a file in the\ncontainer.\ne.g. if /etc/ is mounted to /tmp/etc/ in the container, and the passwd file\nis accessed from within the container: effective_path will be /tmp/etc/passwd"
         },
-        "nodePath": {
+        "actualPath": {
           "type": "string",
-          "title": "The path on the node file system. This is relevant to both deployment- and\nnode-based events.\ne.g. if /etc/ is mounted to /tmp/etc/ in the container, and the passwd file\nis accessed from within the container: node_path will be /etc/passwd"
+          "title": "The path on the node file system. This is relevant to both deployment- and\nnode-based events.\ne.g. if /etc/ is mounted to /tmp/etc/ in the container, and the passwd file\nis accessed from within the container: actual_path will be /etc/passwd"
         },
         "meta": {
           "$ref": "#/definitions/FileAccessFileMetadata"

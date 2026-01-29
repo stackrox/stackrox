@@ -2,6 +2,7 @@
 **/zz_generated.deepcopy.go
 CHANGELOG.md
 central/alert/datastore/internal/store/postgres/store.go
+central/baseimage/watcher/watcher_impl_test.go
 central/cluster/datastore/datastore_impl_test.go
 central/compliance/checks/fixtures/scraped.go
 central/compliance/standards/metadata/pci_dss_3_2.go
@@ -26,6 +27,7 @@ go.sum
 operator/bundle/manifests/*.yaml
 operator/config/crd/bases/*.yaml
 operator/config/manifests/bases/*.yaml
+operator/install/manifest.yaml
 operator/tests/img/*.png
 pkg/booleanpolicy/default_policies_test.go
 pkg/branding/files/red_hat_acs_logo_rgb.png

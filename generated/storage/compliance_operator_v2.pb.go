@@ -1113,14 +1113,14 @@ func (x *ComplianceOperatorClusterScanConfigStatus) GetClusterName() string {
 // Next Tag: 7
 type ComplianceOperatorBenchmarkV2 struct {
 	state       protoimpl.MessageState `protogen:"open.v1"`
-	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id,type(uuid)"`           // @gotags: sql:"pk,id,type(uuid)"
-	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Benchmark Name,hidden"`       // @gotags: search:"Compliance Benchmark Name,hidden"
-	Version     string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty" search:"Compliance Benchmark Version,hidden"` // @gotags: search:"Compliance Benchmark Version,hidden"
+	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Version     string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`
 	Description string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 	Provider    string                 `protobuf:"bytes,5,opt,name=provider,proto3" json:"provider,omitempty"`
 	// This is extracted from the annotation.
 	// Example: from https://control.compliance.openshift.io/CIS-OCP we should have CIS-OCP
-	ShortName     string                                   `protobuf:"bytes,7,opt,name=short_name,json=shortName,proto3" json:"short_name,omitempty" search:"Compliance Benchmark Short Name,hidden"` // @gotags: search:"Compliance Benchmark Short Name,hidden"
+	ShortName     string                                   `protobuf:"bytes,7,opt,name=short_name,json=shortName,proto3" json:"short_name,omitempty"`
 	Profiles      []*ComplianceOperatorBenchmarkV2_Profile `protobuf:"bytes,8,rep,name=profiles,proto3" json:"profiles,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2511,8 +2511,8 @@ func (x *ComplianceOperatorScanConfigurationV2_Cluster) GetClusterId() string {
 
 type ComplianceOperatorBenchmarkV2_Profile struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	ProfileName    string                 `protobuf:"bytes,1,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty" search:"Compliance Profile Name" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"`          // @gotags: search:"Compliance Profile Name" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"
-	ProfileVersion string                 `protobuf:"bytes,2,opt,name=profile_version,json=profileVersion,proto3" json:"profile_version,omitempty" search:"Compliance Profile Version" sql:"fk(ComplianceOperatorProfileV2:profile_version),no-fk-constraint"` // @gotags: search:"Compliance Profile Version" sql:"fk(ComplianceOperatorProfileV2:profile_version),no-fk-constraint"
+	ProfileName    string                 `protobuf:"bytes,1,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
+	ProfileVersion string                 `protobuf:"bytes,2,opt,name=profile_version,json=profileVersion,proto3" json:"profile_version,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }

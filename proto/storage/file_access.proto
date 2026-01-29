@@ -28,14 +28,14 @@ message FileAccess {
     // Relevant to deployment-based events, this is the path of a file in the
     // container.
     // e.g. if /etc/ is mounted to /tmp/etc/ in the container, and the passwd file
-    // is accessed from within the container: mounted_path will be /tmp/etc/passwd
-    string mounted_path = 1; // @gotags: search:"Mounted File Path"
+    // is accessed from within the container: effective_path will be /tmp/etc/passwd
+    string effective_path = 1; // @gotags: search:"Effective Path"
 
     // The path on the node file system. This is relevant to both deployment- and
     // node-based events.
     // e.g. if /etc/ is mounted to /tmp/etc/ in the container, and the passwd file
-    // is accessed from within the container: node_path will be /etc/passwd
-    string node_path = 2; // @gotags: search:"Node File Path"
+    // is accessed from within the container: actual_path will be /etc/passwd
+    string actual_path = 2; // @gotags: search:"Actual Path"
     FileMetadata meta = 3;
   }
 
@@ -45,8 +45,7 @@ message FileAccess {
     RENAME = 2;
     PERMISSION_CHANGE = 3;
     OWNERSHIP_CHANGE = 4;
-    WRITE = 5;
-    OPEN = 6;
+    OPEN = 5;
   }
 
   File file = 1;

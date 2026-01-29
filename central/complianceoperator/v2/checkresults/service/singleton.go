@@ -1,7 +1,6 @@
 package service
 
 import (
-	bencmarkDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	resultsDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
@@ -24,7 +23,7 @@ func Singleton() Service {
 	}
 
 	serviceInstanceInit.Do(func() {
-		serviceInstance = New(resultsDS.Singleton(), configDS.Singleton(), complianceIntegrationDS.Singleton(), profileDatastore.Singleton(), ruleDS.Singleton(), scanDS.Singleton(), bencmarkDS.Singleton())
+		serviceInstance = New(resultsDS.Singleton(), configDS.Singleton(), complianceIntegrationDS.Singleton(), profileDatastore.Singleton(), ruleDS.Singleton(), scanDS.Singleton())
 	})
 	return serviceInstance
 }

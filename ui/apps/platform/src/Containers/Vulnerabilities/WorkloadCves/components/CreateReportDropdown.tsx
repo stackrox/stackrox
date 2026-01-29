@@ -11,7 +11,7 @@ function CreateReportDropdown({ onSelect }: CreateReportDropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     const onToggleClick = () => {
-        setIsOpen(!isOpen);
+        setIsOpen((prev) => !prev);
     };
 
     const onSelectHandler = (

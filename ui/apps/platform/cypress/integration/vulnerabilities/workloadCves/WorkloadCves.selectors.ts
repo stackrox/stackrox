@@ -12,11 +12,11 @@ export const selectors = {
         `.pf-v5-c-toolbar input[aria-label="Filter by ${searchOption}"]`,
     searchOptionsValueMenuItem: (searchOption) =>
         `.pf-v5-c-toolbar ul[aria-label="Filter by ${searchOption}"] button`,
-    severityDropdown: '.pf-v5-c-toolbar button[aria-label="CVE severity filter menu toggle"]',
-    severityMenuItems: '.pf-v5-c-toolbar [aria-label="CVE severity filter menu items"] ul',
+    severityDropdown: '.pf-v5-c-toolbar button[aria-label="CVE severity"]',
+    severityMenuItems: '.pf-v5-c-toolbar [aria-label="CVE severity select menu"] ul',
     severityMenuItem: (severity) => `${selectors.severityMenuItems} label:contains("${severity}")`,
-    fixabilityDropdown: '.pf-v5-c-toolbar button[aria-label="CVE status filter menu toggle"]',
-    fixabilityMenuItems: '.pf-v5-c-toolbar [aria-label="CVE status filter menu items"] ul',
+    fixabilityDropdown: '.pf-v5-c-toolbar button[aria-label="CVE status"]',
+    fixabilityMenuItems: '.pf-v5-c-toolbar [aria-label="CVE status select menu"] ul',
     fixabilityMenuItem: (fixability) =>
         `${selectors.fixabilityMenuItems} label:contains("${fixability}")`,
     filterChipGroup: `${filterChipSection} .pf-v5-c-chip-group`,
@@ -29,6 +29,17 @@ export const selectors = {
         `${selectors.filterChipGroupForCategory(category)} + ul li:contains("${item}")`,
     filterChipGroupItemRemove: (category, item) =>
         `${selectors.filterChipGroupItem(category, item)} button[aria-label="close"]`,
+    filterLabelGroup: `${filterChipSection} .pf-v5-c-label-group`,
+    filterLabelGroupForCategory: (category) =>
+        `${selectors.filterLabelGroup} *:contains("${category}")`,
+    filterLabelGroupRemove: (category) =>
+        `${selectors.filterLabelGroupForCategory(category)} button[aria-label="close"]`,
+    filterLabelGroupItems: (category) =>
+        `${selectors.filterLabelGroupForCategory(category)} + ul li`,
+    filterLabelGroupItem: (category, item) =>
+        `${selectors.filterLabelGroupForCategory(category)} + ul li:contains("${item}")`,
+    filterLabelGroupItemRemove: (category, item) =>
+        `${selectors.filterLabelGroupItem(category, item)} button[aria-label="close"]`,
 
     searchEntityDropdown:
         '.pf-v5-c-toolbar button[aria-label="compound search filter entity selector toggle"]',
@@ -66,7 +77,7 @@ export const selectors = {
     nonZeroImageSeverityCounts:
         'td[data-label="Images by severity"] *[aria-label$="severity"i]:not([aria-label^="0"])',
     nonZeroCveSeverityCount: (severity) =>
-        `span[aria-label*="${severity.toLowerCase()} severity cve count across this"]`,
+        `span[aria-label*="${severity.toLowerCase()} severity CVE count across this"]`,
     nonZeroImageSeverityCount: (severity) =>
         `span[aria-label*="with ${severity.toLowerCase()} severity"]`,
     hiddenSeverityCount: `span[aria-label$="severity is hidden by the applied filter"]`,

@@ -144,6 +144,9 @@ type CVESuppressor interface {
 // ImageGetter will be used to retrieve a specific image from the datastore.
 type ImageGetter func(ctx context.Context, id string) (*storage.Image, bool, error)
 
+// BaseImageGetter will be used to get base images of a given image
+type BaseImageGetter func(ctx context.Context, layers []string) ([]*storage.BaseImageInfo, error)
+
 // SignatureIntegrationGetter will be used to retrieve all available signature integrations.
 type SignatureIntegrationGetter func(ctx context.Context) ([]*storage.SignatureIntegration, error)
 
@@ -153,7 +156,7 @@ type signatureVerifierForIntegrations func(ctx context.Context, integrations []*
 
 // New returns a new ImageEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
-func New(cvesSuppressorV2 CVESuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache cache.ImageMetadata,
+func New(cvesSuppressorV2 CVESuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache cache.ImageMetadata, baseImageGetter BaseImageGetter,
 	imageGetter ImageGetter, healthReporter integrationhealth.Reporter,
 	signatureIntegrationGetter SignatureIntegrationGetter, scanDelegator delegatedregistry.Delegator) ImageEnricher {
 	enricher := &enricherImpl{
@@ -172,7 +175,8 @@ func New(cvesSuppressorV2 CVESuppressor, is integration.Set, subsystem pkgMetric
 		signatureVerifier:          signatures.VerifyAgainstSignatureIntegrations,
 		signatureFetcher:           signatures.NewSignatureFetcher(),
 
-		imageGetter: imageGetter,
+		baseImageGetter: baseImageGetter,
+		imageGetter:     imageGetter,
 
 		asyncRateLimiter: rate.NewLimiter(rate.Every(1*time.Second), 5),
 

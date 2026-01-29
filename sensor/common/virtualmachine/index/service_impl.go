@@ -6,6 +6,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
@@ -59,6 +60,24 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 	}
 
 	log.Debugf("Upserting virtual machine index report with vsock_cid=%q", ir.GetVsockCid())
+
+	// Log VM discovered data.
+	// This is temporary. In a followup, the data will be passed to Central instead of being logged.
+	data := req.GetDiscoveredData()
+	detectedOS := data.GetDetectedOs()
+	osVersion := data.GetOsVersion()
+	activationStatus := data.GetActivationStatus()
+	dnfMetadataStatus := data.GetDnfMetadataStatus()
+	log.Infof("VM discovered data: detected_os=%s, os_version=%q, activation_status=%s, dnf_metadata_status=%s",
+		detectedOS.String(), osVersion, activationStatus.String(), dnfMetadataStatus.String())
+
+	// Record metric for VM discovered data for cusomer data debugging purposes.
+	metrics.VMDiscoveredData.With(prometheus.Labels{
+		"detected_os":         detectedOS.String(),
+		"activation_status":   activationStatus.String(),
+		"dnf_metadata_status": dnfMetadataStatus.String(),
+	}).Inc()
+
 	metrics.IndexReportsReceived.Inc()
 	timeoutCtx, cancel := context.WithTimeout(ctx, indexReportSendTimeout)
 	defer cancel()

@@ -33,6 +33,7 @@ func GetPipeline() pipeline.Fragment {
 }
 
 // newPipeline returns a new instance of Pipeline.
+
 func newPipeline(vms vmDatastore.DataStore, enricher vmEnricher.VirtualMachineEnricher) pipeline.Fragment {
 	return &pipelineImpl{
 		vmDatastore: vms,
@@ -45,8 +46,7 @@ type pipelineImpl struct {
 	enricher    vmEnricher.VirtualMachineEnricher
 }
 
-func (p *pipelineImpl) OnFinish(_ string) {
-}
+func (p *pipelineImpl) OnFinish(string) {}
 
 func (p *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
 	return []centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported}
@@ -60,7 +60,7 @@ func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetEvent().GetVirtualMachineIndexReport() != nil
 }
 
-func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.VirtualMachineIndex)
 
 	if !features.VirtualMachines.Enabled() {
@@ -82,6 +82,10 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 
 	log.Debugf("Received virtual machine index report: %s", index.GetId())
 
+	if clusterID == "" {
+		return errors.New("missing cluster ID in pipeline context")
+	}
+
 	// Get or create VM
 	vm := &storage.VirtualMachine{Id: index.GetId()}
 
@@ -102,7 +106,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		return errors.Wrapf(err, "failed to upsert VM %s to datastore", index.GetId())
 	}
 
-	log.Infof("Successfully enriched and stored VM %s with %d components",
+	log.Debugf("Successfully enriched and stored VM %s with %d components",
 		vm.GetId(), len(vm.GetScan().GetComponents()))
 
 	return nil

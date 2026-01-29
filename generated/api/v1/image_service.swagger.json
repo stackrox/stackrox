@@ -534,18 +534,6 @@
       ],
       "default": "UNKNOWN_VULNERABILITY"
     },
-    "EnvironmentList": {
-      "type": "object",
-      "properties": {
-        "environments": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v4Environment"
-          }
-        }
-      }
-    },
     "WatchImageResponseErrorType": {
       "type": "string",
       "enum": [
@@ -586,222 +574,6 @@
       "additionalProperties": {},
       "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(&foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := &pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := &pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": <string>,\n      \"lastName\": <string>\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
     },
-    "scannerV1Components": {
-      "type": "object",
-      "properties": {
-        "namespace": {
-          "type": "string"
-        },
-        "osComponents": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/scannerV1OSComponent"
-          }
-        },
-        "rhelComponents": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/scannerV1RHELComponent"
-          }
-        },
-        "languageComponents": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/scannerV1LanguageComponent"
-          }
-        },
-        "rhelContentSets": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "scannerV1Executable": {
-      "type": "object",
-      "properties": {
-        "path": {
-          "type": "string"
-        },
-        "requiredFeatures": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/scannerV1FeatureNameVersion"
-          }
-        }
-      }
-    },
-    "scannerV1FeatureNameVersion": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "version": {
-          "type": "string"
-        }
-      }
-    },
-    "scannerV1JavaComponent": {
-      "type": "object",
-      "properties": {
-        "implementationVersion": {
-          "type": "string"
-        },
-        "mavenVersion": {
-          "type": "string"
-        },
-        "origins": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "specificationVersion": {
-          "type": "string"
-        },
-        "bundleName": {
-          "type": "string"
-        }
-      }
-    },
-    "scannerV1LanguageComponent": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "$ref": "#/definitions/scannerV1SourceType"
-        },
-        "name": {
-          "type": "string"
-        },
-        "version": {
-          "type": "string"
-        },
-        "location": {
-          "type": "string"
-        },
-        "java": {
-          "$ref": "#/definitions/scannerV1JavaComponent"
-        },
-        "python": {
-          "$ref": "#/definitions/scannerV1PythonComponent"
-        },
-        "addedBy": {
-          "type": "string"
-        }
-      }
-    },
-    "scannerV1Note": {
-      "type": "string",
-      "enum": [
-        "OS_CVES_UNAVAILABLE",
-        "OS_CVES_STALE",
-        "LANGUAGE_CVES_UNAVAILABLE",
-        "CERTIFIED_RHEL_SCAN_UNAVAILABLE"
-      ],
-      "default": "OS_CVES_UNAVAILABLE"
-    },
-    "scannerV1OSComponent": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "namespace": {
-          "type": "string"
-        },
-        "version": {
-          "type": "string"
-        },
-        "addedBy": {
-          "type": "string"
-        },
-        "executables": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/scannerV1Executable"
-          }
-        }
-      }
-    },
-    "scannerV1PythonComponent": {
-      "type": "object",
-      "properties": {
-        "homepage": {
-          "type": "string"
-        },
-        "authorEmail": {
-          "type": "string"
-        },
-        "downloadUrl": {
-          "type": "string"
-        },
-        "summary": {
-          "type": "string"
-        },
-        "description": {
-          "type": "string"
-        }
-      }
-    },
-    "scannerV1RHELComponent": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "format": "int64"
-        },
-        "name": {
-          "type": "string"
-        },
-        "namespace": {
-          "type": "string"
-        },
-        "version": {
-          "type": "string"
-        },
-        "arch": {
-          "type": "string"
-        },
-        "module": {
-          "type": "string"
-        },
-        "cpes": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "addedBy": {
-          "type": "string"
-        },
-        "executables": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/scannerV1Executable"
-          }
-        }
-      }
-    },
-    "scannerV1SourceType": {
-      "type": "string",
-      "enum": [
-        "UNSET_SOURCE_TYPE",
-        "JAVA",
-        "PYTHON",
-        "NPM",
-        "GEM",
-        "DOTNETCORERUNTIME"
-      ],
-      "default": "UNSET_SOURCE_TYPE"
-    },
     "storageAdvisory": {
       "type": "object",
       "properties": {
@@ -824,6 +596,10 @@
         },
         "baseImageDigest": {
           "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
@@ -998,27 +774,6 @@
         "CRITICAL"
       ],
       "default": "UNKNOWN"
-    },
-    "storageContainerImage": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "$ref": "#/definitions/storageImageName"
-        },
-        "notPullable": {
-          "type": "boolean"
-        },
-        "isClusterLocal": {
-          "type": "boolean"
-        },
-        "idV2": {
-          "type": "string"
-        }
-      },
-      "title": "Next tag: 13"
     },
     "storageCosignSignature": {
       "type": "object",
@@ -1242,9 +997,13 @@
         },
         "epss": {
           "$ref": "#/definitions/storageEPSS"
+        },
+        "datasource": {
+          "type": "string",
+          "title": "datasource is for internal use only"
         }
       },
-      "title": "Next Tag: 26"
+      "title": "Next Tag: 27"
     },
     "storageEmbeddedVulnerabilityScoreVersion": {
       "type": "string",
@@ -1812,31 +1571,6 @@
       },
       "description": "RawQuery represents the search query string.\nThe format of the query string is \"<field name>:<value,value,...>+<field name>:<value, value,...>+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
     },
-    "v1ScanImageInternalRequestSource": {
-      "type": "object",
-      "properties": {
-        "clusterId": {
-          "type": "string"
-        },
-        "namespace": {
-          "type": "string"
-        },
-        "imagePullSecrets": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "v1ScanImageInternalResponse": {
-      "type": "object",
-      "properties": {
-        "image": {
-          "$ref": "#/definitions/storageImage"
-        }
-      }
-    },
     "v1ScanImageRequest": {
       "type": "object",
       "properties": {
@@ -1896,191 +1630,6 @@
         "errorMessage": {
           "type": "string",
           "description": "Only set if error_type is NOT equal to \"NO_ERROR\"."
-        }
-      }
-    },
-    "v4Contents": {
-      "type": "object",
-      "properties": {
-        "packagesDEPRECATED": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v4Package"
-          }
-        },
-        "packages": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/v4Package"
-          }
-        },
-        "distributionsDEPRECATED": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v4Distribution"
-          }
-        },
-        "distributions": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/v4Distribution"
-          }
-        },
-        "repositoriesDEPRECATED": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v4Repository"
-          }
-        },
-        "repositories": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/v4Repository"
-          }
-        },
-        "environmentsDEPRECATED": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/EnvironmentList"
-          }
-        },
-        "environments": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/EnvironmentList"
-          }
-        }
-      }
-    },
-    "v4Distribution": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "did": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "version": {
-          "type": "string"
-        },
-        "versionCodeName": {
-          "type": "string"
-        },
-        "versionId": {
-          "type": "string"
-        },
-        "arch": {
-          "type": "string"
-        },
-        "cpe": {
-          "type": "string"
-        },
-        "prettyName": {
-          "type": "string"
-        }
-      }
-    },
-    "v4Environment": {
-      "type": "object",
-      "properties": {
-        "packageDb": {
-          "type": "string"
-        },
-        "introducedIn": {
-          "type": "string"
-        },
-        "distributionId": {
-          "type": "string"
-        },
-        "repositoryIds": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "description": "Environment describes the surrounding environment a package was\ndiscovered in."
-    },
-    "v4NormalizedVersion": {
-      "type": "object",
-      "properties": {
-        "kind": {
-          "type": "string"
-        },
-        "v": {
-          "type": "array",
-          "items": {
-            "type": "integer",
-            "format": "int32"
-          }
-        }
-      }
-    },
-    "v4Package": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "version": {
-          "type": "string"
-        },
-        "normalizedVersion": {
-          "$ref": "#/definitions/v4NormalizedVersion"
-        },
-        "fixedInVersion": {
-          "type": "string"
-        },
-        "kind": {
-          "type": "string"
-        },
-        "source": {
-          "$ref": "#/definitions/v4Package"
-        },
-        "packageDb": {
-          "type": "string"
-        },
-        "repositoryHint": {
-          "type": "string"
-        },
-        "module": {
-          "type": "string"
-        },
-        "arch": {
-          "type": "string"
-        },
-        "cpe": {
-          "type": "string"
-        }
-      }
-    },
-    "v4Repository": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "key": {
-          "type": "string"
-        },
-        "uri": {
-          "type": "string"
-        },
-        "cpe": {
-          "type": "string"
         }
       }
     }

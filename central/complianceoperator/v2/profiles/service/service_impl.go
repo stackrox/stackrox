@@ -5,7 +5,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
-	v2ComplianceBenchmark "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
+	"github.com/stackrox/rox/central/complianceoperator/v2/benchmark"
 	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -37,10 +37,9 @@ var (
 )
 
 // New returns a service object for registering with grpc.
-func New(complianceProfilesDS profileDS.DataStore, benchmarkDS v2ComplianceBenchmark.DataStore) Service {
+func New(complianceProfilesDS profileDS.DataStore) Service {
 	return &serviceImpl{
 		complianceProfilesDS: complianceProfilesDS,
-		benchmarkDS:          benchmarkDS,
 	}
 }
 
@@ -48,7 +47,6 @@ type serviceImpl struct {
 	v2.UnimplementedComplianceProfileServiceServer
 
 	complianceProfilesDS profileDS.DataStore
-	benchmarkDS          v2ComplianceBenchmark.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -80,13 +78,13 @@ func (s *serviceImpl) GetComplianceProfile(ctx context.Context, req *v2.Resource
 		return nil, errors.Wrapf(errox.NotFound, "compliance profile with id %q does not exist", req.GetId())
 	}
 
-	// Get the benchmarks
-	benchmarks, err := s.benchmarkDS.GetBenchmarksByProfileName(ctx, profile.GetName())
+	// Get the benchmark
+	profileBenchmark, err := benchmark.GetBenchmarkFromProfile(profile)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to retrieve benchmarks for profile %q.", profile.GetName())
 	}
 
-	return storagetov2.ComplianceV2Profile(profile, benchmarks), nil
+	return storagetov2.ComplianceV2Profile(profile, []*storage.ComplianceOperatorBenchmarkV2{profileBenchmark}), nil
 }
 
 // ListComplianceProfiles returns profiles matching given query
@@ -199,11 +197,11 @@ func (s *serviceImpl) getBenchmarks(ctx context.Context, profiles []*storage.Com
 	benchmarkMap := make(map[string][]*storage.ComplianceOperatorBenchmarkV2, len(profiles))
 	for _, profile := range profiles {
 		if _, found := benchmarkMap[profile.GetName()]; !found {
-			benchmarks, err := s.benchmarkDS.GetBenchmarksByProfileName(ctx, profile.GetName())
+			profileBenchmark, err := benchmark.GetBenchmarkFromProfile(profile)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to retrieve benchmarks for profile %q.", profile.GetName())
 			}
-			benchmarkMap[profile.GetName()] = benchmarks
+			benchmarkMap[profile.GetName()] = []*storage.ComplianceOperatorBenchmarkV2{profileBenchmark}
 		}
 	}
 

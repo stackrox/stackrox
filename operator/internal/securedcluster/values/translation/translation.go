@@ -10,6 +10,7 @@ import (
 	_ "embed"
 
 	"github.com/hashicorp/go-multierror"
+	consolev1 "github.com/openshift/api/console/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
@@ -17,12 +18,14 @@ import (
 	"github.com/stackrox/rox/operator/internal/securedcluster/scanner"
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	"github.com/stackrox/rox/pkg/crs"
+	"github.com/stackrox/rox/pkg/features"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chartutil"
 	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -160,6 +163,8 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	}
 
 	v.AddChild("autoLockProcessBaselines", getProcessBaselinesValues(sc.Spec.ProcessBaselines))
+
+	v.AddChild("consolePlugin", t.getConsolePluginValues(ctx))
 
 	return v.Build()
 }
@@ -544,4 +549,34 @@ func createConfigFingerprint(sc platform.SecuredCluster) (string, error) {
 		return "", errors.Wrap(err, "marshaling SecuredCluster spec")
 	}
 	return fmt.Sprintf("%x", sha256.Sum256(specAsYaml)), nil
+}
+
+func (t Translator) getConsolePluginValues(ctx context.Context) *translation.ValuesBuilder {
+	v := translation.NewValuesBuilder()
+
+	if !features.OCPConsoleIntegration.Enabled() {
+		return &v
+	}
+
+	available, err := t.isConsolePluginAPIAvailable(ctx)
+	if err != nil {
+		return v.SetError(err)
+	}
+	if !available {
+		return &v
+	}
+
+	v.SetBoolValue("enabled", true)
+	return &v
+}
+
+func (t Translator) isConsolePluginAPIAvailable(ctx context.Context) (bool, error) {
+	list := &consolev1.ConsolePluginList{}
+	if err := t.direct.List(ctx, list); err != nil {
+		if meta.IsNoMatchError(err) {
+			return false, nil
+		}
+		return false, errors.Wrap(err, "listing ConsolePlugin resources")
+	}
+	return true, nil
 }

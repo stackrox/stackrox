@@ -15,28 +15,17 @@ export type BaseImagesResponse = {
     baseImageReferences: BaseImageReference[];
 };
 
+export type CreateBaseImageReferenceResponse = {
+    baseImageReference: BaseImageReference;
+};
+
 /**
  * Fetch the list of configured base images.
  */
 export function getBaseImages(): Promise<BaseImageReference[]> {
-    // TODO: Replace with actual API call once backend is ready
-    // return axios
-    //     .get<BaseImagesResponse>(baseImagesUrl)
-    //     .then((response) => response.data.baseImageReferences ?? []);
-    return Promise.resolve([
-        {
-            id: '1',
-            baseImageRepoPath: 'library/ubuntu',
-            baseImageTagPattern: '20.04.*',
-            user: { id: '1', username: 'admin', name: 'Admin User' },
-        },
-        {
-            id: '2',
-            baseImageRepoPath: 'library/alpine',
-            baseImageTagPattern: '3.*',
-            user: { id: '2', username: 'admin', name: 'Admin User' },
-        },
-    ]);
+    return axios
+        .get<BaseImagesResponse>(baseImagesUrl)
+        .then((response) => response.data.baseImageReferences ?? []);
 }
 
 /**
@@ -47,8 +36,11 @@ export function addBaseImage(
     baseImageTagPattern: string
 ): Promise<BaseImageReference> {
     return axios
-        .post<BaseImageReference>(baseImagesUrl, { baseImageRepoPath, baseImageTagPattern })
-        .then((response) => response.data);
+        .post<CreateBaseImageReferenceResponse>(baseImagesUrl, {
+            baseImageRepoPath,
+            baseImageTagPattern,
+        })
+        .then((response) => response.data.baseImageReference);
 }
 
 /**
@@ -56,4 +48,13 @@ export function addBaseImage(
  */
 export function deleteBaseImage(id: string): Promise<Empty> {
     return axios.delete<Empty>(`${baseImagesUrl}/${id}`).then((response) => response.data);
+}
+
+/**
+ * Update the tag pattern of an existing base image.
+ */
+export function updateBaseImageTagPattern(id: string, baseImageTagPattern: string): Promise<Empty> {
+    return axios
+        .put<Empty>(`${baseImagesUrl}/${id}`, { baseImageTagPattern })
+        .then((response) => response.data);
 }

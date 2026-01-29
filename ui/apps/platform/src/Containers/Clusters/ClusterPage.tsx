@@ -265,7 +265,7 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
     }
 
     function toggleSA() {
-        setCreateUpgraderSA(!createUpgraderSA);
+        setCreateUpgraderSA((prev) => !prev);
     }
 
     function onDownload() {

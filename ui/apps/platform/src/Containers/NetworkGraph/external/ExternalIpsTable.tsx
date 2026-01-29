@@ -11,7 +11,7 @@ import {
 import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-import SearchFilterChips from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useMetadata from 'hooks/useMetadata';
 import type { TableUIState } from 'utils/getTableUIState';
@@ -19,7 +19,7 @@ import { getVersionedDocs } from 'utils/versioning';
 import type { ExternalNetworkFlowsMetadata } from 'types/networkFlow.proto';
 
 import IPMatchFilter from '../common/IPMatchFilter';
-import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';
+import { attributeForExternalSourceAddress } from '../types/searchFilterConfig';
 
 import { usePagination, useSearchFilterSidePanel } from '../NetworkGraphURLStateContext';
 
@@ -48,20 +48,17 @@ function ExternalIpsTable({
                 <ToolbarContent className="pf-v5-u-px-0">
                     <ToolbarItem className="pf-v5-u-w-100 pf-v5-u-mr-0">
                         <IPMatchFilter
+                            attribute={attributeForExternalSourceAddress}
                             searchFilter={searchFilter}
                             setSearchFilter={setSearchFilter}
                         />
                     </ToolbarItem>
                     <ToolbarItem className="pf-v5-u-w-100">
-                        <SearchFilterChips
-                            searchFilter={searchFilter}
+                        <CompoundSearchFilterLabels
+                            attributesSeparateFromConfig={[attributeForExternalSourceAddress]}
+                            config={[]}
                             onFilterChange={setSearchFilter}
-                            filterChipGroupDescriptors={[
-                                {
-                                    displayName: 'CIDR',
-                                    searchFilterName: EXTERNAL_SOURCE_ADDRESS_QUERY,
-                                },
-                            ]}
+                            searchFilter={searchFilter}
                         />
                     </ToolbarItem>
                 </ToolbarContent>

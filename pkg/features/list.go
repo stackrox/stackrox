@@ -111,10 +111,22 @@ var (
 	SensitiveFileActivity = registerFeature("Enable sensitive file monitoring", "ROX_SENSITIVE_FILE_ACTIVITY", enabled)
 
 	// CVEFixTimestampCriteria enables the new CVE Fix timestamp criteria
-	CVEFixTimestampCriteria = registerFeature("Enable grace period criteria based on CVE fix timestamp", "ROX_CVE_FIX_TIMESTAMP")
+	CVEFixTimestampCriteria = registerFeature("Enable grace period criteria based on CVE fix timestamp", "ROX_CVE_FIX_TIMESTAMP", enabled)
 
-	// BaseImageDetection enables base image detection and management functionality
+	// BaseImageDetection enables base image detection and management functionality.
 	BaseImageDetection = registerFeature("Enable base image detection and management functionality", "ROX_BASE_IMAGE_DETECTION")
+
+	// DelegatedBaseImageScanning enables delegation of base image repository scanning to secured clusters.
+	DelegatedBaseImageScanning = registerFeature("Enable delegated base image scanning to secured clusters", "ROX_DELEGATED_BASE_IMAGE_SCANNING")
+
+	// OCPConsoleIntegration enables the /proxy/central API in Sensor that forwards requests to Central.
+	OCPConsoleIntegration = registerFeature("Enable features related to support the integration of ACS into the OpenShift console", "ROX_OCP_CONSOLE_INTEGRATION", enabled)
+
+	// SensorInternalPubSub enables the internal pubsub system in sensor
+	SensorInternalPubSub = registerFeature("Enables the internal PubSub system in Sensor", "ROX_SENSOR_PUBSUB", enabled)
+
+	// LabelBasedPolicyScoping enables policy scoping based on cluster and namespace labels
+	LabelBasedPolicyScoping = registerFeature("Enable cluster and namespace label-based policy scoping", "ROX_LABEL_BASED_POLICY_SCOPING")
 )
 
 // The following feature flags are related to Scanner V4.
@@ -141,10 +153,9 @@ var (
 	ScannerV4RedHatCVEs = registerFeature("Scanner V4 will output CVEs instead of RHSAs/RHBAs/RHEAs for fixed Red Hat vulnerabilities", "ROX_SCANNER_V4_RED_HAT_CVES", enabled)
 
 	// ScannerV4RedHatCSAF enables CSAF enrichment for Red Hat advisories.
-	// TODO(ROX-26672): Remove this once we can show both CVEs and RHSAs in the UI + reports.
 	//
 	// This must be set in Scanner V4 Matcher to have any effect.
-	ScannerV4RedHatCSAF = registerFeature("Scanner V4 will enrich its results with Red Hat CSAF data", "ROX_SCANNER_V4_RED_HAT_CSAF")
+	ScannerV4RedHatCSAF = registerFeature("Scanner V4 will enrich its results with Red Hat CSAF data", "ROX_SCANNER_V4_RED_HAT_CSAF", enabled)
 
 	// ScannerV4RedHatLayers enables displaying vulnerabilities from Red Hat sources, only, for packages found in official Red Hat image layers.
 	ScannerV4RedHatLayers = registerFeature("Scanner V4 will output vulnerabilities from Red Hat sources, only, for packages found in official Red Hat image layers", "ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY")

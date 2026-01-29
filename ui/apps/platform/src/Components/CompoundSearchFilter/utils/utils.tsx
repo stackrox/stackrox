@@ -1,8 +1,10 @@
 import type { SearchFilter } from 'types/search';
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import { searchValueAsArray } from 'utils/searchUtils';
+import { getDate } from 'utils/dateUtils';
+import { getValueByCaseInsensitiveKey, searchValueAsArray } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
+import { convertFromInternalToExternalConditionText } from '../components/SearchFilterConditionText';
 import type {
     CompoundSearchFilterAttribute,
     CompoundSearchFilterConfig,
@@ -10,9 +12,7 @@ import type {
     OnSearchPayload,
     OnSearchPayloadItem,
     OnSearchPayloadItemAdd,
-    SelectSearchFilterAttribute,
-    SelectSearchFilterGroupedOptions,
-    SelectSearchFilterOptions,
+    SelectSearchFilterOption,
 } from '../types';
 
 export const conditionMap = {
@@ -35,109 +35,68 @@ export const dateConditions = Object.keys(
     dateConditionMap
 ) as unknown as (keyof typeof dateConditionMap)[];
 
-export function getEntity(
-    config: CompoundSearchFilterConfig,
-    entityName: string
-): CompoundSearchFilterEntity | undefined {
-    if (!config || !Array.isArray(config)) {
-        return undefined;
+/**
+ * Formats date picker value like CVE discovered time filter values into user-friendly text
+ * @param value - Filter value like ">2024-01-01" or "2024-01-01"
+ * @returns Formatted string like "After January 1, 2024"
+ */
+export function convertFromInternalToExternalDatePicker(value: string): string {
+    try {
+        // Parse the condition prefix and date
+        const match = value.match(/^([<>]?)(.+)$/);
+        if (!match) {
+            return value; // Return original if parsing fails
+        }
+
+        const [, condition, dateStr] = match;
+        const date = new Date(dateStr);
+
+        // Check if date is valid
+        if (Number.isNaN(date.getTime())) {
+            return value; // Return original if date is invalid
+        }
+
+        const formattedDate = getDate(date);
+
+        // Map conditions to user-friendly text
+        switch (condition) {
+            case '>':
+                return `After ${formattedDate}`;
+            case '<':
+                return `Before ${formattedDate}`;
+            default:
+                return `On ${formattedDate}`;
+        }
+    } catch {
+        // Return original value if any error occurs
+        return value;
     }
-    const entity = config.find((entity) => {
+}
+
+export function getEntityFromConfig(
+    config: CompoundSearchFilterConfig,
+    entityNameSelected: string | undefined,
+    entityNameDefault: string | undefined // when no entity is selected
+): CompoundSearchFilterEntity | undefined {
+    const entityName = entityNameSelected ?? entityNameDefault;
+    const entityFound = config.find((entity) => {
         return entity.displayName === entityName;
     });
-    return entity;
+
+    return entityFound ?? config[0]; // default to first entity
 }
 
-export function getAttribute(
-    config: CompoundSearchFilterConfig,
-    entityName: string,
-    attributeName: string
+export function getAttributeFromEntity(
+    entity: CompoundSearchFilterEntity | undefined,
+    attributeNameSelected: string | undefined,
+    attributeNameDefault: string | undefined // when no attribute is selected
 ): CompoundSearchFilterAttribute | undefined {
-    const entity = getEntity(config, entityName);
-    return entity?.attributes?.find((attribute) => {
+    const attributeName = attributeNameSelected ?? attributeNameDefault;
+    const attributeFound = entity?.attributes?.find((attribute) => {
         return attribute.displayName === attributeName;
     });
-}
 
-export function getDefaultEntityName(config: CompoundSearchFilterConfig): string | undefined {
-    if (!config || !Array.isArray(config)) {
-        return undefined;
-    }
-    return config?.[0]?.displayName;
-}
-
-export function getEntityAttributes(
-    config: CompoundSearchFilterConfig,
-    entityName: string
-): CompoundSearchFilterAttribute[] {
-    const entity = getEntity(config, entityName);
-    return entity?.attributes ?? [];
-}
-
-export function getDefaultAttributeName(
-    config: CompoundSearchFilterConfig,
-    entityName: string
-): string | undefined {
-    const attributes = getEntityAttributes(config, entityName);
-    return attributes?.[0]?.displayName;
-}
-
-export function ensureConditionNumber(value: unknown): { condition: string; number: number } {
-    if (
-        typeof value === 'object' &&
-        value !== null &&
-        'condition' in value &&
-        'number' in value &&
-        typeof value.condition === 'string' &&
-        typeof value.number === 'number'
-    ) {
-        return {
-            condition: value.condition,
-            number: value.number,
-        };
-    }
-    return {
-        condition: conditions[0],
-        number: 0,
-    };
-}
-
-export function ensureConditionDate(value: unknown): { condition: string; date: string } {
-    if (
-        typeof value === 'object' &&
-        value !== null &&
-        'condition' in value &&
-        'date' in value &&
-        typeof value.condition === 'string' &&
-        typeof value.date === 'string'
-    ) {
-        return {
-            condition: value.condition,
-            date: value.date,
-        };
-    }
-    return {
-        condition: dateConditions[1],
-        date: '',
-    };
-}
-
-export function isSelectType(
-    attribute: CompoundSearchFilterAttribute
-): attribute is SelectSearchFilterAttribute {
-    return attribute.inputType === 'select';
-}
-
-export function hasGroupedSelectOptions(
-    inputProps: SelectSearchFilterAttribute['inputProps']
-): inputProps is SelectSearchFilterGroupedOptions {
-    return 'groupOptions' in inputProps;
-}
-
-export function hasSelectOptions(
-    inputProps: SelectSearchFilterAttribute['inputProps']
-): inputProps is SelectSearchFilterOptions {
-    return 'options' in inputProps;
+    return attributeFound ?? entity?.attributes?.[0]; // default to first attribute
 }
 
 // Pure function returns searchFilter updated according to payload from interactions.
@@ -217,6 +176,176 @@ export function payloadItemFiltererForTracking(
         default:
             return false;
     }
+}
+
+// Encapsulate inputType and payload for CompoundSearchFilteChips component.
+
+// Information and interaction to render the group of a LabelGroup element.
+export type CompoundSearchFilterLabelGroupDescription = {
+    label: string; // external text that corresponds to internal value
+    payload: OnSearchPayload; // to remove category or value from searchFilter
+};
+
+// Information and interaction to render a Label element.
+export type CompoundSearchFilterLabelItemDescription = {
+    isGlobal?: boolean; // for certain values in AdvancedFilterToolbar.tsx file
+} & CompoundSearchFilterLabelGroupDescription;
+
+// Information and interaction to render the label for one or more values of a search filter attribute.
+export type CompoundSearchFilterLabelDescription = {
+    group: CompoundSearchFilterLabelGroupDescription;
+    items: CompoundSearchFilterLabelItemDescription[];
+};
+
+export type IsGlobalPredicate = (category: string, value: string) => boolean;
+
+// If attribute has any values in search filter return description else null.
+export function getCompoundSearchFilterLabelDescriptionOrNull(
+    attribute: CompoundSearchFilterAttribute,
+    searchFilter: SearchFilter,
+    isGlobalPredicate: IsGlobalPredicate
+): CompoundSearchFilterLabelDescription | null {
+    const { filterChipLabel, inputType, searchTerm: category } = attribute;
+
+    const payloadItemDeleteCategory: OnSearchPayloadItem = { action: 'DELETE', category };
+    const payloadDeleteCategory: OnSearchPayload = [payloadItemDeleteCategory];
+    const group: CompoundSearchFilterLabelGroupDescription = {
+        label: filterChipLabel,
+        payload: payloadDeleteCategory,
+    };
+
+    // For example, query might have FIXABLE as key but attribute might have Fixable as key.
+    const values = searchValueAsArray(getValueByCaseInsensitiveKey(searchFilter, category));
+
+    switch (inputType) {
+        case 'autocomplete':
+        case 'condition-number':
+        case 'text': {
+            if (values.length === 0) {
+                return null;
+            }
+
+            return {
+                group,
+                items: values.map((value) => ({
+                    label: value, // external text is same as internal value
+                    payload: [{ action: 'REMOVE', category, value }],
+                })),
+            };
+        }
+        case 'condition-text': {
+            if (values.length === 0) {
+                return null;
+            }
+
+            const { inputProps } = attribute;
+            return {
+                group,
+                items: values.map((value) => ({
+                    label: convertFromInternalToExternalConditionText(inputProps, value),
+                    payload: [{ action: 'REMOVE', category, value }],
+                })),
+            };
+        }
+        case 'date-picker': {
+            if (values.length === 0) {
+                return null;
+            }
+
+            return {
+                group,
+                items: values.map((value) => ({
+                    label: convertFromInternalToExternalDatePicker(value),
+                    payload: [{ action: 'REMOVE', category, value }],
+                })),
+            };
+        }
+        case 'select': {
+            if (values.length === 0) {
+                return null;
+            }
+
+            const options =
+                'groupOptions' in attribute.inputProps
+                    ? attribute.inputProps.groupOptions.flatMap((group) => group.options)
+                    : attribute.inputProps.options;
+            return {
+                group,
+                items: values.map((value) => ({
+                    label: getLabelForOption(
+                        options.find((option) => option.value === value),
+                        value
+                    ),
+                    payload: [{ action: 'REMOVE', category, value }],
+                    isGlobal: isGlobalPredicate(category, value),
+                })),
+            };
+        }
+        case 'select-exclusive-single': {
+            if (values.length === 0) {
+                return null;
+            }
+
+            const value = values[0];
+            const { inputProps } = attribute;
+            const { options } = inputProps;
+            return {
+                group,
+                items: [
+                    {
+                        label: getLabelForOption(
+                            options.find((option) => option.value === value),
+                            value
+                        ),
+                        payload: payloadDeleteCategory,
+                    },
+                ],
+            };
+        }
+        case 'select-exclusive-double': {
+            const { inputProps } = attribute;
+            const { category2 } = inputProps;
+            const values2 = searchValueAsArray(searchFilter[category2]);
+
+            if (values.length === 0 && values2.length === 0) {
+                return null;
+            }
+
+            // Assume a value for either category or category2 but not both.
+            const value = values.length !== 0 ? values[0] : values2[0];
+            const categoryOfValue = values.length !== 0 ? category : category2;
+            const { options } = inputProps;
+            const payloadDeleteCategories: OnSearchPayload = [
+                payloadItemDeleteCategory,
+                { action: 'DELETE', category: category2 },
+            ];
+            return {
+                group: {
+                    ...group,
+                    payload: payloadDeleteCategories,
+                },
+                items: [
+                    {
+                        label: getLabelForOption(
+                            options.find(
+                                (option) =>
+                                    option.value === value && option.category === categoryOfValue
+                            ),
+                            value
+                        ),
+                        payload: payloadDeleteCategories,
+                    },
+                ],
+            };
+        }
+        default:
+            return ensureExhaustive(inputType);
+    }
+}
+
+// Return internal value if untrusted page address search query does not have a valid option.
+function getLabelForOption(option: SelectSearchFilterOption | undefined, value: string) {
+    return option ? option.label : value;
 }
 
 // Given predicate function from useFeatureFlags hook in component

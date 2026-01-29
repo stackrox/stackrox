@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 const maxRunTimeViolationsPerAlert = 40
@@ -174,11 +175,15 @@ func lastTime(processes []*storage.ProcessIndicator) (*time.Time, error) {
 	return lastTime, nil
 }
 
-func lastFileTime(files []*storage.FileAccess) (*time.Time, error) {
-	if len(files) == 0 {
-		return nil, errors.New("Unexpected: no files found in the alert")
+func lastFileTime(violations []*storage.Alert_Violation) (*time.Time, error) {
+	if len(violations) == 0 {
+		return nil, errors.New("Unexpected: no file access violations found in the alert")
 	}
-	lastTime := protocompat.ConvertTimestampToTimeOrNil(files[len(files)-1].GetTimestamp())
+	lastFileAccess := violations[len(violations)-1].GetFileAccess()
+	if lastFileAccess == nil {
+		return nil, errors.New("Unexpected: file access violation missing file access data")
+	}
+	lastTime := protocompat.ConvertTimestampToTimeOrNil(lastFileAccess.GetTimestamp())
 	return lastTime, nil
 }
 
@@ -239,49 +244,53 @@ func mergeNetworkFlowViolations(old, new *storage.Alert) bool {
 }
 
 func mergeFileAccessViolations(oldAlert, newAlert *storage.Alert) bool {
-	newViolations := newAlert.GetFileAccessViolation()
-	oldViolations := oldAlert.GetFileAccessViolation()
+	// Extract FILE_ACCESS violations from both alerts
+	newViolations := sliceutils.Filter(newAlert.GetViolations(), func(v *storage.Alert_Violation) bool {
+		return v.GetType() == storage.Alert_Violation_FILE_ACCESS
+	})
 
-	numNewAccesses := len(newViolations.GetAccesses())
-	numOldAccesses := len(oldViolations.GetAccesses())
+	oldViolations := sliceutils.Filter(oldAlert.GetViolations(), func(v *storage.Alert_Violation) bool {
+		return v.GetType() == storage.Alert_Violation_FILE_ACCESS
+	})
 
-	if numNewAccesses == 0 || numOldAccesses >= maxRunTimeViolationsPerAlert {
+	if len(newViolations) == 0 || len(oldViolations) >= maxRunTimeViolationsPerAlert {
 		return false
 	}
 
-	// start with old violations and merge with new
-	mergedFileAccesses := oldViolations.GetAccesses()
-	lastAccessTime, err := lastFileTime(mergedFileAccesses)
+	// Start with old violations and merge with new
+	mergedViolations := oldViolations
+	lastAccessTime, err := lastFileTime(oldViolations)
 	if err != nil {
 		log.Errorf(
 			"Failed to merge alerts. "+
-				"New alert %s (policy=%s) has %d file accesses and old alert %s (policy=%s) has %d file accesses: %v",
-			newAlert.GetId(), newAlert.GetPolicy().GetName(), numNewAccesses,
-			oldAlert.GetId(), oldAlert.GetPolicy().GetName(), numOldAccesses, err,
+				"New alert %s (policy=%s) has %d file access violations and old alert %s (policy=%s) has %d file access violations: %v",
+			newAlert.GetId(), newAlert.GetPolicy().GetName(), len(newViolations),
+			oldAlert.GetId(), oldAlert.GetPolicy().GetName(), len(oldViolations), err,
 		)
 		// At this point, we know that the new alert has non-zero file violations but it cannot be merged.
 		return true
 	}
 
 	hasNewAccesses := false
-	for _, access := range newViolations.GetAccesses() {
-		if protocompat.CompareTimestampToTime(access.GetTimestamp(), lastAccessTime) > 0 {
+	for _, violation := range newViolations {
+		fileAccess := violation.GetFileAccess()
+		if fileAccess != nil && protocompat.CompareTimestampToTime(fileAccess.GetTimestamp(), lastAccessTime) > 0 {
 			hasNewAccesses = true
-			mergedFileAccesses = append(mergedFileAccesses, access)
+			mergedViolations = append(mergedViolations, violation)
 		}
 	}
+
 	// If there are no new accesses, we'll just use the old alert.
 	if !hasNewAccesses {
-		return hasNewAccesses
+		return false
 	}
 
-	if len(mergedFileAccesses) > maxRunTimeViolationsPerAlert {
+	if len(mergedViolations) > maxRunTimeViolationsPerAlert {
 		// prioritize newer events over old ones
-		mergedFileAccesses = mergedFileAccesses[len(mergedFileAccesses)-maxRunTimeViolationsPerAlert:]
+		mergedViolations = mergedViolations[len(mergedViolations)-maxRunTimeViolationsPerAlert:]
 	}
 
-	newAlert.FileAccessViolation.Accesses = mergedFileAccesses
-	printer.UpdateFileAccessAlertViolationMessage(newAlert.GetFileAccessViolation())
+	newAlert.Violations = mergedViolations
 	return true
 }
 

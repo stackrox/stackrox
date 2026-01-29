@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -89,7 +90,12 @@ func (h *handlerImpl) ProcessInvalidateImageCache(req *central.InvalidateImageCa
 
 		keysToDelete := make([]cache.Key, 0, len(req.GetImageKeys()))
 		for _, image := range req.GetImageKeys() {
-			key := image.GetImageId()
+			var key string
+			if centralcaps.Has(centralsensor.FlattenImageData) {
+				key = image.GetImageIdV2()
+			} else {
+				key = image.GetImageId()
+			}
 			if key == "" {
 				key = image.GetImageFullName()
 			}

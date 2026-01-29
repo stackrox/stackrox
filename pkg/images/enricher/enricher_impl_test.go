@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	delegatorMocks "github.com/stackrox/rox/pkg/delegatedregistry/mocks"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/integration/mocks"
 	imgTypes "github.com/stackrox/rox/pkg/images/types"
@@ -1364,9 +1365,78 @@ func TestMetadataUpToDate(t *testing.T) {
 	})
 }
 
+func TestEnrichImageWithBaseImages(t *testing.T) {
+	t.Setenv(features.BaseImageDetection.EnvVar(), "true")
+
+	ctrl := gomock.NewController(t)
+
+	// ... (Existing Registry/Scanner setup remains exactly the same) ...
+	fsr := newFakeRegistryScanner(opts{})
+	registrySet := registryMocks.NewMockSet(ctrl)
+	registrySet.EXPECT().IsEmpty().Return(false).AnyTimes()
+	registrySet.EXPECT().GetAllUnique().Return([]types.ImageRegistry{fsr}).AnyTimes()
+	registrySet.EXPECT().Get(gomock.Any()).Return(fsr).AnyTimes()
+	scannerSet := scannerMocks.NewMockSet(ctrl)
+	scannerSet.EXPECT().IsEmpty().Return(false).AnyTimes()
+	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{fsr}).AnyTimes()
+
+	set := mocks.NewMockSet(ctrl)
+	set.EXPECT().RegistrySet().Return(registrySet).AnyTimes()
+	set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
+
+	const expectedName = "docker.io/library/alpine:3.18"
+	const expectedDigest = "sha256:abcdef123456"
+
+	// CHANGE: Replace mockMatcher with a function closure
+	mockBaseImageGetter := func(ctx context.Context, layers []string) ([]*storage.BaseImageInfo, error) {
+		return []*storage.BaseImageInfo{
+			{
+				BaseImageFullName: expectedName,
+				BaseImageDigest:   expectedDigest,
+			},
+		}, nil
+	}
+
+	testImpl := &enricherImpl{
+		cvesSuppressorV2:           &fakeCVESuppressorV2{},
+		integrations:               set,
+		metadataLimiter:            rate.NewLimiter(rate.Inf, 0),
+		metadataCache:              newCache(),
+		metrics:                    newMetrics(pkgMetrics.CentralSubsystem),
+		imageGetter:                emptyImageGetter,
+		signatureIntegrationGetter: emptySignatureIntegrationGetter,
+		baseImageGetter:            mockBaseImageGetter, // Updated field name/type
+		integrationHealthReporter:  reporterMocks.NewMockReporter(ctrl),
+	}
+
+	testImpl.integrationHealthReporter.(*reporterMocks.MockReporter).EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
+
+	img := &storage.Image{
+		Id: "sha256:123",
+		Name: &storage.ImageName{
+			FullName: "reg/repo:tag",
+			Registry: "reg",
+		},
+		Names: []*storage.ImageName{{FullName: "reg/repo:tag"}},
+		Metadata: &storage.ImageMetadata{
+			LayerShas:  []string{"sha1", "sha2"},
+			DataSource: &storage.DataSource{Id: "test-id"},
+		},
+	}
+
+	// Execute
+	_, err := testImpl.EnrichImage(context.Background(), EnrichmentContext{}, img)
+
+	require.NoError(t, err)
+	require.NotNil(t, img.GetBaseImageInfo())
+	assert.Equal(t, expectedName, img.GetBaseImageInfo()[0].GetBaseImageFullName())
+	assert.Equal(t, expectedDigest, img.GetBaseImageInfo()[0].GetBaseImageDigest())
+}
+
 func newEnricher(set *mocks.MockSet, mockReporter *reporterMocks.MockReporter) ImageEnricher {
 	return New(&fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		newCache(),
+		nil,
 		emptyImageGetter,
 		mockReporter, emptySignatureIntegrationGetter, nil)
 }

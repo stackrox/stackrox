@@ -157,7 +157,7 @@ function AutocompleteSelect({
     );
 
     const onToggleClick = () => {
-        setIsOpen(!isOpen);
+        setIsOpen((prev) => !prev);
     };
 
     const onSelect = (

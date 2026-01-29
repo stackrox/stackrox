@@ -1,5 +1,6 @@
 import withAuth from '../../helpers/basicAuth';
-import { addEntityFilter, visitListeningEndpointsFromLeftNav } from './ListeningEndpoints.helpers';
+import { addAutocompleteFilter } from '../../helpers/compoundFilters';
+import { visitListeningEndpointsFromLeftNav } from './ListeningEndpoints.helpers';
 import selectors from './ListeningEndpoints.selectors';
 
 describe('Listening endpoints page table', () => {
@@ -8,9 +9,9 @@ describe('Listening endpoints page table', () => {
     it('should correctly display listening endpoint information for central-db', () => {
         visitListeningEndpointsFromLeftNav();
 
-        addEntityFilter('Namespace', 'stackrox');
+        addAutocompleteFilter('Namespace', 'Name', 'stackrox');
 
-        addEntityFilter('Deployment', 'central-db');
+        addAutocompleteFilter('Deployment', 'Name', 'central-db');
 
         // assert that only one row is displayed in the table, each row is contained in its own tbody
         cy.get(`${selectors.deploymentTable} > tbody`).should('have.length', 1);

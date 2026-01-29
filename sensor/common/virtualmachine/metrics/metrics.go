@@ -104,6 +104,28 @@ var IndexReportEnqueueBlockedTotal = prometheus.NewCounter(
 	},
 )
 
+// VMDiscoveredData is a counter for VM discovered data grouped by detected OS and status values.
+var VMDiscoveredData = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "virtual_machine_discovered_data_total",
+		Help:      "Total number of VM index reports received by Sensor grouped by detected OS and discovered data status values",
+	},
+	[]string{"detected_os", "activation_status", "dnf_metadata_status"},
+)
+
+// IndexReportAcksReceived counts ACK/NACK responses received from Central for VM index reports.
+var IndexReportAcksReceived = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "virtual_machine_index_report_acks_received_total",
+		Help:      "Total number of ACK/NACK responses received from Central for VM index reports",
+	},
+	[]string{"action"}, // "ACK" or "NACK"
+)
+
 func init() {
 	prometheus.MustRegister(
 		IndexReportsReceived,
@@ -112,5 +134,7 @@ func init() {
 		IndexReportProcessingDurationMilliseconds,
 		IndexReportBlockingEnqueueDurationMilliseconds,
 		IndexReportEnqueueBlockedTotal,
+		VMDiscoveredData,
+		IndexReportAcksReceived,
 	)
 }

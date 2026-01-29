@@ -3,6 +3,7 @@ package index
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"time"
 
@@ -21,9 +22,12 @@ const (
 )
 
 func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client) error {
-	// Create the initial index report immediately.
+	if err := applyRandomDelay(ctx, cfg.MaxInitialReportDelay); err != nil {
+		return fmt.Errorf("delaying initial index: %w", err)
+	}
+
 	if err := RunSingle(ctx, cfg, client); err != nil {
-		log.Errorf("Failed to run initial index: %v", err)
+		return fmt.Errorf("handling initial index: %w", err)
 	}
 
 	ticker := time.NewTicker(cfg.IndexInterval)
@@ -35,7 +39,7 @@ func RunDaemon(ctx context.Context, cfg *common.Config, client *vsock.Client) er
 			return ctx.Err()
 		case <-ticker.C:
 			if err := RunSingle(ctx, cfg, client); err != nil {
-				log.Errorf("Failed to run index: %v", err)
+				log.Errorf("Failed to handle index: %v", err)
 			}
 		}
 	}
@@ -74,4 +78,22 @@ func runIndexer(ctx context.Context, cfg *common.Config) (*v4.IndexReport, error
 		return nil, err
 	}
 	return report, nil
+}
+
+func applyRandomDelay(ctx context.Context, maxDelay time.Duration) error {
+	if maxDelay <= 0 {
+		return nil
+	}
+
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	delay := time.Duration(r.Int63n(maxDelay.Nanoseconds() + 1))
+
+	log.Infof("Delaying initial index report by %s (use --max-initial-report-delay to control this).", delay)
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(delay):
+		return nil
+	}
 }

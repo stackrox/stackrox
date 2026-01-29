@@ -13,7 +13,8 @@ metadata:
       : \"my-cluster\"\n    }\n  }\n]"
     capabilities: Seamless Upgrades
     categories: Security
-    containerImage: quay.io/stackrox-io/stackrox-operator:0.0.1
+    console.openshift.io/plugins: '["advanced-cluster-security"]'
+    containerImage: controller:latest
     createdAt: ''
     description: Red Hat Advanced Cluster Security (RHACS) operator provisions the
       services necessary to secure each of your OpenShift and Kubernetes clusters.
@@ -808,9 +809,9 @@ spec:
 
           If this field is not specified, the following defaulting takes place:
 
-          * for new installations, Scanner V4 is enabled starting with ACS 4.8;
+          * for upgrades to 4.8 from previous releases, the default is: Disabled;
 
-          * for upgrades to 4.8 from previous releases, Scanner V4 is disabled.'
+          * for new installations starting with ACS 4.8, the default is: Enabled.'
         displayName: Scanner V4 component
         path: scannerV4.scannerComponent
       - description: Settings pertaining to the indexer deployment.
@@ -1177,10 +1178,10 @@ spec:
       - description: 'Set to Disabled to disable policy enforcement for the admission
           controller. This is not recommended.
 
-          On new deployments starting with version 4.9, defaults to Enabled.
+          On upgrades to 4.9 from previous releases, defaults to Enabled only if at
+          least one of listenOnCreates or listenOnUpdates is true.
 
-          On old deployments, defaults to Enabled if at least one of listenOnCreates
-          or listenOnUpdates is true.'
+          On new deployments starting with version 4.9, the default is: Enabled.'
         displayName: Enforcement
         path: admissionControl.enforcement
       - description: 'Enables teams to bypass admission control in a monitored manner
@@ -1595,14 +1596,23 @@ spec:
           in the pod's hosts file.
         displayName: Host Aliases
         path: scanner.db.hostAliases
-      - description: 'If you want to enable the Scanner V4 component set this to "AutoSense"
+      - description: 'If you want to enable the Scanner V4 component set this to "AutoSense".
+
+          A value of "AutoSense" means that Scanner V4 should be installed,
+
+          unless there is a Central resource in the same namespace.
+
+          In that case typically a central Scanner V4 will be deployed as a component
+          of Central.
+
+          A value of "Disabled" means that Scanner V4 should not be installed.
 
           If this field is not specified or set to "Default", the following defaulting
           takes place:
 
-          * for new installations, Scanner V4 is enabled starting with ACS 4.8;
+          * for upgrades to 4.8 from previous releases, the default is: Disabled;
 
-          * for upgrades to 4.8 from previous releases, Scanner V4 is disabled.'
+          * for new installations starting with ACS 4.8, the default is: AutoSense.'
         displayName: Scanner V4 component
         path: scannerV4.scannerComponent
       - description: Settings pertaining to the indexer deployment.
@@ -1806,6 +1816,9 @@ spec:
         displayName: Observed Generation
         path: observedGeneration
       version: v1alpha1
+    - kind: SecurityPolicy
+      name: securitypolicies.config.stackrox.io
+      version: v1alpha1
   description: "## Why use Red Hat Advanced Cluster Security for Kubernetes?\n\nProtecting\
     \ cloud-native applications requires significant changes in how we approach security\u2014\
     we must apply controls earlier in the application development life cycle, use\
@@ -1845,51 +1858,55 @@ spec:
     \ back to Central. These services allow users to enforce policies and monitor\
     \ your OpenShift and Kubernetes clusters. Secured Cluster Services come as two\
     \ Deployments (Sensor and Admission Controller) and one DaemonSet (Collector).\n\
-    \n### Central Services Explained\n\n| Service                          | Deployment\
-    \ Type | Description     |\n| :------------------------------- | :--------------\
-    \ | :-------------- |\n| Central                          | Deployment      |\
-    \ Users interact with Red Hat Advanced Cluster Security through the user interface\
-    \ or APIs on Central. Central also sends notifications for violations and interacts\
-    \ with integrations. |\n| Central DB                       | Deployment      |\
-    \ Central DB is a PostgreSQL-based persistent storage for the data collected and\
-    \ managed by Central. |\n| Scanner                          | Deployment     \
-    \ | Scanner is a Red Hat developed and certified image scanner. Scanner analyzes\
-    \ and reports vulnerabilities for images. Scanner uses HPA to scale the number\
-    \ of replicas based on workload. |\n| Scanner DB                       | Deployment\
-    \      | Scanner DB is a cache for vulnerability definitions to serve vulnerability\
-    \ scanning use cases throughout the software development life cycle. |\n\n###\
-    \ Secured Cluster Services Explained\n\n| Service                          | Deployment\
-    \ Type | Description     |\n| :------------------------------- | :--------------\
-    \ | :-------------- |\n| Sensor                           | Deployment      |\
-    \ Sensor analyzes and monitors Kubernetes in secured clusters. |\n| Collector\
-    \                        | DaemonSet       | Analyzes and monitors container activity\
-    \ on Kubernetes nodes.|\n| Admission Controller             | Deployment     \
-    \ | ValidatingWebhookConfiguration for enforcing policies in the deploy lifecycle.\
-    \ |\n\n### Central Custom Resource\n\nCentral Services is the configuration template\
-    \ for RHACS Central deployment. For all customization options, please visit the\
-    \ RHACS documentation.\n\n### SecuredCluster Custom Resource\n\nSecuredCluster\
-    \ is the configuration template for the RHACS Secured Cluster services.\n\n####\
-    \ Installation Prerequisites\n\nBefore deploying a SecuredCluster resource, you\
-    \ need to create a cluster init bundle secret.\n\n- **Through the RHACS UI:**\
-    \ To create a cluster init bundle secret through the RHACS UI, navigate to `Platform\
-    \ Configuration > Clusters`, and then click `Manage Tokens` in the top-right corner.\
-    \ Select `Cluster Init Bundle`, and click `Generate Bundle`. Select `Download\
-    \ Kubernetes secrets file`, and store the file under a name of your choice (for\
-    \ example, `cluster-init-secrets.yaml`).\n- **Through the `roxctl` CLI:** To create\
-    \ a cluster init bundle secret through the `roxctl` command-line interface, run\
-    \ `roxctl central init-bundles generate <name> --output-secrets <file name>`.\
-    \ Choose any `name` and `file name` that you like.\n\nRun `oc project` and check\
-    \ that it reports the correct namespace where you intend to deploy SecuredCluster.\
-    \ In case you want to install SecuredCluster to a different namespace, select\
-    \ it by running `oc project <namespace>`.\nThen, run `oc create -f init-bundle.yaml`.\
-    \ If you have chosen a name other than `init-bundle.yaml`, specify that file name\
-    \ instead.\n\n#### Required Fields\n\nThe following attributes are required to\
-    \ be specified. For all customization options, please visit the RHACS documentation.\n\
-    \n| Parameter          | Description     |\n| :----------------- | :--------------\
-    \ |\n| `clusterName`      | The name given to this secured cluster. The cluster\
-    \ will appear with this name in RHACS user interface. |\n| `centralEndpoint` \
-    \ | This field should specify the address of the Central endpoint, including the\
-    \ port number. `centralEndpoint` may be omitted if this SecuredCluster Custom\
+    \n**Console Plugin:** RHACS provides a dynamic plugin that displays vulnerability\
+    \ management information in the OpenShift web console. Install a SecuredCluster\
+    \ to deploy the plugin. Enable the plugin by selecting *Operators* > *Installed\
+    \ Operators* or by modifying the console Operator configuration.\n**Important:**\
+    \ The Console Plugin requires OpenShift 4.19 or later.\n\n### Central Services\
+    \ Explained\n\n| Service                          | Deployment Type | Description\
+    \     |\n| :------------------------------- | :-------------- | :--------------\
+    \ |\n| Central                          | Deployment      | Users interact with\
+    \ Red Hat Advanced Cluster Security through the user interface or APIs on Central.\
+    \ Central also sends notifications for violations and interacts with integrations.\
+    \ |\n| Central DB                       | Deployment      | Central DB is a PostgreSQL-based\
+    \ persistent storage for the data collected and managed by Central. |\n| Scanner\
+    \                          | Deployment      | Scanner is a Red Hat developed\
+    \ and certified image scanner. Scanner analyzes and reports vulnerabilities for\
+    \ images. Scanner uses HPA to scale the number of replicas based on workload.\
+    \ |\n| Scanner DB                       | Deployment      | Scanner DB is a cache\
+    \ for vulnerability definitions to serve vulnerability scanning use cases throughout\
+    \ the software development life cycle. |\n\n### Secured Cluster Services Explained\n\
+    \n| Service                          | Deployment Type | Description     |\n|\
+    \ :------------------------------- | :-------------- | :-------------- |\n| Sensor\
+    \                           | Deployment      | Sensor analyzes and monitors Kubernetes\
+    \ in secured clusters. |\n| Collector                        | DaemonSet     \
+    \  | Analyzes and monitors container activity on Kubernetes nodes.|\n| Admission\
+    \ Controller             | Deployment      | ValidatingWebhookConfiguration for\
+    \ enforcing policies in the deploy lifecycle. |\n\n### Central Custom Resource\n\
+    \nCentral Services is the configuration template for RHACS Central deployment.\
+    \ For all customization options, please visit the RHACS documentation.\n\n###\
+    \ SecuredCluster Custom Resource\n\nSecuredCluster is the configuration template\
+    \ for the RHACS Secured Cluster services.\n\n#### Installation Prerequisites\n\
+    \nBefore deploying a SecuredCluster resource, you need to create a cluster init\
+    \ bundle secret.\n\n- **Through the RHACS UI:** To create a cluster init bundle\
+    \ secret through the RHACS UI, navigate to `Platform Configuration > Clusters`,\
+    \ and then click `Manage Tokens` in the top-right corner. Select `Cluster Init\
+    \ Bundle`, and click `Generate Bundle`. Select `Download Kubernetes secrets file`,\
+    \ and store the file under a name of your choice (for example, `cluster-init-secrets.yaml`).\n\
+    - **Through the `roxctl` CLI:** To create a cluster init bundle secret through\
+    \ the `roxctl` command-line interface, run `roxctl central init-bundles generate\
+    \ <name> --output-secrets <file name>`. Choose any `name` and `file name` that\
+    \ you like.\n\nRun `oc project` and check that it reports the correct namespace\
+    \ where you intend to deploy SecuredCluster. In case you want to install SecuredCluster\
+    \ to a different namespace, select it by running `oc project <namespace>`.\nThen,\
+    \ run `oc create -f init-bundle.yaml`. If you have chosen a name other than `init-bundle.yaml`,\
+    \ specify that file name instead.\n\n#### Required Fields\n\nThe following attributes\
+    \ are required to be specified. For all customization options, please visit the\
+    \ RHACS documentation.\n\n| Parameter          | Description     |\n| :-----------------\
+    \ | :-------------- |\n| `clusterName`      | The name given to this secured cluster.\
+    \ The cluster will appear with this name in RHACS user interface. |\n| `centralEndpoint`\
+    \  | This field should specify the address of the Central endpoint, including\
+    \ the port number. `centralEndpoint` may be omitted if this SecuredCluster Custom\
     \ Resource is in the same cluster and namespace as Central. |\n"
   displayName: Advanced Cluster Security for Kubernetes
   icon:
@@ -1989,7 +2006,7 @@ spec:
                       containerName: manager
                       divisor: '0'
                       resource: limits.memory
-                image: quay.io/stackrox-io/stackrox-operator:0.0.1
+                image: controller:latest
                 livenessProbe:
                   httpGet:
                     path: /healthz

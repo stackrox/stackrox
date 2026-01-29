@@ -124,7 +124,6 @@ function ViolationDetailsPage(): ReactElement {
                             <ViolationDetails
                                 violations={alert.violations}
                                 processViolation={alert.processViolation}
-                                fileAccessViolation={alert.fileAccessViolation}
                                 lifecycleStage={alert.lifecycleStage}
                             />
                         </PageSection>

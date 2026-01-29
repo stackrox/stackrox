@@ -100,7 +100,7 @@ function CheckboxSelect({
     const selectRef = useRef<HTMLDivElement>(null);
 
     function onToggle() {
-        setIsOpen(!isOpen);
+        setIsOpen((prev) => !prev);
     }
 
     function handleBlur(event: FocusEvent<HTMLDivElement>) {

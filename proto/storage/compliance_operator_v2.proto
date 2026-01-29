@@ -138,18 +138,18 @@ message ComplianceOperatorClusterScanConfigStatus {
 
 // Next Tag: 7
 message ComplianceOperatorBenchmarkV2 {
-  string id = 1; // @gotags: sql:"pk,id,type(uuid)"
-  string name = 2; // @gotags: search:"Compliance Benchmark Name,hidden"
-  string version = 3; // @gotags: search:"Compliance Benchmark Version,hidden"
+  string id = 1;
+  string name = 2;
+  string version = 3;
   string description = 4;
   string provider = 5;
   // This is extracted from the annotation.
   // Example: from https://control.compliance.openshift.io/CIS-OCP we should have CIS-OCP
-  string short_name = 7; // @gotags: search:"Compliance Benchmark Short Name,hidden"
+  string short_name = 7;
 
   message Profile {
-    string profile_name = 1; // @gotags: search:"Compliance Profile Name" sql:"fk(ComplianceOperatorProfileV2:name),no-fk-constraint"
-    string profile_version = 2; // @gotags: search:"Compliance Profile Version" sql:"fk(ComplianceOperatorProfileV2:profile_version),no-fk-constraint"
+    string profile_name = 1;
+    string profile_version = 2;
   }
 
   repeated Profile profiles = 8;

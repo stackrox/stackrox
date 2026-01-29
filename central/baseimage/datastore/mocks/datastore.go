@@ -41,6 +41,20 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
 }
 
+// DeleteMany mocks base method.
+func (m *MockDataStore) DeleteMany(ctx context.Context, ids []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteMany", ctx, ids)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteMany indicates an expected call of DeleteMany.
+func (mr *MockDataStoreMockRecorder) DeleteMany(ctx, ids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteMany", reflect.TypeOf((*MockDataStore)(nil).DeleteMany), ctx, ids)
+}
+
 // GetBaseImage mocks base method.
 func (m *MockDataStore) GetBaseImage(ctx context.Context, manifestDigest string) (*storage.BaseImage, bool, error) {
 	m.ctrl.T.Helper()
@@ -57,6 +71,21 @@ func (mr *MockDataStoreMockRecorder) GetBaseImage(ctx, manifestDigest any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBaseImage", reflect.TypeOf((*MockDataStore)(nil).GetBaseImage), ctx, manifestDigest)
 }
 
+// ListByRepository mocks base method.
+func (m *MockDataStore) ListByRepository(ctx context.Context, repositoryID string) ([]*storage.BaseImage, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListByRepository", ctx, repositoryID)
+	ret0, _ := ret[0].([]*storage.BaseImage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListByRepository indicates an expected call of ListByRepository.
+func (mr *MockDataStoreMockRecorder) ListByRepository(ctx, repositoryID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListByRepository", reflect.TypeOf((*MockDataStore)(nil).ListByRepository), ctx, repositoryID)
+}
+
 // ListCandidateBaseImages mocks base method.
 func (m *MockDataStore) ListCandidateBaseImages(ctx context.Context, firstLayer string) ([]*storage.BaseImage, error) {
 	m.ctrl.T.Helper()
@@ -70,6 +99,20 @@ func (m *MockDataStore) ListCandidateBaseImages(ctx context.Context, firstLayer 
 func (mr *MockDataStoreMockRecorder) ListCandidateBaseImages(ctx, firstLayer any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListCandidateBaseImages", reflect.TypeOf((*MockDataStore)(nil).ListCandidateBaseImages), ctx, firstLayer)
+}
+
+// ReplaceByRepository mocks base method.
+func (m *MockDataStore) ReplaceByRepository(ctx context.Context, repositoryID string, images map[*storage.BaseImage][]string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReplaceByRepository", ctx, repositoryID, images)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ReplaceByRepository indicates an expected call of ReplaceByRepository.
+func (mr *MockDataStoreMockRecorder) ReplaceByRepository(ctx, repositoryID, images any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReplaceByRepository", reflect.TypeOf((*MockDataStore)(nil).ReplaceByRepository), ctx, repositoryID, images)
 }
 
 // UpsertImage mocks base method.

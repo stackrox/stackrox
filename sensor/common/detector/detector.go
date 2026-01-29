@@ -907,11 +907,16 @@ func (d *detectorImpl) processFileAccess() {
 				continue
 			}
 
+			log.Debugf("%d violations for '%v' (%s)", len(alerts), item.Access.GetFile().GetEffectivePath(), item.Access.GetOperation())
 			alertResults := &central.AlertResults{
 				DeploymentId: item.Access.GetProcess().GetDeploymentId(),
 				Alerts:       alerts,
 				Stage:        storage.LifecycleStage_RUNTIME,
 				Source:       source,
+			}
+
+			if fsUtils.IsDeploymentFileAccess(item.Access) {
+				d.enforcer.ProcessAlertResults(central.ResourceAction_CREATE_RESOURCE, storage.LifecycleStage_RUNTIME, alertResults)
 			}
 
 			select {

@@ -47,7 +47,7 @@ message BaseImageRepository {
 // BaseImageTag stores cached base image tag metadata.
 // Persisting cache data across Central restarts avoids cold-start refetches during base
 // image repository scanning.
-// Next tag: 8
+// Next tag: 9
 message BaseImageTag {
   // Unique identifier.
   string id = 1; // @gotags: sql:"pk,type(uuid)"
@@ -67,9 +67,12 @@ message BaseImageTag {
   bool is_manifest_list = 5;
 
   // Image creation timestamp from config blob.
-  google.protobuf.Timestamp created = 6;
+  google.protobuf.Timestamp created = 6; // @gotags: sql:"index=btree"
 
   // Map of "os/arch" to platform-specific manifest digest,
   // to only refetch platforms whose digest changed.
   map<string, string> list_digests = 7;
+
+  // Layer digests for this tag, stored for promotion to base_images.
+  repeated string layer_digests = 8;
 }

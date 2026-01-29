@@ -91,6 +91,24 @@ func (s *dispatcherSuite) Test_RegisterConsumer() {
 	})
 }
 
+func (s *dispatcherSuite) Test_RegisterConsumerToLane() {
+	defer goleak.AssertNoGoroutineLeaks(s.T())
+	s.Run("should not register nil callback", func() {
+		s.Assert().Error(s.d.RegisterConsumerToLane(pubsub.DefaultTopic, pubsub.DefaultLane, nil))
+	})
+	s.Run("should error if lane does not exist", func() {
+		s.Assert().Error(s.d.RegisterConsumerToLane(pubsub.DefaultTopic, -1, func(_ pubsub.Event) error { return nil }))
+	})
+	s.Run("should error if lane RegisterConsumer fails", func() {
+		s.lane.EXPECT().RegisterConsumer(gomock.Eq(pubsub.DefaultTopic), gomock.Any()).Times(1).Return(errors.New("some error"))
+		s.Assert().Error(s.d.RegisterConsumerToLane(pubsub.DefaultTopic, pubsub.DefaultLane, func(_ pubsub.Event) error { return nil }))
+	})
+	s.Run("success case", func() {
+		s.lane.EXPECT().RegisterConsumer(gomock.Eq(pubsub.DefaultTopic), gomock.Any()).Times(1).Return(nil)
+		s.Assert().NoError(s.d.RegisterConsumerToLane(pubsub.DefaultTopic, pubsub.DefaultLane, func(_ pubsub.Event) error { return nil }))
+	})
+}
+
 func (s *dispatcherSuite) Test_Publish() {
 	defer goleak.AssertNoGoroutineLeaks(s.T())
 	data := "some data"

@@ -1,4 +1,20 @@
+import { PublicConfigContext } from 'hooks/usePublicConfig';
 import BaseImagesModal from './BaseImagesModal';
+
+const mockPublicConfigValue = {
+    publicConfig: { telemetry: { enabled: false } },
+    isLoadingPublicConfig: false,
+    error: undefined,
+    refetchPublicConfig: () => {},
+};
+
+function TestWrapper({ children }) {
+    return (
+        <PublicConfigContext.Provider value={mockPublicConfigValue}>
+            {children}
+        </PublicConfigContext.Provider>
+    );
+}
 
 describe('BaseImagesModal', () => {
     beforeEach(() => {
@@ -10,7 +26,11 @@ describe('BaseImagesModal', () => {
             const onClose = cy.stub();
             const onSuccess = cy.stub();
 
-            cy.mount(<BaseImagesModal isOpen onClose={onClose} onSuccess={onSuccess} />);
+            cy.mount(
+                <TestWrapper>
+                    <BaseImagesModal isOpen onClose={onClose} onSuccess={onSuccess} />
+                </TestWrapper>
+            );
 
             cy.get('input#baseImagePath').focus();
             cy.get('input#baseImagePath').blur();
@@ -21,7 +41,11 @@ describe('BaseImagesModal', () => {
             const onClose = cy.stub();
             const onSuccess = cy.stub();
 
-            cy.mount(<BaseImagesModal isOpen onClose={onClose} onSuccess={onSuccess} />);
+            cy.mount(
+                <TestWrapper>
+                    <BaseImagesModal isOpen onClose={onClose} onSuccess={onSuccess} />
+                </TestWrapper>
+            );
 
             cy.get('input#baseImagePath').type('ubuntu');
             cy.get('input#baseImagePath').blur();
@@ -34,7 +58,11 @@ describe('BaseImagesModal', () => {
             const onClose = cy.stub();
             const onSuccess = cy.stub();
 
-            cy.mount(<BaseImagesModal isOpen onClose={onClose} onSuccess={onSuccess} />);
+            cy.mount(
+                <TestWrapper>
+                    <BaseImagesModal isOpen onClose={onClose} onSuccess={onSuccess} />
+                </TestWrapper>
+            );
 
             cy.get('button').contains('Save').should('be.disabled');
             cy.get('input#baseImagePath').type('ubuntu:22.04');
@@ -47,7 +75,11 @@ describe('BaseImagesModal', () => {
             const onClose = cy.stub();
             const onSuccess = cy.stub();
 
-            cy.mount(<BaseImagesModal isOpen onClose={onClose} onSuccess={onSuccess} />);
+            cy.mount(
+                <TestWrapper>
+                    <BaseImagesModal isOpen onClose={onClose} onSuccess={onSuccess} />
+                </TestWrapper>
+            );
 
             cy.get('input#baseImagePath').type('ubuntu:22.04');
             cy.get('button').contains('Save').click();
@@ -65,7 +97,11 @@ describe('BaseImagesModal', () => {
             const onClose = cy.stub();
             const onSuccess = cy.stub();
 
-            cy.mount(<BaseImagesModal isOpen onClose={onClose} onSuccess={onSuccess} />);
+            cy.mount(
+                <TestWrapper>
+                    <BaseImagesModal isOpen onClose={onClose} onSuccess={onSuccess} />
+                </TestWrapper>
+            );
 
             cy.get('input#baseImagePath').type('ubuntu:22.04');
             cy.get('button').contains('Save').click();

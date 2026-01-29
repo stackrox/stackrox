@@ -1,0 +1,11 @@
+[Unit]
+Description=Run StackRox VM Agent periodically
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=3h40m
+RandomizedDelaySec=40min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

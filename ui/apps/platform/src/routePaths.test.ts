@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import type { HasReadAccess } from 'hooks/usePermissions';
 
-import { isRouteEnabled } from './routePaths';
+import { getLinkToDeploymentInNetworkGraph, isRouteEnabled } from './routePaths';
 
 /*
  * TODO: Consider refactoring route access tests to use persona-based testing.
@@ -14,8 +14,10 @@ import { isRouteEnabled } from './routePaths';
  */
 describe('routePaths', () => {
     describe('isRouteEnabled for base-images', () => {
-        it('should enable route when feature flag is enabled and user has Image read access', () => {
-            const hasReadAccess: HasReadAccess = vi.fn((resource) => resource === 'Image');
+        it('should enable route when feature flag is enabled and user has ImageAdministration read access', () => {
+            const hasReadAccess: HasReadAccess = vi.fn(
+                (resource) => resource === 'ImageAdministration'
+            );
             const isFeatureFlagEnabled: IsFeatureFlagEnabled = vi.fn(
                 (flag) => flag === 'ROX_BASE_IMAGE_DETECTION'
             );
@@ -23,7 +25,7 @@ describe('routePaths', () => {
             const enabled = isRouteEnabled({ hasReadAccess, isFeatureFlagEnabled }, 'base-images');
 
             expect(enabled).toBe(true);
-            expect(hasReadAccess).toHaveBeenCalledWith('Image');
+            expect(hasReadAccess).toHaveBeenCalledWith('ImageAdministration');
             expect(isFeatureFlagEnabled).toHaveBeenCalledWith('ROX_BASE_IMAGE_DETECTION');
         });
 
@@ -36,13 +38,25 @@ describe('routePaths', () => {
             expect(enabled).toBe(false);
         });
 
-        it('should disable route when user lacks Image read access', () => {
+        it('should disable route when user lacks ImageAdministration read access', () => {
             const hasReadAccess: HasReadAccess = vi.fn(() => false);
             const isFeatureFlagEnabled: IsFeatureFlagEnabled = vi.fn(() => true);
 
             const enabled = isRouteEnabled({ hasReadAccess, isFeatureFlagEnabled }, 'base-images');
 
             expect(enabled).toBe(false);
+        });
+    });
+
+    describe('getURLLinkToDeployment', () => {
+        it('should get the URL to a specific deployment in the network graph', () => {
+            const cluster = 'remote';
+            const namespace = 'stackrox';
+            const deploymentId = '8cbfde79-3450-45bb-a5c9-4185b9d1d0f1';
+            const url = getLinkToDeploymentInNetworkGraph({ cluster, namespace, deploymentId });
+            expect(url).toEqual(
+                '/main/network-graph/deployment/8cbfde79-3450-45bb-a5c9-4185b9d1d0f1?s[Cluster]=remote&s[Namespace]=stackrox'
+            );
         });
     });
 });

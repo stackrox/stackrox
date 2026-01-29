@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
-	fsUtils "github.com/stackrox/rox/sensor/common/filesystem/utils"
 )
 
 var (
@@ -54,30 +53,30 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 	switch fs.GetFile().(type) {
 	case *sensorAPI.FileActivity_Creation:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetCreation().GetActivity().GetPath(),
-			NodePath:    fs.GetCreation().GetActivity().GetHostPath(),
+			EffectivePath: fs.GetCreation().GetActivity().GetPath(),
+			ActualPath:    fs.GetCreation().GetActivity().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_CREATE
 	case *sensorAPI.FileActivity_Unlink:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetUnlink().GetActivity().GetPath(),
-			NodePath:    fs.GetUnlink().GetActivity().GetHostPath(),
+			EffectivePath: fs.GetUnlink().GetActivity().GetPath(),
+			ActualPath:    fs.GetUnlink().GetActivity().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_UNLINK
 	case *sensorAPI.FileActivity_Rename:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetRename().GetOld().GetPath(),
-			NodePath:    fs.GetRename().GetOld().GetHostPath(),
+			EffectivePath: fs.GetRename().GetOld().GetPath(),
+			ActualPath:    fs.GetRename().GetOld().GetHostPath(),
 		}
 		access.Moved = &storage.FileAccess_File{
-			MountedPath: fs.GetRename().GetNew().GetPath(),
-			NodePath:    fs.GetRename().GetNew().GetHostPath(),
+			EffectivePath: fs.GetRename().GetNew().GetPath(),
+			ActualPath:    fs.GetRename().GetNew().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_RENAME
 	case *sensorAPI.FileActivity_Permission:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetPermission().GetActivity().GetPath(),
-			NodePath:    fs.GetPermission().GetActivity().GetHostPath(),
+			EffectivePath: fs.GetPermission().GetActivity().GetPath(),
+			ActualPath:    fs.GetPermission().GetActivity().GetHostPath(),
 			Meta: &storage.FileAccess_FileMetadata{
 				Mode: fs.GetPermission().GetMode(),
 			},
@@ -85,8 +84,8 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 		access.Operation = storage.FileAccess_PERMISSION_CHANGE
 	case *sensorAPI.FileActivity_Ownership:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetOwnership().GetActivity().GetPath(),
-			NodePath:    fs.GetOwnership().GetActivity().GetHostPath(),
+			EffectivePath: fs.GetOwnership().GetActivity().GetPath(),
+			ActualPath:    fs.GetOwnership().GetActivity().GetHostPath(),
 			Meta: &storage.FileAccess_FileMetadata{
 				Uid:      fs.GetOwnership().GetUid(),
 				Gid:      fs.GetOwnership().GetGid(),
@@ -95,26 +94,15 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 			},
 		}
 		access.Operation = storage.FileAccess_OWNERSHIP_CHANGE
-	case *sensorAPI.FileActivity_Write:
-		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetWrite().GetActivity().GetPath(),
-			NodePath:    fs.GetWrite().GetActivity().GetHostPath(),
-		}
-		access.Operation = storage.FileAccess_WRITE
 	case *sensorAPI.FileActivity_Open:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetOpen().GetActivity().GetPath(),
-			NodePath:    fs.GetOpen().GetActivity().GetHostPath(),
+			EffectivePath: fs.GetOpen().GetActivity().GetPath(),
+			ActualPath:    fs.GetOpen().GetActivity().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_OPEN
 	default:
 		log.Warn("Not implemented file activity type")
 		return nil
-	}
-
-	if fsUtils.IsNodeFileAccess(access) {
-		// TODO: remove when full host path resolution is complete
-		access.File.NodePath = access.GetFile().GetMountedPath()
 	}
 
 	return access
@@ -154,7 +142,6 @@ func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.Proce
 		return pi
 	}
 
-	// TODO(ROX-30798): Enrich file system events with deployment details
 	metadata, ok, _ := p.clusterEntities.LookupByContainerID(process.GetContainerId())
 	if !ok {
 		// unexpected - process should exist before file activity is

@@ -115,7 +115,7 @@ func (s *PolicyValueValidator) TestRegex() {
 		},
 		{
 			name:    "file operation",
-			valid:   []string{"OPEN", "CREATE", "RENAME", "UNLINK", "OWNERSHIP_CHANGED", "PERMISSIONS_CHANGED", "open", "create", "rename", "unlink", "ownership_changed", "permissions_changed", "Open", "Create"},
+			valid:   []string{"OPEN", "CREATE", "UNLINK", "OWNERSHIP_CHANGE", "PERMISSION_CHANGE", "open", "create", "unlink", "ownership_change", "permission_change", "Open", "Create"},
 			invalid: []string{"", " ", "READ", "WRITE", "DELETE", "INVALID_OPERATION", "MODIFY", "ACCESS"},
 			r:       fileOperationRegex,
 		},
@@ -620,6 +620,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 	defer ResetFieldMetadataSingleton(s.T())
 
 	s.Error(Validate(&storage.Policy{
+
 		Name:          "Operation Without Path",
 		PolicyVersion: policyversion.CurrentVersion().String(),
 		EventSource:   storage.EventSource_NODE_EVENT,
@@ -654,7 +655,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 				SectionName: "bad2",
 				PolicyGroups: []*storage.PolicyGroup{
 					{
-						FieldName: fieldnames.NodeFilePath,
+						FieldName: fieldnames.ActualPath,
 						Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 					},
 				},
@@ -675,7 +676,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 						Values:    []*storage.PolicyValue{{Value: "CREATE"}},
 					},
 					{
-						FieldName: fieldnames.NodeFilePath,
+						FieldName: fieldnames.ActualPath,
 						Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 					},
 				},
@@ -684,7 +685,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 	}))
 
 	s.NoError(Validate(&storage.Policy{
-		Name:          "Valid Section with MountedFilePath",
+		Name:          "Valid Section with Effective Path",
 		PolicyVersion: policyversion.CurrentVersion().String(),
 		EventSource:   storage.EventSource_DEPLOYMENT_EVENT,
 		PolicySections: []*storage.PolicySection{
@@ -696,7 +697,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 						Values:    []*storage.PolicyValue{{Value: "CREATE"}},
 					},
 					{
-						FieldName: fieldnames.MountedFilePath,
+						FieldName: fieldnames.EffectivePath,
 						Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 					},
 				},
@@ -722,7 +723,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 	}))
 
 	s.Error(Validate(&storage.Policy{
-		Name:          "MountedFilePath with NODE_EVENT should error",
+		Name:          "Effective Path with NODE_EVENT should error",
 		PolicyVersion: policyversion.CurrentVersion().String(),
 		EventSource:   storage.EventSource_NODE_EVENT,
 		PolicySections: []*storage.PolicySection{
@@ -730,7 +731,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 				SectionName: "bad",
 				PolicyGroups: []*storage.PolicyGroup{
 					{
-						FieldName: fieldnames.MountedFilePath,
+						FieldName: fieldnames.EffectivePath,
 						Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 					},
 				},

@@ -48,7 +48,7 @@ const (
 
 const defaultWaitTime = 600 * time.Second
 const defaultSleepTime = 10 * time.Second
-const defaultTickTime = 2 * time.Second
+const defaultTickTime = 30 * time.Second
 
 func getCurrentComplianceResults(t testutils.T) (rhcos, ocp *storage.ComplianceRunResults) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
@@ -126,7 +126,7 @@ func checkMachineConfigResult(t assert.TestingT, entityResults map[string]*stora
 }
 
 func checkBaseResults(t *testing.T) {
-	assert.EventuallyWithT(t, func(c *assert.CollectT) {
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
 		rhcosResults, ocpResults := getCurrentComplianceResults(wrapCollectT(t, c))
 		require.NotNil(c, rhcosResults)
 		require.NotNil(c, ocpResults)
@@ -143,7 +143,7 @@ func checkBaseResults(t *testing.T) {
 		clusterResults := ocpResults.GetClusterResults().GetControlResults()
 		checkResult(c, clusterResults, envVarControl, storage.ComplianceState_COMPLIANCE_STATE_SUCCESS)
 		checkResult(c, clusterResults, externalStorageControl, storage.ComplianceState_COMPLIANCE_STATE_SKIP)
-	}, defaultWaitTime, defaultTickTime)
+	}, defaultWaitTime, defaultTickTime, "Failed to check base results")
 }
 
 func TestComplianceOperatorResults(t *testing.T) {
@@ -177,6 +177,7 @@ func TestDeleteAndAddRule(t *testing.T) {
 
 	err = ruleClient.Delete(context.Background(), envVarRule, metav1.DeleteOptions{})
 	require.NoError(t, err, "Failed to delete rule %s", envVarRule)
+	t.Logf("Successfully deleted rule %s", envVarRule)
 
 	time.Sleep(defaultSleepTime)
 
@@ -197,7 +198,7 @@ func TestDeleteAndAddRule(t *testing.T) {
 		clusterResults := ocpResults.GetClusterResults().GetControlResults()
 		checkResult(c, clusterResults, externalStorageControl, storage.ComplianceState_COMPLIANCE_STATE_SKIP)
 		assert.Nil(c, clusterResults[envVarControl])
-	}, defaultWaitTime, 2*time.Second)
+	}, defaultWaitTime, defaultTickTime)
 
 	rule.SetResourceVersion("")
 	_, err = ruleClient.Create(context.Background(), rule, metav1.CreateOptions{})
@@ -221,6 +222,7 @@ func TestDeleteAndAddScanSettingBinding(t *testing.T) {
 
 	err = ssbClient.Delete(context.Background(), rhcosProfileName, metav1.DeleteOptions{})
 	require.NoError(t, err, "Failed to delete ScanSettingBinding %s", rhcosProfileName)
+	t.Logf("Successfully deleted ScanSettingBinding %s", rhcosProfileName)
 
 	time.Sleep(defaultSleepTime)
 
@@ -256,6 +258,7 @@ func TestDeleteAndAddProfile(t *testing.T) {
 
 	err = profileClient.Delete(context.Background(), rhcosProfileName, metav1.DeleteOptions{})
 	require.NoError(t, err, "Failed to delete Profile %s", rhcosProfileName)
+	t.Logf("Successfully deleted Profile %s", rhcosProfileName)
 
 	time.Sleep(defaultSleepTime)
 
@@ -297,6 +300,7 @@ func TestUpdateProfile(t *testing.T) {
 	}
 	profileObj, err = profileClient.Update(context.Background(), profileObj, metav1.UpdateOptions{})
 	require.NoError(t, err, "Failed to update Profile %s", rhcosProfileName)
+	t.Logf("Successfully updated Profile %s", rhcosProfileName)
 
 	time.Sleep(defaultSleepTime)
 

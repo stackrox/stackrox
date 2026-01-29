@@ -52,7 +52,7 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
         if (isOpen) {
             setValues(defaultFilters).catch(() => {});
         }
-        setIsOpen(!isOpen);
+        setIsOpen((prev) => !prev);
     }
 
     function handleSeverityChange(severity: VulnerabilitySeverityLabel, isChecked: boolean) {

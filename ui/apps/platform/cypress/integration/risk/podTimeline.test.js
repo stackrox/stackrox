@@ -17,7 +17,7 @@ import { selectors } from './Risk.selectors';
 function openEventTimeline() {
     visitRiskDeployments();
     viewRiskDeploymentByName('collector');
-    clickTab('Process Discovery');
+    clickTab('Process discovery');
     viewGraph();
 }
 

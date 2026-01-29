@@ -8,8 +8,8 @@ import (
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/common"
 	"github.com/stackrox/rox/operator/internal/securedcluster/defaults"
-	"github.com/stackrox/rox/pkg/features"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -18,6 +18,7 @@ import (
 var defaultingFlows = []defaults.SecuredClusterDefaultingFlow{
 	defaults.SecuredClusterStaticDefaults, // Must go first
 	defaults.SecuredClusterScannerV4DefaultingFlow,
+	defaults.SecuredClusterAdmissionControllerDefaultingFlow,
 }
 
 // FeatureDefaultingExtension executes "defaulting flows". A Secured Cluster defaulting flow is of type
@@ -51,14 +52,9 @@ func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *
 		return errors.Wrap(err, "converting unstructured object to SecuredCluster")
 	}
 
-	err := setDefaultsAndPersist(ctx, logger, &securedCluster, client)
+	err := setDefaultsAndPersist(ctx, logger, u, &securedCluster, client)
 	if err != nil {
 		return err
-	}
-
-	u.Object, err = runtime.DefaultUnstructuredConverter.ToUnstructured(&securedCluster)
-	if err != nil {
-		return errors.Wrap(err, "converting SecuredCluster to unstructured object after extension execution")
 	}
 
 	if err := platform.AddSecuredClusterDefaultsToUnstructured(u, &securedCluster); err != nil {
@@ -68,48 +64,49 @@ func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *
 	return nil
 }
 
-func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, securedCluster *platform.SecuredCluster, client ctrlClient.Client) error {
-	effectiveDefaultingFlows := defaultingFlows
-	if features.AdmissionControllerConfig.Enabled() {
-		effectiveDefaultingFlows = append(effectiveDefaultingFlows, defaults.SecuredClusterAdmissionControllerDefaultingFlow)
-	}
+// Sets Defaults in the typed securedCluster object by executing the defaulting flows and, if required, persists the resulting
+// defaulting annotations on the cluster. If no updating of the cluster object is necessary, the function returns nil.
+// If an update is necessary, it patches the object on the cluster and returns an error to indicate that reconciliation should be retried.
+// In this case the provided unstructured u will also be updated as part of the patching.
+func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, u *unstructured.Unstructured, securedCluster *platform.SecuredCluster, client ctrlClient.Client) error {
+	uBase := u.DeepCopy()
+	patch := ctrlClient.MergeFrom(uBase)
 
-	baseSecuredCluster := securedCluster.DeepCopy()
-	patch := ctrlClient.MergeFrom(baseSecuredCluster)
-
-	// This may update securedCluster.Defaults and securedCluster's embedded annotations.
-	for _, flow := range effectiveDefaultingFlows {
-		if err := executeSingleDefaultingFlow(logger, securedCluster, flow); err != nil {
+	for _, flow := range defaultingFlows {
+		if err := executeSingleDefaultingFlow(logger, u, securedCluster, flow); err != nil {
 			return err
 		}
 	}
-	securedClusterDefaults := securedCluster.Defaults
+
+	if common.AnnotationsEqual(uBase, u) {
+		return nil
+	}
 
 	// We persist the annotations immediately during (first-time) execution of this extension to make sure
 	// that this information is already persisted in the Kubernetes resource before we
 	// can realistically end up in a situation where reconcilliation might need to be retried.
 	//
-	// This updates securedCluster both on the cluster and in memory, which is crucial since this object is used for the final
-	// updating within helm-operator and we have concurrently running controllers (the status controller),
-	// whose changes we must preserve.
-	err := client.Patch(ctx, securedCluster, patch)
+	// To keep the flow conceptually simple, we patch the annotations here and then return with an error, which
+	// will cause reconciliation to be requeued.
+	// This way, we avoid having to deal with generation changes and keeping the in-memory object in sync.
+	err := client.Patch(ctx, u, patch)
 	if err != nil {
 		return errors.Wrap(err, "patching SecuredCluster annotations")
 	}
-
 	logger.Info("patched SecuredCluster object",
-		"oldResourceVersion", baseSecuredCluster.GetResourceVersion(),
-		"newResourceVersion", securedCluster.GetResourceVersion(),
+		"oldResourceVersion", uBase.GetResourceVersion(),
+		"newResourceVersion", u.GetResourceVersion(),
 	)
 
-	// Retain the defaults, which are not in the patched object after cluster refresh.
-	securedCluster.Defaults = securedClusterDefaults
-	return nil
+	return common.ErrorAnnotationsUpdated
 }
 
-func executeSingleDefaultingFlow(logger logr.Logger, securedCluster *platform.SecuredCluster, flow defaults.SecuredClusterDefaultingFlow) error {
+// Defaulting flows have two side-effects:
+// 1. They may update the metadata annotations (to be persisted on the cluster); this is happening in the unstructured u.
+// 2. They may update securedCLuster.Defaults (they only exist in-memory, not on the cluster); this is happening in the typed securedCluster object.
+func executeSingleDefaultingFlow(logger logr.Logger, u *unstructured.Unstructured, securedCluster *platform.SecuredCluster, flow defaults.SecuredClusterDefaultingFlow) error {
 	logger = logger.WithName(fmt.Sprintf("defaulting-flow-%s", flow.Name))
-	annotations := securedCluster.GetAnnotations()
+	annotations := u.GetAnnotations()
 	if annotations == nil {
 		annotations = make(map[string]string)
 	}
@@ -122,7 +119,7 @@ func executeSingleDefaultingFlow(logger logr.Logger, securedCluster *platform.Se
 	if err != nil {
 		return errors.Wrapf(err, "SecuredCluster defaulting flow %s failed", flow.Name)
 	}
-	securedCluster.SetAnnotations(annotations)
+	u.SetAnnotations(annotations)
 
 	return nil
 }

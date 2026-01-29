@@ -77,4 +77,13 @@ const (
 
 	// FlattenImageData identifies the capability to use the flattened image data model (ImageV2).
 	FlattenImageData = "FlattenImageData"
+
+	// SensorACKSupport identifies the capability of Sensor to handle the new generic SensorACK message
+	// instead of the deprecated NodeInventoryACK message. This enables proper ACK/NACK handling for
+	// VM index reports and future compliance-related messages.
+	SensorACKSupport SensorCapability = "SensorACKSupport"
+
+	// InternalTokenAPISupported identifies the capability of Central to issue internal tokens
+	// for authenticated proxy requests.
+	InternalTokenAPISupported CentralCapability = "InternalTokenAPISupported"
 )

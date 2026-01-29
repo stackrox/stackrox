@@ -14,6 +14,7 @@ func VirtualMachine(virtualMachine *virtualMachineV1.VirtualMachine) *storage.Vi
 		Namespace: virtualMachine.GetNamespace(),
 		Name:      virtualMachine.GetName(),
 		ClusterId: virtualMachine.GetClusterId(),
+		Facts:     virtualMachine.GetFacts(),
 		VsockCid:  virtualMachine.GetVsockCid(),
 		State:     convertVirtualMachineState(virtualMachine.GetState()),
 	}

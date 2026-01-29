@@ -28,7 +28,7 @@ function K8sCard({ message, keyValueAttrs = { attrs: [] }, time }: K8sCardProps)
     const [isExpanded, setIsExpanded] = useState(true);
 
     function onExpand() {
-        setIsExpanded(!isExpanded);
+        setIsExpanded((prev) => !prev);
     }
 
     return (

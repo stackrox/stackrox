@@ -226,7 +226,7 @@ function PolicyScopeForm(): ReactElement {
                                 <MenuToggle
                                     variant="typeahead"
                                     aria-label="Typeahead menu toggle"
-                                    onClick={() => setIsExcludeImagesOpen(!isExcludeImagesOpen)}
+                                    onClick={() => setIsExcludeImagesOpen((prev) => !prev)}
                                     innerRef={toggleRef}
                                     isExpanded={isExcludeImagesOpen}
                                     isDisabled={
@@ -239,9 +239,7 @@ function PolicyScopeForm(): ReactElement {
                                     <TextInputGroup isPlain>
                                         <TextInputGroupMain
                                             value={filterValue}
-                                            onClick={() =>
-                                                setIsExcludeImagesOpen(!isExcludeImagesOpen)
-                                            }
+                                            onClick={() => setIsExcludeImagesOpen((prev) => !prev)}
                                             onChange={(_event, value) => setFilterValue(value)}
                                             autoComplete="off"
                                             placeholder="Select images to exclude"

@@ -33,6 +33,7 @@ var (
 		fieldnames.DaysSincePublished:             {{required: set.NewStringSet(search.CVE.String(), search.CVEPublishedOn.String()), printerFuncKey: printer.CveKey}},
 		fieldnames.DaysSinceImageFirstDiscovered:  {{required: set.NewStringSet(search.CVE.String(), search.FirstImageOccurrenceTimestamp.String()), printerFuncKey: printer.CveKey}},
 		fieldnames.DaysSinceSystemFirstDiscovered: {{required: set.NewStringSet(search.CVE.String(), search.FirstSystemOccurrenceTimestamp.String()), printerFuncKey: printer.CveKey}},
+		fieldnames.DaysSinceFixAvailable:          {{required: set.NewStringSet(search.CVE.String(), search.CVEFixAvailable.String()), printerFuncKey: printer.CveKey}},
 		fieldnames.DisallowedAnnotation:           {{required: set.NewStringSet(search.DeploymentAnnotation.String()), printerFuncKey: printer.DisallowedAnnotationKey}},
 		fieldnames.DisallowedImageLabel:           {{required: set.NewStringSet(search.ImageLabel.String()), printerFuncKey: printer.DisallowedImageLabelKey}},
 		fieldnames.DockerfileLine:                 {{required: set.NewStringSet(augmentedobjs.DockerfileLineCustomTag), printerFuncKey: printer.LineKey}},
@@ -89,7 +90,7 @@ var (
 	requiredKubeEventFields     = set.NewFrozenStringSet(augmentedobjs.KubernetesAPIVerbCustomTag, augmentedobjs.KubernetesResourceCustomTag)
 	requiredNetworkFlowFields   = set.NewFrozenStringSet(augmentedobjs.NotInNetworkBaselineCustomTag)
 	requiredNetworkPolicyFields = set.NewFrozenStringSet(augmentedobjs.HasEgressPolicyCustomTag, augmentedobjs.HasIngressPolicyCustomTag)
-	requiredFileAccessFields    = set.NewFrozenStringSet(search.NodeFilePath.String(), search.MountedFilePath.String(), search.FileOperation.String())
+	requiredFileAccessFields    = set.NewFrozenStringSet(search.ActualPath.String(), search.EffectivePath.String(), search.FileOperation.String())
 )
 
 func containsAllRequiredFields(fieldMap map[string][]string, required set.StringSet) bool {

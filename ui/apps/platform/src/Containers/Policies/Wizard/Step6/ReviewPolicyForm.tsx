@@ -120,7 +120,7 @@ function ReviewPolicyForm({
                         >
                             <Button
                                 variant="secondary"
-                                onClick={() => setShowPolicyResults(!showPolicyResults)}
+                                onClick={() => setShowPolicyResults((prev) => !prev)}
                             >
                                 Preview policy violations
                             </Button>

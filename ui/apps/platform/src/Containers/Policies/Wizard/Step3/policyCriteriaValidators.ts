@@ -49,11 +49,11 @@ export const policySectionValidators: PolicySectionValidator[] = [
             context.eventSource === 'DEPLOYMENT_EVENT',
         validate: ({ policyGroups }) => {
             const hasFileOperation = policyGroupsHasCriterion(policyGroups, 'File Operation');
-            const hasMountedFilePath = policyGroupsHasCriterion(policyGroups, 'Mounted File Path');
-            const hasNodeFilePath = policyGroupsHasCriterion(policyGroups, 'Node File Path');
+            const hasEffectivePath = policyGroupsHasCriterion(policyGroups, 'Effective Path');
+            const hasActualPath = policyGroupsHasCriterion(policyGroups, 'Actual Path');
 
-            if (hasFileOperation && !hasMountedFilePath && !hasNodeFilePath) {
-                return 'Criterion must be present with at least one value when using File operation: Mounted file path or Node file path';
+            if (hasFileOperation && !hasEffectivePath && !hasActualPath) {
+                return 'Criterion must be present with at least one value when using File operation: Effective Path or Actual Path';
             }
             return undefined;
         },
@@ -64,10 +64,10 @@ export const policySectionValidators: PolicySectionValidator[] = [
             context.lifecycleStages.includes('RUNTIME') && context.eventSource === 'NODE_EVENT',
         validate: ({ policyGroups }) => {
             const hasFileOperation = policyGroupsHasCriterion(policyGroups, 'File Operation');
-            const hasNodeFilePath = policyGroupsHasCriterion(policyGroups, 'Node File Path');
+            const hasActualPath = policyGroupsHasCriterion(policyGroups, 'Actual Path');
 
-            if (hasFileOperation && !hasNodeFilePath) {
-                return 'Criterion must be present with at least one value when using File operation: Node file path';
+            if (hasFileOperation && !hasActualPath) {
+                return 'Criterion must be present with at least one value when using File operation: Actual Path';
             }
             return undefined;
         },

@@ -11,7 +11,7 @@ const CollapsibleRow = ({ header, isCollapsible, children, isCollapsibleOpen, ha
         if (!isCollapsible) {
             return;
         }
-        setOpen(!open);
+        setOpen((prev) => !prev);
     }
 
     const icons = {

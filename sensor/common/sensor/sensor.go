@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cenkalti/backoff/v3"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -31,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralclient"
+	"github.com/stackrox/rox/sensor/common/centralproxy"
 	"github.com/stackrox/rox/sensor/common/chaos"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
@@ -70,8 +71,10 @@ type Sensor struct {
 	server          pkgGRPC.API
 	webhookServer   pkgGRPC.API
 	profilingServer *http.Server
+	proxyServer     *http.Server
 
-	pubSub *internalmessage.MessageSubscriber
+	pubSub           *internalmessage.MessageSubscriber
+	pubSubDispatcher common.PubSubDispatcher
 
 	currentState    common.SensorComponentEvent
 	currentStateMtx *sync.Mutex
@@ -99,15 +102,21 @@ func NewSensor(
 	imageService image.Service,
 	centralConnectionFactory centralclient.CentralConnectionFactory,
 	pubSub *internalmessage.MessageSubscriber,
+	pubSubDispatcher common.PubSubDispatcher,
 	certLoader centralclient.CertLoader,
 	components ...common.SensorComponent,
-) *Sensor {
+) (*Sensor, error) {
+	if features.SensorInternalPubSub.Enabled() && pubSubDispatcher == nil {
+		return nil, errors.Errorf("%q is enabled but the PubSubDispatcher is `nil`", features.SensorInternalPubSub.EnvVar())
+	}
 	return &Sensor{
 		clusterID:          clusterID,
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
 
-		pubSub:        pubSub,
+		pubSub:           pubSub,
+		pubSubDispatcher: pubSubDispatcher,
+
 		configHandler: configHandler,
 		detector:      detector,
 		imageService:  imageService,
@@ -124,7 +133,7 @@ func NewSensor(
 		stoppedSig: concurrency.NewErrorSignal(),
 
 		reconnect: atomic.Bool{},
-	}
+	}, nil
 }
 
 // AddAPIServices adds the api services to the sensor. It should be called PRIOR to Start()
@@ -236,6 +245,22 @@ func (s *Sensor) Start() {
 		s.AddNotifiable(scannerclient.ResetNotifiable())
 	}
 
+	// Enable proxy endpoint for forwarding requests to Central on OpenShift.
+	// The proxy is served on a dedicated HTTPS server with a service CA signed certificate.
+	if features.OCPConsoleIntegration.Enabled() && env.OpenshiftAPI.BooleanSetting() {
+		handler, err := centralproxy.NewProxyHandler(s.centralEndpoint, centralCertificates, s.clusterID)
+		if err != nil {
+			utils.Should(errors.Wrap(err, "creating central proxy handler"))
+		} else {
+			handler.SetCentralGRPCClient(s.centralConnection)
+			s.AddNotifiable(handler)
+			s.proxyServer, err = centralproxy.StartProxyServer(handler)
+			if err != nil {
+				utils.Should(errors.Wrap(err, "starting proxy server"))
+			}
+		}
+	}
+
 	// Create grpc server with custom routes
 	mtlsServiceIDExtractor, err := serviceAuthn.NewExtractor()
 	if err != nil {
@@ -298,7 +323,6 @@ func (s *Sensor) Start() {
 		log.Infof("Connection restart requested: %s", message.Text)
 		s.centralCommunication.Stop()
 	})
-
 	if err != nil {
 		log.Warnf("Failed to register subscription to sensor internal message: %q", err)
 	}
@@ -339,12 +363,22 @@ func (s *Sensor) Stop() {
 		}
 	}
 
+	if s.proxyServer != nil {
+		if err := s.proxyServer.Close(); err != nil && err != http.ErrServerClosed {
+			log.Errorf("Error closing proxy server: %v", err)
+		}
+	}
+
 	if s.server != nil && !s.server.Stop() {
 		log.Warnf("Sensor gRPC server stop was called more than once")
 	}
 
 	if s.webhookServer != nil && !s.webhookServer.Stop() {
 		log.Warnf("Sensor webhook server stop was called more than once")
+	}
+
+	if s.pubSubDispatcher != nil {
+		s.pubSubDispatcher.Stop()
 	}
 
 	log.Info("Sensor shutdown complete")
@@ -413,7 +447,19 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 	exponential.MaxInterval = env.ConnectionRetryMaxInterval.DurationSetting()
 
 	s.reconcile.Store(true)
-	err := backoff.RetryNotify(func() error {
+	err := backoff.RetryNotify(s.communicationWithCentral(centralReachable, exponential), exponential, func(err error, d time.Duration) {
+		log.Infof("Central communication stopped: %s. Retrying after %s...", err, d.Round(time.Second))
+	})
+
+	log.Info("Stopping gRPC connection retry loop.")
+
+	if err != nil {
+		log.Warnf("Backoff returned error: %s", err)
+	}
+}
+
+func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag, exponential *backoff.ExponentialBackOff) func() error {
+	return func() error {
 		log.Infof("Attempting connection setup (client reconciliation = %s)", strconv.FormatBool(s.reconcile.Load()))
 		select {
 		case <-s.centralConnectionFactory.OkSignal().WaitC():
@@ -438,8 +484,14 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		})
 		centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
 		go s.notifySyncDone(&syncDone, centralCommunication)
-		// Reset the exponential back-off if the connection succeeds
-		exponential.Reset()
+
+		defer func() {
+			if syncDone.IsDone() {
+				log.Debug("Reset the exponential back-off if the sync succeeds")
+				exponential.Reset()
+			}
+		}()
+
 		select {
 		case <-s.centralCommunication.Stopped().WaitC():
 			if err := s.centralCommunication.Stopped().Err(); err != nil {
@@ -471,14 +523,6 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			s.centralCommunication.Stop()
 			return backoff.Permanent(wrapOrNewError(s.stoppedSig.Err(), "received sensor stop signal"))
 		}
-	}, exponential, func(err error, d time.Duration) {
-		log.Infof("Central communication stopped: %s. Retrying after %s...", err, d.Round(time.Second))
-	})
-
-	log.Info("Stopping gRPC connection retry loop.")
-
-	if err != nil {
-		log.Warnf("Backoff returned error: %s", err)
 	}
 }
 

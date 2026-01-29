@@ -73,7 +73,7 @@ function ListeningEndpointsTable({
                             // TODO Awkward type assertion here is fixed in PF 5 https://github.com/patternfly/patternfly-react/issues/8330
                             collapseAllAriaLabel: 'Expand or collapse all rows' as '',
                             onToggle: () => {
-                                setAllRowsExpanded(!areAllRowsExpanded);
+                                setAllRowsExpanded((prev) => !prev);
                                 invertedExpansionRowSet.clear();
                             },
                         }}
