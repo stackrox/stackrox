@@ -34,7 +34,7 @@ var (
 
 	orphanedDeclarativeOriginTraits = &storage.Traits{Origin: storage.Traits_DECLARATIVE_ORPHANED}
 
-	dynamicOriginTraits = &storage.Traits{Origin: storage.Traits_DYNAMIC}
+	ephemeralOriginTraits = &storage.Traits{Origin: storage.Traits_EPHEMERAL}
 )
 
 type serviceImplTester struct {

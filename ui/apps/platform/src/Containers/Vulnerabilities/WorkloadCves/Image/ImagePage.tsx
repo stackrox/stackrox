@@ -322,6 +322,7 @@ function ImagePage({
                                         tag: '',
                                     }
                                 }
+                                baseImage={imageData?.baseImage ?? null}
                                 refetchAll={refetchAll}
                                 pagination={pagination}
                                 vulnerabilityState={vulnerabilityState}

@@ -109,7 +109,7 @@ func TestCreatePermissionSet(t *testing.T) {
 				Times(1).
 				Return(tc.expectedStoreError)
 
-			psID, err := roleMgr.createPermissionSet(ctx, tc.input)
+			psID, err := roleMgr.createPermissionSet(ctx, tc.input, testExpiredTraits)
 
 			if tc.expectedStoreError != nil {
 				assert.Empty(it, psID)
@@ -296,7 +296,7 @@ func TestCreateAccessScope(t *testing.T) {
 				Times(1).
 				Return(tc.expectedStoreError)
 
-			asID, err := roleMgr.createAccessScope(ctx, tc.input)
+			asID, err := roleMgr.createAccessScope(ctx, tc.input, testExpiredTraits)
 
 			if tc.expectedStoreError != nil {
 				assert.Empty(it, asID)
@@ -324,7 +324,7 @@ func TestCreateAccessScope(t *testing.T) {
 			Times(1).
 			Return("", false, errDummy)
 
-		accessScopeId, err := roleMgr.createAccessScope(ctx, input)
+		accessScopeId, err := roleMgr.createAccessScope(ctx, input, testExpiredTraits)
 		assert.Empty(it, accessScopeId)
 		assert.ErrorIs(it, err, errDummy)
 	})
@@ -355,7 +355,7 @@ func TestCreateAccessScope(t *testing.T) {
 			Times(1).
 			Return(nil)
 
-		accessScopeId, err := roleMgr.createAccessScope(ctx, input)
+		accessScopeId, err := roleMgr.createAccessScope(ctx, input, testExpiredTraits)
 		assert.Equal(it, expectedAccessScope.GetId(), accessScopeId)
 		assert.NoError(it, err)
 	})
@@ -458,7 +458,7 @@ func TestCreateRole(t *testing.T) {
 				mockRoleStore,
 			)
 
-			roleName, err := roleMgr.createRole(ctx, tc.input)
+			roleName, err := roleMgr.createRole(ctx, tc.input, testExpiredTraits)
 
 			if tc.expectedRoleStoreError != nil {
 				assert.Empty(it, roleName)
@@ -498,7 +498,7 @@ func TestCreateRole(t *testing.T) {
 
 		setClusterStoreExpectations(input, mockClusterStore)
 
-		roleName, err := roleMgr.createRole(ctx, input)
+		roleName, err := roleMgr.createRole(ctx, input, testExpiredTraits)
 
 		assert.Empty(it, roleName)
 		assert.ErrorIs(it, err, accessScopeCreationErr)
@@ -523,7 +523,7 @@ func TestCreateRole(t *testing.T) {
 			ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
 		}
 
-		roleName, err := roleMgr.createRole(ctx, input)
+		roleName, err := roleMgr.createRole(ctx, input, testExpiredTraits)
 
 		assert.Empty(it, roleName)
 		assert.ErrorIs(it, err, permissionSetCreationErr)
@@ -616,7 +616,7 @@ func testPermissionSet(permissions map[string]v1.Access) *storage.PermissionSet 
 		Name:             fmt.Sprintf(permissionSetNameFormat, permissionSetID),
 		Description:      permissionSetDescription,
 		ResourceToAccess: make(map[string]storage.Access),
-		Traits:           generatedObjectTraits.CloneVT(),
+		Traits:           testExpiredTraits,
 	}
 	for _, resource := range resources {
 		permissionSet.ResourceToAccess[resource] = convertAccess(permissions[resource])
@@ -634,7 +634,7 @@ func testAccessScope(targetScopes []*v1.ClusterScope) *storage.SimpleAccessScope
 			IncludedClusters:   make([]string, 0),
 			IncludedNamespaces: make([]*storage.SimpleAccessScope_Rules_Namespace, 0),
 		},
-		Traits: generatedObjectTraits.CloneVT(),
+		Traits: testExpiredTraits,
 	}
 	for _, targetScope := range targetScopes {
 		if targetScope == nil {
@@ -668,7 +668,7 @@ func testRole(permissions map[string]v1.Access, targetScopes []*v1.ClusterScope)
 		Description:     roleDescription,
 		PermissionSetId: permissionSetID,
 		AccessScopeId:   accessScopeID,
-		Traits:          generatedObjectTraits.CloneVT(),
+		Traits:          testExpiredTraits,
 	}
 	return role
 }

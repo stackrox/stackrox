@@ -17,6 +17,7 @@ import ScannerV4IntegrationBanner from 'Components/ScannerV4IntegrationBanner';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
+import { getQueryString } from 'utils/queryStringUtils';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 import type { NonEmptyArray } from 'utils/type.utils';
 import type { VulnerabilityState } from 'types/cve.proto';
@@ -30,7 +31,7 @@ import { WorkloadCveViewContext } from './WorkloadCveViewContext';
 import type { WorkloadCveView } from './WorkloadCveViewContext';
 
 import type { QuerySearchFilter, WorkloadEntityTab } from '../types';
-import { getOverviewPagePath, getWorkloadEntityPagePath } from '../utils/searchUtils';
+import { getWorkloadEntityPagePath } from '../utils/searchUtils';
 
 export const userWorkloadViewId = 'user-workloads';
 export const platformViewId = 'platform';
@@ -40,28 +41,22 @@ export const imagesWithoutCvesViewId = 'images-without-cves';
 
 function getUrlBuilder(viewId: string): WorkloadCveView['urlBuilder'] {
     let urlRoot = '';
-    let cveBase: 'Workload' | 'Node' | 'Platform' = 'Workload';
 
     switch (viewId) {
         case userWorkloadViewId:
             urlRoot = vulnerabilitiesUserWorkloadsPath;
-            cveBase = 'Workload';
             break;
         case platformViewId:
             urlRoot = vulnerabilitiesPlatformPath;
-            cveBase = 'Platform';
             break;
         case allImagesViewId:
             urlRoot = vulnerabilitiesAllImagesPath;
-            cveBase = 'Workload';
             break;
         case inactiveImagesViewId:
             urlRoot = vulnerabilitiesInactiveImagesPath;
-            cveBase = 'Workload';
             break;
         case imagesWithoutCvesViewId:
             urlRoot = vulnerabilitiesImagesWithoutCvesPath;
-            cveBase = 'Workload';
             break;
         default:
             // TODO Handle user-defined views, or error
@@ -75,19 +70,15 @@ function getUrlBuilder(viewId: string): WorkloadCveView['urlBuilder'] {
     return {
         vulnMgmtBase: getAbsoluteUrl,
         cveList: (vulnerabilityState: VulnerabilityState) =>
-            getAbsoluteUrl(getOverviewPagePath(cveBase, { vulnerabilityState, entityTab: 'CVE' })),
+            `${urlRoot}${getQueryString({ vulnerabilityState, entityTab: 'CVE' })}`,
         cveDetails: (cve: string, vulnerabilityState: VulnerabilityState) =>
             getAbsoluteUrl(getWorkloadEntityPagePath('CVE', cve, vulnerabilityState)),
         imageList: (vulnerabilityState: VulnerabilityState) =>
-            getAbsoluteUrl(
-                getOverviewPagePath(cveBase, { vulnerabilityState, entityTab: 'Image' })
-            ),
+            `${urlRoot}${getQueryString({ vulnerabilityState, entityTab: 'Image' })}`,
         imageDetails: (id: string, vulnerabilityState: VulnerabilityState) =>
             getAbsoluteUrl(getWorkloadEntityPagePath('Image', id, vulnerabilityState)),
         workloadList: (vulnerabilityState: VulnerabilityState) =>
-            getAbsoluteUrl(
-                getOverviewPagePath(cveBase, { vulnerabilityState, entityTab: 'Deployment' })
-            ),
+            `${urlRoot}${getQueryString({ vulnerabilityState, entityTab: 'Deployment' })}`,
         workloadDetails: (
             workload: {
                 id: string;

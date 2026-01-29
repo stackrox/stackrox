@@ -114,7 +114,7 @@ type AnalyticsBoolean = 0 | 1;
  */
 export const searchCategoriesWithFilter = [
     'Component Source',
-    'Component From Base Image',
+    'Component Layer Type',
     'SEVERITY',
     'FIXABLE',
     'CLUSTER CVE FIXABLE',

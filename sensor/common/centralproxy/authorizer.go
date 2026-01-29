@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
+	"golang.org/x/sync/errgroup"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -154,6 +155,8 @@ func (a *k8sAuthorizer) validateToken(ctx context.Context, token string) (*authe
 //     access scope limited to the namespace.
 //   - FullClusterAccessScope ("*"): SubjectAccessReview for all namespaces and rox token
 //     with cluster-wide access scope.
+//
+// SAR checks are performed in parallel to reduce latency.
 func (a *k8sAuthorizer) authorize(ctx context.Context, userInfo *authenticationv1.UserInfo, r *http.Request) error {
 	namespace := r.Header.Get(stackroxNamespaceHeader)
 	// Skip authorization if the namespace header is empty or not set.
@@ -161,18 +164,30 @@ func (a *k8sAuthorizer) authorize(ctx context.Context, userInfo *authenticationv
 		return nil
 	}
 
+	// Use errgroup with context cancellation to short-circuit on first error/denial.
+	g, groupCtx := errgroup.WithContext(ctx)
+
 	for _, resource := range a.resourcesToCheck {
 		for _, verb := range a.verbsToCheck {
-			allowed, err := a.performSubjectAccessReview(ctx, userInfo, verb, namespace, resource)
-			if err != nil {
-				return pkghttputil.Errorf(http.StatusInternalServerError, "checking %s permission for %s: %v", verb, resource.Resource, err)
-			}
-			if !allowed {
-				return formatForbiddenErr(userInfo.Username, verb, resource.Resource, resource.Group, namespace)
-			}
+			// Capture loop variables for the goroutine.
+			resource := resource
+
+			g.Go(func() error {
+				allowed, err := a.performSubjectAccessReview(groupCtx, userInfo, verb, namespace, resource)
+				if err != nil {
+					return pkghttputil.Errorf(http.StatusInternalServerError, "checking %s permission for %s: %v", verb, resource.Resource, err)
+				}
+				if !allowed {
+					return formatForbiddenErr(userInfo.Username, verb, resource.Resource, resource.Group, namespace)
+				}
+				return nil
+			})
 		}
 	}
 
+	if err := g.Wait(); err != nil {
+		return err //nolint:wrapcheck
+	}
 	return nil
 }
 

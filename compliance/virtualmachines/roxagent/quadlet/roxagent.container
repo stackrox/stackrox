@@ -1,0 +1,34 @@
+[Unit]
+Description=StackRox VM Agent Container
+# Copy RPM database before starting (SQLite WAL requires writable access)
+Requires=roxagent-prep.service
+After=roxagent-prep.service
+
+[Container]
+# Replace with your StackRox main image tag
+Image=quay.io/stackrox-io/main:4.10.x-697-g3c843a274f
+Exec=--host-path /host
+Network=host
+
+# Privileged for vsock access
+# Use PodmanArgs for entrypoint (RHEL 8 Quadlet doesn't support Entrypoint key)
+# Run as root since image defaults to non-root user
+SecurityLabelDisable=true
+PodmanArgs=--privileged --user root --entrypoint /stackrox/bin/roxagent --device /dev/vsock
+
+# Mount copied RPM database (writable for SQLite WAL) and host config files (read-only)
+Volume=/tmp/roxagent-rpm:/host/var/lib/rpm:rw
+Volume=/etc/yum.repos.d:/host/etc/yum.repos.d:ro
+Volume=/etc/os-release:/host/etc/os-release:ro
+Volume=/etc/redhat-release:/host/etc/redhat-release:ro
+Volume=/etc/system-release-cpe:/host/etc/system-release-cpe:ro
+# DNF cache and state for repo-to-package mapping
+Volume=/var/cache/dnf:/host/var/cache/dnf:ro
+Volume=/var/lib/dnf:/host/var/lib/dnf:ro
+
+[Service]
+Type=oneshot
+TimeoutStartSec=300
+
+[Install]
+WantedBy=

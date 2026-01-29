@@ -278,12 +278,12 @@ Push your changes to a GitHub PR (draft is OK) to let CI build and push images f
 Now the latest version (based off of `make tag`) can be installed like so:
 
 ```bash
-# TODO(ROX-11744): drop branding here once operator is available from quay.io/stackrox-io
+# TODO(ROX-11744): drop branding here once operator is available via OLM from quay.io/stackrox-io
 
 ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-via-olm
 ```
 
-This installs the operator into the `stackrox-operator` namespace.
+This installs the operator into the `rhacs-operator-system` namespace.
 This can be overridden with a `TEST_NAMESPACE` argument.
 The version can be overridden with a `VERSION` argument.
 
@@ -299,7 +299,7 @@ You can blow everything away with:
 
 ```bash
 $ make olm-uninstall
-$ kubectl delete ns stackrox-operator
+$ kubectl delete ns stackrox-operator-system
 
 # Optionally remove CRDs
 $ make uninstall

@@ -68,6 +68,8 @@ import {
     imageCVESearchFilterConfig,
     imageComponentSearchFilterConfig,
 } from '../../searchFilterConfig';
+import BaseImageAssessmentCard from '../components/BaseImageAssessmentCard';
+import type { BaseImage } from '../components/ImageDetailBadges';
 
 export const imageVulnerabilitiesQuery = gql`
     ${imageMetadataContextFragment}
@@ -127,6 +129,7 @@ export type ImagePageVulnerabilitiesProps = {
         remote: string;
         tag: string;
     };
+    baseImage: BaseImage | null;
     refetchAll: () => void;
     pagination: UseURLPaginationResult;
     vulnerabilityState: VulnerabilityState;
@@ -139,6 +142,7 @@ export type ImagePageVulnerabilitiesProps = {
 function ImagePageVulnerabilities({
     imageId,
     imageName,
+    baseImage,
     refetchAll,
     pagination,
     vulnerabilityState,
@@ -148,6 +152,7 @@ function ImagePageVulnerabilities({
     setSearchFilter,
 }: ImagePageVulnerabilitiesProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isBaseImageDetectionEnabled = isFeatureFlagEnabled('ROX_BASE_IMAGE_DETECTION');
     const isNewImageDataModelEnabled = isFeatureFlagEnabled('ROX_FLATTEN_IMAGE_DATA');
 
     const { analyticsTrack } = useAnalytics();
@@ -291,6 +296,11 @@ function ImagePageVulnerabilities({
                 <Text>Review and triage vulnerability data scanned on this image</Text>
             </PageSection>
             <Divider component="div" />
+            {isBaseImageDetectionEnabled && baseImage && (
+                <PageSection component="div" className="pf-v5-u-pt-lg">
+                    <BaseImageAssessmentCard baseImage={baseImage} />
+                </PageSection>
+            )}
             <PageSection
                 id={vulnStateTabContentId}
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"

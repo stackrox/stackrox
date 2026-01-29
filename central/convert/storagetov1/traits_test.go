@@ -15,5 +15,7 @@ func TestTraits(t *testing.T) {
 
 	v1Traits := Traits(traits)
 
+	// Clear ExpiresAt since v1.Traits doesn't have this field (internal storage field).
+	traits.ExpiresAt = nil
 	convertTestUtils.AssertProtoMessageEqual(t, traits, v1Traits)
 }

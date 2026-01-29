@@ -11,7 +11,7 @@ import {
 } from '@patternfly/react-core';
 import { Link } from 'react-router-dom-v5-compat';
 
-import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
+import TechPreviewLabel from 'Components/PatternFly/PreviewLabel/TechPreviewLabel';
 
 type IntegrationTileProps = {
     categories?: string;

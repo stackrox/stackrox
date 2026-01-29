@@ -11,6 +11,8 @@ source "$ROOT/scripts/lib.sh"
 source "$ROOT/scripts/ci/lib.sh"
 
 test_operator_e2e() {
+    operator_cluster_type="$1"
+
     info "Starting operator e2e tests"
 
     require_environment "KUBECONFIG"
@@ -30,31 +32,44 @@ _EO_KUTTL_HELP_
 
     image_prefetcher_prebuilt_await
 
-    info "Deploying operator"
-    junit_wrap deploy-previous-operator \
-               "Deploy previously released version of the operator." \
-               "${kuttl_help}" \
-               "make" "-C" "operator" "deploy-previous-via-olm"
+    # TODO(ROX-27191): Once there *is* a previous version shipping a non-OLM operator distribution,
+    # use it on other platforms too and run the upgrade test as well.
+     if [[ $operator_cluster_type == openshift4 ]]; then
+        info "Deploying operator"
+        junit_wrap deploy-previous-operator \
+                   "Deploy previously released version of the operator." \
+                   "${kuttl_help}" \
+                   "make" "-C" "operator" "deploy-previous-via-olm" TEST_NAMESPACE="rhacs-operator-system"
+   fi
 
     image_prefetcher_system_await
 
-    info "Executing operator upgrade test"
-    junit_wrap test-upgrade \
-               "Test operator upgrade from previously released version to the current one." \
-               "${kuttl_help}" \
-               "make" "-C" "operator" "test-upgrade" || FAILED=1
-    store_test_results "operator/build/kuttl-test-artifacts-upgrade" "kuttl-test-artifacts-upgrade"
-    if junit_contains_failure "$(stored_test_results "kuttl-test-artifacts-upgrade")"; then
-        # Prevent double-reporting
-        remove_junit_record test-upgrade
+    if [[ $operator_cluster_type == openshift4 ]]; then
+        info "Executing operator upgrade test"
+        junit_wrap test-upgrade \
+                   "Test operator upgrade from previously released version to the current one." \
+                   "${kuttl_help}" \
+                   "make" "-C" "operator" "test-upgrade" TEST_NAMESPACE="rhacs-operator-system" || FAILED=1
+        store_test_results "operator/build/kuttl-test-artifacts-upgrade" "kuttl-test-artifacts-upgrade"
+        if junit_contains_failure "$(stored_test_results "kuttl-test-artifacts-upgrade")"; then
+            # Prevent double-reporting
+            remove_junit_record test-upgrade
+        fi
+        [[ $FAILED = 0 ]] || die "operator upgrade tests failed"
+    else
+        info "Deploying operator using manifests..."
+        junit_wrap deploy-operator \
+                   "Deploy current version of the operator." \
+                   "${kuttl_help}" \
+                   "make" "-C" "operator" "build-installer" "deploy-via-installer" TEST_NAMESPACE="rhacs-operator-system"
     fi
-    [[ $FAILED = 0 ]] || die "operator upgrade tests failed"
 
     info "Executing operator e2e tests"
     junit_wrap test-e2e \
                "Run operator E2E tests." \
                "${kuttl_help}" \
-               "make" "-C" "operator" "test-e2e-deployed" || FAILED=1
+               "make" "-C" "operator" "test-e2e-deployed" TEST_NAMESPACE="rhacs-operator-system" || FAILED=1
+    # TODO(ROX-11901): determine the test namespace above based on branding, to make it possible to e2e-test the community build
     store_test_results "operator/build/kuttl-test-artifacts" "kuttl-test-artifacts"
     if junit_contains_failure "$(stored_test_results "kuttl-test-artifacts")"; then
         # Prevent double-reporting
@@ -71,5 +86,5 @@ _EO_KUTTL_HELP_
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    test_operator_e2e "$*"
+    test_operator_e2e "$@"
 fi

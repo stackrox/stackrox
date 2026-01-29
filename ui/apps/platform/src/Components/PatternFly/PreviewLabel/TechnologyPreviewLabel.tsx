@@ -1,5 +1,7 @@
 import PreviewLabelBase from './PreviewLabelBase';
 
+// Render TechPreviewLabel when width is limited: in left navigation or integration tile.
+// Render TechnologyPreviewLabel when when width is not limited: in heading.
 export function TechnologyPreviewLabel() {
     return (
         <PreviewLabelBase

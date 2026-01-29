@@ -4,6 +4,7 @@ package datastore
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -447,4 +448,66 @@ func (s *datastorePostgresTestSuite) TestDeclarativeUpserts() {
 			s.ErrorIs(err, tc.expectedError)
 		})
 	}
+}
+
+// TestUpsertTokenExchangerFailureRollsBackTransaction verifies that when UpsertTokenExchanger
+// fails, the database transaction is properly rolled back and no data is persisted.
+// This test was added to prevent connection leaks where the transaction was not being
+// rolled back when the token exchanger creation failed (e.g., OIDC provider errors).
+func (s *datastorePostgresTestSuite) TestUpsertTokenExchangerFailureRollsBackTransaction() {
+	controller := gomock.NewController(s.T())
+	defer controller.Finish()
+
+	authStore := store.New(s.pool.DB)
+
+	// Mock UpsertTokenExchanger to return an error (simulating OIDC provider failure)
+	tokenExchangerError := errors.New("creating OIDC provider: 404 Not Found: NoSuchBucket")
+	mockSet := mocks.NewMockTokenExchangerSet(controller)
+	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
+	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(tokenExchangerError).Times(1)
+	// Expect rollback operations to be called
+	mockSet.EXPECT().RemoveTokenExchanger(gomock.Any()).Return(nil).Times(1)
+
+	authDataStore := New(authStore, s.roleDataStore, mockSet)
+
+	testConfigID := uuid.NewV4().String()
+	testIssuerURL := "https://storage.googleapis.com/test-bucket"
+
+	config := &storage.AuthMachineToMachineConfig{
+		Id:                      testConfigID,
+		Type:                    storage.AuthMachineToMachineConfig_GENERIC,
+		TokenExpirationDuration: "5m",
+		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
+			{
+				Key:             "sub",
+				ValueExpression: "test-value",
+				Role:            testRole1,
+			},
+		},
+		Issuer: testIssuerURL,
+	}
+
+	// Attempt to upsert - should fail
+	result, err := authDataStore.UpsertAuthM2MConfig(s.ctx, config)
+	s.Error(err, "UpsertAuthM2MConfig should return an error when UpsertTokenExchanger fails")
+	s.Nil(result, "Result should be nil when upsert fails")
+	s.Contains(err.Error(), "NoSuchBucket", "Error should contain the original error message")
+
+	// Verify NO config was persisted (transaction was rolled back)
+	// Use a fresh datastore with a permissive mock to read from the database
+	readMockSet := mocks.NewMockTokenExchangerSet(controller)
+	readMockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
+	readMockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	readDataStore := New(authStore, s.roleDataStore, readMockSet)
+
+	var foundConfig *storage.AuthMachineToMachineConfig
+	err = readDataStore.ForEachAuthM2MConfig(s.ctx, func(obj *storage.AuthMachineToMachineConfig) error {
+		if obj.GetId() == testConfigID || obj.GetIssuer() == testIssuerURL {
+			foundConfig = obj
+		}
+		return nil
+	})
+	s.NoError(err)
+	s.Nil(foundConfig, "Config should NOT be persisted when UpsertTokenExchanger fails - transaction should have been rolled back")
 }

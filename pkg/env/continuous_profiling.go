@@ -17,4 +17,26 @@ var (
 
 	// ContinuousProfilingAppName defines the AppName used to send the profiles
 	ContinuousProfilingAppName = RegisterSetting("ROX_CONTINUOUS_PROFILING_APP_NAME", WithDefault(os.Getenv("POD_NAME")))
+
+	// ContinuousProfilingLabels defines additional labels/tags to attach to profiling data sent to Pyroscope.
+	// Format: Comma-separated list of key=value pairs (e.g., "env=production,region=us-east,team=security")
+	//
+	// Parsing behavior:
+	// - Whitespace around keys, values, and commas is trimmed
+	// - Empty entries (consecutive commas) are ignored
+	// - Values can contain equals signs (e.g., "token=abc=123" is valid)
+	// - Both keys and values must be non-empty after trimming
+	//
+	// Error handling:
+	// - An invalid entry is logged as an error but doesn't prevent profiler initialization
+	// - If parsing fails, no labels are set
+	//
+	// Examples:
+	//   Valid:   "app=central,env=prod"
+	//   Valid:   " key1 = value1 , key2 = value2 "  (whitespace is trimmed)
+	//   Valid:   "token=abc=123"                    (values can contain '=')
+	//   Invalid: "key="                              (empty value)
+	//   Invalid: "=value"                            (empty key)
+	//   Invalid: "noequals"                          (missing '=' separator)
+	ContinuousProfilingLabels = RegisterSetting("ROX_CONTINUOUS_PROFILING_LABELS")
 )

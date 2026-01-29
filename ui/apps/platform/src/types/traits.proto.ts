@@ -10,5 +10,5 @@ export type TraitsOrigin =
     | 'DECLARATIVE'
     | 'DEFAULT'
     | 'DECLARATIVE_ORPHANED'
-    | 'DYNAMIC';
+    | 'EPHEMERAL';
 export type TraitsVisibility = 'VISIBLE' | 'HIDDEN';
