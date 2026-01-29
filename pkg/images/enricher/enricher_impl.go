@@ -29,6 +29,7 @@ import (
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
+	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/time/rate"
 )
@@ -1063,20 +1064,34 @@ func FillScanStats(i *storage.Image) {
 }
 
 // toBaseImageInfos converts matched BaseImage objects to BaseImageInfo for storage in the image.
-// It computes the max layer index for each base image based on the image's metadata.
+// It computes the max layer index based on the first base image's metadata.
 func toBaseImageInfos(metadata *storage.ImageMetadata, baseImages []*storage.BaseImage) []*storage.BaseImageInfo {
 	if len(baseImages) == 0 {
 		return nil
 	}
+
+	// Verify all base images have the same layer count.
+	// If not, this indicates a bug in the matcher (e.g., returning nested base images).
+	firstLayerCount := len(baseImages[0].GetLayers())
+	for _, bi := range baseImages[1:] {
+		if len(bi.GetLayers()) != firstLayerCount {
+			pkgUtils.Should(errors.Errorf(
+				"base images have inconsistent layer counts: %s has %d layers, %s has %d layers",
+				baseImages[0].GetId(), firstLayerCount, bi.GetId(), len(bi.GetLayers())))
+			break
+		}
+	}
+
+	maxIndex, err := resolveLayerBoundary(metadata, firstLayerCount)
+	if err != nil {
+		log.Warnw("Failed to resolve base image layer boundary, ignoring base image matches",
+			logging.String("base_image_id", baseImages[0].GetId()),
+			logging.Err(err))
+		return nil
+	}
+
 	infos := make([]*storage.BaseImageInfo, 0, len(baseImages))
 	for _, bi := range baseImages {
-		maxIndex, err := resolveLayerBoundary(metadata, len(bi.GetLayers()))
-		if err != nil {
-			log.Warnw("Failed to resolve base image layer boundary, ignoring base image match",
-				logging.String("base_image_id", bi.GetId()),
-				logging.Err(err))
-			continue
-		}
 		infos = append(infos, &storage.BaseImageInfo{
 			BaseImageId:       bi.GetId(),
 			BaseImageFullName: fmt.Sprintf("%s:%s", bi.GetRepository(), bi.GetTag()),
