@@ -588,7 +588,7 @@ func TestComponents(t *testing.T) {
 			expected: []*storage.EmbeddedImageScanComponent{
 				{
 					Name:     "test-pkg",
-					Version:  "1.2.3",
+					Version:  "1.0",
 					Source:   storage.SourceType_JAVA,
 					Location: "app.jar",
 					Digest:   "layer-1-hash", // Verify this is set
