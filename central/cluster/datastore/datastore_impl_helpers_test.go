@@ -33,6 +33,7 @@ func TestExtractClusterConfig(t *testing.T) {
 		assert.Equal(t, "fingerprint123", config.helmConfig.GetConfigFingerprint())
 		assert.Equal(t, "stackrox", config.deploymentIdentification.GetAppNamespace())
 		assert.Equal(t, []string{"cap1", "cap2"}, config.capabilities)
+		assert.True(t, config.isNotManagedManually)
 	})
 
 	t.Run("handles nil values gracefully", func(t *testing.T) {
@@ -43,6 +44,7 @@ func TestExtractClusterConfig(t *testing.T) {
 		assert.Empty(t, config.clusterName)
 		assert.Equal(t, storage.ManagerType_MANAGER_TYPE_UNKNOWN, config.manager)
 		assert.Nil(t, config.helmConfig)
+		assert.False(t, config.isNotManagedManually)
 	})
 }
 
@@ -150,6 +152,7 @@ func TestBuildClusterFromConfig(t *testing.T) {
 					MainImage: "stackrox/main:latest",
 				},
 			},
+			isNotManagedManually: true,
 			deploymentIdentification: &storage.SensorDeploymentIdentification{
 				AppNamespace: "stackrox",
 			},
@@ -171,6 +174,7 @@ func TestBuildClusterFromConfig(t *testing.T) {
 			helmConfig: &storage.CompleteClusterConfig{
 				StaticConfig: &storage.StaticClusterConfig{},
 			},
+			isNotManagedManually:     false,
 			deploymentIdentification: &storage.SensorDeploymentIdentification{},
 			capabilities:             []string{},
 		}
@@ -186,6 +190,7 @@ func TestBuildClusterFromConfig(t *testing.T) {
 			helmConfig: &storage.CompleteClusterConfig{
 				StaticConfig: &storage.StaticClusterConfig{},
 			},
+			isNotManagedManually:     true,
 			deploymentIdentification: &storage.SensorDeploymentIdentification{},
 			capabilities:             []string{"zzz", "aaa", "mmm"},
 		}
@@ -214,7 +219,8 @@ func TestApplyConfigToCluster(t *testing.T) {
 					Type: storage.ClusterType_KUBERNETES_CLUSTER,
 				},
 			},
-			capabilities: []string{"new-cap1", "new-cap2"},
+			isNotManagedManually: true,
+			capabilities:         []string{"new-cap1", "new-cap2"},
 		}
 
 		updated := applyConfigToCluster(original, config, "new-bundle")
@@ -238,9 +244,10 @@ func TestApplyConfigToCluster(t *testing.T) {
 		}
 
 		config := clusterConfigData{
-			manager:      storage.ManagerType_MANAGER_TYPE_MANUAL,
-			helmConfig:   &storage.CompleteClusterConfig{},
-			capabilities: []string{},
+			manager:              storage.ManagerType_MANAGER_TYPE_MANUAL,
+			helmConfig:           &storage.CompleteClusterConfig{},
+			isNotManagedManually: false,
+			capabilities:         []string{},
 		}
 
 		updated := applyConfigToCluster(original, config, "bundle")
@@ -258,9 +265,10 @@ func TestApplyConfigToCluster(t *testing.T) {
 		}
 
 		config := clusterConfigData{
-			manager:      storage.ManagerType_MANAGER_TYPE_HELM_CHART,
-			helmConfig:   &storage.CompleteClusterConfig{},
-			capabilities: []string{"cap1"},
+			manager:              storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+			helmConfig:           &storage.CompleteClusterConfig{},
+			isNotManagedManually: true,
+			capabilities:         []string{"cap1"},
 		}
 
 		updated := applyConfigToCluster(original, config, "new-bundle")

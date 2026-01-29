@@ -32,6 +32,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -899,6 +900,7 @@ type clusterConfigData struct {
 	clusterName              string
 	manager                  storage.ManagerType
 	helmConfig               *storage.CompleteClusterConfig
+	isNotManagedManually     bool
 	deploymentIdentification *storage.SensorDeploymentIdentification
 	capabilities             []string
 }
@@ -911,6 +913,7 @@ func extractClusterConfig(hello *central.SensorHello) clusterConfigData {
 		clusterName:              helmInit.GetClusterName(),
 		manager:                  helmInit.GetManagedBy(),
 		helmConfig:               helmInit.GetClusterConfig(),
+		isNotManagedManually:     centralsensor.SecuredClusterIsNotManagedManually(helmInit),
 		deploymentIdentification: hello.GetDeploymentIdentification(),
 		capabilities:             hello.GetCapabilities(),
 	}
@@ -954,7 +957,7 @@ func buildClusterFromConfig(clusterName, registrantID string, config clusterConf
 	}
 	configureFromHelmConfig(cluster, config.helmConfig)
 
-	if config.manager != storage.ManagerType_MANAGER_TYPE_MANUAL && config.manager != storage.ManagerType_MANAGER_TYPE_UNKNOWN {
+	if config.isNotManagedManually {
 		cluster.HelmConfig = config.helmConfig.CloneVT()
 	}
 
@@ -969,7 +972,7 @@ func applyConfigToCluster(cluster *storage.Cluster, config clusterConfigData, re
 	updated.InitBundleId = registrantID
 	updated.SensorCapabilities = sliceutils.CopySliceSorted(config.capabilities)
 
-	if config.manager != storage.ManagerType_MANAGER_TYPE_MANUAL && config.manager != storage.ManagerType_MANAGER_TYPE_UNKNOWN {
+	if config.isNotManagedManually {
 		configureFromHelmConfig(updated, config.helmConfig)
 		updated.HelmConfig = config.helmConfig.CloneVT()
 	} else {
