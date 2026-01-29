@@ -233,6 +233,8 @@ jobs:
     - name: Set up QEMU
       if: matrix.goarch != 'amd64'
       uses: docker/setup-qemu-action@v3
+      with:
+        image: public.ecr.aws/eks-distro-build-tooling/binfmt-misc:qemu-v7.0.0
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
