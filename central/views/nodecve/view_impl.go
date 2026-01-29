@@ -9,7 +9,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
@@ -26,14 +25,7 @@ func (n *nodeCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, erro
 		return 0, err
 	}
 
-	var err error
-	q, err = common.WithSACFilter(ctx, resources.Node, q)
-	if err != nil {
-		return 0, err
-	}
-
-	var results []*nodeCVECoreCount
-	results, err = pgSearch.RunSelectRequestForSchema[nodeCVECoreCount](ctx, n.db, n.schema, common.WithCountQuery(q, search.CVE))
+	results, err := pgSearch.RunSelectRequestForSchema[nodeCVECoreCount](ctx, n.db, n.schema, common.WithCountQuery(q, search.CVE))
 	if err != nil {
 		return 0, err
 	}
@@ -52,14 +44,7 @@ func (n *nodeCVECoreViewImpl) Get(ctx context.Context, q *v1.Query) ([]CveCore, 
 		return nil, err
 	}
 
-	var err error
-	q, err = common.WithSACFilter(ctx, resources.Node, q)
-	if err != nil {
-		return nil, err
-	}
-
-	var results []*nodeCVECoreResponse
-	results, err = pgSearch.RunSelectRequestForSchema[nodeCVECoreResponse](ctx, n.db, n.schema, withSelectQuery(q))
+	results, err := pgSearch.RunSelectRequestForSchema[nodeCVECoreResponse](ctx, n.db, n.schema, withSelectQuery(q))
 	if err != nil {
 		return nil, err
 	}
@@ -83,14 +68,7 @@ func (n *nodeCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query) 
 		return nil, err
 	}
 
-	var err error
-	q, err = common.WithSACFilter(ctx, resources.Node, q)
-	if err != nil {
-		return nil, err
-	}
-
-	var results []*countByNodeCVESeverity
-	results, err = pgSearch.RunSelectRequestForSchema[countByNodeCVESeverity](ctx, n.db, n.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE))
+	results, err := pgSearch.RunSelectRequestForSchema[countByNodeCVESeverity](ctx, n.db, n.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE))
 	if err != nil {
 		return nil, err
 	}
@@ -107,18 +85,11 @@ func (n *nodeCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query) 
 }
 
 func (n *nodeCVECoreViewImpl) GetNodeIDs(ctx context.Context, q *v1.Query) ([]string, error) {
-	var err error
-	q, err = common.WithSACFilter(ctx, resources.Node, q)
-	if err != nil {
-		return nil, err
-	}
-
 	q.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.NodeID).Distinct().Proto(),
 	}
 
-	var results []*nodeResponse
-	results, err = pgSearch.RunSelectRequestForSchema[nodeResponse](ctx, n.db, n.schema, q)
+	results, err := pgSearch.RunSelectRequestForSchema[nodeResponse](ctx, n.db, n.schema, q)
 	if err != nil || len(results) == 0 {
 		return nil, err
 	}

@@ -95,6 +95,11 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 		return nil, err
 	}
 
+	q, err = enrichQueryWithSACFilter(ctx, q, schema, queryType)
+	if err != nil {
+		return nil, err
+	}
+
 	standardizeFieldNamesInQuery(q)
 	joins, dbFields := getJoinsAndFields(schema, q)
 	if len(q.GetSelects()) == 0 && q.GetQuery() == nil {

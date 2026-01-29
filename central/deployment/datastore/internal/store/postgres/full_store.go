@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"gorm.io/gorm"
@@ -71,10 +70,6 @@ func (f *fullStoreImpl) GetContainerImageViews(ctx context.Context, q *v1.Query)
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
-	q, err := common.WithSACFilter(ctx, resources.Deployment, q)
-	if err != nil {
-		return nil, err
-	}
 	q.Selects = []*v1.QuerySelect{
 		pkgSearch.NewQuerySelect(pkgSearch.ImageID).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.ImageSHA).Proto(),
@@ -88,7 +83,7 @@ func (f *fullStoreImpl) GetContainerImageViews(ctx context.Context, q *v1.Query)
 	defer cancel()
 
 	var results []*views.ContainerImageView
-	err = pgSearch.RunSelectRequestForSchemaFn(queryCtx, f.db, pkgSchema.DeploymentsSchema, q, func(response *views.ContainerImageView) error {
+	err := pgSearch.RunSelectRequestForSchemaFn(queryCtx, f.db, pkgSchema.DeploymentsSchema, q, func(response *views.ContainerImageView) error {
 		results = append(results, response)
 		return nil
 	})
