@@ -41,9 +41,13 @@ FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:a670c5b613280e17a
 
 ARG PG_VERSION
 
+# Create minimal dnf.conf required for --installroot
+RUN echo -e "[main]\ngpgcheck=1" > /etc/dnf/dnf.conf
+
 # Install all packages to /out/ using microdnf --installroot
 # This includes base packages and PostgreSQL, all properly tracked in RPM database
 RUN microdnf -y \
+    --config=/etc/dnf/dnf.conf \
     --noplugins \
     --setopt=cachedir=/var/cache/microdnf \
     --setopt=reposdir=/etc/yum.repos.d \
@@ -60,6 +64,7 @@ RUN microdnf -y \
         bash \
         coreutils && \
     microdnf -y \
+    --config=/etc/dnf/dnf.conf \
     --noplugins \
     --setopt=cachedir=/var/cache/microdnf \
     --setopt=reposdir=/etc/yum.repos.d \
@@ -68,6 +73,7 @@ RUN microdnf -y \
     --releasever=8 \
     module enable postgresql:${PG_VERSION} && \
     microdnf -y \
+    --config=/etc/dnf/dnf.conf \
     --noplugins \
     --setopt=cachedir=/var/cache/microdnf \
     --setopt=reposdir=/etc/yum.repos.d \
@@ -77,7 +83,14 @@ RUN microdnf -y \
     --nodocs \
     --setopt=install_weak_deps=0 \
     install postgresql && \
-    microdnf -y --installroot=/out/ clean all && \
+    microdnf -y \
+    --config=/etc/dnf/dnf.conf \
+    --noplugins \
+    --setopt=cachedir=/var/cache/microdnf \
+    --setopt=reposdir=/etc/yum.repos.d \
+    --setopt=varsdir=/etc/dnf \
+    --installroot=/out/ \
+    clean all && \
     rm -rf /out/var/cache/microdnf
 
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/static-bin/* /out/stackrox/
