@@ -300,7 +300,8 @@ func TestCheckGracePeriodForReconnect(t *testing.T) {
 		// Same deployment ID should always be allowed, even with recent contact
 		cluster := &storage.Cluster{
 			HealthStatus: &storage.ClusterHealthStatus{
-				LastContact: nil,
+				LastContact: protoconv.ConvertTimeToTimestampOrNil(
+					time.Now().Add(-1 * time.Minute)), // 1 minute ago
 			},
 			MostRecentSensorId: deploymentID.CloneVT(),
 		}
