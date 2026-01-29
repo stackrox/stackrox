@@ -21,7 +21,15 @@ shift
 script_dir="$(dirname "$0")"
 
 if [[ "${USE_GO_BUNDLE_HELPER:-false}" == "true" ]]; then
-    exec go run "${script_dir}/main.go" "$script_name" "$@"
+    case "$script_name" in
+    fix-spec-descriptor-order)
+        exec go run "${script_dir}/main.go" "$script_name" "$@"
+        ;;
+    *)
+        echo >&2 "No Go implementation of $script_name yet, falling back to Python one!"
+        exec "${script_dir}/${script_name}.py" "$@"
+        ;;
+    esac
 else
     exec "${script_dir}/${script_name}.py" "$@"
 fi
