@@ -55,7 +55,7 @@ func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string) (
 		})
 
 		// base images should always have less layers than a target image
-		if len(candidateLayers) >= len(layers) {
+		if len(layers) <= len(candidateLayers) {
 			continue
 		}
 
