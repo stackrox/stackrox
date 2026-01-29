@@ -53,7 +53,9 @@ func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string) (
 		slices.SortFunc(candidateLayers, func(a, b *storage.BaseImageLayer) int {
 			return int(a.GetIndex() - b.GetIndex())
 		})
-		if len(candidateLayers) > len(layers) {
+
+		// base images should always have less layers than a target image
+		if len(candidateLayers) >= len(layers) {
 			continue
 		}
 
