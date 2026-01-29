@@ -260,10 +260,12 @@ webhooks:
         - '*'
         operations:
         - CONNECT
+        - CREATE
         resources:
           - pods
           - pods/exec
           - pods/portforward
+          - pods/attach
     failurePolicy: {{ ._rox.admissionControl.failurePolicy | quote }}
     clientConfig:
       caBundle: {{ required "The 'ca.cert' config option MUST be set to StackRox's Service CA certificate in order for the admission controller to be usable" ._rox.ca._cert | b64enc }}

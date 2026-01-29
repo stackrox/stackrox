@@ -50,6 +50,8 @@ func GenerateKubeEventViolationMsg(event *storage.KubernetesEvent) *storage.Aler
 		message, attrs = podExecViolationMsg(event)
 	case storage.KubernetesEvent_Object_PODS_PORTFORWARD:
 		message, attrs = podPortForwardViolationMsg(event)
+	case storage.KubernetesEvent_Object_PODS_ATTACH:
+		message, attrs = podAttachViolationMsg(event)
 	default:
 		message, attrs = defaultViolationMsg(event)
 	}
@@ -76,6 +78,10 @@ func podExecViolationMsg(event *storage.KubernetesEvent) (string, []*storage.Ale
 
 func podPortForwardViolationMsg(event *storage.KubernetesEvent) (string, []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr) {
 	return getPFMsgHeader(event), getPFMsgViolationAttr(event)
+}
+
+func podAttachViolationMsg(event *storage.KubernetesEvent) (string, []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr) {
+	return getAttachMsgHeader(event), getAttachMsgViolationAttr(event)
 }
 
 func getDefaultViolationMsgHeader(event *storage.KubernetesEvent) string {
@@ -172,23 +178,45 @@ func getExecMsgHeader(event *storage.KubernetesEvent) string {
 	return stringutils.JoinNonEmpty(" ", prefix, cmds, "request", pod, container)
 }
 
-func getExecMsgViolationAttr(event *storage.KubernetesEvent) []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr {
-	attrs := make([]*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr, 0, 3)
+// podEventAttributes holds optional event-specific attributes for pod-related events.
+type podEventAttributes struct {
+	container string
+	commands  string
+	ports     string
+}
+
+// getPodEventViolationAttr builds violation attributes for pod events (exec, attach, port-forward).
+// It handles the common pod attribute and appends event-specific and default attributes.
+func getPodEventViolationAttr(event *storage.KubernetesEvent, eventSpecificAttr podEventAttributes) []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr {
+	attrs := make([]*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr, 0, 4)
+
+	// Common: pod name
 	if pod := event.GetObject().GetName(); pod != "" {
 		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: PodKey, Value: pod})
 	}
 
-	args := event.GetPodExecArgs()
-	if container := args.GetContainer(); container != "" {
-		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: ContainerKey, Value: container})
+	// Event-specific attributes
+	if eventSpecificAttr.container != "" {
+		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: ContainerKey, Value: eventSpecificAttr.container})
+	}
+	if eventSpecificAttr.commands != "" {
+		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: CommandsKey, Value: eventSpecificAttr.commands})
+	}
+	if eventSpecificAttr.ports != "" {
+		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: PortsKey, Value: eventSpecificAttr.ports})
 	}
 
-	if cmds := stringutils.JoinNonEmpty(" ", args.GetCommands()...); cmds != "" {
-		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: CommandsKey, Value: cmds})
-	}
-
+	// Common: default attrs
 	attrs = append(attrs, getDefaultViolationMsgViolationAttr(event, &attributeOptions{skipVerb: true, skipResourceURI: true})...)
 	return attrs
+}
+
+func getExecMsgViolationAttr(event *storage.KubernetesEvent) []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr {
+	args := event.GetPodExecArgs()
+	return getPodEventViolationAttr(event, podEventAttributes{
+		container: args.GetContainer(),
+		commands:  stringutils.JoinNonEmpty(" ", args.GetCommands()...),
+	})
 }
 
 func getPFMsgHeader(event *storage.KubernetesEvent) string {
@@ -208,15 +236,29 @@ func getPFMsgHeader(event *storage.KubernetesEvent) string {
 }
 
 func getPFMsgViolationAttr(event *storage.KubernetesEvent) []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr {
-	attrs := make([]*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr, 0, 2)
-	if pod := event.GetObject().GetName(); pod != "" {
-		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: PodKey, Value: pod})
+	return getPodEventViolationAttr(event, podEventAttributes{
+		ports: stringutils.JoinInt32(", ", event.GetPodPortForwardArgs().GetPorts()...),
+	})
+}
+
+func getAttachMsgHeader(event *storage.KubernetesEvent) string {
+	pod := event.GetObject().GetName()
+	container := event.GetPodAttachArgs().GetContainer()
+
+	prefix := "Kubernetes API received attach"
+	if pod != "" {
+		pod = fmt.Sprintf("to pod '%s'", pod)
 	}
 
-	if ports := stringutils.JoinInt32(", ", event.GetPodPortForwardArgs().GetPorts()...); ports != "" {
-		attrs = append(attrs, &storage.Alert_Violation_KeyValueAttrs_KeyValueAttr{Key: PortsKey, Value: ports})
+	if container != "" {
+		container = fmt.Sprintf("container '%s'", container)
 	}
 
-	attrs = append(attrs, getDefaultViolationMsgViolationAttr(event, &attributeOptions{skipVerb: true, skipResourceURI: true})...)
-	return attrs
+	return stringutils.JoinNonEmpty(" ", prefix, "request", pod, container)
+}
+
+func getAttachMsgViolationAttr(event *storage.KubernetesEvent) []*storage.Alert_Violation_KeyValueAttrs_KeyValueAttr {
+	return getPodEventViolationAttr(event, podEventAttributes{
+		container: event.GetPodAttachArgs().GetContainer(),
+	})
 }

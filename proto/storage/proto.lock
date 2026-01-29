@@ -10660,6 +10660,10 @@
               {
                 "name": "EGRESS_FIREWALLS",
                 "integer": 9
+              },
+              {
+                "name": "PODS_ATTACH",
+                "integer": 10
               }
             ]
           }
@@ -10698,6 +10702,12 @@
                 "id": 6,
                 "name": "pod_port_forward_args",
                 "type": "PodPortForwardArgs",
+                "oneof_parent": "ObjectArgs"
+              },
+              {
+                "id": 21,
+                "name": "pod_attach_args",
+                "type": "PodAttachArgs",
                 "oneof_parent": "ObjectArgs"
               },
               {
@@ -10782,6 +10792,16 @@
                     "name": "ports",
                     "type": "int32",
                     "is_repeated": true
+                  }
+                ]
+              },
+              {
+                "name": "PodAttachArgs",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "container",
+                    "type": "string"
                   }
                 ]
               },
