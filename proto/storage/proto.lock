@@ -9491,6 +9491,11 @@
                 "id": 4,
                 "name": "created",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "max_layer_index",
+                "type": "int32"
               }
             ]
           }

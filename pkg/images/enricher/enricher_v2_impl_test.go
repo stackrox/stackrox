@@ -1250,11 +1250,15 @@ func TestEnrichImageWithBaseImagesV2(t *testing.T) {
 	const expectedDigest = "sha256:abcdef123456"
 
 	// CHANGE: Define the mock function instead of the gomock matcher
-	mockBaseImageGetter := func(ctx context.Context, layers []string) ([]*storage.BaseImageInfo, error) {
-		return []*storage.BaseImageInfo{
+	mockBaseImageGetter := func(ctx context.Context, layers []string) ([]*storage.BaseImage, error) {
+		return []*storage.BaseImage{
 			{
-				BaseImageFullName: expectedName,
-				BaseImageDigest:   expectedDigest,
+				Repository:     "docker.io/library/alpine",
+				Tag:            "3.18",
+				ManifestDigest: expectedDigest,
+				Layers: []*storage.BaseImageLayer{
+					{LayerDigest: "sha1", Index: 0},
+				},
 			},
 		}, nil
 	}
@@ -1285,6 +1289,12 @@ func TestEnrichImageWithBaseImagesV2(t *testing.T) {
 		Metadata: &storage.ImageMetadata{
 			LayerShas:  []string{"sha1", "sha2"},
 			DataSource: &storage.DataSource{Id: "test-id"},
+			V1: &storage.V1Metadata{
+				Layers: []*storage.ImageLayer{
+					{Instruction: "ADD"},
+					{Instruction: "RUN"},
+				},
+			},
 		},
 	}
 

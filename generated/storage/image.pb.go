@@ -295,7 +295,7 @@ type Image struct {
 	LastUpdated    *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
 	NotPullable    bool                   `protobuf:"varint,10,opt,name=not_pullable,json=notPullable,proto3" json:"not_pullable,omitempty"`
 	IsClusterLocal bool                   `protobuf:"varint,17,opt,name=is_cluster_local,json=isClusterLocal,proto3" json:"is_cluster_local,omitempty"`
-	Priority       int64                  `protobuf:"varint,11,opt,name=priority,proto3" json:"priority,omitempty" search:"Image Risk Priority,hidden"`                     // @gotags: search:"Image Risk Priority,hidden"
+	Priority       int64                  `protobuf:"varint,11,opt,name=priority,proto3" json:"priority,omitempty" search:"Image Risk Priority,hidden"`                  // @gotags: search:"Image Risk Priority,hidden"
 	RiskScore      float32                `protobuf:"fixed32,12,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Image Risk Score,hidden"` // @gotags: search:"Image Risk Score,hidden"
 	// Types that are valid to be assigned to SetTopCvss:
 	//
@@ -603,8 +603,8 @@ func (x *DataSource) GetMirror() string {
 type ImageScan struct {
 	state           protoimpl.MessageState        `protogen:"open.v1"`
 	ScannerVersion  string                        `protobuf:"bytes,6,opt,name=scanner_version,json=scannerVersion,proto3" json:"scanner_version,omitempty"`
-	ScanTime        *timestamppb.Timestamp        `protobuf:"bytes,1,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Image Scan Time"`                      // @gotags: search:"Image Scan Time"
-	Components      []*EmbeddedImageScanComponent `protobuf:"bytes,2,rep,name=components,proto3" json:"components,omitempty" sql:"-"`                                  // @gotags: sql:"-"
+	ScanTime        *timestamppb.Timestamp        `protobuf:"bytes,1,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Image Scan Time"`               // @gotags: search:"Image Scan Time"
+	Components      []*EmbeddedImageScanComponent `protobuf:"bytes,2,rep,name=components,proto3" json:"components,omitempty" sql:"-"`                                            // @gotags: sql:"-"
 	OperatingSystem string                        `protobuf:"bytes,4,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Image OS"` // @gotags: search:"Image OS"
 	// DataSource contains information about which integration was used to scan the image
 	DataSource *DataSource      `protobuf:"bytes,3,opt,name=data_source,json=dataSource,proto3" json:"data_source,omitempty"`
@@ -842,7 +842,7 @@ func (x *ImageSignatureVerificationResult) GetVerifiedImageReferences() []string
 // Next Tag: 14
 type EmbeddedImageScanComponent struct {
 	state   protoimpl.MessageState   `protogen:"open.v1"`
-	Name    string                   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" search:"Component"`       // @gotags: search:"Component"
+	Name    string                   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" search:"Component"`               // @gotags: search:"Component"
 	Version string                   `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty" search:"Component Version"` // @gotags: search:"Component Version"
 	License *License                 `protobuf:"bytes,3,opt,name=license,proto3" json:"license,omitempty"`
 	Vulns   []*EmbeddedVulnerability `protobuf:"bytes,4,rep,name=vulns,proto3" json:"vulns,omitempty" hash:"set"` // @gotags: hash:"set"
@@ -1417,10 +1417,10 @@ type V1Metadata struct {
 	Created       *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=created,proto3" json:"created,omitempty" search:"Image Created Time"` // @gotags: search:"Image Created Time"
 	Author        string                 `protobuf:"bytes,3,opt,name=author,proto3" json:"author,omitempty"`
 	Layers        []*ImageLayer          `protobuf:"bytes,4,rep,name=layers,proto3" json:"layers,omitempty"`
-	User          string                 `protobuf:"bytes,5,opt,name=user,proto3" json:"user,omitempty" search:"Image User"`                                                                               // @gotags: search:"Image User"
-	Command       []string               `protobuf:"bytes,6,rep,name=command,proto3" json:"command,omitempty" search:"Image Command"`                                                                         // @gotags: search:"Image Command"
-	Entrypoint    []string               `protobuf:"bytes,7,rep,name=entrypoint,proto3" json:"entrypoint,omitempty" search:"Image Entrypoint"`                                                                   // @gotags: search:"Image Entrypoint"
-	Volumes       []string               `protobuf:"bytes,8,rep,name=volumes,proto3" json:"volumes,omitempty" search:"Image Volumes"`                                                                         // @gotags: search:"Image Volumes"
+	User          string                 `protobuf:"bytes,5,opt,name=user,proto3" json:"user,omitempty" search:"Image User"`                                                                                // @gotags: search:"Image User"
+	Command       []string               `protobuf:"bytes,6,rep,name=command,proto3" json:"command,omitempty" search:"Image Command"`                                                                       // @gotags: search:"Image Command"
+	Entrypoint    []string               `protobuf:"bytes,7,rep,name=entrypoint,proto3" json:"entrypoint,omitempty" search:"Image Entrypoint"`                                                              // @gotags: search:"Image Entrypoint"
+	Volumes       []string               `protobuf:"bytes,8,rep,name=volumes,proto3" json:"volumes,omitempty" search:"Image Volumes"`                                                                       // @gotags: search:"Image Volumes"
 	Labels        map[string]string      `protobuf:"bytes,9,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" search:"Image Label"` // @gotags: search:"Image Label"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1522,7 +1522,7 @@ func (x *V1Metadata) GetLabels() map[string]string {
 type ImageLayer struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Instruction   string                 `protobuf:"bytes,1,opt,name=instruction,proto3" json:"instruction,omitempty" search:"Dockerfile Instruction Keyword"` // @gotags: search:"Dockerfile Instruction Keyword"
-	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty" search:"Dockerfile Instruction Value"`             // @gotags: search:"Dockerfile Instruction Value"
+	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty" search:"Dockerfile Instruction Value"`               // @gotags: search:"Dockerfile Instruction Value"
 	Created       *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created,proto3" json:"created,omitempty"`
 	Author        string                 `protobuf:"bytes,4,opt,name=author,proto3" json:"author,omitempty"`
 	Empty         bool                   `protobuf:"varint,6,opt,name=empty,proto3" json:"empty,omitempty"`
@@ -1597,9 +1597,9 @@ func (x *ImageLayer) GetEmpty() bool {
 
 type ImageName struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Registry      string                 `protobuf:"bytes,1,opt,name=registry,proto3" json:"registry,omitempty" search:"Image Registry"`                 // @gotags: search:"Image Registry"
-	Remote        string                 `protobuf:"bytes,2,opt,name=remote,proto3" json:"remote,omitempty" search:"Image Remote"`                     // @gotags: search:"Image Remote"
-	Tag           string                 `protobuf:"bytes,3,opt,name=tag,proto3" json:"tag,omitempty" search:"Image Tag"`                           // @gotags: search:"Image Tag"
+	Registry      string                 `protobuf:"bytes,1,opt,name=registry,proto3" json:"registry,omitempty" search:"Image Registry"`                          // @gotags: search:"Image Registry"
+	Remote        string                 `protobuf:"bytes,2,opt,name=remote,proto3" json:"remote,omitempty" search:"Image Remote"`                                // @gotags: search:"Image Remote"
+	Tag           string                 `protobuf:"bytes,3,opt,name=tag,proto3" json:"tag,omitempty" search:"Image Tag"`                                         // @gotags: search:"Image Tag"
 	FullName      string                 `protobuf:"bytes,4,opt,name=full_name,json=fullName,proto3" json:"full_name,omitempty" search:"Image,analyzer=standard"` // @gotags: search:"Image,analyzer=standard"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1879,8 +1879,11 @@ type BaseImageInfo struct {
 	BaseImageFullName string                 `protobuf:"bytes,2,opt,name=base_image_full_name,json=baseImageFullName,proto3" json:"base_image_full_name,omitempty"`
 	BaseImageDigest   string                 `protobuf:"bytes,3,opt,name=base_image_digest,json=baseImageDigest,proto3" json:"base_image_digest,omitempty"`
 	Created           *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created,proto3" json:"created,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Index of the last layer. Components with layer_index <= this value
+	// originate from the base image.
+	MaxLayerIndex int32 `protobuf:"varint,5,opt,name=max_layer_index,json=maxLayerIndex,proto3" json:"max_layer_index,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *BaseImageInfo) Reset() {
@@ -1939,6 +1942,13 @@ func (x *BaseImageInfo) GetCreated() *timestamppb.Timestamp {
 		return x.Created
 	}
 	return nil
+}
+
+func (x *BaseImageInfo) GetMaxLayerIndex() int32 {
+	if x != nil {
+		return x.MaxLayerIndex
+	}
+	return 0
 }
 
 type EmbeddedImageScanComponent_Executable struct {
@@ -2170,12 +2180,13 @@ const file_storage_image_proto_rawDesc = "" +
 	"\vset_fixableJ\x04\b\t\x10\n" +
 	"\"\"\n" +
 	"\fWatchedImage\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"\xc6\x01\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"\xee\x01\n" +
 	"\rBaseImageInfo\x12\"\n" +
 	"\rbase_image_id\x18\x01 \x01(\tR\vbaseImageId\x12/\n" +
 	"\x14base_image_full_name\x18\x02 \x01(\tR\x11baseImageFullName\x12*\n" +
 	"\x11base_image_digest\x18\x03 \x01(\tR\x0fbaseImageDigest\x124\n" +
-	"\acreated\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\acreated*s\n" +
+	"\acreated\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12&\n" +
+	"\x0fmax_layer_index\x18\x05 \x01(\x05R\rmaxLayerIndex*s\n" +
 	"\n" +
 	"SourceType\x12\x06\n" +
 	"\x02OS\x10\x00\x12\n" +
