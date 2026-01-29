@@ -133,7 +133,13 @@ The recommended approach is the following.
    $ make undeploy uninstall
    ```
 
-### Bundling
+### Building and using the operator bundle
+
+*Note:* currently creating a bundle is only supported using the RH ACS branding (ROX-11744).
+You need to have the following set before running most targets mentioned in this section.
+```bash
+$ export ROX_PRODUCT_BRANDING=RHACS_BRANDING
+```
 
 ```bash
 # Refresh bundle metadata. Make sure to check the diff and commit it.
@@ -159,19 +165,20 @@ $ make bundle-test
 $ make bundle-test-image
 ```
 
-### Launch the operator on the cluster with OLM and the bundle
+#### Launching the operator on the cluster with OLM and the bundle
 
 ```bash
 # 0. Get the operator-sdk program.
 $ make operator-sdk
 
-# 1. Install OLM.
+# 1. Install OLM, unless running on OpenShift.
 $ make olm-install
 
 # 2. Create a namespace for testing bundle.
 $ kubectl create ns bundle-test
 
 # 2. Create image pull secrets.
+# You can skip this and the next patch step when using cluster from infra.rox.systems.
 # If the inner magic does not work, just provide --docker-username and --docker-password with your DockerHub creds.
 $ kubectl -n bundle-test create secret docker-registry my-opm-image-pull-secrets \
   --docker-server=https://quay.io/v2/ \
@@ -283,7 +290,7 @@ Now the latest version (based off of `make tag`) can be installed like so:
 ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-via-olm
 ```
 
-This installs the operator into the `rhacs-operator-system` namespace.
+This installs the operator into the `stackrox-operator-system` namespace.
 This can be overridden with a `TEST_NAMESPACE` argument.
 The version can be overridden with a `VERSION` argument.
 

@@ -7,6 +7,9 @@ on:
 permissions:
   contents: write
 
+env:
+  ROX_PRODUCT_BRANDING: RHACS_BRANDING
+
 jobs:
   pr_commented:
     name: Run PR Fixxxer
