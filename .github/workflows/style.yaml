@@ -197,7 +197,7 @@ jobs:
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         with:
           token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-          image: ${{ (matrix.image == 'fact' && 'stackrox-io') || 'rhacs-eng' }}/${{ matrix.image }}:${{ steps.image-tag.outputs.image-tag }}
+          image: rhacs-eng/${{ matrix.image }}:${{ steps.image-tag.outputs.image-tag }}
           limit: 300
 
       - name: Check Konflux-built image exists
