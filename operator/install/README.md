@@ -21,7 +21,7 @@ kubectl rollout status deployment -n stackrox-operator-system stackrox-operator-
 
 ## Where to go from here?
 
-Once the operator is running, to actually deploy StackRox you need to create a `Central` and a `SecuredCluster` custom resource.
+Once the operator is running, to actually deploy StackRox you need to create a `Central` and/or a `SecuredCluster` custom resource.
 Please have a look at the [samples](../config/samples) directory.
 
 Before applying the `SecuredCluster` CR you need to retrieve from central and apply on the cluster an init bundle or cluster registration secret.
