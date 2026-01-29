@@ -106,8 +106,6 @@ spec:
           failureThreshold: 6
           successThreshold: 1
         volumeMounts:
-        - name: scanner-etc-ssl-volume
-          mountPath: /etc/ssl
         - name: scanner-etc-pki-volume
           mountPath: /etc/pki/ca-trust
         - name: additional-ca-volume
@@ -142,8 +140,6 @@ spec:
           {{- else }}
           secretName: additional-ca
           {{- end }}
-      - name: scanner-etc-ssl-volume
-        emptyDir: {}
       - name: scanner-etc-pki-volume
         emptyDir: {}
       - name: scanner-config-volume

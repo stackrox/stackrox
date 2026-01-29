@@ -10,7 +10,6 @@ if [ "$(id -u)" == 0 ]; then
      err=0
      [ ! -d /var/lib/stackrox ] || chown -R 4000:4000 /var/lib/stackrox || err=1
      [ ! -d /var/log/stackrox ] || chown -R 4000:4000 /var/log/stackrox || err=1
-     [ ! -d /etc/ssl ] || chown -R 4000:4000 /etc/ssl || err=1
      [ ! -d /etc/pki/ca-trust ] || chown -R 4000:4000 /etc/pki/ca-trust || err=1
      chown -R 4000:4000 /tmp || err=1
 
@@ -22,6 +21,6 @@ if [ "$(id -u)" == 0 ]; then
 fi
 
 restore-all-dir-contents
-import-additional-cas
+bundle-ca-trust
 
 exec /stackrox/start-central.sh "$@"

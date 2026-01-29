@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# Restores directory contents saved by save-dir-contents during image build.
+# This is needed because emptyDir mounts hide the original directory contents.
 # Note: This is also used for Scanner.
 
 set -euo pipefail

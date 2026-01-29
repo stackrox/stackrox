@@ -21,8 +21,6 @@ spec:
           name: varlog
         - mountPath: /tmp
           name: central-tmp-volume
-        - mountPath: /etc/ssl
-          name: central-etc-ssl-volume
         - mountPath: /etc/pki/ca-trust
           name: central-etc-pki-volume
         - mountPath: /run/secrets/stackrox.io/certs/
@@ -60,8 +58,6 @@ spec:
         name: varlog
       - emptyDir: {}
         name: central-tmp-volume
-      - emptyDir: {}
-        name: central-etc-ssl-volume
       - emptyDir: {}
         name: central-etc-pki-volume
       - name: central-certs-volume

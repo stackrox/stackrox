@@ -219,8 +219,6 @@ spec:
             type: {{ ._rox.collector.seLinuxOptionsType | default "container_runtime_t" | quote }}
           {{ end }}
         volumeMounts:
-        - mountPath: /etc/ssl/
-          name: etc-ssl
         - mountPath: /etc/pki/ca-trust/
           name: etc-pki-volume
         - mountPath: /host
@@ -317,8 +315,6 @@ spec:
       - name: index-volume
         emptyDir: {}
     {{- end }}
-      - name: etc-ssl
-        emptyDir: {}
       - name: etc-pki-volume
         emptyDir: {}
       - name: tmp-volume

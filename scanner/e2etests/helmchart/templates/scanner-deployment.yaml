@@ -74,8 +74,6 @@ spec:
         - name: db-password
           mountPath: /run/secrets/stackrox.io/postgresql
           readOnly: true
-        - name: etc-ssl-volume
-          mountPath: /etc/ssl
         - name: etc-pki-volume
           mountPath: /etc/pki/ca-trust
         - name: tmp-volume
@@ -92,8 +90,6 @@ spec:
         secret:
           secretName: {{ .Values.app.db.name }}-password
           defaultMode: 0640
-      - name: etc-ssl-volume
-        emptyDir: {}
       - name: etc-pki-volume
         emptyDir: {}
       - name: tmp-volume

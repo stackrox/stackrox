@@ -165,10 +165,6 @@
                         "name": "central-tmp-volume"
                     },
                     {
-                        "mountPath": "/etc/ssl",
-                        "name": "central-etc-ssl-volume"
-                    },
-                    {
                         "mountPath": "/etc/pki/ca-trust",
                         "name": "central-etc-pki-volume"
                     },
@@ -268,10 +264,6 @@
             {
                 "emptyDir": {},
                 "name": "central-tmp-volume"
-            },
-            {
-                "emptyDir": {},
-                "name": "central-etc-ssl-volume"
             },
             {
                 "emptyDir": {},

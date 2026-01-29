@@ -17,7 +17,7 @@ WORKDIR /src
 RUN make -C scanner NODEPS=1 CGO_ENABLED=1 image/scanner/bin/scanner copy-scripts
 
 
-FROM registry.access.redhat.com/ubi8-minimal:latest@sha256:a670c5b613280e17a666c858c9263a50aafe1a023a8d5730c7a83cb53771487b
+FROM registry.access.redhat.com/ubi9-minimal:latest@sha256:20acea3e902d5a1ad5b398b4bea24b12daf10d1f36aeba06b7d1118cadb8180f
 
 ARG BUILD_TAG
 
@@ -40,9 +40,10 @@ LABEL \
     # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
     release="1"
 
+
 COPY --from=builder \
     /src/scanner/image/scanner/scripts/entrypoint.sh \
-    /src/scanner/image/scanner/scripts/import-additional-cas \
+    /src/scanner/image/scanner/scripts/bundle-ca-trust \
     /src/scanner/image/scanner/scripts/restore-all-dir-contents \
     /src/scanner/image/scanner/scripts/save-dir-contents \
     /src/scanner/image/scanner/bin/scanner \
@@ -60,11 +61,9 @@ RUN microdnf clean all && \
     rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum && \
     chown -R 65534:65534 /tmp && \
-    # The contents of paths mounted as emptyDir volumes in Kubernetes are saved
-    # by the script `save-dir-contents` during the image build. The directory
-    # contents are then restored by the script `restore-all-dir-contents`
-    # during the container start.
-    chown -R 65534:65534 /etc/pki/ca-trust /etc/ssl && save-dir-contents /etc/pki/ca-trust /etc/ssl
+    # Save system CA bundle for bundle-ca-trust (before emptyDir mount hides it)
+    mkdir -p /usr/share/pki && \
+    cp /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem /usr/share/pki/ca-trust-source.pem
 
 COPY LICENSE /licenses/LICENSE
 

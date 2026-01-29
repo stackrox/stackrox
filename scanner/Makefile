@@ -145,7 +145,7 @@ endif
 image-prefix := scanner-v4
 
 image-scripts        := restore-all-dir-contents \
-                        import-additional-cas \
+                        bundle-ca-trust \
                         save-dir-contents
 image-scripts-prefix := image/scanner/scripts
 image-scripts-t      := $(addprefix $(image-scripts-prefix)/,$(image-scripts))

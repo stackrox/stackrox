@@ -128,8 +128,6 @@ spec:
         {{- end }}
         {{- include "srox.envVars" (list . "deployment" "sensor" "sensor") | nindent 8 }}
         volumeMounts:
-        - name: sensor-etc-ssl-volume
-          mountPath: /etc/ssl/
         - name: sensor-etc-pki-volume
           mountPath: /etc/pki/ca-trust/
         - name: certs
@@ -245,8 +243,6 @@ spec:
         volumeMounts:
         - name: varlog
           mountPath: /var/log/stackrox/
-        - name: sensor-etc-ssl-volume
-          mountPath: /etc/ssl/
         - name: sensor-etc-pki-volume
           mountPath: /etc/pki/ca-trust/
         - name: certs
@@ -330,8 +326,6 @@ spec:
           secretName: cluster-registration-secret
           optional: true
       {{- end }}
-      - name: sensor-etc-ssl-volume
-        emptyDir: {}
       - name: sensor-etc-pki-volume
         emptyDir: {}
       - name: additional-ca-volume

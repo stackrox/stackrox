@@ -1,8 +1,8 @@
 ARG RPMS_REGISTRY=registry.access.redhat.com
-ARG RPMS_BASE_IMAGE=ubi8
+ARG RPMS_BASE_IMAGE=ubi9
 ARG RPMS_BASE_TAG=latest
 ARG BASE_REGISTRY=registry.access.redhat.com
-ARG BASE_IMAGE=ubi8-minimal
+ARG BASE_IMAGE=ubi9-minimal
 ARG BASE_TAG=latest
 
 FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS downloads
@@ -61,11 +61,9 @@ RUN rpm --import RPM-GPG-KEY-CentOS-Official && \
     # (Optional) Remove line below to keep package management utilities
     rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum && \
-    # The contents of paths mounted as emptyDir volumes in Kubernetes are saved
-    # by the script `save-dir-contents` during the image build. The directory
-    # contents are then restored by the script `restore-all-dir-contents`
-    # during the container start.
-    chown -R 4000:4000 /etc/pki/ca-trust /etc/ssl && save-dir-contents /etc/pki/ca-trust /etc/ssl && \
+    # Save system CA bundle for bundle-ca-trust (before emptyDir mount hides it)
+    mkdir -p /usr/share/pki && \
+    cp /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem /usr/share/pki/ca-trust-source.pem && \
     mkdir -p /var/lib/stackrox && chown -R 4000:4000 /var/lib/stackrox && \
     mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
     mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \

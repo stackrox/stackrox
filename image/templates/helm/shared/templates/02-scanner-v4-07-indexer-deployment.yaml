@@ -118,8 +118,6 @@ spec:
         - name: additional-ca-volume
           mountPath: /usr/local/share/ca-certificates/
           readOnly: true
-        - name: etc-ssl-volume
-          mountPath: /etc/ssl
         - name: etc-pki-volume
           mountPath: /etc/pki/ca-trust
         - name: certs
@@ -158,8 +156,6 @@ spec:
           {{- else }}
           secretName: additional-ca-sensor
           {{- end }}
-      - name: etc-ssl-volume
-        emptyDir: {}
       - name: etc-pki-volume
         emptyDir: {}
       - name: certs

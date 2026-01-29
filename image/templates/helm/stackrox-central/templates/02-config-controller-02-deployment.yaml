@@ -93,8 +93,6 @@ spec:
         - name: additional-ca-volume
           mountPath: /usr/local/share/ca-certificates/
           readOnly: true
-        - name: etc-ssl-volume
-          mountPath: /etc/ssl
         - name: etc-pki-volume
           mountPath: /etc/pki/ca-trust
       terminationGracePeriodSeconds: 10
@@ -110,8 +108,6 @@ spec:
         secret:
           secretName: additional-ca
           optional: true
-      - name: etc-ssl-volume
-        emptyDir: {}
       - name: etc-pki-volume
         emptyDir: {}
 {{- end }}
