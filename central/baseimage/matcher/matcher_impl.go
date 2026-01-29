@@ -46,7 +46,7 @@ func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string) (
 		return nil, fmt.Errorf("listing candidates for layer %s: %w", firstLayer, err)
 	}
 	var baseImages []*storage.BaseImage
-	maxLayersFound := 0
+	maxLayers := 0
 
 	for _, c := range candidates {
 		candidateLayers := c.GetLayers()
@@ -66,13 +66,13 @@ func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string) (
 		}
 
 		if match {
-			numCandidateLayers := len(candidateLayers)
+			n := len(candidateLayers)
 
-			if numCandidateLayers > maxLayersFound {
+			if n > maxLayers {
 				// Found a better (longer) match: reset the slice and update max
-				maxLayersFound = numCandidateLayers
+				maxLayers = n
 				baseImages = []*storage.BaseImage{c}
-			} else if numCandidateLayers == maxLayersFound {
+			} else if n == maxLayers {
 				// Found another match of the same (maximum) length
 				baseImages = append(baseImages, c)
 			}
