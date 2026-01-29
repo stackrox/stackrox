@@ -189,3 +189,11 @@ func CentralURL() (*url.URL, error) {
 func UseKubeContext() bool {
 	return useKubeContext || env.UseCurrentKubeContext.BooleanSetting()
 }
+
+// EndpointWasExplicitlyProvided returns true if the user explicitly provided an endpoint
+// via the -e/--endpoint flag, the ROX_ENDPOINT environment variable, or is using
+// port-forwarding via kubeconfig context.
+// Returns false if the default endpoint (localhost:8443) is being used.
+func EndpointWasExplicitlyProvided() bool {
+	return *endpointChanged || env.EndpointEnv.Setting() != "" || UseKubeContext()
+}
