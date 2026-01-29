@@ -217,7 +217,7 @@ To further customize your Helm installation consult these documents:
 ### Installation using the Operator
 
 As of release 4.10 it's possible to [install StackRox using the operator](operator/install).
-we encourage you to try this out and give us your feedback.
+We encourage you to try this out and give us your feedback.
 
 ### Installation via Scripts
 
