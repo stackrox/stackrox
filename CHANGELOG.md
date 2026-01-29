@@ -33,6 +33,10 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ### Deprecated Features
 
 - ROX-32851: The `roxctl netpol generate`, `roxctl netpol connectivity map`, and `roxctl netpol connectivity diff` commands are deprecated because they rely on the unmaintained NP-Guard library and will be removed in a future release.
+- ROX-32867: The Compliance V1 feature has been deprecated, and it is planned to be removed in a future release. This includes:
+  - The Compliance Dashboard
+  - The Compliance V1 API endpoints
+  - The Compliance Configuration Management Board
 
 ### Technical Changes
 - ROX-30769: Update Node.js requirement for ui folder to 22.13.0
