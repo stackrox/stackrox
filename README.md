@@ -6,6 +6,7 @@
     - [Deploying StackRox](#deploying-stackrox)
         - [Quick Installation using Helm](#quick-installation-using-helm)
         - [Manual Installation using Helm](#manual-installation-using-helm)
+        - [Installation using the Operator](#installation-using-the-operator)
         - [Installation via Scripts](#installation-via-scripts)
             - [Kubernetes Distributions (EKS, AKS, GKE)](#kubernetes-distributions-eks-aks-gke)
             - [OpenShift](#openshift)
@@ -212,6 +213,11 @@ To further customize your Helm installation consult these documents:
 * <https://docs.openshift.com/acs/installing/installing_other/install-secured-cluster-other.html#configure-secured-cluster-services-helm-chart-customizations-other>
 
 </details>
+
+### Installation using the Operator
+
+As of release 4.10 it's possible to [install StackRox using the operator](operator/install).
+we encourage you to try this out and give us your feedback.
 
 ### Installation via Scripts
 
