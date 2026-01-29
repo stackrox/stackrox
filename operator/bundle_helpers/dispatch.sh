@@ -12,7 +12,6 @@ set -euo pipefail
 
 if [[ $# -lt 1 ]]; then
     echo "Usage: $0 <script-base-name> [args...]" >&2
-    echo "Available scripts: fix-spec-descriptor-order, patch-csv" >&2
     exit 1
 fi
 
@@ -21,12 +20,8 @@ shift
 
 script_dir="$(dirname "$0")"
 
-case "$script_name" in
-fix-spec-descriptor-order|patch-csv)
-    if [[ "${USE_GO_BUNDLE_HELPER:-false}" == "true" ]]; then
-        echo "No Go implementation of $script_name available yet." >&2
-        exit 1
-    fi
+if [[ "${USE_GO_BUNDLE_HELPER:-false}" == "true" ]]; then
+    exec go run "${script_dir}/main.go" "$script_name" "$@"
+else
     exec "${script_dir}/${script_name}.py" "$@"
-  ;;
-esac
+fi
