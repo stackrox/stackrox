@@ -3,6 +3,7 @@ package policies
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	policyDS "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/pkg/search"
@@ -10,7 +11,7 @@ import (
 
 func New(ds policyDS.DataStore) *tracker.TrackerBase[*finding] {
 	return tracker.MakeTrackerBase(
-		"cfg",
+		metrics.Configuration,
 		"policies",
 		LazyLabels,
 		func(ctx context.Context, _ tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {
