@@ -1,6 +1,8 @@
 package store
 
 import (
+	"maps"
+
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -19,6 +21,7 @@ type VirtualMachineStore struct {
 	idToCID         map[virtualmachine.VMID]uint32
 	namespaceToID   map[string]set.Set[virtualmachine.VMID]
 	virtualMachines map[virtualmachine.VMID]*virtualmachine.Info
+	discoveredFacts map[virtualmachine.VMID]map[string]string
 }
 
 // NewVirtualMachineStore returns a new store
@@ -28,6 +31,7 @@ func NewVirtualMachineStore() *VirtualMachineStore {
 		namespaceToID:   make(map[string]set.Set[virtualmachine.VMID]),
 		cidToID:         make(map[uint32]virtualmachine.VMID),
 		idToCID:         make(map[virtualmachine.VMID]uint32),
+		discoveredFacts: make(map[virtualmachine.VMID]map[string]string),
 	}
 }
 
@@ -84,6 +88,7 @@ func (s *VirtualMachineStore) Cleanup() {
 	clear(s.namespaceToID)
 	clear(s.cidToID)
 	clear(s.idToCID)
+	clear(s.discoveredFacts)
 }
 
 // OnNamespaceDeleted removes the VirtualMachines in the given namespace.
@@ -219,6 +224,7 @@ func (s *VirtualMachineStore) removeNoLock(id virtualmachine.VMID) {
 	}
 	delete(s.virtualMachines, vm.ID)
 	s.removeVSOCKInfoNoLock(vm.ID, vm.VSOCKCID)
+	delete(s.discoveredFacts, vm.ID)
 	vmIDsByNamespace, found := s.namespaceToID[vm.Namespace]
 	if !found {
 		log.Errorf("namespace %q was not found", vm.Namespace)
@@ -236,6 +242,7 @@ func (s *VirtualMachineStore) clearStatusNoLock(id virtualmachine.VMID) {
 		return
 	}
 	s.removeVSOCKInfoNoLock(vm.ID, vm.VSOCKCID)
+	delete(s.discoveredFacts, vm.ID)
 	vm.VSOCKCID = nil
 	// If the instance is removed the VirtualMachine will transition to Stopped
 	vm.Running = false
@@ -243,6 +250,38 @@ func (s *VirtualMachineStore) clearStatusNoLock(id virtualmachine.VMID) {
 	vm.NodeName = ""
 	vm.IPAddresses = nil
 	vm.ActivePods = nil
+}
+
+// UpsertDiscoveredFacts stores discovered facts for a VM by ID.
+// The facts map is copied to avoid aliasing.
+func (s *VirtualMachineStore) UpsertDiscoveredFacts(id virtualmachine.VMID, facts map[string]string) {
+	if facts == nil {
+		return
+	}
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	// Copy the map to avoid aliasing
+	s.discoveredFacts[id] = maps.Clone(facts)
+}
+
+// GetDiscoveredFacts returns a copy of discovered facts for a VM by ID.
+// Returns nil if no facts are stored for the VM.
+func (s *VirtualMachineStore) GetDiscoveredFacts(id virtualmachine.VMID) map[string]string {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	facts, found := s.discoveredFacts[id]
+	if !found {
+		return nil
+	}
+	// Return a copy to avoid aliasing
+	return maps.Clone(facts)
+}
+
+// RemoveDiscoveredFacts removes discovered facts for a VM by ID.
+func (s *VirtualMachineStore) RemoveDiscoveredFacts(id virtualmachine.VMID) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	delete(s.discoveredFacts, id)
 }
 
 func copyStringSlice(values []string) []string {

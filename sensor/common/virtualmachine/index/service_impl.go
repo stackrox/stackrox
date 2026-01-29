@@ -2,6 +2,7 @@ package index
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -9,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
@@ -22,6 +24,7 @@ const indexReportSendTimeout = 10 * time.Second
 type serviceImpl struct {
 	sensor.UnimplementedVirtualMachineIndexReportServiceServer
 	handler Handler
+	store   VirtualMachineStore
 }
 
 var _ Service = (*serviceImpl)(nil)
@@ -52,36 +55,48 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 			Observe(metrics.StartTimeToMS(startTime))
 	}()
 
+	if !features.VirtualMachines.Enabled() {
+		// Swallow the request and exit if feature is disabled.
+		metrics.IndexReportsReceived.Inc()
+		return &sensor.UpsertVirtualMachineIndexReportResponse{
+			Success: true,
+		}, nil
+	}
+
 	ir := req.GetIndexReport()
 	if ir == nil {
 		return &sensor.UpsertVirtualMachineIndexReportResponse{
 			Success: false,
 		}, errox.InvalidArgs.CausedBy("index report in request cannot be nil")
 	}
+	if _, err := strconv.ParseUint(ir.GetVsockCid(), 10, 32); err != nil {
+		return &sensor.UpsertVirtualMachineIndexReportResponse{
+			Success: false,
+		}, errox.InvalidArgs.CausedBy(errors.Wrapf(err, "invalid vsock CID: %q", ir.GetVsockCid()))
+	}
 
 	log.Debugf("Upserting virtual machine index report with vsock_cid=%q", ir.GetVsockCid())
-
-	// Log VM discovered data.
-	// This is temporary. In a followup, the data will be passed to Central instead of being logged.
 	data := req.GetDiscoveredData()
-	detectedOS := data.GetDetectedOs()
-	osVersion := data.GetOsVersion()
-	activationStatus := data.GetActivationStatus()
-	dnfMetadataStatus := data.GetDnfMetadataStatus()
-	log.Infof("VM discovered data: detected_os=%s, os_version=%q, activation_status=%s, dnf_metadata_status=%s",
-		detectedOS.String(), osVersion, activationStatus.String(), dnfMetadataStatus.String())
-
-	// Record metric for VM discovered data for cusomer data debugging purposes.
-	metrics.VMDiscoveredData.With(prometheus.Labels{
-		"detected_os":         detectedOS.String(),
-		"activation_status":   activationStatus.String(),
-		"dnf_metadata_status": dnfMetadataStatus.String(),
-	}).Inc()
+	// Log discovered data if present
+	if data != nil {
+		detectedOS := data.GetDetectedOs()
+		osVersion := data.GetOsVersion()
+		activationStatus := data.GetActivationStatus()
+		dnfMetadataStatus := data.GetDnfMetadataStatus()
+		log.Debugf("VM discovered data: detectedOS=%s, osVersion=%q, activationStatus=%s, dnfMetadataStatus=%s",
+			detectedOS.String(), osVersion, activationStatus.String(), dnfMetadataStatus.String())
+		// Record metric for VM discovered data for customer data debugging purposes.
+		metrics.VMDiscoveredData.With(prometheus.Labels{
+			"detected_os":         detectedOS.String(),
+			"activation_status":   activationStatus.String(),
+			"dnf_metadata_status": dnfMetadataStatus.String(),
+		}).Inc()
+	}
 
 	metrics.IndexReportsReceived.Inc()
 	timeoutCtx, cancel := context.WithTimeout(ctx, indexReportSendTimeout)
 	defer cancel()
-	if err := s.handler.Send(timeoutCtx, ir); err != nil {
+	if err := s.handler.Send(timeoutCtx, ir, data); err != nil {
 		return &sensor.UpsertVirtualMachineIndexReportResponse{
 			Success: false,
 		}, errors.Wrapf(err, "sending virtual machine index report with vsock_cid=%q to Central", ir.GetVsockCid())
