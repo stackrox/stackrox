@@ -115,7 +115,7 @@ jobs:
           [
             "release-central-db",
             "release-collector",
-            "fact",
+            "release-fact",
             "release-main",
             "release-roxctl",
             "release-scanner",

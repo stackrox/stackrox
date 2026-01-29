@@ -35,13 +35,11 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: input-image-repo
-    value: quay.io/rhacs-eng/fact
+    value: quay.io/rhacs-eng/release-fact
   - name: input-image-tag-makefile-target
     value: fact-tag
   - name: output-image-repo
-    value: quay.io/rhacs-eng/fact
-  - name: image-tag-suffix
-    value: ''
+    value: quay.io/rhacs-eng/release-fact
 
   pipelineRef:
     name: retag-pipeline

@@ -204,7 +204,7 @@ spec:
   - name: fact-image-build-repo
     description: Repository where the (unreleased) fact image is pushed by its build pipeline.
     type: string
-    default: "quay.io/rhacs-eng/fact"
+    default: "quay.io/rhacs-eng/release-fact"
   - name: fact-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the fact image is pushed to during the release.
     type: string
