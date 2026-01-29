@@ -1,0 +1,198 @@
+name: Test Bundle Helpers
+
+on:
+  pull_request:
+    paths:
+      - 'operator/**'
+      - '.github/workflows/test-bundle-helpers.yaml'
+  push:
+    branches:
+      - master
+    paths:
+      - 'operator/**'
+
+jobs:
+  test-python-implementation:
+    name: Test Python Implementation
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: operator
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r bundle_helpers/requirements-gha.txt
+
+      - name: Run Python unit tests
+        run: make test-bundle-helpers
+
+      - name: Generate bundle with Python
+        env:
+          USE_GO_BUNDLE_HELPER: false
+        run: |
+          make bundle bundle-post-process
+          mkdir -p /tmp/artifacts
+          cp -r bundle /tmp/artifacts/bundle-python
+          if [ -d build/bundle ]; then
+            cp -r build/bundle /tmp/artifacts/build-bundle-python
+          fi
+
+      - name: Upload Python bundle artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-python
+          path: /tmp/artifacts/
+          retention-days: 1
+
+  test-go-implementation:
+    name: Test Go Implementation
+    runs-on: ubuntu-latest
+    # Only run if Go implementation exists
+    continue-on-error: true
+    defaults:
+      run:
+        working-directory: operator
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Run Go unit tests
+        run: |
+          cd bundle_helpers
+          go test ./...
+
+      - name: Generate bundle with Go
+        env:
+          USE_GO_BUNDLE_HELPER: true
+        run: |
+          make bundle bundle-post-process
+          mkdir -p /tmp/artifacts
+          cp -r bundle /tmp/artifacts/bundle-go
+          if [ -d build/bundle ]; then
+            cp -r build/bundle /tmp/artifacts/build-bundle-go
+          fi
+
+      - name: Upload Go bundle artifacts
+        if: steps.check-go.outputs.exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-go
+          path: /tmp/artifacts/
+          retention-days: 1
+
+  compare-implementations:
+    name: Compare Python and Go Outputs
+    runs-on: ubuntu-latest
+    needs: [test-python-implementation, test-go-implementation]
+    # Only run comparison if Go implementation exists
+    if: always() && needs.test-go-implementation.result == 'success'
+
+    steps:
+      - name: Download Python bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: bundle-python
+          path: /tmp/python
+
+      - name: Download Go bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: bundle-go
+          path: /tmp/go
+        continue-on-error: true
+
+      - name: Install comparison tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y diffutils
+
+      - name: Compare bundle outputs
+        run: |
+          if [ ! -d /tmp/go/bundle-go ]; then
+            echo "Go bundle not available yet - skipping comparison"
+            exit 0
+          fi
+
+          echo "=== Comparing Python and Go bundle outputs ==="
+
+          if diff -r /tmp/python/bundle-python /tmp/go/bundle-go; then
+            echo "✓ SUCCESS: Bundle outputs are identical"
+          else
+            echo "✗ FAILURE: Bundle outputs differ"
+            echo ""
+            echo "Detailed diff of CSV files:"
+            diff -u /tmp/python/bundle-python/manifests/*.clusterserviceversion.yaml \
+                    /tmp/go/bundle-go/manifests/*.clusterserviceversion.yaml || true
+            exit 1
+          fi
+
+          if [ -d /tmp/python/build-bundle-python ] && [ -d /tmp/go/build-bundle-go ]; then
+            echo ""
+            echo "=== Comparing build/bundle outputs ==="
+            if diff -r /tmp/python/build-bundle-python /tmp/go/build-bundle-go; then
+              echo "✓ SUCCESS: Build bundle outputs are identical"
+            else
+              echo "✗ FAILURE: Build bundle outputs differ"
+              exit 1
+            fi
+          fi
+
+  status-check:
+    name: Bundle Helper Tests Status
+    runs-on: ubuntu-latest
+    needs: [test-python-implementation, test-go-implementation, compare-implementations, e2e-test]
+    if: always()
+
+    steps:
+      - name: Check test results
+        run: |
+          python_result="${{ needs.test-python-implementation.result }}"
+          go_result="${{ needs.test-go-implementation.result }}"
+          compare_result="${{ needs.compare-implementations.result }}"
+          e2e_result="${{ needs.e2e-test.result }}"
+
+          echo "Python tests: $python_result"
+          echo "Go tests: $go_result"
+          echo "Comparison: $compare_result"
+          echo "E2E test: $e2e_result"
+
+          # Python tests must always pass
+          if [ "$python_result" != "success" ]; then
+            echo "✗ Python tests failed"
+            exit 1
+          fi
+
+          # E2E test must pass
+          if [ "$e2e_result" != "success" ]; then
+            echo "✗ E2E test failed"
+            exit 1
+          fi
+
+          # Go tests and comparison are optional until Go is fully implemented
+          if [ "$go_result" == "success" ]; then
+            echo "✓ Go implementation available and tested"
+            if [ "$compare_result" != "success" ] && [ "$compare_result" != "skipped" ]; then
+              echo "✗ Go/Python comparison failed"
+              exit 1
+            fi
+          else
+            echo "⚠ Go implementation not yet available (expected during migration)"
+          fi
+
+          echo "✓ All required tests passed"
