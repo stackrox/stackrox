@@ -543,6 +543,8 @@ push_matching_collector_scanner_images() {
     scanner_version="$(make --quiet --no-print-directory scanner-tag)"
     local collector_version
     collector_version="$(make --quiet --no-print-directory collector-tag)"
+    local fact_version
+    fact_version="$(make --quiet --no-print-directory fact-tag)"
 
     registry_rw_login "${registry}"
 
@@ -552,6 +554,8 @@ push_matching_collector_scanner_images() {
     _retag "${registry}/scanner-db-slim:${scanner_version}" "${registry}/scanner-db-slim:${main_tag}-${arch}"
 
     _retag "${registry}/collector:${collector_version}"      "${registry}/collector:${main_tag}-${arch}"
+
+    _retag "${registry}/fact:${fact_version}" "${registry}/fact:${main_tag}-${arch}"
 }
 
 poll_for_system_test_images() {
@@ -1051,6 +1055,13 @@ check_scanner_version() {
 check_collector_version() {
     if ! is_release_version "$(make --quiet --no-print-directory collector-tag)"; then
         echo "::error::Collector tag does not look like a release tag. Please update COLLECTOR_VERSION file before releasing."
+        exit 1
+    fi
+}
+
+check_fact_version() {
+    if ! is_release_version "$(make --quiet --no-print-directory fact-tag)"; then
+        echo "::error::Fact tag does not look like a release tag. Please update FACT_VERSION file before releasing."
         exit 1
     fi
 }
