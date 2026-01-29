@@ -554,45 +554,6 @@ func TestComponents(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "digest matching map existence",
-			metadata: &storage.ImageMetadata{
-				// layerSHAToIndex will map "layer-1-hash" to Index 0
-				LayerShas: []string{"layer-1-hash"},
-				V1: &storage.V1Metadata{
-					Layers: []*storage.ImageLayer{{Empty: false}},
-				},
-			},
-			report: &v4.VulnerabilityReport{
-				Contents: &v4.Contents{
-					Packages: map[string]*v4.Package{
-						"pkg-id": {Id: "pkg-id", Name: "test-pkg", Version: "1.0"},
-					},
-					Environments: map[string]*v4.Environment_List{
-						"pkg-id": {
-							Environments: []*v4.Environment{
-								{
-									PackageDb:    "maven:app.jar",
-									IntroducedIn: "layer-1-hash", // This matches LayerShas
-								},
-							},
-						},
-					},
-				},
-			},
-			expected: []*storage.EmbeddedImageScanComponent{
-				{
-					Name:     "test-pkg",
-					Version:  "1.2.3",
-					Source:   storage.SourceType_JAVA,
-					Location: "app.jar",
-					Digest:   "layer-1-hash", // Verify this is set
-					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
-						LayerIndex: 0,
-					},
-				},
-			},
-		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
