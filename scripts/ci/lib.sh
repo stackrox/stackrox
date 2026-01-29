@@ -366,6 +366,13 @@ push_operator_image() {
         docker tag "${registry}/stackrox-operator:${tag}" "${registry}/stackrox-operator:latest-${arch}"
         _push_operator_image "$registry" "latest" "$arch"
     fi
+
+    if [[ $tag =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        # For release builds, also push a major.minor tag, see operator/install/README.md
+        local major_minor="${tag%.*}"
+        docker tag "${registry}/stackrox-operator:${tag}" "${registry}/stackrox-operator:${major_minor}-${arch}"
+        _push_operator_image "$registry" "$major_minor" "$arch"
+    fi
 }
 
 push_scanner_image_manifest_lists() {
@@ -452,6 +459,12 @@ push_operator_manifest_lists() {
     if [[ "$push_context" == "merge-to-master" ]]; then
         retry 5 true \
             "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/stackrox-operator:latest" "$architectures" | cat
+    fi
+    if [[ $tag =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        # For release builds, also push a major.minor tag, see operator/install/README.md
+        local major_minor="${tag%.*}"
+        retry 5 true \
+            "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/stackrox-operator:${major_minor}" "$architectures" | cat
     fi
 }
 
