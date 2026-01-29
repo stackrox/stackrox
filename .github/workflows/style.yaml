@@ -273,7 +273,7 @@ jobs:
       - misc-checks
       - style-check
       - golangci-lint
-      - check-collector-and-scanner-images-exist
+      - check-dependent-images-exist
       - github-actions-lint
       - github-actions-shellcheck
       - openshift-ci-lint
