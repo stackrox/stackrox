@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"sync/atomic"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -22,6 +24,9 @@ var (
 			v1.PingService_Ping_FullMethodName,
 		},
 	})
+
+	// IsLeader is set by main package to indicate leader status
+	IsLeader atomic.Bool
 )
 
 type serviceImpl struct {
@@ -43,8 +48,11 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-// Ping implements v1.PingServiceServer, and it always returns a v1.PongMessage object.
+// Ping implements v1.PingServiceServer, and returns a v1.PongMessage object if this instance is the leader.
 func (s *serviceImpl) Ping(context.Context, *v1.Empty) (*v1.PongMessage, error) {
+	if !IsLeader.Load() {
+		return nil, errors.New("not leader")
+	}
 	result := &v1.PongMessage{
 		Status: "ok",
 	}

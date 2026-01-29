@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -228,10 +229,16 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/leaderelection"
+	"k8s.io/client-go/tools/leaderelection/resourcelock"
 )
 
 var (
-	log = logging.CreateLogger(logging.CurrentModule(), 0)
+	log      = logging.CreateLogger(logging.CurrentModule(), 0)
+	isLeader atomic.Bool
 
 	authProviderBackendFactories = map[string]authproviders.BackendFactoryCreator{
 		oidc.TypeName:                oidc.NewFactory,
@@ -274,6 +281,75 @@ func runSafeMode() {
 	sig := <-signalsC
 	log.Infof("Caught %s signal", sig)
 	log.Info("Central terminated")
+}
+
+func runLeaderElection(ctx context.Context) {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		log.Errorf("Failed to get in-cluster config: %v", err)
+		return
+	}
+
+	client, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		log.Errorf("Failed to create kubernetes client: %v", err)
+		return
+	}
+
+	podName := os.Getenv("POD_NAME")
+	if podName == "" {
+		podName = "central-unknown"
+		log.Warn("POD_NAME not set, using default")
+	}
+
+	namespace := os.Getenv("POD_NAMESPACE")
+	if namespace == "" {
+		namespace = "stackrox"
+		log.Warn("POD_NAMESPACE not set, using default 'stackrox'")
+	}
+
+	lock := &resourcelock.LeaseLock{
+		LeaseMeta: metav1.ObjectMeta{
+			Name:      "central-leader",
+			Namespace: namespace,
+		},
+		Client: client.CoordinationV1(),
+		LockConfig: resourcelock.ResourceLockConfig{
+			Identity: podName,
+		},
+	}
+
+	leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
+		Lock:          lock,
+		LeaseDuration: 5 * time.Second,
+		RenewDeadline: 3 * time.Second,
+		RetryPeriod:   1 * time.Second,
+		Callbacks: leaderelection.LeaderCallbacks{
+			OnStartedLeading: func(ctx context.Context) {
+				isLeader.Store(true)
+				pingService.IsLeader.Store(true)
+				log.Info("Became leader, starting all services")
+
+				// Start all services only when we become leader
+				go startGRPCServer()
+				go startTelemetryServer()
+
+				if env.ManagedCentral.BooleanSetting() {
+					clusterInternalServer := internal.NewHTTPServer(metrics.HTTPSingleton())
+					clusterInternalServer.AddRoutes(clusterInternalRoutes())
+					go clusterInternalServer.RunForever()
+				}
+			},
+			OnStoppedLeading: func() {
+				log.Fatal("Lost leadership, exiting for restart")
+			},
+			OnNewLeader: func(identity string) {
+				if identity != podName {
+					log.Infof("New leader elected: %s", identity)
+				}
+			},
+		},
+	})
 }
 
 func main() {
@@ -321,14 +397,8 @@ func main() {
 
 	features.LogFeatureFlags()
 
-	go startGRPCServer()
-	go startTelemetryServer()
-
-	if env.ManagedCentral.BooleanSetting() {
-		clusterInternalServer := internal.NewHTTPServer(metrics.HTTPSingleton())
-		clusterInternalServer.AddRoutes(clusterInternalRoutes())
-		clusterInternalServer.RunForever()
-	}
+	// Start leader election - services will start only when we become leader
+	go runLeaderElection(ctx)
 
 	waitForTerminationSignal()
 }
