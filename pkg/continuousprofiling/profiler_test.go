@@ -41,12 +41,29 @@ func TestContinuousProfiling(t *testing.T) {
 }
 
 func (s *continuousProfilingSuite) TestDefaultValues() {
-	s.T().Setenv(env.ContinuousProfilingAppName.EnvVar(), "test")
-	cfg := DefaultConfig()
-	s.startClientFuncWrapper.EXPECT().Start(gomock.Any()).Times(1).Return(nil, nil)
-	s.Assert().NoError(SetupClient(cfg))
-	s.Assert().Equal(*cfg, *DefaultConfig())
-	s.Assert().Equal(mutexProfileFraction, runtime.SetMutexProfileFraction(-1))
+	s.Run("all defaults success", func() {
+		s.T().Setenv(env.ContinuousProfilingAppName.EnvVar(), "test")
+		s.T().Setenv(env.ContinuousProfilingLabels.EnvVar(), "app=stackrox,env=production")
+		cfg := DefaultConfig()
+		s.startClientFuncWrapper.EXPECT().Start(gomock.Any()).Times(1).Return(nil, nil)
+		s.Assert().NoError(SetupClient(cfg))
+		s.Assert().Equal(*cfg, *DefaultConfig())
+		s.Assert().Equal(mutexProfileFraction, runtime.SetMutexProfileFraction(-1))
+		s.Assert().Equal(map[string]string{
+			"app": "stackrox",
+			"env": "production",
+		}, cfg.Tags)
+	})
+	s.Run("fail labels parsing", func() {
+		s.T().Setenv(env.ContinuousProfilingAppName.EnvVar(), "test")
+		s.T().Setenv(env.ContinuousProfilingLabels.EnvVar(), "invalid-labels")
+		cfg := DefaultConfig()
+		s.startClientFuncWrapper.EXPECT().Start(gomock.Any()).Times(1).Return(nil, nil)
+		s.Assert().NoError(SetupClient(cfg))
+		s.Assert().Equal(*cfg, *DefaultConfig())
+		s.Assert().Equal(mutexProfileFraction, runtime.SetMutexProfileFraction(-1))
+		s.Assert().Nil(cfg.Tags)
+	})
 }
 
 func (s *continuousProfilingSuite) TestProfileValidation() {
@@ -163,6 +180,92 @@ func (s *continuousProfilingSuite) TestClientStartError() {
 	cfg := DefaultConfig()
 	s.startClientFuncWrapper.EXPECT().Start(gomock.Any()).Times(1).Return(nil, errors.New("some error"))
 	s.Assert().Error(SetupClient(cfg))
+}
+
+func (s *continuousProfilingSuite) TestParseLabels() {
+	cases := map[string]struct {
+		input          string
+		expectedLabels map[string]string
+		expectedError  string
+	}{
+		"empty string": {
+			input:          "",
+			expectedLabels: map[string]string{},
+		},
+		"single label": {
+			input: "key=value",
+			expectedLabels: map[string]string{
+				"key": "value",
+			},
+		},
+		"multiple labels": {
+			input: "app=stackrox,env=production,team=security",
+			expectedLabels: map[string]string{
+				"app":  "stackrox",
+				"env":  "production",
+				"team": "security",
+			},
+		},
+		"labels with whitespace": {
+			input: " key1 = value1 , key2 = value2 ",
+			expectedLabels: map[string]string{
+				"key1": "value1",
+				"key2": "value2",
+			},
+		},
+		"empty entries ignored": {
+			input: "key1=value1,,key2=value2,,,",
+			expectedLabels: map[string]string{
+				"key1": "value1",
+				"key2": "value2",
+			},
+		},
+		"value with equals sign": {
+			input: "url=https://example.com,token=abc=123",
+			expectedLabels: map[string]string{
+				"url":   "https://example.com",
+				"token": "abc=123",
+			},
+		},
+		"invalid format no equals": {
+			input:         "invalid",
+			expectedError: "invalid label format",
+		},
+		"empty key": {
+			input:         "=value",
+			expectedError: "empty label key",
+		},
+		"empty key with whitespace": {
+			input:         "  =value",
+			expectedError: "empty label key",
+		},
+		"empty value": {
+			input:         "key=",
+			expectedError: "empty label value",
+		},
+		"empty value with whitespace": {
+			input:         "key=  ",
+			expectedError: "empty label value",
+		},
+		"multiple entries with one invalid": {
+			input:         "valid=yes,invalid",
+			expectedError: "invalid label format",
+		},
+	}
+
+	for tName, tCase := range cases {
+		s.Run(tName, func() {
+			labels, err := parseLabels(tCase.input)
+			if tCase.expectedError != "" {
+				s.Assert().Error(err)
+				s.Assert().Contains(err.Error(), tCase.expectedError)
+				s.Assert().Nil(labels)
+			} else {
+				s.Assert().NoError(err)
+				s.Assert().Equal(tCase.expectedLabels, labels)
+			}
+		})
+	}
 }
 
 func resetRuntimeProfiles(t *testing.T) {

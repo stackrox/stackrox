@@ -1,0 +1,11 @@
+[Unit]
+Description=Prepare RPM database for StackRox VM Agent
+# Copy the RPM database to a writable location because SQLite WAL mode
+# requires write access even for read-only queries
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/rm -rf /tmp/roxagent-rpm
+ExecStart=/bin/cp -a /var/lib/rpm /tmp/roxagent-rpm
+ExecStart=/bin/chmod -R 755 /tmp/roxagent-rpm
