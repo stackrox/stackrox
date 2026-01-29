@@ -295,6 +295,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: '"${ROX_BASELINE_GENERATION_DURATION}"
     customize_envVars+=$'\n      - name: ROX_DEVELOPMENT_BUILD'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: LOGLEVEL'
+    customize_envVars+=$'\n        value: "debug"'
     customize_envVars+=$'\n      - name: ROX_NETWORK_BASELINE_OBSERVATION_PERIOD'
     customize_envVars+=$'\n        value: '"${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD}"
     customize_envVars+=$'\n      - name: ROX_PROCESSES_LISTENING_ON_PORT'
