@@ -49,7 +49,7 @@
         "jspdf-autotable": "^5.0.7",
         "lodash": "^4.17.23",
         "mobx": "^6.13.7",
-        "mobx-react": "^7.6.0",
+        "mobx-react": "^9.2.1",
         "object-resolve-path": "^1.1.1",
         "pluralize": "^8.0.0",
         "prop-types": "^15.7.2",
