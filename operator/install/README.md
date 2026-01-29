@@ -39,7 +39,7 @@ You may encounter a few references to RH ACS when using the operator in places s
 - the `UserAgent` header used by the operator controller when talking to the kube API server
 - central web UI when generating init bundles or cluster registration secrets
 
-We hope to clean these up in the next release.
+These will be cleaned up in a future release.
 
 ## How was this manifest created?
 
