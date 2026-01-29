@@ -40,19 +40,16 @@ func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string) (
 	if len(layers) == 0 {
 		return nil, nil
 	}
-
 	firstLayer := layers[0]
 	candidates, err := m.datastore.ListCandidateBaseImages(ctx, firstLayer)
 	if err != nil {
 		return nil, fmt.Errorf("listing candidates for layer %s: %w", firstLayer, err)
 	}
-
 	var baseImages []*storage.BaseImage
 	maxLayersFound := 0
 
 	for _, c := range candidates {
 		candidateLayers := c.GetLayers()
-
 		slices.SortFunc(candidateLayers, func(a, b *storage.BaseImageLayer) int {
 			return int(a.GetIndex() - b.GetIndex())
 		})
@@ -81,6 +78,5 @@ func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string) (
 			}
 		}
 	}
-
 	return baseImages, nil
 }
