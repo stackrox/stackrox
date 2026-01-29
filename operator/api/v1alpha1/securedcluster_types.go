@@ -94,7 +94,7 @@ type SecuredClusterSpec struct {
 	// Deprecated field. This field will be removed in a future release.
 	// Miscellaneous settings.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
-	Misc *MiscSpec `json:"misc,omitempty"`
+	Misc *MiscSpec `json:"misc,omitempty" deprecated:"true"`
 
 	// Overlays
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Overlays,order=13,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
@@ -147,15 +147,15 @@ type SensorComponentSpec struct {
 type AdmissionControlComponentSpec struct {
 	// Deprecated field. This field will be removed in a future release.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
-	ListenOnCreates *bool `json:"listenOnCreates,omitempty"`
+	ListenOnCreates *bool `json:"listenOnCreates,omitempty" deprecated:"true"`
 
 	// Deprecated field. This field will be removed in a future release.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
-	ListenOnUpdates *bool `json:"listenOnUpdates,omitempty"`
+	ListenOnUpdates *bool `json:"listenOnUpdates,omitempty" deprecated:"true"`
 
 	// Deprecated field. This field will be removed in a future release.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
-	ListenOnEvents *bool `json:"listenOnEvents,omitempty"`
+	ListenOnEvents *bool `json:"listenOnEvents,omitempty" deprecated:"true"`
 
 	// Set to Disabled to disable policy enforcement for the admission controller. This is not recommended.
 	// On upgrades to 4.9 from previous releases, defaults to Enabled only if at least one of listenOnCreates or listenOnUpdates is true.
@@ -165,11 +165,11 @@ type AdmissionControlComponentSpec struct {
 
 	// Deprecated field. This field will be removed in a future release.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
-	ContactImageScanners *ImageScanPolicy `json:"contactImageScanners,omitempty"`
+	ContactImageScanners *ImageScanPolicy `json:"contactImageScanners,omitempty" deprecated:"true"`
 
 	// Deprecated field. This field will be removed in a future release.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
-	TimeoutSeconds *int32 `json:"timeoutSeconds,omitempty"`
+	TimeoutSeconds *int32 `json:"timeoutSeconds,omitempty" deprecated:"true"`
 
 	// Enables teams to bypass admission control in a monitored manner in the event of an emergency.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
