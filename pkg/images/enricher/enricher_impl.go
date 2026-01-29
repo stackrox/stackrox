@@ -311,7 +311,7 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	}
 
 	if features.BaseImageDetection.Enabled() {
-		image.BaseImageInfo, err = e.baseImageGetter(ctx, image.GetMetadata().GetLayerShas())
+		matchedBaseImages, err := e.baseImageGetter(ctx, image.GetMetadata().GetLayerShas())
 		if err != nil {
 			log.Warnw("Matching image with base images",
 				logging.FromContext(ctx),
@@ -319,6 +319,7 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 				logging.Err(err),
 				logging.String("request_image", image.GetName().GetFullName()))
 		}
+		image.BaseImageInfo = toBaseImageInfos(image.GetMetadata(), matchedBaseImages)
 	}
 
 	return EnrichmentResult{
@@ -1059,4 +1060,82 @@ func FillScanStats(i *storage.Image) {
 			FixableCves: numFixableVulns,
 		}
 	}
+}
+
+// toBaseImageInfos converts matched BaseImage objects to BaseImageInfo for storage in the image.
+// It computes the max layer index for each base image based on the image's metadata.
+func toBaseImageInfos(metadata *storage.ImageMetadata, baseImages []*storage.BaseImage) []*storage.BaseImageInfo {
+	if len(baseImages) == 0 {
+		return nil
+	}
+	infos := make([]*storage.BaseImageInfo, 0, len(baseImages))
+	for _, bi := range baseImages {
+		maxIndex, err := resolveLayerBoundary(metadata, len(bi.GetLayers()))
+		if err != nil {
+			log.Warnw("Failed to resolve base image layer boundary, ignoring base image match",
+				logging.String("base_image_id", bi.GetId()),
+				logging.Err(err))
+			continue
+		}
+		infos = append(infos, &storage.BaseImageInfo{
+			BaseImageId:       bi.GetId(),
+			BaseImageFullName: fmt.Sprintf("%s:%s", bi.GetRepository(), bi.GetTag()),
+			BaseImageDigest:   bi.GetManifestDigest(),
+			Created:           bi.GetCreated(),
+			MaxLayerIndex:     int32(maxIndex),
+		})
+	}
+	return infos
+}
+
+// resolveLayerBoundary converts the base image's content layer count to the
+// manifest index of its last layer.
+//
+// Components use manifest indices (which include empty layers), while base image
+// layer counts exclude empty layers. This function bridges that gap by recounting
+// the last layer index using empty layers when the image has V2 metadata.
+func resolveLayerBoundary(metadata *storage.ImageMetadata, baseImageLayerCount int) (int, error) {
+	if baseImageLayerCount <= 0 {
+		return 0, errors.New("base image has no content layers")
+	}
+
+	metadataLayers := metadata.GetV1().GetLayers()
+	layerIndex := baseImageLayerCount - 1
+
+	// If V1 layer metadata is available and V2 exists, account for empty
+	// layers by finding the actual manifest index.
+	if len(metadataLayers) > 0 && metadata.GetV2() != nil {
+		contentIndex := 0
+		for i, l := range metadataLayers {
+			if l.GetEmpty() {
+				continue
+			}
+			if contentIndex == layerIndex {
+				return i, nil
+			}
+			contentIndex++
+		}
+		return 0, fmt.Errorf(
+			"base image claims %d content layers but image only has %d non-empty layers",
+			baseImageLayerCount, contentIndex)
+	}
+
+	// V1-only, or V2 without V1 layer metadata: content index equals manifest
+	// index directly. Use LayerShas for validation since it always contains
+	// content layers.
+	layerCount := len(metadata.GetLayerShas())
+	if layerCount == 0 {
+		// This is not expected, but since an empty layer SHA list should never match, we
+		// attempt to check layer count based on V1 manifest layer count.
+		layerCount = len(metadataLayers)
+	}
+	if layerCount == 0 {
+		return 0, errors.New("invalid base image match: image has no layer metadata")
+	}
+	if layerIndex >= layerCount {
+		return 0, fmt.Errorf(
+			"invalid base image match: base image claims %d layers but image only has %d",
+			baseImageLayerCount, layerCount)
+	}
+	return layerIndex, nil
 }

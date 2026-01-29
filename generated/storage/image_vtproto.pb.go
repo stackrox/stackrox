@@ -647,6 +647,7 @@ func (m *BaseImageInfo) CloneVT() *BaseImageInfo {
 	r.BaseImageFullName = m.BaseImageFullName
 	r.BaseImageDigest = m.BaseImageDigest
 	r.Created = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Created).CloneVT())
+	r.MaxLayerIndex = m.MaxLayerIndex
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1698,6 +1699,9 @@ func (this *BaseImageInfo) EqualVT(that *BaseImageInfo) bool {
 		return false
 	}
 	if !(*timestamppb1.Timestamp)(this.Created).EqualVT((*timestamppb1.Timestamp)(that.Created)) {
+		return false
+	}
+	if this.MaxLayerIndex != that.MaxLayerIndex {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -3301,6 +3305,11 @@ func (m *BaseImageInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.MaxLayerIndex != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.MaxLayerIndex))
+		i--
+		dAtA[i] = 0x28
+	}
 	if m.Created != nil {
 		size, err := (*timestamppb1.Timestamp)(m.Created).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -4028,6 +4037,9 @@ func (m *BaseImageInfo) SizeVT() (n int) {
 	if m.Created != nil {
 		l = (*timestamppb1.Timestamp)(m.Created).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.MaxLayerIndex != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.MaxLayerIndex))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -8070,6 +8082,25 @@ func (m *BaseImageInfo) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxLayerIndex", wireType)
+			}
+			m.MaxLayerIndex = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MaxLayerIndex |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -12282,6 +12313,25 @@ func (m *BaseImageInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MaxLayerIndex", wireType)
+			}
+			m.MaxLayerIndex = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.MaxLayerIndex |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

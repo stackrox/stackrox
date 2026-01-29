@@ -260,4 +260,7 @@ message BaseImageInfo {
   string base_image_full_name = 2;
   string base_image_digest = 3;
   google.protobuf.Timestamp created = 4;
+  // Index of the last base image layer, taking into account
+  // "empty layers" (aka. metadata history without SHA).
+  int32 max_layer_index = 5;
 }

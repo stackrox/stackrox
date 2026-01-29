@@ -296,7 +296,7 @@ func (e *enricherV2Impl) EnrichImage(ctx context.Context, enrichContext Enrichme
 	e.cvesSuppressor.EnrichImageV2WithSuppressedCVEs(imageV2)
 
 	if features.BaseImageDetection.Enabled() {
-		imageV2.BaseImageInfo, err = e.baseImageGetter(ctx, imageV2.GetMetadata().GetLayerShas())
+		matchedBaseImages, err := e.baseImageGetter(ctx, imageV2.GetMetadata().GetLayerShas())
 		if err != nil {
 			log.Warnw("Matching image with base images",
 				logging.FromContext(ctx),
@@ -304,6 +304,7 @@ func (e *enricherV2Impl) EnrichImage(ctx context.Context, enrichContext Enrichme
 				logging.Err(err),
 				logging.String("request_image", imageV2.GetName().GetFullName()))
 		}
+		imageV2.BaseImageInfo = toBaseImageInfos(imageV2.GetMetadata(), matchedBaseImages)
 	}
 
 	if !errorList.Empty() {
