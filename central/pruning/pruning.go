@@ -2,6 +2,8 @@ package pruning
 
 import (
 	"context"
+	"sync/atomic"
+	"testing"
 	"time"
 
 	"github.com/pkg/errors"
@@ -79,7 +81,23 @@ var (
 
 	pruneInterval = env.PruneInterval.DurationSetting()
 	orphanWindow  = env.PruneOrphanedWindow.DurationSetting()
+
+	// dynamicRBACPruningEnabled controls whether expired dynamic RBAC objects should be pruned.
+	// It is disabled by default and enabled on the first call to the internaltoken API service.
+	dynamicRBACPruningEnabled atomic.Bool
 )
+
+// EnableDynamicRBACPruning enables pruning of expired dynamic RBAC objects.
+// This should be called on requests to the internaltoken API service.
+func EnableDynamicRBACPruning() {
+	dynamicRBACPruningEnabled.Store(true)
+}
+
+// disableDynamicRBACPruningForTest disables pruning of expired dynamic RBAC objects.
+// This is for testing purposes only.
+func disableDynamicRBACPruningForTest(*testing.T) {
+	dynamicRBACPruningEnabled.Store(false)
+}
 
 // GarbageCollector implements a generic garbage collection mechanism.
 type GarbageCollector interface {
@@ -1176,6 +1194,11 @@ func isExpired(traits *storage.Traits, now time.Time) bool {
 // that have an expiry timestamp in the past and have IMPERATIVE origin.
 // These objects are created dynamically by the internal token API for sensors.
 func (g *garbageCollectorImpl) removeExpiredDynamicRBACObjects() {
+	// Check if dynamic RBAC pruning is enabled.
+	if !dynamicRBACPruningEnabled.Load() {
+		return
+	}
+
 	defer metrics.SetPruningDuration(time.Now(), "DynamicRBACObjects")
 
 	now := time.Now()

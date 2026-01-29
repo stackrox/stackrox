@@ -18634,7 +18634,7 @@
                 "integer": 3
               },
               {
-                "name": "DYNAMIC",
+                "name": "EPHEMERAL",
                 "integer": 4
               }
             ]

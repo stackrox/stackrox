@@ -84,7 +84,7 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 func (s *serviceImpl) GetRoles(ctx context.Context, _ *v1.Empty) (*v1.GetRolesResponse, error) {
 	roles, err := s.roleDataStore.GetRolesFiltered(ctx, func(role *storage.Role) bool {
 		// filter out dynamic roles created to back Rox tokens issued for internal purposes.
-		return role.GetTraits().GetOrigin() != storage.Traits_DYNAMIC
+		return role.GetTraits().GetOrigin() != storage.Traits_EPHEMERAL
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve roles")
@@ -120,7 +120,7 @@ func (s *serviceImpl) CreateRole(ctx context.Context, roleRequest *v1.CreateRole
 	if role.GetName() != "" && role.GetName() != roleRequest.GetName() {
 		return nil, errox.InvalidArgs.CausedBy("different role names in path and body")
 	}
-	if role.GetTraits().GetOrigin() == storage.Traits_DYNAMIC {
+	if role.GetTraits().GetOrigin() == storage.Traits_EPHEMERAL {
 		return nil, errox.InvalidArgs.CausedBy("dynamic roles can only be created by internal services")
 	}
 	role.Name = roleRequest.GetName()
@@ -133,7 +133,7 @@ func (s *serviceImpl) CreateRole(ctx context.Context, roleRequest *v1.CreateRole
 }
 
 func (s *serviceImpl) UpdateRole(ctx context.Context, role *storage.Role) (*v1.Empty, error) {
-	if role.GetTraits().GetOrigin() == storage.Traits_DYNAMIC {
+	if role.GetTraits().GetOrigin() == storage.Traits_EPHEMERAL {
 		return nil, errox.InvalidArgs.CausedBy("dynamic roles cannot be modified by API")
 	}
 	err := s.roleDataStore.UpdateRole(ctx, role)
@@ -194,7 +194,7 @@ func (s *serviceImpl) GetPermissionSet(ctx context.Context, id *v1.ResourceByID)
 func (s *serviceImpl) ListPermissionSets(ctx context.Context, _ *v1.Empty) (*v1.ListPermissionSetsResponse, error) {
 	permissionSets, err := s.roleDataStore.GetPermissionSetsFiltered(ctx, func(permissionSet *storage.PermissionSet) bool {
 		// filter out dynamic permission sets created to back Rox tokens issued for internal purposes.
-		return permissionSet.GetTraits().GetOrigin() != storage.Traits_DYNAMIC
+		return permissionSet.GetTraits().GetOrigin() != storage.Traits_EPHEMERAL
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve permission sets")
@@ -214,7 +214,7 @@ func (s *serviceImpl) PostPermissionSet(ctx context.Context, permissionSet *stor
 	}
 	permissionSet.Id = rolePkg.GeneratePermissionSetID()
 
-	if permissionSet.GetTraits().GetOrigin() == storage.Traits_DYNAMIC {
+	if permissionSet.GetTraits().GetOrigin() == storage.Traits_EPHEMERAL {
 		return nil, errox.InvalidArgs.CausedBy("dynamic permission sets can only be created by internal services")
 	}
 
@@ -231,7 +231,7 @@ func (s *serviceImpl) PostPermissionSet(ctx context.Context, permissionSet *stor
 }
 
 func (s *serviceImpl) PutPermissionSet(ctx context.Context, permissionSet *storage.PermissionSet) (*v1.Empty, error) {
-	if permissionSet.GetTraits().GetOrigin() == storage.Traits_DYNAMIC {
+	if permissionSet.GetTraits().GetOrigin() == storage.Traits_EPHEMERAL {
 		return nil, errox.InvalidArgs.CausedBy("dynamic permission sets cannot be modified by API")
 	}
 	err := s.roleDataStore.UpdatePermissionSet(ctx, permissionSet)
@@ -270,7 +270,7 @@ func (s *serviceImpl) GetSimpleAccessScope(ctx context.Context, id *v1.ResourceB
 func (s *serviceImpl) ListSimpleAccessScopes(ctx context.Context, _ *v1.Empty) (*v1.ListSimpleAccessScopesResponse, error) {
 	scopes, err := s.roleDataStore.GetAccessScopesFiltered(ctx, func(scope *storage.SimpleAccessScope) bool {
 		// filter out dynamic access scopes created to back Rox tokens issued for internal purposes.
-		return scope.GetTraits().GetOrigin() != storage.Traits_DYNAMIC
+		return scope.GetTraits().GetOrigin() != storage.Traits_EPHEMERAL
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to retrieve access scopes")
@@ -289,7 +289,7 @@ func (s *serviceImpl) PostSimpleAccessScope(ctx context.Context, scope *storage.
 		return nil, errox.InvalidArgs.CausedBy("setting id field is not allowed")
 	}
 	scope.Id = rolePkg.GenerateAccessScopeID()
-	if scope.GetTraits().GetOrigin() == storage.Traits_DYNAMIC {
+	if scope.GetTraits().GetOrigin() == storage.Traits_EPHEMERAL {
 		return nil, errox.InvalidArgs.CausedBy("dynamic access scopes can only be created by internal services")
 	}
 
@@ -305,7 +305,7 @@ func (s *serviceImpl) PostSimpleAccessScope(ctx context.Context, scope *storage.
 }
 
 func (s *serviceImpl) PutSimpleAccessScope(ctx context.Context, scope *storage.SimpleAccessScope) (*v1.Empty, error) {
-	if scope.GetTraits().GetOrigin() == storage.Traits_DYNAMIC {
+	if scope.GetTraits().GetOrigin() == storage.Traits_EPHEMERAL {
 		return nil, errox.InvalidArgs.CausedBy("dynamic access scopes cannot be modified by API")
 	}
 	err := s.roleDataStore.UpdateAccessScope(ctx, scope)
