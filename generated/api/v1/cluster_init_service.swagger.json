@@ -367,9 +367,9 @@
           "type": "string"
         },
         "maxRegistrations": {
-          "type": "integer",
-          "format": "int32",
-          "description": "Support for this is to be implemented in ROX-26769."
+          "type": "string",
+          "format": "uint64",
+          "title": "4 was int32 max_registrations"
         }
       }
     },
@@ -404,6 +404,22 @@
         "expiresAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "maxRegistrations": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "registrationsInitiated": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "registrationsCompleted": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

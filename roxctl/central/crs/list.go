@@ -68,5 +68,9 @@ func listCommand(cliEnvironment environment.Environment) *cobra.Command {
 			return listCRSs(cliEnvironment, flags.Timeout(c), flags.RetryTimeout(c))
 		}),
 	}
+
+	flags.AddTimeout(c)
+	flags.AddRetryTimeout(c)
+
 	return c
 }
