@@ -47,14 +47,14 @@ func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntitie
 	en := newEnricher(enricherCtx, clusterEntities, pubSubDispatcher)
 
 	p := &Pipeline{
-		clusterEntities:    clusterEntities,
-		indicators:         indicators,
-		enricher:           en,
-		processFilter:      processFilter,
-		detector:           detector,
-		pubSubDispatcher:   pubSubDispatcher,
-		cancelEnricherCtx:  cancelEnricherCtx,
-		stopper:            concurrency.NewStopper(),
+		clusterEntities:   clusterEntities,
+		indicators:        indicators,
+		enricher:          en,
+		processFilter:     processFilter,
+		detector:          detector,
+		pubSubDispatcher:  pubSubDispatcher,
+		cancelEnricherCtx: cancelEnricherCtx,
+		stopper:           concurrency.NewStopper(),
 	}
 
 	// Dual-mode initialization based on feature flag
@@ -140,9 +140,7 @@ func (p *Pipeline) Process(signal *storage.ProcessSignal) {
 	if features.SensorInternalPubSub.Enabled() && p.pubSubDispatcher != nil {
 		event := NewUnenrichedProcessIndicatorEvent(context.Background(), indicator)
 		if err := p.pubSubDispatcher.Publish(event); err != nil {
-			metrics.IncrementProcessSignalDroppedCount()
-			log.Errorf("Failed to publish unenriched process indicator for container %s with id %s: %v",
-				signal.GetContainerId(), indicator.GetId(), err)
+			p.dropIndicator(signal, "Failed to published to dispatcher")
 		}
 	} else {
 		p.enricher.add(indicator)
@@ -161,24 +159,9 @@ func (p *Pipeline) dropIndicator(signal *storage.ProcessSignal, reason string) {
 func (p *Pipeline) sendIndicatorEvent() {
 	defer p.stopper.Flow().ReportStopped()
 	for indicator := range p.cm.GetOutput() {
-		if !p.processFilter.Add(indicator) {
-			continue
+		if err := p.processEnrichedIndicator(NewEnrichedProcessIndicatorEvent(context.Background(), indicator)); err != nil {
+			log.Errorf("failed to process enriched indicator: %v", err)
 		}
-		p.detector.ProcessIndicator(context.Background(), indicator)
-		p.sendToCentral(
-			message.NewExpiring(context.Background(), &central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_Event{
-					Event: &central.SensorEvent{
-						Id:     indicator.GetId(),
-						Action: central.ResourceAction_CREATE_RESOURCE,
-						Resource: &central.SensorEvent_ProcessIndicator{
-							ProcessIndicator: indicator,
-						},
-					},
-				},
-			}),
-		)
-		metrics.SetProcessSignalBufferSizeGauge(len(p.indicators))
 	}
 }
 
@@ -193,21 +176,6 @@ func (p *Pipeline) sendToCentral(msg *message.ExpiringMessage) {
 			msg.GetEvent().GetProcessIndicator().GetDeploymentId(),
 			msg.GetEvent().GetProcessIndicator().GetId(),
 			msg.GetEvent().GetProcessIndicator().GetSignal().GetName())
-	}
-}
-
-// publishEnrichedIndicator is used in pub/sub mode instead of sending to the enrichedIndicators channel.
-func (p *Pipeline) publishEnrichedIndicator(ctx context.Context, indicator *storage.ProcessIndicator) {
-	if p.pubSubDispatcher == nil {
-		log.Error("Cannot publish enriched indicator: pub/sub dispatcher is nil")
-		return
-	}
-
-	event := NewEnrichedProcessIndicatorEvent(ctx, indicator)
-	if err := p.pubSubDispatcher.Publish(event); err != nil {
-		metrics.IncrementProcessSignalDroppedCount()
-		log.Errorf("Failed to publish enriched process indicator for deployment %s with id %s: %v",
-			indicator.GetDeploymentId(), indicator.GetId(), err)
 	}
 }
 
@@ -228,10 +196,15 @@ func (p *Pipeline) processEnrichedIndicator(event pubsub.Event) error {
 		return nil
 	}
 
-	p.detector.ProcessIndicator(enrichedEvent.Context, indicator)
+	p.handleEnrichedIndicator(enrichedEvent.Context, indicator)
+	return nil
+}
+
+func (p *Pipeline) handleEnrichedIndicator(ctx context.Context, indicator *storage.ProcessIndicator) {
+	p.detector.ProcessIndicator(ctx, indicator)
 
 	p.sendToCentral(
-		message.NewExpiring(enrichedEvent.Context, &central.MsgFromSensor{
+		message.NewExpiring(ctx, &central.MsgFromSensor{
 			Msg: &central.MsgFromSensor_Event{
 				Event: &central.SensorEvent{
 					Id:     indicator.GetId(),
@@ -245,5 +218,4 @@ func (p *Pipeline) processEnrichedIndicator(event pubsub.Event) error {
 	)
 
 	metrics.SetProcessSignalBufferSizeGauge(len(p.indicators))
-	return nil
 }
