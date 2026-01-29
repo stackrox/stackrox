@@ -178,6 +178,7 @@ $ make olm-install
 $ kubectl create ns bundle-test
 
 # 2. Create image pull secrets.
+# You can skip this and the next patch step when using cluster from infra.rox.systems.
 # If the inner magic does not work, just provide --docker-username and --docker-password with your DockerHub creds.
 $ kubectl -n bundle-test create secret docker-registry my-opm-image-pull-secrets \
   --docker-server=https://quay.io/v2/ \
