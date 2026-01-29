@@ -1,11 +1,14 @@
 package config
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.yaml.in/yaml/v3"
@@ -93,4 +96,34 @@ func TestDetermineConfigPath(t *testing.T) {
 	dir, err = determineConfigDir()
 	assert.NoError(t, err)
 	assert.Equal(t, homeDir, dir)
+}
+
+func TestDetermineConfigDirPermissionDenied(t *testing.T) {
+	// This test verifies that when directory creation fails (e.g., permission denied),
+	// a helpful error message is returned suggesting alternative authentication methods.
+
+	// Create a read-only directory to simulate permission issues
+	readOnlyDir := t.TempDir()
+	readOnlySubDir := filepath.Join(readOnlyDir, "readonly")
+	require.NoError(t, os.Mkdir(readOnlySubDir, 0555))
+
+	// Set HOME to a location under the read-only directory
+	impossibleHome := filepath.Join(readOnlySubDir, "home")
+	t.Setenv("HOME", impossibleHome)
+	t.Setenv(env.ConfigDirEnv.EnvVar(), "")
+	t.Setenv("XDG_RUNTIME_DIR", "")
+
+	_, err := determineConfigDir()
+	require.Error(t, err)
+
+	// Verify the error is a NoCredentials error
+	assert.True(t, errors.Is(err, errox.NoCredentials))
+
+	// Verify the error message contains helpful suggestions
+	errMsg := err.Error()
+	assert.True(t, strings.Contains(errMsg, "No authentication credentials are available"))
+	assert.True(t, strings.Contains(errMsg, "--password"))
+	assert.True(t, strings.Contains(errMsg, "ROX_API_TOKEN"))
+	assert.True(t, strings.Contains(errMsg, "--token-file"))
+	assert.True(t, strings.Contains(errMsg, "roxctl central login"))
 }
