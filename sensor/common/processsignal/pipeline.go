@@ -8,9 +8,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/channelmultiplexer"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
-	"github.com/stackrox/rox/pkg/process/normalize"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 )
 
 var (
@@ -33,34 +34,49 @@ type Pipeline struct {
 	processFilter      filter.Filter
 	detector           detector.Detector
 	cm                 *channelmultiplexer.ChannelMultiplexer[*storage.ProcessIndicator]
+	pubSubDispatcher   common.PubSubDispatcher
 	stopper            concurrency.Stopper
 	// enricher context
 	cancelEnricherCtx context.CancelCauseFunc
 }
 
 // NewProcessPipeline defines how to process a ProcessIndicator
-func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntities *clusterentities.Store, processFilter filter.Filter, detector detector.Detector) *Pipeline {
+func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntities *clusterentities.Store, processFilter filter.Filter, detector detector.Detector, pubSubDispatcher common.PubSubDispatcher) *Pipeline {
 	log.Debug("Calling NewProcessPipeline")
 	enricherCtx, cancelEnricherCtx := context.WithCancelCause(context.Background())
-	en := newEnricher(enricherCtx, clusterEntities)
-	enrichedIndicators := make(chan *storage.ProcessIndicator)
+	en := newEnricher(enricherCtx, clusterEntities, pubSubDispatcher)
 
-	cm := channelmultiplexer.NewMultiplexer[*storage.ProcessIndicator]()
-	cm.AddChannel(en.getEnrichedC())  // PIs that are enriched in the enricher
-	cm.AddChannel(enrichedIndicators) // PIs that are enriched directly in the pipeline
-	cm.Run()
 	p := &Pipeline{
 		clusterEntities:    clusterEntities,
 		indicators:         indicators,
 		enricher:           en,
-		enrichedIndicators: enrichedIndicators,
 		processFilter:      processFilter,
 		detector:           detector,
-		cm:                 cm,
+		pubSubDispatcher:   pubSubDispatcher,
 		cancelEnricherCtx:  cancelEnricherCtx,
 		stopper:            concurrency.NewStopper(),
 	}
-	go p.sendIndicatorEvent()
+
+	// Dual-mode initialization based on feature flag
+	if features.SensorInternalPubSub.Enabled() && pubSubDispatcher != nil {
+		log.Info("Process pipeline using pub/sub mode")
+		if err := pubSubDispatcher.RegisterConsumerToLane(pubsub.EnrichedProcessIndicatorTopic, pubsub.EnrichedProcessIndicatorLane, p.processEnrichedIndicator); err != nil {
+			log.Errorf("Failed to register consumer for enriched process indicators: %v", err)
+		}
+	} else {
+		log.Info("Process pipeline using legacy channel mode")
+		enrichedIndicators := make(chan *storage.ProcessIndicator)
+		p.enrichedIndicators = enrichedIndicators
+
+		cm := channelmultiplexer.NewMultiplexer[*storage.ProcessIndicator]()
+		cm.AddChannel(en.getEnrichedC())  // PIs that are enriched in the enricher
+		cm.AddChannel(enrichedIndicators) // PIs that are enriched directly in the pipeline
+		cm.Run()
+		p.cm = cm
+
+		go p.sendIndicatorEvent()
+	}
+
 	return p
 }
 
@@ -78,7 +94,10 @@ func populateIndicatorFromCachedContainer(indicator *storage.ProcessIndicator, c
 func (p *Pipeline) Shutdown() {
 	p.cancelEnricherCtx(errors.New("pipeline shutdown"))
 	defer func() {
-		close(p.enrichedIndicators)
+		// Only close enrichedIndicators channel in legacy mode
+		if p.enrichedIndicators != nil {
+			close(p.enrichedIndicators)
+		}
 		_ = p.enricher.Stopped().Wait()
 		_ = p.stopper.Client().Stopped().Wait()
 	}()
@@ -106,7 +125,6 @@ func (p *Pipeline) Notify(e common.SensorComponentEvent) {
 // Process defines processes to process a ProcessIndicator
 // If the pipeline is shutting down, the signal is dropped to prevent sending on closed channels.
 func (p *Pipeline) Process(signal *storage.ProcessSignal) {
-	// Check if shutdown has been requested before processing
 	select {
 	case <-p.stopper.Flow().StopRequested():
 		p.dropIndicator(signal, "pipeline shutting down before enrichment")
@@ -119,22 +137,15 @@ func (p *Pipeline) Process(signal *storage.ProcessSignal) {
 		Signal: signal,
 	}
 
-	// indicator.GetSignal() is never nil at this point
-	metadata, ok, _ := p.clusterEntities.LookupByContainerID(indicator.GetSignal().GetContainerId())
-	if !ok {
-		p.enricher.Add(indicator)
-		return
-	}
-	metrics.IncrementProcessEnrichmentHits()
-	populateIndicatorFromCachedContainer(indicator, metadata)
-	normalize.Indicator(indicator)
-
-	// Use select to avoid sending on closed channel if shutdown happens between check and send
-	select {
-	case p.enrichedIndicators <- indicator:
-	case <-p.stopper.Flow().StopRequested():
-		p.dropIndicator(indicator.GetSignal(), "pipeline shutting down during send")
-		return
+	if features.SensorInternalPubSub.Enabled() && p.pubSubDispatcher != nil {
+		event := NewUnenrichedProcessIndicatorEvent(context.Background(), indicator)
+		if err := p.pubSubDispatcher.Publish(event); err != nil {
+			metrics.IncrementProcessSignalDroppedCount()
+			log.Errorf("Failed to publish unenriched process indicator for container %s with id %s: %v",
+				signal.GetContainerId(), indicator.GetId(), err)
+		}
+	} else {
+		p.enricher.add(indicator)
 	}
 }
 
@@ -183,4 +194,56 @@ func (p *Pipeline) sendToCentral(msg *message.ExpiringMessage) {
 			msg.GetEvent().GetProcessIndicator().GetId(),
 			msg.GetEvent().GetProcessIndicator().GetSignal().GetName())
 	}
+}
+
+// publishEnrichedIndicator is used in pub/sub mode instead of sending to the enrichedIndicators channel.
+func (p *Pipeline) publishEnrichedIndicator(ctx context.Context, indicator *storage.ProcessIndicator) {
+	if p.pubSubDispatcher == nil {
+		log.Error("Cannot publish enriched indicator: pub/sub dispatcher is nil")
+		return
+	}
+
+	event := NewEnrichedProcessIndicatorEvent(ctx, indicator)
+	if err := p.pubSubDispatcher.Publish(event); err != nil {
+		metrics.IncrementProcessSignalDroppedCount()
+		log.Errorf("Failed to publish enriched process indicator for deployment %s with id %s: %v",
+			indicator.GetDeploymentId(), indicator.GetId(), err)
+	}
+}
+
+// processEnrichedIndicator replaces the sendIndicatorEvent goroutine in legacy mode.
+func (p *Pipeline) processEnrichedIndicator(event pubsub.Event) error {
+	enrichedEvent, ok := event.(*EnrichedProcessIndicatorEvent)
+	if !ok {
+		log.Errorf("Received unexpected event type: %T", event)
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+
+	indicator := enrichedEvent.Indicator
+	if indicator == nil {
+		return errors.New("enriched process indicator event has nil indicator")
+	}
+
+	if !p.processFilter.Add(indicator) {
+		return nil
+	}
+
+	p.detector.ProcessIndicator(enrichedEvent.Context, indicator)
+
+	p.sendToCentral(
+		message.NewExpiring(enrichedEvent.Context, &central.MsgFromSensor{
+			Msg: &central.MsgFromSensor_Event{
+				Event: &central.SensorEvent{
+					Id:     indicator.GetId(),
+					Action: central.ResourceAction_CREATE_RESOURCE,
+					Resource: &central.SensorEvent_ProcessIndicator{
+						ProcessIndicator: indicator,
+					},
+				},
+			},
+		}),
+	)
+
+	metrics.SetProcessSignalBufferSizeGauge(len(p.indicators))
+	return nil
 }
