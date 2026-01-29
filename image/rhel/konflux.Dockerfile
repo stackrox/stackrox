@@ -1,15 +1,5 @@
 ARG PG_VERSION=15
 
-# Install PostgreSQL using ubi-minimal (same as master branch)
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:a670c5b613280e17a666c858c9263a50aafe1a023a8d5730c7a83cb53771487b AS postgres_installer
-
-ARG PG_VERSION
-
-# Install PostgreSQL the same way master branch does
-RUN microdnf -y module enable postgresql:${PG_VERSION} && \
-    microdnf -y install postgresql && \
-    microdnf -y clean all
-
 
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.25@sha256:527782f4a0270f786192281f68d0374f4a21b3ab759643eee4bfcafb6f539468 AS go-builder
 
@@ -47,27 +37,48 @@ RUN mkdir -p image/rhel/docs/api/v1 && \
 RUN make copy-go-binaries-to-image-dir
 
 
-FROM registry.access.redhat.com/ubi8/ubi:latest@sha256:7d7ca86d832d1dc7aba4583414475c15686291b1c2cf75fe63ca03526c3b89ae AS rpm_installer
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:a670c5b613280e17a666c858c9263a50aafe1a023a8d5730c7a83cb53771487b AS package_installer
 
 ARG PG_VERSION
 
-# Install base packages to /out/
-RUN dnf install \
+# Install all packages to /out/ using microdnf --installroot
+# This includes base packages and PostgreSQL, all properly tracked in RPM database
+RUN microdnf -y \
+    --noplugins \
+    --setopt=cachedir=/var/cache/microdnf \
+    --setopt=reposdir=/etc/yum.repos.d \
+    --setopt=varsdir=/etc/dnf \
     --installroot=/out/ \
     --releasever=8 \
-    --setopt=install_weak_deps=0 \
     --nodocs \
-    --nogpgcheck \
-    -y \
-    findutils \
-    util-linux \
-    ca-certificates \
-    curl \
-    bash \
-    coreutils
-
-RUN dnf --installroot=/out/ clean all
-RUN rm -rf /out/var/cache/dnf /out/var/cache/yum
+    --setopt=install_weak_deps=0 \
+    install \
+        findutils \
+        util-linux \
+        ca-certificates \
+        curl \
+        bash \
+        coreutils && \
+    microdnf -y \
+    --noplugins \
+    --setopt=cachedir=/var/cache/microdnf \
+    --setopt=reposdir=/etc/yum.repos.d \
+    --setopt=varsdir=/etc/dnf \
+    --installroot=/out/ \
+    --releasever=8 \
+    module enable postgresql:${PG_VERSION} && \
+    microdnf -y \
+    --noplugins \
+    --setopt=cachedir=/var/cache/microdnf \
+    --setopt=reposdir=/etc/yum.repos.d \
+    --setopt=varsdir=/etc/dnf \
+    --installroot=/out/ \
+    --releasever=8 \
+    --nodocs \
+    --setopt=install_weak_deps=0 \
+    install postgresql && \
+    microdnf -y --installroot=/out/ clean all && \
+    rm -rf /out/var/cache/microdnf
 
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/static-bin/* /out/stackrox/
 
@@ -106,12 +117,9 @@ RUN make -C ui build
 
 FROM registry.access.redhat.com/ubi8/ubi-micro:latest@sha256:37552f11d3b39b3360f7be7c13f6a617e468f39be915cd4f8c8a8531ffc9d43d
 
-COPY --from=rpm_installer /out/ /
-
-# Copy PostgreSQL client from ubi-minimal installer stage
-COPY --from=postgres_installer /usr/bin/psql /usr/bin/psql
-COPY --from=postgres_installer /usr/bin/pg_isready /usr/bin/pg_isready
-COPY --from=postgres_installer /usr/lib64/libpq.so* /usr/lib64/
+# Copy all installed packages from package_installer
+# This includes base packages and PostgreSQL, all properly tracked in RPM database
+COPY --from=package_installer /out/ /
 
 COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 
