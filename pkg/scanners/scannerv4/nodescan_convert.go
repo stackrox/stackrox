@@ -93,11 +93,10 @@ func convertVulnerability(v *v4.VulnerabilityReport_Vulnerability) *storage.Embe
 		Summary:           v.GetDescription(),
 		VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
 		Severity:          normalizedSeverity(v.GetNormalizedSeverity()),
-		Link:              link(v.GetLink()),
 		PublishedOn:       v.GetIssued(),
 	}
 
-	if err := setScoresAndScoreVersions(converted, v.GetCvssMetrics()); err != nil {
+	if err := setScoresAndScoreVersions(converted, v.GetCvssMetrics(), v.GetLink()); err != nil {
 		utils.Should(err)
 	}
 	maybeOverwriteSeverity(converted)
