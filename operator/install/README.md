@@ -44,6 +44,6 @@ These will be cleaned up in a future release.
 ## How was this manifest created?
 
 ```shell
-BUILD_TAG=4.10.0 ROX_PRODUCT_BRANDING=STACKROX_BRANDING make -C operator/ build-installer
+BUILD_TAG=4.10 ROX_PRODUCT_BRANDING=STACKROX_BRANDING make -C operator/ build-installer
 cp operator/dist/install.yaml operator/install/manifest.yaml
 ```
