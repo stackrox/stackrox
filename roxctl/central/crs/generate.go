@@ -171,8 +171,5 @@ func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c.PersistentFlags().StringVarP(&outputFile, "output", "o", "", "File to be used for storing the newly generated CRS (- for stdout).")
 	c.MarkFlagsMutuallyExclusive("valid-for", "valid-until")
 
-	flags.AddTimeout(c)
-	flags.AddRetryTimeout(c)
-
 	return c
 }
