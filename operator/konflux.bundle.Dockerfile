@@ -1,11 +1,7 @@
-FROM registry.access.redhat.com/ubi9/python-39:latest@sha256:c2112827949a0f2deb040bc8f2a57631daaddd453db2198258275668996dd65f AS builder
+FROM registry.access.redhat.com/ubi8/python-312:latest@sha256:b3d3389c871569dac4d0aa759fba4d95c6e6fd0ad470f1085b3ca1f44b18727b AS builder
 
-# Because 'default' user cannot create build/ directory and errrors like:
-# mkdir: cannot create directory ‘build/’: Permission denied
 USER root
-
-COPY ./operator/bundle_helpers/requirements.txt /tmp/requirements.txt
-RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
+RUN microdnf -y install python3.12-pyyaml
 
 COPY . /stackrox
 WORKDIR /stackrox/operator
