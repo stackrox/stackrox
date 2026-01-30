@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/hashstructure"
@@ -269,6 +268,7 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 		"operatingsystem",
 		"imageid",
 		"location",
+		"layertype",
 		"serialized",
 	}
 
@@ -289,6 +289,7 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 			obj.GetOperatingSystem(),
 			obj.GetImageId(),
 			obj.GetLocation(),
+			obj.GetLayerType(),
 			serialized,
 		})
 
