@@ -65,7 +65,8 @@ func EnhanceConnectionError(err error) error {
 	}
 
 	// Check if this is a connection-related error
-	errMsg := err.Error()
+	// Normalize to lowercase to handle case variations in error messages
+	errMsg := strings.ToLower(err.Error())
 	isConnectionError := strings.Contains(errMsg, "connection refused") ||
 		strings.Contains(errMsg, "i/o timeout") ||
 		strings.Contains(errMsg, "no such host") ||

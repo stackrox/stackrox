@@ -196,9 +196,11 @@ func UseKubeContext() bool {
 // EndpointWasExplicitlyProvided returns true if the user explicitly provided an endpoint
 // via the -e/--endpoint flag, the ROX_ENDPOINT environment variable, or is using
 // port-forwarding via kubeconfig context.
-// Returns false if the default endpoint (localhost:8443) is being used.
+// Returns false when the implicit default endpoint is being used (i.e., when no endpoint
+// configuration was explicitly provided by the user).
 func EndpointWasExplicitlyProvided() bool {
 	// Defensively handle nil pointer (shouldn't happen in normal execution but prevents panic)
 	flagChanged := endpointChanged != nil && *endpointChanged
-	return flagChanged || env.EndpointEnv.Setting() != "" || UseKubeContext()
+	endpointVal := strings.TrimSpace(env.EndpointEnv.Setting())
+	return flagChanged || endpointVal != "" || UseKubeContext()
 }
