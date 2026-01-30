@@ -179,15 +179,15 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "deployment_enhancement_queue_size",
-		Help:      "Current number of deployment enhancement requests queued in Sensor",
+		Help:      "Current number of deployment enhancement requests from Central waiting to be processed",
 	})
 
 	k8sObjectIngestionToSendDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "k8s_event_ingestion_to_send_duration",
-		Help:      "Time taken to fully process an event from Kubernetes in milliseconds",
-		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
+		Help:      "Sensor-side time from ingesting a Kubernetes event to sending the resulting update to Central in milliseconds",
+		Buckets:   prometheus.ExponentialBuckets(4, 2, 10),
 	}, []string{"Action", "Resource", "Dispatcher", "Type"})
 
 	k8sObjectProcessingDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -195,7 +195,7 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "k8s_event_processing_duration",
 		Help:      "Time taken to fully process an event from Kubernetes in milliseconds",
-		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
+		Buckets:   prometheus.ExponentialBuckets(4, 2, 10),
 	}, []string{"Action", "Resource", "Dispatcher"})
 
 	resolverChannelSize = prometheus.NewGauge(prometheus.GaugeOpts{
@@ -283,8 +283,8 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "component_process_message_duration_seconds",
-		Help:      "Time taken to process messages from Central in each sensor component",
-		Buckets:   prometheus.ExponentialBuckets(0.001, 2, 12), // 1ms to ~4s
+		Help:      "Time spent handling a message from Central inside a Sensor component in seconds",
+		Buckets:   prometheus.ExponentialBuckets(0.001, 2, 16), // 1ms to ~32s
 	}, []string{ComponentName})
 
 	// ComponentQueueOperations keeps track of the operations of the component queue buffer.

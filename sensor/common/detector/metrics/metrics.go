@@ -72,8 +72,8 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "enricher_image_scan_internal_exponential_backoff_seconds",
-		Help:      "Time spent in exponential backoff for the ImageScanInternal endpoint",
-		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
+		Help:      "Time spent backing off before a successful ImageScanInternal response, typically due to scan rate limiting",
+		Buckets:   prometheus.ExponentialBuckets(1, 2, 10),
 	})
 	networkPoliciesStored = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
