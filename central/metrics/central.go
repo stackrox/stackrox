@@ -88,14 +88,14 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "sensor_event_queue",
-		Help:      "Counts enqueue/dequeue operations on per-type sensor event deduping queues",
+		Help:      "Counts enqueue and dequeue operations on Central's sensor event deduping queues",
 	}, []string{"Operation", "Type"})
 
 	resourceProcessedCounterVec = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "resource_processed_count",
-		Help:      "Number of sensor event resources processed by Central pipelines",
+		Help:      "Number of sensor event resources successfully processed by Central pipelines",
 	}, []string{"Operation", "Resource"})
 
 	totalNetworkFlowsReceivedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -116,7 +116,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "total_external_policies_count",
-		Help:      "A gauge of the total number of policy as code CRs that have been accepted by Central from Config Controller",
+		Help:      "Current number of policy-as-code CRs accepted by Central from Config Controller",
 	})
 
 	riskProcessingHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -169,35 +169,35 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "orphaned_plop_total",
-		Help:      "Count of process-listening-on-port records without a matching process indicator, per cluster",
+		Help:      "Count of process-listening-on-port records that arrived without a matching process indicator",
 	}, []string{"ClusterID"})
 
 	processQueueLengthGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "process_queue_length",
-		Help:      "Current number of process indicators queued for lifecycle baseline evaluation and flush",
+		Help:      "Current number of process indicators queued for baseline evaluation and persistence",
 	})
 
 	sensorEventsDeduperCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "sensor_event_deduper",
-		Help:      "Counts sensor events that were deduped vs passed through the Central deduper",
+		Help:      "Counts sensor events skipped by the deduper vs processed as new",
 	}, []string{"status", "type"})
 
 	pipelinePanicCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "pipeline_panics",
-		Help:      "Count of panics recovered in Central processing pipelines, labeled by resource type",
+		Help:      "Count of panics recovered in Central processing pipelines",
 	}, []string{"resource"})
 
 	sensorConnectedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "sensor_connected",
-		Help:      "Count of sensor connections observed, labeled by cluster and sensor-reported state",
+		Help:      "Count of sensor connections observed by Central",
 	}, []string{"ClusterID", "connection_state"})
 
 	grpcLastMessageSizeReceived = prometheus.NewGaugeVec(prometheus.GaugeOpts{

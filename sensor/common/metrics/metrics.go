@@ -81,7 +81,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "indicators_channel_indicator_dropped_counter",
-		Help:      "A counter of the total number of times we've dropped indicators from the indicators channel because it was full",
+		Help:      "Total process indicator events dropped because the outgoing buffer to Central was full",
 	})
 
 	networkFlowBufferGauge = prometheus.NewGauge(prometheus.GaugeOpts{
@@ -123,7 +123,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "sensor_events",
-		Help:      "A counter for the total number of events sent from Sensor to Central",
+		Help:      "Total number of events sent from Sensor to Central",
 	}, []string{"Action", "ResourceType", "Type"})
 
 	sensorLastMessageSizeSent = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -158,7 +158,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "k8s_events",
-		Help:      "A counter for the total number of typed k8s events processed by Sensor",
+		Help:      "Total number of Kubernetes resource events processed by the Sensor listener",
 	}, []string{"Action", "Resource"})
 
 	resourcesSyncedUnchaged = prometheus.NewCounter(prometheus.CounterOpts{
@@ -202,7 +202,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "resolver_channel_size",
-		Help:      "A gauge to track the resolver channel size",
+		Help:      "Current number of resource events waiting in the resolver input queue",
 	})
 
 	// ResolverDedupingQueueSize a gauge to track the resolver's deduping queue size.
@@ -210,14 +210,14 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "resolver_deduping_queue_size",
-		Help:      "A gauge to track the resolver deduping queue size",
+		Help:      "Current number of pending deployment references in the resolver deduping queue",
 	})
 
 	outputChannelSize = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "output_channel_size",
-		Help:      "A gauge to track the output channel size",
+		Help:      "Current number of resolved events waiting in the output queue before detector/forwarding",
 	})
 
 	telemetryLabels = prometheus.Labels{
@@ -275,7 +275,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "num_messages_waiting_for_transmission_to_central",
-		Help:      "Counts enqueue/dequeue/drop operations on the buffered responses channel to Central",
+		Help:      "Counts enqueue, dequeue, and drop operations on the Sensor-to-Central buffered stream",
 	}, []string{Operation, "MessageType"})
 
 	// componentProcessMessageDurationSeconds tracks the duration of ProcessMessage calls for each component
