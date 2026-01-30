@@ -63,6 +63,32 @@ tests:
   expect: |
     .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.enabled == false)
     .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.enforceOnUpdates == false)
+- name: "policyeval webhook deployment depends on enforce setting"
+  tests:
+  - name: "policyeval webhook is deployed when enforce is true"
+    release:
+      isInstall: true
+      isUpgrade: false
+    set:
+      admissionControl.enforce: true
+    expect: |
+      [.validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io")] | assertThat(length == 1)
+  - name: "policyeval webhook is NOT deployed when enforce is false"
+    release:
+      isInstall: true
+      isUpgrade: false
+    set:
+      admissionControl.enforce: false
+    expect: |
+      [.validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io")] | assertThat(length == 0)
+  - name: "k8sevents webhook is always deployed regardless of enforce setting"
+    release:
+      isInstall: true
+      isUpgrade: false
+    set:
+      admissionControl.enforce: false
+    expect: |
+      [.validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io")] | assertThat(length == 1)
 - name: "Enforcement during upgrade from pre-4.9"
   release:
     isUpgrade: true
