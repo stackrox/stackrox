@@ -1,0 +1,64 @@
+# Vsock Load Generator Configuration
+# This file configures the vsock load generation parameters
+# Mount this as a ConfigMap and vsock-loadgen will read it on startup
+#
+# Architecture:
+# Each goroutine simulates a single VM with a specific CID, sending index
+# reports periodically at the configured interval. This accurately models
+# real-world VM behavior where VMs independently report their state.
+#
+# CID Assignment (No Overlap Guarantee):
+# When deployed as a DaemonSet, each pod automatically calculates a unique
+# CID range based on its node's position in the cluster. This prevents CID
+# overlap between pods running on different nodes.
+#
+# The vmCount represents the TOTAL number of VMs across ALL nodes in the cluster.
+# VMs are distributed evenly across all worker nodes, with remainder VMs assigned
+# to the first nodes (by alphabetical order).
+#
+# Each node gets a partition with 10,000 CID spacing to prevent overlap:
+# - Node 0: starts at CID 3
+# - Node 1: starts at CID 10003
+# - Node 2: starts at CID 20003
+# - etc.
+#
+# The node index is determined by sorting all worker nodes alphabetically
+# by name, ensuring deterministic and stable CID assignments across restarts.
+#
+# Example: With 3 worker nodes and vmCount=1000 (total):
+# - Each node gets 1000/3 = 333 VMs, with 1 remainder
+# - Node "worker-0" (index 0): 334 VMs, CIDs 3-336
+# - Node "worker-1" (index 1): 333 VMs, CIDs 10003-10335
+# - Node "worker-2" (index 2): 333 VMs, CIDs 20003-20335
+#
+# Performance Optimization:
+# The load generator pre-generates and pre-marshals all reports at startup.
+# This eliminates per-request protobuf cloning and marshaling overhead,
+# significantly improving throughput during load testing.
+
+loadgen:
+  # Total number of VMs to simulate across ALL nodes in the cluster
+  # VMs are distributed evenly across worker nodes
+  # Example: 1000 VMs / 3 nodes = ~333 VMs per node
+  # Maximum: 100,000 total VMs (max 10,000 VMs per node)
+  vmCount: 50
+
+  # Interval at which each VM sends index reports (e.g., 30s, 1m, 5m)
+  # This simulates the periodic reporting behavior of real VMs
+  reportInterval: 60s
+
+  # Number of packages per VM index report
+  # Typical values: 514 (small), 700 (average), 1500 (large)
+  numPackages: 1020
+
+  # Stats reporting interval (e.g., 30s, 1m, 5m)
+  statsInterval: 30s
+
+  # Vsock port to connect to (relay listens on 818)
+  port: 818
+
+  # Metrics server port (0 = disabled)
+  metricsPort: 9090
+
+  # Per-request vsock deadline (e.g., 10s, 30s)
+  requestTimeout: 10s

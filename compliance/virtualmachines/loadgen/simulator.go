@@ -16,40 +16,49 @@ var log = logging.LoggerForModule()
 
 // simulateVM simulates a single VM sending index reports periodically.
 // It staggers the initial delay and adds jitter to report intervals.
-func simulateVM(ctx context.Context, cid uint32, cfg config, provider *payloadProvider, stats *statsCollector, metrics *metricsRegistry) {
-	payload, err := provider.get(cid)
+func simulateVM(ctx context.Context, vmCfg vmConfig, globalCfg config, provider *payloadProvider, stats *statsCollector, metrics *metricsRegistry) {
+	payload, err := provider.get(vmCfg.cid)
 	if err != nil {
-		log.Errorf("VM[%d]: failed to get payload: %v", cid, err)
+		log.Errorf("VM[%d]: failed to get payload: %v", vmCfg.cid, err)
 		return
 	}
 
-	rng := rand.New(rand.NewSource(time.Now().UnixNano() + int64(cid)))
+	rng := rand.New(rand.NewSource(time.Now().UnixNano() + int64(vmCfg.cid)))
 
 	// Stagger VM starts with random initial delay [0, reportInterval)
-	initialDelay := time.Duration(rng.Int63n(int64(cfg.reportInterval)))
+	initialDelay := time.Duration(rng.Int63n(int64(vmCfg.reportInterval)))
 	select {
 	case <-ctx.Done():
 		return
 	case <-time.After(initialDelay):
 	}
 
-	sendVMReport(cid, payload, cfg.port, cfg.requestTimeout, stats, metrics)
+	lastSend := time.Now()
+	sendVMReport(vmCfg.cid, payload, vmCfg.numPackages, 0, globalCfg.port, globalCfg.requestTimeout, stats, metrics)
+	lastSend = time.Now()
 
 	for {
-		// Add ±5% jitter to report interval
-		jitter := time.Duration(float64(cfg.reportInterval) * (rng.Float64()*0.1 - 0.05))
-		nextInterval := cfg.reportInterval + jitter
+		// Add ±5% jitter to report interval, clamped to >= 500ms
+		jitterPercent := (rng.Float64()*0.1 - 0.05) // ±5%
+		jitter := time.Duration(float64(vmCfg.reportInterval) * jitterPercent)
+		nextInterval := vmCfg.reportInterval + jitter
+		if nextInterval < 500*time.Millisecond {
+			nextInterval = 500 * time.Millisecond
+		}
 
 		select {
 		case <-ctx.Done():
 			return
 		case <-time.After(nextInterval):
-			sendVMReport(cid, payload, cfg.port, cfg.requestTimeout, stats, metrics)
+			sendStart := time.Now()
+			intervalSinceLast := sendStart.Sub(lastSend)
+			sendVMReport(vmCfg.cid, payload, vmCfg.numPackages, intervalSinceLast, globalCfg.port, globalCfg.requestTimeout, stats, metrics)
+			lastSend = time.Now()
 		}
 	}
 }
 
-func sendVMReport(cid uint32, payload []byte, port uint, timeout time.Duration, stats *statsCollector, metrics *metricsRegistry) {
+func sendVMReport(cid uint32, payload []byte, packages int, observedInterval time.Duration, port uint, timeout time.Duration, stats *statsCollector, metrics *metricsRegistry) {
 	start := time.Now()
 	err := sendReport(payload, port, timeout)
 	latency := time.Since(start)
@@ -66,6 +75,7 @@ func sendVMReport(cid uint32, payload []byte, port uint, timeout time.Duration, 
 	}
 
 	metrics.observeSuccess(latency, len(payload))
+	metrics.observeReport(packages, observedInterval)
 	stats.recordSuccess(latency, len(payload))
 }
 

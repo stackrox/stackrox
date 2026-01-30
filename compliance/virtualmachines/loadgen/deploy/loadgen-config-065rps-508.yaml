@@ -1,0 +1,19 @@
+loadgen:
+  vmCount: 40
+
+  reportInterval:
+    mean: 60s
+    stddev: 0s
+    min: 60s
+    max: 60s
+
+  packages:
+    mean: 508
+    stddev: 0
+    min: 508
+    max: 508
+
+  statsInterval: 30s
+  port: 818
+  metricsPort: 9090
+  requestTimeout: 10s
