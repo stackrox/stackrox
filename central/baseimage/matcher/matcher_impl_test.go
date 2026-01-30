@@ -27,7 +27,7 @@ func TestMatchWithBaseImages(t *testing.T) {
 		desc      string
 		imgLayers []string
 		mockSetup func()
-		expected  []*storage.BaseImageInfo
+		expected  []*storage.BaseImage
 	}{
 		{
 			desc:      "Match found: Base image layers are returned out of order",
@@ -49,12 +49,13 @@ func TestMatchWithBaseImages(t *testing.T) {
 						},
 					}, nil)
 			},
-			expected: []*storage.BaseImageInfo{
+			expected: []*storage.BaseImage{
 				{
-					BaseImageId:       "base-1",
-					BaseImageFullName: "rhel:8",
-					BaseImageDigest:   "sha-base",
-					Created:           testCreatedTime,
+					Id:             "base-1",
+					Repository:     "rhel",
+					Tag:            "8",
+					ManifestDigest: "sha-base",
+					Created:        testCreatedTime,
 				},
 			},
 		},
@@ -99,8 +100,8 @@ func TestMatchWithBaseImages(t *testing.T) {
 						},
 					}, nil)
 			},
-			expected: []*storage.BaseImageInfo{
-				{BaseImageId: "match"},
+			expected: []*storage.BaseImage{
+				{Id: "match"},
 			},
 		},
 		{
@@ -134,9 +135,10 @@ func TestMatchWithBaseImages(t *testing.T) {
 			} else {
 				require.Equal(t, len(tc.expected), len(actual))
 				for i := range tc.expected {
-					assert.Equal(t, tc.expected[i].GetBaseImageId(), actual[i].GetBaseImageId())
-					if tc.expected[i].GetBaseImageFullName() != "" {
-						assert.Equal(t, tc.expected[i].GetBaseImageFullName(), actual[i].GetBaseImageFullName())
+					assert.Equal(t, tc.expected[i].GetId(), actual[i].GetId())
+					if tc.expected[i].GetRepository() != "" {
+						assert.Equal(t, tc.expected[i].GetRepository(), actual[i].GetRepository())
+						assert.Equal(t, tc.expected[i].GetTag(), actual[i].GetTag())
 					}
 					if tc.expected[i].GetCreated() != nil {
 						assert.Equal(t, tc.expected[i].GetCreated(), actual[i].GetCreated())

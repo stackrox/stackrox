@@ -175,11 +175,13 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 				BaseImageId:       "some-id",
 				BaseImageFullName: "registry.example.com/ns/base:tag",
 				BaseImageDigest:   "sha256:...",
+				MaxLayerIndex:     3,
 			},
 			{
 				BaseImageId:       "another-id",
 				BaseImageFullName: "registry.example.com/ns/other:tag",
 				BaseImageDigest:   "sha256:...",
+				MaxLayerIndex:     3,
 			},
 		},
 		Metadata: &storage.ImageMetadata{
@@ -323,11 +325,13 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 				{
 					BaseImageId:       "some-id",
 					BaseImageFullName: "registry.example.com/ns/base:tag",
+					MaxLayerIndex:     3,
 					BaseImageDigest:   "sha256:...",
 				},
 				{
 					BaseImageId:       "another-id",
 					BaseImageFullName: "registry.example.com/ns/other:tag",
+					MaxLayerIndex:     3,
 					BaseImageDigest:   "sha256:...",
 				},
 			},
