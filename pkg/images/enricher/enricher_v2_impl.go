@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
@@ -261,6 +262,26 @@ func (e *enricherV2Impl) EnrichImage(ctx context.Context, enrichContext Enrichme
 
 	updated = updated || didUpdateMetadata
 
+	if features.BaseImageDetection.Enabled() {
+		adminCtx :=
+			sac.WithGlobalAccessScopeChecker(ctx,
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeys(resources.ImageAdministration),
+				),
+			)
+		matchedBaseImages, err := e.baseImageGetter(adminCtx, imageV2.GetMetadata().GetLayerShas())
+		if err != nil {
+			log.Warnw("Matching image with base images",
+				logging.FromContext(ctx),
+				logging.ImageID(imageV2.GetId()),
+				logging.Err(err),
+				logging.String("request_image", imageV2.GetName().GetFullName()))
+		}
+		imageV2.BaseImageInfo = toBaseImageInfos(imageV2.GetMetadata(), matchedBaseImages)
+	}
+	updated = updated || len(imageV2.GetBaseImageInfo()) > 0
+
 	// Update the image with existing values depending on the FetchOption provided or whether any are available.
 	// This makes sure that we fetch any existing image only once from database.
 	useExistingScanIfPossible := e.updateImageFromDatabase(ctx, imageV2, enrichContext.FetchOpt)
@@ -294,18 +315,6 @@ func (e *enricherV2Impl) EnrichImage(ctx context.Context, enrichContext Enrichme
 	updated = updated || didUpdateSigVerificationData
 
 	e.cvesSuppressor.EnrichImageV2WithSuppressedCVEs(imageV2)
-
-	if features.BaseImageDetection.Enabled() {
-		matchedBaseImages, err := e.baseImageGetter(ctx, imageV2.GetMetadata().GetLayerShas())
-		if err != nil {
-			log.Warnw("Matching image with base images",
-				logging.FromContext(ctx),
-				logging.ImageID(imageV2.GetId()),
-				logging.Err(err),
-				logging.String("request_image", imageV2.GetName().GetFullName()))
-		}
-		imageV2.BaseImageInfo = toBaseImageInfos(imageV2.GetMetadata(), matchedBaseImages)
-	}
 
 	if !errorList.Empty() {
 		errorList.AddError(delegateErr)
