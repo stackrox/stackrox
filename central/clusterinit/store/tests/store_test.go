@@ -141,14 +141,14 @@ func (s *clusterInitStoreTestSuite) TestCrsWithoutMaxRegistrations() {
 	err = s.store.InitiateClusterRegistration(s.ctx, crsId, clusterName)
 	s.NoErrorf(err, "recording initiated registration for CRS %s failed", crsId)
 
-	crsMeta, err = s.store.Get(s.ctx, crsMeta.Id)
+	crsMeta, err = s.store.Get(s.ctx, crsMeta.GetId())
 	s.NoErrorf(err, "retrieving CRS %s failed", crsId)
-	s.Empty(crsMeta.RegistrationsInitiated, "CRS %s has registrationsInitiated non-empty, even though registrations are unlimited", crsId)
+	s.Empty(crsMeta.GetRegistrationsInitiated(), "CRS %s has registrationsInitiated non-empty, even though registrations are unlimited", crsId)
 
 	err = s.store.MarkClusterRegistrationComplete(s.ctx, crsId, clusterName)
 	s.NoErrorf(err, "recording completed registration for CRS %s failed", crsId)
-	s.Empty(crsMeta.RegistrationsInitiated, "CRS %s has registrationsInitiated non-empty, even though registrations are unlimited", crsId)
-	s.Empty(crsMeta.RegistrationsCompleted, "CRS %s has registrationsCompleted non-empty, even though registrations are unlimited", crsId)
+	s.Empty(crsMeta.GetRegistrationsInitiated(), "CRS %s has registrationsInitiated non-empty, even though registrations are unlimited", crsId)
+	s.Empty(crsMeta.GetRegistrationsCompleted(), "CRS %s has registrationsCompleted non-empty, even though registrations are unlimited", crsId)
 	s.Falsef(crsMeta.GetIsRevoked(), "CRS %s is revoked", crsId)
 }
 
