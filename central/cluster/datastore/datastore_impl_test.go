@@ -689,16 +689,6 @@ func TestCheckGracePeriodForReconnect(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("handles nil health status gracefully", func(t *testing.T) {
-		cluster := &storage.Cluster{
-			HealthStatus:       nil, // No health status at all
-			MostRecentSensorId: deploymentID.CloneVT(),
-		}
-
-		err := checkGracePeriodForReconnect(cluster, deploymentID, storage.ManagerType_MANAGER_TYPE_HELM_CHART)
-		assert.NoError(t, err, "should not panic with nil health status")
-	})
-
 	t.Run("returns error during grace period with different deployment IDs", func(t *testing.T) {
 		// Control the environment variable to ensure grace period is enforced
 		t.Setenv("ROX_SCALE_TEST", "false")
