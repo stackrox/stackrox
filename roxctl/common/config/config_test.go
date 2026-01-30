@@ -129,3 +129,32 @@ func TestDetermineConfigDirPermissionDenied(t *testing.T) {
 	assert.Contains(t, errMsg, "--token-file")
 	assert.Contains(t, errMsg, "roxctl central login")
 }
+
+func TestEnsureRoxctlConfigFilePathExistsPermissionDenied(t *testing.T) {
+	// This test verifies that ensureRoxctlConfigFilePathExists also returns the helpful
+	// error message when directory creation fails.
+
+	testDir := t.TempDir()
+
+	// Create a file that blocks directory creation
+	blockingFile := filepath.Join(testDir, "blocking")
+	require.NoError(t, os.WriteFile(blockingFile, []byte("not a directory"), 0600))
+
+	// Try to create config file path under the blocking file
+	configDirPath := filepath.Join(blockingFile, "subdir")
+
+	_, err := ensureRoxctlConfigFilePathExists(configDirPath)
+	require.Error(t, err)
+
+	// Verify the error is a NoCredentials error
+	assert.True(t, errors.Is(err, errox.NoCredentials))
+
+	// Verify the error message contains the expected config path and helpful suggestions
+	errMsg := err.Error()
+	assert.Contains(t, errMsg, configDirPath, "error should mention the config path that failed")
+	assert.Contains(t, errMsg, "No authentication credentials are available")
+	assert.Contains(t, errMsg, "--password")
+	assert.Contains(t, errMsg, "ROX_API_TOKEN")
+	assert.Contains(t, errMsg, "--token-file")
+	assert.Contains(t, errMsg, "roxctl central login")
+}
