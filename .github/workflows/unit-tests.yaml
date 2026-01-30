@@ -26,7 +26,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1-5-ga9b384f054
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -97,7 +97,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1-5-ga9b384f054
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -157,7 +157,7 @@ jobs:
   go-bench:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1-5-ga9b384f054
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -207,7 +207,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1-5-ga9b384f054
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -243,7 +243,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.1-5-ga9b384f054
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -286,7 +286,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1-5-ga9b384f054
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -330,7 +330,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1-5-ga9b384f054
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -364,7 +364,7 @@ jobs:
   openshift-ci-unit-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1-5-ga9b384f054
     steps:
       - name: Checkout
         uses: actions/checkout@v6

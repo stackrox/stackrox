@@ -1,5 +1,5 @@
 {
-	"image":"quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1",
+	"image":"quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1-5-ga9b384f054",
 	"containerEnv":{
 		"CI":"true"
 	},

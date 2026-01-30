@@ -114,7 +114,7 @@ jobs:
       UI_PKG_INSTALL_EXTRA_ARGS: --ignore-scripts
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1-5-ga9b384f054
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -149,7 +149,7 @@ jobs:
   pre-build-cli:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1-5-ga9b384f054
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -190,7 +190,7 @@ jobs:
     needs: define-job-matrix
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1-5-ga9b384f054
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -260,7 +260,7 @@ jobs:
   pre-build-docs:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1-5-ga9b384f054
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -320,7 +320,7 @@ jobs:
       GO_BINARIES_BUILD_ARTIFACT: ""
       ROX_PRODUCT_BRANDING: ""
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1-5-ga9b384f054
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -504,7 +504,7 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ""
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1-5-ga9b384f054
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -599,7 +599,7 @@ jobs:
     needs:
       - define-job-matrix
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1-5-ga9b384f054
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -761,7 +761,7 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1-5-ga9b384f054
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -805,7 +805,7 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1-5-ga9b384f054
     needs:
     - pre-build-cli
     - pre-build-go-binaries

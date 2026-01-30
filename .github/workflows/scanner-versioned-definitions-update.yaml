@@ -190,7 +190,7 @@ jobs:
     - prepare-environment
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.1-5-ga9b384f054
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
@@ -282,7 +282,7 @@ jobs:
     - prepare-environment
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.1-5-ga9b384f054
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
