@@ -102,17 +102,13 @@ function ViolationsTableSearchFilter({
     return (
         <Toolbar>
             <ToolbarContent>
-                <ToolbarGroup className="pf-v6-u-w-100">
-                    <ToolbarItem className="pf-v6-u-flex-1">
-                        <CompoundSearchFilter
-                            config={searchFilterConfig}
-                            defaultEntity="Policy"
-                            searchFilter={searchFilter}
-                            onSearch={onSearchHandler}
-                            additionalContextFilter={additionalContextFilter}
-                        />
-                    </ToolbarItem>
-                </ToolbarGroup>
+                <CompoundSearchFilter
+                    config={searchFilterConfig}
+                    defaultEntity="Policy"
+                    searchFilter={searchFilter}
+                    onSearch={onSearchHandler}
+                    additionalContextFilter={additionalContextFilter}
+                />
                 <ToolbarGroup className="pf-v6-u-w-100">
                     <CompoundSearchFilterLabels
                         attributesSeparateFromConfig={[]}
