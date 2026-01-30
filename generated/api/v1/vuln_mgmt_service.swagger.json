@@ -306,6 +306,11 @@
         "created": {
           "type": "string",
           "format": "date-time"
+        },
+        "maxLayerIndex": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Index of the last base image layer, taking into account\n\"empty layers\" (aka. metadata history without SHA)."
         }
       }
     },
