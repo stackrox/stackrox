@@ -212,7 +212,7 @@ func (w *storeImpl) InitiateClusterRegistration(ctx context.Context, initArtifac
 		return errors.Errorf("cluster %s already registered with cluster registration secret %s/%q", clusterName, crsMeta.GetId(), crsMeta.GetName())
 	}
 	if registrationsInitiatedSet.Contains(clusterName) {
-		log.Warnf("Attempting to initiate registration of cluster %s, even though it is already associated wit CRS %s.", clusterName, crsMeta.GetId())
+		log.Warnf("Attempting to initiate registration of cluster %s, even though it is already associated with CRS %s.", clusterName, crsMeta.GetId())
 	} else {
 		_ = registrationsInitiatedSet.Add(clusterName)
 		crsMeta.RegistrationsInitiated = registrationsInitiatedSet.AsSlice()
