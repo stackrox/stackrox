@@ -60,21 +60,21 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "process_enrichment_drops",
-		Help:      "A counter of the total number of times we've dropped enriching process indicators",
+		Help:      "Count of process indicators dropped because container metadata was not available before LRU eviction",
 	})
 
 	processEnrichmentHits = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "process_enrichment_hits",
-		Help:      "A counter of the total number of times we've successfully enriched process indicators",
+		Help:      "Count of process indicators successfully enriched with container metadata",
 	})
 
 	processEnrichmentLRUCacheSize = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "process_enrichment_cache_size",
-		Help:      "A gauge to track the enrichment lru cache size",
+		Help:      "Current number of container entries waiting in the process-enrichment LRU cache",
 	})
 
 	sensorIndicatorChannelFullCounter = prometheus.NewCounter(prometheus.CounterOpts{
@@ -116,7 +116,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "process_signal_dropper_counter",
-		Help:      "A counter of the total number of process indicators that were dropped if the buffer was full",
+		Help:      "Count of process signals dropped due to shutdown or a full output buffer",
 	})
 
 	sensorEvents = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -172,14 +172,14 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "resources_synced_size",
-		Help:      "A gauge to track how large ResourcesSynced message is",
+		Help:      "Size in bytes of the most recent ResourcesSynced message sent to Central",
 	})
 
 	deploymentEnhancementQueueSize = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "deployment_enhancement_queue_size",
-		Help:      "A counter to track deployments queued up in Sensor to be enhanced",
+		Help:      "Current number of deployment enhancement requests queued in Sensor",
 	})
 
 	k8sObjectIngestionToSendDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -275,7 +275,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "num_messages_waiting_for_transmission_to_central",
-		Help:      "A counter that tracks the operations in the responses channel",
+		Help:      "Counts enqueue/dequeue/drop operations on the buffered responses channel to Central",
 	}, []string{Operation, "MessageType"})
 
 	// componentProcessMessageDurationSeconds tracks the duration of ProcessMessage calls for each component

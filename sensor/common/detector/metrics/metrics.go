@@ -105,7 +105,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "node_scan_processed_total",
-		Help:      "Total number of Node Inventories/Indexes received/sent by this Sensor",
+		Help:      "Counts node inventory/index reports received from Compliance and sent to Central",
 	},
 		[]string{
 			// Name of the node sending an inventory
@@ -137,7 +137,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "node_scanning_ack_processed_total",
-		Help:      "Total number of Acks or Nacks for Node Inventories/Indexes processed by Sensor",
+		Help:      "Counts ACK/NACK messages for node inventory/index processing",
 	},
 		[]string{
 			// Name of the node sending an inventory
@@ -218,7 +218,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "block_scan_calls_total",
-		Help:      "A counter that tracks the operations in blocking scan calls",
+		Help:      "Counts add/remove operations for blocking scans triggered by deployment create/update",
 	}, []string{"Operation", "Path"})
 
 	scanCallDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
