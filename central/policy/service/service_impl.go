@@ -492,7 +492,7 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 				return
 			}
 
-			if !compiledPolicy.AppliesTo(deployment) {
+			if !compiledPolicy.AppliesTo(deployment, nil, nil) {
 				return
 			}
 

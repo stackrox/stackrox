@@ -40,7 +40,7 @@ func (d *detectorImpl) DeploymentWhitelistedForPolicy(deploymentID, policyID str
 			result = false
 			return nil
 		}
-		result = !compiled.AppliesTo(dep)
+		result = !compiled.AppliesTo(dep, nil, nil)
 		return nil
 	})
 	if err != nil {
