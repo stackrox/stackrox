@@ -1,8 +1,6 @@
 package lane
 
 import (
-	"time"
-
 	"github.com/pkg/errors"
 
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -120,10 +118,7 @@ func (l *defaultLane) run() {
 }
 
 func (l *defaultLane) handleEvent(event pubsub.Event) error {
-	start := time.Now()
-	operation := metrics.Processed
 	defer func() {
-		metrics.ObserveProcessingDuration(l.id, event.Topic(), time.Since(start), operation)
 		metrics.SetQueueSize(l.id, len(l.ch))
 	}()
 
@@ -131,7 +126,7 @@ func (l *defaultLane) handleEvent(event pubsub.Event) error {
 	defer l.consumerLock.RUnlock()
 	consumers, ok := l.consumers[event.Topic()]
 	if !ok {
-		metrics.RecordConsumerOperation(l.id, event.Topic(), metrics.NoConsumers)
+		metrics.RecordConsumerOperation(l.id, event.Topic(), pubsub.UnknownConsumer, metrics.NoConsumers)
 		return errors.Wrap(pubsubErrors.NewConsumersNotFoundForTopicErr(event.Topic(), l.id), "unable to handle event")
 	}
 	errList := errorhelpers.NewErrorList("handle event")
@@ -146,19 +141,14 @@ func (l *defaultLane) handleEvent(event pubsub.Event) error {
 		}
 	}
 
-	if errList.ToError() != nil {
-		operation = metrics.ConsumerError
-	}
-	metrics.RecordConsumerOperation(l.id, event.Topic(), operation)
-
 	return errList.ToError()
 }
 
-func (l *defaultLane) RegisterConsumer(topic pubsub.Topic, callback pubsub.EventCallback) error {
+func (l *defaultLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pubsub.Topic, callback pubsub.EventCallback) error {
 	if callback == nil {
 		return errors.New("cannot register a 'nil' callback")
 	}
-	c, err := l.newConsumerFn(callback, l.consumerOpts...)
+	c, err := l.newConsumerFn(l.id, topic, consumerID, callback, l.consumerOpts...)
 	if err != nil {
 		return errors.Wrap(err, "unable to create the consumer")
 	}

@@ -63,7 +63,7 @@ func (s *resolverSuite) SetupTest() {
 
 func (s *resolverSuite) newResolver(pubsubEnabled bool) component.Resolver {
 	if pubsubEnabled {
-		s.mockPubSubDispatcher.EXPECT().RegisterConsumerToLane(gomock.Any(), gomock.Any(), gomock.Any()).Times(2).Return(nil)
+		s.mockPubSubDispatcher.EXPECT().RegisterConsumerToLane(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(2).Return(nil)
 	}
 	resolver, err := New(s.mockOutput, &fakeProvider{
 		deploymentStore: s.mockDeploymentStore,
