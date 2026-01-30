@@ -1879,8 +1879,11 @@ type BaseImageInfo struct {
 	BaseImageFullName string                 `protobuf:"bytes,2,opt,name=base_image_full_name,json=baseImageFullName,proto3" json:"base_image_full_name,omitempty"`
 	BaseImageDigest   string                 `protobuf:"bytes,3,opt,name=base_image_digest,json=baseImageDigest,proto3" json:"base_image_digest,omitempty"`
 	Created           *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created,proto3" json:"created,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Index of the last base image layer, taking into account
+	// "empty layers" (aka. metadata history without SHA).
+	MaxLayerIndex int32 `protobuf:"varint,5,opt,name=max_layer_index,json=maxLayerIndex,proto3" json:"max_layer_index,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *BaseImageInfo) Reset() {
@@ -1939,6 +1942,13 @@ func (x *BaseImageInfo) GetCreated() *timestamppb.Timestamp {
 		return x.Created
 	}
 	return nil
+}
+
+func (x *BaseImageInfo) GetMaxLayerIndex() int32 {
+	if x != nil {
+		return x.MaxLayerIndex
+	}
+	return 0
 }
 
 type EmbeddedImageScanComponent_Executable struct {
@@ -2170,12 +2180,13 @@ const file_storage_image_proto_rawDesc = "" +
 	"\vset_fixableJ\x04\b\t\x10\n" +
 	"\"\"\n" +
 	"\fWatchedImage\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"\xc6\x01\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"\xee\x01\n" +
 	"\rBaseImageInfo\x12\"\n" +
 	"\rbase_image_id\x18\x01 \x01(\tR\vbaseImageId\x12/\n" +
 	"\x14base_image_full_name\x18\x02 \x01(\tR\x11baseImageFullName\x12*\n" +
 	"\x11base_image_digest\x18\x03 \x01(\tR\x0fbaseImageDigest\x124\n" +
-	"\acreated\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\acreated*s\n" +
+	"\acreated\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12&\n" +
+	"\x0fmax_layer_index\x18\x05 \x01(\x05R\rmaxLayerIndex*s\n" +
 	"\n" +
 	"SourceType\x12\x06\n" +
 	"\x02OS\x10\x00\x12\n" +
