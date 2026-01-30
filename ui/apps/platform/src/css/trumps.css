@@ -23,13 +23,6 @@ body {
     --base-700: var(--pf-t--color--black);
 }
 
-/* overrides the default link styling in Tailwind (`inherit`) with PF's default blue */
-.pf-v6-c-modal-box a, .pf-v6-c-page__main-section a:not(.pf-v6-c-button):not(.pf-v6-c-nav__link) {
-    color: var(--pf-t--global--text--color--link--default) !important;
-    -webkit-text-decoration: var(--pf-t--global--text-decoration--link--line--default) !important;
-    text-decoration: var(--pf-t--global--text-decoration--link--line--default) !important;
-}
-
 /* PatternFly style for links in classic related entity, cluster page, side panel, widget headerComponents, widget body, and React Table cell plus PatternFly table in classic page. */
 /* Also PatternFly Popover element. */
 

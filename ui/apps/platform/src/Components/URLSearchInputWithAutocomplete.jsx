@@ -16,7 +16,10 @@ import { newWorkflowCases } from 'constants/useCaseTypes';
 const backgroundClass = 'bg-base-100';
 const borderClass = 'border border-base-300';
 const colorClass = 'pf-v6-u-color-100'; // override color from React select style rules
-const categoryOptionClass = `pf-v6-u-font-weight-bold pf-v6-u-background-color-info ${borderClass} ${colorClass}`;
+const categoryOptionStyles = {
+    backgroundColor: 'var(--pf-t--global--color--nonstatus--blue--default)',
+};
+const categoryOptionClass = `pf-v6-u-font-weight-bold ${borderClass} ${colorClass}`;
 const valueOptionClass = `${backgroundClass} ${borderClass} ${colorClass}`;
 
 // Render readonly input with placeholder instead of span to prevent insufficient color contrast.
@@ -40,6 +43,7 @@ export const Option = ({ children, ...rest }) => {
         <components.Option {...rest}>
             <div className="flex">
                 <span
+                    style={isCategoryChip(children) ? categoryOptionStyles : {}}
                     className={`${isCategoryChip(children) ? categoryOptionClass : valueOptionClass} rounded-sm p-1 px-2 text-sm`}
                 >
                     {children}
