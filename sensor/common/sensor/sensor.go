@@ -198,7 +198,9 @@ func (s *Sensor) Start() {
 		}
 	}
 	s.imageService.SetClient(s.centralConnection)
-	s.profilingServer = s.startProfilingServer()
+	if !env.ContinuousProfiling.BooleanSetting() {
+		s.profilingServer = s.startProfilingServer()
+	}
 
 	var centralReachable concurrency.Flag
 
