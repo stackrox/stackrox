@@ -182,6 +182,7 @@ func (w *storeImpl) InitiateClusterRegistration(ctx context.Context, initArtifac
 	log.Infof("Attempting registration for cluster %s using %s %s.", clusterName, initArtifactMeta.GetVersion().String(), initArtifactMeta.GetId())
 	if initArtifactMeta.GetIsRevoked() {
 		log.Warnf("Init artifact %s is revoked, registration of cluster %s not allowed.", initArtifactId, clusterName)
+		return errors.Errorf("Init artifact %s is revoked", initArtifactMeta.GetId())
 	}
 
 	if initArtifactMeta.GetVersion() == storage.InitBundleMeta_INIT_BUNDLE {
