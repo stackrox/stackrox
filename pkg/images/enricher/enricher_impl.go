@@ -273,6 +273,19 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 
 	updated = updated || didUpdateMetadata
 
+	if features.BaseImageDetection.Enabled() {
+		elevatedCtx := sac.WithAllAccess(ctx)
+		matchedBaseImages, err := e.baseImageGetter(elevatedCtx, image.GetMetadata().GetLayerShas())
+		if err != nil {
+			log.Warnw("Matching image with base images",
+				logging.FromContext(ctx),
+				logging.ImageID(image.GetId()),
+				logging.Err(err),
+				logging.String("request_image", image.GetName().GetFullName()))
+		}
+		image.BaseImageInfo = toBaseImageInfos(image.GetMetadata(), matchedBaseImages)
+	}
+
 	// Update the image with existing values depending on the FetchOption provided or whether any are available.
 	// This makes sure that we fetch any existing image only once from database.
 	useExistingScanIfPossible := e.updateImageFromDatabase(ctx, image, enrichContext.FetchOpt)
@@ -309,18 +322,6 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 
 	if !errorList.Empty() {
 		errorList.AddError(delegateErr)
-	}
-
-	if features.BaseImageDetection.Enabled() {
-		matchedBaseImages, err := e.baseImageGetter(ctx, image.GetMetadata().GetLayerShas())
-		if err != nil {
-			log.Warnw("Matching image with base images",
-				logging.FromContext(ctx),
-				logging.ImageID(image.GetId()),
-				logging.Err(err),
-				logging.String("request_image", image.GetName().GetFullName()))
-		}
-		image.BaseImageInfo = toBaseImageInfos(image.GetMetadata(), matchedBaseImages)
 	}
 
 	return EnrichmentResult{
