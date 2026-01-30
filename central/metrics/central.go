@@ -16,7 +16,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "index_op_duration",
-		Help:      "Time taken to perform an index operation",
+		Help:      "Time taken to perform an index operation in milliseconds",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
@@ -25,7 +25,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "cache_op_duration",
-		Help:      "Time taken to perform a cache operation",
+		Help:      "Time taken to perform a cache operation in milliseconds",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
@@ -34,7 +34,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "prune_duration",
-		Help:      "Time to perform a pruning operation",
+		Help:      "Time to perform a pruning operation in milliseconds",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Type"})
@@ -43,7 +43,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "postgres_op_duration",
-		Help:      "Time taken to perform a postgres operation",
+		Help:      "Time taken to perform a postgres operation in milliseconds",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
@@ -52,7 +52,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "postgres_acquire_conn_op_duration",
-		Help:      "Time taken to acquire a Postgres connection",
+		Help:      "Time taken to acquire a Postgres connection in milliseconds",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
@@ -61,7 +61,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "graphql_op_duration",
-		Help:      "Time taken to run a single graphql sub resolver/sub query",
+		Help:      "Time taken to run a single graphql sub resolver/sub query in milliseconds",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Resolver", "Operation"})
@@ -70,7 +70,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "graphql_query_duration",
-		Help:      "Time taken to run a single graphql query",
+		Help:      "Time taken to run a single graphql query in milliseconds",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Query"})
@@ -79,7 +79,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "sensor_event_duration",
-		Help:      "Time taken to perform an process a sensor event operation",
+		Help:      "Time taken to perform a sensor event operation in milliseconds",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 13),
 	}, []string{"Type", "Action"})
@@ -123,7 +123,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "risk_processing_duration",
-		Help:      "Histogram of how long risk processing takes",
+		Help:      "Histogram of how long risk processing takes in milliseconds",
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Risk_Reprocessor"})
 
@@ -131,7 +131,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "datastore_function_duration",
-		Help:      "Histogram of how long a datastore function takes",
+		Help:      "Histogram of how long a datastore function takes in milliseconds",
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Type", "Function"})
 
@@ -139,7 +139,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "function_segment_duration",
-		Help:      "Histogram of how long a particular segment within a function takes",
+		Help:      "Histogram of how long a particular segment within a function takes in milliseconds",
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Segment"})
 

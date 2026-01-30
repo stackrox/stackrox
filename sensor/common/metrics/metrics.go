@@ -186,7 +186,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "k8s_event_ingestion_to_send_duration",
-		Help:      "Time taken to fully process an event from Kubernetes",
+		Help:      "Time taken to fully process an event from Kubernetes in milliseconds",
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Action", "Resource", "Dispatcher", "Type"})
 
