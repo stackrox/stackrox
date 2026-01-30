@@ -18,7 +18,11 @@ type SafeChannel[T any] struct {
 // NewSafeChannel creates a new SafeChannel with the specified buffer size.
 // The waitable parameter is used to coordinate shutdown - writes will fail
 // when the waitable is triggered.
+// If size is negative, it is treated as 0 (unbuffered channel).
 func NewSafeChannel[T any](size int, waitable concurrency.Waitable) *SafeChannel[T] {
+	if size < 0 {
+		size = 0
+	}
 	return &SafeChannel[T]{
 		ch:       make(chan T, size),
 		waitable: waitable,

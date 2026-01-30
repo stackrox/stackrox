@@ -198,6 +198,49 @@ func TestSafeChannel_Cap(t *testing.T) {
 	assert.Equal(t, 10, ch.Cap())
 }
 
+func TestSafeChannel_NegativeSize(t *testing.T) {
+	goleak.AssertNoGoroutineLeaks(t)
+
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		// Negative size should be treated as 0 (unbuffered)
+		ch := NewSafeChannel[int](-5, ctx)
+		assert.Equal(t, 0, ch.Cap())
+		assert.Equal(t, 0, ch.Len())
+
+		// Should still work as an unbuffered channel
+		writeStarted := concurrency.NewSignal()
+		writeCompleted := concurrency.NewSignal()
+		go func() {
+			writeStarted.Signal()
+			require.NoError(t, ch.Write(42))
+			writeCompleted.Signal()
+		}()
+
+		// Wait for write to start
+		<-writeStarted.Done()
+
+		// Wait for goroutine to become blocked
+		synctest.Wait()
+
+		// Write should block on unbuffered channel
+		select {
+		case <-writeCompleted.Done():
+			t.Fatal("Write should block on unbuffered channel")
+		default:
+			// Expected - write is blocked
+		}
+
+		// Read should unblock the write
+		val := <-ch.Chan()
+		assert.Equal(t, 42, val)
+
+		<-writeCompleted.Done()
+	})
+}
+
 func TestSafeChannel_Close_MultipleTimes(t *testing.T) {
 	goleak.AssertNoGoroutineLeaks(t)
 
