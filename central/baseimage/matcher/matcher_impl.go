@@ -28,7 +28,7 @@ func New(
 	}
 }
 
-func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string) ([]*storage.BaseImageInfo, error) {
+func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string) ([]*storage.BaseImage, error) {
 	start := time.Now()
 
 	defer func() {
@@ -45,7 +45,7 @@ func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string) (
 	if err != nil {
 		return nil, fmt.Errorf("listing candidates for layer %s: %w", firstLayer, err)
 	}
-	var baseImages []*storage.BaseImageInfo
+	var baseImages []*storage.BaseImage
 	for _, c := range candidates {
 		candidateLayers := c.GetLayers()
 		slices.SortFunc(candidateLayers, func(a, b *storage.BaseImageLayer) int {
@@ -63,12 +63,7 @@ func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string) (
 		}
 
 		if match {
-			baseImages = append(baseImages, &storage.BaseImageInfo{
-				BaseImageId:       c.GetId(),
-				BaseImageFullName: fmt.Sprintf("%s:%s", c.GetRepository(), c.GetTag()),
-				BaseImageDigest:   c.GetManifestDigest(),
-				Created:           c.GetCreated(),
-			})
+			baseImages = append(baseImages, c)
 		}
 	}
 	return baseImages, nil
