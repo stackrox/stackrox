@@ -261,6 +261,20 @@ func (e *enricherV2Impl) EnrichImage(ctx context.Context, enrichContext Enrichme
 
 	updated = updated || didUpdateMetadata
 
+	if features.BaseImageDetection.Enabled() {
+		allAccCtx := sac.WithAllAccess(ctx)
+		matchedBaseImages, err := e.baseImageGetter(allAccCtx, imageV2.GetMetadata().GetLayerShas())
+		if err != nil {
+			log.Warnw("Matching image with base images",
+				logging.FromContext(ctx),
+				logging.ImageID(imageV2.GetId()),
+				logging.Err(err),
+				logging.String("request_image", imageV2.GetName().GetFullName()))
+		}
+		imageV2.BaseImageInfo = toBaseImageInfos(imageV2.GetMetadata(), matchedBaseImages)
+	}
+	updated = updated || len(imageV2.BaseImageInfo) > 0
+
 	// Update the image with existing values depending on the FetchOption provided or whether any are available.
 	// This makes sure that we fetch any existing image only once from database.
 	useExistingScanIfPossible := e.updateImageFromDatabase(ctx, imageV2, enrichContext.FetchOpt)
@@ -294,18 +308,6 @@ func (e *enricherV2Impl) EnrichImage(ctx context.Context, enrichContext Enrichme
 	updated = updated || didUpdateSigVerificationData
 
 	e.cvesSuppressor.EnrichImageV2WithSuppressedCVEs(imageV2)
-
-	if features.BaseImageDetection.Enabled() {
-		matchedBaseImages, err := e.baseImageGetter(ctx, imageV2.GetMetadata().GetLayerShas())
-		if err != nil {
-			log.Warnw("Matching image with base images",
-				logging.FromContext(ctx),
-				logging.ImageID(imageV2.GetId()),
-				logging.Err(err),
-				logging.String("request_image", imageV2.GetName().GetFullName()))
-		}
-		imageV2.BaseImageInfo = toBaseImageInfos(imageV2.GetMetadata(), matchedBaseImages)
-	}
 
 	if !errorList.Empty() {
 		errorList.AddError(delegateErr)
