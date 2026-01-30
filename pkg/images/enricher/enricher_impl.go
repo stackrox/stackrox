@@ -285,7 +285,7 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 		}
 		image.BaseImageInfo = toBaseImageInfos(image.GetMetadata(), matchedBaseImages)
 	}
-	updated = updated || len(image.BaseImageInfo) > 0
+	updated = updated || len(image.GetBaseImageInfo()) > 0
 
 	// Update the image with existing values depending on the FetchOption provided or whether any are available.
 	// This makes sure that we fetch any existing image only once from database.
