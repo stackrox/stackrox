@@ -199,6 +199,7 @@ message ImageCVEV2 {
 
   // Timestamp when the fix for this CVE was made available according to the sources.
   google.protobuf.Timestamp fix_available_timestamp = 16; // @gotags: search:"CVE Fix Available Timestamp,hidden"
+  string datasource = 17;
 }
 
 message NodeCVE {

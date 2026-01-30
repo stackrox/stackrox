@@ -66,7 +66,12 @@ func (ds *datastoreImpl) UpsertMany(ctx context.Context, infos []*storage.ImageC
 	// Populate both maps separately - can't use index-based loop because
 	// existing may not be in the same order as infos
 	for _, info := range infos {
-		newInfoMap[info.GetId()] = info
+		if prev, ok := newInfoMap[info.GetId()]; ok {
+			// if there are are multiple infos with same id, earlier timestamps take precedence
+			newInfoMap[info.GetId()] = updateTimestamps(prev, info)
+		} else {
+			newInfoMap[info.GetId()] = info
+		}
 	}
 	for _, info := range existing {
 		oldInfoMap[info.GetId()] = info
