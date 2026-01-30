@@ -4,6 +4,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
@@ -25,6 +26,7 @@ func initialize() {
 	as = New(datastore.Singleton(),
 		clusterDataStore.Singleton(),
 		deploymentDataStore.Singleton(),
+		namespaceDataStore.Singleton(),
 		networkPolicyDS.Singleton(),
 		notifierDataStore.Singleton(),
 		mitreDataStore.Singleton(),

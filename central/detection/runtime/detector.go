@@ -1,8 +1,10 @@
 package runtime
 
 import (
-	"github.com/stackrox/rox/central/deployment/datastore"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -21,9 +23,11 @@ type Detector interface {
 }
 
 // NewDetector returns a new instance of a Detector.
-func NewDetector(policySet detection.PolicySet, deployments datastore.DataStore) Detector {
+func NewDetector(policySet detection.PolicySet, deployments deploymentDataStore.DataStore, clusters clusterDataStore.DataStore, namespaces namespaceDataStore.DataStore) Detector {
 	return &detectorImpl{
 		policySet:   policySet,
 		deployments: deployments,
+		clusters:    clusters,
+		namespaces:  namespaces,
 	}
 }

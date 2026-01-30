@@ -7,7 +7,10 @@ import (
 	"testing"
 
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
+	namespaceDatastore "github.com/stackrox/rox/central/namespace/datastore"
+	networkPoliciesDatastore "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDatastore "github.com/stackrox/rox/central/notifier/datastore"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	policyStore "github.com/stackrox/rox/central/policy/store"
@@ -18,6 +21,8 @@ import (
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	mitreDataStore "github.com/stackrox/rox/pkg/mitre/datastore"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -38,6 +43,7 @@ type PolicyServicePostgresSuite struct {
 	policies          policyDatastore.DataStore
 	categories        policyCategoryDatastore.DataStore
 	clusters          clusterDatastore.DataStore
+	namespaces        namespaceDatastore.DataStore
 	mitreVectorStore  mitreDataStore.AttackReadOnlyDataStore
 	lifecycleManager  *lifecycleMocks.MockManager
 	connectionManager *connectionMocks.MockManager
@@ -45,6 +51,7 @@ type PolicyServicePostgresSuite struct {
 }
 
 func (s *PolicyServicePostgresSuite) SetupSuite() {
+	s.T().Setenv("ROX_IMAGE_FLAVOR", "opensource")
 
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pgtest.ForT(s.T())
@@ -67,6 +74,15 @@ func (s *PolicyServicePostgresSuite) SetupSuite() {
 	s.clusters, err = clusterDatastore.GetTestPostgresDataStore(s.T(), s.db)
 	s.Require().NoError(err)
 
+	s.namespaces, err = namespaceDatastore.GetTestPostgresDataStore(s.T(), s.db)
+	s.Require().NoError(err)
+
+	deployments, err := deploymentDatastore.GetTestPostgresDataStore(s.T(), s.db)
+	s.Require().NoError(err)
+
+	networkPolicies, err := networkPoliciesDatastore.GetTestPostgresDataStore(s.T(), s.db)
+	s.Require().NoError(err)
+
 	s.mitreVectorStore = mitreDataStore.NewMitreAttackStore()
 
 	s.mockCtrl = gomock.NewController(s.T())
@@ -75,7 +91,7 @@ func (s *PolicyServicePostgresSuite) SetupSuite() {
 
 	s.connectionManager = connectionMocks.NewMockManager(s.mockCtrl)
 
-	s.tested = New(s.policies, s.clusters, nil, nil, notifierDS, s.mitreVectorStore, nil, s.lifecycleManager, nil, nil, s.connectionManager)
+	s.tested = New(s.policies, s.clusters, deployments, s.namespaces, networkPolicies, notifierDS, s.mitreVectorStore, nil, s.lifecycleManager, nil, nil, s.connectionManager)
 }
 
 // TestPostPolicy tests posting and then immediately after putting the same policy, as this discovered a bug in the
@@ -135,4 +151,68 @@ func (s *PolicyServicePostgresSuite) TestPutAfterPostPolicyWithInvalidCasing() {
 	count, err = s.categories.Count(s.ctx, searchPkg.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, count)
+}
+
+func (s *PolicyServicePostgresSuite) TestDryRunFetchesLabels() {
+	// Insert test cluster with labels
+	cluster := &storage.Cluster{
+		Name:   "Test Cluster",
+		Labels: map[string]string{"env": "prod"},
+	}
+	clusterID, err := s.clusters.AddCluster(s.ctx, cluster)
+	s.NoError(err)
+
+	// Insert test namespace with labels
+	namespace := &storage.NamespaceMetadata{
+		Id:          "22222222-2222-2222-2222-222222222222",
+		Name:        "test-namespace",
+		ClusterId:   clusterID,
+		ClusterName: "Test Cluster",
+		Labels:      map[string]string{"team": "backend"},
+	}
+	s.NoError(s.namespaces.AddNamespace(s.ctx, namespace))
+
+	// Create a deployment so dry-run has something to process
+	deployment := &storage.Deployment{
+		Id:          "33333333-3333-3333-3333-333333333333",
+		Name:        "test-deployment",
+		ClusterId:   clusterID,
+		NamespaceId: "22222222-2222-2222-2222-222222222222",
+		Namespace:   "test-namespace",
+	}
+	deploymentDS, err := deploymentDatastore.GetTestPostgresDataStore(s.T(), s.db)
+	s.Require().NoError(err)
+	s.NoError(deploymentDS.UpsertDeployment(s.ctx, deployment))
+
+	// Create deploy-time policy
+	policy := &storage.Policy{
+		Name:            "Test Label Policy",
+		Severity:        storage.Severity_HIGH_SEVERITY,
+		Categories:      []string{"Test Category"},
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
+		PolicySections: []*storage.PolicySection{
+			{
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: fieldnames.ImageTag,
+						Values:    []*storage.PolicyValue{{Value: "latest"}},
+					},
+				},
+			},
+		},
+		PolicyVersion: policyversion.CurrentVersion().String(),
+	}
+
+	s.lifecycleManager.EXPECT().UpsertPolicy(gomock.Any()).AnyTimes()
+	s.connectionManager.EXPECT().PreparePoliciesAndBroadcast(gomock.Any()).AnyTimes()
+
+	// Run dry-run - this should fetch cluster and namespace labels from datastores
+	resp, err := s.tested.DryRunPolicy(s.ctx, policy)
+	s.NoError(err)
+	s.NotNil(resp)
+
+	// Cleanup: remove test data to avoid affecting other tests
+	s.NoError(deploymentDS.RemoveDeployment(s.ctx, clusterID, "33333333-3333-3333-3333-333333333333"))
+	s.NoError(s.namespaces.RemoveNamespace(s.ctx, "22222222-2222-2222-2222-222222222222"))
+	s.NoError(s.clusters.RemoveCluster(s.ctx, clusterID, nil))
 }
