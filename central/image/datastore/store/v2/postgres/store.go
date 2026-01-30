@@ -269,6 +269,7 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 		"operatingsystem",
 		"imageid",
 		"location",
+		"layertype",
 		"serialized",
 	}
 
@@ -289,6 +290,7 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 			obj.GetOperatingSystem(),
 			obj.GetImageId(),
 			obj.GetLocation(),
+			obj.GetLayerType(),
 			serialized,
 		})
 
