@@ -340,7 +340,7 @@ func TestBackwardCompatibility_LegacyScalarValues(t *testing.T) {
 	// Test that legacy scalar values are converted to distributions correctly
 	var yamlCfg yamlConfig
 	yamlCfg.Loadgen.VmCount = 100
-	yamlCfg.Loadgen.NumPackages = 700 // Legacy scalar
+	yamlCfg.Loadgen.NumPackages = 700      // Legacy scalar
 	yamlCfg.Loadgen.ReportInterval = "60s" // Legacy scalar string
 	yamlCfg.Loadgen.StatsInterval = "30s"
 	yamlCfg.Loadgen.Port = 818

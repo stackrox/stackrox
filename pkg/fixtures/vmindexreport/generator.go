@@ -21,6 +21,8 @@ const (
 // numericRegex matches sequences of digits in a version string.
 var numericRegex = regexp.MustCompile(`\d+`)
 
+const baseRHELPackageCount = 508
+
 // NormalizeRPMVersion parses an RPM version string and returns a 10-element int32 slice.
 // Only the first 3 numeric components (major, minor, patch) are extracted since those
 // are what matter for vulnerability matching. The rest are zeros.
@@ -53,29 +55,54 @@ type Generator struct {
 	environments map[string]*v4.Environment_List
 }
 
-// selectPackageIndices returns a slice of indices into packagesFixture based on numRequested.
-// - numRequested <= 0: returns empty slice (no packages)
-// - numRequested < totalAvailable: randomly samples numRequested indices
-// - numRequested >= totalAvailable: uses all indices, then duplicates randomly to fill
-func selectPackageIndices(rng *rand.Rand, numRequested, totalAvailable int) []int {
-	switch {
-	case numRequested <= 0:
-		// Return empty slice (no packages)
-		return []int{}
-	case numRequested < totalAvailable:
-		// Randomly sample numRequested from available packages
-		return rng.Perm(totalAvailable)[:numRequested]
-	default:
-		// numRequested >= totalAvailable: use all, then duplicate randomly to fill
-		indices := make([]int, numRequested)
-		for i := range totalAvailable {
-			indices[i] = i
-		}
-		for i := totalAvailable; i < numRequested; i++ {
-			indices[i] = rng.Intn(totalAvailable)
-		}
-		return indices
+func packageKey(p PackageFixture) string {
+	return p.Name + "|" + p.Version + "|" + p.Repo
+}
+
+// selectPackages returns concrete fixtures according to the rules:
+//   - numRequested <= 0: empty selection.
+//   - numRequested <= baseRHELPackageCount: take the first N from the original RHEL9 base fixture.
+//   - numRequested > baseRHELPackageCount: take all base RHEL9 packages, then sample
+//     (deterministically via rng) from the remainder of the full fixture, excluding base entries.
+//   - Panics if the request exceeds available packages.
+func selectPackages(rng *rand.Rand, numRequested int) []PackageFixture {
+	if numRequested <= 0 {
+		return nil
 	}
+
+	if numRequested <= baseRHELPackageCount {
+		return basePackagesFixture[:numRequested]
+	}
+
+	extrasNeeded := numRequested - baseRHELPackageCount
+
+	// Build exclusion set for fast lookup.
+	exclude := make(map[string]struct{}, len(basePackagesFixture))
+	for _, p := range basePackagesFixture {
+		exclude[packageKey(p)] = struct{}{}
+	}
+
+	extrasPool := make([]PackageFixture, 0, len(packagesFixture))
+	for _, p := range packagesFixture {
+		if _, ok := exclude[packageKey(p)]; ok {
+			continue
+		}
+		extrasPool = append(extrasPool, p)
+	}
+
+	if extrasNeeded > len(extrasPool) {
+		panic(fmt.Sprintf("numPackages must be <= %d, got %d", baseRHELPackageCount+len(extrasPool), numRequested))
+	}
+
+	perm := rng.Perm(len(extrasPool))
+
+	selected := make([]PackageFixture, 0, numRequested)
+	selected = append(selected, basePackagesFixture...)
+	for i := 0; i < extrasNeeded; i++ {
+		selected = append(selected, extrasPool[perm[i]])
+	}
+
+	return selected
 }
 
 // buildRepositories creates the two real RHEL repositories from the fixture.
@@ -95,30 +122,28 @@ func buildRepositories() map[string]*v4.Repository {
 	return repositories
 }
 
-// NewGeneratorWithSeed creates a new Generator with a specific random seed.
+// NewGeneratorWithSeed creates a new Generator with deterministic package selection.
 // The numPackages parameter specifies how many packages to include.
-// When numPackages == 0, no packages are included (empty report).
-// When numPackages < available, packages are randomly sampled.
-// When numPackages > available, packages are duplicated to reach the requested count.
+//   - numPackages == 0: no packages are included (empty report).
+//   - numPackages <= baseRHELPackageCount: use the first numPackages from the original RHEL9 fixture.
+//   - numPackages > baseRHELPackageCount: include the first baseRHELPackageCount packages,
+//     then sample the remaining from the rest of the fixture using the provided seed.
+//   - numPackages > available: panic.
+//
 // All packages use the two real RHEL repositories from the fixture.
-// The seed parameter controls random selection for reproducibility.
 func NewGeneratorWithSeed(numPackages int, seed int64) *Generator {
 	if numPackages < 0 {
 		panic(fmt.Sprintf("numPackages must be non-negative, got %d", numPackages))
 	}
 	rng := rand.New(rand.NewSource(seed))
 
-	totalPkgs := len(packagesFixture)
-	indices := selectPackageIndices(rng, numPackages, totalPkgs)
+	selected := selectPackages(rng, numPackages)
 	repositories := buildRepositories()
 
-	// Build packages from fixture data using selected indices
-	// All packages use their original repo from the fixture
-	packages := make(map[string]*v4.Package, len(indices))
-	environments := make(map[string]*v4.Environment_List, len(indices))
+	packages := make(map[string]*v4.Package, len(selected))
+	environments := make(map[string]*v4.Environment_List, len(selected))
 
-	for i, idx := range indices {
-		pkg := packagesFixture[idx]
+	for i, pkg := range selected {
 		pkgID := fmt.Sprintf("%s-%d", pkg.Name, i)
 
 		// All packages use their original repo from the fixture
@@ -195,4 +220,90 @@ func (g *Generator) NumPackages() int {
 // NumRepositories returns the number of repositories in the generator.
 func (g *Generator) NumRepositories() int {
 	return len(g.repositories)
+}
+
+// NewGeneratorWithSpecificPackage creates a new Generator where all packages use a specific package name.
+// This is useful for load testing with packages that have specific vulnerability characteristics.
+// packageName must exist in packagesFixture. Common test packages:
+//   - "vim-minimal": High vulnerability count (for stress testing)
+//   - "basesystem": Zero vulnerabilities (metapackage, no code)
+//   - "filesystem": Zero vulnerabilities (directory structure only)
+func NewGeneratorWithSpecificPackage(packageName string, numPackages int) *Generator {
+	if numPackages < 0 {
+		panic(fmt.Sprintf("numPackages must be non-negative, got %d", numPackages))
+	}
+	if numPackages == 0 {
+		return &Generator{
+			repositories: buildRepositories(),
+			packages:     make(map[string]*v4.Package),
+			environments: make(map[string]*v4.Environment_List),
+		}
+	}
+
+	// Find package in the fixture
+	var targetPkg *PackageFixture
+	for i := range packagesFixture {
+		if packagesFixture[i].Name == packageName {
+			targetPkg = &packagesFixture[i]
+			break
+		}
+	}
+	if targetPkg == nil {
+		panic(fmt.Sprintf("package %q not found in packagesFixture", packageName))
+	}
+
+	repositories := buildRepositories()
+	packages := make(map[string]*v4.Package, numPackages)
+	environments := make(map[string]*v4.Environment_List, numPackages)
+
+	// Create numPackages instances of the specified package
+	repoCPE := repositories[targetPkg.Repo].GetCpe()
+	for i := 0; i < numPackages; i++ {
+		pkgID := fmt.Sprintf("%s-%d", targetPkg.Name, i)
+
+		packages[pkgID] = &v4.Package{
+			Id:             pkgID,
+			Name:           targetPkg.Name,
+			Version:        targetPkg.Version,
+			Kind:           "binary",
+			Arch:           "x86_64",
+			RepositoryHint: "hash:sha256:f52ca767328e6919ec11a1da654e92743587bd3c008f0731f8c4de3af19c1830|key:199e2f91fd431d51",
+			Cpe:            repoCPE,
+			PackageDb:      "sqlite:usr/share/rpm",
+			Source: &v4.Package{
+				Id:      pkgID + "-src",
+				Name:    targetPkg.Name,
+				Version: targetPkg.Version,
+				Kind:    "source",
+				Cpe:     repoCPE,
+			},
+			NormalizedVersion: &v4.NormalizedVersion{
+				Kind: "rpm",
+				V:    NormalizeRPMVersion(targetPkg.Version),
+			},
+		}
+
+		environments[pkgID] = &v4.Environment_List{
+			Environments: []*v4.Environment{
+				{
+					PackageDb:     "sqlite:usr/share/rpm",
+					IntroducedIn:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+					RepositoryIds: []string{targetPkg.Repo},
+				},
+			},
+		}
+	}
+
+	return &Generator{
+		repositories: repositories,
+		packages:     packages,
+		environments: environments,
+	}
+}
+
+// NewGeneratorWithVimMinimal creates a new Generator where all packages are vim-minimal.
+// This is useful for load testing vulnerability processing since vim-minimal has many CVEs.
+// The numPackages parameter specifies how many vim-minimal package instances to include.
+func NewGeneratorWithVimMinimal(numPackages int) *Generator {
+	return NewGeneratorWithSpecificPackage("vim-minimal", numPackages)
 }

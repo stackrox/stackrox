@@ -91,10 +91,10 @@ func printPackageList(payloads map[uint32][]byte) {
 		}
 
 		var packageNames []string
-		if report.IndexV4 != nil && report.IndexV4.Contents != nil {
-			for _, pkg := range report.IndexV4.Contents.Packages {
+		if report.GetIndexV4() != nil && report.GetIndexV4().GetContents() != nil {
+			for _, pkg := range report.GetIndexV4().GetContents().GetPackages() {
 				if pkg != nil {
-					packageNames = append(packageNames, pkg.Name)
+					packageNames = append(packageNames, pkg.GetName())
 				}
 			}
 		}

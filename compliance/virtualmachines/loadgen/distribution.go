@@ -61,5 +61,3 @@ func sampleNormal(rng *rand.Rand, mean, stddev, min, max float64) float64 {
 	}
 	return value
 }
-
-

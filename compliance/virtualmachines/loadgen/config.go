@@ -36,9 +36,9 @@ type config struct {
 	vmCount  int
 	duration time.Duration
 
-	packageDist      packageDistribution
-	intervalDist     intervalDistribution
-	specificPackage  string // If set, use only this package (e.g., "vim-minimal", "basesystem")
+	packageDist     packageDistribution
+	intervalDist    intervalDistribution
+	specificPackage string // If set, use only this package (e.g., "vim-minimal", "basesystem")
 
 	port           uint
 	metricsPort    int

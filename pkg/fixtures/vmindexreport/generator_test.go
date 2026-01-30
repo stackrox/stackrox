@@ -1,6 +1,7 @@
 package vmindexreport
 
 import (
+	"math/rand"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/set"
@@ -27,10 +28,6 @@ func TestNewGeneratorWithSeed(t *testing.T) {
 			numPackages:      totalAvailable,
 			expectedPkgCount: totalAvailable,
 		},
-		"should duplicate packages when numPackages > available": {
-			numPackages:      totalAvailable + 100,
-			expectedPkgCount: totalAvailable + 100,
-		},
 	}
 
 	for name, tt := range tests {
@@ -38,9 +35,57 @@ func TestNewGeneratorWithSeed(t *testing.T) {
 			gen := NewGeneratorWithSeed(tt.numPackages, 42)
 
 			assert.Equal(t, tt.expectedPkgCount, gen.NumPackages(), "package count mismatch")
-			assert.Equal(t, 2, gen.NumRepositories(), "should always have 2 real repositories")
+			assert.Equal(t, len(repoToCPEMapping), gen.NumRepositories(), "repository count mismatch")
 		})
 	}
+}
+
+func TestSelectPackages_BaseAndExtras(t *testing.T) {
+	numRequested := baseRHELPackageCount + 5
+	selected := selectPackages(rand.New(rand.NewSource(99)), numRequested)
+
+	require.Len(t, selected, numRequested)
+
+	// First baseRHELPackageCount should match the base fixture exactly.
+	for i := 0; i < baseRHELPackageCount; i++ {
+		assert.Equal(t, basePackagesFixture[i], selected[i], "base package mismatch at %d", i)
+	}
+
+	// Extras should not be part of the base set.
+	exclude := make(map[string]struct{}, len(basePackagesFixture))
+	for _, p := range basePackagesFixture {
+		exclude[p.Name+p.Version+p.Repo] = struct{}{}
+	}
+	seen := make(map[string]struct{})
+	for _, p := range selected[baseRHELPackageCount:] {
+		key := p.Name + p.Version + p.Repo
+		if _, ok := exclude[key]; ok {
+			t.Fatalf("extra package %s is part of base set", key)
+		}
+		if _, ok := seen[key]; ok {
+			t.Fatalf("duplicate extra package %s", key)
+		}
+		seen[key] = struct{}{}
+	}
+}
+
+func TestNewGeneratorWithSeed_PanicsWhenRequestingTooManyPackages(t *testing.T) {
+	exclude := make(map[string]struct{}, len(basePackagesFixture))
+	for _, p := range basePackagesFixture {
+		exclude[p.Name+p.Version+p.Repo] = struct{}{}
+	}
+	extras := 0
+	for _, p := range packagesFixture {
+		if _, ok := exclude[p.Name+p.Version+p.Repo]; ok {
+			continue
+		}
+		extras++
+	}
+	totalAvailable := baseRHELPackageCount + extras
+
+	assert.Panics(t, func() {
+		NewGeneratorWithSeed(totalAvailable+1, 42)
+	}, "should panic when numPackages exceeds available packages")
 }
 
 func TestNewGeneratorWithSeed_PanicsOnNegativePackages(t *testing.T) {
@@ -67,7 +112,8 @@ func TestNewGeneratorWithSeed_Reproducibility(t *testing.T) {
 	}
 }
 
-func TestNewGeneratorWithSeed_DifferentSeeds(t *testing.T) {
+func TestNewGeneratorWithSeed_DeterministicPackageSelection(t *testing.T) {
+	// Test that we always get the same first N packages regardless of seed
 	gen1 := NewGeneratorWithSeed(10, 111)
 	gen2 := NewGeneratorWithSeed(10, 222)
 
@@ -84,10 +130,68 @@ func TestNewGeneratorWithSeed_DifferentSeeds(t *testing.T) {
 		names2.Add(pkg.GetName())
 	}
 
-	// Different seeds should produce different package selection (with high probability)
-	// The symmetric difference should be non-empty
-	diff := names1.Difference(names2).Union(names2.Difference(names1))
-	assert.NotEmpty(t, diff, "different seeds should produce different package selections")
+	// Different seeds should now produce SAME package selection (deterministic)
+	assert.Equal(t, names1, names2, "different seeds should produce identical package selections")
+
+	// Verify we get the first N packages from the fixture
+	expectedNames := set.NewStringSet()
+	for i := 0; i < 10; i++ {
+		expectedNames.Add(basePackagesFixture[i].Name)
+	}
+	assert.Equal(t, expectedNames, names1, "should contain first 10 packages from fixture")
+}
+
+func TestNewGeneratorWithSeed_AlwaysProducesSamePackageSet(t *testing.T) {
+	// Test the behavior described: requesting 5 packages always gives first 5,
+	// requesting 7 packages always gives first 7, etc.
+	tests := []struct {
+		name             string
+		numPackages      int
+		expectedPackages []string
+	}{
+		{
+			name:        "5 packages should always be first 5 from fixture",
+			numPackages: 5,
+			expectedPackages: []string{
+				"NetworkManager",
+				"NetworkManager-libnm",
+				"NetworkManager-team",
+				"NetworkManager-tui",
+				"PackageKit",
+			},
+		},
+		{
+			name:        "7 packages should always be first 7 from fixture",
+			numPackages: 7,
+			expectedPackages: []string{
+				"NetworkManager",
+				"NetworkManager-libnm",
+				"NetworkManager-team",
+				"NetworkManager-tui",
+				"PackageKit",
+				"PackageKit-glib",
+				"abattis-cantarell-fonts",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gen := NewGeneratorWithSeed(tt.numPackages, 42)
+			report := gen.GenerateV4IndexReport()
+
+			actualNames := set.NewStringSet()
+			for _, pkg := range report.GetContents().GetPackages() {
+				actualNames.Add(pkg.GetName())
+			}
+
+			expectedNames := set.NewStringSet()
+			expectedNames.AddAll(tt.expectedPackages...)
+
+			assert.Equal(t, expectedNames, actualNames, "package set mismatch")
+			assert.Equal(t, tt.numPackages, actualNames.Cardinality(), "package count mismatch")
+		})
+	}
 }
 
 func TestGenerateV4IndexReport(t *testing.T) {
@@ -100,7 +204,7 @@ func TestGenerateV4IndexReport(t *testing.T) {
 
 	require.NotNil(t, report.GetContents(), "Contents should not be nil")
 	assert.Len(t, report.GetContents().GetPackages(), 10, "should have 10 packages")
-	assert.Len(t, report.GetContents().GetRepositories(), 2, "should have 2 repositories")
+	assert.Len(t, report.GetContents().GetRepositories(), len(repoToCPEMapping), "repository count mismatch")
 	assert.Len(t, report.GetContents().GetEnvironments(), 10, "should have 10 environments")
 }
 
@@ -117,8 +221,8 @@ func TestGenerateV4IndexReport_ZeroPackages(t *testing.T) {
 	// Packages and Environments should be empty when numPackages is 0
 	assert.Empty(t, report.GetContents().GetPackages(), "Packages should be empty when numPackages is 0")
 	assert.Empty(t, report.GetContents().GetEnvironments(), "Environments should be empty when numPackages is 0")
-	// Repositories should still have the two real repos
-	assert.Len(t, report.GetContents().GetRepositories(), 2, "should still have 2 repositories even with 0 packages")
+	// Repositories should still have the three real repos
+	assert.Len(t, report.GetContents().GetRepositories(), len(repoToCPEMapping), "repository count mismatch even with 0 packages")
 }
 
 func TestGenerateV4IndexReport_PackagesHaveValidCPEs(t *testing.T) {
