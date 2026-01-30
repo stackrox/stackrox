@@ -970,6 +970,10 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 }
 
 func debugRoutes() []routes.CustomRoute {
+	if env.ContinuousProfiling.BooleanSetting() {
+		return []routes.CustomRoute{}
+	}
+
 	customRoutes := make([]routes.CustomRoute, 0, len(routes.DebugRoutes))
 
 	for r, h := range routes.DebugRoutes {
