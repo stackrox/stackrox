@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
@@ -274,8 +275,14 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	updated = updated || didUpdateMetadata
 
 	if features.BaseImageDetection.Enabled() {
-		allAccCtx := sac.WithAllAccess(ctx)
-		matchedBaseImages, err := e.baseImageGetter(allAccCtx, image.GetMetadata().GetLayerShas())
+		adminCtx :=
+			sac.WithGlobalAccessScopeChecker(ctx,
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeys(resources.ImageAdministration),
+				),
+			)
+		matchedBaseImages, err := e.baseImageGetter(adminCtx, image.GetMetadata().GetLayerShas())
 		if err != nil {
 			log.Warnw("Matching image with base images",
 				logging.FromContext(ctx),
