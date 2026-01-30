@@ -368,7 +368,7 @@ func (s *sensorServiceTestSuite) TestClusterRegistrationWithInitBundle() {
 
 	// Verify that init bundle is still associated with cluster.
 	cluster := s.lookupClusterByName(clusterNameA)
-	s.NotEmptyf(cluster.InitBundleId, "cluster %s lost association to init bundle %s", clusterNameA, initBundleId)
+	s.NotEmptyf(cluster.GetInitBundleId(), "cluster %s lost association to init bundle %s", clusterNameA, initBundleId)
 
 	// Simulate regular connection with non-init certificate.
 	mockServer = newMockServerForRegularConnect(s, sensorDeploymentIdentificationA, clusterNameA)
@@ -377,7 +377,7 @@ func (s *sensorServiceTestSuite) TestClusterRegistrationWithInitBundle() {
 
 	// Verify that init bundle is not associated with cluster anymore.
 	cluster = s.lookupClusterByName(clusterNameA)
-	s.Emptyf(cluster.InitBundleId, "cluster %s still association with init bundle %s", clusterNameA, initBundleId)
+	s.Emptyf(cluster.GetInitBundleId(), "cluster %s still association with init bundle %s", clusterNameA, initBundleId)
 }
 
 // Implementation of a simple mock server to be used in the CRS test suite.
@@ -424,7 +424,7 @@ func prepareHelloHandshake(m *mockServer, sensorDeploymentId *storage.SensorDepl
 func newMockServerForCrsHandshake(s *sensorServiceTestSuite, crsMeta *storage.InitBundleMeta, sensorDeploymentId *storage.SensorDeploymentIdentification, clusterName string) *mockServer {
 	identity := &storage.ServiceIdentity{
 		Type:         storage.ServiceType_REGISTRANT_SERVICE,
-		InitBundleId: crsMeta.Id,
+		InitBundleId: crsMeta.GetId(),
 	}
 
 	m := newMockServer(s, identity)
@@ -435,7 +435,7 @@ func newMockServerForCrsHandshake(s *sensorServiceTestSuite, crsMeta *storage.In
 func newMockServerForInitBundleHandshake(s *sensorServiceTestSuite, crsMeta *storage.InitBundleMeta, sensorDeploymentId *storage.SensorDeploymentIdentification, clusterName string) *mockServer {
 	identity := &storage.ServiceIdentity{
 		Type:         storage.ServiceType_SENSOR_SERVICE,
-		InitBundleId: crsMeta.Id,
+		InitBundleId: crsMeta.GetId(),
 	}
 
 	m := newMockServer(s, identity)
@@ -567,7 +567,7 @@ func newCrsMeta(maxRegistrations uint64) (string, *storage.InitBundleMeta) {
 		Version:          storage.InitBundleMeta_CRS,
 		MaxRegistrations: maxRegistrations,
 	}
-	return meta.Id, meta
+	return meta.GetId(), meta
 }
 
 func newInitBundleMeta() (string, *storage.InitBundleMeta) {
@@ -579,7 +579,7 @@ func newInitBundleMeta() (string, *storage.InitBundleMeta) {
 		ExpiresAt: timestamppb.New(time.Now().Add(10 * time.Minute)),
 		Version:   storage.InitBundleMeta_INIT_BUNDLE,
 	}
-	return meta.Id, meta
+	return meta.GetId(), meta
 }
 
 func assertCertificateBundleComplete(s *sensorServiceTestSuite, certBundle map[string]string) {
