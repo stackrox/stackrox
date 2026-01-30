@@ -126,7 +126,7 @@ func (l *defaultLane) handleEvent(event pubsub.Event) error {
 	defer l.consumerLock.RUnlock()
 	consumers, ok := l.consumers[event.Topic()]
 	if !ok {
-		metrics.RecordConsumerOperation(l.id, event.Topic(), pubsub.UnknownConsumer, metrics.NoConsumers)
+		metrics.RecordConsumerOperation(l.id, event.Topic(), pubsub.NoConsumers, metrics.NoConsumers)
 		return errors.Wrap(pubsubErrors.NewConsumersNotFoundForTopicErr(event.Topic(), l.id), "unable to handle event")
 	}
 	errList := errorhelpers.NewErrorList("handle event")

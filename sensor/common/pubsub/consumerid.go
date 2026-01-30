@@ -3,14 +3,14 @@ package pubsub
 type ConsumerID int
 
 const (
-	UnknownConsumer ConsumerID = iota
+	NoConsumers ConsumerID = iota
 	DefaultConsumer
 	ResolverConsumer
 )
 
 var (
 	consumerToString = map[ConsumerID]string{
-		UnknownConsumer:  "Unknown",
+		NoConsumers:      "NoConsumers",
 		DefaultConsumer:  "Default",
 		ResolverConsumer: "Resolver",
 	}
