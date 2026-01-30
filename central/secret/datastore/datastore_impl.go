@@ -10,8 +10,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
@@ -72,12 +72,13 @@ func (d *datastoreImpl) SearchListSecrets(ctx context.Context, request *v1.Query
 		query = pkgSearch.EmptyQuery()
 	}
 
-	// Apply SAC filtering
-	sacQueryFilter, err := pgSearch.GetReadSACQuery(ctx, resources.Secret)
-	if err != nil {
-		return nil, err
+	// Apply default sort (Created Time ascending) if no sort specified
+	// This matches the default sort configured in the store (central/secret/internal/store/postgres/store.go:80)
+	defaultSort := &v1.QuerySortOption{
+		Field:    pkgSearch.CreatedTime.String(),
+		Reversed: false,
 	}
-	query = pkgSearch.FilterQueryByQuery(query, sacQueryFilter)
+	query = paginated.FillDefaultSortOption(query, defaultSort)
 
 	// Specify exact fields to select - framework will detect child table fields and aggregate them
 	query.Selects = []*v1.QuerySelect{
@@ -97,7 +98,7 @@ func (d *datastoreImpl) SearchListSecrets(ctx context.Context, request *v1.Query
 	// 3. Auto-generate GROUP BY on parent table fields (id, name, etc.)
 	// 4. Use LEFT JOIN for optional relationship (secrets with no files)
 	var responses []*listSecretResponse
-	err = pgSearch.RunSelectRequestForSchemaFn(ctx, d.db, pkgSchema.SecretsSchema, query,
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, d.db, pkgSchema.SecretsSchema, query,
 		func(r *listSecretResponse) error {
 			responses = append(responses, r)
 			return nil
