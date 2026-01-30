@@ -8,9 +8,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
+	"github.com/stackrox/rox/pkg/coalescer"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -49,6 +52,7 @@ func newTestTokenProvider(client centralv1.TokenServiceClient, clusterID string)
 	tp := &tokenProvider{
 		clusterIDGetter: &fakeClusterIDGetter{clusterID: clusterID},
 		tokenCache:      expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
+		tokenFlight:     coalescer.New[string](),
 	}
 	if client != nil {
 		tp.client.Store(&client)
@@ -802,4 +806,159 @@ type roundTripperFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
+}
+
+// barrierFakeTokenServiceClient allows controlling when the token is returned using a barrier.
+// This is used for deterministic testing of request coalescing without timing dependencies.
+type barrierFakeTokenServiceClient struct {
+	getToken func() string
+	barrier  <-chan struct{} // If non-nil, blocks until closed before returning
+}
+
+func (b *barrierFakeTokenServiceClient) GenerateTokenForPermissionsAndScope(
+	ctx context.Context,
+	in *centralv1.GenerateTokenForPermissionsAndScopeRequest,
+	opts ...grpc.CallOption,
+) (*centralv1.GenerateTokenForPermissionsAndScopeResponse, error) {
+	if b.barrier != nil {
+		<-b.barrier
+	}
+	return &centralv1.GenerateTokenForPermissionsAndScopeResponse{
+		Token: b.getToken(),
+	}, nil
+}
+
+func TestTokenProvider_Coalescing(t *testing.T) {
+	t.Run("concurrent requests for same scope make only one RPC call", func(t *testing.T) {
+		var callCount atomic.Int32
+		var wg sync.WaitGroup
+
+		// Barrier to keep the RPC in-flight while goroutines start.
+		// This ensures deterministic coalescing behavior without relying on timing.
+		barrier := make(chan struct{})
+
+		fakeClient := &barrierFakeTokenServiceClient{
+			barrier: barrier,
+			getToken: func() string {
+				callCount.Add(1)
+				return "coalesced-token"
+			},
+		}
+
+		provider := newTestTokenProvider(fakeClient, "test-cluster-id")
+
+		const numGoroutines = 10
+		tokens := make([]string, numGoroutines)
+		errs := make([]error, numGoroutines)
+
+		// Use a separate WaitGroup to track when all goroutines have started
+		var startWg sync.WaitGroup
+		startWg.Add(numGoroutines)
+
+		// Launch concurrent requests for the same scope
+		for i := 0; i < numGoroutines; i++ {
+			wg.Add(1)
+			go func(idx int) {
+				defer wg.Done()
+				startWg.Done() // Signal this goroutine has started
+				tokens[idx], errs[idx] = provider.getTokenForScope(context.Background(), "shared-scope")
+			}(i)
+		}
+
+		// Wait for all goroutines to start, then release the barrier
+		startWg.Wait()
+		close(barrier)
+		wg.Wait()
+
+		// Verify only ONE RPC call was made
+		assert.Equal(t, int32(1), callCount.Load(),
+			"expected exactly 1 RPC call for %d concurrent requests", numGoroutines)
+
+		// Verify all goroutines got the same token
+		for i := 0; i < numGoroutines; i++ {
+			require.NoError(t, errs[i])
+			assert.Equal(t, "coalesced-token", tokens[i])
+		}
+	})
+
+	t.Run("different scopes are not coalesced", func(t *testing.T) {
+		var callCount atomic.Int32
+
+		fakeClient := &barrierFakeTokenServiceClient{
+			getToken: func() string {
+				count := callCount.Add(1)
+				return fmt.Sprintf("token-%d", count)
+			},
+		}
+
+		provider := newTestTokenProvider(fakeClient, "test-cluster-id")
+
+		var wg sync.WaitGroup
+		wg.Add(3)
+
+		var tokenA, tokenB, tokenC string
+		go func() { defer wg.Done(); tokenA, _ = provider.getTokenForScope(context.Background(), "scope-a") }()
+		go func() { defer wg.Done(); tokenB, _ = provider.getTokenForScope(context.Background(), "scope-b") }()
+		go func() { defer wg.Done(); tokenC, _ = provider.getTokenForScope(context.Background(), "scope-c") }()
+
+		wg.Wait()
+
+		// Should have made 3 separate RPC calls
+		assert.Equal(t, int32(3), callCount.Load())
+
+		// Each scope should have received a token (order may vary)
+		tokens := []string{tokenA, tokenB, tokenC}
+		assert.Contains(t, tokens, "token-1")
+		assert.Contains(t, tokens, "token-2")
+		assert.Contains(t, tokens, "token-3")
+	})
+
+	t.Run("errors are not shared - each caller can retry", func(t *testing.T) {
+		fakeClient := &fakeTokenServiceClient{}
+
+		provider := newTestTokenProvider(fakeClient, "test-cluster-id")
+
+		// First request fails
+		fakeClient.err = errors.New("transient failure")
+		_, err := provider.getTokenForScope(context.Background(), "error-scope")
+		require.Error(t, err)
+
+		// singleflight removes the key after the call completes with error
+		// so a second request will trigger a new RPC call
+		fakeClient.err = nil
+		fakeClient.response = &centralv1.GenerateTokenForPermissionsAndScopeResponse{Token: "recovered-token"}
+
+		token, err := provider.getTokenForScope(context.Background(), "error-scope")
+		require.NoError(t, err)
+		assert.Equal(t, "recovered-token", token)
+	})
+
+	t.Run("invalidateToken allows fresh RPC after invalidation", func(t *testing.T) {
+		var callCount atomic.Int32
+
+		fakeClient := &dynamicFakeTokenServiceClient{
+			getToken: func() string {
+				count := callCount.Add(1)
+				return fmt.Sprintf("token-%d", count)
+			},
+		}
+
+		provider := newTestTokenProvider(fakeClient, "test-cluster-id")
+
+		// First request
+		token1, err := provider.getTokenForScope(context.Background(), "invalidate-scope")
+		require.NoError(t, err)
+		assert.Equal(t, "token-1", token1)
+		assert.Equal(t, int32(1), callCount.Load())
+
+		// Invalidate
+		provider.invalidateToken("invalidate-scope")
+
+		// Second request should trigger new RPC
+		token2, err := provider.getTokenForScope(context.Background(), "invalidate-scope")
+		require.NoError(t, err)
+		assert.Equal(t, "token-2", token2)
+		assert.Equal(t, int32(2), callCount.Load())
+	})
+
 }

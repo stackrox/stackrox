@@ -4,11 +4,14 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/pkg/errors"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -482,5 +485,191 @@ func TestK8sAuthorizer_TokenReviewCaching(t *testing.T) {
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "token authentication failed")
 		assert.Equal(t, 2, tokenReviewCallCount, "Second request should perform TokenReview again (failures not cached)")
+	})
+}
+
+func TestK8sAuthorizer_TokenReviewCoalescing(t *testing.T) {
+	t.Run("concurrent TokenReview requests for same token make only one API call", func(t *testing.T) {
+		fakeClient := fake.NewClientset()
+		var callCount atomic.Int32
+		var wg sync.WaitGroup
+
+		// Barrier to keep the TokenReview in-flight while goroutines start.
+		// This ensures deterministic coalescing behavior without relying on timing.
+		barrier := make(chan struct{})
+
+		fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+			callCount.Add(1)
+			// Block until test signals all goroutines have started
+			<-barrier
+			return true, &authenticationv1.TokenReview{
+				Status: authenticationv1.TokenReviewStatus{
+					Authenticated: true,
+					User: authenticationv1.UserInfo{
+						Username: "test-user",
+						UID:      "test-uid",
+						Groups:   []string{"test-group"},
+					},
+				},
+			}, nil
+		})
+
+		authorizer := newK8sAuthorizer(fakeClient)
+
+		const numGoroutines = 10
+		results := make([]*authenticationv1.UserInfo, numGoroutines)
+		errs := make([]error, numGoroutines)
+
+		// Use a separate WaitGroup to track when all goroutines have started
+		var startWg sync.WaitGroup
+		startWg.Add(numGoroutines)
+
+		// Launch concurrent requests with the same token
+		for i := 0; i < numGoroutines; i++ {
+			wg.Add(1)
+			go func(idx int) {
+				defer wg.Done()
+				startWg.Done() // Signal this goroutine has started
+				req := httptest.NewRequest(http.MethodGet, "/test", nil)
+				req.Header.Set("Authorization", "Bearer same-token")
+				results[idx], errs[idx] = authorizer.authenticate(context.Background(), req)
+			}(i)
+		}
+
+		// Wait for all goroutines to start, then release the barrier
+		startWg.Wait()
+		close(barrier)
+		wg.Wait()
+
+		// Verify only ONE TokenReview API call was made
+		assert.Equal(t, int32(1), callCount.Load(),
+			"expected exactly 1 TokenReview call for %d concurrent requests", numGoroutines)
+
+		// Verify all goroutines got the same result
+		for i := 0; i < numGoroutines; i++ {
+			require.NoError(t, errs[i])
+			assert.Equal(t, "test-user", results[i].Username)
+		}
+	})
+
+	t.Run("different tokens are not coalesced", func(t *testing.T) {
+		fakeClient := fake.NewClientset()
+		var callCount atomic.Int32
+
+		fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+			count := callCount.Add(1)
+			return true, &authenticationv1.TokenReview{
+				Status: authenticationv1.TokenReviewStatus{
+					Authenticated: true,
+					User: authenticationv1.UserInfo{
+						Username: "user-" + string('0'+count),
+					},
+				},
+			}, nil
+		})
+
+		authorizer := newK8sAuthorizer(fakeClient)
+
+		var wg sync.WaitGroup
+		wg.Add(3)
+
+		go func() {
+			defer wg.Done()
+			req := httptest.NewRequest(http.MethodGet, "/test", nil)
+			req.Header.Set("Authorization", "Bearer token-a")
+			_, _ = authorizer.authenticate(context.Background(), req)
+		}()
+		go func() {
+			defer wg.Done()
+			req := httptest.NewRequest(http.MethodGet, "/test", nil)
+			req.Header.Set("Authorization", "Bearer token-b")
+			_, _ = authorizer.authenticate(context.Background(), req)
+		}()
+		go func() {
+			defer wg.Done()
+			req := httptest.NewRequest(http.MethodGet, "/test", nil)
+			req.Header.Set("Authorization", "Bearer token-c")
+			_, _ = authorizer.authenticate(context.Background(), req)
+		}()
+
+		wg.Wait()
+
+		// Should have made 3 separate TokenReview calls
+		assert.Equal(t, int32(3), callCount.Load())
+	})
+}
+
+func TestK8sAuthorizer_AuthorizationCoalescing(t *testing.T) {
+	t.Run("concurrent authorization requests for same user/namespace make only one set of SAR calls", func(t *testing.T) {
+		fakeClient := fake.NewClientset()
+		var sarCallCount atomic.Int32
+		var wg sync.WaitGroup
+
+		// Barrier to keep the SAR in-flight while goroutines start.
+		// This ensures deterministic coalescing behavior without relying on timing.
+		barrier := make(chan struct{})
+
+		fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+			sarCallCount.Add(1)
+			// Block until test signals all goroutines have started
+			<-barrier
+			return true, &authv1.SubjectAccessReview{
+				Status: authv1.SubjectAccessReviewStatus{
+					Allowed: true,
+				},
+			}, nil
+		})
+
+		// Create authorizer with only one resource to check for simpler test
+		authorizer := &k8sAuthorizer{
+			client:       fakeClient,
+			tokenCache:   newK8sAuthorizer(fakeClient).tokenCache,
+			authzCache:   newK8sAuthorizer(fakeClient).authzCache,
+			authzFlight:  newK8sAuthorizer(fakeClient).authzFlight,
+			verbsToCheck: []string{"get"},
+			resourcesToCheck: []k8sResource{
+				{Resource: "pods", Group: ""},
+			},
+		}
+
+		userInfo := &authenticationv1.UserInfo{
+			Username: "test-user",
+			UID:      "test-uid",
+			Groups:   []string{"test-group"},
+		}
+
+		const numGoroutines = 10
+		errs := make([]error, numGoroutines)
+
+		// Use a separate WaitGroup to track when all goroutines have started
+		var startWg sync.WaitGroup
+		startWg.Add(numGoroutines)
+
+		// Launch concurrent authorize requests for the same user/namespace
+		for i := 0; i < numGoroutines; i++ {
+			wg.Add(1)
+			go func(idx int) {
+				defer wg.Done()
+				startWg.Done() // Signal this goroutine has started
+				req := httptest.NewRequest(http.MethodGet, "/test", nil)
+				req.Header.Set(stackroxNamespaceHeader, "test-namespace")
+				errs[idx] = authorizer.authorize(context.Background(), userInfo, req)
+			}(i)
+		}
+
+		// Wait for all goroutines to start, then release the barrier
+		startWg.Wait()
+		close(barrier)
+		wg.Wait()
+
+		// Verify only ONE SAR API call was made (1 resource × 1 verb)
+		// All concurrent requests share the same singleflight execution.
+		assert.Equal(t, int32(1), sarCallCount.Load(),
+			"expected exactly 1 SAR call for %d concurrent requests", numGoroutines)
+
+		// Verify all goroutines got success
+		for i := 0; i < numGoroutines; i++ {
+			assert.NoError(t, errs[i])
+		}
 	})
 }

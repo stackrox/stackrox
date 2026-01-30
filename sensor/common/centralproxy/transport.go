@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	centralv1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/coalescer"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -170,6 +171,8 @@ type tokenProvider struct {
 	client          atomic.Pointer[centralv1.TokenServiceClient]
 	clusterIDGetter clusterIDGetter
 	tokenCache      expiringcache.Cache[string, string]
+	// tokenFlight coalesces concurrent token requests for the same namespace scope.
+	tokenFlight *coalescer.Coalescer[string]
 }
 
 // newTokenProvider creates a new tokenProvider.
@@ -177,6 +180,7 @@ func newTokenProvider(clusterIDGetter clusterIDGetter) *tokenProvider {
 	return &tokenProvider{
 		clusterIDGetter: clusterIDGetter,
 		tokenCache:      expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
+		tokenFlight:     coalescer.New[string](),
 	}
 }
 
@@ -195,23 +199,45 @@ func (p *tokenProvider) setClient(conn grpc.ClientConnInterface) {
 //   - "" (empty): Token with empty access scope (authentication only)
 //   - "<namespace>": Token scoped to the specific namespace
 //   - FullClusterAccessScope ("*"): Token with full cluster access
+//
+// Concurrent requests for the same scope are coalesced to reduce load on Central.
 func (p *tokenProvider) getTokenForScope(ctx context.Context, namespaceScope string) (string, error) {
 	client := p.client.Load()
 	if client == nil {
 		return "", errors.Wrap(errServiceUnavailable, "token provider not initialized: central connection not available")
 	}
 
+	// Fast path: check cache first.
 	if token, ok := p.tokenCache.Get(namespaceScope); ok {
 		return token, nil
 	}
 
-	log.Debugf("Token cache miss for namespace scope %q, requesting from Central", namespaceScope)
+	// Slow path: coalesce concurrent requests for the same scope.
+	return p.tokenFlight.Coalesce(ctx, namespaceScope, func() (string, error) { //nolint:wrapcheck
+		// Double-check cache inside coalesce to avoid redundant API call.
+		if token, ok := p.tokenCache.Get(namespaceScope); ok {
+			return token, nil
+		}
 
+		log.Debugf("Token cache miss for namespace scope %q, requesting from Central", namespaceScope)
+
+		token, err := p.requestToken(ctx, *client, namespaceScope)
+		if err != nil {
+			return "", err
+		}
+
+		p.tokenCache.Add(namespaceScope, token)
+		return token, nil
+	})
+}
+
+// requestToken performs the RPC call to Central to generate a token for the given scope.
+func (p *tokenProvider) requestToken(ctx context.Context, client centralv1.TokenServiceClient, namespaceScope string) (string, error) {
 	req, err := p.buildTokenRequest(namespaceScope)
 	if err != nil {
 		return "", errors.Wrap(err, "building token request")
 	}
-	resp, err := (*client).GenerateTokenForPermissionsAndScope(ctx, req)
+	resp, err := client.GenerateTokenForPermissionsAndScope(ctx, req)
 	if err != nil {
 		return "", errors.Wrapf(err, "requesting token from Central for scope %q", namespaceScope)
 	}
@@ -221,14 +247,17 @@ func (p *tokenProvider) getTokenForScope(ctx context.Context, namespaceScope str
 		return "", errors.Errorf("received empty token from Central for scope %q", namespaceScope)
 	}
 
-	p.tokenCache.Add(namespaceScope, token)
-
 	return token, nil
 }
 
 // invalidateToken removes the cached token for the given scope.
+// It also removes the singleflight key so subsequent callers will
+// trigger a fresh token request rather than joining any in-progress request.
+// Note: This does not cancel already running requests; they will complete
+// normally but their results will not be used by new callers.
 func (p *tokenProvider) invalidateToken(scope string) {
 	p.tokenCache.Remove(scope)
+	p.tokenFlight.Forget(scope)
 }
 
 // buildTokenRequest creates the token request based on the namespace scope.

@@ -2,11 +2,14 @@ package centralproxy
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"slices"
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/coalescer"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
@@ -23,16 +26,39 @@ const (
 	defaultCacheTTL         = 3 * time.Minute
 )
 
-// sarCacheKey uniquely identifies a SubjectAccessReview check for caching.
+// authzCacheKey uniquely identifies an authorization check for caching.
 // It includes UID and groups to avoid over-permissive cache hits when different
 // tokens for the same username have different group memberships.
-type sarCacheKey struct {
+type authzCacheKey struct {
 	uid        string
 	userGroups string // Joined group names
 	namespace  string
-	verb       string
-	resource   string
-	group      string
+}
+
+// String returns a string representation of the cache key for use with singleflight.
+func (k authzCacheKey) String() string {
+	return fmt.Sprintf("%s|%s|%s", k.uid, k.userGroups, k.namespace)
+}
+
+// authzResult wraps the authorization result for caching.
+// We need a wrapper because expiringcache treats nil values as "not found".
+type authzResult struct {
+	err error
+}
+
+// k8sResource represents a Kubernetes resource that requires authorization checking.
+type k8sResource struct {
+	Resource string
+	Group    string
+}
+
+// String returns the qualified resource name in "resource.group" format.
+// For core API resources (empty group), it returns "resource.core".
+func (r k8sResource) String() string {
+	if r.Group == "" {
+		return r.Resource + ".core"
+	}
+	return r.Resource + "." + r.Group
 }
 
 // k8sAuthorizer verifies that a bearer token has the required Kubernetes permissions.
@@ -42,26 +68,26 @@ type sarCacheKey struct {
 type k8sAuthorizer struct {
 	client           kubernetes.Interface
 	tokenCache       expiringcache.Cache[string, *authenticationv1.UserInfo]
-	sarCache         expiringcache.Cache[sarCacheKey, bool]
+	authzCache       expiringcache.Cache[authzCacheKey, *authzResult]
 	verbsToCheck     []string
-	resourcesToCheck []struct {
-		Resource string
-		Group    string
-	}
+	resourcesToCheck []k8sResource
+	// tokenReviewFlight coalesces concurrent authentication requests for the same token.
+	tokenReviewFlight *coalescer.Coalescer[*authenticationv1.UserInfo]
+	// authzFlight coalesces concurrent authorization requests for the same user/namespace.
+	authzFlight *coalescer.Coalescer[*authzResult]
 }
 
 // newK8sAuthorizer creates a new Kubernetes-based authorizer with TokenReview and
 // SubjectAccessReview caching.
 func newK8sAuthorizer(client kubernetes.Interface) *k8sAuthorizer {
 	return &k8sAuthorizer{
-		client:       client,
-		tokenCache:   expiringcache.NewExpiringCache[string, *authenticationv1.UserInfo](defaultCacheTTL),
-		sarCache:     expiringcache.NewExpiringCache[sarCacheKey, bool](defaultCacheTTL),
-		verbsToCheck: []string{"get", "list"},
-		resourcesToCheck: []struct {
-			Resource string
-			Group    string
-		}{
+		client:            client,
+		tokenCache:        expiringcache.NewExpiringCache[string, *authenticationv1.UserInfo](defaultCacheTTL),
+		authzCache:        expiringcache.NewExpiringCache[authzCacheKey, *authzResult](defaultCacheTTL),
+		verbsToCheck:      []string{"get", "list"},
+		tokenReviewFlight: coalescer.New[*authenticationv1.UserInfo](),
+		authzFlight:       coalescer.New[*authzResult](),
+		resourcesToCheck: []k8sResource{
 			{Resource: "pods", Group: ""},
 			{Resource: "replicationcontrollers", Group: ""},
 			{Resource: "daemonsets", Group: "apps"},
@@ -76,37 +102,53 @@ func newK8sAuthorizer(client kubernetes.Interface) *k8sAuthorizer {
 }
 
 // formatForbiddenErr creates a consistent forbidden error message for authorization failures.
-func formatForbiddenErr(user, verb, resource, group, namespace string) error {
+func formatForbiddenErr(user, verb string, resource k8sResource, namespace string) error {
 	// Uppercase the verb for readability.
 	verb = strings.ToUpper(verb)
-
-	// Format as resource.group using "core" for empty group.
-	qualifiedResource := resource + "." + group
-	if group == "" {
-		qualifiedResource = resource + ".core"
-	}
 
 	if namespace == FullClusterAccessScope {
 		return pkghttputil.Errorf(
 			http.StatusForbidden,
 			"user %q lacks cluster-wide %s permission for resource %q",
-			user, verb, qualifiedResource,
+			user, verb, resource.String(),
 		)
 	}
 	return pkghttputil.Errorf(
 		http.StatusForbidden,
 		"user %q lacks %s permission for resource %q in namespace %q",
-		user, verb, qualifiedResource, namespace,
+		user, verb, resource.String(), namespace,
 	)
 }
 
 // authenticate validates the bearer token using TokenReview and returns user information.
+// Successful authentications are cached and concurrent requests are coalesced to reduce load
+// on the Kubernetes API server.
 func (a *k8sAuthorizer) authenticate(ctx context.Context, r *http.Request) (*authenticationv1.UserInfo, error) {
 	token, err := extractBearerToken(r)
 	if err != nil {
 		return nil, err
 	}
-	return a.validateToken(ctx, token)
+
+	// Fast path: check cache first.
+	if userInfo, ok := a.tokenCache.Get(token); ok {
+		return userInfo, nil
+	}
+
+	// Slow path: coalesce concurrent authentication requests for the same token.
+	return a.tokenReviewFlight.Coalesce(ctx, token, func() (*authenticationv1.UserInfo, error) { //nolint:wrapcheck
+		// Double-check cache inside coalesce to avoid redundant API call.
+		if userInfo, ok := a.tokenCache.Get(token); ok {
+			return userInfo, nil
+		}
+
+		userInfo, err := a.validateToken(ctx, token)
+		if err != nil {
+			return nil, err
+		}
+
+		a.tokenCache.Add(token, userInfo)
+		return userInfo, nil
+	})
 }
 
 func extractBearerToken(r *http.Request) (string, error) {
@@ -119,12 +161,7 @@ func extractBearerToken(r *http.Request) (string, error) {
 }
 
 // validateToken validates the bearer token using TokenReview and returns user information.
-// Successful authentications are cached to reduce API calls to the Kubernetes API server.
 func (a *k8sAuthorizer) validateToken(ctx context.Context, token string) (*authenticationv1.UserInfo, error) {
-	if userInfo, ok := a.tokenCache.Get(token); ok {
-		return userInfo, nil
-	}
-
 	tokenReview := &authenticationv1.TokenReview{
 		Spec: authenticationv1.TokenReviewSpec{
 			Token: token,
@@ -144,7 +181,6 @@ func (a *k8sAuthorizer) validateToken(ctx context.Context, token string) (*authe
 		return nil, pkghttputil.NewError(http.StatusUnauthorized, "token authentication failed")
 	}
 
-	a.tokenCache.Add(token, &result.Status.User)
 	return &result.Status.User, nil
 }
 
@@ -156,7 +192,8 @@ func (a *k8sAuthorizer) validateToken(ctx context.Context, token string) (*authe
 //   - FullClusterAccessScope ("*"): SubjectAccessReview for all namespaces and rox token
 //     with cluster-wide access scope.
 //
-// SAR checks are performed in parallel to reduce latency.
+// Successful authorizations are cached and concurrent requests are coalesced to reduce load
+// on the Kubernetes API server.
 func (a *k8sAuthorizer) authorize(ctx context.Context, userInfo *authenticationv1.UserInfo, r *http.Request) error {
 	namespace := r.Header.Get(stackroxNamespaceHeader)
 	// Skip authorization if the namespace header is empty or not set.
@@ -164,63 +201,85 @@ func (a *k8sAuthorizer) authorize(ctx context.Context, userInfo *authenticationv
 		return nil
 	}
 
+	cacheKey := a.buildAuthzCacheKey(userInfo, namespace)
+
+	// Fast path: check cache first.
+	if cached, ok := a.authzCache.Get(cacheKey); ok {
+		return cached.err
+	}
+
+	// Slow path: coalesce concurrent authorization requests for the same user/namespace.
+	cached, err := a.authzFlight.Coalesce(ctx, cacheKey.String(), func() (*authzResult, error) {
+		// Double-check cache inside coalesce to avoid redundant API calls.
+		if cached, ok := a.authzCache.Get(cacheKey); ok {
+			return cached, nil
+		}
+
+		log.Debugf("Authorization cache miss for user %q (uid=%q) in namespace %q", userInfo.Username, userInfo.UID, namespace)
+
+		authzErr := a.checkAllPermissions(ctx, userInfo, namespace)
+		cached := &authzResult{err: authzErr}
+		// Only cache successful authorizations and permission denials (403 Forbidden).
+		// Transient errors (e.g., API failures) should not be cached so callers can retry.
+		if authzErr == nil || pkghttputil.StatusFromError(authzErr) == http.StatusForbidden {
+			a.authzCache.Add(cacheKey, cached)
+		}
+		return cached, nil
+	})
+
+	if err != nil {
+		return err //nolint:wrapcheck
+	}
+	return cached.err
+}
+
+// buildAuthzCacheKey creates a cache key for authorization based on user identity and namespace.
+func (a *k8sAuthorizer) buildAuthzCacheKey(userInfo *authenticationv1.UserInfo, namespace string) authzCacheKey {
+	// Sort groups to make the cache key order-independent.
+	sortedGroups := append([]string(nil), userInfo.Groups...)
+	slices.Sort(sortedGroups)
+
+	return authzCacheKey{
+		uid:        userInfo.UID,
+		userGroups: strings.Join(sortedGroups, "|"),
+		namespace:  namespace,
+	}
+}
+
+// checkAllPermissions runs all SubjectAccessReview checks in parallel.
+func (a *k8sAuthorizer) checkAllPermissions(ctx context.Context, userInfo *authenticationv1.UserInfo, namespace string) error {
 	// Use errgroup with context cancellation to short-circuit on first error/denial.
 	g, groupCtx := errgroup.WithContext(ctx)
 
 	for _, resource := range a.resourcesToCheck {
 		for _, verb := range a.verbsToCheck {
-			// Capture loop variables for the goroutine.
 			resource := resource
 
 			g.Go(func() error {
 				allowed, err := a.performSubjectAccessReview(groupCtx, userInfo, verb, namespace, resource)
 				if err != nil {
-					return pkghttputil.Errorf(http.StatusInternalServerError, "checking %s permission for %s: %v", verb, resource.Resource, err)
+					return pkghttputil.Errorf(http.StatusInternalServerError,
+						"checking %s permission for %q: %v", verb, resource, err)
 				}
 				if !allowed {
-					return formatForbiddenErr(userInfo.Username, verb, resource.Resource, resource.Group, namespace)
+					return formatForbiddenErr(userInfo.Username, verb, resource, namespace)
 				}
 				return nil
 			})
 		}
 	}
 
-	if err := g.Wait(); err != nil {
-		return err //nolint:wrapcheck
-	}
-	return nil
+	return g.Wait() //nolint:wrapcheck
 }
 
-func (a *k8sAuthorizer) performSubjectAccessReview(ctx context.Context, userInfo *authenticationv1.UserInfo, verb, namespace string, resource struct {
-	Resource string
-	Group    string
-},
-) (bool, error) {
-	// Sort groups to make the cache key order-independent.
-	sortedGroups := append([]string(nil), userInfo.Groups...)
-	slices.Sort(sortedGroups)
-
-	cacheKey := sarCacheKey{
-		uid:        userInfo.UID,
-		userGroups: strings.Join(sortedGroups, "|"),
-		namespace:  namespace,
-		verb:       verb,
-		resource:   resource.Resource,
-		group:      resource.Group,
-	}
-	if allowed, ok := a.sarCache.Get(cacheKey); ok {
-		return allowed, nil
-	}
-	log.Debugf(
-		"Cache miss for subject access review to perform %s on %s.%s in %s (user=%q, uid=%q, userGroups=%q)",
-		cacheKey.verb, cacheKey.group, cacheKey.resource, cacheKey.namespace, userInfo.Username, cacheKey.uid, cacheKey.userGroups,
-	)
-
+// performSubjectAccessReview performs a SubjectAccessReview API call.
+func (a *k8sAuthorizer) performSubjectAccessReview(ctx context.Context, userInfo *authenticationv1.UserInfo, verb, namespace string, resource k8sResource) (bool, error) {
 	// In SubjectAccessReview an empty namespace means full cluster access.
 	namespaceScope := namespace
 	if namespace == FullClusterAccessScope {
 		namespaceScope = ""
 	}
+
 	sar := &authv1.SubjectAccessReview{
 		Spec: authv1.SubjectAccessReviewSpec{
 			User:   userInfo.Username,
@@ -237,13 +296,12 @@ func (a *k8sAuthorizer) performSubjectAccessReview(ctx context.Context, userInfo
 
 	result, err := a.client.AuthorizationV1().SubjectAccessReviews().Create(ctx, sar, metav1.CreateOptions{})
 	if err != nil {
-		return false, pkghttputil.Errorf(http.StatusInternalServerError, "performing subject access review: %v", err)
+		return false, errors.Wrap(err, "performing subject access review")
 	}
 
 	if result.Status.EvaluationError != "" {
-		return false, pkghttputil.Errorf(http.StatusInternalServerError, "authorization evaluation error: %s", result.Status.EvaluationError)
+		return false, errors.Errorf("authorization evaluation error: %s", result.Status.EvaluationError)
 	}
 
-	a.sarCache.Add(cacheKey, result.Status.Allowed)
 	return result.Status.Allowed, nil
 }
