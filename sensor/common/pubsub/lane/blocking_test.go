@@ -31,7 +31,7 @@ func (s *blockingLaneSuite) TestNewLaneOptions() {
 		defer lane.Stop()
 		laneImpl, ok := lane.(*blockingLane)
 		require.True(s.T(), ok)
-		assert.Equal(s.T(), 0, cap(laneImpl.ch))
+		assert.Equal(s.T(), 0, laneImpl.ch.Cap())
 	})
 	s.Run("with default lane size", func() {
 		laneSize := 10
@@ -42,7 +42,7 @@ func (s *blockingLaneSuite) TestNewLaneOptions() {
 		defer lane.Stop()
 		laneImpl, ok := lane.(*blockingLane)
 		require.True(s.T(), ok)
-		assert.Equal(s.T(), laneSize, cap(laneImpl.ch))
+		assert.Equal(s.T(), laneSize, laneImpl.ch.Cap())
 	})
 	s.Run("with negative lane size", func() {
 		laneSize := -1
@@ -53,7 +53,7 @@ func (s *blockingLaneSuite) TestNewLaneOptions() {
 		defer lane.Stop()
 		laneImpl, ok := lane.(*blockingLane)
 		require.True(s.T(), ok)
-		assert.Equal(s.T(), 0, cap(laneImpl.ch))
+		assert.Equal(s.T(), 0, laneImpl.ch.Cap())
 	})
 	s.Run("with custom consumer", func() {
 		config := NewBlockingLane(pubsub.DefaultLane, WithBlockingLaneConsumer(newTestConsumer))

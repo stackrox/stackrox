@@ -3,9 +3,9 @@ package lane
 import (
 	"github.com/pkg/errors"
 
+	"github.com/stackrox/rox/pkg/channel"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/pubsub/consumer"
 	pubsubErrors "github.com/stackrox/rox/sensor/common/pubsub/errors"
@@ -65,39 +65,26 @@ func (c *BlockingConfig) NewLane() pubsub.Lane {
 	for _, opt := range c.opts {
 		opt(lane)
 	}
-	lane.ch = make(chan pubsub.Event, lane.size)
+	lane.ch = channel.NewSafeChannel[pubsub.Event](lane.size, lane.stopper.LowLevel().GetStopRequestSignal())
 	go lane.run()
 	return lane
 }
 
 type blockingLane struct {
 	Lane
-	mu      sync.Mutex
 	size    int
-	ch      chan pubsub.Event
+	ch      *channel.SafeChannel[pubsub.Event]
 	stopper concurrency.Stopper
 }
 
 func (l *blockingLane) Publish(event pubsub.Event) error {
-	// We need to lock here and nest two selects to avoid races stopping and
-	// publishing events
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	select {
-	case <-l.stopper.Flow().StopRequested():
+	if err := l.ch.Write(event); err != nil {
 		metrics.RecordPublishOperation(l.id, event.Topic(), metrics.PublishError)
 		return errors.Wrap(pubsubErrors.NewPublishOnStoppedLaneErr(l.id), "unable to publish event")
-	default:
 	}
-	select {
-	case <-l.stopper.Flow().StopRequested():
-		metrics.RecordPublishOperation(l.id, event.Topic(), metrics.PublishError)
-		return errors.Wrap(pubsubErrors.NewPublishOnStoppedLaneErr(l.id), "unable to publish event")
-	case l.ch <- event:
-		metrics.RecordPublishOperation(l.id, event.Topic(), metrics.Published)
-		metrics.SetQueueSize(l.id, len(l.ch))
-		return nil
-	}
+	metrics.RecordPublishOperation(l.id, event.Topic(), metrics.Published)
+	metrics.SetQueueSize(l.id, l.ch.Len())
+	return nil
 }
 
 func (l *blockingLane) run() {
@@ -106,7 +93,7 @@ func (l *blockingLane) run() {
 		select {
 		case <-l.stopper.Flow().StopRequested():
 			return
-		case event, ok := <-l.ch:
+		case event, ok := <-l.ch.Chan():
 			if !ok {
 				return
 			}
@@ -119,7 +106,7 @@ func (l *blockingLane) run() {
 
 func (l *blockingLane) handleEvent(event pubsub.Event) error {
 	defer func() {
-		metrics.SetQueueSize(l.id, len(l.ch))
+		metrics.SetQueueSize(l.id, l.ch.Len())
 	}()
 
 	l.consumerLock.RLock()
@@ -161,13 +148,6 @@ func (l *blockingLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pubs
 
 func (l *blockingLane) Stop() {
 	l.stopper.Client().Stop()
-	<-l.stopper.Client().Stopped().Done()
-	concurrency.WithLock(&l.mu, func() {
-		if l.ch == nil {
-			return
-		}
-		close(l.ch)
-		l.ch = nil
-	})
+	l.ch.Close()
 	l.Lane.Stop()
 }
