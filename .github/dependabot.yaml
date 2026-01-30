@@ -447,3 +447,9 @@ updates:
       actions:
         patterns:
         - "actions/*"
+
+  - package-ecosystem: 'pip'
+    directory: '/operator/bundle_helpers'
+    # Ignore all dependencies - these are managed manually
+    ignore:
+      - dependency-name: "*"
