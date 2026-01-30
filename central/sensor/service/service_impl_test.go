@@ -383,9 +383,10 @@ func (s *sensorServiceTestSuite) TestClusterRegistrationWithInitBundle() {
 // Implementation of a simple mock server to be used in the CRS test suite.
 type mockServer struct {
 	grpc.ServerStream
-	context        context.Context
-	msgsFromSensor []*central.MsgFromSensor
-	msgsToSensor   []*central.MsgToSensor
+	context            context.Context
+	msgsFromSensor     []*central.MsgFromSensor
+	msgsToSensor       []*central.MsgToSensor
+	clustersRegistered []*storage.Cluster
 }
 
 func newMockServer(s *sensorServiceTestSuite, identity *storage.ServiceIdentity) *mockServer {
