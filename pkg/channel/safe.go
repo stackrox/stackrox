@@ -89,6 +89,11 @@ func (s *SafeChannel[T]) Len() int {
 	return len(s.ch)
 }
 
+// Cap returns the capacity of the channel.
+func (s *SafeChannel[T]) Cap() int {
+	return cap(s.ch)
+}
+
 // Close safely closes the underlying channel.
 // This should be called after the waitable has been triggered.
 // It is safe to call Close multiple times - subsequent calls are no-ops.

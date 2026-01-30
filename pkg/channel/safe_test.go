@@ -177,6 +177,27 @@ func TestSafeChannel_Len(t *testing.T) {
 	assert.Equal(t, 0, ch.Len())
 }
 
+func TestSafeChannel_Cap(t *testing.T) {
+	goleak.AssertNoGoroutineLeaks(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	ch := NewSafeChannel[int](10, ctx)
+	assert.Equal(t, 10, ch.Cap())
+
+	// Capacity doesn't change as we write
+	require.NoError(t, ch.Write(1))
+	assert.Equal(t, 10, ch.Cap())
+
+	require.NoError(t, ch.Write(2))
+	assert.Equal(t, 10, ch.Cap())
+
+	// Capacity doesn't change as we read
+	<-ch.Chan()
+	assert.Equal(t, 10, ch.Cap())
+}
+
 func TestSafeChannel_Close_MultipleTimes(t *testing.T) {
 	goleak.AssertNoGoroutineLeaks(t)
 
