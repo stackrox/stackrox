@@ -12,13 +12,13 @@ import (
 	"github.com/stackrox/rox/sensor/common/pubsub/metrics"
 )
 
-type DefaultConfig struct {
+type BlockingConfig struct {
 	Config
 }
 
-func WithDefaultLaneSize(size int) pubsub.LaneOption {
+func WithBlockingLaneSize(size int) pubsub.LaneOption {
 	return func(lane pubsub.Lane) {
-		laneImpl, ok := lane.(*defaultLane)
+		laneImpl, ok := lane.(*blockingLane)
 		if !ok {
 			panic("cannot use default lane option for this type of lane")
 		}
@@ -29,9 +29,9 @@ func WithDefaultLaneSize(size int) pubsub.LaneOption {
 	}
 }
 
-func WithDefaultLaneConsumer(consumer pubsub.NewConsumer, opts ...pubsub.ConsumerOption) pubsub.LaneOption {
+func WithBlockingLaneConsumer(consumer pubsub.NewConsumer, opts ...pubsub.ConsumerOption) pubsub.LaneOption {
 	return func(lane pubsub.Lane) {
-		laneImpl, ok := lane.(*defaultLane)
+		laneImpl, ok := lane.(*blockingLane)
 		if !ok {
 			panic("cannot use default lane option for this type of lane")
 		}
@@ -43,8 +43,8 @@ func WithDefaultLaneConsumer(consumer pubsub.NewConsumer, opts ...pubsub.Consume
 	}
 }
 
-func NewDefaultLane(id pubsub.LaneID, opts ...pubsub.LaneOption) *DefaultConfig {
-	return &DefaultConfig{
+func NewBlockingLane(id pubsub.LaneID, opts ...pubsub.LaneOption) *BlockingConfig {
+	return &BlockingConfig{
 		Config: Config{
 			id:          id,
 			opts:        opts,
@@ -53,8 +53,8 @@ func NewDefaultLane(id pubsub.LaneID, opts ...pubsub.LaneOption) *DefaultConfig 
 	}
 }
 
-func (c *DefaultConfig) NewLane() pubsub.Lane {
-	lane := &defaultLane{
+func (c *BlockingConfig) NewLane() pubsub.Lane {
+	lane := &blockingLane{
 		Lane: Lane{
 			id:            c.LaneID(),
 			newConsumerFn: c.newConsumer,
@@ -70,7 +70,7 @@ func (c *DefaultConfig) NewLane() pubsub.Lane {
 	return lane
 }
 
-type defaultLane struct {
+type blockingLane struct {
 	Lane
 	mu      sync.Mutex
 	size    int
@@ -78,7 +78,7 @@ type defaultLane struct {
 	stopper concurrency.Stopper
 }
 
-func (l *defaultLane) Publish(event pubsub.Event) error {
+func (l *blockingLane) Publish(event pubsub.Event) error {
 	// We need to lock here and nest two selects to avoid races stopping and
 	// publishing events
 	l.mu.Lock()
@@ -100,7 +100,7 @@ func (l *defaultLane) Publish(event pubsub.Event) error {
 	}
 }
 
-func (l *defaultLane) run() {
+func (l *blockingLane) run() {
 	defer l.stopper.Flow().ReportStopped()
 	for {
 		select {
@@ -117,7 +117,7 @@ func (l *defaultLane) run() {
 	}
 }
 
-func (l *defaultLane) handleEvent(event pubsub.Event) error {
+func (l *blockingLane) handleEvent(event pubsub.Event) error {
 	defer func() {
 		metrics.SetQueueSize(l.id, len(l.ch))
 	}()
@@ -144,7 +144,7 @@ func (l *defaultLane) handleEvent(event pubsub.Event) error {
 	return errList.ToError()
 }
 
-func (l *defaultLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pubsub.Topic, callback pubsub.EventCallback) error {
+func (l *blockingLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pubsub.Topic, callback pubsub.EventCallback) error {
 	if callback == nil {
 		return errors.New("cannot register a 'nil' callback")
 	}
@@ -159,7 +159,7 @@ func (l *defaultLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pubsu
 	return nil
 }
 
-func (l *defaultLane) Stop() {
+func (l *blockingLane) Stop() {
 	l.stopper.Client().Stop()
 	<-l.stopper.Client().Stopped().Done()
 	concurrency.WithLock(&l.mu, func() {

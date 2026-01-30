@@ -13,66 +13,66 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type defaultLaneSuite struct {
+type blockingLaneSuite struct {
 	suite.Suite
 }
 
-func TestDefaultLane(t *testing.T) {
-	suite.Run(t, new(defaultLaneSuite))
+func TestBlockingLane(t *testing.T) {
+	suite.Run(t, new(blockingLaneSuite))
 }
 
-func (s *defaultLaneSuite) TestNewLaneOptions() {
+func (s *blockingLaneSuite) TestNewLaneOptions() {
 	defer goleak.AssertNoGoroutineLeaks(s.T())
 	s.Run("with default options", func() {
-		config := NewDefaultLane(pubsub.DefaultLane)
+		config := NewBlockingLane(pubsub.DefaultLane)
 		assert.Equal(s.T(), pubsub.DefaultLane, config.LaneID())
 		lane := config.NewLane()
 		assert.NotNil(s.T(), lane)
 		defer lane.Stop()
-		laneImpl, ok := lane.(*defaultLane)
+		laneImpl, ok := lane.(*blockingLane)
 		require.True(s.T(), ok)
 		assert.Equal(s.T(), 0, cap(laneImpl.ch))
 	})
 	s.Run("with default lane size", func() {
 		laneSize := 10
-		config := NewDefaultLane(pubsub.DefaultLane, WithDefaultLaneSize(laneSize))
+		config := NewBlockingLane(pubsub.DefaultLane, WithBlockingLaneSize(laneSize))
 		assert.Equal(s.T(), pubsub.DefaultLane, config.LaneID())
 		lane := config.NewLane()
 		assert.NotNil(s.T(), lane)
 		defer lane.Stop()
-		laneImpl, ok := lane.(*defaultLane)
+		laneImpl, ok := lane.(*blockingLane)
 		require.True(s.T(), ok)
 		assert.Equal(s.T(), laneSize, cap(laneImpl.ch))
 	})
 	s.Run("with negative lane size", func() {
 		laneSize := -1
-		config := NewDefaultLane(pubsub.DefaultLane, WithDefaultLaneSize(laneSize))
+		config := NewBlockingLane(pubsub.DefaultLane, WithBlockingLaneSize(laneSize))
 		assert.Equal(s.T(), pubsub.DefaultLane, config.LaneID())
 		lane := config.NewLane()
 		assert.NotNil(s.T(), lane)
 		defer lane.Stop()
-		laneImpl, ok := lane.(*defaultLane)
+		laneImpl, ok := lane.(*blockingLane)
 		require.True(s.T(), ok)
 		assert.Equal(s.T(), 0, cap(laneImpl.ch))
 	})
 	s.Run("with custom consumer", func() {
-		config := NewDefaultLane(pubsub.DefaultLane, WithDefaultLaneConsumer(newTestConsumer))
+		config := NewBlockingLane(pubsub.DefaultLane, WithBlockingLaneConsumer(newTestConsumer))
 		assert.Equal(s.T(), pubsub.DefaultLane, config.LaneID())
 		lane := config.NewLane()
 		assert.NotNil(s.T(), lane)
 		defer lane.Stop()
-		laneImpl, ok := lane.(*defaultLane)
+		laneImpl, ok := lane.(*blockingLane)
 		require.True(s.T(), ok)
 		assert.NotNil(s.T(), laneImpl.newConsumerFn)
 		assert.Len(s.T(), laneImpl.consumerOpts, 0)
 	})
 	s.Run("with custom consumer and consumer options", func() {
-		config := NewDefaultLane(pubsub.DefaultLane, WithDefaultLaneConsumer(newTestConsumer, func(_ pubsub.Consumer) {}))
+		config := NewBlockingLane(pubsub.DefaultLane, WithBlockingLaneConsumer(newTestConsumer, func(_ pubsub.Consumer) {}))
 		assert.Equal(s.T(), pubsub.DefaultLane, config.LaneID())
 		lane := config.NewLane()
 		assert.NotNil(s.T(), lane)
 		defer lane.Stop()
-		laneImpl, ok := lane.(*defaultLane)
+		laneImpl, ok := lane.(*blockingLane)
 		require.True(s.T(), ok)
 		assert.NotNil(s.T(), laneImpl.newConsumerFn)
 		assert.Len(s.T(), laneImpl.consumerOpts, 1)
@@ -107,50 +107,50 @@ func (lc *testLaneConfig) LaneID() pubsub.LaneID {
 	return pubsub.DefaultLane
 }
 
-func (s *defaultLaneSuite) TestOptionPanic() {
+func (s *blockingLaneSuite) TestOptionPanic() {
 	defer goleak.AssertNoGoroutineLeaks(s.T())
-	s.Run("panic if WithDefaultLaneSize is used in a different lane", func() {
+	s.Run("panic if WithBlockingLaneSize is used in a different lane", func() {
 		config := &testLaneConfig{
 			opts: []pubsub.LaneOption{
-				WithDefaultLaneSize(10),
+				WithBlockingLaneSize(10),
 			},
 		}
 		s.Assert().Panics(func() {
 			config.NewLane()
 		})
 	})
-	s.Run("panic if WithDefaultLaneConsumer is used in a different lane", func() {
+	s.Run("panic if WithBlockingLaneConsumer is used in a different lane", func() {
 		config := &testLaneConfig{
 			opts: []pubsub.LaneOption{
-				WithDefaultLaneConsumer(nil),
+				WithBlockingLaneConsumer(nil),
 			},
 		}
 		s.Assert().Panics(func() {
 			config.NewLane()
 		})
 	})
-	s.Run("panic if a nil NewConsumer is passed to WithDefaultLaneConsumer", func() {
-		config := NewDefaultLane(pubsub.DefaultLane, WithDefaultLaneConsumer(nil))
+	s.Run("panic if a nil NewConsumer is passed to WithBlockingLaneConsumer", func() {
+		config := NewBlockingLane(pubsub.DefaultLane, WithBlockingLaneConsumer(nil))
 		s.Assert().Panics(func() {
 			config.NewLane()
 		})
 	})
 }
 
-func (s *defaultLaneSuite) TestRegisterConsumer() {
+func (s *blockingLaneSuite) TestRegisterConsumer() {
 	defer goleak.AssertNoGoroutineLeaks(s.T())
 	s.Run("should error on nil callback", func() {
-		lane := NewDefaultLane(pubsub.DefaultLane).NewLane()
+		lane := NewBlockingLane(pubsub.DefaultLane).NewLane()
 		assert.NotNil(s.T(), lane)
 		assert.Error(s.T(), lane.RegisterConsumer(pubsub.DefaultConsumer, pubsub.DefaultTopic, nil))
 		lane.Stop()
 	})
 }
 
-func (s *defaultLaneSuite) TestPublish() {
+func (s *blockingLaneSuite) TestPublish() {
 	defer goleak.AssertNoGoroutineLeaks(s.T())
 	s.Run("publish with blocking consumer should block", func() {
-		lane := NewDefaultLane(pubsub.DefaultLane).NewLane()
+		lane := NewBlockingLane(pubsub.DefaultLane).NewLane()
 		assert.NotNil(s.T(), lane)
 		unblockSig := concurrency.NewSignal()
 		wg := sync.WaitGroup{}
@@ -177,14 +177,14 @@ func (s *defaultLaneSuite) TestPublish() {
 		wg.Wait()
 	})
 	s.Run("publish with no consumer should not block", func() {
-		lane := NewDefaultLane(pubsub.DefaultLane).NewLane()
+		lane := NewBlockingLane(pubsub.DefaultLane).NewLane()
 		assert.NotNil(s.T(), lane)
 		assert.NoError(s.T(), lane.Publish(&testEvent{}))
 		assert.NoError(s.T(), lane.Publish(&testEvent{}))
 		lane.Stop()
 	})
 	s.Run("publish and consume", func() {
-		lane := NewDefaultLane(pubsub.DefaultLane).NewLane()
+		lane := NewBlockingLane(pubsub.DefaultLane).NewLane()
 		assert.NotNil(s.T(), lane)
 		data := "some data"
 		consumeSignal := concurrency.NewSignal()
@@ -201,7 +201,7 @@ func (s *defaultLaneSuite) TestPublish() {
 		lane.Stop()
 	})
 	s.Run("stop should unblock publish", func() {
-		lane := NewDefaultLane(pubsub.DefaultLane).NewLane()
+		lane := NewBlockingLane(pubsub.DefaultLane).NewLane()
 		assert.NotNil(s.T(), lane)
 		unblockSig := concurrency.NewSignal()
 		wg := sync.WaitGroup{}
