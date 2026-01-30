@@ -121,6 +121,67 @@ func TestMatchWithBaseImages(t *testing.T) {
 					}, nil)
 			},
 			expected: nil,
+		}, {
+			desc:      "Max layers only: Returns 3-layer match and ignores 2-layer match",
+			imgLayers: []string{"L1", "L2", "L3", "L4"},
+			mockSetup: func() {
+				mockDS.EXPECT().
+					ListCandidateBaseImages(gomock.Any(), "L1").
+					Return([]*storage.BaseImage{
+						{
+							Id: "short-match", // 2 layers
+							Layers: []*storage.BaseImageLayer{
+								{LayerDigest: "L1", Index: 0},
+								{LayerDigest: "L2", Index: 1},
+							},
+						},
+						{
+							Id: "long-match", // 3 layers - the winner
+							Layers: []*storage.BaseImageLayer{
+								{LayerDigest: "L1", Index: 0},
+								{LayerDigest: "L2", Index: 1},
+								{LayerDigest: "L3", Index: 2},
+							},
+						},
+					}, nil)
+			},
+			expected: []*storage.BaseImage{
+				{Id: "long-match"},
+			},
+		},
+		{
+			desc:      "Max layers only: Returns multiple matches if they have same max length",
+			imgLayers: []string{"L1", "L2", "L3"},
+			mockSetup: func() {
+				mockDS.EXPECT().
+					ListCandidateBaseImages(gomock.Any(), "L1").
+					Return([]*storage.BaseImage{
+						{
+							Id: "match-A",
+							Layers: []*storage.BaseImageLayer{
+								{LayerDigest: "L1", Index: 0},
+								{LayerDigest: "L2", Index: 1},
+							},
+						},
+						{
+							Id: "match-B",
+							Layers: []*storage.BaseImageLayer{
+								{LayerDigest: "L1", Index: 0},
+								{LayerDigest: "L2", Index: 1},
+							},
+						},
+						{
+							Id: "too-short",
+							Layers: []*storage.BaseImageLayer{
+								{LayerDigest: "L1", Index: 0},
+							},
+						},
+					}, nil)
+			},
+			expected: []*storage.BaseImage{
+				{Id: "match-A"},
+				{Id: "match-B"},
+			},
 		},
 	}
 
