@@ -79,7 +79,12 @@ admissionControl:
     scanInline: false
 [<- end >]
     disableBypass: false
+    {{/* Use longer timeout for non-OpenShift environments where webhook timeout limits are higher. */}}
+    {{- if ._rox.env.openshift }}
     timeout: 10
+    {{- else }}
+    timeout: 26
+    {{- end }}
   replicas: 3
   failurePolicy: Ignore
 

@@ -62,7 +62,12 @@ const (
 )
 
 const (
-	defaultAdmissionControllerTimeout = 10
+	// defaultAdmissionControllerTimeoutOpenShift is the default timeout for OpenShift clusters.
+	// OpenShift has stricter webhook timeout requirements.
+	defaultAdmissionControllerTimeoutOpenShift = 10
+	// defaultAdmissionControllerTimeoutKubernetes is the default timeout for vanilla Kubernetes clusters.
+	// Kubernetes allows webhook timeouts up to 30 seconds, so we use 26 (+ 2s buffer < 30s webhook timeout to be safe).
+	defaultAdmissionControllerTimeoutKubernetes = 26
 )
 
 var (
@@ -1077,7 +1082,14 @@ func addDefaults(cluster *storage.Cluster) error {
 		return fmt.Errorf("timeout of %d is invalid", acConfig.GetTimeoutSeconds())
 	}
 	if acConfig.GetTimeoutSeconds() == 0 {
-		acConfig.TimeoutSeconds = defaultAdmissionControllerTimeout
+		// Use different default timeouts based on cluster type.
+		// OpenShift has stricter webhook timeout requirements.
+		clusterType := cluster.GetType()
+		if clusterType != storage.ClusterType_OPENSHIFT_CLUSTER && clusterType != storage.ClusterType_OPENSHIFT4_CLUSTER {
+			acConfig.TimeoutSeconds = defaultAdmissionControllerTimeoutKubernetes
+		} else {
+			acConfig.TimeoutSeconds = defaultAdmissionControllerTimeoutOpenShift
+		}
 	}
 	if cluster.GetMainImage() == "" {
 		flavor := defaults.GetImageFlavorFromEnv()

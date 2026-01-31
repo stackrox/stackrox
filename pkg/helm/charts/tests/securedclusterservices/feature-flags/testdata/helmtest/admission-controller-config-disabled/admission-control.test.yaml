@@ -10,9 +10,17 @@ server:
 tests:
 - name: "Webhook timeout pads AdmissionController timeout by 2 seconds"
   tests:
-    - name: "default AdmissionController timeout is 10s + 2s padding"
+    - name: "default AdmissionController timeout is 10s + 2s padding for OpenShift"
+      set:
+        env.openshift: 4
+        admissionControl.listenOnCreates: true
       expect: |
         .validatingwebhookconfigurations[].webhooks[].timeoutSeconds | assertThat(. == 10 + 2)
+    - name: "default AdmissionController timeout is 26s + 2s padding for Kubernetes"
+      set:
+        env.openshift: false
+      expect: |
+        .validatingwebhookconfigurations[].webhooks[].timeoutSeconds | assertThat(. == 26 + 2)
     - name: "override sets value correctly"
       values:
         admissionControl:

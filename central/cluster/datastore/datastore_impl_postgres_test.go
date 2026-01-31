@@ -895,7 +895,38 @@ func (s *ClusterPostgresDataStoreTestSuite) TestAddDefaults() {
 		acc := dc.GetAdmissionControllerConfig()
 		s.Require().NotNil(acc)
 		s.False(acc.GetEnabled())
-		s.Equal(int32(defaultAdmissionControllerTimeout), acc.GetTimeoutSeconds())
+		// Default cluster type is unset, which uses Kubernetes timeout
+		s.Equal(int32(defaultAdmissionControllerTimeoutKubernetes), acc.GetTimeoutSeconds())
+	})
+
+	s.Run("OpenShift clusters get OpenShift-specific timeout default", func() {
+		for _, clusterType := range []storage.ClusterType{
+			storage.ClusterType_OPENSHIFT_CLUSTER,
+			storage.ClusterType_OPENSHIFT4_CLUSTER,
+		} {
+			cluster := &storage.Cluster{
+				CentralApiEndpoint: centralEndpoint,
+				MainImage:          mainImage,
+				Type:               clusterType,
+			}
+			s.NoError(addDefaults(cluster))
+			acc := cluster.GetDynamicConfig().GetAdmissionControllerConfig()
+			s.Require().NotNil(acc)
+			s.Equal(int32(defaultAdmissionControllerTimeoutOpenShift), acc.GetTimeoutSeconds(),
+				"cluster type %s should use OpenShift timeout", clusterType)
+		}
+	})
+
+	s.Run("Kubernetes clusters get Kubernetes-specific timeout default", func() {
+		cluster := &storage.Cluster{
+			CentralApiEndpoint: centralEndpoint,
+			MainImage:          mainImage,
+			Type:               storage.ClusterType_KUBERNETES_CLUSTER,
+		}
+		s.NoError(addDefaults(cluster))
+		acc := cluster.GetDynamicConfig().GetAdmissionControllerConfig()
+		s.Require().NotNil(acc)
+		s.Equal(int32(defaultAdmissionControllerTimeoutKubernetes), acc.GetTimeoutSeconds())
 	})
 
 	s.Run("Provided values are either not overridden or properly updated", func() {
