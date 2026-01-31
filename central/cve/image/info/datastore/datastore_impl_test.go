@@ -170,7 +170,7 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpsertMany_PreservesTimestamps() {
 	earlier2 := time.Now().Add(-12 * time.Hour)
 	later := time.Now()
 
-	// First, insert infos with earlier timestamps. 
+	// First, insert infos with earlier timestamps.
 	// If there are multiple infos with same id, earlier timestamps should be preserved.
 	firstInfos := []*storage.ImageCVEInfo{
 		{
@@ -187,7 +187,7 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpsertMany_PreservesTimestamps() {
 			Id:                    "test-cve-1#test-pkg#test-ds",
 			FirstSystemOccurrence: nil,
 			FixAvailableTimestamp: timestamppb.New(earlier2),
-		}
+		},
 	}
 	err := s.datastore.UpsertMany(s.ctx, firstInfos)
 	s.NoError(err)
