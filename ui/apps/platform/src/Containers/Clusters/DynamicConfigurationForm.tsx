@@ -21,7 +21,6 @@ export type DynamicConfigurationFormProps = {
     clusterType: ClusterType;
     dynamicConfig: DynamicClusterConfig;
     handleChange: (path: string, value: boolean | string) => void;
-    handleChangeAdmissionControllerEnforcementBehavior: (value: boolean) => void;
     helmConfig: CompleteClusterConfig | null;
     isManagerTypeNonConfigurable: boolean;
 };
@@ -30,7 +29,6 @@ function DynamicConfigurationForm({
     clusterType,
     dynamicConfig,
     handleChange,
-    handleChangeAdmissionControllerEnforcementBehavior,
     helmConfig,
     isManagerTypeNonConfigurable,
 }: DynamicConfigurationFormProps) {
@@ -61,59 +59,6 @@ function DynamicConfigurationForm({
                     <HelperText>
                         <HelperTextItem>
                             Set a value if the default registry is not docker.io in this cluster
-                        </HelperTextItem>
-                    </HelperText>
-                </FormHelperText>
-            </FormGroup>
-            <FormGroup label="Admission controller enforcement behavior">
-                <SelectSingle
-                    id="dynamicConfig.admissionControllerConfig.enabled"
-                    value={
-                        dynamicConfig.admissionControllerConfig.enabled ||
-                        dynamicConfig.admissionControllerConfig.enforceOnUpdates
-                            ? 'enabled'
-                            : 'disabled'
-                    }
-                    handleSelect={(id, value) =>
-                        handleChangeAdmissionControllerEnforcementBehavior(value === 'enabled')
-                    }
-                    isDisabled={isManagerTypeNonConfigurable}
-                    isFullWidth={false}
-                >
-                    <SelectOption value="enabled">Enforce policies</SelectOption>
-                    <SelectOption value="disabled">No enforcement</SelectOption>
-                </SelectSingle>
-                <HelmValueWarning
-                    currentValue={
-                        dynamicConfig.admissionControllerConfig.enabled ||
-                        dynamicConfig.admissionControllerConfig.enforceOnUpdates
-                    }
-                    helmValue={
-                        helmConfig?.dynamicConfig?.admissionControllerConfig?.enabled ||
-                        helmConfig?.dynamicConfig?.admissionControllerConfig?.enforceOnUpdates
-                    }
-                />
-                <FormHelperText>
-                    <HelperText>
-                        <HelperTextItem>
-                            Controls the policy enforcement configuration of the admission
-                            controller. It determines whether the admission controller actively
-                            blocks workloads and operations if they violate policies.
-                        </HelperTextItem>
-                        <HelperTextItem>
-                            For more information, see{' '}
-                            <ExternalLink>
-                                <a
-                                    href={getVersionedDocs(
-                                        version,
-                                        'operating/use-admission-controller-enforcement'
-                                    )}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    RHACS documentation
-                                </a>
-                            </ExternalLink>
                         </HelperTextItem>
                     </HelperText>
                 </FormHelperText>
