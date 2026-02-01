@@ -98,6 +98,7 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 				return err
 			}
 		} else {
+			recordProcessIndicatorsBatchAdded(identifierBatch)
 			log.Debugf("successfully added a batch of %d process indicators", len(identifierBatch))
 		}
 	}
