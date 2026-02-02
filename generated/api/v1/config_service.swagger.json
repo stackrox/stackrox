@@ -508,6 +508,9 @@
         },
         "nodeVulnerabilities": {
           "$ref": "#/definitions/storagePrometheusMetricsGroup"
+        },
+        "apiRequests": {
+          "$ref": "#/definitions/storagePrometheusMetricsGroup"
         }
       },
       "title": "next available tag: 4"
@@ -518,7 +521,7 @@
         "gatheringPeriodMinutes": {
           "type": "integer",
           "format": "int64",
-          "description": "The gathering period for periodically gathered metrics. If set to zero,\ngathering is disabled."
+          "description": "Period in minutes for periodic gatherers.\nIgnored for non-periodic gatherers."
         },
         "descriptors": {
           "type": "object",
@@ -526,6 +529,10 @@
             "$ref": "#/definitions/GroupLabels"
           },
           "description": "Metric descriptors is a map of metric names to the list of allowed\nlabels."
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable gathering for non-periodic gatherers, such as counters."
         }
       },
       "description": "A group is a collection of metrics that are computed by the same\naggregator. Metrics in a group may use different subsets of a complete list\nof labels supported by the aggregator."

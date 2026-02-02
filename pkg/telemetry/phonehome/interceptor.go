@@ -46,7 +46,9 @@ func (c *Client) track(rp *RequestParams) {
 	}
 }
 
-func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string, req any) *RequestParams {
+// GetGRPCRequestDetails extracts request parameters from a gRPC request context.
+// This function is exported to allow other packages to reuse the request metadata extraction logic.
+func GetGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string, req any) *RequestParams {
 	id, iderr := authn.IdentityFromContext(ctx)
 	if iderr != nil && grpcFullMethod != v1.PingService_Ping_FullMethodName { // Ignore readiness probes.
 		log.Debugf("Cannot identify user from context for method call %q: %v", grpcFullMethod, iderr)
@@ -60,11 +62,13 @@ func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 		if ri.HTTPRequest.URL != nil {
 			path = ri.HTTPRequest.URL.Path
 		}
-		// This is either the gRPC client or the grpc-gateway user agent:
-		grpcClientAgent := ri.Metadata.Get(userAgentHeaderKey)
+		// This is a list of the User-Agents of the original client (first) and,
+		// potentially, the gRPC-gateway (second):
+		var grpcClientAgent []string
 		if clientAgent := ri.HTTPRequest.Headers.Get(userAgentHeaderKey); clientAgent != "" {
-			grpcClientAgent = append(grpcClientAgent, clientAgent)
+			grpcClientAgent = append(grpcClientAgent, clientAgent) // Original client UA first.
 		}
+		grpcClientAgent = append(grpcClientAgent, ri.Metadata.Get(userAgentHeaderKey)...) // Gateway's UA last.
 		return &RequestParams{
 			UserID:  id,
 			Method:  ri.HTTPRequest.Method,
@@ -90,7 +94,9 @@ func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 	}
 }
 
-func getHTTPRequestDetails(ctx context.Context, r *http.Request, status int) *RequestParams {
+// GetHTTPRequestDetails extracts request parameters from an HTTP request.
+// This function is exported to allow other packages to reuse the request metadata extraction logic.
+func GetHTTPRequestDetails(ctx context.Context, r *http.Request, status int) *RequestParams {
 	id, iderr := authn.IdentityFromContext(ctx)
 	if iderr != nil {
 		log.Debug("Cannot identify user from context: ", iderr)
