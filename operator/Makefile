@@ -132,8 +132,8 @@ $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
 
 # CSV_PATCHER_IMPL selects which implementation to use for CSV patching
-# Valid values: "python" (default), "go"
-CSV_PATCHER_IMPL ?= python
+# Valid values: "python", "go" (default)
+CSV_PATCHER_IMPL ?= go
 
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
