@@ -7,6 +7,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestDefaultingReadConfig(t *testing.T) {
+	conf, err := readConfigsImpl(
+		"does-not-exist-and-will-be-defaulted/central-config.yaml",
+		"does-not-exist-and-will-be-defaulted/central-external-db.yaml")
+	assert.NoError(t, err)
+	require.NoError(t, conf.validate())
+	require.True(t, *conf.Maintenance.Compaction.Enabled)
+	require.Equal(t, defaultDBSource, conf.CentralDB.Source)
+}
+
 func TestReadConfig(t *testing.T) {
 	testCases := []struct {
 		title             string
@@ -14,7 +24,6 @@ func TestReadConfig(t *testing.T) {
 		extDBConfigPath   string
 		compactionEnabled bool
 		isValid           bool
-		isDefault         bool
 	}{
 		{
 			title:             "valid config",
@@ -22,22 +31,12 @@ func TestReadConfig(t *testing.T) {
 			extDBConfigPath:   "testdata/valid_case/central-external-db.yaml",
 			compactionEnabled: false,
 			isValid:           true,
-			isDefault:         false,
-		},
-		{
-			title:             "default config",
-			centralConfigPath: "testdata/default_case/central-config.yaml",
-			extDBConfigPath:   "testdata/default_case/central-external-db.yaml",
-			compactionEnabled: true,
-			isValid:           true,
-			isDefault:         true,
 		},
 		{
 			title:             "malformed config",
 			centralConfigPath: "testdata/malformed_case/central-config.yaml",
 			extDBConfigPath:   "testdata/malformed_case/central-external-db.yaml",
 			isValid:           false,
-			isDefault:         false,
 		},
 	}
 	for _, tc := range testCases {
@@ -47,11 +46,7 @@ func TestReadConfig(t *testing.T) {
 				assert.NoError(t, err)
 				require.NoError(t, conf.validate())
 				require.Equal(t, *conf.Maintenance.Compaction.Enabled, tc.compactionEnabled)
-				if tc.isDefault {
-					require.Equal(t, defaultDBSource, conf.CentralDB.Source)
-				} else {
-					assert.Contains(t, conf.CentralDB.Source, "fake")
-				}
+				assert.Contains(t, conf.CentralDB.Source, "fake")
 			} else {
 				assert.Error(t, err)
 			}
