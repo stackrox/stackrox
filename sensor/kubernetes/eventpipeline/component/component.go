@@ -54,7 +54,7 @@ type ContextListener interface {
 
 // PubSubDispatcher defines the interface to the internal PubSub system
 type PubSubDispatcher interface {
-	RegisterConsumer(pubsub.Topic, pubsub.EventCallback) error
-	RegisterConsumerToLane(pubsub.Topic, pubsub.LaneID, pubsub.EventCallback) error
+	RegisterConsumer(pubsub.ConsumerID, pubsub.Topic, pubsub.EventCallback) error
+	RegisterConsumerToLane(pubsub.ConsumerID, pubsub.Topic, pubsub.LaneID, pubsub.EventCallback) error
 	Publish(pubsub.Event) error
 }

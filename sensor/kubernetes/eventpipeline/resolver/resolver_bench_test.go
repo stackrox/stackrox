@@ -145,7 +145,7 @@ func setupMocks(b *testing.B, doneSignal *concurrency.Signal, pubsubEnabled bool
 	mockPubSubDispatcher = mocksComponent.NewMockPubSubDispatcher(mockCtrl)
 	// Set up the EXPECT
 	if pubsubEnabled {
-		mockPubSubDispatcher.EXPECT().RegisterConsumerToLane(gomock.Any(), gomock.Any(), gomock.Any()).Times(2).Return(nil)
+		mockPubSubDispatcher.EXPECT().RegisterConsumerToLane(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(2).Return(nil)
 	}
 	mockOutput.EXPECT().Send(gomock.Any()).AnyTimes().DoAndReturn(func(resourceEvent *component.ResourceEvent) {
 		for _, m := range resourceEvent.ForwardMessages {

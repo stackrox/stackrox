@@ -324,29 +324,29 @@ func (mr *MockPubSubDispatcherMockRecorder) Publish(arg0 any) *gomock.Call {
 }
 
 // RegisterConsumer mocks base method.
-func (m *MockPubSubDispatcher) RegisterConsumer(arg0 pubsub.Topic, arg1 pubsub.EventCallback) error {
+func (m *MockPubSubDispatcher) RegisterConsumer(arg0 pubsub.ConsumerID, arg1 pubsub.Topic, arg2 pubsub.EventCallback) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RegisterConsumer", arg0, arg1)
+	ret := m.ctrl.Call(m, "RegisterConsumer", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RegisterConsumer indicates an expected call of RegisterConsumer.
-func (mr *MockPubSubDispatcherMockRecorder) RegisterConsumer(arg0, arg1 any) *gomock.Call {
+func (mr *MockPubSubDispatcherMockRecorder) RegisterConsumer(arg0, arg1, arg2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterConsumer", reflect.TypeOf((*MockPubSubDispatcher)(nil).RegisterConsumer), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterConsumer", reflect.TypeOf((*MockPubSubDispatcher)(nil).RegisterConsumer), arg0, arg1, arg2)
 }
 
 // RegisterConsumerToLane mocks base method.
-func (m *MockPubSubDispatcher) RegisterConsumerToLane(arg0 pubsub.Topic, arg1 pubsub.LaneID, arg2 pubsub.EventCallback) error {
+func (m *MockPubSubDispatcher) RegisterConsumerToLane(arg0 pubsub.ConsumerID, arg1 pubsub.Topic, arg2 pubsub.LaneID, arg3 pubsub.EventCallback) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RegisterConsumerToLane", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "RegisterConsumerToLane", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RegisterConsumerToLane indicates an expected call of RegisterConsumerToLane.
-func (mr *MockPubSubDispatcherMockRecorder) RegisterConsumerToLane(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockPubSubDispatcherMockRecorder) RegisterConsumerToLane(arg0, arg1, arg2, arg3 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterConsumerToLane", reflect.TypeOf((*MockPubSubDispatcher)(nil).RegisterConsumerToLane), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterConsumerToLane", reflect.TypeOf((*MockPubSubDispatcher)(nil).RegisterConsumerToLane), arg0, arg1, arg2, arg3)
 }
