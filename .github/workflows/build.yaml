@@ -14,7 +14,6 @@ on:
 
 env:
   REGISTRY: quay.io/klape
-  ROX_PRODUCT_BRANDING: STACKROX_BRANDING
   # Override TAG since fork doesn't have upstream tags
   BUILD_TAG: 0.0.0-dev
 
@@ -26,8 +25,13 @@ jobs:
   # =============================================================================
   # Pre-build jobs run in apollo-ci container (need Go, Node, etc.)
   # =============================================================================
+
+  # UI builds - one per branding
   pre-build-ui:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branding: [STACKROX_BRANDING, RHACS_BRANDING]
     container:
       image: quay.io/klape/apollo-ci-buildah:0.5.1
     steps:
@@ -41,14 +45,17 @@ jobs:
         run: make -C ui deps
 
       - name: Build UI
+        env:
+          ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
         run: make -C ui build
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ui-build
+          name: ui-build-${{ matrix.branding }}
           path: ui/build
           retention-days: 1
 
+  # CLI builds all platforms (shared across brandings)
   pre-build-cli:
     runs-on: ubuntu-latest
     container:
@@ -72,8 +79,12 @@ jobs:
           path: cli-build.tgz
           retention-days: 1
 
+  # Go binaries - one per architecture
   pre-build-go-binaries:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
     container:
       image: quay.io/klape/apollo-ci-buildah:0.5.1
     steps:
@@ -88,19 +99,20 @@ jobs:
 
       - name: Build Go binaries
         env:
-          GOARCH: amd64
+          GOARCH: ${{ matrix.arch }}
           GOOS: linux
         run: make main-build-nodeps
 
       - name: Bundle build to preserve permissions
-        run: tar -cvzf go-binaries-build.tgz bin
+        run: tar -cvzf go-binaries-build-${{ matrix.arch }}.tgz bin
 
       - uses: actions/upload-artifact@v4
         with:
-          name: go-binaries-build
-          path: go-binaries-build.tgz
+          name: go-binaries-build-${{ matrix.arch }}
+          path: go-binaries-build-${{ matrix.arch }}.tgz
           retention-days: 1
 
+  # Docs (shared across all variants)
   pre-build-docs:
     runs-on: ubuntu-latest
     container:
@@ -128,8 +140,12 @@ jobs:
           retention-days: 1
           if-no-files-found: ignore
 
+  # Operator binary - one per architecture
   pre-build-operator:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
     container:
       image: quay.io/klape/apollo-ci-buildah:0.5.1
     steps:
@@ -147,31 +163,36 @@ jobs:
 
       - name: Build Operator binary
         env:
-          GOARCH: amd64
+          GOARCH: ${{ matrix.arch }}
           CGO_ENABLED: "0"
         run: make -C operator/ build
 
       - name: Bundle operator build
-        run: tar -cvzf operator-build.tgz operator/bin
+        run: tar -cvzf operator-build-${{ matrix.arch }}.tgz operator/bin
 
       - uses: actions/upload-artifact@v4
         with:
-          name: operator-build
-          path: operator-build.tgz
+          name: operator-build-${{ matrix.arch }}
+          path: operator-build-${{ matrix.arch }}.tgz
           retention-days: 1
 
   # =============================================================================
   # Build images with buildah - runs directly on runner (not in container)
   # Buildah needs user namespaces which aren't available in containers
   # =============================================================================
+
+  # Main image builds - branding x arch matrix
   build-and-push-main:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branding: [STACKROX_BRANDING, RHACS_BRANDING]
+        arch: [amd64, arm64]
     needs:
       - pre-build-ui
       - pre-build-cli
       - pre-build-go-binaries
       - pre-build-docs
-    if: ${{ !cancelled() }}
     env:
       QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
       QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
@@ -187,7 +208,7 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: ui-build
+          name: ui-build-${{ matrix.branding }}
           path: ui/build
 
       - uses: actions/download-artifact@v4
@@ -199,10 +220,10 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: go-binaries-build
+          name: go-binaries-build-${{ matrix.arch }}
 
       - name: Unpack Go binaries build
-        run: tar xvzf go-binaries-build.tgz
+        run: tar xvzf go-binaries-build-${{ matrix.arch }}.tgz
 
       - uses: actions/download-artifact@v4
         with:
@@ -221,21 +242,31 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Building with tag: $TAG"
 
+      - name: Derive image suffix
+        id: suffix
+        run: |
+          if [ "${{ matrix.branding }}" = "RHACS_BRANDING" ]; then
+            echo "suffix=-rhacs" >> "$GITHUB_OUTPUT"
+          else
+            echo "suffix=" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Prepare image directory
         run: |
-          # Copy binaries from bin/linux_amd64 to image/rhel/bin
+          # Copy binaries from bin/linux_$arch to image/rhel/bin
           mkdir -p image/rhel/bin
-          cp bin/linux_amd64/central image/rhel/bin/
-          cp bin/linux_amd64/compliance image/rhel/bin/
-          cp bin/linux_amd64/migrator image/rhel/bin/
-          cp bin/linux_amd64/config-controller image/rhel/bin/
-          cp bin/linux_amd64/admission-control image/rhel/bin/
+          ARCH=${{ matrix.arch }}
+          cp bin/linux_${ARCH}/central image/rhel/bin/
+          cp bin/linux_${ARCH}/compliance image/rhel/bin/
+          cp bin/linux_${ARCH}/migrator image/rhel/bin/
+          cp bin/linux_${ARCH}/config-controller image/rhel/bin/
+          cp bin/linux_${ARCH}/admission-control image/rhel/bin/
           # Rename sensor binaries to match Dockerfile expectations
-          cp bin/linux_amd64/kubernetes image/rhel/bin/kubernetes-sensor
-          cp bin/linux_amd64/upgrader image/rhel/bin/sensor-upgrader
+          cp bin/linux_${ARCH}/kubernetes image/rhel/bin/kubernetes-sensor
+          cp bin/linux_${ARCH}/upgrader image/rhel/bin/sensor-upgrader
           # Copy roxctl and roxagent (from CLI build)
-          cp bin/linux_amd64/roxctl image/rhel/bin/
-          cp bin/linux_amd64/roxagent image/rhel/bin/
+          cp bin/linux_${ARCH}/roxctl image/rhel/bin/
+          cp bin/linux_${ARCH}/roxagent image/rhel/bin/
           # Copy roxctl for all platforms for asset downloads
           cp -r bin/* image/rhel/bin/ 2>/dev/null || true
 
@@ -247,19 +278,21 @@ jobs:
           echo "PoC build - license notices not generated" > image/rhel/THIRD_PARTY_NOTICES/README.txt
 
           # Copy roxctl to image/roxctl for roxctl image build
-          cp bin/linux_amd64/roxctl image/roxctl/roxctl-linux
+          cp bin/linux_${ARCH}/roxctl image/roxctl/roxctl-linux
+
+      - name: Set up QEMU for cross-platform builds
+        if: matrix.arch != 'amd64'
+        uses: docker/setup-qemu-action@v3
 
       - name: Build main image with buildah
-        env:
-          GOARCH: amd64
         run: |
           buildah bud \
-            --platform linux/amd64 \
+            --platform linux/${{ matrix.arch }} \
             --layers \
-            -t ${{ env.REGISTRY }}/main:${{ steps.tag.outputs.tag }} \
+            -t ${{ env.REGISTRY }}/main${{ steps.suffix.outputs.suffix }}:${{ steps.tag.outputs.tag }}-${{ matrix.arch }} \
             --build-arg DEBUG_BUILD="${DEBUG_BUILD:-}" \
-            --build-arg ROX_PRODUCT_BRANDING=${{ env.ROX_PRODUCT_BRANDING }} \
-            --build-arg TARGET_ARCH=amd64 \
+            --build-arg ROX_PRODUCT_BRANDING=${{ matrix.branding }} \
+            --build-arg TARGET_ARCH=${{ matrix.arch }} \
             --build-arg ROX_IMAGE_FLAVOR=opensource \
             --build-arg LABEL_VERSION=${{ steps.tag.outputs.tag }} \
             --build-arg LABEL_RELEASE=${{ steps.tag.outputs.tag }} \
@@ -269,37 +302,40 @@ jobs:
       - name: Build roxctl image with buildah
         run: |
           buildah bud \
-            --platform linux/amd64 \
+            --platform linux/${{ matrix.arch }} \
             --layers \
-            -t ${{ env.REGISTRY }}/roxctl:${{ steps.tag.outputs.tag }} \
+            -t ${{ env.REGISTRY }}/roxctl${{ steps.suffix.outputs.suffix }}:${{ steps.tag.outputs.tag }}-${{ matrix.arch }} \
             --file image/roxctl/Dockerfile \
             image/roxctl
 
       - name: Build central-db image with buildah
         run: |
-          # Build central-db from postgres base
           buildah bud \
-            --platform linux/amd64 \
+            --platform linux/${{ matrix.arch }} \
             --layers \
-            -t ${{ env.REGISTRY }}/central-db:${{ steps.tag.outputs.tag }} \
+            -t ${{ env.REGISTRY }}/central-db${{ steps.suffix.outputs.suffix }}:${{ steps.tag.outputs.tag }}-${{ matrix.arch }} \
             --file image/postgres/Dockerfile \
             image/postgres
 
       - name: Push images with buildah
         run: |
           TAG="${{ steps.tag.outputs.tag }}"
+          SUFFIX="${{ steps.suffix.outputs.suffix }}"
+          ARCH="${{ matrix.arch }}"
 
           for image in main roxctl central-db; do
-            echo "Pushing ${{ env.REGISTRY }}/${image}:${TAG}"
-            buildah push ${{ env.REGISTRY }}/${image}:${TAG} \
-              docker://${{ env.REGISTRY }}/${image}:${TAG}
+            echo "Pushing ${{ env.REGISTRY }}/${image}${SUFFIX}:${TAG}-${ARCH}"
+            buildah push ${{ env.REGISTRY }}/${image}${SUFFIX}:${TAG}-${ARCH} \
+              docker://${{ env.REGISTRY }}/${image}${SUFFIX}:${TAG}-${ARCH}
           done
 
-  # =============================================================================
-  # Build operator with buildah - runs directly on runner
-  # =============================================================================
+  # Operator image builds - branding x arch matrix
   build-and-push-operator:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branding: [STACKROX_BRANDING, RHACS_BRANDING]
+        arch: [amd64, arm64]
     needs:
       - pre-build-operator
     env:
@@ -314,10 +350,10 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: operator-build
+          name: operator-build-${{ matrix.arch }}
 
       - name: Unpack operator build
-        run: tar xvzf operator-build.tgz
+        run: tar xvzf operator-build-${{ matrix.arch }}.tgz
 
       - name: Login to Quay.io with buildah
         run: |
@@ -330,13 +366,26 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Building operator with tag: $TAG"
 
+      - name: Derive image suffix
+        id: suffix
+        run: |
+          if [ "${{ matrix.branding }}" = "RHACS_BRANDING" ]; then
+            echo "suffix=-rhacs" >> "$GITHUB_OUTPUT"
+          else
+            echo "suffix=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up QEMU for cross-platform builds
+        if: matrix.arch != 'amd64'
+        uses: docker/setup-qemu-action@v3
+
       - name: Build Operator image with buildah
         run: |
           cd operator
           buildah bud \
-            --platform linux/amd64 \
+            --platform linux/${{ matrix.arch }} \
             --layers \
-            -t ${{ env.REGISTRY }}/stackrox-operator:${{ steps.tag.outputs.tag }} \
+            -t ${{ env.REGISTRY }}/stackrox-operator${{ steps.suffix.outputs.suffix }}:${{ steps.tag.outputs.tag }}-${{ matrix.arch }} \
             --build-arg ROX_IMAGE_FLAVOR=opensource \
             --file Dockerfile.prebuilt \
             .
@@ -344,8 +393,111 @@ jobs:
       - name: Push operator image with buildah
         run: |
           buildah push \
-            ${{ env.REGISTRY }}/stackrox-operator:${{ steps.tag.outputs.tag }} \
-            docker://${{ env.REGISTRY }}/stackrox-operator:${{ steps.tag.outputs.tag }}
+            ${{ env.REGISTRY }}/stackrox-operator${{ steps.suffix.outputs.suffix }}:${{ steps.tag.outputs.tag }}-${{ matrix.arch }} \
+            docker://${{ env.REGISTRY }}/stackrox-operator${{ steps.suffix.outputs.suffix }}:${{ steps.tag.outputs.tag }}-${{ matrix.arch }}
 
-  # NOTE: Multi-arch support requires native arm64 runners with buildah.
-  # For now, this PoC builds amd64 only.
+  # =============================================================================
+  # Create and push multi-arch manifests
+  # =============================================================================
+
+  push-main-manifests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branding: [STACKROX_BRANDING, RHACS_BRANDING]
+    needs:
+      - build-and-push-main
+    env:
+      QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+      QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Login to Quay.io with buildah
+        run: |
+          buildah login -u "$QUAY_USERNAME" -p "$QUAY_PASSWORD" quay.io
+
+      - name: Get image tag
+        id: tag
+        run: |
+          TAG=$(make --quiet --no-print-directory tag)
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Derive image suffix
+        id: suffix
+        run: |
+          if [ "${{ matrix.branding }}" = "RHACS_BRANDING" ]; then
+            echo "suffix=-rhacs" >> "$GITHUB_OUTPUT"
+          else
+            echo "suffix=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create and push multi-arch manifests
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          SUFFIX="${{ steps.suffix.outputs.suffix }}"
+
+          for image in main roxctl central-db; do
+            echo "Creating manifest for ${{ env.REGISTRY }}/${image}${SUFFIX}:${TAG}"
+
+            buildah manifest create ${image}${SUFFIX}:${TAG} \
+              ${{ env.REGISTRY }}/${image}${SUFFIX}:${TAG}-amd64 \
+              ${{ env.REGISTRY }}/${image}${SUFFIX}:${TAG}-arm64
+
+            buildah manifest push --all ${image}${SUFFIX}:${TAG} \
+              docker://${{ env.REGISTRY }}/${image}${SUFFIX}:${TAG}
+          done
+
+  push-operator-manifests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branding: [STACKROX_BRANDING, RHACS_BRANDING]
+    needs:
+      - build-and-push-operator
+    env:
+      QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+      QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Login to Quay.io with buildah
+        run: |
+          buildah login -u "$QUAY_USERNAME" -p "$QUAY_PASSWORD" quay.io
+
+      - name: Get image tag
+        id: tag
+        run: |
+          TAG=$(make --quiet --no-print-directory tag)
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Derive image suffix
+        id: suffix
+        run: |
+          if [ "${{ matrix.branding }}" = "RHACS_BRANDING" ]; then
+            echo "suffix=-rhacs" >> "$GITHUB_OUTPUT"
+          else
+            echo "suffix=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create and push operator multi-arch manifest
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          SUFFIX="${{ steps.suffix.outputs.suffix }}"
+
+          echo "Creating manifest for ${{ env.REGISTRY }}/stackrox-operator${SUFFIX}:${TAG}"
+
+          buildah manifest create stackrox-operator${SUFFIX}:${TAG} \
+            ${{ env.REGISTRY }}/stackrox-operator${SUFFIX}:${TAG}-amd64 \
+            ${{ env.REGISTRY }}/stackrox-operator${SUFFIX}:${TAG}-arm64
+
+          buildah manifest push --all stackrox-operator${SUFFIX}:${TAG} \
+            docker://${{ env.REGISTRY }}/stackrox-operator${SUFFIX}:${TAG}
