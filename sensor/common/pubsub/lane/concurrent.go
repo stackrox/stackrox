@@ -2,8 +2,8 @@ package lane
 
 import (
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/channel"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/pubsub/consumer"
 	pubsubErrors "github.com/stackrox/rox/sensor/common/pubsub/errors"
@@ -63,7 +63,7 @@ func (c *ConcurrentConfig) NewLane() pubsub.Lane {
 	for _, opt := range c.opts {
 		opt(lane)
 	}
-	lane.ch = channel.NewSafeChannel[pubsub.Event](lane.size, lane.stopper.LowLevel().GetStopRequestSignal())
+	lane.ch = safe.NewChannel[pubsub.Event](lane.size, lane.stopper.LowLevel().GetStopRequestSignal())
 	go lane.run()
 	return lane
 }
@@ -71,7 +71,7 @@ func (c *ConcurrentConfig) NewLane() pubsub.Lane {
 type concurrentLane struct {
 	Lane
 	size    int
-	ch      *channel.SafeChannel[pubsub.Event]
+	ch      *safe.SafeChannel[pubsub.Event]
 	stopper concurrency.Stopper
 }
 

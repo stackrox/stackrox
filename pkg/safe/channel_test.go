@@ -1,4 +1,4 @@
-package channel
+package safe
 
 import (
 	"context"
@@ -19,7 +19,7 @@ func TestSafeChannel_Write_Success(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ch := NewSafeChannel[int](5, ctx)
+	ch := NewChannel[int](5, ctx)
 
 	// Write some items
 	err := ch.Write(1)
@@ -44,7 +44,7 @@ func TestSafeChannel_Write_BlocksWhenFull(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		ch := NewSafeChannel[int](2, ctx)
+		ch := NewChannel[int](2, ctx)
 
 		// Fill the channel
 		require.NoError(t, ch.Write(1))
@@ -89,7 +89,7 @@ func TestSafeChannel_Write_FailsAfterWaitableTriggered(t *testing.T) {
 	goleak.AssertNoGoroutineLeaks(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	ch := NewSafeChannel[int](5, ctx)
+	ch := NewChannel[int](5, ctx)
 
 	// Cancel the context
 	cancel()
@@ -105,7 +105,7 @@ func TestSafeChannel_TryWrite_Success(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ch := NewSafeChannel[int](5, ctx)
+	ch := NewChannel[int](5, ctx)
 
 	// TryWrite some items
 	err := ch.TryWrite(1)
@@ -125,7 +125,7 @@ func TestSafeChannel_TryWrite_FailsWhenFull(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ch := NewSafeChannel[int](2, ctx)
+	ch := NewChannel[int](2, ctx)
 
 	// Fill the channel
 	require.NoError(t, ch.TryWrite(1))
@@ -144,7 +144,7 @@ func TestSafeChannel_TryWrite_FailsAfterWaitableTriggered(t *testing.T) {
 	goleak.AssertNoGoroutineLeaks(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	ch := NewSafeChannel[int](5, ctx)
+	ch := NewChannel[int](5, ctx)
 
 	// Cancel the context
 	cancel()
@@ -160,7 +160,7 @@ func TestSafeChannel_Len(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ch := NewSafeChannel[int](5, ctx)
+	ch := NewChannel[int](5, ctx)
 
 	assert.Equal(t, 0, ch.Len())
 
@@ -183,7 +183,7 @@ func TestSafeChannel_Cap(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ch := NewSafeChannel[int](10, ctx)
+	ch := NewChannel[int](10, ctx)
 	assert.Equal(t, 10, ch.Cap())
 
 	// Capacity doesn't change as we write
@@ -206,7 +206,7 @@ func TestSafeChannel_NegativeSize(t *testing.T) {
 		defer cancel()
 
 		// Negative size should be treated as 0 (unbuffered)
-		ch := NewSafeChannel[int](-5, ctx)
+		ch := NewChannel[int](-5, ctx)
 		assert.Equal(t, 0, ch.Cap())
 		assert.Equal(t, 0, ch.Len())
 
@@ -245,7 +245,7 @@ func TestSafeChannel_Close_MultipleTimes(t *testing.T) {
 	goleak.AssertNoGoroutineLeaks(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	ch := NewSafeChannel[int](5, ctx)
+	ch := NewChannel[int](5, ctx)
 
 	cancel()
 
@@ -259,7 +259,7 @@ func TestSafeChannel_Close_ProperShutdownSequence(t *testing.T) {
 	goleak.AssertNoGoroutineLeaks(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	ch := NewSafeChannel[int](5, ctx)
+	ch := NewChannel[int](5, ctx)
 
 	// Write some items
 	require.NoError(t, ch.Write(1))
@@ -285,7 +285,7 @@ func TestSafeChannel_ConcurrentWrites(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ch := NewSafeChannel[int](100, ctx)
+	ch := NewChannel[int](100, ctx)
 
 	numGoroutines := 10
 	numWrites := 100
@@ -329,7 +329,7 @@ func TestSafeChannel_ConcurrentWritesAndClose(t *testing.T) {
 	// This test ensures there are no panics when writing and closing concurrently
 	for range 100 {
 		ctx, cancel := context.WithCancel(context.Background())
-		ch := NewSafeChannel[int](10, ctx)
+		ch := NewChannel[int](10, ctx)
 
 		writeStarted := concurrency.NewSignal()
 
@@ -364,7 +364,7 @@ func TestSafeChannel_WriteBlockedThenWaitableTriggered(t *testing.T) {
 
 	synctest.Test(t, func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
-		ch := NewSafeChannel[int](1, ctx)
+		ch := NewChannel[int](1, ctx)
 
 		// Fill the channel
 		require.NoError(t, ch.Write(1))
@@ -404,7 +404,7 @@ func TestSafeChannel_WithStructTypes(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ch := NewSafeChannel[Event](5, ctx)
+	ch := NewChannel[Event](5, ctx)
 
 	event1 := Event{ID: 1, Data: "test1"}
 	event2 := Event{ID: 2, Data: "test2"}
@@ -430,7 +430,7 @@ func TestSafeChannel_WithPointerTypes(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ch := NewSafeChannel[*Event](5, ctx)
+	ch := NewChannel[*Event](5, ctx)
 
 	event1 := &Event{ID: 1, Data: "test1"}
 	event2 := &Event{ID: 2, Data: "test2"}
@@ -450,8 +450,8 @@ func TestSafeChannel_NewSafeChannel_PanicsOnNilWaitable(t *testing.T) {
 
 	// Creating a SafeChannel with a nil waitable should panic
 	assert.Panics(t, func() {
-		NewSafeChannel[int](5, nil)
-	}, "NewSafeChannel should panic when waitable is nil")
+		NewChannel[int](5, nil)
+	}, "NewChannel should panic when waitable is nil")
 }
 
 func TestSafeChannel_Close_PanicsOnUntriggeredWaitable(t *testing.T) {
@@ -460,7 +460,7 @@ func TestSafeChannel_Close_PanicsOnUntriggeredWaitable(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ch := NewSafeChannel[int](5, ctx)
+	ch := NewChannel[int](5, ctx)
 
 	// Calling Close without triggering the waitable should panic
 	assert.Panics(t, func() {

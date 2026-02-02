@@ -1,4 +1,4 @@
-package channel
+package safe
 
 import "github.com/pkg/errors"
 
