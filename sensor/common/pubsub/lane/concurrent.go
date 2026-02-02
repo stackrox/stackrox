@@ -88,6 +88,13 @@ func (l *concurrentLane) Publish(event pubsub.Event) error {
 func (l *concurrentLane) run() {
 	defer l.stopper.Flow().ReportStopped()
 	for {
+		// Priority 1: Check if stop requested
+		select {
+		case <-l.stopper.Flow().StopRequested():
+			return
+		default:
+		}
+		// Priority 2: Read event, but respect stop during blocking read
 		select {
 		case <-l.stopper.Flow().StopRequested():
 			return
