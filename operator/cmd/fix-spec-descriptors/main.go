@@ -26,17 +26,38 @@ func main() {
 	}
 
 	// Fix descriptors in all owned CRDs
-	spec := doc["spec"].(map[string]interface{})
-	crds := spec["customresourcedefinitions"].(map[string]interface{})
-	owned := crds["owned"].([]interface{})
+	spec, ok := doc["spec"].(map[string]interface{})
+	if !ok {
+		fmt.Fprintf(os.Stderr, "Error: 'spec' field is not a map\n")
+		os.Exit(1)
+	}
+	crds, ok := spec["customresourcedefinitions"].(map[string]interface{})
+	if !ok {
+		fmt.Fprintf(os.Stderr, "Error: 'spec.customresourcedefinitions' field is not a map\n")
+		os.Exit(1)
+	}
+	owned, ok := crds["owned"].([]interface{})
+	if !ok {
+		fmt.Fprintf(os.Stderr, "Error: 'spec.customresourcedefinitions.owned' field is not an array\n")
+		os.Exit(1)
+	}
 
 	for _, crd := range owned {
-		crdMap := crd.(map[string]interface{})
+		crdMap, ok := crd.(map[string]interface{})
+		if !ok {
+			fmt.Fprintf(os.Stderr, "Warning: CRD entry is not a map, skipping\n")
+			continue
+		}
 		if specDescriptors, ok := crdMap["specDescriptors"].([]interface{}); ok {
 			// Convert to []map[string]interface{}
 			descriptors := make([]map[string]interface{}, len(specDescriptors))
 			for i, d := range specDescriptors {
-				descriptors[i] = d.(map[string]interface{})
+				descriptorMap, ok := d.(map[string]interface{})
+				if !ok {
+					fmt.Fprintf(os.Stderr, "Warning: descriptor entry is not a map, skipping\n")
+					continue
+				}
+				descriptors[i] = descriptorMap
 			}
 
 			fixDescriptorOrder(descriptors)
@@ -60,8 +81,13 @@ func main() {
 // fixDescriptorOrder performs stable sort so parents appear before children
 func fixDescriptorOrder(descriptors []map[string]interface{}) {
 	sort.SliceStable(descriptors, func(i, j int) bool {
-		pathI := descriptors[i]["path"].(string)
-		pathJ := descriptors[j]["path"].(string)
+		pathI, okI := descriptors[i]["path"].(string)
+		pathJ, okJ := descriptors[j]["path"].(string)
+
+		// If either path is not a string, maintain current order
+		if !okI || !okJ {
+			return false
+		}
 
 		// Sort lexicographically - this ensures parents come before children
 		// because "central" < "central.db" < "central.db.enabled"
@@ -95,7 +121,8 @@ func allowRelativeFieldDependencies(descriptors []map[string]interface{}) {
 			}
 
 			field := parts[5]
-			value := parts[6]
+			// Preserve colons in value by joining remaining parts
+			value := strings.Join(parts[6:], ":")
 
 			// If field starts with '.', it's relative
 			if !strings.HasPrefix(field, ".") {
@@ -103,8 +130,17 @@ func allowRelativeFieldDependencies(descriptors []map[string]interface{}) {
 			}
 
 			// Resolve relative to current path
-			currentPath := "." + d["path"].(string)
-			parentPath := currentPath[:strings.LastIndex(currentPath, ".")]
+			currentPathStr, ok := d["path"].(string)
+			if !ok {
+				continue
+			}
+			currentPath := "." + currentPathStr
+			lastDot := strings.LastIndex(currentPath, ".")
+			if lastDot == -1 {
+				// Top-level field, relative dependency doesn't make sense
+				continue
+			}
+			parentPath := currentPath[:lastDot]
 			absoluteField := strings.TrimPrefix(parentPath, ".") + field
 
 			// Reconstruct descriptor with absolute path
