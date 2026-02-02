@@ -1535,7 +1535,8 @@
           "type": "string"
         },
         "label": {
-          "$ref": "#/definitions/storageScopeLabel"
+          "$ref": "#/definitions/storageScopeLabel",
+          "title": "Deployment label."
         },
         "clusterLabel": {
           "$ref": "#/definitions/storageScopeLabel"
