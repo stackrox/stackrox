@@ -112,11 +112,19 @@ var (
 		Help:      "A counter of the total number of network endpoints received by Central from Sensor",
 	}, []string{"ClusterID"})
 
+	// totalExternalPoliciesGauge is deprecated due to naming confusion (vector vs. gauge), use currentExternalPolicies instead.
 	totalExternalPoliciesGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "total_external_policies_count",
-		Help:      "Current number of policy-as-code CRs accepted by Central from Config Controller",
+		Help:      "Number of policy-as-code CRs accepted by Central from Config Controller",
+	})
+	// currentExternalPolicies replaces the totalExternalPoliciesGauge
+	currentExternalPolicies = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "number_of_external_policies_current",
+		Help:      "Number of policy-as-code CRs accepted by Central from Config Controller",
 	})
 
 	riskProcessingHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -422,10 +430,12 @@ func IncrementTotalNetworkEndpointsReceivedCounter(clusterID string, numberOfEnd
 
 func IncrementTotalExternalPoliciesGauge() {
 	totalExternalPoliciesGauge.Inc()
+	currentExternalPolicies.Inc()
 }
 
 func DecrementTotalExternalPoliciesGauge() {
 	totalExternalPoliciesGauge.Dec()
+	currentExternalPolicies.Dec()
 }
 
 // ObserveRiskProcessingDuration adds an observation for risk processing duration.
