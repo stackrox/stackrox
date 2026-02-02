@@ -147,6 +147,10 @@ func CalculateReplacedVersion(current, first, previousYStream string, skips []Xy
 	for skipMap[currentReplace.String()] {
 		// Try next patch
 		currentReplace = XyzVersion{X: currentReplace.X, Y: currentReplace.Y, Z: currentReplace.Z + 1}
+		// Safety: stop if we've reached or exceeded current version, or crossed into next minor release
+		if currentReplace.Y != initialReplace.Y || currentReplace.Compare(currentXyz) >= 0 {
+			break
+		}
 	}
 
 	// Exception: if we're releasing immediate patch to broken version, still replace it
