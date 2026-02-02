@@ -73,7 +73,7 @@ func (c *BlockingConfig) NewLane() pubsub.Lane {
 type blockingLane struct {
 	Lane
 	size    int
-	ch      *safe.SafeChannel[pubsub.Event]
+	ch      *safe.Channel[pubsub.Event]
 	stopper concurrency.Stopper
 }
 

@@ -71,7 +71,7 @@ func (c *ConcurrentConfig) NewLane() pubsub.Lane {
 type concurrentLane struct {
 	Lane
 	size    int
-	ch      *safe.SafeChannel[pubsub.Event]
+	ch      *safe.Channel[pubsub.Event]
 	stopper concurrency.Stopper
 }
 

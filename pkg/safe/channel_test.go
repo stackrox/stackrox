@@ -306,6 +306,7 @@ func TestSafeChannel_ConcurrentWrites(t *testing.T) {
 		}(i)
 	}
 
+	// Reads are possible after we call Close
 	wg.Wait()
 	cancel()
 	<-ctx.Done()
@@ -403,7 +404,7 @@ func TestSafeChannel_WriteBlockedThenWaitableTriggered(t *testing.T) {
 func TestSafeChannel_NewSafeChannel_PanicsOnNilWaitable(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 
-	// Creating a SafeChannel with a nil waitable should panic
+	// Creating a Channel with a nil waitable should panic
 	assert.Panics(t, func() {
 		NewChannel[int](5, nil)
 	}, "NewChannel should panic when waitable is nil")

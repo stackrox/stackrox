@@ -5,29 +5,29 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-// SafeChannel provides a thread-safe channel with race-free shutdown semantics.
+// Channel provides a thread-safe channel with race-free shutdown semantics.
 // It encapsulates a channel along with synchronization primitives to ensure
 // safe writes and closure even during concurrent shutdown scenarios.
-type SafeChannel[T any] struct {
+type Channel[T any] struct {
 	mu       sync.RWMutex
 	ch       chan T
 	closed   bool
 	waitable concurrency.Waitable
 }
 
-// NewChannel creates a new SafeChannel with the specified buffer size.
+// NewChannel creates a new Channel with the specified buffer size.
 // The waitable parameter is used to coordinate shutdown - writes will fail
 // when the waitable is triggered.
 // If size is negative, it is treated as 0 (unbuffered channel).
 // Panics if waitable is nil.
-func NewChannel[T any](size int, waitable concurrency.Waitable) *SafeChannel[T] {
+func NewChannel[T any](size int, waitable concurrency.Waitable) *Channel[T] {
 	if waitable == nil {
 		panic("waitable must not be nil")
 	}
 	if size < 0 {
 		size = 0
 	}
-	return &SafeChannel[T]{
+	return &Channel[T]{
 		ch:       make(chan T, size),
 		waitable: waitable,
 	}
@@ -59,7 +59,7 @@ func NewChannel[T any](size int, waitable concurrency.Waitable) *SafeChannel[T] 
 //
 // The second select is needed because if we're blocked waiting to write to a full channel
 // and another caller triggers the waitable, we should immediately stop trying to write and exit.
-func (s *SafeChannel[T]) Write(item T) error {
+func (s *Channel[T]) Write(item T) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -97,7 +97,7 @@ func (s *SafeChannel[T]) Write(item T) error {
 // The double-select pattern prevents panics when writing to a closed channel:
 // See the Write function documentation for a detailed explanation of the race condition
 // this pattern prevents.
-func (s *SafeChannel[T]) TryWrite(item T) error {
+func (s *Channel[T]) TryWrite(item T) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -121,17 +121,17 @@ func (s *SafeChannel[T]) TryWrite(item T) error {
 
 // Chan returns a read-only view of the underlying channel.
 // This can be used in select statements or to read from the channel.
-func (s *SafeChannel[T]) Chan() <-chan T {
+func (s *Channel[T]) Chan() <-chan T {
 	return s.ch
 }
 
 // Len returns the number of items currently in the channel.
-func (s *SafeChannel[T]) Len() int {
+func (s *Channel[T]) Len() int {
 	return len(s.ch)
 }
 
 // Cap returns the capacity of the channel.
-func (s *SafeChannel[T]) Cap() int {
+func (s *Channel[T]) Cap() int {
 	return cap(s.ch)
 }
 
@@ -144,7 +144,7 @@ func (s *SafeChannel[T]) Cap() int {
 //  1. Signal the waitable
 //  2. Wait for the waitable
 //  3. Call Close()
-func (s *SafeChannel[T]) Close() {
+func (s *Channel[T]) Close() {
 	// Verify the waitable has been triggered to prevent potential deadlocks
 	select {
 	case <-s.waitable.Done():
