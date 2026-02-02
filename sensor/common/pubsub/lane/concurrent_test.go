@@ -191,7 +191,9 @@ func TestPublish(t *testing.T) {
 			return nil
 		}))
 		lane.Stop()
-		assert.Error(t, lane.Publish(&concurrentTestEvent{}))
+		err := lane.Publish(&concurrentTestEvent{})
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "publishing on stopped lane")
 	})
 	t.Run("multiple consumers receive same event", func(t *testing.T) {
 		lane := NewConcurrentLane(pubsub.DefaultLane).NewLane()

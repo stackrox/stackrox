@@ -19,7 +19,11 @@ type SafeChannel[T any] struct {
 // The waitable parameter is used to coordinate shutdown - writes will fail
 // when the waitable is triggered.
 // If size is negative, it is treated as 0 (unbuffered channel).
+// Panics if waitable is nil.
 func NewSafeChannel[T any](size int, waitable concurrency.Waitable) *SafeChannel[T] {
+	if waitable == nil {
+		panic("waitable must not be nil")
+	}
 	if size < 0 {
 		size = 0
 	}
@@ -101,12 +105,21 @@ func (s *SafeChannel[T]) Cap() int {
 // Close safely closes the underlying channel.
 // This should be called after the waitable has been triggered.
 // It is safe to call Close multiple times - subsequent calls are no-ops.
+// Panics if called before the waitable has been triggered.
 //
 // Proper shutdown sequence:
-//  1. Signal the waitable (if it is not signaled, this function will block forever)
-//  2. Call Close()
+//  1. Signal the waitable
+//  2. Wait for the waitable
+//  3. Call Close()
 func (s *SafeChannel[T]) Close() {
-	<-s.waitable.Done()
+	// Verify the waitable has been triggered to prevent potential deadlocks
+	select {
+	case <-s.waitable.Done():
+	default:
+		// Waitable not triggered - this violates the contract
+		panic("Close() called before waitable was triggered")
+	}
+
 	concurrency.WithLock(&s.mu, func() {
 		if !s.closed {
 			close(s.ch)

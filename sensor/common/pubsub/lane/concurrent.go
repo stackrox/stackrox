@@ -128,16 +128,18 @@ func (l *concurrentLane) handleEvent(event pubsub.Event) {
 	for _, c := range consumers {
 		errC := c.Consume(l.stopper.Client().Stopped(), event)
 		// Spawning go routine here to not block other consumers
-		go func() {
-			// This blocks until the consumer finishes the processing
-			// TODO: Consider adding a timout here
-			select {
-			case err := <-errC:
-				// TODO: consider adding a callback to inform of the error
-				log.Errorf("unable to handle event: %v", err)
-			case <-l.stopper.Flow().StopRequested():
-			}
-		}()
+		go l.handleConsumerError(errC)
+	}
+}
+
+func (l *concurrentLane) handleConsumerError(errC <-chan error) {
+	// This blocks until the consumer finishes the processing
+	// TODO: Consider adding a timout here
+	select {
+	case err := <-errC:
+		// TODO: consider adding a callback to inform of the error
+		log.Errorf("unable to handle event: %v", err)
+	case <-l.stopper.Flow().StopRequested():
 	}
 }
 
@@ -157,6 +159,7 @@ func (l *concurrentLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pu
 
 func (l *concurrentLane) Stop() {
 	l.stopper.Client().Stop()
+	<-l.stopper.Client().Stopped().Done()
 	l.ch.Close()
 	l.Lane.Stop()
 }

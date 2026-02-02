@@ -148,6 +148,7 @@ func (l *blockingLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pubs
 
 func (l *blockingLane) Stop() {
 	l.stopper.Client().Stop()
+	<-l.stopper.Client().Stopped().Done()
 	l.ch.Close()
 	l.Lane.Stop()
 }

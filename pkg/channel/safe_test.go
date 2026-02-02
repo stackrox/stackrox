@@ -444,3 +444,26 @@ func TestSafeChannel_WithPointerTypes(t *testing.T) {
 	assert.Same(t, event1, receivedEvent1)
 	assert.Same(t, event2, receivedEvent2)
 }
+
+func TestSafeChannel_NewSafeChannel_PanicsOnNilWaitable(t *testing.T) {
+	goleak.AssertNoGoroutineLeaks(t)
+
+	// Creating a SafeChannel with a nil waitable should panic
+	assert.Panics(t, func() {
+		NewSafeChannel[int](5, nil)
+	}, "NewSafeChannel should panic when waitable is nil")
+}
+
+func TestSafeChannel_Close_PanicsOnUntriggeredWaitable(t *testing.T) {
+	goleak.AssertNoGoroutineLeaks(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	ch := NewSafeChannel[int](5, ctx)
+
+	// Calling Close without triggering the waitable should panic
+	assert.Panics(t, func() {
+		ch.Close()
+	}, "Close should panic when waitable has not been triggered")
+}
