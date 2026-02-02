@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"sigs.k8s.io/yaml"
 )
@@ -23,6 +24,14 @@ func main() {
 
 	if *version == "" || *firstVersion == "" || *operatorImage == "" {
 		fmt.Fprintln(os.Stderr, "Error: --use-version, --first-version, and --operator-image are required")
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	// Validate related-images-mode
+	validModes := map[string]bool{"downstream": true, "omit": true, "konflux": true}
+	if !validModes[*relatedImagesMode] {
+		fmt.Fprintf(os.Stderr, "Error: --related-images-mode must be one of: downstream, omit, konflux (got: %s)\n", *relatedImagesMode)
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -83,8 +92,14 @@ func main() {
 }
 
 func echoReplacedVersion(doc map[string]interface{}, version, firstVersion, unreleased string) error {
-	metadata := doc["metadata"].(map[string]interface{})
-	name := metadata["name"].(string)
+	metadata, ok := doc["metadata"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("metadata is not a map[string]interface{}")
+	}
+	name, ok := metadata["name"].(string)
+	if !ok {
+		return fmt.Errorf("metadata.name is not a string")
+	}
 
 	rawName := ""
 	if name == "rhacs-operator.v0.0.1" {
@@ -93,21 +108,22 @@ func echoReplacedVersion(doc map[string]interface{}, version, firstVersion, unre
 		return fmt.Errorf("unexpected metadata.name format: %s", name)
 	}
 
-	spec := doc["spec"].(map[string]interface{})
+	spec, ok := doc["spec"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("spec is not a map[string]interface{}")
+	}
 	skips := make([]XyzVersion, 0)
 	if rawSkips, ok := spec["skips"].([]interface{}); ok {
 		for _, s := range rawSkips {
-			skipStr := s.(string)
-			skipVer := ""
+			skipStr, ok := s.(string)
+			if !ok {
+				return fmt.Errorf("skip entry is not a string")
+			}
 			if skipStr == rawName+".v0.0.1" {
 				continue
 			}
 			// Extract version from "rhacs-operator.vX.Y.Z"
-			parts := splitString(skipStr, ".")
-			if len(parts) >= 2 {
-				skipVer = parts[len(parts)-3] + "." + parts[len(parts)-2] + "." + parts[len(parts)-1]
-				skipVer = trimPrefix(skipVer, "v")
-			}
+			skipVer := strings.TrimPrefix(skipStr, rawName+".v")
 
 			v, err := ParseXyzVersion(skipVer)
 			if err != nil {
@@ -139,44 +155,10 @@ func splitComma(s string) []string {
 		return nil
 	}
 	parts := []string{}
-	for _, p := range splitString(s, ",") {
-		if trimmed := trimSpace(p); trimmed != "" {
+	for _, p := range strings.Split(s, ",") {
+		if trimmed := strings.TrimSpace(p); trimmed != "" {
 			parts = append(parts, trimmed)
 		}
 	}
 	return parts
-}
-
-func splitString(s, sep string) []string {
-	result := []string{}
-	current := ""
-	for _, char := range s {
-		if string(char) == sep {
-			result = append(result, current)
-			current = ""
-		} else {
-			current += string(char)
-		}
-	}
-	result = append(result, current)
-	return result
-}
-
-func trimSpace(s string) string {
-	start := 0
-	end := len(s)
-	for start < end && (s[start] == ' ' || s[start] == '\t' || s[start] == '\n') {
-		start++
-	}
-	for start < end && (s[end-1] == ' ' || s[end-1] == '\t' || s[end-1] == '\n') {
-		end--
-	}
-	return s[start:end]
-}
-
-func trimPrefix(s, prefix string) string {
-	if len(s) >= len(prefix) && s[:len(prefix)] == prefix {
-		return s[len(prefix):]
-	}
-	return s
 }
