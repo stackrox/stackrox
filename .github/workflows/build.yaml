@@ -28,7 +28,7 @@ jobs:
 
   # UI builds - one per branding
   pre-build-ui:
-    runs-on: ubuntu-latest
+    runs-on: stackrox-runners
     strategy:
       fail-fast: false
       matrix:
@@ -58,7 +58,7 @@ jobs:
 
   # CLI builds all platforms (shared across brandings)
   pre-build-cli:
-    runs-on: ubuntu-latest
+    runs-on: stackrox-runners
     container:
       image: quay.io/klape/apollo-ci-buildah:0.5.1
     steps:
@@ -82,7 +82,7 @@ jobs:
 
   # Go binaries - one per architecture
   pre-build-go-binaries:
-    runs-on: ubuntu-latest
+    runs-on: stackrox-runners
     strategy:
       fail-fast: false
       matrix:
@@ -118,7 +118,7 @@ jobs:
 
   # Docs (shared across all variants)
   pre-build-docs:
-    runs-on: ubuntu-latest
+    runs-on: stackrox-runners
     container:
       image: quay.io/klape/apollo-ci-buildah:0.5.1
     steps:
@@ -146,7 +146,7 @@ jobs:
 
   # Operator binary - one per architecture
   pre-build-operator:
-    runs-on: ubuntu-latest
+    runs-on: stackrox-runners
     strategy:
       fail-fast: false
       matrix:
@@ -197,7 +197,7 @@ jobs:
 
   # Main image builds - branding x arch matrix
   build-and-push-main:
-    runs-on: ubuntu-latest
+    runs-on: stackrox-runners
     strategy:
       fail-fast: false
       matrix:
@@ -346,7 +346,7 @@ jobs:
 
   # Operator image builds - branding x arch matrix
   build-and-push-operator:
-    runs-on: ubuntu-latest
+    runs-on: stackrox-runners
     strategy:
       fail-fast: false
       matrix:
@@ -417,7 +417,7 @@ jobs:
   # =============================================================================
 
   push-main-manifests:
-    runs-on: ubuntu-latest
+    runs-on: stackrox-runners
     strategy:
       fail-fast: false
       matrix:
@@ -470,7 +470,7 @@ jobs:
           done
 
   push-operator-manifests:
-    runs-on: ubuntu-latest
+    runs-on: stackrox-runners
     strategy:
       fail-fast: false
       matrix:
