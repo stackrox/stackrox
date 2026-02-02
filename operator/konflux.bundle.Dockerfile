@@ -1,7 +1,4 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:5dc6ba426ccbeb3954ead6b015f36b4a2d22320e5b356b074198d08422464ed2 AS builder
-
-# This installs both PyYAML and Python.
-RUN microdnf -y install python3.12-pyyaml
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.25@sha256:527782f4a0270f786192281f68d0374f4a21b3ab759643eee4bfcafb6f539468 AS builder
 
 COPY . /stackrox
 WORKDIR /stackrox/operator
@@ -56,11 +53,37 @@ ARG RELATED_IMAGE_CENTRAL_DB
 ENV RELATED_IMAGE_CENTRAL_DB=$RELATED_IMAGE_CENTRAL_DB
 RUN echo "Checking required RELATED_IMAGE_CENTRAL_DB"; [[ "${RELATED_IMAGE_CENTRAL_DB}" != "" ]]
 
-RUN ./bundle_helpers/prepare-bundle-manifests.sh \
+# Build csv-patcher and fix-spec-descriptors from source
+RUN cd /stackrox/operator/cmd/csv-patcher && go build -o /usr/local/bin/csv-patcher .
+RUN cd /stackrox/operator/cmd/fix-spec-descriptors && go build -o /usr/local/bin/fix-spec-descriptors .
+
+# Generate initial bundle
+RUN /stackrox/operator/bundle_helpers/generate-bundle.sh \
       --use-version="${OPERATOR_IMAGE_TAG}" \
       --first-version=4.0.0 \
+      --operator-image="${OPERATOR_IMAGE_REF}"
+
+# Patch the CSV with related images for Konflux
+RUN /usr/local/bin/csv-patcher \
+      --csv-file=build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
+      --operator-version="${OPERATOR_IMAGE_TAG}" \
       --operator-image="${OPERATOR_IMAGE_REF}" \
-      --related-images-mode=konflux
+      --main-image="${RELATED_IMAGE_MAIN}" \
+      --scanner-image="${RELATED_IMAGE_SCANNER}" \
+      --scanner-db-image="${RELATED_IMAGE_SCANNER_DB}" \
+      --scanner-slim-image="${RELATED_IMAGE_SCANNER_SLIM}" \
+      --scanner-db-slim-image="${RELATED_IMAGE_SCANNER_DB_SLIM}" \
+      --scanner-v4-image="${RELATED_IMAGE_SCANNER_V4}" \
+      --scanner-v4-db-image="${RELATED_IMAGE_SCANNER_V4_DB}" \
+      --collector-image="${RELATED_IMAGE_COLLECTOR}" \
+      --roxctl-image="${RELATED_IMAGE_ROXCTL}" \
+      --central-db-image="${RELATED_IMAGE_CENTRAL_DB}" \
+      --output-file=build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
+
+# Fix spec descriptors
+RUN /usr/local/bin/fix-spec-descriptors \
+      --csv-file=build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
+      --output-file=build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
 
 FROM scratch
 
