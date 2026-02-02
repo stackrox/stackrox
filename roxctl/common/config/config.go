@@ -12,6 +12,13 @@ import (
 	"go.yaml.in/yaml/v3"
 )
 
+const missingAuthCredsMessage = `
+No authentication credentials are available. Please provide authentication using one of the following methods:
+  - Use the --password flag or set the ROX_ADMIN_PASSWORD environment variable
+  - Use the --token-file flag and point to a file containing your API token
+  - Set the ROX_API_TOKEN environment variable with your API token
+  - Run "roxctl central login" to save credentials (requires writable home directory)`
+
 // Store provides the ability to read / write configurations for roxctl from / to a configuration file.
 //
 //go:generate mockgen-wrapper
@@ -164,7 +171,7 @@ func determineConfigDir() (string, error) {
 	}
 	path := filepath.Join(homeDir, ".roxctl")
 	if err := os.MkdirAll(path, 0700); err != nil {
-		return "", errors.Wrapf(err, "creating config directory %s", path)
+		return "", errox.NoCredentials.Newf("unable to access configuration directory %s: %v%s", path, err, missingAuthCredsMessage)
 	}
 	return path, nil
 }
@@ -173,7 +180,7 @@ func determineConfigDir() (string, error) {
 func ensureRoxctlConfigFilePathExists(configDir string) (string, error) {
 	configFilePath := filepath.Join(configDir, "roxctl-config.yaml")
 	if err := os.MkdirAll(configDir, 0700); err != nil {
-		return "", errors.Wrapf(err, "creating roxctl config file %s", configDir)
+		return "", errox.NoCredentials.Newf("unable to create configuration directory %s: %v%s", configDir, err, missingAuthCredsMessage)
 	}
 	return configFilePath, nil
 }
