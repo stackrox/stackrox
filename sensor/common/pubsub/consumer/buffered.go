@@ -1,17 +1,21 @@
 package consumer
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/channel"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	pubsubErrors "github.com/stackrox/rox/sensor/common/pubsub/errors"
+	"github.com/stackrox/rox/sensor/common/pubsub/metrics"
 )
 
 // bufferedEvent wraps an event with its error channel to pipe callback errors back to the caller
 type bufferedEvent struct {
-	event pubsub.Event
-	errC  chan error
+	event     pubsub.Event
+	errC      chan error
+	startTime time.Time
 }
 
 func WithBufferedConsumerSize(size int) pubsub.ConsumerOption {
@@ -27,14 +31,17 @@ func WithBufferedConsumerSize(size int) pubsub.ConsumerOption {
 	}
 }
 
-func NewBufferedConsumer(callback pubsub.EventCallback, opts ...pubsub.ConsumerOption) (pubsub.Consumer, error) {
+func NewBufferedConsumer(laneID pubsub.LaneID, topic pubsub.Topic, consumerID pubsub.ConsumerID, callback pubsub.EventCallback, opts ...pubsub.ConsumerOption) (pubsub.Consumer, error) {
 	if callback == nil {
 		return nil, errors.Wrap(pubsubErrors.UndefinedEventCallbackErr, "")
 	}
 	ret := &BufferedConsumer{
-		callback: callback,
-		stopper:  concurrency.NewStopper(),
-		size:     1000,
+		laneID:     laneID,
+		topic:      topic,
+		consumerID: consumerID,
+		callback:   callback,
+		stopper:    concurrency.NewStopper(),
+		size:       1000,
 	}
 	for _, opt := range opts {
 		opt(ret)
@@ -45,30 +52,41 @@ func NewBufferedConsumer(callback pubsub.EventCallback, opts ...pubsub.ConsumerO
 }
 
 type BufferedConsumer struct {
-	callback pubsub.EventCallback
-	size     int
-	stopper  concurrency.Stopper
-	buffer   *channel.SafeChannel[*bufferedEvent]
+	laneID     pubsub.LaneID
+	topic      pubsub.Topic
+	consumerID pubsub.ConsumerID
+	callback   pubsub.EventCallback
+	size       int
+	stopper    concurrency.Stopper
+	buffer     *channel.SafeChannel[*bufferedEvent]
 }
 
 func (c *BufferedConsumer) Consume(waitable concurrency.Waitable, event pubsub.Event) <-chan error {
 	errC := make(chan error, 1)
 	go func() {
+		start := time.Now()
+		operation := metrics.ConsumerError
+
 		// Priority 1: Check if already cancelled
 		select {
 		case <-waitable.Done():
 			close(errC)
+			metrics.ObserveProcessingDuration(c.laneID, c.topic, c.consumerID, time.Since(start), operation)
+			metrics.RecordConsumerOperation(c.laneID, c.topic, c.consumerID, operation)
 			return
 		case <-c.stopper.Flow().StopRequested():
 			close(errC)
+			metrics.ObserveProcessingDuration(c.laneID, c.topic, c.consumerID, time.Since(start), operation)
+			metrics.RecordConsumerOperation(c.laneID, c.topic, c.consumerID, operation)
 			return
 		default:
 		}
 
 		// Wrap event with its errC to pipe callback errors back to caller
 		wrappedEvent := &bufferedEvent{
-			event: event,
-			errC:  errC,
+			event:     event,
+			errC:      errC,
+			startTime: start,
 		}
 
 		// SafeChannel.TryWrite is non-blocking by design, so it's safe to call directly
@@ -76,6 +94,7 @@ func (c *BufferedConsumer) Consume(waitable concurrency.Waitable, event pubsub.E
 
 		// Priority 2: If write failed, send error and close. Otherwise keep errC open.
 		if writeErr != nil {
+			operation := metrics.ConsumerError
 			select {
 			case errC <- writeErr:
 				close(errC)
@@ -84,6 +103,8 @@ func (c *BufferedConsumer) Consume(waitable concurrency.Waitable, event pubsub.E
 			case <-c.stopper.Flow().StopRequested():
 				close(errC)
 			}
+			metrics.ObserveProcessingDuration(c.laneID, c.topic, c.consumerID, time.Since(wrappedEvent.startTime), operation)
+			metrics.RecordConsumerOperation(c.laneID, c.topic, c.consumerID, operation)
 		}
 		// If writeErr is nil, errC stays open and will be closed later when callback completes
 	}()
@@ -120,15 +141,24 @@ func (c *BufferedConsumer) run() {
 				close(callbackDone)
 			}()
 			// Wait for callback or stopper, allowing clean exit if callback blocks
+			operation := metrics.Processed
 			select {
 			case <-c.stopper.Flow().StopRequested():
 				// Consumer is stopping - close the errC without waiting for callback
+				operation = metrics.ConsumerError
 				close(wrappedEv.errC)
+				metrics.ObserveProcessingDuration(c.laneID, c.topic, c.consumerID, time.Since(wrappedEv.startTime), operation)
+				metrics.RecordConsumerOperation(c.laneID, c.topic, c.consumerID, operation)
 				return
 			case err := <-callbackDone:
 				// Callback completed - send result (nil or error) and close errC
+				if err != nil {
+					operation = metrics.ConsumerError
+				}
 				wrappedEv.errC <- err
 				close(wrappedEv.errC)
+				metrics.ObserveProcessingDuration(c.laneID, c.topic, c.consumerID, time.Since(wrappedEv.startTime), operation)
+				metrics.RecordConsumerOperation(c.laneID, c.topic, c.consumerID, operation)
 			}
 		}
 	}

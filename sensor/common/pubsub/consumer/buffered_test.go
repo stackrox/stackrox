@@ -19,7 +19,7 @@ import (
 func TestNewBufferedConsumer_NilCallback(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 
-	c, err := NewBufferedConsumer(nil)
+	c, err := NewBufferedConsumer(pubsub.DefaultLane, pubsub.DefaultTopic, pubsub.DefaultConsumer, nil)
 	assert.Error(t, err)
 	assert.Nil(t, c)
 }
@@ -31,7 +31,7 @@ func TestBufferedConsumer_ConsumeSuccess(t *testing.T) {
 		callbackCalled := false
 		eventData := "test-data"
 
-		c, err := NewBufferedConsumer(func(event pubsub.Event) error {
+		c, err := NewBufferedConsumer(pubsub.DefaultLane, pubsub.DefaultTopic, pubsub.DefaultConsumer, func(event pubsub.Event) error {
 			callbackCalled = true
 			te, ok := event.(*testEvent)
 			require.True(t, ok)
@@ -65,7 +65,7 @@ func TestBufferedConsumer_CallbackError(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		expectedErr := errors.New("callback error")
 
-		c, err := NewBufferedConsumer(func(event pubsub.Event) error {
+		c, err := NewBufferedConsumer(pubsub.DefaultLane, pubsub.DefaultTopic, pubsub.DefaultConsumer, func(event pubsub.Event) error {
 			return expectedErr
 		})
 		require.NoError(t, err)
@@ -95,6 +95,9 @@ func TestBufferedConsumer_BufferFull(t *testing.T) {
 		blockCallback := concurrency.NewSignal()
 
 		c, err := NewBufferedConsumer(
+			pubsub.DefaultLane,
+			pubsub.DefaultTopic,
+			pubsub.DefaultConsumer,
 			func(event pubsub.Event) error {
 				<-blockCallback.Done()
 				return nil
@@ -168,7 +171,7 @@ func TestBufferedConsumer_WaitableCancellation(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 
 	synctest.Test(t, func(t *testing.T) {
-		c, err := NewBufferedConsumer(func(event pubsub.Event) error {
+		c, err := NewBufferedConsumer(pubsub.DefaultLane, pubsub.DefaultTopic, pubsub.DefaultConsumer, func(event pubsub.Event) error {
 			return nil
 		})
 		require.NoError(t, err)
@@ -193,7 +196,7 @@ func TestBufferedConsumer_StopDuringConsume(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		blockCallback := make(chan struct{})
 
-		c, err := NewBufferedConsumer(func(event pubsub.Event) error {
+		c, err := NewBufferedConsumer(pubsub.DefaultLane, pubsub.DefaultTopic, pubsub.DefaultConsumer, func(event pubsub.Event) error {
 			<-blockCallback
 			return nil
 		})
@@ -223,7 +226,7 @@ func TestBufferedConsumer_ConcurrentConsume(t *testing.T) {
 		const numEvents = 10
 		var callbackCount atomic.Int32
 
-		c, err := NewBufferedConsumer(func(event pubsub.Event) error {
+		c, err := NewBufferedConsumer(pubsub.DefaultLane, pubsub.DefaultTopic, pubsub.DefaultConsumer, func(event pubsub.Event) error {
 			callbackCount.Add(1)
 			return nil
 		})
@@ -268,6 +271,9 @@ func TestBufferedConsumer_WithBufferedConsumerSize(t *testing.T) {
 
 	synctest.Test(t, func(t *testing.T) {
 		c, err := NewBufferedConsumer(
+			pubsub.DefaultLane,
+			pubsub.DefaultTopic,
+			pubsub.DefaultConsumer,
 			func(event pubsub.Event) error { return nil },
 			WithBufferedConsumerSize(5),
 		)
@@ -287,6 +293,9 @@ func TestBufferedConsumer_WithBufferedConsumerSize_Negative(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		// Negative size should be ignored
 		c, err := NewBufferedConsumer(
+			pubsub.DefaultLane,
+			pubsub.DefaultTopic,
+			pubsub.DefaultConsumer,
 			func(event pubsub.Event) error { return nil },
 			WithBufferedConsumerSize(-1),
 		)
@@ -303,7 +312,7 @@ func TestBufferedConsumer_StopIdempotent(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 
 	synctest.Test(t, func(t *testing.T) {
-		c, err := NewBufferedConsumer(func(event pubsub.Event) error {
+		c, err := NewBufferedConsumer(pubsub.DefaultLane, pubsub.DefaultTopic, pubsub.DefaultConsumer, func(event pubsub.Event) error {
 			return nil
 		})
 		require.NoError(t, err)
@@ -319,7 +328,7 @@ func TestBufferedConsumer_ConsumeAfterStop(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 
 	synctest.Test(t, func(t *testing.T) {
-		c, err := NewBufferedConsumer(func(event pubsub.Event) error {
+		c, err := NewBufferedConsumer(pubsub.DefaultLane, pubsub.DefaultTopic, pubsub.DefaultConsumer, func(event pubsub.Event) error {
 			return nil
 		})
 		require.NoError(t, err)
