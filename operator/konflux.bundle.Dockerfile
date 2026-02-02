@@ -53,37 +53,15 @@ ARG RELATED_IMAGE_CENTRAL_DB
 ENV RELATED_IMAGE_CENTRAL_DB=$RELATED_IMAGE_CENTRAL_DB
 RUN echo "Checking required RELATED_IMAGE_CENTRAL_DB"; [[ "${RELATED_IMAGE_CENTRAL_DB}" != "" ]]
 
-# Build csv-patcher and fix-spec-descriptors from source
+# Build csv-patcher from source (Go replacement for patch-csv.py)
 RUN cd /stackrox/operator/cmd/csv-patcher && go build -o /usr/local/bin/csv-patcher .
-RUN cd /stackrox/operator/cmd/fix-spec-descriptors && go build -o /usr/local/bin/fix-spec-descriptors .
 
-# Generate initial bundle
-RUN /stackrox/operator/bundle_helpers/generate-bundle.sh \
+# Prepare bundle using the csv-patcher Go tool
+RUN ./bundle_helpers/prepare-bundle-manifests.sh \
       --use-version="${OPERATOR_IMAGE_TAG}" \
       --first-version=4.0.0 \
-      --operator-image="${OPERATOR_IMAGE_REF}"
-
-# Patch the CSV with related images for Konflux
-RUN /usr/local/bin/csv-patcher \
-      --csv-file=build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
-      --operator-version="${OPERATOR_IMAGE_TAG}" \
       --operator-image="${OPERATOR_IMAGE_REF}" \
-      --main-image="${RELATED_IMAGE_MAIN}" \
-      --scanner-image="${RELATED_IMAGE_SCANNER}" \
-      --scanner-db-image="${RELATED_IMAGE_SCANNER_DB}" \
-      --scanner-slim-image="${RELATED_IMAGE_SCANNER_SLIM}" \
-      --scanner-db-slim-image="${RELATED_IMAGE_SCANNER_DB_SLIM}" \
-      --scanner-v4-image="${RELATED_IMAGE_SCANNER_V4}" \
-      --scanner-v4-db-image="${RELATED_IMAGE_SCANNER_V4_DB}" \
-      --collector-image="${RELATED_IMAGE_COLLECTOR}" \
-      --roxctl-image="${RELATED_IMAGE_ROXCTL}" \
-      --central-db-image="${RELATED_IMAGE_CENTRAL_DB}" \
-      --output-file=build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
-
-# Fix spec descriptors
-RUN /usr/local/bin/fix-spec-descriptors \
-      --csv-file=build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
-      --output-file=build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
+      --related-images-mode=konflux
 
 FROM scratch
 
