@@ -42,9 +42,7 @@ func TestReadConfig(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.title, func(t *testing.T) {
-			configPath = tc.centralConfigPath
-			dbConfigPath = tc.extDBConfigPath
-			conf, err := readConfigs()
+			conf, err := readConfigsImpl(tc.centralConfigPath, tc.extDBConfigPath)
 			if tc.isValid {
 				assert.NoError(t, err)
 				require.NoError(t, conf.validate())

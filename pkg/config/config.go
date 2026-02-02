@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var (
+const (
 	configPath   = "/etc/stackrox/central-config.yaml"
 	dbConfigPath = "/etc/ext-db/central-external-db.yaml"
 )
@@ -159,7 +159,11 @@ func readConfig[T yamlConfig](path string) (*T, error) {
 }
 
 func readConfigs() (*Config, error) {
-	centralConf, err := readConfig[centralConfig](configPath)
+	return readConfigsImpl(configPath, dbConfigPath)
+}
+
+func readConfigsImpl(centralConfigPath, dbConfigPath string) (*Config, error) {
+	centralConf, err := readConfig[centralConfig](centralConfigPath)
 	if err != nil {
 		return nil, err
 	}
