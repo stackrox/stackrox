@@ -128,7 +128,7 @@ func (s *GraphQLImageComponentV2TestSuite) TestImageComponents() {
 	}
 	inBaseImageLayerMap := map[string]bool{
 		s.componentIDMap[comp11]: false,
-		s.componentIDMap[comp12]: true,
+		s.componentIDMap[comp12]: false, // comp1 on image2 has no LayerIndex, so we can't determine origin
 		s.componentIDMap[comp21]: false,
 		s.componentIDMap[comp31]: false,
 		s.componentIDMap[comp32]: true,

@@ -53,7 +53,7 @@ func (d *dispatcher) Publish(event pubsub.Event) error {
 	return errors.Wrap(lane.Publish(event), "unable to publish event")
 }
 
-func (d *dispatcher) RegisterConsumer(topic pubsub.Topic, callback pubsub.EventCallback) error {
+func (d *dispatcher) RegisterConsumer(consumerID pubsub.ConsumerID, topic pubsub.Topic, callback pubsub.EventCallback) error {
 	if callback == nil {
 		return errors.New("cannot register a 'nil' callback")
 	}
@@ -61,14 +61,14 @@ func (d *dispatcher) RegisterConsumer(topic pubsub.Topic, callback pubsub.EventC
 	defer d.laneLock.RUnlock()
 	errList := errorhelpers.NewErrorList("register consumer")
 	for _, lane := range d.lanes {
-		if err := d.registerConsumerToLane(topic, lane, callback); err != nil {
+		if err := d.registerConsumerToLane(consumerID, topic, lane, callback); err != nil {
 			errList.AddErrors(err)
 		}
 	}
 	return errList.ToError()
 }
 
-func (d *dispatcher) RegisterConsumerToLane(topic pubsub.Topic, laneID pubsub.LaneID, callback pubsub.EventCallback) error {
+func (d *dispatcher) RegisterConsumerToLane(consumerID pubsub.ConsumerID, topic pubsub.Topic, laneID pubsub.LaneID, callback pubsub.EventCallback) error {
 	if callback == nil {
 		return errors.New("cannot register a 'nil' callback")
 	}
@@ -76,7 +76,7 @@ func (d *dispatcher) RegisterConsumerToLane(topic pubsub.Topic, laneID pubsub.La
 	if err != nil {
 		return errors.Errorf("lane with ID %q not found: %v", laneID, err)
 	}
-	return d.registerConsumerToLane(topic, lane, callback)
+	return d.registerConsumerToLane(consumerID, topic, lane, callback)
 }
 
 func (d *dispatcher) Stop() {
@@ -97,8 +97,8 @@ func (d *dispatcher) getLane(id pubsub.LaneID) (pubsub.Lane, error) {
 	return lane, nil
 }
 
-func (d *dispatcher) registerConsumerToLane(topic pubsub.Topic, lane pubsub.Lane, callback pubsub.EventCallback) error {
-	return errors.Wrap(lane.RegisterConsumer(topic, callback), "unable to register consumer")
+func (d *dispatcher) registerConsumerToLane(consumerID pubsub.ConsumerID, topic pubsub.Topic, lane pubsub.Lane, callback pubsub.EventCallback) error {
+	return errors.Wrap(lane.RegisterConsumer(consumerID, topic, callback), "unable to register consumer")
 }
 
 func (d *dispatcher) createLanes() error {

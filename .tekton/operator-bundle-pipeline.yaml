@@ -201,6 +201,15 @@ spec:
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-collector-rhel8"
 
+  - name: fact-image-build-repo
+    description: Repository where the (unreleased) fact image is pushed by its build pipeline.
+    type: string
+    default: "quay.io/rhacs-eng/release-fact"
+  - name: fact-image-catalog-repo
+    description: Repository within the Red Hat Container Catalog where the fact image is pushed to during the release.
+    type: string
+    default: "registry.redhat.io/advanced-cluster-security/rhacs-fact-rhel8"
+
   - name: roxctl-image-build-repo
     description: Repository where the (unreleased) roxctl image is pushed by its build pipeline.
     type: string
@@ -434,6 +443,14 @@ spec:
     # This timeout must be the same as the pipeline timeout in `collector-retag.yaml`
     timeout: 40m
 
+  - name: wait-for-fact-image
+    params:
+    - name: IMAGE
+      value: "$(params.fact-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
+    taskRef: *wait-for-image-ref
+    # This timeout must be the same as the pipeline timeout in `retag-fact.yaml`
+    timeout: 40m
+
   - name: wait-for-roxctl-image
     params:
     - name: IMAGE
@@ -479,6 +496,7 @@ spec:
       - RELATED_IMAGE_SCANNER_V4=$(params.scanner-v4-image-catalog-repo)@$(tasks.wait-for-scanner-v4-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_SCANNER_V4_DB=$(params.scanner-v4-db-image-catalog-repo)@$(tasks.wait-for-scanner-v4-db-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_COLLECTOR=$(params.collector-image-catalog-repo)@$(tasks.wait-for-collector-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_FACT=$(params.fact-image-catalog-repo)@$(tasks.wait-for-fact-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_ROXCTL=$(params.roxctl-image-catalog-repo)@$(tasks.wait-for-roxctl-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_CENTRAL_DB=$(params.central-db-image-catalog-repo)@$(tasks.wait-for-central-db-image.results.IMAGE_DIGEST)
     - name: SOURCE_ARTIFACT

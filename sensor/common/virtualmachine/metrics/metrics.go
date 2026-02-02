@@ -115,6 +115,17 @@ var VMDiscoveredData = prometheus.NewCounterVec(
 	[]string{"detected_os", "activation_status", "dnf_metadata_status"},
 )
 
+// IndexReportAcksReceived counts ACK/NACK responses received from Central for VM index reports.
+var IndexReportAcksReceived = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "virtual_machine_index_report_acks_received_total",
+		Help:      "Total number of ACK/NACK responses received from Central for VM index reports",
+	},
+	[]string{"action"}, // "ACK" or "NACK"
+)
+
 func init() {
 	prometheus.MustRegister(
 		IndexReportsReceived,
@@ -124,5 +135,6 @@ func init() {
 		IndexReportBlockingEnqueueDurationMilliseconds,
 		IndexReportEnqueueBlockedTotal,
 		VMDiscoveredData,
+		IndexReportAcksReceived,
 	)
 }

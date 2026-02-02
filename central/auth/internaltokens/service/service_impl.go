@@ -7,6 +7,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/pruning"
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
@@ -23,6 +24,10 @@ import (
 
 const (
 	claimNameFormat = "Generated claims for role %s expiring at %s"
+
+	// rbacObjectsGraceExpiration expands expired RBAC objects lifetime to allow
+	// requests complete even if the token expires during requests handling.
+	rbacObjectsGraceExpiration = 2 * time.Minute
 )
 
 var (
@@ -40,6 +45,8 @@ var (
 			sac.ResourceScopeKeys(resources.Cluster),
 		),
 	)
+
+	errBadExpirationValue = errox.InvalidArgs.New("bad expiration timestamp")
 )
 
 type serviceImpl struct {
@@ -71,13 +78,23 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	ctx context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
 ) (*v1.GenerateTokenForPermissionsAndScopeResponse, error) {
-	roleName, err := s.roleManager.createRole(ctx, req)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating and storing target role")
-	}
+	// Enable dynamic RBAC pruning.
+	pruning.EnableDynamicRBACPruning()
+
+	// Calculate expiry first so we can set it on the RBAC objects.
 	expiresAt, err := s.getExpiresAt(ctx, req)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting expiration time")
+	}
+	traits, err := generateTraitsWithExpiry(expiresAt.Add(rbacObjectsGraceExpiration))
+	if err != nil {
+		return nil, errBadExpirationValue.CausedBy(err)
+	}
+	// Create the role with the same expiry as the token, so pruning can clean
+	// it up.
+	roleName, err := s.roleManager.createRole(ctx, req, traits)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating and storing target role")
 	}
 	claimName := fmt.Sprintf(claimNameFormat, roleName, expiresAt.Format(time.RFC3339Nano))
 	roxClaims := tokens.RoxClaims{

@@ -37,12 +37,12 @@ var (
 	// As VM scanning is only one of potentially many other workloads, we set the default to 0.3 requests per second.
 	// For larger clusters, the rate limit could be increased to up to 3.0 requests per second only if the
 	// scanner-v4-matcher and the scanner-v4-db are able to handle the load!
-	VMIndexReportRateLimit = RegisterSetting("ROX_VM_INDEX_REPORT_RATE_LIMIT", WithDefault("0.3"))
+	VMIndexReportRateLimit = RegisterFloatSetting("ROX_VM_INDEX_REPORT_RATE_LIMIT", 0.3)
 
 	// VMIndexReportBucketCapacity defines the token bucket capacity for VM index report rate limiting.
 	// This is the maximum number of requests that can be accepted in a burst before rate limiting kicks in.
 	// For example, with capacity=15 and rate=3 req/sec, a sensor can send up to 15 requests instantly,
 	// then must wait for 5 seconds for tokens to refill at the rate limit.
-	// Default: 5 tokens
-	VMIndexReportBucketCapacity = RegisterIntegerSetting("ROX_VM_INDEX_REPORT_BUCKET_CAPACITY", 5).WithMinimum(1)
+	// Default: 200 tokens
+	VMIndexReportBucketCapacity = RegisterIntegerSetting("ROX_VM_INDEX_REPORT_BUCKET_CAPACITY", 200).WithMinimum(1)
 )

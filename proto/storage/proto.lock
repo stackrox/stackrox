@@ -6598,6 +6598,11 @@
                 "id": 15,
                 "name": "image_id_v2",
                 "type": "string"
+              },
+              {
+                "id": 16,
+                "name": "fix_available_timestamp",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           },
@@ -8404,12 +8409,8 @@
                 "integer": 4
               },
               {
-                "name": "WRITE",
-                "integer": 5
-              },
-              {
                 "name": "OPEN",
-                "integer": 6
+                "integer": 5
               }
             ]
           }
@@ -9490,6 +9491,11 @@
                 "id": 4,
                 "name": "created",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "max_layer_index",
+                "type": "int32"
               }
             ]
           }
@@ -9520,6 +9526,20 @@
     {
       "protopath": "image_component.proto",
       "def": {
+        "enums": [
+          {
+            "name": "LayerType",
+            "enum_fields": [
+              {
+                "name": "APPLICATION"
+              },
+              {
+                "name": "BASE_IMAGE",
+                "integer": 1
+              }
+            ]
+          }
+        ],
         "messages": [
           {
             "name": "ImageComponent",
@@ -9667,7 +9687,18 @@
               {
                 "id": 15,
                 "name": "from_base_image",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
+              },
+              {
+                "id": 16,
+                "name": "layer_type",
+                "type": "LayerType"
               }
             ]
           }
@@ -18589,6 +18620,10 @@
               {
                 "name": "DECLARATIVE_ORPHANED",
                 "integer": 3
+              },
+              {
+                "name": "EPHEMERAL",
+                "integer": 4
               }
             ]
           }
@@ -18611,8 +18646,18 @@
                 "id": 3,
                 "name": "origin",
                 "type": "Origin"
+              },
+              {
+                "id": 4,
+                "name": "expires_at",
+                "type": "google.protobuf.Timestamp"
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {

@@ -35,7 +35,7 @@ export default function consoleFetchAxiosAdapter(
         body: config.data,
         headers: updatedHeaders,
     })
-        .then(async (response) => {
+        .then(async (response: Response) => {
             const data = await response.text();
 
             // GraphQL request errors are JSON objects with an `errors` field an a HTTP status code of 200, so we
@@ -57,16 +57,26 @@ export default function consoleFetchAxiosAdapter(
                 statusText: response.statusText,
             };
         })
-        .catch(async (error) => {
-            const { status, statusText, headers, config } = error.response;
-            const text = await error.response.text();
-            const convertedResponse = { status, statusText, headers, config, data: text };
-            // Preserve original error context by passing the original error object and stack trace
-            const axiosError: AxiosError & { originalError?: Error; backendMessage?: string } =
-                new AxiosError(error.message, status, config, undefined, convertedResponse);
-            axiosError.stack = error.stack;
-            // Attach the original error for further debugging if needed
-            axiosError.originalError = error;
-            throw axiosError;
+        .catch(async (error: unknown) => {
+            if (
+                typeof error === 'object' &&
+                error !== null &&
+                'response' in error &&
+                error.response instanceof Response
+            ) {
+                // If the error contains response information for an HTTP 4xx or 5xx error, we can extract the message from the response body
+                const { status, statusText } = error.response;
+                const text = await error.response.text();
+                const headers = new AxiosHeaders();
+                const axiosResponse = { status, statusText, headers, config, data: text };
+                // Preserve original error context by passing the original error object and response information
+                throw new AxiosError(text, `${status}`, { headers }, undefined, axiosResponse);
+            }
+
+            if (error instanceof Error) {
+                throw error;
+            }
+
+            throw new Error(String(error));
         });
 }

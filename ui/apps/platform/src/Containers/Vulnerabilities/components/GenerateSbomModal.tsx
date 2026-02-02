@@ -16,6 +16,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useAnalytics, { IMAGE_SBOM_GENERATED } from 'hooks/useAnalytics';
 import useRestMutation from 'hooks/useRestMutation';
 import { generateAndSaveSbom } from 'services/ImageSbomService';
+import type { GenerateSbomImageParams } from 'services/ImageSbomService';
 
 export function getSbomGenerationStatusMessage({
     isScannerV4Enabled,
@@ -37,19 +38,19 @@ export function getSbomGenerationStatusMessage({
 
 export type GenerateSbomModalProps = {
     onClose: () => void;
-    imageName: string;
+    image: GenerateSbomImageParams;
 };
 
 function GenerateSbomModal(props: GenerateSbomModalProps) {
     const { analyticsTrack } = useAnalytics();
-    const { onClose, imageName } = props;
+    const { onClose, image } = props;
     const { mutate, isLoading, isSuccess, isError, error } = useRestMutation(generateAndSaveSbom, {
         onSuccess: () => analyticsTrack(IMAGE_SBOM_GENERATED),
         onError: (err) => Raven.captureException(err),
     });
 
     function onClickGenerateSbom() {
-        mutate({ imageName });
+        mutate({ image });
     }
 
     return (
@@ -89,8 +90,14 @@ function GenerateSbomModal(props: GenerateSbomModalProps) {
                 <DescriptionList isHorizontal>
                     <DescriptionListGroup>
                         <DescriptionListTerm>Selected image:</DescriptionListTerm>
-                        <DescriptionListDescription>{imageName}</DescriptionListDescription>
+                        <DescriptionListDescription>{image.name}</DescriptionListDescription>
                     </DescriptionListGroup>
+                    {image.digest && (
+                        <DescriptionListGroup>
+                            <DescriptionListTerm>Image digest:</DescriptionListTerm>
+                            <DescriptionListDescription>{image.digest}</DescriptionListDescription>
+                        </DescriptionListGroup>
+                    )}
                 </DescriptionList>
                 {isSuccess && (
                     <Alert

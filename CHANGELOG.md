@@ -13,12 +13,28 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
+### Removed Features
+
+### Deprecated Features
+
+### Technical Changes
+
+## [4.10.0]
+
+
+
+### Added Features
+
 - ROX-31443: Automatic HTTP to HTTPS redirection is now enabled for Central OpenShift routes (passthrough and reencrypt).
 - ROX-29582: A `kubectl get` on a Central CR now shows the following additional columns: Version, AdminPassword, Message, Available, Progressing.
 - ROX-32061: The `spec.configAsCode` field in the Central CR now supports `resources`, `nodeSelector`, `tolerations`, and `hostAliases` settings for the config-controller deployment.
 - ROX-31738: Added the `spec.customize.deploymentDefaults` field to Central and SecuredCluster CRDs, for configuring global default scheduling constraints for Deployments. This was previously possible on a per-component basis.
 - ROX-30094, ROX-30610, ROX-30740: Add new namespaces to Layered Products default config regex.
 - ROX-31960, ROX-32449: include and exclude filters for custom metrics.
+- ROX-30641: Added a new policy criteria "Days Since CVE Fix Was Available".
+- ROX-32630: The OpenShift console plugin integrates the ACS vulnerability management view into OpenShift console. It is enabled by default for operator-deployed secured clusters.
+- Tech preview: operator-based installation available for community StackRox build. More information in [a separate README file](operator/install/README.md).
+- ROX-30585, ROX-30196 (Tech Preview): Added file activity monitoring, including new policy criteria for deployment or node file activity.
 
 ### Removed Features
 - ROX-31727: `/v1/cve/requests` APIs (deprecated in 4.3.0) for managing vulnerability exceptions have been removed.
@@ -27,6 +43,12 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-31531: Removed deprecated `/v1/imagecves/suppress` and `/v1/imagecves/unsuppress` APIs
 
 ### Deprecated Features
+
+- ROX-32851: The `roxctl netpol generate`, `roxctl netpol connectivity map`, and `roxctl netpol connectivity diff` commands are deprecated because they rely on the unmaintained NP-Guard library and will be removed in a future release.
+- ROX-32867: The Compliance V1 feature has been deprecated, and it is planned to be removed in a future release. This includes:
+  - The Compliance Dashboard
+  - The Compliance V1 API endpoints
+  - The Compliance Configuration Management Board
 
 ### Technical Changes
 - ROX-30769: Update Node.js requirement for ui folder to 22.13.0

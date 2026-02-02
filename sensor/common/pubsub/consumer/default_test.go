@@ -23,13 +23,13 @@ func TestDefaultConsumer(t *testing.T) {
 func (s *defaultConsumerSuite) TestConsume() {
 	defer goleak.AssertNoGoroutineLeaks(s.T())
 	s.Run("should error with nil callback", func() {
-		c, err := NewDefaultConsumer(nil)
+		c, err := NewDefaultConsumer(pubsub.DefaultLane, pubsub.DefaultTopic, pubsub.DefaultConsumer, nil)
 		s.Assert().Error(err)
 		s.Assert().Nil(c)
 	})
 	s.Run("should unblock if waitable is done", func() {
 		callbackDone := concurrency.NewSignal()
-		c, err := NewDefaultConsumer(func(_ pubsub.Event) error {
+		c, err := NewDefaultConsumer(pubsub.DefaultLane, pubsub.DefaultTopic, pubsub.DefaultConsumer, func(_ pubsub.Event) error {
 			defer callbackDone.Signal()
 			return errors.New("some error")
 		})
@@ -47,7 +47,7 @@ func (s *defaultConsumerSuite) TestConsume() {
 	s.Run("consume event error", func() {
 		data := "some data"
 		consumerSignal := concurrency.NewSignal()
-		c, err := NewDefaultConsumer(func(event pubsub.Event) error {
+		c, err := NewDefaultConsumer(pubsub.DefaultLane, pubsub.DefaultTopic, pubsub.DefaultConsumer, func(event pubsub.Event) error {
 			defer consumerSignal.Signal()
 			eventImpl, ok := event.(*testEvent)
 			s.Require().True(ok)
@@ -82,7 +82,7 @@ func (s *defaultConsumerSuite) TestConsume() {
 	s.Run("consume event no error", func() {
 		data := "some data"
 		consumerSignal := concurrency.NewSignal()
-		c, err := NewDefaultConsumer(func(event pubsub.Event) error {
+		c, err := NewDefaultConsumer(pubsub.DefaultLane, pubsub.DefaultTopic, pubsub.DefaultConsumer, func(event pubsub.Event) error {
 			defer consumerSignal.Signal()
 			eventImpl, ok := event.(*testEvent)
 			s.Require().True(ok)

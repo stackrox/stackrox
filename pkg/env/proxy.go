@@ -1,9 +1,6 @@
 package env
 
 var (
-	// CentralProxyToken is the ROX API token used for authenticating proxy requests to Central.
-	CentralProxyToken = RegisterSetting("ROX_CENTRAL_PROXY_TOKEN")
-
 	// CentralProxyCertPath is the path to the TLS certificate for the proxy server.
 	CentralProxyCertPath = RegisterSetting("ROX_CENTRAL_PROXY_CERT_PATH",
 		WithDefault("/run/secrets/stackrox.io/proxy-tls/tls.crt"))
