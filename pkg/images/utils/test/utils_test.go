@@ -601,3 +601,42 @@ func TestFillScanStatsV2(t *testing.T) {
 		})
 	}
 }
+
+func TestStripDatasourceNoClone(t *testing.T) {
+	original := &storage.ImageScan{
+		Components: []*storage.EmbeddedImageScanComponent{
+			{
+				Name: "comp1",
+				Vulns: []*storage.EmbeddedVulnerability{
+					{
+						Cve:        "cve-1",
+						Datasource: "test-ds-1",
+					},
+					{
+						Cve:        "cve-2",
+						Datasource: "test-ds-2",
+					},
+				},
+			},
+			{
+				Name: "comp2",
+				Vulns: []*storage.EmbeddedVulnerability{
+					{
+						Cve:        "cve-3",
+						Datasource: "test-ds-3",
+					},
+					{
+						Cve:        "cve-4",
+						Datasource: "test-ds-4",
+					},
+				},
+			},
+		},
+	}
+
+	utils.StripDatasourceNoClone(original)
+	assert.Equal(t, "", original.Components[0].Vulns[0].Datasource)
+	assert.Equal(t, "", original.Components[0].Vulns[1].Datasource)
+	assert.Equal(t, "", original.Components[1].Vulns[0].Datasource)
+	assert.Equal(t, "", original.Components[1].Vulns[1].Datasource)
+}
