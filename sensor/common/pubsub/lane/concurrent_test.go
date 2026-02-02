@@ -297,8 +297,6 @@ func TestStop(t *testing.T) {
 
 		_, ok = <-laneImpl.ch.Chan()
 		assert.False(t, ok)
-		_, ok = <-laneImpl.errC.Chan()
-		assert.False(t, ok)
 	})
 	t.Run("stop should stop all consumers", func(t *testing.T) {
 		lane := NewConcurrentLane(pubsub.DefaultLane).NewLane()

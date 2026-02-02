@@ -58,26 +58,21 @@ func (c *ConcurrentConfig) NewLane() pubsub.Lane {
 			newConsumerFn: c.newConsumer,
 			consumers:     make(map[pubsub.Topic][]pubsub.Consumer),
 		},
-		stopper:               concurrency.NewStopper(),
-		errHandlingStopSignal: concurrency.NewSignal(),
+		stopper: concurrency.NewStopper(),
 	}
 	for _, opt := range c.opts {
 		opt(lane)
 	}
 	lane.ch = channel.NewSafeChannel[pubsub.Event](lane.size, lane.stopper.LowLevel().GetStopRequestSignal())
-	lane.errC = channel.NewSafeChannel[error](0, lane.stopper.LowLevel().GetStopRequestSignal())
 	go lane.run()
-	go lane.runHandleErr()
 	return lane
 }
 
 type concurrentLane struct {
 	Lane
-	size                  int
-	ch                    *channel.SafeChannel[pubsub.Event]
-	errC                  *channel.SafeChannel[error]
-	stopper               concurrency.Stopper
-	errHandlingStopSignal concurrency.Signal
+	size    int
+	ch      *channel.SafeChannel[pubsub.Event]
+	stopper concurrency.Stopper
 }
 
 func (l *concurrentLane) Publish(event pubsub.Event) error {
@@ -105,22 +100,6 @@ func (l *concurrentLane) run() {
 	}
 }
 
-func (l *concurrentLane) runHandleErr() {
-	defer l.errHandlingStopSignal.Signal()
-	for {
-		select {
-		case <-l.stopper.Flow().StopRequested():
-			return
-		case err, ok := <-l.errC.Chan():
-			if !ok {
-				return
-			}
-			// TODO: consider adding a callback to inform of the error
-			log.Errorf("unable to handle event: %v", err)
-		}
-	}
-}
-
 func (l *concurrentLane) getConsumersByTopic(topic pubsub.Topic) ([]pubsub.Consumer, error) {
 	l.consumerLock.RLock()
 	defer l.consumerLock.RUnlock()
@@ -135,7 +114,7 @@ func (l *concurrentLane) handleEvent(event pubsub.Event) {
 	defer metrics.SetQueueSize(l.id, l.ch.Len())
 	consumers, err := l.getConsumersByTopic(event.Topic())
 	if err != nil {
-		l.writeToErrChannel(err)
+		log.Errorf("unable to handle event: %v", err)
 		metrics.RecordConsumerOperation(l.id, event.Topic(), pubsub.NoConsumers, metrics.NoConsumers)
 		return
 	}
@@ -147,21 +126,11 @@ func (l *concurrentLane) handleEvent(event pubsub.Event) {
 			// TODO: Consider adding a timout here
 			select {
 			case err := <-errC:
-				// write to channel does nothing if err == nil
-				l.writeToErrChannel(err)
+				// TODO: consider adding a callback to inform of the error
+				log.Errorf("unable to handle event: %v", err)
 			case <-l.stopper.Flow().StopRequested():
 			}
 		}()
-	}
-}
-
-func (l *concurrentLane) writeToErrChannel(err error) {
-	if err == nil {
-		return
-	}
-	if err := l.errC.Write(err); err != nil {
-		// This is ok. We should only fail to write to the channel if sensor is stopping
-		log.Warn("unable to write consumer error to error channel")
 	}
 }
 
@@ -182,7 +151,5 @@ func (l *concurrentLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pu
 func (l *concurrentLane) Stop() {
 	l.stopper.Client().Stop()
 	l.ch.Close()
-	l.errC.Close()
-	<-l.errHandlingStopSignal.Done()
 	l.Lane.Stop()
 }
