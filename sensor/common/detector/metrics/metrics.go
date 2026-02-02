@@ -225,8 +225,9 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "scan_call_duration_milliseconds",
-		Help:      "Time taken to call scan in milliseconds",
-		Buckets:   prometheus.ExponentialBuckets(4, 2, 16),
+		Help: "Total time spent calling Scan in milliseconds, including retries and backoff waits. " +
+			"Applies to both local and remote scans (whichever is currently used in Sensor).",
+		Buckets: prometheus.ExponentialBuckets(4, 2, 16),
 	})
 
 	scanAndSetCall = prometheus.NewCounterVec(prometheus.CounterOpts{

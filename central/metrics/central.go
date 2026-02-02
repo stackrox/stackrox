@@ -16,7 +16,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "index_op_duration",
-		Help:      "Time taken to perform an index operation in milliseconds",
+		Help:      "Time spent performing an index operation in milliseconds",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
@@ -25,7 +25,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "cache_op_duration",
-		Help:      "Time taken to perform a cache operation in milliseconds",
+		Help:      "Time spent performing a cache operation in milliseconds",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
@@ -43,7 +43,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "postgres_op_duration",
-		Help:      "Time taken to perform a postgres operation in milliseconds",
+		Help:      "Time spent performing a postgres operation in milliseconds",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
@@ -52,7 +52,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "postgres_acquire_conn_op_duration",
-		Help:      "Time taken to acquire a Postgres connection in milliseconds",
+		Help:      "Time spent acquiring a Postgres connection in milliseconds",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
@@ -61,7 +61,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "graphql_op_duration",
-		Help:      "Time taken to run a single graphql sub resolver/sub query in milliseconds",
+		Help:      "Time spent running a single graphql sub resolver/sub query in milliseconds",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Resolver", "Operation"})
@@ -70,7 +70,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "graphql_query_duration",
-		Help:      "Time taken to run a single graphql query in milliseconds",
+		Help:      "Time spent running a single graphql query in milliseconds",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Query"})
@@ -79,7 +79,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "sensor_event_duration",
-		Help:      "Time taken to perform a sensor event operation in milliseconds",
+		Help:      "Time spent performing a sensor event operation in milliseconds",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 13),
 	}, []string{"Type", "Action"})
@@ -131,7 +131,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "risk_processing_duration",
-		Help:      "Histogram of how long risk processing takes in milliseconds",
+		Help:      "Time in milliseconds spent recomputing and persisting risk scores in Central's risk manager for deployments, nodes, images, and their components",
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Risk_Reprocessor"})
 
