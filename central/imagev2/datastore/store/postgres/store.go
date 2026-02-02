@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/hashstructure"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/baseimage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
@@ -525,7 +525,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.ImageV2) error {
 		// Re-verify base images when base image detection is enabled:
 		// 1. Legacy images may lack base image info if the feature was enabled after they were scanned.
 		// 2. User-provided base images may change over time.
-		scanUpdated = scanUpdated || baseImagesUpdated(oldImage.GetBaseImageInfo(), obj.GetBaseImageInfo())
+		scanUpdated = scanUpdated || baseimage.BaseImagesUpdated(oldImage.GetBaseImageInfo(), obj.GetBaseImageInfo())
 	}
 
 	splitParts, err := common.Split(obj, scanUpdated)
@@ -650,27 +650,6 @@ func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *s
 	}
 	common.Merge(imageParts)
 	return nil
-}
-
-func baseImagesUpdated(prev, cur []*storage.BaseImageInfo) bool {
-	if len(prev) != len(cur) {
-		return true
-	}
-
-	existing := make(map[string]int)
-	for _, p := range prev {
-		existing[p.GetBaseImageDigest()]++
-	}
-
-	for _, c := range cur {
-		digest := c.GetBaseImageDigest()
-		if count, ok := existing[digest]; !ok || count == 0 {
-			return true // Found a current digest or more occurrences than before
-		}
-		existing[digest]--
-	}
-
-	return false
 }
 
 func (s *storeImpl) getFullImage(ctx context.Context, imageID string) (*storage.ImageV2, bool, error) {
