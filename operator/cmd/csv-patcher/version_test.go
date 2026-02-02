@@ -171,3 +171,60 @@ func TestXyzVersion_Compare(t *testing.T) {
 		})
 	}
 }
+
+func TestGetPreviousYStream(t *testing.T) {
+	tests := []struct {
+		name    string
+		version string
+		want    string
+		wantErr bool
+	}{
+		{
+			name:    "minor version decrement",
+			version: "3.74.0",
+			want:    "3.73.0",
+		},
+		{
+			name:    "minor version decrement with patch",
+			version: "3.74.3",
+			want:    "3.73.0",
+		},
+		{
+			name:    "major version 4 to 3.74.0",
+			version: "4.0.0",
+			want:    "3.74.0",
+		},
+		{
+			name:    "major version 4 minor 1",
+			version: "4.1.0",
+			want:    "4.0.0",
+		},
+		{
+			name:    "trunk builds",
+			version: "1.0.0",
+			want:    "0.0.0",
+		},
+		{
+			name:    "with nightly suffix",
+			version: "3.74.x-nightly-20230224",
+			want:    "3.73.0",
+		},
+		{
+			name:    "unknown major version",
+			version: "99.0.0",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetPreviousYStream(tt.version)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

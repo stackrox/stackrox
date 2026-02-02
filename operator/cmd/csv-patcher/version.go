@@ -64,3 +64,29 @@ func (v XyzVersion) Compare(other XyzVersion) int {
 	}
 	return 0
 }
+
+// GetPreviousYStream returns the previous Y-Stream version
+// Y-Stream versions have patch number = 0 (e.g., 3.73.0, 3.74.0, 4.0.0)
+// This implements the logic from scripts/get-previous-y-stream.sh
+func GetPreviousYStream(versionStr string) (string, error) {
+	v, err := ParseXyzVersion(versionStr)
+	if err != nil {
+		return "", err
+	}
+
+	if v.Y > 0 {
+		// If minor version > 0, previous Y-Stream is one minor less
+		return fmt.Sprintf("%d.%d.0", v.X, v.Y-1), nil
+	}
+
+	// For major version bumps, maintain hardcoded mapping
+	switch v.X {
+	case 4:
+		return "3.74.0", nil
+	case 1:
+		// 0.0.0 was never released, but used for trunk builds
+		return "0.0.0", nil
+	default:
+		return "", fmt.Errorf("don't know the previous Y-Stream for %d.%d", v.X, v.Y)
+	}
+}
