@@ -225,6 +225,24 @@ kuttl: $(KUTTL) ## Download kuttl.
 .PHONY: yq
 yq: $(YQ) ## Download yq.
 
+# CSV patching Go tools
+CSV_PATCHER := $(LOCALBIN)/csv-patcher
+FIX_SPEC_DESCRIPTORS := $(LOCALBIN)/fix-spec-descriptors
+
+$(CSV_PATCHER): cmd/csv-patcher/*.go
+	@echo "+ $(notdir $@)"
+	$(SILENT)cd cmd/csv-patcher && go build -o $@ .
+
+$(FIX_SPEC_DESCRIPTORS): cmd/fix-spec-descriptors/*.go
+	@echo "+ $(notdir $@)"
+	$(SILENT)cd cmd/fix-spec-descriptors && go build -o $@ .
+
+.PHONY: csv-patcher
+csv-patcher: $(CSV_PATCHER) ## Build csv-patcher tool
+
+.PHONY: fix-spec-descriptors
+fix-spec-descriptors: $(FIX_SPEC_DESCRIPTORS) ## Build fix-spec-descriptors tool
+
 ##@ Development
 
 
