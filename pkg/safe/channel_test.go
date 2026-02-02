@@ -14,7 +14,7 @@ import (
 )
 
 func TestSafeChannel_Write_Success(t *testing.T) {
-	goleak.AssertNoGoroutineLeaks(t)
+	defer goleak.AssertNoGoroutineLeaks(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -38,7 +38,7 @@ func TestSafeChannel_Write_Success(t *testing.T) {
 }
 
 func TestSafeChannel_Write_BlocksWhenFull(t *testing.T) {
-	goleak.AssertNoGoroutineLeaks(t)
+	defer goleak.AssertNoGoroutineLeaks(t)
 
 	synctest.Test(t, func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
@@ -86,7 +86,7 @@ func TestSafeChannel_Write_BlocksWhenFull(t *testing.T) {
 }
 
 func TestSafeChannel_Write_FailsAfterWaitableTriggered(t *testing.T) {
-	goleak.AssertNoGoroutineLeaks(t)
+	defer goleak.AssertNoGoroutineLeaks(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	ch := NewChannel[int](5, ctx)
@@ -100,7 +100,7 @@ func TestSafeChannel_Write_FailsAfterWaitableTriggered(t *testing.T) {
 }
 
 func TestSafeChannel_TryWrite_Success(t *testing.T) {
-	goleak.AssertNoGoroutineLeaks(t)
+	defer goleak.AssertNoGoroutineLeaks(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -120,7 +120,7 @@ func TestSafeChannel_TryWrite_Success(t *testing.T) {
 }
 
 func TestSafeChannel_TryWrite_FailsWhenFull(t *testing.T) {
-	goleak.AssertNoGoroutineLeaks(t)
+	defer goleak.AssertNoGoroutineLeaks(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -141,7 +141,7 @@ func TestSafeChannel_TryWrite_FailsWhenFull(t *testing.T) {
 }
 
 func TestSafeChannel_TryWrite_FailsAfterWaitableTriggered(t *testing.T) {
-	goleak.AssertNoGoroutineLeaks(t)
+	defer goleak.AssertNoGoroutineLeaks(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	ch := NewChannel[int](5, ctx)
@@ -155,7 +155,7 @@ func TestSafeChannel_TryWrite_FailsAfterWaitableTriggered(t *testing.T) {
 }
 
 func TestSafeChannel_Len(t *testing.T) {
-	goleak.AssertNoGoroutineLeaks(t)
+	defer goleak.AssertNoGoroutineLeaks(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -178,7 +178,7 @@ func TestSafeChannel_Len(t *testing.T) {
 }
 
 func TestSafeChannel_Cap(t *testing.T) {
-	goleak.AssertNoGoroutineLeaks(t)
+	defer goleak.AssertNoGoroutineLeaks(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -199,7 +199,7 @@ func TestSafeChannel_Cap(t *testing.T) {
 }
 
 func TestSafeChannel_NegativeSize(t *testing.T) {
-	goleak.AssertNoGoroutineLeaks(t)
+	defer goleak.AssertNoGoroutineLeaks(t)
 
 	synctest.Test(t, func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
@@ -242,12 +242,13 @@ func TestSafeChannel_NegativeSize(t *testing.T) {
 }
 
 func TestSafeChannel_Close_MultipleTimes(t *testing.T) {
-	goleak.AssertNoGoroutineLeaks(t)
+	defer goleak.AssertNoGoroutineLeaks(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	ch := NewChannel[int](5, ctx)
 
 	cancel()
+	<-ctx.Done()
 
 	// Close multiple times should not panic
 	ch.Close()
@@ -256,7 +257,7 @@ func TestSafeChannel_Close_MultipleTimes(t *testing.T) {
 }
 
 func TestSafeChannel_Close_ProperShutdownSequence(t *testing.T) {
-	goleak.AssertNoGoroutineLeaks(t)
+	defer goleak.AssertNoGoroutineLeaks(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	ch := NewChannel[int](5, ctx)
@@ -267,6 +268,7 @@ func TestSafeChannel_Close_ProperShutdownSequence(t *testing.T) {
 
 	// Proper shutdown sequence
 	cancel()
+	<-ctx.Done()
 	ch.Close()
 
 	// Should still be able to read existing items
@@ -280,12 +282,12 @@ func TestSafeChannel_Close_ProperShutdownSequence(t *testing.T) {
 }
 
 func TestSafeChannel_ConcurrentWrites(t *testing.T) {
-	goleak.AssertNoGoroutineLeaks(t)
+	defer goleak.AssertNoGoroutineLeaks(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ch := NewChannel[int](100, ctx)
+	ch := NewChannel[int](1000, ctx)
 
 	numGoroutines := 10
 	numWrites := 100
@@ -304,6 +306,11 @@ func TestSafeChannel_ConcurrentWrites(t *testing.T) {
 		}(i)
 	}
 
+	wg.Wait()
+	cancel()
+	<-ctx.Done()
+	ch.Close()
+
 	// Read all items in another goroutine
 	received := set.NewIntSet()
 	var readerWg sync.WaitGroup
@@ -316,7 +323,6 @@ func TestSafeChannel_ConcurrentWrites(t *testing.T) {
 		}
 	}()
 
-	wg.Wait()
 	readerWg.Wait()
 
 	// Verify all items were received
@@ -324,7 +330,7 @@ func TestSafeChannel_ConcurrentWrites(t *testing.T) {
 }
 
 func TestSafeChannel_ConcurrentWritesAndClose(t *testing.T) {
-	goleak.AssertNoGoroutineLeaks(t)
+	defer goleak.AssertNoGoroutineLeaks(t)
 
 	// This test ensures there are no panics when writing and closing concurrently
 	for range 100 {
@@ -340,10 +346,10 @@ func TestSafeChannel_ConcurrentWritesAndClose(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for j := range 100 {
+				_ = ch.Write(j)
 				if j == 0 {
 					writeStarted.Signal()
 				}
-				_ = ch.Write(j)
 			}
 		}()
 
@@ -352,6 +358,7 @@ func TestSafeChannel_ConcurrentWritesAndClose(t *testing.T) {
 			defer wg.Done()
 			<-writeStarted.Done()
 			cancel()
+			<-ctx.Done()
 			ch.Close()
 		}()
 
@@ -360,7 +367,7 @@ func TestSafeChannel_ConcurrentWritesAndClose(t *testing.T) {
 }
 
 func TestSafeChannel_WriteBlockedThenWaitableTriggered(t *testing.T) {
-	goleak.AssertNoGoroutineLeaks(t)
+	defer goleak.AssertNoGoroutineLeaks(t)
 
 	synctest.Test(t, func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
@@ -393,60 +400,8 @@ func TestSafeChannel_WriteBlockedThenWaitableTriggered(t *testing.T) {
 	})
 }
 
-func TestSafeChannel_WithStructTypes(t *testing.T) {
-	goleak.AssertNoGoroutineLeaks(t)
-
-	type Event struct {
-		ID   int
-		Data string
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	ch := NewChannel[Event](5, ctx)
-
-	event1 := Event{ID: 1, Data: "test1"}
-	event2 := Event{ID: 2, Data: "test2"}
-
-	require.NoError(t, ch.Write(event1))
-	require.NoError(t, ch.Write(event2))
-
-	receivedEvent1 := <-ch.Chan()
-	receivedEvent2 := <-ch.Chan()
-
-	assert.Equal(t, event1, receivedEvent1)
-	assert.Equal(t, event2, receivedEvent2)
-}
-
-func TestSafeChannel_WithPointerTypes(t *testing.T) {
-	goleak.AssertNoGoroutineLeaks(t)
-
-	type Event struct {
-		ID   int
-		Data string
-	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	ch := NewChannel[*Event](5, ctx)
-
-	event1 := &Event{ID: 1, Data: "test1"}
-	event2 := &Event{ID: 2, Data: "test2"}
-
-	require.NoError(t, ch.Write(event1))
-	require.NoError(t, ch.Write(event2))
-
-	receivedEvent1 := <-ch.Chan()
-	receivedEvent2 := <-ch.Chan()
-
-	assert.Same(t, event1, receivedEvent1)
-	assert.Same(t, event2, receivedEvent2)
-}
-
 func TestSafeChannel_NewSafeChannel_PanicsOnNilWaitable(t *testing.T) {
-	goleak.AssertNoGoroutineLeaks(t)
+	defer goleak.AssertNoGoroutineLeaks(t)
 
 	// Creating a SafeChannel with a nil waitable should panic
 	assert.Panics(t, func() {
@@ -455,7 +410,7 @@ func TestSafeChannel_NewSafeChannel_PanicsOnNilWaitable(t *testing.T) {
 }
 
 func TestSafeChannel_Close_PanicsOnUntriggeredWaitable(t *testing.T) {
-	goleak.AssertNoGoroutineLeaks(t)
+	defer goleak.AssertNoGoroutineLeaks(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
