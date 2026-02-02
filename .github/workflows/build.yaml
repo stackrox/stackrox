@@ -115,6 +115,9 @@ jobs:
       - name: Checkout submodules
         run: git submodule update --init
 
+      - name: Sync Go modules
+        run: go mod tidy
+
       - name: Build swagger docs
         run: make swagger-docs
 
@@ -138,6 +141,9 @@ jobs:
 
       - name: Checkout submodules
         run: git submodule update --init
+
+      - name: Sync Go modules
+        run: go mod tidy
 
       - name: Build Operator binary
         env:
