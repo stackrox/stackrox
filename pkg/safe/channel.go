@@ -18,14 +18,13 @@ type Channel[T any] struct {
 // NewChannel creates a new Channel with the specified buffer size.
 // The waitable parameter is used to coordinate shutdown - writes will fail
 // when the waitable is triggered.
-// If size is negative, it is treated as 0 (unbuffered channel).
-// Panics if waitable is nil.
+// Panics if waitable is nil or size is negative.
 func NewChannel[T any](size int, waitable concurrency.Waitable) *Channel[T] {
 	if waitable == nil {
 		panic("waitable must not be nil")
 	}
 	if size < 0 {
-		size = 0
+		panic("size must not be negative")
 	}
 	return &Channel[T]{
 		ch:       make(chan T, size),
