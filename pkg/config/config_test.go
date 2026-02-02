@@ -26,6 +26,7 @@ maintenance:
     enabled: false
     bucketFillFraction: .5
     freeFractionThreshold: 0.75`
+
 	testCases := []struct {
 		title             string
 		centralConfigPath string
@@ -33,7 +34,7 @@ maintenance:
 		extDBConfigPath   string
 		extDBConfig       string
 		compactionEnabled bool
-		isValid           bool
+		expectedError     string
 	}{
 		{
 			title:         "valid config",
@@ -45,7 +46,6 @@ centralDB:
     port=5432
     user=fakeuser`,
 			compactionEnabled: false,
-			isValid:           true,
 		},
 		{
 			title:         "malformed config",
@@ -56,7 +56,7 @@ centralDB:
     host=fakehost
     port=5432
     user=fakeuser`,
-			isValid: false,
+			expectedError: "cannot unmarshal string into Go struct",
 		},
 	}
 	for _, tc := range testCases {
@@ -66,13 +66,13 @@ centralDB:
 			writeFile(t, dir+"/external-db.yaml", tc.extDBConfig)
 
 			conf, err := readConfigsImpl(dir+"/central.yaml", dir+"/external-db.yaml")
-			if tc.isValid {
+			if tc.expectedError == "" {
 				assert.NoError(t, err)
 				assert.NoError(t, conf.validate())
 				assert.Equal(t, *conf.Maintenance.Compaction.Enabled, tc.compactionEnabled)
 				assert.Contains(t, conf.CentralDB.Source, "fake")
 			} else {
-				assert.Error(t, err)
+				assert.ErrorContains(t, err, tc.expectedError)
 			}
 		})
 	}
