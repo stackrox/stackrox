@@ -151,7 +151,7 @@ $ make docker-build docker-push
 # Build and push bundle image
 $ make bundle-build docker-push-bundle
 ```
-_Note: Bundle helpers depend on Python <=3.13. By default, the build process will use the default Python version installed on the build host. You can override the python version if needed via the optional `PYTHON` env var, e.g. `PYTHON=python3.10 make bundle-build`_
+_Note: Bundle helpers are implemented in Go and built automatically as needed. See [docs/csv-patching.md](docs/csv-patching.md) for details on the CSV patching tools._
 
 
 Build and push everything as **one-liner**
