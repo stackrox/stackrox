@@ -90,3 +90,71 @@ func GetPreviousYStream(versionStr string) (string, error) {
 		return "", fmt.Errorf("don't know the previous Y-Stream for %d.%d", v.X, v.Y)
 	}
 }
+
+// CalculateReplacedVersion determines which version this release replaces
+// This is complex logic that handles Y-Stream vs patch releases, version skips, and unreleased versions
+func CalculateReplacedVersion(current, first, previousYStream string, skips []XyzVersion, unreleased string) (*XyzVersion, error) {
+	currentXyz, err := ParseXyzVersion(current)
+	if err != nil {
+		return nil, err
+	}
+
+	firstXyz, err := ParseXyzVersion(first)
+	if err != nil {
+		return nil, err
+	}
+
+	previousXyz, err := ParseXyzVersion(previousYStream)
+	if err != nil {
+		return nil, err
+	}
+
+	// First version or earlier gets no replace
+	if currentXyz.Compare(firstXyz) <= 0 {
+		return nil, nil
+	}
+
+	// Determine initial replace candidate
+	var initialReplace XyzVersion
+	if currentXyz.Z == 0 {
+		// New minor release replaces previous minor (e.g., 4.2.0 replaces 4.1.0)
+		initialReplace = previousXyz
+	} else {
+		// Patch replaces previous patch (e.g., 4.2.2 replaces 4.2.1)
+		initialReplace = XyzVersion{X: currentXyz.X, Y: currentXyz.Y, Z: currentXyz.Z - 1}
+	}
+
+	// If initial replace is unreleased, try previous one
+	if unreleased != "" && initialReplace.String() == unreleased {
+		prev, err := GetPreviousYStream(initialReplace.String())
+		if err != nil {
+			return nil, err
+		}
+		initialReplace, err = ParseXyzVersion(prev)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	currentReplace := initialReplace
+
+	// Skip over broken versions in the skips list
+	skipMap := make(map[string]bool)
+	for _, skip := range skips {
+		skipMap[skip.String()] = true
+	}
+
+	for skipMap[currentReplace.String()] {
+		// Try next patch
+		currentReplace = XyzVersion{X: currentReplace.X, Y: currentReplace.Y, Z: currentReplace.Z + 1}
+	}
+
+	// Exception: if we're releasing immediate patch to broken version, still replace it
+	// E.g., 4.1.0 is broken and in skips, 4.1.1 still replaces 4.1.0
+	// This works because 4.1.1 will have skipRange allowing upgrade from 4.0.0
+	if currentReplace.Compare(currentXyz) >= 0 {
+		currentReplace = initialReplace
+	}
+
+	return &currentReplace, nil
+}

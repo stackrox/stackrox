@@ -228,3 +228,120 @@ func TestGetPreviousYStream(t *testing.T) {
 		})
 	}
 }
+
+func TestCalculateReplacedVersion(t *testing.T) {
+	tests := []struct {
+		name       string
+		current    string
+		first      string
+		previous   string
+		skips      []string
+		unreleased string
+		want       string
+		wantNil    bool
+	}{
+		{
+			name:     "downstream trunk builds get no replace",
+			current:  "1.0.0",
+			first:    "4.0.0",
+			previous: "0.0.0",
+			wantNil:  true,
+		},
+		{
+			name:     "first release gets no replace",
+			current:  "4.0.0",
+			first:    "4.0.0",
+			previous: "3.74.0",
+			wantNil:  true,
+		},
+		{
+			name:     "patch follows normal release",
+			current:  "4.0.1",
+			first:    "4.0.0",
+			previous: "3.74.0",
+			want:     "4.0.0",
+		},
+		{
+			name:     "Y-Stream release replaces previous Y-Stream",
+			current:  "4.2.0",
+			first:    "4.0.0",
+			previous: "4.1.0",
+			want:     "4.1.0",
+		},
+		{
+			name:     "normal patch replaces previous patch",
+			current:  "4.1.3",
+			first:    "4.0.0",
+			previous: "4.0.0",
+			want:     "4.1.2",
+		},
+		{
+			name:     "first patch replaces its Y-Stream",
+			current:  "4.1.1",
+			first:    "4.0.0",
+			previous: "4.0.0",
+			want:     "4.1.0",
+		},
+		{
+			name:     "skipped immediate preceding patch still used",
+			current:  "4.1.1",
+			first:    "4.0.0",
+			previous: "4.0.0",
+			skips:    []string{"4.1.0"},
+			want:     "4.1.0",
+		},
+		{
+			name:     "skipped immediate preceding minor patch still used",
+			current:  "4.1.3",
+			first:    "4.0.0",
+			previous: "4.0.0",
+			skips:    []string{"4.1.2"},
+			want:     "4.1.2",
+		},
+		{
+			name:     "skipped previous Y-Stream targets next patch",
+			current:  "4.2.0",
+			first:    "4.0.0",
+			previous: "4.1.0",
+			skips:    []string{"4.1.0"},
+			want:     "4.1.1",
+		},
+		{
+			name:     "multiple skips iterate to find non-skipped",
+			current:  "4.3.0",
+			first:    "4.0.0",
+			previous: "4.2.0",
+			skips:    []string{"4.1.0", "4.2.0", "4.2.1", "4.2.2", "4.4.0"},
+			want:     "4.2.3",
+		},
+		{
+			name:       "unreleased version fallback",
+			current:    "4.2.0",
+			first:      "4.0.0",
+			previous:   "4.1.0",
+			unreleased: "4.1.0",
+			want:       "4.0.0",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			skipVersions := make([]XyzVersion, 0)
+			for _, s := range tt.skips {
+				v, err := ParseXyzVersion(s)
+				require.NoError(t, err)
+				skipVersions = append(skipVersions, v)
+			}
+
+			got, err := CalculateReplacedVersion(tt.current, tt.first, tt.previous, skipVersions, tt.unreleased)
+			require.NoError(t, err)
+
+			if tt.wantNil {
+				assert.Nil(t, got)
+			} else {
+				require.NotNil(t, got)
+				assert.Equal(t, tt.want, got.String())
+			}
+		})
+	}
+}
