@@ -8,6 +8,12 @@ import (
 	pubsubErrors "github.com/stackrox/rox/sensor/common/pubsub/errors"
 )
 
+// bufferedEvent wraps an event with its error channel to pipe callback errors back to the caller
+type bufferedEvent struct {
+	event pubsub.Event
+	errC  chan error
+}
+
 func WithBufferedConsumerSize(size int) pubsub.ConsumerOption {
 	return func(consumer pubsub.Consumer) {
 		impl, ok := consumer.(*BufferedConsumer)
@@ -33,7 +39,7 @@ func NewBufferedConsumer(callback pubsub.EventCallback, opts ...pubsub.ConsumerO
 	for _, opt := range opts {
 		opt(ret)
 	}
-	ret.buffer = channel.NewSafeChannel[pubsub.Event](ret.size, ret.stopper.LowLevel().GetStopRequestSignal())
+	ret.buffer = channel.NewSafeChannel[*bufferedEvent](ret.size, ret.stopper.LowLevel().GetStopRequestSignal())
 	go ret.run()
 	return ret, nil
 }
@@ -42,27 +48,44 @@ type BufferedConsumer struct {
 	callback pubsub.EventCallback
 	size     int
 	stopper  concurrency.Stopper
-	buffer   *channel.SafeChannel[pubsub.Event]
+	buffer   *channel.SafeChannel[*bufferedEvent]
 }
 
 func (c *BufferedConsumer) Consume(waitable concurrency.Waitable, event pubsub.Event) <-chan error {
 	errC := make(chan error, 1)
 	go func() {
-		defer close(errC)
 		// Priority 1: Check if already cancelled
 		select {
 		case <-waitable.Done():
+			close(errC)
 			return
 		case <-c.stopper.Flow().StopRequested():
+			close(errC)
 			return
 		default:
 		}
-		// Priority 2: Try to write, respecting cancellation during the write
-		select {
-		case errC <- c.buffer.TryWrite(event):
-		case <-waitable.Done():
-		case <-c.stopper.Flow().StopRequested():
+
+		// Wrap event with its errC to pipe callback errors back to caller
+		wrappedEvent := &bufferedEvent{
+			event: event,
+			errC:  errC,
 		}
+
+		// SafeChannel.TryWrite is non-blocking by design, so it's safe to call directly
+		writeErr := c.buffer.TryWrite(wrappedEvent)
+
+		// Priority 2: If write failed, send error and close. Otherwise keep errC open.
+		if writeErr != nil {
+			select {
+			case errC <- writeErr:
+				close(errC)
+			case <-waitable.Done():
+				close(errC)
+			case <-c.stopper.Flow().StopRequested():
+				close(errC)
+			}
+		}
+		// If writeErr is nil, errC stays open and will be closed later when callback completes
 	}()
 	return errC
 }
@@ -86,23 +109,26 @@ func (c *BufferedConsumer) run() {
 		select {
 		case <-c.stopper.Flow().StopRequested():
 			return
-		case ev, ok := <-c.buffer.Chan():
+		case wrappedEv, ok := <-c.buffer.Chan():
 			if !ok {
 				return
 			}
 			// Execute callback in separate goroutine to prevent blocking the consumer
 			callbackDone := make(chan error, 1)
 			go func() {
-				callbackDone <- c.callback(ev)
+				callbackDone <- c.callback(wrappedEv.event)
+				close(callbackDone)
 			}()
 			// Wait for callback or stopper, allowing clean exit if callback blocks
 			select {
 			case <-c.stopper.Flow().StopRequested():
+				// Consumer is stopping - close the errC without waiting for callback
+				close(wrappedEv.errC)
 				return
 			case err := <-callbackDone:
-				if err != nil {
-					// TODO: Pipe error to errC Created in Consume
-				}
+				// Callback completed - send result (nil or error) and close errC
+				wrappedEv.errC <- err
+				close(wrappedEv.errC)
 			}
 		}
 	}
