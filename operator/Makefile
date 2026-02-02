@@ -305,10 +305,16 @@ test-upgrade: kuttl bundle-post-process ## Run OLM-based operator upgrade tests.
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" $(KUTTL) test --config kuttl-test.yaml --artifacts-dir build/kuttl-test-artifacts-upgrade $(KUTTL_TEST_RUN_ARGS) tests/upgrade
 
 .PHONY: test-bundle-helpers
+ifeq ($(CSV_PATCHER_IMPL),go)
+test-bundle-helpers: ## Run unit tests against CSV patcher tools.
+	cd cmd/csv-patcher && go test -v ./...
+	cd cmd/fix-spec-descriptors && go test -v ./...
+else
 test-bundle-helpers: ## Run Python unit tests against helper scripts.
 	set -euo pipefail ;\
 	$(ACTIVATE_PYTHON) ;\
 	pytest -v bundle_helpers
+endif
 
 .PHONY: stackrox-image-pull-secret
 stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on Quay.io. Used by Helm chart.
