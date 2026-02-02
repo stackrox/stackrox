@@ -2,12 +2,12 @@ package channel
 
 import (
 	"context"
-	"sync"
 	"testing"
 	"testing/synctest"
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

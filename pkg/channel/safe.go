@@ -9,7 +9,7 @@ import (
 // It encapsulates a channel along with synchronization primitives to ensure
 // safe writes and closure even during concurrent shutdown scenarios.
 type SafeChannel[T any] struct {
-	mu       sync.Mutex
+	mu       sync.RWMutex
 	ch       chan T
 	closed   bool
 	waitable concurrency.Waitable
@@ -34,8 +34,8 @@ func NewSafeChannel[T any](size int, waitable concurrency.Waitable) *SafeChannel
 //
 // Returns ErrWaitableTriggered if the waitable is triggered before or during the write.
 func (s *SafeChannel[T]) Write(item T) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	// First select will exit early if waitable is already triggered
 	select {
@@ -61,8 +61,8 @@ func (s *SafeChannel[T]) Write(item T) error {
 //   - ErrWaitableTriggered if the waitable is triggered before or during the write
 //   - ErrChannelFull if the channel is full and cannot accept the item
 func (s *SafeChannel[T]) TryWrite(item T) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	// First select will exit early if waitable is already triggered
 	select {
@@ -103,8 +103,8 @@ func (s *SafeChannel[T]) Cap() int {
 // It is safe to call Close multiple times - subsequent calls are no-ops.
 //
 // Proper shutdown sequence:
-//  1. Signal the waitable
-//  3. Call Close()
+//  1. Signal the waitable (if it is not signaled, this function will block forever)
+//  2. Call Close()
 func (s *SafeChannel[T]) Close() {
 	<-s.waitable.Done()
 	concurrency.WithLock(&s.mu, func() {

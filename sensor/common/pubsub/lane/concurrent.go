@@ -122,8 +122,8 @@ func (l *concurrentLane) runHandleErr() {
 }
 
 func (l *concurrentLane) getConsumersByTopic(topic pubsub.Topic) ([]pubsub.Consumer, error) {
-	l.consumerLock.Lock()
-	defer l.consumerLock.Unlock()
+	l.consumerLock.RLock()
+	defer l.consumerLock.RUnlock()
 	consumers, ok := l.consumers[topic]
 	if !ok {
 		return nil, errors.Wrap(pubsubErrors.NewConsumersNotFoundForTopicErr(topic, l.id), "unable to handle event")
