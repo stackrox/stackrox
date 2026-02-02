@@ -37,6 +37,7 @@ jobs:
         labels: |
           ci-all-qa-tests
           dependencies
+          konflux-build
         team-reviewers: scanner
         draft: false
     - name: Enable Pull Request Automerge
