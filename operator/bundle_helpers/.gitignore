@@ -1,5 +1,0 @@
-/__pycache__/
-
-# Remnants of the old way we pulled Python dependencies in the operator-bundle build.
-requirements-build.in
-pip_find_builddeps.py

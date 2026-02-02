@@ -151,8 +151,6 @@ $ make docker-build docker-push
 # Build and push bundle image
 $ make bundle-build docker-push-bundle
 ```
-_Note: Bundle helpers are implemented in Go and built automatically as needed. See [docs/csv-patching.md](docs/csv-patching.md) for details on the CSV patching tools._
-
 
 Build and push everything as **one-liner**
 
