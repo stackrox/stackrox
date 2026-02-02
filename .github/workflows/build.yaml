@@ -166,11 +166,20 @@ jobs:
       - name: Sync Go modules
         run: go mod tidy
 
+      - name: Generate protos (host architecture)
+        run: |
+          # Proto generation must run with host architecture
+          make -C operator/ generate manifests
+
       - name: Build Operator binary
         env:
           GOARCH: ${{ matrix.arch }}
+          GOOS: linux
           CGO_ENABLED: "0"
-        run: make -C operator/ build
+        run: |
+          # Build only the binary, not the proto generation
+          cd operator
+          go build -o bin/manager ./cmd/main.go
 
       - name: Bundle operator build
         run: tar -cvzf operator-build-${{ matrix.arch }}.tgz operator/bin
