@@ -163,7 +163,7 @@ func (client *roxctlClientImpl) Do(req *http.Request) (*http.Response, error) {
 	if _, ok := err.(*url.Error); ok {
 		err = errors.Unwrap(err)
 	}
-	return resp, errors.Wrap(err, "error when doing http request")
+	return resp, EnhanceConnectionError(errors.Wrap(err, "error when doing http request"))
 }
 
 // NewReq creates a new http.Request which will have all authentication metadata injected

@@ -1,10 +1,10 @@
-name: Update collector version
+name: Update fact version
 on:
   workflow_dispatch:
   schedule:
     - cron: 0 5 * * 1
 jobs:
-  update-collector:
+  update-fact:
     if:  ${{ github.repository_owner == 'stackrox' }}
     runs-on: ubuntu-latest
     steps:
@@ -12,28 +12,28 @@ jobs:
       with:
         ref: master # this is our target branch
         fetch-depth: 0 # we need to fetch all branches
-    - name: Checkout collector repo
+    - name: Checkout fact repo
       uses: actions/checkout@v6
       with:
-        repository: stackrox/collector
-        path: deps/collector
+        repository: stackrox/fact
+        path: deps/fact
         fetch-depth: 0 # we need to fetch tags
     - name: Update version
-      run: make -sC deps/collector tag | tee COLLECTOR_VERSION
+      run: make -sC deps/fact tag | tee FACT_VERSION
     - name: Create Pull Request
       id: cpr
       uses: peter-evans/create-pull-request@v8
       with:
         token: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
-        commit-message: Update COLLECTOR_VERSION
+        commit-message: Update FACT_VERSION
         committer: '${{ secrets.RHACS_BOT_GITHUB_USERNAME }} <${{ secrets.RHACS_BOT_GITHUB_EMAIL }}>'
         author: '${{ secrets.RHACS_BOT_GITHUB_USERNAME }} <${{ secrets.RHACS_BOT_GITHUB_EMAIL }}>'
-        branch: update_collector_version
+        branch: update_fact_version
         signoff: false
         delete-branch: true
-        title: 'chore(collector): Update COLLECTOR_VERSION'
+        title: 'chore(fact): Update FACT_VERSION'
         body: |
-          Daily update of COLLECTOR_VERSION to latest master version
+          Daily update of FACT_VERSION to latest master version
         labels: |
           ci-all-qa-tests
           dependencies
