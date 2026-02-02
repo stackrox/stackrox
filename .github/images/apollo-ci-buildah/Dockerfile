@@ -8,12 +8,10 @@ RUN dnf install -y buildah && \
 
 # Configure buildah storage with all required paths
 RUN mkdir -p /etc/containers /var/lib/containers /run/containers && \
-    cat > /etc/containers/storage.conf << 'EOF'
-[storage]
-driver = "vfs"
-runroot = "/run/containers/storage"
-graphroot = "/var/lib/containers/storage"
-EOF
+    echo '[storage]' > /etc/containers/storage.conf && \
+    echo 'driver = "vfs"' >> /etc/containers/storage.conf && \
+    echo 'runroot = "/run/containers/storage"' >> /etc/containers/storage.conf && \
+    echo 'graphroot = "/var/lib/containers/storage"' >> /etc/containers/storage.conf
 
 # Mark GitHub Actions workspace as safe for git
 RUN git config --global --add safe.directory '*'
