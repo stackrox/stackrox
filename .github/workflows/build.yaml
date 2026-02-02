@@ -246,6 +246,9 @@ jobs:
           mkdir -p image/rhel/THIRD_PARTY_NOTICES
           echo "PoC build - license notices not generated" > image/rhel/THIRD_PARTY_NOTICES/README.txt
 
+          # Copy roxctl to image/roxctl for roxctl image build
+          cp bin/linux_amd64/roxctl image/roxctl/roxctl-linux
+
       - name: Build main image with buildah
         env:
           GOARCH: amd64
