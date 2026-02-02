@@ -43,5 +43,5 @@ type Configuration struct {
 }
 
 func (cfg *Configuration) isEnabled() bool {
-	return cfg != nil && len(cfg.metrics) >= 0 && cfg.period > 0
+	return cfg != nil && len(cfg.metrics) > 0 && cfg.period > 0
 }
