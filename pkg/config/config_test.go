@@ -18,7 +18,7 @@ func TestDefaultingReadConfig(t *testing.T) {
 	assert.Equal(t, defaultDBSource, conf.CentralDB.Source)
 }
 
-func TestReadConfig(t *testing.T) {
+func TestValidReadConfig(t *testing.T) {
 	const centralConfig = `
 maintenance:
   safeMode: false
@@ -27,55 +27,49 @@ maintenance:
     bucketFillFraction: .5
     freeFractionThreshold: 0.75`
 
-	testCases := []struct {
-		title             string
-		centralConfigPath string
-		centralConfig     string
-		extDBConfigPath   string
-		extDBConfig       string
-		compactionEnabled bool
-		expectedError     string
-	}{
-		{
-			title:         "valid config",
-			centralConfig: centralConfig,
-			extDBConfig: `
+	const extDBConfig = `
 centralDB:
   source: >
     host=fakehost
     port=5432
-    user=fakeuser`,
-			compactionEnabled: false,
-		},
-		{
-			title:         "malformed config",
-			centralConfig: centralConfig,
-			extDBConfig: `
+    user=fakeuser`
+
+	conf, err := readConfigsT(t, centralConfig, extDBConfig)
+
+	assert.NoError(t, err)
+	assert.NoError(t, conf.validate())
+	assert.False(t, *conf.Maintenance.Compaction.Enabled)
+	assert.Contains(t, conf.CentralDB.Source, "fake")
+}
+
+func TestInvalidReadConfig(t *testing.T) {
+	const centralConfig = `
+maintenance:
+  safeMode: false
+  compaction:
+    enabled: false
+    bucketFillFraction: .5
+    freeFractionThreshold: 0.75`
+
+	const extDBConfig = `
 centralDB:
   source
     host=fakehost
     port=5432
-    user=fakeuser`,
-			expectedError: "cannot unmarshal string into Go struct",
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.title, func(t *testing.T) {
-			dir := t.TempDir()
-			writeFile(t, dir+"/central.yaml", tc.centralConfig)
-			writeFile(t, dir+"/external-db.yaml", tc.extDBConfig)
+    user=fakeuser`
 
-			conf, err := readConfigsImpl(dir+"/central.yaml", dir+"/external-db.yaml")
-			if tc.expectedError == "" {
-				assert.NoError(t, err)
-				assert.NoError(t, conf.validate())
-				assert.Equal(t, *conf.Maintenance.Compaction.Enabled, tc.compactionEnabled)
-				assert.Contains(t, conf.CentralDB.Source, "fake")
-			} else {
-				assert.ErrorContains(t, err, tc.expectedError)
-			}
-		})
-	}
+	conf, err := readConfigsT(t, centralConfig, extDBConfig)
+
+	assert.ErrorContains(t, err, "cannot unmarshal string into Go struct")
+	assert.Nil(t, conf)
+}
+
+func readConfigsT(t *testing.T, centralConfig, extDBConfig string) (*Config, error) {
+	dir := t.TempDir()
+	writeFile(t, dir+"/central.yaml", centralConfig)
+	writeFile(t, dir+"/external-db.yaml", extDBConfig)
+
+	return readConfigsImpl(dir+"/central.yaml", dir+"/external-db.yaml")
 }
 
 func writeFile(t *testing.T, filename, contents string) {
