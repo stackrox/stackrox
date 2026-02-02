@@ -10,7 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v6
       with:
-        ref: main # this is our target branch
+        ref: master # this is our target branch
         fetch-depth: 0 # we need to fetch all branches
     - name: Checkout fact repo
       uses: actions/checkout@v6
