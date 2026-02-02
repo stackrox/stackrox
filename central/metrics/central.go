@@ -88,7 +88,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "sensor_event_queue",
-		Help:      "Counts enqueue and dequeue operations on Central's sensor event deduping queues",
+		Help:      "Number of enqueue and dequeue operations on Central's event deduping queues for messages arriving from Sensor",
 	}, []string{"Operation", "Type"})
 
 	resourceProcessedCounterVec = prometheus.NewCounterVec(prometheus.CounterOpts{
