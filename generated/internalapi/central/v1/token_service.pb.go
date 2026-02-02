@@ -307,8 +307,8 @@ var file_internalapi_central_v1_token_service_proto_enumTypes = make([]protoimpl
 var file_internalapi_central_v1_token_service_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_internalapi_central_v1_token_service_proto_goTypes = []any{
 	(Access)(0), // 0: central.v1.Access
-	(*GenerateTokenForPermissionsAndScopeRequest)(nil),  // 1: central.v1.GenerateTokenForPermissionsAndScopeRequest
-	(*ClusterScope)(nil),                                // 2: central.v1.ClusterScope
+	(*GenerateTokenForPermissionsAndScopeRequest)(nil), // 1: central.v1.GenerateTokenForPermissionsAndScopeRequest
+	(*ClusterScope)(nil), // 2: central.v1.ClusterScope
 	(*GenerateTokenForPermissionsAndScopeResponse)(nil), // 3: central.v1.GenerateTokenForPermissionsAndScopeResponse
 	nil,                         // 4: central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntry
 	(*durationpb.Duration)(nil), // 5: google.protobuf.Duration
