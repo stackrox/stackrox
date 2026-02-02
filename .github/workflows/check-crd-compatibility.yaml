@@ -20,7 +20,7 @@ jobs:
   check-crd-compatibility:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1-5-ga9b384f054
     outputs:
       released_version: ${{ steps.get_previous_released_version.outputs.released_version }}
     steps:

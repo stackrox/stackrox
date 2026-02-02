@@ -1,8 +1,8 @@
 ARG MAPPINGS_REGISTRY=registry.access.redhat.com
-ARG MAPPINGS_BASE_IMAGE=ubi8
+ARG MAPPINGS_BASE_IMAGE=ubi9
 ARG MAPPINGS_BASE_TAG=latest
 ARG BASE_REGISTRY=registry.access.redhat.com
-ARG BASE_IMAGE=ubi8-minimal
+ARG BASE_IMAGE=ubi9-minimal
 ARG BASE_TAG=latest
 
 FROM ${MAPPINGS_REGISTRY}/${MAPPINGS_BASE_IMAGE}:${MAPPINGS_BASE_TAG} AS mappings
@@ -35,7 +35,7 @@ COPY bin/scanner /usr/local/bin/
 COPY THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY --from=mappings /mappings/repository-to-cpe.json /mappings/container-name-repos-map.json /run/mappings/
 
-RUN microdnf upgrade --nobest && \
+RUN microdnf upgrade -y --nobest && \
     microdnf clean all && \
     # (Optional) Remove line below to keep package management utilities
     rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
