@@ -127,7 +127,7 @@ func PatchCSV(doc map[string]interface{}, opts PatchOptions) error {
 		spec["replaces"] = fmt.Sprintf("%s.v%s", rawName, replacedVersion.String())
 	}
 
-	// Add SecurityPolicy CRD
+	// Improve SecurityPolicy CRD metadata in ACS operator CSV
 	if err := addSecurityPolicyCRD(spec); err != nil {
 		return err
 	}
@@ -218,7 +218,23 @@ func addSecurityPolicyCRD(spec map[string]interface{}) error {
 	if !ok {
 		return fmt.Errorf("spec.customresourcedefinitions.owned field is missing or has wrong type")
 	}
-	crds["owned"] = append(owned, crd)
+
+	// Filter out existing SecurityPolicy CRDs to prevent duplicates
+	filteredOwned := make([]interface{}, 0, len(owned))
+	for _, crdEntry := range owned {
+		crdMap, ok := crdEntry.(map[string]interface{})
+		if !ok {
+			filteredOwned = append(filteredOwned, crdEntry)
+			continue
+		}
+		kind, _ := crdMap["kind"].(string)
+		if kind != "SecurityPolicy" {
+			filteredOwned = append(filteredOwned, crdEntry)
+		}
+	}
+
+	// Add the SecurityPolicy CRD
+	crds["owned"] = append(filteredOwned, crd)
 
 	return nil
 }
