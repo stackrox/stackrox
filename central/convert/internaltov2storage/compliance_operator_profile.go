@@ -17,7 +17,7 @@ func ComplianceOperatorProfileV2(internalMsg *central.ComplianceOperatorProfileV
 
 	productType := internalMsg.GetAnnotations()[v1alpha1.ProductTypeAnnotation]
 
-	return &storage.ComplianceOperatorProfileV2{
+	profile := &storage.ComplianceOperatorProfileV2{
 		Id:             internalMsg.GetId(),
 		ProfileId:      internalMsg.GetProfileId(),
 		Name:           internalMsg.GetName(),
@@ -32,5 +32,53 @@ func ComplianceOperatorProfileV2(internalMsg *central.ComplianceOperatorProfileV
 		Values:         internalMsg.GetValues(),
 		ClusterId:      clusterID,
 		ProfileRefId:   BuildProfileRefID(clusterID, internalMsg.GetProfileId(), productType),
+		IsTailored:     internalMsg.GetIsTailored(),
 	}
+
+	// Convert tailored profile details if present
+	if td := internalMsg.GetTailoredDetails(); td != nil {
+		profile.TailoredDetails = convertTailoredProfileDetails(td)
+	}
+
+	return profile
+}
+
+// convertTailoredProfileDetails converts internal TailoredProfileDetails to storage format
+func convertTailoredProfileDetails(td *central.TailoredProfileDetails) *storage.StorageTailoredProfileDetails {
+	result := &storage.StorageTailoredProfileDetails{
+		Extends:      td.GetExtends(),
+		State:        td.GetState(),
+		ErrorMessage: td.GetErrorMessage(),
+	}
+
+	for _, rule := range td.GetDisabledRules() {
+		result.DisabledRules = append(result.DisabledRules, &storage.StorageTailoredProfileRuleModification{
+			Name:      rule.GetName(),
+			Rationale: rule.GetRationale(),
+		})
+	}
+
+	for _, rule := range td.GetEnabledRules() {
+		result.EnabledRules = append(result.EnabledRules, &storage.StorageTailoredProfileRuleModification{
+			Name:      rule.GetName(),
+			Rationale: rule.GetRationale(),
+		})
+	}
+
+	for _, rule := range td.GetManualRules() {
+		result.ManualRules = append(result.ManualRules, &storage.StorageTailoredProfileRuleModification{
+			Name:      rule.GetName(),
+			Rationale: rule.GetRationale(),
+		})
+	}
+
+	for _, val := range td.GetSetValues() {
+		result.SetValues = append(result.SetValues, &storage.StorageTailoredProfileValueOverride{
+			Name:      val.GetName(),
+			Value:     val.GetValue(),
+			Rationale: val.GetRationale(),
+		})
+	}
+
+	return result
 }

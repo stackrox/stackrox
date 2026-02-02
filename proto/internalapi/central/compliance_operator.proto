@@ -49,6 +49,10 @@ message ApplyComplianceScanConfigRequest {
     bool strict_node_scan = 5;
     bool auto_apply_remediations = 6;
     bool auto_update_remediations = 7;
+
+    // Names of profiles that are TailoredProfiles (subset of profiles).
+    // Used by Sensor to set correct Kind in ScanSettingBinding.
+    repeated string tailored_profile_names = 8;
   }
 
   message OneTimeScan {
@@ -179,7 +183,7 @@ message ComplianceOperatorCheckResultV2 {
 }
 
 // ComplianceOperatorProfileV2 is a message from Sensor (to Central) representing a compliance check profile.
-// Next tag: 11.
+// Next tag: 13.
 message ComplianceOperatorProfileV2 {
   string id = 1;
   string profile_id = 2;
@@ -194,6 +198,40 @@ message ComplianceOperatorProfileV2 {
   repeated Rule rules = 8;
   string title = 9;
   repeated string values = 10;
+
+  // TailoredProfile support
+  bool is_tailored = 11;
+  TailoredProfileDetails tailored_details = 12;
+}
+
+// TailoredProfileDetails contains TailoredProfile-specific fields.
+// Only populated when ComplianceOperatorProfileV2.is_tailored is true.
+message TailoredProfileDetails {
+  // Base profile name that this TP extends. Empty for from-scratch TPs.
+  string extends = 1;
+  // Rules disabled from the base profile
+  repeated TailoredProfileRuleModification disabled_rules = 2;
+  // Rules enabled (added to base or for from-scratch TPs)
+  repeated TailoredProfileRuleModification enabled_rules = 3;
+  // Rules marked for manual verification (not auto-scanned)
+  repeated TailoredProfileRuleModification manual_rules = 4;
+  // Variable value overrides
+  repeated TailoredProfileValueOverride set_values = 5;
+  // TailoredProfile state: PENDING, READY, or ERROR
+  string state = 6;
+  // Error message if state is ERROR
+  string error_message = 7;
+}
+
+message TailoredProfileRuleModification {
+  string name = 1;
+  string rationale = 2;
+}
+
+message TailoredProfileValueOverride {
+  string name = 1;
+  string value = 2;
+  string rationale = 3;
 }
 
 // ComplianceOperatorRuleV2 is a message from Sensor (to Central) representing a compliance check rule.

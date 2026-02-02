@@ -25,7 +25,7 @@ func ComplianceV2Profile(incoming *storage.ComplianceOperatorProfileV2, benchmar
 		})
 	}
 
-	return &v2.ComplianceProfile{
+	profile := &v2.ComplianceProfile{
 		Id:             incoming.GetId(),
 		Name:           incoming.GetName(),
 		ProfileVersion: incoming.GetProfileVersion(),
@@ -36,7 +36,54 @@ func ComplianceV2Profile(incoming *storage.ComplianceOperatorProfileV2, benchmar
 		Product:        incoming.GetProduct(),
 		Title:          incoming.GetTitle(),
 		Values:         incoming.GetValues(),
+		IsTailored:     incoming.GetIsTailored(),
 	}
+
+	if td := incoming.GetTailoredDetails(); td != nil {
+		profile.TailoredDetails = convertTailoredProfileDetailsToV2(td)
+	}
+
+	return profile
+}
+
+// convertTailoredProfileDetailsToV2 converts storage tailored profile details to API v2 format
+func convertTailoredProfileDetailsToV2(td *storage.StorageTailoredProfileDetails) *v2.TailoredProfileDetails {
+	result := &v2.TailoredProfileDetails{
+		Extends:      td.GetExtends(),
+		State:        td.GetState(),
+		ErrorMessage: td.GetErrorMessage(),
+	}
+
+	for _, r := range td.GetDisabledRules() {
+		result.DisabledRules = append(result.DisabledRules, &v2.TailoredProfileRuleModification{
+			Name:      r.GetName(),
+			Rationale: r.GetRationale(),
+		})
+	}
+
+	for _, r := range td.GetEnabledRules() {
+		result.EnabledRules = append(result.EnabledRules, &v2.TailoredProfileRuleModification{
+			Name:      r.GetName(),
+			Rationale: r.GetRationale(),
+		})
+	}
+
+	for _, r := range td.GetManualRules() {
+		result.ManualRules = append(result.ManualRules, &v2.TailoredProfileRuleModification{
+			Name:      r.GetName(),
+			Rationale: r.GetRationale(),
+		})
+	}
+
+	for _, v := range td.GetSetValues() {
+		result.SetValues = append(result.SetValues, &v2.TailoredProfileValueOverride{
+			Name:      v.GetName(),
+			Value:     v.GetValue(),
+			Rationale: v.GetRationale(),
+		})
+	}
+
+	return result
 }
 
 // ComplianceV2Profiles converts V2 storage objects to V2 API objects
@@ -93,6 +140,7 @@ func ComplianceProfileSummary(incoming []*storage.ComplianceOperatorProfileV2, b
 				RuleCount:      int32(len(summary.GetRules())),
 				ProfileVersion: summary.GetProfileVersion(),
 				Standards:      profileBenchmarkNameMap[summary.GetName()],
+				IsTailored:     summary.GetIsTailored(),
 			}
 			orderedProfiles = append(orderedProfiles, summary.GetName())
 		}

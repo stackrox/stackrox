@@ -10,7 +10,7 @@ import weak "google/api/annotations.proto";
 option go_package = "./api/v2;v2";
 option java_package = "io.stackrox.proto.api.v2";
 
-// Next Tag: 12
+// Next Tag: 14
 message ComplianceProfile {
   string id = 1;
   string name = 2;
@@ -23,6 +23,10 @@ message ComplianceProfile {
   string title = 9;
   repeated string values = 10;
   repeated ComplianceBenchmark standards = 11;
+  // Whether this profile is a TailoredProfile
+  bool is_tailored = 12;
+  // Details specific to tailored profiles (only set if is_tailored is true)
+  TailoredProfileDetails tailored_details = 13;
 }
 
 // ListComplianceProfilesResponse provides a list of profiles

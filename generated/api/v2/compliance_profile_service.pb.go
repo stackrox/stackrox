@@ -22,7 +22,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Next Tag: 12
+// Next Tag: 14
 type ComplianceProfile struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -35,8 +35,12 @@ type ComplianceProfile struct {
 	Title          string                 `protobuf:"bytes,9,opt,name=title,proto3" json:"title,omitempty"`
 	Values         []string               `protobuf:"bytes,10,rep,name=values,proto3" json:"values,omitempty"`
 	Standards      []*ComplianceBenchmark `protobuf:"bytes,11,rep,name=standards,proto3" json:"standards,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Whether this profile is a TailoredProfile
+	IsTailored bool `protobuf:"varint,12,opt,name=is_tailored,json=isTailored,proto3" json:"is_tailored,omitempty"`
+	// Details specific to tailored profiles (only set if is_tailored is true)
+	TailoredDetails *TailoredProfileDetails `protobuf:"bytes,13,opt,name=tailored_details,json=tailoredDetails,proto3" json:"tailored_details,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ComplianceProfile) Reset() {
@@ -135,6 +139,20 @@ func (x *ComplianceProfile) GetValues() []string {
 func (x *ComplianceProfile) GetStandards() []*ComplianceBenchmark {
 	if x != nil {
 		return x.Standards
+	}
+	return nil
+}
+
+func (x *ComplianceProfile) GetIsTailored() bool {
+	if x != nil {
+		return x.IsTailored
+	}
+	return false
+}
+
+func (x *ComplianceProfile) GetTailoredDetails() *TailoredProfileDetails {
+	if x != nil {
+		return x.TailoredDetails
 	}
 	return nil
 }
@@ -353,7 +371,7 @@ var File_api_v2_compliance_profile_service_proto protoreflect.FileDescriptor
 
 const file_api_v2_compliance_profile_service_proto_rawDesc = "" +
 	"\n" +
-	"'api/v2/compliance_profile_service.proto\x12\x02v2\x1a\x13api/v2/common.proto\x1a\x1eapi/v2/compliance_common.proto\x1a\x19api/v2/search_query.proto\x1a\x1cgoogle/api/annotations.proto\"\xd4\x02\n" +
+	"'api/v2/compliance_profile_service.proto\x12\x02v2\x1a\x13api/v2/common.proto\x1a\x1eapi/v2/compliance_common.proto\x1a\x19api/v2/search_query.proto\x1a\x1cgoogle/api/annotations.proto\"\xbc\x03\n" +
 	"\x11ComplianceProfile\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12'\n" +
@@ -365,7 +383,10 @@ const file_api_v2_compliance_profile_service_proto_rawDesc = "" +
 	"\x05title\x18\t \x01(\tR\x05title\x12\x16\n" +
 	"\x06values\x18\n" +
 	" \x03(\tR\x06values\x125\n" +
-	"\tstandards\x18\v \x03(\v2\x17.v2.ComplianceBenchmarkR\tstandardsJ\x04\b\x05\x10\x06\"t\n" +
+	"\tstandards\x18\v \x03(\v2\x17.v2.ComplianceBenchmarkR\tstandards\x12\x1f\n" +
+	"\vis_tailored\x18\f \x01(\bR\n" +
+	"isTailored\x12E\n" +
+	"\x10tailored_details\x18\r \x01(\v2\x1a.v2.TailoredProfileDetailsR\x0ftailoredDetailsJ\x04\b\x05\x10\x06\"t\n" +
 	"\x1eListComplianceProfilesResponse\x121\n" +
 	"\bprofiles\x18\x01 \x03(\v2\x15.v2.ComplianceProfileR\bprofiles\x12\x1f\n" +
 	"\vtotal_count\x18\x03 \x01(\x05R\n" +
@@ -409,28 +430,30 @@ var file_api_v2_compliance_profile_service_proto_goTypes = []any{
 	(*ClustersProfileSummaryRequest)(nil),        // 4: v2.ClustersProfileSummaryRequest
 	(*ComplianceRule)(nil),                       // 5: v2.ComplianceRule
 	(*ComplianceBenchmark)(nil),                  // 6: v2.ComplianceBenchmark
-	(*ComplianceProfileSummary)(nil),             // 7: v2.ComplianceProfileSummary
-	(*RawQuery)(nil),                             // 8: v2.RawQuery
-	(*ResourceByID)(nil),                         // 9: v2.ResourceByID
+	(*TailoredProfileDetails)(nil),               // 7: v2.TailoredProfileDetails
+	(*ComplianceProfileSummary)(nil),             // 8: v2.ComplianceProfileSummary
+	(*RawQuery)(nil),                             // 9: v2.RawQuery
+	(*ResourceByID)(nil),                         // 10: v2.ResourceByID
 }
 var file_api_v2_compliance_profile_service_proto_depIdxs = []int32{
-	5, // 0: v2.ComplianceProfile.rules:type_name -> v2.ComplianceRule
-	6, // 1: v2.ComplianceProfile.standards:type_name -> v2.ComplianceBenchmark
-	0, // 2: v2.ListComplianceProfilesResponse.profiles:type_name -> v2.ComplianceProfile
-	7, // 3: v2.ListComplianceProfileSummaryResponse.profiles:type_name -> v2.ComplianceProfileSummary
-	8, // 4: v2.ProfilesForClusterRequest.query:type_name -> v2.RawQuery
-	8, // 5: v2.ClustersProfileSummaryRequest.query:type_name -> v2.RawQuery
-	9, // 6: v2.ComplianceProfileService.GetComplianceProfile:input_type -> v2.ResourceByID
-	3, // 7: v2.ComplianceProfileService.ListComplianceProfiles:input_type -> v2.ProfilesForClusterRequest
-	4, // 8: v2.ComplianceProfileService.ListProfileSummaries:input_type -> v2.ClustersProfileSummaryRequest
-	0, // 9: v2.ComplianceProfileService.GetComplianceProfile:output_type -> v2.ComplianceProfile
-	1, // 10: v2.ComplianceProfileService.ListComplianceProfiles:output_type -> v2.ListComplianceProfilesResponse
-	2, // 11: v2.ComplianceProfileService.ListProfileSummaries:output_type -> v2.ListComplianceProfileSummaryResponse
-	9, // [9:12] is the sub-list for method output_type
-	6, // [6:9] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	5,  // 0: v2.ComplianceProfile.rules:type_name -> v2.ComplianceRule
+	6,  // 1: v2.ComplianceProfile.standards:type_name -> v2.ComplianceBenchmark
+	7,  // 2: v2.ComplianceProfile.tailored_details:type_name -> v2.TailoredProfileDetails
+	0,  // 3: v2.ListComplianceProfilesResponse.profiles:type_name -> v2.ComplianceProfile
+	8,  // 4: v2.ListComplianceProfileSummaryResponse.profiles:type_name -> v2.ComplianceProfileSummary
+	9,  // 5: v2.ProfilesForClusterRequest.query:type_name -> v2.RawQuery
+	9,  // 6: v2.ClustersProfileSummaryRequest.query:type_name -> v2.RawQuery
+	10, // 7: v2.ComplianceProfileService.GetComplianceProfile:input_type -> v2.ResourceByID
+	3,  // 8: v2.ComplianceProfileService.ListComplianceProfiles:input_type -> v2.ProfilesForClusterRequest
+	4,  // 9: v2.ComplianceProfileService.ListProfileSummaries:input_type -> v2.ClustersProfileSummaryRequest
+	0,  // 10: v2.ComplianceProfileService.GetComplianceProfile:output_type -> v2.ComplianceProfile
+	1,  // 11: v2.ComplianceProfileService.ListComplianceProfiles:output_type -> v2.ListComplianceProfilesResponse
+	2,  // 12: v2.ComplianceProfileService.ListProfileSummaries:output_type -> v2.ListComplianceProfileSummaryResponse
+	10, // [10:13] is the sub-list for method output_type
+	7,  // [7:10] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_compliance_profile_service_proto_init() }

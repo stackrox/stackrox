@@ -39,7 +39,7 @@ message ProfileShim {
   string profile_ref_id = 2; // @gotags: search:"Profile Ref ID,hidden" sql:"fk(ComplianceOperatorProfileV2:profile_ref_id),no-fk-constraint,type(uuid)"
 }
 
-// Next Tag: 15
+// Next Tag: 18
 message ComplianceOperatorProfileV2 {
   // The primary key is name-profile_version as that is guaranteed unique in the operator and how
   // the profile is referenced in scans and settings
@@ -61,6 +61,40 @@ message ComplianceOperatorProfileV2 {
   repeated string values = 13;
   string cluster_id = 14; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
   string profile_ref_id = 15; // @gotags: search:"Profile Ref ID,hidden" sql:"type(uuid)"
+
+  // TailoredProfile support
+  bool is_tailored = 16; // @gotags: search:"Compliance Profile Is Tailored,hidden"
+  StorageTailoredProfileDetails tailored_details = 17;
+}
+
+// StorageTailoredProfileDetails contains TailoredProfile-specific fields.
+// Only populated when ComplianceOperatorProfileV2.is_tailored is true.
+message StorageTailoredProfileDetails {
+  // Base profile name that this TP extends. Empty for from-scratch TPs.
+  string extends = 1;
+  // Rules disabled from the base profile
+  repeated StorageTailoredProfileRuleModification disabled_rules = 2;
+  // Rules enabled (added to base or for from-scratch TPs)
+  repeated StorageTailoredProfileRuleModification enabled_rules = 3;
+  // Rules marked for manual verification (not auto-scanned)
+  repeated StorageTailoredProfileRuleModification manual_rules = 4;
+  // Variable value overrides
+  repeated StorageTailoredProfileValueOverride set_values = 5;
+  // TailoredProfile state: PENDING, READY, or ERROR
+  string state = 6;
+  // Error message if state is ERROR
+  string error_message = 7;
+}
+
+message StorageTailoredProfileRuleModification {
+  string name = 1;
+  string rationale = 2;
+}
+
+message StorageTailoredProfileValueOverride {
+  string name = 1;
+  string value = 2;
+  string rationale = 3;
 }
 
 message ComplianceOperatorRuleV2 {

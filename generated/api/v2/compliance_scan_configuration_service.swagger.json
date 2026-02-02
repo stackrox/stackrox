@@ -823,9 +823,12 @@
             "type": "object",
             "$ref": "#/definitions/v2ComplianceBenchmark"
           }
+        },
+        "isTailored": {
+          "type": "boolean"
         }
       },
-      "title": "Next Tag: 8"
+      "title": "Next Tag: 9"
     },
     "v2ComplianceReportHistoryResponse": {
       "type": "object",
