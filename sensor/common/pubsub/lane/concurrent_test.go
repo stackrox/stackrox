@@ -2,6 +2,7 @@ package lane
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -217,6 +218,57 @@ func TestPublish(t *testing.T) {
 		case <-consumer2Signal.Done():
 		}
 		lane.Stop()
+	})
+	t.Run("parallel publish operations", func(t *testing.T) {
+		numPublishers := 10
+		eventsPerPublisher := 10
+		laneSize := numPublishers * eventsPerPublisher
+		lane := NewConcurrentLane(pubsub.DefaultLane, WithConcurrentLaneSize(laneSize)).NewLane()
+		assert.NotNil(t, lane)
+		defer lane.Stop()
+
+		receivedEvents := make(chan string, numPublishers*eventsPerPublisher)
+		assert.NoError(t, lane.RegisterConsumer(pubsub.DefaultConsumer, pubsub.DefaultTopic, func(event pubsub.Event) error {
+			eventImpl, ok := event.(*concurrentTestEvent)
+			require.True(t, ok)
+			receivedEvents <- eventImpl.data
+			return nil
+		}))
+
+		// Start signal to coordinate parallel publishers
+		startSignal := concurrency.NewSignal()
+
+		// Spawn multiple publisher goroutines
+		for i := 0; i < numPublishers; i++ {
+			publisherID := i
+			go func() {
+				<-startSignal.Done()
+				for j := 0; j < eventsPerPublisher; j++ {
+					event := &concurrentTestEvent{
+						data: fmt.Sprintf("publisher_%d_event_%d", publisherID, j),
+					}
+					require.NoError(t, lane.Publish(event))
+				}
+			}()
+		}
+
+		// Signal all publishers to start publishing simultaneously
+		startSignal.Signal()
+
+		// Wait for all events to be consumed
+		totalEvents := numPublishers * eventsPerPublisher
+		receivedCount := 0
+		for receivedCount < totalEvents {
+			select {
+			case <-receivedEvents:
+				receivedCount++
+			case <-time.After(2 * time.Second):
+				t.Fatalf("Only received %d/%d events within timeout", receivedCount, totalEvents)
+			}
+		}
+
+		// Verify all events were received
+		assert.Equal(t, totalEvents, receivedCount)
 	})
 }
 
