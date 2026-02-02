@@ -635,8 +635,8 @@ func TestStripDatasourceNoClone(t *testing.T) {
 	}
 
 	utils.StripDatasourceNoClone(original)
-	assert.Equal(t, "", original.Components[0].Vulns[0].Datasource)
-	assert.Equal(t, "", original.Components[0].Vulns[1].Datasource)
-	assert.Equal(t, "", original.Components[1].Vulns[0].Datasource)
-	assert.Equal(t, "", original.Components[1].Vulns[1].Datasource)
+	assert.Equal(t, "", original.Components[0].Vulns[0].GetDatasource())
+	assert.Equal(t, "", original.Components[0].Vulns[1].GetDatasource())
+	assert.Equal(t, "", original.Components[1].Vulns[0].GetDatasource())
+	assert.Equal(t, "", original.Components[1].Vulns[1].GetDatasource())
 }
