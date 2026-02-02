@@ -1,0 +1,42 @@
+name: Build CI Image
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/images/apollo-ci-buildah/**'
+
+env:
+  REGISTRY: quay.io/klape
+  IMAGE_NAME: apollo-ci-buildah
+
+jobs:
+  build-ci-image:
+    runs-on: ubuntu-latest
+    env:
+      QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+      QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Quay.io
+        run: |
+          buildah login -u "$QUAY_USERNAME" -p "$QUAY_PASSWORD" quay.io
+
+      - name: Build CI image with buildah
+        run: |
+          buildah bud \
+            --platform linux/amd64 \
+            --layers \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.5.1 \
+            --file .github/images/apollo-ci-buildah/Dockerfile \
+            .github/images/apollo-ci-buildah
+
+      - name: Push CI image
+        run: |
+          buildah push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          buildah push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.5.1 \
+            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.5.1
