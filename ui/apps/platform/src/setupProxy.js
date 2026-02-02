@@ -52,5 +52,6 @@ export function viteProxy() {
         '/api': proxy,
         '/docs': proxy,
         '/sso': proxy,
+        '/metrics': proxy,
     };
 }
