@@ -1,7 +1,6 @@
 package clusterid
 
 import (
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clusterid"
@@ -38,7 +37,7 @@ func NewHandler() *handlerImpl {
 // Get returns the cluster id parsed from the service certificate
 func (c *handlerImpl) Get() string {
 	c.once.Do(func() {
-		id := c.clusterIDFromCert()
+		id := c.GetFromCert()
 		if c.isInitCertClusterID(id) {
 			log.Infof("Certificate has wildcard subject %s. Waiting to receive cluster ID from central...", id)
 			c.clusterIDAvailable.Wait()
@@ -61,7 +60,7 @@ func (c *handlerImpl) GetNoWait() string {
 
 // Set sets the global cluster ID value.
 func (c *handlerImpl) Set(value string) {
-	effectiveClusterID, err := c.getClusterID(value, c.clusterIDFromCert())
+	effectiveClusterID, err := c.getClusterID(value, c.GetFromCert())
 	if err != nil {
 		log.Panicf("Invalid dynamic cluster ID value %q: %v", value, err)
 	}
@@ -80,22 +79,7 @@ func (c *handlerImpl) Set(value string) {
 	}
 }
 
-// SetFromCert reads the cluster ID from the certificate, validates it's neither
-// a wildcard nor empty, and signals availability. Returns an error describing
-// the invalid cluster ID.
-func (c *handlerImpl) SetFromCert() error {
-	certClusterID := c.clusterIDFromCert()
-	if certClusterID == "" {
-		return errors.New("certificate has an empty cluster ID")
-	}
-	if centralsensor.IsInitCertClusterID(certClusterID) {
-		return errors.New("certificate has a wildcard cluster ID")
-	}
-	c.Set(certClusterID)
-	return nil
-}
-
-func (c *handlerImpl) clusterIDFromCert() string {
+func (c *handlerImpl) GetFromCert() string {
 	id, err := c.parseClusterIDFromServiceCert(storage.ServiceType_SENSOR_SERVICE)
 	if err != nil {
 		log.Panicf("Error parsing cluster id from certificate: %v", err)

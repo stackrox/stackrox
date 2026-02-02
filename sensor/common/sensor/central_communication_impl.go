@@ -54,7 +54,7 @@ type centralCommunicationImpl struct {
 type clusterIDPeekSetter interface {
 	Set(string)
 	GetNoWait() string
-	SetFromCert() error
+	GetFromCert() string
 }
 
 var (
@@ -225,7 +225,11 @@ func (s *centralCommunicationImpl) hello(stream central.SensorService_Communicat
 	if centralHello == nil {
 		return errors.Errorf("first message received from central was not CentralHello but of type %T", firstMsg.GetMsg())
 	}
+
 	clusterID := centralHello.GetClusterId()
+	if fromCert := s.clusterID.GetFromCert(); clusterID != fromCert {
+		return errors.Errorf("cluster ID value %q from central conflicts with the certificate value %q", clusterID, fromCert)
+	}
 	s.clusterID.Set(clusterID)
 
 	if centralHello.GetManagedCentral() {
@@ -264,19 +268,18 @@ func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream centr
 	}
 
 	if metautils.MD(rawHdr).Get(centralsensor.SensorHelloMetadataKey) == "true" {
-		// Yay, central supports the "sensor hello" protocol!
 		err := s.hello(stream, hello)
 		if err != nil {
 			return errors.Wrap(err, "error while executing the sensor hello protocol")
 		}
 	} else {
-		// No sensor hello - Central is running a legacy version.
 		log.Warn("Central is running a legacy version that might not support all current features")
 
-		// Without hello protocol, we must have a real cluster ID in the certificate.
-		if err := s.clusterID.SetFromCert(); err != nil {
-			return errors.Wrap(err, "failed to derive cluster ID from Central certificate in legacy mode (no sensor hello)")
+		fromCert := s.clusterID.GetFromCert()
+		if centralsensor.IsInitCertClusterID(fromCert) {
+			return errors.New("certificate has a wildcard cluster ID")
 		}
+		s.clusterID.Set(fromCert)
 
 		// Disable features that require hello protocol.
 		s.clientReconcile = false

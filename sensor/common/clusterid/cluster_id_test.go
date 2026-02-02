@@ -6,7 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/suite"
 )
@@ -190,74 +189,6 @@ func (s *clusterIDSuite) Test_Set() {
 			case <-handler.clusterIDAvailable.Done():
 			}
 			s.Assert().Equal(clusterID, handler.clusterID)
-		})
-	}
-}
-
-func (s *clusterIDSuite) Test_SetFromCert() {
-	var handler *handlerImpl
-	clusterID := "valid-cluster-id"
-	cases := map[string]struct {
-		injectFakeCalls *funcWrapper
-		shouldPanic     bool
-		expectedError   string
-	}{
-		"error parsing the cluster ID from cert should panic": {
-			injectFakeCalls: newFuncWrapper(func() {
-				handler.parseClusterIDFromServiceCert = func(_ storage.ServiceType) (string, error) {
-					return "", errors.New("parsing error")
-				}
-			}),
-			shouldPanic: true,
-		},
-		"empty cluster ID from cert should return error": {
-			injectFakeCalls: newFuncWrapper(func() {
-				handler.parseClusterIDFromServiceCert = func(_ storage.ServiceType) (string, error) {
-					return "", nil
-				}
-			}),
-			expectedError: "certificate has an empty cluster ID",
-		},
-		"wildcard cluster ID from cert should return error": {
-			injectFakeCalls: newFuncWrapper(func() {
-				handler.parseClusterIDFromServiceCert = func(_ storage.ServiceType) (string, error) {
-					return centralsensor.RegisteredInitCertClusterID, nil
-				}
-			}),
-			expectedError: "certificate has a wildcard cluster ID",
-		},
-		"valid cluster ID from cert should succeed": {
-			injectFakeCalls: newFuncWrapper(func() {
-				handler.parseClusterIDFromServiceCert = func(_ storage.ServiceType) (string, error) {
-					return clusterID, nil
-				}
-				handler.isInitCertClusterID = func(_ string) bool {
-					return false
-				}
-				handler.getClusterID = func(value, certID string) (string, error) {
-					return certID, nil
-				}
-			}),
-		},
-	}
-	for tName, tCase := range cases {
-		s.Run(tName, func() {
-			handler = NewHandler()
-			tCase.injectFakeCalls.Run()
-			if tCase.shouldPanic {
-				s.Assert().Panics(func() {
-					_ = handler.SetFromCert()
-				})
-				return
-			}
-			err := handler.SetFromCert()
-			if tCase.expectedError != "" {
-				s.Assert().Error(err)
-				s.Assert().Contains(err.Error(), tCase.expectedError)
-			} else {
-				s.Assert().NoError(err)
-				s.Assert().Equal(clusterID, handler.clusterID)
-			}
 		})
 	}
 }

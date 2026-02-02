@@ -402,8 +402,8 @@ func (f *fakeClusterIDPeekSetter) GetNoWait() string {
 	return "fake-cluster-id"
 }
 
-func (f *fakeClusterIDPeekSetter) SetFromCert() error {
-	return nil
+func (f *fakeClusterIDPeekSetter) GetFromCert() string {
+	return "00000000-0000-4000-A000-000000000000"
 }
 
 func (c *centralCommunicationSuite) createCentralCommunication(clientReconcile bool) (chan *message.ExpiringMessage, func()) {
