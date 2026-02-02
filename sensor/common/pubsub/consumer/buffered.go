@@ -14,7 +14,7 @@ import (
 // bufferedEvent wraps an event with its error channel to pipe callback errors back to the caller
 type bufferedEvent struct {
 	event     pubsub.Event
-	errC      chan error
+	errC      chan<- error
 	startTime time.Time
 }
 
@@ -63,52 +63,49 @@ type BufferedConsumer struct {
 
 func (c *BufferedConsumer) Consume(waitable concurrency.Waitable, event pubsub.Event) <-chan error {
 	errC := make(chan error, 1)
-	go func() {
-		start := time.Now()
-		operation := metrics.ConsumerError
-
-		// Priority 1: Check if already cancelled
-		select {
-		case <-waitable.Done():
-			close(errC)
-			metrics.ObserveProcessingDuration(c.laneID, c.topic, c.consumerID, time.Since(start), operation)
-			metrics.RecordConsumerOperation(c.laneID, c.topic, c.consumerID, operation)
-			return
-		case <-c.stopper.Flow().StopRequested():
-			close(errC)
-			metrics.ObserveProcessingDuration(c.laneID, c.topic, c.consumerID, time.Since(start), operation)
-			metrics.RecordConsumerOperation(c.laneID, c.topic, c.consumerID, operation)
-			return
-		default:
-		}
-
-		// Wrap event with its errC to pipe callback errors back to caller
-		wrappedEvent := &bufferedEvent{
-			event:     event,
-			errC:      errC,
-			startTime: start,
-		}
-
-		// SafeChannel.TryWrite is non-blocking by design, so it's safe to call directly
-		writeErr := c.buffer.TryWrite(wrappedEvent)
-
-		// Priority 2: If write failed, send error and close. Otherwise keep errC open.
-		if writeErr != nil {
-			operation := metrics.ConsumerError
-			select {
-			case errC <- writeErr:
-				close(errC)
-			case <-waitable.Done():
-				close(errC)
-			case <-c.stopper.Flow().StopRequested():
-				close(errC)
-			}
-			metrics.ObserveProcessingDuration(c.laneID, c.topic, c.consumerID, time.Since(wrappedEvent.startTime), operation)
-			metrics.RecordConsumerOperation(c.laneID, c.topic, c.consumerID, operation)
-		}
-		// If writeErr is nil, errC stays open and will be closed later when callback completes
-	}()
+	// No goroutine needed: all operations in consume are non-blocking.
+	// The select statements use default cases, TryWrite is non-blocking by design,
+	// and errC has size 1 so the single send on error won't block.
+	c.consume(waitable, event, errC)
 	return errC
+}
+
+func (c *BufferedConsumer) consume(waitable concurrency.Waitable, event pubsub.Event, errC chan<- error) {
+	// IMPORTANT: All operations must remain non-blocking.
+	start := time.Now()
+	operation := metrics.ConsumerError
+
+	// Priority 1: Check if already cancelled
+	select {
+	case <-waitable.Done():
+		close(errC)
+		c.recordMetrics(operation, start)
+		return
+	case <-c.stopper.Flow().StopRequested():
+		close(errC)
+		c.recordMetrics(operation, start)
+		return
+	default:
+	}
+
+	// Wrap event with its errC to pipe callback errors back to caller
+	wrappedEvent := &bufferedEvent{
+		event:     event,
+		errC:      errC,
+		startTime: start,
+	}
+
+	// SafeChannel.TryWrite is non-blocking by design, so it's safe to call directly
+	writeErr := c.buffer.TryWrite(wrappedEvent)
+
+	// Priority 2: If write failed, send error and close. Otherwise keep errC open.
+	if writeErr != nil {
+		operation := metrics.ConsumerError
+		errC <- writeErr // Won't block - buffered channel of size 1
+		close(errC)
+		c.recordMetrics(operation, start)
+	}
+	// If writeErr is nil, errC stays open and will be closed later when callback completes
 }
 
 func (c *BufferedConsumer) Stop() {
@@ -134,32 +131,39 @@ func (c *BufferedConsumer) run() {
 			if !ok {
 				return
 			}
-			// Execute callback in separate goroutine to prevent blocking the consumer
-			callbackDone := make(chan error, 1)
-			go func() {
-				callbackDone <- c.callback(wrappedEv.event)
-				close(callbackDone)
-			}()
-			// Wait for callback or stopper, allowing clean exit if callback blocks
-			operation := metrics.Processed
-			select {
-			case <-c.stopper.Flow().StopRequested():
-				// Consumer is stopping - close the errC without waiting for callback
-				operation = metrics.ConsumerError
-				close(wrappedEv.errC)
-				metrics.ObserveProcessingDuration(c.laneID, c.topic, c.consumerID, time.Since(wrappedEv.startTime), operation)
-				metrics.RecordConsumerOperation(c.laneID, c.topic, c.consumerID, operation)
-				return
-			case err := <-callbackDone:
-				// Callback completed - send result (nil or error) and close errC
-				if err != nil {
-					operation = metrics.ConsumerError
-				}
-				wrappedEv.errC <- err
-				close(wrappedEv.errC)
-				metrics.ObserveProcessingDuration(c.laneID, c.topic, c.consumerID, time.Since(wrappedEv.startTime), operation)
-				metrics.RecordConsumerOperation(c.laneID, c.topic, c.consumerID, operation)
-			}
+			c.handleEvent(wrappedEv)
 		}
 	}
+}
+
+func (c *BufferedConsumer) handleEvent(wrappedEv *bufferedEvent) {
+	// Execute callback in separate goroutine to prevent blocking the consumer
+	callbackDone := make(chan error, 1)
+	go func() {
+		callbackDone <- c.callback(wrappedEv.event)
+		close(callbackDone)
+	}()
+	// Wait for callback or stopper, allowing clean exit if callback blocks
+	operation := metrics.Processed
+	select {
+	case <-c.stopper.Flow().StopRequested():
+		// Consumer is stopping - close the errC without waiting for callback
+		operation = metrics.ConsumerError
+		close(wrappedEv.errC)
+		c.recordMetrics(operation, wrappedEv.startTime)
+		return
+	case err := <-callbackDone:
+		// Callback completed - send result (nil or error) and close errC
+		if err != nil {
+			operation = metrics.ConsumerError
+		}
+		wrappedEv.errC <- err
+		close(wrappedEv.errC)
+		c.recordMetrics(operation, wrappedEv.startTime)
+	}
+}
+
+func (c *BufferedConsumer) recordMetrics(op metrics.Operation, start time.Time) {
+	metrics.ObserveProcessingDuration(c.laneID, c.topic, c.consumerID, time.Since(start), op)
+	metrics.RecordConsumerOperation(c.laneID, c.topic, c.consumerID, op)
 }
