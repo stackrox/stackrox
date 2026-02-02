@@ -23,11 +23,14 @@ func ParseXyzVersion(versionStr string) (XyzVersion, error) {
 		return XyzVersion{}, fmt.Errorf("invalid version format: %s", versionStr)
 	}
 
+	// Atoi errors are safely ignored here because the regex ensures matches[1] and matches[2]
+	// contain only digits (\d+), making conversion to int guaranteed to succeed.
 	x, _ := strconv.Atoi(matches[1])
 	y, _ := strconv.Atoi(matches[2])
 
 	z := 0
 	if matches[3] != "x" {
+		// matches[3] is either "x" or digits (\d+), so Atoi is safe here too
 		z, _ = strconv.Atoi(matches[3])
 	}
 
