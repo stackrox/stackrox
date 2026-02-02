@@ -12,6 +12,8 @@ import (
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -19,6 +21,32 @@ import (
 	"k8s.io/utils/ptr"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+)
+
+var (
+	// Expected resources when enforcement is disabled.
+	expectedResourcesEnforcementDisabled = &corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("100Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("500Mi"),
+		},
+	}
+
+	// Expected resources when enforcement is enabled.
+	expectedResourcesEnforcementEnabled = &corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("200m"),
+			corev1.ResourceMemory: resource.MustParse("500Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("1"),
+			corev1.ResourceMemory: resource.MustParse("1Gi"),
+		},
+	}
 )
 
 type scannerV4DefaultingTestCase struct {
@@ -50,6 +78,9 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 			Spec:   platform.SecuredClusterSpec{},
 			Status: platform.SecuredClusterStatus{},
 			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
+				DeploymentSpec: platform.DeploymentSpec{
+					Resources: expectedResourcesEnforcementEnabled,
+				},
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
@@ -67,6 +98,9 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 			},
 			Status: platform.SecuredClusterStatus{},
 			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
+				DeploymentSpec: platform.DeploymentSpec{
+					Resources: expectedResourcesEnforcementDisabled,
+				},
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
@@ -84,6 +118,9 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 			},
 			Status: platform.SecuredClusterStatus{},
 			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
+				DeploymentSpec: platform.DeploymentSpec{
+					Resources: expectedResourcesEnforcementEnabled,
+				},
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
@@ -100,6 +137,9 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
 			},
 			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
+				DeploymentSpec: platform.DeploymentSpec{
+					Resources: expectedResourcesEnforcementEnabled,
+				},
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
@@ -116,6 +156,9 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Disabled",
 			},
 			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
+				DeploymentSpec: platform.DeploymentSpec{
+					Resources: expectedResourcesEnforcementDisabled,
+				},
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
@@ -134,6 +177,9 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 			},
 			Status: postInstallStatus,
 			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
+				DeploymentSpec: platform.DeploymentSpec{
+					Resources: expectedResourcesEnforcementDisabled,
+				},
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
@@ -152,6 +198,9 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 			},
 			Status: postInstallStatus,
 			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
+				DeploymentSpec: platform.DeploymentSpec{
+					Resources: expectedResourcesEnforcementEnabled,
+				},
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
@@ -170,6 +219,9 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 			},
 			Status: postInstallStatus,
 			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
+				DeploymentSpec: platform.DeploymentSpec{
+					Resources: expectedResourcesEnforcementEnabled,
+				},
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
