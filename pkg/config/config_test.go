@@ -1,9 +1,11 @@
 package config
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDefaultingReadConfig(t *testing.T) {
@@ -17,30 +19,53 @@ func TestDefaultingReadConfig(t *testing.T) {
 }
 
 func TestReadConfig(t *testing.T) {
+	const centralConfig = `
+maintenance:
+  safeMode: false
+  compaction:
+    enabled: false
+    bucketFillFraction: .5
+    freeFractionThreshold: 0.75`
 	testCases := []struct {
 		title             string
 		centralConfigPath string
+		centralConfig     string
 		extDBConfigPath   string
+		extDBConfig       string
 		compactionEnabled bool
 		isValid           bool
 	}{
 		{
-			title:             "valid config",
-			centralConfigPath: "testdata/valid_case/central-config.yaml",
-			extDBConfigPath:   "testdata/valid_case/central-external-db.yaml",
+			title:         "valid config",
+			centralConfig: centralConfig,
+			extDBConfig: `
+centralDB:
+  source: >
+    host=fakehost
+    port=5432
+    user=fakeuser`,
 			compactionEnabled: false,
 			isValid:           true,
 		},
 		{
-			title:             "malformed config",
-			centralConfigPath: "testdata/malformed_case/central-config.yaml",
-			extDBConfigPath:   "testdata/malformed_case/central-external-db.yaml",
-			isValid:           false,
+			title:         "malformed config",
+			centralConfig: centralConfig,
+			extDBConfig: `
+centralDB:
+  source
+    host=fakehost
+    port=5432
+    user=fakeuser`,
+			isValid: false,
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.title, func(t *testing.T) {
-			conf, err := readConfigsImpl(tc.centralConfigPath, tc.extDBConfigPath)
+			dir := t.TempDir()
+			writeFile(t, dir+"/central.yaml", tc.centralConfig)
+			writeFile(t, dir+"/external-db.yaml", tc.extDBConfig)
+
+			conf, err := readConfigsImpl(dir+"/central.yaml", dir+"/external-db.yaml")
 			if tc.isValid {
 				assert.NoError(t, err)
 				assert.NoError(t, conf.validate())
@@ -51,4 +76,9 @@ func TestReadConfig(t *testing.T) {
 			}
 		})
 	}
+}
+
+func writeFile(t *testing.T, filename, contents string) {
+	err := os.WriteFile(filename, []byte(contents), 0644)
+	require.NoError(t, err)
 }
