@@ -112,8 +112,11 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Build docs
-        run: make docs-build || echo "Docs build skipped, continuing..."
+      - name: Checkout submodules
+        run: git submodule update --init
+
+      - name: Build swagger docs
+        run: make swagger-docs
 
       - uses: actions/upload-artifact@v4
         with:
@@ -121,6 +124,35 @@ jobs:
           path: image/rhel/docs
           retention-days: 1
           if-no-files-found: ignore
+
+  pre-build-operator:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/klape/apollo-ci-buildah:0.5.1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Checkout submodules
+        run: git submodule update --init
+
+      - name: Build Operator binary
+        env:
+          GOARCH: amd64
+          CGO_ENABLED: "0"
+        run: make -C operator/ build
+
+      - name: Bundle operator build
+        run: tar -cvzf operator-build.tgz operator/bin
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: operator-build
+          path: operator-build.tgz
+          retention-days: 1
 
   # =============================================================================
   # Build images with buildah - runs directly on runner (not in container)
@@ -240,6 +272,8 @@ jobs:
   # =============================================================================
   build-and-push-operator:
     runs-on: ubuntu-latest
+    needs:
+      - pre-build-operator
     env:
       QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
       QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
@@ -250,10 +284,12 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: actions/download-artifact@v4
         with:
-          go-version-file: go.mod
+          name: operator-build
+
+      - name: Unpack operator build
+        run: tar xvzf operator-build.tgz
 
       - name: Login to Quay.io with buildah
         run: |
@@ -262,16 +298,9 @@ jobs:
       - name: Get image tag
         id: tag
         run: |
-          TAG=$(make --quiet --no-print-directory -C operator tag)
+          TAG=$(make --quiet --no-print-directory tag)
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Building operator with tag: $TAG"
-
-      - name: Build Operator binary
-        env:
-          GOARCH: amd64
-          CGO_ENABLED: "0"
-        run: |
-          make -C operator/ build
 
       - name: Build Operator image with buildah
         run: |
