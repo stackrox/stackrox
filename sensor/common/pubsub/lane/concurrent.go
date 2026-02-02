@@ -18,7 +18,7 @@ func WithConcurrentLaneSize(size int) pubsub.LaneOption {
 	return func(lane pubsub.Lane) {
 		laneImpl, ok := lane.(*concurrentLane)
 		if !ok {
-			panic("cannot use concurrent lane option for this type of lane")
+			panic("attempted using concurrent lane option for a different lane type")
 		}
 		if size < 0 {
 			return
@@ -31,7 +31,7 @@ func WithConcurrentLaneConsumer(consumer pubsub.NewConsumer, opts ...pubsub.Cons
 	return func(lane pubsub.Lane) {
 		laneImpl, ok := lane.(*concurrentLane)
 		if !ok {
-			panic("cannot use concurrent lane option for this type of lane")
+			panic("attempted using concurrent lane option for a different lane type")
 		}
 		if consumer == nil {
 			panic("cannot configure a 'nil' NewConsumer function")
@@ -134,11 +134,13 @@ func (l *concurrentLane) handleEvent(event pubsub.Event) {
 
 func (l *concurrentLane) handleConsumerError(errC <-chan error) {
 	// This blocks until the consumer finishes the processing
-	// TODO: Consider adding a timout here
+	// TODO: Consider adding a timeout here
 	select {
 	case err := <-errC:
-		// TODO: consider adding a callback to inform of the error
-		log.Errorf("unable to handle event: %v", err)
+		if err != nil {
+			// TODO: consider adding a callback to inform of the error
+			log.Errorf("unable to handle event: %v", err)
+		}
 	case <-l.stopper.Flow().StopRequested():
 	}
 }
@@ -149,7 +151,7 @@ func (l *concurrentLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pu
 	}
 	c, err := l.newConsumerFn(l.id, topic, consumerID, callback, l.consumerOpts...)
 	if err != nil {
-		return errors.Wrap(err, "unable to create the consumer")
+		return errors.Wrap(err, "creating the consumer")
 	}
 	l.consumerLock.Lock()
 	defer l.consumerLock.Unlock()
@@ -159,6 +161,8 @@ func (l *concurrentLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pu
 
 func (l *concurrentLane) Stop() {
 	l.stopper.Client().Stop()
+	// Wait for the run() goroutine to fully exit before closing the channel.
+	// This ensures an orderly shutdown where event processing is complete.
 	<-l.stopper.Client().Stopped().Done()
 	l.ch.Close()
 	l.Lane.Stop()
