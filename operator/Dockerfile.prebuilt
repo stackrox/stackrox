@@ -1,0 +1,14 @@
+# Dockerfile for pre-built operator binary
+ARG TARGET_ARCH=amd64
+
+FROM --platform=linux/${TARGET_ARCH} registry.access.redhat.com/ubi9-micro:latest
+
+ARG ROX_IMAGE_FLAVOR
+ENV ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR}
+
+COPY bin/manager /usr/local/bin/stackrox-operator
+
+# The following are numeric uid and gid of `nobody` user in UBI.
+USER 65534:65534
+
+ENTRYPOINT ["/usr/local/bin/stackrox-operator"]

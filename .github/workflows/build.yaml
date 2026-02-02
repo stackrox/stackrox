@@ -315,7 +315,8 @@ jobs:
             --platform linux/amd64 \
             --layers \
             -t ${{ env.REGISTRY }}/stackrox-operator:${{ steps.tag.outputs.tag }} \
-            --file Dockerfile \
+            --build-arg ROX_IMAGE_FLAVOR=opensource \
+            --file Dockerfile.prebuilt \
             .
 
       - name: Push operator image with buildah
