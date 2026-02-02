@@ -48,11 +48,14 @@ const (
 	plaintextFlagName             = "plaintext"
 	serverNameFlagName            = "server-name"
 	useKubeContextFlagName        = "use-current-k8s-context"
+
+	// DefaultEndpoint is the default central endpoint when none is specified
+	DefaultEndpoint = "localhost:8443"
 )
 
 // AddConnectionFlags adds connection-related flags to roxctl.
 func AddConnectionFlags(c *cobra.Command) {
-	c.PersistentFlags().StringVarP(&endpoint, endpointFlagName, "e", "localhost:8443",
+	c.PersistentFlags().StringVarP(&endpoint, endpointFlagName, "e", DefaultEndpoint,
 		"Endpoint for service to contact. Alternatively, set the endpoint via the ROX_ENDPOINT environment variable.")
 	endpointChanged = &c.PersistentFlags().Lookup(endpointFlagName).Changed
 	c.PersistentFlags().StringVarP(&serverName, serverNameFlagName, "s", "", "TLS ServerName to use for SNI "+
@@ -188,4 +191,16 @@ func CentralURL() (*url.URL, error) {
 // UseKubeContext tells whether the connections should go through k8s port forwarding.
 func UseKubeContext() bool {
 	return useKubeContext || env.UseCurrentKubeContext.BooleanSetting()
+}
+
+// EndpointWasExplicitlyProvided returns true if the user explicitly provided an endpoint
+// via the -e/--endpoint flag, the ROX_ENDPOINT environment variable, or is using
+// port-forwarding via kubeconfig context.
+// Returns false when the implicit default endpoint is being used (i.e., when no endpoint
+// configuration was explicitly provided by the user).
+func EndpointWasExplicitlyProvided() bool {
+	// Defensively handle nil pointer (shouldn't happen in normal execution but prevents panic)
+	flagChanged := endpointChanged != nil && *endpointChanged
+	endpointVal := strings.TrimSpace(env.EndpointEnv.Setting())
+	return flagChanged || endpointVal != "" || UseKubeContext()
 }
