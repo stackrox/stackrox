@@ -131,6 +131,10 @@ LOCALBIN ?= $(shell pwd)/bin
 $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
 
+# CSV_PATCHER_IMPL selects which implementation to use for CSV patching
+# Valid values: "python" (default), "go"
+CSV_PATCHER_IMPL ?= python
+
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
 SHELL = /usr/bin/env bash -o pipefail
@@ -455,7 +459,11 @@ ACTIVATE_PYTHON = $(PYTHON) -m venv bundle_helpers/.venv ;\
 	pip3 install -r bundle_helpers/requirements.txt
 
 .PHONY: bundle
+ifeq ($(CSV_PATCHER_IMPL),go)
+bundle: yq manifests kustomize operator-sdk fix-spec-descriptors ## Generate bundle manifests and metadata, then validate generated files.
+else
 bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
+endif
 	rm -rf bundle
 # The operator-sdk command both reads and writes config/manifests by default.
 # We re-generate it from scratch each time based on a minimal set of inputs, to be able to catch cases when operator-sdk stops working (ROX-25872)
@@ -481,17 +489,57 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 # Therefore we append ".extra" file to the end of bundle's dockerfile.
 	cat bundle.Dockerfile.extra >> bundle.Dockerfile
 # Run a python script to fix the orders in the specDescriptors (children must not appear before their parents).
+ifeq ($(CSV_PATCHER_IMPL),go)
+	$(FIX_SPEC_DESCRIPTORS) \
+	  <bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
+	  >bundle/manifests/rhacs-operator.clusterserviceversion.yaml.fixed
+else
 	set -euo pipefail ;\
 	$(ACTIVATE_PYTHON) ;\
 	bundle_helpers/fix-spec-descriptor-order.py \
 	  <bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
 	  >bundle/manifests/rhacs-operator.clusterserviceversion.yaml.fixed
+endif
 	mv bundle/manifests/rhacs-operator.clusterserviceversion.yaml.fixed \
        bundle/manifests/rhacs-operator.clusterserviceversion.yaml
 	$(OPERATOR_SDK) bundle validate ./bundle --select-optional suite=operatorframework
 
 .PHONY: bundle-post-process
+ifeq ($(CSV_PATCHER_IMPL),go)
+bundle-post-process: csv-patcher operator-sdk ## Post-process CSV file to include correct operator versions, etc.
+else
 bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file to include correct operator versions, etc.
+endif
+ifeq ($(CSV_PATCHER_IMPL),go)
+	set -euo pipefail ;\
+	first_version=3.62.0 `# 3.62.0 is the first operator version ever released` ;\
+	candidate_version=$$($(CSV_PATCHER) \
+		--use-version $(VERSION) \
+		--first-version $${first_version} \
+		--operator-image $(IMG) \
+		--echo-replaced-version-only \
+		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml); \
+	echo "Candidate version: $$candidate_version"; \
+	index_img_base=$(INDEX_IMG_BASE); \
+	if ! ../scripts/ci/lib.sh check_rhacs_eng_image_exists $${index_img_base##*/} v$${candidate_version}; then \
+		echo "Operator index image for this version does not exist (yet)."; \
+		unreleased_opt="--unreleased=$${candidate_version}"; \
+	else \
+		echo "Operator index image for this version exists"; \
+	fi; \
+	mkdir -p build/; \
+	rm -rf build/bundle; \
+	cp -a bundle build/; \
+	cp -v ../config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml build/bundle/manifests/; \
+	$(CSV_PATCHER) \
+		--use-version $(VERSION) \
+		--first-version $${first_version} \
+		--operator-image $(IMG) \
+		--related-images-mode omit \
+		$${unreleased_opt:+--unreleased=$$candidate_version} \
+		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
+		> build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
+else
 	set -euo pipefail ;\
 	$(ACTIVATE_PYTHON) ;\
 	first_version=3.62.0 `# 3.62.0 is the first operator version ever released` ;\
@@ -515,6 +563,7 @@ bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file t
 		--operator-image=$(IMG) \
 		--related-images-mode=omit \
 		$${unreleased_opt:-}
+endif
 # Check that the resulting bundle still passes validations.
 	$(OPERATOR_SDK) bundle validate ./build/bundle --select-optional suite=operatorframework
 
