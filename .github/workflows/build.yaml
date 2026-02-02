@@ -30,6 +30,7 @@ jobs:
   pre-build-ui:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         branding: [STACKROX_BRANDING, RHACS_BRANDING]
     container:
@@ -83,6 +84,7 @@ jobs:
   pre-build-go-binaries:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         arch: [amd64, arm64]
     container:
@@ -101,6 +103,8 @@ jobs:
         env:
           GOARCH: ${{ matrix.arch }}
           GOOS: linux
+          # Disable CGO for cross-compilation (arm64 on amd64 runner)
+          CGO_ENABLED: "0"
         run: make main-build-nodeps
 
       - name: Bundle build to preserve permissions
@@ -144,6 +148,7 @@ jobs:
   pre-build-operator:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         arch: [amd64, arm64]
     container:
@@ -185,6 +190,7 @@ jobs:
   build-and-push-main:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         branding: [STACKROX_BRANDING, RHACS_BRANDING]
         arch: [amd64, arm64]
@@ -333,6 +339,7 @@ jobs:
   build-and-push-operator:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         branding: [STACKROX_BRANDING, RHACS_BRANDING]
         arch: [amd64, arm64]
@@ -403,6 +410,7 @@ jobs:
   push-main-manifests:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         branding: [STACKROX_BRANDING, RHACS_BRANDING]
     needs:
@@ -455,6 +463,7 @@ jobs:
   push-operator-manifests:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         branding: [STACKROX_BRANDING, RHACS_BRANDING]
     needs:
