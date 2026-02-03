@@ -47,51 +47,36 @@ function getStatusMessage({ status, description }: SignatureVerificationResult) 
 function ImagePageSignatureVerification({ results }: ImagePageSignatureVerificationProps) {
     return (
         <>
-            <PageSection
-                hasBodyWrapper={false}
-                component="div"
-                className="pf-v6-u-py-md pf-v6-u-px-xl"
-            >
+            <PageSection component="div">
                 <Content component="p">
                     Review the signature verification results for this image
                 </Content>
             </PageSection>
             <Divider component="div" />
-            <PageSection
-                hasBodyWrapper={false}
-                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
-                component="div"
-            >
-                <div className="pf-v6-u-background-color-100 pf-v6-u-pt-sm">
-                    <Table borders={false} variant="compact">
-                        <Thead noWrap>
-                            <Tr>
-                                <Th>Integration</Th>
-                                <Th>Status</Th>
-                                <Th>Verification time</Th>
-                            </Tr>
-                        </Thead>
+            <PageSection component="div">
+                <Table variant="compact">
+                    <Thead noWrap>
+                        <Tr>
+                            <Th>Integration</Th>
+                            <Th>Status</Th>
+                            <Th>Verification time</Th>
+                        </Tr>
+                    </Thead>
 
-                        {results?.map((result) => {
-                            return (
-                                <Tbody
-                                    key={result.verifierId}
-                                    style={{
-                                        borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
-                                    }}
-                                >
-                                    <Tr>
-                                        <Td dataLabel="Integration">{result.verifierId}</Td>
-                                        <Td dataLabel="Status">{getStatusMessage(result)}</Td>
-                                        <Td dataLabel="Verification time">
-                                            <DateDistance date={result.verificationTime} />
-                                        </Td>
-                                    </Tr>
-                                </Tbody>
-                            );
-                        })}
-                    </Table>
-                </div>
+                    {results?.map((result) => {
+                        return (
+                            <Tbody key={result.verifierId}>
+                                <Tr>
+                                    <Td dataLabel="Integration">{result.verifierId}</Td>
+                                    <Td dataLabel="Status">{getStatusMessage(result)}</Td>
+                                    <Td dataLabel="Verification time">
+                                        <DateDistance date={result.verificationTime} />
+                                    </Td>
+                                </Tr>
+                            </Tbody>
+                        );
+                    })}
+                </Table>
             </PageSection>
         </>
     );

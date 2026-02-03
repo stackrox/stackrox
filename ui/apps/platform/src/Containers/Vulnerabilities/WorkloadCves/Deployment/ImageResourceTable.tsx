@@ -45,7 +45,7 @@ export type ImageResourceTableProps = {
 
 function ImageResourceTable({ data, getSortParams }: ImageResourceTableProps) {
     return (
-        <Table borders={false} variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th sort={getSortParams('Image')}>Name</Th>

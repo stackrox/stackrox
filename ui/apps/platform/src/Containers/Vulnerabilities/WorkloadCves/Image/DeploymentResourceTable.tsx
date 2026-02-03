@@ -73,7 +73,7 @@ function DeploymentResourceTable({
     const vulnerabilityState = useVulnerabilityState();
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
     return (
-        <Table borders={false} variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th className={getVisibilityClass('name')} sort={getSortParams('Deployment')}>

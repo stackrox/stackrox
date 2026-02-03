@@ -67,12 +67,7 @@ function ImageComponentVulnerabilitiesTable({
     const sortedComponentVulns = sortTableData(componentVulns, sortOption);
 
     return (
-        <Table
-            style={{
-                border: '1px solid var(--pf-v5-c-table--BorderColor)',
-            }}
-            borders={false}
-        >
+        <Table borders={false} variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th sort={getSortParams('Component')}>Component</Th>
@@ -99,11 +94,14 @@ function ImageComponentVulnerabilitiesTable({
                 // No border on the last row
                 const style =
                     index !== componentVulns.length - 1
-                        ? { borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)' }
+                        ? {
+                              borderBlockEnd:
+                                  '1px solid var(--pf-v6-c-table__tr--BorderBlockEndColor)',
+                          }
                         : {};
 
                 return (
-                    <Tbody key={`${image.id}:${name}:${version}`} style={style}>
+                    <Tbody key={`${image.id}:${name}:${version}`}>
                         <Tr>
                             <Td dataLabel="Component">{name}</Td>
                             <Td dataLabel="Version">{version}</Td>
@@ -127,7 +125,7 @@ function ImageComponentVulnerabilitiesTable({
                                 <ComponentLocation location={location} source={source} />
                             </Td>
                         </Tr>
-                        <Tr>
+                        <Tr style={style}>
                             <Td colSpan={colSpanForDockerfileLayer} className="pf-v6-u-pt-0">
                                 <DockerfileLayer layer={layer} />
                             </Td>
