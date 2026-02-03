@@ -29,6 +29,8 @@ jobs:
       QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
       HOME: /tmp
       XDG_RUNTIME_DIR: /tmp
+      BUILDAH_ISOLATION: chroot
+      STORAGE_DRIVER: vfs
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -61,6 +63,8 @@ jobs:
       QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
       HOME: /tmp
       XDG_RUNTIME_DIR: /tmp
+      BUILDAH_ISOLATION: chroot
+      STORAGE_DRIVER: vfs
     steps:
       - name: Login to Quay.io
         run: |
