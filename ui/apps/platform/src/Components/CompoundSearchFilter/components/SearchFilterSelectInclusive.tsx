@@ -1,6 +1,12 @@
 import { Fragment } from 'react';
 import type { ReactElement } from 'react';
-import { Divider, SelectGroup, SelectList, SelectOption } from '@patternfly/react-core';
+import {
+    Divider,
+    SelectGroup,
+    SelectList,
+    SelectOption,
+    ToolbarItem,
+} from '@patternfly/react-core';
 
 import CheckboxSelect from 'Components/CheckboxSelect';
 import type { SearchFilter } from 'types/search';
@@ -71,22 +77,24 @@ function SearchFilterSelectInclusive({
     }
 
     return (
-        <CheckboxSelect
-            selection={selection}
-            onChange={(checked, _value) => {
-                onSearch([
-                    {
-                        action: checked ? 'SELECT_INCLUSIVE' : 'REMOVE',
-                        category,
-                        value: _value,
-                    },
-                ]);
-            }}
-            ariaLabelMenu={`${toggleLabel} select menu`}
-            toggleLabel={toggleLabel}
-        >
-            {content}
-        </CheckboxSelect>
+        <ToolbarItem>
+            <CheckboxSelect
+                selection={selection}
+                onChange={(checked, _value) => {
+                    onSearch([
+                        {
+                            action: checked ? 'SELECT_INCLUSIVE' : 'REMOVE',
+                            category,
+                            value: _value,
+                        },
+                    ]);
+                }}
+                ariaLabelMenu={`${toggleLabel} select menu`}
+                toggleLabel={toggleLabel}
+            >
+                {content}
+            </CheckboxSelect>
+        </ToolbarItem>
     );
 }
 
