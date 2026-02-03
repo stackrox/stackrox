@@ -264,7 +264,8 @@ jobs:
       - name: Get image tag
         id: tag
         run: |
-          TAG=$(make --quiet --no-print-directory tag)
+          # Use BUILD_TAG from workflow env (no make available on runner)
+          TAG="${BUILD_TAG:-0.0.0-dev}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Building with tag: $TAG"
 
@@ -386,7 +387,7 @@ jobs:
       - name: Get image tag
         id: tag
         run: |
-          TAG=$(make --quiet --no-print-directory tag)
+          TAG="${BUILD_TAG:-0.0.0-dev}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Building operator with tag: $TAG"
 
@@ -443,7 +444,7 @@ jobs:
       - name: Get image tag
         id: tag
         run: |
-          TAG=$(make --quiet --no-print-directory tag)
+          TAG="${BUILD_TAG:-0.0.0-dev}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Derive image suffix
@@ -493,7 +494,7 @@ jobs:
       - name: Get image tag
         id: tag
         run: |
-          TAG=$(make --quiet --no-print-directory tag)
+          TAG="${BUILD_TAG:-0.0.0-dev}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Derive image suffix
