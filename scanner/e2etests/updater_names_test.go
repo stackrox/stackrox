@@ -1,13 +1,13 @@
 package e2etests
 
 import (
-	"context"
 	"os"
 	"regexp"
 	"slices"
 	"testing"
 
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/test"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -70,7 +70,7 @@ var (
 // go test -run ^TestUpdaterNames$ github.com/stackrox/rox/scanner/e2etests -v
 // ```
 func TestUpdaterNames(t *testing.T) {
-	ctx := context.Background()
+	ctx := test.Logging(t)
 
 	// Get database connection string
 	//

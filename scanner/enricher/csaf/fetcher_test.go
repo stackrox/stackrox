@@ -3,17 +3,16 @@ package csaf
 import (
 	"bufio"
 	"bytes"
-	"context"
 	"testing"
 
 	"github.com/klauspost/compress/snappy"
 	"github.com/quay/claircore/rhel/vex"
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/toolkit/types/csaf"
-	"github.com/quay/zlog"
 )
 
 func TestFetchEnrichment(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	root, c := vex.ServeSecDB(t, "testdata/server.txtar")
 	enricher := &Enricher{}
 	err := enricher.Configure(ctx, func(v interface{}) error {

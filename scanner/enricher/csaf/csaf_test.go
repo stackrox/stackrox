@@ -8,7 +8,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/test"
 	"github.com/stackrox/rox/pkg/scannerv4/enricher/csaf"
 	"github.com/stretchr/testify/assert"
 )
@@ -61,7 +61,7 @@ var (
 )
 
 func TestConfigure(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 
 	noopConfig := func(_ interface{}) error { return nil }
 	type configTestcase struct {
@@ -119,7 +119,7 @@ func TestConfigure(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.Name, func(t *testing.T) {
 			e := &Enricher{}
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t, ctx)
 			f := tc.Config
 			if f == nil {
 				f = noopConfig
@@ -143,7 +143,7 @@ func (eg enrichmentGetter) GetEnrichment(ctx context.Context, tags []string) ([]
 }
 
 func TestEnrich(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 
 	g := enrichmentGetter(func(ctx context.Context, tags []string) ([]driver.EnrichmentRecord, error) {
 		return []driver.EnrichmentRecord{
