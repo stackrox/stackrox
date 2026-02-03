@@ -28,13 +28,13 @@ jobs:
 
   # UI builds - one per branding
   pre-build-ui:
-    runs-on: stackrox-runners
+    runs-on: stackrox-runners-amd64
     strategy:
       fail-fast: false
       matrix:
         branding: [STACKROX_BRANDING, RHACS_BRANDING]
     container:
-      image: quay.io/klape/apollo-ci-buildah:0.6.0
+      image: quay.io/klape/apollo-ci-buildah:0.6.1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -58,9 +58,9 @@ jobs:
 
   # CLI builds all platforms (shared across brandings)
   pre-build-cli:
-    runs-on: stackrox-runners
+    runs-on: stackrox-runners-amd64
     container:
-      image: quay.io/klape/apollo-ci-buildah:0.6.0
+      image: quay.io/klape/apollo-ci-buildah:0.6.1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -80,15 +80,19 @@ jobs:
           path: cli-build.tgz
           retention-days: 1
 
-  # Go binaries - one per architecture
+  # Go binaries - native builds on each architecture
   pre-build-go-binaries:
-    runs-on: stackrox-runners
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: stackrox-runners-amd64
+          - arch: arm64
+            runner: stackrox-runners-arm64
+    runs-on: ${{ matrix.runner }}
     container:
-      image: quay.io/klape/apollo-ci-buildah:0.6.0
+      image: quay.io/klape/apollo-ci-buildah:0.6.1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -103,7 +107,6 @@ jobs:
         env:
           GOARCH: ${{ matrix.arch }}
           GOOS: linux
-          # Disable CGO for cross-compilation (arm64 on amd64 runner)
           CGO_ENABLED: "0"
         run: make main-build-nodeps
 
@@ -118,9 +121,9 @@ jobs:
 
   # Docs (shared across all variants)
   pre-build-docs:
-    runs-on: stackrox-runners
+    runs-on: stackrox-runners-amd64
     container:
-      image: quay.io/klape/apollo-ci-buildah:0.6.0
+      image: quay.io/klape/apollo-ci-buildah:0.6.1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -144,15 +147,19 @@ jobs:
           retention-days: 1
           if-no-files-found: ignore
 
-  # Operator binary - one per architecture
+  # Operator binary - native builds on each architecture
   pre-build-operator:
-    runs-on: stackrox-runners
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: stackrox-runners-amd64
+          - arch: arm64
+            runner: stackrox-runners-arm64
+    runs-on: ${{ matrix.runner }}
     container:
-      image: quay.io/klape/apollo-ci-buildah:0.6.0
+      image: quay.io/klape/apollo-ci-buildah:0.6.1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -191,18 +198,22 @@ jobs:
           retention-days: 1
 
   # =============================================================================
-  # Build images with buildah - runs directly on runner (not in container)
-  # Buildah needs user namespaces which aren't available in containers
+  # Build images with Docker - native builds on each architecture
   # =============================================================================
 
   # Main image builds - branding x arch matrix
   build-and-push-main:
-    runs-on: stackrox-runners
     strategy:
       fail-fast: false
       matrix:
         branding: [STACKROX_BRANDING, RHACS_BRANDING]
         arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: stackrox-runners-amd64
+          - arch: arm64
+            runner: stackrox-runners-arm64
+    runs-on: ${{ matrix.runner }}
     needs:
       - pre-build-ui
       - pre-build-cli
@@ -246,9 +257,9 @@ jobs:
           path: image/rhel/docs
         continue-on-error: true
 
-      - name: Login to Quay.io with buildah
+      - name: Login to Quay.io
         run: |
-          buildah login -u "$QUAY_USERNAME" -p "$QUAY_PASSWORD" quay.io
+          echo "$QUAY_PASSWORD" | docker login -u "$QUAY_USERNAME" --password-stdin quay.io
 
       - name: Get image tag
         id: tag
@@ -295,15 +306,10 @@ jobs:
           # Copy roxctl to image/roxctl for roxctl image build
           cp bin/linux_${ARCH}/roxctl image/roxctl/roxctl-linux
 
-      - name: Set up QEMU for cross-platform builds
-        if: matrix.arch != 'amd64'
-        uses: docker/setup-qemu-action@v3
-
-      - name: Build main image with buildah
+      - name: Build main image
         run: |
-          buildah bud \
-            --platform linux/${{ matrix.arch }} \
-            --layers \
+          docker build \
+            --provenance=false \
             -t ${{ env.REGISTRY }}/main${{ steps.suffix.outputs.suffix }}:${{ steps.tag.outputs.tag }}-${{ matrix.arch }} \
             --build-arg DEBUG_BUILD="${DEBUG_BUILD:-}" \
             --build-arg ROX_PRODUCT_BRANDING=${{ matrix.branding }} \
@@ -314,25 +320,23 @@ jobs:
             --file image/rhel/Dockerfile \
             image/rhel
 
-      - name: Build roxctl image with buildah
+      - name: Build roxctl image
         run: |
-          buildah bud \
-            --platform linux/${{ matrix.arch }} \
-            --layers \
+          docker build \
+            --provenance=false \
             -t ${{ env.REGISTRY }}/roxctl${{ steps.suffix.outputs.suffix }}:${{ steps.tag.outputs.tag }}-${{ matrix.arch }} \
             --file image/roxctl/Dockerfile \
             image/roxctl
 
-      - name: Build central-db image with buildah
+      - name: Build central-db image
         run: |
-          buildah bud \
-            --platform linux/${{ matrix.arch }} \
-            --layers \
+          docker build \
+            --provenance=false \
             -t ${{ env.REGISTRY }}/central-db${{ steps.suffix.outputs.suffix }}:${{ steps.tag.outputs.tag }}-${{ matrix.arch }} \
             --file image/postgres/Dockerfile \
             image/postgres
 
-      - name: Push images with buildah
+      - name: Push images
         run: |
           TAG="${{ steps.tag.outputs.tag }}"
           SUFFIX="${{ steps.suffix.outputs.suffix }}"
@@ -340,18 +344,22 @@ jobs:
 
           for image in main roxctl central-db; do
             echo "Pushing ${{ env.REGISTRY }}/${image}${SUFFIX}:${TAG}-${ARCH}"
-            buildah push ${{ env.REGISTRY }}/${image}${SUFFIX}:${TAG}-${ARCH} \
-              docker://${{ env.REGISTRY }}/${image}${SUFFIX}:${TAG}-${ARCH}
+            docker push ${{ env.REGISTRY }}/${image}${SUFFIX}:${TAG}-${ARCH}
           done
 
   # Operator image builds - branding x arch matrix
   build-and-push-operator:
-    runs-on: stackrox-runners
     strategy:
       fail-fast: false
       matrix:
         branding: [STACKROX_BRANDING, RHACS_BRANDING]
         arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: stackrox-runners-amd64
+          - arch: arm64
+            runner: stackrox-runners-arm64
+    runs-on: ${{ matrix.runner }}
     needs:
       - pre-build-operator
     env:
@@ -371,9 +379,9 @@ jobs:
       - name: Unpack operator build
         run: tar xvzf operator-build-${{ matrix.arch }}.tgz
 
-      - name: Login to Quay.io with buildah
+      - name: Login to Quay.io
         run: |
-          buildah login -u "$QUAY_USERNAME" -p "$QUAY_PASSWORD" quay.io
+          echo "$QUAY_PASSWORD" | docker login -u "$QUAY_USERNAME" --password-stdin quay.io
 
       - name: Get image tag
         id: tag
@@ -391,33 +399,27 @@ jobs:
             echo "suffix=" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Set up QEMU for cross-platform builds
-        if: matrix.arch != 'amd64'
-        uses: docker/setup-qemu-action@v3
-
-      - name: Build Operator image with buildah
+      - name: Build Operator image
         run: |
           cd operator
-          buildah bud \
-            --platform linux/${{ matrix.arch }} \
-            --layers \
+          docker build \
+            --provenance=false \
             -t ${{ env.REGISTRY }}/stackrox-operator${{ steps.suffix.outputs.suffix }}:${{ steps.tag.outputs.tag }}-${{ matrix.arch }} \
             --build-arg ROX_IMAGE_FLAVOR=opensource \
             --file Dockerfile.prebuilt \
             .
 
-      - name: Push operator image with buildah
+      - name: Push operator image
         run: |
-          buildah push \
-            ${{ env.REGISTRY }}/stackrox-operator${{ steps.suffix.outputs.suffix }}:${{ steps.tag.outputs.tag }}-${{ matrix.arch }} \
-            docker://${{ env.REGISTRY }}/stackrox-operator${{ steps.suffix.outputs.suffix }}:${{ steps.tag.outputs.tag }}-${{ matrix.arch }}
+          docker push \
+            ${{ env.REGISTRY }}/stackrox-operator${{ steps.suffix.outputs.suffix }}:${{ steps.tag.outputs.tag }}-${{ matrix.arch }}
 
   # =============================================================================
   # Create and push multi-arch manifests
   # =============================================================================
 
   push-main-manifests:
-    runs-on: stackrox-runners
+    runs-on: stackrox-runners-amd64
     strategy:
       fail-fast: false
       matrix:
@@ -434,9 +436,9 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Login to Quay.io with buildah
+      - name: Login to Quay.io
         run: |
-          buildah login -u "$QUAY_USERNAME" -p "$QUAY_PASSWORD" quay.io
+          echo "$QUAY_PASSWORD" | docker login -u "$QUAY_USERNAME" --password-stdin quay.io
 
       - name: Get image tag
         id: tag
@@ -461,16 +463,13 @@ jobs:
           for image in main roxctl central-db; do
             echo "Creating manifest for ${{ env.REGISTRY }}/${image}${SUFFIX}:${TAG}"
 
-            buildah manifest create ${image}${SUFFIX}:${TAG} \
+            docker buildx imagetools create -t ${{ env.REGISTRY }}/${image}${SUFFIX}:${TAG} \
               ${{ env.REGISTRY }}/${image}${SUFFIX}:${TAG}-amd64 \
               ${{ env.REGISTRY }}/${image}${SUFFIX}:${TAG}-arm64
-
-            buildah manifest push --all ${image}${SUFFIX}:${TAG} \
-              docker://${{ env.REGISTRY }}/${image}${SUFFIX}:${TAG}
           done
 
   push-operator-manifests:
-    runs-on: stackrox-runners
+    runs-on: stackrox-runners-amd64
     strategy:
       fail-fast: false
       matrix:
@@ -487,9 +486,9 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Login to Quay.io with buildah
+      - name: Login to Quay.io
         run: |
-          buildah login -u "$QUAY_USERNAME" -p "$QUAY_PASSWORD" quay.io
+          echo "$QUAY_PASSWORD" | docker login -u "$QUAY_USERNAME" --password-stdin quay.io
 
       - name: Get image tag
         id: tag
@@ -513,9 +512,6 @@ jobs:
 
           echo "Creating manifest for ${{ env.REGISTRY }}/stackrox-operator${SUFFIX}:${TAG}"
 
-          buildah manifest create stackrox-operator${SUFFIX}:${TAG} \
+          docker buildx imagetools create -t ${{ env.REGISTRY }}/stackrox-operator${SUFFIX}:${TAG} \
             ${{ env.REGISTRY }}/stackrox-operator${SUFFIX}:${TAG}-amd64 \
             ${{ env.REGISTRY }}/stackrox-operator${SUFFIX}:${TAG}-arm64
-
-          buildah manifest push --all stackrox-operator${SUFFIX}:${TAG} \
-            docker://${{ env.REGISTRY }}/stackrox-operator${SUFFIX}:${TAG}
