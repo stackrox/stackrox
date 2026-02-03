@@ -1,4 +1,5 @@
 # Multi-arch CI image for StackRox builds
+# Version: 0.6.0
 # Supports both amd64 and arm64 architectures
 FROM registry.access.redhat.com/ubi9:latest
 
