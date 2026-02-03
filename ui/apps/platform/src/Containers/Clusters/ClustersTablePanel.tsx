@@ -372,21 +372,14 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
             <PageSection hasBodyWrapper={false}>
                 <Toolbar>
                     <ToolbarContent>
-                        <ToolbarGroup
-                            variant="filter-group"
-                            className="pf-v6-u-flex-grow-1 pf-v6-u-flex-shrink-1"
-                        >
-                            <ToolbarItem className="pf-v6-u-w-100">
-                                <CompoundSearchFilter
-                                    config={searchFilterConfig}
-                                    defaultEntity="Cluster"
-                                    searchFilter={searchFilter}
-                                    onSearch={(payload) =>
-                                        setSearchFilter(updateSearchFilter(searchFilter, payload))
-                                    }
-                                />
-                            </ToolbarItem>
-                        </ToolbarGroup>
+                        <CompoundSearchFilter
+                            config={searchFilterConfig}
+                            defaultEntity="Cluster"
+                            searchFilter={searchFilter}
+                            onSearch={(payload) =>
+                                setSearchFilter(updateSearchFilter(searchFilter, payload))
+                            }
+                        />
                         <ToolbarGroup variant="action-group" align={{ default: 'alignEnd' }}>
                             {hasWriteAccessForAdministration && (
                                 <ToolbarItem className="pf-v6-u-align-self-center">

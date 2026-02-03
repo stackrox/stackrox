@@ -40,17 +40,13 @@ function DiscoveredClustersToolbar({
     return (
         <Toolbar>
             <ToolbarContent>
-                <ToolbarGroup className="pf-v5-u-w-100">
-                    <ToolbarItem>
-                        <CompoundSearchFilter
-                            config={searchFilterConfig}
-                            searchFilter={searchFilter}
-                            onSearch={(payload) =>
-                                setSearchFilter(updateSearchFilter(searchFilter, payload))
-                            }
-                        />
-                    </ToolbarItem>
-                </ToolbarGroup>
+                <CompoundSearchFilter
+                    config={searchFilterConfig}
+                    searchFilter={searchFilter}
+                    onSearch={(payload) =>
+                        setSearchFilter(updateSearchFilter(searchFilter, payload))
+                    }
+                />
                 <ToolbarGroup className="pf-v5-u-w-100">
                     <ToolbarItem>
                         <CompoundSearchFilterLabels

@@ -125,23 +125,17 @@ function VirtualMachinePageComponents({
         <PageSection variant="light" isFilled padding={{ default: 'padding' }}>
             <Toolbar>
                 <ToolbarContent>
-                    <ToolbarGroup className="pf-v5-u-w-100">
-                        <ToolbarItem className="pf-v5-u-flex-1">
-                            <CompoundSearchFilter
-                                config={searchFilterConfig}
-                                searchFilter={searchFilter}
-                                onSearch={onSearch}
-                            />
-                        </ToolbarItem>
-                        <ToolbarItem>
-                            <SearchFilterSelectInclusive
-                                attribute={attributeForScannable}
-                                isSeparate
-                                onSearch={onSearchScannable}
-                                searchFilter={searchFilter}
-                            />
-                        </ToolbarItem>
-                    </ToolbarGroup>
+                    <CompoundSearchFilter
+                        config={searchFilterConfig}
+                        searchFilter={searchFilter}
+                        onSearch={onSearch}
+                    />
+                    <SearchFilterSelectInclusive
+                        attribute={attributeForScannable}
+                        isSeparate
+                        onSearch={onSearchScannable}
+                        searchFilter={searchFilter}
+                    />
                     <ToolbarGroup className="pf-v5-u-w-100">
                         <CompoundSearchFilterLabels
                             attributesSeparateFromConfig={[attributeForScannable]}
