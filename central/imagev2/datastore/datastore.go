@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
 	"github.com/stackrox/rox/central/imagev2/datastore/store"
 	"github.com/stackrox/rox/central/imagev2/views"
 	"github.com/stackrox/rox/central/ranking"
@@ -38,8 +39,8 @@ type DataStore interface {
 }
 
 // NewWithPostgres returns a new instance of DataStore using the input store, and searcher.
-func NewWithPostgres(storage store.Store, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
-	ds := newDatastoreImpl(storage, risks, imageRanker, imageComponentRanker)
+func NewWithPostgres(storage store.Store, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker, imageCVEInfo imageCVEInfoDS.DataStore) DataStore {
+	ds := newDatastoreImpl(storage, risks, imageRanker, imageComponentRanker, imageCVEInfo)
 	go ds.initializeRankers()
 	return ds
 }

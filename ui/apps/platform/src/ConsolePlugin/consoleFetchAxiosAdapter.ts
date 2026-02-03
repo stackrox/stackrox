@@ -1,6 +1,6 @@
 import { ApolloError } from '@apollo/client';
 import { consoleFetch } from '@openshift-console/dynamic-plugin-sdk';
-import { AxiosError } from 'axios';
+import { AxiosError, AxiosHeaders } from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
 
 import type { AuthScope } from './ScopeContext';
@@ -11,7 +11,7 @@ export default function consoleFetchAxiosAdapter(
     config: InternalAxiosRequestConfig,
     getScope: () => AuthScope = () => ({})
 ) {
-    const updatedHeaders = { ...config.headers };
+    const updatedHeaders = new AxiosHeaders(config.headers);
     // Note - in production authorization is handled in-cluster by the console and will overwrite this header. When
     // running locally, we need to inject the token manually to allow API requests to the ACS API.
     if (process.env.NODE_ENV === 'development' && process.env.ACS_CONSOLE_DEV_TOKEN) {
@@ -35,7 +35,7 @@ export default function consoleFetchAxiosAdapter(
         body: config.data,
         headers: updatedHeaders,
     })
-        .then(async (response) => {
+        .then(async (response: Response) => {
             const data = await response.text();
 
             // GraphQL request errors are JSON objects with an `errors` field an a HTTP status code of 200, so we
@@ -57,18 +57,26 @@ export default function consoleFetchAxiosAdapter(
                 statusText: response.statusText,
             };
         })
-        .catch((error) => {
-            // Preserve original error context by passing the original error object and stack trace
-            const axiosError: AxiosError & { originalError?: Error } = new AxiosError(
-                error.message,
-                undefined,
-                config,
-                undefined,
-                error.response
-            );
-            axiosError.stack = error.stack;
-            // Attach the original error for further debugging if needed
-            axiosError.originalError = error;
-            throw axiosError;
+        .catch(async (error: unknown) => {
+            if (
+                typeof error === 'object' &&
+                error !== null &&
+                'response' in error &&
+                error.response instanceof Response
+            ) {
+                // If the error contains response information for an HTTP 4xx or 5xx error, we can extract the message from the response body
+                const { status, statusText } = error.response;
+                const text = await error.response.text();
+                const headers = new AxiosHeaders();
+                const axiosResponse = { status, statusText, headers, config, data: text };
+                // Preserve original error context by passing the original error object and response information
+                throw new AxiosError(text, `${status}`, { headers }, undefined, axiosResponse);
+            }
+
+            if (error instanceof Error) {
+                throw error;
+            }
+
+            throw new Error(String(error));
         });
 }

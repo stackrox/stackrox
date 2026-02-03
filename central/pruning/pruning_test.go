@@ -17,6 +17,7 @@ import (
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
+	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -50,6 +51,7 @@ import (
 	roleBindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	riskDatastore "github.com/stackrox/rox/central/risk/datastore"
 	riskDatastoreMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
+	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
@@ -253,12 +255,14 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 
 	var images imageDatastore.DataStore
 	var imagesV2 imageV2Datastore.DataStore
+	imageCVEInfo := imageCVEInfoDS.GetTestPostgresDataStore(s.T(), s.pool)
 	if features.FlattenImageData.Enabled() {
 		imagesV2 = imageV2Datastore.NewWithPostgres(
 			imageV2Postgres.New(s.pool, true, concurrency.NewKeyFence()),
 			mockRiskDatastore,
 			ranking.ImageRanker(),
 			ranking.ComponentRanker(),
+			imageCVEInfo,
 		)
 	} else {
 		images = imageDatastore.NewWithPostgres(
@@ -266,6 +270,7 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 			mockRiskDatastore,
 			ranking.ImageRanker(),
 			ranking.ComponentRanker(),
+			imageCVEInfo,
 		)
 	}
 
@@ -571,7 +576,7 @@ func (s *PruningTestSuite) TestImagePruning() {
 			gc := newGarbageCollector(alerts, nodes, images, imagesV2, nil, deployments, pods,
 				nil, nil, nil, config, nil, nil,
 				nil, nil, nil, nil, nil, nil, nil,
-				nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add images, deployments, and pods into the datastores
 			if c.deployment != nil {
@@ -864,7 +869,7 @@ func (s *PruningTestSuite) TestClusterPruning() {
 			gc := newGarbageCollector(nil, nil, nil, nil, clusterDS, deploymentsDS, nil,
 				nil, nil, nil, nil, nil, nil,
 				nil, nil, nil, nil, nil, nil,
-				nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(c.config)
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -991,7 +996,7 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 			gc := newGarbageCollector(nil, nil, nil, nil, clusterDS, deploymentsDS, nil,
 				nil, nil, nil, nil, nil, nil,
 				nil, nil, nil, nil, nil, nil,
-				nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(getCluserRetentionConfig(60, 90, 72))
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -1169,7 +1174,7 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			gc := newGarbageCollector(alerts, nodes, images, imagesV2, nil, deployments, nil,
 				nil, nil, nil, config, nil, nil,
 				nil, nil, nil, nil, nil, nil,
-				nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
 			for _, alert := range c.alerts {
@@ -2323,6 +2328,378 @@ func (s *PruningTestSuite) TestPruneOrphanedNodeCVEs() {
 			assert.ElementsMatch(t, tc.remainingNodeCVEIDs, ids)
 		})
 	}
+}
+
+func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects() {
+	EnableDynamicRBACPruning()
+
+	now := time.Now()
+	yesterday := now.Add(-24 * time.Hour)
+	tomorrow := now.Add(24 * time.Hour)
+	twoDaysAgo := now.Add(-48 * time.Hour)
+
+	// Create classic (non-expiring) access scope and permission set for roles to reference.
+	classicPS := &storage.PermissionSet{
+		Id:               uuid.NewV4().String(),
+		Name:             "classic-ps",
+		ResourceToAccess: map[string]storage.Access{"Cluster": storage.Access_READ_ACCESS},
+		Traits:           nil,
+	}
+	classicAS := &storage.SimpleAccessScope{
+		Id:     uuid.NewV4().String(),
+		Name:   "classic-as",
+		Rules:  &storage.SimpleAccessScope_Rules{},
+		Traits: nil,
+	}
+
+	// Pre-generate UUIDs for test cases where we need to reference them in expected deletions.
+	ps1ID := uuid.NewV4().String()
+	ps2ID := uuid.NewV4().String()
+	ps3ID := uuid.NewV4().String()
+	as1ID := uuid.NewV4().String()
+	as2ID := uuid.NewV4().String()
+	as3ID := uuid.NewV4().String()
+	psExpiredID := uuid.NewV4().String()
+	psNoExpiryID := uuid.NewV4().String()
+	asExpiredID := uuid.NewV4().String()
+	asActiveID := uuid.NewV4().String()
+
+	cases := []struct {
+		name                  string
+		roles                 []*storage.Role
+		permissionSets        []*storage.PermissionSet
+		accessScopes          []*storage.SimpleAccessScope
+		expectedRoleDeletions set.FrozenStringSet
+		expectedPSDeletions   set.FrozenStringSet
+		expectedASDeletions   set.FrozenStringSet
+	}{
+		{
+			name: "remove expired roles only",
+			roles: []*storage.Role{
+				{
+					Name:            "role-1",
+					PermissionSetId: classicPS.GetId(),
+					AccessScopeId:   classicAS.GetId(),
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(yesterday),
+					},
+				},
+				{
+					Name:            "role-2",
+					PermissionSetId: classicPS.GetId(),
+					AccessScopeId:   classicAS.GetId(),
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(tomorrow),
+					},
+				},
+				{
+					Name:            "role-3",
+					PermissionSetId: classicPS.GetId(),
+					AccessScopeId:   classicAS.GetId(),
+					Traits:          &storage.Traits{},
+				},
+			},
+			expectedRoleDeletions: set.NewFrozenStringSet("role-1"),
+			expectedPSDeletions:   set.NewFrozenStringSet(),
+			expectedASDeletions:   set.NewFrozenStringSet(),
+		},
+		{
+			name: "remove expired permission sets only",
+			permissionSets: []*storage.PermissionSet{
+				{
+					Id:   ps1ID,
+					Name: "ps-1",
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(twoDaysAgo),
+					},
+				},
+				{
+					Id:   ps2ID,
+					Name: "ps-2",
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(tomorrow),
+					},
+				},
+				{
+					Id:     ps3ID,
+					Name:   "ps-3",
+					Traits: &storage.Traits{},
+				},
+			},
+			expectedRoleDeletions: set.NewFrozenStringSet(),
+			expectedPSDeletions:   set.NewFrozenStringSet(ps1ID),
+			expectedASDeletions:   set.NewFrozenStringSet(),
+		},
+		{
+			name: "remove expired access scopes only",
+			accessScopes: []*storage.SimpleAccessScope{
+				{
+					Id:    as1ID,
+					Name:  "as-1",
+					Rules: &storage.SimpleAccessScope_Rules{},
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(yesterday),
+					},
+				},
+				{
+					Id:    as2ID,
+					Name:  "as-2",
+					Rules: &storage.SimpleAccessScope_Rules{},
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(tomorrow),
+					},
+				},
+				{
+					Id:     as3ID,
+					Name:   "as-3",
+					Rules:  &storage.SimpleAccessScope_Rules{},
+					Traits: &storage.Traits{},
+				},
+			},
+			expectedRoleDeletions: set.NewFrozenStringSet(),
+			expectedPSDeletions:   set.NewFrozenStringSet(),
+			expectedASDeletions:   set.NewFrozenStringSet(as1ID),
+		},
+		{
+			name: "remove expired objects of all types",
+			roles: []*storage.Role{
+				{
+					Name:            "role-expired",
+					PermissionSetId: classicPS.GetId(),
+					AccessScopeId:   classicAS.GetId(),
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(yesterday),
+					},
+				},
+				{
+					Name:            "role-active",
+					PermissionSetId: classicPS.GetId(),
+					AccessScopeId:   classicAS.GetId(),
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(tomorrow),
+					},
+				},
+			},
+			permissionSets: []*storage.PermissionSet{
+				{
+					Id:   psExpiredID,
+					Name: "ps-expired",
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(twoDaysAgo),
+					},
+				},
+				{
+					Id:     psNoExpiryID,
+					Name:   "ps-no-expiry",
+					Traits: &storage.Traits{},
+				},
+			},
+			accessScopes: []*storage.SimpleAccessScope{
+				{
+					Id:    asExpiredID,
+					Name:  "as-expired",
+					Rules: &storage.SimpleAccessScope_Rules{},
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(yesterday),
+					},
+				},
+				{
+					Id:    asActiveID,
+					Name:  "as-active",
+					Rules: &storage.SimpleAccessScope_Rules{},
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(tomorrow),
+					},
+				},
+			},
+			expectedRoleDeletions: set.NewFrozenStringSet("role-expired"),
+			expectedPSDeletions:   set.NewFrozenStringSet(psExpiredID),
+			expectedASDeletions:   set.NewFrozenStringSet(asExpiredID),
+		},
+		{
+			name: "nothing to remove when all unexpired",
+			roles: []*storage.Role{
+				{
+					Name:            "role-1",
+					PermissionSetId: classicPS.GetId(),
+					AccessScopeId:   classicAS.GetId(),
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(tomorrow),
+					},
+				},
+			},
+			permissionSets: []*storage.PermissionSet{
+				{
+					Id:     uuid.NewV4().String(),
+					Name:   "ps-1",
+					Traits: &storage.Traits{},
+				},
+			},
+			accessScopes: []*storage.SimpleAccessScope{
+				{
+					Id:    uuid.NewV4().String(),
+					Name:  "as-1",
+					Rules: &storage.SimpleAccessScope_Rules{},
+					Traits: &storage.Traits{
+						ExpiresAt: timestamppb.New(tomorrow),
+					},
+				},
+			},
+			expectedRoleDeletions: set.NewFrozenStringSet(),
+			expectedPSDeletions:   set.NewFrozenStringSet(),
+			expectedASDeletions:   set.NewFrozenStringSet(),
+		},
+		{
+			name:                  "nothing to remove when no objects exist",
+			expectedRoleDeletions: set.NewFrozenStringSet(),
+			expectedPSDeletions:   set.NewFrozenStringSet(),
+			expectedASDeletions:   set.NewFrozenStringSet(),
+		},
+	}
+
+	for _, c := range cases {
+		s.T().Run(c.name, func(t *testing.T) {
+			roleStore := roleDataStore.GetTestPostgresDataStore(t, s.pool)
+
+			// Add classic permission set and access scope for roles to reference.
+			assert.NoError(t, roleStore.AddPermissionSet(pruningCtx, classicPS))
+			assert.NoError(t, roleStore.AddAccessScope(pruningCtx, classicAS))
+			t.Cleanup(func() {
+				_ = roleStore.RemovePermissionSet(pruningCtx, classicPS.GetId())
+				_ = roleStore.RemoveAccessScope(pruningCtx, classicAS.GetId())
+			})
+
+			for _, role := range c.roles {
+				assert.NoError(t, roleStore.AddRole(pruningCtx, role))
+				t.Cleanup(func() {
+					_ = roleStore.RemoveRole(pruningCtx, role.GetName())
+				})
+			}
+
+			for _, ps := range c.permissionSets {
+				assert.NoError(t, roleStore.AddPermissionSet(pruningCtx, ps))
+				t.Cleanup(func() {
+					_ = roleStore.RemovePermissionSet(pruningCtx, ps.GetId())
+				})
+			}
+
+			for _, as := range c.accessScopes {
+				assert.NoError(t, roleStore.AddAccessScope(pruningCtx, as))
+				t.Cleanup(func() {
+					_ = roleStore.RemoveAccessScope(pruningCtx, as.GetId())
+				})
+			}
+
+			gc := &garbageCollectorImpl{
+				roleStore: roleStore,
+			}
+
+			gc.removeExpiredDynamicRBACObjects()
+
+			for _, role := range c.roles {
+				_, ok, err := roleStore.GetRole(pruningCtx, role.GetName())
+				assert.NoError(t, err)
+				assert.Equal(t, !c.expectedRoleDeletions.Contains(role.GetName()), ok)
+			}
+
+			for _, ps := range c.permissionSets {
+				_, ok, err := roleStore.GetPermissionSet(pruningCtx, ps.GetId())
+				assert.NoError(t, err)
+				assert.Equal(t, !c.expectedPSDeletions.Contains(ps.GetId()), ok)
+			}
+
+			for _, as := range c.accessScopes {
+				_, ok, err := roleStore.GetAccessScope(pruningCtx, as.GetId())
+				assert.NoError(t, err)
+				assert.Equal(t, !c.expectedASDeletions.Contains(as.GetId()), ok)
+			}
+		})
+	}
+}
+
+func (s *PruningTestSuite) TestRemoveExpiredDynamicRBACObjects_WhenDisabled() {
+	disableDynamicRBACPruningForTest(s.T())
+
+	now := time.Now()
+	yesterday := now.Add(-24 * time.Hour)
+
+	// Create classic (non-expiring) access scope and permission set for roles to reference.
+	classicPS := &storage.PermissionSet{
+		Id:               uuid.NewV4().String(),
+		Name:             "classic-ps-disabled",
+		ResourceToAccess: map[string]storage.Access{"Cluster": storage.Access_READ_ACCESS},
+		Traits:           nil,
+	}
+	classicAS := &storage.SimpleAccessScope{
+		Id:     uuid.NewV4().String(),
+		Name:   "classic-as-disabled",
+		Rules:  &storage.SimpleAccessScope_Rules{},
+		Traits: nil,
+	}
+
+	roleStore := roleDataStore.GetTestPostgresDataStore(s.T(), s.pool)
+
+	// Add classic permission set and access scope for roles to reference.
+	s.Require().NoError(roleStore.AddPermissionSet(pruningCtx, classicPS))
+	s.Require().NoError(roleStore.AddAccessScope(pruningCtx, classicAS))
+	s.T().Cleanup(func() {
+		_ = roleStore.RemovePermissionSet(pruningCtx, classicPS.GetId())
+		_ = roleStore.RemoveAccessScope(pruningCtx, classicAS.GetId())
+	})
+
+	// Create expired RBAC objects.
+	expiredRole := &storage.Role{
+		Name:            "expired-role-disabled",
+		PermissionSetId: classicPS.GetId(),
+		AccessScopeId:   classicAS.GetId(),
+		Traits: &storage.Traits{
+			ExpiresAt: timestamppb.New(yesterday),
+		},
+	}
+	expiredPS := &storage.PermissionSet{
+		Id:   uuid.NewV4().String(),
+		Name: "expired-ps-disabled",
+		Traits: &storage.Traits{
+			ExpiresAt: timestamppb.New(yesterday),
+		},
+	}
+	expiredAS := &storage.SimpleAccessScope{
+		Id:    uuid.NewV4().String(),
+		Name:  "expired-as-disabled",
+		Rules: &storage.SimpleAccessScope_Rules{},
+		Traits: &storage.Traits{
+			ExpiresAt: timestamppb.New(yesterday),
+		},
+	}
+
+	s.Require().NoError(roleStore.AddRole(pruningCtx, expiredRole))
+	s.Require().NoError(roleStore.AddPermissionSet(pruningCtx, expiredPS))
+	s.Require().NoError(roleStore.AddAccessScope(pruningCtx, expiredAS))
+	s.T().Cleanup(func() {
+		_ = roleStore.RemoveRole(pruningCtx, expiredRole.GetName())
+		_ = roleStore.RemovePermissionSet(pruningCtx, expiredPS.GetId())
+		_ = roleStore.RemoveAccessScope(pruningCtx, expiredAS.GetId())
+	})
+
+	gc := &garbageCollectorImpl{
+		roleStore: roleStore,
+	}
+
+	// Call pruning - it should be a no-op since pruning is disabled.
+	gc.removeExpiredDynamicRBACObjects()
+
+	// Verify that none of the expired objects were deleted.
+	_, ok, err := roleStore.GetRole(pruningCtx, expiredRole.GetName())
+	s.NoError(err)
+	s.True(ok, "expired role should still exist when pruning is disabled")
+
+	_, ok, err = roleStore.GetPermissionSet(pruningCtx, expiredPS.GetId())
+	s.NoError(err)
+	s.True(ok, "expired permission set should still exist when pruning is disabled")
+
+	_, ok, err = roleStore.GetAccessScope(pruningCtx, expiredAS.GetId())
+	s.NoError(err)
+	s.True(ok, "expired access scope should still exist when pruning is disabled")
 }
 
 func (s *PruningTestSuite) addSomePods(podDS podDatastore.DataStore, clusterID string, numberPods int) {

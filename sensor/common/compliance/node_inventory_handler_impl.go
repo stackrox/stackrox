@@ -66,7 +66,7 @@ func (c *nodeInventoryHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 }
 
 func (c *nodeInventoryHandlerImpl) Capabilities() []centralsensor.SensorCapability {
-	return nil
+	return []centralsensor.SensorCapability{centralsensor.SensorACKSupport}
 }
 
 // ResponsesC returns a channel with messages to Central. It must be called after Start() for the channel to be not nil
@@ -115,15 +115,79 @@ func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
 }
 
 func (c *nodeInventoryHandlerImpl) Accepts(msg *central.MsgToSensor) bool {
-	return msg.GetNodeInventoryAck() != nil
+	if msg.GetNodeInventoryAck() != nil {
+		return true
+	}
+	if sensorAck := msg.GetSensorAck(); sensorAck != nil {
+		switch sensorAck.GetMessageType() {
+		case central.SensorACK_NODE_INVENTORY, central.SensorACK_NODE_INDEX_REPORT:
+			return true
+		}
+	}
+	return false
 }
 
 func (c *nodeInventoryHandlerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
-	ackMsg := msg.GetNodeInventoryAck()
-	if ackMsg == nil {
+	// Handle new SensorACK message (from Central 4.10+)
+	if sensorAck := msg.GetSensorAck(); sensorAck != nil {
+		return c.processSensorACK(sensorAck)
+	}
+
+	// Handle legacy NodeInventoryACK message (from Central 4.9 and earlier)
+	if ackMsg := msg.GetNodeInventoryAck(); ackMsg != nil {
+		return c.processNodeInventoryACK(ackMsg)
+	}
+
+	return nil
+}
+
+// processSensorACK handles the new generic SensorACK message from Central.
+// Only node-related ACK/NACK messages (NODE_INVENTORY, NODE_INDEX_REPORT) are forwarded to Compliance.
+// All other message types are ignored - they should be handled by their respective handlers.
+func (c *nodeInventoryHandlerImpl) processSensorACK(sensorAck *central.SensorACK) error {
+	log.Debugf("Received SensorACK message: type=%s, action=%s, resource_id=%s, reason=%s",
+		sensorAck.GetMessageType(), sensorAck.GetAction(), sensorAck.GetResourceId(), sensorAck.GetReason())
+
+	metrics.ObserveNodeScanningAck(sensorAck.GetResourceId(),
+		sensorAck.GetAction().String(),
+		sensorAck.GetMessageType().String(),
+		metrics.AckOperationReceive,
+		"", metrics.AckOriginSensor)
+
+	// Only handle node-related message types - all others are handled by their respective handlers
+	var messageType sensor.MsgToCompliance_ComplianceACK_MessageType
+	switch sensorAck.GetMessageType() {
+	case central.SensorACK_NODE_INVENTORY:
+		messageType = sensor.MsgToCompliance_ComplianceACK_NODE_INVENTORY
+	case central.SensorACK_NODE_INDEX_REPORT:
+		messageType = sensor.MsgToCompliance_ComplianceACK_NODE_INDEX_REPORT
+	default:
+		// Not a node-related message - ignore it (handled by other handlers like VM handler)
+		log.Debugf("Ignoring SensorACK message type %s - not handled by node inventory handler", sensorAck.GetMessageType())
 		return nil
 	}
-	log.Debugf("Received node-scanning-ACK message of type %s, action %s for node %s",
+
+	// Map central.SensorACK action to sensor.ComplianceACK action
+	var action sensor.MsgToCompliance_ComplianceACK_Action
+	switch sensorAck.GetAction() {
+	case central.SensorACK_ACK:
+		action = sensor.MsgToCompliance_ComplianceACK_ACK
+	case central.SensorACK_NACK:
+		action = sensor.MsgToCompliance_ComplianceACK_NACK
+	default:
+		log.Debugf("Ignoring SensorACK message with unknown action %s: type=%s, resource_id=%s, reason=%s",
+			sensorAck.GetAction(), sensorAck.GetMessageType(), sensorAck.GetResourceId(), sensorAck.GetReason())
+		return nil
+	}
+
+	c.sendComplianceAckToCompliance(sensorAck.GetResourceId(), action, messageType, sensorAck.GetReason())
+	return nil
+}
+
+// processNodeInventoryACK handles the legacy NodeInventoryACK message from Central 4.9 and earlier.
+// It forwards the ACK/NACK to Compliance using the legacy NodeInventoryACK message type.
+func (c *nodeInventoryHandlerImpl) processNodeInventoryACK(ackMsg *central.NodeInventoryACK) error {
+	log.Debugf("Received legacy node-scanning-ACK message of type %s, action %s for node %s",
 		ackMsg.GetMessageType(), ackMsg.GetAction(), ackMsg.GetNodeName())
 	metrics.ObserveNodeScanningAck(ackMsg.GetNodeName(),
 		ackMsg.GetAction().String(),
@@ -282,6 +346,47 @@ func (c *nodeInventoryHandlerImpl) sendAckToCompliance(
 		messageType.String(),
 		metrics.AckOperationSend,
 		reason, metrics.AckOriginSensor)
+}
+
+// sendComplianceAckToCompliance sends the new ComplianceACK message to Compliance.
+// This is used for the new SensorACK message from Central 4.10+.
+func (c *nodeInventoryHandlerImpl) sendComplianceAckToCompliance(
+	resourceID string,
+	action sensor.MsgToCompliance_ComplianceACK_Action,
+	messageType sensor.MsgToCompliance_ComplianceACK_MessageType,
+	reason string,
+) {
+	select {
+	case <-c.stopper.Flow().StopRequested():
+		log.Debugf("Skipped sending ComplianceACK (stop requested): type=%s, action=%s, resource_id=%s, reason=%s",
+			messageType, action, resourceID, reason)
+	case c.toCompliance <- common.MessageToComplianceWithAddress{
+		Msg: &sensor.MsgToCompliance{
+			Msg: &sensor.MsgToCompliance_ComplianceAck{
+				ComplianceAck: &sensor.MsgToCompliance_ComplianceACK{
+					Action:      action,
+					MessageType: messageType,
+					ResourceId:  resourceID,
+					Reason:      reason,
+				},
+			},
+		},
+		Hostname:  resourceID, // For node-based messages, resourceID is the node name
+		Broadcast: resourceID == "",
+	}:
+		log.Debugf("Sent ComplianceACK to Compliance: type=%s, action=%s, resource_id=%s, reason=%s",
+			messageType, action, resourceID, reason)
+
+		// Record old metric for compatiblity.
+		// Note the new 'reason' is set in Central and is a string, not an enum, thus hardcoding here to 'forward'.
+		// The new metric for the SensorACK records the reason fully (as a string).
+		metrics.ObserveNodeScanningAck(resourceID,
+			action.String(),
+			messageType.String(),
+			metrics.AckOperationSend,
+			metrics.AckReasonForwardingFromCentral,
+			metrics.AckOriginSensor)
+	}
 }
 
 func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *message.ExpiringMessage, inventory *storage.NodeInventory) {

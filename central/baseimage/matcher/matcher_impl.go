@@ -28,7 +28,7 @@ func New(
 	}
 }
 
-func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string) ([]*storage.BaseImageInfo, error) {
+func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string) ([]*storage.BaseImage, error) {
 	start := time.Now()
 
 	defer func() {
@@ -45,15 +45,20 @@ func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string) (
 	if err != nil {
 		return nil, fmt.Errorf("listing candidates for layer %s: %w", firstLayer, err)
 	}
-	var baseImages []*storage.BaseImageInfo
+	var baseImages []*storage.BaseImage
+	maxLayers := 0
+
 	for _, c := range candidates {
 		candidateLayers := c.GetLayers()
 		slices.SortFunc(candidateLayers, func(a, b *storage.BaseImageLayer) int {
 			return int(a.GetIndex() - b.GetIndex())
 		})
+
+		// base images should always have less layers than a target image
 		if len(layers) <= len(candidateLayers) {
 			continue
 		}
+
 		match := true
 		for i, l := range candidateLayers {
 			if layers[i] != l.GetLayerDigest() {
@@ -63,13 +68,18 @@ func (m matcherImpl) MatchWithBaseImages(ctx context.Context, layers []string) (
 		}
 
 		if match {
-			baseImages = append(baseImages, &storage.BaseImageInfo{
-				BaseImageId:       c.GetId(),
-				BaseImageFullName: fmt.Sprintf("%s:%s", c.GetRepository(), c.GetTag()),
-				BaseImageDigest:   c.GetManifestDigest(),
-				Created:           c.GetCreated(),
-			})
+			n := len(candidateLayers)
+
+			if n > maxLayers {
+				// Found a better (longer) match: reset the slice and update max
+				maxLayers = n
+				baseImages = []*storage.BaseImage{c}
+			} else if n == maxLayers {
+				// Found another match of the same (maximum) length
+				baseImages = append(baseImages, c)
+			}
 		}
 	}
+
 	return baseImages, nil
 }

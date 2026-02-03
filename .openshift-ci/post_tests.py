@@ -163,7 +163,7 @@ class PostClusterTest(StoreArtifacts):
         self._check_stackrox_logs = check_stackrox_logs
         self.k8s_namespaces = [
             "stackrox",
-            "stackrox-operator",
+            "rhacs-operator-system",
             "proxies",
             "squid",
             "kube-system",

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -63,7 +64,7 @@ func (s *resolverSuite) SetupTest() {
 
 func (s *resolverSuite) newResolver(pubsubEnabled bool) component.Resolver {
 	if pubsubEnabled {
-		s.mockPubSubDispatcher.EXPECT().RegisterConsumerToLane(gomock.Any(), gomock.Any(), gomock.Any()).Times(2).Return(nil)
+		s.mockPubSubDispatcher.EXPECT().RegisterConsumerToLane(gomock.Eq(pubsub.ResolverConsumer), gomock.Any(), gomock.Any(), gomock.Any()).Times(2).Return(nil)
 	}
 	resolver, err := New(s.mockOutput, &fakeProvider{
 		deploymentStore: s.mockDeploymentStore,

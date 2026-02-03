@@ -293,7 +293,6 @@
         "RENAME",
         "PERMISSION_CHANGE",
         "OWNERSHIP_CHANGE",
-        "WRITE",
         "OPEN"
       ],
       "default": "CREATE"

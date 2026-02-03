@@ -57,6 +57,7 @@ export const PLATFORM_CVE_ENTITY_CONTEXT_VIEWED = 'Platform CVE Entity Context V
 
 // cluster-init-bundles
 export const CREATE_INIT_BUNDLE_CLICKED = 'Create Init Bundle Clicked';
+export const VIEW_INIT_BUNDLES_CLICKED = 'View Init Bundles Clicked';
 export const SECURE_A_CLUSTER_LINK_CLICKED = 'Secure a Cluster Link Clicked';
 export const LEGACY_SECURE_A_CLUSTER_LINK_CLICKED = 'Legacy Secure a Cluster Link Clicked';
 export const CRS_SECURE_A_CLUSTER_LINK_CLICKED = 'CRS Secure a Cluster Link Clicked';
@@ -113,7 +114,7 @@ type AnalyticsBoolean = 0 | 1;
  */
 export const searchCategoriesWithFilter = [
     'Component Source',
-    'Component From Base Image',
+    'Component Layer Type',
     'SEVERITY',
     'FIXABLE',
     'CLUSTER CVE FIXABLE',
@@ -361,11 +362,22 @@ export type AnalyticsEvent =
       }
     /**
      * Tracks each time the user clicks the "Create Bundle" button
+     * source: 'No Clusters' is superseded by the following event in 4.10
      */
     | {
           event: typeof CREATE_INIT_BUNDLE_CLICKED;
           properties: {
               source: 'No Clusters' | 'Cluster Init Bundles';
+          };
+      }
+    /**
+     * Tracks each time the user clicks the "Init bundles installation method" link
+     * superseded the preceding event in 4.10
+     */
+    | {
+          event: typeof VIEW_INIT_BUNDLES_CLICKED;
+          properties: {
+              source: 'No Clusters';
           };
       }
     /**

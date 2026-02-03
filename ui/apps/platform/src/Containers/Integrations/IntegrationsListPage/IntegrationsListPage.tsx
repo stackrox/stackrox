@@ -21,7 +21,7 @@ import { actions as cloudSourcesActions } from 'reducers/cloudSources';
 import { getTableUIState } from 'utils/getTableUIState';
 import { integrationsPath } from 'routePaths';
 
-import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
+import TechnologyPreviewLabel from 'Components/PatternFly/PreviewLabel/TechnologyPreviewLabel';
 import useIntegrations from '../hooks/useIntegrations';
 import { getIntegrationLabel } from '../utils/integrationsList';
 import {
@@ -122,7 +122,7 @@ function IntegrationsListPage({
                             alignItems={{ default: 'alignItemsCenter' }}
                         >
                             <span>{typeLabel}</span>
-                            {isTechPreview && <TechPreviewLabel />}
+                            {isTechPreview && <TechnologyPreviewLabel />}
                         </Flex>
                     </Title>
                 )}
