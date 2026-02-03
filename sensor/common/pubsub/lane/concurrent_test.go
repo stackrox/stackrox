@@ -59,21 +59,6 @@ func TestNewLaneOptions(t *testing.T) {
 		laneImpl, ok := lane.(*concurrentLane)
 		require.True(t, ok)
 		assert.NotNil(t, laneImpl.newConsumerFn)
-		assert.Len(t, laneImpl.consumerOpts, 0)
-	})
-	t.Run("with custom consumer and consumer options", func(t *testing.T) {
-		config := NewConcurrentLane(
-			pubsub.DefaultLane,
-			WithConcurrentLaneConsumer(newTestConsumer, func(_ pubsub.Consumer) {}),
-		)
-		assert.Equal(t, pubsub.DefaultLane, config.LaneID())
-		lane := config.NewLane()
-		assert.NotNil(t, lane)
-		defer lane.Stop()
-		laneImpl, ok := lane.(*concurrentLane)
-		require.True(t, ok)
-		assert.NotNil(t, laneImpl.newConsumerFn)
-		assert.Len(t, laneImpl.consumerOpts, 1)
 	})
 }
 

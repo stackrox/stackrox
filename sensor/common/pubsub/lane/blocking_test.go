@@ -64,18 +64,6 @@ func (s *blockingLaneSuite) TestNewLaneOptions() {
 		laneImpl, ok := lane.(*blockingLane)
 		require.True(s.T(), ok)
 		assert.NotNil(s.T(), laneImpl.newConsumerFn)
-		assert.Len(s.T(), laneImpl.consumerOpts, 0)
-	})
-	s.Run("with custom consumer and consumer options", func() {
-		config := NewBlockingLane(pubsub.DefaultLane, WithBlockingLaneConsumer(newTestConsumer, func(_ pubsub.Consumer) {}))
-		assert.Equal(s.T(), pubsub.DefaultLane, config.LaneID())
-		lane := config.NewLane()
-		assert.NotNil(s.T(), lane)
-		defer lane.Stop()
-		laneImpl, ok := lane.(*blockingLane)
-		require.True(s.T(), ok)
-		assert.NotNil(s.T(), laneImpl.newConsumerFn)
-		assert.Len(s.T(), laneImpl.consumerOpts, 1)
 	})
 }
 
@@ -209,7 +197,7 @@ func (t *testEvent) Lane() pubsub.LaneID {
 	return pubsub.DefaultLane
 }
 
-func newTestConsumer(_ pubsub.LaneID, _ pubsub.Topic, _ pubsub.ConsumerID, _ pubsub.EventCallback, _ ...pubsub.ConsumerOption) (pubsub.Consumer, error) {
+func newTestConsumer(_ pubsub.LaneID, _ pubsub.Topic, _ pubsub.ConsumerID, _ pubsub.EventCallback) (pubsub.Consumer, error) {
 	return &testCustomConsumer{}, nil
 }
 
