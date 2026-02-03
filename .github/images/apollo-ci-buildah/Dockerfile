@@ -8,7 +8,8 @@ FROM registry.access.redhat.com/ubi9:latest
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Install base packages first
-RUN dnf install -y \
+# Use --allowerasing to replace curl-minimal with curl
+RUN dnf install -y --allowerasing \
         buildah \
         git \
         make \
@@ -20,8 +21,6 @@ RUN dnf install -y \
         which \
         procps-ng \
         curl \
-        tar \
-        gzip \
     && dnf clean all \
     && rm -rf /var/cache/dnf
 
