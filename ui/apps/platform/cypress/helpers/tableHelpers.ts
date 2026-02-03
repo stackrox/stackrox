@@ -1,3 +1,5 @@
+import pf6 from '../selectors/pf6';
+
 export function getTableRowLinkByName(name: string) {
     const exactName = new RegExp(`^${name}$`, 'g');
     return cy
@@ -96,9 +98,9 @@ function resetManagedColumns() {
 export function verifyColumnManagement({ tableSelector }: { tableSelector: string }) {
     resetManagedColumns();
 
-    // Open the colum management modal and get the list of columns
+    // Open the column management modal and get the list of columns
     cy.get('button:contains("Columns")').click();
-    cy.get('.pf-v6-c-modal-box label')
+    cy.get(pf6.columnManagementLabel)
         .then(($labels) => {
             cy.get('.pf-v6-c-modal-box button:contains("Cancel")').click();
             const columns = $labels.map((_, el) => el.innerText).get();
