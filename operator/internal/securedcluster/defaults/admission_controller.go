@@ -143,15 +143,16 @@ func setAdmissionControllerResourceDefaults(spec *platform.SecuredClusterSpec, d
 		return
 	}
 
-	// Determine enforcement status (check defaults first, then spec).
-	enforcement := platform.PolicyEnforcementDisabled
-	if defaults.AdmissionControl != nil && defaults.AdmissionControl.Enforcement != nil {
-		enforcement = *defaults.AdmissionControl.Enforcement
-	} else if spec.AdmissionControl != nil && spec.AdmissionControl.Enforcement != nil {
+	// Determine enforcement status. Check spec first (user's explicit setting), then use computed defaults.
+	var enforcement platform.PolicyEnforcement
+	if spec.AdmissionControl != nil && spec.AdmissionControl.Enforcement != nil {
 		enforcement = *spec.AdmissionControl.Enforcement
+	} else {
+		// Computed defaults are guaranteed to be set by green/brown field defaulting functions.
+		enforcement = *defaults.AdmissionControl.Enforcement
 	}
 
-	// Set resources based on enforcement status.
+	// Set default resources based on enforcement status.
 	if enforcement == platform.PolicyEnforcementEnabled {
 		defaults.AdmissionControl.Resources = defaultResourcesEnforcementEnabled.DeepCopy()
 	} else {

@@ -104,7 +104,7 @@ func TestReconcileAdmissionControllerDef(t *testing.T) {
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 				Replicas:      ptr.To(int32(3)),
-				Enforcement:   nil,
+				Enforcement:   ptr.To(platform.PolicyEnforcementDisabled),
 			},
 			ExpectedAnnotations: map[string]string{
 				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "",
