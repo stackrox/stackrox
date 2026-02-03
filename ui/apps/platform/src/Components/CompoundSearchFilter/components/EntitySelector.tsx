@@ -1,4 +1,4 @@
-import { SelectOption } from '@patternfly/react-core';
+import { SelectOption, ToolbarItem } from '@patternfly/react-core';
 
 import SimpleSelect from './SimpleSelect';
 import type { CompoundSearchFilterConfig, CompoundSearchFilterEntity } from '../types';
@@ -15,21 +15,23 @@ export type EntitySelectorProps = {
 
 function EntitySelector({ entity, onChange, config, menuToggleClassName }: EntitySelectorProps) {
     return (
-        <SimpleSelect
-            menuToggleClassName={menuToggleClassName}
-            value={entity.displayName}
-            onChange={onChange}
-            ariaLabelMenu="compound search filter entity selector menu"
-            ariaLabelToggle="compound search filter entity selector toggle"
-        >
-            {config.map(({ displayName }) => {
-                return (
-                    <SelectOption key={displayName} value={displayName}>
-                        {displayName}
-                    </SelectOption>
-                );
-            })}
-        </SimpleSelect>
+        <ToolbarItem>
+            <SimpleSelect
+                menuToggleClassName={menuToggleClassName}
+                value={entity.displayName}
+                onChange={onChange}
+                ariaLabelMenu="compound search filter entity selector menu"
+                ariaLabelToggle="compound search filter entity selector toggle"
+            >
+                {config.map(({ displayName }) => {
+                    return (
+                        <SelectOption key={displayName} value={displayName}>
+                            {displayName}
+                        </SelectOption>
+                    );
+                })}
+            </SimpleSelect>
+        </ToolbarItem>
     );
 }
 

@@ -205,18 +205,16 @@ function PoliciesTable({
             <PageSection hasBodyWrapper={false} isFilled id="policies-table">
                 <Toolbar>
                     <ToolbarContent>
-                        <ToolbarItem className="pf-v6-u-w-100">
-                            <CompoundSearchFilter
-                                config={searchFilterConfig}
-                                searchFilter={searchFilter}
-                                onSearch={(payload) => {
-                                    handleChangeSearchFilter(
-                                        updateSearchFilter(searchFilter, payload)
-                                    );
-                                }}
-                                defaultEntity={'Policy'}
-                            />
-                        </ToolbarItem>
+                        <CompoundSearchFilter
+                            config={searchFilterConfig}
+                            searchFilter={searchFilter}
+                            onSearch={(payload) => {
+                                handleChangeSearchFilter(
+                                    updateSearchFilter(searchFilter, payload)
+                                );
+                            }}
+                            defaultEntity={'Policy'}
+                        />
                         <ToolbarItem className="pf-v6-u-w-100">
                             <CompoundSearchFilterLabels
                                 attributesSeparateFromConfig={[]}
