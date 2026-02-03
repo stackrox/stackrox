@@ -671,7 +671,7 @@ func TestSelectQueries(t *testing.T) {
 		},
 		{
 			desc: "base schema; select w/ where; image scope",
-			ctx: scoped.Context(context.Background(), scoped.Scope{
+			ctx: scoped.Context(sac.WithAllAccess(context.Background()), scoped.Scope{
 				IDs:   []string{"fake-image"},
 				Level: v1.SearchCategory_IMAGES,
 			}),
@@ -685,7 +685,7 @@ func TestSelectQueries(t *testing.T) {
 		},
 		{
 			desc: "base schema; select w/ multiple scopes",
-			ctx: scoped.Context(context.Background(), scoped.Scope{
+			ctx: scoped.Context(sac.WithAllAccess(context.Background()), scoped.Scope{
 				IDs:   []string{uuid.NewV4().String()},
 				Level: v1.SearchCategory_NAMESPACES,
 				Parent: &scoped.Scope{
@@ -740,7 +740,7 @@ func TestSelectQueries(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			ctx := c.ctx
 			if c.ctx == nil {
-				ctx = context.Background()
+				ctx = sac.WithAllAccess(context.Background())
 			}
 			testSchema := c.schema
 			actualQ, err := standardizeSelectQueryAndPopulatePath(ctx, c.q, testSchema, SELECT)
