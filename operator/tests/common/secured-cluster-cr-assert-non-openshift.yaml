@@ -1,0 +1,26 @@
+# Make kuttl ignore this file if running against openshift.
+apiVersion: kuttl.dev/v1beta1
+kind: TestFile
+testRunSelector:
+  matchLabels:
+    openshift: "false"
+---
+# Non-OpenShift (Kubernetes) webhook assertions (26s + 2s padding = 28s timeout)
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: stackrox
+webhooks:
+  - name: policyeval.stackrox.io
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+    failurePolicy: Ignore
+    timeoutSeconds: 28
+  - name: k8sevents.stackrox.io
+    rules:
+      - operations:
+          - CONNECT
+    failurePolicy: Ignore
+    timeoutSeconds: 28

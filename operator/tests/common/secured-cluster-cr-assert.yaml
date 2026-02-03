@@ -72,23 +72,6 @@ metadata:
   name: securedcluster-stackrox-secured-cluster-services-proxy-env
 data:
   NO_PROXY: MTI3LjEuMi4zLzg= # 127.1.2.3/8
----
-# Default ValidatingWebhookConfiguration
-apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingWebhookConfiguration
-metadata:
-  name: stackrox
-webhooks:
-  - name: policyeval.stackrox.io
-    rules:
-      - operations:
-          - CREATE
-          - UPDATE
-    failurePolicy: Ignore
-    timeoutSeconds: 12
-  - name: k8sevents.stackrox.io
-    rules:
-      - operations:
-          - CONNECT
-    failurePolicy: Ignore
-    timeoutSeconds: 12
+# ValidatingWebhookConfiguration assertions are in environment-specific files:
+# - secured-cluster-cr-assert-openshift.yaml (timeoutSeconds: 12)
+# - secured-cluster-cr-assert-non-openshift.yaml (timeoutSeconds: 28)
