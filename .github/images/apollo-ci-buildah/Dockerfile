@@ -2,21 +2,12 @@
 # Version: 0.6.0
 # Supports both amd64 and arm64 architectures
 
-# Use multi-stage build to get Go from official image
-FROM docker.io/library/golang:1.24.0 AS golang
-
-# Use UBI9 as the final base (multi-arch)
 FROM registry.access.redhat.com/ubi9:latest
 
 # This line makes sure that piped commands in RUN instructions exit early.
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Copy Go from the golang image
-COPY --from=golang /usr/local/go /usr/local/go
-ENV PATH="/usr/local/go/bin:/go/bin:${PATH}"
-ENV GOPATH=/go
-
-# Install base packages
+# Install base packages first
 RUN dnf install -y \
         buildah \
         git \
@@ -29,9 +20,27 @@ RUN dnf install -y \
         which \
         procps-ng \
         curl \
+        tar \
+        gzip \
     && dnf clean all \
-    && rm -rf /var/cache/dnf \
-    && go version
+    && rm -rf /var/cache/dnf
+
+# Install Go (multi-arch) - download directly to avoid Docker Hub rate limits
+ARG GO_VERSION=1.24.0
+RUN set -ex \
+    && ARCH=$(uname -m) \
+    && case "${ARCH}" in \
+         x86_64) GOARCH=amd64 ;; \
+         aarch64) GOARCH=arm64 ;; \
+         *) echo "Unsupported architecture: ${ARCH}" && exit 1 ;; \
+       esac \
+    && curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${GOARCH}.tar.gz" -o /tmp/go.tar.gz \
+    && tar -C /usr/local -xzf /tmp/go.tar.gz \
+    && rm /tmp/go.tar.gz \
+    && /usr/local/go/bin/go version
+
+ENV PATH="/usr/local/go/bin:/go/bin:${PATH}"
+ENV GOPATH=/go
 
 # Install Node.js (multi-arch)
 ARG NODE_VERSION=20
