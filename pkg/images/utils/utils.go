@@ -481,3 +481,11 @@ func FillScanStatsV2(i *storage.ImageV2) {
 		}
 	}
 }
+
+func StripDatasourceNoClone(scan *storage.ImageScan) {
+	for _, c := range scan.GetComponents() {
+		for _, v := range c.GetVulns() {
+			v.Datasource = ""
+		}
+	}
+}

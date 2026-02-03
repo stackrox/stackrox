@@ -6603,6 +6603,11 @@
                 "id": 16,
                 "name": "fix_available_timestamp",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 17,
+                "name": "datasource",
+                "type": "string"
               }
             ]
           },
