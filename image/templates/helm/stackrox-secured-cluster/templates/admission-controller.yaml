@@ -190,7 +190,7 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "validatingwebhookconfiguration" "stackrox") | nindent 4 }}
 webhooks:
-  {{- if ._rox.admissionControl.enforce }}
+  {{- if or ._rox.admissionControl.enforceOnCreates _rox.admissionControl.enforceOnUpdates }}
   - name: policyeval.stackrox.io
     {{- if ne ._rox.env.openshift 3 }}
     sideEffects: NoneOnDryRun
