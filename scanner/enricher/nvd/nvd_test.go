@@ -17,12 +17,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/test"
 	"github.com/stackrox/rox/pkg/scannerv4/enricher/nvd"
 )
 
 func TestConfigure(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	tt := []configTestcase{
 		{
 			Name: "None",
@@ -88,7 +88,7 @@ type configTestcase struct {
 func (tc configTestcase) Run(ctx context.Context) func(*testing.T) {
 	e := &Enricher{}
 	return func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t, ctx)
 		f := tc.Config
 		if f == nil {
 			f = noopConfig
@@ -107,7 +107,7 @@ func (tc configTestcase) Run(ctx context.Context) func(*testing.T) {
 func noopConfig(_ interface{}) error { return nil }
 
 func TestFetch(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	srv := mockServer(t)
 	tt := []fetchTestcase{
 		{
@@ -184,7 +184,7 @@ type fetchTestcase struct {
 func (tc fetchTestcase) Run(ctx context.Context, srv *httptest.Server) func(*testing.T) {
 	e := &Enricher{}
 	return func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t, ctx)
 		f := func(i interface{}) error {
 			cfg, ok := i.(*Config)
 			if !ok {
@@ -247,7 +247,7 @@ func mockServer(t *testing.T) *httptest.Server {
 }
 
 func TestParse(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	srv := mockServer(t)
 	tt := []parseTestcase{
 		{
@@ -267,7 +267,7 @@ type parseTestcase struct {
 func (tc parseTestcase) Run(ctx context.Context, srv *httptest.Server) func(*testing.T) {
 	e := &Enricher{}
 	return func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t, ctx)
 		f := func(i interface{}) error {
 			cfg, ok := i.(*Config)
 			if !ok {
@@ -302,7 +302,7 @@ func (tc parseTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 }
 
 func TestEnrich(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	g := newFakeGetter(t, "testdata/feed.json")
 	r := &claircore.VulnerabilityReport{
 		Vulnerabilities: map[string]*claircore.Vulnerability{

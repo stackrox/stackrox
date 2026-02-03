@@ -1,7 +1,6 @@
 package mappers
 
 import (
-	"context"
 	"slices"
 	"strings"
 	"testing"
@@ -10,6 +9,7 @@ import (
 	nvdschema "github.com/facebookincubator/nvdtools/cveapi/nvd/schema"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/enricher/epss"
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/toolkit/types/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/features"
@@ -299,9 +299,9 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 			wantErr: "",
 		},
 	}
-	ctx := context.Background()
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			ctx := test.Logging(t)
 			got, err := ToProtoV4VulnerabilityReport(ctx, tt.arg)
 			if tt.wantErr == "" {
 				assert.NoError(t, err)
@@ -451,9 +451,9 @@ func Test_ToProtoV4VulnerabilityReport_FilterNodeJS(t *testing.T) {
 			wantErr: "",
 		},
 	}
-	ctx := context.Background()
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			ctx := test.Logging(t)
 			got, err := ToProtoV4VulnerabilityReport(ctx, tt.arg)
 			if tt.wantErr == "" {
 				assert.NoError(t, err)
@@ -785,9 +785,9 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 			wantErr: "",
 		},
 	}
-	ctx := context.Background()
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			ctx := test.Logging(t)
 			got, err := ToProtoV4VulnerabilityReport(ctx, tt.arg)
 			if tt.wantErr != "" {
 				assert.ErrorContains(t, err, tt.wantErr)
@@ -1565,9 +1565,9 @@ func Test_toProtoV4VulnerabilitiesMapWithEPSS(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			ctx := test.Logging(t)
 			enableRedHatCVEs := "false"
 			t.Setenv(features.ScannerV4RedHatCVEs.EnvVar(), enableRedHatCVEs)
 			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns, tt.epssItems, nil)
@@ -2374,9 +2374,9 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			},
 		},
 	}
-	ctx := context.Background()
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			ctx := test.Logging(t)
 			enableRedHatCVEs := "false"
 			if tt.enableRedHatCVEs {
 				enableRedHatCVEs = "true"
@@ -2391,7 +2391,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 }
 
 func Test_convertToNormalizedSeverity(t *testing.T) {
-	ctx := context.Background()
+	ctx := test.Logging(t)
 	// Check all severities can be mapped.
 	for i := 0; i <= int(claircore.Critical); i++ {
 		ccS := claircore.Severity(i)

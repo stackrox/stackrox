@@ -1,18 +1,18 @@
 package vuln
 
 import (
-	"context"
 	"errors"
 	"testing"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 	"github.com/stackrox/rox/scanner/datastore/postgres/mocks"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
 
 func TestDistManager(t *testing.T) {
-	ctx := context.Background()
+	ctx := test.Logging(t)
 	store := mocks.NewMockMatcherStore(gomock.NewController(t))
 	m := &distManager{
 		store: store,
