@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"testing"
 
-	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
 	"github.com/stackrox/rox/central/image/datastore/keyfence"
 	pgStore "github.com/stackrox/rox/central/imagev2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
@@ -33,8 +32,7 @@ func BenchmarkImageGetMany(b *testing.B) {
 	db := testDB.DB
 
 	mockRisk := mockRisks.NewMockDataStore(gomock.NewController(b))
-	imageCVEInfo := imageCVEInfoDS.GetTestPostgresDataStore(b, db)
-	datastore := NewWithPostgres(pgStore.New(db, false, keyfence.ImageKeyFenceSingleton()), mockRisk, ranking.NewRanker(), ranking.NewRanker(), imageCVEInfo)
+	datastore := NewWithPostgres(pgStore.New(db, false, keyfence.ImageKeyFenceSingleton()), mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	ids := make([]string, 0, 100)
 	images := make([]*storage.ImageV2, 0, 100)
@@ -76,8 +74,7 @@ func BenchmarkImageUpsert(b *testing.B) {
 	db := testDB.DB
 
 	mockRisk := mockRisks.NewMockDataStore(gomock.NewController(b))
-	imageCVEInfo := imageCVEInfoDS.GetTestPostgresDataStore(b, db)
-	datastore := NewWithPostgres(pgStore.New(db, false, keyfence.ImageKeyFenceSingleton()), mockRisk, ranking.NewRanker(), ranking.NewRanker(), imageCVEInfo)
+	datastore := NewWithPostgres(pgStore.New(db, false, keyfence.ImageKeyFenceSingleton()), mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	images := make([]*storage.ImageV2, 0, 100)
 	for i := 0; i < 100; i++ {
