@@ -13,11 +13,15 @@ function isTailoredProfile(profile: ComplianceProfileSummary): boolean {
 
 // Extract unique standards from profiles and add special tabs for tailored profiles and profiles with no standards
 function getUniqueStandards(profiles: ComplianceProfileSummary[]): string[] {
-    // Get standards only from non-tailored profiles
+    // Get standards only from non-tailored profiles, filtering out empty shortNames
     const standards = new Set(
         profiles
             .filter((profile) => !isTailoredProfile(profile))
-            .flatMap((profile) => profile.standards.map((standard) => standard.shortName))
+            .flatMap((profile) =>
+                profile.standards
+                    .map((standard) => standard.shortName)
+                    .filter((shortName) => shortName && shortName.trim() !== '')
+            )
     );
 
     const standardsArray = Array.from(standards).sort();
@@ -27,8 +31,13 @@ function getUniqueStandards(profiles: ComplianceProfileSummary[]): string[] {
         standardsArray.push(TAILORED_PROFILES_TAB);
     }
 
-    // Add "Other" tab if there are non-tailored profiles with no standards
-    if (profiles.some((profile) => !isTailoredProfile(profile) && profile.standards.length === 0)) {
+    // Add "Other" tab if there are non-tailored profiles with no valid standards
+    const hasProfilesWithNoValidStandards = profiles.some(
+        (profile) =>
+            !isTailoredProfile(profile) &&
+            profile.standards.every((s) => !s.shortName || s.shortName.trim() === '')
+    );
+    if (hasProfilesWithNoValidStandards) {
         standardsArray.push(NON_STANDARD_TAB);
     }
 
@@ -50,6 +59,10 @@ function getInitialStandard(profiles: ComplianceProfileSummary[], profileName: s
     return NON_STANDARD_TAB;
 }
 
+function hasValidStandards(profile: ComplianceProfileSummary): boolean {
+    return profile.standards.some((s) => s.shortName && s.shortName.trim() !== '');
+}
+
 function isStandardInProfile(
     standardShortName: string,
     profile: ComplianceProfileSummary
@@ -58,10 +71,13 @@ function isStandardInProfile(
     if (isTailoredProfile(profile)) {
         return standardShortName === TAILORED_PROFILES_TAB;
     }
-    // Non-tailored profiles appear in their standard tabs or Other tab
-    return (
-        profile.standards.some((standard) => standard.shortName === standardShortName) ||
-        (standardShortName === NON_STANDARD_TAB && profile.standards.length === 0)
+    // Non-tailored profiles with no valid standards go to Other tab
+    if (standardShortName === NON_STANDARD_TAB) {
+        return !hasValidStandards(profile);
+    }
+    // Non-tailored profiles appear in their matching standard tabs
+    return profile.standards.some(
+        (standard) => standard.shortName && standard.shortName === standardShortName
     );
 }
 
