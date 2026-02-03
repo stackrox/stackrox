@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react';
 import { Flex, FlexItem, Label, List, ListItem, Popover } from '@patternfly/react-core';
 import { CheckCircleIcon } from '@patternfly/react-icons';
 
@@ -21,11 +20,6 @@ export type VerifiedSignatureLabelProps = {
     variant?: 'outline' | 'filled';
 };
 
-// Separate list from the title with same margin-top as second list item from the first.
-const styleList = {
-    marginTop: 'var(--pf-v5-c-list--li--MarginTop)',
-} as CSSProperties;
-
 function VerifiedSignatureLabel({
     verifiedSignatureResults,
     className,
@@ -47,7 +41,7 @@ function VerifiedSignatureLabel({
                             {verifiedSignatureResults?.map((result) => (
                                 <FlexItem key={result.verifierId}>
                                     <strong>{result.verifierId}</strong>
-                                    <List style={styleList}>
+                                    <List>
                                         {result.verifiedImageReferences?.map((name) => (
                                             <ListItem key={name}>{name}</ListItem>
                                         ))}

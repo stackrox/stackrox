@@ -94,12 +94,7 @@ function DeploymentResourceTable({
             {data.deployments.length === 0 && <EmptyTableResults colSpan={4} />}
             {data.deployments.map(({ id, name, type, clusterName, namespace, created }) => {
                 return (
-                    <Tbody
-                        key={id}
-                        style={{
-                            borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
-                        }}
-                    >
+                    <Tbody key={id}>
                         <Tr>
                             <Td dataLabel="Name" className={getVisibilityClass('name')}>
                                 <Link

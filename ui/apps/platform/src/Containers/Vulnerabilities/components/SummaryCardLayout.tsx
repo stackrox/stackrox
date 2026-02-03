@@ -33,7 +33,7 @@ export function SummaryCard<T>({ loadingText, renderer, data }: SummaryCardProps
 
 // Responsive widths for the summary cards, taking into account the gutter spacing
 const oneThirdWidth = 'calc(33.3% - var(--pf-t--global--spacer--gutter--default))';
-const oneHalfWidth = 'calc(50% - var(--pf-v5-global--gutter))';
+const oneHalfWidth = 'calc(50% - var(--pf-t--global--spacer--gutter--default))';
 const fullWidth = '100%';
 
 export type SummaryCardLayoutProps = {
