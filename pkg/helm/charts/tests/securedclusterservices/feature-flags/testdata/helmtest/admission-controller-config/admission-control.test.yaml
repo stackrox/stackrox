@@ -25,8 +25,7 @@ tests:
    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.timeoutSeconds == 10)
 - name: "disabling listenOn* is ignored"
   set:
-    admissionControl.listenOnCreates: false
-    admissionControl.listenOnUpdates: false
+    admissionControl.enforce: true
     admissionControl.listenOnEvents: false
   expect: |
    .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0].operations | assertThat(contains(["CREATE"]))
@@ -87,6 +86,60 @@ tests:
       isUpgrade: false
     set:
       admissionControl.enforce: false
+    expect: |
+      [.validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io")] | assertThat(length == 1)
+- name: "policyeval webhook deployment during upgrade from pre-4.9"
+  release:
+    isUpgrade: true
+    isInstall: false
+  server:
+    objects:
+    - apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: stackrox-secured-cluster-helm
+        namespace: stackrox
+      data:
+        installXYVersion: "4.8"
+  tests:
+  - name: "policyeval webhook is NOT deployed when enforceOn* was disabled"
+    values:
+      admissionControl:
+        dynamic:
+          enforceOnCreates: false
+          enforceOnUpdates: false
+    expect: |
+      [.validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io")] | assertThat(length == 0)
+  - name: "policyeval webhook is deployed when enforceOnCreates was enabled"
+    values:
+      admissionControl:
+        dynamic:
+          enforceOnCreates: true
+          enforceOnUpdates: false
+    expect: |
+      [.validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io")] | assertThat(length == 1)
+  - name: "policyeval webhook is deployed when enforceOnUpdates was enabled"
+    values:
+      admissionControl:
+        dynamic:
+          enforceOnCreates: false
+          enforceOnUpdates: true
+    expect: |
+      [.validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io")] | assertThat(length == 1)
+  - name: "policyeval webhook is deployed when both enforceOn* were enabled"
+    values:
+      admissionControl:
+        dynamic:
+          enforceOnCreates: true
+          enforceOnUpdates: true
+    expect: |
+      [.validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io")] | assertThat(length == 1)
+  - name: "k8sevents webhook is always deployed regardless of enforce settings"
+    values:
+      admissionControl:
+        dynamic:
+          enforceOnCreates: false
+          enforceOnUpdates: false
     expect: |
       [.validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io")] | assertThat(length == 1)
 - name: "Enforcement during upgrade from pre-4.9"
