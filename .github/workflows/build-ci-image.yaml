@@ -27,6 +27,8 @@ jobs:
     env:
       QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
       QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+      HOME: /tmp
+      XDG_RUNTIME_DIR: /tmp
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -57,6 +59,8 @@ jobs:
     env:
       QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
       QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+      HOME: /tmp
+      XDG_RUNTIME_DIR: /tmp
     steps:
       - name: Login to Quay.io
         run: |
