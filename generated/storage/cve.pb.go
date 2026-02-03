@@ -2365,7 +2365,7 @@ type ImageCVEInfo struct {
 	Id                    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE Info" sql:"pk"`                                                                      // @gotags: search:"CVE Info" sql:"pk"
 	FixAvailableTimestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=fix_available_timestamp,json=fixAvailableTimestamp,proto3" json:"fix_available_timestamp,omitempty" search:"CVE Fix Available Timestamp,hidden"` // @gotags: search:"CVE Fix Available Timestamp,hidden"
 	FirstSystemOccurrence *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=first_system_occurrence,json=firstSystemOccurrence,proto3" json:"first_system_occurrence,omitempty" search:"First System Occurrence Timestamp,hidden"` // @gotags: search:"First System Occurrence Timestamp,hidden"
-	Cve                   string                 `protobuf:"bytes,4,opt,name=cve,proto3" json:"cve,omitempty" search:"CVE" sql:"index=btree"`                                                                    // @gotags: search:"CVE" sql:"index=btree"
+	Cve                   string                 `protobuf:"bytes,4,opt,name=cve,proto3" json:"cve,omitempty" search:"CVE" sql:"index"`                                                                    // @gotags: search:"CVE" sql:"index"
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
