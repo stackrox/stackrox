@@ -252,3 +252,16 @@ select {
 .z-2xl-601 {
     z-index: 601;
 }
+
+/* Override Tailwind line-height for input elements to match PatternFly, can be removed once Tailwind is removed or isolated */
+input[type="text"],
+input[type="email"],
+input[type="url"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="search"], input[type="tel"], input[type="time"], input[type="week"], textarea, select {
+    line-height: var(--pf-t--global--font--line-height--body);
+}
