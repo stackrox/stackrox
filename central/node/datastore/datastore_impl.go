@@ -2,9 +2,10 @@ package datastore
 
 import (
 	"context"
+	"errors"
+	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/node/datastore/store"
@@ -74,18 +75,28 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (ds *datastoreImpl) SearchNodes(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), typ, "SearchNodes")
 
-	// TODO(ROX-29943): remove unnecessary calls to database
-	results, err := ds.Search(ctx, q)
+	if q == nil {
+		q = pkgSearch.EmptyQuery()
+	}
+	qClone := q.CloneVT()
+
+	qClone.Selects = append(qClone.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.Node).Proto())
+
+	results, err := ds.Search(ctx, qClone)
 	if err != nil {
 		return nil, err
 	}
 
-	components, missingIndices, err := ds.storage.GetMany(ctx, pkgSearch.ResultsToIDs(results))
-	if err != nil {
-		return nil, err
+	searchTag := strings.ToLower(pkgSearch.Node.String())
+	for i := range results {
+		if results[i].FieldValues != nil {
+			if nameVal, ok := results[i].FieldValues[searchTag]; ok {
+				results[i].Name = nameVal
+			}
+		}
 	}
-	results = pkgSearch.RemoveMissingResults(results, missingIndices)
-	return convertMany(components, results)
+
+	return pkgSearch.ResultsToSearchResultProtos(results, &NodeSearchResultConverter{}), nil
 }
 
 // SearchRawNodes delegates to the underlying searcher.
@@ -306,24 +317,21 @@ func (ds *datastoreImpl) updateComponentRisk(node *storage.Node) {
 	}
 }
 
-func convertMany(nodes []*storage.Node, results []pkgSearch.Result) ([]*v1.SearchResult, error) {
-	if len(nodes) != len(results) {
-		return nil, errors.Errorf("expected %d nodes, got %d", len(nodes), len(results))
-	}
+// NodeSearchResultConverter converts node search results to proto search results
+type NodeSearchResultConverter struct{}
 
-	outputResults := make([]*v1.SearchResult, len(nodes))
-	for i, sar := range nodes {
-		outputResults[i] = convertOne(sar, &results[i])
-	}
-	return outputResults, nil
+func (c *NodeSearchResultConverter) BuildName(result *pkgSearch.Result) string {
+	return result.Name
 }
 
-func convertOne(node *storage.Node, result *pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_NODES,
-		Id:             node.GetId(),
-		Name:           node.GetName(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+func (c *NodeSearchResultConverter) BuildLocation(result *pkgSearch.Result) string {
+	return ""
+}
+
+func (c *NodeSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_NODES
+}
+
+func (c *NodeSearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
+	return result.Score
 }

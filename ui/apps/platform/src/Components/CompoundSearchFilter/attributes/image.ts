@@ -20,7 +20,7 @@ export const Tag: CompoundSearchFilterAttribute = {
     displayName: 'Tag',
     filterChipLabel: 'Image tag',
     searchTerm: 'Image Tag',
-    inputType: 'text',
+    inputType: 'autocomplete',
 };
 
 export const Label: CompoundSearchFilterAttribute = {
@@ -34,7 +34,7 @@ export const Registry: CompoundSearchFilterAttribute = {
     displayName: 'Registry',
     filterChipLabel: 'Image registry',
     searchTerm: 'Image Registry',
-    inputType: 'text',
+    inputType: 'autocomplete',
 };
 
-export const imageAttributes = [Name, OperatingSystem, Tag, Label, Registry];
+export const imageAttributes = [Label, Name, OperatingSystem, Registry, Tag];

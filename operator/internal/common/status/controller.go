@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 	"time"
 
@@ -228,21 +229,22 @@ func determineAvailableState(deployments []appsv1.Deployment) (platform.Conditio
 		return platform.StatusFalse, "NoDeployments", "No deployments found"
 	}
 
-	allReady := true
-	notReadyCount := 0
+	var notReadyNames []string
 	for _, dep := range deployments {
 		if !isDeploymentReady(&dep) {
-			allReady = false
-			notReadyCount++
+			notReadyNames = append(notReadyNames, dep.Name)
 		}
 	}
 
-	if allReady {
+	if len(notReadyNames) == 0 {
 		return platform.StatusTrue, "DeploymentsReady", "All deployments are ready"
 	}
 
+	// Sort to avoid updates merely due to ordering changes.
+	slices.Sort(notReadyNames)
+
 	return platform.StatusFalse, "DeploymentsNotReady",
-		fmt.Sprintf("%d of %d deployments are not ready", notReadyCount, len(deployments))
+		fmt.Sprintf("%d of %d deployments are not ready: %s", len(notReadyNames), len(deployments), strings.Join(notReadyNames, ", "))
 }
 
 // isDeploymentReady checks if a deployment has all replicas available.

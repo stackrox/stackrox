@@ -18,21 +18,67 @@ import (
 // This follows the pattern from network flow dedupers (PR #17040).
 type BinaryHash uint64
 
-// This filter is a rudimentary filter that prevents a container from spamming Central
-//
-// Parameters:
-// maxExactPathMatch:
-// 	The maximum number of times a complete path has been taken
-// 	e.g. The exact path "bash -c nmap" will only be passed through at most maxExactPathMatch
-//
-// fanOut:
-// 	The degree of fan out of each level, generally decreasing
-//
-// Logic:
-// 	Keyed on deployment -> container ID, define a root level. Take the exec file path and retrieve or create
-// 	the level for that specific process. No process exec file paths are limited because we want to see all new binaries.
-// 	Then recursively sift through the args and create a level for each argument (up to len(fanOut)) that has a parent of the
-//  previous argument. If the fan out or the number of maxExactPathMatches has been exceeded, then return false. Otherwise, return true
+/***
+This filter is a rudimentary filter that prevents a container from spamming Central
+
+Parameters:
+### How `ROX_PROCESS_FILTER_FAN_OUT_LEVELS` works
+
+For a given **(deployment, container, execFilePath)**, the filter builds an argument “tree”:
+
+- **Level 0** = first argument token
+- **Level 1** = second token
+- **Level 2** = third token
+- …
+- Each `ROX_PROCESS_FILTER_FAN_OUT_LEVELS[i]` is the **max number of distinct children** allowed at that arg position under the same parent.
+- If fan-out is exceeded at some level, **new variations are rejected** (filtered).
+- If there are more arg tokens than levels, deeper tokens are **not distinguished** (they share the same leaf counter for max-exact matches).
+
+The fan out value should decrease at each level.
+
+Referred to as `fanOut` in the code.
+
+### Configuring
+Fan-out limits per argument level as comma-separated integers within brackets
+Each value represents the maximum number of unique children at that level
+Example: "[10,8,6,4]" increases first-level fan-out to 10
+Empty value "" results in default value [8,6,4,2]
+Empty array "[]" results in only tracking unique processes without arguments
+
+---
+
+### Example: `ROX_PROCESS_FILTER_FAN_OUT_LEVELS=[3,2]`
+
+Meaning:
+
+- **Level 0 fan-out = 3**: three distinct first arguments are allowed
+- **Level 1 fan-out = 2**: two distinct seconds arguments per exec path and first argument.
+- Third+ args aren’t used to create more levels (they share the same leaf).
+
+Concrete sequence (same exec file path, same container):
+
+1. /usr/bin/myexec arg1a arg2a -> accepted
+2. /usr/bin/myexec arg1b arg2a -> accepted
+3. /usr/bin/myexec arg1c arg2a -> accepted
+4. /usr/bin/myexec arg1d arg2a -> rejected Only three unique first arguments are allowed
+5. /usr/bin/myexec arg1a arg2b -> accepted
+6. /usr/bin/myexec arg1a arg2c -> rejected Only two unique second arguments are allowed
+
+### How `ROX_PROCESS_FILTER_MAX_EXACT_PATH_MATCHES` works
+Maximum number of times an exact path (same deployment+container+process+args) can appear before being filtered.
+Referred to as `maxExactPathMatches` in the code.
+
+### How `ROX_PROCESS_FILTER_MAX_PROCESS_PATHS` works
+Maximum number of unique process executable paths per container.
+Referred to as `maxUniqueProcesses` in the code.
+
+### Logic
+	Keyed on deployment -> container ID, define a root level. Take the exec file path and retrieve or create
+	the level for that specific process. No process exec file paths are limited because we want to see all new binaries.
+	Then recursively sift through the args and create a level for each argument (up to len(fanOut)) that has a parent of the
+ previous argument. If the fan out or the number of maxExactPathMatches has been exceeded, then return false. Otherwise, return true
+
+***/
 
 const (
 	maxArgSize = 16

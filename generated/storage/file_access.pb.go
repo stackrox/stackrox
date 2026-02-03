@@ -30,8 +30,7 @@ const (
 	FileAccess_RENAME            FileAccess_Operation = 2
 	FileAccess_PERMISSION_CHANGE FileAccess_Operation = 3
 	FileAccess_OWNERSHIP_CHANGE  FileAccess_Operation = 4
-	FileAccess_WRITE             FileAccess_Operation = 5
-	FileAccess_OPEN              FileAccess_Operation = 6
+	FileAccess_OPEN              FileAccess_Operation = 5
 )
 
 // Enum value maps for FileAccess_Operation.
@@ -42,8 +41,7 @@ var (
 		2: "RENAME",
 		3: "PERMISSION_CHANGE",
 		4: "OWNERSHIP_CHANGE",
-		5: "WRITE",
-		6: "OPEN",
+		5: "OPEN",
 	}
 	FileAccess_Operation_value = map[string]int32{
 		"CREATE":            0,
@@ -51,8 +49,7 @@ var (
 		"RENAME":            2,
 		"PERMISSION_CHANGE": 3,
 		"OWNERSHIP_CHANGE":  4,
-		"WRITE":             5,
-		"OPEN":              6,
+		"OPEN":              5,
 	}
 )
 
@@ -327,7 +324,7 @@ var File_storage_file_access_proto protoreflect.FileDescriptor
 
 const file_storage_file_access_proto_rawDesc = "" +
 	"\n" +
-	"\x19storage/file_access.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/process_indicator.proto\"\xa6\x05\n" +
+	"\x19storage/file_access.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/process_indicator.proto\"\x9b\x05\n" +
 	"\n" +
 	"FileAccess\x12,\n" +
 	"\x04file\x18\x01 \x01(\v2\x18.storage.FileAccess.FileR\x04file\x12;\n" +
@@ -346,7 +343,7 @@ const file_storage_file_access_proto_rawDesc = "" +
 	"\x0eeffective_path\x18\x01 \x01(\tR\reffectivePath\x12\x1f\n" +
 	"\vactual_path\x18\x02 \x01(\tR\n" +
 	"actualPath\x124\n" +
-	"\x04meta\x18\x03 \x01(\v2 .storage.FileAccess.FileMetadataR\x04meta\"q\n" +
+	"\x04meta\x18\x03 \x01(\v2 .storage.FileAccess.FileMetadataR\x04meta\"f\n" +
 	"\tOperation\x12\n" +
 	"\n" +
 	"\x06CREATE\x10\x00\x12\n" +
@@ -355,9 +352,8 @@ const file_storage_file_access_proto_rawDesc = "" +
 	"\n" +
 	"\x06RENAME\x10\x02\x12\x15\n" +
 	"\x11PERMISSION_CHANGE\x10\x03\x12\x14\n" +
-	"\x10OWNERSHIP_CHANGE\x10\x04\x12\t\n" +
-	"\x05WRITE\x10\x05\x12\b\n" +
-	"\x04OPEN\x10\x06B.\n" +
+	"\x10OWNERSHIP_CHANGE\x10\x04\x12\b\n" +
+	"\x04OPEN\x10\x05B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (

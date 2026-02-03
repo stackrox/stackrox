@@ -248,6 +248,8 @@ const config = {
                     ? process.env.ACS_CONSOLE_DEV_TOKEN
                     : undefined
             ),
+            // Default to `/proxy/central` if not set
+            'process.env.ACS_PROXY_BASE_PATH': JSON.stringify(process.env.ACS_PROXY_BASE_PATH),
             'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
             'process.env.ROX_PRODUCT_BRANDING': JSON.stringify(process.env.ROX_PRODUCT_BRANDING),
         }),

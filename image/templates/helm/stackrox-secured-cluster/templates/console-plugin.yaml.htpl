@@ -1,0 +1,38 @@
+[<- if and .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION (not .KubectlOutput) >]
+{{- include "srox.init" . -}}
+
+{{- /*
+  ConsolePlugin is only deployed on OpenShift 4.19+ (Kubernetes 1.32+).
+  For the mapping between OpenShift and Kubernetes versions, see:
+  https://access.redhat.com/solutions/4870701
+*/ -}}
+{{- $kubeVersion := semver $.Capabilities.KubeVersion.Version -}}
+{{- if and (eq ._rox.env.installMethod "operator") ._rox.consolePlugin.enabled (ge (int $kubeVersion.Minor) 32) -}}
+apiVersion: console.openshift.io/v1
+kind: ConsolePlugin
+metadata:
+  name: advanced-cluster-security
+  labels:
+    {{- include "srox.labels" (list . "consoleplugin" "advanced-cluster-security") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "consoleplugin" "advanced-cluster-security") | nindent 4 }}
+spec:
+  displayName: Red Hat Advanced Cluster Security for OpenShift
+  backend:
+    type: Service
+    service:
+      name: sensor-proxy
+      namespace: {{ ._rox._namespace }}
+      port: 443
+      basePath: /proxy/central/static/ocp-plugin
+  proxy:
+    - alias: api-service
+      authorization: UserToken
+      endpoint:
+        type: Service
+        service:
+          name: sensor-proxy
+          namespace: {{ ._rox._namespace }}
+          port: 443
+{{- end -}}
+[<- end >]

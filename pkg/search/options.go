@@ -68,6 +68,8 @@ var (
 	AdvisoryName       = newFieldLabel("Advisory Name")
 	AdvisoryLink       = newFieldLabel("Advisory Link")
 
+	CVEInfo = newFieldLabel("CVE Info")
+
 	Component                      = newFieldLabel("Component")
 	ComponentID                    = newFieldLabel("Component ID")
 	ComponentVersion               = newFieldLabel("Component Version")
@@ -330,13 +332,13 @@ var (
 	Inactive = newFieldLabel("Inactive Deployment")
 
 	// Risk Search Fields
-	RiskScore              = newFieldLabel("Risk Score")
-	NodeRiskScore          = newFieldLabel("Node Risk Score")
-	DeploymentRiskScore    = newFieldLabel("Deployment Risk Score")
-	ImageRiskScore         = newFieldLabel("Image Risk Score")
-	ComponentRiskScore     = newFieldLabel("Component Risk Score")
-	RiskSubjectType        = newFieldLabel("Risk Subject Type")
-	ComponentFromBaseImage = newFieldLabel("Component From Base Image")
+	RiskScore           = newFieldLabel("Risk Score")
+	NodeRiskScore       = newFieldLabel("Node Risk Score")
+	DeploymentRiskScore = newFieldLabel("Deployment Risk Score")
+	ImageRiskScore      = newFieldLabel("Image Risk Score")
+	ComponentRiskScore  = newFieldLabel("Component Risk Score")
+	RiskSubjectType     = newFieldLabel("Risk Subject Type")
+	ComponentLayerType  = newFieldLabel("Component Layer Type")
 
 	PolicyLastUpdated = newFieldLabel("Policy Last Updated")
 

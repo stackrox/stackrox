@@ -20,6 +20,9 @@ func TestVerifyReferencedResourceOrigin(t *testing.T) {
 	declarativeTraits := &storage.Traits{
 		Origin: storage.Traits_DECLARATIVE,
 	}
+	ephemeralTraits := &storage.Traits{
+		Origin: storage.Traits_EPHEMERAL,
+	}
 	imperativeTraits := &storage.Traits{
 		Origin: storage.Traits_IMPERATIVE,
 	}
@@ -35,16 +38,25 @@ func TestVerifyReferencedResourceOrigin(t *testing.T) {
 	testNoError(t, declarativeTraits, orphanedTraits)
 	testNoError(t, declarativeTraits, defaultTraits)
 	testError(t, declarativeTraits, imperativeTraits)
+	testError(t, declarativeTraits, ephemeralTraits)
 
 	testNoError(t, orphanedTraits, declarativeTraits)
 	testNoError(t, orphanedTraits, orphanedTraits)
 	testNoError(t, orphanedTraits, defaultTraits)
 	testError(t, orphanedTraits, imperativeTraits)
+	testError(t, orphanedTraits, ephemeralTraits)
 
 	testNoError(t, imperativeTraits, declarativeTraits)
 	testNoError(t, imperativeTraits, orphanedTraits)
 	testNoError(t, imperativeTraits, defaultTraits)
 	testNoError(t, imperativeTraits, imperativeTraits)
+	testNoError(t, imperativeTraits, ephemeralTraits)
+
+	testNoError(t, ephemeralTraits, declarativeTraits)
+	testNoError(t, ephemeralTraits, orphanedTraits)
+	testNoError(t, ephemeralTraits, defaultTraits)
+	testNoError(t, ephemeralTraits, imperativeTraits)
+	testNoError(t, ephemeralTraits, ephemeralTraits)
 }
 
 func testError(t *testing.T, referencing *storage.Traits, referenced *storage.Traits) {

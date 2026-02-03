@@ -14,6 +14,14 @@ luname() {
   uname | tr '[:upper:]' '[:lower:]'
 }
 
+strip_deprecation_notice() {
+  if [[ $# -gt 0 ]]; then
+    printf '%s\n' "$1" | sed -e '/^Command ".*" is deprecated,/d'
+    return
+  fi
+  sed -e '/^Command ".*" is deprecated,/d'
+}
+
 tmp_roxctl="tmp/roxctl-bats/bin"
 test_data="$BATS_TEST_DIRNAME/../test-data"
 

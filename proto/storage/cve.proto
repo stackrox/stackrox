@@ -196,6 +196,10 @@ message ImageCVEV2 {
   storage.Advisory advisory = 14;
 
   string image_id_v2 = 15; // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
+
+  // Timestamp when the fix for this CVE was made available according to the sources.
+  google.protobuf.Timestamp fix_available_timestamp = 16; // @gotags: search:"CVE Fix Available Timestamp,hidden"
+  string datasource = 17;
 }
 
 message NodeCVE {
@@ -330,4 +334,12 @@ message CVSSV3 {
   Impact availability = 11;
   float score = 12;
   Severity severity = 13;
+}
+
+message ImageCVEInfo {
+  // ID is comprised of cve#package#datasource where package is the component that is afflicted, and datasource
+  // is the concatenation of the updater + OS ex: debian-bookworm-updater::debian:12
+  string id = 1; // @gotags: search:"CVE Info" sql:"pk"
+  google.protobuf.Timestamp fix_available_timestamp = 2; // @gotags: search:"CVE Fix Available Timestamp,hidden"
+  google.protobuf.Timestamp first_system_occurrence = 3; // @gotags: search:"First System Occurrence Timestamp,hidden"
 }

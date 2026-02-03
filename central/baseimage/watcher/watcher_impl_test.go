@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	baseImageDSMocks "github.com/stackrox/rox/central/baseimage/datastore/mocks"
 	repoDSMocks "github.com/stackrox/rox/central/baseimage/datastore/repository/mocks"
 	tagDSMocks "github.com/stackrox/rox/central/baseimage/datastore/tag/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -33,6 +34,7 @@ func createTestWatcher(
 	mockRegistrySet *registryMocks.MockSet,
 	mockDelegator *delegatedRegistryMocks.MockDelegator,
 	poll time.Duration,
+	delegationEnabled bool,
 ) Watcher {
 	if mockTagDS == nil {
 		mockTagDS = tagDSMocks.NewMockDataStore(ctrl)
@@ -43,7 +45,16 @@ func createTestWatcher(
 	if mockDelegator == nil {
 		mockDelegator = delegatedRegistryMocks.NewMockDelegator(ctrl)
 	}
-	return New(mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, poll, 10)
+
+	// Create default baseImageDS mock.
+	mockBaseImageDS := baseImageDSMocks.NewMockDataStore(ctrl)
+	mockBaseImageDS.EXPECT().ReplaceByRepository(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	// Allow tag datastore calls.
+	mockTagDS.EXPECT().ListTagsByRepository(gomock.Any(), gomock.Any()).Return([]*storage.BaseImageTag{}, nil).AnyTimes()
+	mockTagDS.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	return New(mockRepoDS, mockTagDS, mockBaseImageDS, mockRegistrySet, mockDelegator, poll, 10, 0, delegationEnabled)
 }
 
 func TestWatcher_StartsAndStops(t *testing.T) {
@@ -56,7 +67,7 @@ func TestWatcher_StartsAndStops(t *testing.T) {
 		Return([]*storage.BaseImageRepository{}, nil).
 		Times(2)
 
-	w := createTestWatcher(ctrl, mockRepoDS, nil, nil, nil, 100*time.Millisecond)
+	w := createTestWatcher(ctrl, mockRepoDS, nil, nil, nil, 100*time.Millisecond, false)
 
 	// Start watcher
 	w.Start()
@@ -93,7 +104,7 @@ func TestWatcher_PollsImmediately(t *testing.T) {
 		}).
 		Times(1)
 
-	w := createTestWatcher(ctrl, mockRepoDS, nil, nil, nil, 1*time.Hour)
+	w := createTestWatcher(ctrl, mockRepoDS, nil, nil, nil, 1*time.Hour, false)
 
 	w.Start()
 	defer w.Stop()
@@ -145,7 +156,7 @@ func TestWatcher_ProcessesMultipleRepositories(t *testing.T) {
 
 	// No tags stored (no matching registry), so no UpsertMany/DeleteMany calls expected
 
-	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour)
+	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, true)
 
 	assert.NotPanics(t, func() {
 		w.(*watcherImpl).pollOnce()
@@ -161,7 +172,7 @@ func TestWatcher_HandlesDatastoreError(t *testing.T) {
 		Return(nil, errox.InvariantViolation.New("database connection failed")).
 		Times(1)
 
-	w := createTestWatcher(ctrl, mockRepoDS, nil, nil, nil, 1*time.Hour)
+	w := createTestWatcher(ctrl, mockRepoDS, nil, nil, nil, 1*time.Hour, false)
 
 	assert.NotPanics(t, func() {
 		w.(*watcherImpl).pollOnce()
@@ -178,7 +189,7 @@ func TestWatcher_StartIsIdempotent(t *testing.T) {
 		Return([]*storage.BaseImageRepository{}, nil).
 		Times(2)
 
-	w := createTestWatcher(ctrl, mockRepoDS, nil, nil, nil, 100*time.Millisecond)
+	w := createTestWatcher(ctrl, mockRepoDS, nil, nil, nil, 100*time.Millisecond, false)
 
 	// Call Start multiple times (only first should take effect)
 	w.Start()
@@ -201,7 +212,7 @@ func TestWatcher_StopIsIdempotent(t *testing.T) {
 		Return([]*storage.BaseImageRepository{}, nil).
 		Times(2)
 
-	w := createTestWatcher(ctrl, mockRepoDS, nil, nil, nil, 100*time.Millisecond)
+	w := createTestWatcher(ctrl, mockRepoDS, nil, nil, nil, 100*time.Millisecond, false)
 
 	w.Start()
 	time.Sleep(150 * time.Millisecond)
@@ -229,7 +240,7 @@ func TestWatcher_StopsGracefullyDuringPoll(t *testing.T) {
 		}).
 		Times(1)
 
-	w := createTestWatcher(ctrl, mockRepoDS, nil, nil, nil, 1*time.Hour)
+	w := createTestWatcher(ctrl, mockRepoDS, nil, nil, nil, 1*time.Hour, false)
 
 	w.Start()
 
@@ -295,7 +306,7 @@ func TestWatcher_AccessesAllProtoFields(t *testing.T) {
 
 	// No tags stored (no matching registry), so no UpsertMany/DeleteMany calls expected
 
-	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour)
+	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, true)
 
 	// Should not panic when accessing proto fields
 	w.(*watcherImpl).pollOnce()
@@ -347,7 +358,7 @@ func TestWatcher_DelegationError(t *testing.T) {
 
 	// No tags stored (no matching registry), so no UpsertMany/DeleteMany calls expected
 
-	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour)
+	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, true)
 
 	// Should not panic on delegation error
 	assert.NotPanics(t, func() {
@@ -387,7 +398,7 @@ func TestWatcher_ShouldDelegate(t *testing.T) {
 	// Delegated scanner returns error (not implemented)
 	// No tags stored (delegated scanner not implemented), so no UpsertMany/DeleteMany calls expected
 
-	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, nil, mockDelegator, 1*time.Hour)
+	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, nil, mockDelegator, 1*time.Hour, true)
 
 	// Should not panic when delegation is required
 	assert.NotPanics(t, func() {
@@ -439,7 +450,7 @@ func TestWatcher_NoMatchingRegistry(t *testing.T) {
 
 	// No tags stored (registry doesn't match), so no UpsertMany/DeleteMany calls expected
 
-	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour)
+	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, true)
 
 	// Should not panic when no matching registry found
 	assert.NotPanics(t, func() {
@@ -495,7 +506,7 @@ func TestWatcher_MatchingRegistryWithTagListError(t *testing.T) {
 
 	// No tags stored (ListTags failed), so no UpsertMany/DeleteMany calls expected
 
-	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour)
+	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, true)
 
 	// Should not panic on tag listing error
 	assert.NotPanics(t, func() {
@@ -570,7 +581,7 @@ func TestWatcher_MatchingRegistrySuccess(t *testing.T) {
 
 	// No tags stored (all metadata calls failed V1 validation), so no UpsertMany/DeleteMany calls expected
 
-	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour)
+	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, true)
 
 	// Should complete successfully
 	assert.NotPanics(t, func() {
@@ -619,7 +630,7 @@ func TestWatcher_ContextCancellation(t *testing.T) {
 
 	// No tags stored (no matching registry), so no UpsertMany/DeleteMany calls expected
 
-	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour)
+	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, true)
 
 	// Start the watcher
 	w.Start()
@@ -762,7 +773,7 @@ func TestWatcher_IncrementalUpdate_CheckTagsConstruction(t *testing.T) {
 		DeleteMany(gomock.Any(), gomock.Any()).
 		AnyTimes()
 
-	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour)
+	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, true)
 
 	// Execute poll
 	require.NotPanics(t, func() {
@@ -864,7 +875,7 @@ func TestWatcher_IncrementalUpdate_SkipTagsWithLargeCache(t *testing.T) {
 		DeleteMany(gomock.Any(), gomock.Any()).
 		AnyTimes()
 
-	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour)
+	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, true)
 
 	require.NotPanics(t, func() {
 		w.(*watcherImpl).pollOnce()
@@ -956,7 +967,7 @@ func TestWatcher_TagBatch_FlushAfterScan(t *testing.T) {
 		DeleteMany(gomock.Any(), gomock.Any()).
 		AnyTimes()
 
-	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour)
+	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, true)
 
 	require.NotPanics(t, func() {
 		w.(*watcherImpl).pollOnce()
@@ -1074,7 +1085,7 @@ func TestWatcher_TagBatch_DeleteEvent(t *testing.T) {
 		}).
 		Times(1)
 
-	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour)
+	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, true)
 
 	require.NotPanics(t, func() {
 		w.(*watcherImpl).pollOnce()
@@ -1354,4 +1365,89 @@ func TestTagUUID_InvalidRepoID(t *testing.T) {
 	require.Error(t, err)
 	assert.Empty(t, id)
 	assert.Contains(t, err.Error(), "invalid UUID")
+}
+
+func TestWatcher_DelegatedFeatureFlag_Disabled(t *testing.T) {
+	// When delegation is disabled, GetDelegateClusterID should not be called.
+	ctrl := gomock.NewController(t)
+	mockRepoDS := repoDSMocks.NewMockDataStore(ctrl)
+	mockTagDS := tagDSMocks.NewMockDataStore(ctrl)
+	mockRegistrySet := registryMocks.NewMockSet(ctrl)
+	mockDelegator := delegatedRegistryMocks.NewMockDelegator(ctrl)
+
+	repo := &storage.BaseImageRepository{
+		Id:             "00000000-0000-0000-0000-0000000000ff",
+		RepositoryPath: "docker.io/library/nginx",
+		TagPattern:     "*",
+	}
+
+	mockRepoDS.EXPECT().
+		ListRepositories(gomock.Any()).
+		Return([]*storage.BaseImageRepository{repo}, nil).
+		Times(1)
+
+	// GetDelegateClusterID should NOT be called when delegation is disabled.
+	// If it were called, this test would fail due to missing expectation.
+
+	// Fetch existing tags from cache.
+	mockTagDS.EXPECT().
+		ListTagsByRepository(gomock.Any(), gomock.Any()).
+		Return([]*storage.BaseImageTag{}, nil).
+		Times(1)
+
+	// Scanner calls GetAllUnique (local scanner is always used).
+	mockRegistrySet.EXPECT().
+		GetAllUnique().
+		Return(nil).
+		Times(1)
+
+	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, false)
+
+	assert.NotPanics(t, func() {
+		w.(*watcherImpl).pollOnce()
+	})
+}
+
+func TestWatcher_DelegatedFeatureFlag_Enabled(t *testing.T) {
+	// When delegation is enabled, GetDelegateClusterID should be called.
+	ctrl := gomock.NewController(t)
+	mockRepoDS := repoDSMocks.NewMockDataStore(ctrl)
+	mockTagDS := tagDSMocks.NewMockDataStore(ctrl)
+	mockRegistrySet := registryMocks.NewMockSet(ctrl)
+	mockDelegator := delegatedRegistryMocks.NewMockDelegator(ctrl)
+
+	repo := &storage.BaseImageRepository{
+		Id:             "00000000-0000-0000-0000-0000000000ff",
+		RepositoryPath: "docker.io/library/nginx",
+		TagPattern:     "*",
+	}
+
+	mockRepoDS.EXPECT().
+		ListRepositories(gomock.Any()).
+		Return([]*storage.BaseImageRepository{repo}, nil).
+		Times(1)
+
+	// GetDelegateClusterID should be called when feature is enabled.
+	mockDelegator.EXPECT().
+		GetDelegateClusterID(gomock.Any(), gomock.Any()).
+		Return("", false, nil).
+		Times(1)
+
+	// Fetch existing tags from cache.
+	mockTagDS.EXPECT().
+		ListTagsByRepository(gomock.Any(), gomock.Any()).
+		Return([]*storage.BaseImageTag{}, nil).
+		Times(1)
+
+	// Scanner calls GetAllUnique.
+	mockRegistrySet.EXPECT().
+		GetAllUnique().
+		Return(nil).
+		Times(1)
+
+	w := createTestWatcher(ctrl, mockRepoDS, mockTagDS, mockRegistrySet, mockDelegator, 1*time.Hour, true)
+
+	assert.NotPanics(t, func() {
+		w.(*watcherImpl).pollOnce()
+	})
 }

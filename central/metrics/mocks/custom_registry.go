@@ -12,7 +12,6 @@ package mocks
 import (
 	http "net/http"
 	reflect "reflect"
-	time "time"
 
 	prometheus "github.com/prometheus/client_golang/prometheus"
 	io_prometheus_client "github.com/prometheus/client_model/go"
@@ -71,17 +70,17 @@ func (mr *MockCustomRegistryMockRecorder) Lock() *gomock.Call {
 }
 
 // RegisterMetric mocks base method.
-func (m *MockCustomRegistry) RegisterMetric(metricName, category string, period time.Duration, labels []string) error {
+func (m *MockCustomRegistry) RegisterMetric(metricName, description string, labels []string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RegisterMetric", metricName, category, period, labels)
+	ret := m.ctrl.Call(m, "RegisterMetric", metricName, description, labels)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RegisterMetric indicates an expected call of RegisterMetric.
-func (mr *MockCustomRegistryMockRecorder) RegisterMetric(metricName, category, period, labels any) *gomock.Call {
+func (mr *MockCustomRegistryMockRecorder) RegisterMetric(metricName, description, labels any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterMetric", reflect.TypeOf((*MockCustomRegistry)(nil).RegisterMetric), metricName, category, period, labels)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterMetric", reflect.TypeOf((*MockCustomRegistry)(nil).RegisterMetric), metricName, description, labels)
 }
 
 // Reset mocks base method.

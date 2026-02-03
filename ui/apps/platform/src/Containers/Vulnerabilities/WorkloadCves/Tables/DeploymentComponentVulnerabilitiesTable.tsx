@@ -137,7 +137,11 @@ function DeploymentComponentVulnerabilitiesTable({
                         <Tr>
                             <Td dataLabel="Image">
                                 {image.name ? (
-                                    <ImageNameLink name={image.name} id={image.id} />
+                                    <ImageNameLink
+                                        name={image.name}
+                                        id={image.id}
+                                        digest={image.digest}
+                                    />
                                 ) : (
                                     'Image name not available'
                                 )}

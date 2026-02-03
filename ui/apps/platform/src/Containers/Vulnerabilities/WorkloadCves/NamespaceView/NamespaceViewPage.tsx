@@ -22,9 +22,7 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import SearchFilterChips, {
-    makeFilterChipDescriptors,
-} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import CompoumdSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -86,9 +84,7 @@ const defaultSearchFilters = {
     'Vulnerability State': 'OBSERVED',
 };
 
-const searchFilterConfig = [namespaceSearchFilterConfig, clusterSearchFilterConfig];
-
-const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
+const searchFilterConfig = [clusterSearchFilterConfig, namespaceSearchFilterConfig];
 
 const sortFields = ['Namespace Risk Priority', 'Namespace', 'Cluster', 'Deployment Count'];
 const defaultSortOption = {
@@ -176,32 +172,36 @@ function NamespaceViewPage() {
                     <ToolbarContent>
                         <CompoundSearchFilter
                             config={searchFilterConfig}
+                            defaultEntity="Namespace"
                             searchFilter={searchFilter}
                             onSearch={onSearch}
                         />
-                        <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
-                            <Pagination
-                                toggleTemplate={({ firstIndex, lastIndex }) => (
-                                    <span>
-                                        <b>
-                                            {firstIndex} - {lastIndex}
-                                        </b>{' '}
-                                        of <b>many</b>
-                                    </span>
-                                )}
-                                page={page}
-                                perPage={perPage}
-                                onSetPage={(_, newPage) => setPage(newPage)}
-                                onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
-                                isCompact
-                            />
-                        </ToolbarItem>
                         <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
-                            <SearchFilterChips
-                                searchFilter={searchFilter}
+                            <CompoumdSearchFilterLabels
+                                attributesSeparateFromConfig={[]}
+                                config={searchFilterConfig}
                                 onFilterChange={onFilterChange}
-                                filterChipGroupDescriptors={filterChipGroupDescriptors}
+                                searchFilter={searchFilter}
                             />
+                        </ToolbarGroup>
+                        <ToolbarGroup className="pf-v5-u-w-100">
+                            <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                                <Pagination
+                                    toggleTemplate={({ firstIndex, lastIndex }) => (
+                                        <span>
+                                            <b>
+                                                {firstIndex} - {lastIndex}
+                                            </b>{' '}
+                                            of <b>many</b>
+                                        </span>
+                                    )}
+                                    page={page}
+                                    perPage={perPage}
+                                    onSetPage={(_, newPage) => setPage(newPage)}
+                                    onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
+                                    isCompact
+                                />
+                            </ToolbarItem>
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>

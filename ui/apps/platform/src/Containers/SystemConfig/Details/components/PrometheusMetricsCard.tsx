@@ -20,6 +20,7 @@ import {
     LabelGroup,
     TextInput,
 } from '@patternfly/react-core';
+import { MinusIcon, PlusIcon } from '@patternfly/react-icons';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 import type { FormikErrors, FormikValues } from 'formik';
@@ -72,7 +73,7 @@ const predefinedMetrics: Record<
     policyViolations: {
         namespace_severity: {
             labels: ['Cluster', 'Namespace', 'IsPlatformComponent', 'Action', 'Severity'],
-            filters: { State: 'ACTIVE' },
+            includeFilters: { State: 'ACTIVE' },
         },
         deployment_severity: {
             labels: [
@@ -83,12 +84,16 @@ const predefinedMetrics: Record<
                 'Action',
                 'Severity',
             ],
-            filters: { State: 'ACTIVE' },
+            includeFilters: { State: 'ACTIVE' },
         },
     },
 };
 
-function labelGroup(labels: PrometheusMetricsLabels): ReactElement {
+export type PrometheusMetricsLabelGroupProps = {
+    labels: PrometheusMetricsLabels;
+};
+
+function PrometheusMetricsLabelGroup({ labels }: PrometheusMetricsLabelGroupProps): ReactElement {
     return (
         <LabelGroup isCompact numLabels={Infinity}>
             {labels.labels.map((label) => {
@@ -102,13 +107,30 @@ function labelGroup(labels: PrometheusMetricsLabels): ReactElement {
     );
 }
 
-function filterGroup(labels: PrometheusMetricsLabels): ReactElement {
+export type PrometheusMetricsFilterGroupProps = {
+    labels: PrometheusMetricsLabels;
+};
+
+function PrometheusMetricsFilterGroup({ labels }: PrometheusMetricsFilterGroupProps): ReactElement {
+    const includeEntries = Object.entries(labels.includeFilters ?? {}).sort(([a], [b]) =>
+        a.localeCompare(b)
+    );
+    const excludeEntries = Object.entries(labels.excludeFilters ?? {}).sort(([a], [b]) =>
+        a.localeCompare(b)
+    );
     return (
         <LabelGroup isCompact numLabels={Infinity}>
-            {Object.entries(labels.filters ?? {}).map(([label, pattern]) => {
+            {includeEntries.map(([label, pattern]) => {
                 return (
-                    <Label isCompact key={label}>
-                        {label}: {pattern}
+                    <Label isCompact key={`include-${label}`} color="green" icon={<PlusIcon />}>
+                        {label}: <code>{pattern}</code>
+                    </Label>
+                );
+            })}
+            {excludeEntries.map(([label, pattern]) => {
+                return (
+                    <Label isCompact key={`exclude-${label}`} color="red" icon={<MinusIcon />}>
+                        {label}: <code>{pattern}</code>
                     </Label>
                 );
             })}
@@ -116,16 +138,25 @@ function filterGroup(labels: PrometheusMetricsLabels): ReactElement {
     );
 }
 
-function predefinedMetricTableRow(
-    rowIndex: number,
-    enabled: boolean,
-    category: PrometheusMetricsCategory,
-    metric: string,
+export type PrometheusMetricsPredefinedMetricTableRowProps = {
+    category: PrometheusMetricsCategory;
+    enabled: boolean;
+    metric: string;
     onCustomChange:
         | ((value: unknown, id: string) => Promise<void> | Promise<FormikErrors<FormikValues>>)
-        | undefined,
-    showFilters: boolean
-): ReactElement {
+        | undefined;
+    rowIndex: number;
+    showFilters: boolean;
+};
+
+function PrometheusMetricsPredefinedMetricTableRow({
+    rowIndex,
+    enabled,
+    category,
+    metric,
+    onCustomChange,
+    showFilters,
+}: PrometheusMetricsPredefinedMetricTableRowProps): ReactElement {
     return (
         <Tr key={`${category}-${metric}-row`}>
             {onCustomChange ? (
@@ -154,15 +185,28 @@ function predefinedMetricTableRow(
             </Td>
             <Td key={`${category}-${metric}-predefined`}>Predefined</Td>
             <Td key={`${category}-${metric}-descriptors`}>
-                {labelGroup(predefinedMetrics[category][metric])}
+                <PrometheusMetricsLabelGroup labels={predefinedMetrics[category][metric]} />
             </Td>
             {showFilters && (
                 <Td key={`${category}-${metric}-filters`}>
-                    {filterGroup(predefinedMetrics[category][metric])}
+                    <PrometheusMetricsFilterGroup labels={predefinedMetrics[category][metric]} />
                 </Td>
             )}
         </Tr>
     );
+}
+
+// recordsMatch returns true if two maps are equal.
+function recordsMatch(a: Record<string, string>, b: Record<string, string>): boolean {
+    return (
+        Object.keys(a).length === Object.keys(b).length &&
+        Object.entries(a).every(([key, val]) => b[key] === val)
+    );
+}
+
+// elementsMatch returns true if two arrays have same elements ignoring order.
+function elementsMatch(a: string[], b: string[]): boolean {
+    return a.length === b.length && a.every((value) => b.includes(value));
 }
 
 // hasMetric checks if the descriptors contain the given metric by looking at
@@ -172,15 +216,27 @@ function hasMetric(
     metric: string,
     labels: PrometheusMetricsLabels
 ): boolean {
-    const cfgLabels = descriptors?.[metric]?.labels ?? [];
-    const cfgFilters = descriptors?.[metric]?.filters ?? {};
-    const ll = labels.labels;
-    const lf = labels.filters;
+    const base = {
+        labels: descriptors?.[metric]?.labels ?? [],
+        includeFilters: descriptors?.[metric]?.includeFilters ?? {},
+        excludeFilters: descriptors?.[metric]?.excludeFilters ?? {},
+    };
+    const given = {
+        labels: labels.labels,
+        includeFilters: labels.includeFilters ?? {},
+        excludeFilters: labels.excludeFilters ?? {},
+    };
     return (
-        cfgLabels.length === ll.length &&
-        cfgLabels.every((label) => ll.includes(label)) &&
-        Object.keys(cfgFilters).length === Object.keys(lf ?? {}).length &&
-        Object.entries(cfgFilters).every(([label, pattern]) => lf?.[label] === pattern)
+        elementsMatch(base.labels, given.labels) &&
+        recordsMatch(base.includeFilters, given.includeFilters) &&
+        recordsMatch(base.excludeFilters, given.excludeFilters)
+    );
+}
+
+function hasFiltersInLabels(labels: PrometheusMetricsLabels): boolean {
+    return (
+        Object.keys(labels.includeFilters ?? {}).length > 0 ||
+        Object.keys(labels.excludeFilters ?? {}).length > 0
     );
 }
 
@@ -192,18 +248,12 @@ function metricsHaveFilters(
     // In edit mode, check all predefined metrics.
     // In view mode, only check enabled metrics (those in descriptors).
     const hasFiltersInPredefined = editMode
-        ? Object.values(predefinedMetrics[category]).some(
-              (labels) => labels.filters && Object.keys(labels.filters).length > 0
-          )
+        ? Object.values(predefinedMetrics[category]).some(hasFiltersInLabels)
         : Object.entries(predefinedMetrics[category]).some(
               ([metric, labels]) =>
-                  hasMetric(descriptors, metric, labels) &&
-                  labels.filters &&
-                  Object.keys(labels.filters).length > 0
+                  hasMetric(descriptors, metric, labels) && hasFiltersInLabels(labels)
           );
-    const hasFiltersInDescriptors = Object.values(descriptors ?? {}).some(
-        (labels) => labels.filters && Object.keys(labels.filters).length > 0
-    );
+    const hasFiltersInDescriptors = Object.values(descriptors ?? {}).some(hasFiltersInLabels);
     const showFilters = hasFiltersInPredefined || hasFiltersInDescriptors;
     return showFilters;
 }
@@ -249,13 +299,15 @@ function PrometheusMetricsTable({
                         const enabled =
                             descriptors !== undefined && predefinedMetric in descriptors;
                         if (isEnabledOriginal || (onCustomChange && !enabled)) {
-                            return predefinedMetricTableRow(
-                                rowIndex,
-                                isEnabledOriginal,
-                                category,
-                                predefinedMetric,
-                                onCustomChange,
-                                showFilters
+                            return (
+                                <PrometheusMetricsPredefinedMetricTableRow
+                                    rowIndex={rowIndex}
+                                    enabled={isEnabledOriginal}
+                                    category={category}
+                                    metric={predefinedMetric}
+                                    onCustomChange={onCustomChange}
+                                    showFilters={showFilters}
+                                />
                             );
                         }
                         return null;
@@ -282,8 +334,14 @@ function PrometheusMetricsTable({
                                 <strong>{metric}</strong>
                             </Td>
                             <Td>Custom</Td>
-                            <Td>{labelGroup(labels)}</Td>
-                            {showFilters && <Td>{filterGroup(labels)}</Td>}
+                            <Td>
+                                <PrometheusMetricsLabelGroup labels={labels} />
+                            </Td>
+                            {showFilters && (
+                                <Td>
+                                    <PrometheusMetricsFilterGroup labels={labels} />
+                                </Td>
+                            )}
                         </Tr>
                     );
                 })}
@@ -304,7 +362,7 @@ export function PrometheusMetricsCard({
     period,
     descriptors,
     title,
-}: PrometheusMetricsCardProps) {
+}: PrometheusMetricsCardProps): ReactElement {
     const hasMetrics = descriptors && Object.keys(descriptors).length > 0;
     return (
         <GridItem key={category} md={hasMetrics ? 12 : 6} lg={hasMetrics ? 12 : 6}>
@@ -415,7 +473,7 @@ export function PrometheusMetricsForm({
     title,
     onChange,
     onCustomChange,
-}: PrometheusMetricsFormProps) {
+}: PrometheusMetricsFormProps): ReactElement {
     return (
         <GridItem>
             <Card isFlat data-testid={`${category}-metrics-config`}>

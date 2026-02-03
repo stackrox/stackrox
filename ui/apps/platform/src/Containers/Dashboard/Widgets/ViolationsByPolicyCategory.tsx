@@ -73,8 +73,12 @@ function ViolationsByPolicyCategory() {
             isLoading={isLoading}
             error={error}
             header={
-                <Flex direction={{ default: 'row' }}>
-                    <FlexItem grow={{ default: 'grow' }}>
+                <Flex
+                    direction={{ default: 'row' }}
+                    alignItems={{ default: 'alignItemsCenter' }}
+                    justifyContent={{ default: 'justifyContentSpaceBetween' }}
+                >
+                    <FlexItem>
                         <Title headingLevel="h2">Policy violations by category</Title>
                     </FlexItem>
                     <FlexItem>

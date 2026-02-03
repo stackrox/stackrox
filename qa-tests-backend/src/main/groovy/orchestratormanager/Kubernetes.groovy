@@ -14,6 +14,7 @@ import java.util.concurrent.TimeoutException
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import io.stackrox.annotations.Retry
 import io.fabric8.kubernetes.api.model.Affinity
 import io.fabric8.kubernetes.api.model.Capabilities
 import io.fabric8.kubernetes.api.model.ConfigMap as K8sConfigMap
@@ -176,19 +177,21 @@ class Kubernetes {
         this("default")
     }
 
+    @Retry()
     void ensureNamespaceExists(String ns) {
         Namespace namespace = newNamespace(ns)
         try {
             client.namespaces().create(namespace)
             log.info "Created namespace ${ns}"
-            defaultPspForNamespace(ns)
-            provisionDefaultServiceAccount(ns)
         } catch (KubernetesClientException kce) {
             if (kce.code != 409) {
                 throw kce
             }
             log.debug("Namespace ${ns} already exists")
         }
+
+        defaultPspForNamespace(ns)
+        provisionDefaultServiceAccount(ns)
     }
 
     void setup() {

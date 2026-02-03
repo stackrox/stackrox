@@ -2,47 +2,60 @@ package printer
 
 import (
 	"fmt"
-	"maps"
-	"slices"
-	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 const (
-	maxPaths = 10
+	UNKNOWN_FILE = "Unknown file"
 )
 
-func UpdateFileAccessAlertViolationMessage(v *storage.Alert_FileAccessViolation) {
-	if len(v.GetAccesses()) == 0 {
+var (
+	operationToPretty = map[storage.FileAccess_Operation]string{
+		storage.FileAccess_OPEN:              "opened writable",
+		storage.FileAccess_UNLINK:            "deleted",
+		storage.FileAccess_CREATE:            "created",
+		storage.FileAccess_OWNERSHIP_CHANGE:  "ownership changed",
+		storage.FileAccess_PERMISSION_CHANGE: "permission changed",
+		storage.FileAccess_RENAME:            "renamed",
+	}
+)
+
+func prettifyOperation(op storage.FileAccess_Operation) string {
+	if pretty, ok := operationToPretty[op]; ok {
+		return pretty
+	}
+	return "Unknown operation"
+}
+
+func UpdateFileAccessAlertViolationMessage(v *storage.Alert_Violation) {
+	if v.GetType() != storage.Alert_Violation_FILE_ACCESS {
 		return
 	}
 
-	// Construct a string for each distinct path, and accumulate
-	// file operation, so we can show all the kinds of activity
-	// for each file, to provide the most important info.
-	pathToOperation := make(map[string][]string, 0)
-	for _, fa := range v.GetAccesses() {
-		path := fa.GetFile().GetActualPath()
-		pathToOperation[path] = append(pathToOperation[path], fa.GetOperation().String())
-	}
-
-	if len(pathToOperation) >= maxPaths {
-		v.Message = fmt.Sprintf("%d sensitive files accessed", len(pathToOperation))
+	access := v.GetFileAccess()
+	if access == nil {
 		return
 	}
 
-	// sorted to make this more deterministic which means both that
-	// the output is more consistent, and it is more testable.
-	paths := slices.SortedFunc(maps.Keys(pathToOperation), func(a, b string) int {
-		return strings.Compare(a, b)
-	})
-
-	parts := make([]string, 0, len(pathToOperation))
-	for _, path := range paths {
-		parts = append(parts, fmt.Sprintf("'%v' accessed (%s)", path, strings.Join(sliceutils.Unique(pathToOperation[path]), ", ")))
+	path := UNKNOWN_FILE
+	if access.GetFile().GetActualPath() != "" {
+		path = access.GetFile().GetActualPath()
+	} else if access.GetFile().GetEffectivePath() != "" {
+		path = access.GetFile().GetEffectivePath()
 	}
 
-	v.Message = strings.Join(parts, "; ")
+	v.Message = fmt.Sprintf("'%v' %s", path, prettifyOperation(access.GetOperation()))
+}
+
+func GenerateFileAccessViolation(access *storage.FileAccess) *storage.Alert_Violation {
+	violation := &storage.Alert_Violation{
+		Type: storage.Alert_Violation_FILE_ACCESS,
+		MessageAttributes: &storage.Alert_Violation_FileAccess{
+			FileAccess: access,
+		},
+	}
+
+	UpdateFileAccessAlertViolationMessage(violation)
+	return violation
 }

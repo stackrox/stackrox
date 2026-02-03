@@ -29,7 +29,7 @@ func constructProcessAlert(policy *storage.Policy, deployment *storage.Deploymen
 // It assumes one of node or deployment is non-nil and constructs an alert based
 // on this.
 func constructFileAccessAlert(policy *storage.Policy, node *storage.Node, deployment *storage.Deployment, violations booleanpolicy.Violations) *storage.Alert {
-	if violations.FileAccessViolation == nil {
+	if len(violations.AlertViolations) == 0 {
 		return nil
 	}
 
@@ -50,7 +50,6 @@ func constructFileAccessAlert(policy *storage.Policy, node *storage.Node, deploy
 			}
 		}
 	}
-	alert.FileAccessViolation = violations.FileAccessViolation
 	return alert
 }
 

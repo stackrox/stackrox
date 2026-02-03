@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 )
 
 // PipelineComponent components that constitute the eventPipeline
@@ -28,6 +29,7 @@ type PipelineComponent interface {
 type Resolver interface {
 	PipelineComponent
 	Send(event *ResourceEvent)
+	ProcessResourceEvent(event pubsub.Event) error
 }
 
 // OutputQueue component that redirects Resource Events to the output channel. This component is the last step
@@ -48,4 +50,11 @@ type OutputQueue interface {
 type ContextListener interface {
 	PipelineComponent
 	StartWithContext(context.Context) error
+}
+
+// PubSubDispatcher defines the interface to the internal PubSub system
+type PubSubDispatcher interface {
+	RegisterConsumer(pubsub.ConsumerID, pubsub.Topic, pubsub.EventCallback) error
+	RegisterConsumerToLane(pubsub.ConsumerID, pubsub.Topic, pubsub.LaneID, pubsub.EventCallback) error
+	Publish(pubsub.Event) error
 }

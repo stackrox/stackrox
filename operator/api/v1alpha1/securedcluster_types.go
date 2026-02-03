@@ -158,8 +158,8 @@ type AdmissionControlComponentSpec struct {
 	ListenOnEvents *bool `json:"listenOnEvents,omitempty"`
 
 	// Set to Disabled to disable policy enforcement for the admission controller. This is not recommended.
-	// On new deployments starting with version 4.9, defaults to Enabled.
-	// On old deployments, defaults to Enabled if at least one of listenOnCreates or listenOnUpdates is true.
+	// On upgrades to 4.9 from previous releases, defaults to Enabled only if at least one of listenOnCreates or listenOnUpdates is true.
+	// On new deployments starting with version 4.9, the default is: Enabled.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Enforcement *PolicyEnforcement `json:"enforcement,omitempty"`
 
@@ -437,10 +437,14 @@ type LocalScannerComponentSpec struct {
 
 // LocalScannerV4ComponentSpec defines settings for the "Scanner V4" component in SecuredClusters
 type LocalScannerV4ComponentSpec struct {
-	// If you want to enable the Scanner V4 component set this to "AutoSense"
+	// If you want to enable the Scanner V4 component set this to "AutoSense".
+	// A value of "AutoSense" means that Scanner V4 should be installed,
+	// unless there is a Central resource in the same namespace.
+	// In that case typically a central Scanner V4 will be deployed as a component of Central.
+	// A value of "Disabled" means that Scanner V4 should not be installed.
 	// If this field is not specified or set to "Default", the following defaulting takes place:
-	// * for new installations, Scanner V4 is enabled starting with ACS 4.8;
-	// * for upgrades to 4.8 from previous releases, Scanner V4 is disabled.
+	// * for upgrades to 4.8 from previous releases, the default is: Disabled;
+	// * for new installations starting with ACS 4.8, the default is: AutoSense.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner V4 component",order=1
 	ScannerComponent *LocalScannerV4ComponentPolicy `json:"scannerComponent,omitempty"`
 
@@ -483,7 +487,7 @@ type LocalScannerV4ComponentPolicy string
 
 const (
 	// LocalScannerV4ComponentDefault means that local Scanner V4 will use the default semantics
-	// to determine whether scannerV4 components should be used.
+	// to determine whether Scanner V4 components should be used.
 	// Currently this defaults to "Disabled" semantics.
 	// TODO: change default to "AutoSense" semantics with version 4.5
 	LocalScannerV4ComponentDefault LocalScannerV4ComponentPolicy = "Default"
@@ -491,7 +495,7 @@ const (
 	// unless there is a Central resource in the same namespace.
 	// In that case typically a central Scanner V4 will be deployed as a component of Central
 	LocalScannerV4ComponentAutoSense LocalScannerV4ComponentPolicy = "AutoSense"
-	// LocalScannerV4ComponentDisabled means that scanner should not be installed.
+	// LocalScannerV4ComponentDisabled means that Scanner V4 should not be installed.
 	LocalScannerV4ComponentDisabled LocalScannerV4ComponentPolicy = "Disabled"
 )
 

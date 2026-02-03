@@ -3,23 +3,30 @@ import type { ReactElement } from 'react';
 import { Flex, SearchInput } from '@patternfly/react-core';
 
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
+import type { GenericSearchFilterAttribute } from 'Components/CompoundSearchFilter/types';
 import type { SetSearchFilter } from 'hooks/useURLSearch';
 import type { SearchFilter } from 'types/search';
 import { isValidCidrBlock } from 'utils/urlUtils';
-
-import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';
 
 export const matchTypes = ['Equals', 'Not'];
 
 export type MatchType = (typeof matchTypes)[number];
 
 type IPMatchFilterProps = {
+    attribute: GenericSearchFilterAttribute;
     searchFilter: SearchFilter;
     setSearchFilter: SetSearchFilter;
 };
 
-function IPMatchFilter({ searchFilter, setSearchFilter }: IPMatchFilterProps): ReactElement {
+function IPMatchFilter({
+    attribute,
+    searchFilter,
+    setSearchFilter,
+}: IPMatchFilterProps): ReactElement {
     const [externalIP, setExternalIP] = useState('');
+
+    const { filterChipLabel, searchTerm: category } = attribute;
+    const textLabel = `Filter results by ${filterChipLabel}`; // consistent with SearchFilterText
 
     function handleClear() {
         setExternalIP('');
@@ -33,7 +40,7 @@ function IPMatchFilter({ searchFilter, setSearchFilter }: IPMatchFilterProps): R
             updateSearchFilter(searchFilter, [
                 {
                     action: 'APPEND',
-                    category: EXTERNAL_SOURCE_ADDRESS_QUERY,
+                    category,
                     value: searchValue,
                 },
             ])
@@ -50,7 +57,8 @@ function IPMatchFilter({ searchFilter, setSearchFilter }: IPMatchFilterProps): R
             className="pf-v5-u-w-100"
         >
             <SearchInput
-                placeholder="Find by IP or IP/CIDR"
+                aria-label={textLabel}
+                placeholder={textLabel}
                 value={externalIP}
                 onChange={(_event, value) => setExternalIP(value)}
                 onSearch={() => {

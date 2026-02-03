@@ -29,9 +29,7 @@ import type { IAction } from '@patternfly/react-table';
 
 import type { ListPolicy } from 'types/policy.proto';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import SearchFilterChips, {
-    makeFilterChipDescriptors,
-} from 'Components/CompoundSearchFilter/components/SearchFilterChips';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
@@ -217,16 +215,14 @@ function PoliciesTable({
                                     );
                                 }}
                                 defaultEntity={'Policy'}
-                                defaultAttribute={'Name'}
                             />
                         </ToolbarItem>
                         <ToolbarItem className="pf-v5-u-w-100">
-                            <SearchFilterChips
-                                searchFilter={searchFilter}
+                            <CompoundSearchFilterLabels
+                                attributesSeparateFromConfig={[]}
+                                config={searchFilterConfig}
                                 onFilterChange={handleChangeSearchFilter}
-                                filterChipGroupDescriptors={makeFilterChipDescriptors(
-                                    searchFilterConfig
-                                )}
+                                searchFilter={searchFilter}
                             />
                         </ToolbarItem>
                         <ToolbarGroup

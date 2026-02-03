@@ -85,6 +85,7 @@ COPY bin/kubernetes-sensor  /stackrox/bin/kubernetes-sensor
 COPY bin/sensor-upgrader    /stackrox/bin/sensor-upgrader
 COPY bin/admission-control  /stackrox/bin/admission-control
 COPY bin/config-controller  /stackrox/bin/config-controller
+COPY bin/roxagent           /stackrox/bin/roxagent
 COPY bin/roxctl*            /assets/downloads/cli/
 
 RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \

@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/pubsub/consumer"
 	pubsubErrors "github.com/stackrox/rox/sensor/common/pubsub/errors"
+	"github.com/stackrox/rox/sensor/common/pubsub/metrics"
 )
 
 type DefaultConfig struct {
@@ -84,13 +85,17 @@ func (l *defaultLane) Publish(event pubsub.Event) error {
 	defer l.mu.Unlock()
 	select {
 	case <-l.stopper.Flow().StopRequested():
+		metrics.RecordPublishOperation(l.id, event.Topic(), metrics.PublishError)
 		return errors.Wrap(pubsubErrors.NewPublishOnStoppedLaneErr(l.id), "unable to publish event")
 	default:
 	}
 	select {
 	case <-l.stopper.Flow().StopRequested():
+		metrics.RecordPublishOperation(l.id, event.Topic(), metrics.PublishError)
 		return errors.Wrap(pubsubErrors.NewPublishOnStoppedLaneErr(l.id), "unable to publish event")
 	case l.ch <- event:
+		metrics.RecordPublishOperation(l.id, event.Topic(), metrics.Published)
+		metrics.SetQueueSize(l.id, len(l.ch))
 		return nil
 	}
 }
@@ -113,10 +118,15 @@ func (l *defaultLane) run() {
 }
 
 func (l *defaultLane) handleEvent(event pubsub.Event) error {
+	defer func() {
+		metrics.SetQueueSize(l.id, len(l.ch))
+	}()
+
 	l.consumerLock.RLock()
 	defer l.consumerLock.RUnlock()
 	consumers, ok := l.consumers[event.Topic()]
 	if !ok {
+		metrics.RecordConsumerOperation(l.id, event.Topic(), pubsub.NoConsumers, metrics.NoConsumers)
 		return errors.Wrap(pubsubErrors.NewConsumersNotFoundForTopicErr(event.Topic(), l.id), "unable to handle event")
 	}
 	errList := errorhelpers.NewErrorList("handle event")
@@ -130,20 +140,22 @@ func (l *defaultLane) handleEvent(event pubsub.Event) error {
 		case <-l.stopper.Flow().StopRequested():
 		}
 	}
+
 	return errList.ToError()
 }
 
-func (l *defaultLane) RegisterConsumer(topic pubsub.Topic, callback pubsub.EventCallback) error {
+func (l *defaultLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pubsub.Topic, callback pubsub.EventCallback) error {
 	if callback == nil {
 		return errors.New("cannot register a 'nil' callback")
 	}
-	c, err := l.newConsumerFn(callback, l.consumerOpts...)
+	c, err := l.newConsumerFn(l.id, topic, consumerID, callback, l.consumerOpts...)
 	if err != nil {
 		return errors.Wrap(err, "unable to create the consumer")
 	}
 	l.consumerLock.Lock()
 	defer l.consumerLock.Unlock()
 	l.consumers[topic] = append(l.consumers[topic], c)
+	metrics.RecordConsumerCount(l.id, topic, len(l.consumers[topic]))
 	return nil
 }
 

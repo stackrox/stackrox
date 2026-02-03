@@ -2,8 +2,11 @@ import { WorkloadCveViewContext } from 'Containers/Vulnerabilities/WorkloadCves/
 
 import { VulnerabilitiesOverviewContainer } from '../Components/VulnerabilitiesOverviewContainer';
 import { useDefaultWorkloadCveViewContext } from '../hooks/useDefaultWorkloadCveViewContext';
+import { useAnalyticsPageView } from '../hooks/useAnalyticsPageView';
 
 export function ProjectSecurityTab() {
+    useAnalyticsPageView();
+
     const context = useDefaultWorkloadCveViewContext();
 
     return (

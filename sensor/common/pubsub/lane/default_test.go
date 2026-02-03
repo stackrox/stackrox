@@ -89,7 +89,7 @@ func (t *testLane) Publish(_ pubsub.Event) error {
 	return nil
 }
 
-func (t *testLane) RegisterConsumer(_ pubsub.Topic, _ pubsub.EventCallback) error {
+func (t *testLane) RegisterConsumer(_ pubsub.ConsumerID, _ pubsub.Topic, _ pubsub.EventCallback) error {
 	return nil
 }
 
@@ -142,7 +142,7 @@ func (s *defaultLaneSuite) TestRegisterConsumer() {
 	s.Run("should error on nil callback", func() {
 		lane := NewDefaultLane(pubsub.DefaultLane).NewLane()
 		assert.NotNil(s.T(), lane)
-		assert.Error(s.T(), lane.RegisterConsumer(pubsub.DefaultTopic, nil))
+		assert.Error(s.T(), lane.RegisterConsumer(pubsub.DefaultConsumer, pubsub.DefaultTopic, nil))
 		lane.Stop()
 	})
 }
@@ -155,7 +155,7 @@ func (s *defaultLaneSuite) TestPublish() {
 		unblockSig := concurrency.NewSignal()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
-		assert.NoError(s.T(), lane.RegisterConsumer(pubsub.DefaultTopic, blockingCallback(&wg, &unblockSig)))
+		assert.NoError(s.T(), lane.RegisterConsumer(pubsub.DefaultConsumer, pubsub.DefaultTopic, blockingCallback(&wg, &unblockSig)))
 		publishDone := concurrency.NewSignal()
 		go func() {
 			defer publishDone.Signal()
@@ -188,7 +188,7 @@ func (s *defaultLaneSuite) TestPublish() {
 		assert.NotNil(s.T(), lane)
 		data := "some data"
 		consumeSignal := concurrency.NewSignal()
-		assert.NoError(s.T(), lane.RegisterConsumer(pubsub.DefaultTopic,
+		assert.NoError(s.T(), lane.RegisterConsumer(pubsub.DefaultConsumer, pubsub.DefaultTopic,
 			assertInCallback(s.T(), func(t *testing.T, event pubsub.Event) error {
 				defer consumeSignal.Signal()
 				eventImpl, ok := event.(*testEvent)
@@ -206,7 +206,7 @@ func (s *defaultLaneSuite) TestPublish() {
 		unblockSig := concurrency.NewSignal()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
-		assert.NoError(s.T(), lane.RegisterConsumer(pubsub.DefaultTopic, blockingCallback(&wg, &unblockSig)))
+		assert.NoError(s.T(), lane.RegisterConsumer(pubsub.DefaultConsumer, pubsub.DefaultTopic, blockingCallback(&wg, &unblockSig)))
 		publishDone := concurrency.NewSignal()
 		firstPublishCallDone := concurrency.NewSignal()
 		go func() {
@@ -257,7 +257,7 @@ func (t *testEvent) Lane() pubsub.LaneID {
 	return pubsub.DefaultLane
 }
 
-func newTestConsumer(_ pubsub.EventCallback, _ ...pubsub.ConsumerOption) (pubsub.Consumer, error) {
+func newTestConsumer(_ pubsub.LaneID, _ pubsub.Topic, _ pubsub.ConsumerID, _ pubsub.EventCallback, _ ...pubsub.ConsumerOption) (pubsub.Consumer, error) {
 	return &testCustomConsumer{}, nil
 }
 

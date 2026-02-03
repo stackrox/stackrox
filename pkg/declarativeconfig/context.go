@@ -41,7 +41,7 @@ func CanModifyResource(ctx context.Context, resource ResourceWithTraits) bool {
 		return IsDeclarativeOrigin(resource)
 	}
 	if ctx.Value(originCheckerKey{}) == allowModifyDeclarativeOrImperative {
-		return IsDeclarativeOrigin(resource) || resource.GetTraits().GetOrigin() == storage.Traits_IMPERATIVE
+		return IsDeclarativeOrigin(resource) || IsImperativeOrigin(resource) || IsEphemeralOrigin(resource)
 	}
-	return resource.GetTraits().GetOrigin() == storage.Traits_IMPERATIVE
+	return IsImperativeOrigin(resource) || IsEphemeralOrigin(resource)
 }

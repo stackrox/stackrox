@@ -87,3 +87,85 @@ func TestEndpointAndPlaintextSetting(t *testing.T) {
 		})
 	}
 }
+
+func TestEndpointWasExplicitlyProvided(t *testing.T) {
+	testCases := []struct {
+		name                string
+		endpointFlag        bool
+		envVarValue         string
+		kubeContextFlag     bool
+		kubeContextEnvValue string
+		expectedExplicit    bool
+	}{
+		{
+			name:             "default endpoint - not explicit",
+			endpointFlag:     false,
+			envVarValue:      "",
+			kubeContextFlag:  false,
+			expectedExplicit: false,
+		},
+		{
+			name:             "endpoint flag set - explicit",
+			endpointFlag:     true,
+			envVarValue:      "",
+			kubeContextFlag:  false,
+			expectedExplicit: true,
+		},
+		{
+			name:             "env var set - explicit",
+			endpointFlag:     false,
+			envVarValue:      "central.example.com:443",
+			kubeContextFlag:  false,
+			expectedExplicit: true,
+		},
+		{
+			name:             "kube context flag enabled - explicit",
+			endpointFlag:     false,
+			envVarValue:      "",
+			kubeContextFlag:  true,
+			expectedExplicit: true,
+		},
+		{
+			name:                "kube context env var enabled - explicit",
+			endpointFlag:        false,
+			envVarValue:         "",
+			kubeContextFlag:     false,
+			kubeContextEnvValue: "true",
+			expectedExplicit:    true,
+		},
+		{
+			name:             "endpoint flag and env var both set - explicit",
+			endpointFlag:     true,
+			envVarValue:      "central.example.com:443",
+			kubeContextFlag:  false,
+			expectedExplicit: true,
+		},
+		{
+			name:             "all three set - explicit",
+			endpointFlag:     true,
+			envVarValue:      "central.example.com:443",
+			kubeContextFlag:  true,
+			expectedExplicit: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Reset state
+			endpointChanged = pointers.Bool(tc.endpointFlag)
+			useKubeContext = tc.kubeContextFlag
+
+			// Clear and optionally set environment variables
+			t.Setenv(env.EndpointEnv.EnvVar(), tc.envVarValue)
+			if tc.kubeContextEnvValue != "" {
+				t.Setenv(env.UseCurrentKubeContext.EnvVar(), tc.kubeContextEnvValue)
+			} else {
+				t.Setenv(env.UseCurrentKubeContext.EnvVar(), "")
+			}
+
+			result := EndpointWasExplicitlyProvided()
+			assert.Equal(t, tc.expectedExplicit, result,
+				"EndpointWasExplicitlyProvided() returned %v, expected %v", result, tc.expectedExplicit)
+		})
+	}
+}

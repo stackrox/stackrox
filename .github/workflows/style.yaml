@@ -162,14 +162,14 @@ jobs:
     - name: Check Cache golangci-lint
       run: make golangci-lint-cache-status
 
-  check-collector-and-scanner-images-exist:
-    # This job ensures that COLLECTOR_VERSION or SCANNER_VERSION files cannot be updated to a version for which the
-    # image was not successfully built on Konflux (suffix "-fast"). It also verifies that GHA-built image is there (no
-    # suffix) so that the failure also happens in this job.
+  check-dependent-images-exist:
+    # This job ensures that COLLECTOR_VERSION, FACT_VERSION or SCANNER_VERSION files cannot be updated to a version
+    # for which the image was not successfully built on Konflux (suffix "-fast"). It also verifies that GHA-built image
+    # is there (no suffix) so that the failure also happens in this job.
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        image: ["collector", "scanner", "scanner-slim", "scanner-db", "scanner-db-slim"]
+        image: ["collector", "fact", "scanner", "scanner-slim", "scanner-db", "scanner-db-slim"]
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
@@ -178,11 +178,13 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Get image tag from COLLECTOR|SCANNER_VERSION file
+      - name: Get image tag from COLLECTOR|FACT|SCANNER_VERSION file
         id: image-tag
         run: |
           if [[ "${{ matrix.image }}" == "collector" ]]; then
             makefile_target="collector-tag"
+          elif [[ "${{ matrix.image }}" == "fact" ]]; then
+            makefile_target="fact-tag"
           else
             makefile_target="scanner-tag"
           fi
@@ -271,7 +273,7 @@ jobs:
       - misc-checks
       - style-check
       - golangci-lint
-      - check-collector-and-scanner-images-exist
+      - check-dependent-images-exist
       - github-actions-lint
       - github-actions-shellcheck
       - openshift-ci-lint

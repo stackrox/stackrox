@@ -23,6 +23,7 @@ import (
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
 	"github.com/stackrox/rox/central/audit"
 	authDS "github.com/stackrox/rox/central/auth/datastore"
+	internalTokenAuthService "github.com/stackrox/rox/central/auth/internaltokens/service"
 	authService "github.com/stackrox/rox/central/auth/service"
 	"github.com/stackrox/rox/central/auth/userpass"
 	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
@@ -492,6 +493,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, baseImageService.Singleton())
 	}
 
+	if features.OCPConsoleIntegration.Enabled() {
+		servicesToRegister = append(servicesToRegister, internalTokenAuthService.Singleton())
+	}
+
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
 	if err := connection.ManagerSingleton().Start(
 		clusterDataStore.Singleton(),
@@ -802,7 +807,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/api/v1/images/sbom",
 			Authorizer:    user.With(permissions.Modify(resources.Image)),
-			ServerHandler: imageService.SBOMHandler(imageintegration.Set(), enrichment.ImageEnricherSingleton(), sachelper.NewClusterSacHelper(clusterDataStore.Singleton()), riskManager.Singleton()),
+			ServerHandler: imageService.SBOMHandler(imageintegration.Set(), enrichment.ImageEnricherSingleton(), enrichment.ImageEnricherV2Singleton(), sachelper.NewClusterSacHelper(clusterDataStore.Singleton()), riskManager.Singleton()),
 			Compression:   true,
 		},
 		{
@@ -965,6 +970,10 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 }
 
 func debugRoutes() []routes.CustomRoute {
+	if env.ContinuousProfiling.BooleanSetting() {
+		return []routes.CustomRoute{}
+	}
+
 	customRoutes := make([]routes.CustomRoute, 0, len(routes.DebugRoutes))
 
 	for r, h := range routes.DebugRoutes {

@@ -187,7 +187,7 @@ func (x *BaseImageRepository) GetCreatedBy() *SlimUser {
 // BaseImageTag stores cached base image tag metadata.
 // Persisting cache data across Central restarts avoids cold-start refetches during base
 // image repository scanning.
-// Next tag: 8
+// Next tag: 9
 type BaseImageTag struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Unique identifier.
@@ -203,10 +203,12 @@ type BaseImageTag struct {
 	// Whether this tag points to a manifest list (multi-platform).
 	IsManifestList bool `protobuf:"varint,5,opt,name=is_manifest_list,json=isManifestList,proto3" json:"is_manifest_list,omitempty"`
 	// Image creation timestamp from config blob.
-	Created *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created,proto3" json:"created,omitempty"`
+	Created *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created,proto3" json:"created,omitempty" sql:"index=btree"` // @gotags: sql:"index=btree"
 	// Map of "os/arch" to platform-specific manifest digest,
 	// to only refetch platforms whose digest changed.
-	ListDigests   map[string]string `protobuf:"bytes,7,rep,name=list_digests,json=listDigests,proto3" json:"list_digests,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	ListDigests map[string]string `protobuf:"bytes,7,rep,name=list_digests,json=listDigests,proto3" json:"list_digests,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// Layer digests for this tag, stored for promotion to base_images.
+	LayerDigests  []string `protobuf:"bytes,8,rep,name=layer_digests,json=layerDigests,proto3" json:"layer_digests,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -290,6 +292,13 @@ func (x *BaseImageTag) GetListDigests() map[string]string {
 	return nil
 }
 
+func (x *BaseImageTag) GetLayerDigests() []string {
+	if x != nil {
+		return x.LayerDigests
+	}
+	return nil
+}
+
 var File_storage_base_image_repository_proto protoreflect.FileDescriptor
 
 const file_storage_base_image_repository_proto_rawDesc = "" +
@@ -310,7 +319,7 @@ const file_storage_base_image_repository_proto_rawDesc = "" +
 	"\fHealthStatus\x12\v\n" +
 	"\aHEALTHY\x10\x00\x12\r\n" +
 	"\tUNHEALTHY\x10\x01\x12\f\n" +
-	"\bDISABLED\x10\x02\"\xfd\x02\n" +
+	"\bDISABLED\x10\x02\"\xa2\x03\n" +
 	"\fBaseImageTag\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x127\n" +
 	"\x18base_image_repository_id\x18\x02 \x01(\tR\x15baseImageRepositoryId\x12\x10\n" +
@@ -318,7 +327,8 @@ const file_storage_base_image_repository_proto_rawDesc = "" +
 	"\x0fmanifest_digest\x18\x04 \x01(\tR\x0emanifestDigest\x12(\n" +
 	"\x10is_manifest_list\x18\x05 \x01(\bR\x0eisManifestList\x124\n" +
 	"\acreated\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12I\n" +
-	"\flist_digests\x18\a \x03(\v2&.storage.BaseImageTag.ListDigestsEntryR\vlistDigests\x1a>\n" +
+	"\flist_digests\x18\a \x03(\v2&.storage.BaseImageTag.ListDigestsEntryR\vlistDigests\x12#\n" +
+	"\rlayer_digests\x18\b \x03(\tR\flayerDigests\x1a>\n" +
 	"\x10ListDigestsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B.\n" +

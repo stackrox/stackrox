@@ -130,10 +130,9 @@ const APIVerbs: DescriptorOption[] = ['CREATE', 'DELETE', 'GET', 'PATCH', 'UPDAT
 }));
 
 const fileOperationOptions: DescriptorOption[] = [
-    ['OPEN', 'Open'],
+    ['OPEN', 'Open (Writable)'],
     ['CREATE', 'Create'],
     ['UNLINK', 'Delete'],
-    ['RENAME', 'Rename'],
     ['PERMISSION_CHANGE', 'Permission change'],
     ['OWNERSHIP_CHANGE', 'Ownership change'],
 ].map(([value, label]) => ({ value, label }));
@@ -1506,7 +1505,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         label: 'Effective path',
         name: 'Effective Path',
         shortName: 'Effective path',
-        longName: 'The path as observed by the process doing the modification or access',
+        longName: 'The file path as observed by the process',
         category: policyCriteriaCategories.FILE_ACTIVITY,
         type: 'select',
         placeholder: 'Select a file path',
@@ -1519,8 +1518,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         label: 'Actual path',
         name: 'Actual Path',
         shortName: 'Actual path',
-        longName:
-            'The path to the physical file that is modified on the filesystem or underlying mount',
+        longName: 'The file path on the filesystem or volume mount',
         category: policyCriteriaCategories.FILE_ACTIVITY,
         type: 'select',
         placeholder: 'Select a file path',

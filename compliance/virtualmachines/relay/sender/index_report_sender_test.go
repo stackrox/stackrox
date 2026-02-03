@@ -33,7 +33,7 @@ func (s *senderTestSuite) TestSend_HandlesContextCancellation() {
 	ctx, cancel := context.WithCancel(s.ctx)
 	cancel()
 
-	err := sender.Send(ctx, &v1.IndexReport{})
+	err := sender.Send(ctx, relaytest.NewTestVMReport("42"))
 	s.Require().Error(err)
 	s.Contains(err.Error(), "context canceled")
 }
@@ -73,7 +73,7 @@ func (s *senderTestSuite) TestSend_RetriesOnRetryableErrors() {
 			ctx, cancel := context.WithTimeout(s.ctx, 500*time.Millisecond)
 			defer cancel()
 
-			err := sender.Send(ctx, &v1.IndexReport{})
+			err := sender.Send(ctx, relaytest.NewTestVMReport("42"))
 			s.Require().Error(err)
 
 			retried := len(client.CapturedRequests()) > 1
@@ -86,15 +86,49 @@ func (s *senderTestSuite) TestReportSender_Send() {
 	client := relaytest.NewMockSensorClient(s.T())
 	sender := New(client)
 
-	err := sender.Send(s.ctx, &v1.IndexReport{VsockCid: "42"})
+	msg := &v1.VMReport{
+		IndexReport: &v1.IndexReport{VsockCid: "42"},
+		DiscoveredData: &v1.DiscoveredData{
+			DetectedOs:        v1.DetectedOS_RHEL,
+			OsVersion:         "9.2",
+			ActivationStatus:  v1.ActivationStatus_ACTIVE,
+			DnfMetadataStatus: v1.DnfMetadataStatus_AVAILABLE,
+		},
+	}
+
+	err := sender.Send(s.ctx, msg)
 	s.Require().NoError(err)
-	s.Len(client.CapturedRequests(), 1)
+	s.Require().Len(client.CapturedRequests(), 1)
+
+	// Verify that discovered data fields are correctly forwarded into the request
+	req := client.CapturedRequests()[0]
+	s.Equal(msg.GetDiscoveredData().GetDetectedOs(), req.GetDiscoveredData().GetDetectedOs())
+	s.Equal(msg.GetDiscoveredData().GetActivationStatus(), req.GetDiscoveredData().GetActivationStatus())
+	s.Equal(msg.GetDiscoveredData().GetDnfMetadataStatus(), req.GetDiscoveredData().GetDnfMetadataStatus())
 }
 
 func (s *senderTestSuite) TestReportSender_SendHandlesErrors() {
 	client := relaytest.NewMockSensorClient(s.T()).WithError(errox.NotImplemented)
 	sender := New(client)
 
-	err := sender.Send(s.ctx, &v1.IndexReport{VsockCid: "42"})
+	err := sender.Send(s.ctx, relaytest.NewTestVMReport("42"))
 	s.Require().Error(err)
+}
+
+func (s *senderTestSuite) TestReportSender_SendMissingIndexReport() {
+	client := relaytest.NewMockSensorClient(s.T())
+	sender := New(client)
+
+	msg := &v1.VMReport{
+		DiscoveredData: &v1.DiscoveredData{
+			DetectedOs:        v1.DetectedOS_RHEL,
+			OsVersion:         "9.2",
+			ActivationStatus:  v1.ActivationStatus_ACTIVE,
+			DnfMetadataStatus: v1.DnfMetadataStatus_AVAILABLE,
+		},
+	}
+
+	err := sender.Send(s.ctx, msg)
+	s.Require().Error(err)
+	s.Require().Empty(client.CapturedRequests())
 }

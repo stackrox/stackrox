@@ -12,11 +12,12 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/service"
 	"github.com/stackrox/rox/sensor/common/store"
 	mocksStore "github.com/stackrox/rox/sensor/common/store/mocks"
-	"github.com/stackrox/rox/sensor/common/store/resolver"
+	resolverStore "github.com/stackrox/rox/sensor/common/store/resolver"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component/mocks"
 	"github.com/stretchr/testify/suite"
@@ -29,13 +30,12 @@ type resolverSuite struct {
 
 	mockCtrl *gomock.Controller
 
-	mockOutput          *mocks.MockOutputQueue
-	mockDeploymentStore *mocksStore.MockDeploymentStore
-	mockServiceStore    *mocksStore.MockServiceStore
-	mockRBACStore       *mocksStore.MockRBACStore
-	mockEndpointManager *mocksStore.MockEndpointManager
-
-	resolver component.Resolver
+	mockOutput           *mocks.MockOutputQueue
+	mockDeploymentStore  *mocksStore.MockDeploymentStore
+	mockServiceStore     *mocksStore.MockServiceStore
+	mockRBACStore        *mocksStore.MockRBACStore
+	mockEndpointManager  *mocksStore.MockEndpointManager
+	mockPubSubDispatcher *mocks.MockPubSubDispatcher
 }
 
 var _ suite.SetupTestSuite = &resolverSuite{}
@@ -58,73 +58,148 @@ func (s *resolverSuite) SetupTest() {
 	s.mockServiceStore = mocksStore.NewMockServiceStore(s.mockCtrl)
 	s.mockRBACStore = mocksStore.NewMockRBACStore(s.mockCtrl)
 	s.mockEndpointManager = mocksStore.NewMockEndpointManager(s.mockCtrl)
+	s.mockPubSubDispatcher = mocks.NewMockPubSubDispatcher(s.mockCtrl)
 
-	s.resolver = New(s.mockOutput, &fakeProvider{
+}
+
+func (s *resolverSuite) newResolver(pubsubEnabled bool) component.Resolver {
+	if pubsubEnabled {
+		s.mockPubSubDispatcher.EXPECT().RegisterConsumerToLane(gomock.Eq(pubsub.ResolverConsumer), gomock.Any(), gomock.Any(), gomock.Any()).Times(2).Return(nil)
+	}
+	resolver, err := New(s.mockOutput, &fakeProvider{
 		deploymentStore: s.mockDeploymentStore,
 		serviceStore:    s.mockServiceStore,
 		rbacStore:       s.mockRBACStore,
 		endpointManager: s.mockEndpointManager,
-	}, 100)
+	}, 100, s.mockPubSubDispatcher)
+	s.Require().NoError(err)
+	return resolver
+}
+
+func (s *resolverSuite) dispatchEvent(event *component.ResourceEvent, resolver component.Resolver, pubSubEnabled bool) {
+	if pubSubEnabled {
+		err := resolver.ProcessResourceEvent(event)
+		s.Assert().NoError(err)
+		return
+	}
+	resolver.Send(event)
 }
 
 func (s *resolverSuite) Test_MessageSentToOutput() {
-	err := s.resolver.Start()
-	s.NoError(err)
+	for _, pubSubEnabled := range []bool{true, false} {
+		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
+			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
+			resolver := s.newResolver(pubSubEnabled)
+			err := resolver.Start()
+			s.NoError(err)
 
-	messageReceived := sync.WaitGroup{}
-	messageReceived.Add(1)
+			messageReceived := sync.WaitGroup{}
+			messageReceived.Add(1)
 
-	s.mockOutput.EXPECT().Send(gomock.Any()).Times(1).Do(func(arg0 interface{}) {
-		defer messageReceived.Done()
-	})
-
-	s.resolver.Send(&component.ResourceEvent{
-		ForwardMessages: []*central.SensorEvent{
-			{
-				Action: central.ResourceAction_UPDATE_RESOURCE,
-				Resource: &central.SensorEvent_Deployment{
-					Deployment: &storage.Deployment{Id: "abc"},
+			s.mockOutput.EXPECT().Send(gomock.Any()).Times(1).Do(func(arg0 interface{}) {
+				defer messageReceived.Done()
+			})
+			event := &component.ResourceEvent{
+				ForwardMessages: []*central.SensorEvent{
+					{
+						Action: central.ResourceAction_UPDATE_RESOURCE,
+						Resource: &central.SensorEvent_Deployment{
+							Deployment: &storage.Deployment{Id: "abc"},
+						},
+					},
 				},
-			},
-		},
-	})
+			}
+			s.dispatchEvent(event, resolver, pubSubEnabled)
 
-	messageReceived.Wait()
+			messageReceived.Wait()
+		})
+	}
 }
 
 func (s *resolverSuite) Test_Send_DeploymentWithRBACs() {
-	err := s.resolver.Start()
-	s.NoError(err)
+	for _, pubSubEnabled := range []bool{true, false} {
+		s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
+		resolver := s.newResolver(pubSubEnabled)
+		err := resolver.Start()
+		s.NoError(err)
 
-	testCases := map[string]struct {
-		deploymentID    string
-		permissionLevel storage.PermissionLevel
-	}{
-		"[1234]: None": {
-			deploymentID:    "1234",
-			permissionLevel: storage.PermissionLevel_NONE,
-		},
-		"[1234]: Elevated in namespace": {
-			deploymentID:    "1234",
-			permissionLevel: storage.PermissionLevel_ELEVATED_IN_NAMESPACE,
-		},
-		"[4321]: Elevated in cluster": {
-			deploymentID:    "4321",
-			permissionLevel: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE,
-		},
+		testCases := map[string]struct {
+			deploymentID    string
+			permissionLevel storage.PermissionLevel
+		}{
+			"[1234]: None": {
+				deploymentID:    "1234",
+				permissionLevel: storage.PermissionLevel_NONE,
+			},
+			"[1234]: Elevated in namespace": {
+				deploymentID:    "1234",
+				permissionLevel: storage.PermissionLevel_ELEVATED_IN_NAMESPACE,
+			},
+			"[4321]: Elevated in cluster": {
+				deploymentID:    "4321",
+				permissionLevel: storage.PermissionLevel_ELEVATED_CLUSTER_WIDE,
+			},
+		}
+
+		for name, testCase := range testCases {
+			s.Run(fmt.Sprintf("%s with %s %t", name, features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
+				messageReceived := sync.WaitGroup{}
+				messageReceived.Add(2)
+
+				s.givenPermissionLevelForDeployment(testCase.deploymentID, testCase.permissionLevel)
+
+				expectedDeployment := deploymentMatcher{
+					id:                           testCase.deploymentID,
+					permissionLevel:              testCase.permissionLevel,
+					expectedExposureInfos:        nil,
+					acceptableNumberOfMismatches: 1,
+				}
+
+				s.mockOutput.EXPECT().Send(&expectedDeployment).Times(2).Do(func(arg0 interface{}) {
+					defer messageReceived.Done()
+				})
+
+				event := &component.ResourceEvent{
+					DeploymentReferences: []component.DeploymentReference{
+						{
+							Reference:            resolverStore.ResolveDeploymentIds(testCase.deploymentID),
+							ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
+						},
+					},
+				}
+				s.dispatchEvent(event, resolver, pubSubEnabled)
+
+				messageReceived.Wait()
+			})
+		}
 	}
+}
 
-	for name, testCase := range testCases {
-		s.Run(name, func() {
+func (s *resolverSuite) Test_Send_DeploymentsWithServiceExposure() {
+	for _, pubSubEnabled := range []bool{true, false} {
+		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
+			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
+			resolver := s.newResolver(pubSubEnabled)
+			err := resolver.Start()
+			s.NoError(err)
+
 			messageReceived := sync.WaitGroup{}
 			messageReceived.Add(2)
 
-			s.givenPermissionLevelForDeployment(testCase.deploymentID, testCase.permissionLevel)
+			s.givenServiceExposureForDeployment("1234", []map[service.PortRef][]*storage.PortConfig_ExposureInfo{
+				s.givenStubPortExposure(),
+			})
 
 			expectedDeployment := deploymentMatcher{
-				id:                           testCase.deploymentID,
-				permissionLevel:              testCase.permissionLevel,
-				expectedExposureInfos:        nil,
+				id:              "1234",
+				permissionLevel: storage.PermissionLevel_NONE,
+				expectedExposureInfos: []*storage.PortConfig_ExposureInfo{
+					{
+						Level:       storage.PortConfig_EXTERNAL,
+						ServiceName: "my.service",
+						ServicePort: 80,
+					},
+				},
 				acceptableNumberOfMismatches: 1,
 			}
 
@@ -132,277 +207,282 @@ func (s *resolverSuite) Test_Send_DeploymentWithRBACs() {
 				defer messageReceived.Done()
 			})
 
-			s.resolver.Send(&component.ResourceEvent{
+			event := &component.ResourceEvent{
 				DeploymentReferences: []component.DeploymentReference{
 					{
-						Reference:            resolver.ResolveDeploymentIds(testCase.deploymentID),
+						Reference:            resolverStore.ResolveDeploymentIds("1234"),
 						ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
 					},
 				},
-			})
+			}
+
+			s.dispatchEvent(event, resolver, pubSubEnabled)
 
 			messageReceived.Wait()
 		})
 	}
 }
 
-func (s *resolverSuite) Test_Send_DeploymentsWithServiceExposure() {
-	err := s.resolver.Start()
-	s.NoError(err)
-
-	messageReceived := sync.WaitGroup{}
-	messageReceived.Add(2)
-
-	s.givenServiceExposureForDeployment("1234", []map[service.PortRef][]*storage.PortConfig_ExposureInfo{
-		s.givenStubPortExposure(),
-	})
-
-	expectedDeployment := deploymentMatcher{
-		id:              "1234",
-		permissionLevel: storage.PermissionLevel_NONE,
-		expectedExposureInfos: []*storage.PortConfig_ExposureInfo{
-			{
-				Level:       storage.PortConfig_EXTERNAL,
-				ServiceName: "my.service",
-				ServicePort: 80,
-			},
-		},
-		acceptableNumberOfMismatches: 1,
-	}
-
-	s.mockOutput.EXPECT().Send(&expectedDeployment).Times(2).Do(func(arg0 interface{}) {
-		defer messageReceived.Done()
-	})
-
-	s.resolver.Send(&component.ResourceEvent{
-		DeploymentReferences: []component.DeploymentReference{
-			{
-				Reference:            resolver.ResolveDeploymentIds("1234"),
-				ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
-			},
-		},
-	})
-
-	messageReceived.Wait()
-}
-
 func (s *resolverSuite) Test_Send_MultipleDeploymentRefs() {
-	err := s.resolver.Start()
-	s.NoError(err)
+	for _, pubSubEnabled := range []bool{true, false} {
+		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
+			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
+			resolver := s.newResolver(pubSubEnabled)
+			err := resolver.Start()
+			s.NoError(err)
 
-	messageReceived := sync.WaitGroup{}
-	messageReceived.Add(4)
-
-	s.givenPermissionLevelForDeployment("1234", storage.PermissionLevel_NONE)
-	s.givenPermissionLevelForDeployment("4321", storage.PermissionLevel_ELEVATED_IN_NAMESPACE)
-	s.givenPermissionLevelForDeployment("6543", storage.PermissionLevel_ELEVATED_CLUSTER_WIDE)
-
-	s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: []int{0, 1, 1, 1}}).Times(4).Do(func(arg0 interface{}) {
-		defer messageReceived.Done()
-	})
-
-	s.resolver.Send(&component.ResourceEvent{
-		DeploymentReferences: []component.DeploymentReference{
-			{
-				Reference:            resolver.ResolveDeploymentIds("1234", "4321"),
-				ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
-			},
-			{
-				Reference:            resolver.ResolveDeploymentIds("6543"),
-				ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
-			},
-		},
-	})
-	messageReceived.Wait()
-}
-
-func (s *resolverSuite) Test_Send_ResourceAction() {
-	err := s.resolver.Start()
-	s.NoError(err)
-
-	for _, action := range []central.ResourceAction{central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE} {
-		s.Run(fmt.Sprintf("ResourceAction: %s", action), func() {
 			messageReceived := sync.WaitGroup{}
-			messageReceived.Add(2)
+			messageReceived.Add(4)
 
 			s.givenPermissionLevelForDeployment("1234", storage.PermissionLevel_NONE)
-			s.mockOutput.EXPECT()
+			s.givenPermissionLevelForDeployment("4321", storage.PermissionLevel_ELEVATED_IN_NAMESPACE)
+			s.givenPermissionLevelForDeployment("6543", storage.PermissionLevel_ELEVATED_CLUSTER_WIDE)
 
-			s.mockOutput.EXPECT().Send(
-				&resourceActionMatcher{
-					resourceAction:               action,
-					acceptableNumberOfMismatches: 1,
-				},
-			).Times(2).Do(func(arg0 interface{}) {
+			s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: []int{0, 1, 1, 1}}).Times(4).Do(func(arg0 interface{}) {
 				defer messageReceived.Done()
 			})
 
-			s.resolver.Send(&component.ResourceEvent{
+			event := &component.ResourceEvent{
 				DeploymentReferences: []component.DeploymentReference{
 					{
-						Reference:            resolver.ResolveDeploymentIds("1234"),
-						ParentResourceAction: action,
+						Reference:            resolverStore.ResolveDeploymentIds("1234", "4321"),
+						ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
+					},
+					{
+						Reference:            resolverStore.ResolveDeploymentIds("6543"),
+						ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
 					},
 				},
-			})
+			}
+
+			s.dispatchEvent(event, resolver, pubSubEnabled)
 
 			messageReceived.Wait()
+		})
+	}
+}
+
+func (s *resolverSuite) Test_Send_ResourceAction() {
+	for _, pubSubEnabled := range []bool{true, false} {
+		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
+			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
+			resolver := s.newResolver(pubSubEnabled)
+			err := resolver.Start()
+			s.NoError(err)
+
+			for _, action := range []central.ResourceAction{central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE} {
+				s.Run(fmt.Sprintf("ResourceAction: %s", action), func() {
+					messageReceived := sync.WaitGroup{}
+					messageReceived.Add(2)
+
+					s.givenPermissionLevelForDeployment("1234", storage.PermissionLevel_NONE)
+					s.mockOutput.EXPECT()
+
+					s.mockOutput.EXPECT().Send(
+						&resourceActionMatcher{
+							resourceAction:               action,
+							acceptableNumberOfMismatches: 1,
+						},
+					).Times(2).Do(func(arg0 interface{}) {
+						defer messageReceived.Done()
+					})
+
+					event := &component.ResourceEvent{
+						DeploymentReferences: []component.DeploymentReference{
+							{
+								Reference:            resolverStore.ResolveDeploymentIds("1234"),
+								ParentResourceAction: action,
+							},
+						},
+					}
+					s.dispatchEvent(event, resolver, pubSubEnabled)
+
+					messageReceived.Wait()
+				})
+			}
 		})
 	}
 }
 
 func (s *resolverSuite) Test_Send_BuildDeploymentWithDependenciesError() {
-	err := s.resolver.Start()
-	s.NoError(err)
+	for _, pubSubEnabled := range []bool{true, false} {
+		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
+			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
+			resolver := s.newResolver(pubSubEnabled)
+			err := resolver.Start()
+			s.NoError(err)
 
-	waitForEvents := sync.WaitGroup{}
-	waitForEvents.Add(2)
+			waitForEvents := sync.WaitGroup{}
+			waitForEvents.Add(2)
 
-	s.givenBuildDependenciesError("1234", &waitForEvents)
+			s.givenBuildDependenciesError("1234", &waitForEvents)
 
-	s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: []int{0}}).Times(1).Do(func(arg0 interface{}) {
-		defer waitForEvents.Done()
-	})
-
-	s.resolver.Send(&component.ResourceEvent{
-		DeploymentReferences: []component.DeploymentReference{
-			{
-				Reference:            resolver.ResolveDeploymentIds("1234"),
-				ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
-			},
-		},
-	})
-
-	waitForEvents.Wait()
-}
-
-func (s *resolverSuite) Test_Send_DeploymentNotFound() {
-	err := s.resolver.Start()
-	s.NoError(err)
-
-	waitForEvents := sync.WaitGroup{}
-	waitForEvents.Add(2)
-
-	s.givenNilDeployment(&waitForEvents)
-
-	s.mockEndpointManager.EXPECT().OnDeploymentCreateOrUpdateByID(gomock.Any()).Times(0)
-	s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Times(0)
-	s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(gomock.Any(), gomock.Any()).Times(0)
-
-	s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: []int{0}}).Times(1).Do(func(arg0 interface{}) {
-		defer waitForEvents.Done()
-	})
-
-	s.resolver.Send(&component.ResourceEvent{
-		DeploymentReferences: []component.DeploymentReference{
-			{
-				Reference:            resolver.ResolveDeploymentIds("1234"),
-				ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
-			},
-		},
-	})
-
-	waitForEvents.Wait()
-}
-
-func (s *resolverSuite) Test_Send_DetectorReference() {
-	err := s.resolver.Start()
-	s.NoError(err)
-
-	messageReceived := sync.WaitGroup{}
-	messageReceived.Add(1)
-
-	detectionObject := []component.DeploytimeDetectionRequest{
-		{
-			Object: &storage.Deployment{Id: "1234"},
-			Action: central.ResourceAction_UPDATE_RESOURCE,
-		},
-	}
-
-	s.mockOutput.EXPECT().Send(&detectionObjectMatcher{expected: detectionObject}).Times(1).Do(func(arg0 interface{}) {
-		defer messageReceived.Done()
-	})
-
-	s.resolver.Send(&component.ResourceEvent{
-		DetectorMessages: detectionObject,
-	})
-
-	messageReceived.Wait()
-}
-
-func (s *resolverSuite) Test_Send_ForwardedMessagesAreSent() {
-	err := s.resolver.Start()
-	s.NoError(err)
-
-	// There are two types of resource events that will be written to the output queue.
-	// 1) Resource events that were processed at the handlers level. E.g.: Pod events,
-	// these will be passed to the resolver component through the `ForwardMessages` property
-	// in `component.ResourceEvent`.
-	// 2) Deployments that need to be processed against their dependencies. These come
-	// as deployment references, then the resource event is generated in this component.
-	// All events are merged in the same `ForwardedMessages` in the end, and passed to the
-	// output component to be sent to central.
-	testCases := map[string]struct {
-		resolver                    resolver.DeploymentResolution
-		forwardedMessages           []*central.SensorEvent
-		expectedDeploymentProcessed int
-		expectedEvents              []int
-	}{
-		"Single id, no forwarded messages": {
-			resolver:                    resolver.ResolveDeploymentIds("1234"),
-			forwardedMessages:           nil,
-			expectedDeploymentProcessed: 1,
-			expectedEvents:              []int{0, 1},
-		},
-		"Multiple ids, no forwarded messages": {
-			resolver:                    resolver.ResolveDeploymentIds("1234", "4321"),
-			forwardedMessages:           nil,
-			expectedDeploymentProcessed: 2,
-			expectedEvents:              []int{0, 1, 1},
-		},
-		"Single id, one forwarded message": {
-			resolver:                    resolver.ResolveDeploymentIds("1234"),
-			forwardedMessages:           []*central.SensorEvent{s.givenStubSensorEvent()},
-			expectedDeploymentProcessed: 1,
-			expectedEvents:              []int{1, 1},
-		},
-		"Single id, multiple forwarded messages": {
-			resolver:                    resolver.ResolveDeploymentIds("1234"),
-			forwardedMessages:           []*central.SensorEvent{s.givenStubSensorEvent(), s.givenStubSensorEvent()},
-			expectedDeploymentProcessed: 1,
-			expectedEvents:              []int{2, 1},
-		},
-		"No deployment resolver, multiple forwarded messages": {
-			resolver:                    nil,
-			forwardedMessages:           []*central.SensorEvent{s.givenStubSensorEvent(), s.givenStubSensorEvent()},
-			expectedDeploymentProcessed: 0,
-			expectedEvents:              []int{2},
-		},
-	}
-
-	for name, testCase := range testCases {
-		s.Run(name, func() {
-			messageReceived := sync.WaitGroup{}
-			messageReceived.Add(len(testCase.expectedEvents))
-
-			s.givenAnyDeploymentProcessedNTimes(testCase.expectedDeploymentProcessed)
-
-			s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: testCase.expectedEvents}).Times(len(testCase.expectedEvents)).Do(func(arg0 interface{}) {
-				defer messageReceived.Done()
+			s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: []int{0}}).Times(1).Do(func(arg0 interface{}) {
+				defer waitForEvents.Done()
 			})
 
-			s.resolver.Send(&component.ResourceEvent{
-				ForwardMessages: testCase.forwardedMessages,
+			event := &component.ResourceEvent{
 				DeploymentReferences: []component.DeploymentReference{
 					{
-						Reference:            testCase.resolver,
+						Reference:            resolverStore.ResolveDeploymentIds("1234"),
 						ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
 					},
 				},
+			}
+			s.dispatchEvent(event, resolver, pubSubEnabled)
+
+			waitForEvents.Wait()
+		})
+	}
+}
+
+func (s *resolverSuite) Test_Send_DeploymentNotFound() {
+	for _, pubSubEnabled := range []bool{true, false} {
+		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
+			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
+			resolver := s.newResolver(pubSubEnabled)
+			err := resolver.Start()
+			s.NoError(err)
+
+			waitForEvents := sync.WaitGroup{}
+			waitForEvents.Add(2)
+
+			s.givenNilDeployment(&waitForEvents)
+
+			s.mockEndpointManager.EXPECT().OnDeploymentCreateOrUpdateByID(gomock.Any()).Times(0)
+			s.mockRBACStore.EXPECT().GetPermissionLevelForDeployment(gomock.Any()).Times(0)
+			s.mockDeploymentStore.EXPECT().BuildDeploymentWithDependencies(gomock.Any(), gomock.Any()).Times(0)
+
+			s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: []int{0}}).Times(1).Do(func(arg0 interface{}) {
+				defer waitForEvents.Done()
 			})
+
+			event := &component.ResourceEvent{
+				DeploymentReferences: []component.DeploymentReference{
+					{
+						Reference:            resolverStore.ResolveDeploymentIds("1234"),
+						ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
+					},
+				},
+			}
+
+			s.dispatchEvent(event, resolver, pubSubEnabled)
+
+			waitForEvents.Wait()
+		})
+	}
+}
+
+func (s *resolverSuite) Test_Send_DetectorReference() {
+	for _, pubSubEnabled := range []bool{true, false} {
+		s.Run(fmt.Sprintf("with %s %t", features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
+			s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
+			resolver := s.newResolver(pubSubEnabled)
+			err := resolver.Start()
+			s.NoError(err)
+
+			messageReceived := sync.WaitGroup{}
+			messageReceived.Add(1)
+
+			detectionObject := []component.DeploytimeDetectionRequest{
+				{
+					Object: &storage.Deployment{Id: "1234"},
+					Action: central.ResourceAction_UPDATE_RESOURCE,
+				},
+			}
+
+			s.mockOutput.EXPECT().Send(&detectionObjectMatcher{expected: detectionObject}).Times(1).Do(func(arg0 interface{}) {
+				defer messageReceived.Done()
+			})
+
+			event := &component.ResourceEvent{
+				DetectorMessages: detectionObject,
+			}
+			s.dispatchEvent(event, resolver, pubSubEnabled)
 
 			messageReceived.Wait()
 		})
+	}
+}
+
+func (s *resolverSuite) Test_Send_ForwardedMessagesAreSent() {
+	for _, pubSubEnabled := range []bool{true, false} {
+		s.T().Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", pubSubEnabled))
+		resolver := s.newResolver(pubSubEnabled)
+		err := resolver.Start()
+		s.NoError(err)
+
+		// There are two types of resource events that will be written to the output queue.
+		// 1) Resource events that were processed at the handlers level. E.g.: Pod events,
+		// these will be passed to the resolver component through the `ForwardMessages` property
+		// in `component.ResourceEvent`.
+		// 2) Deployments that need to be processed against their dependencies. These come
+		// as deployment references, then the resource event is generated in this component.
+		// All events are merged in the same `ForwardedMessages` in the end, and passed to the
+		// output component to be sent to central.
+		testCases := map[string]struct {
+			resolver                    resolverStore.DeploymentResolution
+			forwardedMessages           []*central.SensorEvent
+			expectedDeploymentProcessed int
+			expectedEvents              []int
+		}{
+			"Single id, no forwarded messages": {
+				resolver:                    resolverStore.ResolveDeploymentIds("1234"),
+				forwardedMessages:           nil,
+				expectedDeploymentProcessed: 1,
+				expectedEvents:              []int{0, 1},
+			},
+			"Multiple ids, no forwarded messages": {
+				resolver:                    resolverStore.ResolveDeploymentIds("1234", "4321"),
+				forwardedMessages:           nil,
+				expectedDeploymentProcessed: 2,
+				expectedEvents:              []int{0, 1, 1},
+			},
+			"Single id, one forwarded message": {
+				resolver:                    resolverStore.ResolveDeploymentIds("1234"),
+				forwardedMessages:           []*central.SensorEvent{s.givenStubSensorEvent()},
+				expectedDeploymentProcessed: 1,
+				expectedEvents:              []int{1, 1},
+			},
+			"Single id, multiple forwarded messages": {
+				resolver:                    resolverStore.ResolveDeploymentIds("1234"),
+				forwardedMessages:           []*central.SensorEvent{s.givenStubSensorEvent(), s.givenStubSensorEvent()},
+				expectedDeploymentProcessed: 1,
+				expectedEvents:              []int{2, 1},
+			},
+			"No deployment resolver, multiple forwarded messages": {
+				resolver:                    nil,
+				forwardedMessages:           []*central.SensorEvent{s.givenStubSensorEvent(), s.givenStubSensorEvent()},
+				expectedDeploymentProcessed: 0,
+				expectedEvents:              []int{2},
+			},
+		}
+
+		for name, testCase := range testCases {
+			s.Run(fmt.Sprintf("%s with %s %t", name, features.SensorInternalPubSub.EnvVar(), pubSubEnabled), func() {
+				messageReceived := sync.WaitGroup{}
+				messageReceived.Add(len(testCase.expectedEvents))
+
+				s.givenAnyDeploymentProcessedNTimes(testCase.expectedDeploymentProcessed)
+
+				s.mockOutput.EXPECT().Send(&messageCounterMatcher{numEvents: testCase.expectedEvents}).Times(len(testCase.expectedEvents)).Do(func(arg0 interface{}) {
+					defer messageReceived.Done()
+				})
+
+				event := &component.ResourceEvent{
+					ForwardMessages: testCase.forwardedMessages,
+					DeploymentReferences: []component.DeploymentReference{
+						{
+							Reference:            testCase.resolver,
+							ParentResourceAction: central.ResourceAction_UPDATE_RESOURCE,
+						},
+					},
+				}
+				s.dispatchEvent(event, resolver, pubSubEnabled)
+
+				messageReceived.Wait()
+			})
+		}
 	}
 }
 

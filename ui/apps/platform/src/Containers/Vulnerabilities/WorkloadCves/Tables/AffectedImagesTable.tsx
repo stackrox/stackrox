@@ -77,7 +77,8 @@ export const defaultColumns = {
 } as const;
 
 export type ImageForCve = {
-    id: string;
+    id: string; // UUID - used for linking
+    digest?: string; // For ImageV2, the SHA digest - used for display
     name: {
         registry: string;
         remote: string;
@@ -243,7 +244,11 @@ function AffectedImagesTable({
                                     />
                                     <Td className={getVisibilityClass('image')} dataLabel="Image">
                                         {name ? (
-                                            <ImageNameLink name={name} id={id} />
+                                            <ImageNameLink
+                                                name={name}
+                                                id={id}
+                                                digest={image.digest}
+                                            />
                                         ) : (
                                             'Image name not available'
                                         )}

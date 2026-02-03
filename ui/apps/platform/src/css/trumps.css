@@ -88,9 +88,6 @@ button[data-testid="related-entity-value"]:hover,
 .pf-v5-c-expandable-section__toggle-text {
     text-align: left;
 }
-.pf-v5-c-card__expandable-content {
-    border-top: var(--pf-v5-global--BorderColor--100) var(--pf-v5-global--BorderWidth--sm) solid;
-}
 
 .pf-v5-c-form-control {
     border-top-color: var(--pf-v5-global--BorderColor--300);

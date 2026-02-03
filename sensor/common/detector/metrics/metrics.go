@@ -72,8 +72,8 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "enricher_image_scan_internal_exponential_backoff_seconds",
-		Help:      "Time spent in exponential backoff for the ImageScanInternal endpoint",
-		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
+		Help:      "Time spent backing off before a successful ImageScanInternal response, typically due to scan rate limiting",
+		Buckets:   prometheus.ExponentialBuckets(1, 2, 10),
 	})
 	networkPoliciesStored = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -105,7 +105,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "node_scan_processed_total",
-		Help:      "Total number of Node Inventories/Indexes received/sent by this Sensor",
+		Help:      "Counts node inventory/index reports received from Compliance and sent to Central",
 	},
 		[]string{
 			// Name of the node sending an inventory
@@ -137,7 +137,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "node_scanning_ack_processed_total",
-		Help:      "Total number of Acks or Nacks for Node Inventories/Indexes processed by Sensor",
+		Help:      "Counts ACK/NACK messages for node inventory/index processing",
 	},
 		[]string{
 			// Name of the node sending an inventory
@@ -218,15 +218,16 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "block_scan_calls_total",
-		Help:      "A counter that tracks the operations in blocking scan calls",
+		Help:      "Counts add/remove operations for blocking scans triggered by deployment create/update",
 	}, []string{"Operation", "Path"})
 
 	scanCallDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "scan_call_duration_milliseconds",
-		Help:      "Time taken to call scan in milliseconds",
-		Buckets:   prometheus.ExponentialBuckets(4, 2, 16),
+		Help: "Total time spent calling Scan in milliseconds, including retries and backoff waits. " +
+			"Applies to both local and remote scans (whichever is currently used in Sensor).",
+		Buckets: prometheus.ExponentialBuckets(4, 2, 16),
 	})
 
 	scanAndSetCall = prometheus.NewCounterVec(prometheus.CounterOpts{

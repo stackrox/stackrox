@@ -24,7 +24,7 @@ var (
 			Namespace: metrics.PrometheusNamespace,
 			Subsystem: "base_image_watcher",
 			Name:      "poll_duration_seconds",
-			Help:      "Time taken to complete a poll cycle",
+			Help:      "Time spent completing a poll cycle",
 			Buckets:   prometheus.ExponentialBuckets(0.1, 2, 10), // 0.1s to ~102s
 		},
 		[]string{"error"},
@@ -63,7 +63,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: "base_image_watcher",
 		Name:      "scan_duration_seconds",
-		Help:      "Time taken to scan a repository (list tags + fetch metadata)",
+		Help:      "Time spent scanning a repository (list tags + fetch metadata)",
 		Buckets:   prometheus.ExponentialBuckets(0.1, 2, 12), // 0.1s to ~409s
 	}, []string{
 		"registry_domain",

@@ -75,19 +75,37 @@ func (s *dispatcherSuite) Test_WithLaneConfigs() {
 func (s *dispatcherSuite) Test_RegisterConsumer() {
 	defer goleak.AssertNoGoroutineLeaks(s.T())
 	s.Run("should not register nil callback", func() {
-		s.Assert().Error(s.d.RegisterConsumer(pubsub.DefaultTopic, nil))
+		s.Assert().Error(s.d.RegisterConsumer(pubsub.DefaultConsumer, pubsub.DefaultTopic, nil))
 	})
 	s.Run("should error if lane RegisterConsumer fails", func() {
-		s.lane.EXPECT().RegisterConsumer(gomock.Eq(pubsub.DefaultTopic), gomock.Any()).Times(1).Return(errors.New("some error"))
-		s.Assert().Error(s.d.RegisterConsumer(pubsub.DefaultTopic, func(_ pubsub.Event) error {
+		s.lane.EXPECT().RegisterConsumer(gomock.Eq(pubsub.DefaultConsumer), gomock.Eq(pubsub.DefaultTopic), gomock.Any()).Times(1).Return(errors.New("some error"))
+		s.Assert().Error(s.d.RegisterConsumer(pubsub.DefaultConsumer, pubsub.DefaultTopic, func(_ pubsub.Event) error {
 			return nil
 		}))
 	})
 	s.Run("success case", func() {
-		s.lane.EXPECT().RegisterConsumer(gomock.Eq(pubsub.DefaultTopic), gomock.Any()).Times(1).Return(nil)
-		s.Assert().NoError(s.d.RegisterConsumer(pubsub.DefaultTopic, func(_ pubsub.Event) error {
+		s.lane.EXPECT().RegisterConsumer(gomock.Eq(pubsub.DefaultConsumer), gomock.Eq(pubsub.DefaultTopic), gomock.Any()).Times(1).Return(nil)
+		s.Assert().NoError(s.d.RegisterConsumer(pubsub.DefaultConsumer, pubsub.DefaultTopic, func(_ pubsub.Event) error {
 			return nil
 		}))
+	})
+}
+
+func (s *dispatcherSuite) Test_RegisterConsumerToLane() {
+	defer goleak.AssertNoGoroutineLeaks(s.T())
+	s.Run("should not register nil callback", func() {
+		s.Assert().Error(s.d.RegisterConsumerToLane(pubsub.DefaultConsumer, pubsub.DefaultTopic, pubsub.DefaultLane, nil))
+	})
+	s.Run("should error if lane does not exist", func() {
+		s.Assert().Error(s.d.RegisterConsumerToLane(pubsub.DefaultConsumer, pubsub.DefaultTopic, -1, func(_ pubsub.Event) error { return nil }))
+	})
+	s.Run("should error if lane RegisterConsumer fails", func() {
+		s.lane.EXPECT().RegisterConsumer(gomock.Eq(pubsub.DefaultConsumer), gomock.Eq(pubsub.DefaultTopic), gomock.Any()).Times(1).Return(errors.New("some error"))
+		s.Assert().Error(s.d.RegisterConsumerToLane(pubsub.DefaultConsumer, pubsub.DefaultTopic, pubsub.DefaultLane, func(_ pubsub.Event) error { return nil }))
+	})
+	s.Run("success case", func() {
+		s.lane.EXPECT().RegisterConsumer(gomock.Eq(pubsub.DefaultConsumer), gomock.Eq(pubsub.DefaultTopic), gomock.Any()).Times(1).Return(nil)
+		s.Assert().NoError(s.d.RegisterConsumerToLane(pubsub.DefaultConsumer, pubsub.DefaultTopic, pubsub.DefaultLane, func(_ pubsub.Event) error { return nil }))
 	})
 }
 
@@ -153,8 +171,8 @@ func (s *dispatcherSuite) Test_Publish() {
 			d, lanes := newDispatcher(s.T(), s.ctrl, s.defaultLanes)
 			callback := tCase.callback(s.T(), &wg)
 			s.Require().Len(lanes, 1)
-			lanes[0].EXPECT().RegisterConsumer(gomock.Eq(pubsub.DefaultTopic), gomock.Any()).Times(1).Return(nil)
-			s.Assert().NoError(d.RegisterConsumer(pubsub.DefaultTopic, callback))
+			lanes[0].EXPECT().RegisterConsumer(gomock.Eq(pubsub.DefaultConsumer), gomock.Eq(pubsub.DefaultTopic), gomock.Any()).Times(1).Return(nil)
+			s.Assert().NoError(d.RegisterConsumer(pubsub.DefaultConsumer, pubsub.DefaultTopic, callback))
 			tCase.laneExpectCalls(lanes[0], callback)
 			err := d.Publish(tCase.event)
 			tCase.expectError(s.T(), err)

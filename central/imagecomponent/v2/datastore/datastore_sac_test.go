@@ -4,6 +4,7 @@ package datastore
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
@@ -361,20 +362,25 @@ func (s *componentV2DataStoreSACTestSuite) TestSACImageComponentSearchImageCompo
 		results, err := s.imageComponentStore.SearchImageComponents(testCtx, nil)
 		s.NoError(err)
 		expectedComponentIDs := make([]string, 0, len(c.expectedComponentFound))
+		actualNames := make([]string, 0, len(c.expectedComponentFound))
+		expectedNames := make([]string, 0, len(c.expectedComponentFound))
 		for ID, visible := range c.expectedComponentFound {
 			if visible {
 				expectedComponentIDs = append(expectedComponentIDs, ID)
+				expectedNames = append(expectedNames, strings.Split(ID, "#")[0])
 			}
 		}
 		fetchedComponentIDset := make(map[string]bool, 0)
 		for _, result := range results {
 			fetchedComponentIDset[result.GetId()] = true
+			actualNames = append(actualNames, result.GetName())
 		}
 		fetchedComponentIDs := make([]string, 0, len(fetchedComponentIDset))
 		for id := range fetchedComponentIDset {
 			fetchedComponentIDs = append(fetchedComponentIDs, id)
 		}
 		s.ElementsMatch(fetchedComponentIDs, expectedComponentIDs)
+		s.ElementsMatch(actualNames, expectedNames)
 	})
 }
 
