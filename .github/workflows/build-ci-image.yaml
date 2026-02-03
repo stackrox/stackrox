@@ -12,13 +12,21 @@ env:
 
 jobs:
   build-ci-image:
-    runs-on: ubuntu-latest
+    runs-on: stackrox-runners
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
     env:
       QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
       QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up QEMU for cross-platform builds
+        if: matrix.arch != 'amd64'
+        uses: docker/setup-qemu-action@v3
 
       - name: Login to Quay.io
         run: |
@@ -27,16 +35,36 @@ jobs:
       - name: Build CI image with buildah
         run: |
           buildah bud \
-            --platform linux/amd64 \
+            --platform linux/${{ matrix.arch }} \
             --layers \
-            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.5.1 \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.0-${{ matrix.arch }} \
             --file .github/images/apollo-ci-buildah/Dockerfile \
             .github/images/apollo-ci-buildah
 
       - name: Push CI image
         run: |
-          buildah push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+          buildah push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.0-${{ matrix.arch }} \
+            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.0-${{ matrix.arch }}
+
+  push-manifest:
+    runs-on: stackrox-runners
+    needs: build-ci-image
+    env:
+      QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+      QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+    steps:
+      - name: Login to Quay.io
+        run: |
+          buildah login -u "$QUAY_USERNAME" -p "$QUAY_PASSWORD" quay.io
+
+      - name: Create and push multi-arch manifest
+        run: |
+          buildah manifest create ${{ env.IMAGE_NAME }}:0.6.0 \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.0-amd64 \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.0-arm64
+
+          buildah manifest push --all ${{ env.IMAGE_NAME }}:0.6.0 \
+            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.0
+
+          buildah manifest push --all ${{ env.IMAGE_NAME }}:0.6.0 \
             docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          buildah push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.5.1 \
-            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.5.1
