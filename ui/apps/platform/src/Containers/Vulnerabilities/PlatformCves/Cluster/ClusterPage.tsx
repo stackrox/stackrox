@@ -3,11 +3,9 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
-    Divider,
     PageSection,
     Skeleton,
     Tab,
-    TabContent,
     Tabs,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
@@ -43,7 +41,6 @@ const clusterMetadataQuery = gql`
     }
 `;
 
-// TODO - Update for PF5
 function ClusterPage() {
     const { clusterId } = useParams() as { clusterId: string };
 
@@ -64,7 +61,7 @@ function ClusterPage() {
     return (
         <>
             <PageTitle title={`Platform CVEs - Cluster ${clusterName}`} />
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
+            <PageSection>
                 <Breadcrumb>
                     <BreadcrumbItemLink to={platformCvesClusterOverviewPath}>
                         Clusters
@@ -76,7 +73,6 @@ function ClusterPage() {
                     </BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
-            <Divider component="div" />
             {error ? (
                 <PageSection hasBodyWrapper={false}>
                     <Bullseye>
@@ -93,43 +89,32 @@ function ClusterPage() {
                     <PageSection hasBodyWrapper={false}>
                         <ClusterPageHeader data={data?.cluster} />
                     </PageSection>
-                    <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
+                    <PageSection type="tabs">
                         <Tabs
                             activeKey={activeTabKey}
                             onSelect={(e, key) => {
                                 setActiveTabKey(key);
                                 // pagination.setPage(1);
                             }}
-                            className="pf-v6-u-pl-md pf-v6-u-background-color-100"
+                            usePageInsets
+                            mountOnEnter
+                            unmountOnExit
                         >
                             <Tab
                                 eventKey={vulnTabKey}
                                 tabContentId={idVulnerabilities}
                                 title={vulnTabKey}
-                            />
+                            >
+                                <ClusterPageVulnerabilities clusterId={clusterId} />
+                            </Tab>
                             <Tab
                                 eventKey={detailTabKey}
                                 tabContentId={idDetails}
                                 title={detailTabKey}
-                            />
-                        </Tabs>
-                    </PageSection>
-                    <PageSection
-                        hasBodyWrapper={false}
-                        isFilled
-                        padding={{ default: 'noPadding' }}
-                        className="pf-v6-u-display-flex pf-v6-u-flex-direction-column"
-                    >
-                        {activeTabKey === vulnTabKey && (
-                            <TabContent id={idVulnerabilities}>
-                                <ClusterPageVulnerabilities clusterId={clusterId} />
-                            </TabContent>
-                        )}
-                        {activeTabKey === detailTabKey && (
-                            <TabContent id={idDetails}>
+                            >
                                 <ClusterPageDetails clusterId={clusterId} />
-                            </TabContent>
-                        )}
+                            </Tab>
+                        </Tabs>
                     </PageSection>
                 </>
             )}
