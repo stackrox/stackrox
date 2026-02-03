@@ -1,10 +1,20 @@
 # Multi-arch CI image for StackRox builds
 # Version: 0.6.0
 # Supports both amd64 and arm64 architectures
+
+# Use multi-stage build to get Go from official image
+FROM golang:1.24.0 AS golang
+
+# Use UBI9 as the final base (multi-arch)
 FROM registry.access.redhat.com/ubi9:latest
 
 # This line makes sure that piped commands in RUN instructions exit early.
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# Copy Go from the golang image
+COPY --from=golang /usr/local/go /usr/local/go
+ENV PATH="/usr/local/go/bin:/go/bin:${PATH}"
+ENV GOPATH=/go
 
 # Install base packages
 RUN dnf install -y \
@@ -18,24 +28,10 @@ RUN dnf install -y \
         jq \
         which \
         procps-ng \
+        curl \
     && dnf clean all \
-    && rm -rf /var/cache/dnf
-
-# Install Go (multi-arch)
-ARG GO_VERSION=1.24.0
-RUN set -ex \
-    && ARCH=$(uname -m) \
-    && case "${ARCH}" in \
-         x86_64) GOARCH=amd64 ;; \
-         aarch64) GOARCH=arm64 ;; \
-         *) echo "Unsupported architecture: ${ARCH}" && exit 1 ;; \
-       esac \
-    && wget --no-verbose "https://go.dev/dl/go${GO_VERSION}.linux-${GOARCH}.tar.gz" -O /tmp/go.tar.gz \
-    && tar -C /usr/local -xzf /tmp/go.tar.gz \
-    && rm /tmp/go.tar.gz \
-    && /usr/local/go/bin/go version
-ENV PATH="/usr/local/go/bin:/go/bin:${PATH}"
-ENV GOPATH=/go
+    && rm -rf /var/cache/dnf \
+    && go version
 
 # Install Node.js (multi-arch)
 ARG NODE_VERSION=20
@@ -75,7 +71,7 @@ RUN set -ex \
          aarch64) PROTOC_ARCH=aarch_64 ;; \
          *) echo "Unsupported architecture: ${ARCH}" && exit 1 ;; \
        esac \
-    && wget --no-verbose "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-${PROTOC_ARCH}.zip" -O /tmp/protoc.zip \
+    && curl -fsSL "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-${PROTOC_ARCH}.zip" -o /tmp/protoc.zip \
     && unzip /tmp/protoc.zip -d /usr/local \
     && rm /tmp/protoc.zip \
     && protoc --version
