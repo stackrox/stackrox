@@ -42,6 +42,10 @@ func imageGetterPanicOnCall(_ context.Context, _ string) (*storage.Image, bool, 
 	panic("Unexpected call to imageGetter")
 }
 
+func emptyBaseImageGetter(_ context.Context, _ []string) ([]*storage.BaseImage, error) {
+	return nil, nil
+}
+
 var _ signatures.SignatureFetcher = (*fakeSigFetcher)(nil)
 
 var _ scannertypes.Scanner = (*fakeScanner)(nil)
@@ -348,6 +352,7 @@ func TestEnricherFlow(t *testing.T) {
 				imageGetter:                emptyImageGetter,
 				signatureIntegrationGetter: emptySignatureIntegrationGetter,
 				signatureFetcher:           &fakeSigFetcher{},
+				baseImageGetter:            emptyBaseImageGetter,
 			}
 			if c.inMetadataCache {
 				enricherImpl.metadataCache.Add(c.image.GetId(), c.image.GetMetadata())
