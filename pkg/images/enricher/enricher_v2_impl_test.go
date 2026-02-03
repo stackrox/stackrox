@@ -414,6 +414,7 @@ func TestCVESuppressionV2(t *testing.T) {
 		imageGetter:                emptyImageGetterV2,
 		signatureIntegrationGetter: emptySignatureIntegrationGetter,
 		signatureFetcher:           &fakeSigFetcher{},
+		baseImageGetter:            emptyBaseImageGetterV2,
 	}
 
 	img := &storage.ImageV2{
