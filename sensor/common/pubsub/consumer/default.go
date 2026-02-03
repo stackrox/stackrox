@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/pubsub/metrics"
 )
 
-func NewDefaultConsumer(laneID pubsub.LaneID, topic pubsub.Topic, consumerID pubsub.ConsumerID, callback pubsub.EventCallback, _ ...pubsub.ConsumerOption) (pubsub.Consumer, error) {
+func newDefaultConsumer(laneID pubsub.LaneID, topic pubsub.Topic, consumerID pubsub.ConsumerID, callback pubsub.EventCallback) (*DefaultConsumer, error) {
 	if callback == nil {
 		return nil, errors.Wrap(pubsubErrors.UndefinedEventCallbackErr, "cannot create a consumer with a 'nil' callback")
 	}
@@ -20,6 +20,12 @@ func NewDefaultConsumer(laneID pubsub.LaneID, topic pubsub.Topic, consumerID pub
 		consumerID: consumerID,
 		callback:   callback,
 	}, nil
+}
+
+func NewDefaultConsumer(_ ...pubsub.ConsumerOption[*DefaultConsumer]) pubsub.NewConsumer {
+	return func(laneID pubsub.LaneID, topic pubsub.Topic, consumerID pubsub.ConsumerID, callback pubsub.EventCallback) (pubsub.Consumer, error) {
+		return newDefaultConsumer(laneID, topic, consumerID, callback)
+	}
 }
 
 type DefaultConsumer struct {

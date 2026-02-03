@@ -26,7 +26,6 @@ type Lane struct {
 	newConsumerFn pubsub.NewConsumer
 	consumerLock  sync.RWMutex
 	consumers     map[pubsub.Topic][]pubsub.Consumer
-	consumerOpts  []pubsub.ConsumerOption
 }
 
 func (l *Lane) Stop() {

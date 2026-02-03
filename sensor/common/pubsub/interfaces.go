@@ -12,7 +12,7 @@ type EventCallback func(Event) error
 
 type LaneOption[T Lane] func(T)
 
-type ConsumerOption func(Consumer)
+type ConsumerOption[T Consumer] func(T)
 
 type LaneConfig interface {
 	NewLane() Lane
@@ -25,7 +25,7 @@ type Lane interface {
 	Stop()
 }
 
-type NewConsumer func(laneID LaneID, topic Topic, consumerID ConsumerID, callback EventCallback, opts ...ConsumerOption) (Consumer, error)
+type NewConsumer func(laneID LaneID, topic Topic, consumerID ConsumerID, callback EventCallback) (Consumer, error)
 
 type Consumer interface {
 	Consume(concurrency.Waitable, Event) <-chan error

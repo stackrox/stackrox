@@ -25,13 +25,12 @@ func WithBlockingLaneSize(size int) pubsub.LaneOption[*blockingLane] {
 	}
 }
 
-func WithBlockingLaneConsumer(consumer pubsub.NewConsumer, opts ...pubsub.ConsumerOption) pubsub.LaneOption[*blockingLane] {
+func WithBlockingLaneConsumer(consumer pubsub.NewConsumer) pubsub.LaneOption[*blockingLane] {
 	return func(lane *blockingLane) {
 		if consumer == nil {
 			panic("cannot configure a 'nil' NewConsumer function")
 		}
 		lane.newConsumerFn = consumer
-		lane.consumerOpts = opts
 	}
 }
 
@@ -40,7 +39,7 @@ func NewBlockingLane(id pubsub.LaneID, opts ...pubsub.LaneOption[*blockingLane])
 		Config: Config[*blockingLane]{
 			id:          id,
 			opts:        opts,
-			newConsumer: consumer.NewDefaultConsumer,
+			newConsumer: consumer.NewDefaultConsumer(),
 		},
 	}
 }
@@ -127,7 +126,8 @@ func (l *blockingLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pubs
 	if callback == nil {
 		return errors.New("cannot register a 'nil' callback")
 	}
-	c, err := l.newConsumerFn(l.id, topic, consumerID, callback, l.consumerOpts...)
+	// c, err := l.newConsumerFn(l.id, topic, consumerID, callback, l.consumerOpts...)
+	c, err := l.newConsumerFn(l.id, topic, consumerID, callback)
 	if err != nil {
 		return errors.Wrap(err, "unable to create the consumer")
 	}
