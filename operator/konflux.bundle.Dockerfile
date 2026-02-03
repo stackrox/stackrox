@@ -1,7 +1,7 @@
-FROM registry.access.redhat.com/ubi8/python-312:latest@sha256:b3d3389c871569dac4d0aa759fba4d95c6e6fd0ad470f1085b3ca1f44b18727b AS builder
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:5dc6ba426ccbeb3954ead6b015f36b4a2d22320e5b356b074198d08422464ed2 AS builder
 
-USER root
-RUN dnf -y install python3.12-pyyaml
+# This installs both PyYAML and Python.
+RUN microdnf -y install python3.12-pyyaml
 
 COPY . /stackrox
 WORKDIR /stackrox/operator
