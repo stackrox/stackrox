@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flex } from '@patternfly/react-core';
+import { ToolbarGroup } from '@patternfly/react-core';
 
 import type { SearchFilter } from 'types/search';
 import { ensureString } from 'utils/ensure';
@@ -41,12 +41,7 @@ function CompoundSearchFilter({
     const attribute = getAttributeFromEntity(entity, selectedAttribute, defaultAttribute);
 
     return (
-        <Flex
-            direction={{ default: 'row' }}
-            spaceItems={{ default: 'spaceItemsNone' }}
-            flexWrap={{ default: 'nowrap' }}
-            className="pf-v6-u-w-100"
-        >
+        <ToolbarGroup variant="filter-group" className="pf-v6-u-flex-grow-1">
             {entity && (
                 <EntitySelector
                     menuToggleClassName="pf-v6-u-flex-shrink-0"
@@ -92,7 +87,7 @@ function CompoundSearchFilter({
                     }}
                 />
             )}
-        </Flex>
+        </ToolbarGroup>
     );
 }
 

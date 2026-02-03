@@ -78,23 +78,17 @@ function ClusterDetailsTable({
         <>
             <Toolbar>
                 <ToolbarContent>
-                    <ToolbarGroup className="pf-v6-u-w-100">
-                        <ToolbarItem className="pf-v6-u-flex-1">
-                            <CompoundSearchFilter
-                                config={searchFilterConfig}
-                                searchFilter={searchFilter}
-                                onSearch={onSearch}
-                            />
-                        </ToolbarItem>
-                        <ToolbarItem>
-                            <SearchFilterSelectInclusive
-                                attribute={attributeForComplianceCheckStatus}
-                                isSeparate
-                                onSearch={onSearch}
-                                searchFilter={searchFilter}
-                            />
-                        </ToolbarItem>
-                    </ToolbarGroup>
+                    <CompoundSearchFilter
+                        config={searchFilterConfig}
+                        searchFilter={searchFilter}
+                        onSearch={onSearch}
+                    />
+                    <SearchFilterSelectInclusive
+                        attribute={attributeForComplianceCheckStatus}
+                        isSeparate
+                        onSearch={onSearch}
+                        searchFilter={searchFilter}
+                    />
                     <ToolbarGroup className="pf-v6-u-w-100">
                         <CompoundSearchFilterLabels
                             attributesSeparateFromConfig={[attributeForComplianceCheckStatus]}
