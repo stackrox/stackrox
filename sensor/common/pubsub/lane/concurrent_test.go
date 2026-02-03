@@ -79,26 +79,6 @@ func TestNewLaneOptions(t *testing.T) {
 
 func TestOptionPanic(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
-	t.Run("panic if WithConcurrentLaneSize is used in a different lane", func(t *testing.T) {
-		config := &testLaneConfig{
-			opts: []pubsub.LaneOption{
-				WithConcurrentLaneSize(10),
-			},
-		}
-		assert.Panics(t, func() {
-			config.NewLane()
-		})
-	})
-	t.Run("panic if WithConcurrentLaneConsumer is used in a different lane", func(t *testing.T) {
-		config := &testLaneConfig{
-			opts: []pubsub.LaneOption{
-				WithConcurrentLaneConsumer(nil),
-			},
-		}
-		assert.Panics(t, func() {
-			config.NewLane()
-		})
-	})
 	t.Run("panic if a nil NewConsumer is passed to WithConcurrentLaneConsumer", func(t *testing.T) {
 		config := NewConcurrentLane(pubsub.DefaultLane, WithConcurrentLaneConsumer(nil))
 		assert.Panics(t, func() {

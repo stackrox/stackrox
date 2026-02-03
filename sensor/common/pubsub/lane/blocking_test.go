@@ -79,56 +79,8 @@ func (s *blockingLaneSuite) TestNewLaneOptions() {
 	})
 }
 
-type testLaneConfig struct {
-	opts []pubsub.LaneOption
-}
-
-type testLane struct{}
-
-func (t *testLane) Publish(_ pubsub.Event) error {
-	return nil
-}
-
-func (t *testLane) RegisterConsumer(_ pubsub.ConsumerID, _ pubsub.Topic, _ pubsub.EventCallback) error {
-	return nil
-}
-
-func (t *testLane) Stop() {
-}
-
-func (lc *testLaneConfig) NewLane() pubsub.Lane {
-	ret := &testLane{}
-	for _, opt := range lc.opts {
-		opt(ret)
-	}
-	return ret
-}
-func (lc *testLaneConfig) LaneID() pubsub.LaneID {
-	return pubsub.DefaultLane
-}
-
 func (s *blockingLaneSuite) TestOptionPanic() {
 	defer goleak.AssertNoGoroutineLeaks(s.T())
-	s.Run("panic if WithBlockingLaneSize is used in a different lane", func() {
-		config := &testLaneConfig{
-			opts: []pubsub.LaneOption{
-				WithBlockingLaneSize(10),
-			},
-		}
-		s.Assert().Panics(func() {
-			config.NewLane()
-		})
-	})
-	s.Run("panic if WithBlockingLaneConsumer is used in a different lane", func() {
-		config := &testLaneConfig{
-			opts: []pubsub.LaneOption{
-				WithBlockingLaneConsumer(nil),
-			},
-		}
-		s.Assert().Panics(func() {
-			config.NewLane()
-		})
-	})
 	s.Run("panic if a nil NewConsumer is passed to WithBlockingLaneConsumer", func() {
 		config := NewBlockingLane(pubsub.DefaultLane, WithBlockingLaneConsumer(nil))
 		s.Assert().Panics(func() {

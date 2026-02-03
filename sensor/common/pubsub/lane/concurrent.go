@@ -11,42 +11,34 @@ import (
 )
 
 type ConcurrentConfig struct {
-	Config
+	Config[*concurrentLane]
 }
 
-func WithConcurrentLaneSize(size int) pubsub.LaneOption {
-	return func(lane pubsub.Lane) {
-		laneImpl, ok := lane.(*concurrentLane)
-		if !ok {
-			panic("attempted using concurrent lane option for a different lane type")
-		}
+func WithConcurrentLaneSize(size int) pubsub.LaneOption[*concurrentLane] {
+	return func(lane *concurrentLane) {
 		if size < 0 {
 			return
 		}
-		laneImpl.size = size
+		lane.size = size
 	}
 }
 
-func WithConcurrentLaneConsumer(consumer pubsub.NewConsumer, opts ...pubsub.ConsumerOption) pubsub.LaneOption {
-	return func(lane pubsub.Lane) {
-		laneImpl, ok := lane.(*concurrentLane)
-		if !ok {
-			panic("attempted using concurrent lane option for a different lane type")
-		}
+func WithConcurrentLaneConsumer(consumer pubsub.NewConsumer, opts ...pubsub.ConsumerOption) pubsub.LaneOption[*concurrentLane] {
+	return func(lane *concurrentLane) {
 		if consumer == nil {
 			panic("cannot configure a 'nil' NewConsumer function")
 		}
-		laneImpl.newConsumerFn = consumer
-		laneImpl.consumerOpts = opts
+		lane.newConsumerFn = consumer
+		lane.consumerOpts = opts
 	}
 }
 
-func NewConcurrentLane(id pubsub.LaneID, opts ...pubsub.LaneOption) *ConcurrentConfig {
+func NewConcurrentLane(id pubsub.LaneID, opts ...pubsub.LaneOption[*concurrentLane]) *ConcurrentConfig {
 	return &ConcurrentConfig{
-		Config: Config{
+		Config: Config[*concurrentLane]{
 			id:          id,
 			opts:        opts,
-			newConsumer: consumer.NewDefaultConsumer,
+			newConsumer: consumer.NewBufferedConsumer,
 		},
 	}
 }
@@ -54,13 +46,13 @@ func NewConcurrentLane(id pubsub.LaneID, opts ...pubsub.LaneOption) *ConcurrentC
 func (c *ConcurrentConfig) NewLane() pubsub.Lane {
 	lane := &concurrentLane{
 		Lane: Lane{
-			id:            c.LaneID(),
-			newConsumerFn: c.newConsumer,
+			id:            c.Config.LaneID(),
+			newConsumerFn: c.Config.newConsumer,
 			consumers:     make(map[pubsub.Topic][]pubsub.Consumer),
 		},
 		stopper: concurrency.NewStopper(),
 	}
-	for _, opt := range c.opts {
+	for _, opt := range c.Config.opts {
 		opt(lane)
 	}
 	lane.ch = safe.NewChannel[pubsub.Event](lane.size, lane.stopper.LowLevel().GetStopRequestSignal())

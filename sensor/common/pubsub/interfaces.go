@@ -10,7 +10,7 @@ type Event interface {
 
 type EventCallback func(Event) error
 
-type LaneOption func(Lane)
+type LaneOption[T Lane] func(T)
 
 type ConsumerOption func(Consumer)
 

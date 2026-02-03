@@ -13,39 +13,31 @@ import (
 )
 
 type BlockingConfig struct {
-	Config
+	Config[*blockingLane]
 }
 
-func WithBlockingLaneSize(size int) pubsub.LaneOption {
-	return func(lane pubsub.Lane) {
-		laneImpl, ok := lane.(*blockingLane)
-		if !ok {
-			panic("cannot use default lane option for this type of lane")
-		}
+func WithBlockingLaneSize(size int) pubsub.LaneOption[*blockingLane] {
+	return func(lane *blockingLane) {
 		if size < 0 {
 			return
 		}
-		laneImpl.size = size
+		lane.size = size
 	}
 }
 
-func WithBlockingLaneConsumer(consumer pubsub.NewConsumer, opts ...pubsub.ConsumerOption) pubsub.LaneOption {
-	return func(lane pubsub.Lane) {
-		laneImpl, ok := lane.(*blockingLane)
-		if !ok {
-			panic("cannot use default lane option for this type of lane")
-		}
+func WithBlockingLaneConsumer(consumer pubsub.NewConsumer, opts ...pubsub.ConsumerOption) pubsub.LaneOption[*blockingLane] {
+	return func(lane *blockingLane) {
 		if consumer == nil {
 			panic("cannot configure a 'nil' NewConsumer function")
 		}
-		laneImpl.newConsumerFn = consumer
-		laneImpl.consumerOpts = opts
+		lane.newConsumerFn = consumer
+		lane.consumerOpts = opts
 	}
 }
 
-func NewBlockingLane(id pubsub.LaneID, opts ...pubsub.LaneOption) *BlockingConfig {
+func NewBlockingLane(id pubsub.LaneID, opts ...pubsub.LaneOption[*blockingLane]) *BlockingConfig {
 	return &BlockingConfig{
-		Config: Config{
+		Config: Config[*blockingLane]{
 			id:          id,
 			opts:        opts,
 			newConsumer: consumer.NewDefaultConsumer,
@@ -56,13 +48,13 @@ func NewBlockingLane(id pubsub.LaneID, opts ...pubsub.LaneOption) *BlockingConfi
 func (c *BlockingConfig) NewLane() pubsub.Lane {
 	lane := &blockingLane{
 		Lane: Lane{
-			id:            c.LaneID(),
-			newConsumerFn: c.newConsumer,
+			id:            c.Config.LaneID(),
+			newConsumerFn: c.Config.newConsumer,
 			consumers:     make(map[pubsub.Topic][]pubsub.Consumer),
 		},
 		stopper: concurrency.NewStopper(),
 	}
-	for _, opt := range c.opts {
+	for _, opt := range c.Config.opts {
 		opt(lane)
 	}
 	lane.ch = safe.NewChannel[pubsub.Event](lane.size, lane.stopper.LowLevel().GetStopRequestSignal())
