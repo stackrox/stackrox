@@ -62,13 +62,13 @@ message ComplianceOperatorProfileV2 {
   string cluster_id = 14; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
   string profile_ref_id = 15; // @gotags: search:"Profile Ref ID,hidden" sql:"type(uuid)"
 
-  // TailoredProfile support
-  bool is_tailored = 16; // @gotags: search:"Compliance Profile Is Tailored,hidden"
+  // TailoredProfile support - presence of tailored_details indicates this is a TailoredProfile
+  reserved 16;
   StorageTailoredProfileDetails tailored_details = 17;
 }
 
 // StorageTailoredProfileDetails contains TailoredProfile-specific fields.
-// Only populated when ComplianceOperatorProfileV2.is_tailored is true.
+// Presence of this field indicates the profile is a TailoredProfile.
 message StorageTailoredProfileDetails {
   // Base profile name that this TP extends. Empty for from-scratch TPs.
   string extends = 1;

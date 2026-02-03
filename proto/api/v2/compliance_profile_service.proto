@@ -16,16 +16,14 @@ message ComplianceProfile {
   string name = 2;
   string profile_version = 3;
   string product_type = 4;
-  reserved 5;
+  reserved 5, 12;
   string description = 6;
   repeated ComplianceRule rules = 7;
   string product = 8;
   string title = 9;
   repeated string values = 10;
   repeated ComplianceBenchmark standards = 11;
-  // Whether this profile is a TailoredProfile
-  bool is_tailored = 12;
-  // Details specific to tailored profiles (only set if is_tailored is true)
+  // Details specific to tailored profiles (set only for TailoredProfiles)
   TailoredProfileDetails tailored_details = 13;
 }
 

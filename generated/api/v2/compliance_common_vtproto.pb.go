@@ -311,7 +311,7 @@ func (m *ComplianceProfileSummary) CloneVT() *ComplianceProfileSummary {
 	r.Title = m.Title
 	r.RuleCount = m.RuleCount
 	r.ProfileVersion = m.ProfileVersion
-	r.IsTailored = m.IsTailored
+	r.TailoredDetails = m.TailoredDetails.CloneVT()
 	if rhs := m.Standards; rhs != nil {
 		tmpContainer := make([]*ComplianceBenchmark, len(rhs))
 		for k, v := range rhs {
@@ -875,7 +875,7 @@ func (this *ComplianceProfileSummary) EqualVT(that *ComplianceProfileSummary) bo
 			}
 		}
 	}
-	if this.IsTailored != that.IsTailored {
+	if !this.TailoredDetails.EqualVT(that.TailoredDetails) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1812,15 +1812,15 @@ func (m *ComplianceProfileSummary) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.IsTailored {
-		i--
-		if m.IsTailored {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
+	if m.TailoredDetails != nil {
+		size, err := m.TailoredDetails.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
 		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x40
+		dAtA[i] = 0x4a
 	}
 	if len(m.Standards) > 0 {
 		for iNdEx := len(m.Standards) - 1; iNdEx >= 0; iNdEx-- {
@@ -2429,8 +2429,9 @@ func (m *ComplianceProfileSummary) SizeVT() (n int) {
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
-	if m.IsTailored {
-		n += 2
+	if m.TailoredDetails != nil {
+		l = m.TailoredDetails.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -4824,11 +4825,11 @@ func (m *ComplianceProfileSummary) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 8:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IsTailored", wireType)
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TailoredDetails", wireType)
 			}
-			var v int
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -4838,12 +4839,28 @@ func (m *ComplianceProfileSummary) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.IsTailored = bool(v != 0)
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.TailoredDetails == nil {
+				m.TailoredDetails = &TailoredProfileDetails{}
+			}
+			if err := m.TailoredDetails.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -7861,11 +7878,11 @@ func (m *ComplianceProfileSummary) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 8:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IsTailored", wireType)
+		case 9:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TailoredDetails", wireType)
 			}
-			var v int
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -7875,12 +7892,28 @@ func (m *ComplianceProfileSummary) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.IsTailored = bool(v != 0)
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.TailoredDetails == nil {
+				m.TailoredDetails = &TailoredProfileDetails{}
+			}
+			if err := m.TailoredDetails.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

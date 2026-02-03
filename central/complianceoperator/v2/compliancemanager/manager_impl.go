@@ -286,9 +286,10 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 	}
 
 	// Extract tailored profile names for Sensor to create SSBs with correct Kind
+	// TailoredProfiles are identified by presence of TailoredDetails
 	var tailoredProfileNames []string
 	for _, profile := range returnedProfiles {
-		if profile.GetIsTailored() {
+		if profile.GetTailoredDetails() != nil {
 			tailoredProfileNames = append(tailoredProfileNames, profile.GetName())
 		}
 	}

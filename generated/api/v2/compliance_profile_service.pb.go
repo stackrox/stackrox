@@ -35,9 +35,7 @@ type ComplianceProfile struct {
 	Title          string                 `protobuf:"bytes,9,opt,name=title,proto3" json:"title,omitempty"`
 	Values         []string               `protobuf:"bytes,10,rep,name=values,proto3" json:"values,omitempty"`
 	Standards      []*ComplianceBenchmark `protobuf:"bytes,11,rep,name=standards,proto3" json:"standards,omitempty"`
-	// Whether this profile is a TailoredProfile
-	IsTailored bool `protobuf:"varint,12,opt,name=is_tailored,json=isTailored,proto3" json:"is_tailored,omitempty"`
-	// Details specific to tailored profiles (only set if is_tailored is true)
+	// Details specific to tailored profiles (set only for TailoredProfiles)
 	TailoredDetails *TailoredProfileDetails `protobuf:"bytes,13,opt,name=tailored_details,json=tailoredDetails,proto3" json:"tailored_details,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -141,13 +139,6 @@ func (x *ComplianceProfile) GetStandards() []*ComplianceBenchmark {
 		return x.Standards
 	}
 	return nil
-}
-
-func (x *ComplianceProfile) GetIsTailored() bool {
-	if x != nil {
-		return x.IsTailored
-	}
-	return false
 }
 
 func (x *ComplianceProfile) GetTailoredDetails() *TailoredProfileDetails {
@@ -371,7 +362,7 @@ var File_api_v2_compliance_profile_service_proto protoreflect.FileDescriptor
 
 const file_api_v2_compliance_profile_service_proto_rawDesc = "" +
 	"\n" +
-	"'api/v2/compliance_profile_service.proto\x12\x02v2\x1a\x13api/v2/common.proto\x1a\x1eapi/v2/compliance_common.proto\x1a\x19api/v2/search_query.proto\x1a\x1cgoogle/api/annotations.proto\"\xbc\x03\n" +
+	"'api/v2/compliance_profile_service.proto\x12\x02v2\x1a\x13api/v2/common.proto\x1a\x1eapi/v2/compliance_common.proto\x1a\x19api/v2/search_query.proto\x1a\x1cgoogle/api/annotations.proto\"\xa1\x03\n" +
 	"\x11ComplianceProfile\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12'\n" +
@@ -383,10 +374,8 @@ const file_api_v2_compliance_profile_service_proto_rawDesc = "" +
 	"\x05title\x18\t \x01(\tR\x05title\x12\x16\n" +
 	"\x06values\x18\n" +
 	" \x03(\tR\x06values\x125\n" +
-	"\tstandards\x18\v \x03(\v2\x17.v2.ComplianceBenchmarkR\tstandards\x12\x1f\n" +
-	"\vis_tailored\x18\f \x01(\bR\n" +
-	"isTailored\x12E\n" +
-	"\x10tailored_details\x18\r \x01(\v2\x1a.v2.TailoredProfileDetailsR\x0ftailoredDetailsJ\x04\b\x05\x10\x06\"t\n" +
+	"\tstandards\x18\v \x03(\v2\x17.v2.ComplianceBenchmarkR\tstandards\x12E\n" +
+	"\x10tailored_details\x18\r \x01(\v2\x1a.v2.TailoredProfileDetailsR\x0ftailoredDetailsJ\x04\b\x05\x10\x06J\x04\b\f\x10\r\"t\n" +
 	"\x1eListComplianceProfilesResponse\x121\n" +
 	"\bprofiles\x18\x01 \x03(\v2\x15.v2.ComplianceProfileR\bprofiles\x12\x1f\n" +
 	"\vtotal_count\x18\x03 \x01(\x05R\n" +

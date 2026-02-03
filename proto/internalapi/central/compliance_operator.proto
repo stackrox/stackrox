@@ -199,13 +199,13 @@ message ComplianceOperatorProfileV2 {
   string title = 9;
   repeated string values = 10;
 
-  // TailoredProfile support
-  bool is_tailored = 11;
+  // TailoredProfile support - presence of tailored_details indicates this is a TailoredProfile
+  reserved 11;
   TailoredProfileDetails tailored_details = 12;
 }
 
 // TailoredProfileDetails contains TailoredProfile-specific fields.
-// Only populated when ComplianceOperatorProfileV2.is_tailored is true.
+// Presence of this field indicates the profile is a TailoredProfile.
 message TailoredProfileDetails {
   // Base profile name that this TP extends. Empty for from-scratch TPs.
   string extends = 1;

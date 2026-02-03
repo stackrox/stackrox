@@ -342,13 +342,9 @@
             "$ref": "#/definitions/v2ComplianceBenchmark"
           }
         },
-        "isTailored": {
-          "type": "boolean",
-          "title": "Whether this profile is a TailoredProfile"
-        },
         "tailoredDetails": {
           "$ref": "#/definitions/v2TailoredProfileDetails",
-          "title": "Details specific to tailored profiles (only set if is_tailored is true)"
+          "title": "Details specific to tailored profiles (set only for TailoredProfiles)"
         }
       },
       "title": "Next Tag: 14"
@@ -382,11 +378,12 @@
             "$ref": "#/definitions/v2ComplianceBenchmark"
           }
         },
-        "isTailored": {
-          "type": "boolean"
+        "tailoredDetails": {
+          "$ref": "#/definitions/v2TailoredProfileDetails",
+          "title": "Details specific to tailored profiles (set only for TailoredProfiles)"
         }
       },
-      "title": "Next Tag: 9"
+      "title": "Next Tag: 10"
     },
     "v2ComplianceRule": {
       "type": "object",

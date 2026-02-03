@@ -32,7 +32,6 @@ func ComplianceOperatorProfileV2(internalMsg *central.ComplianceOperatorProfileV
 		Values:         internalMsg.GetValues(),
 		ClusterId:      clusterID,
 		ProfileRefId:   BuildProfileRefID(clusterID, internalMsg.GetProfileId(), productType),
-		IsTailored:     internalMsg.GetIsTailored(),
 	}
 
 	// Convert tailored profile details if present

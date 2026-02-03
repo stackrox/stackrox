@@ -108,7 +108,7 @@ message ComplianceProfileCheckRequest {
   RawQuery query = 3;
 }
 
-// Next Tag: 9
+// Next Tag: 10
 message ComplianceProfileSummary {
   string name = 1;
   string product_type = 2;
@@ -117,7 +117,9 @@ message ComplianceProfileSummary {
   int32 rule_count = 5;
   string profile_version = 6;
   repeated ComplianceBenchmark standards = 7;
-  bool is_tailored = 8;
+  reserved 8;
+  // Details specific to tailored profiles (set only for TailoredProfiles)
+  TailoredProfileDetails tailored_details = 9;
 }
 
 // TailoredProfileDetails contains information specific to tailored profiles

@@ -841,7 +841,7 @@ func (x *ComplianceProfileCheckRequest) GetQuery() *RawQuery {
 	return nil
 }
 
-// Next Tag: 9
+// Next Tag: 10
 type ComplianceProfileSummary struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Name           string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -851,9 +851,10 @@ type ComplianceProfileSummary struct {
 	RuleCount      int32                  `protobuf:"varint,5,opt,name=rule_count,json=ruleCount,proto3" json:"rule_count,omitempty"`
 	ProfileVersion string                 `protobuf:"bytes,6,opt,name=profile_version,json=profileVersion,proto3" json:"profile_version,omitempty"`
 	Standards      []*ComplianceBenchmark `protobuf:"bytes,7,rep,name=standards,proto3" json:"standards,omitempty"`
-	IsTailored     bool                   `protobuf:"varint,8,opt,name=is_tailored,json=isTailored,proto3" json:"is_tailored,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Details specific to tailored profiles (set only for TailoredProfiles)
+	TailoredDetails *TailoredProfileDetails `protobuf:"bytes,9,opt,name=tailored_details,json=tailoredDetails,proto3" json:"tailored_details,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ComplianceProfileSummary) Reset() {
@@ -935,11 +936,11 @@ func (x *ComplianceProfileSummary) GetStandards() []*ComplianceBenchmark {
 	return nil
 }
 
-func (x *ComplianceProfileSummary) GetIsTailored() bool {
+func (x *ComplianceProfileSummary) GetTailoredDetails() *TailoredProfileDetails {
 	if x != nil {
-		return x.IsTailored
+		return x.TailoredDetails
 	}
-	return false
+	return nil
 }
 
 // TailoredProfileDetails contains information specific to tailored profiles
@@ -1283,7 +1284,7 @@ const file_api_v2_compliance_common_proto_rawDesc = "" +
 	"\fprofile_name\x18\x01 \x01(\tR\vprofileName\x12\x1d\n" +
 	"\n" +
 	"check_name\x18\x02 \x01(\tR\tcheckName\x12\"\n" +
-	"\x05query\x18\x03 \x01(\v2\f.v2.RawQueryR\x05query\"\xa9\x02\n" +
+	"\x05query\x18\x03 \x01(\v2\f.v2.RawQueryR\x05query\"\xd5\x02\n" +
 	"\x18ComplianceProfileSummary\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
 	"\fproduct_type\x18\x02 \x01(\tR\vproductType\x12 \n" +
@@ -1292,9 +1293,8 @@ const file_api_v2_compliance_common_proto_rawDesc = "" +
 	"\n" +
 	"rule_count\x18\x05 \x01(\x05R\truleCount\x12'\n" +
 	"\x0fprofile_version\x18\x06 \x01(\tR\x0eprofileVersion\x125\n" +
-	"\tstandards\x18\a \x03(\v2\x17.v2.ComplianceBenchmarkR\tstandards\x12\x1f\n" +
-	"\vis_tailored\x18\b \x01(\bR\n" +
-	"isTailored\"\x8c\x03\n" +
+	"\tstandards\x18\a \x03(\v2\x17.v2.ComplianceBenchmarkR\tstandards\x12E\n" +
+	"\x10tailored_details\x18\t \x01(\v2\x1a.v2.TailoredProfileDetailsR\x0ftailoredDetailsJ\x04\b\b\x10\t\"\x8c\x03\n" +
 	"\x16TailoredProfileDetails\x12\x18\n" +
 	"\aextends\x18\x01 \x01(\tR\aextends\x12J\n" +
 	"\x0edisabled_rules\x18\x02 \x03(\v2#.v2.TailoredProfileRuleModificationR\rdisabledRules\x12H\n" +
@@ -1371,15 +1371,16 @@ var file_api_v2_compliance_common_proto_depIdxs = []int32{
 	18, // 9: v2.ComplianceProfileResultsRequest.query:type_name -> v2.RawQuery
 	18, // 10: v2.ComplianceProfileCheckRequest.query:type_name -> v2.RawQuery
 	6,  // 11: v2.ComplianceProfileSummary.standards:type_name -> v2.ComplianceBenchmark
-	14, // 12: v2.TailoredProfileDetails.disabled_rules:type_name -> v2.TailoredProfileRuleModification
-	14, // 13: v2.TailoredProfileDetails.enabled_rules:type_name -> v2.TailoredProfileRuleModification
-	14, // 14: v2.TailoredProfileDetails.manual_rules:type_name -> v2.TailoredProfileRuleModification
-	15, // 15: v2.TailoredProfileDetails.set_values:type_name -> v2.TailoredProfileValueOverride
-	16, // [16:16] is the sub-list for method output_type
-	16, // [16:16] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	13, // 12: v2.ComplianceProfileSummary.tailored_details:type_name -> v2.TailoredProfileDetails
+	14, // 13: v2.TailoredProfileDetails.disabled_rules:type_name -> v2.TailoredProfileRuleModification
+	14, // 14: v2.TailoredProfileDetails.enabled_rules:type_name -> v2.TailoredProfileRuleModification
+	14, // 15: v2.TailoredProfileDetails.manual_rules:type_name -> v2.TailoredProfileRuleModification
+	15, // 16: v2.TailoredProfileDetails.set_values:type_name -> v2.TailoredProfileValueOverride
+	17, // [17:17] is the sub-list for method output_type
+	17, // [17:17] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_compliance_common_proto_init() }

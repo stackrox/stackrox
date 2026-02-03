@@ -73,7 +73,6 @@ func (m *ComplianceOperatorProfileV2) CloneVT() *ComplianceOperatorProfileV2 {
 	r.Title = m.Title
 	r.ClusterId = m.ClusterId
 	r.ProfileRefId = m.ProfileRefId
-	r.IsTailored = m.IsTailored
 	r.TailoredDetails = m.TailoredDetails.CloneVT()
 	if rhs := m.Labels; rhs != nil {
 		tmpContainer := make(map[string]string, len(rhs))
@@ -1022,9 +1021,6 @@ func (this *ComplianceOperatorProfileV2) EqualVT(that *ComplianceOperatorProfile
 		return false
 	}
 	if this.ProfileRefId != that.ProfileRefId {
-		return false
-	}
-	if this.IsTailored != that.IsTailored {
 		return false
 	}
 	if !this.TailoredDetails.EqualVT(that.TailoredDetails) {
@@ -2450,18 +2446,6 @@ func (m *ComplianceOperatorProfileV2) MarshalToSizedBufferVT(dAtA []byte) (int, 
 		dAtA[i] = 0x1
 		i--
 		dAtA[i] = 0x8a
-	}
-	if m.IsTailored {
-		i--
-		if m.IsTailored {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x1
-		i--
-		dAtA[i] = 0x80
 	}
 	if len(m.ProfileRefId) > 0 {
 		i -= len(m.ProfileRefId)
@@ -5109,9 +5093,6 @@ func (m *ComplianceOperatorProfileV2) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.IsTailored {
-		n += 3
-	}
 	if m.TailoredDetails != nil {
 		l = m.TailoredDetails.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
@@ -7043,26 +7024,6 @@ func (m *ComplianceOperatorProfileV2) UnmarshalVT(dAtA []byte) error {
 			}
 			m.ProfileRefId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 16:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IsTailored", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.IsTailored = bool(v != 0)
 		case 17:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field TailoredDetails", wireType)
@@ -15864,26 +15825,6 @@ func (m *ComplianceOperatorProfileV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.ProfileRefId = stringValue
 			iNdEx = postIndex
-		case 16:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IsTailored", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.IsTailored = bool(v != 0)
 		case 17:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field TailoredDetails", wireType)

@@ -112,7 +112,7 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 			Annotations: tailoredProfile.Annotations,
 			Description: tailoredProfile.Spec.Description,
 			Title:       tailoredProfile.Spec.Title,
-			IsTailored:  true,
+			// TailoredDetails presence indicates this is a TailoredProfile
 			TailoredDetails: &central.TailoredProfileDetails{
 				Extends:      tailoredProfile.Spec.Extends,
 				State:        string(tailoredProfile.Status.State),

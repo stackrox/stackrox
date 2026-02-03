@@ -458,24 +458,22 @@ type ComplianceOperatorProfileV2 struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The primary key is name-profile_version as that is guaranteed unique in the operator and how
 	// the profile is referenced in scans and settings
-	Id             string                              `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                               // @gotags: sql:"pk"
-	ProfileId      string                              `protobuf:"bytes,2,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty" search:"Compliance Profile ID,hidden"`                // @gotags: search:"Compliance Profile ID,hidden"
-	Name           string                              `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Profile Name,hidden"`                                           // @gotags: search:"Compliance Profile Name,hidden"
-	ProfileVersion string                              `protobuf:"bytes,4,opt,name=profile_version,json=profileVersion,proto3" json:"profile_version,omitempty" search:"Compliance Profile Version,hidden"` // @gotags: search:"Compliance Profile Version,hidden"
-	ProductType    string                              `protobuf:"bytes,5,opt,name=product_type,json=productType,proto3" json:"product_type,omitempty" search:"Compliance Profile Product Type,hidden"`          // @gotags: search:"Compliance Profile Product Type,hidden"
-	Standard       string                              `protobuf:"bytes,6,opt,name=standard,proto3" json:"standard,omitempty" search:"Compliance Standard,hidden"`                                   // @gotags: search:"Compliance Standard,hidden"
-	Labels         map[string]string                   `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Annotations    map[string]string                   `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Description    string                              `protobuf:"bytes,9,opt,name=description,proto3" json:"description,omitempty"`
-	Rules          []*ComplianceOperatorProfileV2_Rule `protobuf:"bytes,10,rep,name=rules,proto3" json:"rules,omitempty"`
-	Product        string                              `protobuf:"bytes,11,opt,name=product,proto3" json:"product,omitempty"`
-	Title          string                              `protobuf:"bytes,12,opt,name=title,proto3" json:"title,omitempty"`
-	Values         []string                            `protobuf:"bytes,13,rep,name=values,proto3" json:"values,omitempty"`
-	ClusterId      string                              `protobuf:"bytes,14,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`            // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
-	ProfileRefId   string                              `protobuf:"bytes,15,opt,name=profile_ref_id,json=profileRefId,proto3" json:"profile_ref_id,omitempty" search:"Profile Ref ID,hidden" sql:"type(uuid)"` // @gotags: search:"Profile Ref ID,hidden" sql:"type(uuid)"
-	// TailoredProfile support
-	IsTailored      bool                           `protobuf:"varint,16,opt,name=is_tailored,json=isTailored,proto3" json:"is_tailored,omitempty" search:"Compliance Profile Is Tailored,hidden"` // @gotags: search:"Compliance Profile Is Tailored,hidden"
-	TailoredDetails *StorageTailoredProfileDetails `protobuf:"bytes,17,opt,name=tailored_details,json=tailoredDetails,proto3" json:"tailored_details,omitempty"`
+	Id              string                              `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                               // @gotags: sql:"pk"
+	ProfileId       string                              `protobuf:"bytes,2,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty" search:"Compliance Profile ID,hidden"`                // @gotags: search:"Compliance Profile ID,hidden"
+	Name            string                              `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Profile Name,hidden"`                                           // @gotags: search:"Compliance Profile Name,hidden"
+	ProfileVersion  string                              `protobuf:"bytes,4,opt,name=profile_version,json=profileVersion,proto3" json:"profile_version,omitempty" search:"Compliance Profile Version,hidden"` // @gotags: search:"Compliance Profile Version,hidden"
+	ProductType     string                              `protobuf:"bytes,5,opt,name=product_type,json=productType,proto3" json:"product_type,omitempty" search:"Compliance Profile Product Type,hidden"`          // @gotags: search:"Compliance Profile Product Type,hidden"
+	Standard        string                              `protobuf:"bytes,6,opt,name=standard,proto3" json:"standard,omitempty" search:"Compliance Standard,hidden"`                                   // @gotags: search:"Compliance Standard,hidden"
+	Labels          map[string]string                   `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Annotations     map[string]string                   `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Description     string                              `protobuf:"bytes,9,opt,name=description,proto3" json:"description,omitempty"`
+	Rules           []*ComplianceOperatorProfileV2_Rule `protobuf:"bytes,10,rep,name=rules,proto3" json:"rules,omitempty"`
+	Product         string                              `protobuf:"bytes,11,opt,name=product,proto3" json:"product,omitempty"`
+	Title           string                              `protobuf:"bytes,12,opt,name=title,proto3" json:"title,omitempty"`
+	Values          []string                            `protobuf:"bytes,13,rep,name=values,proto3" json:"values,omitempty"`
+	ClusterId       string                              `protobuf:"bytes,14,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`            // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+	ProfileRefId    string                              `protobuf:"bytes,15,opt,name=profile_ref_id,json=profileRefId,proto3" json:"profile_ref_id,omitempty" search:"Profile Ref ID,hidden" sql:"type(uuid)"` // @gotags: search:"Profile Ref ID,hidden" sql:"type(uuid)"
+	TailoredDetails *StorageTailoredProfileDetails      `protobuf:"bytes,17,opt,name=tailored_details,json=tailoredDetails,proto3" json:"tailored_details,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -615,13 +613,6 @@ func (x *ComplianceOperatorProfileV2) GetProfileRefId() string {
 	return ""
 }
 
-func (x *ComplianceOperatorProfileV2) GetIsTailored() bool {
-	if x != nil {
-		return x.IsTailored
-	}
-	return false
-}
-
 func (x *ComplianceOperatorProfileV2) GetTailoredDetails() *StorageTailoredProfileDetails {
 	if x != nil {
 		return x.TailoredDetails
@@ -630,7 +621,7 @@ func (x *ComplianceOperatorProfileV2) GetTailoredDetails() *StorageTailoredProfi
 }
 
 // StorageTailoredProfileDetails contains TailoredProfile-specific fields.
-// Only populated when ComplianceOperatorProfileV2.is_tailored is true.
+// Presence of this field indicates the profile is a TailoredProfile.
 type StorageTailoredProfileDetails struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Base profile name that this TP extends. Empty for from-scratch TPs.
@@ -3065,7 +3056,7 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\vProfileShim\x12\x1d\n" +
 	"\n" +
 	"profile_id\x18\x01 \x01(\tR\tprofileId\x12$\n" +
-	"\x0eprofile_ref_id\x18\x02 \x01(\tR\fprofileRefId\"\xef\x06\n" +
+	"\x0eprofile_ref_id\x18\x02 \x01(\tR\fprofileRefId\"\xd4\x06\n" +
 	"\x1bComplianceOperatorProfileV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -3084,9 +3075,7 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\x06values\x18\r \x03(\tR\x06values\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x0e \x01(\tR\tclusterId\x12$\n" +
-	"\x0eprofile_ref_id\x18\x0f \x01(\tR\fprofileRefId\x12\x1f\n" +
-	"\vis_tailored\x18\x10 \x01(\bR\n" +
-	"isTailored\x12Q\n" +
+	"\x0eprofile_ref_id\x18\x0f \x01(\tR\fprofileRefId\x12Q\n" +
 	"\x10tailored_details\x18\x11 \x01(\v2&.storage.StorageTailoredProfileDetailsR\x0ftailoredDetails\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
@@ -3095,7 +3084,7 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a#\n" +
 	"\x04Rule\x12\x1b\n" +
-	"\trule_name\x18\x01 \x01(\tR\bruleName\"\xc3\x03\n" +
+	"\trule_name\x18\x01 \x01(\tR\bruleNameJ\x04\b\x10\x10\x11\"\xc3\x03\n" +
 	"\x1dStorageTailoredProfileDetails\x12\x18\n" +
 	"\aextends\x18\x01 \x01(\tR\aextends\x12V\n" +
 	"\x0edisabled_rules\x18\x02 \x03(\v2/.storage.StorageTailoredProfileRuleModificationR\rdisabledRules\x12T\n" +

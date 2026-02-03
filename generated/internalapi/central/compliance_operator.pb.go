@@ -1022,20 +1022,18 @@ func (x *ComplianceOperatorCheckResultV2) GetWarnings() []string {
 // ComplianceOperatorProfileV2 is a message from Sensor (to Central) representing a compliance check profile.
 // Next tag: 13.
 type ComplianceOperatorProfileV2 struct {
-	state          protoimpl.MessageState              `protogen:"open.v1"`
-	Id             string                              `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	ProfileId      string                              `protobuf:"bytes,2,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty"`
-	Name           string                              `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	ProfileVersion string                              `protobuf:"bytes,4,opt,name=profile_version,json=profileVersion,proto3" json:"profile_version,omitempty"`
-	Labels         map[string]string                   `protobuf:"bytes,5,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Annotations    map[string]string                   `protobuf:"bytes,6,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Description    string                              `protobuf:"bytes,7,opt,name=description,proto3" json:"description,omitempty"`
-	Rules          []*ComplianceOperatorProfileV2_Rule `protobuf:"bytes,8,rep,name=rules,proto3" json:"rules,omitempty"`
-	Title          string                              `protobuf:"bytes,9,opt,name=title,proto3" json:"title,omitempty"`
-	Values         []string                            `protobuf:"bytes,10,rep,name=values,proto3" json:"values,omitempty"`
-	// TailoredProfile support
-	IsTailored      bool                    `protobuf:"varint,11,opt,name=is_tailored,json=isTailored,proto3" json:"is_tailored,omitempty"`
-	TailoredDetails *TailoredProfileDetails `protobuf:"bytes,12,opt,name=tailored_details,json=tailoredDetails,proto3" json:"tailored_details,omitempty"`
+	state           protoimpl.MessageState              `protogen:"open.v1"`
+	Id              string                              `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	ProfileId       string                              `protobuf:"bytes,2,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty"`
+	Name            string                              `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	ProfileVersion  string                              `protobuf:"bytes,4,opt,name=profile_version,json=profileVersion,proto3" json:"profile_version,omitempty"`
+	Labels          map[string]string                   `protobuf:"bytes,5,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Annotations     map[string]string                   `protobuf:"bytes,6,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Description     string                              `protobuf:"bytes,7,opt,name=description,proto3" json:"description,omitempty"`
+	Rules           []*ComplianceOperatorProfileV2_Rule `protobuf:"bytes,8,rep,name=rules,proto3" json:"rules,omitempty"`
+	Title           string                              `protobuf:"bytes,9,opt,name=title,proto3" json:"title,omitempty"`
+	Values          []string                            `protobuf:"bytes,10,rep,name=values,proto3" json:"values,omitempty"`
+	TailoredDetails *TailoredProfileDetails             `protobuf:"bytes,12,opt,name=tailored_details,json=tailoredDetails,proto3" json:"tailored_details,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -1140,13 +1138,6 @@ func (x *ComplianceOperatorProfileV2) GetValues() []string {
 	return nil
 }
 
-func (x *ComplianceOperatorProfileV2) GetIsTailored() bool {
-	if x != nil {
-		return x.IsTailored
-	}
-	return false
-}
-
 func (x *ComplianceOperatorProfileV2) GetTailoredDetails() *TailoredProfileDetails {
 	if x != nil {
 		return x.TailoredDetails
@@ -1155,7 +1146,7 @@ func (x *ComplianceOperatorProfileV2) GetTailoredDetails() *TailoredProfileDetai
 }
 
 // TailoredProfileDetails contains TailoredProfile-specific fields.
-// Only populated when ComplianceOperatorProfileV2.is_tailored is true.
+// Presence of this field indicates the profile is a TailoredProfile.
 type TailoredProfileDetails struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Base profile name that this TP extends. Empty for from-scratch TPs.
@@ -3009,7 +3000,7 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\n" +
 	"\x06MANUAL\x10\x05\x12\x12\n" +
 	"\x0eNOT_APPLICABLE\x10\x06\x12\x10\n" +
-	"\fINCONSISTENT\x10\aJ\x04\b\f\x10\rJ\x04\b\r\x10\x0e\"\xca\x05\n" +
+	"\fINCONSISTENT\x10\aJ\x04\b\f\x10\rJ\x04\b\r\x10\x0e\"\xaf\x05\n" +
 	"\x1bComplianceOperatorProfileV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -3022,9 +3013,7 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\x05rules\x18\b \x03(\v2).central.ComplianceOperatorProfileV2.RuleR\x05rules\x12\x14\n" +
 	"\x05title\x18\t \x01(\tR\x05title\x12\x16\n" +
 	"\x06values\x18\n" +
-	" \x03(\tR\x06values\x12\x1f\n" +
-	"\vis_tailored\x18\v \x01(\bR\n" +
-	"isTailored\x12J\n" +
+	" \x03(\tR\x06values\x12J\n" +
 	"\x10tailored_details\x18\f \x01(\v2\x1f.central.TailoredProfileDetailsR\x0ftailoredDetails\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
@@ -3033,7 +3022,7 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a#\n" +
 	"\x04Rule\x12\x1b\n" +
-	"\trule_name\x18\x01 \x01(\tR\bruleName\"\xa0\x03\n" +
+	"\trule_name\x18\x01 \x01(\tR\bruleNameJ\x04\b\v\x10\f\"\xa0\x03\n" +
 	"\x16TailoredProfileDetails\x12\x18\n" +
 	"\aextends\x18\x01 \x01(\tR\aextends\x12O\n" +
 	"\x0edisabled_rules\x18\x02 \x03(\v2(.central.TailoredProfileRuleModificationR\rdisabledRules\x12M\n" +

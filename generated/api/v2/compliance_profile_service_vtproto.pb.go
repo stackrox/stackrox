@@ -32,7 +32,6 @@ func (m *ComplianceProfile) CloneVT() *ComplianceProfile {
 	r.Description = m.Description
 	r.Product = m.Product
 	r.Title = m.Title
-	r.IsTailored = m.IsTailored
 	r.TailoredDetails = m.TailoredDetails.CloneVT()
 	if rhs := m.Rules; rhs != nil {
 		tmpContainer := make([]*ComplianceRule, len(rhs))
@@ -222,9 +221,6 @@ func (this *ComplianceProfile) EqualVT(that *ComplianceProfile) bool {
 			}
 		}
 	}
-	if this.IsTailored != that.IsTailored {
-		return false
-	}
 	if !this.TailoredDetails.EqualVT(that.TailoredDetails) {
 		return false
 	}
@@ -399,16 +395,6 @@ func (m *ComplianceProfile) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x6a
-	}
-	if m.IsTailored {
-		i--
-		if m.IsTailored {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x60
 	}
 	if len(m.Standards) > 0 {
 		for iNdEx := len(m.Standards) - 1; iNdEx >= 0; iNdEx-- {
@@ -748,9 +734,6 @@ func (m *ComplianceProfile) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
-	}
-	if m.IsTailored {
-		n += 2
 	}
 	if m.TailoredDetails != nil {
 		l = m.TailoredDetails.SizeVT()
@@ -1189,26 +1172,6 @@ func (m *ComplianceProfile) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 12:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IsTailored", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.IsTailored = bool(v != 0)
 		case 13:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field TailoredDetails", wireType)
@@ -2098,26 +2061,6 @@ func (m *ComplianceProfile) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 12:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IsTailored", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.IsTailored = bool(v != 0)
 		case 13:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field TailoredDetails", wireType)

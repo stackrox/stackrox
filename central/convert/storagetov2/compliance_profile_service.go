@@ -36,7 +36,6 @@ func ComplianceV2Profile(incoming *storage.ComplianceOperatorProfileV2, benchmar
 		Product:        incoming.GetProduct(),
 		Title:          incoming.GetTitle(),
 		Values:         incoming.GetValues(),
-		IsTailored:     incoming.GetIsTailored(),
 	}
 
 	if td := incoming.GetTailoredDetails(); td != nil {
@@ -132,7 +131,7 @@ func ComplianceProfileSummary(incoming []*storage.ComplianceOperatorProfileV2, b
 			profileClusterMap[summary.GetName()] = append(profileClusters, summary.GetClusterId())
 		}
 		if _, found := profileSummaryMap[summary.GetName()]; !found {
-			profileSummaryMap[summary.GetName()] = &v2.ComplianceProfileSummary{
+			summaryObj := &v2.ComplianceProfileSummary{
 				Name:           summary.GetName(),
 				ProductType:    summary.GetProductType(),
 				Description:    summary.GetDescription(),
@@ -140,8 +139,11 @@ func ComplianceProfileSummary(incoming []*storage.ComplianceOperatorProfileV2, b
 				RuleCount:      int32(len(summary.GetRules())),
 				ProfileVersion: summary.GetProfileVersion(),
 				Standards:      profileBenchmarkNameMap[summary.GetName()],
-				IsTailored:     summary.GetIsTailored(),
 			}
+			if td := summary.GetTailoredDetails(); td != nil {
+				summaryObj.TailoredDetails = convertTailoredProfileDetailsToV2(td)
+			}
+			profileSummaryMap[summary.GetName()] = summaryObj
 			orderedProfiles = append(orderedProfiles, summary.GetName())
 		}
 	}
