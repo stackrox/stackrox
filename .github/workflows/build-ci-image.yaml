@@ -39,14 +39,14 @@ jobs:
         run: |
           buildah bud \
             --layers \
-            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.0-${{ matrix.arch }} \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.1-${{ matrix.arch }} \
             --file .github/images/apollo-ci-buildah/Dockerfile \
             .github/images/apollo-ci-buildah
 
       - name: Push CI image
         run: |
-          buildah push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.0-${{ matrix.arch }} \
-            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.0-${{ matrix.arch }}
+          buildah push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.1-${{ matrix.arch }} \
+            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.1-${{ matrix.arch }}
 
   push-manifest:
     runs-on: stackrox-runners-amd64
@@ -64,12 +64,12 @@ jobs:
 
       - name: Create and push multi-arch manifest
         run: |
-          buildah manifest create ${{ env.IMAGE_NAME }}:0.6.0 \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.0-amd64 \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.0-arm64
+          buildah manifest create ${{ env.IMAGE_NAME }}:0.6.1 \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.1-amd64 \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.1-arm64
 
-          buildah manifest push --all ${{ env.IMAGE_NAME }}:0.6.0 \
-            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.0
+          buildah manifest push --all ${{ env.IMAGE_NAME }}:0.6.1 \
+            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.1
 
-          buildah manifest push --all ${{ env.IMAGE_NAME }}:0.6.0 \
+          buildah manifest push --all ${{ env.IMAGE_NAME }}:0.6.1 \
             docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
