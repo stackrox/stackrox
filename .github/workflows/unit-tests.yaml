@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
-    runs-on: stackrox-runners
+    runs-on: stackrox-runners-amd64
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -90,7 +90,7 @@ jobs:
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
         pg: [ '15' ]
-    runs-on: stackrox-runners
+    runs-on: stackrox-runners-amd64
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -149,7 +149,7 @@ jobs:
         directory: 'junit-reports'
 
   go-bench:
-    runs-on: stackrox-runners
+    runs-on: stackrox-runners-amd64
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
     steps:
@@ -194,7 +194,7 @@ jobs:
     # https://github.com/jstemmer/go-junit-report/issues/174
 
   ui:
-    runs-on: stackrox-runners
+    runs-on: stackrox-runners-amd64
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -230,7 +230,7 @@ jobs:
         directory: 'ui/apps/platform/test-results/reports'
 
   ui-component:
-    runs-on: stackrox-runners
+    runs-on: stackrox-runners-amd64
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -273,7 +273,7 @@ jobs:
         directory: 'ui/apps/platform/cypress/test-results/reports'
 
   local-roxctl-tests:
-    runs-on: stackrox-runners
+    runs-on: stackrox-runners-amd64
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -314,7 +314,7 @@ jobs:
         directory: 'roxctl-test-output'
 
   shell-unit-tests:
-    runs-on: stackrox-runners
+    runs-on: stackrox-runners-amd64
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
@@ -350,7 +350,7 @@ jobs:
         directory: 'shell-test-output'
 
   openshift-ci-unit-tests:
-    runs-on: stackrox-runners
+    runs-on: stackrox-runners-amd64
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
     steps:
@@ -370,7 +370,7 @@ jobs:
   sensor-integration-tests:
     env:
       KUBECONFIG: "/tmp/kubeconfig"
-    runs-on: stackrox-runners
+    runs-on: stackrox-runners-amd64
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
@@ -430,7 +430,7 @@ jobs:
           contains(github.event.pull_request.labels.*.name, 'ci-test-github-action-slack-messages')
       )
     name: Post failure message to Slack
-    runs-on: stackrox-runners
+    runs-on: stackrox-runners-amd64
     needs:
       - go
       - go-bench
