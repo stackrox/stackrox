@@ -1,7 +1,7 @@
 FROM registry.access.redhat.com/ubi8/python-312:latest@sha256:b3d3389c871569dac4d0aa759fba4d95c6e6fd0ad470f1085b3ca1f44b18727b AS builder
 
 USER root
-RUN microdnf -y install python3.12-pyyaml
+RUN dnf -y install python3.12-pyyaml
 
 COPY . /stackrox
 WORKDIR /stackrox/operator
