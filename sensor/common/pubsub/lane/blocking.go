@@ -139,9 +139,8 @@ func (l *blockingLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pubs
 
 func (l *blockingLane) Stop() {
 	l.stopper.Client().Stop()
-	// Wait for the run() goroutine to fully exit before closing the channel.
-	// This ensures an orderly shutdown where event processing is complete.
+	// Wait for the run() goroutine to fully exit.
+	// The channel will be closed automatically when the waitable is done.
 	<-l.stopper.Client().Stopped().Done()
-	l.ch.Close()
 	l.Lane.Stop()
 }

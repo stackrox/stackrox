@@ -8,16 +8,16 @@ import (
 // Channel provides a thread-safe channel with race-free shutdown semantics.
 // It encapsulates a channel along with synchronization primitives to ensure
 // safe writes and closure even during concurrent shutdown scenarios.
+// The channel is automatically closed when the waitable is triggered.
 type Channel[T any] struct {
 	mu       sync.RWMutex
 	ch       chan T
-	closed   bool
 	waitable concurrency.Waitable
 }
 
 // NewChannel creates a new Channel with the specified buffer size.
 // The waitable parameter is used to coordinate shutdown - writes will fail
-// when the waitable is triggered.
+// when the waitable is triggered, and the channel will be automatically closed.
 // Panics if waitable is nil or size is negative.
 func NewChannel[T any](size int, waitable concurrency.Waitable) *Channel[T] {
 	if waitable == nil {
@@ -26,10 +26,21 @@ func NewChannel[T any](size int, waitable concurrency.Waitable) *Channel[T] {
 	if size < 0 {
 		panic("size must not be negative")
 	}
-	return &Channel[T]{
+	c := &Channel[T]{
 		ch:       make(chan T, size),
 		waitable: waitable,
 	}
+
+	// Spawn a goroutine that will close the channel when the waitable is triggered.
+	// The lock ensures all in-flight writes complete before closing.
+	go func() {
+		<-waitable.Done()
+		c.mu.Lock()
+		defer c.mu.Unlock()
+		close(c.ch)
+	}()
+
+	return c
 }
 
 // Write pushes an item to the channel, blocking if the channel is full.
@@ -132,30 +143,4 @@ func (s *Channel[T]) Len() int {
 // Cap returns the capacity of the channel.
 func (s *Channel[T]) Cap() int {
 	return cap(s.ch)
-}
-
-// Close safely closes the underlying channel.
-// This should be called after the waitable has been triggered.
-// It is safe to call Close multiple times - subsequent calls are no-ops.
-// Panics if called before the waitable has been triggered.
-//
-// Proper shutdown sequence:
-//  1. Signal the waitable
-//  2. Wait for the waitable
-//  3. Call Close()
-func (s *Channel[T]) Close() {
-	// Verify the waitable has been triggered to prevent potential deadlocks
-	select {
-	case <-s.waitable.Done():
-	default:
-		// Waitable not triggered - this violates the contract
-		panic("Close() called before waitable was triggered")
-	}
-
-	concurrency.WithLock(&s.mu, func() {
-		if !s.closed {
-			close(s.ch)
-			s.closed = true
-		}
-	})
 }
