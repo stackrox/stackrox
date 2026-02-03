@@ -139,6 +139,7 @@ func (a *k8sAuthorizer) authenticate(ctx context.Context, r *http.Request) (*aut
 
 	// Slow path: coalesce concurrent authentication requests for the same token.
 	return a.tokenReviewGroup.Coalesce(ctx, token, func() (*authenticationv1.UserInfo, error) { //nolint:wrapcheck
+		log.Info("Authenticating user")
 		// Double-check cache inside coalesce to avoid redundant API calls.
 		if userInfo, ok := a.tokenCache.Get(token); ok {
 			return userInfo, nil
@@ -216,6 +217,7 @@ func (a *k8sAuthorizer) authorize(ctx context.Context, userInfo *authenticationv
 
 	// Slow path: coalesce concurrent authorization requests for the same user/namespace.
 	cached, err := a.authzGroup.Coalesce(ctx, cacheKey.String(), func() (*authzResult, error) {
+		log.Infof("Authorizing %q (uid=%q) for namespace %q", userInfo.Username, userInfo.UID, namespace)
 		// Double-check cache inside coalesce to avoid redundant API calls.
 		if cached, ok := a.authzCache.Get(cacheKey); ok {
 			return cached, nil

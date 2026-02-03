@@ -218,6 +218,7 @@ func (p *tokenProvider) getTokenForScope(ctx context.Context, namespaceScope str
 
 	// Slow path: coalesce concurrent requests for the same scope.
 	return p.tokenGroup.Coalesce(ctx, namespaceScope, func() (string, error) { //nolint:wrapcheck
+		log.Infof("Requesting token for namespace scope %q", namespaceScope)
 		// Double-check cache inside coalesce to avoid redundant API calls.
 		if token, ok := p.tokenCache.Get(namespaceScope); ok {
 			return token, nil
