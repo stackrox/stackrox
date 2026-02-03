@@ -1,3 +1,5 @@
 self-hosted-runner:
   labels:
     - stackrox-runners
+    - stackrox-runners-amd64
+    - stackrox-runners-arm64
