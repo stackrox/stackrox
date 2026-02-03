@@ -42,9 +42,9 @@ func TestPatchCSV(t *testing.T) {
 				},
 			},
 			opts: PatchOptions{
-				Version:        "4.0.0",
-				OperatorImage:  "quay.io/stackrox-io/stackrox-operator:4.0.0",
-				FirstVersion:   "3.62.0",
+				Version:           "4.0.0",
+				OperatorImage:     "quay.io/stackrox-io/stackrox-operator:4.0.0",
+				FirstVersion:      "3.62.0",
 				RelatedImagesMode: "omit",
 			},
 			assertions: func(t *testing.T, result map[string]interface{}) {
@@ -76,9 +76,9 @@ func TestPatchCSV(t *testing.T) {
 				},
 			},
 			opts: PatchOptions{
-				Version:        "4.0.1",
-				OperatorImage:  "quay.io/stackrox-io/stackrox-operator:4.0.1",
-				FirstVersion:   "4.0.0",
+				Version:           "4.0.1",
+				OperatorImage:     "quay.io/stackrox-io/stackrox-operator:4.0.1",
+				FirstVersion:      "4.0.0",
 				RelatedImagesMode: "omit",
 			},
 			assertions: func(t *testing.T, result map[string]interface{}) {

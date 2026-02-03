@@ -9,10 +9,10 @@ type csvDocument struct {
 		Labels      map[string]interface{} `yaml:"labels,omitempty"`
 	} `yaml:"metadata"`
 	Spec struct {
-		Version       string                   `yaml:"version"`
-		Replaces      string                   `yaml:"replaces,omitempty"`
-		Skips         []string                 `yaml:"skips,omitempty"`
-		RelatedImages []map[string]interface{} `yaml:"relatedImages,omitempty"`
+		Version                   string                   `yaml:"version"`
+		Replaces                  string                   `yaml:"replaces,omitempty"`
+		Skips                     []string                 `yaml:"skips,omitempty"`
+		RelatedImages             []map[string]interface{} `yaml:"relatedImages,omitempty"`
 		CustomResourceDefinitions struct {
 			Owned []map[string]interface{} `yaml:"owned"`
 		} `yaml:"customresourcedefinitions"`

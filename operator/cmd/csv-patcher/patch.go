@@ -9,12 +9,12 @@ import (
 
 // PatchOptions contains all options for patching a CSV
 type PatchOptions struct {
-	Version            string
-	OperatorImage      string
-	FirstVersion       string
-	RelatedImagesMode  string
+	Version             string
+	OperatorImage       string
+	FirstVersion        string
+	RelatedImagesMode   string
 	ExtraSupportedArchs []string
-	Unreleased         string
+	Unreleased          string
 }
 
 // PatchCSV modifies the CSV document in-place according to options
