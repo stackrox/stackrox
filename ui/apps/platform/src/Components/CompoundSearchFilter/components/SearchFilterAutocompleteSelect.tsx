@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button } from '@patternfly/react-core';
+import { Button, ToolbarItem } from '@patternfly/react-core';
 import { ArrowRightIcon } from '@patternfly/react-icons';
 
 import type { SearchFilter } from 'types/search';
@@ -41,23 +41,27 @@ function SearchFilterAutocompleteSelect({
 
     return (
         <>
-            <AutocompleteSelect
-                searchCategory={searchCategory}
-                searchTerm={searchTerm}
-                value={value}
-                onChange={setValue}
-                onSearch={handleSearch}
-                textLabel={textLabel}
-                searchFilter={searchFilter}
-                additionalContextFilter={additionalContextFilter}
-            />
-            <Button
-                variant="control"
-                aria-label="Apply autocomplete input to search"
-                onClick={() => handleSearch(value)}
-            >
-                <ArrowRightIcon />
-            </Button>
+            <ToolbarItem className="pf-v6-u-flex-grow-1">
+                <AutocompleteSelect
+                    searchCategory={searchCategory}
+                    searchTerm={searchTerm}
+                    value={value}
+                    onChange={setValue}
+                    onSearch={handleSearch}
+                    textLabel={textLabel}
+                    searchFilter={searchFilter}
+                    additionalContextFilter={additionalContextFilter}
+                />
+            </ToolbarItem>
+            <ToolbarItem>
+                <Button
+                    variant="control"
+                    aria-label="Apply autocomplete input to search"
+                    onClick={() => handleSearch(value)}
+                >
+                    <ArrowRightIcon />
+                </Button>
+            </ToolbarItem>
         </>
     );
 }

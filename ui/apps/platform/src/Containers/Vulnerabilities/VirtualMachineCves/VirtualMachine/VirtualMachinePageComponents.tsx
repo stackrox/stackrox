@@ -5,7 +5,6 @@ import {
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
-    ToolbarItem,
 } from '@patternfly/react-core';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
@@ -124,23 +123,17 @@ function VirtualMachinePageComponents({
         <PageSection variant="light" isFilled padding={{ default: 'padding' }}>
             <Toolbar>
                 <ToolbarContent>
-                    <ToolbarGroup className="pf-v5-u-w-100">
-                        <ToolbarItem className="pf-v5-u-flex-1">
-                            <CompoundSearchFilter
-                                config={searchFilterConfig}
-                                searchFilter={searchFilter}
-                                onSearch={onSearch}
-                            />
-                        </ToolbarItem>
-                        <ToolbarItem>
-                            <SearchFilterSelectInclusive
-                                attribute={attributeForScanStatus}
-                                isSeparate
-                                onSearch={onSearchScanStatus}
-                                searchFilter={searchFilter}
-                            />
-                        </ToolbarItem>
-                    </ToolbarGroup>
+                    <CompoundSearchFilter
+                        config={searchFilterConfig}
+                        searchFilter={searchFilter}
+                        onSearch={onSearch}
+                    />
+                    <SearchFilterSelectInclusive
+                        attribute={attributeForScanStatus}
+                        isSeparate
+                        onSearch={onSearchScanStatus}
+                        searchFilter={searchFilter}
+                    />
                     <ToolbarGroup className="pf-v5-u-w-100">
                         <CompoundSearchFilterLabels
                             attributesSeparateFromConfig={[attributeForScanStatus]}
