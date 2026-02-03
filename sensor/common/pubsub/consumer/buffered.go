@@ -113,7 +113,7 @@ func (c *BufferedConsumer) consume(waitable concurrency.Waitable, event pubsub.E
 func (c *BufferedConsumer) Stop() {
 	c.stopper.Client().Stop()
 	<-c.stopper.Client().Stopped().Done()
-	c.buffer.Close()
+	// Channel will be closed automatically when the waitable is done
 	// Drain events and close their errC
 	for ev := range c.buffer.Chan() {
 		close(ev.errC)
