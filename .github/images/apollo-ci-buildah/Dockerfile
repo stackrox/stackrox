@@ -3,7 +3,7 @@
 # Supports both amd64 and arm64 architectures
 
 # Use multi-stage build to get Go from official image
-FROM golang:1.24.0 AS golang
+FROM docker.io/library/golang:1.24.0 AS golang
 
 # Use UBI9 as the final base (multi-arch)
 FROM registry.access.redhat.com/ubi9:latest
