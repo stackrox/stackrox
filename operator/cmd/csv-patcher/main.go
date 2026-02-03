@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -94,11 +95,11 @@ func main() {
 func echoReplacedVersion(doc map[string]interface{}, version, firstVersion, unreleased string) error {
 	metadata, ok := doc["metadata"].(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("metadata is not a map[string]interface{}")
+		return errors.New("metadata is not a map[string]interface{}")
 	}
 	name, ok := metadata["name"].(string)
 	if !ok {
-		return fmt.Errorf("metadata.name is not a string")
+		return errors.New("metadata.name is not a string")
 	}
 
 	rawName := ""
@@ -110,14 +111,14 @@ func echoReplacedVersion(doc map[string]interface{}, version, firstVersion, unre
 
 	spec, ok := doc["spec"].(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("spec is not a map[string]interface{}")
+		return errors.New("spec is not a map[string]interface{}")
 	}
 	skips := make([]XyzVersion, 0)
 	if rawSkips, ok := spec["skips"].([]interface{}); ok {
 		for _, s := range rawSkips {
 			skipStr, ok := s.(string)
 			if !ok {
-				return fmt.Errorf("skip entry is not a string")
+				return errors.New("skip entry is not a string")
 			}
 			if skipStr == rawName+".v0.0.1" {
 				continue

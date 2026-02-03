@@ -28,24 +28,24 @@ func main() {
 	// Fix descriptors in all owned CRDs
 	spec, ok := doc["spec"].(map[string]interface{})
 	if !ok {
-		fmt.Fprintf(os.Stderr, "Error: 'spec' field is not a map\n")
+		fmt.Fprint(os.Stderr, "Error: 'spec' field is not a map\n")
 		os.Exit(1)
 	}
 	crds, ok := spec["customresourcedefinitions"].(map[string]interface{})
 	if !ok {
-		fmt.Fprintf(os.Stderr, "Error: 'spec.customresourcedefinitions' field is not a map\n")
+		fmt.Fprint(os.Stderr, "Error: 'spec.customresourcedefinitions' field is not a map\n")
 		os.Exit(1)
 	}
 	owned, ok := crds["owned"].([]interface{})
 	if !ok {
-		fmt.Fprintf(os.Stderr, "Error: 'spec.customresourcedefinitions.owned' field is not an array\n")
+		fmt.Fprint(os.Stderr, "Error: 'spec.customresourcedefinitions.owned' field is not an array\n")
 		os.Exit(1)
 	}
 
 	for _, crd := range owned {
 		crdMap, ok := crd.(map[string]interface{})
 		if !ok {
-			fmt.Fprintf(os.Stderr, "Warning: CRD entry is not a map, skipping\n")
+			fmt.Fprint(os.Stderr, "Warning: CRD entry is not a map, skipping\n")
 			continue
 		}
 		if specDescriptors, ok := crdMap["specDescriptors"].([]interface{}); ok {
@@ -54,7 +54,7 @@ func main() {
 			for i, d := range specDescriptors {
 				descriptorMap, ok := d.(map[string]interface{})
 				if !ok {
-					fmt.Fprintf(os.Stderr, "Warning: descriptor entry is not a map, skipping\n")
+					fmt.Fprint(os.Stderr, "Warning: descriptor entry is not a map, skipping\n")
 					continue
 				}
 				descriptors[i] = descriptorMap

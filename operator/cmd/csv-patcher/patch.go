@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -22,25 +23,25 @@ func PatchCSV(doc map[string]interface{}, opts PatchOptions) error {
 	// Update createdAt timestamp
 	metadata, ok := doc["metadata"].(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("metadata field is missing or has wrong type")
+		return errors.New("metadata field is missing or has wrong type")
 	}
 	annotations, ok := metadata["annotations"].(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("metadata.annotations field is missing or has wrong type")
+		return errors.New("metadata.annotations field is missing or has wrong type")
 	}
 	annotations["createdAt"] = time.Now().UTC().Format(time.RFC3339)
 
 	// Replace placeholder image with actual operator image
 	placeholderImage, ok := annotations["containerImage"].(string)
 	if !ok {
-		return fmt.Errorf("annotations.containerImage field is missing or has wrong type")
+		return errors.New("annotations.containerImage field is missing or has wrong type")
 	}
 	rewriteStrings(doc, placeholderImage, opts.OperatorImage)
 
 	// Update metadata name with version
 	metadataName, ok := metadata["name"].(string)
 	if !ok {
-		return fmt.Errorf("metadata.name field is missing or has wrong type")
+		return errors.New("metadata.name field is missing or has wrong type")
 	}
 	rawName := strings.TrimSuffix(metadataName, ".v0.0.1")
 	if !strings.HasSuffix(metadataName, ".v0.0.1") {
@@ -51,7 +52,7 @@ func PatchCSV(doc map[string]interface{}, opts PatchOptions) error {
 	// Update spec.version
 	spec, ok := doc["spec"].(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("spec field is missing or has wrong type")
+		return errors.New("spec field is missing or has wrong type")
 	}
 	spec["version"] = opts.Version
 
@@ -88,7 +89,7 @@ func PatchCSV(doc map[string]interface{}, opts PatchOptions) error {
 	}
 	labels, ok := metadata["labels"].(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("metadata.labels field has wrong type")
+		return errors.New("metadata.labels field has wrong type")
 	}
 	for _, arch := range opts.ExtraSupportedArchs {
 		labels[fmt.Sprintf("operatorframework.io/arch.%s", arch)] = "supported"
@@ -100,7 +101,7 @@ func PatchCSV(doc map[string]interface{}, opts PatchOptions) error {
 		for _, s := range rawSkips {
 			skipStr, ok := s.(string)
 			if !ok {
-				return fmt.Errorf("skip entry has wrong type (expected string)")
+				return errors.New("skip entry has wrong type (expected string)")
 			}
 			skipVer := strings.TrimPrefix(skipStr, rawName+".v")
 			v, err := ParseXyzVersion(skipVer)
@@ -212,11 +213,11 @@ func addSecurityPolicyCRD(spec map[string]interface{}) error {
 
 	crds, ok := spec["customresourcedefinitions"].(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("spec.customresourcedefinitions field is missing or has wrong type")
+		return errors.New("spec.customresourcedefinitions field is missing or has wrong type")
 	}
 	owned, ok := crds["owned"].([]interface{})
 	if !ok {
-		return fmt.Errorf("spec.customresourcedefinitions.owned field is missing or has wrong type")
+		return errors.New("spec.customresourcedefinitions.owned field is missing or has wrong type")
 	}
 
 	// Filter out existing SecurityPolicy CRDs to prevent duplicates
