@@ -6895,6 +6895,11 @@
                 "id": 3,
                 "name": "first_system_occurrence",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 4,
+                "name": "cve",
+                "type": "string"
               }
             ]
           }
