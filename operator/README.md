@@ -113,6 +113,8 @@ The recommended approach is the following.
    ```bash
    $ docker save stackrox/stackrox-operator:$(make tag) | ssh -o StrictHostKeyChecking=no -i $(minikube ssh-key) docker@$(minikube ip) docker load
    ```
+   _Alternatively you can also set `DOCKER_BUILD_LOAD=1` in the make environment in the previous build step. This will load images into the local Docker daemon instead of leaving them just in BuildKit cache._
+   
 3. Install CRDs and deploy operator resources
    ```bash
    $ make deploy
@@ -149,6 +151,8 @@ $ make docker-build docker-push
 # Build and push bundle image
 $ make bundle-build docker-push-bundle
 ```
+_Note: Bundle helpers depend on Python <=3.13. By default, the build process will use the default Python version installed on the build host. You can override the python version if needed via the optional `PYTHON` env var, e.g. `PYTHON=python3.10 make bundle-build`_
+
 
 Build and push everything as **one-liner**
 
