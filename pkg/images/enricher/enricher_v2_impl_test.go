@@ -43,6 +43,10 @@ func imageGetterV2PanicOnCall(_ context.Context, _ string) (*storage.ImageV2, bo
 	panic("Unexpected call to imageGetter")
 }
 
+func emptyBaseImageGetterV2(_ context.Context, _ []string) ([]*storage.BaseImage, error) {
+	return nil, nil
+}
+
 var _ signatures.SignatureFetcher = (*fakeSigFetcher)(nil)
 
 var _ scannertypes.Scanner = (*fakeScanner)(nil)
@@ -357,6 +361,7 @@ func TestEnricherV2Flow(t *testing.T) {
 				imageGetter:                emptyImageGetterV2,
 				signatureIntegrationGetter: emptySignatureIntegrationGetter,
 				signatureFetcher:           &fakeSigFetcher{},
+				baseImageGetter:            emptyBaseImageGetterV2,
 			}
 			if c.inMetadataCache {
 				enricherImpl.metadataCache.Add(c.image.GetId(), c.image.GetMetadata())
@@ -409,6 +414,7 @@ func TestCVESuppressionV2(t *testing.T) {
 		imageGetter:                emptyImageGetterV2,
 		signatureIntegrationGetter: emptySignatureIntegrationGetter,
 		signatureFetcher:           &fakeSigFetcher{},
+		baseImageGetter:            emptyBaseImageGetterV2,
 	}
 
 	img := &storage.ImageV2{
@@ -1313,7 +1319,7 @@ func TestEnrichImageWithBaseImagesV2(t *testing.T) {
 func newEnricherV2(set *mocks.MockSet, mockReporter *reporterMocks.MockReporter) ImageEnricherV2 {
 	return NewV2(&fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		newCache(),
-		nil,
+		emptyBaseImageGetterV2,
 		emptyImageGetterV2,
 		mockReporter, emptySignatureIntegrationGetter, nil)
 }
