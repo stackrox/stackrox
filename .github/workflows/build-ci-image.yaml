@@ -21,63 +21,43 @@ jobs:
           - arch: arm64
             runner: stackrox-runners-arm64
     runs-on: ${{ matrix.runner }}
-    container:
-      image: quay.io/buildah/stable
-      options: --privileged
-    env:
-      QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
-      QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
-      HOME: /tmp
-      XDG_RUNTIME_DIR: /tmp
-      BUILDAH_ISOLATION: chroot
-      STORAGE_DRIVER: vfs
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Login to Quay.io
         run: |
-          buildah --storage-driver=vfs login -u "$QUAY_USERNAME" -p "$QUAY_PASSWORD" quay.io
+          echo "${{ secrets.QUAY_PASSWORD }}" | docker login -u "${{ secrets.QUAY_USERNAME }}" --password-stdin quay.io
 
       - name: Build CI image
         run: |
-          buildah --storage-driver=vfs --isolation=chroot bud \
-            --layers \
+          docker build \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.1-${{ matrix.arch }} \
-            --file .github/images/apollo-ci-buildah/Dockerfile \
+            -f .github/images/apollo-ci-buildah/Dockerfile \
             .github/images/apollo-ci-buildah
 
       - name: Push CI image
         run: |
-          buildah --storage-driver=vfs push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.1-${{ matrix.arch }} \
-            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.1-${{ matrix.arch }}
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.1-${{ matrix.arch }}
 
   push-manifest:
     runs-on: stackrox-runners-amd64
     needs: build-ci-image
-    container:
-      image: quay.io/buildah/stable
-      options: --privileged
-    env:
-      QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
-      QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
-      HOME: /tmp
-      XDG_RUNTIME_DIR: /tmp
-      BUILDAH_ISOLATION: chroot
-      STORAGE_DRIVER: vfs
     steps:
       - name: Login to Quay.io
         run: |
-          buildah --storage-driver=vfs login -u "$QUAY_USERNAME" -p "$QUAY_PASSWORD" quay.io
+          echo "${{ secrets.QUAY_PASSWORD }}" | docker login -u "${{ secrets.QUAY_USERNAME }}" --password-stdin quay.io
 
       - name: Create and push multi-arch manifest
         run: |
-          buildah --storage-driver=vfs manifest create ${{ env.IMAGE_NAME }}:0.6.1 \
+          docker manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.1 \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.1-amd64 \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.1-arm64
 
-          buildah --storage-driver=vfs manifest push --all ${{ env.IMAGE_NAME }}:0.6.1 \
-            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.1
+          docker manifest push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.1
 
-          buildah --storage-driver=vfs manifest push --all ${{ env.IMAGE_NAME }}:0.6.1 \
-            docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          docker manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.1-amd64 \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:0.6.1-arm64
+
+          docker manifest push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
