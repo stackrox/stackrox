@@ -1319,7 +1319,7 @@ func TestEnrichImageWithBaseImagesV2(t *testing.T) {
 func newEnricherV2(set *mocks.MockSet, mockReporter *reporterMocks.MockReporter) ImageEnricherV2 {
 	return NewV2(&fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		newCache(),
-		nil,
+		emptyBaseImageGetterV2,
 		emptyImageGetterV2,
 		mockReporter, emptySignatureIntegrationGetter, nil)
 }
