@@ -10,11 +10,11 @@ import (
 
 func TestPatchCSV(t *testing.T) {
 	// Set up test environment variables
-	os.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.0.0")
-	os.Setenv("RELATED_IMAGE_SCANNER", "quay.io/rhacs-eng/scanner:4.0.0")
+	require.NoError(t, os.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.0.0"))
+	require.NoError(t, os.Setenv("RELATED_IMAGE_SCANNER", "quay.io/rhacs-eng/scanner:4.0.0"))
 	defer func() {
-		os.Unsetenv("RELATED_IMAGE_MAIN")
-		os.Unsetenv("RELATED_IMAGE_SCANNER")
+		require.NoError(t, os.Unsetenv("RELATED_IMAGE_MAIN"))
+		require.NoError(t, os.Unsetenv("RELATED_IMAGE_SCANNER"))
 	}()
 
 	tests := []struct {
