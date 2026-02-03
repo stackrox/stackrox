@@ -69,6 +69,37 @@ export type ComplianceBenchmark = {
     shortName: string;
 };
 
+// TailoredProfileRuleModification represents a rule modification in a tailored profile
+export type TailoredProfileRuleModification = {
+    name: string;
+    rationale: string;
+};
+
+// TailoredProfileValueOverride represents a variable value override in a tailored profile
+export type TailoredProfileValueOverride = {
+    name: string;
+    value: string;
+    rationale: string;
+};
+
+// TailoredProfileDetails contains information specific to tailored profiles
+export type TailoredProfileDetails = {
+    // Base profile this tailored profile extends (empty for from-scratch profiles)
+    extends: string;
+    // Rules disabled from the base profile
+    disabledRules: TailoredProfileRuleModification[];
+    // Rules enabled that were disabled in the base profile
+    enabledRules: TailoredProfileRuleModification[];
+    // Rules marked as manual
+    manualRules: TailoredProfileRuleModification[];
+    // Variable value overrides
+    setValues: TailoredProfileValueOverride[];
+    // State of the tailored profile (PENDING, READY, ERROR)
+    state: string;
+    // Error message if state is ERROR
+    errorMessage: string;
+};
+
 export type ComplianceProfileSummary = {
     name: string;
     productType: string;
@@ -77,6 +108,8 @@ export type ComplianceProfileSummary = {
     ruleCount: number;
     profileVersion: string;
     standards: ComplianceBenchmark[];
+    // Details specific to tailored profiles (set only for TailoredProfiles)
+    tailoredDetails?: TailoredProfileDetails;
 };
 
 /*

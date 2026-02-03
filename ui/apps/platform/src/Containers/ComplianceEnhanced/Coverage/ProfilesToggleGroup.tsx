@@ -4,16 +4,31 @@ import { Tab, Tabs, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core'
 import type { ComplianceProfileSummary } from 'services/ComplianceCommon';
 
 const NON_STANDARD_TAB = 'Other';
+const TAILORED_PROFILES_TAB = 'Tailored Profiles';
 
-// Extract unique standards from profiles and add 'Other' standard if there are profiles with no standards
+// Check if a profile is a tailored profile
+function isTailoredProfile(profile: ComplianceProfileSummary): boolean {
+    return profile.tailoredDetails !== undefined && profile.tailoredDetails !== null;
+}
+
+// Extract unique standards from profiles and add special tabs for tailored profiles and profiles with no standards
 function getUniqueStandards(profiles: ComplianceProfileSummary[]): string[] {
+    // Get standards only from non-tailored profiles
     const standards = new Set(
-        profiles.flatMap((profile) => profile.standards.map((standard) => standard.shortName))
+        profiles
+            .filter((profile) => !isTailoredProfile(profile))
+            .flatMap((profile) => profile.standards.map((standard) => standard.shortName))
     );
 
     const standardsArray = Array.from(standards).sort();
 
-    if (profiles.some((profile) => profile.standards.length === 0)) {
+    // Add "Tailored Profiles" tab if there are any tailored profiles
+    if (profiles.some(isTailoredProfile)) {
+        standardsArray.push(TAILORED_PROFILES_TAB);
+    }
+
+    // Add "Other" tab if there are non-tailored profiles with no standards
+    if (profiles.some((profile) => !isTailoredProfile(profile) && profile.standards.length === 0)) {
         standardsArray.push(NON_STANDARD_TAB);
     }
 
@@ -22,8 +37,15 @@ function getUniqueStandards(profiles: ComplianceProfileSummary[]): string[] {
 
 function getInitialStandard(profiles: ComplianceProfileSummary[], profileName: string): string {
     const profile = profiles.find((profile) => profile.name === profileName);
-    if (profile && profile.standards.length > 0) {
-        return profile.standards[0].shortName;
+    if (profile) {
+        // Tailored profiles go to the Tailored Profiles tab
+        if (isTailoredProfile(profile)) {
+            return TAILORED_PROFILES_TAB;
+        }
+        // Non-tailored profiles with standards go to their first standard tab
+        if (profile.standards.length > 0) {
+            return profile.standards[0].shortName;
+        }
     }
     return NON_STANDARD_TAB;
 }
@@ -32,6 +54,11 @@ function isStandardInProfile(
     standardShortName: string,
     profile: ComplianceProfileSummary
 ): boolean {
+    // Tailored profiles only appear in the Tailored Profiles tab
+    if (isTailoredProfile(profile)) {
+        return standardShortName === TAILORED_PROFILES_TAB;
+    }
+    // Non-tailored profiles appear in their standard tabs or Other tab
     return (
         profile.standards.some((standard) => standard.shortName === standardShortName) ||
         (standardShortName === NON_STANDARD_TAB && profile.standards.length === 0)
@@ -61,13 +88,15 @@ function ProfilesToggleGroup({
 
     useEffect(() => {
         // Sets the selected standard based on the profile name in the URL.
-        // Currently picks the first standard found since no profile should have multiple standards, however
-        // if this changes in the future, we'll want to find all matches and only update selectedStandard if the
-        // current selectedStandard doesn't exist in the match
+        // Tailored profiles go to the Tailored Profiles tab, otherwise use the first standard or Other tab
         if (profileName && profiles.some((profile) => profile.name === profileName)) {
-            const standardShortName =
-                profiles.find((profile) => profile.name === profileName)?.standards[0]?.shortName ||
-                NON_STANDARD_TAB;
+            const currentProfile = profiles.find((profile) => profile.name === profileName);
+            let standardShortName: string;
+            if (currentProfile && isTailoredProfile(currentProfile)) {
+                standardShortName = TAILORED_PROFILES_TAB;
+            } else {
+                standardShortName = currentProfile?.standards[0]?.shortName || NON_STANDARD_TAB;
+            }
             setSelectedStandard(standardShortName);
         } else {
             if (profiles[0]?.name) {
