@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/channel"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	pubsubErrors "github.com/stackrox/rox/sensor/common/pubsub/errors"
 	"github.com/stackrox/rox/sensor/common/pubsub/metrics"
@@ -46,7 +46,7 @@ func NewBufferedConsumer(laneID pubsub.LaneID, topic pubsub.Topic, consumerID pu
 	for _, opt := range opts {
 		opt(ret)
 	}
-	ret.buffer = channel.NewSafeChannel[*bufferedEvent](ret.size, ret.stopper.LowLevel().GetStopRequestSignal())
+	ret.buffer = safe.NewChannel[*bufferedEvent](ret.size, ret.stopper.LowLevel().GetStopRequestSignal())
 	go ret.run()
 	return ret, nil
 }
@@ -58,7 +58,7 @@ type BufferedConsumer struct {
 	callback   pubsub.EventCallback
 	size       int
 	stopper    concurrency.Stopper
-	buffer     *channel.SafeChannel[*bufferedEvent]
+	buffer     *safe.Channel[*bufferedEvent]
 }
 
 func (c *BufferedConsumer) Consume(waitable concurrency.Waitable, event pubsub.Event) <-chan error {

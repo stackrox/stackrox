@@ -7,8 +7,8 @@ import (
 	"testing/synctest"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/channel"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/sensor/common/pubsub"
@@ -124,7 +124,7 @@ func TestBufferedConsumer_BufferFull(t *testing.T) {
 		// Second consume should get buffer full error
 		err, ok := <-errC3
 		assert.True(t, ok)
-		assert.Equal(t, channel.ErrChannelFull, err)
+		assert.Equal(t, safe.ErrChannelFull, err)
 
 		err, ok = <-errC3
 		assert.False(t, ok, "errC2 should be closed")
