@@ -42,5 +42,6 @@ type ImageCveInfos struct {
 	ID                    string     `gorm:"column:id;type:varchar;primaryKey"`
 	FixAvailableTimestamp *time.Time `gorm:"column:fixavailabletimestamp;type:timestamp"`
 	FirstSystemOccurrence *time.Time `gorm:"column:firstsystemoccurrence;type:timestamp"`
+	Cve                   string     `gorm:"column:cve;type:varchar;index:imagecveinfos_cve,type:btree"`
 	Serialized            []byte     `gorm:"column:serialized;type:bytea"`
 }

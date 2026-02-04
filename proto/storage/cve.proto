@@ -342,4 +342,5 @@ message ImageCVEInfo {
   string id = 1; // @gotags: search:"CVE Info" sql:"pk"
   google.protobuf.Timestamp fix_available_timestamp = 2; // @gotags: search:"CVE Fix Available Timestamp,hidden"
   google.protobuf.Timestamp first_system_occurrence = 3; // @gotags: search:"First System Occurrence Timestamp,hidden"
+  string cve = 4; // @gotags: search:"CVE" sql:"index"
 }
