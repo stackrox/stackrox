@@ -53,6 +53,9 @@ ARG RELATED_IMAGE_CENTRAL_DB
 ENV RELATED_IMAGE_CENTRAL_DB=$RELATED_IMAGE_CENTRAL_DB
 RUN echo "Checking required RELATED_IMAGE_CENTRAL_DB"; [[ "${RELATED_IMAGE_CENTRAL_DB}" != "" ]]
 
+# Set Go environment variables to ensure hermetic builds work correctly with Cachi2
+ENV CI=1 GOFLAGS="" CGO_ENABLED=1
+
 # Build csv-patcher from source (Go replacement for patch-csv.py)
 RUN cd /stackrox/operator/bundle_helpers/csv-patcher && go build -o /usr/local/bin/csv-patcher .
 
