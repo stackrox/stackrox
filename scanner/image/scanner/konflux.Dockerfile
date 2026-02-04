@@ -1,5 +1,7 @@
 FROM registry.redhat.io/rhel8/go-toolset:1.25@sha256:070a8b01fe3c47cda74390c49c37e0abde1157c162cc3a46be1698564a18f923 as builder
 
+USER 0:0
+
 ARG BUILD_TAG
 RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
 ENV BUILD_TAG="$BUILD_TAG"

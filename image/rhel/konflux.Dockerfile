@@ -3,6 +3,8 @@ ARG PG_VERSION=15
 
 FROM registry.redhat.io/rhel8/go-toolset:1.25@sha256:070a8b01fe3c47cda74390c49c37e0abde1157c162cc3a46be1698564a18f923 AS go-builder
 
+USER 0:0
+
 RUN dnf -y install --allowerasing jq
 
 WORKDIR /go/src/github.com/stackrox/rox/app
