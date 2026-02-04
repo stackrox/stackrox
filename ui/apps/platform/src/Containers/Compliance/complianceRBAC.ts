@@ -1,5 +1,5 @@
-import { HasReadAccess } from 'hooks/usePermissions';
-import { ResourceName } from 'types/roleResources';
+import type { HasReadAccess } from 'hooks/usePermissions';
+import type { ResourceName } from 'types/roleResources';
 
 // Apply subset of patterns from routePaths.ts file.
 

@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"time"
@@ -9,11 +10,15 @@ import (
 	"github.com/docker/distribution/manifest/manifestlist"
 	manifestV1 "github.com/docker/distribution/manifest/schema1"
 	manifestV2 "github.com/docker/distribution/manifest/schema2"
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries/types"
@@ -67,6 +72,8 @@ type Registry struct {
 	repositoryListLock   sync.RWMutex
 
 	repoListOnce sync.Once
+
+	clientTimeout time.Duration
 }
 
 // NewDockerRegistryWithConfig creates a new instantiation of the docker registry
@@ -87,18 +94,18 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 		return nil, err
 	}
 
-	client.Client.Timeout = env.RegistryClientTimeout.DurationSetting()
-
 	repoListState := pkgUtils.IfThenElse(cfg.DisableRepoList, "disabled", "enabled")
 	log.Debugf("created integration %q with repo list %s", integration.GetName(), repoListState)
-
-	return &Registry{
+	r := &Registry{
 		url:                   url,
 		registry:              hostname,
 		Client:                client,
 		cfg:                   cfg,
 		protoImageIntegration: integration,
-	}, nil
+		clientTimeout:         env.RegistryClientTimeout.DurationSetting(),
+	}
+	r.Client.Client.Timeout = r.clientTimeout
+	return r, nil
 }
 
 // NewDockerRegistry creates a generic docker registry integration
@@ -253,4 +260,58 @@ func (r *Registry) Name() string {
 // HTTPClient returns the *http.Client used to contact the registry.
 func (r *Registry) HTTPClient() *http.Client {
 	return r.Client.Client
+}
+
+// buildTransport builds an http.RoundTripper with timeouts, TLS settings, and
+// metrics configured from the registry config. This transport is suitable for
+// use with go-containerregistry's remote.WithAuth() for authentication.
+func (r *Registry) buildTransport() http.RoundTripper {
+	transport := proxy.RoundTripper(
+		proxy.WithDialTimeout(env.RegistryDialerTimeout.DurationSetting()),
+		proxy.WithResponseHeaderTimeout(env.RegistryResponseTimeout.DurationSetting()),
+	)
+	if r.cfg.Insecure {
+		transport = proxy.RoundTripper(
+			proxy.WithTLSConfig(&tls.Config{InsecureSkipVerify: true}),
+			proxy.WithDialTimeout(env.RegistryDialerTimeout.DurationSetting()),
+			proxy.WithResponseHeaderTimeout(env.RegistryResponseTimeout.DurationSetting()),
+		)
+	}
+	return r.cfg.MetricsHandler.RoundTripper(transport, r.cfg.RegistryType)
+}
+
+// ListTags lists all tags for a given repository, returning a list of tag names.
+// This uses google/go-containerregistry which properly handles pagination and
+// bearer token authentication. The transport is built from the same configuration
+// as the docker-registry-client (timeouts, TLS, metrics), but uses
+// go-containerregistry's native authentication instead of the docker-registry-client
+// auth wrappers.
+//
+// This function does not impose an overall timeout. The transport's per-request
+// timeouts (DialTimeout, ResponseHeaderTimeout) protect against hung requests.
+// Callers needing an overall timeout should pass a context with deadline.
+func (r *Registry) ListTags(ctx context.Context, repository string) ([]string, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	repoPath := fmt.Sprintf("%s/%s", r.registry, repository)
+	repo, err := name.NewRepository(repoPath)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse repository %q", repoPath)
+	}
+
+	username, password := r.cfg.GetCredentials()
+	opts := []remote.Option{
+		remote.WithContext(ctx),
+		remote.WithTransport(r.buildTransport()),
+		remote.WithAuth(&authn.Basic{
+			Username: username,
+			Password: password,
+		}),
+	}
+	tags, err := remote.List(repo, opts...)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to list tags for repository %q", repository)
+	}
+	return tags, nil
 }

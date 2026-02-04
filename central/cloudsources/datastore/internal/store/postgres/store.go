@@ -120,6 +120,13 @@ func insertIntoCloudSources(batch *pgx.Batch, obj *storage.CloudSource) error {
 	return nil
 }
 
+var copyColsCloudSources = []string{
+	"id",
+	"name",
+	"type",
+	"serialized",
+}
+
 func copyFromCloudSources(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.CloudSource) error {
 	if len(objs) == 0 {
 		return nil
@@ -135,13 +142,6 @@ func copyFromCloudSources(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"type",
-		"serialized",
 	}
 
 	idx := 0
@@ -165,7 +165,7 @@ func copyFromCloudSources(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"cloud_sources"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"cloud_sources"}, copyColsCloudSources, inputRows); err != nil {
 		return err
 	}
 

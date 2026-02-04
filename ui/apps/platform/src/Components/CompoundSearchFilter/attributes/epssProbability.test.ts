@@ -8,7 +8,7 @@ import {
     validateExternalText,
     validateInternalText,
 } from './epssProbability';
-import { convertFromInternalToExternalConditionText } from '../components/ConditionText';
+import { convertFromInternalToExternalConditionText } from '../components/SearchFilterConditionText';
 
 describe('epssProbability', () => {
     describe('convertFromExternalToInternalText', () => {

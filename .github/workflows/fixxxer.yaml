@@ -7,6 +7,9 @@ on:
 permissions:
   contents: write
 
+env:
+  ROX_PRODUCT_BRANDING: RHACS_BRANDING
+
 jobs:
   pr_commented:
     name: Run PR Fixxxer
@@ -14,7 +17,7 @@ jobs:
     if: ${{ github.event.issue.pull_request && github.event.comment.body == '/fixxx' }}
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
     steps:
 
     - name: Fetch PR metadata
@@ -55,7 +58,7 @@ jobs:
         STEPS_CONTEXT: ${{ toJson(steps) }}
       run: echo "$STEPS_CONTEXT" | jq .
 
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         ref: ${{ steps.pr-metadata.outputs.branch }}
         fetch-depth: 0

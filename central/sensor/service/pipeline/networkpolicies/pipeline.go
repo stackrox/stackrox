@@ -155,7 +155,7 @@ func (s *pipelineImpl) persistNetworkPolicy(ctx context.Context, action central.
 	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE, central.ResourceAction_SYNC_RESOURCE:
 		return s.networkPolicies.UpsertNetworkPolicy(ctx, np)
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.networkPolicies.RemoveNetworkPolicy(ctx, string(np.GetId()))
+		return s.networkPolicies.RemoveNetworkPolicy(ctx, np.GetId())
 	default:
 		return fmt.Errorf("Event action '%s' for network policy does not exist", action)
 	}

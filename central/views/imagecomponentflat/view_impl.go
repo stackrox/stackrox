@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
@@ -27,12 +26,6 @@ type imageComponentFlatViewImpl struct {
 
 func (v *imageComponentFlatViewImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	if err := common.ValidateQuery(q); err != nil {
-		return 0, err
-	}
-
-	var err error
-	q, err = common.WithSACFilter(ctx, resources.Image, q)
-	if err != nil {
 		return 0, err
 	}
 
@@ -56,21 +49,15 @@ func (v *imageComponentFlatViewImpl) Get(ctx context.Context, q *v1.Query) ([]Co
 		return nil, err
 	}
 
-	var err error
 	// Avoid changing the passed query
 	cloned := q.CloneVT()
 	// Update the sort options to use aggregations if necessary as we are grouping by CVEs
 	cloned = common.UpdateSortAggs(cloned)
-	cloned, err = common.WithSACFilter(ctx, resources.Image, cloned)
-	if err != nil {
-		return nil, err
-	}
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	var results []*imageComponentFlatResponse
-	results, err = pgSearch.RunSelectRequestForSchema[imageComponentFlatResponse](queryCtx, v.db, v.schema, withSelectComponentCoreResponseQuery(cloned))
+	results, err := pgSearch.RunSelectRequestForSchema[imageComponentFlatResponse](queryCtx, v.db, v.schema, withSelectComponentCoreResponseQuery(cloned))
 	if err != nil {
 		return nil, err
 	}

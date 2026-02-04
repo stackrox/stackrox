@@ -165,6 +165,19 @@ func insertIntoRoleBindingsSubjects(batch *pgx.Batch, obj *storage.Subject, role
 	return nil
 }
 
+var copyColsRoleBindings = []string{
+	"id",
+	"name",
+	"namespace",
+	"clusterid",
+	"clustername",
+	"clusterrole",
+	"labels",
+	"annotations",
+	"roleid",
+	"serialized",
+}
+
 func copyFromRoleBindings(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.K8SRoleBinding) error {
 	if len(objs) == 0 {
 		return nil
@@ -180,19 +193,6 @@ func copyFromRoleBindings(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"namespace",
-		"clusterid",
-		"clustername",
-		"clusterrole",
-		"labels",
-		"annotations",
-		"roleid",
-		"serialized",
 	}
 
 	idx := 0
@@ -222,7 +222,7 @@ func copyFromRoleBindings(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"role_bindings"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"role_bindings"}, copyColsRoleBindings, inputRows); err != nil {
 		return err
 	}
 
@@ -235,16 +235,16 @@ func copyFromRoleBindings(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 	return nil
 }
 
+var copyColsRoleBindingsSubjects = []string{
+	"role_bindings_id",
+	"idx",
+	"kind",
+	"name",
+}
+
 func copyFromRoleBindingsSubjects(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, roleBindingID string, objs ...*storage.Subject) error {
 	if len(objs) == 0 {
 		return nil
-	}
-
-	copyCols := []string{
-		"role_bindings_id",
-		"idx",
-		"kind",
-		"name",
 	}
 
 	idx := 0
@@ -263,7 +263,7 @@ func copyFromRoleBindingsSubjects(ctx context.Context, s pgSearch.Deleter, tx *p
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"role_bindings_subjects"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"role_bindings_subjects"}, copyColsRoleBindingsSubjects, inputRows); err != nil {
 		return err
 	}
 

@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
@@ -90,6 +91,11 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 
 	var err error
 	q, err = scopeContextToQuery(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	q, err = enrichQueryWithSACFilter(ctx, q, schema, queryType)
 	if err != nil {
 		return nil, err
 	}
@@ -239,11 +245,26 @@ func selectQueryField(searchField string, field *walker.Field, selectDistinct bo
 	if dataType == "" {
 		dataType = field.DataType
 	}
+
+	// Add PostTransform for enum fields to convert integer values to strings
+	var postTransform func(interface{}) interface{}
+	if dataType == postgres.Enum {
+		var enumFieldPath string
+		if searchFieldObj, ok := field.Schema.OptionsMap.Get(searchField); ok {
+			enumFieldPath = searchFieldObj.FieldPath
+		}
+		postTransform = func(i interface{}) interface{} {
+			// The value from postgres is a *int, convert it to string using enum registry
+			return enumregistry.Lookup(enumFieldPath, int32(*(i.(*int))))
+		}
+	}
+
 	return pgsearch.SelectQueryField{
-		SelectPath:   selectPath,
-		Alias:        strings.Join(strings.Fields(searchField+" "+aggrFunc.Name()), "_"),
-		FieldType:    dataType,
-		FieldPath:    strings.ToLower(searchField), // Store the search field name for FieldValues mapping
-		DerivedField: aggrFunc != aggregatefunc.Unset,
+		SelectPath:    selectPath,
+		Alias:         strings.Join(strings.Fields(searchField+" "+aggrFunc.Name()), "_"),
+		FieldType:     dataType,
+		FieldPath:     strings.ToLower(searchField), // Store the search field name for FieldValues mapping
+		DerivedField:  aggrFunc != aggregatefunc.Unset,
+		PostTransform: postTransform,
 	}
 }

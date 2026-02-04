@@ -16,7 +16,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { markNetworkBaselineStatuses } from 'services/NetworkService';
 import type { NetworkBaselinePeerStatus, PeerStatus } from 'types/networkBaseline.proto';
@@ -27,13 +27,13 @@ import IPMatchFilter from '../common/IPMatchFilter';
 import { FlowBulkDropdown } from '../components/FlowBulkDropdown';
 import { FlowTable } from '../components/FlowTable';
 import { useNetworkBaselineStatus } from '../hooks/useNetworkBaselineStatus';
-import { EXTERNAL_SOURCE_ADDRESS_QUERY } from '../NetworkGraph.constants';
 import {
     usePagination,
     usePaginationSecondary,
     useSearchFilterSidePanel,
     useTimeWindow,
 } from '../NetworkGraphURLStateContext';
+import { attributeForExternalSourceAddress } from '../types/searchFilterConfig';
 import { getFlowKey } from '../utils/flowUtils';
 
 function getUniquePendingFlows(flows: NetworkBaselinePeerStatus[]) {
@@ -232,20 +232,19 @@ function ExternalFlows({ deploymentId }: ExternalFlowsProps) {
                         <ToolbarContent className="pf-v5-u-px-0">
                             <ToolbarItem className="pf-v5-u-w-100 pf-v5-u-mr-0">
                                 <IPMatchFilter
+                                    attribute={attributeForExternalSourceAddress}
                                     searchFilter={searchFilter}
                                     setSearchFilter={setSearchFilter}
                                 />
                             </ToolbarItem>
                             <ToolbarItem className="pf-v5-u-w-100">
-                                <SearchFilterChips
-                                    searchFilter={searchFilter}
-                                    onFilterChange={setSearchFilter}
-                                    filterChipGroupDescriptors={[
-                                        {
-                                            displayName: 'CIDR',
-                                            searchFilterName: EXTERNAL_SOURCE_ADDRESS_QUERY,
-                                        },
+                                <CompoundSearchFilterLabels
+                                    attributesSeparateFromConfig={[
+                                        attributeForExternalSourceAddress,
                                     ]}
+                                    config={[]}
+                                    onFilterChange={setSearchFilter}
+                                    searchFilter={searchFilter}
                                 />
                             </ToolbarItem>
                         </ToolbarContent>

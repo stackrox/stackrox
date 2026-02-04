@@ -2,18 +2,18 @@ name: Update collector version
 on:
   workflow_dispatch:
   schedule:
-    - cron: 0 5 * * 1-5
+    - cron: 0 5 * * 1
 jobs:
   update-collector:
     if:  ${{ github.repository_owner == 'stackrox' }}
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         ref: master # this is our target branch
         fetch-depth: 0 # we need to fetch all branches
     - name: Checkout collector repo
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         repository: stackrox/collector
         path: deps/collector
@@ -22,7 +22,7 @@ jobs:
       run: make -sC deps/collector tag | tee COLLECTOR_VERSION
     - name: Create Pull Request
       id: cpr
-      uses: peter-evans/create-pull-request@v7
+      uses: peter-evans/create-pull-request@v8
       with:
         token: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
         commit-message: Update COLLECTOR_VERSION
@@ -37,6 +37,7 @@ jobs:
         labels: |
           ci-all-qa-tests
           dependencies
+          konflux-build
         team-reviewers: |
           collector-team
         draft: false

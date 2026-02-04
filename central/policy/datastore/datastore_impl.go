@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	errorsPkg "github.com/pkg/errors"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
@@ -92,34 +93,30 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 
 // SearchPolicies
 func (ds *datastoreImpl) SearchPolicies(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	// TODO(ROX-29943): remove 2 pass database calls
+	if q == nil {
+		q = searchPkg.EmptyQuery()
+	}
+
+	// Add name field to select columns
+	q = q.CloneVT()
+	q.Selects = append(q.GetSelects(), searchPkg.NewQuerySelect(searchPkg.PolicyName).Proto())
+
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 
-	var policies []*storage.Policy
-	var newResults []searchPkg.Result
-	for _, result := range results {
-		policy, exists, err := ds.storage.Get(ctx, result.ID)
-		if err != nil {
-			return nil, errorsPkg.Wrapf(err, "error retrieving policy %q", result.ID)
+	// Extract name from FieldValues and populate Name in search results
+	searchTag := strings.ToLower(searchPkg.PolicyName.String())
+	for i := range results {
+		if results[i].FieldValues != nil {
+			if nameVal, ok := results[i].FieldValues[searchTag]; ok {
+				results[i].Name = nameVal
+			}
 		}
-		// The result may not exist if the object was deleted after the search
-		if !exists {
-			continue
-		}
-		policies = append(policies, policy)
-		// Because of using 2 calls we are at risk of a race condition causing a mismatch in results
-		// and policies.  So we have to make sure we match for building the output below.
-		newResults = append(newResults, result)
 	}
 
-	protoResults := make([]*v1.SearchResult, 0, len(policies))
-	for i, policy := range policies {
-		protoResults = append(protoResults, convertPolicy(policy, newResults[i]))
-	}
-	return protoResults, nil
+	return searchPkg.ResultsToSearchResultProtos(results, &PolicySearchResultConverter{}), nil
 }
 
 // SearchRawPolicies
@@ -271,7 +268,8 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 	}
 
 	if findPolicyWithSameName(policyNameToPolicyMap, policy.GetName()) != nil {
-		return "", fmt.Errorf("Could not add policy due to name validation, policy with name %s already exists", policy.GetName())
+		nameError := fmt.Errorf("Could not add policy due to name validation, policy with name %s already exists", policy.GetName())
+		return "", ds.wrapWithRollback(ctx, tx, nameError)
 	}
 	policyutils.FillSortHelperFields(policy)
 	// Any policy added after startup must be marked custom policy.
@@ -678,13 +676,21 @@ func (ds *datastoreImpl) wrapWithRollback(ctx context.Context, tx *pgPkg.Tx, err
 	return err
 }
 
-// convertPolicy returns proto search result from a policy object and the internal search result
-func convertPolicy(policy *storage.Policy, result searchPkg.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_POLICIES,
-		Id:             policy.GetId(),
-		Name:           policy.GetName(),
-		FieldToMatches: searchPkg.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+type PolicySearchResultConverter struct{}
+
+func (c *PolicySearchResultConverter) BuildName(result *searchPkg.Result) string {
+	return result.Name
+}
+
+func (c *PolicySearchResultConverter) BuildLocation(result *searchPkg.Result) string {
+	// Policy does not have a location
+	return ""
+}
+
+func (c *PolicySearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_POLICIES
+}
+
+func (c *PolicySearchResultConverter) GetScore(result *searchPkg.Result) float64 {
+	return result.Score
 }

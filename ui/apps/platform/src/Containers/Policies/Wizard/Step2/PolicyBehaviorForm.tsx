@@ -103,7 +103,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
             }
         });
         values.excludedDeploymentScopes.forEach(({ scope }, idx) => {
-            const { ...rest } = omit(scope || {}, 'label');
+            const { ...rest } = omit(scope ?? {}, 'label');
 
             setFieldValue(
                 `excludedDeploymentScopes[${idx}]`,
@@ -126,6 +126,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
         setValues({
             ...values,
             eventSource: 'NODE_EVENT',
+            policySections: cloneDeep(initialPolicy.policySections),
             scope: [],
             excludedImageNames: [],
             excludedDeploymentScopes: [],
@@ -207,11 +208,12 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                             and apply enforcement to either or both stages in a single policy.
                         </p>
                         <p>
-                            <strong>Runtime</strong> policies inspect either workload activity or
-                            Kubernetes resource operations, depending on the event source selected.
-                            When enforced, runtime policies that inspect workload activity terminate
-                            the offending pod. Enforcement is not available for the policies
-                            inspecting sensitive operations via the Kubernetes audit log.
+                            <strong>Runtime</strong> policies inspect either workload activity,
+                            Kubernetes resource operations, or node activity, depending on the event
+                            source selected. When enforced, runtime policies that inspect workload
+                            activity terminate the offending pod. Enforcement is not available for
+                            the policies inspecting sensitive operations via the Kubernetes audit
+                            log or node activity.
                         </p>
                         <div className="pf-v5-u-pt-md">
                             Learn more about policy{' '}

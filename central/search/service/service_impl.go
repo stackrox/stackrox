@@ -90,6 +90,7 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 	}
 	if features.FlattenImageData.Enabled() {
 		searchfuncs[v1.SearchCategory_IMAGES_V2] = s.imagesV2.SearchImages
+		searchfuncs[v1.SearchCategory_IMAGES] = s.imagesV2.SearchImages
 	} else {
 		searchfuncs[v1.SearchCategory_IMAGES] = s.images.SearchImages
 	}
@@ -101,7 +102,6 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 	searchers := map[v1.SearchCategory]search.Searcher{
 		v1.SearchCategory_ALERTS:             &alertDataStore.DefaultStateAlertDataStoreImpl{DataStore: &s.alerts},
 		v1.SearchCategory_DEPLOYMENTS:        s.deployments,
-		v1.SearchCategory_IMAGES:             s.images,
 		v1.SearchCategory_POLICIES:           s.policies,
 		v1.SearchCategory_SECRETS:            s.secrets,
 		v1.SearchCategory_NAMESPACES:         s.namespaces,
@@ -118,6 +118,7 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 	}
 	if features.FlattenImageData.Enabled() {
 		searchers[v1.SearchCategory_IMAGES_V2] = s.imagesV2
+		searchers[v1.SearchCategory_IMAGES] = s.imagesV2
 	} else {
 		searchers[v1.SearchCategory_IMAGES] = s.images
 	}

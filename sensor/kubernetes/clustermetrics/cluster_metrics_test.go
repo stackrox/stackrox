@@ -32,7 +32,7 @@ type ClusterMetricsTestSuite struct {
 }
 
 func (s *ClusterMetricsTestSuite) SetupTest() {
-	s.client = fake.NewSimpleClientset()
+	s.client = fake.NewClientset()
 	defaultInterval = 10 * time.Millisecond
 }
 

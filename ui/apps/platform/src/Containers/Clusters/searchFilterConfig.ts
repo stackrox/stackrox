@@ -54,12 +54,12 @@ const clusterSearchFilterConfig: CompoundSearchFilterEntity = {
     searchCategory: 'CLUSTERS',
     attributes: [
         clusterIdAttribute,
-        clusterNameAttribute,
+        clusterKubernetesVersionAttribute,
         clusterLabelAttribute,
+        clusterNameAttribute,
+        clusterPlatformTypeAttribute,
         clusterStatusAttribute,
         clusterTypeAttribute,
-        clusterPlatformTypeAttribute,
-        clusterKubernetesVersionAttribute,
     ],
 };
 
@@ -88,10 +88,10 @@ const sensorSearchFilterConfig: CompoundSearchFilterEntity = {
 };
 
 export const searchFilterConfig = [
-    clusterSearchFilterConfig,
-    lastContactSearchFilterConfig,
     admissionControlSearchFilterConfig,
+    clusterSearchFilterConfig,
     collectorSearchFilterConfig,
+    lastContactSearchFilterConfig,
     scannerSearchFilterConfig,
     sensorSearchFilterConfig,
 ];

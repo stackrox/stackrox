@@ -25,45 +25,34 @@ describe('Risk', () => {
 
             cy.title().should('match', getRegExpForTitleWithBranding('Risk'));
 
-            cy.get('.rt-th:contains("Name")');
-            cy.get('.rt-th:contains("Created")');
-            cy.get('.rt-th:contains("Cluster")');
-            cy.get('.rt-th:contains("Namespace")');
-            cy.get('.rt-th:contains("Priority")');
+            cy.get('th:contains("Name")');
+            cy.get('th:contains("Created")');
+            cy.get('th:contains("Cluster")');
+            cy.get('th:contains("Namespace")');
+            cy.get('th:contains("Priority")');
         });
 
-        it('should open side panel for deployment', () => {
+        it('should open detail page for deployment', () => {
             visitRiskDeployments();
             viewRiskDeploymentByName('collector');
         });
 
         // TODO add relevant tests for error messages in PatternFly
 
-        it('should open the panel to view risk indicators', () => {
+        it('should open the detail page to view risk indicators, deployment details, and process discovery tabs', () => {
             visitRiskDeployments();
             viewRiskDeploymentByName('collector');
 
-            cy.get(RiskPageSelectors.panel).should('have.length', 2); // main panel and side panel
-            cy.get('button[data-testid="tab"]:contains("Risk Indicators")');
-            cy.get('button[aria-label="Close"]').click();
-            cy.get(RiskPageSelectors.panel).should('have.length', 1); // main panel
-        });
-
-        it('should open the panel to view deployment details', () => {
-            visitRiskDeployments();
-            viewRiskDeploymentByName('collector');
-
-            cy.get(RiskPageSelectors.panel).should('have.length', 2); // main panel and side panel
-            cy.get('button[data-testid="tab"]:contains("Deployment Details")');
-            cy.get('button[aria-label="Close"]').click();
-            cy.get(RiskPageSelectors.panel).should('have.length', 1); // main panel
+            cy.get('[role="tab"]:contains("Risk indicators")');
+            cy.get('[role="tab"]:contains("Deployment details")');
+            cy.get('[role="tab"]:contains("Process discovery")');
         });
 
         it('should navigate from Risk Page to Vulnerability Management Image Page', () => {
             visitRiskDeployments();
             viewRiskDeploymentByName('collector');
 
-            clickTab('Deployment Details');
+            clickTab('Deployment details');
             cy.get(RiskPageSelectors.imageLink).first().click();
 
             cy.location('pathname').should('contain', '/main/vulnerabilities/platform/image');
@@ -71,11 +60,10 @@ describe('Risk', () => {
     });
 
     describe('with actual API', () => {
-        // TODO fix uncaught exception in Network Graph 2.0
-        it.skip('should navigate to network page with selected deployment', () => {
+        it('should navigate to network page with selected deployment', () => {
             visitRiskDeployments();
             viewRiskDeploymentByName('collector');
-            viewRiskDeploymentInNetworkGraph();
+            viewRiskDeploymentInNetworkGraph('collector');
         });
 
         const searchPlaceholderSelector = `${RiskPageSelectors.search.valueContainer} input[placeholder="Filter deployments"]`;
@@ -95,7 +83,7 @@ describe('Risk', () => {
             const nsOption = 'Namespace';
             const nsValue = 'stackrox';
             cy.get(
-                `${RiskPageSelectors.table.dataRows} .rt-td:nth-child(4):contains("${nsValue}")`
+                `${RiskPageSelectors.table.dataRows} td[data-label="Namespace"]:contains("${nsValue}")`
             ).then((stackroxDeps) => {
                 const stackroxCount = stackroxDeps.length;
 
@@ -126,7 +114,7 @@ describe('Risk', () => {
             const deployOption = 'Deployment';
             const deployValue = 'scanner';
             cy.get(
-                `${RiskPageSelectors.table.dataRows} .rt-td:nth-child(1):contains("${deployValue}")`
+                `${RiskPageSelectors.table.dataRows} td[data-label="Name"]:contains("${deployValue}")`
             ).then((staticDeps) => {
                 const staticCount = staticDeps.length;
 
@@ -156,25 +144,6 @@ describe('Risk', () => {
                 );
 
                 cy.get(RiskPageSelectors.table.dataRows).should('have.length', staticCount);
-            });
-        });
-
-        it('should not use invalid URL search param key/value pair in its search bar', () => {
-            visitRiskDeployments();
-
-            const sillyOption = 'Wingardium';
-            const sillyValue = 'leviosa';
-            cy.get(RiskPageSelectors.table.dataRows).then((allDeps) => {
-                const allCount = allDeps.length;
-
-                visitRiskDeploymentsWithSearchQuery(`?s[${sillyOption}]=${sillyValue}`);
-
-                // Positive assertion:
-                cy.get(searchPlaceholderSelector);
-                // Negative assertion:
-                cy.get(RiskPageSelectors.search.searchLabels).should('not.exist');
-
-                cy.get(RiskPageSelectors.table.dataRows).should('have.length', allCount);
             });
         });
     });

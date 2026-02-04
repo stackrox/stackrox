@@ -6,8 +6,11 @@ import ImagePage from 'Containers/Vulnerabilities/WorkloadCves/Image/ImagePage';
 import { useDefaultWorkloadCveViewContext } from 'ConsolePlugin/hooks/useDefaultWorkloadCveViewContext';
 import { WorkloadCveViewContext } from 'Containers/Vulnerabilities/WorkloadCves/WorkloadCveViewContext';
 import { hideColumnIf } from 'hooks/useManagedColumns';
+import { useAnalyticsPageView } from '../hooks/useAnalyticsPageView';
 
 export function ImageDetailPage() {
+    useAnalyticsPageView();
+
     const { searchFilter, setSearchFilter } = useURLSearch();
     const context = useDefaultWorkloadCveViewContext();
     const [activeNamespace] = useActiveNamespace();

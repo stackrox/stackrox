@@ -276,3 +276,40 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingUnmanaged_Failing
 
 	assert.Equal(s.T(), initSecret, secret)
 }
+
+func (s *secretReconcilerTestSuite) Test_ShouldExist_OnAdoptableSecret_ShouldAdoptAndFix() {
+	adoptableSecret := &v1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "adoptable-secret",
+			Namespace: testutils.TestNamespace,
+			Labels:    labels.DefaultLabels(),
+		},
+		Data: map[string][]byte{
+			"secret-name": []byte("adoptable-secret"),
+		},
+	}
+	s.Require().NoError(s.client.Create(s.ctx, adoptableSecret))
+
+	validateFn := func(_ types.SecretDataMap, managed bool) error {
+		s.True(managed, "secret should be considered managed after adoption")
+		return pkgErrors.New("needs regeneration")
+	}
+
+	generateFn := func(_ types.SecretDataMap) (types.SecretDataMap, error) {
+		return types.SecretDataMap{"new-data": []byte("fixed")}, nil
+	}
+
+	err := s.reconciliator.EnsureSecret(s.ctx, "adoptable-secret", validateFn, generateFn, nil)
+	s.Require().NoError(err)
+
+	secret := &v1.Secret{}
+	key := ctrlClient.ObjectKey{Namespace: testutils.TestNamespace, Name: "adoptable-secret"}
+	s.Require().NoError(s.client.Get(context.Background(), key, secret))
+
+	s.True(metav1.IsControlledBy(secret, s.centralObj))
+	s.Equal("fixed", string(secret.Data["new-data"]))
+}

@@ -81,10 +81,12 @@ class PolicyConfigurationTest extends BaseSpecification {
                             mountPath: "/tmp/test")),
             new Deployment()
                     .setName(STRUTS)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:struts-app")
                     .addLabel("app", "test"),
             new Deployment()
                     .setName(DNS)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:apache-dns")
                     .addLabel("app", "test"),
             new Deployment()
@@ -107,6 +109,7 @@ class PolicyConfigurationTest extends BaseSpecification {
             new Deployment()
                     .setName(DEPLOYMENT_RBAC)
                     .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
+                    .setImagePrefetcherAffinity()
                     .setServiceAccountName(SERVICE_ACCOUNT_NAME)
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine")
                     .setSkipReplicaWait(true),
@@ -114,6 +117,7 @@ class PolicyConfigurationTest extends BaseSpecification {
 
     static final private Deployment NGINX_WITH_DIGEST = new Deployment()
             .setName(NGINX_LATEST_WITH_DIGEST_NAME)
+            .setImagePrefetcherAffinity()
             .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1" +
                 "@sha256:a05b0cdd4fc1be3b224ba9662ebdf98fe44c09c0c9215b45f84344c12867002e")
             .setCommand(["sleep", "60000"])
@@ -121,6 +125,7 @@ class PolicyConfigurationTest extends BaseSpecification {
 
     static final private Deployment NGINX_LATEST = new Deployment()
             .setName(NGINX_LATEST_NAME)
+            .setImagePrefetcherAffinity()
             .setImage("quay.io/rhacs-eng/qa-multi-arch:latest" +
                 "@sha256:a05b0cdd4fc1be3b224ba9662ebdf98fe44c09c0c9215b45f84344c12867002e")
             .setCommand(["sleep", "60000"])
@@ -787,10 +792,12 @@ class PolicyConfigurationTest extends BaseSpecification {
                         ).build()             |
                 [new Deployment()
                          .setName("label-scope-violation")
+                         .setImagePrefetcherAffinity()
                          .addLabel("app", "qa-test")
                          .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),]                |
                 [new Deployment()
                          .setName("label-scope-non-violation")
+                         .setImagePrefetcherAffinity()
                          .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),]
         "NamespaceScope"             |
                 Policy.newBuilder()
@@ -814,10 +821,12 @@ class PolicyConfigurationTest extends BaseSpecification {
                         ).build()             |
                 [new Deployment()
                          .setName("namespace-scope-violation")
+                         .setImagePrefetcherAffinity()
                          .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),]                |
                 [new Deployment()
                          .setName("namespace-scope-non-violation")
                          .setNamespace("default")
+                         .setImagePrefetcherAffinity()
                          .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),]
         "ClusterNamespaceLabelScope" |
                 Policy.newBuilder()
@@ -846,11 +855,13 @@ class PolicyConfigurationTest extends BaseSpecification {
                         ).build()             |
                 [new Deployment()
                          .setName("all-scope-violation")
+                         .setImagePrefetcherAffinity()
                          .addLabel("app", "qa-test")
                          .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),]                |
                 [new Deployment()
                          .setName("all-scope-non-violation")
                          .setNamespace("default")
+                         .setImagePrefetcherAffinity()
                          .addLabel("app", "qa-test")
                          .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),]
         "MultipleScopes"             |
@@ -881,15 +892,18 @@ class PolicyConfigurationTest extends BaseSpecification {
                         ).build()             |
                 [new Deployment()
                          .setName("multiple-scope-violation")
+                         .setImagePrefetcherAffinity()
                          .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),
                  new Deployment()
                          .setName("multiple-scope-violation2")
                          .setNamespace("default")
+                         .setImagePrefetcherAffinity()
                          .addLabel("app", "qa-test")
                          .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),]                |
                 [new Deployment()
                          .setName("multiple-scope-non-violation")
                          .setNamespace("default")
+                         .setImagePrefetcherAffinity()
                          .setImage("quay.io/rhacs-eng/qa-multi-arch-nginx:latest"),]
     }
 

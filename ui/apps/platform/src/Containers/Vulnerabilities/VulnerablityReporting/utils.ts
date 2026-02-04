@@ -60,7 +60,7 @@ export function getReportConfigurationFromFormValues(
         imageTypes: reportParameters.imageType,
         includeAdvisory: reportParameters.includeAdvisory,
         includeEpssProbability: reportParameters.includeEpssProbability,
-        // Ross CISA KEV includeExploitable
+        // includeKnownExploit: reportParameters.includeKnownExploit, // ROX_CISA_KEV
         includeNvdCvss: reportParameters.includeNvdCvss,
     };
     let vulnReportFilters: VulnerabilityReportFilters;
@@ -93,7 +93,7 @@ export function getReportConfigurationFromFormValues(
             hour: 0,
             minute: 0,
             daysOfWeek: {
-                days: formSchedule.daysOfWeek?.map((day) => Number(day)) || [],
+                days: formSchedule.daysOfWeek?.map((day) => Number(day)) ?? [],
             },
         };
     } else if (formSchedule.intervalType === 'MONTHLY') {
@@ -102,7 +102,7 @@ export function getReportConfigurationFromFormValues(
             hour: 0,
             minute: 0,
             daysOfMonth: {
-                days: formSchedule.daysOfMonth?.map((day) => Number(day)) || [],
+                days: formSchedule.daysOfMonth?.map((day) => Number(day)) ?? [],
             },
         };
     } else {
@@ -192,7 +192,7 @@ export function getReportFormValuesFromConfiguration(
             cvesDiscoveredStartDate,
             includeAdvisory: vulnReportFilters.includeAdvisory,
             includeEpssProbability: vulnReportFilters.includeEpssProbability,
-            // Ross CISA KEV includeExploitable
+            // includeKnownExploit: vulnReportFilters.includeKnownExploit, // ROX_CISA_KEV
             includeNvdCvss: vulnReportFilters.includeNvdCvss,
             reportScope: {
                 id: resourceScope.collectionScope.collectionId,

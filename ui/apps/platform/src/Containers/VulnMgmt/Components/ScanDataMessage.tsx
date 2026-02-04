@@ -1,7 +1,7 @@
-import React, { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Alert } from '@patternfly/react-core';
 
-import { ScanMessage } from 'messages/vulnMgmt.messages';
+import type { ScanMessage } from 'messages/vulnMgmt.messages';
 
 // Component props have inconsistent name because ScanMessage is application-specific data structure.
 /* eslint-disable generic/react-props-name */

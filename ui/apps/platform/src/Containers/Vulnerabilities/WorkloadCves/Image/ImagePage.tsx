@@ -28,11 +28,13 @@ import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
+import type { GenerateSbomImageParams } from 'services/ImageSbomService';
 import type { VulnerabilityState } from 'types/cve.proto';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
@@ -44,7 +46,10 @@ import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
 import ImagePageSignatureVerification from './ImagePageSignatureVerification';
 import { detailsTabValues } from '../../types';
-import ImageDetailBadges, { imageDetailsFragment } from '../components/ImageDetailBadges';
+import ImageDetailBadges, {
+    imageDetailsFragment,
+    imageV2DetailsFragment,
+} from '../components/ImageDetailBadges';
 import type { ImageDetails } from '../components/ImageDetailBadges';
 import getImageScanMessage from '../utils/getImageScanMessage';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
@@ -55,7 +60,7 @@ import type { defaultColumns as deploymentResourcesDefaultColumns } from './Depl
 import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
 
-export const imageDetailsQuery = gql`
+const imageDetailsQuery = gql`
     ${imageDetailsFragment}
     query getImageDetails($id: ID!) {
         image(id: $id) {
@@ -67,6 +72,22 @@ export const imageDetailsQuery = gql`
                 fullName
             }
             ...ImageDetails
+        }
+    }
+`;
+
+const imageV2DetailsQuery = gql`
+    ${imageV2DetailsFragment}
+    query getImageDetails($id: ID!) {
+        image: imageV2(id: $id) {
+            id: digest
+            name {
+                registry
+                remote
+                tag
+                fullName
+            }
+            ...ImageV2Details
         }
     }
 `;
@@ -92,31 +113,38 @@ export type ImagePageProps = {
     >;
 };
 
+type ImageData = {
+    id: string;
+    name: {
+        registry: string;
+        remote: string;
+        tag: string;
+        fullName: string;
+    } | null;
+} & ImageDetails;
+
 function ImagePage({
     vulnerabilityState,
     showVulnerabilityStateTabs,
     deploymentResourceColumnOverrides,
 }: ImagePageProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isNewImageDataModelEnabled = isFeatureFlagEnabled('ROX_FLATTEN_IMAGE_DATA');
     const { urlBuilder, pageTitle, baseSearchFilter, viewContext } = useWorkloadCveViewContext();
     const { imageId } = useParams() as { imageId: string };
-    const { data, error } = useQuery<
-        {
-            image: {
-                id: string;
-                name: {
-                    registry: string;
-                    remote: string;
-                    tag: string;
-                    fullName: string;
-                } | null;
-            } & ImageDetails;
-        },
-        {
-            id: string;
-        }
-    >(imageDetailsQuery, {
+
+    const v1Query = useQuery<{ image: ImageData }, { id: string }>(imageDetailsQuery, {
         variables: { id: imageId },
+        skip: isNewImageDataModelEnabled,
     });
+
+    const v2Query = useQuery<{ image: ImageData }, { id: string }>(imageV2DetailsQuery, {
+        variables: { id: imageId },
+        skip: !isNewImageDataModelEnabled,
+    });
+
+    const data = isNewImageDataModelEnabled ? v2Query.data : v1Query.data;
+    const error = isNewImageDataModelEnabled ? v2Query.error : v1Query.error;
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
     const { invalidateAll: refetchAll } = useInvalidateVulnerabilityQueries();
 
@@ -130,7 +158,7 @@ function ImagePage({
     const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
     const hasWorkflowAdminAccess = hasReadAccess('WorkflowAdministration');
     const isScannerV4Enabled = useIsScannerV4Enabled();
-    const [sbomTargetImage, setSbomTargetImage] = useState<string>();
+    const [sbomTargetImage, setSbomTargetImage] = useState<GenerateSbomImageParams>();
 
     // Report-specific functionality
     const isViewBasedReportsEnabled =
@@ -153,13 +181,13 @@ function ImagePage({
         return getVulnStateScopedQueryString(combinedFilter, vulnerabilityState);
     }, [imageId, baseSearchFilter, querySearchFilter, vulnerabilityState]);
 
-    const imageData = data && data.image;
+    const imageData = data?.image;
     const imageName = imageData?.name;
     const imageDisplayName =
         imageData && imageName
             ? `${imageName.registry}/${getImageBaseNameDisplay(imageData.id, imageName)}`
             : 'NAME UNKNOWN';
-    const scanMessage = getImageScanMessage(imageData?.notes || [], imageData?.scanNotes || []);
+    const scanMessage = getImageScanMessage(imageData?.notes ?? [], imageData?.scanNotes ?? []);
     const hasScanMessage = !isEmpty(scanMessage);
 
     const workloadCveOverviewImagePath = urlBuilder.imageList('OBSERVED');
@@ -218,10 +246,15 @@ function ImagePage({
                                             <Button
                                                 variant="secondary"
                                                 onClick={() => {
-                                                    setSbomTargetImage(imageData.name?.fullName);
+                                                    setSbomTargetImage({
+                                                        name: imageData.name?.fullName ?? '',
+                                                        digest: imageData.id,
+                                                    });
                                                 }}
                                                 isAriaDisabled={
-                                                    !isScannerV4Enabled || hasScanMessage
+                                                    !isScannerV4Enabled ||
+                                                    hasScanMessage ||
+                                                    !imageData.name?.fullName
                                                 }
                                             >
                                                 Generate SBOM
@@ -230,7 +263,7 @@ function ImagePage({
                                         {sbomTargetImage && (
                                             <GenerateSbomModal
                                                 onClose={() => setSbomTargetImage(undefined)}
-                                                imageName={sbomTargetImage}
+                                                image={sbomTargetImage}
                                             />
                                         )}
                                     </FlexItem>
@@ -289,6 +322,7 @@ function ImagePage({
                                         tag: '',
                                     }
                                 }
+                                baseImage={imageData?.baseImage ?? null}
                                 refetchAll={refetchAll}
                                 pagination={pagination}
                                 vulnerabilityState={vulnerabilityState}

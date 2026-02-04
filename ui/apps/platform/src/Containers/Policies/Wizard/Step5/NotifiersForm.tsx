@@ -24,7 +24,7 @@ function NotifiersForm() {
     });
 
     function onSelectNotifier(e, isSelected, rowIndex) {
-        const selectedNotifiers = field.value || [];
+        const selectedNotifiers = field.value ?? [];
         if (isSelected) {
             helpers.setValue([...selectedNotifiers, notifiers[rowIndex].id]);
         } else {

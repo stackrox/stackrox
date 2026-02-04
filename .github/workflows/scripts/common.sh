@@ -78,6 +78,27 @@ gh_summary() {
 }
 export -f gh_summary
 
+
+# Fetches the CHANGELOG from a release branch
+# and returns the content of the section for a given version.
+fetch_changelog() {
+    RELEASE_BRANCH="$1"
+    VERSION="$2"
+
+    check_not_empty \
+      RELEASE_BRANCH \
+      VERSION
+
+    ESCAPED_VERSION="${VERSION//./\.}"
+    CHANGELOG="$(gh api \
+      -H "Accept: application/vnd.github.v3.raw" \
+      "/repos/${GITHUB_REPOSITORY}/contents/CHANGELOG.md?ref=${RELEASE_BRANCH}"
+    )"
+
+    echo "$CHANGELOG" | sed -n "/^## \[$ESCAPED_VERSION]$/,/^## \[/p" | sed '1d;$d' | sed '/./,$!d'
+}
+export -f fetch_changelog
+
 # bash trick to check if the script is sourced.
 if ! (return 0 2>/dev/null); then # called
     SCRIPT="$1"

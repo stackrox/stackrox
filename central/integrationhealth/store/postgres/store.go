@@ -106,6 +106,11 @@ func insertIntoIntegrationHealths(batch *pgx.Batch, obj *storage.IntegrationHeal
 	return nil
 }
 
+var copyColsIntegrationHealths = []string{
+	"id",
+	"serialized",
+}
+
 func copyFromIntegrationHealths(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.IntegrationHealth) error {
 	if len(objs) == 0 {
 		return nil
@@ -121,11 +126,6 @@ func copyFromIntegrationHealths(ctx context.Context, s pgSearch.Deleter, tx *pos
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"serialized",
 	}
 
 	idx := 0
@@ -147,7 +147,7 @@ func copyFromIntegrationHealths(ctx context.Context, s pgSearch.Deleter, tx *pos
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"integration_healths"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"integration_healths"}, copyColsIntegrationHealths, inputRows); err != nil {
 		return err
 	}
 

@@ -3,11 +3,13 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/cache"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore/internal/store"
+	"github.com/stackrox/rox/central/deployment/views"
 	"github.com/stackrox/rox/central/globaldb"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
@@ -173,27 +175,30 @@ func (ds *datastoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query)
 // SearchDeployments
 func (ds *datastoreImpl) SearchDeployments(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "SearchDeployments")
-	results, err := ds.Search(ctx, q)
+	if q == nil {
+		q = pkgSearch.EmptyQuery()
+	}
+	// Clone the query and add select fields for SearchResult construction
+	clonedQuery := q.CloneVT()
+	selectSelects := []*v1.QuerySelect{
+		pkgSearch.NewQuerySelect(pkgSearch.DeploymentName).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.Cluster).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.Namespace).Proto(),
+	}
+	clonedQuery.Selects = append(clonedQuery.GetSelects(), selectSelects...)
+
+	results, err := ds.deploymentStore.Search(ctx, clonedQuery)
 	if err != nil {
 		return nil, err
 	}
-
-	ids := pkgSearch.ResultsToIDs(results)
-	deployments, missingIndices, err := ds.deploymentStore.GetMany(ctx, ids)
-	if err != nil {
-		return nil, err
+	for i := range results {
+		if results[i].FieldValues != nil {
+			if nameVal, ok := results[i].FieldValues[strings.ToLower(pkgSearch.DeploymentName.String())]; ok {
+				results[i].Name = nameVal
+			}
+		}
 	}
-	results = pkgSearch.RemoveMissingResults(results, missingIndices)
-
-	if len(deployments) != len(results) {
-		return nil, errors.Errorf("expected %d deployments but got %d", len(results), len(deployments))
-	}
-
-	protoResults := make([]*v1.SearchResult, 0, len(deployments))
-	for i, deployment := range deployments {
-		protoResults = append(protoResults, convertDeployment(deployment, results[i]))
-	}
-	return protoResults, nil
+	return pkgSearch.ResultsToSearchResultProtos(results, &DeploymentSearchResultConverter{}), nil
 }
 
 // SearchRawDeployments
@@ -468,14 +473,32 @@ func (ds *datastoreImpl) GetDeploymentIDs(ctx context.Context) ([]string, error)
 	return ds.deploymentStore.GetIDs(ctx)
 }
 
-// convertDeployment returns proto search result from a deployment object and the internal search result
-func convertDeployment(deployment *storage.Deployment, result pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_DEPLOYMENTS,
-		Id:             deployment.GetId(),
-		Name:           deployment.GetName(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-		Location:       fmt.Sprintf("/%s/%s", deployment.GetClusterName(), deployment.GetNamespace()),
+func (ds *datastoreImpl) GetContainerImageViews(ctx context.Context, q *v1.Query) ([]*views.ContainerImageView, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "GetContainerImageViews")
+	return ds.deploymentStore.GetContainerImageViews(ctx, q)
+}
+
+type DeploymentSearchResultConverter struct{}
+
+func (c *DeploymentSearchResultConverter) BuildName(result *pkgSearch.Result) string {
+	return result.Name
+}
+
+func (c *DeploymentSearchResultConverter) BuildLocation(result *pkgSearch.Result) string {
+	fv := result.FieldValues
+	clusterName := fv[strings.ToLower(pkgSearch.Cluster.String())]
+	namespace := fv[strings.ToLower(pkgSearch.Namespace.String())]
+
+	if clusterName != "" && namespace != "" {
+		return fmt.Sprintf("/%s/%s", clusterName, namespace)
 	}
+	return ""
+}
+
+func (c *DeploymentSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_DEPLOYMENTS
+}
+
+func (c *DeploymentSearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
+	return result.Score
 }

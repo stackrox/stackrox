@@ -1,7 +1,12 @@
 import type { CSSProperties, ReactElement } from 'react';
-import { Activity } from 'react-feather';
 import { useNavigate } from 'react-router-dom-v5-compat';
-import { Tooltip } from '@patternfly/react-core';
+import { Button, Flex, FlexItem, Tooltip } from '@patternfly/react-core';
+import {
+    CheckCircleIcon,
+    ExclamationCircleIcon,
+    ExclamationTriangleIcon,
+    PortIcon,
+} from '@patternfly/react-icons';
 
 import { clustersBasePath } from 'routePaths';
 
@@ -26,7 +31,6 @@ const ClusterStatusButton = ({
     const navigate = useNavigate();
     const hasDegradedClusters = degraded > 0;
     const hasUnhealthyClusters = unhealthy > 0;
-    const hasProblems = hasDegradedClusters || hasUnhealthyClusters;
 
     const contentElement = (
         <div>
@@ -50,31 +54,10 @@ const ClusterStatusButton = ({
         </div>
     );
 
-    // Border radius for background circle to emphasize icon color.
-    const classNameProblems = hasProblems ? 'rounded-lg' : '';
-
-    let styleProblems: CSSProperties | undefined;
-    /*
-     * Explicit white background because the following did not work:
-     * `backgroundColor: var(--pf-v5-global--BackgroundColor--100)`
-     */
-    if (hasUnhealthyClusters) {
-        styleProblems = {
-            backgroundColor: '#ffffff',
-            color: 'var(--pf-v5-global--danger-color--100)',
-        };
-    } else if (hasDegradedClusters) {
-        styleProblems = {
-            backgroundColor: '#ffffff',
-            color: 'var(--pf-v5-global--warning-color--100)',
-        };
-    }
-
     const onClick = () => {
-        navigate(`${clustersBasePath}`);
-        // TODO after ClustersPage sets search filter according to search query string in URL:
-        // If any clusters have problems, then Clusters list has search filter.
-        // search: hasUnhealthyClusters || hasDegradedClusters ? '?s[Cluster Health][0]=UNHEALTHY&s[Cluster Health][1]=DEGRADED' : '',
+        navigate(
+            `${clustersBasePath}?s[Cluster status][0]=UNHEALTHY&s[Cluster status][1]=DEGRADED`
+        );
     };
 
     // On masthead, black text on white background like a dropdown menu.
@@ -91,16 +74,26 @@ const ClusterStatusButton = ({
             position="bottom"
             style={styleTooltip}
         >
-            <button
-                aria-label="Cluster status problems"
-                type="button"
-                onClick={onClick}
-                className="flex h-full items-center pt-2 pb-2 px-4"
-            >
-                <div className={classNameProblems} style={styleProblems}>
-                    <Activity className="h-4 w-4" />
-                </div>
-            </button>
+            <Button variant="plain" aria-label="Cluster status problems" onClick={onClick}>
+                <Flex
+                    direction={{ default: 'row' }}
+                    flexWrap={{ default: 'nowrap' }}
+                    spaceItems={{ default: 'spaceItemsSm' }}
+                >
+                    <FlexItem>
+                        <PortIcon />
+                    </FlexItem>
+                    <FlexItem>
+                        {hasUnhealthyClusters ? (
+                            <ExclamationCircleIcon />
+                        ) : hasDegradedClusters ? (
+                            <ExclamationTriangleIcon />
+                        ) : (
+                            <CheckCircleIcon />
+                        )}
+                    </FlexItem>
+                </Flex>
+            </Button>
         </Tooltip>
     );
 };

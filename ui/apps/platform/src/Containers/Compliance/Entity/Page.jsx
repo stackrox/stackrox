@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { useLocation } from 'react-router-dom-v5-compat';
 import URLService from 'utils/URLService';

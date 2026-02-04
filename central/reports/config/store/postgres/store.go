@@ -139,6 +139,16 @@ func insertIntoReportConfigurationsNotifiers(batch *pgx.Batch, obj *storage.Noti
 	return nil
 }
 
+var copyColsReportConfigurations = []string{
+	"id",
+	"name",
+	"type",
+	"scopeid",
+	"resourcescope_collectionid",
+	"creator_name",
+	"serialized",
+}
+
 func copyFromReportConfigurations(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ReportConfiguration) error {
 	if len(objs) == 0 {
 		return nil
@@ -154,16 +164,6 @@ func copyFromReportConfigurations(ctx context.Context, s pgSearch.Deleter, tx *p
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"type",
-		"scopeid",
-		"resourcescope_collectionid",
-		"creator_name",
-		"serialized",
 	}
 
 	idx := 0
@@ -190,7 +190,7 @@ func copyFromReportConfigurations(ctx context.Context, s pgSearch.Deleter, tx *p
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"report_configurations"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"report_configurations"}, copyColsReportConfigurations, inputRows); err != nil {
 		return err
 	}
 
@@ -203,15 +203,15 @@ func copyFromReportConfigurations(ctx context.Context, s pgSearch.Deleter, tx *p
 	return nil
 }
 
+var copyColsReportConfigurationsNotifiers = []string{
+	"report_configurations_id",
+	"idx",
+	"id",
+}
+
 func copyFromReportConfigurationsNotifiers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, reportConfigurationID string, objs ...*storage.NotifierConfiguration) error {
 	if len(objs) == 0 {
 		return nil
-	}
-
-	copyCols := []string{
-		"report_configurations_id",
-		"idx",
-		"id",
 	}
 
 	idx := 0
@@ -229,7 +229,7 @@ func copyFromReportConfigurationsNotifiers(ctx context.Context, s pgSearch.Delet
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"report_configurations_notifiers"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"report_configurations_notifiers"}, copyColsReportConfigurationsNotifiers, inputRows); err != nil {
 		return err
 	}
 

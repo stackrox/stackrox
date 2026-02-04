@@ -27,7 +27,7 @@ function CheckboxSelect({
     const [isOpen, setIsOpen] = useState(false);
 
     const onToggleClick = () => {
-        setIsOpen(!isOpen);
+        setIsOpen((prev) => !prev);
     };
 
     const onSelect = (

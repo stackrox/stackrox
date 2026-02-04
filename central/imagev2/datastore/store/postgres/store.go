@@ -15,7 +15,9 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/baseimage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -36,6 +38,9 @@ const (
 	// TODO(ROX-29911): really need cache table for the dates.
 	imageCVEsLegacyTable     = "image_cves"
 	imageCVEEdgesLegacyTable = "image_cve_edges"
+
+	LegacyImageIDField = "imageid"
+	NewImageIDField    = "imageidv2"
 )
 
 var (
@@ -114,14 +119,23 @@ func (s *storeImpl) insertIntoImages(
 	}
 
 	// Grab all CVEs for the image.
-	existingCVEs, err := getImageCVEs(ctx, tx, parts.image.GetId())
+	existingCVEs, err := getImageCVEs(ctx, tx, parts.image.GetId(), NewImageIDField)
 	if err != nil {
 		return err
 	}
 
 	if len(existingCVEs) == 0 {
-		// If we did not find any existing CVEs for the image, we may have just upgraded to q version using new CVE data model.
-		// So we try to migrate the CVE created and first image occurrence timestamps from the legacy model.
+		// If migrating from a version that already has the new CVE model, we try to get the existing CVEs from the new CVE model using the legacy image ID.
+		// This should only run the first time an image is scanned after migrating to the new image model.
+		existingCVEs, err = getImageCVEs(ctx, tx, parts.image.GetDigest(), LegacyImageIDField)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(existingCVEs) == 0 {
+		// If migrating from a version that did not even have the new CVE model, we try to get the existing CVEs from the legacy CVE model.
+		// This should only run the first time an image is scanned after migrating to the new image model.
 		existingCVEs, err = getLegacyImageCVEs(ctx, tx, parts.image.GetDigest())
 		if err != nil {
 			return err
@@ -283,6 +297,7 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 		"operatingsystem",
 		"imageidv2",
 		"location",
+		"layertype",
 		"serialized",
 	}
 
@@ -303,6 +318,7 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 			obj.GetOperatingSystem(),
 			obj.GetImageIdV2(),
 			obj.GetLocation(),
+			obj.GetLayerType(),
 			serialized,
 		})
 
@@ -344,6 +360,7 @@ func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTime ti
 		"componentid",
 		"advisory_name",
 		"advisory_link",
+		"fixavailabletimestamp",
 		"serialized",
 	}
 
@@ -384,6 +401,7 @@ func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTime ti
 			obj.GetComponentId(),
 			obj.GetAdvisory().GetName(),
 			obj.GetAdvisory().GetLink(),
+			protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
 			serialized,
 		})
 
@@ -504,6 +522,13 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.ImageV2) error {
 
 	scanUpdated = scanUpdated || componentsEmpty
 
+	if features.BaseImageDetection.Enabled() {
+		// Re-verify base images when base image detection is enabled:
+		// 1. Legacy images may lack base image info if the feature was enabled after they were scanned.
+		// 2. User-provided base images may change over time.
+		scanUpdated = scanUpdated || baseimage.BaseImagesUpdated(oldImage.GetBaseImageInfo(), obj.GetBaseImageInfo())
+	}
+
 	splitParts, err := common.Split(obj, scanUpdated)
 	if err != nil {
 		return err
@@ -512,22 +537,16 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.ImageV2) error {
 	keys := gatherKeys(imageParts)
 
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
-		conn, release, err := s.acquireConn(ctx, ops.Get, "ImageV2")
-		if err != nil {
-			return err
-		}
-		defer release()
-
-		tx, ctx, err := conn.Begin(ctx)
+		tx, ctx, err := s.begin(ctx)
 		if err != nil {
 			return err
 		}
 
 		if err := s.insertIntoImages(ctx, tx, imageParts, metadataUpdated, scanUpdated, iTime); err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
+			if errTx := tx.Rollback(ctx); errTx != nil {
+				return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 			}
-			return err
+			return errors.Wrap(err, "inserting into images")
 		}
 		return tx.Commit(ctx)
 	})
@@ -580,14 +599,6 @@ func (s *storeImpl) retryableExists(ctx context.Context, id string) (bool, error
 	return count == 1, nil
 }
 
-func wrapRollback(ctx context.Context, tx *postgres.Tx, err error) error {
-	rollbackErr := tx.Rollback(ctx)
-	if rollbackErr != nil {
-		return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
-	}
-	return err
-}
-
 // Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ImageV2, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageV2")
@@ -598,25 +609,13 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ImageV2, bool,
 }
 
 func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.ImageV2, bool, error) {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ImageV2")
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return nil, false, err
 	}
-	defer release()
-
-	tx, ctx, err := conn.Begin(ctx)
-	if err != nil {
-		return nil, false, err
-	}
+	defer postgres.FinishReadOnlyTransaction(tx)
 
 	image, found, err := s.getFullImage(ctx, id)
-	if err != nil {
-		return nil, false, wrapRollback(ctx, tx, err)
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return nil, false, err
-	}
 	return image, found, err
 }
 
@@ -672,13 +671,8 @@ func (s *storeImpl) getFullImage(ctx context.Context, imageID string) (*storage.
 	return image, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
+func (s *storeImpl) begin(ctx context.Context) (*postgres.Tx, context.Context, error) {
+	return postgres.GetTransaction(ctx, s.db)
 }
 
 func getImageComponents(ctx context.Context, tx *postgres.Tx, imageID string) ([]*storage.ImageComponentV2, error) {
@@ -705,12 +699,12 @@ func getImageComponentCVEs(ctx context.Context, tx *postgres.Tx, componentID str
 	return pgutils.ScanRows[storage.ImageCVEV2, *storage.ImageCVEV2](rows)
 }
 
-func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*storage.EmbeddedVulnerability, error) {
+func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string, imageIDField string) ([]*storage.EmbeddedVulnerability, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEsV2")
 
 	// Using this method instead of accessing the component store to ensure the query is in the same transaction as
 	// the updates.  That may prove to not matter, but for now doing it this way.
-	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageComponentsV2CVEsTable+" WHERE imageidv2 = $1", imageID)
+	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageComponentsV2CVEsTable+" WHERE "+imageIDField+" = $1", imageID)
 	if err != nil {
 		return nil, err
 	}
@@ -810,22 +804,16 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 }
 
 func (s *storeImpl) retryableDelete(ctx context.Context, id string) error {
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "ImageV2")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, ctx, err := conn.Begin(ctx)
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
 
 	if err := s.deleteImageTree(ctx, tx, id); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
+		if errTx := tx.Rollback(ctx); errTx != nil {
+			return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 		}
-		return err
+		return errors.Wrap(err, "deleting image tree")
 	}
 	return tx.Commit(ctx)
 }
@@ -859,22 +847,17 @@ func (s *storeImpl) GetByIDs(ctx context.Context, ids []string) ([]*storage.Imag
 }
 
 func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*storage.ImageV2, error) {
-	conn, release, err := s.acquireConn(ctx, ops.GetMany, "ImageV2")
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer release()
-
-	tx, ctx, err := conn.Begin(ctx)
-	if err != nil {
-		return nil, err
-	}
+	defer postgres.FinishReadOnlyTransaction(tx)
 
 	elems := make([]*storage.ImageV2, 0, len(ids))
 	for _, id := range ids {
 		msg, found, err := s.getFullImage(ctx, id)
 		if err != nil {
-			return nil, wrapRollback(ctx, tx, err)
+			return nil, err
 		}
 		if !found {
 			continue
@@ -882,9 +865,6 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 		elems = append(elems, msg)
 	}
 
-	if err := tx.Commit(ctx); err != nil {
-		return nil, err
-	}
 	return elems, nil
 }
 
@@ -894,21 +874,11 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 
 	q = s.applyDefaultSort(q)
 
-	conn, release, err := s.acquireConn(ctx, ops.WalkByQuery, "ImageV2")
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
-	defer release()
-
-	tx, ctx, err := conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := tx.Rollback(ctx); err != nil {
-			log.Errorf("error rolling back: %v", err)
-		}
-	}()
+	defer postgres.FinishReadOnlyTransaction(tx)
 
 	callback := func(image *storage.ImageV2) error {
 		err := s.populateImage(ctx, tx, image)
@@ -1008,13 +978,7 @@ func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, im
 		return nil
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Update, "UpdateVulnState")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, ctx, err := conn.Begin(ctx)
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -1049,10 +1013,10 @@ func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, im
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet(keys...), func() error {
 		err = s.updateCVEVulnState(ctx, tx, imageCVEs...)
 		if err != nil {
-			if err := tx.Rollback(ctx); err != nil {
-				return err
+			if errTx := tx.Rollback(ctx); errTx != nil {
+				return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 			}
-			return err
+			return errors.Wrap(err, "updating CVE vuln state")
 		}
 		return tx.Commit(ctx)
 	})
@@ -1095,10 +1059,11 @@ func (s *storeImpl) insertIntoImageComponentV2Cves(batch *pgx.Batch, obj *storag
 		obj.GetFixedBy(),
 		obj.GetComponentId(),
 		obj.GetAdvisory().GetName(),
+		protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_cves_v2 (Id, ImageIdV2, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, Cvss, Severity, ImpactScore, Nvdcvss, FirstImageOccurrence, State, IsFixable, FixedBy, ComponentId, advisory_name, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,$17) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ImageIdV2 = EXCLUDED.ImageIdV2, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, State = EXCLUDED.State, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy, ComponentId = EXCLUDED.ComponentId, advisory_name = EXCLUDED.advisory_name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_cves_v2 (Id, ImageIdV2, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, Cvss, Severity, ImpactScore, Nvdcvss, FirstImageOccurrence, State, IsFixable, FixedBy, ComponentId, advisory_name, FixAvailableTimestamp, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ImageIdV2 = EXCLUDED.ImageIdV2, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, State = EXCLUDED.State, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy, ComponentId = EXCLUDED.ComponentId, advisory_name = EXCLUDED.advisory_name, FixAvailableTimestamp = EXCLUDED.FixAvailableTimestamp, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil

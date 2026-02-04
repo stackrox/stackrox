@@ -117,6 +117,17 @@ func insertIntoClusterHealthStatuses(batch *pgx.Batch, obj *storage.ClusterHealt
 	return nil
 }
 
+var copyColsClusterHealthStatuses = []string{
+	"id",
+	"sensorhealthstatus",
+	"collectorhealthstatus",
+	"overallhealthstatus",
+	"admissioncontrolhealthstatus",
+	"scannerhealthstatus",
+	"lastcontact",
+	"serialized",
+}
+
 func copyFromClusterHealthStatuses(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ClusterHealthStatus) error {
 	if len(objs) == 0 {
 		return nil
@@ -132,17 +143,6 @@ func copyFromClusterHealthStatuses(ctx context.Context, s pgSearch.Deleter, tx *
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"sensorhealthstatus",
-		"collectorhealthstatus",
-		"overallhealthstatus",
-		"admissioncontrolhealthstatus",
-		"scannerhealthstatus",
-		"lastcontact",
-		"serialized",
 	}
 
 	idx := 0
@@ -170,7 +170,7 @@ func copyFromClusterHealthStatuses(ctx context.Context, s pgSearch.Deleter, tx *
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"cluster_health_statuses"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"cluster_health_statuses"}, copyColsClusterHealthStatuses, inputRows); err != nil {
 		return err
 	}
 

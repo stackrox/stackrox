@@ -23,11 +23,14 @@ import (
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
 	"github.com/stackrox/rox/central/audit"
 	authDS "github.com/stackrox/rox/central/auth/datastore"
+	internalTokenAuthService "github.com/stackrox/rox/central/auth/internaltokens/service"
 	authService "github.com/stackrox/rox/central/auth/service"
 	"github.com/stackrox/rox/central/auth/userpass"
 	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
 	authProviderSvc "github.com/stackrox/rox/central/authprovider/service"
 	authProviderTelemetry "github.com/stackrox/rox/central/authprovider/telemetry"
+	baseImageService "github.com/stackrox/rox/central/baseimage/service"
+	baseImageWatcher "github.com/stackrox/rox/central/baseimage/watcher"
 	centralHealthService "github.com/stackrox/rox/central/centralhealth/service"
 	"github.com/stackrox/rox/central/certgen"
 	certHandler "github.com/stackrox/rox/central/certs/handlers"
@@ -46,7 +49,6 @@ import (
 	complianceHandlers "github.com/stackrox/rox/central/compliance/handlers"
 	complianceManagerService "github.com/stackrox/rox/central/compliance/manager/service"
 	complianceService "github.com/stackrox/rox/central/compliance/service"
-	v2ComplianceBenchmark "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	v2ComplianceResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/service"
 	v2ComplianceStats "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/stats/service"
 	v2ComplianceMgr "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
@@ -377,6 +379,9 @@ func startServices() {
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()
 	pruning.Singleton().Start()
+	if baseImageWatcher.Enabled() {
+		baseImageWatcher.Singleton().Start()
+	}
 	gatherer.Singleton().Start()
 	vulnRequestManager.Singleton().Start()
 	apiTokenExpiration.Singleton().Start()
@@ -478,12 +483,18 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, v2ComplianceStats.Singleton())
 		servicesToRegister = append(servicesToRegister, v2ComplianceProfiles.Singleton())
 		servicesToRegister = append(servicesToRegister, v2ComplianceRules.Singleton())
-		// TODO: this is only done to initialize the table. Once we have a service we can move this there
-		v2ComplianceBenchmark.Singleton()
 	}
 
 	if features.VirtualMachines.Enabled() {
 		servicesToRegister = append(servicesToRegister, virtualmachineService.Singleton())
+	}
+
+	if features.BaseImageDetection.Enabled() {
+		servicesToRegister = append(servicesToRegister, baseImageService.Singleton())
+	}
+
+	if features.OCPConsoleIntegration.Enabled() {
+		servicesToRegister = append(servicesToRegister, internalTokenAuthService.Singleton())
 	}
 
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
@@ -623,32 +634,42 @@ func startGRPCServer() {
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
 
+	// Telemetry client has to add interceptors before starting the server.
+	c := phonehomeClient.Singleton()
+	config.HTTPInterceptors = append(config.HTTPInterceptors, c.GetHTTPInterceptor())
+	config.UnaryInterceptors = append(config.UnaryInterceptors, c.GetGRPCInterceptor())
+
 	server := pkgGRPC.NewAPI(config)
 	server.Register(servicesToRegister()...)
 	startedSig := server.Start()
 
 	go watchdog(startedSig, grpcServerWatchdogTimeout)
 
-	go startPhonehomeTelemetryCollection(&config, basicAuthProvider.ID())
+	go startPhonehomeTelemetryCollection(c, basicAuthProvider.ID())
 
 	go startServices()
 }
 
-func startPhonehomeTelemetryCollection(config *pkgGRPC.Config, basicAuthProviderID string) {
+func startPhonehomeTelemetryCollection(c *phonehomeClient.CentralClient, basicAuthProviderID string) {
 	pubcfg, err := configDS.Singleton().GetPublicConfig()
 	if err != nil {
 		log.Warnw("Failed to read telemetry configuration", logging.Err(err))
 		return
 	}
-	telemetryCfg := pubcfg.GetTelemetry()
-	if telemetryCfg == nil || telemetryCfg.GetEnabled() {
-		c := phonehomeClient.Singleton()
-		c.GrantConsent()
-		c.RegisterCentralClient(config, basicAuthProviderID)
-		addCentralIdentityGatherers(c)
-		c.Enable()
-		log.Infof("Telemetry Client Configuration: %s", c)
+	if cfg := pubcfg.GetTelemetry(); cfg != nil && !cfg.GetEnabled() {
+		return
 	}
+	log.Debug("User configuration grants consent for telemetry collection")
+	// Sending the initial client identity requires user consent.
+	c.GrantConsent()
+	c.RegisterCentralClient(basicAuthProviderID)
+	addCentralIdentityGatherers(c)
+	// Start the gathering.
+	// For release versions, the remote configuration will be periodically
+	// downloaded. For non-release versions, you can call POST to
+	// /v1/telemetry/config/reload to reload the configuration.
+	c.Enable()
+	log.Infof("Telemetry Client Configuration: %s", c)
 }
 
 func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
@@ -671,6 +692,7 @@ func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
 	add(roleDataStore.Gather)
 	add(signatureIntegrationDS.Gather)
 	add(complianceScanDS.GatherProfiles(complianceScanDS.Singleton()))
+	add(policyDataStore.Gather)
 }
 
 func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {
@@ -785,7 +807,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/api/v1/images/sbom",
 			Authorizer:    user.With(permissions.Modify(resources.Image)),
-			ServerHandler: imageService.SBOMHandler(imageintegration.Set(), enrichment.ImageEnricherSingleton(), sachelper.NewClusterSacHelper(clusterDataStore.Singleton()), riskManager.Singleton()),
+			ServerHandler: imageService.SBOMHandler(imageintegration.Set(), enrichment.ImageEnricherSingleton(), enrichment.ImageEnricherV2Singleton(), sachelper.NewClusterSacHelper(clusterDataStore.Singleton()), riskManager.Singleton()),
 			Compression:   true,
 		},
 		{
@@ -948,6 +970,10 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 }
 
 func debugRoutes() []routes.CustomRoute {
+	if env.ContinuousProfiling.BooleanSetting() {
+		return []routes.CustomRoute{}
+	}
+
 	customRoutes := make([]routes.CustomRoute, 0, len(routes.DebugRoutes))
 
 	for r, h := range routes.DebugRoutes {
@@ -989,6 +1015,10 @@ func waitForTerminationSignal() {
 		{gcp.Singleton(), "GCP cloud credentials manager"},
 		{cloudSourcesManager.Singleton(), "cloud sources manager"},
 		{administrationEventHandler.Singleton(), "administration events handler"},
+	}
+
+	if baseImageWatcher.Enabled() {
+		stoppables = append(stoppables, stoppableWithName{baseImageWatcher.Singleton(), "base image watcher"})
 	}
 
 	stoppables = append(stoppables,

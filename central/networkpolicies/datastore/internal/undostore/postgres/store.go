@@ -107,6 +107,11 @@ func insertIntoNetworkpolicyapplicationundorecords(batch *pgx.Batch, obj *storag
 	return nil
 }
 
+var copyColsNetworkpolicyapplicationundorecords = []string{
+	"clusterid",
+	"serialized",
+}
+
 func copyFromNetworkpolicyapplicationundorecords(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NetworkPolicyApplicationUndoRecord) error {
 	if len(objs) == 0 {
 		return nil
@@ -122,11 +127,6 @@ func copyFromNetworkpolicyapplicationundorecords(ctx context.Context, s pgSearch
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"clusterid",
-		"serialized",
 	}
 
 	idx := 0
@@ -148,7 +148,7 @@ func copyFromNetworkpolicyapplicationundorecords(ctx context.Context, s pgSearch
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"networkpolicyapplicationundorecords"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"networkpolicyapplicationundorecords"}, copyColsNetworkpolicyapplicationundorecords, inputRows); err != nil {
 		return err
 	}
 

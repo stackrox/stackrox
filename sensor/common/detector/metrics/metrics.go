@@ -72,8 +72,8 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "enricher_image_scan_internal_exponential_backoff_seconds",
-		Help:      "Time spent in exponential backoff for the ImageScanInternal endpoint",
-		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
+		Help:      "Time spent backing off before a successful ImageScanInternal response, typically due to scan rate limiting",
+		Buckets:   prometheus.ExponentialBuckets(1, 2, 10),
 	})
 	networkPoliciesStored = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -105,7 +105,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "node_scan_processed_total",
-		Help:      "Total number of Node Inventories/Indexes received/sent by this Sensor",
+		Help:      "Counts node inventory/index reports received from Compliance and sent to Central",
 	},
 		[]string{
 			// Name of the node sending an inventory
@@ -137,7 +137,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "node_scanning_ack_processed_total",
-		Help:      "Total number of Acks or Nacks for Node Inventories/Indexes processed by Sensor",
+		Help:      "Counts ACK/NACK messages for node inventory/index processing",
 	},
 		[]string{
 			// Name of the node sending an inventory
@@ -173,6 +173,15 @@ var (
 		Help:      "A counter that tracks the number of ADD and REMOVE operations on the deployment buffer queue. Current size of the queue can be calculated by subtracting the number of remove operations from the add operations",
 	}, []string{"Operation"})
 
+	// DetectorFileAccessQueueOperations keeps track of the operations of the
+	// detection file access buffer.
+	DetectorFileAccessQueueOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "detector_file_access_queue_operations_total",
+		Help:      "A counter that tracks the number of ADD and REMOVE operations on the file access buffer queue. Current size of the queue can be calculated by subtracting the number of remove operations from the add operations",
+	}, []string{"Operation"})
+
 	// DetectorProcessIndicatorDroppedCount keeps track of the number of process indicators dropped in the detector.
 	DetectorProcessIndicatorDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -197,19 +206,28 @@ var (
 		Help:      "A counter of the total number of deployments that were dropped if the detector buffer was full",
 	})
 
+	// DetectorFileAccessDroppedCount keeps track of the number of file accesses dropped in the detector.
+	DetectorFileAccessDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "detector_file_access_queue_dropped_total",
+		Help:      "A counter of the total number of file accesses that were dropped if the detector buffer was full",
+	})
+
 	detectorBlockScanCalls = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "block_scan_calls_total",
-		Help:      "A counter that tracks the operations in blocking scan calls",
+		Help:      "Counts add/remove operations for blocking scans triggered by deployment create/update",
 	}, []string{"Operation", "Path"})
 
 	scanCallDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "scan_call_duration_milliseconds",
-		Help:      "Time taken to call scan in milliseconds",
-		Buckets:   prometheus.ExponentialBuckets(4, 2, 16),
+		Help: "Total time spent calling Scan in milliseconds, including retries and backoff waits. " +
+			"Applies to both local and remote scans (whichever is currently used in Sensor).",
+		Buckets: prometheus.ExponentialBuckets(4, 2, 16),
 	})
 
 	scanAndSetCall = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -330,5 +348,7 @@ func init() {
 		scanAndSetCall,
 		DetectorDeploymentQueueOperations,
 		DetectorDeploymentDroppedCount,
+		DetectorFileAccessQueueOperations,
+		DetectorFileAccessDroppedCount,
 	)
 }

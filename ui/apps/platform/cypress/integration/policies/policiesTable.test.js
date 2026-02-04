@@ -183,6 +183,9 @@ describe('Policies table', () => {
     it('should enable bulk actions dropdown button if checkbox is selected in table head', () => {
         visitPolicies();
 
+        // Wait for table rows to load before interacting with header checkbox
+        cy.get(`tbody ${selectors.table.selectCheckbox}`).should('exist');
+
         cy.get(selectors.table.bulkActionsDropdownButton).should('be.disabled');
 
         cy.get(`thead ${selectors.table.selectCheckbox}`).should('not.be.checked').click();

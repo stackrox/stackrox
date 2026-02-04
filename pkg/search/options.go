@@ -54,6 +54,7 @@ var (
 	CVE                = newFieldLabel("CVE")
 	CVEType            = newFieldLabel("CVE Type")
 	CVEPublishedOn     = newFieldLabel("CVE Published On")
+	CVEFixAvailable    = newFieldLabel("CVE Fix Available Timestamp")
 	CVECreatedTime     = newFieldLabel("CVE Created Time")
 	CVESuppressed      = newFieldLabel("CVE Snoozed")
 	CVESuppressExpiry  = newFieldLabel("CVE Snooze Expiry")
@@ -66,6 +67,8 @@ var (
 	EPSSProbablity     = newFieldLabel("EPSS Probability")
 	AdvisoryName       = newFieldLabel("Advisory Name")
 	AdvisoryLink       = newFieldLabel("Advisory Link")
+
+	CVEInfo = newFieldLabel("CVE Info")
 
 	Component                      = newFieldLabel("Component")
 	ComponentID                    = newFieldLabel("Component ID")
@@ -116,6 +119,17 @@ var (
 	FixableModerateCVECount        = newFieldLabel("Fixable Moderate CVE Count")
 	LowCVECount                    = newFieldLabel("Low CVE Count")
 	FixableLowCVECount             = newFieldLabel("Fixable Low CVE Count")
+
+	// Base Image
+	BaseImageId               = newFieldLabel("Base Image Id")
+	BaseImageRepository       = newFieldLabel("Base Image Repository")
+	BaseImageTag              = newFieldLabel("Base Image Tag")
+	BaseImageActive           = newFieldLabel("Base Image Active")
+	BaseImageManifestDigest   = newFieldLabel("Base Image Manifest Digest")
+	BaseImageFirstLayerDigest = newFieldLabel("Base Image First Layer Digest")
+	BaseImageLayerDigest      = newFieldLabel("Base Image Layer Digest")
+	BaseImageIndex            = newFieldLabel("Base Image Index")
+	BaseImageDiscoveredAt     = newFieldLabel("Base Image Discovered At")
 
 	// Deployment related fields
 	AddCapabilities              = newFieldLabel("Add Capabilities")
@@ -212,9 +226,9 @@ var (
 	ProcessContainerStartTime = newFieldLabel("Process Container Start Time")
 
 	// FileActivity Search fields
-	MountedFilePath = newFieldLabel("Mounted File Path")
-	NodeFilePath    = newFieldLabel("Node File Path")
-	FileOperation   = newFieldLabel("File Operation")
+	EffectivePath = newFieldLabel("Effective Path")
+	ActualPath    = newFieldLabel("Actual Path")
+	FileOperation = newFieldLabel("File Operation")
 
 	// ProcessListeningOnPort Search fields
 	Closed     = newFieldLabel("Closed")
@@ -324,6 +338,7 @@ var (
 	ImageRiskScore      = newFieldLabel("Image Risk Score")
 	ComponentRiskScore  = newFieldLabel("Component Risk Score")
 	RiskSubjectType     = newFieldLabel("Risk Subject Type")
+	ComponentLayerType  = newFieldLabel("Component Layer Type")
 
 	PolicyLastUpdated = newFieldLabel("Policy Last Updated")
 

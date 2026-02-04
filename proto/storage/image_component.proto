@@ -10,19 +10,19 @@ option java_package = "io.stackrox.proto.storage";
 // This proto is deprecated and replaced by ImageComponentV2
 message ImageComponent {
   option deprecated = true;
-  string id = 1; // This field is composite id over name, version, and operating system. // @gotags: search:"Component ID,hidden" sql:"pk,id"
-  string name = 2; // @gotags: search:"Component"
-  string version = 3; // @gotags: search:"Component Version"
+  string id = 1; // This field is composite id over name, version, and operating system.
+  string name = 2;
+  string version = 3;
   License license = 4;
-  int64 priority = 5; // @gotags: search:"Component Risk Priority,hidden"
-  SourceType source = 6; // @gotags: search:"Component Source"
-  float risk_score = 7; // @gotags: search:"Component Risk Score,hidden"
+  int64 priority = 5;
+  SourceType source = 6;
+  float risk_score = 7;
   oneof set_top_cvss {
-    float top_cvss = 8; // @gotags: search:"Component Top CVSS"
+    float top_cvss = 8;
   }
   // Component version that fixes all the fixable vulnerabilities in this component.
   string fixed_by = 9;
-  string operating_system = 10; // @gotags: search:"Operating System"
+  string operating_system = 10;
 }
 
 message ImageComponentV2 {
@@ -51,4 +51,12 @@ message ImageComponentV2 {
   string architecture = 13;
 
   string image_id_v2 = 14; // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
+  bool from_base_image = 15 [deprecated = true];
+
+  LayerType layer_type = 16; // @gotags: search:"Component Layer Type"
+}
+
+enum LayerType {
+  APPLICATION = 0;
+  BASE_IMAGE = 1;
 }

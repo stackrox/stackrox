@@ -36,9 +36,10 @@ declare -A files_to_download=(
     ["$tmpdir/mapping.zip"]="https://definitions.stackrox.io/v4/redhat-repository-mappings/mapping.zip"
 )
 
-# Download the files
+# Download the files. The vulnerability bundle is ~317MB and may take longer than
+# 60 seconds on slower network conditions between GitHub runners and GCS.
 for f in "${!files_to_download[@]}"; do
-    curl --fail --silent --show-error --max-time 60 --retry 3 --create-dirs -o "$f" "${files_to_download[$f]}"
+    curl --fail --silent --show-error --max-time 300 --retry 3 --create-dirs -o "$f" "${files_to_download[$f]}"
 done
 unzip -j "$tmpdir/mapping.zip" "repomapping/*" -d "$tmpdir" && rm "$tmpdir/mapping.zip"
 

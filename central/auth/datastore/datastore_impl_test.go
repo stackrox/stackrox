@@ -4,9 +4,11 @@ package datastore
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
+	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/auth/m2m/mocks"
 	"github.com/stackrox/rox/central/auth/store"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
@@ -46,6 +48,7 @@ type datastorePostgresTestSuite struct {
 }
 
 func (s *datastorePostgresTestSuite) SetupTest() {
+	m2m.SetKubernetesIssuerForTest(s.T(), testIssuer)
 	s.ctx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
@@ -78,10 +81,7 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 	s.mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, true).AnyTimes()
 	s.mockSet.EXPECT().RollbackExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
-	issuerFetcher := mocks.NewMockServiceAccountIssuerFetcher(controller)
-	issuerFetcher.EXPECT().GetServiceAccountIssuer().Return("https://localhost", nil).AnyTimes()
-
-	s.authDataStore = New(authStore, s.roleDataStore, s.mockSet, issuerFetcher)
+	s.authDataStore = New(authStore, s.roleDataStore, s.mockSet)
 }
 
 func (s *datastorePostgresTestSuite) TestKubeServiceAccountConfig() {
@@ -90,13 +90,10 @@ func (s *datastorePostgresTestSuite) TestKubeServiceAccountConfig() {
 	authStore := store.New(s.pool.DB)
 
 	mockSet := mocks.NewMockTokenExchangerSet(controller)
-	issuerFetcher := mocks.NewMockServiceAccountIssuerFetcher(controller)
-
-	issuerFetcher.EXPECT().GetServiceAccountIssuer().Return(testIssuer, nil).Times(1)
 	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).Times(1)
 
-	authDataStore := New(authStore, s.roleDataStore, mockSet, issuerFetcher)
+	authDataStore := New(authStore, s.roleDataStore, mockSet)
 	s.NoError(authDataStore.InitializeTokenExchangers())
 }
 
@@ -120,14 +117,11 @@ func (s *datastorePostgresTestSuite) kubeSAM2MConfig(authDataStoreMutator authDa
 	store := store.New(s.pool.DB)
 
 	mockSet := mocks.NewMockTokenExchangerSet(controller)
-	issuerFetcher := mocks.NewMockServiceAccountIssuerFetcher(controller)
-
-	issuerFetcher.EXPECT().GetServiceAccountIssuer().Return(testIssuer, nil).Times(2)
 	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), kubeSAMatcher{}).Return(nil).MinTimes(1)
 	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
 	mockSet.EXPECT().RemoveTokenExchanger(gomock.AssignableToTypeOf("")).Return(nil).AnyTimes()
 
-	authDataStore := New(store, s.roleDataStore, mockSet, issuerFetcher)
+	authDataStore := New(store, s.roleDataStore, mockSet)
 	s.NoError(authDataStore.InitializeTokenExchangers())
 	authDataStoreMutator(authDataStore)
 
@@ -136,7 +130,7 @@ func (s *datastorePostgresTestSuite) kubeSAM2MConfig(authDataStoreMutator authDa
 	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), kubeSAMatcher{}).Return(nil).MinTimes(1)
 	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
 
-	authDataStore = New(store, s.roleDataStore, mockSet, issuerFetcher)
+	authDataStore = New(store, s.roleDataStore, mockSet)
 	s.NoError(authDataStore.InitializeTokenExchangers())
 
 	var kubeSAConfig *storage.AuthMachineToMachineConfig
@@ -454,4 +448,66 @@ func (s *datastorePostgresTestSuite) TestDeclarativeUpserts() {
 			s.ErrorIs(err, tc.expectedError)
 		})
 	}
+}
+
+// TestUpsertTokenExchangerFailureRollsBackTransaction verifies that when UpsertTokenExchanger
+// fails, the database transaction is properly rolled back and no data is persisted.
+// This test was added to prevent connection leaks where the transaction was not being
+// rolled back when the token exchanger creation failed (e.g., OIDC provider errors).
+func (s *datastorePostgresTestSuite) TestUpsertTokenExchangerFailureRollsBackTransaction() {
+	controller := gomock.NewController(s.T())
+	defer controller.Finish()
+
+	authStore := store.New(s.pool.DB)
+
+	// Mock UpsertTokenExchanger to return an error (simulating OIDC provider failure)
+	tokenExchangerError := errors.New("creating OIDC provider: 404 Not Found: NoSuchBucket")
+	mockSet := mocks.NewMockTokenExchangerSet(controller)
+	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
+	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(tokenExchangerError).Times(1)
+	// Expect rollback operations to be called
+	mockSet.EXPECT().RemoveTokenExchanger(gomock.Any()).Return(nil).Times(1)
+
+	authDataStore := New(authStore, s.roleDataStore, mockSet)
+
+	testConfigID := uuid.NewV4().String()
+	testIssuerURL := "https://storage.googleapis.com/test-bucket"
+
+	config := &storage.AuthMachineToMachineConfig{
+		Id:                      testConfigID,
+		Type:                    storage.AuthMachineToMachineConfig_GENERIC,
+		TokenExpirationDuration: "5m",
+		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
+			{
+				Key:             "sub",
+				ValueExpression: "test-value",
+				Role:            testRole1,
+			},
+		},
+		Issuer: testIssuerURL,
+	}
+
+	// Attempt to upsert - should fail
+	result, err := authDataStore.UpsertAuthM2MConfig(s.ctx, config)
+	s.Error(err, "UpsertAuthM2MConfig should return an error when UpsertTokenExchanger fails")
+	s.Nil(result, "Result should be nil when upsert fails")
+	s.Contains(err.Error(), "NoSuchBucket", "Error should contain the original error message")
+
+	// Verify NO config was persisted (transaction was rolled back)
+	// Use a fresh datastore with a permissive mock to read from the database
+	readMockSet := mocks.NewMockTokenExchangerSet(controller)
+	readMockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
+	readMockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+
+	readDataStore := New(authStore, s.roleDataStore, readMockSet)
+
+	var foundConfig *storage.AuthMachineToMachineConfig
+	err = readDataStore.ForEachAuthM2MConfig(s.ctx, func(obj *storage.AuthMachineToMachineConfig) error {
+		if obj.GetId() == testConfigID || obj.GetIssuer() == testIssuerURL {
+			foundConfig = obj
+		}
+		return nil
+	})
+	s.NoError(err)
+	s.Nil(foundConfig, "Config should NOT be persisted when UpsertTokenExchanger fails - transaction should have been rolled back")
 }

@@ -3,6 +3,7 @@ package tracker
 import (
 	"context"
 	"maps"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -80,9 +81,9 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 		tracker.registryFactory = func(string) (metrics.CustomRegistry, error) { return rf, nil }
 
 		var registered, unregistered []MetricName
-		rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any()).
 			AnyTimes().Do(
-			func(metricName string, _ string, _ time.Duration, _ []string) {
+			func(metricName string, _ string, _ []string) {
 				registered = append(registered, MetricName(metricName))
 			})
 		rf.EXPECT().UnregisterMetric(gomock.Any()).
@@ -145,7 +146,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 			identity, _ := authn.IdentityFromContext(ctx)
 			gRaw, ok := tracker.gatherers.Load(identity.UID())
 			require.True(t, ok)
-			g := gRaw.(*gatherer)
+			g := gRaw.(*gatherer[testFinding])
 			// Make it temporarily running to avoid data race on lastGather.
 			require.Eventually(t, g.trySetRunning, 5*time.Second, 10*time.Millisecond)
 			g.lastGather = time.Time{}
@@ -192,7 +193,11 @@ func TestTrackerBase_Track(t *testing.T) {
 	tracker.config = &Configuration{
 		metrics: makeTestMetricDescriptors(t),
 	}
-	assert.NoError(t, tracker.track(context.Background(), rf, tracker.config.metrics))
+	testGatherer := &gatherer[testFinding]{
+		registry:   rf,
+		aggregator: makeAggregator(tracker.config.metrics, tracker.config.includeFilters, tracker.config.excludeFilters, tracker.getters),
+	}
+	assert.NoError(t, tracker.track(context.Background(), testGatherer, tracker.config))
 
 	if assert.Len(t, result, 2) &&
 		assert.Contains(t, result, "test_TestTrackerBase_Track_metric1") &&
@@ -252,7 +257,11 @@ func TestTrackerBase_error(t *testing.T) {
 	tracker.config = &Configuration{
 		metrics: makeTestMetricDescriptors(t),
 	}
-	assert.ErrorIs(t, tracker.track(context.Background(), rf, tracker.config.metrics),
+	testGatherer := &gatherer[testFinding]{
+		registry:   rf,
+		aggregator: makeAggregator(tracker.config.metrics, tracker.config.includeFilters, tracker.config.excludeFilters, tracker.getters),
+	}
+	assert.ErrorIs(t, tracker.track(context.Background(), testGatherer, tracker.config),
 		errox.InvariantViolation)
 }
 
@@ -267,7 +276,7 @@ func TestTrackerBase_Gather(t *testing.T) {
 
 	result := make(map[string][]*aggregatedRecord)
 	{ // Capture result with a mock registry.
-		rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any()).
 			Times(2)
 		rf.EXPECT().SetTotal(gomock.Any(), gomock.Any(), gomock.Any()).
 			AnyTimes().Do(
@@ -296,6 +305,130 @@ func TestTrackerBase_Gather(t *testing.T) {
 	tracker.cleanupWG.Wait()
 }
 
+func TestTrackerBase_Gather_resetBetweenRuns(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	rf := mocks.NewMockCustomRegistry(ctrl)
+	tracker := MakeTrackerBase("test", "Test",
+		testLabelGetters,
+		makeTestGatherFunc(testData),
+	)
+	tracker.registryFactory = func(string) (metrics.CustomRegistry, error) { return rf, nil }
+
+	// Track all SetTotal calls with their totals.
+	var allTotals []int
+	rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any()).Times(2)
+	rf.EXPECT().SetTotal(gomock.Any(), gomock.Any(), gomock.Any()).
+		AnyTimes().Do(func(_ string, _ prometheus.Labels, total int) {
+		allTotals = append(allTotals, total)
+	})
+	rf.EXPECT().Reset(gomock.Any()).AnyTimes()
+	rf.EXPECT().Lock().AnyTimes()
+	rf.EXPECT().Unlock().AnyTimes()
+
+	md := makeTestMetricDescriptors(t)
+	tracker.Reconfigure(&Configuration{
+		metrics: md,
+		toAdd:   slices.Collect(maps.Keys(md)),
+		period:  time.Nanosecond, // Very short period to allow immediate re-gather.
+	})
+
+	ctx := makeAdminContext(t)
+
+	// First gather.
+	tracker.Gather(ctx)
+	tracker.cleanupWG.Wait()
+	firstRunTotals := append([]int{}, allTotals...)
+	assert.NotEmpty(t, firstRunTotals, "first gather should produce results")
+
+	// Reset tracking and force immediate re-gather.
+	allTotals = nil
+	identity, _ := authn.IdentityFromContext(ctx)
+	gRaw, _ := tracker.gatherers.Load(identity.UID())
+	g := gRaw.(*gatherer[testFinding])
+	require.Eventually(t, g.trySetRunning, 5*time.Second, 10*time.Millisecond)
+	g.lastGather = time.Time{} // Reset to allow immediate gather.
+	g.running.Store(false)
+
+	// Second gather.
+	tracker.Gather(ctx)
+	tracker.cleanupWG.Wait()
+
+	// Verify second run produced the same totals (not accumulated).
+	assert.ElementsMatch(t, firstRunTotals, allTotals,
+		"second gather should produce same totals, not accumulated values")
+}
+
+func TestTrackerBase_Gather_afterReconfiguration(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	rf := mocks.NewMockCustomRegistry(ctrl)
+	tracker := MakeTrackerBase("test", "Test",
+		testLabelGetters,
+		makeTestGatherFunc(testData),
+	)
+	tracker.registryFactory = func(string) (metrics.CustomRegistry, error) { return rf, nil }
+
+	var gatheredMetrics []string
+	rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	rf.EXPECT().UnregisterMetric(gomock.Any()).AnyTimes()
+	rf.EXPECT().SetTotal(gomock.Any(), gomock.Any(), gomock.Any()).
+		AnyTimes().Do(func(metricName string, _ prometheus.Labels, _ int) {
+		gatheredMetrics = append(gatheredMetrics, metricName)
+	})
+	rf.EXPECT().Reset(gomock.Any()).AnyTimes()
+	rf.EXPECT().Lock().AnyTimes()
+	rf.EXPECT().Unlock().AnyTimes()
+
+	// Initial configuration with 2 metrics.
+	md1 := makeTestMetricDescriptors(t)
+	cfg1 := &Configuration{
+		metrics: md1,
+		toAdd:   slices.Collect(maps.Keys(md1)),
+		period:  time.Nanosecond,
+	}
+	tracker.Reconfigure(cfg1)
+
+	ctx := makeAdminContext(t)
+	tracker.Gather(ctx)
+	tracker.cleanupWG.Wait()
+
+	assert.NotEmpty(t, gatheredMetrics, "should gather metrics with initial config")
+	initialMetrics := slices.Compact(slices.Sorted(slices.Values(gatheredMetrics)))
+
+	// Reconfigure with different metrics (only metric1).
+	gatheredMetrics = nil
+	md2 := MetricDescriptors{
+		"test_" + MetricName(t.Name()) + "_new_metric": {"Severity"},
+	}
+	cfg2 := &Configuration{
+		metrics:  md2,
+		toAdd:    []MetricName{"test_" + MetricName(t.Name()) + "_new_metric"},
+		toDelete: slices.Collect(maps.Keys(md1)),
+		period:   time.Nanosecond,
+	}
+	tracker.Reconfigure(cfg2)
+
+	// Reset lastGather to allow immediate gather.
+	identity, _ := authn.IdentityFromContext(ctx)
+	gRaw, _ := tracker.gatherers.Load(identity.UID())
+	g := gRaw.(*gatherer[testFinding])
+	require.Eventually(t, g.trySetRunning, 5*time.Second, 10*time.Millisecond)
+	g.lastGather = time.Time{}
+	g.running.Store(false)
+
+	// Gather with new configuration.
+	tracker.Gather(ctx)
+	tracker.cleanupWG.Wait()
+
+	assert.NotEmpty(t, gatheredMetrics, "should gather metrics after reconfiguration")
+	newMetrics := slices.Compact(slices.Sorted(slices.Values(gatheredMetrics)))
+
+	// Verify we're gathering different metrics now.
+	assert.NotEqual(t, initialMetrics, newMetrics,
+		"metrics after reconfiguration should differ from initial")
+	assert.Contains(t, newMetrics, "test_"+t.Name()+"_new_metric",
+		"should contain the new metric")
+}
+
 func TestTrackerBase_getGatherer(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	rf := mocks.NewMockCustomRegistry(ctrl)
@@ -313,7 +446,7 @@ func TestTrackerBase_getGatherer(t *testing.T) {
 	})
 
 	cfg := tracker.getConfiguration()
-	rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+	rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any()).
 		// each new gatherer, created by getGatherer, calls RegisterMetric
 		// for every metric.
 		Times(2 * len(cfg.metrics))
@@ -337,7 +470,7 @@ func TestTrackerBase_getGatherer(t *testing.T) {
 func TestTrackerBase_cleanup(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	rf := mocks.NewMockCustomRegistry(ctrl)
-	rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+	rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(4).Return(nil)
 
 	// Test that cleanupInactiveGatherers removes gatherers that have been inactive for longer than inactiveGathererTTL.
@@ -410,7 +543,7 @@ func Test_makeProps(t *testing.T) {
 		period:  time.Hour,
 	})
 	descriptionTitle := strings.ToTitle(tracker.description[0:1]) + tracker.description[1:]
-	props := tracker.makeProps(descriptionTitle, 12345*time.Millisecond)
+	props := tracker.makeProps(descriptionTitle)
 	get := func(key string) any {
 		if v, ok := props[key]; ok {
 			return v
@@ -418,8 +551,40 @@ func Test_makeProps(t *testing.T) {
 		return nil
 	}
 
-	assert.Len(t, props, 3)
+	assert.Len(t, props, 2)
 	assert.ElementsMatch(t, get("Telemetry test metrics labels"), []Label{"Cluster", "Namespace", "Severity"})
 	assert.Equal(t, len(md), get("Total Telemetry test metrics"))
-	assert.Equal(t, uint32(12), get("Telemetry test gathering seconds"))
+}
+
+func Test_formatMetricsHelp(t *testing.T) {
+	assert.Equal(t, "The total number of my metric",
+		formatMetricHelp("my metric", &Configuration{}, "my_metric"))
+
+	assert.Equal(t, `The total number of my metric aggregated by Label1, Label2, and gathered every 1h0m0s`,
+		formatMetricHelp("my metric", &Configuration{
+			metrics: MetricDescriptors{
+				"metric1": []Label{"Label1", "Label2"},
+			},
+			period: time.Hour,
+		}, "metric1"))
+
+	assert.Equal(t, `The total number of my metric aggregated by Label1, Label2, including only Label3≈"EXPR1", Label4≈"EXPR11", excluding Label4≈"EXPR2", Label5≈"EXPR2", and gathered every 1h0m0s`,
+		formatMetricHelp("my metric", &Configuration{
+			metrics: MetricDescriptors{
+				"metric1": []Label{"Label1", "Label2"},
+			},
+			includeFilters: LabelFilters{
+				"metric1": {
+					"Label3": regexp.MustCompile("EXPR1"),
+					"Label4": regexp.MustCompile("EXPR11"),
+				},
+			},
+			excludeFilters: LabelFilters{
+				"metric1": {
+					"Label4": regexp.MustCompile("EXPR2"),
+					"Label5": regexp.MustCompile("EXPR2"),
+				},
+			},
+			period: time.Hour,
+		}, "metric1"))
 }

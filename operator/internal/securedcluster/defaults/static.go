@@ -21,6 +21,9 @@ var staticDefaults = platform.SecuredClusterSpec{
 			Collection: platform.CollectionCOREBPF.Pointer(),
 		},
 		TaintToleration: platform.TaintTolerate.Pointer(),
+		SFA: &platform.SFAContainerSpec{
+			Agent: platform.SFAAgentDisabled.Pointer(),
+		},
 	},
 	AuditLogs: &platform.AuditLogsSpec{
 		Collection: platform.AuditLogsCollectionAuto.Pointer(),
@@ -64,6 +67,11 @@ var staticDefaults = platform.SecuredClusterSpec{
 	},
 	Network: &platform.GlobalNetworkSpec{
 		Policies: ptr.To(platform.NetworkPoliciesEnabled),
+	},
+	Customize: &platform.CustomizeSpec{
+		DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+			PinToNodes: ptr.To(platform.PinToNodesNone),
+		},
 	},
 }
 

@@ -150,19 +150,19 @@ message Advisory {
 // This proto is deprecated and replaced by ImageCVEV2.
 message ImageCVE {
   option deprecated = true;
-  string id = 1; // This field is composite of cve and operating system. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
+  string id = 1; // This field is composite of cve and operating system.
   CVEInfo cve_base_info = 2;
-  string operating_system = 3; // @gotags: search:"Operating System"
+  string operating_system = 3;
   // cvss stores ACS preferred cvss score
-  float cvss = 4; // @gotags: search:"CVSS"
-  VulnerabilitySeverity severity = 5; // @gotags: search:"Severity"
-  float impact_score = 6; // @gotags: search:"Impact Score"
+  float cvss = 4;
+  VulnerabilitySeverity severity = 5;
+  float impact_score = 6;
 
-  bool snoozed = 7 [deprecated = true]; // @gotags: search:"CVE Snoozed"
+  bool snoozed = 7 [deprecated = true];
   google.protobuf.Timestamp snooze_start = 8 [deprecated = true];
-  google.protobuf.Timestamp snooze_expiry = 9 [deprecated = true]; // @gotags: search:"CVE Snooze Expiry,hidden"
+  google.protobuf.Timestamp snooze_expiry = 9 [deprecated = true];
   // nvdcvss stores cvss score for a cve from NVD
-  float nvdcvss = 10; // @gotags: search:"NVD CVSS"
+  float nvdcvss = 10;
   // cvss_metrics stores list of cvss metrics from different sources like Redhat, NVD etc
   repeated CVSSScore cvss_metrics = 11;
   CvssScoreVersion nvd_score_version = 12;
@@ -196,6 +196,10 @@ message ImageCVEV2 {
   storage.Advisory advisory = 14;
 
   string image_id_v2 = 15; // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
+
+  // Timestamp when the fix for this CVE was made available according to the sources.
+  google.protobuf.Timestamp fix_available_timestamp = 16; // @gotags: search:"CVE Fix Available Timestamp,hidden"
+  string datasource = 17;
 }
 
 message NodeCVE {
@@ -330,4 +334,13 @@ message CVSSV3 {
   Impact availability = 11;
   float score = 12;
   Severity severity = 13;
+}
+
+message ImageCVEInfo {
+  // ID is comprised of cve#package#datasource where package is the component that is afflicted, and datasource
+  // is the concatenation of the updater + OS ex: debian-bookworm-updater::debian:12
+  string id = 1; // @gotags: search:"CVE Info" sql:"pk"
+  google.protobuf.Timestamp fix_available_timestamp = 2; // @gotags: search:"CVE Fix Available Timestamp,hidden"
+  google.protobuf.Timestamp first_system_occurrence = 3; // @gotags: search:"First System Occurrence Timestamp,hidden"
+  string cve = 4; // @gotags: search:"CVE" sql:"index"
 }

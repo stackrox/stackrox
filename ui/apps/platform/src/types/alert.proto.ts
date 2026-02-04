@@ -2,6 +2,7 @@ import type { ContainerImage } from './deployment.proto';
 import type { L4Protocol, NetworkEntityInfoType } from './networkFlow.proto';
 import type { EnforcementAction, LifecycleStage, Policy, PolicySeverity } from './policy.proto';
 import type { ProcessIndicator } from './processIndicator.proto';
+import type { FileAccess } from './fileAccess.proto';
 
 // Alert is for violation page.
 
@@ -74,6 +75,7 @@ export type BaseAlert = {
     lifecycleStage: LifecycleStage;
     violations: Violation[]; // For run-time phase alert, a maximum of 40 violations are retained.
     processViolation: ProcessViolation | null;
+    fileAccessViolation: FileAccessViolation | null;
     enforcement: AlertEnforcement | null;
     time: string; // ISO 8601 date string
     firstOccurred: string; // ISO 8601 date string
@@ -82,7 +84,11 @@ export type BaseAlert = {
     snoozeTill: string | null; // ISO 8601 date string
 };
 
-export type Violation = GenericViolation | K8sEventViolation | NetworkFlowViolation;
+export type Violation =
+    | GenericViolation
+    | K8sEventViolation
+    | NetworkFlowViolation
+    | FileAccessViolation;
 
 export type GenericViolation = {
     type: 'GENERIC';
@@ -117,6 +123,11 @@ export type NetworkFlowInfoEntity = {
     port: string | number; // int32 TODO verify is it just number?
 };
 
+export type FileAccessViolation = {
+    type: 'FILE_ACCESS';
+    fileAccess: FileAccess;
+} & BaseViolation;
+
 type BaseViolation = {
     type: ViolationType;
     message: string;
@@ -126,7 +137,12 @@ type BaseViolation = {
     time: string | null; // ISO 8601 date string
 };
 
-export type ViolationType = 'GENERIC' | 'K8S_EVENT' | 'NETWORK_FLOW' | 'NETWORK_POLICY';
+export type ViolationType =
+    | 'GENERIC'
+    | 'K8S_EVENT'
+    | 'NETWORK_FLOW'
+    | 'NETWORK_POLICY'
+    | 'FILE_ACCESS';
 
 export type ProcessViolation = {
     message: string;

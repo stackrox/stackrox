@@ -44,9 +44,8 @@ func CentralScannerV4ComponentPolicy(logger logr.Logger, status *platform.Centra
 
 	// No or unexpected default set in the annotations.
 
-	if centralStatusUninitialized(status) {
-		// Install / Green field.
-		logger.Info("assuming new installation due to empty status.")
+	if isNewInstallation(status) {
+		logger.Info("Assuming new installation due to incomplete status.")
 		return defaultForNewInstallations, true
 	}
 
@@ -69,9 +68,12 @@ func CentralScannerV4ComponentPolicy(logger logr.Logger, status *platform.Centra
 	return defaultForUpgrades, true
 }
 
-// centralStatusUninitialized checks if the provided CentralStatus is uninitialized.
-func centralStatusUninitialized(status *platform.CentralStatus) bool {
-	return status == nil || reflect.DeepEqual(status, &platform.CentralStatus{})
+// isNewInstallation checks if this is a new installation based on the status.
+func isNewInstallation(status *platform.CentralStatus) bool {
+	// The ProductVersion is only set post installation.
+	return status == nil ||
+		reflect.DeepEqual(status, &platform.CentralStatus{}) ||
+		status.ProductVersion == ""
 }
 
 func centralScannerV4Defaulting(logger logr.Logger, status *platform.CentralStatus, annotations map[string]string, spec *platform.CentralSpec, defaults *platform.CentralSpec) error {
@@ -89,7 +91,10 @@ func centralScannerV4Defaulting(logger logr.Logger, status *platform.CentralStat
 		annotations[common.FeatureDefaultKeyScannerV4] = string(componentPolicy)
 	}
 
-	defaults.ScannerV4 = &platform.ScannerV4Spec{ScannerComponent: &componentPolicy}
+	if defaults.ScannerV4 == nil {
+		defaults.ScannerV4 = &platform.ScannerV4Spec{}
+	}
+	defaults.ScannerV4.ScannerComponent = &componentPolicy
 	return nil
 }
 

@@ -170,6 +170,20 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 		Name: &storage.ImageName{
 			FullName: imageName,
 		},
+		BaseImageInfo: []*storage.BaseImageInfo{
+			{
+				BaseImageId:       "some-id",
+				BaseImageFullName: "registry.example.com/ns/base:tag",
+				BaseImageDigest:   "sha256:...",
+				MaxLayerIndex:     3,
+			},
+			{
+				BaseImageId:       "another-id",
+				BaseImageFullName: "registry.example.com/ns/other:tag",
+				BaseImageDigest:   "sha256:...",
+				MaxLayerIndex:     3,
+			},
+		},
 		Metadata: &storage.ImageMetadata{
 			V1: &storage.V1Metadata{
 				Created: ts,
@@ -307,6 +321,20 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 				UnknownCveCount:        7,
 				FixableUnknownCveCount: 4,
 			},
+			BaseImageInfo: []*storage.BaseImageInfo{
+				{
+					BaseImageId:       "some-id",
+					BaseImageFullName: "registry.example.com/ns/base:tag",
+					MaxLayerIndex:     3,
+					BaseImageDigest:   "sha256:...",
+				},
+				{
+					BaseImageId:       "another-id",
+					BaseImageFullName: "registry.example.com/ns/other:tag",
+					MaxLayerIndex:     3,
+					BaseImageDigest:   "sha256:...",
+				},
+			},
 		},
 		Children: []ComponentPartsV2{
 			{
@@ -318,6 +346,7 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
 						LayerIndex: 1,
 					},
+					LayerType: storage.LayerType_BASE_IMAGE,
 				},
 				Children: []CVEPartsV2{},
 			},
@@ -330,6 +359,7 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
 						LayerIndex: 3,
 					},
+					LayerType: storage.LayerType_BASE_IMAGE,
 				},
 				Children: []CVEPartsV2{
 					{
@@ -390,6 +420,7 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
 						LayerIndex: 2,
 					},
+					LayerType: storage.LayerType_BASE_IMAGE,
 				},
 				Children: []CVEPartsV2{
 					{
@@ -433,6 +464,7 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
 						LayerIndex: 2,
 					},
+					LayerType: storage.LayerType_BASE_IMAGE,
 				},
 				Children: []CVEPartsV2{
 					{
@@ -487,7 +519,9 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 	}
 
 	imageActual := Merge(splitActual)
-	protoassert.Equal(t, dedupedImageV2(imageID, imageName, imageSha), imageActual)
+	expectedFinalImage := dedupedImageV2(imageID, imageName, imageSha)
+	expectedFinalImage.BaseImageInfo = imageV2.GetBaseImageInfo()
+	protoassert.Equal(t, expectedFinalImage, imageActual)
 }
 
 func getTestComponentID(testComponent *storage.EmbeddedImageScanComponent, imageID string, index int) string {

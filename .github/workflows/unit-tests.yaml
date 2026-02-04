@@ -26,13 +26,13 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -97,7 +97,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -107,7 +107,7 @@ jobs:
         echo "/usr/pgsql-${{ matrix.pg }}/bin" >> "${GITHUB_PATH}"
 
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -157,7 +157,7 @@ jobs:
   go-bench:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -167,7 +167,7 @@ jobs:
         echo "/usr/pgsql-15/bin" >> "${GITHUB_PATH}"
 
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -207,10 +207,10 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -243,10 +243,10 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.1
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -286,13 +286,13 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -330,10 +330,10 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -364,10 +364,10 @@ jobs:
   openshift-ci-unit-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -387,9 +387,14 @@ jobs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -452,7 +457,7 @@ jobs:
       actions: read
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Slack message
       env:

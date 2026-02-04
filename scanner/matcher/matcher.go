@@ -141,7 +141,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		&epss.Enricher{},
 	}
 	var csafEnabled bool
-	if features.ScannerV4RedHatCSAF.Enabled() && !features.ScannerV4RedHatCVEs.Enabled() {
+	if features.ScannerV4RedHatCSAF.Enabled() {
 		csafEnabled = true
 		enrichers = append(enrichers, &csaf.Enricher{})
 	}

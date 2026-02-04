@@ -137,6 +137,17 @@ func insertIntoServiceAccounts(batch *pgx.Batch, obj *storage.ServiceAccount) er
 	return nil
 }
 
+var copyColsServiceAccounts = []string{
+	"id",
+	"name",
+	"namespace",
+	"clustername",
+	"clusterid",
+	"labels",
+	"annotations",
+	"serialized",
+}
+
 func copyFromServiceAccounts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ServiceAccount) error {
 	if len(objs) == 0 {
 		return nil
@@ -152,17 +163,6 @@ func copyFromServiceAccounts(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"namespace",
-		"clustername",
-		"clusterid",
-		"labels",
-		"annotations",
-		"serialized",
 	}
 
 	idx := 0
@@ -190,7 +190,7 @@ func copyFromServiceAccounts(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"service_accounts"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"service_accounts"}, copyColsServiceAccounts, inputRows); err != nil {
 		return err
 	}
 

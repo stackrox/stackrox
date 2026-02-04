@@ -118,11 +118,13 @@ function ViewBasedReportsTab() {
 
         // Track filter interaction for additions only
         if (checked) {
-            trackAppliedFilter(VIEW_BASED_REPORT_FILTER_APPLIED, {
-                action: 'ADD',
-                category: 'Report Job Status',
-                value: selectedStatus,
-            });
+            trackAppliedFilter(VIEW_BASED_REPORT_FILTER_APPLIED, [
+                {
+                    action: 'SELECT_INCLUSIVE',
+                    category: 'Report Job Status',
+                    value: selectedStatus,
+                },
+            ]);
         }
     };
 
@@ -132,11 +134,13 @@ function ViewBasedReportsTab() {
 
         // Track filter interaction for enabling my jobs only
         if (checked) {
-            trackAppliedFilter(VIEW_BASED_REPORT_FILTER_APPLIED, {
-                action: 'ADD',
-                category: 'My Jobs',
-                value: 'true',
-            });
+            trackAppliedFilter(VIEW_BASED_REPORT_FILTER_APPLIED, [
+                {
+                    action: 'SELECT_INCLUSIVE',
+                    category: 'My Jobs',
+                    value: 'true',
+                },
+            ]);
         }
     };
 

@@ -12,8 +12,11 @@ import {
     namespaceSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import ImageCvePage from 'Containers/Vulnerabilities/WorkloadCves/ImageCve/ImageCvePage';
+import { useAnalyticsPageView } from '../hooks/useAnalyticsPageView';
 
 export function CveDetailPage() {
+    useAnalyticsPageView();
+
     const [activeNamespace] = useActiveNamespace();
     const { searchFilter, setSearchFilter } = useURLSearch();
     const context = useDefaultWorkloadCveViewContext();

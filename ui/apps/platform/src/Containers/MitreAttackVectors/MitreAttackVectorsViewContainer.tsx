@@ -93,7 +93,7 @@ function MitreAttackVectorsViewContainer({
     );
 
     const policyMitreAttackVectors =
-        policyFormAttackVectors || data?.policy?.mitreAttackVectors || [];
+        policyFormAttackVectors ?? data?.policy?.mitreAttackVectors ?? [];
 
     return (
         <MitreAttackVectorsView

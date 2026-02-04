@@ -247,6 +247,10 @@ func (s *flowStoreImpl) copyFromNetworkflow(ctx context.Context, tx *postgres.Tx
 	return err
 }
 
+func getPartitionName(clusterID string) string {
+	return fmt.Sprintf("network_flows_v2_%s", strings.ReplaceAll(clusterID, "-", "_"))
+}
+
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB, clusterID string, networktreeMgr networktree.Manager) FlowStore {
 	clusterUUID, err := uuid.FromString(clusterID)
@@ -255,7 +259,7 @@ func New(db postgres.DB, clusterID string, networktreeMgr networktree.Manager) F
 		return nil
 	}
 
-	partitionName := fmt.Sprintf("network_flows_v2_%s", strings.ReplaceAll(clusterID, "-", "_"))
+	partitionName := getPartitionName(clusterID)
 	partitionCreate := `create table if not exists %s partition of network_flows_v2
 		for values in ('%s')`
 
@@ -277,14 +281,20 @@ func New(db postgres.DB, clusterID string, networktreeMgr networktree.Manager) F
 	}
 }
 
-func (s *flowStoreImpl) copyFrom(ctx context.Context, lastUpdateTS timestamp.MicroTS, objs ...*storage.NetworkFlow) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkFlow")
-	if err != nil {
-		return err
-	}
-	defer release()
+// dropPartition drops the partition from network_flows_v2 for the target cluster.
+func dropPartition(ctx context.Context, db postgres.DB, clusterID string) error {
+	partitionName := getPartitionName(clusterID)
+	partitionDrop := `drop table if exists %s restrict`
 
-	tx, ctx, err := conn.Begin(ctx)
+	err := pgutils.Retry(ctx, func() error {
+		_, err := db.Exec(ctx, fmt.Sprintf(partitionDrop, partitionName))
+		return err
+	})
+	return err
+}
+
+func (s *flowStoreImpl) copyFrom(ctx context.Context, lastUpdateTS timestamp.MicroTS, objs ...*storage.NetworkFlow) error {
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -295,26 +305,16 @@ func (s *flowStoreImpl) copyFrom(ctx context.Context, lastUpdateTS timestamp.Mic
 		}
 		return err
 	}
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-	return nil
+	return tx.Commit(ctx)
 }
 
 func (s *flowStoreImpl) upsert(ctx context.Context, lastUpdateTS timestamp.MicroTS, objs ...*storage.NetworkFlow) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "NetworkFlow")
-	if err != nil {
-		return err
-	}
-	defer release()
-
 	// Moved the transaction outside the loop which greatly improved the performance of these individual inserts.
-	tx, ctx, err := conn.Begin(ctx)
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
 	for _, obj := range objs {
-
 		if err := s.insertIntoNetworkflow(ctx, tx, s.clusterID, obj, lastUpdateTS); err != nil {
 			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 				return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
@@ -323,10 +323,7 @@ func (s *flowStoreImpl) upsert(ctx context.Context, lastUpdateTS timestamp.Micro
 		}
 	}
 
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-	return nil
+	return tx.Commit(ctx)
 }
 
 func (s *flowStoreImpl) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
@@ -350,13 +347,8 @@ func (s *flowStoreImpl) retryableUpsertFlows(ctx context.Context, flows []*stora
 	return s.copyFrom(ctx, lastUpdateTS, flows...)
 }
 
-func (s *flowStoreImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
+func (s *flowStoreImpl) begin(ctx context.Context) (*postgres.Tx, context.Context, error) {
+	return postgres.GetTransaction(ctx, s.db)
 }
 
 func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowProperties) bool) ([]*storage.NetworkFlow, error) {
@@ -468,16 +460,10 @@ func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, i
 }
 
 func (s *flowStoreImpl) removeDeploymentFlows(ctx context.Context, deleteStmt string, id string) error {
-	conn, release, err := s.acquireConn(ctx, ops.RemoveFlowsByDeployment, "NetworkFlow")
-	if err != nil {
-		return err
-	}
-	defer release()
-
 	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
 	defer cancel()
 
-	tx, ctx, err := conn.Begin(ctx)
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -494,16 +480,10 @@ func (s *flowStoreImpl) removeDeploymentFlows(ctx context.Context, deleteStmt st
 }
 
 func (s *flowStoreImpl) removeAndReturnDeploymentFlows(ctx context.Context, deleteStmt string, id string) ([]*storage.NetworkFlow, error) {
-	conn, release, err := s.acquireConn(ctx, ops.RemoveFlowsByDeployment, "NetworkFlow")
-	if err != nil {
-		return nil, err
-	}
-	defer release()
-
 	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
 	defer cancel()
 
-	tx, ctx, err := conn.Begin(ctx)
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -521,11 +501,7 @@ func (s *flowStoreImpl) removeAndReturnDeploymentFlows(ctx context.Context, dele
 		return nil, err
 	}
 
-	if err := tx.Commit(ctx); err != nil {
-		return nil, err
-	}
-
-	return flows, nil
+	return flows, tx.Commit(ctx)
 }
 
 // GetAllFlows returns the object, if it exists from the store, timestamp and error
@@ -650,14 +626,8 @@ func (s *flowStoreImpl) delete(ctx context.Context, objs ...*storage.NetworkFlow
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
-	if err != nil {
-		return err
-	}
-	defer release()
-
 	// Moved the transaction outside the loop which greatly improved the performance of these individual inserts.
-	tx, ctx, err := conn.Begin(ctx)
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -670,12 +640,8 @@ func (s *flowStoreImpl) delete(ctx context.Context, objs ...*storage.NetworkFlow
 			}
 			return err
 		}
-
 	}
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-	return nil
+	return tx.Commit(ctx)
 }
 
 // RemoveFlow removes the specified flow from the store
@@ -760,33 +726,18 @@ func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, srcFlow
 }
 
 func (s *flowStoreImpl) pruneFlows(ctx context.Context, deleteStmt string, orphanWindow *time.Time) error {
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
-	if err != nil {
-		return err
-	}
-	defer release()
-
 	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
 	defer cancel()
 
-	if _, err := conn.Exec(ctx, deleteStmt, s.clusterID, orphanWindow); err != nil {
-		return err
-	}
-
-	return nil
+	_, err := s.db.Exec(ctx, deleteStmt, s.clusterID, orphanWindow)
+	return err
 }
 
 func (s *flowStoreImpl) pruneAndReturnFlows(ctx context.Context, deleteStmt string, orphanWindow *time.Time) ([]*storage.NetworkFlow, error) {
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
-	if err != nil {
-		return nil, err
-	}
-	defer release()
-
 	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
 	defer cancel()
 
-	rows, err := conn.Query(ctx, deleteStmt, s.clusterID, orphanWindow)
+	rows, err := s.db.Query(ctx, deleteStmt, s.clusterID, orphanWindow)
 	if err != nil {
 		return nil, err
 	}
@@ -795,16 +746,10 @@ func (s *flowStoreImpl) pruneAndReturnFlows(ctx context.Context, deleteStmt stri
 }
 
 func (s *flowStoreImpl) pruneEntities(ctx context.Context, deleteStmt string, entityIds []string) error {
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
-	if err != nil {
-		return err
-	}
-	defer release()
-
 	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
 	defer cancel()
 
-	rows, err := conn.Query(ctx, deleteStmt, entityIds)
+	rows, err := s.db.Query(ctx, deleteStmt, entityIds)
 	if err != nil {
 		return err
 	}
@@ -835,18 +780,12 @@ func (s *flowStoreImpl) RemoveStaleFlows(ctx context.Context) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
-	if err != nil {
-		return err
-	}
-	defer release()
-
 	// This is purposefully not retried as this is an optimization and not a requirement
 	// It is also currently prone to statement timeouts
 	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
 	defer cancel()
 	prune := fmt.Sprintf(pruneStaleNetworkFlowsStmt, s.partitionName, s.partitionName)
-	_, err = conn.Exec(ctx, prune)
+	_, err := s.db.Exec(ctx, prune)
 
 	return err
 }

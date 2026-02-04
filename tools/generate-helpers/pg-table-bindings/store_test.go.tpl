@@ -74,9 +74,7 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	s.Nil(found{{.TrimmedType|upperCamelCase}})
 
 	{{if and (not .JoinTable) (eq (len .Schema.RelationshipsToDefineAsForeignKeys) 0) -}}
-	{{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
 	withNoAccessCtx := sac.WithNoAccess(ctx)
-	{{- end }}
 
 	s.NoError(store.Upsert(ctx, {{$name}}))
 	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{$paramList}})
@@ -87,20 +85,15 @@ func (s *{{$namePrefix}}StoreSuite) TestStore() {
 	{{$name}}Count, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(1, {{$name}}Count)
-
-	{{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
 	{{$name}}Count, err = store.Count(withNoAccessCtx, search.EmptyQuery())
 	s.NoError(err)
 	s.Zero({{$name}}Count)
-	{{- end }}
 
 	{{$name}}Exists, err := store.Exists(ctx, {{$paramList}})
 	s.NoError(err)
 	s.True({{$name}}Exists)
 	s.NoError(store.Upsert(ctx, {{$name}}))
-	{{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
 	s.ErrorIs(store.Upsert(withNoAccessCtx, {{$name}}), sac.ErrResourceAccessDenied)
-	{{- end }}
 
 	s.NoError(store.Delete(ctx, {{$paramList}}))
 	found{{.TrimmedType|upperCamelCase}}, exists, err = store.Get(ctx, {{$paramList}})

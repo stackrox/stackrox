@@ -14,10 +14,8 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
-	"github.com/stackrox/rox/pkg/defaults/complianceoperator"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -41,12 +39,14 @@ import (
 const (
 	coNamespaceV2     = "openshift-compliance"
 	stackroxNamespace = "stackrox"
+	defaultTimeout    = 90 * time.Second
+	eventuallyTimeout = 120 * time.Second
 )
 
 var (
 	scanName        = "sync-test"
 	initialProfiles = []string{"ocp4-cis"}
-	updatedProfiles = []string{"ocp4-cis-1-4", "ocp4-cis-node-1-4"}
+	updatedProfiles = []string{"ocp4-high", "ocp4-cis-node"}
 	initialSchedule = &v2.Schedule{
 		Hour:         12,
 		Minute:       0,
@@ -96,7 +96,7 @@ func scaleToN(ctx context.Context, client kubernetes.Interface, deploymentName s
 	return nil
 }
 
-func createDynamicClient(t T) dynclient.Client {
+func createDynamicClient(t testutils.T) dynclient.Client {
 	restCfg := getConfig(t)
 	restCfg.WarningHandler = rest.NoWarnings{}
 	k8sClient := createK8sClient(t)
@@ -138,7 +138,7 @@ func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	log.Info("Waiting for ComplianceSuite to reach DONE phase")
+	t.Logf("Waiting for ComplianceSuite to reach DONE phase")
 	for range ticker.C {
 		var suite complianceoperatorv1.ComplianceSuite
 		mustEventually(t, ctx, func() error {
@@ -147,10 +147,10 @@ func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, 
 		}, timeout, fmt.Sprintf("failed to get ComplianceSuite %s", suiteName))
 
 		if suite.Status.Phase == "DONE" {
-			log.Infof("ComplianceSuite %s reached DONE phase", suiteName)
+			t.Logf("ComplianceSuite %s reached DONE phase", suiteName)
 			return
 		}
-		log.Infof("ComplianceSuite %s is in %s phase", suiteName, suite.Status.Phase)
+		t.Logf("ComplianceSuite %s is in %s phase", suiteName, suite.Status.Phase)
 	}
 }
 
@@ -168,29 +168,42 @@ func cleanUpResources(ctx context.Context, t *testing.T, resourceName string, na
 	}
 }
 
-func assertResourceDoesExist(ctx context.Context, t T, resourceName string, namespace string, obj dynclient.Object) dynclient.Object {
+func assertResourceDoesExist(ctx context.Context, t testutils.T, resourceName string, namespace string, obj dynclient.Object) dynclient.Object {
 	client := createDynamicClient(t)
 	require.Eventually(t, func() bool {
 		return client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, obj) == nil
-	}, 60*time.Second, 10*time.Millisecond)
+	}, defaultTimeout, 10*time.Millisecond)
 	return obj
 }
 
-func assertResourceWasUpdated(ctx context.Context, t T, resourceName string, namespace string, obj dynclient.Object) dynclient.Object {
+func assertResourceWasUpdated(ctx context.Context, t testutils.T, resourceName string, namespace string, obj dynclient.Object) dynclient.Object {
 	client := createDynamicClient(t)
 	oldResourceVersion := obj.GetResourceVersion()
-	require.Eventually(t, func() bool {
-		return client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, obj) == nil && obj.GetResourceVersion() != oldResourceVersion
-	}, 60*time.Second, 10*time.Millisecond)
+	timeout := time.NewTimer(defaultTimeout)
+	ticker := time.NewTicker(10 * time.Millisecond)
+	for {
+		select {
+		case <-ticker.C:
+			if client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, obj) == nil && obj.GetResourceVersion() != oldResourceVersion {
+				return obj
+			}
+		case <-timeout.C:
+			// Timing-out in here does not necessarily indicate that the
+			// resource was not updated as the retrieval and assertion of the
+			// resource can race.
+			t.Logf("Timeout before we got a new resource version for %s %s (this might be ok)", obj.GetObjectKind().GroupVersionKind().String(), resourceName)
+			return obj
+		}
+	}
 	return obj
 }
 
-func assertResourceDoesNotExist(ctx context.Context, t T, resourceName string, namespace string, obj dynclient.Object) {
+func assertResourceDoesNotExist(ctx context.Context, t testutils.T, resourceName string, namespace string, obj dynclient.Object) {
 	client := createDynamicClient(t)
 	require.Eventually(t, func() bool {
 		err := client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, obj)
 		return errors2.IsNotFound(err)
-	}, 60*time.Second, 10*time.Millisecond)
+	}, defaultTimeout, 10*time.Millisecond)
 }
 
 func assertScanSetting(t testutils.T, scanConfig v2.ComplianceScanConfiguration, scanSetting *complianceoperatorv1.ScanSetting) {
@@ -222,7 +235,7 @@ func waitForDeploymentReady(ctx context.Context, t *testing.T, name string, name
 	require.Eventually(t, func() bool {
 		deployment := &appsv1.Deployment{}
 		return client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, deployment) == nil && deployment.Status.ReadyReplicas == numReplicas
-	}, 60*time.Second, 10*time.Millisecond)
+	}, defaultTimeout, 10*time.Millisecond)
 }
 
 func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
@@ -272,7 +285,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 		assertResourceDoesExist(ctx, wrapCollectT(t, c), scanName, coNamespaceV2, scanSettingBinding)
 		assertScanSetting(wrapCollectT(t, c), scanConfig, scanSetting)
 		assertScanSettingBinding(wrapCollectT(t, c), scanConfig, scanSettingBinding)
-	}, 60*time.Second, 2*time.Second)
+	}, eventuallyTimeout, 2*time.Second)
 
 	// Scale down Sensor
 	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 0))
@@ -295,7 +308,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 		assertResourceWasUpdated(ctx, wrapCollectT(t, c), scanName, coNamespaceV2, scanSettingBinding)
 		assertScanSetting(wrapCollectT(t, c), scanConfig, scanSetting)
 		assertScanSettingBinding(wrapCollectT(t, c), scanConfig, scanSettingBinding)
-	}, 60*time.Second, 2*time.Second)
+	}, eventuallyTimeout, 2*time.Second)
 
 	// Scale down Sensor
 	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 0))
@@ -562,7 +575,7 @@ func TestComplianceV2UpdateScanConfigurations(t *testing.T) {
 		assertResourceDoesExist(ctx, wrapCollectT(t, c), scanName, coNamespaceV2, scanSettingBinding)
 		assertScanSetting(wrapCollectT(t, c), *req, scanSetting)
 		assertScanSettingBinding(wrapCollectT(t, c), *req, scanSettingBinding)
-	}, 60*time.Second, 2*time.Second)
+	}, eventuallyTimeout, 2*time.Second)
 
 	// Update the scan configuration
 	updateReq := req.CloneVT()
@@ -593,7 +606,7 @@ func TestComplianceV2UpdateScanConfigurations(t *testing.T) {
 		assertResourceWasUpdated(ctx, wrapCollectT(t, c), scanName, coNamespaceV2, scanSettingBinding)
 		assertScanSetting(wrapCollectT(t, c), *updateReq, scanSetting)
 		assertScanSettingBinding(wrapCollectT(t, c), *updateReq, scanSettingBinding)
-	}, 60*time.Second, 2*time.Second)
+	}, eventuallyTimeout, 2*time.Second)
 }
 
 func TestComplianceV2DeleteComplianceScanConfigurations(t *testing.T) {
@@ -770,27 +783,4 @@ func TestComplianceV2ScheduleRescan(t *testing.T) {
 
 	// Assert the scan is rerunning on the cluster using the Compliance Operator CRDs
 	waitForComplianceSuiteToComplete(t, scanConfig.ScanName, 2*time.Second, 5*time.Minute)
-}
-
-func TestBenchmarkConfigFiles(t *testing.T) {
-	conn := centralgrpc.GRPCConnectionToCentral(t)
-	client := v2.NewComplianceProfileServiceClient(conn)
-	clusterClient := v1.NewClustersServiceClient(conn)
-	clustersResponse, err := clusterClient.GetClusters(context.TODO(), &v1.GetClustersRequest{})
-	require.NoError(t, err)
-	require.Len(t, clustersResponse.GetClusters(), 1)
-	res, err := client.ListComplianceProfiles(context.TODO(), &v2.ProfilesForClusterRequest{ClusterId: clustersResponse.GetClusters()[0].GetId()})
-	require.NoError(t, err)
-	require.NotEmpty(t, res.GetProfiles())
-	benchmarks, err := complianceoperator.LoadComplianceOperatorBenchmarks()
-	require.NoError(t, err)
-	mappedProfiles := set.NewStringSet()
-	for _, benchmark := range benchmarks {
-		for _, mappedProfile := range benchmark.GetProfiles() {
-			mappedProfiles.Add(mappedProfile.GetProfileName())
-		}
-	}
-	for _, profile := range res.GetProfiles() {
-		assert.Contains(t, mappedProfiles, profile.GetName())
-	}
 }

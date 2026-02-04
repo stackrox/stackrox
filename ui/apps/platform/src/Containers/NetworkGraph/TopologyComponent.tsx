@@ -277,8 +277,8 @@ const TopologyComponent = ({
                         <NamespaceSideBar
                             labelledById={labelledById}
                             namespaceId={selectedNode.id}
-                            nodes={model?.nodes || []}
-                            edges={model?.edges || []}
+                            nodes={model?.nodes ?? []}
+                            edges={model?.edges ?? []}
                             onNodeSelect={onNodeSelect}
                         />
                     )}
@@ -286,8 +286,8 @@ const TopologyComponent = ({
                         <DeploymentSideBar
                             labelledById={labelledById}
                             deploymentId={selectedNode.id}
-                            nodes={model?.nodes || []}
-                            edges={model?.edges || []}
+                            nodes={model?.nodes ?? []}
+                            edges={model?.edges ?? []}
                             edgeState={edgeState}
                             onNodeSelect={onNodeSelect}
                         />
@@ -296,8 +296,8 @@ const TopologyComponent = ({
                         <ExternalGroupSideBar
                             labelledById={labelledById}
                             id={selectedNode.id}
-                            nodes={model?.nodes || []}
-                            edges={model?.edges || []}
+                            nodes={model?.nodes ?? []}
+                            edges={model?.edges ?? []}
                             onNodeSelect={onNodeSelect}
                         />
                     )}
@@ -305,8 +305,8 @@ const TopologyComponent = ({
                         <GenericEntitiesSideBar
                             labelledById={labelledById}
                             id={selectedNode.id}
-                            nodes={model?.nodes || []}
-                            edges={model?.edges || []}
+                            nodes={model?.nodes ?? []}
+                            edges={model?.edges ?? []}
                             onNodeSelect={onNodeSelect}
                             EntityHeaderIcon={<CidrBlockIcon />}
                             sidebarTitle={selectedNode.data.externalSource.cidr ?? ''}
@@ -317,8 +317,8 @@ const TopologyComponent = ({
                         <ExternalEntitiesSideBar
                             labelledById={labelledById}
                             id={selectedNode.id}
-                            nodes={model?.nodes || []}
-                            edges={model?.edges || []}
+                            nodes={model?.nodes ?? []}
+                            edges={model?.edges ?? []}
                             scopeHierarchy={scopeHierarchy}
                             selectedExternalIP={selectedExternalIP}
                             onNodeSelect={onNodeSelect}
@@ -329,8 +329,8 @@ const TopologyComponent = ({
                         <GenericEntitiesSideBar
                             labelledById={labelledById}
                             id={selectedNode.id}
-                            nodes={model?.nodes || []}
-                            edges={model?.edges || []}
+                            nodes={model?.nodes ?? []}
+                            edges={model?.edges ?? []}
                             onNodeSelect={onNodeSelect}
                             EntityHeaderIcon={<InternalEntitiesIcon />}
                             sidebarTitle={'Unknown entity connections within your clusters'}

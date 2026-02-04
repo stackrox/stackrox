@@ -107,6 +107,11 @@ func insertIntoNetworkpoliciesundodeployments(batch *pgx.Batch, obj *storage.Net
 	return nil
 }
 
+var copyColsNetworkpoliciesundodeployments = []string{
+	"deploymentid",
+	"serialized",
+}
+
 func copyFromNetworkpoliciesundodeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NetworkPolicyApplicationUndoDeploymentRecord) error {
 	if len(objs) == 0 {
 		return nil
@@ -122,11 +127,6 @@ func copyFromNetworkpoliciesundodeployments(ctx context.Context, s pgSearch.Dele
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"deploymentid",
-		"serialized",
 	}
 
 	idx := 0
@@ -148,7 +148,7 @@ func copyFromNetworkpoliciesundodeployments(ctx context.Context, s pgSearch.Dele
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"networkpoliciesundodeployments"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"networkpoliciesundodeployments"}, copyColsNetworkpoliciesundodeployments, inputRows); err != nil {
 		return err
 	}
 

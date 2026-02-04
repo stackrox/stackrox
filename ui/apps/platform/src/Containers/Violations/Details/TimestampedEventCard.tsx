@@ -7,6 +7,7 @@ import {
     CardExpandableContent,
     CardHeader,
     DescriptionList,
+    Flex,
 } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
@@ -30,7 +31,7 @@ function TimestampedEventCard<T>({
     const [isExpanded, setIsExpanded] = useState(true);
 
     function onExpand() {
-        setIsExpanded(!isExpanded);
+        setIsExpanded((prev) => !prev);
     }
 
     const timestamps = events
@@ -65,9 +66,14 @@ function TimestampedEventCard<T>({
                             desc={getDateTime(lastOccurrenceTimestamp)}
                         />
                     </DescriptionList>
-                    {events.map((event) => (
-                        <ContentComponent key={getEventKey(event)} event={event} />
-                    ))}
+                    <Flex
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsMd' }}
+                    >
+                        {events.map((event) => (
+                            <ContentComponent key={getEventKey(event)} event={event} />
+                        ))}
+                    </Flex>
                 </CardBody>
             </CardExpandableContent>
         </Card>

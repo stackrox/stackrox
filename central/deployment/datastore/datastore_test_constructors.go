@@ -44,7 +44,7 @@ func NewTestDataStore(
 	if t == nil {
 		return nil, errors.New("NewTestDataStore called without testing")
 	}
-	deploymentStore := pgStore.FullStoreWrap(pgStore.New(testDB.DB))
+	deploymentStore := pgStore.FullStoreWrap(pgStore.New(testDB.DB), testDB.DB)
 	mockCtrl := gomock.NewController(t)
 	ds := newDatastoreImpl(
 		deploymentStore,
@@ -67,7 +67,7 @@ func NewTestDataStore(
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error) {
-	dbStore := pgStore.FullStoreWrap(pgStore.New(pool))
+	dbStore := pgStore.FullStoreWrap(pgStore.New(pool), pool)
 	imageStore := imageDS.GetTestPostgresDataStore(t, pool)
 	imageV2Store := imageV2DS.GetTestPostgresDataStore(t, pool)
 	processBaselineStore := pbDS.GetTestPostgresDataStore(t, pool)

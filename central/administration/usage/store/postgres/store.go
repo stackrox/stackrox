@@ -114,6 +114,14 @@ func insertIntoSecuredUnits(batch *pgx.Batch, obj *storage.SecuredUnits) error {
 	return nil
 }
 
+var copyColsSecuredUnits = []string{
+	"id",
+	"timestamp",
+	"numnodes",
+	"numcpuunits",
+	"serialized",
+}
+
 func copyFromSecuredUnits(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.SecuredUnits) error {
 	if len(objs) == 0 {
 		return nil
@@ -129,14 +137,6 @@ func copyFromSecuredUnits(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"timestamp",
-		"numnodes",
-		"numcpuunits",
-		"serialized",
 	}
 
 	idx := 0
@@ -161,7 +161,7 @@ func copyFromSecuredUnits(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"secured_units"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"secured_units"}, copyColsSecuredUnits, inputRows); err != nil {
 		return err
 	}
 

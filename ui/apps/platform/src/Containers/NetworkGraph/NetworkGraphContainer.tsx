@@ -242,7 +242,7 @@ function fadeOutUnconnectedNodes(
             selectedNode.children.reduce((acc, currId) => {
                 const connectedNodeIds = getConnectedNodeIds(edges, currId);
                 return [...acc, ...connectedNodeIds];
-            }, [] as string[]) || [];
+            }, [] as string[]) ?? [];
         // we include the child nodes so that they aren't faded out
         emphasizedNodeIds = [...emphasizedNodeIds, ...selectedNode.children];
     } else {

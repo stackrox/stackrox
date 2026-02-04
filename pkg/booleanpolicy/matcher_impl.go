@@ -194,6 +194,52 @@ func (m *nodeEventMatcher) MatchNodeWithFileAccess(cache *CacheReceptacle, node 
 	return *violations, nil
 }
 
+type fileAccessMatcherImpl struct {
+	fileAccessOnlyEvaluators []evaluator.Evaluator
+	matcherImpl
+}
+
+func (m *fileAccessMatcherImpl) checkFileAccessMatches(cache *CacheReceptacle, fileAccess *storage.FileAccess) (bool, error) {
+	var augmentedFileAccess *pathutil.AugmentedObj
+	if cache != nil && cache.augmentedFileAccess != nil {
+		augmentedFileAccess = cache.augmentedFileAccess
+	} else {
+		augmentedFileAccess = augmentedobjs.ConstructFileAccess(fileAccess)
+		if cache != nil {
+			cache.augmentedFileAccess = augmentedFileAccess
+		}
+	}
+	for _, eval := range m.fileAccessOnlyEvaluators {
+		_, matched := eval.Evaluate(augmentedFileAccess.Value())
+		if matched {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (m *fileAccessMatcherImpl) MatchDeploymentWithFileAccess(
+	cache *CacheReceptacle,
+	enhancedDeployment EnhancedDeployment,
+	fileAccess *storage.FileAccess,
+) (Violations, error) {
+	if cache == nil || cache.augmentedObj == nil {
+		matched, err := m.checkFileAccessMatches(cache, fileAccess)
+		if err != nil || !matched {
+			return Violations{}, err
+		}
+	}
+
+	violations, err := m.getViolations(cache, func() (*pathutil.AugmentedObj, error) {
+		return augmentedobjs.ConstructDeploymentWithFileAccess(enhancedDeployment.Deployment, enhancedDeployment.Images, enhancedDeployment.NetworkPoliciesApplied, fileAccess)
+	}, nil, nil, nil, nil, fileAccess)
+	if err != nil || violations == nil {
+		return Violations{}, err
+	}
+
+	return *violations, nil
+}
+
 type matcherImpl struct {
 	evaluators []sectionAndEvaluator
 }
@@ -298,10 +344,7 @@ func (m *matcherImpl) getViolations(
 	} else if networkPolicyMatched {
 		v.AlertViolations = printer.EnhanceNetworkPolicyViolations(v.AlertViolations, networkPolicy)
 	} else if fileAccessMatched {
-		v.FileAccessViolation = &storage.Alert_FileAccessViolation{
-			Accesses: []*storage.FileAccess{fileAccess},
-		}
-		printer.UpdateFileAccessAlertViolationMessage(v.FileAccessViolation)
+		v.AlertViolations = append(v.AlertViolations, printer.GenerateFileAccessViolation(fileAccess))
 	}
 	return v, nil
 }

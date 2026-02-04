@@ -20,12 +20,12 @@ jobs:
   check-crd-compatibility:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
     outputs:
       released_version: ${{ steps.get_previous_released_version.outputs.released_version }}
     steps:
     - name: Checkout stackrox/stackrox
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -35,11 +35,11 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout crd-schema-checker
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         repository: openshift/crd-schema-checker
         path: .crd-schema-checker
-        ref: 9c9f5f57c9f9ea4dba41d9eec5c365a622f08417 # 2025-04-08
+        ref: c313b6407231f6d1aabfb602f0823708f8c6b9fb # 2025-09-05
 
     - name: Build crd-schema-checker
       run: |
@@ -53,7 +53,7 @@ jobs:
         echo "released_version=$released_version" >> "$GITHUB_OUTPUT"
 
     - name: Checkout previous released version
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ steps.get_previous_released_version.outputs.released_version }}

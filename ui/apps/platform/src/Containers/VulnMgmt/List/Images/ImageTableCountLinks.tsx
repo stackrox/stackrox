@@ -1,6 +1,8 @@
-import React, { ReactElement, useContext } from 'react';
+import { useContext } from 'react';
+import type { ReactElement } from 'react';
 
-import { ResourceType, resourceTypes } from 'constants/entityTypes';
+import { resourceTypes } from 'constants/entityTypes';
+import type { ResourceType } from 'constants/entityTypes';
 import workflowStateContext from 'Containers/workflowStateContext';
 import TableCountLink from '../../TableCountLink';
 

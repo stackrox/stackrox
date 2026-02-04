@@ -69,8 +69,28 @@ message PrometheusMetrics {
   // of labels supported by the aggregator.
   message Group {
     message Labels {
+      // A list of labels to aggregate on. The complete list of labels for the
+      // given metric group can be found in the documentation, or in the API
+      // error message, returned when an invalid label is attempted to be added.
       repeated string labels = 1;
+      // A map of label name to a filter regular expression for this label
+      // value. See the RE2 syntax reference:
+      // https://github.com/google/re2/wiki/Syntax. If include_filters are
+      // specified, a metric record is only counted if all label values match
+      // the according label expression. Patterns are full-match only
+      // (automatically wrapped with ^ and $).
+      map<string, string> include_filters = 2;
+      // A map of label name to a filter regular expression for this label
+      // value. See the RE2 syntax reference:
+      // https://github.com/google/re2/wiki/Syntax. If exclude_filters are
+      // specified, a metric record is dropped if any label value matches the
+      // according label expression. Patterns are full-match only (automatically
+      // wrapped with ^ and $). Exclude filters are applied after include
+      // filters.
+      map<string, string> exclude_filters = 3;
     }
+    // The gathering period for periodically gathered metrics. If set to zero,
+    // gathering is disabled.
     uint32 gathering_period_minutes = 1;
     // Metric descriptors is a map of metric names to the list of allowed
     // labels.

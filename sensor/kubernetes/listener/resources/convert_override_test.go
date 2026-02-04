@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -18,6 +19,9 @@ import (
 )
 
 func TestConvertWithRegistryOverride(t *testing.T) {
+	defaultSecurityContext := &storage.SecurityContext{
+		AllowPrivilegeEscalation: true,
+	}
 	base := struct {
 		inputObj           interface{}
 		deploymentType     string
@@ -124,7 +128,7 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 					Config: &storage.ContainerConfig{
 						Env: []*storage.ContainerConfig_EnvironmentConfig{},
 					},
-					SecurityContext: &storage.SecurityContext{},
+					SecurityContext: defaultSecurityContext,
 					Resources:       &storage.Resources{},
 					Image: &storage.ContainerImage{
 						Id:          "sha256:aa561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
@@ -144,7 +148,7 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 						Id:   "sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
 						Name: &storage.ImageName{},
 					},
-					SecurityContext: &storage.SecurityContext{},
+					SecurityContext: defaultSecurityContext,
 					Resources:       &storage.Resources{},
 					LivenessProbe:   &storage.LivenessProbe{Defined: false},
 					ReadinessProbe:  &storage.ReadinessProbe{Defined: false},
@@ -201,6 +205,9 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 			testutils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, c.enableUnqualifiedFeature)
 			for i, container := range base.expectedDeployment.GetContainers() {
 				container.Image.Name = c.expectedImageNames[i]
+				if features.FlattenImageData.Enabled() {
+					container.GetImage().IdV2 = utils.NewImageV2ID(container.GetImage().GetName(), container.GetImage().GetId())
+				}
 			}
 
 			actual := newDeploymentEventFromResource(base.inputObj, &base.action, base.deploymentType, testClusterID,

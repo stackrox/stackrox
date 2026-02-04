@@ -145,6 +145,24 @@ func insertIntoProcessIndicators(batch *pgx.Batch, obj *storage.ProcessIndicator
 	return nil
 }
 
+var copyColsProcessIndicators = []string{
+	"id",
+	"deploymentid",
+	"containername",
+	"podid",
+	"poduid",
+	"signal_containerid",
+	"signal_time",
+	"signal_name",
+	"signal_args",
+	"signal_execfilepath",
+	"signal_uid",
+	"clusterid",
+	"namespace",
+	"containerstarttime",
+	"serialized",
+}
+
 func copyFromProcessIndicators(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ProcessIndicator) error {
 	if len(objs) == 0 {
 		return nil
@@ -160,24 +178,6 @@ func copyFromProcessIndicators(ctx context.Context, s pgSearch.Deleter, tx *post
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"deploymentid",
-		"containername",
-		"podid",
-		"poduid",
-		"signal_containerid",
-		"signal_time",
-		"signal_name",
-		"signal_args",
-		"signal_execfilepath",
-		"signal_uid",
-		"clusterid",
-		"namespace",
-		"containerstarttime",
-		"serialized",
 	}
 
 	idx := 0
@@ -212,7 +212,7 @@ func copyFromProcessIndicators(ctx context.Context, s pgSearch.Deleter, tx *post
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"process_indicators"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"process_indicators"}, copyColsProcessIndicators, inputRows); err != nil {
 		return err
 	}
 

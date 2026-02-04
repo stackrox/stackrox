@@ -2,25 +2,18 @@ import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
+import type { ContainerImage as ContainerImageType } from 'types/deployment.proto';
 
 type ContainerImageProps = {
-    image: {
-        name: {
-            fullName: string;
-            registry: string;
-            remote: string;
-            tag: string;
-        };
-        notPullable: boolean;
-        id: string;
-    };
+    image: ContainerImageType;
     vulnMgmtBasePath: string;
 };
 
 function ContainerImage({ image, vulnMgmtBasePath }: ContainerImageProps): ReactElement {
-    const imageDetailsPageURL = `${vulnMgmtBasePath}/images/${image.id}`;
+    const imageId = image.idV2 && image.idV2 !== '' ? image.idV2 : image.id;
+    const imageDetailsPageURL = `${vulnMgmtBasePath}/images/${imageId}`;
 
-    if (image.id === '' || image.notPullable) {
+    if (imageId === '' || image.notPullable) {
         const unavailableText = image.notPullable
             ? 'image not currently pullable'
             : 'image not available until deployment is running';

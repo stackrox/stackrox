@@ -1,4 +1,4 @@
-import React from 'react';
+import { memo } from 'react';
 import { Route, Routes } from 'react-router-dom-v5-compat';
 import isEqual from 'lodash/isEqual';
 
@@ -39,4 +39,4 @@ const Page = () => (
     </Routes>
 );
 
-export default React.memo(Page, isEqual);
+export default memo(Page, isEqual);

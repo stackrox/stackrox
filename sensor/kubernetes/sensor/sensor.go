@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
-	"github.com/stackrox/rox/sensor/common/certdistribution"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/delegatedregistry"
@@ -41,6 +40,9 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/common/processsignal"
+	"github.com/stackrox/rox/sensor/common/pubsub"
+	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
+	"github.com/stackrox/rox/sensor/common/pubsub/lane"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/sensor"
@@ -68,6 +70,21 @@ var log = logging.LoggerForModule()
 func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	log.Info("Running sensor with Kubernetes re-sync disabled")
 
+	var internalMessageDispatcher common.PubSubDispatcher
+	if features.SensorInternalPubSub.Enabled() {
+		log.Info("Internal PubSub system enabled")
+		var err error
+		internalMessageDispatcher, err = pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs(
+			[]pubsub.LaneConfig{
+				lane.NewBlockingLane(pubsub.KubernetesDispatcherEventLane),
+				lane.NewBlockingLane(pubsub.FromCentralResolverEventLane),
+			},
+		))
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create the pubsub dispatcher")
+		}
+	}
+
 	clusterID := cfg.clusterIDHandler
 
 	hm := heritage.NewHeritageManager(pods.GetPodNamespace(), cfg.k8sClient.Kubernetes().CoreV1(), time.Now())
@@ -81,6 +98,10 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	log.Infof("Install method: %q", helmManagedConfig.GetManagedBy())
 	installmethod.Set(helmManagedConfig.GetManagedBy())
+
+	if features.LabelBasedPolicyScoping.Enabled() && helmManagedConfig != nil {
+		storeProvider.ClusterLabels().Set(helmManagedConfig.GetClusterConfig().GetClusterLabels())
+	}
 
 	if cfg.introspectionK8sClient == nil {
 		// This is used so we can still identify sensor's deployment with the fake-workloads.
@@ -119,9 +140,12 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	pubSub := internalmessage.NewMessageSubscriber()
 
-	policyDetector := detector.New(clusterID, enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan)
+	policyDetector := detector.New(clusterID, enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan, storeProvider.Nodes())
 	reprocessorHandler := reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache)
-	pipeline := eventpipeline.New(clusterID, cfg.k8sClient, configHandler, policyDetector, reprocessorHandler, k8sNodeName.Setting(), cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize, pubSub)
+	pipeline, err := eventpipeline.New(clusterID, cfg.k8sClient, configHandler, policyDetector, reprocessorHandler, k8sNodeName.Setting(), cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize, pubSub, internalMessageDispatcher)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create the k8s event pipeline")
+	}
 	admCtrlMsgForwarder := admissioncontroller.NewAdmCtrlMsgForwarder(admCtrlSettingsMgr, pipeline)
 
 	imageService := image.NewService(clusterID, imageCache, storeProvider.Registries(), storeProvider.RegistryMirrors())
@@ -130,6 +154,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	// Create Process Pipeline
 	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
 	processPipeline := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
+	if cfg.processPipelineObserver != nil {
+		cfg.processPipelineObserver(processPipeline)
+	}
 	var processSignals signalService.Service
 	if cfg.signalServiceAuthFuncOverride != nil && cfg.localSensor {
 		processSignals = signalService.New(processPipeline, indicators,
@@ -200,19 +227,29 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 			certrefresh.NewSecuredClusterTLSIssuer(cfg.introspectionK8sClient.Kubernetes(), sensorNamespace, podName))
 	}
 
-	s := sensor.NewSensor(
+	s, err := sensor.NewSensor(
 		clusterID,
 		configHandler,
 		policyDetector,
 		imageService,
 		cfg.centralConnFactory,
 		pubSub,
+		internalMessageDispatcher,
 		cfg.certLoader,
 		components...,
 	)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create sensor")
+	}
 
 	if cfg.workloadManager != nil {
 		cfg.workloadManager.SetSignalHandlers(processPipeline, networkFlowManager)
+		if features.VirtualMachines.Enabled() && virtualMachineHandler != nil {
+			cfg.workloadManager.SetVMIndexReportHandler(virtualMachineHandler)
+			cfg.workloadManager.SetVMStore(storeProvider.VirtualMachines())
+			// Register WorkloadManager as a Notifiable so it receives SensorComponentEvent notifications
+			s.AddNotifiable(cfg.workloadManager)
+		}
 	}
 
 	var networkFlowService service.Service
@@ -233,7 +270,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	if features.SensitiveFileActivity.Enabled() {
 		activityChan := make(chan *sensorInternal.FileActivity)
-		fileSystemPipeline := filesystemPipeline.NewFileSystemPipeline(policyDetector, storeProvider.Entities(), storeProvider.Nodes(), activityChan)
+		fileSystemPipeline := filesystemPipeline.NewFileSystemPipeline(policyDetector, storeProvider.Entities(), activityChan)
 		fileSystemService := filesystemService.NewService(fileSystemPipeline, activityChan)
 		apiServices = append(apiServices, fileSystemService)
 	}
@@ -245,8 +282,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if admCtrlSettingsMgr != nil {
 		apiServices = append(apiServices, admissioncontroller.NewManagementService(admCtrlSettingsMgr, admissioncontroller.AlertHandlerSingleton()))
 	}
-
-	apiServices = append(apiServices, certdistribution.NewService(clusterID, cfg.k8sClient.Kubernetes(), sensorNamespace))
 
 	s.AddAPIServices(apiServices...)
 	return s, nil

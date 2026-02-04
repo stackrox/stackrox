@@ -46,6 +46,9 @@ func (s *VirtualMachineStore) AddOrUpdate(vm *virtualmachine.Info) *virtualmachi
 			vm.VSOCKCID = &vSockCID
 		}
 		vm.GuestOS = oldVM.GuestOS
+		vm.IPAddresses = copyStringSlice(oldVM.IPAddresses)
+		vm.ActivePods = copyStringSlice(oldVM.ActivePods)
+		vm.NodeName = oldVM.NodeName
 	}
 	s.addOrUpdateNoLock(vm)
 	return vm
@@ -108,6 +111,13 @@ func (s *VirtualMachineStore) Has(id virtualmachine.VMID) bool {
 	return s.Get(id) != nil
 }
 
+// Size returns the number of VirtualMachines in the store
+func (s *VirtualMachineStore) Size() int {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	return len(s.virtualMachines)
+}
+
 // GetFromCID returns the VirtualMachineInfo associated with a given VSOCK CID
 func (s *VirtualMachineStore) GetFromCID(cid uint32) *virtualmachine.Info {
 	s.lock.RLock()
@@ -154,6 +164,12 @@ func (s *VirtualMachineStore) updateStatusOrCreateNoLock(updateInfo *virtualmach
 	prev.VSOCKCID = s.addOrUpdateVSOCKInfoNoLock(updateInfo.ID, updateInfo.VSOCKCID)
 	prev.Running = updateInfo.Running
 	prev.GuestOS = updateInfo.GuestOS
+	prev.IPAddresses = copyStringSlice(updateInfo.IPAddresses)
+	prev.ActivePods = copyStringSlice(updateInfo.ActivePods)
+	prev.NodeName = updateInfo.NodeName
+	prev.Description = updateInfo.Description
+	prev.BootOrder = copyStringSlice(updateInfo.BootOrder)
+	prev.CDRomDisks = copyStringSlice(updateInfo.CDRomDisks)
 }
 
 func (s *VirtualMachineStore) addOrUpdateVSOCKInfoNoLock(id virtualmachine.VMID, vsockCID *uint32) *uint32 {
@@ -187,8 +203,11 @@ func (s *VirtualMachineStore) replaceVSOCKInfoNoLock(vm *virtualmachine.Info) *u
 		vm.VSOCKCID = prev.VSOCKCID
 	}
 	// Upsert VSOCKCID info
+	// CRITICAL: addOrUpdateVSOCKInfoNoLock always returns a heap-allocated copy so the store owns
+	// its own pointer. Reusing vm.VSOCKCID would let the caller mutate the same pointer later.
+	// Added regression test: Test_replaceVSOCKInfoNoLockCopiesIncomingPointer.
 	if vm.VSOCKCID != nil {
-		_ = s.addOrUpdateVSOCKInfoNoLock(vm.ID, vm.VSOCKCID)
+		return s.addOrUpdateVSOCKInfoNoLock(vm.ID, vm.VSOCKCID)
 	}
 	return vm.VSOCKCID
 }
@@ -220,4 +239,15 @@ func (s *VirtualMachineStore) clearStatusNoLock(id virtualmachine.VMID) {
 	vm.VSOCKCID = nil
 	// If the instance is removed the VirtualMachine will transition to Stopped
 	vm.Running = false
+	vm.GuestOS = ""
+	vm.NodeName = ""
+	vm.IPAddresses = nil
+	vm.ActivePods = nil
+}
+
+func copyStringSlice(values []string) []string {
+	if len(values) == 0 {
+		return nil
+	}
+	return append([]string(nil), values...)
 }

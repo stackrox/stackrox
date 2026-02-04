@@ -14,22 +14,16 @@ commands:
     set -eu # shell in CI does not grok -o pipefail
     # Test that Central auth reader rolebinding DOES NOT exist in kube-system any more.
     ! retry-kubectl.sh get rolebinding rhacs-central-auth-reader-${NAMESPACE} -n kube-system
----
-apiVersion: platform.stackrox.io/v1alpha1
-kind: Central
-metadata:
+resourceRefs:
+- apiVersion: platform.stackrox.io/v1alpha1
+  kind: Central
   name: stackrox-central-services
-status:
-  conditions:
-  - status: "True"
-    type: Deployed
-  - status: "True"
-    type: Initialized
-  - status: "False"
-    type: Irreconcilable
-  - status: "False"
-    type: Paused
-  - status: "False"
-    type: ProxyConfigFailed
-  - status: "False"
-    type: ReleaseFailed
+  ref: central_cr
+assertAll:
+- celExpr: "central_cr.status.conditions.filter(c, c.type=='Deployed').exists(c, c.status=='True')"
+- celExpr: "central_cr.status.conditions.filter(c, c.type=='Initialized').exists(c, c.status=='True')"
+- celExpr: "central_cr.status.conditions.filter(c, c.type=='Irreconcilable').exists(c, c.status=='False')"
+- celExpr: "central_cr.status.conditions.filter(c, c.type=='ProxyConfigFailed').exists(c, c.status=='False')"
+- celExpr: "central_cr.status.conditions.filter(c, c.type=='ReleaseFailed').exists(c, c.status=='False')"
+- celExpr: "central_cr.status.conditions.filter(c, c.type=='Progressing').exists(c, c.status=='False')"
+- celExpr: "central_cr.status.conditions.filter(c, c.type=='Available').exists(c, c.status=='True')"

@@ -27,6 +27,11 @@ data:
 
     # default admin password, can be changed before first start of grafana,  or in profile settings
     admin_password = {{ required "A Grafana password is required" .Values.password }}
+
+    [auth.anonymous]
+    # When enabled, user/pass is not needed to access with admin rights
+    enabled = {{ .Values.anonymousAdminAccess }}
+    org_role = Admin
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -91,3 +96,5 @@ data:
 {{ .Files.Get "dashboards/enrichment-endpoints.json" | indent 4 }}
   enrichment-updatecomputer.json: |-
 {{ .Files.Get "dashboards/enrichment-updatecomputer.json" | indent 4 }}
+  vm-index-report-dashboard.json: |-
+{{ .Files.Get "dashboards/vm-index-report-dashboard.json" | indent 4 }}

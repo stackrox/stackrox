@@ -1,3 +1,9 @@
+/* IMPORTANT:
+   Tailwind's PostCSS processing (including the purge step) is triggered
+   by matching this specific filename.
+   If this file is renamed or moved, update the condition in postcss.config.js.
+   When tailwind is removed entirely, delete the related PostCSS plugin there. */
+
 @import 'css/style.css';
 
 @import 'css/light.theme.css';

@@ -5,6 +5,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -83,31 +84,26 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NotificationSchedul
 }
 
 func (s *storeImpl) retryableUpsert(ctx context.Context, obj *storage.NotificationSchedule) error {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "NotificationSchedule")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, ctx, err := conn.Begin(ctx)
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
 
 	if _, err := tx.Exec(ctx, deleteStmt); err != nil {
-		return err
+		if errTx := tx.Rollback(ctx); errTx != nil {
+			return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
+		}
+		return errors.Wrap(err, "deleting from notification_schedules")
 	}
 
 	if err := insertIntoNotificationSchedules(ctx, tx, obj); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
+		if errTx := tx.Rollback(ctx); errTx != nil {
+			return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 		}
-		return err
+		return errors.Wrap(err, "inserting into notification_schedules")
 	}
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-	return nil
+
+	return tx.Commit(ctx)
 }
 
 // Get returns the object, if it exists from the store.
@@ -125,13 +121,7 @@ func (s *storeImpl) Get(ctx context.Context) (*storage.NotificationSchedule, boo
 }
 
 func (s *storeImpl) retryableGet(ctx context.Context) (*storage.NotificationSchedule, bool, error) {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "NotificationSchedule")
-	if err != nil {
-		return nil, false, err
-	}
-	defer release()
-
-	row := conn.QueryRow(ctx, getStmt)
+	row := s.db.QueryRow(ctx, getStmt)
 	var data []byte
 	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
@@ -144,13 +134,8 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.NotificationSche
 	return &msg, true, nil
 }
 
-func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
-	defer metrics.SetAcquireDBConnDuration(time.Now(), op, typ)
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
+func (s *storeImpl) begin(ctx context.Context) (*postgres.Tx, context.Context, error) {
+	return postgres.GetTransaction(ctx, s.db)
 }
 
 // Delete removes the singleton from the store
@@ -168,14 +153,16 @@ func (s *storeImpl) Delete(ctx context.Context) error {
 }
 
 func (s *storeImpl) retryableDelete(ctx context.Context) error {
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "NotificationSchedule")
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
-	defer release()
 
-	if _, err := conn.Exec(ctx, deleteStmt); err != nil {
-		return err
+	if _, err := tx.Exec(ctx, deleteStmt); err != nil {
+		if errTx := tx.Rollback(ctx); errTx != nil {
+			return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
+		}
+		return errors.Wrap(err, "deleting from notification_schedules")
 	}
-	return nil
+	return tx.Commit(ctx)
 }

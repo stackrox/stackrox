@@ -129,7 +129,7 @@ const ConfigManagementEntityCluster = ({
                         listData = listData.map((listItem) => {
                             return {
                                 ...listItem,
-                                subjectWithClusterID: listItem?.subject?.subjectWithClusterID || [],
+                                subjectWithClusterID: listItem?.subject?.subjectWithClusterID ?? [],
                             };
                         });
                     }

@@ -10,7 +10,7 @@ fi
 
 # Opens cypress with environment variables for feature flags and auth
 OPENSHIFT_CONSOLE_URL="${OPENSHIFT_CONSOLE_URL:-http://localhost:9000}"
-API_PROXY_BASE_URL="${OPENSHIFT_CONSOLE_URL}/api/proxy/plugin/advanced-cluster-security/api-service"
+API_PROXY_BASE_URL="${OPENSHIFT_CONSOLE_URL}/api/proxy/plugin/advanced-cluster-security/api-service/proxy/central"
 
 if [[ -z "$OCP_BRIDGE_AUTH_DISABLED" && ( -z "$OPENSHIFT_CONSOLE_USERNAME" || -z "$OPENSHIFT_CONSOLE_PASSWORD" ) ]]; then
     echo "OPENSHIFT_CONSOLE_USERNAME and OPENSHIFT_CONSOLE_PASSWORD must be set if OCP_BRIDGE_AUTH_DISABLED is not true"

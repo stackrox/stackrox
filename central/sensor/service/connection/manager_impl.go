@@ -11,13 +11,17 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events"
+	adminEventStream "github.com/stackrox/rox/pkg/administration/events/stream"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clusterhealth"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/rate"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -73,6 +77,8 @@ type manager struct {
 	complianceOperatorMgr      common.ComplianceOperatorManager
 	initSyncMgr                *initSyncManager
 	autoTriggerUpgrades        *concurrency.Flag
+	rateLimiter                *rate.Limiter
+	adminEventsStream          events.Stream
 }
 
 // NewManager returns a new connection manager
@@ -81,7 +87,25 @@ func NewManager(mgr hashManager.Manager) Manager {
 		connectionsByClusterID: make(map[string]connectionAndUpgradeController),
 		manager:                mgr,
 		initSyncMgr:            NewInitSyncManager(),
+		rateLimiter:            newVMIndexReportRateLimiter(),
+		adminEventsStream:      adminEventStream.Singleton(),
 	}
+}
+
+func newVMIndexReportRateLimiter() *rate.Limiter {
+	rl, err := rate.NewLimiter(
+		"vm_index_reports",
+		env.VMIndexReportRateLimit.FloatSetting(),
+		env.VMIndexReportBucketCapacity.IntegerSetting()).
+		ForWorkload(func(msg *central.MsgFromSensor) bool {
+			return msg.GetEvent().GetVirtualMachineIndexReport() != nil
+		})
+
+	if err != nil {
+		utils.Should(errors.Wrap(err, "Creating rate-limiter for VM index reports"))
+	}
+
+	return rl
 }
 
 func (m *manager) initializeUpgradeControllers() error {
@@ -252,6 +276,8 @@ func (m *manager) CloseConnection(clusterID string) {
 	if err := m.manager.Delete(ctx, clusterID); err != nil {
 		log.Errorf("deleting cluster id %q from hash manager: %v", clusterID, err)
 	}
+
+	m.rateLimiter.OnClientDisconnect(clusterID)
 }
 
 func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.SensorHello, cluster *storage.Cluster, eventPipeline pipeline.ClusterPipeline, server central.SensorService_CommunicateServer) error {
@@ -278,8 +304,13 @@ func (m *manager) HandleConnection(ctx context.Context, sensorHello *central.Sen
 			m.manager,
 			m.complianceOperatorMgr,
 			m.initSyncMgr,
+			m.rateLimiter,
+			m.adminEventsStream,
 		)
-	ctx = withConnection(ctx, conn)
+
+	defer m.rateLimiter.OnClientDisconnect(clusterID)
+
+	ctx = WithConnection(ctx, conn)
 
 	oldConnection, err := m.replaceConnection(ctx, cluster, conn)
 	if err != nil {
@@ -505,4 +536,13 @@ func (m *manager) PushExternalNetworkEntitiesToAllSensors(ctx context.Context) e
 		}
 	}
 	return errs.ToError()
+}
+
+func (m *manager) AllSensorsHaveCapability(capability centralsensor.SensorCapability) bool {
+	for _, conn := range m.GetActiveConnections() {
+		if !conn.HasCapability(capability) {
+			return false
+		}
+	}
+	return true
 }

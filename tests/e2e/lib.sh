@@ -65,9 +65,6 @@ deploy_stackrox() {
     echo "Sensor deployed. Waiting for sensor to be up"
     sensor_wait "${sensor_namespace}"
 
-    # Bounce collectors to avoid restarts on initial module pull
-    kubectl -n "${sensor_namespace}" delete pod -l app=collector --grace-period=0
-
     sensor_wait "${sensor_namespace}"
 
     wait_for_collectors_to_be_operational "${sensor_namespace}"
@@ -182,15 +179,15 @@ export_test_environment() {
     ci_export ROX_EXTERNAL_IPS "${ROX_EXTERNAL_IPS:-true}"
     ci_export ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS "${ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS:-true}"
     ci_export ROX_NETWORK_GRAPH_EXTERNAL_IPS "${ROX_NETWORK_GRAPH_EXTERNAL_IPS:-false}"
-    ci_export ROX_FLATTEN_CVE_DATA "${ROX_FLATTEN_CVE_DATA:-true}"
     ci_export ROX_FLATTEN_IMAGE_DATA "${ROX_FLATTEN_IMAGE_DATA:-false}"
     ci_export ROX_VULNERABILITY_VIEW_BASED_REPORTS "${ROX_VULNERABILITY_VIEW_BASED_REPORTS:-true}"
     ci_export ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS "${ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS:-true}"
     ci_export ROX_ADMISSION_CONTROLLER_CONFIG "${ROX_ADMISSION_CONTROLLER_CONFIG:-true}"
     ci_export ROX_CISA_KEV "${ROX_CISA_KEV:-true}"
-    ci_export ROX_SENSITIVE_FILE_ACTIVITY "${ROX_SENSITIVE_FILE_ACTIVITY:-false}"
+    ci_export ROX_SENSITIVE_FILE_ACTIVITY "${ROX_SENSITIVE_FILE_ACTIVITY:-true}"
     ci_export ROX_CVE_FIX_TIMESTAMP "${ROX_CVE_FIX_TIMESTAMP:-true}"
-
+    ci_export ROX_BASE_IMAGE_DETECTION "${ROX_BASE_IMAGE_DETECTION:-true}"
+    ci_export ROX_LABEL_BASED_POLICY_SCOPING "${ROX_LABEL_BASED_POLICY_SCOPING:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -216,6 +213,7 @@ deploy_stackrox_operator() {
         ocp_version=$(kubectl get clusterversion -o=jsonpath='{.items[0].status.desired.version}' | cut -d '.' -f 1,2)
 
         make -C operator kuttl deploy-via-olm \
+          TEST_NAMESPACE="rhacs-operator-system" \
           INDEX_IMG_BASE="quay.io/rhacs-eng/stackrox-operator-index" \
           INDEX_IMG_TAG="$(< operator/midstream/iib.json jq -r --arg version "$ocp_version" '.iibs[$version]')" \
           INSTALL_CHANNEL="$(< operator/midstream/iib.json jq -r '.operator.channel')" \
@@ -223,6 +221,7 @@ deploy_stackrox_operator() {
     else
         info "Deploying ACS operator"
         make -C operator kuttl deploy-via-olm \
+          TEST_NAMESPACE="rhacs-operator-system" \
           ROX_PRODUCT_BRANDING=RHACS_BRANDING
     fi
 }
@@ -324,8 +323,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS'
     customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_FLATTEN_CVE_DATA'
-    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_FLATTEN_IMAGE_DATA'
     customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_VULNERABILITY_VIEW_BASED_REPORTS'
@@ -340,6 +337,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_CVE_FIX_TIMESTAMP'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_BASE_IMAGE_DETECTION'
+    customize_envVars+=$'\n        value: "false"'
 
     local scannerV4ScannerComponent="Default"
     case "${ROX_SCANNER_V4:-}" in
@@ -372,6 +371,7 @@ deploy_central_via_operator() {
 deploy_sensor() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
+    local validate=${3:-true}
 
     info "Deploying sensor into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
 
@@ -379,7 +379,7 @@ deploy_sensor() {
     ci_export ROX_COLLECTOR_INTROSPECTION_ENABLE "true"
 
     if [[ "${DEPLOY_STACKROX_VIA_OPERATOR}" == "true" ]]; then
-        deploy_sensor_via_operator "${sensor_namespace}" "${central_namespace}"
+        deploy_sensor_via_operator "${sensor_namespace}" "${central_namespace}" "${validate}"
     else
         if [[ "${OUTPUT_FORMAT:-}" == "helm" ]]; then
             echo "Preparing deployment of Sensor using Helm ..."
@@ -412,7 +412,9 @@ deploy_sensor() {
 deploy_sensor_via_operator() {
     local sensor_namespace=${1:-stackrox}
     local central_namespace=${2:-stackrox}
+    local validate=${3:-true}
     local scanner_component_setting="Disabled"
+    local sfa_agent_setting="Disabled"
     local central_endpoint="central.${central_namespace}.svc:443"
 
     info "Deploying sensor using operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
@@ -430,12 +432,6 @@ deploy_sensor_via_operator() {
         --output-secrets -' \
     | kubectl -n "${sensor_namespace}" apply -f -
 
-    if [[ -n "${COLLECTION_METHOD:-}" ]]; then
-       echo "Overriding the product default collection method due to COLLECTION_METHOD variable: ${COLLECTION_METHOD}"
-    else
-       die "COLLECTION_METHOD not set"
-    fi
-
     if [[ "${SENSOR_SCANNER_SUPPORT:-}" == "true" ]]; then
         scanner_component_setting="AutoSense"
     fi
@@ -445,20 +441,17 @@ deploy_sensor_via_operator() {
         secured_cluster_yaml_path="tests/e2e/yaml/secured-cluster-cr-with-scanner-v4.envsubst.yaml"
     fi
 
-    upper_case_collection_method="$(echo "$COLLECTION_METHOD" | tr '[:lower:]' '[:upper:]')"
-
-    # forceCollection only has an impact when the collection method is EBPF
-    # but upgrade tests can fail if forceCollection is used for 4.3 or older.
-    if [[ "${upper_case_collection_method}" == "CORE_BPF" ]]; then
-      sed -i.bak '/forceCollection/d' "${secured_cluster_yaml_path}"
+    if [[ "${SFA_AGENT:-}" == "Enabled" ]]; then
+       echo "Enabling SFA agent due to SFA_AGENT variable: ${SFA_AGENT}"
+       sfa_agent_setting="Enabled"
     fi
 
     env - \
-      collection_method="$upper_case_collection_method" \
       scanner_component_setting="$scanner_component_setting" \
+      sfa_agent_setting="$sfa_agent_setting" \
       central_endpoint="$central_endpoint" \
     "${envsubst}" \
-      < "${secured_cluster_yaml_path}" | kubectl apply -n "${sensor_namespace}" -f -
+      < "${secured_cluster_yaml_path}" | kubectl apply -n "${sensor_namespace}" --validate="${validate}" -f -
 
     wait_for_object_to_appear "${sensor_namespace}" deploy/sensor 300
     wait_for_object_to_appear "${sensor_namespace}" ds/collector 300
@@ -538,7 +531,7 @@ install_the_compliance_operator() {
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/catalog-source.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/operator-group.yaml"
         oc create -f "${ROOT}/tests/e2e/yaml/compliance-operator/subscription.yaml"
-        wait_for_object_to_appear openshift-compliance deploy/compliance-operator
+        wait_for_object_to_appear openshift-compliance deploy/compliance-operator 900
     else
         info "Reusing existing compliance operator deployment from $csv subscription"
     fi
@@ -997,6 +990,9 @@ remove_existing_stackrox_resources() {
     if echo "${k8s_api_resources}" | grep -q "^securitycontextconstraints\.security\.openshift\.io$"; then
         resource_types="${resource_types},SecurityContextConstraints"
     fi
+    if echo "${k8s_api_resources}" | grep -q "^consoleplugins\.console\.openshift\.io$"; then
+        global_resource_types="${global_resource_types},consoleplugins.console.openshift.io"
+    fi
     if echo "${k8s_api_resources}" | grep -q "^podsecuritypolicies\.policy$"; then
         psps_supported=true
         global_resource_types="${global_resource_types},psp"
@@ -1063,17 +1059,17 @@ remove_existing_stackrox_resources() {
             kubectl delete --wait "$namespace"
         done
 
-        if kubectl get ns stackrox-operator >/dev/null 2>&1; then
+        if kubectl get ns rhacs-operator-system >/dev/null 2>&1; then
             # Delete subscription first to give OLM a chance to notice and prevent errors on re-install.
             # See https://issues.redhat.com/browse/ROX-30450
-            kubectl -n stackrox-operator delete --ignore-not-found --wait subscription.operators.coreos.com --all
+            kubectl -n rhacs-operator-system delete --ignore-not-found --wait subscription.operators.coreos.com --all
             # Then delete remaining OLM resources.
             # The awk is a quick hack to omit templating that might confuse kubectl's YAML parser.
             # We only care about apiVersion, kind and metadata, which do not contain any templating.
             awk 'BEGIN{interesting=1} /^spec:/{interesting=0} /^---$/{interesting=1} interesting{print}' operator/hack/operator.envsubst.yaml | \
-              kubectl -n stackrox-operator delete --ignore-not-found --wait -f -
+              kubectl -n rhacs-operator-system delete --ignore-not-found --wait -f -
         fi
-        kubectl delete --ignore-not-found ns stackrox-operator --wait
+        kubectl delete --ignore-not-found ns rhacs-operator-system --wait
         kubectl delete --ignore-not-found crd {centrals.platform,securedclusters.platform,securitypolicies.config}.stackrox.io --wait
     ) 2>&1 | sed -e 's/^/out: /' || true # (prefix output to avoid triggering prow log focus)
     info "Finished tearing down resources."
@@ -1590,8 +1586,8 @@ wait_for_log_line() {
 }
 
 wait_for_profile_bundles_to_be_ready() {
-    wait_for_object_to_appear openshift-compliance profilebundle/ocp4
-    wait_for_object_to_appear openshift-compliance profilebundle/rhcos4
+    wait_for_object_to_appear openshift-compliance profilebundle/ocp4 900
+    wait_for_object_to_appear openshift-compliance profilebundle/rhcos4 900
     for pb in $(oc get pb -n openshift-compliance -o jsonpath="{.items[*].metadata.name}"); do
         local delay="300"
         local waitInterval=10

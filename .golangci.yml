@@ -1,7 +1,7 @@
 version: "2"
 run:
   timeout: 240m
-  # go: "1.24"  # https://golangci-lint.run/usage/configuration/ "Default: use Go version from the go.mod file, fallback on the env var `GOVERSION`, fallback on 1.22.
+  go: "1.25"
   build-tags:
     - integration
     - scanner_db_integration
@@ -35,7 +35,7 @@ linters:
     - staticcheck
     - wrapcheck
   # - nakedret TODO: add in follow-up
-  # - unconvert TODO: add in follow-up
+    - unconvert
   # - unparam TODO: add in follow-up
   # - unused // enabled in Makefile as it fails with release tag
     - usestdlibvars
@@ -170,10 +170,14 @@ linters:
     rules:
       - linters:
           - wrapcheck
-        path: ^(central|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor/tests/helper|tests|tools|scale)/
+        # The exclusion for pkg was changed from folder-wide to all subfolders except pkg/virtualmachines
+        # Packages that start with `pkg/v...` need to be explicitly added to the paths below (as needed).
+        path: ^(central|compliance|integration-tests|local|migrator|operator|pkg/[abcdefghijklmnopqrstuwxz](.*)|pkg/v2backuprestore|pkg/version|scanner|sensor/tests/helper|tests|tools|scale)/
       - linters:
           - forbidigo
-        path: (central/graphql/schema/print|compliance|integration-tests|local|migrator|operator|pkg|scanner|sensor|tests|tools|scale|govulncheck|compliance/virtualmachines/agent)/
+        # The exclusion for pkg was changed from folder-wide to all subfolders except pkg/virtualmachines
+        # Packages that start with `pkg/v...` need to be explicitly added to the paths below (as needed).
+        path: (central/graphql/schema/print|compliance|integration-tests|local|migrator|operator|pkg/[abcdefghijklmnopqrstuwxz](.*)|pkg/v2backuprestore|pkg/version|scanner|sensor|tests|tools|scale|govulncheck|compliance/virtualmachines/agent)/
       - linters:
           - forbidigo
         path: roxctl/central/generate/interactive.go

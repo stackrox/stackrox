@@ -133,7 +133,7 @@ const ListFrontendPaginated = ({
                             />
                         );
                     }
-                    const tableRows = createTableRows(queryData) || [];
+                    const tableRows = createTableRows(queryData) ?? [];
                     const headerComponents = getHeaderComponents(tableRows.length);
 
                     if (tableRows.length) {

@@ -6,6 +6,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
@@ -18,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/assert"
@@ -266,6 +268,40 @@ func (s *ImageResolversTestSuite) TestDeployments() {
 				assert.Equal(t, int32(expectedCVESevCount.important), important.Total(testCtx))
 				assert.Equal(t, int32(expectedCVESevCount.moderate), moderate.Total(testCtx))
 				assert.Equal(t, int32(expectedCVESevCount.low), low.Total(testCtx))
+
+				// Test BaseImage field
+				actualBaseImage, err := image.BaseImage(testCtx)
+				assert.NoError(t, err)
+
+				expectedImage, exists := expectedImages[imageID]
+				require.True(t, exists, "Expected image %s not found in expectedImages map", imageID)
+				baseImageInfos := expectedImage.GetBaseImageInfo()
+				if len(baseImageInfos) == 0 {
+					assert.Nil(t, actualBaseImage)
+				} else {
+					require.NotNil(t, actualBaseImage)
+
+					// Test imageSha (should be the digest from the first base image info)
+					expectedSha := baseImageInfos[0].GetBaseImageDigest()
+					assert.Equal(t, expectedSha, actualBaseImage.ImageSha(testCtx))
+
+					// Test name array
+					expectedNames := []string{
+						baseImageInfos[1].GetBaseImageFullName(),
+						baseImageInfos[0].GetBaseImageFullName(),
+					}
+					assert.Equal(t, expectedNames, actualBaseImage.Names(testCtx))
+
+					// Test created timestamp
+					actualCreated, err := actualBaseImage.Created(testCtx)
+					assert.NoError(t, err)
+					assert.NotNil(t, actualCreated)
+					expectedTimestamp, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 3000))
+					assert.NoError(t, err)
+					expectedCreated, err := protocompat.ConvertTimestampToGraphqlTimeOrError(expectedTimestamp)
+					assert.NoError(t, err)
+					assert.Equal(t, expectedCreated, actualCreated)
+				}
 
 				// Test image -> deployments -> images
 				imageDeployments, err := image.Deployments(testCtx, paginatedQ)

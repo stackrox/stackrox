@@ -169,6 +169,15 @@ func insertIntoPodsLiveInstances(batch *pgx.Batch, obj *storage.ContainerInstanc
 	return nil
 }
 
+var copyColsPods = []string{
+	"id",
+	"name",
+	"deploymentid",
+	"namespace",
+	"clusterid",
+	"serialized",
+}
+
 func copyFromPods(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Pod) error {
 	if len(objs) == 0 {
 		return nil
@@ -184,15 +193,6 @@ func copyFromPods(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"deploymentid",
-		"namespace",
-		"clusterid",
-		"serialized",
 	}
 
 	idx := 0
@@ -218,7 +218,7 @@ func copyFromPods(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"pods"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"pods"}, copyColsPods, inputRows); err != nil {
 		return err
 	}
 
@@ -231,15 +231,15 @@ func copyFromPods(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs
 	return nil
 }
 
+var copyColsPodsLiveInstances = []string{
+	"pods_id",
+	"idx",
+	"imagedigest",
+}
+
 func copyFromPodsLiveInstances(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, podID string, objs ...*storage.ContainerInstance) error {
 	if len(objs) == 0 {
 		return nil
-	}
-
-	copyCols := []string{
-		"pods_id",
-		"idx",
-		"imagedigest",
 	}
 
 	idx := 0
@@ -257,7 +257,7 @@ func copyFromPodsLiveInstances(ctx context.Context, s pgSearch.Deleter, tx *post
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"pods_live_instances"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"pods_live_instances"}, copyColsPodsLiveInstances, inputRows); err != nil {
 		return err
 	}
 

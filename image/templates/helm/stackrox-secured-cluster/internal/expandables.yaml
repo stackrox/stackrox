@@ -28,9 +28,8 @@ collector:
   resources: true
   complianceResources: true
   nodeScanningResources: true
+  sfaResources: true
   nodeSelector: true
-fact:
-  resources: true
 scanner:
   resources: true
   dbResources: true

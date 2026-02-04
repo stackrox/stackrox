@@ -106,6 +106,11 @@ func insertIntoWatchedImages(batch *pgx.Batch, obj *storage.WatchedImage) error 
 	return nil
 }
 
+var copyColsWatchedImages = []string{
+	"name",
+	"serialized",
+}
+
 func copyFromWatchedImages(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.WatchedImage) error {
 	if len(objs) == 0 {
 		return nil
@@ -121,11 +126,6 @@ func copyFromWatchedImages(ctx context.Context, s pgSearch.Deleter, tx *postgres
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"name",
-		"serialized",
 	}
 
 	idx := 0
@@ -147,7 +147,7 @@ func copyFromWatchedImages(ctx context.Context, s pgSearch.Deleter, tx *postgres
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"watched_images"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"watched_images"}, copyColsWatchedImages, inputRows); err != nil {
 		return err
 	}
 

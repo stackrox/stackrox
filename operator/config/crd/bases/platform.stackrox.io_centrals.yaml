@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.20.0
   name: centrals.platform.stackrox.io
 spec:
   group: platform.stackrox.io
@@ -14,7 +14,23 @@ spec:
     singular: central
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.productVersion
+      name: Version
+      type: string
+    - jsonPath: .status.central.adminPassword.adminPasswordSecretReference
+      name: AdminPassword
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Deployed")].message
+      name: Message
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Progressing")].status
+      name: Progressing
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Available")].status
+      name: Available
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: |-
@@ -135,8 +151,9 @@ spec:
                       nodeSelector:
                         additionalProperties:
                           type: string
-                        description: If you want this component to only run on specific
-                          nodes, you can configure a node selector here.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure a node selector here.
+                          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                         type: object
                       passwordSecret:
                         description: |-
@@ -200,7 +217,7 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-                              This is an alpha field and requires enabling the
+                              This field depends on the
                               DynamicResourceAllocation feature gate.
 
                               This field is immutable. It can only be set for containers.
@@ -252,8 +269,9 @@ spec:
                             type: object
                         type: object
                       tolerations:
-                        description: If you want this component to only run on specific
-                          nodes, you can configure tolerations of tainted nodes.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                          This setting overrides spec.customize.deploymentDefaults.tolerations.
                         items:
                           description: |-
                             The pod this Toleration is attached to tolerates any taint that matches
@@ -272,9 +290,10 @@ spec:
                             operator:
                               description: |-
                                 Operator represents a key's relationship to the value.
-                                Valid operators are Exists and Equal. Defaults to Equal.
+                                Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                 Exists is equivalent to wildcard for value, so that a pod can
                                 tolerate all taints of a particular category.
+                                Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                               type: string
                             tolerationSeconds:
                               description: |-
@@ -473,8 +492,9 @@ spec:
                   nodeSelector:
                     additionalProperties:
                       type: string
-                    description: If you want this component to only run on specific
-                      nodes, you can configure a node selector here.
+                    description: |-
+                      If you want this component to only run on specific nodes, you can configure a node selector here.
+                      This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                     type: object
                   notifierSecretsEncryption:
                     description: Configures the encryption of notifier secrets stored
@@ -521,7 +541,7 @@ spec:
                           Claims lists the names of resources, defined in spec.resourceClaims,
                           that are used by this container.
 
-                          This is an alpha field and requires enabling the
+                          This field depends on the
                           DynamicResourceAllocation feature gate.
 
                           This field is immutable. It can only be set for containers.
@@ -595,8 +615,9 @@ spec:
                         type: object
                     type: object
                   tolerations:
-                    description: If you want this component to only run on specific
-                      nodes, you can configure tolerations of tainted nodes.
+                    description: |-
+                      If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                      This setting overrides spec.customize.deploymentDefaults.tolerations.
                     items:
                       description: |-
                         The pod this Toleration is attached to tolerates any taint that matches
@@ -615,9 +636,10 @@ spec:
                         operator:
                           description: |-
                             Operator represents a key's relationship to the value.
-                            Valid operators are Exists and Equal. Defaults to Equal.
+                            Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                             Exists is equivalent to wildcard for value, so that a pod can
                             tolerate all taints of a particular category.
+                            Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                           type: string
                         tolerationSeconds:
                           description: |-
@@ -646,6 +668,137 @@ spec:
                     - Enabled
                     - Disabled
                     type: string
+                  hostAliases:
+                    description: HostAliases allows configuring additional hostnames
+                      to resolve in the pod's hosts file.
+                    items:
+                      description: |-
+                        HostAlias holds the mapping between IP and hostnames that will be injected as an entry in the
+                        pod's hosts file.
+                      properties:
+                        hostnames:
+                          description: Hostnames for the above IP address.
+                          items:
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: atomic
+                        ip:
+                          description: IP address of the host file entry.
+                          type: string
+                      required:
+                      - ip
+                      type: object
+                    type: array
+                  nodeSelector:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      If you want this component to only run on specific nodes, you can configure a node selector here.
+                      This setting overrides spec.customize.deploymentDefaults.nodeSelector.
+                    type: object
+                  resources:
+                    description: |-
+                      Allows overriding the default resource settings for this component. Please consult the documentation
+                      for an overview of default resource requirements and a sizing guide.
+                    properties:
+                      claims:
+                        description: |-
+                          Claims lists the names of resources, defined in spec.resourceClaims,
+                          that are used by this container.
+
+                          This field depends on the
+                          DynamicResourceAllocation feature gate.
+
+                          This field is immutable. It can only be set for containers.
+                        items:
+                          description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                          properties:
+                            name:
+                              description: |-
+                                Name must match the name of one entry in pod.spec.resourceClaims of
+                                the Pod where this field is used. It makes that resource available
+                                inside a container.
+                              type: string
+                            request:
+                              description: |-
+                                Request is the name chosen for a request in the referenced claim.
+                                If empty, everything from the claim is made available, otherwise
+                                only the result of this request.
+                              type: string
+                          required:
+                          - name
+                          type: object
+                        type: array
+                        x-kubernetes-list-map-keys:
+                        - name
+                        x-kubernetes-list-type: map
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: |-
+                          Limits describes the maximum amount of compute resources allowed.
+                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: |-
+                          Requests describes the minimum amount of compute resources required.
+                          If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                          otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                        type: object
+                    type: object
+                  tolerations:
+                    description: |-
+                      If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                      This setting overrides spec.customize.deploymentDefaults.tolerations.
+                    items:
+                      description: |-
+                        The pod this Toleration is attached to tolerates any taint that matches
+                        the triple <key,value,effect> using the matching operator <operator>.
+                      properties:
+                        effect:
+                          description: |-
+                            Effect indicates the taint effect to match. Empty means match all taint effects.
+                            When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.
+                          type: string
+                        key:
+                          description: |-
+                            Key is the taint key that the toleration applies to. Empty means match all taint keys.
+                            If the key is empty, operator must be Exists; this combination means to match all values and all keys.
+                          type: string
+                        operator:
+                          description: |-
+                            Operator represents a key's relationship to the value.
+                            Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
+                            Exists is equivalent to wildcard for value, so that a pod can
+                            tolerate all taints of a particular category.
+                            Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
+                          type: string
+                        tolerationSeconds:
+                          description: |-
+                            TolerationSeconds represents the period of time the toleration (which must be
+                            of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+                            it is not set, which means tolerate the taint forever (do not evict). Zero and
+                            negative values will be treated as 0 (evict immediately) by the system.
+                          format: int64
+                          type: integer
+                        value:
+                          description: |-
+                            Value is the taint value the toleration matches to.
+                            If the operator is Exists, the value should be empty, otherwise just a regular string.
+                          type: string
+                      type: object
+                    type: array
                 type: object
               customize:
                 description: Customizations to apply on all Central Services components.
@@ -655,6 +808,75 @@ spec:
                       type: string
                     description: Custom annotations to set on all managed objects.
                     type: object
+                  deploymentDefaults:
+                    description: |-
+                      Global nodeSelector and tolerations for Deployment-based components. DaemonSets (Collector) are not affected.
+                      Component-level nodeSelector and tolerations settings override these defaults on a field-by-field basis.
+                    properties:
+                      nodeSelector:
+                        additionalProperties:
+                          type: string
+                        description: |-
+                          Default nodeSelector applied to all Deployment-based components. Use this for custom node
+                          selection criteria.
+                          Cannot be used together with pinToNodes.
+                        type: object
+                      pinToNodes:
+                        description: |-
+                          Pin all Deployment-based components to specific node types. This is a convenience setting
+                          that automatically configures both nodeSelector and tolerations with predefined values.
+                          Use this for common scenarios like running on OpenShift infrastructure nodes.
+                          For custom node selection, use the explicit nodeSelector and tolerations fields instead.
+                          Cannot be used together with nodeSelector or tolerations fields.
+                          The default is: None.
+                        enum:
+                        - None
+                        - InfraRole
+                        type: string
+                      tolerations:
+                        description: |-
+                          Default tolerations applied to all Deployment-based components. Use this when your target
+                          nodes have custom taints that pods must tolerate.
+                          Cannot be used together with pinToNodes.
+                        items:
+                          description: |-
+                            The pod this Toleration is attached to tolerates any taint that matches
+                            the triple <key,value,effect> using the matching operator <operator>.
+                          properties:
+                            effect:
+                              description: |-
+                                Effect indicates the taint effect to match. Empty means match all taint effects.
+                                When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.
+                              type: string
+                            key:
+                              description: |-
+                                Key is the taint key that the toleration applies to. Empty means match all taint keys.
+                                If the key is empty, operator must be Exists; this combination means to match all values and all keys.
+                              type: string
+                            operator:
+                              description: |-
+                                Operator represents a key's relationship to the value.
+                                Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
+                                Exists is equivalent to wildcard for value, so that a pod can
+                                tolerate all taints of a particular category.
+                                Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
+                              type: string
+                            tolerationSeconds:
+                              description: |-
+                                TolerationSeconds represents the period of time the toleration (which must be
+                                of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+                                it is not set, which means tolerate the taint forever (do not evict). Zero and
+                                negative values will be treated as 0 (evict immediately) by the system.
+                              format: int64
+                              type: integer
+                            value:
+                              description: |-
+                                Value is the taint value the toleration matches to.
+                                If the operator is Exists, the value should be empty, otherwise just a regular string.
+                              type: string
+                          type: object
+                        type: array
+                    type: object
                   envVars:
                     description: Custom environment variables to set on managed pods'
                       containers.
@@ -663,8 +885,9 @@ spec:
                         in a Container.
                       properties:
                         name:
-                          description: Name of the environment variable. Must be a
-                            C_IDENTIFIER.
+                          description: |-
+                            Name of the environment variable.
+                            May consist of any printable ASCII characters except '='.
                           type: string
                         value:
                           description: |-
@@ -720,6 +943,43 @@ spec:
                                   type: string
                               required:
                               - fieldPath
+                              type: object
+                              x-kubernetes-map-type: atomic
+                            fileKeyRef:
+                              description: |-
+                                FileKeyRef selects a key of the env file.
+                                Requires the EnvFiles feature gate to be enabled.
+                              properties:
+                                key:
+                                  description: |-
+                                    The key within the env file. An invalid key will prevent the pod from starting.
+                                    The keys defined within a source may consist of any printable ASCII characters except '='.
+                                    During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.
+                                  type: string
+                                optional:
+                                  default: false
+                                  description: |-
+                                    Specify whether the file or its key must be defined. If the file or key
+                                    does not exist, then the env var is not published.
+                                    If optional is set to true and the specified key does not exist,
+                                    the environment variable will not be set in the Pod's containers.
+
+                                    If optional is set to false and the specified key does not exist,
+                                    an error will be returned during Pod creation.
+                                  type: boolean
+                                path:
+                                  description: |-
+                                    The path within the volume from which to select the file.
+                                    Must be relative and may not contain the '..' path or start with '..'.
+                                  type: string
+                                volumeName:
+                                  description: The name of the volume mount containing
+                                    the env file.
+                                  type: string
+                              required:
+                              - key
+                              - path
+                              - volumeName
                               type: object
                               x-kubernetes-map-type: atomic
                             resourceFieldRef:
@@ -951,8 +1211,9 @@ spec:
                       nodeSelector:
                         additionalProperties:
                           type: string
-                        description: If you want this component to only run on specific
-                          nodes, you can configure a node selector here.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure a node selector here.
+                          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                         type: object
                       resources:
                         description: |-
@@ -964,7 +1225,7 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-                              This is an alpha field and requires enabling the
+                              This field depends on the
                               DynamicResourceAllocation feature gate.
 
                               This field is immutable. It can only be set for containers.
@@ -1047,8 +1308,9 @@ spec:
                             type: integer
                         type: object
                       tolerations:
-                        description: If you want this component to only run on specific
-                          nodes, you can configure tolerations of tainted nodes.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                          This setting overrides spec.customize.deploymentDefaults.tolerations.
                         items:
                           description: |-
                             The pod this Toleration is attached to tolerates any taint that matches
@@ -1067,9 +1329,10 @@ spec:
                             operator:
                               description: |-
                                 Operator represents a key's relationship to the value.
-                                Valid operators are Exists and Equal. Defaults to Equal.
+                                Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                 Exists is equivalent to wildcard for value, so that a pod can
                                 tolerate all taints of a particular category.
+                                Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                               type: string
                             tolerationSeconds:
                               description: |-
@@ -1115,8 +1378,9 @@ spec:
                       nodeSelector:
                         additionalProperties:
                           type: string
-                        description: If you want this component to only run on specific
-                          nodes, you can configure a node selector here.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure a node selector here.
+                          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                         type: object
                       resources:
                         description: |-
@@ -1128,7 +1392,7 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-                              This is an alpha field and requires enabling the
+                              This field depends on the
                               DynamicResourceAllocation feature gate.
 
                               This field is immutable. It can only be set for containers.
@@ -1180,8 +1444,9 @@ spec:
                             type: object
                         type: object
                       tolerations:
-                        description: If you want this component to only run on specific
-                          nodes, you can configure tolerations of tainted nodes.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                          This setting overrides spec.customize.deploymentDefaults.tolerations.
                         items:
                           description: |-
                             The pod this Toleration is attached to tolerates any taint that matches
@@ -1200,9 +1465,10 @@ spec:
                             operator:
                               description: |-
                                 Operator represents a key's relationship to the value.
-                                Valid operators are Exists and Equal. Defaults to Equal.
+                                Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                 Exists is equivalent to wildcard for value, so that a pod can
                                 tolerate all taints of a particular category.
+                                Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                               type: string
                             tolerationSeconds:
                               description: |-
@@ -1277,8 +1543,9 @@ spec:
                       nodeSelector:
                         additionalProperties:
                           type: string
-                        description: If you want this component to only run on specific
-                          nodes, you can configure a node selector here.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure a node selector here.
+                          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                         type: object
                       persistence:
                         description: |-
@@ -1330,7 +1597,7 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-                              This is an alpha field and requires enabling the
+                              This field depends on the
                               DynamicResourceAllocation feature gate.
 
                               This field is immutable. It can only be set for containers.
@@ -1382,8 +1649,9 @@ spec:
                             type: object
                         type: object
                       tolerations:
-                        description: If you want this component to only run on specific
-                          nodes, you can configure tolerations of tainted nodes.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                          This setting overrides spec.customize.deploymentDefaults.tolerations.
                         items:
                           description: |-
                             The pod this Toleration is attached to tolerates any taint that matches
@@ -1402,9 +1670,10 @@ spec:
                             operator:
                               description: |-
                                 Operator represents a key's relationship to the value.
-                                Valid operators are Exists and Equal. Defaults to Equal.
+                                Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                 Exists is equivalent to wildcard for value, so that a pod can
                                 tolerate all taints of a particular category.
+                                Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                               type: string
                             tolerationSeconds:
                               description: |-
@@ -1449,8 +1718,9 @@ spec:
                       nodeSelector:
                         additionalProperties:
                           type: string
-                        description: If you want this component to only run on specific
-                          nodes, you can configure a node selector here.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure a node selector here.
+                          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                         type: object
                       resources:
                         description: |-
@@ -1462,7 +1732,7 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-                              This is an alpha field and requires enabling the
+                              This field depends on the
                               DynamicResourceAllocation feature gate.
 
                               This field is immutable. It can only be set for containers.
@@ -1545,8 +1815,9 @@ spec:
                             type: integer
                         type: object
                       tolerations:
-                        description: If you want this component to only run on specific
-                          nodes, you can configure tolerations of tainted nodes.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                          This setting overrides spec.customize.deploymentDefaults.tolerations.
                         items:
                           description: |-
                             The pod this Toleration is attached to tolerates any taint that matches
@@ -1565,9 +1836,10 @@ spec:
                             operator:
                               description: |-
                                 Operator represents a key's relationship to the value.
-                                Valid operators are Exists and Equal. Defaults to Equal.
+                                Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                 Exists is equivalent to wildcard for value, so that a pod can
                                 tolerate all taints of a particular category.
+                                Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                               type: string
                             tolerationSeconds:
                               description: |-
@@ -1612,8 +1884,9 @@ spec:
                       nodeSelector:
                         additionalProperties:
                           type: string
-                        description: If you want this component to only run on specific
-                          nodes, you can configure a node selector here.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure a node selector here.
+                          This setting overrides spec.customize.deploymentDefaults.nodeSelector.
                         type: object
                       resources:
                         description: |-
@@ -1625,7 +1898,7 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-                              This is an alpha field and requires enabling the
+                              This field depends on the
                               DynamicResourceAllocation feature gate.
 
                               This field is immutable. It can only be set for containers.
@@ -1708,8 +1981,9 @@ spec:
                             type: integer
                         type: object
                       tolerations:
-                        description: If you want this component to only run on specific
-                          nodes, you can configure tolerations of tainted nodes.
+                        description: |-
+                          If you want this component to only run on specific nodes, you can configure tolerations of tainted nodes.
+                          This setting overrides spec.customize.deploymentDefaults.tolerations.
                         items:
                           description: |-
                             The pod this Toleration is attached to tolerates any taint that matches
@@ -1728,9 +2002,10 @@ spec:
                             operator:
                               description: |-
                                 Operator represents a key's relationship to the value.
-                                Valid operators are Exists and Equal. Defaults to Equal.
+                                Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal.
                                 Exists is equivalent to wildcard for value, so that a pod can
                                 tolerate all taints of a particular category.
+                                Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).
                               type: string
                             tolerationSeconds:
                               description: |-
@@ -1768,8 +2043,8 @@ spec:
                     description: |-
                       Can be specified as "Enabled" or "Disabled".
                       If this field is not specified, the following defaulting takes place:
-                      * for new installations, Scanner V4 is enabled starting with ACS 4.8;
-                      * for upgrades to 4.8 from previous releases, Scanner V4 is disabled.
+                      * for upgrades to 4.8 from previous releases, the default is: Disabled;
+                      * for new installations starting with ACS 4.8, the default is: Enabled.
                     enum:
                     - Default
                     - Enabled
@@ -1854,6 +2129,11 @@ spec:
                   version:
                     type: string
                 type: object
+              observedGeneration:
+                description: ObservedGeneration is the generation most recently observed
+                  by the controller.
+                format: int64
+                type: integer
               productVersion:
                 description: The deployed version of the product.
                 type: string

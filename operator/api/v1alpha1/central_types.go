@@ -548,8 +548,8 @@ type ScannerComponentSpec struct {
 type ScannerV4Spec struct {
 	// Can be specified as "Enabled" or "Disabled".
 	// If this field is not specified, the following defaulting takes place:
-	// * for new installations, Scanner V4 is enabled starting with ACS 4.8;
-	// * for upgrades to 4.8 from previous releases, Scanner V4 is disabled.
+	// * for upgrades to 4.8 from previous releases, the default is: Disabled;
+	// * for new installations starting with ACS 4.8, the default is: Enabled.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Scanner V4 component"
 	ScannerComponent *ScannerV4ComponentPolicy `json:"scannerComponent,omitempty"`
 
@@ -625,6 +625,9 @@ type ConfigAsCodeSpec struct {
 	// The default is: Enabled.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Config as Code component"
 	ComponentPolicy *ConfigAsCodeComponentPolicy `json:"configAsCodeComponent,omitempty"`
+
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
+	DeploymentSpec `json:",inline"`
 }
 
 // ConfigAsCodeComponentPolicy is a type for values of spec.configAsCode.configAsCodeComponent
@@ -651,6 +654,10 @@ type CentralStatus struct {
 	ProductVersion string `json:"productVersion,omitempty"`
 	//+operator-sdk:csv:customresourcedefinitions:type=status,order=2
 	Central *CentralComponentStatus `json:"central,omitempty"`
+
+	// ObservedGeneration is the generation most recently observed by the controller.
+	//+operator-sdk:csv:customresourcedefinitions:type=status,order=4
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 }
 
 // AdminPasswordStatus shows status related to the admin password.
@@ -673,6 +680,11 @@ type CentralComponentStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+operator-sdk:csv:customresourcedefinitions:resources={{Deployment,v1,""},{Secret,v1,""},{Service,v1,""},{Route,v1,""}}
+//+kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.status.productVersion`
+//+kubebuilder:printcolumn:name="AdminPassword",type=string,JSONPath=`.status.central.adminPassword.adminPasswordSecretReference`
+//+kubebuilder:printcolumn:name="Message",type=string,JSONPath=`.status.conditions[?(@.type=="Deployed")].message`
+//+kubebuilder:printcolumn:name="Progressing",type=string,JSONPath=`.status.conditions[?(@.type=="Progressing")].status`
+//+kubebuilder:printcolumn:name="Available",type=string,JSONPath=`.status.conditions[?(@.type=="Available")].status`
 //+genclient
 
 // Central is the configuration template for the central services. This includes the API server, persistent storage,
@@ -686,6 +698,28 @@ type Central struct {
 
 	// This field will never be serialized, it is used for attaching defaulting decisions to a Central struct during reconciliation.
 	Defaults CentralSpec `json:"-"`
+}
+
+// GetCondition returns a specific condition by type, or nil if not found.
+func (c *Central) GetCondition(condType ConditionType) *StackRoxCondition {
+	return getCondition(c.Status.Conditions, condType)
+}
+
+// SetCondition updates or adds a condition. Returns true if the condition changed.
+func (c *Central) SetCondition(updatedCond StackRoxCondition) bool {
+	var updated bool
+	c.Status.Conditions, updated = updateCondition(c.Status.Conditions, updatedCond)
+	return updated
+}
+
+// GetGeneration returns the metadata.generation of the Central resource.
+func (c *Central) GetGeneration() int64 {
+	return c.ObjectMeta.GetGeneration()
+}
+
+// GetObservedGeneration returns the observedGeneration of the Central status sub-resource.
+func (c *Central) GetObservedGeneration() int64 {
+	return c.Status.ObservedGeneration
 }
 
 //+kubebuilder:object:root=true

@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package v2;
+
+import "api/v2/common.proto";
+import "api/v2/user.proto";
+import weak "google/api/annotations.proto";
+
+option go_package = "./api/v2;v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+message BaseImageReference {
+  string id = 1;
+  string base_image_repo_path = 2;
+  string base_image_tag_pattern = 3;
+
+  SlimUser user = 4;
+}
+
+message GetBaseImageReferenceResponse {
+  repeated BaseImageReference base_image_references = 1;
+}
+
+message CreateBaseImageReferenceRequest {
+  string base_image_repo_path = 1;
+  string base_image_tag_pattern = 2;
+}
+
+message CreateBaseImageReferenceResponse {
+  BaseImageReference base_image_reference = 1;
+}
+
+message UpdateBaseImageTagPatternRequest {
+  string id = 1;
+  string base_image_tag_pattern = 2;
+}
+
+message DeleteBaseImageReferenceRequest {
+  string id = 1;
+}
+
+// BaseImageServiceV2 APIs manages base image references.
+service BaseImageServiceV2 {
+  // GetBaseImageReferences returns all base image references.
+  rpc GetBaseImageReferences(Empty) returns (GetBaseImageReferenceResponse) {
+    option (google.api.http) = {get: "/v2/baseimages"};
+  }
+
+  // CreateBaseImageReference creates a new base image reference.
+  rpc CreateBaseImageReference(CreateBaseImageReferenceRequest) returns (CreateBaseImageReferenceResponse) {
+    option (google.api.http) = {
+      post: "/v2/baseimages"
+      body: "*"
+    };
+  }
+
+  // UpdateBaseImageTagPattern updates the tag pattern of an existing base image reference.
+  rpc UpdateBaseImageTagPattern(UpdateBaseImageTagPatternRequest) returns (Empty) {
+    option (google.api.http) = {
+      put: "/v2/baseimages/{id}"
+      body: "*"
+    };
+  }
+
+  // DeleteBaseImageReference deletes a base image reference.
+  rpc DeleteBaseImageReference(DeleteBaseImageReferenceRequest) returns (Empty) {
+    option (google.api.http) = {delete: "/v2/baseimages/{id}"};
+  }
+}

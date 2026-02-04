@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"regexp"
 	"slices"
 	"time"
 )
@@ -10,6 +11,9 @@ type MetricName string // Prometheus metric name.
 
 // MetricDescriptors is the parsed aggregation configuration.
 type MetricDescriptors map[MetricName][]Label
+
+// LabelFilters is a map of regex filters of the metric label values.
+type LabelFilters map[MetricName]map[Label]*regexp.Regexp
 
 // diff computes the difference between one instance of MetricDescriptors and
 // another. The result serves for runtime updates.
@@ -30,8 +34,10 @@ func (md MetricDescriptors) diff(another MetricDescriptors) (toAdd []MetricName,
 }
 
 type Configuration struct {
-	metrics  MetricDescriptors
-	toAdd    []MetricName
-	toDelete []MetricName
-	period   time.Duration
+	metrics        MetricDescriptors
+	includeFilters LabelFilters
+	excludeFilters LabelFilters
+	toAdd          []MetricName
+	toDelete       []MetricName
+	period         time.Duration
 }

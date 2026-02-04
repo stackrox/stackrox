@@ -84,6 +84,8 @@ type Registry interface {
 	Config(ctx context.Context) *Config
 	Name() string
 	HTTPClient() *http.Client
+	// ListTags lists all tags for a given repository in this registry.
+	ListTags(ctx context.Context, repository string) ([]string, error)
 }
 
 // ImageRegistry adds a DataSource function to Registry that describes which

@@ -1,4 +1,5 @@
-import React, { ReactElement, useState } from 'react';
+import { useState } from 'react';
+import type { ReactElement } from 'react';
 import { useApolloClient } from '@apollo/client';
 import { Alert } from '@patternfly/react-core';
 
@@ -13,10 +14,8 @@ import { resourceTypes } from 'constants/entityTypes';
 import useCaseTypes from 'constants/useCaseTypes';
 import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
 import usePermissions from 'hooks/usePermissions';
-import {
-    ComplianceStandardMetadata,
-    fetchComplianceStandardsSortedByName,
-} from 'services/ComplianceService';
+import { fetchComplianceStandardsSortedByName } from 'services/ComplianceService';
+import type { ComplianceStandardMetadata } from 'services/ComplianceService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import {

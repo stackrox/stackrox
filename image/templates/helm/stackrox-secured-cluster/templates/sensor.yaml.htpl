@@ -70,6 +70,7 @@ spec:
         args:
         - ensure-service-certificates
         securityContext:
+          allowPrivilegeEscalation: false
           runAsNonRoot: true
           readOnlyRootFilesystem: true
         env:
@@ -119,6 +120,12 @@ spec:
               name: tls-cert-sensor
               key: cert.pem
               optional: true
+        {{- if ._rox._securedClusterCertRefresh }}
+        - name: ROX_CERTS_LEGACY_DIR
+          value: /run/secrets/stackrox.io/certs-legacy/
+        - name: ROX_CERTS_NEW_DIR
+          value: /run/secrets/stackrox.io/certs-new/
+        {{- end }}
         {{- include "srox.envVars" (list . "deployment" "sensor" "sensor") | nindent 8 }}
         volumeMounts:
         - name: sensor-etc-ssl-volume
@@ -147,9 +154,6 @@ spec:
           readOnly: true
         {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
       {{- end }}
-      {{- if ._rox._securedClusterCertRefresh }}
-      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
-      {{- end }}
       containers:
       - image: {{ quote ._rox.image.main.fullRef }}
         imagePullPolicy: {{ ._rox.sensor.imagePullPolicy }}
@@ -172,11 +176,18 @@ spec:
           - containerPort: 9091
             name: monitoring-tls
           {{- end }}
+          [<- if .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >]
+          {{- if ._rox.env.openshift }}
+          - containerPort: 9444
+            name: proxy-https
+          {{- end }}
+          [<- end >]
         command:
           - kubernetes-sensor
         resources:
           {{- ._rox.sensor._resources | nindent 10 }}
         securityContext:
+          allowPrivilegeEscalation: false
           runAsNonRoot: true
           readOnlyRootFilesystem: true
         env:
@@ -240,7 +251,17 @@ spec:
           mountPath: /etc/pki/ca-trust/
         - name: certs
           mountPath: /run/secrets/stackrox.io/certs/
+          {{- if not ._rox._securedClusterCertRefresh }}
           readOnly: true
+          {{- end }}
+        {{- if ._rox._securedClusterCertRefresh }}
+        - name: certs-legacy
+          mountPath: /run/secrets/stackrox.io/certs-legacy/
+          readOnly: true
+        - name: certs-new
+          mountPath: /run/secrets/stackrox.io/certs-new/
+          readOnly: true
+        {{- end }}
         - name: additional-ca-volume
           mountPath: /usr/local/share/ca-certificates/
           readOnly: true
@@ -264,9 +285,32 @@ spec:
           mountPath: /run/secrets/stackrox.io/monitoring-tls
           readOnly: true
         {{- end }}
+        [<- if .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >]
+        {{- if ._rox.env.openshift }}
+        - name: proxy-tls-volume
+          mountPath: /run/secrets/stackrox.io/proxy-tls/
+          readOnly: true
+        {{- end }}
+        [<- end >]
       volumes:
       {{- if ._rox._securedClusterCertRefresh }}
-      {{- include "srox.tlsCertsInitContainerVolumes" (list "sensor") | indent 6 }}
+      - name: certs
+        emptyDir: {}
+      - name: certs-legacy
+        secret:
+          secretName: sensor-tls
+          optional: true
+          items:
+          - key: sensor-cert.pem
+            path: cert.pem
+          - key: sensor-key.pem
+            path: key.pem
+          - key: ca.pem
+            path: ca.pem
+      - name: certs-new
+        secret:
+          secretName: tls-cert-sensor
+          optional: true
       {{- else }}
       - name: certs
         secret:
@@ -324,6 +368,13 @@ spec:
         secret:
           secretName: sensor-monitoring-tls
       {{- end }}
+      [<- if .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >]
+      {{- if ._rox.env.openshift }}
+      - name: proxy-tls-volume
+        secret:
+          secretName: sensor-proxy-tls
+      {{- end }}
+      [<- end >]
 ---
 apiVersion: v1
 kind: Service
@@ -361,6 +412,31 @@ spec:
   type: ClusterIP
   sessionAffinity: None
 ---
+[<- if .FeatureFlags.ROX_OCP_CONSOLE_INTEGRATION >]
+{{- if ._rox.env.openshift }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: sensor-proxy
+  namespace: {{ ._rox._namespace | quote }}
+  labels:
+    {{- include "srox.labels" (list . "service" "sensor-proxy") | nindent 4 }}
+  annotations:
+    {{- $annotations := dict -}}
+    {{- $_ := set $annotations "service.beta.openshift.io/serving-cert-secret-name" "sensor-proxy-tls" -}}
+    {{- include "srox.annotations" (list . "service" "sensor-proxy" $annotations) | nindent 4 }}
+spec:
+  ports:
+  - name: https
+    port: 443
+    targetPort: proxy-https
+    protocol: TCP
+  selector:
+    app: sensor
+  type: ClusterIP
+---
+{{- end }}
+[<- end >]
 
 {{- if ._rox.env.istio }}
 apiVersion: networking.istio.io/v1alpha3

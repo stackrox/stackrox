@@ -2,8 +2,8 @@ package datastore
 
 import (
 	"context"
+	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/secret/internal/store"
 	pgStore "github.com/stackrox/rox/central/secret/internal/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -34,18 +34,31 @@ func (d *datastoreImpl) GetSecret(ctx context.Context, id string) (*storage.Secr
 }
 
 func (d *datastoreImpl) SearchSecrets(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	// TODO(ROX-29943): remove 2 pass database queries
+	if q == nil {
+		q = pkgSearch.EmptyQuery()
+	} else {
+		q = q.CloneVT()
+	}
+
+	// Add name field to select columns
+	q.Selects = append(q.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.SecretName).Proto())
+
 	results, err := d.storage.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 
-	secrets, missingIndices, err := d.resultsToListSecrets(ctx, results)
-	if err != nil {
-		return nil, err
+	// Extract name from FieldValues and populate Name in search results
+	searchTag := strings.ToLower(pkgSearch.SecretName.String())
+	for i := range results {
+		if results[i].FieldValues != nil {
+			if nameVal, ok := results[i].FieldValues[searchTag]; ok {
+				results[i].Name = nameVal
+			}
+		}
 	}
-	results = pkgSearch.RemoveMissingResults(results, missingIndices)
-	return convertMany(secrets, results)
+
+	return pkgSearch.ResultsToSearchResultProtos(results, &SecretSearchResultConverter{}), nil
 }
 
 func (d *datastoreImpl) SearchListSecrets(ctx context.Context, request *v1.Query) ([]*storage.ListSecret, error) {
@@ -102,24 +115,21 @@ func (d *datastoreImpl) resultsToListSecrets(ctx context.Context, results []pkgS
 	return listSecrets, missingIndices, nil
 }
 
-func convertMany(secrets []*storage.ListSecret, results []pkgSearch.Result) ([]*v1.SearchResult, error) {
-	if len(secrets) != len(results) {
-		return nil, errors.Errorf("expected %d secrets but got %d", len(results), len(secrets))
-	}
+type SecretSearchResultConverter struct{}
 
-	outputResults := make([]*v1.SearchResult, len(secrets))
-	for index, sar := range secrets {
-		outputResults[index] = convertOne(sar, &results[index])
-	}
-	return outputResults, nil
+func (c *SecretSearchResultConverter) BuildName(result *pkgSearch.Result) string {
+	return result.Name
 }
 
-func convertOne(secret *storage.ListSecret, result *pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_SECRETS,
-		Id:             secret.GetId(),
-		Name:           secret.GetName(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+func (c *SecretSearchResultConverter) BuildLocation(result *pkgSearch.Result) string {
+	// Secrets do not have a location
+	return ""
+}
+
+func (c *SecretSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_SECRETS
+}
+
+func (c *SecretSearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
+	return result.Score
 }

@@ -31,7 +31,7 @@ jobs:
       is_release: ${{ steps.is_release_check.outputs.is_release }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
@@ -61,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
@@ -70,13 +70,26 @@ jobs:
           scripts/ci/lib.sh \
             check_collector_version
 
+  check-fact-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+      - name: Check fact version
+        run: |
+          scripts/ci/lib.sh \
+            check_fact_version
+
   publish-helm-charts:
-    needs: [build, check-scanner-version, check-collector-version, check-is-release]
+    needs: [build, check-scanner-version, check-collector-version, check-fact-version, check-is-release]
     if: needs.check-is-release.outputs.is_release == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
@@ -100,12 +113,12 @@ jobs:
 
   # Publish `roxagent` and `roxctl`.
   publish-cli:
-    needs: [build, check-scanner-version, check-collector-version, check-is-release]
+    needs: [build, check-scanner-version, check-collector-version, check-fact-version, check-is-release]
     if: needs.check-is-release.outputs.is_release == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
@@ -126,12 +139,12 @@ jobs:
             publish_cli "${STACKROX_TAG}"
 
   publish-openapispec:
-    needs: [build, check-scanner-version, check-collector-version, check-is-release]
+    needs: [build, check-scanner-version, check-collector-version, check-fact-version, check-is-release]
     if: needs.check-is-release.outputs.is_release == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}

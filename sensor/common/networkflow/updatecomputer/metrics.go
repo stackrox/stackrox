@@ -9,6 +9,7 @@ func init() {
 	prometheus.MustRegister(
 		UpdateEvents,
 		periodicCleanupDurationSeconds,
+		DroppedItems,
 	)
 }
 
@@ -28,4 +29,10 @@ var (
 		Help:      "Time in seconds taken to perform a single periodic cleanup on the transition-based update computer.",
 		Buckets:   []float64{0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5},
 	})
+	DroppedItems = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "update_computer_dropped_items_total",
+		Help:      "Total number of items (connections or endpoints) dropped by limitCacheSize due to cache size limits.",
+	}, []string{"entity"})
 )

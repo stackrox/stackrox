@@ -25,6 +25,7 @@ type Store interface {
 	GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error)
 	GetManyImageMetadata(ctx context.Context, id []string) ([]*storage.Image, error)
 	WalkByQuery(ctx context.Context, q *v1.Query, fn func(img *storage.Image) error) error
+	WalkMetadataByQuery(ctx context.Context, q *v1.Query, fn func(img *storage.Image) error) error
 
 	Upsert(ctx context.Context, image *storage.Image) error
 	Delete(ctx context.Context, id string) error

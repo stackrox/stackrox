@@ -16,8 +16,8 @@ import {
 } from '@patternfly/react-core';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
-import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import PageTitle from 'Components/PageTitle';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
@@ -42,9 +42,6 @@ import ScanConfigurationSelect from './components/ScanConfigurationSelect';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 import ProfilesToggleGroup from './ProfilesToggleGroup';
-import { profileCheckSearchFilterConfig } from '../searchFilterConfig';
-
-const searchFilterConfig = [profileCheckSearchFilterConfig];
 
 function ClusterDetailsPage() {
     const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
@@ -106,19 +103,8 @@ function ClusterDetailsPage() {
         });
     }
 
-    const onSearch = (payload: OnSearchPayload) => {
-        onURLSearch(searchFilter, setSearchFilter, payload);
-    };
-
-    const onCheckStatusSelect = (
-        filterType: 'Compliance Check Status',
-        checked: boolean,
-        selection: string
-    ) => {
-        const action = checked ? 'ADD' : 'REMOVE';
-        const category = filterType;
-        const value = selection;
-        onSearch({ action, category, value });
+    const onSearch: OnSearchCallback = (payload) => {
+        setSearchFilter(updateSearchFilter(searchFilter, payload));
     };
 
     function onClearFilters() {
@@ -227,11 +213,9 @@ function ClusterDetailsPage() {
                             tableState={tableState}
                             pagination={pagination}
                             getSortParams={getSortParams}
-                            searchFilterConfig={searchFilterConfig}
                             searchFilter={searchFilter}
                             onFilterChange={setSearchFilter}
                             onSearch={onSearch}
-                            onCheckStatusSelect={onCheckStatusSelect}
                             onClearFilters={onClearFilters}
                         />
                     </>

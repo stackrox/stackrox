@@ -7,41 +7,12 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-// Comment out Names filter for 4.4 MVP because testers expected partial match instead of exact match.
-
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
-import {
-    getDiscoveredClustersFilter,
-    isStatus,
-    isType,
-    // replaceSearchFilterNames,
-    replaceSearchFilterStatuses,
-    replaceSearchFilterTypes,
-} from 'services/DiscoveredClusterService';
-import type {
-    DiscoveredClusterStatus,
-    DiscoveredClusterType,
-} from 'services/DiscoveredClusterService';
+import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import type { SearchFilter } from 'types/search';
 
-import SearchFilterTypes from './SearchFilterTypes';
-// import SearchFilterNames from './SearchFilterNames';
-import SearchFilterStatuses from './SearchFilterStatuses';
-import { getStatusText, getTypeText } from './DiscoveredCluster';
-
-const searchFilterChipDescriptors = [
-    // { displayName: 'Name', searchFilterName: 'Cluster' },
-    {
-        displayName: 'Status',
-        searchFilterName: 'Cluster Status',
-        render: (filter: string) => (isStatus(filter) ? getStatusText(filter) : filter),
-    },
-    {
-        displayName: 'Type',
-        searchFilterName: 'Cluster Type',
-        render: (filter: string) => (isType(filter) ? getTypeText(filter) : filter),
-    },
-];
+import { searchFilterConfig } from './searchFilterConfig';
 
 export type DiscoveredClustersToolbarProps = {
     count: number;
@@ -66,61 +37,32 @@ function DiscoveredClustersToolbar({
     searchFilter,
     setSearchFilter,
 }: DiscoveredClustersToolbarProps): ReactElement {
-    /*
-    function setNamesSelected(names: string[] | undefined) {
-        setSearchFilter(replaceSearchFilterNames(searchFilter, names));
-    }
-    */
-
-    function setStatusesSelected(statuses: DiscoveredClusterStatus[] | undefined) {
-        setSearchFilter(replaceSearchFilterStatuses(searchFilter, statuses));
-    }
-
-    function setTypesSelected(types: DiscoveredClusterType[] | undefined) {
-        setSearchFilter(replaceSearchFilterTypes(searchFilter, types));
-    }
-
-    const {
-        // names: namesSelected,
-        types: typesSelected,
-        statuses: statusesSelected,
-    } = getDiscoveredClustersFilter(searchFilter);
-
     return (
         <Toolbar>
             <ToolbarContent>
-                {/*
-                <ToolbarItem variant="search-filter">
-                    <SearchFilterNames
-                        namesSelected={namesSelected}
-                        // Comment out for MVP because testers complained about flicker.
-                        // isDisabled={isDisabled}
-                        setNamesSelected={setNamesSelected}
-                    />
-                    </ToolbarItem>
-                */}
-                <ToolbarGroup variant="filter-group">
+                <ToolbarGroup className="pf-v5-u-w-100">
                     <ToolbarItem>
-                        <SearchFilterStatuses
-                            statusesSelected={statusesSelected}
-                            // Comment out for MVP because testers complained about flicker.
-                            // isDisabled={isDisabled}
-                            isDisabled={false}
-                            setStatusesSelected={setStatusesSelected}
-                        />
-                    </ToolbarItem>
-                    <ToolbarItem>
-                        <SearchFilterTypes
-                            typesSelected={typesSelected}
-                            // Comment out for MVP because testers complained about flicker.
-                            // isDisabled={isDisabled}
-                            isDisabled={false}
-                            setTypesSelected={setTypesSelected}
+                        <CompoundSearchFilter
+                            config={searchFilterConfig}
+                            searchFilter={searchFilter}
+                            onSearch={(payload) =>
+                                setSearchFilter(updateSearchFilter(searchFilter, payload))
+                            }
                         />
                     </ToolbarItem>
                 </ToolbarGroup>
-                <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
-                    <ToolbarItem variant="pagination">
+                <ToolbarGroup className="pf-v5-u-w-100">
+                    <ToolbarItem>
+                        <CompoundSearchFilterLabels
+                            attributesSeparateFromConfig={[]}
+                            config={searchFilterConfig}
+                            onFilterChange={setSearchFilter}
+                            searchFilter={searchFilter}
+                        />
+                    </ToolbarItem>
+                </ToolbarGroup>
+                <ToolbarGroup className="pf-v5-u-w-100">
+                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                         <Pagination
                             isCompact
                             // Comment out for MVP because testers complained about flicker.
@@ -134,13 +76,6 @@ function DiscoveredClustersToolbar({
                             }}
                         />
                     </ToolbarItem>
-                </ToolbarGroup>
-                <ToolbarGroup className="pf-v5-u-w-100">
-                    <SearchFilterChips
-                        searchFilter={searchFilter}
-                        onFilterChange={setSearchFilter}
-                        filterChipGroupDescriptors={searchFilterChipDescriptors}
-                    />
                 </ToolbarGroup>
             </ToolbarContent>
         </Toolbar>

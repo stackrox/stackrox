@@ -17,6 +17,7 @@ import type { HasReadAccess } from 'hooks/usePermissions';
 import {
     accessControlBasePath,
     administrationEventsBasePath,
+    baseImagesPath,
     clustersBasePath,
     collectionsBasePath,
     complianceBasePath,
@@ -261,6 +262,12 @@ function getNavDescriptions(
                     content: 'System Health',
                     path: systemHealthPath,
                     routeKey: 'system-health',
+                },
+                {
+                    type: 'link',
+                    content: 'Base Images',
+                    path: baseImagesPath,
+                    routeKey: 'base-images',
                 },
             ],
         },

@@ -49,6 +49,7 @@ const (
 
 	Walk
 	WalkByQuery
+	WalkMetadataByQuery
 
 	Unset
 

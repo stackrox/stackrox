@@ -8,6 +8,7 @@ import type { HasReadAccess } from 'hooks/usePermissions';
 import type { ResourceName } from 'types/roleResources';
 import { allEnabled } from 'utils/featureFlagUtils';
 import type { FeatureFlagPredicate } from 'utils/featureFlagUtils';
+import { getQueryString } from 'utils/queryStringUtils';
 
 export const mainPath = '/main';
 export const loginPath = '/login';
@@ -66,6 +67,7 @@ export const searchPath = `${mainPath}/search`;
 export const secretsPath = `${mainPath}/configmanagement/secrets/:secretId?`;
 export const systemConfigPath = `${mainPath}/systemconfig`;
 export const systemHealthPath = `${mainPath}/system-health`;
+export const baseImagesPath = `${mainPath}/base-images`;
 export const userBasePath = `${mainPath}/user`;
 export const userRolePath = `${userBasePath}/roles/:roleName`;
 export const violationsBasePath = `${mainPath}/violations`;
@@ -189,6 +191,7 @@ export type RouteKey =
     | 'vulnerabilities/images-without-cves'
     | 'vulnerabilities/platform-cves'
     | 'vulnerabilities/virtual-machine-cves'
+    | 'base-images'
     | 'vulnerability-management'
     ;
 
@@ -368,6 +371,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         featureFlagRequirements: allEnabled(['ROX_VIRTUAL_MACHINES']),
         resourceAccessRequirements: everyResource(['Cluster']),
     },
+    'base-images': {
+        featureFlagRequirements: allEnabled(['ROX_BASE_IMAGE_DETECTION']),
+        resourceAccessRequirements: everyResource(['ImageAdministration']),
+    },
     'vulnerability-management': {
         resourceAccessRequirements: everyResource([
             // 'Alert', // for Cluster and Deployment and Namespace
@@ -495,3 +502,24 @@ export const workflowPaths = {
     LIST: `${mainPath}/:context/:pageEntityListType/:entityId1?/:entityType2?/:entityId2?`,
     ENTITY: `${mainPath}/:context/:pageEntityType/:pageEntityId?/:entityType1?/:entityId1?/:entityType2?/:entityId2?`,
 };
+
+type GetLinkToDeploymentInNetworkGraphParams = {
+    cluster: string;
+    namespace: string;
+    deploymentId: string;
+};
+
+export function getLinkToDeploymentInNetworkGraph({
+    cluster,
+    namespace,
+    deploymentId,
+}: GetLinkToDeploymentInNetworkGraphParams) {
+    const queryString = getQueryString({
+        s: {
+            Cluster: cluster,
+            Namespace: namespace,
+        },
+    });
+    const networkGraphLink = `${networkBasePath}/deployment/${deploymentId}${queryString}`;
+    return networkGraphLink;
+}

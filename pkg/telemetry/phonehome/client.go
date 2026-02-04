@@ -157,10 +157,13 @@ func (c *Client) WithGroups() []telemeter.Option {
 	return c.config.groups
 }
 
-// Reconfigure updates the client's key from the provided URL and returns the
-// remote configuration and an error.
-// It will not update an inactive client.
+// Reconfigure updates the client's key from the provided URL and can disable
+// the client if remote configuration tells so.
 func (c *Client) Reconfigure() error {
+	log.Debug("Reconfiguring the telemetry client")
+	if c.config.configURL == "" {
+		return nil
+	}
 	// Allow for reconfiguring a not yet configured client, which is
 	// temporarily inactive as the key is not set.
 	if c.storageKey.IsSet() && c.storageKey.Get() == DisabledKey {
@@ -170,6 +173,7 @@ func (c *Client) Reconfigure() error {
 	if err != nil {
 		return err
 	}
+	log.Debugf("Remote configuration key: %q", rc.Key)
 	if c.storageKey.IsSet() && c.storageKey.Get() != rc.Key {
 		// The key has changed, the telemeter needs to be reset.
 		c.telemeterMux.Lock()
@@ -219,7 +223,7 @@ func (c *Client) IsEnabled() bool {
 		return true
 	}
 
-	// This will not block because we know its already been set.
+	// This will not block because we know it has already been set.
 	return c.storageKey.Get() != DisabledKey
 }
 

@@ -39,6 +39,7 @@ class Deployment {
     Boolean hostNetwork = false
     List<String> addCapabilities = []
     List<String> dropCapabilities = []
+    Map<String, String> nodeAntiAffinity = [:]
 
     // Misc
     String loadBalancerIP = null
@@ -316,6 +317,11 @@ class Deployment {
     Deployment setCapabilities(List<String> add, List<String> drop) {
         this.addCapabilities = add
         this.dropCapabilities = drop
+        return this
+    }
+
+    Deployment setImagePrefetcherAffinity() {
+        this.nodeAntiAffinity = ["image-prefetcher.stackrox.io/stackrox-images": "failed"]
         return this
     }
 

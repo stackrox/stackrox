@@ -52,6 +52,8 @@ var (
 	Detection = newResourceMetadata("Detection", permissions.GlobalScope)
 	Image     = newResourceMetadata("Image", permissions.NamespaceScope)
 
+	ImageAdministration = newResourceMetadata("ImageAdministration", permissions.GlobalScope)
+
 	// Integration groups all integration-related resources. It aims to cover
 	// integrations and their configuration. For instance, it has replaced:
 	// APIToken, BackupPlugins, ImageIntegration, Notifier, SignatureIntegration.
@@ -73,7 +75,7 @@ var (
 	VulnerabilityManagementRequests = newResourceMetadata("VulnerabilityManagementRequests",
 		permissions.GlobalScope)
 
-	WatchedImage = newResourceMetadata("WatchedImage", permissions.GlobalScope)
+	WatchedImage = newDeprecatedResourceMetadata("WatchedImage", permissions.GlobalScope, ImageAdministration)
 	// WorkflowAdministration groups all workflow-related resources. It aims to cover core workflows
 	// such as managing policies and vulnerability reports. For instance, it has replaced:
 	// Policy, VulnerabilityReports.
@@ -98,6 +100,20 @@ func newResourceMetadata(name permissions.Resource, scope permissions.ResourceSc
 	md := permissions.ResourceMetadata{
 		Resource: name,
 		Scope:    scope,
+	}
+	resourceToMetadata[name] = md
+	return md
+}
+
+func newDeprecatedResourceMetadata(
+	name permissions.Resource,
+	scope permissions.ResourceScope,
+	replacingResourceMD permissions.ResourceMetadata,
+) permissions.ResourceMetadata {
+	md := permissions.ResourceMetadata{
+		Resource:          name,
+		Scope:             scope,
+		ReplacingResource: &replacingResourceMD,
 	}
 	resourceToMetadata[name] = md
 	return md

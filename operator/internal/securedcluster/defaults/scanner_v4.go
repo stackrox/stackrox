@@ -42,7 +42,7 @@ func SecuredClusterScannerV4ComponentPolicy(logger logr.Logger, status *platform
 
 	// No or unexpected default set in the annotations.
 
-	if securedClusterStatusUninitialized(status) {
+	if isNewInstallation(status) {
 		// Install / Green field.
 		logger.Info("assuming new installation due to empty status.")
 		return defaultForNewInstallations, true
@@ -82,7 +82,10 @@ func securedClusterScannerV4Defaulting(logger logr.Logger, status *platform.Secu
 		annotations[common.FeatureDefaultKeyScannerV4] = string(componentPolicy)
 	}
 
-	defaults.ScannerV4 = &platform.LocalScannerV4ComponentSpec{ScannerComponent: &componentPolicy}
+	if defaults.ScannerV4 == nil {
+		defaults.ScannerV4 = &platform.LocalScannerV4ComponentSpec{}
+	}
+	defaults.ScannerV4.ScannerComponent = &componentPolicy
 	return nil
 }
 

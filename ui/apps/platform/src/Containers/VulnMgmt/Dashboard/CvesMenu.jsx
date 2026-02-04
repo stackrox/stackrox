@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { gql, useQuery } from '@apollo/client';
 
 import Loader from 'Components/Loader';

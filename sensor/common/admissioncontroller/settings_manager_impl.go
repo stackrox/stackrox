@@ -6,12 +6,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/admissioncontrol"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	pkgPolicies "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/store"
 )
 
@@ -55,6 +57,9 @@ func (p *settingsManager) newSettingsNoLock() *sensor.AdmissionControlSettings {
 	settings.ClusterId = p.clusterID.Get()
 	settings.CentralEndpoint = p.centralEndpoint
 	settings.Timestamp = protocompat.TimestampNow()
+	if centralcaps.Has(centralsensor.FlattenImageData) {
+		settings.FlattenImageData = true
+	}
 	return settings
 }
 

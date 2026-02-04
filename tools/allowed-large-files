@@ -2,12 +2,14 @@
 **/zz_generated.deepcopy.go
 CHANGELOG.md
 central/alert/datastore/internal/store/postgres/store.go
+central/baseimage/watcher/watcher_impl_test.go
 central/cluster/datastore/datastore_impl_test.go
 central/compliance/checks/fixtures/scraped.go
 central/compliance/standards/metadata/pci_dss_3_2.go
 central/cve/converter/utils/testdata/*
 central/cve/fetcher/testdata/cve-list.json
 central/graphql/resolvers/generated.go
+central/image/service/service_impl.go
 central/networkgraph/service/service_impl_test.go
 central/networkpolicies/graph/evaluator_test.go
 central/processlisteningonport/datastore/datastore_impl_test.go
@@ -17,7 +19,7 @@ central/splunk/violations_test.go
 central/testutils/testdata/imgdata.json.gz
 central/vulnmgmt/vulnerabilityrequest/datastore/datastore_impl_postgres_test.go
 compliance/node/index/testdata/usr/share/rpm/rpmdb.sqlite
-deploy/charts/monitoring/dashboards/dataplane.json
+deploy/charts/monitoring/dashboards/*.json
 generated/**/*.pb.go
 generated/**/*.pb.gw.go
 generated/**/*.swagger.json
@@ -25,15 +27,18 @@ go.sum
 operator/bundle/manifests/*.yaml
 operator/config/crd/bases/*.yaml
 operator/config/manifests/bases/*.yaml
+operator/install/manifest.yaml
 operator/tests/img/*.png
 pkg/booleanpolicy/default_policies_test.go
 pkg/branding/files/red_hat_acs_logo_rgb.png
 pkg/branding/files/stackrox_integration_logo.png
+pkg/continuousprofiling/docs/img/*.png
 pkg/cve/testdata_IDV2Golden.txt
 pkg/docker/types/types_easyjson.go
 pkg/fixtures/graph.go
 pkg/fixtures/image.go
 pkg/fixtures/image/files/*
+pkg/fixtures/vmindexreport/packages_fixture.go
 pkg/images/enricher/enricher_impl_test.go
 pkg/images/enricher/enricher_v2_impl_test.go
 pkg/mitre/files/mitre.json
@@ -61,6 +66,7 @@ scanner/enricher/nvd/testdata/feed.json
 scripts/ci/lib.sh
 sensor/tests/data/policies.json
 sensor/upgrader/preflight/testdata/k8s-1.22.json.gz
+tests/common.go
 tests/e2e/lib.sh
 tests/e2e/run-scanner-v4-install.bats
 tests/performance/load/package-lock.json
@@ -68,5 +74,6 @@ tests/performance/scale/config/metrics-acs.yml
 tests/performance/scale/config/metrics-full.yml
 ui/apps/platform/package-lock.json
 ui/apps/platform/src/Containers/Integrations/IntegrationForm/Forms/SignatureIntegrationForm.tsx
+ui/apps/platform/src/Containers/Policies/Wizard/Step3/policyCriteriaDescriptors.tsx
 ui/apps/platform/src/fonts/Open_Sans_Regular.json
 ui/apps/platform/src/images/globalSearchEmptyState.svg

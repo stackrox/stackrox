@@ -1,4 +1,5 @@
-import { imageScanMessages, ScanMessage } from 'messages/vulnMgmt.messages';
+import { imageScanMessages } from 'messages/vulnMgmt.messages';
+import type { ScanMessage } from 'messages/vulnMgmt.messages';
 
 export default function getImageScanMessage(
     imageNotes: string[],

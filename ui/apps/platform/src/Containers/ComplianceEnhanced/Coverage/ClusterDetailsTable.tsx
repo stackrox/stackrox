@@ -12,12 +12,9 @@ import {
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
-import type {
-    CompoundSearchFilterConfig,
-    OnSearchPayload,
-} from 'Components/CompoundSearchFilter/types';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
+import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
+import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import type { UseURLSortResult } from 'hooks/useURLSort';
@@ -29,11 +26,15 @@ import { DETAILS_TAB, TAB_NAV_QUERY } from './CheckDetailsPage';
 import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
 import { coverageCheckDetailsPath } from './compliance.coverage.routes';
 import { getClusterResultsStatusObject } from './compliance.coverage.utils';
-import CheckStatusDropdown from './components/CheckStatusDropdown';
 import ControlLabels from './components/ControlLabels';
 import StatusIcon from './components/StatusIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
-import { complianceStatusFilterChipDescriptors } from '../searchFilterConfig';
+import {
+    attributeForComplianceCheckStatus,
+    profileCheckSearchFilterConfig,
+} from '../searchFilterConfig';
+
+const searchFilterConfig = [profileCheckSearchFilterConfig];
 
 export type ClusterDetailsTableProps = {
     checkResultsCount: number;
@@ -41,15 +42,9 @@ export type ClusterDetailsTableProps = {
     tableState: TableUIState<ComplianceCheckResult>;
     pagination: UseURLPaginationResult;
     getSortParams: UseURLSortResult['getSortParams'];
-    searchFilterConfig: CompoundSearchFilterConfig;
     searchFilter: SearchFilter;
     onFilterChange: (newFilter: SearchFilter) => void;
-    onSearch: (payload: OnSearchPayload) => void;
-    onCheckStatusSelect: (
-        filterType: 'Compliance Check Status',
-        checked: boolean,
-        selection: string
-    ) => void;
+    onSearch: OnSearchCallback;
     onClearFilters: () => void;
 };
 
@@ -59,11 +54,9 @@ function ClusterDetailsTable({
     tableState,
     pagination,
     getSortParams,
-    searchFilterConfig,
     searchFilter,
     onFilterChange,
     onSearch,
-    onCheckStatusSelect,
     onClearFilters,
 }: ClusterDetailsTableProps) {
     const { page, perPage, setPage, setPerPage } = pagination;
@@ -81,8 +74,6 @@ function ClusterDetailsTable({
         setExpandedRows([]);
     }, [page, perPage, tableState]);
 
-    const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
-
     return (
         <>
             <Toolbar>
@@ -96,11 +87,23 @@ function ClusterDetailsTable({
                             />
                         </ToolbarItem>
                         <ToolbarItem>
-                            <CheckStatusDropdown
+                            <SearchFilterSelectInclusive
+                                attribute={attributeForComplianceCheckStatus}
+                                isSeparate
+                                onSearch={onSearch}
                                 searchFilter={searchFilter}
-                                onSelect={onCheckStatusSelect}
                             />
                         </ToolbarItem>
+                    </ToolbarGroup>
+                    <ToolbarGroup className="pf-v5-u-w-100">
+                        <CompoundSearchFilterLabels
+                            attributesSeparateFromConfig={[attributeForComplianceCheckStatus]}
+                            config={searchFilterConfig}
+                            onFilterChange={onFilterChange}
+                            searchFilter={searchFilter}
+                        />
+                    </ToolbarGroup>
+                    <ToolbarGroup className="pf-v5-u-w-100">
                         <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
                             <Pagination
                                 itemCount={checkResultsCount}
@@ -110,16 +113,6 @@ function ClusterDetailsTable({
                                 onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
                             />
                         </ToolbarItem>
-                    </ToolbarGroup>
-                    <ToolbarGroup className="pf-v5-u-w-100">
-                        <SearchFilterChips
-                            searchFilter={searchFilter}
-                            onFilterChange={onFilterChange}
-                            filterChipGroupDescriptors={[
-                                ...filterChipGroupDescriptors,
-                                complianceStatusFilterChipDescriptors,
-                            ]}
-                        />
                     </ToolbarGroup>
                 </ToolbarContent>
             </Toolbar>

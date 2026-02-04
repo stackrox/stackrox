@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	clusterPkg "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -226,11 +227,7 @@ func (m *managerImpl) isAutoLockEnabledForCluster(clusterId string) bool {
 		return false
 	}
 
-	if cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_MANUAL || cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_UNKNOWN {
-		return cluster.GetDynamicConfig().GetAutoLockProcessBaselinesConfig().GetEnabled()
-	}
-
-	return cluster.GetHelmConfig().GetDynamicConfig().GetAutoLockProcessBaselinesConfig().GetEnabled()
+	return clusterPkg.GetAutoLockProcessBaselinesEnabled(cluster)
 }
 
 func (m *managerImpl) flushIndicatorQueue() {
@@ -483,6 +480,19 @@ func (m *managerImpl) HandleResourceAlerts(clusterID string, alerts []*storage.A
 		if _, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, alerts, opts...); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (m *managerImpl) HandleNodeAlerts(clusterID string, alerts []*storage.Alert, stage storage.LifecycleStage) error {
+	m.filterOutDisabledPolicies(&alerts)
+	if len(alerts) == 0 && stage == storage.LifecycleStage_RUNTIME {
+		return nil
+	}
+
+	if _, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, alerts,
+		alertmanager.WithClusterID(clusterID), alertmanager.WithLifecycleStage(stage)); err != nil {
+		return err
 	}
 	return nil
 }

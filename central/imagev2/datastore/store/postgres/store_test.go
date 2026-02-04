@@ -9,6 +9,8 @@ import (
 	"time"
 
 	cveStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
+	v1Store "github.com/stackrox/rox/central/image/datastore/store"
+	v2StorePostgres "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
 	"github.com/stackrox/rox/central/imagev2/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -30,15 +32,17 @@ import (
 var (
 	lastWeek  = time.Now().Add(-7 * 24 * time.Hour)
 	yesterday = time.Now().Add(-24 * time.Hour)
+	nextWeek  = time.Now().Add(7 * 24 * time.Hour)
 )
 
 type ImagesV2StoreSuite struct {
 	suite.Suite
 
-	ctx        context.Context
-	testDB     *pgtest.TestPostgres
-	store      store.Store
-	cvePgStore cveStore.Store
+	ctx                     context.Context
+	testDB                  *pgtest.TestPostgres
+	store                   store.Store
+	newCVEModelImageV1Store v1Store.Store
+	cvePgStore              cveStore.Store
 }
 
 func TestImagesV2Store(t *testing.T) {
@@ -54,6 +58,7 @@ func (s *ImagesV2StoreSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 
 	s.store = New(s.testDB.DB, false, concurrency.NewKeyFence())
+	s.newCVEModelImageV1Store = v2StorePostgres.NewForTest(s.T(), s.testDB.DB, false, concurrency.NewKeyFence())
 	s.cvePgStore = cveStore.New(s.testDB.DB)
 }
 
@@ -92,6 +97,7 @@ func (s *ImagesV2StoreSuite) TestStore() {
 			vuln.SuppressActivation = nil
 			vuln.SuppressExpiry = nil
 			vuln.Advisory = nil
+			vuln.FixAvailableTimestamp = nil
 		}
 		comp.License = nil
 	}
@@ -147,6 +153,7 @@ func (s *ImagesV2StoreSuite) TestNVDCVSS() {
 	for _, component := range image.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			vuln.CvssMetrics = []*storage.CVSSScore{nvdCvss}
+			vuln.FixAvailableTimestamp = nil
 		}
 
 	}
@@ -167,6 +174,73 @@ func (s *ImagesV2StoreSuite) TestNVDCVSS() {
 	s.Equal(float32(10), imageCve.GetNvdcvss())
 	s.Require().NotEmpty(imageCve.GetCveBaseInfo().GetCvssMetrics())
 	protoassert.Equal(s.T(), nvdCvss, imageCve.GetCveBaseInfo().GetCvssMetrics()[0])
+}
+
+func (s *ImagesV2StoreSuite) TestUpsert_MigrationFromNewCVEModel() {
+	// Need to set ROX_FLATTEN_IMAGE_DATA to false in order to insert into old image table but new CVE and component tables.
+	// This is because the functions that convert EmbeddedComponents and EmbeddedVulnerabilities to ComponentV2 and CVEV2
+	// set the imageID based on whether the flattened image model is enabled or not.
+	s.T().Setenv(features.FlattenImageData.EnvVar(), "false")
+	if features.FlattenImageData.Enabled() {
+		s.T().Skip("Cannot set ROX_FLATTEN_IMAGE_DATA to false for inserting data to old model. Skipping...")
+	}
+
+	imageV2 := getTestImageV2("image1", "sha256:SHA1")
+	imageV1 := convertToImageV1(imageV2)
+
+	// Upsert image using image V1 store for new CVE model. This will insert CVEs and components into the new tables and set created at and
+	// first image occurrence timestamps to current time
+	s.NoError(s.newCVEModelImageV1Store.Upsert(s.ctx, imageV1))
+	foundImageV1, exists, err := s.newCVEModelImageV1Store.Get(s.ctx, imageV1.GetId())
+	s.NoError(err)
+	s.True(exists)
+
+	// Set ROX_FLATTEN_IMAGE_DATA to true now to insert into ImageV2 model
+	s.T().Setenv(features.FlattenImageData.EnvVar(), "true")
+	if !features.FlattenImageData.Enabled() {
+		s.T().Skip("Cannot set ROX_FLATTEN_IMAGE_DATA to true for inserting data to new model. Skipping...")
+	}
+
+	// Set the created and first image occurrence timestamps in the test image to a future value
+	for _, comp := range imageV2.GetScan().GetComponents() {
+		for _, vuln := range comp.GetVulns() {
+			vuln.FirstSystemOccurrence = protocompat.ConvertTimeToTimestampOrNil(&nextWeek)
+			vuln.FirstImageOccurrence = protocompat.ConvertTimeToTimestampOrNil(&nextWeek)
+		}
+	}
+
+	// Re-upsert the image into v2 data model store
+	s.NoError(s.store.Upsert(s.ctx, imageV2))
+	foundImageV2, exists, err := s.store.Get(s.ctx, imageV2.GetId())
+	s.NoError(err)
+	s.True(exists)
+
+	expectedTimestamps := make(map[string]*timeFields)
+	for _, comp := range foundImageV1.GetScan().GetComponents() {
+		for _, vuln := range comp.GetVulns() {
+			if _, ok := expectedTimestamps[vuln.GetCve()]; !ok {
+				expectedTimestamps[vuln.GetCve()] = &timeFields{
+					createdAt:            vuln.GetFirstSystemOccurrence().AsTime(),
+					firstImageOccurrence: vuln.GetFirstImageOccurrence().AsTime(),
+				}
+			}
+		}
+	}
+
+	actualTimestamps := make(map[string]*timeFields)
+	for _, comp := range foundImageV2.GetScan().GetComponents() {
+		for _, vuln := range comp.GetVulns() {
+			if _, ok := actualTimestamps[vuln.GetCve()]; !ok {
+				actualTimestamps[vuln.GetCve()] = &timeFields{
+					createdAt:            vuln.GetFirstSystemOccurrence().AsTime(),
+					firstImageOccurrence: vuln.GetFirstImageOccurrence().AsTime(),
+				}
+			}
+		}
+	}
+
+	// Created at and first image occurrence timestamps should not have changed to the future ones.
+	s.Assert().Equal(expectedTimestamps, actualTimestamps)
 }
 
 func (s *ImagesV2StoreSuite) TestUpsert() {
@@ -353,6 +427,16 @@ func (s *ImagesV2StoreSuite) TestGetMany() {
 	returnedImages, err = s.store.GetByIDs(s.ctx, searchedIndexes)
 	s.NoError(err)
 	s.Equal(2, len(returnedImages))
+}
+
+func convertToImageV1(imageV2 *storage.ImageV2) *storage.Image {
+	return &storage.Image{
+		Id:        imageV2.GetDigest(),
+		Name:      imageV2.GetName(),
+		Scan:      imageV2.GetScan(),
+		RiskScore: imageV2.GetRiskScore(),
+		Priority:  imageV2.GetPriority(),
+	}
 }
 
 func getTestImageV2(name, sha string) *storage.ImageV2 {

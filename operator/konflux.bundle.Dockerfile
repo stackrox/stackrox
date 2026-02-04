@@ -1,11 +1,7 @@
-FROM registry.access.redhat.com/ubi9/python-39:latest@sha256:dee7605bfc0cc89b83075937cd48ff7b61bf5e396f8bd2ae13e7f7299be53326 AS builder
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:5dc6ba426ccbeb3954ead6b015f36b4a2d22320e5b356b074198d08422464ed2 AS builder
 
-# Because 'default' user cannot create build/ directory and errrors like:
-# mkdir: cannot create directory ‘build/’: Permission denied
-USER root
-
-COPY ./operator/bundle_helpers/requirements.txt /tmp/requirements.txt
-RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
+# This installs both PyYAML and Python.
+RUN microdnf -y install python3.12-pyyaml
 
 COPY . /stackrox
 WORKDIR /stackrox/operator

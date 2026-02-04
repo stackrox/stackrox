@@ -5,7 +5,6 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
-	benchmarksDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
@@ -50,7 +49,7 @@ var (
 )
 
 // New returns a service object for registering with grpc.
-func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore, profileDS profileDatastore.DataStore, ruleDS complianceRuleDS.DataStore, scanDS complianceScanDS.DataStore, benchmarkDS benchmarksDS.DataStore) Service {
+func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConfigDS.DataStore, integrationDS complianceIntegrationDS.DataStore, profileDS profileDatastore.DataStore, ruleDS complianceRuleDS.DataStore, scanDS complianceScanDS.DataStore) Service {
 	return &serviceImpl{
 		complianceResultsDS: complianceResultsDS,
 		scanConfigDS:        scanConfigDS,
@@ -58,7 +57,6 @@ func New(complianceResultsDS complianceDS.DataStore, scanConfigDS complianceConf
 		profileDS:           profileDS,
 		ruleDS:              ruleDS,
 		scanDS:              scanDS,
-		benchmarkDS:         benchmarkDS,
 	}
 }
 
@@ -71,7 +69,6 @@ type serviceImpl struct {
 	profileDS           profileDatastore.DataStore
 	ruleDS              complianceRuleDS.DataStore
 	scanDS              complianceScanDS.DataStore
-	benchmarkDS         benchmarksDS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -158,7 +155,7 @@ func (s *serviceImpl) GetComplianceScanCheckResult(ctx context.Context, req *v2.
 	}
 	ruleNames = append(ruleNames, rules[0].GetName())
 
-	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, profiles[0].GetName(), s.benchmarkDS)
+	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, profiles[0].GetName())
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for result %q", req.GetId())
 	}
@@ -232,7 +229,7 @@ func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", request)
 	}
 
-	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, request.GetProfileName(), s.benchmarkDS)
+	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, request.GetProfileName())
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", request)
 	}
@@ -308,7 +305,7 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", parsedQuery)
 	}
 
-	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, request.GetProfileName(), s.benchmarkDS)
+	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, request.GetProfileName())
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", request)
 	}
@@ -375,7 +372,7 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 		ruleNames = append(ruleNames, rules[0].GetName())
 	}
 
-	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, request.GetProfileName(), s.benchmarkDS)
+	controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, ruleNames, request.GetProfileName())
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", request)
 	}
@@ -460,7 +457,7 @@ func (s *serviceImpl) GetComplianceProfileCheckDetails(ctx context.Context, requ
 		// TODO(ROX-22362): implement tailored profiles
 		log.Warnf("Unable to find profiles for result %v.  It is possible results match a tailored profile which have not been implemented in Compliance V2", parsedQuery)
 	} else {
-		controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, []string{rules[0].GetName()}, profiles[0].GetName(), s.benchmarkDS)
+		controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, []string{rules[0].GetName()}, profiles[0].GetName())
 		if err != nil {
 			return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", parsedQuery)
 		}
@@ -509,7 +506,7 @@ func (s *serviceImpl) searchComplianceCheckResults(ctx context.Context, parsedQu
 		}
 
 		if _, found := checkToControls[result.GetCheckName()]; !found {
-			controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, []string{rules[0].GetName()}, profileName, s.benchmarkDS)
+			controls, err := utils.GetControlsForScanResults(ctx, s.ruleDS, []string{rules[0].GetName()}, profileName)
 			if err != nil {
 				return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve controls for compliance scan results %v", parsedQuery)
 			}

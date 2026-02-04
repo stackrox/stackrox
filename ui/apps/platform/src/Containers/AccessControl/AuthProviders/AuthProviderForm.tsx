@@ -82,7 +82,7 @@ function getNewAuthProviderTitle(type, availableProviderTypes) {
 
 function getRuleAttributes(type, availableProviderTypes) {
     return (
-        (availableProviderTypes.find(({ value }) => value === type)?.ruleAttributes as string[]) ||
+        (availableProviderTypes.find(({ value }) => value === type)?.ruleAttributes as string[]) ??
         []
     );
 }

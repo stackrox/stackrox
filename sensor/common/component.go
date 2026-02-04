@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 	"google.golang.org/grpc"
 )
 
@@ -108,4 +109,12 @@ type ComplianceComponent interface {
 // The connection is injected on sensor startup before the Start method gets called.
 type CentralGRPCConnAware interface {
 	SetCentralGRPCClient(cc grpc.ClientConnInterface)
+}
+
+// PubSubDispatcher defines the interface to the internal PubSub system
+type PubSubDispatcher interface {
+	RegisterConsumer(pubsub.ConsumerID, pubsub.Topic, pubsub.EventCallback) error
+	RegisterConsumerToLane(pubsub.ConsumerID, pubsub.Topic, pubsub.LaneID, pubsub.EventCallback) error
+	Publish(pubsub.Event) error
+	Stop()
 }

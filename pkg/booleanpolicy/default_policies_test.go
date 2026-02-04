@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/defaults/policies"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
@@ -63,6 +64,7 @@ func enhancedDeploymentWithNetworkPolicies(dep *storage.Deployment, images []*st
 }
 
 func TestDefaultPolicies(t *testing.T) {
+	t.Setenv(features.CVEFixTimestampCriteria.EnvVar(), "true")
 	suite.Run(t, new(DefaultPoliciesTestSuite))
 }
 
@@ -201,6 +203,55 @@ func (suite *DefaultPoliciesTestSuite) TestFixableAndImageFirstOccurenceCriteria
 	}
 
 	policy := policyWithGroups(storage.EventSource_NOT_APPLICABLE, fixablePolicyGroup, firstImageOccurrenceGroup)
+
+	deployment := suite.deployments["HEARTBLEEDDEPID"]
+	depMatcher, err := BuildDeploymentMatcher(policy)
+	require.NoError(suite.T(), err)
+	violations, err := depMatcher.MatchDeployment(nil, enhancedDeployment(deployment, suite.getImagesForDeployment(deployment)))
+	require.Len(suite.T(), violations.AlertViolations, 1)
+	require.NoError(suite.T(), err)
+
+}
+
+func (suite *DefaultPoliciesTestSuite) TestFixableAndFixTimestampAvailableCriteria() {
+	heartbleedDep := &storage.Deployment{
+		Id: "HEARTBLEEDDEPID",
+		Containers: []*storage.Container{
+			{
+				Name:            "nginx",
+				SecurityContext: &storage.SecurityContext{Privileged: true},
+				Image:           &storage.ContainerImage{Id: "HEARTBLEEDDEPSHA"},
+			},
+		},
+	}
+
+	ts := time.Now().AddDate(0, 0, -5)
+	protoTs, err := protocompat.ConvertTimeToTimestampOrError(ts)
+	require.NoError(suite.T(), err)
+
+	suite.addDepAndImages(heartbleedDep, &storage.Image{
+		Id:   "HEARTBLEEDDEPSHA",
+		Name: &storage.ImageName{FullName: "heartbleed"},
+		Scan: &storage.ImageScan{
+			Components: []*storage.EmbeddedImageScanComponent{
+				{Name: "heartbleed", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
+					{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.2"},
+						FixAvailableTimestamp: protoTs},
+				}},
+			},
+		},
+	})
+
+	fixablePolicyGroup := &storage.PolicyGroup{
+		FieldName: fieldnames.Fixable,
+		Values:    []*storage.PolicyValue{{Value: "true"}},
+	}
+	fixTimestampAvailableGroup := &storage.PolicyGroup{
+		FieldName: fieldnames.DaysSinceFixAvailable,
+		Values:    []*storage.PolicyValue{{Value: "2"}},
+	}
+
+	policy := policyWithGroups(storage.EventSource_NOT_APPLICABLE, fixablePolicyGroup, fixTimestampAvailableGroup)
 
 	deployment := suite.deployments["HEARTBLEEDDEPID"]
 	depMatcher, err := BuildDeploymentMatcher(policy)
@@ -3905,7 +3956,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 			require.NoError(b, err)
 
 			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				for _, dep := range []*storage.Deployment{privilegedDep, nonPrivilegedDep} {
 					for _, key := range []string{aptGetKey, aptGet2Key, curlKey, bashKey} {
 						_, err := m.MatchDeploymentWithProcess(nil, enhancedDeployment(dep, images), indicators[dep.GetId()][key], processesNotInBaseline[dep.GetId()].Contains(key))
@@ -3926,7 +3977,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 			b.Run(fmt.Sprintf("benchmark caching: %s/%s", dep.GetId(), key), func(b *testing.B) {
 				var resNoCaching Violations
 				b.Run("no caching", func(b *testing.B) {
-					for i := 0; i < b.N; i++ {
+					for b.Loop() {
 						var err error
 						resNoCaching, err = m.MatchDeploymentWithProcess(nil, enhancedDeployment(privilegedDep, images), indicator, notInBaseline)
 						require.NoError(b, err)
@@ -3936,7 +3987,7 @@ func BenchmarkProcessPolicies(b *testing.B) {
 				var resWithCaching Violations
 				b.Run("with caching", func(b *testing.B) {
 					var cache CacheReceptacle
-					for i := 0; i < b.N; i++ {
+					for b.Loop() {
 						var err error
 						resWithCaching, err = m.MatchDeploymentWithProcess(&cache, enhancedDeployment(privilegedDep, images), indicator, notInBaseline)
 						require.NoError(b, err)

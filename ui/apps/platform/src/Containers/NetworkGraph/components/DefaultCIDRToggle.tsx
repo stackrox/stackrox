@@ -26,7 +26,7 @@ function DefaultCIDRToggle({ updateNetworkNodes = () => {} }): ReactElement {
     function toggleHandler(): void {
         setHideDefaultExternalSrcs(showDefaultExternalSrcs)
             .then(() => {
-                setShowDefaultExternalSrcs(!showDefaultExternalSrcs);
+                setShowDefaultExternalSrcs((prev) => !prev);
                 setErrorMessage('');
                 updateNetworkNodes();
             })

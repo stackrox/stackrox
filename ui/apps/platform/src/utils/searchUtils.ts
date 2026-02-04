@@ -25,7 +25,7 @@ import {
 } from 'Components/CompoundSearchFilter/attributes/cluster';
 import { policyAttributes } from 'Components/CompoundSearchFilter/attributes/policy';
 
-import type { ValueOf } from './type.utils';
+import type { NonEmptyArray, ValueOf } from './type.utils';
 import { safeGeneratePath } from './urlUtils';
 
 /**
@@ -88,11 +88,11 @@ export function convertSortToGraphQLFormat({
 }
 
 export function convertSortToRestFormat(
-    graphqlSort: GraphQLSortOption[]
-): Partial<ApiSortOptionSingle> {
+    graphqlSort: NonEmptyArray<GraphQLSortOption>
+): Pick<ApiSortOptionSingle, 'field' | 'reversed'> {
     return {
-        field: graphqlSort[0]?.id,
-        reversed: graphqlSort[0]?.desc,
+        field: graphqlSort[0].id,
+        reversed: graphqlSort[0].desc,
     };
 }
 

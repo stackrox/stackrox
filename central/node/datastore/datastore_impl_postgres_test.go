@@ -342,6 +342,81 @@ func (suite *NodePostgresDataStoreTestSuite) TestSearchByComponent() {
 	suite.Empty(results)
 }
 
+func (suite *NodePostgresDataStoreTestSuite) TestSearchNodes() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	// Test with nil query.
+	searchResults, err := suite.datastore.SearchNodes(ctx, nil)
+	suite.NoError(err)
+	suite.Empty(searchResults)
+
+	// Upsert test nodes.
+	node1 := getTestNodeForPostgres(fixtureconsts.Node1, "name1")
+	suite.NoError(suite.datastore.UpsertNode(ctx, node1))
+
+	node2 := getTestNodeForPostgres(fixtureconsts.Node2, "name2")
+	node2.GetScan().Components = append(node2.GetScan().GetComponents(), &storage.EmbeddedNodeScanComponent{
+		Name:    "comp3",
+		Version: "ver1",
+		Vulnerabilities: []*storage.NodeVulnerability{
+			{
+				CveBaseInfo: &storage.CVEInfo{
+					Cve: "cve3",
+				},
+			},
+		},
+	})
+	suite.NoError(suite.datastore.UpsertNode(ctx, node2))
+
+	// Search all nodes.
+	searchResults, err = suite.datastore.SearchNodes(ctx, pkgSearch.EmptyQuery())
+	suite.NoError(err)
+	suite.Len(searchResults, 2)
+
+	// Verify search result fields.
+	resultMap := make(map[string]*v1.SearchResult)
+	for _, result := range searchResults {
+		resultMap[result.GetId()] = result
+	}
+
+	result1 := resultMap[fixtureconsts.Node1]
+	suite.NotNil(result1)
+	suite.Equal(v1.SearchCategory_NODES, result1.GetCategory())
+	suite.Equal(fixtureconsts.Node1, result1.GetId())
+	suite.Equal("name1", result1.GetName())
+	suite.NotNil(result1.GetFieldToMatches())
+
+	result2 := resultMap[fixtureconsts.Node2]
+	suite.NotNil(result2)
+	suite.Equal(v1.SearchCategory_NODES, result2.GetCategory())
+	suite.Equal(fixtureconsts.Node2, result2.GetId())
+	suite.Equal("name2", result2.GetName())
+	suite.NotNil(result2.GetFieldToMatches())
+
+	// Search with scoped context.
+	scopedCtx := scoped.Context(ctx, scoped.Scope{
+		IDs:   []string{node1.GetId()},
+		Level: v1.SearchCategory_NODES,
+	})
+	searchResults, err = suite.datastore.SearchNodes(scopedCtx, pkgSearch.EmptyQuery())
+	suite.NoError(err)
+	suite.Len(searchResults, 1)
+	suite.Equal(fixtureconsts.Node1, searchResults[0].GetId())
+	suite.Equal("name1", searchResults[0].GetName())
+	suite.Equal(v1.SearchCategory_NODES, searchResults[0].GetCategory())
+
+	// Search with query filter.
+	query := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Node, "name1").ProtoQuery()
+	searchResults, err = suite.datastore.SearchNodes(ctx, query)
+	suite.NoError(err)
+	suite.Len(searchResults, 1)
+	suite.Equal(fixtureconsts.Node1, searchResults[0].GetId())
+	suite.Equal("name1", searchResults[0].GetName())
+
+	// Clean up.
+	suite.deleteTestNodes(ctx)
+}
+
 // Test sort by Component search label sorts by Component+Version to ensure backward compatibility.
 func (suite *NodePostgresDataStoreTestSuite) TestSortByComponent() {
 	ctx := sac.WithAllAccess(context.Background())

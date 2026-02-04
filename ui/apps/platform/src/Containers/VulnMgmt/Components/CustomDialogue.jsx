@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { Button, Flex, FlexItem } from '@patternfly/react-core';
 import Modal from 'Components/Modal';

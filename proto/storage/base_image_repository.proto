@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+import "storage/user.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// BaseImageRepository configures automatic tag discovery for a base image repository.
+// Defines which repository to watch, what tag patterns to match, and health tracking.
+// Next tag: 9
+message BaseImageRepository {
+  // Unique identifier for this repository pattern configuration.
+  string id = 1; // @gotags: sql:"pk,type(uuid)"
+
+  // Full repository path including registry (e.g., "registry.redhat.io/ubi8/ubi").
+  // Must be unique - one tag pattern per repository.
+  string repository_path = 2; // @gotags: sql:"unique"
+
+  // Glob pattern for tag filtering (e.g., "8.10-*").
+  string tag_pattern = 3;
+
+  // Timestamp of last update (successful poll or configuration change).
+  google.protobuf.Timestamp updated_at = 4;
+
+  // Count of consecutive poll failures (for health tracking).
+  int32 failure_count = 5;
+
+  // Health status of this repository pattern.
+  enum HealthStatus {
+    HEALTHY = 0; // Pattern polling successfully.
+    UNHEALTHY = 1; // Pattern experiencing failures.
+    DISABLED = 2; // Pattern disabled by operator.
+  }
+  HealthStatus health_status = 6; // @gotags: sql:"index=btree"
+
+  // SHA256 hash of tag_pattern for cache invalidation detection
+  // (when pattern changes, hash differs, triggering cache flush).
+  string pattern_hash = 7;
+
+  // User who created the base image repository.
+  SlimUser created_by = 8; // @gotags: sql:"ignore_labels(User ID)
+}
+
+// BaseImageTag stores cached base image tag metadata.
+// Persisting cache data across Central restarts avoids cold-start refetches during base
+// image repository scanning.
+// Next tag: 9
+message BaseImageTag {
+  // Unique identifier.
+  string id = 1; // @gotags: sql:"pk,type(uuid)"
+
+  // Foreign key to the repository pattern.
+  // Composite unique constraint with tag field.
+  string base_image_repository_id = 2; // @gotags: sql:"fk(BaseImageRepository:id),type(uuid),index=category:unique;name:base_image_tags_repo_tag"
+
+  // Tag name (e.g., "8.10-1234").
+  // Composite unique constraint with base_image_repository_id field.
+  string tag = 3; // @gotags: search:"Base Image Tag,hidden" sql:"index=category:unique;name:base_image_tags_repo_tag"
+
+  // SHA256 digest of the manifest (or manifest list for multi-arch).
+  string manifest_digest = 4;
+
+  // Whether this tag points to a manifest list (multi-platform).
+  bool is_manifest_list = 5;
+
+  // Image creation timestamp from config blob.
+  google.protobuf.Timestamp created = 6; // @gotags: sql:"index=btree"
+
+  // Map of "os/arch" to platform-specific manifest digest,
+  // to only refetch platforms whose digest changed.
+  map<string, string> list_digests = 7;
+
+  // Layer digests for this tag, stored for promotion to base_images.
+  repeated string layer_digests = 8;
+}

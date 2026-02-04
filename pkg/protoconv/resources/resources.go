@@ -454,7 +454,11 @@ func (w *DeploymentWrap) populateImages(podSpec v1.PodSpec) {
 
 func (w *DeploymentWrap) populateSecurityContext(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
-		sc := &storage.SecurityContext{}
+		sc := &storage.SecurityContext{
+			// allowPrivilegeEscalation default value is true.
+			// See: https://github.com/kubernetes/website/pull/51909
+			AllowPrivilegeEscalation: true,
+		}
 		s := c.SecurityContext
 		if s != nil {
 			if p := s.Privileged; p != nil {
@@ -465,6 +469,10 @@ func (w *DeploymentWrap) populateSecurityContext(podSpec v1.PodSpec) {
 				sc.ReadOnlyRootFilesystem = *p
 			}
 
+			if ape := s.AllowPrivilegeEscalation; ape != nil {
+				sc.AllowPrivilegeEscalation = *ape
+			}
+
 			if capabilities := s.Capabilities; capabilities != nil {
 				for _, add := range capabilities.Add {
 					sc.AddCapabilities = append(sc.AddCapabilities, string(add))
@@ -473,13 +481,6 @@ func (w *DeploymentWrap) populateSecurityContext(podSpec v1.PodSpec) {
 				for _, drop := range capabilities.Drop {
 					sc.DropCapabilities = append(sc.DropCapabilities, string(drop))
 				}
-			}
-			// If allowPrivilegeEscalation is not defined explicitly in the container's security context
-			// its default value is true
-			if ape := s.AllowPrivilegeEscalation; ape != nil {
-				sc.AllowPrivilegeEscalation = *ape
-			} else {
-				sc.AllowPrivilegeEscalation = true
 			}
 		}
 		sc.Selinux = makeSELinuxWithDefaults(s, podSpec.SecurityContext)

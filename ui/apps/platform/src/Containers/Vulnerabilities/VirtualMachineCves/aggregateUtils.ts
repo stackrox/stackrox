@@ -58,7 +58,7 @@ export type CveTableRow = {
     affectedComponents: CveComponentRow[];
 };
 
-export function getVirtualMachineScannedPackagesCount(virtualMachine: VirtualMachine): string {
+export function getVirtualMachineScannedComponentsCount(virtualMachine: VirtualMachine): string {
     const components = virtualMachine.scan?.components;
     if (!Array.isArray(components)) {
         return 'Not available';
@@ -69,7 +69,7 @@ export function getVirtualMachineScannedPackagesCount(virtualMachine: VirtualMac
         (component) => !component.notes?.includes('UNSCANNED')
     ).length;
 
-    return `${scannedComponents}/${totalComponents} scanned packages`;
+    return `${scannedComponents}/${totalComponents} scanned components`;
 }
 
 export function getVirtualMachineCveSeverityStatusCounts(
@@ -254,38 +254,38 @@ export function applyVirtualMachineCveTableSort(
     return [...rows].sort(comparator);
 }
 
-export type PackageTableRow = {
+export type ComponentTableRow = {
     name: ScanComponent['name'];
     version: string;
     isScannable: boolean;
 };
 
-export function getVirtualMachinePackagesTableData(
+export function getVirtualMachineComponentsTableData(
     virtualMachine?: VirtualMachine
-): PackageTableRow[] {
+): ComponentTableRow[] {
     if (!virtualMachine) {
         return [];
     }
 
-    const packagesTableData: PackageTableRow[] = [];
+    const componentsTableData: ComponentTableRow[] = [];
 
     virtualMachine.scan?.components?.forEach((component) => {
-        packagesTableData.push({
+        componentsTableData.push({
             name: component.name,
             version: component.version,
             isScannable: !component.notes.includes('UNSCANNED'),
         });
     });
 
-    return packagesTableData;
+    return componentsTableData;
 }
 
-export function applyVirtualMachinePackagesTableFilters(
-    packagesTableData: PackageTableRow[],
+export function applyVirtualMachineComponentsTableFilters(
+    componentsTableData: ComponentTableRow[],
     searchFilter: SearchFilter
-): PackageTableRow[] {
+): ComponentTableRow[] {
     if (!searchFilter || Object.keys(searchFilter).length === 0) {
-        return packagesTableData;
+        return componentsTableData;
     }
 
     const componentFilters = searchValueAsArray(searchFilter.Component).map((component) =>
@@ -297,10 +297,10 @@ export function applyVirtualMachinePackagesTableFilters(
 
     const scannableFilters = searchValueAsArray(searchFilter.SCANNABLE);
 
-    return packagesTableData.filter((packageTableRow) => {
+    return componentsTableData.filter((componentTableRow) => {
         // "Component" filter, case insensitive and substring
         if (componentFilters.length > 0) {
-            const componentNameLowerCase = packageTableRow.name.toLowerCase();
+            const componentNameLowerCase = componentTableRow.name.toLowerCase();
             if (!componentFilters.some((filter) => componentNameLowerCase.includes(filter))) {
                 return false;
             }
@@ -308,7 +308,7 @@ export function applyVirtualMachinePackagesTableFilters(
 
         // "Component Version" filter, case insensitive and substring
         if (componentVersionFilters.length > 0) {
-            const componentVersionLowerCase = packageTableRow.version.toLowerCase();
+            const componentVersionLowerCase = componentTableRow.version.toLowerCase();
             if (
                 !componentVersionFilters.some((filter) =>
                     componentVersionLowerCase.includes(filter)
@@ -320,7 +320,7 @@ export function applyVirtualMachinePackagesTableFilters(
 
         // "SCANNABLE" filter, exact
         if (scannableFilters.length > 0) {
-            const rowScannable: ScannableStatus = packageTableRow.isScannable
+            const rowScannable: ScannableStatus = componentTableRow.isScannable
                 ? 'Scanned'
                 : 'Not scanned';
             if (!scannableFilters.includes(rowScannable)) {
@@ -332,12 +332,12 @@ export function applyVirtualMachinePackagesTableFilters(
     });
 }
 
-export function applyVirtualMachinePackagesTableSort(
-    rows: PackageTableRow[],
+export function applyVirtualMachineComponentsTableSort(
+    rows: ComponentTableRow[],
     sortKey: string,
     reversed: boolean
-): PackageTableRow[] {
-    const comparator = (a: PackageTableRow, b: PackageTableRow) => {
+): ComponentTableRow[] {
+    const comparator = (a: ComponentTableRow, b: ComponentTableRow) => {
         let compareResult = 0;
 
         switch (sortKey) {

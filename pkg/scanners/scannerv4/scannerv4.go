@@ -25,11 +25,16 @@ import (
 	scannerv1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
-// mockDigest is the digest used for annotating any Node Index.
+// mockNodeDigest is the digest used for annotating any Node Index.
 // The Scanner endpoint requires a digest for each image layer before analyzing it - TODO(ROX-25614)
 // As the Node contents are treated as one big image layer, they also need a bogus digest.
 // This digest is taken from the test of the digest library we're using (go-containerregistry).
-const mockDigest = "registry/repository@sha256:deadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33f"
+const mockNodeDigest = "registry/repository@sha256:deadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33f"
+
+// mockVirtualMachineDigest is the digest used for annotating any Virtual Machine Index.
+// The Scanner endpoint requires a digest for each image layer before analyzing it - TODO(ROX-25614)
+// As the Virtual Machine contents are treated as one big image layer, they also need a bogus digest.
+const mockVirtualMachineDigest = "vm-registry/repository@sha256:900dc0ffee900dc0ffee900dc0ffee900dc0ffee900dc0ffee900dc0ffee900d"
 
 var (
 	_ types.Scanner                  = (*scannerv4)(nil)
@@ -282,15 +287,27 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.S
 }
 
 func (s *scannerv4) GetNodeVulnerabilityReport(node *storage.Node, indexReport *v4.IndexReport) (*v4.VulnerabilityReport, error) {
-	nodeDigest, err := name.NewDigest(mockDigest)
+	nodeDigest, err := name.NewDigest(mockNodeDigest)
 	if err != nil {
 		log.Errorf("Failed to parse digest from node %q: %v", node.GetName(), err)
 	}
 
+	vr, err := s.getVulnerabilityReport(nodeDigest, indexReport)
+	if err != nil {
+		return nil, errors.Wrap(err, "Scanner V4 client call to GetVulnerabilities")
+	}
+
+	return vr, nil
+}
+
+func (s *scannerv4) getVulnerabilityReport(
+	digest name.Digest,
+	indexReport *v4.IndexReport,
+) (*v4.VulnerabilityReport, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
 
-	vr, err := s.scannerClient.GetVulnerabilities(ctx, nodeDigest, indexReport.GetContents())
+	vr, err := s.scannerClient.GetVulnerabilities(ctx, digest, indexReport.GetContents())
 	if err != nil {
 		return nil, errors.Wrap(err, "Scanner V4 client call to GetVulnerabilities")
 	}
@@ -317,6 +334,29 @@ func (s *scannerv4) GetNodeScan(_ *storage.Node) (*storage.NodeScan, error) {
 func (s *scannerv4) TestNodeScanner() error {
 	log.Warn("NodeScanner v4 - Returning FAKE 'success' to Test")
 	return nil
+}
+
+func (s *scannerv4) GetVirtualMachineScan(
+	vm *storage.VirtualMachine,
+	indexReport *v4.IndexReport,
+) (*storage.VirtualMachineScan, error) {
+	if s.scannerClient == nil {
+		return nil, errors.New("Scanner V4 client not available for VM enrichment")
+	}
+	if indexReport == nil {
+		return nil, errors.New("index report is required for VM scanning")
+	}
+	vmDigest, err := name.NewDigest(mockVirtualMachineDigest)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse digest for VM %q", vm.GetName())
+	}
+
+	vr, err := s.getVulnerabilityReport(vmDigest, indexReport)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get vulnerability report for VM %q", vm.GetName())
+	}
+
+	return ToVirtualMachineScan(vr), nil
 }
 
 // NodeScannerCreator provides the type scanners.NodeScannerCreator to add to the scanners registry.
@@ -365,4 +405,31 @@ func newNodeScanner(integration *storage.NodeIntegration) (*scannerv4, error) {
 	}
 
 	return scanner, nil
+}
+
+// NewVirtualMachineScanner provides a scannerv4 instance that is able to scan virtual machines
+func NewVirtualMachineScanner() (types.VirtualMachineScanner, error) {
+	return newVirtualMachineScanner(getMatcherOnlyScanner)
+}
+
+func newVirtualMachineScanner(clientCreator func(string) (client.Scanner, error)) (types.VirtualMachineScanner, error) {
+	matcherEndpoint := DefaultMatcherEndpoint
+
+	scannerClient, err := clientCreator(matcherEndpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	numConcurrentScans := defaultMaxConcurrentScans
+
+	return &scannerv4{
+		name:              "Virtual machine scanner",
+		scannerClient:     scannerClient,
+		ScanSemaphore:     types.NewSemaphoreWithValue(numConcurrentScans),
+		NodeScanSemaphore: types.NewNodeSemaphoreWithValue(numConcurrentScans),
+	}, nil
+}
+
+func getMatcherOnlyScanner(matcherEndpoint string) (client.Scanner, error) {
+	return client.NewGRPCScanner(context.Background(), client.WithMatcherAddress(matcherEndpoint))
 }

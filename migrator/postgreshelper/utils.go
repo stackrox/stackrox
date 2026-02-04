@@ -2,9 +2,10 @@ package postgreshelper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
-	"github.com/pkg/errors"
+	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
@@ -15,7 +16,7 @@ import (
 // RenameDB - renames a database
 func RenameDB(adminPool postgres.DB, originalDB, newDB string) error {
 	if pgconfig.IsExternalDatabase() {
-		utils.Should(errors.New("unexpected call, should not try to rename a database from an external Postgres."))
+		utils.Should(errors.New("unexpected call, should not try to rename a database from an external Postgres"))
 	}
 
 	log.WriteToStderrf("Renaming database %q to %q", originalDB, newDB)
@@ -33,5 +34,13 @@ func RenameDB(adminPool postgres.DB, originalDB, newDB string) error {
 
 	_, err = adminPool.Exec(ctx, sqlStmt)
 
+	return err
+}
+
+func WrapRollback(ctx context.Context, tx *postgres.Tx, err error) error {
+	rollbackErr := tx.Rollback(ctx)
+	if rollbackErr != nil {
+		return errors.Join(err, pkgErrors.Wrap(rollbackErr, "additionally, unable to rollback transaction"))
+	}
 	return err
 }

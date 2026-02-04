@@ -14,21 +14,20 @@ import {
 } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql, useQuery } from '@apollo/client';
-import uniq from 'lodash/uniq';
 
 import { getTableUIState } from 'utils/getTableUIState';
-import { getPaginationParams, searchValueAsArray } from 'utils/searchUtils';
+import { getPaginationParams } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import CompoumdSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
+import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import KeyValueListModal from 'Components/KeyValueListModal';
-import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
@@ -85,9 +84,7 @@ const defaultSearchFilters = {
     'Vulnerability State': 'OBSERVED',
 };
 
-const searchFilterConfig = [namespaceSearchFilterConfig, clusterSearchFilterConfig];
-
-const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
+const searchFilterConfig = [clusterSearchFilterConfig, namespaceSearchFilterConfig];
 
 const sortFields = ['Namespace Risk Priority', 'Namespace', 'Cluster', 'Deployment Count'];
 const defaultSortOption = {
@@ -136,21 +133,10 @@ function NamespaceViewPage() {
         searchFilter,
     });
 
-    function onSearch(searchPayload: OnSearchPayload) {
-        const { category, value, action } = searchPayload;
-        const selectedSearchFilter = searchValueAsArray(searchFilter[category]);
-
-        const newFilter = {
-            ...searchFilter,
-            [category]:
-                action === 'ADD'
-                    ? uniq([...selectedSearchFilter, value])
-                    : selectedSearchFilter.filter((oldValue) => value !== oldValue),
-        };
-
-        onFilterChange(newFilter);
+    const onSearch: OnSearchCallback = (searchPayload) => {
+        onFilterChange(updateSearchFilter(searchFilter, searchPayload));
         trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
-    }
+    };
 
     function onFilterChange(searchFilter: SearchFilter) {
         setSearchFilter(searchFilter);
@@ -186,32 +172,36 @@ function NamespaceViewPage() {
                     <ToolbarContent>
                         <CompoundSearchFilter
                             config={searchFilterConfig}
+                            defaultEntity="Namespace"
                             searchFilter={searchFilter}
                             onSearch={onSearch}
                         />
-                        <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
-                            <Pagination
-                                toggleTemplate={({ firstIndex, lastIndex }) => (
-                                    <span>
-                                        <b>
-                                            {firstIndex} - {lastIndex}
-                                        </b>{' '}
-                                        of <b>many</b>
-                                    </span>
-                                )}
-                                page={page}
-                                perPage={perPage}
-                                onSetPage={(_, newPage) => setPage(newPage)}
-                                onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
-                                isCompact
-                            />
-                        </ToolbarItem>
                         <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
-                            <SearchFilterChips
-                                searchFilter={searchFilter}
+                            <CompoumdSearchFilterLabels
+                                attributesSeparateFromConfig={[]}
+                                config={searchFilterConfig}
                                 onFilterChange={onFilterChange}
-                                filterChipGroupDescriptors={filterChipGroupDescriptors}
+                                searchFilter={searchFilter}
                             />
+                        </ToolbarGroup>
+                        <ToolbarGroup className="pf-v5-u-w-100">
+                            <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                                <Pagination
+                                    toggleTemplate={({ firstIndex, lastIndex }) => (
+                                        <span>
+                                            <b>
+                                                {firstIndex} - {lastIndex}
+                                            </b>{' '}
+                                            of <b>many</b>
+                                        </span>
+                                    )}
+                                    page={page}
+                                    perPage={perPage}
+                                    onSetPage={(_, newPage) => setPage(newPage)}
+                                    onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
+                                    isCompact
+                                />
+                            </ToolbarItem>
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>

@@ -135,6 +135,14 @@ func insertIntoComplianceOperatorClusterScanConfigStatuses(batch *pgx.Batch, obj
 	return nil
 }
 
+var copyColsComplianceOperatorClusterScanConfigStatuses = []string{
+	"id",
+	"clusterid",
+	"scanconfigid",
+	"lastupdatedtime",
+	"serialized",
+}
+
 func copyFromComplianceOperatorClusterScanConfigStatuses(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ComplianceOperatorClusterScanConfigStatus) error {
 	if len(objs) == 0 {
 		return nil
@@ -150,14 +158,6 @@ func copyFromComplianceOperatorClusterScanConfigStatuses(ctx context.Context, s 
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"clusterid",
-		"scanconfigid",
-		"lastupdatedtime",
-		"serialized",
 	}
 
 	idx := 0
@@ -182,7 +182,7 @@ func copyFromComplianceOperatorClusterScanConfigStatuses(ctx context.Context, s 
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_cluster_scan_config_statuses"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"compliance_operator_cluster_scan_config_statuses"}, copyColsComplianceOperatorClusterScanConfigStatuses, inputRows); err != nil {
 		return err
 	}
 

@@ -7,12 +7,22 @@ import (
 	"github.com/stackrox/rox/central/externalbackups/service/internal"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	"google.golang.org/grpc"
 )
 
-const cause = "the scheduled backup service is not applicable when using an external database. " +
-	"Please manage backups directly with your database provider."
+func getCause() string {
+	if env.ManagedCentral.BooleanSetting() {
+		return "cloud backup integrations are not available in this environment."
+	}
+	if pgconfig.IsExternalDatabase() {
+		return "the scheduled backup service is not applicable when using an external database. " +
+			"Please manage backups directly with your database provider."
+	}
+	return "the scheduled backup service is not available"
+}
 
 type serviceImpl struct {
 	v1.UnimplementedExternalBackupServiceServer
@@ -31,37 +41,37 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) GetExternalBackup(_ context.Context, _ *v1.ResourceByID) (*storage.ExternalBackup, error) {
-	return nil, errox.NotFound.CausedBy(cause)
+	return nil, errox.NotFound.CausedBy(getCause())
 }
 
 func (s *serviceImpl) GetExternalBackups(_ context.Context, _ *v1.Empty) (*v1.GetExternalBackupsResponse, error) {
-	return nil, errox.NotFound.CausedBy(cause)
+	return nil, errox.NotFound.CausedBy(getCause())
 }
 
 func (s *serviceImpl) TestExternalBackup(_ context.Context, _ *storage.ExternalBackup) (*v1.Empty, error) {
-	return nil, errox.NotFound.CausedBy(cause)
+	return nil, errox.NotFound.CausedBy(getCause())
 }
 
 func (s *serviceImpl) TestUpdatedExternalBackup(_ context.Context, _ *v1.UpdateExternalBackupRequest) (*v1.Empty, error) {
-	return nil, errox.NotFound.CausedBy(cause)
+	return nil, errox.NotFound.CausedBy(getCause())
 }
 
 func (s *serviceImpl) TriggerExternalBackup(_ context.Context, _ *v1.ResourceByID) (*v1.Empty, error) {
-	return nil, errox.NotFound.CausedBy(cause)
+	return nil, errox.NotFound.CausedBy(getCause())
 }
 
 func (s *serviceImpl) PutExternalBackup(_ context.Context, _ *storage.ExternalBackup) (*storage.ExternalBackup, error) {
-	return nil, errox.NotImplemented.CausedBy(cause)
+	return nil, errox.NotImplemented.CausedBy(getCause())
 }
 
 func (s *serviceImpl) UpdateExternalBackup(_ context.Context, _ *v1.UpdateExternalBackupRequest) (*storage.ExternalBackup, error) {
-	return nil, errox.NotFound.CausedBy(cause)
+	return nil, errox.NotFound.CausedBy(getCause())
 }
 
 func (s *serviceImpl) PostExternalBackup(_ context.Context, _ *storage.ExternalBackup) (*storage.ExternalBackup, error) {
-	return nil, errox.NotImplemented.CausedBy(cause)
+	return nil, errox.NotImplemented.CausedBy(getCause())
 }
 
 func (s *serviceImpl) DeleteExternalBackup(_ context.Context, _ *v1.ResourceByID) (*v1.Empty, error) {
-	return nil, errox.NotFound.CausedBy(cause)
+	return nil, errox.NotFound.CausedBy(getCause())
 }

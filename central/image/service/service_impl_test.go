@@ -8,8 +8,11 @@ import (
 
 	imageDSMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
+	imageV2DSMocks "github.com/stackrox/rox/central/imagev2/datastore/mocks"
 	riskManagerMocks "github.com/stackrox/rox/central/risk/manager/mocks"
+	connMgrMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
@@ -19,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/search"
 	pkgTestUtils "github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -172,7 +176,7 @@ func TestShouldUpdateExistingScan(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			pkgTestUtils.MustUpdateFeature(t, features.ScannerV4, tc.featureEnabled)
 
-			actual := shouldUpdateExistingScan(tc.imgExists, tc.existingImg, tc.req)
+			actual := shouldUpdateExistingScan(tc.imgExists, tc.existingImg.GetScan(), tc.req)
 			assert.Equal(t, tc.expected, actual)
 		})
 	}
@@ -270,7 +274,7 @@ func TestScanExpired(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.desc, func(t *testing.T) {
-			assert.Equal(t, tc.expired, scanExpired(tc.image))
+			assert.Equal(t, tc.expired, scanExpired(tc.image.GetScan()))
 		})
 	}
 
@@ -412,4 +416,147 @@ func TestEnrichLocalImageInternal_ImageNames(t *testing.T) {
 	require.NoError(t, err)
 	// Verify that the names from the cached image are carried forward.
 	require.Len(t, resp.GetImage().GetNames(), 3)
+}
+
+// TestEnrichLocalImageV2Internal_ImageNames ensures that image names are
+// populated from the existing images with the same SHA in Central DB when the image
+// requires re-enrichment. (ie: when scan has expired)
+func TestEnrichLocalImageV2Internal_ImageNames(t *testing.T) {
+	pkgTestUtils.MustUpdateFeature(t, features.FlattenImageData, true)
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+
+	genImageName := func(img string) *storage.ImageName {
+		imgName, _, err := utils.GenerateImageNameFromString(img)
+		require.NoError(t, err)
+		return imgName
+	}
+
+	imageEnricherMock := enricherMocks.NewMockImageEnricherV2(ctrl)
+	imageEnricherMock.EXPECT().EnrichWithVulnerabilities(gomock.Any(), gomock.Any(), gomock.Any()).
+		AnyTimes().
+		Return(enricher.EnrichmentResult{}, nil)
+	imageEnricherMock.EXPECT().EnrichWithSignatureVerificationData(gomock.Any(), gomock.Any()).
+		AnyTimes().
+		Return(enricher.EnrichmentResult{}, nil)
+
+	imageDSMock := imageV2DSMocks.NewMockDataStore(ctrl)
+	imageDSMock.EXPECT().GetImage(gomock.Any(), gomock.Any()).
+		AnyTimes().
+		Return(&storage.ImageV2{
+			Id:   "fake-id_1",
+			Scan: nil, // A nil scan should trigger a re-scan.
+		}, true, nil)
+	imageDSMock.EXPECT().GetImageNames(gomock.Any(), gomock.Any()).
+		AnyTimes().
+		Return([]*storage.ImageName{genImageName("fake/image:A"), genImageName("fake/image:B")}, nil)
+
+	riskManagerMock := riskManagerMocks.NewMockManager(ctrl)
+	riskManagerMock.EXPECT().CalculateRiskAndUpsertImageV2(gomock.Any()).
+		AnyTimes().
+		Return(nil)
+
+	connMgrMock := connMgrMocks.NewMockManager(ctrl)
+	connMgrMock.EXPECT().AllSensorsHaveCapability(gomock.Any()).AnyTimes().Return(false)
+
+	s := serviceImpl{
+		internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
+		enricherV2:            imageEnricherMock,
+		datastoreV2:           imageDSMock,
+		riskManager:           riskManagerMock,
+		connManager:           connMgrMock,
+	}
+
+	resp, err := s.EnrichLocalImageInternal(ctx, &v1.EnrichLocalImageInternalRequest{
+		ImageId:   "fake-id_1",
+		ImageName: genImageName("fake/image:C"),
+	})
+	require.NoError(t, err)
+	// Verify that the names from the cached image are carried forward.
+	require.Len(t, resp.GetImage().GetNames(), 3)
+}
+
+// TestDeleteImages_V2 ensures that DeleteImages correctly queries for ImageID and SHA
+// and broadcasts InvalidateImageCache messages with both fields populated.
+func TestDeleteImages_V2(t *testing.T) {
+	pkgTestUtils.MustUpdateFeature(t, features.FlattenImageData, true)
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+
+	imageDSV2Mock := imageV2DSMocks.NewMockDataStore(ctrl)
+	connMgrMock := connMgrMocks.NewMockManager(ctrl)
+
+	// Expected search results with ImageID and SHA fields
+	searchResults := []search.Result{
+		{
+			ID: "image-uuid-1",
+			FieldValues: map[string]string{
+				"image sha": "sha256:abc123",
+				"image":     "docker.io/library/nginx:latest",
+			},
+		},
+		{
+			ID: "image-uuid-2",
+			FieldValues: map[string]string{
+				"image sha": "sha256:def456",
+				"image":     "docker.io/library/redis:latest",
+			},
+		},
+	}
+
+	// Build expected query with selects
+	expectedQuery := search.NewQueryBuilder().
+		AddStrings(search.ImageName, "docker.io/library/nginx:latest", "docker.io/library/redis:latest").
+		ForSearchResults(search.ImageSHA, search.ImageName).
+		WithPagination(search.NewPagination().Limit(2)).
+		ProtoQuery()
+
+	// Expect Search to be called with the query containing selects
+	imageDSV2Mock.EXPECT().Search(gomock.Any(), expectedQuery).Return(searchResults, nil)
+
+	// Expect DeleteImages to be called with the IDs
+	imageDSV2Mock.EXPECT().DeleteImages(gomock.Any(), "image-uuid-1", "image-uuid-2").Return(nil)
+
+	// Build expected broadcast message
+	expectedMsg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_InvalidateImageCache{
+			InvalidateImageCache: &central.InvalidateImageCache{
+				ImageKeys: []*central.InvalidateImageCache_ImageKey{
+					{
+						ImageId:       "sha256:abc123",
+						ImageIdV2:     "image-uuid-1",
+						ImageFullName: "docker.io/library/nginx:latest",
+					},
+					{
+						ImageId:       "sha256:def456",
+						ImageIdV2:     "image-uuid-2",
+						ImageFullName: "docker.io/library/redis:latest",
+					},
+				},
+			},
+		},
+	}
+
+	// Expect BroadcastMessage to be called with the expected message
+	connMgrMock.EXPECT().BroadcastMessage(expectedMsg)
+
+	s := &serviceImpl{
+		datastoreV2: imageDSV2Mock,
+		connManager: connMgrMock,
+	}
+
+	req := &v1.DeleteImagesRequest{
+		Query: &v1.RawQuery{
+			Query: "Image:docker.io/library/nginx:latest,docker.io/library/redis:latest",
+			Pagination: &v1.Pagination{
+				Limit: 2,
+			},
+		},
+		Confirm: true,
+	}
+
+	resp, err := s.DeleteImages(ctx, req)
+	require.NoError(t, err)
+	assert.Equal(t, uint32(2), resp.GetNumDeleted())
+	assert.False(t, resp.GetDryRun())
 }

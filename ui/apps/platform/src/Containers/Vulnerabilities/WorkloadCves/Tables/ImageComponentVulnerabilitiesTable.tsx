@@ -1,3 +1,4 @@
+import { Label } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
@@ -25,6 +26,7 @@ export const imageComponentVulnerabilitiesFragment = gql`
         location
         source
         layerIndex
+        inBaseImageLayer
         imageVulnerabilities(query: $query) {
             severity
             fixedByVersion
@@ -52,8 +54,10 @@ function ImageComponentVulnerabilitiesTable({
 }: ImageComponentVulnerabilitiesTableProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isAdvisoryColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isLayerTypeColumnEnabled = isFeatureFlagEnabled('ROX_BASE_IMAGE_DETECTION');
 
-    const colSpanForDockerfileLayer = 5 + (isAdvisoryColumnEnabled ? 1 : 0);
+    const colSpanForDockerfileLayer =
+        5 + (isAdvisoryColumnEnabled ? 1 : 0) + (isLayerTypeColumnEnabled ? 1 : 0);
 
     const { sortOption, getSortParams } = useTableSort({ sortFields, defaultSortOption });
     const componentVulns = flattenImageComponentVulns(
@@ -76,12 +80,22 @@ function ImageComponentVulnerabilitiesTable({
                     <Th>CVE fixed in</Th>
                     {isAdvisoryColumnEnabled && <Th>Advisory</Th>}
                     <Th>Source</Th>
+                    {isLayerTypeColumnEnabled && <Th>Layer type</Th>}
                     <Th>Location</Th>
                 </Tr>
             </Thead>
             {sortedComponentVulns.map((componentVuln, index) => {
-                const { image, name, version, fixedByVersion, advisory, location, source, layer } =
-                    componentVuln;
+                const {
+                    image,
+                    name,
+                    version,
+                    fixedByVersion,
+                    advisory,
+                    location,
+                    source,
+                    layer,
+                    inBaseImageLayer = false,
+                } = componentVuln;
                 // No border on the last row
                 const style =
                     index !== componentVulns.length - 1
@@ -102,6 +116,13 @@ function ImageComponentVulnerabilitiesTable({
                                 </Td>
                             )}
                             <Td dataLabel="Source">{source}</Td>
+                            {isLayerTypeColumnEnabled && (
+                                <Td dataLabel="Layer type">
+                                    <Label color={inBaseImageLayer ? 'blue' : 'grey'} isCompact>
+                                        {inBaseImageLayer ? 'Base image' : 'Application'}
+                                    </Label>
+                                </Td>
+                            )}
                             <Td dataLabel="Location">
                                 <ComponentLocation location={location} source={source} />
                             </Td>

@@ -2,8 +2,10 @@ package dispatcher
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	k8sUtils "github.com/stackrox/rox/sensor/kubernetes/utils"
@@ -41,7 +43,7 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 	_ interface{},
 	action central.ResourceAction,
 ) *component.ResourceEvent {
-	if !features.VirtualMachines.Enabled() {
+	if !features.VirtualMachines.Enabled() || !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
 		return nil
 	}
 	virtualMachineInstance := &kubeVirtV1.VirtualMachineInstance{}
@@ -63,13 +65,20 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 		vmUID = vmReference.UID
 		vmName = vmReference.Name
 	}
+	disks := extractDisksFromVMI(virtualMachineInstance)
 	vm := &virtualmachine.Info{
-		ID:        virtualmachine.VMID(vmUID),
-		Name:      vmName,
-		Namespace: namespace,
-		Running:   virtualMachineInstance.Status.Phase == kubeVirtV1.Running,
-		VSOCKCID:  virtualMachineInstance.Status.VSOCKCID,
-		GuestOS:   virtualMachineInstance.Status.GuestOSInfo.Name,
+		ID:          virtualmachine.VMID(vmUID),
+		Name:        vmName,
+		Namespace:   namespace,
+		Running:     virtualMachineInstance.Status.Phase == kubeVirtV1.Running,
+		VSOCKCID:    virtualMachineInstance.Status.VSOCKCID,
+		GuestOS:     virtualMachineInstance.Status.GuestOSInfo.Name,
+		Description: descriptionFromAnnotations(virtualMachineInstance.GetAnnotations()),
+		IPAddresses: extractIPAddresses(virtualMachineInstance),
+		ActivePods:  extractActivePods(virtualMachineInstance),
+		NodeName:    virtualMachineInstance.Status.NodeName,
+		BootOrder:   extractBootOrder(disks),
+		CDRomDisks:  extractCDRomDisks(disks),
 	}
 	// If the instance is NOT handled by a VirtualMachine
 	// Process the instance as a VirtualMachine

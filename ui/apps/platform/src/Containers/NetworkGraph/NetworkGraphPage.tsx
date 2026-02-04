@@ -281,7 +281,7 @@ function NetworkGraphPageContent() {
             });
         }
 
-        setIsCIDRBlockFormOpen(!isCIDRBlockFormOpen);
+        setIsCIDRBlockFormOpen((prev) => !prev);
     }
 
     return (

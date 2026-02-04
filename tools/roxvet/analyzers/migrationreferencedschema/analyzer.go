@@ -34,8 +34,8 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	if !strings.HasPrefix(root, "migrator") {
 		return nil, nil
 	}
-	// This is allowed in frozen schema or the initial frozen schema as that code is isolated
-	if strings.Contains(root, "postgreshelper") || strings.Contains(root, "frozenschema") {
+	// This is allowed in postgreshelper as that code is isolated
+	if strings.Contains(root, "postgreshelper") {
 		return nil, nil
 	}
 

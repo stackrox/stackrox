@@ -22,7 +22,6 @@ func TestGetResourceType(t *testing.T) {
 		{typ: &storage.Cluster{}, resourceType: directlyScoped},
 		{typ: &storage.Deployment{}, resourceType: directlyScoped},
 		{typ: &storage.Image{}, resourceType: indirectlyScoped},
-		{typ: &storage.CVE{}, resourceType: indirectlyScoped},
 		{typ: &storage.Policy{}, resourceType: globallyScoped},
 		{typ: &storage.Email{}, resourceType: joinTable, joinTable: true},
 		// Evaluate types of the various stores
@@ -52,9 +51,7 @@ func TestGetResourceType(t *testing.T) {
 		{typ: &storage.ComplianceRunMetadata{}, resourceType: directlyScoped},
 		{typ: &storage.ComplianceRunResults{}, resourceType: directlyScoped},
 		{typ: &storage.ComplianceStrings{}, resourceType: indirectlyScoped},
-		{typ: &storage.ComponentCVEEdge{}, resourceType: indirectlyScoped},
 		{typ: &storage.Config{}, resourceType: globallyScoped},
-		{typ: &storage.CVE{}, resourceType: indirectlyScoped},
 		{typ: &storage.DeclarativeConfigHealth{}, resourceType: globallyScoped},
 		{typ: &storage.DelegatedRegistryConfig{}, resourceType: globallyScoped},
 		{typ: &storage.Deployment{}, resourceType: directlyScoped},
@@ -62,10 +59,8 @@ func TestGetResourceType(t *testing.T) {
 		{typ: &storage.Group{}, resourceType: globallyScoped},
 		{typ: &storage.Hash{}, resourceType: globallyScoped},
 		{typ: &storage.Image{}, resourceType: indirectlyScoped},
-		{typ: &storage.ImageComponent{}, resourceType: indirectlyScoped},
-		{typ: &storage.ImageComponentEdge{}, resourceType: indirectlyScoped},
-		{typ: &storage.ImageCVE{}, resourceType: indirectlyScoped},
-		{typ: &storage.ImageCVEEdge{}, resourceType: indirectlyScoped},
+		{typ: &storage.ImageComponentV2{}, resourceType: indirectlyScoped},
+		{typ: &storage.ImageCVEV2{}, resourceType: indirectlyScoped},
 		{typ: &storage.ImageIntegration{}, resourceType: globallyScoped},
 		{typ: &storage.InitBundleMeta{}, resourceType: globallyScoped},
 		{typ: &storage.IntegrationHealth{}, resourceType: globallyScoped},
@@ -122,10 +117,20 @@ func TestGetResourceType(t *testing.T) {
 		})
 	}
 
-	t.Run("panics on unknown resource", func(t *testing.T) {
-		email := &storage.Email{}
-		assert.Panics(t, func() {
-			getResourceType(fmt.Sprintf("%T", email), walker.Walk(reflect.TypeOf(email), ""), false)
+	for _, tc := range []struct {
+		typ protocompat.Message
+	}{
+		{typ: &storage.Email{}},
+		{typ: &storage.CVE{}},
+	} {
+		t.Run(fmt.Sprintf("panics on unknown resource %T", tc.typ), func(t *testing.T) {
+			assert.PanicsWithValue(
+				t,
+				"unknown resource: . Please add the resource to tools/generate-helpers/pg-table-bindings/list.go.",
+				func() {
+					getResourceType(fmt.Sprintf("%T", tc.typ), walker.Walk(reflect.TypeOf(tc.typ), ""), false)
+				},
+			)
 		})
-	})
+	}
 }

@@ -5,7 +5,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/stackrox/rox/pkg/concurrency"
 	networkingV1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -52,15 +51,24 @@ func (w *WorkloadManager) getNetworkPolicy(workload NetworkPolicyWorkload, id st
 }
 
 func (w *WorkloadManager) manageNetworkPolicy(ctx context.Context, resources *networkPolicyToBeManaged) {
-	w.manageNetworkPolicyLifecycle(ctx, resources)
+	defer w.wg.Done()
 
-	for count := 0; resources.workload.NumLifecycles == 0 || count < resources.workload.NumLifecycles; count++ {
+	// NumLifecycles+1 is to handle the initial startup. These start up resources
+	// are like deploying Sensor into a new environment and syncing all objects.
+	for count := 0; resources.workload.NumLifecycles == 0 || count < resources.workload.NumLifecycles+1; count++ {
+		w.manageNetworkPolicyLifecycle(ctx, resources)
+
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
 		resources = w.getNetworkPolicy(resources.workload, "")
 		if _, err := w.client.Kubernetes().NetworkingV1().NetworkPolicies(resources.networkPolicy.Namespace).Create(ctx, resources.networkPolicy, metav1.CreateOptions{}); err != nil {
 			log.Errorf("error creating networkPolicy: %v", err)
 		}
 		w.writeID(networkPolicyPrefix, resources.networkPolicy.UID)
-		w.manageNetworkPolicyLifecycle(ctx, resources)
 	}
 }
 
@@ -71,13 +79,13 @@ func (w *WorkloadManager) manageNetworkPolicyLifecycle(ctx context.Context, reso
 	npNextUpdate := calculateDurationWithJitter(resources.workload.UpdateInterval)
 
 	np := resources.networkPolicy
-	stopSig := concurrency.NewSignal()
 	npClient := w.client.Kubernetes().NetworkingV1().NetworkPolicies(np.Namespace)
 
 	for {
 		select {
+		case <-ctx.Done():
+			return
 		case <-timer.C:
-			stopSig.Signal()
 			if err := npClient.Delete(ctx, np.Name, metav1.DeleteOptions{}); err != nil {
 				log.Error(err)
 			}

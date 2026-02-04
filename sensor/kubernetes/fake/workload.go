@@ -80,14 +80,41 @@ type ServiceWorkload struct {
 	NumLoadBalancers int `yaml:"numLoadBalancers"`
 }
 
+// VirtualMachineWorkload defines the workload for VirtualMachine and VirtualMachineInstance CRDs.
+// This is the unified config for both VM/VMI informer events AND VM index reports.
+// Index reports are only generated when ReportInterval > 0, and they follow the VM lifecycle
+// (reports are sent only while the VM is "alive" in the informer simulation).
+type VirtualMachineWorkload struct {
+	// PoolSize is the number of VM/VMI templates to maintain in the pool.
+	// This controls how many unique VMs exist at any given time.
+	PoolSize int `yaml:"poolSize"`
+	// UpdateInterval is how often to update VM/VMI metadata (annotations, labels)
+	UpdateInterval time.Duration `yaml:"updateInterval"`
+	// LifecycleDuration is how long each VM/VMI lifecycle lasts before recreation
+	LifecycleDuration time.Duration `yaml:"lifecycleDuration"`
+	// NumLifecycles is the number of times to recreate VMs/VMIs (0 = infinite)
+	NumLifecycles int `yaml:"numLifecycles"`
+	// InitialReportDelay delays the first index report for each VM by a user-provided duration.
+	// A ±20% jitter is always applied to spread the initial burst; when unset, the first index
+	// report is sent immediately (no delay, no jitter) once prerequisites are ready.
+	InitialReportDelay time.Duration `yaml:"initialReportDelay"`
+
+	// ReportInterval is how often each VM sends an index report (0 = no reports).
+	// Index reports are only sent while the VM is alive in the informer simulation.
+	ReportInterval time.Duration `yaml:"reportInterval"`
+	// NumPackages is the number of fake packages to include in each index report
+	NumPackages int `yaml:"numPackages"`
+}
+
 // Workload is the definition of a scale workload
 type Workload struct {
-	DeploymentWorkload    []DeploymentWorkload    `yaml:"deploymentWorkload"`
-	NetworkPolicyWorkload []NetworkPolicyWorkload `yaml:"networkPolicyWorkload"`
-	NodeWorkload          NodeWorkload            `yaml:"nodeWorkload"`
-	NetworkWorkload       NetworkWorkload         `yaml:"networkWorkload"`
-	RBACWorkload          RBACWorkload            `yaml:"rbacWorkload"`
-	ServiceWorkload       ServiceWorkload         `yaml:"serviceWorkload"`
-	NumNamespaces         int                     `yaml:"numNamespaces"`
-	MatchLabels           bool                    `yaml:"matchLabels"`
+	DeploymentWorkload     []DeploymentWorkload    `yaml:"deploymentWorkload"`
+	NetworkPolicyWorkload  []NetworkPolicyWorkload `yaml:"networkPolicyWorkload"`
+	NodeWorkload           NodeWorkload            `yaml:"nodeWorkload"`
+	NetworkWorkload        NetworkWorkload         `yaml:"networkWorkload"`
+	RBACWorkload           RBACWorkload            `yaml:"rbacWorkload"`
+	ServiceWorkload        ServiceWorkload         `yaml:"serviceWorkload"`
+	VirtualMachineWorkload VirtualMachineWorkload  `yaml:"virtualMachineWorkload"`
+	NumNamespaces          int                     `yaml:"numNamespaces"`
+	MatchLabels            bool                    `yaml:"matchLabels"`
 }

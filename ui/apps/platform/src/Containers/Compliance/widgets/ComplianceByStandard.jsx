@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import PropTypes from 'prop-types';
 import capitalize from 'lodash/capitalize';
 import { Link, useLocation } from 'react-router-dom-v5-compat';

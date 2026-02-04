@@ -68,7 +68,7 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                                     <Button
                                         variant="plain"
                                         className="pf-v5-u-px-sm"
-                                        onClick={() => setIsEditingName(!isEditingName)}
+                                        onClick={() => setIsEditingName((prev) => !prev)}
                                         title={
                                             isEditingName
                                                 ? 'Save name of policy section'

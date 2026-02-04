@@ -43,6 +43,10 @@ func imageGetterV2PanicOnCall(_ context.Context, _ string) (*storage.ImageV2, bo
 	panic("Unexpected call to imageGetter")
 }
 
+func emptyBaseImageGetterV2(_ context.Context, _ []string) ([]*storage.BaseImage, error) {
+	return nil, nil
+}
+
 var _ signatures.SignatureFetcher = (*fakeSigFetcher)(nil)
 
 var _ scannertypes.Scanner = (*fakeScanner)(nil)
@@ -357,6 +361,7 @@ func TestEnricherV2Flow(t *testing.T) {
 				imageGetter:                emptyImageGetterV2,
 				signatureIntegrationGetter: emptySignatureIntegrationGetter,
 				signatureFetcher:           &fakeSigFetcher{},
+				baseImageGetter:            emptyBaseImageGetterV2,
 			}
 			if c.inMetadataCache {
 				enricherImpl.metadataCache.Add(c.image.GetId(), c.image.GetMetadata())
@@ -409,6 +414,7 @@ func TestCVESuppressionV2(t *testing.T) {
 		imageGetter:                emptyImageGetterV2,
 		signatureIntegrationGetter: emptySignatureIntegrationGetter,
 		signatureFetcher:           &fakeSigFetcher{},
+		baseImageGetter:            emptyBaseImageGetterV2,
 	}
 
 	img := &storage.ImageV2{
@@ -1224,9 +1230,96 @@ func TestMetadataUpToDateV2(t *testing.T) {
 	})
 }
 
+func TestEnrichImageWithBaseImagesV2(t *testing.T) {
+	// Enable the Feature Flags
+	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+	t.Setenv(features.BaseImageDetection.EnvVar(), "true")
+
+	ctrl := gomock.NewController(t)
+
+	// ... (Existing Registry/Scanner setup remains the same) ...
+	fsr := newFakeRegistryScanner(opts{})
+	registrySet := registryMocks.NewMockSet(ctrl)
+	registrySet.EXPECT().IsEmpty().Return(false).AnyTimes()
+	registrySet.EXPECT().GetAllUnique().Return([]types.ImageRegistry{fsr}).AnyTimes()
+	registrySet.EXPECT().Get(gomock.Any()).Return(fsr).AnyTimes()
+
+	scannerSet := scannerMocks.NewMockSet(ctrl)
+	scannerSet.EXPECT().IsEmpty().Return(false).AnyTimes()
+	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{fsr}).AnyTimes()
+
+	set := mocks.NewMockSet(ctrl)
+	set.EXPECT().RegistrySet().Return(registrySet).AnyTimes()
+	set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
+
+	const expectedName = "docker.io/library/alpine:3.18"
+	const expectedDigest = "sha256:abcdef123456"
+
+	// CHANGE: Define the mock function instead of the gomock matcher
+	mockBaseImageGetter := func(ctx context.Context, layers []string) ([]*storage.BaseImage, error) {
+		return []*storage.BaseImage{
+			{
+				Repository:     "docker.io/library/alpine",
+				Tag:            "3.18",
+				ManifestDigest: expectedDigest,
+				Layers: []*storage.BaseImageLayer{
+					{LayerDigest: "sha1", Index: 0},
+				},
+			},
+		}, nil
+	}
+
+	testImpl := &enricherV2Impl{
+		cvesSuppressor:             &fakeCVESuppressorV2{},
+		integrations:               set,
+		metadataLimiter:            rate.NewLimiter(rate.Inf, 0),
+		metadataCache:              newCache(),
+		metrics:                    newMetrics(pkgMetrics.CentralSubsystem),
+		imageGetter:                emptyImageGetterV2,
+		signatureIntegrationGetter: emptySignatureIntegrationGetter,
+		// CHANGE: Pass the function here
+		baseImageGetter:           mockBaseImageGetter,
+		integrationHealthReporter: reporterMocks.NewMockReporter(ctrl),
+	}
+
+	testImpl.integrationHealthReporter.(*reporterMocks.MockReporter).EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
+
+	imgName := &storage.ImageName{
+		FullName: "reg/repo:tag",
+		Registry: "reg",
+	}
+	img := &storage.ImageV2{
+		Id:     utils.NewImageV2ID(imgName, "sha256:123"),
+		Digest: "sha256:123",
+		Name:   imgName,
+		Metadata: &storage.ImageMetadata{
+			LayerShas:  []string{"sha1", "sha2"},
+			DataSource: &storage.DataSource{Id: "test-id"},
+			V1: &storage.V1Metadata{
+				Layers: []*storage.ImageLayer{
+					{Instruction: "ADD"},
+					{Instruction: "RUN"},
+				},
+			},
+		},
+	}
+
+	// REMOVED: mockMatcher.EXPECT() is no longer needed
+	// because the behavior is defined in the closure above.
+
+	// Execute
+	_, err := testImpl.EnrichImage(context.Background(), EnrichmentContext{}, img)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, img.GetBaseImageInfo(), "BaseImageInfo should have been populated")
+	assert.Equal(t, expectedName, img.GetBaseImageInfo()[0].GetBaseImageFullName())
+	assert.Equal(t, expectedDigest, img.GetBaseImageInfo()[0].GetBaseImageDigest())
+}
+
 func newEnricherV2(set *mocks.MockSet, mockReporter *reporterMocks.MockReporter) ImageEnricherV2 {
 	return NewV2(&fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		newCache(),
+		emptyBaseImageGetterV2,
 		emptyImageGetterV2,
 		mockReporter, emptySignatureIntegrationGetter, nil)
 }

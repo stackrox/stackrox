@@ -12,6 +12,8 @@ var lazyLabels = tracker.LazyLabelGetters[*finding]{
 	"Cluster":            func(f *finding) string { return f.deployment.GetClusterName() },
 	"Namespace":          func(f *finding) string { return f.deployment.GetNamespace() },
 	"Deployment":         func(f *finding) string { return f.deployment.GetName() },
+	"Type":               func(f *finding) string { return f.deployment.GetType() },
+	"IsActive":           func(f *finding) string { return strconv.FormatBool(!f.deployment.GetInactive()) },
 	"IsPlatformWorkload": isPlatformWorkload,
 
 	"ImageID":          func(f *finding) string { return f.image.GetId() },

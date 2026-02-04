@@ -28,7 +28,7 @@ var (
 // MakeFakeClient creates a k8s client that is not connected to any cluster
 func MakeFakeClient() *ClientSet {
 	return &ClientSet{
-		k8s: fake.NewSimpleClientset(),
+		k8s: fake.NewClientset(),
 	}
 }
 

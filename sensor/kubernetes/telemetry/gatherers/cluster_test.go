@@ -33,7 +33,7 @@ func (s *ClusterGathererTestSuite) TestGatherCluster() {
 		},
 	}
 	gatherer := NewClusterGatherer(
-		fake.NewSimpleClientset(node, namespace),
+		fake.NewClientset(node, namespace),
 		resources.InitializeStore(nil).Deployments())
 	cluster := gatherer.Gather(context.Background())
 	s.NotNil(cluster)

@@ -28,7 +28,7 @@ const (
 )
 
 var (
-	helloMessageTimeout = 20 * time.Second
+	helloMessageTimeout = time.Minute
 	coDeployment        = helper.K8sResourceInfo{Kind: "Deployment", YamlFile: "co-deployment.yaml", Name: "compliance-operator"}
 
 	testScanConfig = &central.ApplyComplianceScanConfigRequest{

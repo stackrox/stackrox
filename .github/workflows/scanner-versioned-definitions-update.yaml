@@ -41,7 +41,7 @@ jobs:
       versions: ${{ steps.set-versions.outputs.versions }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
     - name: Parse VULNERABILITY_BUNDLE_VERSION
@@ -96,7 +96,7 @@ jobs:
       manual_url: ${{ steps.set-manual-url.outputs.manual_url }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -190,7 +190,7 @@ jobs:
     - prepare-environment
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.1
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
@@ -207,7 +207,7 @@ jobs:
     steps:
     # Checkout master to get the latest local actions
     - name: Checkout repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -217,7 +217,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout specific reference
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ env.ROX_GIT_REF }}
@@ -264,14 +264,14 @@ jobs:
         zip definitions/"$SCANNER_BUNDLE_VERSION"/vulnerabilities.zip bundles/*.json.zst
 
     - name: Upload definitions artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: artifact_${{ env.SCANNER_BUNDLE_VERSION }}
         path: definitions
 
     # Checkout again to get the latest local actions for cleanup phase
     - name: Checkout repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       if: always()
       with:
         fetch-depth: 0
@@ -282,7 +282,7 @@ jobs:
     - prepare-environment
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.1
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
@@ -291,7 +291,7 @@ jobs:
     steps:
     # Checkout master to get the latest local actions
     - name: Checkout repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
@@ -301,7 +301,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout specific reference
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -359,7 +359,7 @@ jobs:
 
     # Checkout again to get the latest local actions for cleanup phase
     - name: Checkout repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       if: always()
       with:
         fetch-depth: 0
@@ -371,11 +371,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     # Checkout to run ./.github/actions/download-artifact-with-retry
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
-    - uses: actions/download-artifact@v5
+    - uses: actions/download-artifact@v7
       with:
         # Vulnerability bundles are named `artifact_${{ env.SCANNER_BUNDLE_VERSION }}`.
         pattern: "artifact_*"

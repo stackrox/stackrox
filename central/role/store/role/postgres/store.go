@@ -106,6 +106,11 @@ func insertIntoRoles(batch *pgx.Batch, obj *storage.Role) error {
 	return nil
 }
 
+var copyColsRoles = []string{
+	"name",
+	"serialized",
+}
+
 func copyFromRoles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Role) error {
 	if len(objs) == 0 {
 		return nil
@@ -121,11 +126,6 @@ func copyFromRoles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, obj
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"name",
-		"serialized",
 	}
 
 	idx := 0
@@ -147,7 +147,7 @@ func copyFromRoles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, obj
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"roles"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"roles"}, copyColsRoles, inputRows); err != nil {
 		return err
 	}
 

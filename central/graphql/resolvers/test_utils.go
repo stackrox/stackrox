@@ -96,6 +96,8 @@ func testImages() []*storage.Image {
 	utils.CrashOnError(err)
 	t2, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 2000))
 	utils.CrashOnError(err)
+	t3, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 3000))
+	utils.CrashOnError(err)
 	return []*storage.Image{
 		{
 			Id: "sha1",
@@ -229,6 +231,22 @@ func testImages() []*storage.Image {
 					},
 				},
 				ScanTime: t2,
+			},
+			BaseImageInfo: []*storage.BaseImageInfo{
+				{
+					BaseImageId:       "base-sha2",
+					BaseImageFullName: "busybox:latest",
+					BaseImageDigest:   "sha256:alpine312",
+					Created:           t3,
+					MaxLayerIndex:     10,
+				},
+				{
+					BaseImageId:       "base-sha3",
+					BaseImageFullName: "alpine:3.12",
+					BaseImageDigest:   "sha256:busybox1",
+					Created:           t3,
+					MaxLayerIndex:     10,
+				},
 			},
 		},
 	}

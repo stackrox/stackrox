@@ -7,7 +7,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -59,12 +58,12 @@ func TestReplaceVars(t *testing.T) {
 func BenchmarkReplaceVars(b *testing.B) {
 	veryLongString := strings.Repeat("$$ ", 1000)
 	b.Run("short", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			replaceVars("$$ $$ $$ $$ $$ $$ $$ $$ $$ $$ $$")
 		}
 	})
 	b.Run("long", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
+		for b.Loop() {
 			replaceVars(veryLongString)
 		}
 	})
@@ -264,14 +263,13 @@ func TestMultiTableQueries(t *testing.T) {
 func TestCountQueries(t *testing.T) {
 	baseCtx := sac.WithAllAccess(context.Background())
 	for _, c := range []struct {
-		desc                       string
-		ctx                        context.Context
-		q                          *v1.Query
-		schema                     *walker.Schema
-		expectedStatement          string
-		expectedData               []interface{}
-		expectedError              string
-		expectedFlattenedStatement string
+		desc              string
+		ctx               context.Context
+		q                 *v1.Query
+		schema            *walker.Schema
+		expectedStatement string
+		expectedData      []interface{}
+		expectedError     string
 	}{
 		{
 			desc:              "base schema query",
@@ -473,17 +471,9 @@ func TestCountQueries(t *testing.T) {
 				AddExactMatches(search.VulnerabilityState, storage.VulnerabilityState_OBSERVED.String()).
 				AddStrings(search.PlatformComponent, "false", "-").
 				ProtoQuery(),
-			schema: imagesSchema,
-			expectedStatement: normalizeStatement(`select count(distinct(images.Id)) from images
-				left join deployments_containers on images.Id = deployments_containers.Image_Id
-				left join deployments on deployments_containers.deployments_Id = deployments.Id
-				inner join image_component_edges on images.Id = image_component_edges.ImageId
-				inner join image_component_cve_edges on image_component_edges.ImageComponentId = image_component_cve_edges.ImageComponentId
-				inner join image_cves on image_component_cve_edges.ImageCveId = image_cves.Id
-				inner join image_cve_edges on(images.Id = image_cve_edges.ImageId and image_component_cve_edges.ImageCveId = image_cve_edges.ImageCveId)
-				where ((deployments.PlatformComponent = $1 or deployments.PlatformComponent is null) and image_cve_edges.State = $2)`),
+			schema:       imagesSchema,
 			expectedData: []interface{}{"false", "0"},
-			expectedFlattenedStatement: normalizeStatement(`select count(distinct(images.Id)) from images
+			expectedStatement: normalizeStatement(`select count(distinct(images.Id)) from images
 				left join deployments_containers on images.Id = deployments_containers.Image_Id
 				left join deployments on deployments_containers.deployments_Id = deployments.Id
 				inner join image_cves_v2 on images.Id = image_cves_v2.ImageId
@@ -496,11 +486,7 @@ func TestCountQueries(t *testing.T) {
 				assert.Error(it, err, c.expectedError)
 			} else {
 				assert.NoError(it, err)
-				expectedStatement := c.expectedStatement
-				if features.FlattenCVEData.Enabled() && c.expectedFlattenedStatement != "" {
-					expectedStatement = c.expectedFlattenedStatement
-				}
-				assert.Equal(it, expectedStatement, actual.AsSQL())
+				assert.Equal(it, c.expectedStatement, actual.AsSQL())
 				assert.Equal(it, c.expectedData, actual.Data)
 			}
 		})
@@ -685,7 +671,7 @@ func TestSelectQueries(t *testing.T) {
 		},
 		{
 			desc: "base schema; select w/ where; image scope",
-			ctx: scoped.Context(context.Background(), scoped.Scope{
+			ctx: scoped.Context(sac.WithAllAccess(context.Background()), scoped.Scope{
 				IDs:   []string{"fake-image"},
 				Level: v1.SearchCategory_IMAGES,
 			}),
@@ -699,7 +685,7 @@ func TestSelectQueries(t *testing.T) {
 		},
 		{
 			desc: "base schema; select w/ multiple scopes",
-			ctx: scoped.Context(context.Background(), scoped.Scope{
+			ctx: scoped.Context(sac.WithAllAccess(context.Background()), scoped.Scope{
 				IDs:   []string{uuid.NewV4().String()},
 				Level: v1.SearchCategory_NAMESPACES,
 				Parent: &scoped.Scope{
@@ -754,7 +740,7 @@ func TestSelectQueries(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			ctx := c.ctx
 			if c.ctx == nil {
-				ctx = context.Background()
+				ctx = sac.WithAllAccess(context.Background())
 			}
 			testSchema := c.schema
 			actualQ, err := standardizeSelectQueryAndPopulatePath(ctx, c.q, testSchema, SELECT)

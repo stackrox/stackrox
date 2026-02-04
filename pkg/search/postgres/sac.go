@@ -28,8 +28,10 @@ func enrichQueryWithSACFilter(ctx context.Context, q *v1.Query, schema *walker.S
 			return q, nil
 		}
 		pagination := q.GetPagination()
+		groupBy := q.GetGroupBy()
 		query := searchPkg.ConjunctionQuery(sacFilter, q)
 		query.Pagination = pagination
+		query.GroupBy = groupBy
 		return query, nil
 	default:
 		sacFilter, err := GetReadSACQuery(ctx, schema.ScopingResource)
@@ -40,8 +42,12 @@ func enrichQueryWithSACFilter(ctx context.Context, q *v1.Query, schema *walker.S
 			return q, nil
 		}
 		pagination := q.GetPagination()
+		selects := q.GetSelects()
+		groupBy := q.GetGroupBy()
 		query := searchPkg.ConjunctionQuery(sacFilter, q)
 		query.Pagination = pagination
+		query.Selects = selects
+		query.GroupBy = groupBy
 		return query, nil
 	}
 }

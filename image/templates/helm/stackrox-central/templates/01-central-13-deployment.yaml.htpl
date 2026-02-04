@@ -66,6 +66,7 @@ spec:
         resources:
           {{- ._rox.central._resources | nindent 10 }}
         securityContext:
+          allowPrivilegeEscalation: false
           capabilities:
             drop: ["NET_RAW"]
           readOnlyRootFilesystem: true

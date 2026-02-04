@@ -10,6 +10,7 @@ import (
 	_ "embed"
 
 	"github.com/hashicorp/go-multierror"
+	consolev1 "github.com/openshift/api/console/v1"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
@@ -17,13 +18,14 @@ import (
 	"github.com/stackrox/rox/operator/internal/securedcluster/scanner"
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	"github.com/stackrox/rox/pkg/crs"
+	"github.com/stackrox/rox/pkg/features"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chartutil"
 	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -98,7 +100,7 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	if err := platform.MergeSecuredClusterDefaultsIntoSpec(&sc); err != nil {
 		return nil, err
 	}
-	t.setDefaults(&sc)
+	scanner.SetScannerDefaults(&sc.Spec)
 
 	v := translation.NewValuesBuilder()
 
@@ -116,6 +118,10 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	v.AddAllFrom(translation.GetImagePullSecrets(sc.Spec.ImagePullSecrets))
 
 	customize := translation.NewValuesBuilder()
+	deploymentDefaults, err := translation.GetDeploymentDefaults(sc.Spec.Customize)
+	if err != nil {
+		return nil, err
+	}
 
 	scannerAutoSenseConfig, err := scanner.AutoSenseLocalScannerConfig(ctx, t.client, sc)
 	if err != nil {
@@ -127,11 +133,8 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 		return nil, err
 	}
 
-	v.AddChild("sensor", t.getSensorValues(sc.Spec.Sensor, scannerAutoSenseConfig, scannerV4AutoSenseConfig))
-
-	if sc.Spec.AdmissionControl != nil {
-		v.AddChild("admissionControl", t.getAdmissionControlValues(sc.Spec.AdmissionControl))
-	}
+	v.AddChild("sensor", t.getSensorValues(sc.Spec.Sensor, scannerAutoSenseConfig, scannerV4AutoSenseConfig, deploymentDefaults))
+	v.AddChild("admissionControl", t.getAdmissionControlValues(sc.Spec.AdmissionControl, deploymentDefaults))
 
 	if sc.Spec.AuditLogs != nil {
 		v.AddChild("auditLogs", t.getAuditLogsValues(sc.Spec.AuditLogs))
@@ -141,10 +144,8 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 		v.AddChild("collector", t.getCollectorValues(sc.Spec.PerNode))
 	}
 
-	v.AddChild("scanner", t.getLocalScannerComponentValues(sc, scannerAutoSenseConfig))
-	if sc.Spec.ScannerV4 != nil {
-		v.AddChild("scannerV4", t.getLocalScannerV4ComponentValues(ctx, sc, scannerV4AutoSenseConfig))
-	}
+	v.AddChild("scanner", t.getLocalScannerComponentValues(sc, scannerAutoSenseConfig, deploymentDefaults))
+	v.AddChild("scannerV4", t.getLocalScannerV4ComponentValues(ctx, sc, scannerV4AutoSenseConfig, deploymentDefaults))
 
 	customize.AddAllFrom(translation.GetCustomize(sc.Spec.Customize))
 
@@ -162,6 +163,8 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	}
 
 	v.AddChild("autoLockProcessBaselines", getProcessBaselinesValues(sc.Spec.ProcessBaselines))
+
+	v.AddChild("consolePlugin", t.getConsolePluginValues(ctx))
 
 	return v.Build()
 }
@@ -296,26 +299,39 @@ func (t Translator) checkInitBundleSecret(ctx context.Context, sc platform.Secur
 	return nil
 }
 
-func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, scannerAutosense scanner.AutoSenseResult, scannerV4Autosense scanner.AutoSenseResult) *translation.ValuesBuilder {
+func (t Translator) getSensorValues(sensor *platform.SensorComponentSpec, scannerAutosense scanner.AutoSenseResult, scannerV4Autosense scanner.AutoSenseResult, defaults translation.SchedulingConstraints) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
-
-	if sensor != nil {
-		sv.AddChild(translation.ResourcesKey, translation.GetResources(sensor.Resources))
-		sv.SetStringMap("nodeSelector", sensor.NodeSelector)
-		sv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, sensor.Tolerations))
-		if len(sensor.HostAliases) > 0 {
-			sv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, sensor.HostAliases))
-		}
-	}
 
 	if scannerAutosense.EnableLocalImageScanning || scannerV4Autosense.EnableLocalImageScanning {
 		sv.SetPathValue("localImageScanning.enabled", strconv.FormatBool(true))
 	}
 
+	if sensor == nil && !defaults.IsSet() {
+		return &sv
+	}
+	if sensor == nil {
+		sensor = &platform.SensorComponentSpec{}
+	}
+
+	sv.AddChild(translation.ResourcesKey, translation.GetResources(sensor.Resources))
+
+	sv.SetScheduling("nodeSelector", translation.TolerationsKey, &sensor.DeploymentSpec, defaults)
+
+	if len(sensor.HostAliases) > 0 {
+		sv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, sensor.HostAliases))
+	}
+
 	return &sv
 }
 
-func (t Translator) getAdmissionControlValues(admissionControl *platform.AdmissionControlComponentSpec) *translation.ValuesBuilder {
+func (t Translator) getAdmissionControlValues(admissionControl *platform.AdmissionControlComponentSpec, defaults translation.SchedulingConstraints) *translation.ValuesBuilder {
+	if admissionControl == nil && !defaults.IsSet() {
+		return nil
+	}
+	if admissionControl == nil {
+		admissionControl = &platform.AdmissionControlComponentSpec{}
+	}
+
 	acv := translation.NewValuesBuilder()
 
 	acv.AddChild(translation.ResourcesKey, translation.GetResources(admissionControl.Resources))
@@ -346,8 +362,9 @@ func (t Translator) getAdmissionControlValues(admissionControl *platform.Admissi
 	}
 	acv.SetString("failurePolicy", (*string)(admissionControl.FailurePolicy))
 	acv.AddChild("dynamic", &dynamic)
-	acv.SetStringMap("nodeSelector", admissionControl.NodeSelector)
-	acv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, admissionControl.Tolerations))
+
+	acv.SetScheduling("nodeSelector", translation.TolerationsKey, &admissionControl.DeploymentSpec, defaults)
+
 	if len(admissionControl.HostAliases) > 0 {
 		acv.AddAllFrom(translation.GetHostAliases(translation.HostAliasesKey, admissionControl.HostAliases))
 	}
@@ -403,6 +420,7 @@ func (t Translator) getCollectorValues(perNode *platform.PerNodeSpec) *translati
 	cv.AddAllFrom(t.getCollectorContainerValues(perNode.Collector))
 	cv.AddAllFrom(t.getComplianceContainerValues(perNode.Compliance))
 	cv.AddAllFrom(t.getNodeInventoryContainerValues(perNode.NodeInventory))
+	cv.AddAllFrom(t.getSFAContainerValues(perNode.SFA))
 
 	return &cv
 }
@@ -458,26 +476,52 @@ func (t Translator) getNodeInventoryContainerValues(nodeInventory *platform.Cont
 	return &cv
 }
 
-func (t Translator) getLocalScannerComponentValues(securedCluster platform.SecuredCluster, config scanner.AutoSenseResult) *translation.ValuesBuilder {
+func (t Translator) getSFAContainerValues(sfaContainerSpec *platform.SFAContainerSpec) *translation.ValuesBuilder {
+	if sfaContainerSpec == nil {
+		return nil
+	}
+
+	cv := translation.NewValuesBuilder()
+	switch *sfaContainerSpec.Agent {
+	case platform.SFAAgentEnabled:
+		cv.SetBoolValue("sfaEnabled", true)
+	case platform.SFAAgentDisabled:
+		cv.SetBoolValue("sfaEnabled", false)
+	default:
+		return cv.SetError(errors.Errorf("invalid spec.perNode.sfa.agent setting %q", *sfaContainerSpec.Agent))
+	}
+
+	cv.AddChild("sfaResources", translation.GetResources(sfaContainerSpec.Resources))
+
+	return &cv
+}
+
+func (t Translator) getLocalScannerComponentValues(securedCluster platform.SecuredCluster, config scanner.AutoSenseResult, defaults translation.SchedulingConstraints) *translation.ValuesBuilder {
 	sv := translation.NewValuesBuilder()
 	s := securedCluster.Spec.Scanner
 
 	sv.SetBoolValue("disable", !config.DeployScannerResources)
-
-	translation.SetScannerAnalyzerValues(&sv, s.Analyzer)
-	translation.SetScannerDBValues(&sv, s.DB)
+	translation.SetScannerAnalyzerValues(&sv, s.Analyzer, defaults)
+	translation.SetScannerDBValues(&sv, s.DB, defaults)
 
 	return &sv
 }
 
-func (t Translator) getLocalScannerV4ComponentValues(ctx context.Context, securedCluster platform.SecuredCluster, config scanner.AutoSenseResult) *translation.ValuesBuilder {
-	sv := translation.NewValuesBuilder()
+func (t Translator) getLocalScannerV4ComponentValues(ctx context.Context, securedCluster platform.SecuredCluster, config scanner.AutoSenseResult, defaults translation.SchedulingConstraints) *translation.ValuesBuilder {
 	s := securedCluster.Spec.ScannerV4
+	if s == nil && !defaults.IsSet() {
+		return nil
+	}
+	sv := translation.NewValuesBuilder()
+	if s == nil {
+		s = &platform.LocalScannerV4ComponentSpec{}
+	}
+
 	sv.SetBoolValue("disable", !config.EnableLocalImageScanning)
 
 	if config.DeployScannerResources {
-		translation.SetScannerV4ComponentValues(&sv, "indexer", s.Indexer)
-		translation.SetScannerV4DBValues(ctx, &sv, s.DB, platform.SecuredClusterGVK.Kind, securedCluster.GetNamespace(), t.client)
+		translation.SetScannerV4ComponentValues(&sv, "indexer", s.Indexer, defaults)
+		translation.SetScannerV4DBValues(ctx, &sv, s.DB, platform.SecuredClusterGVK.Kind, securedCluster.GetNamespace(), t.client, defaults)
 	} else if config.EnableLocalImageScanning {
 		translation.DisableScannerV4Component(&sv, "indexer")
 	}
@@ -487,21 +531,6 @@ func (t Translator) getLocalScannerV4ComponentValues(ctx context.Context, secure
 	}
 
 	return &sv
-}
-
-// Sets defaults that might not be applied on the resource due to ROX-8046.
-// Only defaults that result in behaviour different from the Helm chart defaults should be included here.
-func (t Translator) setDefaults(sc *platform.SecuredCluster) {
-	scanner.SetScannerDefaults(&sc.Spec)
-	if sc.Spec.AdmissionControl == nil {
-		sc.Spec.AdmissionControl = &platform.AdmissionControlComponentSpec{}
-	}
-	if sc.Spec.AdmissionControl.ListenOnCreates == nil {
-		sc.Spec.AdmissionControl.ListenOnCreates = pointers.Bool(true)
-	}
-	if sc.Spec.AdmissionControl.ListenOnUpdates == nil {
-		sc.Spec.AdmissionControl.ListenOnUpdates = pointers.Bool(true)
-	}
 }
 
 func getMetaValues(sc platform.SecuredCluster) *translation.ValuesBuilder {
@@ -520,4 +549,34 @@ func createConfigFingerprint(sc platform.SecuredCluster) (string, error) {
 		return "", errors.Wrap(err, "marshaling SecuredCluster spec")
 	}
 	return fmt.Sprintf("%x", sha256.Sum256(specAsYaml)), nil
+}
+
+func (t Translator) getConsolePluginValues(ctx context.Context) *translation.ValuesBuilder {
+	v := translation.NewValuesBuilder()
+
+	if !features.OCPConsoleIntegration.Enabled() {
+		return &v
+	}
+
+	available, err := t.isConsolePluginAPIAvailable(ctx)
+	if err != nil {
+		return v.SetError(err)
+	}
+	if !available {
+		return &v
+	}
+
+	v.SetBoolValue("enabled", true)
+	return &v
+}
+
+func (t Translator) isConsolePluginAPIAvailable(ctx context.Context) (bool, error) {
+	list := &consolev1.ConsolePluginList{}
+	if err := t.direct.List(ctx, list); err != nil {
+		if meta.IsNoMatchError(err) {
+			return false, nil
+		}
+		return false, errors.Wrap(err, "listing ConsolePlugin resources")
+	}
+	return true, nil
 }

@@ -31,7 +31,7 @@
   steps you _intend_ to do, and annotate them with `TBD`, or add a task checkbox
   via `[ ]` to indicate they haven't been done yet. Make sure all `TBD`s are
   removed or all tasks are completed before checking the box and merging the PR.
-- **PR type:** If you are creating a PR primarily to give CI a first shot and 
+- **PR type:** If you are creating a PR primarily to give CI a first shot and
   don't intend anyone to review the PR yet, create a [*Draft* PR](https://github.blog/2019-02-14-introducing-draft-pull-requests/)
   by clicking on the small downward arrow next to the "Create pull request"
   button, and selecting "Create draft pull request". If you accidentally created
@@ -40,21 +40,21 @@
 ## Working on a PR
 
 ### Git operations
-- Create a separate Git commit for every set of incremental changes.
-- Do not use `git commit --amend` on changes you have already pushed to the remote.
-- Only use `git rebase` (or the `smart-rebase` script) for rebasing on top of
-  latest `master` changes. **Do not use merge commits** because they complicate
-  reviewing and confuse Jira linkage.
-- Never locally squash changes, except for making conflict resolution during a
-  `git rebase` easier. Always try rebasing without squashing first; if there are
-  conflicts that you believe will be easier to resolve with squashing, do
-  `git rebase --abort` followed by squashing and re-running the rebase command.
-- The only case in which you need to force-push to your branch is after rebasing
-  on top of latest `master` changes.
+
+- Between review cycles, you may create commits at will and freely rewrite,
+  squash, or rebase your branch.
+- Requesting a PR review locks your commits. A review cycle ends when all
+  requested reviewers have responded. Once you request (or re-request) a PR
+  review, those commits become immutable -- only add new commits on top.
+- For locked commits, only use `git rebase` (or the `smart-rebase` script) for
+  rebasing on top of latest `master` changes. **Do not use merge commits**
+  because they complicate reviewing and confuse Jira linkage.
+- Force-pushing to your branch is acceptable when rebasing on top of latest
+  `master` changes, or between review cycles.
 
 ### Interaction with reviewers
 - Consult the relevant style guide, e.g., [golang](go-coding-style.md), before
-  creating a PR.  
+  creating a PR.
 - It is preferable to respond to reviewer comments in the "Files changed" view.
   In contrast to the "Conversation" view, this allows you to store your responses
   as drafts and submit them in a single batch. It is advisable to only submit
@@ -69,7 +69,7 @@
   them; when there is any doubt about the reviewer being OK with the resolution,
   leave them unresolved.
 - After addressing a set of review comments, indicate that the PR is ready for a
-  new round of reviews by clicking on the small "cycle/refresh" icon next to 
+  new round of reviews by clicking on the small "cycle/refresh" icon next to
   their name (![icon](images/re-request-review.png?raw=true)).
 - If a PR is time-sensitive, or has been dragging on for a long time, you should
   absolutely feel comfortable pinging the reviewer(s) via Slack to expedite the

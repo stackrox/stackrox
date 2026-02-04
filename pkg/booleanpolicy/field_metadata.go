@@ -77,52 +77,86 @@ type metadataAndQB struct {
 	fieldTypes         []RuntimeFieldType
 }
 
-func (f *FieldMetadata) findField(fieldName string) (*metadataAndQB, error) {
+func (m *metadataAndQB) IsOfType(expectedType RuntimeFieldType) bool {
+	return slices.Contains(m.fieldTypes, expectedType)
+}
+
+func (m *metadataAndQB) IsDeploymentEventField() bool {
+	// TODO(ROX-30809): update with m.IsOfType(FileAccess)
+	return m.IsOfType(Process) || m.IsOfType(NetworkFlow) || m.IsOfType(KubeEvent)
+}
+
+func (m *metadataAndQB) IsAuditLogEventField() bool {
+	return m.IsOfType(AuditLogEvent)
+}
+
+func (m *metadataAndQB) IsFileEventField() bool {
+	return m.IsOfType(FileAccess)
+}
+
+func (m *metadataAndQB) IsFromEventSource(eventSource storage.EventSource) bool {
+	return slices.Contains(m.eventSourceContext, eventSource)
+}
+
+func (m *metadataAndQB) IsNotApplicableEventSource() bool {
+	return m.IsFromEventSource(storage.EventSource_NOT_APPLICABLE)
+}
+
+func (f *FieldMetadata) findField(fieldName string) *metadataAndQB {
 	field := f.fieldsToQB[fieldName]
 	if field == nil {
-		return nil, errNoSuchField
+		log.Warnf("policy field %s not found", fieldName)
 	}
-	return field, nil
+	return field
 }
 
 // FieldIsOfType returns true if the specified field is of the specified type
 func (f *FieldMetadata) FieldIsOfType(fieldName string, expectedType RuntimeFieldType) bool {
-	field := f.fieldsToQB[fieldName]
-	if field == nil {
-		log.Warnf("policy field %s not found", fieldName)
-		return false
-	}
-	for _, fieldType := range field.fieldTypes {
-		if fieldType == expectedType {
-			return true
-		}
+	if field := f.findField(fieldName); field != nil {
+		return field.IsOfType(expectedType)
 	}
 	return false
 }
 
 // IsDeploymentEventField returns true if the field is an deployment event field
 func (f *FieldMetadata) IsDeploymentEventField(fieldName string) bool {
-	return f.FieldIsOfType(fieldName, Process) || f.FieldIsOfType(fieldName, NetworkFlow) ||
-		f.FieldIsOfType(fieldName, KubeEvent)
+	if field := f.findField(fieldName); field != nil {
+		return field.IsDeploymentEventField()
+	}
+	return false
+
 }
 
 // IsAuditLogEventField returns true if the field is an audit log field
 func (f *FieldMetadata) IsAuditLogEventField(fieldName string) bool {
-	return f.FieldIsOfType(fieldName, AuditLogEvent)
+	if field := f.findField(fieldName); field != nil {
+		return field.IsAuditLogEventField()
+	}
+	return false
+
 }
 
 // IsFileEventField returns true if the field is a node event field
 func (f *FieldMetadata) IsFileEventField(fieldName string) bool {
-	return f.FieldIsOfType(fieldName, FileAccess)
+	if field := f.findField(fieldName); field != nil {
+		return field.IsFileEventField()
+	}
+
+	return false
 }
 
 func (f *FieldMetadata) IsFromEventSource(fieldName string, eventSource storage.EventSource) bool {
-	field := f.fieldsToQB[fieldName]
-	if field == nil {
-		log.Warnf("policy field %s not found", fieldName)
-		return false
+	if field := f.findField(fieldName); field != nil {
+		return field.IsFromEventSource(eventSource)
 	}
-	return slices.Contains(field.eventSourceContext, eventSource)
+	return false
+}
+
+func (f *FieldMetadata) IsNotApplicableEventSource(fieldName string) bool {
+	if field := f.findField(fieldName); field != nil {
+		return field.IsNotApplicableEventSource()
+	}
+	return false
 }
 
 // findFieldMetadata searches for a policy criteria field by name and returns the field metadata
@@ -304,6 +338,17 @@ func initializeFieldMetadata() FieldMetadata {
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
+
+	if features.CVEFixTimestampCriteria.Enabled() {
+		f.registerFieldMetadata(fieldnames.DaysSinceFixAvailable,
+			querybuilders.ForDays(search.CVEFixAvailable),
+			violationmessages.VulnContextFields,
+			func(*validateConfiguration) *regexp.Regexp {
+				return integerValueRegex
+			},
+			[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+			[]RuntimeFieldType{}, negationForbidden, operatorsForbidden)
+	}
 
 	f.registerFieldMetadata(fieldnames.DisallowedAnnotation,
 		querybuilders.ForFieldLabelMap(search.DeploymentAnnotation, query.MapShouldContain),
@@ -885,14 +930,25 @@ func initializeFieldMetadata() FieldMetadata {
 	)
 
 	if features.SensitiveFileActivity.Enabled() {
-		f.registerFieldMetadata(fieldnames.NodeFilePath,
-			querybuilders.ForFieldLabel(search.NodeFilePath), nil,
+		f.registerFieldMetadata(fieldnames.ActualPath,
+			querybuilders.ForFieldLabelExact(search.ActualPath), nil,
 			func(*validateConfiguration) *regexp.Regexp {
 				// TODO(ROX-31449): change to an absolute path regex when arbitrary
 				// paths are supported
 				return allowedFilePathRegex
 			},
-			[]storage.EventSource{storage.EventSource_NODE_EVENT},
+			[]storage.EventSource{storage.EventSource_NODE_EVENT, storage.EventSource_DEPLOYMENT_EVENT},
+			[]RuntimeFieldType{FileAccess}, negationForbidden,
+		)
+
+		f.registerFieldMetadata(fieldnames.EffectivePath,
+			querybuilders.ForFieldLabelExact(search.EffectivePath), nil,
+			func(*validateConfiguration) *regexp.Regexp {
+				// TODO(ROX-31449): change to an absolute path regex when arbitrary
+				// paths are supported
+				return allowedFilePathRegex
+			},
+			[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT},
 			[]RuntimeFieldType{FileAccess}, negationForbidden,
 		)
 
@@ -901,7 +957,7 @@ func initializeFieldMetadata() FieldMetadata {
 			func(*validateConfiguration) *regexp.Regexp {
 				return fileOperationRegex
 			},
-			[]storage.EventSource{storage.EventSource_NODE_EVENT},
+			[]storage.EventSource{storage.EventSource_NODE_EVENT, storage.EventSource_DEPLOYMENT_EVENT},
 			[]RuntimeFieldType{FileAccess},
 		)
 	}

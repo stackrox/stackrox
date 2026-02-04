@@ -69,7 +69,7 @@ export function useWatchLastSnapshotForReports(
     useInterval(refetch, 10000);
 
     const result: FetchLastSnapshotReturn = {
-        reportSnapshots: data || {},
+        reportSnapshots: data ?? {},
         isLoading,
         error: error ? getAxiosErrorMessage(error) : null,
         fetchSnapshots: refetch,

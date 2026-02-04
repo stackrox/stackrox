@@ -15,7 +15,7 @@ option java_package = "io.stackrox.proto.storage";
 // Next available tag: 26
 message Alert {
   message Deployment {
-    string id = 1; // @gotags: search:"Deployment ID,hidden" sql:"index=hash,type(uuid)"
+    string id = 1; // @gotags: search:"Deployment ID,hidden" sql:"index,type(uuid)"
     string name = 2; // @gotags: search:"Deployment"
     string type = 4;
     string namespace = 5; // This field has to be duplicated in Alert for scope management and search.
@@ -56,6 +56,8 @@ message Alert {
   message Node {
     string id = 1; // @gotags: search:"Node ID"
     string name = 2; // @gotags: search:"Node"
+    string cluster_id = 3; // This field has to be duplicated in Alert for scope management and search.
+    string cluster_name = 4; // This field has to be duplicated in Alert for scope management and search.
   }
 
   message Violation {
@@ -64,6 +66,7 @@ message Alert {
       K8S_EVENT = 1;
       NETWORK_FLOW = 2;
       NETWORK_POLICY = 3;
+      FILE_ACCESS = 4;
     }
     message KeyValueAttrs {
       message KeyValueAttr {
@@ -91,6 +94,7 @@ message Alert {
     oneof MessageAttributes {
       KeyValueAttrs key_value_attrs = 4;
       NetworkFlowInfo network_flow_info = 7; // @gotags: search:"-" sql:"-"
+      FileAccess file_access = 8; // @gotags: search:"-" sql:"-"
     }
     // 'type' is for internal use only.
     Type type = 5;
@@ -103,11 +107,6 @@ message Alert {
   message ProcessViolation {
     string message = 1;
     repeated ProcessIndicator processes = 2; // @gotags: sql:"ignore-fks"
-  }
-
-  message FileAccessViolation {
-    string message = 1;
-    repeated FileAccess accesses = 2; // @gotags: sql:"ignore-fks"
   }
 
   message Enforcement {
@@ -152,7 +151,6 @@ message Alert {
   // For run-time phase alert, a maximum of 40 violations are retained.
   repeated Violation violations = 5; // @gotags: search:"-"
   ProcessViolation process_violation = 13; // @gotags: search:"-"
-  FileAccessViolation file_access_violation = 25; // @gotags: search:"-"
 
   Enforcement enforcement = 6;
 

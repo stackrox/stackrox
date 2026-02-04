@@ -18,8 +18,9 @@ const _ScanResult_name = "ScanNotDoneScanTriggeredScanSucceeded"
 var _ScanResult_index = [...]uint8{0, 11, 24, 37}
 
 func (i ScanResult) String() string {
-	if i < 0 || i >= ScanResult(len(_ScanResult_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_ScanResult_index)-1 {
 		return "ScanResult(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _ScanResult_name[_ScanResult_index[i]:_ScanResult_index[i+1]]
+	return _ScanResult_name[_ScanResult_index[idx]:_ScanResult_index[idx+1]]
 }

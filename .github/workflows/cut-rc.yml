@@ -175,7 +175,7 @@ jobs:
     needs: [variables, properties, postpone-prs, check-jira]
     steps:
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{needs.variables.outputs.branch}}
           token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
@@ -274,10 +274,9 @@ jobs:
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
             create-release \
             "${{ needs.variables.outputs.milestone }}" \
+            "${{ needs.variables.outputs.branch }}" \
             "true"
 
-      - run: |
-          echo "Created GitHub pre-release [${{needs.variables.outputs.milestone}}](${{steps.pre-release.outputs.url}})" >> "$GITHUB_STEP_SUMMARY"
       - name: Post to Slack
         uses: slackapi/slack-github-action@v2.1.1
         with:

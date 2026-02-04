@@ -108,6 +108,12 @@ func insertIntoPermissionSets(batch *pgx.Batch, obj *storage.PermissionSet) erro
 	return nil
 }
 
+var copyColsPermissionSets = []string{
+	"id",
+	"name",
+	"serialized",
+}
+
 func copyFromPermissionSets(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.PermissionSet) error {
 	if len(objs) == 0 {
 		return nil
@@ -123,12 +129,6 @@ func copyFromPermissionSets(ctx context.Context, s pgSearch.Deleter, tx *postgre
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"serialized",
 	}
 
 	idx := 0
@@ -151,7 +151,7 @@ func copyFromPermissionSets(ctx context.Context, s pgSearch.Deleter, tx *postgre
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"permission_sets"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"permission_sets"}, copyColsPermissionSets, inputRows); err != nil {
 		return err
 	}
 

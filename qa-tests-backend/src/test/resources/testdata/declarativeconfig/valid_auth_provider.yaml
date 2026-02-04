@@ -9,3 +9,4 @@ oidc:
   issuer: sso.redhat.com/auth/realms/redhat-external
   mode: fragment
   clientID: SOMECLIENTID
+  doNotUseClientSecret: true

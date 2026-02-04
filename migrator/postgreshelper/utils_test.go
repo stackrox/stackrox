@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
@@ -106,4 +107,23 @@ func (s *PostgresRestoreSuite) TestUtilities() {
 	s.True(exists)
 	// Make sure connection to active database was terminated
 	s.NotNil(activePool.Ping(s.ctx))
+}
+
+func (s *PostgresRestoreSuite) TestWrapRollback() {
+	// Create a transaction
+	tx, err := s.pool.Begin(s.ctx)
+	s.Require().NoError(err)
+
+	originalErr := errors.New("original operation failed")
+	// Roll back the first time. The rollback itself succeeds and the original error is passed back.
+	wrappedErr := WrapRollback(s.ctx, tx, originalErr)
+	s.Assert().Error(wrappedErr)
+	s.Assert().Equal(originalErr, wrappedErr)
+
+	// Roll back the second time. Since the transaction is rolled back already, the rollback should fail and the info
+	// about it should be added to the returned error.
+	wrappedErr = WrapRollback(s.ctx, tx, originalErr)
+	s.Assert().Error(wrappedErr)
+	s.Assert().ErrorContains(wrappedErr, originalErr.Error())
+	s.Assert().ErrorContains(wrappedErr, "tx is closed")
 }

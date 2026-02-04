@@ -332,13 +332,17 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) TestSearchEdges() {
 			}
 		}
 		fetchedIDs := make([]string, 0, len(c.expectedEdgeFound))
+		fetchedNames := make([]string, 0, len(c.expectedEdgeFound))
 		res, err := s.datastore.SearchEdges(ctx, search.EmptyQuery())
 		s.NoError(err)
 		for _, r := range res {
 			fetchedIDs = append(fetchedIDs, r.GetId())
+			fetchedNames = append(fetchedNames, r.GetName())
 			s.True(c.expectedEdgeFound[r.GetId()])
 		}
 		s.ElementsMatch(expectedIDs, fetchedIDs)
+		// for nodecomponentedge name is set to id
+		s.ElementsMatch(expectedIDs, fetchedNames)
 	})
 }
 

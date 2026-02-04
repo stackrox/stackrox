@@ -15,25 +15,25 @@ func BenchmarkCertFingerprintChoices(b *testing.B) {
 		b.Fatalf("Expected %d bytes of randomness but got %d with error %v", len(fakeCert), n, err)
 	}
 	b.Run("SHA-1", func(b *testing.B) {
-		for n := 0; n < b.N; n++ {
+		for b.Loop() {
 			sum := sha1.Sum(fakeCert)
 			_ = formatID(sum[:])
 		}
 	})
 	b.Run("SHA-256", func(b *testing.B) {
-		for n := 0; n < b.N; n++ {
+		for b.Loop() {
 			sum := sha256.Sum256(fakeCert)
 			_ = formatID(sum[:])
 		}
 	})
 	b.Run("SHA-512", func(b *testing.B) {
-		for n := 0; n < b.N; n++ {
+		for b.Loop() {
 			sum := sha512.Sum512(fakeCert)
 			_ = formatID(sum[:])
 		}
 	})
 	b.Run("SHA-512_256", func(b *testing.B) {
-		for n := 0; n < b.N; n++ {
+		for b.Loop() {
 			sum := sha512.Sum512_256(fakeCert)
 			_ = formatID(sum[:])
 		}

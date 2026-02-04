@@ -87,6 +87,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
             .setName(STRUTS)
+            .setImagePrefetcherAffinity()
             .setImage(STRUTS_IMAGE)
             .addLabel("app", "test")
             .addPort(80)
@@ -94,6 +95,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
         new Deployment()
             .setName (NGINX_LATEST)
+            .setImagePrefetcherAffinity()
             // this is docker.io/nginx:1.23.3 but tagged as latest
             .setImage ("quay.io/rhacs-eng/qa-multi-arch-nginx:latest")
             .addPort (22)
@@ -107,6 +109,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         //     .setCommand(["sleep", "600"]),
         new Deployment()
             .setName(TRIGGER_MOST)
+            .setImagePrefetcherAffinity()
             .setImage("quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-most-v1")
             .addLabel("app", "test"),
         new Deployment()

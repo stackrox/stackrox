@@ -130,13 +130,12 @@ const APIVerbs: DescriptorOption[] = ['CREATE', 'DELETE', 'GET', 'PATCH', 'UPDAT
 }));
 
 const fileOperationOptions: DescriptorOption[] = [
-    'OPEN',
-    'CREATE',
-    'UNLINK',
-    'RENAME',
-    'PERMISSION_CHANGE',
-    'OWNERSHIP_CHANGE',
-].map((operation) => ({ label: operation, value: operation }));
+    ['OPEN', 'Open (Writable)'],
+    ['CREATE', 'Create'],
+    ['UNLINK', 'Delete'],
+    ['PERMISSION_CHANGE', 'Permission change'],
+    ['OWNERSHIP_CHANGE', 'Ownership change'],
+].map(([value, label]) => ({ value, label }));
 
 const fileActivityPathOptions: DescriptorOption[] = [
     '/etc/passwd',
@@ -607,6 +606,17 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         placeholder: '0',
         canBooleanLogic: false,
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
+    },
+    {
+        label: 'Days Since CVE Fix Was Available',
+        name: 'Days Since CVE Fix Was Available',
+        shortName: 'Days since CVE fix was available',
+        category: policyCriteriaCategories.IMAGE_SCANNING,
+        type: 'number',
+        placeholder: '0',
+        canBooleanLogic: false,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
+        featureFlagDependency: ['ROX_CVE_FIX_TIMESTAMP'],
     },
     {
         label: 'Days Since CVE Was First Discovered In Image',
@@ -1492,12 +1502,26 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
-        label: 'Mounted file path',
-        name: 'Mounted File Path',
-        shortName: 'Mounted file path',
+        label: 'Effective path',
+        name: 'Effective Path',
+        shortName: 'Effective path',
+        longName: 'The file path as observed by the process',
         category: policyCriteriaCategories.FILE_ACTIVITY,
         type: 'select',
-        placeholder: 'Select an option',
+        placeholder: 'Select a file path',
+        options: fileActivityPathOptions,
+        canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
+        featureFlagDependency: ['ROX_SENSITIVE_FILE_ACTIVITY'],
+    },
+    {
+        label: 'Actual path',
+        name: 'Actual Path',
+        shortName: 'Actual path',
+        longName: 'The file path on the filesystem or volume mount',
+        category: policyCriteriaCategories.FILE_ACTIVITY,
+        type: 'select',
+        placeholder: 'Select a file path',
         options: fileActivityPathOptions,
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
@@ -1638,9 +1662,9 @@ export const auditLogDescriptor: Descriptor[] = [
 
 export const nodeEventDescriptor: Descriptor[] = [
     {
-        label: 'Node file path',
-        name: 'Node File Path',
-        shortName: 'Node file path',
+        label: 'Actual path',
+        name: 'Actual Path',
+        shortName: 'Actual path',
         category: policyCriteriaCategories.FILE_ACTIVITY,
         type: 'select',
         placeholder: 'Select a file path',

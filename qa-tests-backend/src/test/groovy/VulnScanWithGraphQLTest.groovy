@@ -4,7 +4,6 @@ import objects.Deployment
 import services.GraphQLService
 import util.Timer
 
-import spock.lang.IgnoreIf
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
@@ -104,6 +103,18 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         }
     }
 """
+
+    // Query to find CVE by name and get its actual ID
+    // CVE IDs now include component ID and index, so they cannot be constructed manually
+    private static final String GET_CVE_ID_BY_NAME_QUERY = """
+    query getCveByName(\$query: String!) {
+        result: imageVulnerabilities(query: \$query) {
+            id
+            cve
+        }
+    }
+"""
+
     @Shared
     private  gqlService = new GraphQLService()
 
@@ -146,12 +157,10 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
     }
 
     @Unroll
-    // TODO(ROX-29221): Fix the test for fixable image info from CVEID
-    @IgnoreIf({ Env.get("ROX_FLATTEN_CVE_DATA") == "true" })
     def "Verify image info from #CVEID in GraphQL"() {
         when:
         "Fetch the results of the CVE,image from GraphQL "
-        GraphQLService.Response result2Ret = waitForImagesTobeFetched(CVEID, OS)
+        GraphQLService.Response result2Ret = waitForImagesTobeFetched(CVEID)
         assert result2Ret.getValue()?.result?.images  != null
         then :
         List<Object> imagesReturned = result2Ret.getValue().result.images
@@ -160,24 +169,49 @@ class VulnScanWithGraphQLTest extends BaseSpecification {
         assert !(StringUtils.isEmpty(imgName))
         where:
         "Data inputs are :"
-        CVEID            | OS         | imageToBeVerified
-        "CVE-2017-5638" | "ubuntu:20.04" | STRUTS_DEP.getImage()
+        CVEID           | imageToBeVerified
+        "CVE-2017-5638" | STRUTS_DEP.getImage()
     }
 
-    private GraphQLService.Response waitForImagesTobeFetched(String cveId, String os,
+    /**
+     * Fetches images associated with a CVE by first looking up the CVE's actual ID.
+     * CVE IDs now include component ID and index, so they must be fetched from the API
+     * rather than constructed manually.
+     */
+    private GraphQLService.Response waitForImagesTobeFetched(String cveName,
      int retries = 30, int interval = 4) {
         Timer t = new Timer(retries, interval)
-        def objId = cveId + "#" + os
-        def graphQLQuery = GET_IMAGE_INFO_FROM_VULN_QUERY
+
+        // First, find the actual CVE ID by querying for it by name
+        String actualCveId = null
+        while (t.IsValid() && actualCveId == null) {
+            def cveQuery = "CVE:${cveName}"
+            def cveResult = gqlService.Call(GET_CVE_ID_BY_NAME_QUERY, [query: cveQuery])
+            assert cveResult.getCode() == 200
+            def cves = cveResult.getValue()?.result
+            if (cves != null && cves.size() > 0) {
+                actualCveId = cves[0].id
+                log.info "Found CVE ID: ${actualCveId} for CVE name: ${cveName}"
+            } else {
+                log.info "CVE ${cveName} not found yet, retrying..."
+            }
+        }
+
+        if (actualCveId == null) {
+            log.info "Unable to find CVE ${cveName} in ${t.SecondsSince()} seconds"
+            return null
+        }
+
+        // Now use the actual CVE ID to get the vulnerability details with images
         while (t.IsValid()) {
-            def result2Ret = gqlService.Call(graphQLQuery, [id: objId])
+            def result2Ret = gqlService.Call(GET_IMAGE_INFO_FROM_VULN_QUERY, [id: actualCveId])
             assert result2Ret.getCode() == 200
             if (result2Ret.getValue().result != null) {
                 log.info "images fetched from cve"
                 return result2Ret
             }
         }
-        log.info "Unable to fetch images for $cveId in ${t.SecondsSince()} seconds"
+        log.info "Unable to fetch images for ${cveName} in ${t.SecondsSince()} seconds"
         return null
     }
 

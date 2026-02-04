@@ -10,7 +10,7 @@ import { selectors } from './WorkloadCves.selectors';
 describe('Workload CVE Namespace View', () => {
     withAuth();
 
-    it('should display the correct search filter chips on the main list page when clicking the deployment link in the table', () => {
+    it('should display the correct search filter labels on the main list page when clicking the deployment link in the table', () => {
         visitWorkloadCveOverview();
 
         visitNamespaceView();
@@ -32,8 +32,8 @@ describe('Workload CVE Namespace View', () => {
 
                         cy.get(`h1:contains("Platform vulnerabilities")`);
 
-                        cy.get(selectors.filterChipGroupItem('Namespace', `^${namespace}$`));
-                        cy.get(selectors.filterChipGroupItem('Cluster', `^${cluster}$`));
+                        cy.get(selectors.filterLabelGroupItem('Namespace', `^${namespace}$`));
+                        cy.get(selectors.filterLabelGroupItem('Cluster', `^${cluster}$`));
                     });
             });
     });

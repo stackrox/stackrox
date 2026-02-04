@@ -66,7 +66,7 @@ function NamespaceSideBar({
         };
     });
     const namespacePolicyIds = deploymentNodes.reduce((acc, curr) => {
-        const policyIds: string[] = curr?.data?.policyIds || [];
+        const policyIds: string[] = curr?.data?.policyIds ?? [];
         return [...acc, ...policyIds];
     }, [] as string[]);
     const uniqueNamespacePolicyIds = uniq(namespacePolicyIds);

@@ -66,8 +66,28 @@ function getSrcAliases() {
     return aliases;
 }
 
+/*
+ * Mocks for Cypress component tests
+ * This is necessary because the OpenShift Console SDK requires the Console environment to be present,
+ * which is not the case when running Cypress component tests.
+ */
+function getCypressComponentTestAliases() {
+    return {
+        '@openshift-console/dynamic-plugin-sdk': path.resolve(
+            __dirname,
+            'cypress/mocks/openshift-console-sdk.ts'
+        ),
+    };
+}
+
 export default defineConfig(async () => {
     const sslOptions = getSslOptions();
+
+    const serverConfig = {
+        proxy: viteProxy(),
+        ...(sslOptions?.localHttpsConfig ?? {}),
+    };
+
     return {
         build: {
             assetsDir: './static',
@@ -87,7 +107,6 @@ export default defineConfig(async () => {
                         ],
                         react: ['react', 'react-dom'],
                         apollo: ['@apollo/client'],
-                        patternfly: ['@patternfly/react-core', '@patternfly/react-styles'],
                     },
                 },
             },
@@ -104,13 +123,22 @@ export default defineConfig(async () => {
             global: 'window',
         },
         plugins: [react(), svgr(), ...(sslOptions?.basicSsl ? [sslOptions.basicSsl()] : [])],
+        preview: {
+            ...serverConfig,
+            port: 3000,
+        },
         resolve: {
-            alias: getSrcAliases(),
+            alias: {
+                ...getSrcAliases(),
+                // Mocks for Cypress component tests
+                // For example, the OpenShift Console SDK requires the Console environment to be present,
+                // which is not the case when running Cypress component tests.
+                ...(process.env.CYPRESS_COMPONENT_TEST ? getCypressComponentTestAliases() : {}),
+            },
         },
         server: {
-            proxy: viteProxy(),
+            ...serverConfig,
             port: 3000,
-            ...(sslOptions?.localHttpsConfig ?? {}),
         },
         test: {
             environment: 'jsdom',

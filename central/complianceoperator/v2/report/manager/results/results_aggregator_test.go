@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	benchmarkMocks "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore/mocks"
 	checkResultsMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	profileMocks "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
 	remediationMocks "github.com/stackrox/rox/central/complianceoperator/v2/remediations/datastore/mocks"
@@ -39,7 +38,6 @@ type ComplianceResultsAggregatorSuite struct {
 	scanDS         *scanMocks.MockDataStore
 	profileDS      *profileMocks.MockDataStore
 	remediationDS  *remediationMocks.MockDataStore
-	benchmarkDS    *benchmarkMocks.MockDataStore
 	ruleDS         *ruleMocks.MockDataStore
 
 	aggregator *Aggregator
@@ -140,8 +138,8 @@ func fakeWalkByResponse(
 var (
 	profiles = []*storage.ComplianceOperatorProfileV2{
 		{
-			Name:           "profile-1",
-			ProfileVersion: "version-profile-1",
+			Name:           "ocp4-cis",
+			ProfileVersion: "1.7.0",
 		},
 	}
 	remediations = []*storage.ComplianceOperatorRemediationV2{
@@ -156,7 +154,7 @@ var (
 	}
 	benchmarks = []*storage.ComplianceOperatorBenchmarkV2{
 		{
-			ShortName: "bench-1",
+			ShortName: "CIS-OCP",
 		},
 	}
 	controls = []*datastore.ControlResult{
@@ -255,9 +253,6 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
 				return benchmarks, nil
 			},
-			expectedControls: func() ([]*datastore.ControlResult, error) {
-				return controls, nil
-			},
 		},
 		"remediation search error": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
@@ -312,26 +307,15 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 				return []*storage.ComplianceOperatorRuleV2{}, nil
 			},
 		},
-		"benchmark search error": {
-			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
-			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
-				return profiles, nil
-			},
-			expectedRemediations: func() ([]*storage.ComplianceOperatorRemediationV2, error) {
-				return remediations, nil
-			},
-			expectedRules: func() ([]*storage.ComplianceOperatorRuleV2, error) {
-				return rules, nil
-			},
-			expectedBenchmarks: func() ([]*storage.ComplianceOperatorBenchmarkV2, error) {
-				return nil, errors.New("error")
-			},
-			expectError: true,
-		},
 		"benchmark not found": {
 			check: getCheckResult(storage.ComplianceOperatorCheckResultV2_PASS),
 			expectedProfiles: func() ([]*storage.ComplianceOperatorProfileV2, error) {
-				return profiles, nil
+				return []*storage.ComplianceOperatorProfileV2{
+					{
+						Name:           "not-found",
+						ProfileVersion: "1.0.1",
+					},
+				}, nil
 			},
 			expectedRemediations: func() ([]*storage.ComplianceOperatorRemediationV2, error) {
 				return remediations, nil
@@ -392,9 +376,6 @@ func (s *ComplianceResultsAggregatorSuite) Test_WalkByQuery() {
 			if tcase.expectedRules != nil {
 				s.ruleDS.EXPECT().SearchRules(gomock.Any(), gomock.Any()).Times(1).Return(tcase.expectedRules())
 			}
-			if tcase.expectedBenchmarks != nil {
-				s.benchmarkDS.EXPECT().GetBenchmarksByProfileName(gomock.Any(), gomock.Any()).Times(1).Return(tcase.expectedBenchmarks())
-			}
 			if tcase.expectedControls != nil {
 				s.ruleDS.EXPECT().GetControlsByRulesAndBenchmarks(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(tcase.expectedControls())
 			}
@@ -419,10 +400,9 @@ func (s *ComplianceResultsAggregatorSuite) SetupTest() {
 	s.scanDS = scanMocks.NewMockDataStore(s.ctrl)
 	s.profileDS = profileMocks.NewMockDataStore(s.ctrl)
 	s.remediationDS = remediationMocks.NewMockDataStore(s.ctrl)
-	s.benchmarkDS = benchmarkMocks.NewMockDataStore(s.ctrl)
 	s.ruleDS = ruleMocks.NewMockDataStore(s.ctrl)
 
-	s.aggregator = NewAggregator(s.checkResultsDS, s.scanDS, s.profileDS, s.remediationDS, s.benchmarkDS, s.ruleDS)
+	s.aggregator = NewAggregator(s.checkResultsDS, s.scanDS, s.profileDS, s.remediationDS, s.ruleDS)
 }
 
 func getRequest(ctx context.Context, numClusters, numProfiles, numFailedClusters int) *report.Request {

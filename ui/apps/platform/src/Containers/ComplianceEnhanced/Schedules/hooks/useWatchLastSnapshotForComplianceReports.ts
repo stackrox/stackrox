@@ -83,7 +83,7 @@ function useWatchLastSnapshotForComplianceReports(
     useInterval(refetch, 10000);
 
     const result: FetchLastComplianceReportSnapshotReturn = {
-        complianceReportSnapshots: data || {},
+        complianceReportSnapshots: data ?? {},
         isLoading,
         error: error ? getAxiosErrorMessage(error) : null,
         fetchSnapshots: refetch,

@@ -14,7 +14,8 @@ import {
 } from '../../utils/vulnerabilityUtils';
 
 export type ImageMetadataContext = {
-    id: string;
+    id: string; // UUID - used for linking
+    digest?: string; // For ImageV2, the SHA digest - used for display
     name: {
         registry: string;
         remote: string;
@@ -49,6 +50,26 @@ export const imageMetadataContextFragment = gql`
     }
 `;
 
+export const imageV2MetadataContextFragment = gql`
+    fragment ImageV2MetadataContext on ImageV2 {
+        id
+        digest
+        name {
+            registry
+            remote
+            tag
+        }
+        metadata {
+            v1 {
+                layers {
+                    instruction
+                    value
+                }
+            }
+        }
+    }
+`;
+
 // TODO Enforce a non-empty imageVulnerabilities array at a higher level?
 export type ComponentVulnerabilityBase = {
     type: 'Image' | 'Deployment';
@@ -57,6 +78,7 @@ export type ComponentVulnerabilityBase = {
     location: string;
     source: SourceType;
     layerIndex: number | null;
+    inBaseImageLayer?: boolean;
     imageVulnerabilities: {
         severity: string;
         fixedByVersion: string;
@@ -85,7 +107,8 @@ export type DeploymentComponentVulnerability = Omit<
 
 export type TableDataRow = {
     image: {
-        id: string;
+        id: string; // UUID - used for linking
+        digest?: string; // For ImageV2, the SHA digest - used for display
         name: {
             remote: string;
             registry: string;
@@ -105,6 +128,7 @@ export type TableDataRow = {
         value: string;
     } | null;
     pendingExceptionCount: number;
+    inBaseImageLayer?: boolean;
 };
 
 /**
@@ -159,7 +183,7 @@ function extractCommonComponentFields(
     component: ComponentVulnerabilityBase,
     vulnerability: ComponentVulnerabilityBase['imageVulnerabilities'][0] | undefined
 ): TableDataRow {
-    const { name, version, location, source, layerIndex } = component;
+    const { name, version, location, source, layerIndex, inBaseImageLayer } = component;
 
     let layer: TableDataRow['layer'] = null;
 
@@ -187,12 +211,17 @@ function extractCommonComponentFields(
         version,
         location,
         source,
-        image,
+        image: {
+            id: image.id,
+            digest: image.digest,
+            name: image.name,
+        },
         layer,
         severity,
         fixedByVersion,
         advisory,
         pendingExceptionCount,
+        inBaseImageLayer,
     };
 }
 

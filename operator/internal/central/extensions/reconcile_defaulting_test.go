@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/common"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
@@ -27,10 +28,8 @@ type scannerV4DefaultingTestCase struct {
 }
 
 var (
-	nonEmptyStatus = platform.CentralStatus{
-		DeployedRelease: &platform.StackRoxRelease{
-			Version: "some-version-string",
-		},
+	postInstallStatus = platform.CentralStatus{
+		ProductVersion: "some-version-string",
 	}
 )
 
@@ -46,7 +45,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 		},
 		"upgrade: disabled by default": {
 			Spec:            platform.CentralSpec{},
-			Status:          nonEmptyStatus,
+			Status:          postInstallStatus,
 			ExpectedDefault: &platform.ScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
 				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
@@ -71,7 +70,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			ExpectedDefault: nil,
 		},
 		"upgrade: pick up previously persisted default (Enabled)": {
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			Annotations: map[string]string{
 				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentEnabled),
 			},
@@ -81,7 +80,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			},
 		},
 		"upgrade: pick up previously persisted default (Disabled)": {
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			Annotations: map[string]string{
 				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
@@ -91,7 +90,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			},
 		},
 		"upgrade: ignoring bogus persisted default": {
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			Annotations: map[string]string{
 				common.FeatureDefaultKeyScannerV4: "foo",
 			},
@@ -142,7 +141,10 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			unstructuredCentral := centralToUnstructured(t, central)
 
 			err := reconcileFeatureDefaults(ctx, client, unstructuredCentral, logr.Discard())
-			assert.Nil(t, err, "reconcileScannerV4StatusDefaults returned error")
+			if errors.Is(err, common.ErrorAnnotationsUpdated) {
+				err = reconcileFeatureDefaults(ctx, client, unstructuredCentral, logr.Discard())
+			}
+			assert.NoError(t, err, "reconcileFeatureDefaults returned error")
 
 			centralFetched := platform.Central{}
 			err = client.Get(ctx, ctrlClient.ObjectKey{Namespace: testutils.TestNamespace, Name: centralName}, &centralFetched)

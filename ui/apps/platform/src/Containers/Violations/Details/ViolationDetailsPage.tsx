@@ -12,6 +12,7 @@ import {
     Tab,
     TabTitleText,
     Tabs,
+    Text,
     Title,
 } from '@patternfly/react-core';
 
@@ -97,10 +98,10 @@ function ViolationDetailsPage(): ReactElement {
             <ViolationsBreadcrumbs current={title} filteredWorkflowView={filteredWorkflowView} />
             <PageSection variant="light">
                 <Title headingLevel="h1">{title}</Title>
-                <Title
-                    headingLevel="h2"
+                <Text
+                    component="p"
                     className="pf-v5-u-mb-sm"
-                >{`in "${entityName}" ${displayedResourceType}`}</Title>
+                >{`in "${entityName}" ${displayedResourceType}`}</Text>
                 <LabelGroup numLabels={2} aria-label="Violation state and resolution">
                     <Label>State: {VIOLATION_STATE_LABELS[alert.state]}</Label>
                     {alert.state === 'RESOLVED' && (
@@ -152,7 +153,7 @@ function ViolationDetailsPage(): ReactElement {
                     {isRouteEnabledForPolicy && (
                         <Tab eventKey={3} title={<TabTitleText>Policy</TabTitleText>}>
                             <PageSection variant="default">
-                                <Title headingLevel="h3" className="pf-v5-u-mb-md">
+                                <Title headingLevel="h2" className="pf-v5-u-mb-md">
                                     Policy overview
                                 </Title>
                                 <Divider component="div" className="pf-v5-u-pb-md" />

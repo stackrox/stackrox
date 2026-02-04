@@ -22,8 +22,9 @@ const _mode_name = "renderAllscannerOnlycentralTLSOnlycentralDBTLSOnlyscannerTLS
 var _mode_index = [...]uint8{0, 9, 20, 34, 50, 64, 77, 93}
 
 func (i mode) String() string {
-	if i < 0 || i >= mode(len(_mode_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_mode_index)-1 {
 		return "mode(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _mode_name[_mode_index[i]:_mode_index[i+1]]
+	return _mode_name[_mode_index[idx]:_mode_index[idx+1]]
 }

@@ -1,4 +1,3 @@
-import React from 'react';
 import URLService from 'utils/URLService';
 import useCaseTypes from 'constants/useCaseTypes';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';

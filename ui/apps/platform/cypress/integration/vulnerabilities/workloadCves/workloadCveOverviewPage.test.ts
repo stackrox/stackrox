@@ -24,6 +24,7 @@ import {
     interceptAndOverridePermissions,
     interceptAndWatchRequests,
 } from '../../../helpers/request';
+import { addCheckboxSelectFilter } from '../../../helpers/compoundFilters';
 
 const visitFromMoreViewsDropdown = visitFromHorizontalNavExpandable('More Views');
 
@@ -91,10 +92,13 @@ describe('Workload CVE overview page tests', () => {
             // @ts-ignore
             selectEntityTab(entity);
 
-            // Ensure that only the correct filter chip is present
-            const filterChipGroupName = 'CVE severity';
-            cy.get(selectors.filterChipGroupItem(filterChipGroupName, 'Critical'));
-            cy.get(selectors.filterChipGroupItems(filterChipGroupName)).should('have.lengthOf', 1);
+            // Ensure that only the correct filter label is present
+            const filterLabelGroupName = 'CVE severity';
+            cy.get(selectors.filterLabelGroupItem(filterLabelGroupName, 'Critical'));
+            cy.get(selectors.filterLabelGroupItems(filterLabelGroupName)).should(
+                'have.lengthOf',
+                1
+            );
 
             // TODO - See if there is a clean way to re-enable this to handle both cases where the
             // feature flag is not enabled and not enabled
@@ -236,12 +240,12 @@ describe('Workload CVE overview page tests', () => {
             visitWorkloadCveOverview();
 
             const cvesBySeverityHeader = 'th:contains("CVEs by severity")';
-            const prioritizeByNamespaceButton = 'a:contains("Prioritize by namespace view")';
+            const namespaceViewLink = 'a:contains("Namespace view")';
             const defaultFiltersButton = 'button:contains("Default filters")';
 
             function assertCveElementsArePresent() {
                 cy.get(cvesBySeverityHeader);
-                cy.get(prioritizeByNamespaceButton);
+                cy.get(namespaceViewLink);
                 cy.get(defaultFiltersButton);
                 cy.get(selectors.severityDropdown);
                 cy.get(selectors.fixabilityDropdown);
@@ -249,7 +253,7 @@ describe('Workload CVE overview page tests', () => {
 
             function assertCveElementsAreNotPresent() {
                 cy.get(cvesBySeverityHeader).should('not.be.visible');
-                cy.get(prioritizeByNamespaceButton).should('not.exist');
+                cy.get(namespaceViewLink).should('not.exist');
                 cy.get(defaultFiltersButton).should('not.exist');
                 cy.get(selectors.severityDropdown).should('not.exist');
                 cy.get(selectors.fixabilityDropdown).should('not.exist');
@@ -340,6 +344,27 @@ describe('Workload CVE overview page tests', () => {
                     );
                 }
             );
+        });
+    });
+
+    describe('Layer type filter tests', () => {
+        it('should apply Layer type filter correctly', () => {
+            interceptAndOverrideFeatureFlags({ ROX_BASE_IMAGE_DETECTION: true });
+
+            visitWorkloadCveOverview();
+
+            addCheckboxSelectFilter('Image component', 'Layer type', 'Base image');
+
+            // Verify filter chip is applied
+            cy.get(selectors.filterLabelGroupForCategory('Image component layer type')).should(
+                'be.visible'
+            );
+            cy.get(
+                selectors.filterLabelGroupItem('Image component layer type', 'Base image')
+            ).should('be.visible');
+
+            // Verify filtered view label is shown
+            cy.get(selectors.filteredViewLabel).should('be.visible');
         });
     });
 });

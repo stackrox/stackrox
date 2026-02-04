@@ -101,5 +101,11 @@ func GenerateImageComponentV2(os string, image *storage.ImageV2, index int, from
 		}
 	}
 
+	ret.LayerType = storage.LayerType_APPLICATION
+	if len(image.GetBaseImageInfo()) > 0 && from.GetHasLayerIndex() != nil {
+		if from.GetLayerIndex() <= image.GetBaseImageInfo()[0].GetMaxLayerIndex() {
+			ret.LayerType = storage.LayerType_BASE_IMAGE
+		}
+	}
 	return ret, nil
 }

@@ -2,10 +2,10 @@ package secretinformer
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -109,41 +109,46 @@ func TestSecretInformer(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			k8sClient := fake.NewSimpleClientset()
+			var onAddCnt, onUpdateCnt, onDeleteCnt atomic.Int32
 
-			var wgAdd, wgUp, wgDel sync.WaitGroup
-			wgAdd.Add(c.expectedOnAddCnt)
-			wgUp.Add(c.expectedOnUpdateCnt)
-			wgDel.Add(c.expectedOnDeleteCnt)
+			// Use Eventually to retry the entire operation with a configurable timeout.
+			// This handles the k8s fake client potentially losing events.
+			require.EventuallyWithT(t, func(ct *assert.CollectT) {
+				k8sClient := fake.NewClientset()
+				informer := NewSecretInformer(
+					namespace,
+					secretName,
+					k8sClient,
+					func(s *v1.Secret) {
+						assert.Equal(ct, c.expectedData, string(s.Data[secretKey]))
+						onAddCnt.Add(1)
+					},
+					func(s *v1.Secret) {
+						assert.Equal(ct, c.expectedData, string(s.Data[secretKey]))
+						onUpdateCnt.Add(1)
+					},
+					func() {
+						onDeleteCnt.Add(1)
+					},
+				)
+				err := informer.Start()
+				require.NoError(ct, err)
+				defer informer.Stop()
+				require.Eventually(ct, informer.HasSynced, 5*time.Second, 100*time.Millisecond)
 
-			informer := NewSecretInformer(
-				namespace,
-				secretName,
-				k8sClient,
-				func(s *v1.Secret) {
-					assert.Equal(t, c.expectedData, string(s.Data[secretKey]))
-					wgAdd.Done()
-				},
-				func(s *v1.Secret) {
-					assert.Equal(t, c.expectedData, string(s.Data[secretKey]))
-					wgUp.Done()
-				},
-				func() {
-					wgDel.Done()
-				},
-			)
+				onAddCnt.Store(0)
+				onUpdateCnt.Store(0)
+				onDeleteCnt.Store(0)
+				require.NoError(ct, c.setupFn(k8sClient))
 
-			err := informer.Start()
-			require.NoError(t, err)
-			defer informer.Stop()
-			require.Eventually(t, informer.HasSynced, 5*time.Second, 100*time.Millisecond)
-			err = c.setupFn(k8sClient)
-			require.NoError(t, err)
-
-			wgAdd.Wait()
-			wgUp.Wait()
-			wgDel.Wait()
-			// Test is OK if not killed after timeout.
+				assert.Eventually(ct, func() bool {
+					return onAddCnt.Load() == int32(c.expectedOnAddCnt) &&
+						onUpdateCnt.Load() == int32(c.expectedOnUpdateCnt) &&
+						onDeleteCnt.Load() == int32(c.expectedOnDeleteCnt)
+				}, 200*time.Millisecond, 10*time.Millisecond)
+			}, 10*time.Second, 200*time.Millisecond, "callbacks not invoked as expected (add: %d/%d, update: %d/%d, delete: %d/%d)",
+				onAddCnt.Load(), c.expectedOnAddCnt, onUpdateCnt.Load(), c.expectedOnUpdateCnt,
+				onDeleteCnt.Load(), c.expectedOnDeleteCnt)
 		})
 	}
 }

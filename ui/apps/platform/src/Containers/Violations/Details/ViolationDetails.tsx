@@ -24,7 +24,7 @@ function ViolationDetails({
         <Flex>
             <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>
                 <FlexItem>
-                    <Title headingLevel="h3" className="pf-v5-u-mb-md">
+                    <Title headingLevel="h2" className="pf-v5-u-mb-md">
                         Violation events
                     </Title>
                     <Divider component="div" />

@@ -141,6 +141,20 @@ func insertIntoListeningEndpoints(batch *pgx.Batch, obj *storage.ProcessListenin
 	return nil
 }
 
+var copyColsListeningEndpoints = []string{
+	"id",
+	"port",
+	"protocol",
+	"closetimestamp",
+	"processindicatorid",
+	"closed",
+	"deploymentid",
+	"poduid",
+	"clusterid",
+	"namespace",
+	"serialized",
+}
+
 func copyFromListeningEndpoints(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ProcessListeningOnPortStorage) error {
 	if len(objs) == 0 {
 		return nil
@@ -156,20 +170,6 @@ func copyFromListeningEndpoints(ctx context.Context, s pgSearch.Deleter, tx *pos
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"port",
-		"protocol",
-		"closetimestamp",
-		"processindicatorid",
-		"closed",
-		"deploymentid",
-		"poduid",
-		"clusterid",
-		"namespace",
-		"serialized",
 	}
 
 	idx := 0
@@ -200,7 +200,7 @@ func copyFromListeningEndpoints(ctx context.Context, s pgSearch.Deleter, tx *pos
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"listening_endpoints"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"listening_endpoints"}, copyColsListeningEndpoints, inputRows); err != nil {
 		return err
 	}
 

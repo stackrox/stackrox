@@ -65,7 +65,7 @@ var (
 )
 
 func Test_FetchBindingRemovesLastAppliedConfig(t *testing.T) {
-	fakeClient := fake.NewSimpleClientset()
+	fakeClient := fake.NewClientset()
 	fetcher := newBindingFetcher(fakeClient)
 
 	_, err := fakeClient.RbacV1().ClusterRoleBindings().Create(context.Background(), clusterRoleBinding, metav1.CreateOptions{})
@@ -92,7 +92,7 @@ func Test_FetchBindingRemovesLastAppliedConfig(t *testing.T) {
 }
 
 func Test_FetchBindingErrors(t *testing.T) {
-	fakeClient := fake.NewSimpleClientset()
+	fakeClient := fake.NewClientset()
 	fetcher := newBindingFetcher(fakeClient)
 	fetcher.numRetries = 2
 

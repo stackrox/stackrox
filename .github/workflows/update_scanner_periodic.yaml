@@ -8,12 +8,12 @@ jobs:
     if:  ${{ github.repository_owner == 'stackrox' }}
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         ref: master # this is our target branch
         fetch-depth: 0 # we need to fetch all branches
     - name: Checkout scanner repo
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         repository: stackrox/scanner
         path: deps/scanner
@@ -22,7 +22,7 @@ jobs:
       run: make -sC deps/scanner tag | tee SCANNER_VERSION
     - name: Create Pull Request
       id: cpr
-      uses: peter-evans/create-pull-request@v7
+      uses: peter-evans/create-pull-request@v8
       with:
         token: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
         commit-message: Update SCANNER_VERSION
@@ -37,6 +37,7 @@ jobs:
         labels: |
           ci-all-qa-tests
           dependencies
+          konflux-build
         team-reviewers: scanner
         draft: false
     - name: Enable Pull Request Automerge

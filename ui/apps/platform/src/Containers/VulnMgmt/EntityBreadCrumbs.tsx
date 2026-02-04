@@ -1,4 +1,5 @@
-import React, { ReactElement, useContext } from 'react';
+import { useContext } from 'react';
+import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { ChevronRight, ArrowLeft } from 'react-feather';
 
@@ -6,7 +7,8 @@ import entityTypes from 'constants/entityTypes';
 import EntityIcon from 'Components/EntityIcon';
 import workflowStateContext from 'Containers/workflowStateContext';
 
-import EntityBreadCrumb, { WorkflowEntity } from './EntityBreadCrumb';
+import EntityBreadCrumb from './EntityBreadCrumb';
+import type { WorkflowEntity } from './EntityBreadCrumb';
 
 const Icon = (
     <ChevronRight className="bg-base-200 border border-base-400 mx-4 rounded-full" size="14" />

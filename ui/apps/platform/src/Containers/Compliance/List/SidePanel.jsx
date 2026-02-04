@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 import { Link, useLocation, useNavigate } from 'react-router-dom-v5-compat';

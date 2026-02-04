@@ -111,12 +111,12 @@ export type EnforcementAction =
     | 'FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT';
 
 export type PolicySection = {
-    sectionName: string;
+    sectionName?: string;
     policyGroups: PolicyGroup[];
 };
 
 export type ClientPolicySection = {
-    sectionName: string;
+    sectionName?: string;
     policyGroups: ClientPolicyGroup[];
 };
 

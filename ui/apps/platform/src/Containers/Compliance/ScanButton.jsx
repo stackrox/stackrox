@@ -1,4 +1,4 @@
-import React from 'react';
+import { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Mutation } from '@apollo/client/react/components';
@@ -9,7 +9,7 @@ import { actions as notificationActions } from 'reducers/notifications';
 import { TRIGGER_SCAN } from 'queries/standard';
 import Button from 'Components/Button';
 
-class ScanButton extends React.Component {
+class ScanButton extends Component {
     static propTypes = {
         className: PropTypes.string,
         text: PropTypes.string.isRequired,

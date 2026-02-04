@@ -228,23 +228,26 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 }
 
 func (ds *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	results, err := ds.Search(ctx, q)
+	if q == nil {
+		q = pkgSearch.EmptyQuery()
+	}
+	clonedQuery := q.CloneVT()
+	selectSelects := []*v1.QuerySelect{
+		pkgSearch.NewQuerySelect(pkgSearch.Cluster).Proto(),
+	}
+	clonedQuery.Selects = append(clonedQuery.GetSelects(), selectSelects...)
+	results, err := ds.Search(ctx, clonedQuery)
 	if err != nil {
 		return nil, err
 	}
-
-	clusters, missingIndices, err := ds.clusterStorage.GetMany(ctx, pkgSearch.ResultsToIDs(results))
-	if err != nil {
-		return nil, err
+	for i := range results {
+		if results[i].FieldValues != nil {
+			if nameVal, ok := results[i].FieldValues[strings.ToLower(pkgSearch.Cluster.String())]; ok {
+				results[i].Name = nameVal
+			}
+		}
 	}
-
-	results = pkgSearch.RemoveMissingResults(results, missingIndices)
-
-	protoResults := make([]*v1.SearchResult, 0, len(clusters))
-	for i, cluster := range clusters {
-		protoResults = append(protoResults, convertCluster(cluster, results[i]))
-	}
-	return protoResults, nil
+	return pkgSearch.ResultsToSearchResultProtos(results, &ClusterSearchResultConverter{}), nil
 }
 
 func (ds *datastoreImpl) searchRawClusters(ctx context.Context, q *v1.Query) ([]*storage.Cluster, error) {
@@ -616,6 +619,10 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 
 	if err := ds.netEntityDataStore.DeleteExternalNetworkEntitiesForCluster(ctx, cluster.GetId()); err != nil {
 		log.Errorf("failed to delete external network graph entities for removed cluster %s: %v", cluster.GetId(), err)
+	}
+
+	if err := ds.netFlowsDataStore.RemoveFlowStore(ctx, cluster.GetId()); err != nil {
+		log.Errorf("failed to delete network flows for removed cluster %s: %v", cluster.GetId(), err)
 	}
 
 	if features.ComplianceEnhancements.Enabled() {
@@ -1120,13 +1127,18 @@ func (ds *datastoreImpl) collectClusters(ctx context.Context) ([]*storage.Cluste
 	return clusters, nil
 }
 
-func convertCluster(cluster *storage.Cluster, result pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_CLUSTERS,
-		Id:             cluster.GetId(),
-		Name:           cluster.GetName(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-		Location:       fmt.Sprintf("/%s", cluster.GetName()),
-	}
+// ClusterSearchResultConverter implements search.SearchResultConverter for cluster search results.
+// This enables single-pass query construction for SearchResult protos.
+type ClusterSearchResultConverter struct{}
+
+func (c *ClusterSearchResultConverter) BuildName(result *pkgSearch.Result) string {
+	return result.Name
+}
+
+func (c *ClusterSearchResultConverter) BuildLocation(result *pkgSearch.Result) string {
+	return fmt.Sprintf("/%s", result.Name)
+}
+
+func (c *ClusterSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_CLUSTERS
 }

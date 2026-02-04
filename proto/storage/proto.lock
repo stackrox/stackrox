@@ -251,6 +251,10 @@
               {
                 "name": "NETWORK_POLICY",
                 "integer": 3
+              },
+              {
+                "name": "FILE_ACCESS",
+                "integer": 4
               }
             ]
           },
@@ -410,11 +414,6 @@
                 "id": 13,
                 "name": "process_violation",
                 "type": "ProcessViolation"
-              },
-              {
-                "id": 25,
-                "name": "file_access_violation",
-                "type": "FileAccessViolation"
               },
               {
                 "id": 6,
@@ -593,6 +592,16 @@
                     "id": 2,
                     "name": "name",
                     "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "cluster_id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 4,
+                    "name": "cluster_name",
+                    "type": "string"
                   }
                 ]
               },
@@ -614,6 +623,12 @@
                     "id": 7,
                     "name": "network_flow_info",
                     "type": "NetworkFlowInfo",
+                    "oneof_parent": "MessageAttributes"
+                  },
+                  {
+                    "id": 8,
+                    "name": "file_access",
+                    "type": "FileAccess",
                     "oneof_parent": "MessageAttributes"
                   },
                   {
@@ -726,22 +741,6 @@
                     "id": 2,
                     "name": "processes",
                     "type": "ProcessIndicator",
-                    "is_repeated": true
-                  }
-                ]
-              },
-              {
-                "name": "FileAccessViolation",
-                "fields": [
-                  {
-                    "id": 1,
-                    "name": "message",
-                    "type": "string"
-                  },
-                  {
-                    "id": 2,
-                    "name": "accesses",
-                    "type": "FileAccess",
                     "is_repeated": true
                   }
                 ]
@@ -1329,6 +1328,254 @@
           },
           {
             "path": "storage/traits.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "./storage;storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
+      }
+    },
+    {
+      "protopath": "base_image.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "BaseImage",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "base_image_repository_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "repository",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "tag",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "manifest_digest",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "discovered_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 7,
+                "name": "active",
+                "type": "bool"
+              },
+              {
+                "id": 8,
+                "name": "first_layer_digest",
+                "type": "string"
+              },
+              {
+                "id": 9,
+                "name": "layers",
+                "type": "BaseImageLayer",
+                "is_repeated": true
+              },
+              {
+                "id": 10,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
+              }
+            ]
+          },
+          {
+            "name": "BaseImageLayer",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "base_image_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "layer_digest",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "index",
+                "type": "int32"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "./storage;storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
+      }
+    },
+    {
+      "protopath": "base_image_repository.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "BaseImageRepository.HealthStatus",
+            "enum_fields": [
+              {
+                "name": "HEALTHY"
+              },
+              {
+                "name": "UNHEALTHY",
+                "integer": 1
+              },
+              {
+                "name": "DISABLED",
+                "integer": 2
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "BaseImageRepository",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "repository_path",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "tag_pattern",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "updated_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "failure_count",
+                "type": "int32"
+              },
+              {
+                "id": 6,
+                "name": "health_status",
+                "type": "HealthStatus"
+              },
+              {
+                "id": 7,
+                "name": "pattern_hash",
+                "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "created_by",
+                "type": "SlimUser"
+              }
+            ]
+          },
+          {
+            "name": "BaseImageTag",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "base_image_repository_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "tag",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "manifest_digest",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "is_manifest_list",
+                "type": "bool"
+              },
+              {
+                "id": 6,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 8,
+                "name": "layer_digests",
+                "type": "string",
+                "is_repeated": true
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 7,
+                  "name": "list_digests",
+                  "type": "string"
+                }
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/user.proto"
           }
         ],
         "package": {
@@ -5265,6 +5512,24 @@
                         "type": "string",
                         "is_repeated": true
                       }
+                    ],
+                    "maps": [
+                      {
+                        "key_type": "string",
+                        "field": {
+                          "id": 2,
+                          "name": "include_filters",
+                          "type": "string"
+                        }
+                      },
+                      {
+                        "key_type": "string",
+                        "field": {
+                          "id": 3,
+                          "name": "exclude_filters",
+                          "type": "string"
+                        }
+                      }
                     ]
                   }
                 ]
@@ -6333,6 +6598,16 @@
                 "id": 15,
                 "name": "image_id_v2",
                 "type": "string"
+              },
+              {
+                "id": 16,
+                "name": "fix_available_timestamp",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 17,
+                "name": "datasource",
+                "type": "string"
               }
             ]
           },
@@ -6600,6 +6875,31 @@
                 "id": 13,
                 "name": "severity",
                 "type": "Severity"
+              }
+            ]
+          },
+          {
+            "name": "ImageCVEInfo",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "fix_available_timestamp",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 3,
+                "name": "first_system_occurrence",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 4,
+                "name": "cve",
+                "type": "string"
               }
             ]
           }
@@ -8119,12 +8419,8 @@
                 "integer": 4
               },
               {
-                "name": "WRITE",
-                "integer": 5
-              },
-              {
                 "name": "OPEN",
-                "integer": 6
+                "integer": 5
               }
             ]
           }
@@ -8200,12 +8496,12 @@
                 "fields": [
                   {
                     "id": 1,
-                    "name": "mounted_path",
+                    "name": "effective_path",
                     "type": "string"
                   },
                   {
                     "id": 2,
-                    "name": "node_path",
+                    "name": "actual_path",
                     "type": "string"
                   },
                   {
@@ -8671,6 +8967,12 @@
                 "id": 14,
                 "name": "notes",
                 "type": "Note",
+                "is_repeated": true
+              },
+              {
+                "id": 19,
+                "name": "base_image_info",
+                "type": "BaseImageInfo",
                 "is_repeated": true
               }
             ],
@@ -9176,6 +9478,36 @@
                 "type": "string"
               }
             ]
+          },
+          {
+            "name": "BaseImageInfo",
+            "fields": [
+              {
+                "id": 1,
+                "name": "base_image_id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "base_image_full_name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "base_image_digest",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "max_layer_index",
+                "type": "int32"
+              }
+            ]
           }
         ],
         "imports": [
@@ -9204,6 +9536,20 @@
     {
       "protopath": "image_component.proto",
       "def": {
+        "enums": [
+          {
+            "name": "LayerType",
+            "enum_fields": [
+              {
+                "name": "APPLICATION"
+              },
+              {
+                "name": "BASE_IMAGE",
+                "integer": 1
+              }
+            ]
+          }
+        ],
         "messages": [
           {
             "name": "ImageComponent",
@@ -9347,6 +9693,22 @@
                 "id": 14,
                 "name": "image_id_v2",
                 "type": "string"
+              },
+              {
+                "id": 15,
+                "name": "from_base_image",
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
+              },
+              {
+                "id": 16,
+                "name": "layer_type",
+                "type": "LayerType"
               }
             ]
           }
@@ -9932,6 +10294,12 @@
                 "id": 15,
                 "name": "notes",
                 "type": "Note",
+                "is_repeated": true
+              },
+              {
+                "id": 16,
+                "name": "base_image_info",
+                "type": "BaseImageInfo",
                 "is_repeated": true
               }
             ],
@@ -16146,6 +16514,16 @@
                 "id": 3,
                 "name": "label",
                 "type": "Label"
+              },
+              {
+                "id": 4,
+                "name": "cluster_label",
+                "type": "Label"
+              },
+              {
+                "id": 5,
+                "name": "namespace_label",
+                "type": "Label"
               }
             ],
             "messages": [
@@ -18262,6 +18640,10 @@
               {
                 "name": "DECLARATIVE_ORPHANED",
                 "integer": 3
+              },
+              {
+                "name": "EPHEMERAL",
+                "integer": 4
               }
             ]
           }
@@ -18284,8 +18666,18 @@
                 "id": 3,
                 "name": "origin",
                 "type": "Origin"
+              },
+              {
+                "id": 4,
+                "name": "expires_at",
+                "type": "google.protobuf.Timestamp"
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
           }
         ],
         "package": {
@@ -19375,6 +19767,11 @@
                 "type": "google.protobuf.Timestamp"
               },
               {
+                "id": 25,
+                "name": "fix_available_timestamp",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
                 "id": 19,
                 "name": "severity",
                 "type": "VulnerabilitySeverity"
@@ -19399,6 +19796,11 @@
                 "id": 23,
                 "name": "epss",
                 "type": "EPSS"
+              },
+              {
+                "id": 26,
+                "name": "datasource",
+                "type": "string"
               }
             ],
             "reserved_ids": [

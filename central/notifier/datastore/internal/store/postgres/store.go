@@ -107,6 +107,12 @@ func insertIntoNotifiers(batch *pgx.Batch, obj *storage.Notifier) error {
 	return nil
 }
 
+var copyColsNotifiers = []string{
+	"id",
+	"name",
+	"serialized",
+}
+
 func copyFromNotifiers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.Notifier) error {
 	if len(objs) == 0 {
 		return nil
@@ -122,12 +128,6 @@ func copyFromNotifiers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"serialized",
 	}
 
 	idx := 0
@@ -150,7 +150,7 @@ func copyFromNotifiers(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"notifiers"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"notifiers"}, copyColsNotifiers, inputRows); err != nil {
 		return err
 	}
 

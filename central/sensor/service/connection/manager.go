@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 )
 
@@ -51,4 +52,8 @@ type Manager interface {
 
 	PushExternalNetworkEntitiesToSensor(ctx context.Context, clusterID string) error
 	PushExternalNetworkEntitiesToAllSensors(ctx context.Context) error
+
+	// AllSensorsHaveCapability returns true if all active sensor connections have the given capability.
+	// Returns true if there are no active connections.
+	AllSensorsHaveCapability(capability centralsensor.SensorCapability) bool
 }

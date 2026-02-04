@@ -23,9 +23,7 @@ var (
 
 // Config wraps Gorm configurations to connect to Postgres DB
 type Config interface {
-	// TODO(ROX-18005) remove this
 	Connect(dbName string) (*gorm.DB, error)
-	// TODO(ROX-18005) remove this
 	ConnectWithRetries(dbName string) (*gorm.DB, error)
 
 	ConnectDatabase() (*gorm.DB, error)
@@ -64,7 +62,6 @@ func getConfig() (*gormConfig, error) {
 }
 
 // Connect connects to the Postgres database and returns a Gorm DB instance with error if applicable.
-// TODO(ROX-18005) remove this
 func (gc *gormConfig) Connect(dbName string) (*gorm.DB, error) {
 	source := gc.source
 	if !pgconfig.IsExternalDatabase() && dbName != "" {
@@ -99,7 +96,6 @@ func Close(db *gorm.DB) {
 }
 
 // ConnectWithRetries ConnectWithRetires connects to the Postgres database and retries if it fails
-// TODO(ROX-18005) remove this
 func (gc *gormConfig) ConnectWithRetries(dbName string) (db *gorm.DB, err error) {
 	// TODO(ROX-12235) be to implemented in seperated PR
 	return gc.Connect(dbName)

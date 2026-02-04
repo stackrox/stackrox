@@ -22,10 +22,7 @@ function Header(): ReactElement {
     // PageToggleButton assumes isManagedSidebar prop of Page element.
     // aria-label="primary" prop makes header element a unique landmark.
     return (
-        <Masthead
-            className="ignore-react-onclickoutside theme-dark"
-            inset={{ default: 'insetNone' }}
-        >
+        <Masthead className="ignore-react-onclickoutside" inset={{ default: 'insetNone' }}>
             <Notifications />
             <PublicConfigHeader />
             <Banners />

@@ -50,26 +50,18 @@ export function viewRiskDeploymentByName(deploymentName) {
     };
 
     interactAndWaitForResponses(() => {
-        // Specify nth-child(4) for Namespace to make sure it is stackrox.
-        // For example, prevent multiple matches with collector in gmp-system namespace.
-        //
-        // Specify nth-child(1) for Name of deployment.
-        //
-        // Call contains method with RegExp for exact match and only first element.
-        // Unlike contains pseudo-selector which would require :nth(0) in case of multiple matches.
         cy.get(
-            `.rt-tbody .rt-tr:has('.rt-td:nth-child(4):contains("stackrox")') .rt-td:nth-child(1)`
+            `tbody tr:has('td[data-label="Namespace"]:contains("stackrox")') td[data-label="Name"]`
         )
             .contains(new RegExp(`^${deploymentName}$`))
             .click();
     }, routeMatcherMapForDeployment);
 
-    // Unlike some classic containers, risk list header has different data-testid attribute.
-    cy.get(`[data-testid="panel-header"]:contains("${deploymentName}")`);
+    cy.get(`h1:contains("${deploymentName}")`);
 }
 
-export function viewRiskDeploymentInNetworkGraph() {
-    interactAndVisitNetworkGraphWithDeploymentSelected(() => {
+export function viewRiskDeploymentInNetworkGraph(deploymentName) {
+    interactAndVisitNetworkGraphWithDeploymentSelected(deploymentName, () => {
         cy.get('a:contains("View Deployment in Network Graph")').click();
     });
 }
@@ -160,7 +152,7 @@ export function clickFirstDrillDownButtonInEventTimeline(fixtureForPodEventTimel
 // interact
 
 export function clickTab(tabText) {
-    cy.get(`button[data-testid="tab"]:contains("${tabText}")`).click();
+    cy.get(`*[role="tablist"] button:contains("${tabText}")`).click();
 }
 
 export function filterEventsByType(eventType) {

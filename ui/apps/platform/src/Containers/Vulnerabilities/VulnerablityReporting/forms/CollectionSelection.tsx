@@ -154,7 +154,7 @@ function CollectionSelection({
     }
 
     function onToggleClick() {
-        setIsOpen(!isOpen);
+        setIsOpen((prev) => !prev);
         if (isOpen) {
             setSearch('');
         }

@@ -74,7 +74,7 @@ func TestCreateAccessScope_Failures(t *testing.T) {
 				"--cluster-label-selector=key=some-key;operator=EXISTS;values=some-value",
 			},
 			errOut: `Error: validating access scope: 1 error occurred:
-	* values: Invalid value: []string{"some-value"}: values set must be empty for exists and does not exist
+	* values: Invalid value: ["some-value"]: values set must be empty for exists and does not exist
 
 
 `,

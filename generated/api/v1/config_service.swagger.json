@@ -258,7 +258,22 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "A list of labels to aggregate on. The complete list of labels for the\ngiven metric group can be found in the documentation, or in the API\nerror message, returned when an invalid label is attempted to be added."
+        },
+        "includeFilters": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "A map of label name to a filter regular expression for this label\nvalue. See the RE2 syntax reference:\nhttps://github.com/google/re2/wiki/Syntax. If include_filters are\nspecified, a metric record is only counted if all label values match\nthe according label expression. Patterns are full-match only\n(automatically wrapped with ^ and $)."
+        },
+        "excludeFilters": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "A map of label name to a filter regular expression for this label\nvalue. See the RE2 syntax reference:\nhttps://github.com/google/re2/wiki/Syntax. If exclude_filters are\nspecified, a metric record is dropped if any label value matches the\naccording label expression. Patterns are full-match only (automatically\nwrapped with ^ and $). Exclude filters are applied after include\nfilters."
         }
       }
     },
@@ -502,7 +517,8 @@
       "properties": {
         "gatheringPeriodMinutes": {
           "type": "integer",
-          "format": "int64"
+          "format": "int64",
+          "description": "The gathering period for periodically gathered metrics. If set to zero,\ngathering is disabled."
         },
         "descriptors": {
           "type": "object",

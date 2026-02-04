@@ -14,6 +14,8 @@ import java.util.concurrent.TimeoutException
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import io.stackrox.annotations.Retry
+import io.fabric8.kubernetes.api.model.Affinity
 import io.fabric8.kubernetes.api.model.Capabilities
 import io.fabric8.kubernetes.api.model.ConfigMap as K8sConfigMap
 import io.fabric8.kubernetes.api.model.ConfigMapEnvSource
@@ -32,6 +34,9 @@ import io.fabric8.kubernetes.api.model.LabelSelector
 import io.fabric8.kubernetes.api.model.LocalObjectReference
 import io.fabric8.kubernetes.api.model.Namespace
 import io.fabric8.kubernetes.api.model.NamespaceBuilder
+import io.fabric8.kubernetes.api.model.NodeAffinity
+import io.fabric8.kubernetes.api.model.NodeSelectorRequirement
+import io.fabric8.kubernetes.api.model.NodeSelectorTerm
 import io.fabric8.kubernetes.api.model.ObjectFieldSelectorBuilder
 import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.kubernetes.api.model.OwnerReference
@@ -40,6 +45,7 @@ import io.fabric8.kubernetes.api.model.PodBuilder
 import io.fabric8.kubernetes.api.model.PodList
 import io.fabric8.kubernetes.api.model.PodSpec
 import io.fabric8.kubernetes.api.model.PodTemplateSpec
+import io.fabric8.kubernetes.api.model.PreferredSchedulingTerm
 import io.fabric8.kubernetes.api.model.Probe
 import io.fabric8.kubernetes.api.model.Quantity
 import io.fabric8.kubernetes.api.model.ResourceFieldSelectorBuilder
@@ -171,19 +177,21 @@ class Kubernetes {
         this("default")
     }
 
+    @Retry()
     void ensureNamespaceExists(String ns) {
         Namespace namespace = newNamespace(ns)
         try {
             client.namespaces().create(namespace)
             log.info "Created namespace ${ns}"
-            defaultPspForNamespace(ns)
-            provisionDefaultServiceAccount(ns)
         } catch (KubernetesClientException kce) {
             if (kce.code != 409) {
                 throw kce
             }
             log.debug("Namespace ${ns} already exists")
         }
+
+        defaultPspForNamespace(ns)
+        provisionDefaultServiceAccount(ns)
     }
 
     void setup() {
@@ -2331,12 +2339,38 @@ class Kubernetes {
             container.setReadinessProbe(readinessProbe)
         }
 
+        // Build node affinity to avoid nodes where prefetching failed
+        Affinity affinity = null
+        if (!deployment.nodeAntiAffinity.isEmpty()) {
+            List<NodeSelectorRequirement> matchExpressions = deployment.nodeAntiAffinity.collect { key, value ->
+                new NodeSelectorRequirement(
+                    key: key,
+                    operator: "NotIn",
+                    values: [value]
+                )
+            }
+
+            PreferredSchedulingTerm preferredTerm = new PreferredSchedulingTerm(
+                weight: 100,
+                preference: new NodeSelectorTerm(
+                    matchExpressions: matchExpressions
+                )
+            )
+
+            affinity = new Affinity(
+                nodeAffinity: new NodeAffinity(
+                    preferredDuringSchedulingIgnoredDuringExecution: [preferredTerm]
+                )
+            )
+        }
+
         PodSpec podSpec = new PodSpec(
                 containers: [container],
                 volumes: volumes,
                 imagePullSecrets: imagePullSecrets,
                 hostNetwork: deployment.hostNetwork,
-                serviceAccountName: deployment.serviceAccountName
+                serviceAccountName: deployment.serviceAccountName,
+                affinity: affinity
         )
         if (!deployment.automountServiceAccountToken) {
             podSpec.automountServiceAccountToken = deployment.automountServiceAccountToken

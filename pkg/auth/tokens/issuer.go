@@ -7,6 +7,8 @@ import (
 )
 
 // Issuer is an interface for issuing tokens, tied to a token source.
+//
+//go:generate mockgen-wrapper
 type Issuer interface {
 	// Issue issues a token for the given claims, applying any of the specified options.
 	Issue(ctx context.Context, claims RoxClaims, options ...Option) (*TokenInfo, error)

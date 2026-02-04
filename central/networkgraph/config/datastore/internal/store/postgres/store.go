@@ -106,6 +106,11 @@ func insertIntoNetworkGraphConfigs(batch *pgx.Batch, obj *storage.NetworkGraphCo
 	return nil
 }
 
+var copyColsNetworkGraphConfigs = []string{
+	"id",
+	"serialized",
+}
+
 func copyFromNetworkGraphConfigs(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NetworkGraphConfig) error {
 	if len(objs) == 0 {
 		return nil
@@ -121,11 +126,6 @@ func copyFromNetworkGraphConfigs(ctx context.Context, s pgSearch.Deleter, tx *po
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"serialized",
 	}
 
 	idx := 0
@@ -147,7 +147,7 @@ func copyFromNetworkGraphConfigs(ctx context.Context, s pgSearch.Deleter, tx *po
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"network_graph_configs"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"network_graph_configs"}, copyColsNetworkGraphConfigs, inputRows); err != nil {
 		return err
 	}
 

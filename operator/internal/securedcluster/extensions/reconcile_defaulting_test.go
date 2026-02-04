@@ -2,6 +2,7 @@ package extensions
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -37,14 +38,12 @@ type admissionControllerDefaultingTestCase struct {
 }
 
 var (
-	nonEmptyStatus = platform.SecuredClusterStatus{
-		DeployedRelease: &platform.StackRoxRelease{
-			Version: "some-version-string",
-		},
+	postInstallStatus = platform.SecuredClusterStatus{
+		ProductVersion: "some-version-string",
 	}
 )
 
-func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
+func TestReconcileAdmissionControllerDef(t *testing.T) {
 	t.Setenv("ROX_ADMISSION_CONTROLLER_CONFIG", "true")
 	cases := map[string]admissionControllerDefaultingTestCase{
 		"install: empty spec": {
@@ -96,7 +95,7 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 		},
 		"upgrade: annotation true is picked up": {
 			Spec:   platform.SecuredClusterSpec{},
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			Annotations: map[string]string{
 				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Enabled",
 			},
@@ -112,7 +111,7 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 		},
 		"upgrade: annotation false is picked up": {
 			Spec:   platform.SecuredClusterSpec{},
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			Annotations: map[string]string{
 				defaults.FeatureDefaultKeyAdmissionControllerEnforcement: "Disabled",
 			},
@@ -133,7 +132,7 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 					ListenOnUpdates: ptr.To(false),
 				},
 			},
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
@@ -151,7 +150,7 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 					ListenOnUpdates: ptr.To(false),
 				},
 			},
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
@@ -169,7 +168,7 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 					ListenOnUpdates: ptr.To(true),
 				},
 			},
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
 				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
@@ -212,6 +211,9 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 			unstructuredSecuredCluster := securedClusterToUnstructured(t, baseSecuredCluster)
 
 			err := reconcileFeatureDefaults(ctx, client, unstructuredSecuredCluster, logr.Discard())
+			if errors.Is(err, common.ErrorAnnotationsUpdated) {
+				err = reconcileFeatureDefaults(ctx, client, unstructuredSecuredCluster, logr.Discard())
+			}
 			assert.NoError(t, err, "reconcileFeatureDefaults returned error")
 
 			securedClusterFetched := platform.SecuredCluster{}
@@ -246,7 +248,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 		},
 		"upgrade: disabled by default": {
 			Spec:            platform.SecuredClusterSpec{},
-			Status:          nonEmptyStatus,
+			Status:          postInstallStatus,
 			ExpectedDefault: &platform.LocalScannerV4Disabled,
 			ExpectedAnnotations: map[string]string{
 				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
@@ -272,7 +274,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 		},
 		"upgrade: pick up previously persisted default (AutoSense)": {
 			Spec:   platform.SecuredClusterSpec{},
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			Annotations: map[string]string{
 				common.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
 			},
@@ -283,7 +285,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 		},
 		"upgrade: pick up previously persisted default (Disabled)": {
 			Spec:   platform.SecuredClusterSpec{},
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			Annotations: map[string]string{
 				common.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
@@ -294,7 +296,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 		},
 		"upgrade: ignoring bogus persisted default": {
 			Spec:   platform.SecuredClusterSpec{},
-			Status: nonEmptyStatus,
+			Status: postInstallStatus,
 			Annotations: map[string]string{
 				common.FeatureDefaultKeyScannerV4: "foo",
 			},
@@ -346,7 +348,10 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			unstructuredSecuredCluster := securedClusterToUnstructured(t, baseSecuredCluster)
 
 			err := reconcileFeatureDefaults(ctx, client, unstructuredSecuredCluster, logr.Discard())
-			assert.Nil(t, err, "reconcileFeatureDefaults returned error")
+			if errors.Is(err, common.ErrorAnnotationsUpdated) {
+				err = reconcileFeatureDefaults(ctx, client, unstructuredSecuredCluster, logr.Discard())
+			}
+			assert.NoError(t, err, "reconcileFeatureDefaults returned error")
 
 			securedClusterFetched := platform.SecuredCluster{}
 			err = client.Get(ctx, ctrlClient.ObjectKey{Namespace: testutils.TestNamespace, Name: clusterName}, &securedClusterFetched)

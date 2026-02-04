@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+message BaseImage {
+  string id = 1; // @gotags: search:"Base Image Id,store,hidden" sql:"pk,type(uuid)"
+  string base_image_repository_id = 2; // @gotags: sql:"fk(BaseImageRepository:id),allow-null"
+  string repository = 3; // @gotags: search:"Base Image Repository,store"
+  string tag = 4; // @gotags: search:"Base Image Tag,hidden"
+  string manifest_digest = 5; // @gotags: search:"Base Image Manifest Digest,store"
+  google.protobuf.Timestamp discovered_at = 6; // @gotags: search:"Base Image Discovered At,hidden"
+  bool active = 7; // @gotags: search:"Base Image Active,hidden"
+  string first_layer_digest = 8; // @gotags: search:"Base Image First Layer Digest,hidden" sql:"index=btree"
+  repeated BaseImageLayer layers = 9;
+  google.protobuf.Timestamp created = 10;
+}
+
+message BaseImageLayer {
+  string id = 1; // @gotags: sql:"pk,type(uuid)"
+  string base_image_id = 2; // @gotags: sql:"type(uuid),index=category:unique;name:base_image_id_layer"
+  string layer_digest = 3; // @gotags: search:"Base Image Layer Digest,hidden" sql:"index=category:unique;name:base_image_id_layer"
+  int32 index = 4; // @gotags: search:"Base Image Index,hidden"
+}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/imagev2/datastore/store"
 	"github.com/stackrox/rox/central/imagev2/views"
@@ -15,9 +16,12 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -40,10 +44,13 @@ type datastoreImpl struct {
 
 	imageRanker          *ranking.Ranker
 	imageComponentRanker *ranking.Ranker
+
+	imageCVEInfoDS imageCVEInfoDS.DataStore
 }
 
 func newDatastoreImpl(storage store.Store, risks riskDS.DataStore,
-	imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) *datastoreImpl {
+	imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker,
+	imageCVEInfo imageCVEInfoDS.DataStore) *datastoreImpl {
 	ds := &datastoreImpl{
 		storage: storage,
 
@@ -51,6 +58,8 @@ func newDatastoreImpl(storage store.Store, risks riskDS.DataStore,
 
 		imageRanker:          imageRanker,
 		imageComponentRanker: imageComponentRanker,
+
+		imageCVEInfoDS: imageCVEInfo,
 
 		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
@@ -219,6 +228,41 @@ func (ds *datastoreImpl) GetImagesBatch(ctx context.Context, ids []string) ([]*s
 	return imgs, nil
 }
 
+// GetImageNames returns all image names with the same digest.
+func (ds *datastoreImpl) GetImageNames(ctx context.Context, digest string) ([]*storage.ImageName, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ImageV2", "GetImageNames")
+
+	if digest == "" {
+		return nil, nil
+	}
+
+	// Query all images with this digest
+	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, digest).
+		ForSearchResults(search.ImageRegistry, search.ImageRemote, search.ImageTag, search.ImageName).
+		ProtoQuery()
+	results, err := ds.Search(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	// Collect all image names
+	allNames := make([]*storage.ImageName, 0, len(results))
+	for _, res := range results {
+		if res.FieldValues != nil {
+			if nameVal, ok := res.FieldValues[strings.ToLower(search.ImageName.String())]; ok {
+				allNames = append(allNames, &storage.ImageName{
+					Registry: res.FieldValues[strings.ToLower(search.ImageRegistry.String())],
+					Remote:   res.FieldValues[strings.ToLower(search.ImageRemote.String())],
+					Tag:      res.FieldValues[strings.ToLower(search.ImageTag.String())],
+					FullName: nameVal,
+				})
+			}
+		}
+	}
+
+	return allNames, nil
+}
+
 // UpsertImage dedupes the image with the underlying storage and adds the image to the index.
 func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.ImageV2) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ImageV2", "UpsertImage")
@@ -235,6 +279,20 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.ImageV2
 
 	ds.keyedMutex.Lock(image.GetId())
 	defer ds.keyedMutex.Unlock(image.GetId())
+
+	if features.CVEFixTimestampCriteria.Enabled() {
+		// Populate the ImageCVEInfo lookup table with CVE timing metadata
+		if err := ds.upsertImageCVEInfos(ctx, image); err != nil {
+			log.Warnf("Failed to upsert ImageCVEInfo: %v", err)
+			// Non-fatal, continue with image upsert
+		}
+
+		// Enrich the CVEs with accurate timestamps from lookup table
+		if err := ds.enrichCVEsFromImageCVEInfo(ctx, image); err != nil {
+			log.Warnf("Failed to enrich CVEs from ImageCVEInfo: %v", err)
+			// Non-fatal, continue with image upsert
+		}
+	}
 
 	ds.updateComponentRisk(image)
 	utils.FillScanStatsV2(image)
@@ -339,6 +397,85 @@ func (ds *datastoreImpl) updateComponentRisk(image *storage.ImageV2) {
 		componentID := scancomponent.ComponentIDV2(component, image.GetId(), index)
 		component.RiskScore = ds.imageComponentRanker.GetScoreForID(componentID)
 	}
+}
+
+// upsertImageCVEInfos populates the ImageCVEInfo lookup table with CVE timing metadata.
+func (ds *datastoreImpl) upsertImageCVEInfos(ctx context.Context, image *storage.ImageV2) error {
+	if !features.CVEFixTimestampCriteria.Enabled() {
+		return nil
+	}
+
+	infos := make([]*storage.ImageCVEInfo, 0)
+	now := protocompat.TimestampNow()
+
+	for _, component := range image.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			// Determine fix available timestamp: use scanner-provided value if available,
+			// otherwise fabricate from scan time if the CVE is fixable (has a fix version).
+			// This handles non-Red Hat data sources that don't provide fix timestamps.
+			fixAvailableTimestamp := vuln.GetFixAvailableTimestamp()
+			if fixAvailableTimestamp == nil && vuln.GetFixedBy() != "" {
+				fixAvailableTimestamp = now
+			}
+
+			info := &storage.ImageCVEInfo{
+				Id:                    cve.ImageCVEInfoID(vuln.GetCve(), component.GetName(), vuln.GetDatasource()),
+				Cve:                   vuln.GetCve(),
+				FixAvailableTimestamp: fixAvailableTimestamp,
+				FirstSystemOccurrence: now, // Smart upsert in ImageCVEInfo datastore preserves existing
+			}
+			infos = append(infos, info)
+		}
+	}
+
+	return ds.imageCVEInfoDS.UpsertMany(ctx, infos)
+}
+
+// enrichCVEsFromImageCVEInfo enriches the image's CVEs with accurate timestamps from the lookup table.
+func (ds *datastoreImpl) enrichCVEsFromImageCVEInfo(ctx context.Context, image *storage.ImageV2) error {
+	if !features.CVEFixTimestampCriteria.Enabled() {
+		return nil
+	}
+
+	// Collect all IDs
+	ids := make([]string, 0)
+	for _, component := range image.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			ids = append(ids, cve.ImageCVEInfoID(vuln.GetCve(), component.GetName(), vuln.GetDatasource()))
+		}
+	}
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	// Batch fetch
+	infos, err := ds.imageCVEInfoDS.GetBatch(ctx, ids)
+	if err != nil {
+		return err
+	}
+
+	// Build lookup map
+	infoMap := make(map[string]*storage.ImageCVEInfo)
+	for _, info := range infos {
+		infoMap[info.GetId()] = info
+	}
+
+	// Enrich CVEs and blank out datasource after using it
+	for _, component := range image.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			id := cve.ImageCVEInfoID(vuln.GetCve(), component.GetName(), vuln.GetDatasource())
+			if info, ok := infoMap[id]; ok {
+				if vuln.GetFixAvailableTimestamp() == nil && vuln.GetFixedBy() != "" {
+					// Set the fix timestamp if it was not provided by the scanner
+					vuln.FixAvailableTimestamp = info.GetFixAvailableTimestamp()
+				}
+				vuln.FirstSystemOccurrence = info.GetFirstSystemOccurrence()
+			}
+		}
+	}
+
+	return nil
 }
 
 // ImageSearchResultConverter implements search.SearchResultConverter for image search results.

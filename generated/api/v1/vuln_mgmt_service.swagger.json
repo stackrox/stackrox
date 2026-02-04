@@ -291,6 +291,29 @@
         }
       }
     },
+    "storageBaseImageInfo": {
+      "type": "object",
+      "properties": {
+        "baseImageId": {
+          "type": "string"
+        },
+        "baseImageFullName": {
+          "type": "string"
+        },
+        "baseImageDigest": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "maxLayerIndex": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Index of the last base image layer, taking into account\n\"empty layers\" (aka. metadata history without SHA)."
+        }
+      }
+    },
     "storageCVSSScore": {
       "type": "object",
       "properties": {
@@ -910,6 +933,11 @@
           "format": "date-time",
           "description": "Time when the CVE was first seen in this image."
         },
+        "fixAvailableTimestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the fix for this CVE was made available according to the sources\nor the timestamp of the first scan after this field was introduced\nwhich discovered this CVE as fixable, if it is."
+        },
         "severity": {
           "$ref": "#/definitions/storageVulnerabilitySeverity"
         },
@@ -930,9 +958,13 @@
         },
         "epss": {
           "$ref": "#/definitions/storageEPSS"
+        },
+        "datasource": {
+          "type": "string",
+          "title": "datasource is for internal use only"
         }
       },
-      "title": "Next Tag: 25"
+      "title": "Next Tag: 27"
     },
     "storageEmbeddedVulnerabilityScoreVersion": {
       "type": "string",
@@ -1011,6 +1043,13 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageImageNote"
+          }
+        },
+        "baseImageInfo": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageBaseImageInfo"
           }
         }
       },

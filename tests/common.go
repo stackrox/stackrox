@@ -5,22 +5,22 @@ package tests
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math"
-	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/hashicorp/go-retryablehttp"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/docker/config"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/retryablehttp"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
@@ -57,10 +57,27 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
-
 	sensorPodLabels = map[string]string{"app": "sensor"}
 )
+
+// testutilsLogger adapts testutils.T to retryablehttp.Logger interface.
+//
+// WHY THIS EXISTS (and why it's unfortunate):
+// The retryablehttp library requires a logger implementing its Logger interface with Printf method.
+// Go's *testing.T has Logf but NOT Printf (different method names, same functionality).
+// We cannot add Printf to testutils.T because that would break compatibility with *testing.T,
+// which is used throughout the codebase (e.g., centralgrpc.GRPCConnectionToCentral(t testutils.T)).
+//
+// CLEANER ALTERNATIVE:
+// Accept *testing.T directly in helper functions and create testutils.T wrappers locally where needed
+// (specifically for the retry mechanism). This would avoid the interface constraint propagating everywhere.
+// However, this would be a larger refactor affecting many test helper functions.
+//
+// CURRENT COMPROMISE:
+// Use this tiny adapter ONLY where retryablehttp requires it. Everywhere else uses testutils.T naturally.
+type testutilsLogger struct{ testutils.T }
+
+func (l testutilsLogger) Printf(format string, v ...interface{}) { l.Logf(format, v...) }
 
 // logf logs using the testing logger, prefixing a high-resolution timestamp.
 // Using testing.T.Logf means that the output is hidden unless the test fails or verbose logging is enabled with -v.
@@ -114,7 +131,7 @@ func retrieveDeployments(service v1.DeploymentServiceClient, deps []*storage.Lis
 	return deployments, nil
 }
 
-func waitForDeploymentCount(t testutils.T, query string, count int) {
+func waitForDeploymentCountInCentral(t testutils.T, query string, count int) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	service := v1.NewDeploymentServiceClient(conn)
@@ -132,7 +149,7 @@ func waitForDeploymentCount(t testutils.T, query string, count int) {
 			deploymentCount, err := service.CountDeployments(ctx, &v1.RawQuery{Query: query})
 			cancel()
 			if err != nil {
-				log.Errorf("Error listing deployments: %s", err)
+				t.Logf("Error listing deployments: %s", err)
 				continue
 			}
 			if deploymentCount.GetCount() == int32(count) {
@@ -146,7 +163,92 @@ func waitForDeploymentCount(t testutils.T, query string, count int) {
 
 }
 
-func waitForDeployment(t testutils.T, deploymentName string) {
+func waitForDeploymentReadyInK8s(t testutils.T, deploymentName, namespace string) {
+	client := createK8sClient(t)
+
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	timer := time.NewTimer(waitTimeout)
+	defer timer.Stop()
+
+	ctx := context.Background()
+	t.Logf("Waiting for deployment %q in namespace %q to be ready in Kubernetes", deploymentName, namespace)
+
+	for {
+		select {
+		case <-ticker.C:
+			deploy, err := client.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metaV1.GetOptions{})
+			if err != nil {
+				if apiErrors.IsNotFound(err) {
+					t.Logf("Deployment %q in namespace %q not found yet, waiting...", deploymentName, namespace)
+					continue
+				}
+				t.Logf("Error getting deployment %q from namespace %q: %v", deploymentName, namespace, err)
+				continue
+			}
+
+			// Check if generation matches observed generation.
+			// Practical Example: generation: 5, observedGeneration: 4
+			// This tells you: "Someone just updated the deployment (5th change),
+			// but the controller is still working on the 4th revision—be patient, reconciliation is in progress."
+			// Without these numbers, you'd just see repeated "NOT ready" messages without understanding the root cause.
+			if deploy.GetGeneration() != deploy.Status.ObservedGeneration {
+				t.Logf("Deployment %q in namespace %q NOT ready: generation %d != observed generation %d",
+					deploymentName, namespace, deploy.GetGeneration(), deploy.Status.ObservedGeneration)
+				continue
+			}
+
+			// Check if all replicas are ready
+			if deploy.Status.Replicas == 0 || deploy.Status.Replicas != deploy.Status.ReadyReplicas {
+				t.Logf("Deployment %q in namespace %q NOT ready: %d/%d ready replicas",
+					deploymentName, namespace, deploy.Status.ReadyReplicas, deploy.Status.Replicas)
+				continue
+			}
+
+			// Ensure all pods are from the current generation (no old pods during rollout)
+			if deploy.Status.UpdatedReplicas > 0 && deploy.Status.UpdatedReplicas != deploy.Status.Replicas {
+				t.Logf("Deployment %q in namespace %q NOT ready: rollout incomplete (%d/%d updated replicas)",
+					deploymentName, namespace, deploy.Status.UpdatedReplicas, deploy.Status.Replicas)
+				continue
+			}
+
+			// Check conditions for additional insights
+			printDeploymentConditions(t, deploy.Status.Conditions, deploymentName, namespace)
+
+			t.Logf("Deployment %q in namespace %q READY in Kubernetes (%d/%d ready replicas)",
+				deploymentName, namespace, deploy.Status.ReadyReplicas, deploy.Status.Replicas)
+			return
+		case <-timer.C:
+			// Get final status for error message
+			deploy, err := client.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metaV1.GetOptions{})
+			if err != nil {
+				require.NoError(t, err, "Timed out waiting for deployment %q in namespace %q. Failed to get final status: %v", deploymentName, namespace, err)
+			}
+			require.Failf(t, "Timed out waiting for deployment in Kubernetes",
+				"Deployment %q in namespace %q did not become ready within %v.\nStatus: Replicas=%d, ReadyReplicas=%d, UpdatedReplicas=%d, AvailableReplicas=%d, UnavailableReplicas=%d\nGeneration=%d, ObservedGeneration=%d",
+				deploymentName, namespace, waitTimeout,
+				deploy.Status.Replicas, deploy.Status.ReadyReplicas, deploy.Status.UpdatedReplicas,
+				deploy.Status.AvailableReplicas, deploy.Status.UnavailableReplicas,
+				deploy.GetGeneration(), deploy.Status.ObservedGeneration)
+		}
+	}
+}
+
+func printDeploymentConditions(t testutils.T, conditions []appsV1.DeploymentCondition, deploymentName, namespace string) {
+	for _, cond := range conditions {
+		if cond.Type == appsV1.DeploymentAvailable && cond.Status != coreV1.ConditionTrue {
+			t.Logf("Deployment %q in namespace %q NOT ready: Available condition is %s: %s",
+				deploymentName, namespace, cond.Status, cond.Message)
+		}
+		if cond.Type == appsV1.DeploymentProgressing && cond.Status != coreV1.ConditionTrue {
+			t.Logf("Deployment %q in namespace %q NOT ready: Progressing condition is %s: %s",
+				deploymentName, namespace, cond.Status, cond.Message)
+		}
+	}
+}
+
+func waitForDeploymentInCentral(t testutils.T, deploymentName string) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	service := v1.NewDeploymentServiceClient(conn)
@@ -169,13 +271,13 @@ func waitForDeployment(t testutils.T, deploymentName string) {
 			)
 			cancel()
 			if err != nil {
-				log.Errorf("Error listing deployments: %s", err)
+				t.Logf("Error listing deployments: %s", err)
 				continue
 			}
 
 			deployments, err := retrieveDeployments(service, listDeployments.GetDeployments())
 			if err != nil {
-				log.Errorf("Error retrieving deployments: %s", err)
+				t.Logf("Error retrieving deployments: %s", err)
 				continue
 			}
 
@@ -214,7 +316,7 @@ func waitForTermination(t testutils.T, deploymentName string) {
 			})
 			cancel()
 			if err != nil {
-				log.Error(err)
+				t.Logf("Error listing deployments: %v", err)
 				continue
 			}
 
@@ -238,24 +340,35 @@ func getPodFromFile(t testutils.T, path string) *coreV1.Pod {
 	return &pod
 }
 
-func setupDeployment(t *testing.T, image, deploymentName string) {
-	setupDeploymentWithReplicas(t, image, deploymentName, 1)
+func setupDeploymentInNamespace(t *testing.T, image, deploymentName, namespace string) {
+	setupDeploymentWithReplicasInNamespace(t, image, deploymentName, 1, namespace)
 }
 
 func setupDeploymentWithReplicas(t *testing.T, image, deploymentName string, replicas int) {
-	setupDeploymentNoWait(t, image, deploymentName, replicas)
-	waitForDeployment(t, deploymentName)
+	setupDeploymentWithReplicasInNamespace(t, image, deploymentName, replicas, "default")
+}
+
+func setupDeploymentWithReplicasInNamespace(t *testing.T, image, deploymentName string, replicas int, namespace string) {
+	setupDeploymentNoWaitInNamespace(t, image, deploymentName, replicas, namespace)
+	waitForDeploymentReadyInK8s(t, deploymentName, namespace)
+	waitForDeploymentInCentral(t, deploymentName)
 }
 
 func setupDeploymentNoWait(t *testing.T, image, deploymentName string, replicas int) {
-	createDeploymentViaAPI(t, image, deploymentName, replicas)
+	setupDeploymentNoWaitInNamespace(t, image, deploymentName, replicas, "default")
+}
+
+func setupDeploymentNoWaitInNamespace(t *testing.T, image, deploymentName string, replicas int, namespace string) {
+	require.NoError(t, createDeploymentViaAPI(t, image, deploymentName, replicas, namespace))
 }
 
 // createDeploymentViaAPI creates a Kubernetes deployment using the K8s API client.
 // Mirrors qa-tests-backend/src/main/groovy/orchestratormanager/Kubernetes.groovy:2316-2318
 // to support IMAGE_PULL_POLICY_FOR_QUAY_IO for prefetched images.
-func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas int) {
+func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas int, namespace string) error {
 	client := createK8sClient(t)
+
+	t.Logf("Creating deployment %q in namespace %q with image %q and %d replicas", deploymentName, namespace, image, replicas)
 
 	// Determine imagePullPolicy - allow override ONLY for actual quay.io/ images.
 	// NOTE: This intentionally does NOT apply to mirrored images (e.g., icsp.invalid, idms.invalid)
@@ -263,13 +376,17 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 	pullPolicy := coreV1.PullIfNotPresent
 	if policy := os.Getenv("IMAGE_PULL_POLICY_FOR_QUAY_IO"); policy != "" && strings.HasPrefix(image, "quay.io/") {
 		pullPolicy = coreV1.PullPolicy(policy)
-		log.Infof("Setting imagePullPolicy=%s for quay.io image (IMAGE_PULL_POLICY_FOR_QUAY_IO)", policy)
+		t.Logf("Setting imagePullPolicy=%s for quay.io image (IMAGE_PULL_POLICY_FOR_QUAY_IO)", policy)
 	}
 
+	// Build deployment object
 	deployment := &appsV1.Deployment{
 		ObjectMeta: metaV1.ObjectMeta{
-			Name:   deploymentName,
-			Labels: map[string]string{"app": deploymentName},
+			Name:      deploymentName,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app": deploymentName,
+			},
 		},
 		Spec: appsV1.DeploymentSpec{
 			Replicas: pointers.Int32(int32(replicas)),
@@ -292,12 +409,56 @@ func createDeploymentViaAPI(t *testing.T, image, deploymentName string, replicas
 		},
 	}
 
+	t.Logf("Deployment object created: name=%s, namespace=%s, replicas=%d, image=%s, labels=%v",
+		deployment.Name, deployment.Namespace, *deployment.Spec.Replicas, image, deployment.Labels)
+
+	// Create the deployment with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	logf(t, "Creating deployment %q with image %q in namespace %q", deploymentName, image, "default")
-	_, err := client.AppsV1().Deployments("default").Create(ctx, deployment, metaV1.CreateOptions{})
-	require.NoError(t, err, "Failed to create deployment %q", deploymentName)
+	t.Logf("Calling K8s API to create deployment %q in namespace %q...", deploymentName, namespace)
+	createdDeployment, err := client.AppsV1().Deployments(namespace).Create(ctx, deployment, metaV1.CreateOptions{})
+
+	if err != nil {
+		// Detailed error logging
+		if apiErrors.IsAlreadyExists(err) {
+			t.Logf("ERROR: Deployment %q already exists in namespace %q: %v", deploymentName, namespace, err)
+		} else if apiErrors.IsInvalid(err) {
+			t.Logf("ERROR: Deployment %q spec is invalid: %v", deploymentName, err)
+		} else if apiErrors.IsForbidden(err) {
+			t.Logf("ERROR: Permission denied creating deployment %q in namespace %q: %v", deploymentName, namespace, err)
+		} else if apiErrors.IsTimeout(err) {
+			t.Logf("ERROR: Timeout creating deployment %q in namespace %q after 30s: %v", deploymentName, namespace, err)
+		} else if apiErrors.IsServerTimeout(err) {
+			t.Logf("ERROR: Server timeout creating deployment %q in namespace %q: %v", deploymentName, namespace, err)
+		} else if apiErrors.IsServiceUnavailable(err) {
+			t.Logf("ERROR: K8s API service unavailable when creating deployment %q: %v", deploymentName, err)
+		} else {
+			t.Logf("ERROR: Unexpected error creating deployment %q in namespace %q: %v (type: %T)", deploymentName, namespace, err, err)
+		}
+		// Log deployment conditions only if deployment was partially created (useful for debugging failures)
+		if createdDeployment != nil && len(createdDeployment.Status.Conditions) > 0 {
+			t.Logf("Deployment %q has %d status conditions:", deploymentName, len(createdDeployment.Status.Conditions))
+			for i, cond := range createdDeployment.Status.Conditions {
+				t.Logf("  Condition[%d]: Type=%s, Status=%s, Reason=%s, Message=%q, LastUpdateTime=%v",
+					i, cond.Type, cond.Status, cond.Reason, cond.Message, cond.LastUpdateTime)
+			}
+		}
+		return fmt.Errorf("failed to create deployment %q: %w", deploymentName, err)
+	}
+
+	t.Logf("Deployment %q successfully created in namespace %q", deploymentName, namespace)
+	t.Logf("Deployment UID: %s, ResourceVersion: %s, Generation: %d",
+		createdDeployment.UID, createdDeployment.ResourceVersion, createdDeployment.Generation)
+	t.Logf("Deployment status: Replicas=%d, UpdatedReplicas=%d, ReadyReplicas=%d, AvailableReplicas=%d, UnavailableReplicas=%d",
+		createdDeployment.Status.Replicas,
+		createdDeployment.Status.UpdatedReplicas,
+		createdDeployment.Status.ReadyReplicas,
+		createdDeployment.Status.AvailableReplicas,
+		createdDeployment.Status.UnavailableReplicas)
+
+	t.Logf("Deployment %q creation completed successfully", deploymentName)
+	return nil
 }
 
 func setImage(t *testing.T, deploymentName string, deploymentID string, containerName string, image string) {
@@ -310,7 +471,7 @@ func setImage(t *testing.T, deploymentName string, deploymentID string, containe
 	waitForCondition(t, func() bool {
 		deployment, err := retrieveDeployment(service, deploymentID)
 		if err != nil {
-			log.Error(err)
+			t.Logf("Error retrieving deployment: %v", err)
 			return false
 		}
 		containers := deployment.GetContainers()
@@ -319,7 +480,7 @@ func setImage(t *testing.T, deploymentName string, deploymentID string, containe
 				return false
 			}
 		}
-		log.Infof("Image set to %s for deployment %s(%s) container %s", image, deploymentName, deploymentID, containerName)
+		t.Logf("Image set to %s for deployment %s(%s) container %s", image, deploymentName, deploymentID, containerName)
 		return true
 	}, "image updated", time.Minute, 5*time.Second)
 }
@@ -408,44 +569,75 @@ func teardownPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 	waitForTermination(t, pod.GetName())
 }
 
-func teardownDeployment(t *testing.T, deploymentName string) {
+// teardownDeploymentInternal handles deployment deletion with configurable verification.
+// When waitForCompletion is true, it retries deletion and waits for both K8s and Central cleanup.
+// When false, it only issues the delete command without waiting or failing on errors.
+func teardownDeploymentInternal(t *testing.T, deploymentName string, namespace string, waitForCompletion bool) {
 	client := createK8sClient(t)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	// Set explicit propagation policy to ensure ReplicaSets/Pods are deleted
 	deletePolicy := metaV1.DeletePropagationForeground
 	gracePeriod := int64(1)
 
-	logf(t, "Deleting deployment %q via API with propagation policy %s", deploymentName, deletePolicy)
-	err := client.AppsV1().Deployments("default").Delete(ctx, deploymentName, metaV1.DeleteOptions{
-		GracePeriodSeconds: &gracePeriod,
-		PropagationPolicy:  &deletePolicy,
-	})
+	deleteFunc := func() error {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
 
-	if err != nil {
-		if apiErrors.IsNotFound(err) {
-			logf(t, "Deployment %q not found in Kubernetes (already deleted)", deploymentName)
-		} else {
-			require.NoError(t, err, "Failed to delete deployment %q", deploymentName)
+		logf(t, "Deleting deployment %q in namespace %q via API with propagation policy %s", deploymentName, namespace, deletePolicy)
+		err := client.AppsV1().Deployments(namespace).Delete(ctx, deploymentName, metaV1.DeleteOptions{
+			GracePeriodSeconds: &gracePeriod,
+			PropagationPolicy:  &deletePolicy,
+		})
+
+		if err != nil {
+			if apiErrors.IsNotFound(err) {
+				logf(t, "Deployment %q not found in namespace %q (already deleted)", deploymentName, namespace)
+				return nil
+			}
+			return fmt.Errorf("failed to delete deployment %q in namespace %q: %w", deploymentName, namespace, err)
 		}
-	} else {
-		logf(t, "Successfully initiated deletion of deployment %q", deploymentName)
+		logf(t, "Successfully initiated deletion of deployment %q in namespace %q", deploymentName, namespace)
+		return nil
 	}
 
-	// Verify deployment is actually deleted from Kubernetes
-	waitForK8sDeploymentDeletion(t, client, deploymentName)
+	if waitForCompletion {
+		// Retry the delete + wait sequence if the deployment doesn't delete within 15 seconds
+		err := retry.WithRetry(
+			func() error {
+				if err := deleteFunc(); err != nil {
+					return retry.MakeRetryable(err)
+				}
+				// Verify deployment is actually deleted from Kubernetes
+				return waitForK8sDeploymentDeletion(t, client, deploymentName, namespace, 15*time.Second)
+			},
+			retry.Tries(4),              // Try up to 4 times (1 initial + 3 retries)
+			retry.OnlyRetryableErrors(), // Only retry on retriable errors
+			retry.BetweenAttempts(func(int) {
+				logf(t, "Retrying deployment %q deletion in namespace %q", deploymentName, namespace)
+			}),
+		)
+		require.NoError(t, err, "Failed to delete deployment %q in namespace %q after retries", deploymentName, namespace)
 
-	// Wait for Central to recognize the deletion
-	waitForTermination(t, deploymentName)
+		// Wait for Central to recognize the deletion
+		waitForTermination(t, deploymentName)
+	} else {
+		// Fire and forget - don't fail the test if deletion fails
+		if err := deleteFunc(); err != nil {
+			logf(t, "Deployment %q deletion in namespace %q failed (non-fatal): %v", deploymentName, namespace, err)
+		}
+	}
 }
 
-// waitForK8sDeploymentDeletion polls Kubernetes to verify the deployment is actually gone
-func waitForK8sDeploymentDeletion(t *testing.T, client kubernetes.Interface, deploymentName string) {
+func teardownDeployment(t *testing.T, deploymentName string, namespace string) {
+	teardownDeploymentInternal(t, deploymentName, namespace, true)
+}
+
+// waitForK8sDeploymentDeletion polls Kubernetes to verify the deployment is actually gone.
+// Returns an error if the deployment still exists after the timeout, which triggers a retry
+// of the entire delete operation.
+func waitForK8sDeploymentDeletion(t *testing.T, client kubernetes.Interface, deploymentName string, namespace string, timeout time.Duration) error {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	timer := time.NewTimer(30 * time.Second)
+	timer := time.NewTimer(timeout)
 	defer timer.Stop()
 
 	attempt := 0
@@ -454,31 +646,28 @@ func waitForK8sDeploymentDeletion(t *testing.T, client kubernetes.Interface, dep
 		case <-ticker.C:
 			attempt++
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			_, err := client.AppsV1().Deployments("default").Get(ctx, deploymentName, metaV1.GetOptions{})
+			_, err := client.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metaV1.GetOptions{})
 			cancel()
 
 			if apiErrors.IsNotFound(err) {
-				logf(t, "Verified: deployment %q deleted from Kubernetes after %d attempt(s)", deploymentName, attempt)
-				return
+				logf(t, "Verified: deployment %q deleted from namespace %q after %d attempt(s)", deploymentName, namespace, attempt)
+				return nil
 			}
 			if err != nil {
-				logf(t, "Error checking deployment %q status (attempt %d): %v", deploymentName, attempt, err)
+				logf(t, "Error checking deployment %q status in namespace %q (attempt %d): %v", deploymentName, namespace, attempt, err)
 				continue
 			}
-			logf(t, "Deployment %q still exists in Kubernetes (attempt %d)", deploymentName, attempt)
+			logf(t, "Deployment %q still exists in namespace %q (attempt %d)", deploymentName, namespace, attempt)
 		case <-timer.C:
-			t.Fatalf("Timeout: deployment %s still exists in Kubernetes after 30 seconds", deploymentName)
+			return retry.MakeRetryable(fmt.Errorf("deployment %s in namespace %s still exists in Kubernetes after %v", deploymentName, namespace, timeout))
 		}
 	}
 }
 
-func teardownDeploymentWithoutCheck(t *testing.T, deploymentName string) {
+func teardownDeploymentWithoutCheck(t *testing.T, deploymentName string, namespace string) {
 	// In cases where deployment will not impact other tests,
 	// we can trigger deletion and assume that it will be deleted eventually.
-	cmd := exec.Command(`kubectl`, `delete`, `deployment`, deploymentName, `--ignore-not-found=true`, `--grace-period=1`)
-	if err := cmd.Run(); err != nil {
-		logf(t, "Deleting deployment %q failed: %v", deploymentName, err)
-	}
+	teardownDeploymentInternal(t, deploymentName, namespace, false)
 }
 
 func getConfig(t testutils.T) *rest.Config {
@@ -488,54 +677,31 @@ func getConfig(t testutils.T) *rest.Config {
 	restCfg, err := clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{}).ClientConfig()
 	require.NoError(t, err, "could not get REST client config from kubernetes config")
 
+	configureRetryableTransport(t, restCfg)
+
 	return restCfg
 }
 
-func createK8sClient(t T) kubernetes.Interface {
-	return createK8sClientWithConfig(t, getConfig(t))
-}
-
-func createK8sClientWithConfig(t T, restCfg *rest.Config) kubernetes.Interface {
-	// Configure retryable HTTP client for network resilience
-	retryClient := retryablehttp.NewClient()
-	retryClient.RetryMax = 3
-	retryClient.RetryWaitMin = 500 * time.Millisecond
-	retryClient.RetryWaitMax = 2 * time.Second
-	retryClient.Logger = logWrapper{t: t}
+// configureRetryableTransport configures a rest.Config to use retryable HTTP client
+// for network resilience. This adds automatic retry logic for transient network errors.
+func configureRetryableTransport(t testutils.T, restCfg *rest.Config) {
 	if restCfg.Timeout == 0 {
 		restCfg.Timeout = 30 * time.Second
 	}
-	// Set retryable timeout to 90% of rest config timeout to allow retries
-	retryClient.HTTPClient.Timeout = (9 * restCfg.Timeout) / 10
+	retryablehttp.ConfigureRESTConfig(restCfg,
+		retryablehttp.WithLogger(&testutilsLogger{t}),
+	)
+}
 
-	// Wrap the transport with retryable client
-	oldWrapTransport := restCfg.WrapTransport
-	restCfg.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
-		if oldWrapTransport != nil {
-			rt = oldWrapTransport(rt)
-		}
+func createK8sClient(t testutils.T) kubernetes.Interface {
+	return createK8sClientWithConfig(t, getConfig(t))
+}
 
-		retryClient.HTTPClient.Transport = rt
-		return retryClient.StandardClient().Transport
-	}
-
+func createK8sClientWithConfig(t testutils.T, restCfg *rest.Config) kubernetes.Interface {
 	k8sClient, err := kubernetes.NewForConfig(restCfg)
 	require.NoError(t, err, "creating Kubernetes client from REST config")
 
 	return k8sClient
-}
-
-type T interface {
-	testutils.T
-	Logf(string, ...interface{})
-}
-
-type logWrapper struct {
-	t T
-}
-
-func (l logWrapper) Printf(format string, values ...interface{}) {
-	l.t.Logf(format, values...)
 }
 
 func waitForCondition(t testutils.T, condition func() bool, desc string, timeout time.Duration, frequency time.Duration) {
@@ -777,6 +943,21 @@ func (ks *KubernetesSuite) ensureSecretExists(ctx context.Context, namespace str
 		}
 		ks.Require().NoError(err, "cannot create secret %q in namespace %q", name, namespace)
 	}
+}
+
+// ensureQuayImagePullSecretExists creates an image pull secret for quay.io using credentials from
+// REGISTRY_USERNAME and REGISTRY_PASSWORD environment variables. This is a common pattern across e2e tests.
+func (ks *KubernetesSuite) ensureQuayImagePullSecretExists(ctx context.Context, namespace string, secretName string) {
+	configBytes, err := json.Marshal(config.DockerConfigJSON{
+		Auths: map[string]config.DockerConfigEntry{
+			"https://quay.io": {
+				Username: mustGetEnv(ks.T(), "REGISTRY_USERNAME"),
+				Password: mustGetEnv(ks.T(), "REGISTRY_PASSWORD"),
+			},
+		},
+	})
+	ks.Require().NoError(err, "cannot serialize docker config for image pull secret %q in namespace %q", secretName, namespace)
+	ks.ensureSecretExists(ctx, namespace, secretName, coreV1.SecretTypeDockerConfigJson, map[string][]byte{coreV1.DockerConfigJsonKey: configBytes})
 }
 
 // ensureConfigMapExists creates a k8s ConfigMap object. If one exists, it makes sure the data matches.

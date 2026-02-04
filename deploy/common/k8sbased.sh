@@ -865,6 +865,11 @@ function launch_sensor {
         extra_helm_config+=(--set "collector.priorityClassName=$collector_priority_class_name")
       fi
 
+      if [[ "${SFA_AGENT:-false}" == "true" ]]; then
+        echo "Enable Sensitive File Activity agent"
+        extra_helm_config+=(--set "collector.sfaEnabled=true")
+      fi
+
       if [[ -n "$CI" ]]; then
         echo "Linting Helm chart ${sensor_helm_chart}".
         helm lint --set ca.cert=PLACEHOLDER_FOR_LINTING "${sensor_helm_chart}"

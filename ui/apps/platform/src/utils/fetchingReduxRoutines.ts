@@ -1,12 +1,12 @@
-export enum FetchingActionState {
-    REQUEST = 'REQUEST',
-    SUCCESS = 'SUCCESS',
-    FAILURE = 'FAILURE',
-}
+export const FetchingActionState = {
+    REQUEST: 'REQUEST',
+    SUCCESS: 'SUCCESS',
+    FAILURE: 'FAILURE',
+} as const;
 
-export type FetchingActionTypesMap = {
-    [prop in FetchingActionState]: string;
-};
+type FetchingActionStateKey = keyof typeof FetchingActionState;
+
+export type FetchingActionTypesMap = Record<FetchingActionStateKey, string>;
 
 /**
  * Creates a map of action types with values that use the given prefix.
@@ -16,15 +16,15 @@ export type FetchingActionTypesMap = {
  */
 export function createFetchingActionTypes<T extends string>(prefix: T): FetchingActionTypesMap {
     return {
-        REQUEST: `${prefix}_${FetchingActionState.REQUEST}`,
-        SUCCESS: `${prefix}_${FetchingActionState.SUCCESS}`,
-        FAILURE: `${prefix}_${FetchingActionState.FAILURE}`,
+        REQUEST: `${prefix}_REQUEST`,
+        SUCCESS: `${prefix}_SUCCESS`,
+        FAILURE: `${prefix}_FAILURE`,
     };
 }
 
 export type ActionTypeInfo = {
     prefix: string;
-    fetchingState: FetchingActionState;
+    fetchingState: FetchingActionStateKey;
 };
 
 /**

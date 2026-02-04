@@ -19,6 +19,7 @@ import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useMan
 import type { ManagedColumns } from 'hooks/useManagedColumns';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import usePermissions from 'hooks/usePermissions';
+import type { GenerateSbomImageParams } from 'services/ImageSbomService';
 import GenerateSbomModal, {
     getSbomGenerationStatusMessage,
 } from '../../components/GenerateSbomModal';
@@ -75,6 +76,57 @@ export const imageListQuery = gql`
     query getImageList($query: String, $pagination: Pagination) {
         images(query: $query, pagination: $pagination) {
             id
+            digest: id
+            name {
+                registry
+                remote
+                tag
+                fullName
+            }
+            imageCVECountBySeverity(query: $query) {
+                critical {
+                    total
+                }
+                important {
+                    total
+                }
+                moderate {
+                    total
+                }
+                low {
+                    total
+                }
+                unknown {
+                    total
+                }
+            }
+            operatingSystem
+            deploymentCount(query: $query)
+            watchStatus
+            metadata {
+                v1 {
+                    created
+                }
+            }
+            scanTime
+            scanNotes
+            notes
+            signatureVerificationData {
+                results {
+                    status
+                    verifiedImageReferences
+                    verifierId
+                }
+            }
+        }
+    }
+`;
+
+export const imageV2ListQuery = gql`
+    query getImageList($query: String, $pagination: Pagination) {
+        images: imageV2s(query: $query, pagination: $pagination) {
+            id
+            digest
             name {
                 registry
                 remote
@@ -121,7 +173,8 @@ export const imageListQuery = gql`
 `;
 
 export type Image = {
-    id: string;
+    id: string; // UUID for linking
+    digest?: string; // For ImageV2, the actual SHA digest for display
     name: {
         registry: string;
         remote: string;
@@ -181,7 +234,7 @@ function ImageOverviewTable({
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
 
     const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
-    const [sbomTargetImage, setSbomTargetImage] = useState<string>();
+    const [sbomTargetImage, setSbomTargetImage] = useState<GenerateSbomImageParams>();
 
     return (
         <Table borders={false} variant="compact">
@@ -275,7 +328,8 @@ function ImageOverviewTable({
                         }
 
                         if (hasWriteAccessForImage) {
-                            const isAriaDisabled = !isScannerV4Enabled || hasScanMessage;
+                            const isAriaDisabled =
+                                !isScannerV4Enabled || hasScanMessage || !name?.fullName;
                             const description = getSbomGenerationStatusMessage({
                                 isScannerV4Enabled,
                                 hasScanMessage,
@@ -286,7 +340,10 @@ function ImageOverviewTable({
                                 isAriaDisabled,
                                 description,
                                 onClick: () => {
-                                    setSbomTargetImage(name?.fullName);
+                                    setSbomTargetImage({
+                                        name: name?.fullName ?? '',
+                                        digest: image.digest,
+                                    });
                                 },
                             });
                         }
@@ -339,7 +396,11 @@ function ImageOverviewTable({
                                 <Tr>
                                     <Td className={getVisibilityClass('image')} dataLabel="Image">
                                         {name ? (
-                                            <ImageNameLink name={name} id={id} />
+                                            <ImageNameLink
+                                                name={name}
+                                                id={id}
+                                                digest={image.digest}
+                                            />
                                         ) : (
                                             'Image name not available'
                                         )}
@@ -420,7 +481,7 @@ function ImageOverviewTable({
             {sbomTargetImage && (
                 <GenerateSbomModal
                     onClose={() => setSbomTargetImage(undefined)}
-                    imageName={sbomTargetImage}
+                    image={sbomTargetImage}
                 />
             )}
         </Table>

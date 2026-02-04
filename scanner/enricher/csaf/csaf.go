@@ -15,7 +15,6 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/scannerv4/enricher/csaf"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 )
@@ -137,11 +136,6 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 // advisory determines the vulnerability's related Red Hat advisory name.
 // Returns "" if an advisory cannot be determined.
 func advisory(vuln *claircore.Vulnerability) string {
-	// If we are not interested in Red Hat advisories,
-	// then there is no point in continuing.
-	if features.ScannerV4RedHatCVEs.Enabled() {
-		return ""
-	}
 	// We only find Red Hat advisories in - you guessed it - the Red Hat updater.
 	// End here if this vulnerability came from a different source.
 	if !strings.EqualFold(vuln.Updater, mappers.RedHatUpdaterName) {

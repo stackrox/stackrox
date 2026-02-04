@@ -118,6 +118,18 @@ func insertIntoAdministrationEvents(batch *pgx.Batch, obj *storage.Administratio
 	return nil
 }
 
+var copyColsAdministrationEvents = []string{
+	"id",
+	"type",
+	"level",
+	"domain",
+	"resource_type",
+	"numoccurrences",
+	"lastoccurredat",
+	"createdat",
+	"serialized",
+}
+
 func copyFromAdministrationEvents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.AdministrationEvent) error {
 	if len(objs) == 0 {
 		return nil
@@ -133,18 +145,6 @@ func copyFromAdministrationEvents(ctx context.Context, s pgSearch.Deleter, tx *p
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"type",
-		"level",
-		"domain",
-		"resource_type",
-		"numoccurrences",
-		"lastoccurredat",
-		"createdat",
-		"serialized",
 	}
 
 	idx := 0
@@ -173,7 +173,7 @@ func copyFromAdministrationEvents(ctx context.Context, s pgSearch.Deleter, tx *p
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"administration_events"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"administration_events"}, copyColsAdministrationEvents, inputRows); err != nil {
 		return err
 	}
 

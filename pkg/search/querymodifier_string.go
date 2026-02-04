@@ -19,8 +19,9 @@ const _QueryModifier_name = "AtLeastOneNegationRegexEquality"
 var _QueryModifier_index = [...]uint8{0, 10, 18, 23, 31}
 
 func (i QueryModifier) String() string {
-	if i < 0 || i >= QueryModifier(len(_QueryModifier_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_QueryModifier_index)-1 {
 		return "QueryModifier(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _QueryModifier_name[_QueryModifier_index[i]:_QueryModifier_index[i+1]]
+	return _QueryModifier_name[_QueryModifier_index[idx]:_QueryModifier_index[idx+1]]
 }

@@ -2,8 +2,6 @@ package metrics
 
 import (
 	"net/http"
-	"strings"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -32,7 +30,7 @@ type CustomRegistry interface {
 	http.Handler
 	Lock()
 	Unlock()
-	RegisterMetric(metricName string, category string, period time.Duration, labels []string) error
+	RegisterMetric(metricName string, description string, labels []string) error
 	UnregisterMetric(metricName string) bool
 	SetTotal(metricName string, labels prometheus.Labels, total int)
 	Reset(metricName string)
@@ -98,13 +96,12 @@ func (cr *customRegistry) UnregisterMetric(metricName string) bool {
 }
 
 // RegisterMetric registers a user-defined aggregated metric.
-func (cr *customRegistry) RegisterMetric(metricName string, description string, period time.Duration, labels []string) error {
+func (cr *customRegistry) RegisterMetric(metricName string, description string, labels []string) error {
 	gauge := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      metricName,
-		Help: "The total number of " + description + " aggregated by " + strings.Join(labels, ",") +
-			" and gathered every " + period.String(),
+		Help:      description,
 	}, labels)
 	if _, loaded := cr.gauges.LoadOrStore(metricName, gauge); !loaded {
 		return cr.Register(gauge)

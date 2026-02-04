@@ -94,30 +94,17 @@ class OperatorE2eTest(BaseTest):
                  "-p", '[{"op": "add", "path": "/spec/disableAllDefaultSources", "value": true}]'],
                 self.OLM_SETUP_TIMEOUT_SEC,
             )
+            print("Bouncing catalog operator pod to clear its cache")
             olm_ns = "openshift-operator-lifecycle-manager"
-        else:
-            print("Installing OLM")
             self.run_with_graceful_kill(
-                ["make", "-C", "operator", "olm-install"],
+                ["kubectl", "delete", "pods",
+                    f"--namespace={olm_ns}", "--selector", "app=catalog-operator", "--now=true"],
                 self.OLM_SETUP_TIMEOUT_SEC,
             )
-            print("Removing unused catalog source(s)")
-            self.run_with_graceful_kill(
-                ["kubectl", "delete", "catalogsource.operators.coreos.com",
-                    "--namespace=olm", "--all"],
-                self.OLM_SETUP_TIMEOUT_SEC,
-            )
-            olm_ns = "olm"
-        print("Bouncing catalog operator pod to clear its cache")
-        self.run_with_graceful_kill(
-            ["kubectl", "delete", "pods",
-                f"--namespace={olm_ns}", "--selector", "app=catalog-operator", "--now=true"],
-            self.OLM_SETUP_TIMEOUT_SEC,
-        )
 
         print("Executing operator e2e tests")
         self.run_with_graceful_kill(
-            ["operator/tests/run.sh"],
+            ["operator/tests/run.sh", self._operator_cluster_type],
             self.TEST_TIMEOUT_SEC,
             output_dir="/tmp/operator-e2e-misc-logs",
         )

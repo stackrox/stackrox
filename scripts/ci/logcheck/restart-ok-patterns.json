@@ -70,5 +70,11 @@
         "job": "gke-external-pg-17-qa-e2e-tests",
         "logfile": "matcher-previous",
         "logline": "panic: migrate: failed to connect to"
+    },
+    {
+        "comment": "config-controller restart due to m2m auth OIDC discovery failure - ROX-32040",
+        "job": ".*",
+        "logfile": "config-controller.*-manager-previous",
+        "logline": "could not exchange token.*forbidden.*openid"
     }
 ]

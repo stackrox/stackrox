@@ -67,7 +67,7 @@ func TestLogMatcher(t *testing.T) {
 }
 
 func TestCreateK8sClientWithConfig_RetriesOnFailure(t *testing.T) {
-	// This test verifies that the createK8sClientWithConfig function configures retries correctly
+	// This test verifies that the configureRetryableTransport function configures retries correctly
 	// by injecting a mock transport that fails initially, then succeeds
 
 	var callCount int
@@ -112,6 +112,7 @@ func TestCreateK8sClientWithConfig_RetriesOnFailure(t *testing.T) {
 			return mockTransport
 		},
 	}
+	configureRetryableTransport(t, restCfg)
 
 	// Create client with our mock config
 	client := createK8sClientWithConfig(t, restCfg)

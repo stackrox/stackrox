@@ -3,11 +3,14 @@ package scannerv4
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const scannerVersion = "indexer=4.8.3"
@@ -43,6 +46,9 @@ func TestNoPanic(t *testing.T) {
 }
 
 func TestConvert(t *testing.T) {
+	protoNow, err := protocompat.ConvertTimeToTimestampOrError(time.Now())
+	require.NoError(t, err)
+
 	testcases := []struct {
 		name     string
 		metadata *storage.ImageMetadata
@@ -91,6 +97,7 @@ func TestConvert(t *testing.T) {
 						Id:                 "CVE1-ID",
 						Name:               "CVE1-Name",
 						FixedInVersion:     "v99",
+						FixedDate:          protoNow,
 						NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
 					},
 				},
@@ -110,10 +117,11 @@ func TestConvert(t *testing.T) {
 						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
-								Cve:               "CVE1-Name",
-								VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-								Severity:          storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-								SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v99"},
+								Cve:                   "CVE1-Name",
+								VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+								Severity:              storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+								SetFixedBy:            &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v99"},
+								FixAvailableTimestamp: protoNow,
 							},
 						},
 					},
@@ -182,10 +190,11 @@ func TestConvert(t *testing.T) {
 						HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{LayerIndex: 0},
 						Vulns: []*storage.EmbeddedVulnerability{
 							{
-								Cve:               "CVE1-Name",
-								VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-								Severity:          storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-								SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v99"},
+								Cve:                   "CVE1-Name",
+								VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+								Severity:              storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+								SetFixedBy:            &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v99"},
+								FixAvailableTimestamp: nil,
 							},
 						},
 					},
@@ -1422,6 +1431,119 @@ func TestOS(t *testing.T) {
 	}
 }
 
+func TestEnvOS(t *testing.T) {
+	testcases := []struct {
+		expected string
+		env      *v4.Environment
+		report   *v4.VulnerabilityReport
+	}{
+		{
+			expected: "",
+			env:      nil,
+			report:   nil,
+		},
+		{
+			expected: "",
+			env:      &v4.Environment{DistributionId: "-1"},
+			report:   nil,
+		},
+		{
+			expected: "",
+			env:      nil,
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: map[string]*v4.Distribution{
+						"-1": {
+							Did:       "rhel",
+							VersionId: "9",
+						},
+					},
+				},
+			},
+		},
+		{
+			expected: "",
+			env:      &v4.Environment{DistributionId: "noexist"},
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: map[string]*v4.Distribution{
+						"-1": {
+							Did:       "rhel",
+							VersionId: "9",
+						},
+					},
+				},
+			},
+		},
+		{
+			expected: "",
+			env:      &v4.Environment{DistributionId: "-1"},
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: map[string]*v4.Distribution{
+						"-1": {
+							Did: "rhel",
+							// VersionId missing
+						},
+					},
+				},
+			},
+		},
+		{
+			expected: "",
+			env:      &v4.Environment{DistributionId: "-1"},
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: map[string]*v4.Distribution{
+						"-1": {
+							// Did missing
+							VersionId: "9",
+						},
+					},
+				},
+			},
+		},
+		{
+			expected: "ubuntu:22.04",
+			env:      &v4.Environment{DistributionId: "0"},
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: map[string]*v4.Distribution{
+						"0": {
+							Did:       "ubuntu",
+							VersionId: "22.04",
+						},
+					},
+				},
+			},
+		},
+		{
+			expected: "alpine:3.18",
+			env:      &v4.Environment{DistributionId: "4"},
+			report: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{
+					Distributions: map[string]*v4.Distribution{
+						"4": {
+							Did:       "alpine",
+							VersionId: "3.18",
+						},
+						"idk": {
+							Did: "idk",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.expected, func(t *testing.T) {
+			name := envOS(testcase.env, testcase.report)
+			assert.Equal(t, testcase.expected, name)
+		})
+	}
+}
+
 func TestNotes(t *testing.T) {
 	testcases := []struct {
 		os       string
@@ -1453,6 +1575,56 @@ func TestNotes(t *testing.T) {
 		t.Run(testcase.os, func(t *testing.T) {
 			notes := notes(testcase.report)
 			assert.ElementsMatch(t, testcase.expected, notes)
+		})
+	}
+}
+
+// TestVulnDataSource
+//
+// If this test fails due to a datasource format change
+// a Central DB migration may be needed convert stored values to the
+// new format.
+func TestVulnDataSource(t *testing.T) {
+	testcases := []struct {
+		expected string
+		os       string
+		ccVuln   *v4.VulnerabilityReport_Vulnerability
+	}{
+		{
+			expected: "",
+			os:       "",
+			ccVuln:   nil,
+		},
+		{
+			expected: "",
+			os:       "os",
+			ccVuln:   nil,
+		},
+		{
+			expected: "",
+			os:       "os",
+			ccVuln:   &v4.VulnerabilityReport_Vulnerability{},
+		},
+		{
+			expected: "updater",
+			os:       "",
+			ccVuln: &v4.VulnerabilityReport_Vulnerability{
+				Updater: "updater",
+			},
+		},
+		{
+			expected: "updater::os",
+			os:       "os",
+			ccVuln: &v4.VulnerabilityReport_Vulnerability{
+				Updater: "updater",
+			},
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.expected, func(t *testing.T) {
+			name := vulnDataSource(testcase.ccVuln, testcase.os)
+			assert.Equal(t, testcase.expected, name)
 		})
 	}
 }

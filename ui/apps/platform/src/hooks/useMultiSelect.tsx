@@ -16,7 +16,7 @@ function useMultiSelect(
     const [isOpen, setIsOpen] = useState(false);
 
     function onToggle() {
-        setIsOpen(!isOpen);
+        setIsOpen((prev) => !prev);
     }
 
     function onSelect(_event, selection) {

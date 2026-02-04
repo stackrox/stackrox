@@ -13,17 +13,52 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
+### Removed Features
+
+### Deprecated Features
+
+### Technical Changes
+
+## [4.10.0]
+
+
+
+### Added Features
+
 - ROX-31443: Automatic HTTP to HTTPS redirection is now enabled for Central OpenShift routes (passthrough and reencrypt).
+- ROX-29582: A `kubectl get` on a Central CR now shows the following additional columns: Version, AdminPassword, Message, Available, Progressing.
+- ROX-32061: The `spec.configAsCode` field in the Central CR now supports `resources`, `nodeSelector`, `tolerations`, and `hostAliases` settings for the config-controller deployment.
+- ROX-31738: Added the `spec.customize.deploymentDefaults` field to Central and SecuredCluster CRDs, for configuring global default scheduling constraints for Deployments. This was previously possible on a per-component basis.
+- ROX-30094, ROX-30610, ROX-30740: Add new namespaces to Layered Products default config regex.
+- ROX-31960, ROX-32449: include and exclude filters for custom metrics.
+- ROX-30641: Added a new policy criteria "Days Since CVE Fix Was Available".
+- ROX-32630: The OpenShift console plugin integrates the ACS vulnerability management view into OpenShift console. It is enabled by default for operator-deployed secured clusters.
+- Tech preview: operator-based installation available for community StackRox build. More information in [a separate README file](operator/install/README.md).
+- ROX-30585, ROX-30196 (Tech Preview): Added file activity monitoring, including new policy criteria for deployment or node file activity.
 
 ### Removed Features
 - ROX-31727: `/v1/cve/requests` APIs (deprecated in 4.3.0) for managing vulnerability exceptions have been removed.
   - The `/v2/vulnerability-exceptions/` APIs must be used.
 - ROX-31728: Active Vulnerability Management has been removed.
+- ROX-31531: Removed deprecated `/v1/imagecves/suppress` and `/v1/imagecves/unsuppress` APIs
 
 ### Deprecated Features
 
+- ROX-32851: The `roxctl netpol generate`, `roxctl netpol connectivity map`, and `roxctl netpol connectivity diff` commands are deprecated because they rely on the unmaintained NP-Guard library and will be removed in a future release.
+- ROX-32867: The Compliance V1 feature has been deprecated, and it is planned to be removed in a future release. This includes:
+  - The Compliance Dashboard
+  - The Compliance V1 API endpoints
+  - The Compliance Configuration Management Board
+
 ### Technical Changes
 - ROX-30769: Update Node.js requirement for ui folder to 22.13.0
+- ROX-31295: The lower limit for `ROX_MAX_PARALLEL_IMAGE_SCAN_INTERNAL` on Sensor has been reduced to one (from 10).
+- ROX-32125: The operator now adopts secrets that have the `app.stackrox.io/managed-by: operator` label but no `ownerReferences`. This fixes reconciliation failures after backup/restore operations that strip `ownerReferences` from secrets.
+- ROX-32394, ROX-32554: Remove init-tls-certs init container from all Secured Cluster services. The certificate initialization logic for Sensor is now performed at Sensor startup.
+- ROX-28352: Remove Sensor's certdistribution API, which was used by the admission controller to retrieve its TLS certificate from Sensor (no longer needed)
+- ROX-26374: Upgrading from a version prior to 4.6 is no longer supported. If upgrading from a version prior to 4.6, then you must upgrade to 4.6, 4.7, 4.8 or 4.9 first, before upgrading to 4.10. Similarly, once on 4.10 or higher, rollback to a version prior to 4.6 is no longer supported.  For example:
+	  - 4.5 -> 4.10 -- not supported must go to 4.6, 4.7, 4.8 or 4.9 first and then go to 4.10.
+	  - 4.6 -> 4.10 -- this upgrade is supported, as is the rollback.
 
 ## [4.9.0]
 
@@ -110,7 +145,7 @@ since 4.7 and prior.
   before dropping occurs. New metrics have been added for monitoring sensor components:
     - `rox_sensor_component_process_message_duration_seconds`: Tracks processing time for messages from Central in each sensor component
     - `rox_sensor_component_queue_operations_total`: Tracks operations on component buffer queues
-    - `rox_sensor_component_process_message_errors_total`: Tracks processing errors in each sensor component
+    - `rox_sensor_component_process_message_errors_total`: Tracks processing errors in each sensor component (note: it will not be published until an error occurs)
 - ROX-30729: Allow to spin up a Sensitive File Activity monitoring agent via `ROX_SENSITIVE_FILE_ACTIVITY` env var. The agent itself is in dev preview and is not supposed to be used in production in this version.
 - ROX-31365: Fixed an issue that could cause DB connection exhaustion when many sensor try to reconnect at the same time
 

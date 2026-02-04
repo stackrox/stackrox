@@ -37,14 +37,14 @@ jobs:
       matrix:
         parallel: [ 1 ]
     steps:
-      - uses: davdhacs/workflow-telemetry-action@master
-        with:
-          comment_on_pr: false
-          job_summary: true
-          # 'github_token', 'apikey', 'apihost', 'dataset', 'matrix-key', 'otel-traceid', 'comment_on_pr', 'job_summary'
+      # Telemetry action disabled - requires apikey configuration
+      # - uses: davdhacs/workflow-telemetry-action@master
+      #   with:
+      #     comment_on_pr: false
+      #     job_summary: true
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: ${{ github.event.pull_request.commits }}
           fetch-tags: false
@@ -294,7 +294,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
@@ -388,7 +388,7 @@ jobs:
           proc_trace_chart_max_count: 100
 
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
@@ -439,7 +439,7 @@ jobs:
           proc_trace_chart_max_count: 100
 
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -508,7 +508,7 @@ jobs:
           proc_trace_chart_max_count: 100
 
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -628,7 +628,7 @@ jobs:
           proc_trace_chart_max_count: 100
 
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -742,7 +742,7 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -930,7 +930,7 @@ jobs:
         } >> "$GITHUB_ENV"
 
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -994,7 +994,7 @@ jobs:
     needs:
       - define-job-matrix
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -1007,7 +1007,7 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -1123,7 +1123,7 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ""
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -1146,7 +1146,7 @@ jobs:
         } >> "$GITHUB_ENV"
 
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -1181,7 +1181,7 @@ jobs:
     - pre-build-go-binaries
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 1
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -1243,7 +1243,7 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).scan_images_with_roxctl }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -1310,7 +1310,7 @@ jobs:
       actions: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Slack message
         env:

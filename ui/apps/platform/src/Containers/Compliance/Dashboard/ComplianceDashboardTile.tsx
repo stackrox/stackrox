@@ -1,6 +1,6 @@
-import React from 'react';
 import { Link } from 'react-router-dom-v5-compat';
-import { DocumentNode, gql, useQuery } from '@apollo/client';
+import { gql, useQuery } from '@apollo/client';
+import type { DocumentNode } from '@apollo/client';
 
 import { complianceBasePath } from 'routePaths';
 

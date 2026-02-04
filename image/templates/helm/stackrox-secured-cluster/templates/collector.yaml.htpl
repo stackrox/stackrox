@@ -45,10 +45,6 @@ spec:
       hostAliases: {{ toYaml ._rox.collector.hostAliases | nindent 8 }}
       {{- end }}
       serviceAccountName: collector
-      initContainers:
-      {{- if ._rox._securedClusterCertRefresh }}
-      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
-      {{- end }}
       containers:
       {{- if ne ._rox.collector.collectionMethod "NO_COLLECTION"}}
       - name: collector
@@ -113,6 +109,8 @@ spec:
       {{- end }}
 
       [<- if .FeatureFlags.ROX_SENSITIVE_FILE_ACTIVITY >]
+
+      {{- if ._rox.collector.sfaEnabled }}
       - name: fact
         image: {{ quote ._rox.image.fact.fullRef }}
         imagePullPolicy: {{ ._rox.fact.imagePullPolicy }}
@@ -131,9 +129,11 @@ spec:
           value: "/var/run/secrets/stackrox.io/certs/"
         - name: FACT_HOST_MOUNT
           value: "/host"
-        {{- include "srox.envVars" (list . "daemonset" "fact" "fact") | nindent 8 }}
+        - name: FACT_PATHS
+          value: "/etc/ssh/sshd_config:/etc/sudoers:/etc/passwd:/etc/shadow"
+        {{- include "srox.envVars" (list . "daemonset" "collector" "fact") | nindent 8 }}
         resources:
-          {{- ._rox.fact._resources | nindent 10 }}
+          {{- ._rox.collector._sfaResources | nindent 10 }}
         securityContext:
           capabilities:
             drop:
@@ -156,6 +156,8 @@ spec:
           name: etc-ro
           readOnly: true
           mountPropagation: HostToContainer
+      {{- end }}
+
       [<- end >]
 
       - command:
@@ -289,7 +291,9 @@ spec:
           path: /dev
         name: dev-ro
       {{- if ._rox._securedClusterCertRefresh }}
-      {{- include "srox.tlsCertsInitContainerVolumes" (list "collector") | indent 6 }}
+      - name: certs
+        secret:
+          secretName: tls-cert-collector
       {{- else }}
       - name: certs
         secret:
@@ -329,3 +333,26 @@ spec:
         configMap:
           name: collector-config
           optional: true
+
+{{- if ._rox.collector.exposeMonitoring }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: compliance-metrics
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "service" "compliance-metrics") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "service" "compliance-metrics") | nindent 4 }}
+spec:
+  clusterIP: None
+  ports:
+  - name: monitoring
+    port: 9091
+    targetPort: 9091
+    protocol: TCP
+  selector:
+    app: collector
+{{- end }}

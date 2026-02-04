@@ -272,7 +272,9 @@ func TestPipelineEdgeCases(t *testing.T) {
 	defer ctrl.Finish()
 
 	vmDatastore := vmDatastoreMocks.NewMockDataStore(ctrl)
-	pipeline := &pipelineImpl{vmDatastore: vmDatastore}
+	pipeline := &pipelineImpl{
+		vmDatastore: vmDatastore,
+	}
 
 	t.Run("nil message", func(t *testing.T) {
 		result := pipeline.Match(nil)

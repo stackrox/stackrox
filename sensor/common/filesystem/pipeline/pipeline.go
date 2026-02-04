@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
-	"github.com/stackrox/rox/sensor/common/store"
 )
 
 var (
@@ -24,19 +23,17 @@ type Pipeline struct {
 
 	activityChan    chan *sensorAPI.FileActivity
 	clusterEntities *clusterentities.Store
-	nodeStore       store.NodeStore
 
 	msgCtx context.Context
 }
 
-func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clusterentities.Store, nodeStore store.NodeStore, activityChan chan *sensorAPI.FileActivity) *Pipeline {
+func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clusterentities.Store, activityChan chan *sensorAPI.FileActivity) *Pipeline {
 	msgCtx := context.Background()
 
 	p := &Pipeline{
 		detector:        detector,
 		activityChan:    activityChan,
 		clusterEntities: clusterEntities,
-		nodeStore:       nodeStore,
 		stopper:         concurrency.NewStopper(),
 		msgCtx:          msgCtx,
 	}
@@ -48,37 +45,38 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 
 	access := &storage.FileAccess{
-		Process:  p.getIndicator(fs.GetProcess()),
-		Hostname: fs.GetHostname(),
+		Process:   p.getIndicator(fs.GetProcess()),
+		Hostname:  fs.GetHostname(),
+		Timestamp: fs.GetTimestamp(),
 	}
 
 	switch fs.GetFile().(type) {
 	case *sensorAPI.FileActivity_Creation:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetCreation().GetActivity().GetPath(),
-			NodePath:    fs.GetCreation().GetActivity().GetHostPath(),
+			EffectivePath: fs.GetCreation().GetActivity().GetPath(),
+			ActualPath:    fs.GetCreation().GetActivity().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_CREATE
 	case *sensorAPI.FileActivity_Unlink:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetUnlink().GetActivity().GetPath(),
-			NodePath:    fs.GetUnlink().GetActivity().GetHostPath(),
+			EffectivePath: fs.GetUnlink().GetActivity().GetPath(),
+			ActualPath:    fs.GetUnlink().GetActivity().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_UNLINK
 	case *sensorAPI.FileActivity_Rename:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetRename().GetOld().GetPath(),
-			NodePath:    fs.GetRename().GetOld().GetHostPath(),
+			EffectivePath: fs.GetRename().GetOld().GetPath(),
+			ActualPath:    fs.GetRename().GetOld().GetHostPath(),
 		}
 		access.Moved = &storage.FileAccess_File{
-			MountedPath: fs.GetRename().GetNew().GetPath(),
-			NodePath:    fs.GetRename().GetNew().GetHostPath(),
+			EffectivePath: fs.GetRename().GetNew().GetPath(),
+			ActualPath:    fs.GetRename().GetNew().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_RENAME
 	case *sensorAPI.FileActivity_Permission:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetPermission().GetActivity().GetPath(),
-			NodePath:    fs.GetPermission().GetActivity().GetHostPath(),
+			EffectivePath: fs.GetPermission().GetActivity().GetPath(),
+			ActualPath:    fs.GetPermission().GetActivity().GetHostPath(),
 			Meta: &storage.FileAccess_FileMetadata{
 				Mode: fs.GetPermission().GetMode(),
 			},
@@ -86,8 +84,8 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 		access.Operation = storage.FileAccess_PERMISSION_CHANGE
 	case *sensorAPI.FileActivity_Ownership:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetOwnership().GetActivity().GetPath(),
-			NodePath:    fs.GetOwnership().GetActivity().GetHostPath(),
+			EffectivePath: fs.GetOwnership().GetActivity().GetPath(),
+			ActualPath:    fs.GetOwnership().GetActivity().GetHostPath(),
 			Meta: &storage.FileAccess_FileMetadata{
 				Uid:      fs.GetOwnership().GetUid(),
 				Gid:      fs.GetOwnership().GetGid(),
@@ -96,16 +94,10 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 			},
 		}
 		access.Operation = storage.FileAccess_OWNERSHIP_CHANGE
-	case *sensorAPI.FileActivity_Write:
-		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetWrite().GetActivity().GetPath(),
-			NodePath:    fs.GetWrite().GetActivity().GetHostPath(),
-		}
-		access.Operation = storage.FileAccess_WRITE
 	case *sensorAPI.FileActivity_Open:
 		access.File = &storage.FileAccess_File{
-			MountedPath: fs.GetOpen().GetActivity().GetPath(),
-			NodePath:    fs.GetOpen().GetActivity().GetHostPath(),
+			EffectivePath: fs.GetOpen().GetActivity().GetPath(),
+			ActualPath:    fs.GetOpen().GetActivity().GetHostPath(),
 		}
 		access.Operation = storage.FileAccess_OPEN
 	default:
@@ -117,20 +109,32 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 }
 
 func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.ProcessIndicator {
+	signal := &storage.ProcessSignal{
+		Id:           process.GetId(),
+		Uid:          process.GetUid(),
+		Gid:          process.GetGid(),
+		Time:         process.GetCreationTime(),
+		Name:         process.GetName(),
+		Args:         process.GetArgs(),
+		ExecFilePath: process.GetExecFilePath(),
+		Pid:          process.GetPid(),
+		Scraped:      process.GetScraped(),
+		ContainerId:  process.GetContainerId(),
+		LineageInfo:  make([]*storage.ProcessSignal_LineageInfo, 0, len(process.GetLineageInfo())),
+	}
+
+	for _, lineage := range process.GetLineageInfo() {
+		signal.LineageInfo = append(signal.LineageInfo,
+			&storage.ProcessSignal_LineageInfo{
+				ParentUid:          lineage.GetParentUid(),
+				ParentExecFilePath: lineage.GetParentExecFilePath(),
+			},
+		)
+	}
+
 	pi := &storage.ProcessIndicator{
-		Id: uuid.NewV4().String(),
-		Signal: &storage.ProcessSignal{
-			Id:           process.GetId(),
-			Uid:          process.GetUid(),
-			Gid:          process.GetGid(),
-			Time:         process.GetCreationTime(),
-			Name:         process.GetName(),
-			Args:         process.GetArgs(),
-			ExecFilePath: process.GetExecFilePath(),
-			Pid:          process.GetPid(),
-			Scraped:      process.GetScraped(),
-			ContainerId:  process.GetContainerId(),
-		},
+		Id:     uuid.NewV4().String(),
+		Signal: signal,
 	}
 
 	if process.GetContainerId() == "" {
@@ -138,7 +142,6 @@ func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.Proce
 		return pi
 	}
 
-	// TODO(ROX-30798): Enrich file system events with deployment details
 	metadata, ok, _ := p.clusterEntities.LookupByContainerID(process.GetContainerId())
 	if !ok {
 		// unexpected - process should exist before file activity is
@@ -174,21 +177,7 @@ func (p *Pipeline) run() {
 				return
 			}
 			event := p.translate(fs)
-
-			// TODO: Send event to detector
-			if event.GetProcess().GetContainerName() != "" {
-				// Do deployment based detection but for now just log
-				log.Infof("Container FS event = %+v", event)
-			} else {
-				node := p.nodeStore.GetNode(event.GetHostname())
-				if node == nil {
-					log.Warnf("Node %s not found in node store", event.GetHostname())
-					continue
-				}
-
-				// Do node based detection but for now just log
-				log.Infof("Node FS event on %s = %+v", node.GetName(), event)
-			}
+			p.detector.ProcessFileAccess(p.msgCtx, event)
 		}
 	}
 }

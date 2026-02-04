@@ -666,7 +666,7 @@ func getFakeK8sClient(conf fakeK8sClientConfig) *fake.Clientset {
 		}
 	}
 
-	k8sClient := fake.NewSimpleClientset(objects...)
+	k8sClient := fake.NewClientset(objects...)
 
 	return k8sClient
 }

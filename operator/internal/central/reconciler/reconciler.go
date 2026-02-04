@@ -9,6 +9,7 @@ import (
 	centralTranslation "github.com/stackrox/rox/operator/internal/central/values/translation"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
 	"github.com/stackrox/rox/operator/internal/common/rendercache"
+	statusController "github.com/stackrox/rox/operator/internal/common/status"
 	"github.com/stackrox/rox/operator/internal/legacy"
 	"github.com/stackrox/rox/operator/internal/proxy"
 	"github.com/stackrox/rox/operator/internal/reconciler"
@@ -17,6 +18,7 @@ import (
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	"github.com/stackrox/rox/pkg/version"
 	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
@@ -49,13 +51,22 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
 	}
 
-	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+7)
+	// Plug in custom event predicate to skip reconciliation for updates caused by the status controller.
+	// to prevent unnecessary Helm dry-runs.
+	predicates := []pkgReconciler.Option{
+		pkgReconciler.WithPredicate(statusController.SkipStatusControllerUpdates[ctrlClient.Object]{}),
+	}
+
+	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+len(predicates)+8)
 	opts = append(opts, extraEventWatcher)
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.VerifyCollisionFreeCentral(mgr.GetClient())))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.FeatureDefaultingExtension(mgr.GetClient())))
 	opts = append(opts, otherPreExtensions...)
+	opts = append(opts, predicates...)
+	opts = append(opts, pkgReconciler.WithAggressiveConflictResolution(true))
 	opts = append(opts, pkgReconciler.WithReconcilePeriod(extensions.InitBundleReconcilePeriod))
 	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
+
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)
 	if err != nil {
 		return err

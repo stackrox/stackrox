@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -14,19 +14,13 @@ import (
 )
 
 const (
-	getStmt = "SELECT seqnum, version, minseqnum, lastpersisted FROM versions LIMIT 1"
-	// TODO(ROX-18005) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
-	// the older database.  In that case we will need to process the serialized data.
-	getPreviousStmt = "SELECT serialized FROM versions LIMIT 1"
-	deleteStmt      = "DELETE FROM versions"
+	getStmt    = "SELECT seqnum, version, minseqnum, lastpersisted FROM versions LIMIT 1"
+	deleteStmt = "DELETE FROM versions"
 )
 
 // Store access versions in database
 type Store interface {
 	Get(ctx context.Context) (*storage.Version, bool, error)
-	// TODO(ROX-18005) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
-	// the older database.  In that case we will need to process the serialized data.
-	GetPrevious(ctx context.Context) (*storage.Version, bool, error)
 	Upsert(ctx context.Context, obj *storage.Version) error
 	Delete(ctx context.Context) error
 }
@@ -70,31 +64,26 @@ func (s *storeImpl) retryableUpsert(ctx context.Context, obj *storage.Version) e
 		return sac.ErrResourceAccessDenied
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Version")
-	if err != nil {
-		return err
-	}
-	defer release()
-
-	tx, ctx, err := conn.Begin(ctx)
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
 
 	if _, err := tx.Exec(ctx, deleteStmt); err != nil {
+		if errTx := tx.Rollback(ctx); errTx != nil {
+			return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
+		}
 		return err
 	}
 
 	if err := insertIntoVersions(ctx, tx, obj); err != nil {
-		if err := tx.Rollback(ctx); err != nil {
-			return err
+		if errTx := tx.Rollback(ctx); errTx != nil {
+			return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 		}
 		return err
 	}
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-	return nil
+
+	return tx.Commit(ctx)
 }
 
 // Get returns the object, if it exists from the store
@@ -110,13 +99,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.Version, bool, e
 		return nil, false, nil
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Version")
-	if err != nil {
-		return nil, false, err
-	}
-	defer release()
-
-	row := conn.QueryRow(ctx, getStmt)
+	row := s.db.QueryRow(ctx, getStmt)
 	var sequenceNum int
 	var version string
 	var minSequenceNum int
@@ -137,48 +120,8 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.Version, bool, e
 	return &msg, true, nil
 }
 
-// GetPrevious returns the object, if it exists from central_previous
-// TODO(ROX-18005) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
-// the older database.  In that case we will need to process the serialized data.
-func (s *storeImpl) GetPrevious(ctx context.Context) (*storage.Version, bool, error) {
-	return pgutils.Retry3(ctx, func() (*storage.Version, bool, error) {
-		return s.retryableGetPrevious(ctx)
-	})
-}
-
-// TODO(ROX-18005) -- remove this.  During transition away from serialized version, UpgradeStatus will make this call against
-// the older database.  In that case we will need to process the serialized data.
-func (s *storeImpl) retryableGetPrevious(ctx context.Context) (*storage.Version, bool, error) {
-	scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_ACCESS)
-	if !scopeChecker.IsAllowed() {
-		return nil, false, nil
-	}
-
-	conn, release, err := s.acquireConn(ctx, ops.Get, "Version")
-	if err != nil {
-		return nil, false, err
-	}
-	defer release()
-
-	row := conn.QueryRow(ctx, getPreviousStmt)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
-		return nil, false, pgutils.ErrNilIfNoRows(err)
-	}
-
-	var msg storage.Version
-	if err := msg.UnmarshalVTUnsafe(data); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
-}
-
-func (s *storeImpl) acquireConn(ctx context.Context, _ ops.Op, _ string) (*postgres.Conn, func(), error) {
-	conn, err := s.db.Acquire(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	return conn, conn.Release, nil
+func (s *storeImpl) begin(ctx context.Context) (*postgres.Tx, context.Context, error) {
+	return postgres.GetTransaction(ctx, s.db)
 }
 
 // Delete removes the specified ID from the store
@@ -194,14 +137,16 @@ func (s *storeImpl) retryableDelete(ctx context.Context) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "Version")
+	tx, ctx, err := s.begin(ctx)
 	if err != nil {
 		return err
 	}
-	defer release()
 
-	if _, err := conn.Exec(ctx, deleteStmt); err != nil {
+	if _, err := tx.Exec(ctx, deleteStmt); err != nil {
+		if errTx := tx.Rollback(ctx); errTx != nil {
+			return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
+		}
 		return err
 	}
-	return nil
+	return tx.Commit(ctx)
 }

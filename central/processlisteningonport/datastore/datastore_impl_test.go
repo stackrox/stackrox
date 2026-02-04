@@ -2340,6 +2340,13 @@ func makeRandomPlops(nport int, nprocess int, npod int, deployment string) []*st
 			}
 		}
 	}
+
+	// Shuffle the PLOPs to simulate realistic interleaved arrival from different pods
+	// rather than sequential insertion by pod which gives artificial locality benefits
+	rand.Shuffle(len(plops), func(i, j int) {
+		plops[i], plops[j] = plops[j], plops[i]
+	})
+
 	return plops
 }
 
@@ -2862,8 +2869,8 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePLOPsWithoutPodUIDScaleRaceCondit
 	// and pruned, then it will be pruned once. Therefore the number of rows pruned will
 	// be between the number of PLOPs that don't have poduids that were added and twice
 	// that number.
-	suite.GreaterOrEqual(int(plopsWithoutPodUids), totalPrunedCount/2)
-	suite.LessOrEqual(int(plopsWithoutPodUids), totalPrunedCount)
+	suite.GreaterOrEqual(plopsWithoutPodUids, totalPrunedCount/2)
+	suite.LessOrEqual(plopsWithoutPodUids, totalPrunedCount)
 }
 
 func (suite *PLOPDataStoreTestSuite) TestSortMany() {

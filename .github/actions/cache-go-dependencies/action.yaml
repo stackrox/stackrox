@@ -20,7 +20,7 @@ runs:
       shell: bash
 
     - name: Cache Go Dependencies
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ${{ steps.cache-vars.outputs.GOCACHE }}

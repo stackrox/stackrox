@@ -22,9 +22,12 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	searchCommon "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/sync"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 const whenUnlimited = 100
@@ -84,25 +87,39 @@ func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excl
 func (ds *datastoreImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlerts")
 
-	results, err := ds.Search(ctx, q, true)
-	if err != nil {
-		return nil, err
+	if q == nil {
+		q = search.EmptyQuery()
 	}
-	alerts, missingIndices, err := ds.storage.GetMany(ctx, searchCommon.ResultsToIDs(results))
-	if err != nil {
-		return nil, err
-	}
-	listAlerts := make([]*storage.ListAlert, 0, len(alerts))
-	for _, alert := range alerts {
-		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
-	}
-	results = searchCommon.RemoveMissingResults(results, missingIndices)
 
-	protoResults := make([]*v1.SearchResult, 0, len(alerts))
-	for i, alert := range listAlerts {
-		protoResults = append(protoResults, convertAlert(alert, results[i]))
+	// Clone the query and add select fields for SearchResult construction
+	clonedQuery := q.CloneVT()
+	selectSelects := []*v1.QuerySelect{
+		search.NewQuerySelect(search.PolicyName).Proto(),
+		search.NewQuerySelect(search.Cluster).Proto(),
+		search.NewQuerySelect(search.Namespace).Proto(),
+		search.NewQuerySelect(search.DeploymentName).Proto(),
+		search.NewQuerySelect(search.EntityType).Proto(),
+		search.NewQuerySelect(search.ResourceName).Proto(),
+		search.NewQuerySelect(search.ResourceType).Proto(),
 	}
-	return protoResults, nil
+	clonedQuery.Selects = append(clonedQuery.GetSelects(), selectSelects...)
+
+	results, err := ds.Search(ctx, clonedQuery, false)
+	if err != nil {
+		return nil, err
+	}
+
+	// Populate Name and Location fields from FieldValues for each result
+	for i := range results {
+
+		if results[i].FieldValues != nil {
+			if nameVal, ok := results[i].FieldValues[strings.ToLower(search.PolicyName.String())]; ok {
+				results[i].Name = nameVal
+			}
+		}
+	}
+
+	return search.ResultsToSearchResultProtos(results, &AlertSearchResultConverter{}), nil
 }
 
 // SearchRawAlerts returns search results for the given request in the form of a slice of alerts.
@@ -182,7 +199,7 @@ func (ds *datastoreImpl) UpdateAlertBatch(ctx context.Context, alert *storage.Al
 			return
 		}
 
-		if !hasSameScope(getNSScopedObjectFromAlert(alert), getNSScopedObjectFromAlert(oldAlert)) {
+		if !hasSameScope(alert, oldAlert) {
 			c <- fmt.Errorf("cannot change the cluster or namespace of an existing alert %q", alert.GetId())
 			return
 		}
@@ -288,27 +305,19 @@ func (ds *datastoreImpl) PruneAlerts(ctx context.Context, ids ...string) error {
 }
 
 func sacKeyForAlert(alert *storage.Alert) []sac.ScopeKey {
-	scopedObj := getNSScopedObjectFromAlert(alert)
-	if scopedObj == nil {
-		return sac.GlobalScopeKey()
-	}
-	return sac.KeyForNSScopedObj(scopedObj)
-}
-
-func getNSScopedObjectFromAlert(alert *storage.Alert) sac.NamespaceScopedObject {
 	switch alert.GetEntity().(type) {
 	case *storage.Alert_Deployment_:
-		return alert.GetDeployment()
+		return sac.KeyForNSScopedObj(alert.GetDeployment())
 	case *storage.Alert_Resource_:
-		return alert.GetResource()
+		return sac.KeyForNSScopedObj(alert.GetResource())
 	case *storage.Alert_Image:
-		return nil // This is theoretically possible even though image doesn't have a ns/cluster
+		return sac.GlobalScopeKey() // This is theoretically possible even though image doesn't have a ns/cluster
 	case *storage.Alert_Node_:
-		return nil
+		return sac.ClusterScopeKeys(alert.GetClusterId())
 	default:
 		log.Errorf("UNEXPECTED: Alert Entity %s unknown", alert.GetEntity())
 	}
-	return nil
+	return sac.GlobalScopeKey()
 }
 
 func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*storage.Alert) error {
@@ -330,8 +339,18 @@ func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*stora
 	return ds.storage.UpsertMany(ctx, alerts)
 }
 
-func hasSameScope(o1, o2 sac.NamespaceScopedObject) bool {
-	return o1 != nil && o2 != nil && o1.GetClusterId() == o2.GetClusterId() && o1.GetNamespace() == o2.GetNamespace()
+func hasSameScope(alert1, alert2 *storage.Alert) bool {
+	if alert1.GetClusterId() != alert2.GetClusterId() {
+		return false
+	}
+
+	// For namespace-scoped entities, also check namespace
+	switch alert1.GetEntity().(type) {
+	case *storage.Alert_Deployment_, *storage.Alert_Resource_:
+		return alert1.GetNamespace() == alert2.GetNamespace()
+	}
+
+	return true
 }
 
 func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(alert *storage.Alert) error) error {
@@ -386,36 +405,55 @@ func applyDefaultState(q *v1.Query) *v1.Query {
 			storage.ViolationState_ACTIVE.String(),
 			storage.ViolationState_ATTEMPTED.String()).ProtoQuery())
 		cq.Pagination = q.GetPagination()
+		cq.Selects = q.GetSelects()
 		return cq
 	}
 	return q
 }
 
-// convertAlert returns proto search result from an alert object and the internal search result
-func convertAlert(alert *storage.ListAlert, result searchCommon.Result) *v1.SearchResult {
-	entityInfo := alert.GetCommonEntityInfo()
+// AlertSearchResultConverter implements search.SearchResultConverter for alert search results.
+// This enables single-pass query construction for SearchResult protos.
+type AlertSearchResultConverter struct{}
+
+func (c *AlertSearchResultConverter) BuildName(result *search.Result) string {
+	return result.Name
+}
+
+func (c *AlertSearchResultConverter) BuildLocation(result *search.Result) string {
+	fv := result.FieldValues
+	clusterName := fv[strings.ToLower(search.Cluster.String())]
+	namespace := fv[strings.ToLower(search.Namespace.String())]
+	deploymentName := fv[strings.ToLower(search.DeploymentName.String())]
+	entityType := fv[strings.ToLower(search.EntityType.String())]
+	resourceName := fv[strings.ToLower(search.ResourceName.String())]
+	resourceType := fv[strings.ToLower(search.ResourceType.String())]
+
 	var entityName string
-	switch entity := alert.GetEntity().(type) {
-	case *storage.ListAlert_Resource:
-		entityName = entity.Resource.GetName()
-	case *storage.ListAlert_Deployment:
-		entityName = entity.Deployment.GetName()
+	switch entityType {
+	case "DEPLOYMENT":
+		entityName = deploymentName
+		resourceType = entityType
+	case "RESOURCE":
+		entityName = resourceName
 	}
-	resourceTypeTitleCase := strings.Title(strings.ToLower(entityInfo.GetResourceType().String()))
+
 	var location string
-	if entityInfo.GetNamespace() != "" {
+
+	casePkg := cases.Title(language.English)
+	if namespace != "" {
 		location = fmt.Sprintf("/%s/%s/%s/%s",
-			entityInfo.GetClusterName(), entityInfo.GetNamespace(), resourceTypeTitleCase, entityName)
+			clusterName, namespace, casePkg.String(resourceType), entityName)
 	} else {
 		location = fmt.Sprintf("/%s/%s/%s",
-			entityInfo.GetClusterName(), resourceTypeTitleCase, entityName)
+			clusterName, casePkg.String(resourceType), entityName)
 	}
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_ALERTS,
-		Id:             alert.GetId(),
-		Name:           alert.GetPolicy().GetName(),
-		FieldToMatches: searchCommon.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-		Location:       location,
-	}
+	return location
+}
+
+func (c *AlertSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_ALERTS
+}
+
+func (c *AlertSearchResultConverter) GetScore(result *search.Result) float64 {
+	return result.Score
 }

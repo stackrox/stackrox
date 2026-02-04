@@ -138,7 +138,6 @@ var funcMap = template.FuncMap{
 	"upperCamelCase":               upperCamelCase,
 	"valueExpansion":               valueExpansion,
 	"lowerCase":                    strings.ToLower,
-	"storageToResource":            storageToResource,
 	"concatWith":                   concatWith,
 	"searchFieldNameInOtherSchema": searchFieldNameInOtherSchema,
 	"isSacScoping":                 isSacScoping,

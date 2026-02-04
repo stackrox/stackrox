@@ -28,6 +28,7 @@ class ExternalNetworkSourcesTest extends BaseSpecification {
     static final private Deployment DEP_EXTERNALCONNECTION =
             createAndRegisterDeployment()
                     .setName(EXT_CONN_DEPLOYMENT_NAME)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-1-19-alpine")
                     .addLabel("app", EXT_CONN_DEPLOYMENT_NAME)
                     .setCommand(["/bin/sh", "-c",])

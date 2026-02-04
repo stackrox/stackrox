@@ -1,12 +1,13 @@
-import React, { ReactElement, useContext } from 'react';
+import { useContext } from 'react';
+import type { ReactElement } from 'react';
 
 import GroupedTabs from 'Components/GroupedTabs';
 import {
-    VulnerabilityManagementEntityType,
     getVulnerabilityManagementEntityTypesByRelationship,
     entityGroups,
     entityGroupMap,
 } from 'utils/entityRelationships';
+import type { VulnerabilityManagementEntityType } from 'utils/entityRelationships';
 import workflowStateContext from '../../workflowStateContext';
 import { entityNounSentenceCasePlural } from '../entitiesForVulnerabilityManagement';
 

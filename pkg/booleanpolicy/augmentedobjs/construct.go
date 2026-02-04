@@ -143,6 +143,31 @@ func ConstructNodeWithFileAccess(node *storage.Node, fileAccess *storage.FileAcc
 	return nodeObj, nil
 }
 
+func ConstructDeploymentWithFileAccess(
+	deployment *storage.Deployment,
+	images []*storage.Image,
+	applied *NetworkPoliciesApplied,
+	fileAccess *storage.FileAccess,
+) (*pathutil.AugmentedObj, error) {
+	obj, err := ConstructDeployment(deployment, images, applied)
+	if err != nil {
+		return nil, err
+	}
+
+	err = obj.AddAugmentedObjAt(
+		ConstructFileAccess(fileAccess),
+		pathutil.FieldStep(fileAccessKey),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+func ConstructFileAccess(fileAccess *storage.FileAccess) *pathutil.AugmentedObj {
+	return pathutil.NewAugmentedObj(fileAccess)
+}
+
 // ConstructDeploymentWithNetworkFlowInfo constructs an augmented object with deployment and network flow.
 func ConstructDeploymentWithNetworkFlowInfo(
 	deployment *storage.Deployment,

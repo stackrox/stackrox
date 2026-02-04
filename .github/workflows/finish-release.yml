@@ -74,7 +74,7 @@ jobs:
     needs: [variables, properties]
     steps:
       - name: Check out code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: ${{ needs.variables.outputs.branch }}
           token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
@@ -83,6 +83,14 @@ jobs:
         run: |
           git config user.name "${{ github.event.sender.login }}"
           git config user.email noreply@github.com
+
+      - name: Check CHANGELOG entry exists for release "${{ needs.variables.outputs.named-release-patch }}"
+        run: |
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{ env.script_url }}" | bash -s -- \
+            check-changelog \
+            "${{ needs.variables.outputs.branch }}" \
+            "${{ needs.variables.outputs.named-release-patch }}"
 
       - name: Tag release branch with "${{ needs.variables.outputs.named-release-patch }}"
         id: tag
@@ -104,10 +112,8 @@ jobs:
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
             create-release \
             "${{ needs.variables.outputs.named-release-patch }}" \
+            "${{ needs.variables.outputs.branch }}" \
             "false"
-
-      - run: |
-          echo "Created GitHub release [${{ needs.variables.outputs.named-release-patch }}](${{ steps.release.outputs.url }})" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Delete open milestone for release
         if: env.DRY_RUN == 'false'
@@ -172,7 +178,7 @@ jobs:
       BRANCH: "bump-demo-versions-${{ inputs.version }}"
     steps:
       - name: Checkout stackrox/infra repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: stackrox/infra
           token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}

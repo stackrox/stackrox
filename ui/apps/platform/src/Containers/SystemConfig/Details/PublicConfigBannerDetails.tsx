@@ -33,7 +33,7 @@ const PublicConfigBannerDetails = ({
         enabled = false,
         size = 'None',
         text = 'None',
-    } = publicConfig?.[type] || {};
+    } = publicConfig?.[type] ?? {};
 
     const title = `${capitalize(type)} configuration`;
 

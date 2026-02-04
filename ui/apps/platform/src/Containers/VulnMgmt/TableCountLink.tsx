@@ -1,4 +1,5 @@
-import React, { ReactElement, useContext } from 'react';
+import { useContext } from 'react';
+import type { ReactElement } from 'react';
 import pluralize from 'pluralize';
 
 import TableCellLink from 'Components/TableCellLink';

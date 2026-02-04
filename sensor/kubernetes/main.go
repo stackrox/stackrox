@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/cloudproviders/gcp"
 	"github.com/stackrox/rox/sensor/common/clusterid"
+	"github.com/stackrox/rox/sensor/kubernetes/certinit"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/crs"
@@ -57,6 +58,11 @@ func main() {
 			os.Exit(1)
 		}
 		os.Exit(0)
+	}
+
+	// Initialize TLS certificates if needed (select between legacy and new service certificates)
+	if err := certinit.Run(); err != nil {
+		log.Fatalf("TLS certificate initialization failed: %v", err)
 	}
 
 	// Start the prometheus metrics server

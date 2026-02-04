@@ -19,6 +19,7 @@ export type ResourceName =
     | 'DeploymentExtension' // DeploymentExtension is the new resource grouping all deployment extending resources.
     | 'Detection'
     | 'Image'
+    | 'ImageAdministration' // ImageAdministration is the new resource grouping all image scanning related resources.
     | 'Integration' // Integration is the new resource grouping all integration resources.
     | 'K8sRole'
     | 'K8sRoleBinding'
@@ -29,6 +30,7 @@ export type ResourceName =
     | 'Node'
     | 'Secret'
     | 'ServiceAccount'
+    | 'VirtualMachine'
     | 'VulnerabilityManagementApprovals'
     | 'VulnerabilityManagementRequests'
     | 'WatchedImage'

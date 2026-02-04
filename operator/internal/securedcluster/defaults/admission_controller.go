@@ -87,7 +87,7 @@ func admissionControllerDefaultingBrownField(logger logr.Logger, annotations map
 }
 
 func securedClusterAdmissionControllerDefaulting(logger logr.Logger, status *platform.SecuredClusterStatus, annotations map[string]string, spec *platform.SecuredClusterSpec, defaults *platform.SecuredClusterSpec) error {
-	if securedClusterStatusUninitialized(status) {
+	if isNewInstallation(status) {
 		// Green field.
 		logger.Info("Assuming new installation due to empty status.")
 		if err := admissionControllerDefaultingGreenField(logger, annotations, spec, defaults); err != nil {

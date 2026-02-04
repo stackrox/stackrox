@@ -992,6 +992,91 @@ func (s *PolicyValidatorTestSuite) TestValidateEnforcement() {
 	}
 }
 
+func (s *PolicyValidatorTestSuite) TestValidateEffectivePathEventSource() {
+	testCases := []struct {
+		description string
+		p           *storage.Policy
+		errExpected bool
+	}{
+		{
+			description: "Deployment policy with valid Effective Path field",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.EffectivePath: "/etc/passwd",
+				}),
+		},
+		{
+			description: "Deployment policy with Effective Path and FileOperation",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.EffectivePath: "/etc/shadow",
+					fieldnames.FileOperation: "open",
+				}),
+		},
+		{
+			description: "Node policy with Effective Path (should be invalid)",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
+				map[string]string{
+					fieldnames.EffectivePath: "/etc/passwd",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Deployment policy with FileOperation but no file path",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.FileOperation: "open",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Deployment policy with invalid Effective Path",
+			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.EffectivePath: "relative/path.sh",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Deployment policy with Effective Path in wrong lifecycle stage (build)",
+			p: booleanPolicyWithFields(storage.LifecycleStage_BUILD, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.EffectivePath: "/etc/hosts",
+				}),
+			errExpected: true,
+		},
+		{
+			description: "Deployment policy with Effective Path in wrong lifecycle stage (deploy)",
+			p: booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_DEPLOYMENT_EVENT,
+				map[string]string{
+					fieldnames.EffectivePath: "/etc/passwd",
+				}),
+			errExpected: true,
+		},
+	}
+
+	// reset once for these tests, and then reset on return after the feature flag has been disabled
+	// again to ensure consistent state in other tests
+	testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, true)
+	booleanpolicy.ResetFieldMetadataSingleton(s.T())
+
+	defer testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, false)
+	defer booleanpolicy.ResetFieldMetadataSingleton(s.T())
+
+	for _, c := range testCases {
+		s.T().Run(c.description, func(t *testing.T) {
+			c.p.Name = "BLAHBLAH"
+
+			err := s.validator.validateCompilableForLifecycle(c.p)
+			if c.errExpected {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 	testCases := []struct {
 		description string
@@ -999,10 +1084,10 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 		errExpected bool
 	}{
 		{
-			description: "Node policy with valid NodeFilePath field",
+			description: "Node policy with valid Actual Path field",
 			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
 				map[string]string{
-					fieldnames.NodeFilePath: "/etc/passwd",
+					fieldnames.ActualPath: "/etc/passwd",
 				}),
 		},
 		{
@@ -1038,44 +1123,44 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 			errExpected: true,
 		},
 		{
-			description: "Node policy with NodeFilePath and invalid process fields",
+			description: "Node policy with Actual Path and invalid process fields",
 			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
 				map[string]string{
-					fieldnames.NodeFilePath: "/var/log/audit.log",
-					fieldnames.ProcessName:  "suspicious-binary",
+					fieldnames.ActualPath:  "/var/log/audit.log",
+					fieldnames.ProcessName: "suspicious-binary",
 				}),
 			errExpected: true,
 		},
 		{
-			description: "Node policy with NodeFilePath and invalid container fields",
+			description: "Node policy with Actual Path and invalid container fields",
 			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
 				map[string]string{
-					fieldnames.NodeFilePath:  "/etc/shadow",
+					fieldnames.ActualPath:    "/etc/shadow",
 					fieldnames.ContainerName: "malicious-container",
 				}),
 			errExpected: true,
 		},
 		{
-			description: "Node policy with NodeFilePath in wrong lifecycle stage (build)",
+			description: "Node policy with Actual Path in wrong lifecycle stage (build)",
 			p: booleanPolicyWithFields(storage.LifecycleStage_BUILD, storage.EventSource_NODE_EVENT,
 				map[string]string{
-					fieldnames.NodeFilePath: "/etc/hosts",
+					fieldnames.ActualPath: "/etc/hosts",
 				}),
 			errExpected: true,
 		},
 		{
-			description: "Node policy with NodeFilePath in wrong lifecycle stage (deploy)",
+			description: "Node policy with Actual Path in wrong lifecycle stage (deploy)",
 			p: booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_NODE_EVENT,
 				map[string]string{
-					fieldnames.NodeFilePath: "/tmp/malicious.sh",
+					fieldnames.ActualPath: "/tmp/malicious.sh",
 				}),
 			errExpected: true,
 		},
 		{
-			description: "Node policy invalid NodeFilePath",
+			description: "Node policy invalid Actual Path",
 			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
 				map[string]string{
-					fieldnames.NodeFilePath: "relative/path.sh",
+					fieldnames.ActualPath: "relative/path.sh",
 				}),
 			errExpected: true,
 		},
@@ -1085,13 +1170,14 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 				map[string]string{
 					fieldnames.FileOperation: "open",
 				}),
+			errExpected: true,
 		},
 		{
-			description: "Node policy with FileOperation and valid NodeFilePath field",
+			description: "Node policy with FileOperation and valid Actual Path field",
 			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
 				map[string]string{
 					fieldnames.FileOperation: "open",
-					fieldnames.NodeFilePath:  "/etc/passwd",
+					fieldnames.ActualPath:    "/etc/passwd",
 				}),
 		},
 		{
@@ -1134,6 +1220,98 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 
 			err := s.validator.validateCompilableForLifecycle(c.p)
 			if c.errExpected {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func (s *PolicyValidatorTestSuite) TestValidateScope() {
+	testutils.MustUpdateFeature(s.T(), features.LabelBasedPolicyScoping, true)
+	defer testutils.MustUpdateFeature(s.T(), features.LabelBasedPolicyScoping, false)
+
+	testCases := []struct {
+		description string
+		scope       *storage.Scope
+		errExpected bool
+	}{
+		{
+			description: "cluster and cluster_label are mutually exclusive",
+			scope: &storage.Scope{
+				Cluster: "cluster1",
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+			},
+			errExpected: true,
+		},
+		{
+			description: "namespace and namespace_label are mutually exclusive",
+			scope: &storage.Scope{
+				Namespace: "default",
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "backend",
+				},
+			},
+			errExpected: true,
+		},
+		{
+			description: "cluster_label alone is valid",
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+			},
+			errExpected: false,
+		},
+		{
+			description: "namespace_label alone is valid",
+			scope: &storage.Scope{
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "backend",
+				},
+			},
+			errExpected: false,
+		},
+		{
+			description: "cluster and namespace_label together is valid",
+			scope: &storage.Scope{
+				Cluster: "cluster1",
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "backend",
+				},
+			},
+			errExpected: false,
+		},
+		{
+			description: "cluster_label and namespace together is valid",
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+				Namespace: "default",
+			},
+			errExpected: false,
+		},
+		{
+			description: "empty scope is invalid",
+			scope:       &storage.Scope{},
+			errExpected: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.description, func(t *testing.T) {
+			err := s.validator.validateScope(tc.scope)
+			if tc.errExpected {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)

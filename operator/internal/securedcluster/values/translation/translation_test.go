@@ -2,6 +2,7 @@ package translation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	testingUtils "github.com/stackrox/rox/operator/internal/values/testing"
 	"github.com/stackrox/rox/operator/internal/values/translation"
+	"github.com/stackrox/rox/pkg/features"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -21,10 +23,12 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/utils/ptr"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -1395,4 +1399,162 @@ func createCaBundleConfigMap(namespace string, data map[string]string) *v1.Confi
 		},
 		Data: data,
 	}
+}
+
+func TestDeploymentDefaults(t *testing.T) {
+	componentPaths := []testingUtils.ComponentPath{
+		{Name: "sensor", NodeSelectorPath: "sensor.nodeSelector", TolerationsPath: "sensor.tolerations"},
+		{Name: "admissionControl", NodeSelectorPath: "admissionControl.nodeSelector", TolerationsPath: "admissionControl.tolerations"},
+		{Name: "scanner", NodeSelectorPath: "scanner.nodeSelector", TolerationsPath: "scanner.tolerations"},
+		{Name: "scanner-db", NodeSelectorPath: "scanner.dbNodeSelector", TolerationsPath: "scanner.dbTolerations"},
+		{Name: "scannerV4-indexer", NodeSelectorPath: "scannerV4.indexer.nodeSelector", TolerationsPath: "scannerV4.indexer.tolerations"},
+		{Name: "scannerV4-db", NodeSelectorPath: "scannerV4.db.nodeSelector", TolerationsPath: "scannerV4.db.tolerations"},
+	}
+
+	tests := map[string]struct {
+		securedCluster platform.SecuredCluster
+		expectations   testingUtils.SchedulingExpectations
+	}{
+		"pinToNodes InfraRole": {
+			securedCluster: platform.SecuredCluster{
+				ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+				Spec: platform.SecuredClusterSpec{
+					ClusterName: ptr.To("test-cluster"),
+					ScannerV4: &platform.LocalScannerV4ComponentSpec{
+						ScannerComponent: ptr.To(platform.LocalScannerV4ComponentAutoSense),
+					},
+					Customize: &platform.CustomizeSpec{
+						DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+							PinToNodes: ptr.To(platform.PinToNodesInfraRole),
+						},
+					},
+				},
+			},
+			expectations: testingUtils.NewSchedulingExpectations(componentPaths, testingUtils.InfraScheduling),
+		},
+		"explicit nodeSelector and tolerations": {
+			securedCluster: platform.SecuredCluster{
+				ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+				Spec: platform.SecuredClusterSpec{
+					ClusterName: ptr.To("test-cluster"),
+					ScannerV4: &platform.LocalScannerV4ComponentSpec{
+						ScannerComponent: ptr.To(platform.LocalScannerV4ComponentAutoSense),
+					},
+					Customize: &platform.CustomizeSpec{
+						DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+							NodeSelector: map[string]string{"global-label": "global-value"},
+							Tolerations: []*v1.Toleration{
+								{Key: "global-taint", Operator: v1.TolerationOpExists},
+							},
+						},
+					},
+				},
+			},
+			expectations: testingUtils.NewSchedulingExpectations(componentPaths, testingUtils.GlobalScheduling),
+		},
+		"component-specific overrides global": {
+			securedCluster: platform.SecuredCluster{
+				ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+				Spec: platform.SecuredClusterSpec{
+					ClusterName: ptr.To("test-cluster"),
+					ScannerV4: &platform.LocalScannerV4ComponentSpec{
+						ScannerComponent: ptr.To(platform.LocalScannerV4ComponentAutoSense),
+					},
+					Sensor: &platform.SensorComponentSpec{
+						DeploymentSpec: platform.DeploymentSpec{
+							NodeSelector: map[string]string{"sensor-label": "sensor-value"},
+							Tolerations: []*v1.Toleration{
+								{Key: "sensor-taint", Effect: v1.TaintEffectNoExecute},
+							},
+						},
+					},
+					Customize: &platform.CustomizeSpec{
+						DeploymentDefaults: &platform.DeploymentDefaultsSpec{
+							NodeSelector: map[string]string{"global-label": "global-value"},
+							Tolerations: []*v1.Toleration{
+								{Key: "global-taint", Operator: v1.TolerationOpExists},
+							},
+						},
+					},
+				},
+			},
+			expectations: testingUtils.NewSchedulingExpectations(componentPaths, testingUtils.GlobalScheduling).
+				WithOverride("sensor", testingUtils.SchedulingExpectation{
+					NodeSelector: map[string]any{"sensor-label": "sensor-value"},
+					Tolerations:  []any{map[string]any{"effect": "NoExecute", "key": "sensor-taint"}},
+				}),
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			client := newDefaultFakeClient(t)
+			translator := Translator{client: client, direct: client}
+			values, err := translator.translate(t.Context(), tt.securedCluster)
+			require.NoError(t, err)
+
+			flatValues, err := flatten.Flatten(values, "", flatten.DotStyle)
+			require.NoError(t, err)
+
+			for _, path := range componentPaths {
+				t.Run(path.Name, func(t *testing.T) {
+					exp := tt.expectations[path.Name]
+					flatExpected, err := flatten.Flatten(map[string]any{
+						path.NodeSelectorPath: exp.NodeSelector,
+						path.TolerationsPath:  exp.Tolerations,
+					}, "", flatten.DotStyle)
+					require.NoError(t, err)
+
+					for k, v := range flatExpected {
+						assert.Equal(t, v, flatValues[k], "mismatch at %s", k)
+					}
+				})
+			}
+
+			// Collector is a DaemonSet and does not inherit deployment scheduling defaults
+			assert.Nil(t, flatValues["collector.nodeSelector"], "collector should not have nodeSelector from deployment defaults")
+			assert.Nil(t, flatValues["collector.tolerations"], "collector should not have tolerations from deployment defaults")
+		})
+	}
+}
+
+func TestConsolePluginValues(t *testing.T) {
+	t.Setenv(features.OCPConsoleIntegration.EnvVar(), "true")
+
+	t.Run("enabled when API available", func(t *testing.T) {
+		client := testutils.NewFakeClientBuilderWithConsolePluginListError(t, nil).Build()
+		translator := Translator{client: client, direct: client}
+
+		v := translator.getConsolePluginValues(context.Background())
+		vals, err := v.Build()
+		require.NoError(t, err)
+
+		enabled, err := vals.PathValue("enabled")
+		require.NoError(t, err)
+		assert.Equal(t, true, enabled)
+	})
+
+	t.Run("disabled when API not available", func(t *testing.T) {
+		noMatchErr := &meta.NoKindMatchError{
+			GroupKind: schema.GroupKind{Group: "console.openshift.io", Kind: "ConsolePlugin"},
+		}
+		client := testutils.NewFakeClientBuilderWithConsolePluginListError(t, noMatchErr).Build()
+		translator := Translator{client: client, direct: client}
+
+		v := translator.getConsolePluginValues(context.Background())
+		vals, err := v.Build()
+		require.NoError(t, err)
+
+		_, err = vals.PathValue("enabled")
+		assert.Error(t, err, "enabled should not be set when API is not available")
+	})
+
+	t.Run("error when API check fails", func(t *testing.T) {
+		client := testutils.NewFakeClientBuilderWithConsolePluginListError(t, errors.New("RBAC error")).Build()
+		translator := Translator{client: client, direct: client}
+
+		v := translator.getConsolePluginValues(context.Background())
+		_, err := v.Build()
+		assert.Error(t, err, "should return error when API check fails")
+	})
 }

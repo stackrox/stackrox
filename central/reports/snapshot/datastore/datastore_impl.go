@@ -69,27 +69,23 @@ func (ds *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.
 		return nil, err
 	}
 
-	// TODO(ROX-29943): remove 2 pass database queries
+	if q == nil {
+		q = pkgSearch.EmptyQuery()
+	} else {
+		q = q.CloneVT()
+	}
+
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 
-	snaps, missingIndices, err := ds.storage.GetMany(ctx, pkgSearch.ResultsToIDs(results))
-	if err != nil {
-		return nil, err
+	// Populate Name from ID for each result (report snapshots use ID as name).
+	for i := range results {
+		results[i].Name = results[i].ID
 	}
 
-	results = pkgSearch.RemoveMissingResults(results, missingIndices)
-	if len(snaps) != len(results) {
-		return nil, errors.Errorf("expected %d report snapshots but got %d", len(results), len(snaps))
-	}
-
-	protoResults := make([]*v1.SearchResult, 0, len(snaps))
-	for i, snap := range snaps {
-		protoResults = append(protoResults, convertOne(snap, results[i]))
-	}
-	return protoResults, nil
+	return pkgSearch.ResultsToSearchResultProtos(results, &ReportSnapshotSearchResultConverter{}), nil
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ReportSnapshot, bool, error) {
@@ -177,12 +173,22 @@ func (ds *datastoreImpl) Walk(ctx context.Context, fn func(report *storage.Repor
 	return ds.storage.Walk(ctx, fn)
 }
 
-func convertOne(report *storage.ReportSnapshot, result pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_REPORT_SNAPSHOT,
-		Id:             report.GetReportId(),
-		Name:           report.GetReportId(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+type ReportSnapshotSearchResultConverter struct{}
+
+func (c *ReportSnapshotSearchResultConverter) BuildName(result *pkgSearch.Result) string {
+	// Name is already populated from ID
+	return result.Name
+}
+
+func (c *ReportSnapshotSearchResultConverter) BuildLocation(result *pkgSearch.Result) string {
+	// ReportSnapshot does not have a location
+	return ""
+}
+
+func (c *ReportSnapshotSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_REPORT_SNAPSHOT
+}
+
+func (c *ReportSnapshotSearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
+	return result.Score
 }

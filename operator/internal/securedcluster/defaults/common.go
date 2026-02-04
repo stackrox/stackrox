@@ -3,10 +3,13 @@ package defaults
 import (
 	"reflect"
 
-	"github.com/stackrox/rox/operator/api/v1alpha1"
+	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 )
 
-// securedClusterStatusUninitialized checks if the provided SecuredClusterStatus is uninitialized.
-func securedClusterStatusUninitialized(status *v1alpha1.SecuredClusterStatus) bool {
-	return status == nil || reflect.DeepEqual(status, &v1alpha1.SecuredClusterStatus{})
+// isNewInstallation checks if this is a new installation based on the status.
+func isNewInstallation(status *platform.SecuredClusterStatus) bool {
+	// The ProductVersion is only set post installation.
+	return status == nil ||
+		reflect.DeepEqual(status, &platform.SecuredClusterStatus{}) ||
+		status.ProductVersion == ""
 }

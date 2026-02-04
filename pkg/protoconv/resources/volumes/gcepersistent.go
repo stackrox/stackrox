@@ -9,7 +9,7 @@ type gcePersistentDisk struct {
 }
 
 func (e *gcePersistentDisk) Source() string {
-	return string(e.PDName)
+	return e.PDName
 }
 
 func (e *gcePersistentDisk) Type() string {

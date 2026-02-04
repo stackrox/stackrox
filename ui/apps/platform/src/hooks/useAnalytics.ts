@@ -6,6 +6,7 @@ import type { Telemetry } from 'types/config.proto';
 import { ensureExhaustive, tupleTypeGuard } from 'utils/type.utils';
 import type { UnionFrom } from 'utils/type.utils';
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
+import { getAnalytics } from 'init/initializeAnalytics';
 import usePublicConfig from './usePublicConfig';
 
 // Event Name Constants
@@ -56,6 +57,7 @@ export const PLATFORM_CVE_ENTITY_CONTEXT_VIEWED = 'Platform CVE Entity Context V
 
 // cluster-init-bundles
 export const CREATE_INIT_BUNDLE_CLICKED = 'Create Init Bundle Clicked';
+export const VIEW_INIT_BUNDLES_CLICKED = 'View Init Bundles Clicked';
 export const SECURE_A_CLUSTER_LINK_CLICKED = 'Secure a Cluster Link Clicked';
 export const LEGACY_SECURE_A_CLUSTER_LINK_CLICKED = 'Legacy Secure a Cluster Link Clicked';
 export const CRS_SECURE_A_CLUSTER_LINK_CLICKED = 'CRS Secure a Cluster Link Clicked';
@@ -86,6 +88,16 @@ export const COMPLIANCE_REPORT_JOB_STATUS_FILTERED = 'Compliance Report Job Stat
 export const COMPLIANCE_SCHEDULES_WIZARD_SAVE_CLICKED = 'Compliance Schedules Wizard Save Clicked';
 export const COMPLIANCE_SCHEDULES_WIZARD_STEP_CHANGED = 'Compliance Schedules Wizard Step Changed';
 
+// base images
+export const BASE_IMAGE_REFERENCE_ADD_MODAL_OPENED = 'Base Image Reference Add Modal Opened';
+export const BASE_IMAGE_REFERENCE_ADD_SUBMITTED = 'Base Image Reference Add Submitted';
+export const BASE_IMAGE_REFERENCE_ADD_SUCCESS = 'Base Image Reference Add Success';
+export const BASE_IMAGE_REFERENCE_ADD_FAILURE = 'Base Image Reference Add Failure';
+export const BASE_IMAGE_REFERENCE_DELETED = 'Base Image Reference Deleted';
+
+// error boundary
+export const PAGE_CRASH = 'Page Crash';
+
 /**
  * Boolean fields should be tracked with 0 or 1 instead of true/false. This
  * allows us to use the boolean fields in numeric aggregations in the
@@ -102,6 +114,7 @@ type AnalyticsBoolean = 0 | 1;
  */
 export const searchCategoriesWithFilter = [
     'Component Source',
+    'Component Layer Type',
     'SEVERITY',
     'FIXABLE',
     'CLUSTER CVE FIXABLE',
@@ -349,11 +362,22 @@ export type AnalyticsEvent =
       }
     /**
      * Tracks each time the user clicks the "Create Bundle" button
+     * source: 'No Clusters' is superseded by the following event in 4.10
      */
     | {
           event: typeof CREATE_INIT_BUNDLE_CLICKED;
           properties: {
               source: 'No Clusters' | 'Cluster Init Bundles';
+          };
+      }
+    /**
+     * Tracks each time the user clicks the "Init bundles installation method" link
+     * superseded the preceding event in 4.10
+     */
+    | {
+          event: typeof VIEW_INIT_BUNDLES_CLICKED;
+          properties: {
+              source: 'No Clusters';
           };
       }
     /**
@@ -495,6 +519,34 @@ export type AnalyticsEvent =
           properties: {
               step: string;
           };
+      }
+    /** Tracks each time the user opens the "Add base image" modal */
+    | typeof BASE_IMAGE_REFERENCE_ADD_MODAL_OPENED
+    /** Tracks each time the user submits the base image add form */
+    | typeof BASE_IMAGE_REFERENCE_ADD_SUBMITTED
+    /** Tracks each successful base image addition */
+    | typeof BASE_IMAGE_REFERENCE_ADD_SUCCESS
+    /** Tracks each failed base image addition with error categorization */
+    | {
+          event: typeof BASE_IMAGE_REFERENCE_ADD_FAILURE;
+          properties: {
+              errorType: string;
+          };
+      }
+    /** Tracks each time a base image is deleted */
+    | typeof BASE_IMAGE_REFERENCE_DELETED
+    /**
+     * Tracks each time a page crash occurs (caught by error boundary).
+     * Includes error name, truncated message, and component location.
+     */
+    | {
+          event: typeof PAGE_CRASH;
+          properties: {
+              errorName: string;
+              errorMessage: string;
+              componentStack: string;
+              pathname: string;
+          };
       };
 
 export const redactedHostReplacement = 'redacted.host.invalid';
@@ -585,10 +637,14 @@ const useAnalytics = () => {
     const analyticsPageVisit = useCallback(
         (type: string, name: string, additionalProperties = {}): void => {
             if (isTelemetryEnabled !== false) {
-                window.analytics?.page(type, name, {
-                    ...additionalProperties,
-                    ...getRedactedOriginProperties(window.location.toString()),
-                });
+                getAnalytics()
+                    ?.page(type, name, {
+                        ...additionalProperties,
+                        ...getRedactedOriginProperties(window.location.toString()),
+                    })
+                    .catch((error) => {
+                        Raven.captureException(error);
+                    });
             }
         },
         [isTelemetryEnabled]
@@ -607,13 +663,17 @@ const useAnalytics = () => {
             };
 
             if (typeof analyticsEvent === 'string') {
-                window.analytics?.track(analyticsEvent, undefined, redactedEventContext);
+                getAnalytics()
+                    ?.track(analyticsEvent, undefined, redactedEventContext)
+                    .catch((error) => {
+                        Raven.captureException(error);
+                    });
             } else {
-                window.analytics?.track(
-                    analyticsEvent.event,
-                    analyticsEvent.properties,
-                    redactedEventContext
-                );
+                getAnalytics()
+                    ?.track(analyticsEvent.event, analyticsEvent.properties, redactedEventContext)
+                    .catch((error) => {
+                        Raven.captureException(error);
+                    });
             }
         },
         [isTelemetryEnabled]

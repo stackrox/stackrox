@@ -122,6 +122,23 @@ func insertIntoNodeCves(batch *pgx.Batch, obj *storage.NodeCVE) error {
 	return nil
 }
 
+var copyColsNodeCves = []string{
+	"id",
+	"cvebaseinfo_cve",
+	"cvebaseinfo_publishedon",
+	"cvebaseinfo_createdat",
+	"cvebaseinfo_epss_epssprobability",
+	"operatingsystem",
+	"cvss",
+	"severity",
+	"impactscore",
+	"snoozed",
+	"snoozeexpiry",
+	"orphaned",
+	"orphanedtime",
+	"serialized",
+}
+
 func copyFromNodeCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.NodeCVE) error {
 	if len(objs) == 0 {
 		return nil
@@ -137,23 +154,6 @@ func copyFromNodeCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, 
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"cvebaseinfo_cve",
-		"cvebaseinfo_publishedon",
-		"cvebaseinfo_createdat",
-		"cvebaseinfo_epss_epssprobability",
-		"operatingsystem",
-		"cvss",
-		"severity",
-		"impactscore",
-		"snoozed",
-		"snoozeexpiry",
-		"orphaned",
-		"orphanedtime",
-		"serialized",
 	}
 
 	idx := 0
@@ -187,7 +187,7 @@ func copyFromNodeCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, 
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"node_cves"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"node_cves"}, copyColsNodeCves, inputRows); err != nil {
 		return err
 	}
 

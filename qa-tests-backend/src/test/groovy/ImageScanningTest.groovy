@@ -73,6 +73,7 @@ class ImageScanningTest extends BaseSpecification {
             "quay": new Deployment()
                     .setName("quay-image-scanning-test")
                     .setNamespace(TEST_NAMESPACE)
+                    .setImagePrefetcherAffinity()
                     // same image as us.gcr.io/acs-san-stackroxci/qa/registry-image:0.3 but just retagged
                     // Alternatively can use quay.io/rhacs-eng/qa:struts-app but that doesn't have as many
                     // dockerfile violations

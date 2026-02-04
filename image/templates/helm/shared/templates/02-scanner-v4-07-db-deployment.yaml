@@ -47,9 +47,6 @@ spec:
       serviceAccountName: scanner-v4
       terminationGracePeriodSeconds: 120
       initContainers:
-      {{- if ._rox._securedClusterCertRefresh }}
-      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
-      {{- end }}
       - name: init-db
         image: {{ ._rox.scannerV4.db.image.fullRef | quote }}
         env:
@@ -71,6 +68,8 @@ spec:
         - name: scanner-v4-db-password
           mountPath: /run/secrets/stackrox.io/secrets
           readOnly: true
+        securityContext:
+          allowPrivilegeEscalation: false
         resources:
           {{- ._rox.scannerV4.db._resources | nindent 10 }}
       containers:
@@ -100,6 +99,8 @@ spec:
           timeoutSeconds: 1
         resources:
           {{- ._rox.scannerV4.db._resources | nindent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: false
         volumeMounts:
         - name: disk
           mountPath: /var/lib/postgresql/data
@@ -120,35 +121,9 @@ spec:
       - name: config-volume
         configMap:
           name: {{ default "scanner-v4-db-config" ._rox.scannerV4.db.configOverride }}
-      {{- if ._rox._securedClusterCertRefresh }}
-      - name: certs
-        emptyDir: {}
-      - name: certs-legacy
-        secret:
-          secretName: scanner-v4-db-tls
-          optional: true
-          items:
-          - key: cert.pem
-            path: server.crt
-          - key: key.pem
-            path: server.key
-          - key: ca.pem
-            path: root.crt
-      - name: certs-new
-        secret:
-          secretName: tls-cert-scanner-v4-db
-          optional: true
-          items:
-          - key: cert.pem
-            path: server.crt
-          - key: key.pem
-            path: server.key
-          - key: ca.pem
-            path: root.crt
-      {{- else }}
       - name: certs
         secret:
-          secretName: scanner-v4-db-tls
+          secretName: {{ (default false ._rox._securedClusterCertRefresh) | ternary "tls-cert-scanner-v4-db" "scanner-v4-db-tls" }}
           defaultMode: 0640
           items:
           - key: cert.pem
@@ -157,7 +132,6 @@ spec:
             path: server.key
           - key: ca.pem
             path: root.crt
-      {{- end }}
       - name: shared-memory
         emptyDir:
           medium: Memory

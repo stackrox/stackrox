@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
@@ -86,10 +86,13 @@ jobs:
       # race-condition-debug - built with -race
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).pre_build_scanner_go_binary }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.1
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -143,13 +146,13 @@ jobs:
     needs: pre-build-scanner-go-binary
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.1
     if: contains(github.event.pull_request.labels.*.name, 'scan-go-binaries')
     env:
       ARTIFACT_DIR: junit-reports/
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 1
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -197,7 +200,10 @@ jobs:
       # race-condition-debug - built with -race
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).build_and_push_scanner }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.1
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
@@ -205,7 +211,7 @@ jobs:
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -272,7 +278,7 @@ jobs:
       # race-condition-debug
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).push_scanner_manifests }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.1
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
@@ -280,7 +286,7 @@ jobs:
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -336,7 +342,7 @@ jobs:
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).scan_images_with_roxctl }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}

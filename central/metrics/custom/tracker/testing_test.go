@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 
@@ -52,7 +53,8 @@ func makeTestMetricLabels(t *testing.T) map[string]*storage.PrometheusMetrics_Gr
 	pfx := strings.ReplaceAll(t.Name(), "/", "_")
 	return map[string]*storage.PrometheusMetrics_Group_Labels{
 		pfx + "_metric1": {Labels: []string{"Cluster", "Severity"}},
-		pfx + "_metric2": {Labels: []string{"Namespace"}},
+		pfx + "_metric2": {Labels: []string{"Namespace"},
+			IncludeFilters: map[string]string{"Namespace": "ns.*"}},
 	}
 }
 
@@ -61,6 +63,15 @@ func makeTestMetricDescriptors(t *testing.T) MetricDescriptors {
 	return MetricDescriptors{
 		pfx + "_metric1": {"Cluster", "Severity"},
 		pfx + "_metric2": {"Namespace"},
+	}
+}
+
+func makeTestLabelFilters(t *testing.T) LabelFilters {
+	pfx := "test_" + MetricName(strings.ReplaceAll(t.Name(), "/", "_"))
+	return LabelFilters{
+		pfx + "_metric2": map[Label]*regexp.Regexp{
+			"Namespace": regexp.MustCompile("^ns.*$"),
+		},
 	}
 }
 

@@ -15,7 +15,7 @@ function useSelectToggleState(onSelectionChange: (value: string) => void) {
     };
 
     const onToggle = () => {
-        setIsOpen(!isOpen);
+        setIsOpen((prev) => !prev);
     };
 
     return {

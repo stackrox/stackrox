@@ -121,6 +121,21 @@ func insertIntoReportSnapshots(batch *pgx.Batch, obj *storage.ReportSnapshot) er
 	return nil
 }
 
+var copyColsReportSnapshots = []string{
+	"reportid",
+	"reportconfigurationid",
+	"name",
+	"reportstatus_runstate",
+	"reportstatus_queuedat",
+	"reportstatus_completedat",
+	"reportstatus_reportrequesttype",
+	"reportstatus_reportnotificationmethod",
+	"requester_id",
+	"requester_name",
+	"areaofconcern",
+	"serialized",
+}
+
 func copyFromReportSnapshots(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ReportSnapshot) error {
 	if len(objs) == 0 {
 		return nil
@@ -136,21 +151,6 @@ func copyFromReportSnapshots(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"reportid",
-		"reportconfigurationid",
-		"name",
-		"reportstatus_runstate",
-		"reportstatus_queuedat",
-		"reportstatus_completedat",
-		"reportstatus_reportrequesttype",
-		"reportstatus_reportnotificationmethod",
-		"requester_id",
-		"requester_name",
-		"areaofconcern",
-		"serialized",
 	}
 
 	idx := 0
@@ -182,7 +182,7 @@ func copyFromReportSnapshots(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"report_snapshots"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"report_snapshots"}, copyColsReportSnapshots, inputRows); err != nil {
 		return err
 	}
 

@@ -110,6 +110,12 @@ func insertIntoPolicyCategories(batch *pgx.Batch, obj *storage.PolicyCategory) e
 	return nil
 }
 
+var copyColsPolicyCategories = []string{
+	"id",
+	"name",
+	"serialized",
+}
+
 func copyFromPolicyCategories(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.PolicyCategory) error {
 	if len(objs) == 0 {
 		return nil
@@ -125,12 +131,6 @@ func copyFromPolicyCategories(ctx context.Context, s pgSearch.Deleter, tx *postg
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"name",
-		"serialized",
 	}
 
 	idx := 0
@@ -153,7 +153,7 @@ func copyFromPolicyCategories(ctx context.Context, s pgSearch.Deleter, tx *postg
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"policy_categories"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"policy_categories"}, copyColsPolicyCategories, inputRows); err != nil {
 		return err
 	}
 

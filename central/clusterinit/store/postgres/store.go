@@ -114,6 +114,11 @@ func insertIntoClusterInitBundles(batch *pgx.Batch, obj *storage.InitBundleMeta)
 	return nil
 }
 
+var copyColsClusterInitBundles = []string{
+	"id",
+	"serialized",
+}
+
 func copyFromClusterInitBundles(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.InitBundleMeta) error {
 	if len(objs) == 0 {
 		return nil
@@ -129,11 +134,6 @@ func copyFromClusterInitBundles(ctx context.Context, s pgSearch.Deleter, tx *pos
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"serialized",
 	}
 
 	idx := 0
@@ -155,7 +155,7 @@ func copyFromClusterInitBundles(ctx context.Context, s pgSearch.Deleter, tx *pos
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"cluster_init_bundles"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"cluster_init_bundles"}, copyColsClusterInitBundles, inputRows); err != nil {
 		return err
 	}
 

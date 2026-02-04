@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -91,18 +92,30 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.R
 }
 
 func (ds *datastoreImpl) SearchClusterCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	// TODO(ROX-29943): remove 2 pass database queries
-	results, err := ds.Search(ctx, q)
+	if q == nil {
+		q = pkgSearch.EmptyQuery()
+	}
+	clonedQuery := q.CloneVT()
+
+	// Add CVE field to select columns
+	clonedQuery.Selects = append(clonedQuery.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.CVE).Proto())
+
+	results, err := ds.Search(ctx, clonedQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	cves, missingIndices, err := ds.storage.GetMany(ctx, pkgSearch.ResultsToIDs(results))
-	if err != nil {
-		return nil, err
+	// Extract CVE name from FieldValues and populate Name in search results
+	searchTag := strings.ToLower(pkgSearch.CVE.String())
+	for i := range results {
+		if results[i].FieldValues != nil {
+			if nameVal, ok := results[i].FieldValues[searchTag]; ok {
+				results[i].Name = nameVal
+			}
+		}
 	}
-	results = pkgSearch.RemoveMissingResults(results, missingIndices)
-	return convertMany(cves, results)
+
+	return pkgSearch.ResultsToSearchResultProtos(results, &ClusterCVESearchResultConverter{}), nil
 }
 
 func (ds *datastoreImpl) SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.ClusterCVE, error) {
@@ -233,24 +246,21 @@ func (ds *datastoreImpl) deleteFromCache(cves ...*storage.ClusterCVE) {
 	}
 }
 
-func convertMany(cves []*storage.ClusterCVE, results []pkgSearch.Result) ([]*v1.SearchResult, error) {
-	if len(cves) != len(results) {
-		return nil, errors.Errorf("expected %d CVEs, got %d", len(results), len(cves))
-	}
+type ClusterCVESearchResultConverter struct{}
 
-	outputResults := make([]*v1.SearchResult, len(cves))
-	for index, sar := range cves {
-		outputResults[index] = convertOne(sar, &results[index])
-	}
-	return outputResults, nil
+func (c *ClusterCVESearchResultConverter) BuildName(result *pkgSearch.Result) string {
+	return result.Name
 }
 
-func convertOne(cve *storage.ClusterCVE, result *pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_CLUSTER_VULNERABILITIES,
-		Id:             cve.GetId(),
-		Name:           cve.GetCveBaseInfo().GetCve(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
-	}
+func (c *ClusterCVESearchResultConverter) BuildLocation(result *pkgSearch.Result) string {
+	// ClusterCVE does not have a location
+	return ""
+}
+
+func (c *ClusterCVESearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_CLUSTER_VULNERABILITIES
+}
+
+func (c *ClusterCVESearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
+	return result.Score
 }

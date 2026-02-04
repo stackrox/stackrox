@@ -25,6 +25,34 @@ func constructProcessAlert(policy *storage.Policy, deployment *storage.Deploymen
 	return alert
 }
 
+// constructFileAccessAlert constructs an alert for a FileAccess violation.
+// It assumes one of node or deployment is non-nil and constructs an alert based
+// on this.
+func constructFileAccessAlert(policy *storage.Policy, node *storage.Node, deployment *storage.Deployment, violations booleanpolicy.Violations) *storage.Alert {
+	if len(violations.AlertViolations) == 0 {
+		return nil
+	}
+
+	// file access alerts can be for node or for deployment but not both
+	if node != nil && deployment != nil {
+		return nil
+	}
+
+	var alert *storage.Alert
+	if node != nil {
+		alert = constructNodeRuntimeAlert(policy, node, violations.AlertViolations)
+	} else {
+		alert = constructGenericRuntimeAlert(policy, deployment, violations.AlertViolations)
+		if action, msg := buildEnforcement(policy); action != storage.EnforcementAction_UNSET_ENFORCEMENT {
+			alert.Enforcement = &storage.Alert_Enforcement{
+				Action:  action,
+				Message: msg,
+			}
+		}
+	}
+	return alert
+}
+
 func constructKubeEventAlert(
 	policy *storage.Policy,
 	kubeEvent *storage.KubernetesEvent,
@@ -92,6 +120,17 @@ func constructResourceRuntimeAlert(
 		Policy:         policy.CloneVT(),
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
 		Entity:         convert.ToAlertResource(kubeEvent),
+		Violations:     violations,
+		Time:           protocompat.TimestampNow(),
+	}
+}
+
+func constructNodeRuntimeAlert(policy *storage.Policy, node *storage.Node, violations []*storage.Alert_Violation) *storage.Alert {
+	return &storage.Alert{
+		Id:             uuid.NewV4().String(),
+		Policy:         policy.CloneVT(),
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+		Entity:         convert.ToAlertNode(node),
 		Violations:     violations,
 		Time:           protocompat.TimestampNow(),
 	}

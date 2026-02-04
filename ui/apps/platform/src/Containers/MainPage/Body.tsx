@@ -10,6 +10,7 @@ import {
     administrationEventsPathWithParam,
     apidocsPath,
     apidocsPathV2,
+    baseImagesPath,
     clustersClusterRegistrationSecretsPathWithParam,
     clustersDelegatedScanningPath,
     clustersDiscoveredClustersPath,
@@ -33,7 +34,7 @@ import {
     networkPath,
     policiesBasePath,
     policyManagementBasePath,
-    riskPath,
+    riskBasePath,
     searchPath,
     systemConfigPath,
     systemHealthPath,
@@ -211,8 +212,8 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         path: policyManagementBasePath,
     },
     risk: {
-        component: asyncComponent(() => import('Containers/Risk/RiskPage')),
-        path: riskPath,
+        component: asyncComponent(() => import('Containers/Risk/RiskRoutes')),
+        path: riskBasePath,
     },
     search: {
         component: asyncComponent(() => import('Containers/Search/SearchPage')),
@@ -269,6 +270,10 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'vulnerabilities/all-images': {
         component: makeVulnMgmtUserWorkloadView('all-images'),
         path: vulnerabilitiesAllImagesPath,
+    },
+    'base-images': {
+        component: asyncComponent(() => import('Containers/BaseImages/BaseImagesPage')),
+        path: baseImagesPath,
     },
     'vulnerabilities/inactive-images': {
         component: makeVulnMgmtUserWorkloadView('inactive-images'),
@@ -329,7 +334,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const routePredicates = { hasReadAccess, isFeatureFlagEnabled };
 
     return (
-        <div className="flex flex-col h-full w-full relative overflow-auto bg-base-100">
+        <div id="BodyRoutes">
             <ErrorBoundary>
                 <Routes>
                     <Route path="/" element={<Navigate to={dashboardPath} replace />} />

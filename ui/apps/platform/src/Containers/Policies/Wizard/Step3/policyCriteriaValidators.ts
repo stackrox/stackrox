@@ -1,4 +1,11 @@
-import type { ClientPolicy, ClientPolicySection } from 'types/policy.proto';
+import type { ClientPolicy, ClientPolicyGroup, ClientPolicySection } from 'types/policy.proto';
+
+function policyGroupsHasCriterion(
+    policyGroups: ClientPolicyGroup[],
+    criterionName: string
+): boolean {
+    return policyGroups.some((g) => g.fieldName === criterionName);
+}
 
 export type PolicyContext = Pick<ClientPolicy, 'eventSource' | 'lifecycleStages'>;
 
@@ -19,11 +26,9 @@ export const policySectionValidators: PolicySectionValidator[] = [
     {
         name: 'Audit log required fields',
         appliesTo: (context) => context.eventSource === 'AUDIT_LOG_EVENT',
-        validate: (section) => {
-            const hasResource = section.policyGroups.some(
-                (g) => g.fieldName === 'Kubernetes Resource'
-            );
-            const hasVerb = section.policyGroups.some((g) => g.fieldName === 'Kubernetes API Verb');
+        validate: ({ policyGroups }) => {
+            const hasResource = policyGroupsHasCriterion(policyGroups, 'Kubernetes Resource');
+            const hasVerb = policyGroupsHasCriterion(policyGroups, 'Kubernetes API Verb');
 
             if (!hasResource && !hasVerb) {
                 return 'Criteria must be present for audit log policies: Kubernetes resource type and Kubernetes API verb';
@@ -33,6 +38,36 @@ export const policySectionValidators: PolicySectionValidator[] = [
             }
             if (!hasVerb) {
                 return 'Criterion must be present for audit log policies: Kubernetes API verb';
+            }
+            return undefined;
+        },
+    },
+    {
+        name: 'File operation requires file path (Deploy)',
+        appliesTo: (context) =>
+            context.lifecycleStages.includes('RUNTIME') &&
+            context.eventSource === 'DEPLOYMENT_EVENT',
+        validate: ({ policyGroups }) => {
+            const hasFileOperation = policyGroupsHasCriterion(policyGroups, 'File Operation');
+            const hasEffectivePath = policyGroupsHasCriterion(policyGroups, 'Effective Path');
+            const hasActualPath = policyGroupsHasCriterion(policyGroups, 'Actual Path');
+
+            if (hasFileOperation && !hasEffectivePath && !hasActualPath) {
+                return 'Criterion must be present with at least one value when using File operation: Effective Path or Actual Path';
+            }
+            return undefined;
+        },
+    },
+    {
+        name: 'File operation requires file path (Node)',
+        appliesTo: (context) =>
+            context.lifecycleStages.includes('RUNTIME') && context.eventSource === 'NODE_EVENT',
+        validate: ({ policyGroups }) => {
+            const hasFileOperation = policyGroupsHasCriterion(policyGroups, 'File Operation');
+            const hasActualPath = policyGroupsHasCriterion(policyGroups, 'Actual Path');
+
+            if (hasFileOperation && !hasActualPath) {
+                return 'Criterion must be present with at least one value when using File operation: Actual Path';
             }
             return undefined;
         },

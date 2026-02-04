@@ -3,6 +3,7 @@ import { BarsIcon, CheckCircleIcon, SecurityIcon, WrenchIcon } from '@patternfly
 import pluralize from 'pluralize';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
+import { ensureExhaustive } from 'utils/type.utils';
 
 import {
     FAILING_VAR_COLOR,
@@ -37,6 +38,7 @@ function getStatusIcon(status: Status, count: number, disabled: boolean) {
                 color = OTHER_VAR_COLOR;
                 break;
             default:
+                ensureExhaustive(status);
                 break;
         }
     }
@@ -58,7 +60,7 @@ function getStatusIcon(status: Status, count: number, disabled: boolean) {
                 />
             );
         default:
-            return null;
+            return ensureExhaustive(status);
     }
 }
 

@@ -29,4 +29,18 @@ export const Version: CompoundSearchFilterAttribute = {
     inputType: 'text',
 };
 
-export const imageComponentAttributes = [Name, Source, Version];
+export const LayerType: CompoundSearchFilterAttribute = {
+    displayName: 'Layer type',
+    filterChipLabel: 'Image component layer type',
+    searchTerm: 'Component Layer Type',
+    inputType: 'select',
+    featureFlagDependency: ['ROX_BASE_IMAGE_DETECTION'],
+    inputProps: {
+        options: [
+            { label: 'Application', value: 'APPLICATION' },
+            { label: 'Base image', value: 'BASE_IMAGE' },
+        ],
+    },
+};
+
+export const imageComponentAttributes = [LayerType, Name, Source, Version];

@@ -13,6 +13,11 @@ import (
 	"k8s.io/utils/env"
 )
 
+// GetSingleConnectionString returns a connection string with pool configuration
+func GetSingleConnectionString(t testing.TB, database string) string {
+	return fmt.Sprintf("%s pool_min_conns=1 pool_max_conns=1", GetConnectionStringWithDatabaseName(t, database))
+}
+
 // GetConnectionStringWithDatabaseName returns a connection string with the passed database
 func GetConnectionStringWithDatabaseName(t testing.TB, database string) string {
 	return fmt.Sprintf("%s database=%s", GetConnectionString(t), database)

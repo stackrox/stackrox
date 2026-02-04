@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import entityTypes from 'constants/entityTypes';

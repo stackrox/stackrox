@@ -66,7 +66,7 @@ can be written, applied and the workaround code replaced with code that uses the
 
 4. Starting in 4.2, all migrations MUST be backwards compatible, at least while previous releases are supported.  
 
-   Rollbacks from 4.2 to 4.1 will NO LONGER use the `central_previous` database.  These rollbacks will use `central_active` and as such all schema changes and migrations must be backwards compatible.  This means no destructive changes like deleting columns or fields and ensuring that any data changes either work with previous versions or occur within a new field.  When a breaking change is made the `MinimumSupportedDBVersionSeqNum` will need to be updated to the minimum database version that will work with the breaking change.
+   These rollbacks will use `central_active` and as such all schema changes and migrations must be backwards compatible.  This means no destructive changes like deleting columns or fields and ensuring that any data changes either work with previous versions or occur within a new field.  When a breaking change is made the `MinimumSupportedDBVersionSeqNum` will need to be updated to the minimum database version that will work with the breaking change.
 
 ## How to write new migration script
 

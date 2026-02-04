@@ -221,3 +221,17 @@ func (mr *MockStoreMockRecorder) WalkByQuery(ctx, q, fn any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkByQuery", reflect.TypeOf((*MockStore)(nil).WalkByQuery), ctx, q, fn)
 }
+
+// WalkMetadataByQuery mocks base method.
+func (m *MockStore) WalkMetadataByQuery(ctx context.Context, q *v1.Query, fn func(*storage.Image) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WalkMetadataByQuery", ctx, q, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WalkMetadataByQuery indicates an expected call of WalkMetadataByQuery.
+func (mr *MockStoreMockRecorder) WalkMetadataByQuery(ctx, q, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkMetadataByQuery", reflect.TypeOf((*MockStore)(nil).WalkMetadataByQuery), ctx, q, fn)
+}

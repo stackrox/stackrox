@@ -67,4 +67,7 @@ const (
 
 	ClusterName1 = "Cluster1"
 	ClusterName2 = "Cluster2"
+
+	NodeName1 = "Node1"
+	NodeName2 = "Node2"
 )

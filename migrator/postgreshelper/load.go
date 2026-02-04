@@ -51,7 +51,6 @@ func GetConnections() (postgres.DB, *gorm.DB, error) {
 }
 
 // Load loads a Postgres instance and returns a GormDB.
-// TODO(ROX-18005) Deprecate this
 func Load(databaseName string) (postgres.DB, *gorm.DB, error) {
 	log.WriteToStderrf("Load database = %q", databaseName)
 	gc := migGorm.GetConfig()

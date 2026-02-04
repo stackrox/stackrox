@@ -2,9 +2,11 @@ package datastore
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/views"
@@ -14,10 +16,13 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -39,10 +44,13 @@ type datastoreImpl struct {
 
 	imageRanker          *ranking.Ranker
 	imageComponentRanker *ranking.Ranker
+
+	imageCVEInfoDS imageCVEInfoDS.DataStore
 }
 
 func newDatastoreImpl(storage store.Store, risks riskDS.DataStore,
-	imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) *datastoreImpl {
+	imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker,
+	imageCVEInfo imageCVEInfoDS.DataStore) *datastoreImpl {
 	ds := &datastoreImpl{
 		storage: storage,
 
@@ -50,6 +58,8 @@ func newDatastoreImpl(storage store.Store, risks riskDS.DataStore,
 
 		imageRanker:          imageRanker,
 		imageComponentRanker: imageComponentRanker,
+
+		imageCVEInfoDS: imageCVEInfo,
 
 		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
@@ -72,35 +82,28 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (ds *datastoreImpl) SearchImages(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Image", "SearchImages")
 
-	// TODO(ROX-29943): remove unnecessary calls to database
+	if q == nil {
+		q = pkgSearch.EmptyQuery()
+	}
+
+	// Clone the query and add select fields for SearchResult construction
+	clonedQuery := q.CloneVT()
+	clonedQuery.Selects = append(q.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.ImageName).Proto())
+
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
-	var images []*storage.Image
-	var newResults []pkgSearch.Result
-	for _, result := range results {
-		image, exists, err := ds.storage.GetImageMetadata(ctx, result.ID)
-		if err != nil {
-			return nil, err
+	for i := range results {
+		if results[i].FieldValues != nil {
+			if nameVal, ok := results[i].FieldValues[strings.ToLower(pkgSearch.ImageName.String())]; ok {
+				results[i].Name = nameVal
+			}
 		}
-		// The result may not exist if the object was deleted after the search
-		if !exists {
-			continue
-		}
-		images = append(images, image)
-		newResults = append(newResults, result)
+		results[i].ID = imageTypes.NewDigest(results[i].ID).Digest()
 	}
 
-	if len(newResults) != len(images) {
-		return nil, errors.Errorf("expected %d results, got %d", len(images), len(newResults))
-	}
-
-	protoResults := make([]*v1.SearchResult, 0, len(images))
-	for i, image := range images {
-		protoResults = append(protoResults, convertImage(image, newResults[i]))
-	}
-	return protoResults, nil
+	return pkgSearch.ResultsToSearchResultProtos(results, &ImageSearchResultConverter{}), nil
 }
 
 // SearchRawImages delegates to the underlying searcher.
@@ -125,7 +128,7 @@ func (ds *datastoreImpl) SearchListImages(ctx context.Context, q *v1.Query) ([]*
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Image", "SearchListImages")
 
 	var imgs []*storage.ListImage
-	err := ds.storage.WalkByQuery(ctx, q, func(img *storage.Image) error {
+	err := ds.storage.WalkMetadataByQuery(ctx, q, func(img *storage.Image) error {
 		imgs = append(imgs, imageTypes.ConvertImageToListImage(img))
 		return nil
 	})
@@ -271,6 +274,20 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) 
 	ds.keyedMutex.Lock(image.GetId())
 	defer ds.keyedMutex.Unlock(image.GetId())
 
+	if features.CVEFixTimestampCriteria.Enabled() {
+		// Populate the ImageCVEInfo table with CVE timing metadata
+		if err := ds.upsertImageCVEInfos(ctx, image); err != nil {
+			log.Warnf("Failed to upsert ImageCVEInfo: %v", err)
+			// Non-fatal, continue with image upsert
+		}
+
+		// Enrich the CVEs with accurate timestamps from lookup table
+		if err := ds.enrichCVEsFromImageCVEInfo(ctx, image); err != nil {
+			log.Warnf("Failed to enrich CVEs from ImageCVEInfo: %v", err)
+			// Non-fatal, continue with image upsert
+		}
+	}
+
 	ds.updateComponentRisk(image)
 	enricher.FillScanStats(image)
 
@@ -376,13 +393,102 @@ func (ds *datastoreImpl) updateComponentRisk(image *storage.Image) {
 	}
 }
 
-// convertImage returns proto search result from an image object and the internal search result
-func convertImage(image *storage.Image, result pkgSearch.Result) *v1.SearchResult {
-	return &v1.SearchResult{
-		Category:       v1.SearchCategory_IMAGES,
-		Id:             imageTypes.NewDigest(image.GetId()).Digest(),
-		Name:           image.GetName().GetFullName(),
-		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
-		Score:          result.Score,
+// upsertImageCVEInfos populates the ImageCVEInfo lookup table with CVE timing metadata.
+func (ds *datastoreImpl) upsertImageCVEInfos(ctx context.Context, image *storage.Image) error {
+	if !features.CVEFixTimestampCriteria.Enabled() {
+		return nil
 	}
+
+	infos := make([]*storage.ImageCVEInfo, 0)
+	now := protocompat.TimestampNow()
+
+	for _, component := range image.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			// Determine fix available timestamp: use scanner-provided value if available,
+			// otherwise fabricate from scan time if the CVE is fixable (has a fix version).
+			// This handles non-Red Hat data sources that don't provide fix timestamps.
+			fixAvailableTimestamp := vuln.GetFixAvailableTimestamp()
+			if fixAvailableTimestamp == nil && vuln.GetFixedBy() != "" {
+				fixAvailableTimestamp = now
+			}
+
+			info := &storage.ImageCVEInfo{
+				Id:                    cve.ImageCVEInfoID(vuln.GetCve(), component.GetName(), vuln.GetDatasource()),
+				Cve:                   vuln.GetCve(),
+				FixAvailableTimestamp: fixAvailableTimestamp,
+				FirstSystemOccurrence: now, // Smart upsert in ImageCVEInfo datastore preserves existing
+			}
+			infos = append(infos, info)
+		}
+	}
+
+	return ds.imageCVEInfoDS.UpsertMany(ctx, infos)
+}
+
+// enrichCVEsFromImageCVEInfo enriches the image's CVEs with accurate timestamps from the lookup table.
+func (ds *datastoreImpl) enrichCVEsFromImageCVEInfo(ctx context.Context, image *storage.Image) error {
+	if !features.CVEFixTimestampCriteria.Enabled() {
+		return nil
+	}
+
+	// Collect all IDs
+	ids := make([]string, 0)
+	for _, component := range image.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			ids = append(ids, cve.ImageCVEInfoID(vuln.GetCve(), component.GetName(), vuln.GetDatasource()))
+		}
+	}
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	// Batch fetch
+	infos, err := ds.imageCVEInfoDS.GetBatch(ctx, ids)
+	if err != nil {
+		return err
+	}
+
+	// Build lookup map
+	infoMap := make(map[string]*storage.ImageCVEInfo)
+	for _, info := range infos {
+		infoMap[info.GetId()] = info
+	}
+
+	// Enrich CVEs and blank out datasource after using it
+	for _, component := range image.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			id := cve.ImageCVEInfoID(vuln.GetCve(), component.GetName(), vuln.GetDatasource())
+			if info, ok := infoMap[id]; ok {
+				if vuln.GetFixAvailableTimestamp() == nil && vuln.GetFixedBy() != "" {
+					// Set the fix timestamp if it was not provided by the scanner
+					vuln.FixAvailableTimestamp = info.GetFixAvailableTimestamp()
+				}
+				vuln.FirstSystemOccurrence = info.GetFirstSystemOccurrence()
+			}
+		}
+	}
+
+	return nil
+}
+
+// ImageSearchResultConverter converts image search results to proto search results
+type ImageSearchResultConverter struct{}
+
+func (c *ImageSearchResultConverter) BuildName(result *pkgSearch.Result) string {
+
+	return result.Name
+}
+
+func (c *ImageSearchResultConverter) BuildLocation(result *pkgSearch.Result) string {
+	// Images do not have a location
+	return ""
+}
+
+func (c *ImageSearchResultConverter) GetCategory() v1.SearchCategory {
+	return v1.SearchCategory_IMAGES
+}
+
+func (c *ImageSearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
+	return result.Score
 }

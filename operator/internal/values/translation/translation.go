@@ -27,6 +27,18 @@ const (
 	defaultScannerV4PVCName = "scanner-v4-db"
 )
 
+// SchedulingConstraints holds node scheduling configuration (nodeSelector and tolerations)
+// that constrain where pods can be scheduled.
+type SchedulingConstraints struct {
+	NodeSelector map[string]string
+	Tolerations  []*corev1.Toleration
+}
+
+// IsSet returns true if either NodeSelector or Tolerations is set.
+func (s SchedulingConstraints) IsSet() bool {
+	return s.NodeSelector != nil || s.Tolerations != nil
+}
+
 // GetResources converts platform.Resources to chart values builder.
 func GetResources(resources *corev1.ResourceRequirements) *ValuesBuilder {
 	if resources == nil {
@@ -189,28 +201,39 @@ func SetScannerV4DisableValue(sv *ValuesBuilder, scannerV4Component *platform.Sc
 }
 
 // SetScannerAnalyzerValues sets values in "sv" based on "analyzer".
-func SetScannerAnalyzerValues(sv *ValuesBuilder, analyzer *platform.ScannerAnalyzerComponent) {
-	if analyzer == nil {
+func SetScannerAnalyzerValues(sv *ValuesBuilder, analyzer *platform.ScannerAnalyzerComponent, defaults SchedulingConstraints) {
+	if analyzer == nil && !defaults.IsSet() {
 		return
 	}
+
+	if analyzer == nil {
+		analyzer = &platform.ScannerAnalyzerComponent{}
+	}
+
 	setScannerComponentScaling(sv, analyzer.GetScaling())
-	sv.SetStringMap("nodeSelector", analyzer.NodeSelector)
+
+	sv.SetScheduling("nodeSelector", TolerationsKey, &analyzer.DeploymentSpec, defaults)
 	sv.AddChild(ResourcesKey, GetResources(analyzer.Resources))
-	sv.AddAllFrom(GetTolerations(TolerationsKey, analyzer.DeploymentSpec.Tolerations))
+
 	if len(analyzer.HostAliases) > 0 {
 		sv.AddAllFrom(GetHostAliases(HostAliasesKey, analyzer.HostAliases))
 	}
 }
 
 // SetScannerDBValues sets values in "sv" based on "db".
-func SetScannerDBValues(sv *ValuesBuilder, db *platform.DeploymentSpec) {
-	if db != nil {
-		sv.SetStringMap("dbNodeSelector", db.NodeSelector)
-		sv.AddChild("dbResources", GetResources(db.Resources))
-		sv.AddAllFrom(GetTolerations("dbTolerations", db.Tolerations))
-		if len(db.HostAliases) > 0 {
-			sv.AddAllFrom(GetHostAliases("dbHostAliases", db.HostAliases))
-		}
+func SetScannerDBValues(sv *ValuesBuilder, db *platform.DeploymentSpec, defaults SchedulingConstraints) {
+	if db == nil && !defaults.IsSet() {
+		return
+	}
+
+	if db == nil {
+		db = &platform.DeploymentSpec{}
+	}
+
+	sv.SetScheduling("dbNodeSelector", "dbTolerations", db, defaults)
+	sv.AddChild("dbResources", GetResources(db.Resources))
+	if len(db.HostAliases) > 0 {
+		sv.AddAllFrom(GetHostAliases("dbHostAliases", db.HostAliases))
 	}
 }
 
@@ -223,7 +246,7 @@ func SetScannerDBValues(sv *ValuesBuilder, db *platform.DeploymentSpec) {
 // that the extension prevents central DB's PVC deletion on deletion of the CR.
 // Since Scanner V4's DB contains data which recovers by itself it is safe to remove the PVC
 // through the helm uninstall if a CR is deleted.
-func SetScannerV4DBValues(ctx context.Context, sv *ValuesBuilder, db *platform.ScannerV4DB, objKind string, namespace string, client ctrlClient.Reader) {
+func SetScannerV4DBValues(ctx context.Context, sv *ValuesBuilder, db *platform.ScannerV4DB, objKind string, namespace string, client ctrlClient.Reader, defaults SchedulingConstraints) {
 	dbVB := NewValuesBuilder()
 	persistenceVB := NewValuesBuilder()
 
@@ -240,13 +263,14 @@ func SetScannerV4DBValues(ctx context.Context, sv *ValuesBuilder, db *platform.S
 		return
 	}
 
-	if db != nil {
-		dbVB.SetStringMap("nodeSelector", db.NodeSelector)
-		dbVB.AddChild(ResourcesKey, GetResources(db.Resources))
-		dbVB.AddAllFrom(GetTolerations(TolerationsKey, db.Tolerations))
-		if len(db.HostAliases) > 0 {
-			dbVB.AddAllFrom(GetHostAliases(HostAliasesKey, db.HostAliases))
-		}
+	if db == nil {
+		db = &platform.ScannerV4DB{}
+	}
+
+	dbVB.SetScheduling("nodeSelector", TolerationsKey, &db.DeploymentSpec, defaults)
+	dbVB.AddChild(ResourcesKey, GetResources(db.Resources))
+	if len(db.HostAliases) > 0 {
+		dbVB.AddAllFrom(GetHostAliases(HostAliasesKey, db.HostAliases))
 	}
 
 	setScannerV4DBPersistence(&dbVB, objKind, db.GetPersistence())
@@ -345,17 +369,22 @@ func hasScannerV4DBPVC(ctx context.Context, client ctrlClient.Reader, pvcName st
 	return false, nil
 }
 
-// SetScannerV4ComponentValues sets values in "sv" based on "component"
-func SetScannerV4ComponentValues(sv *ValuesBuilder, componentKey string, component *platform.ScannerV4Component) {
-	if component == nil {
+// SetScannerV4ComponentValues sets values in "sv" based on "component". For indexer and matcher.
+func SetScannerV4ComponentValues(sv *ValuesBuilder, componentKey string, component *platform.ScannerV4Component, defaults SchedulingConstraints) {
+	if component == nil && !defaults.IsSet() {
 		return
+	}
+
+	if component == nil {
+		component = &platform.ScannerV4Component{}
 	}
 
 	componentVB := NewValuesBuilder()
 	setScannerComponentScaling(&componentVB, component.Scaling)
-	componentVB.SetStringMap("nodeSelector", component.NodeSelector)
+
+	componentVB.SetScheduling("nodeSelector", TolerationsKey, &component.DeploymentSpec, defaults)
 	componentVB.AddChild(ResourcesKey, GetResources(component.Resources))
-	componentVB.AddAllFrom(GetTolerations(TolerationsKey, component.Tolerations))
+
 	if len(component.HostAliases) > 0 {
 		componentVB.AddAllFrom(GetHostAliases(HostAliasesKey, component.HostAliases))
 	}
@@ -408,4 +437,79 @@ func GetConfigAsCode(c *platform.ConfigAsCodeSpec) *ValuesBuilder {
 		sv.SetBoolValue("enabled", *c.ComponentPolicy == v1alpha1.ConfigAsCodeComponentEnabled)
 	}
 	return &sv
+}
+
+// GetDeploymentDefaults returns the default nodeSelector and tolerations for all Deployments.
+// If pinToNodes is set, it expands it to the default nodeSelector and tolerations.
+func GetDeploymentDefaults(customize *platform.CustomizeSpec) (SchedulingConstraints, error) {
+	if customize == nil || customize.DeploymentDefaults == nil {
+		return SchedulingConstraints{}, nil
+	}
+
+	if customize.DeploymentDefaults.PinToNodes != nil && *customize.DeploymentDefaults.PinToNodes != platform.PinToNodesNone &&
+		(len(customize.DeploymentDefaults.NodeSelector) > 0 || len(customize.DeploymentDefaults.Tolerations) > 0) {
+		return SchedulingConstraints{}, errors.New("deploymentDefaults.pinToNodes cannot be used together with nodeSelector or tolerations")
+	}
+
+	defaults := customize.DeploymentDefaults
+	if expanded := expandPinToNodes(defaults.PinToNodes); expanded.IsSet() {
+		return expanded, nil
+	}
+
+	return SchedulingConstraints{
+		NodeSelector: defaults.NodeSelector,
+		Tolerations:  defaults.Tolerations,
+	}, nil
+}
+
+func expandPinToNodes(pinToNodes *platform.PinToNodesPolicy) SchedulingConstraints {
+	if pinToNodes == nil || *pinToNodes != platform.PinToNodesInfraRole {
+		return SchedulingConstraints{}
+	}
+
+	return SchedulingConstraints{
+		NodeSelector: map[string]string{
+			"node-role.kubernetes.io/infra": "",
+		},
+		Tolerations: []*corev1.Toleration{
+			{
+				Key:      "node-role.kubernetes.io/infra",
+				Value:    "reserved",
+				Effect:   corev1.TaintEffectNoSchedule,
+				Operator: corev1.TolerationOpEqual,
+			},
+			{
+				Key:      "node-role.kubernetes.io/infra",
+				Value:    "reserved",
+				Effect:   corev1.TaintEffectNoExecute,
+				Operator: corev1.TolerationOpEqual,
+			},
+		},
+	}
+}
+
+func getSchedulingWithFallback(spec *platform.DeploymentSpec, defaults SchedulingConstraints) (map[string]string, []*corev1.Toleration) {
+	var nodeSelector map[string]string
+	var tolerations []*corev1.Toleration
+
+	if spec != nil {
+		nodeSelector = spec.NodeSelector
+		tolerations = spec.Tolerations
+	}
+
+	if nodeSelector == nil && defaults.NodeSelector != nil {
+		nodeSelector = defaults.NodeSelector
+	}
+	if tolerations == nil && defaults.Tolerations != nil {
+		tolerations = defaults.Tolerations
+	}
+
+	return nodeSelector, tolerations
+}
+
+// SetScheduling sets nodeSelector and tolerations values with fallback to defaults.
+func (v *ValuesBuilder) SetScheduling(nodeSelectorKey, tolerationsKey string, spec *platform.DeploymentSpec, defaults SchedulingConstraints) {
+	nodeSelector, tolerations := getSchedulingWithFallback(spec, defaults)
+	v.SetStringMap(nodeSelectorKey, nodeSelector)
+	v.AddAllFrom(GetTolerations(tolerationsKey, tolerations))
 }

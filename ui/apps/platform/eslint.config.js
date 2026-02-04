@@ -26,12 +26,15 @@ const pluginGeneric = require('./eslint-plugins/pluginGeneric');
 const pluginLimited = require('./eslint-plugins/pluginLimited');
 const pluginPatternFly = require('./eslint-plugins/pluginPatternFly');
 
+const parser = parserTypeScriptESLint;
+const parserOptions = {
+    project: './tsconfig.eslint.json',
+    tsconfigRootDir: __dirname,
+};
+
 const parserAndOptions = {
-    parser: parserTypeScriptESLint,
-    parserOptions: {
-        project: './tsconfig.eslint.json',
-        tsconfigRootDir: __dirname,
-    },
+    parser,
+    parserOptions,
 };
 
 module.exports = [
@@ -588,7 +591,15 @@ module.exports = [
         files: ['src/*.{ts,tsx}', 'src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including mockData and test-utils folders)
 
         languageOptions: {
-            ...parserAndOptions,
+            parser,
+            parserOptions: {
+                ...parserOptions,
+
+                // https://typescript-eslint.io/packages/parser/#jsxpragma
+                // If you are using the new JSX transform you can set this to null.
+                jsxPragma: null,
+            },
+
             globals: {
                 ...browserGlobals,
                 process: false, // for JavaScript files which have process.env.NODE_ENV and so on
@@ -600,6 +611,7 @@ module.exports = [
             accessibility: pluginAccessibility,
             generic: pluginGeneric,
             import: pluginImport,
+            limited: pluginLimited,
             patternfly: pluginPatternFly,
             react: pluginReact,
             'react-hooks': pluginReactHooks,
@@ -711,10 +723,16 @@ module.exports = [
             'react/style-prop-object': 'error',
             'react/void-dom-elements-no-children': 'error',
 
-            // https://github.com/facebook/react/blob/main/packages/eslint-plugin-react-hooks/src/index.js
-            ...pluginReactHooks.configs.recommended.rules,
+            // Report as error: React.Whatever
+            'limited/no-qualified-name-react': 'error',
+            // Report as error: import React from 'react';
+            'react/jsx-uses-react': 'off',
+            'react/react-in-jsx-scope': 'off',
 
+            // Explicit configuration because recommended includes React Compiler rules.
+            // Core hooks rules
             'react-hooks/exhaustive-deps': 'error', // instead of 'warn'
+            'react-hooks/rules-of-hooks': 'error',
         },
     },
     {
@@ -749,6 +767,7 @@ module.exports = [
 
             '@typescript-eslint/array-type': 'error',
             '@typescript-eslint/consistent-type-exports': 'error',
+            '@typescript-eslint/consistent-type-imports': 'error',
 
             'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
         },
@@ -802,56 +821,6 @@ module.exports = [
         },
     },
     {
-        files: ['src/**/*.{js,jsx,ts,tsx}'],
-        ignores: [
-            'src/Containers/Compliance/**', // deprecated
-            'src/Containers/VulnMgmt/**', // deprecated
-            'src/Containers/Workflow/**', // deprecated
-        ],
-
-        // After deprecated folders have been deleted:
-        // Move jsxPragma property to languageOptions at module scope.
-        // Move react rules into appropriate configuration objects.
-
-        // Set parserOptions and turn off rules explicitly,
-        // instead of implicitlu via jsx-runtime configuration of eslint-plugin-react package.
-
-        languageOptions: {
-            parserOptions: {
-                // https://typescript-eslint.io/packages/parser/#jsxpragma
-                // If you are using the new JSX transform you can set this to null.
-                jsxPragma: null,
-            },
-        },
-
-        plugins: {
-            limited: pluginLimited,
-            react: pluginReact,
-        },
-        rules: {
-            'limited/no-qualified-name-react': 'error',
-            'react/jsx-uses-react': 'off',
-            'react/react-in-jsx-scope': 'off',
-        },
-    },
-    {
-        files: ['src/**/*.{ts,tsx}'],
-        ignores: [
-            'src/Containers/Compliance/**', // deprecated
-            'src/Containers/VulnMgmt/**', // deprecated
-        ],
-
-        // languageOptions from previous configuration object
-
-        // Key of plugin is namespace of its rules.
-        plugins: {
-            '@typescript-eslint': pluginTypeScriptESLint,
-        },
-        rules: {
-            '@typescript-eslint/consistent-type-imports': 'error',
-        },
-    },
-    {
         files: ['src/*/**/*.{js,jsx,ts,tsx}'],
         ignores: [
             'src/Containers/Compliance/**', // deprecated
@@ -871,6 +840,34 @@ module.exports = [
         },
     },
     {
+        files: ['src/*/**/*.{js,jsx,ts,tsx}'],
+        ignores: [
+            'src/Components/GroupedTabs.jsx', // deprecated
+            'src/Components/ReactSelect/ReactSelect.jsx', // deprecated
+            'src/Components/URLSearchInputWithAutocomplete.jsx', // deprecated
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/sagas/authSagas.js', // deprecated
+            'src/sagas/groupSagas.js', // deprecated
+            'src/sagas/roleSagas.js', // deprecated
+            'src/utils/URLParser.ts', // deprecated
+            'src/utils/WorkflowState.js', // deprecated
+            'src/utils/entityRelationships.ts', // deprecated
+            'src/utils/getSubListFromEntity.js', // deprecated
+            'src/utils/queryService.js', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-logical-or-preceding-array-or-object': 'error',
+        },
+    },
+    {
         files: ['src/**/*.{js,jsx,ts,tsx}'],
         ignores: [
             'src/Components/*.{js,jsx}', // deprecated
@@ -887,7 +884,6 @@ module.exports = [
             'src/Components/FixableCVECount/**', // deprecated
             'src/Components/HeaderWithSubText/**', // deprecated
             'src/Components/Labeled/**', // deprecated
-            'src/Components/KeyValue/**', // fix errors, and then delete
             'src/Components/Menu/**', // deprecated
             'src/Components/Metadata/**', // deprecated
             'src/Components/MetadataStatsList/**', // deprecated
@@ -923,9 +919,8 @@ module.exports = [
             'src/Containers/ConfigManagement/**',
             'src/Containers/Images/**', // deprecated
             'src/Containers/Login/**', // rewrite in PatternFly, and then delete; also in tailwind.config.js file
-            'src/Containers/MainPage/**', // fix errors, and then delete; also in tailwind.config.js file
+            'src/Containers/MainPage/Header/Header.tsx', // investigate ignore-react-onclickoutside
             'src/Containers/Risk/**', // rewrite in PatternFly, and then delete; also in tailwind.config.js file
-            'src/Containers/Violations/Details/ProcessCardContent.jsx', // fix error and then delete; also in tailwind.config.js file
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Workflow/**', // deprecated
         ],
@@ -938,6 +933,7 @@ module.exports = [
         },
         rules: {
             'limited/no-Tailwind': 'error',
+            'limited/no-feather-icons': 'error',
         },
     },
     {

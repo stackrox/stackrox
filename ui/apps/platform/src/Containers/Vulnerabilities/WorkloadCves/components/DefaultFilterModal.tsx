@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button, Checkbox, Form, FormGroup, Modal } from '@patternfly/react-core';
 import cloneDeep from 'lodash/cloneDeep';
 import { FormikProvider, useFormik } from 'formik';
-import { Globe } from 'react-feather';
+import { Globe } from 'react-feather'; // eslint-disable-line limited/no-feather-icons
 
 import useAnalytics, { WORKLOAD_CVE_DEFAULT_FILTERS_CHANGED } from 'hooks/useAnalytics';
 import type { DefaultFilters, FixableStatus, VulnerabilitySeverityLabel } from '../../types';
@@ -52,7 +52,7 @@ function DefaultFilterModal({ defaultFilters, setLocalStorage }: DefaultFilterMo
         if (isOpen) {
             setValues(defaultFilters).catch(() => {});
         }
-        setIsOpen(!isOpen);
+        setIsOpen((prev) => !prev);
     }
 
     function handleSeverityChange(severity: VulnerabilitySeverityLabel, isChecked: boolean) {

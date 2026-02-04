@@ -359,6 +359,9 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 
 				image.IsClusterLocal = localImages.Contains(image.GetName().GetFullName())
 				updateImageWithNewerImageName(image, runtimeImageName, true)
+				if features.FlattenImageData.Enabled() {
+					image.IdV2 = imageUtils.NewImageV2ID(image.GetName(), image.GetId())
+				}
 				continue
 			}
 
@@ -379,6 +382,9 @@ func (w *deploymentWrap) populateImageMetadata(localImages set.StringSet, pods .
 				image.NotPullable = !imageUtils.IsPullable(c.ImageID)
 				image.IsClusterLocal = localImages.Contains(image.GetName().GetFullName())
 				updateImageWithNewerImageName(image, runtimeImageName, false)
+				if features.FlattenImageData.Enabled() {
+					image.IdV2 = imageUtils.NewImageV2ID(image.GetName(), digest)
+				}
 			}
 		}
 	}

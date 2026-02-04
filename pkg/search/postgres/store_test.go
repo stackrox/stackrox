@@ -24,10 +24,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	ctx = sac.WithAllAccess(context.Background())
-)
-
 func TestNewStore(t *testing.T) {
 	testDB := pgtest.ForT(t)
 	assert.NotNil(t, newStore(testDB))
@@ -66,9 +62,103 @@ func TestNewGloballyScopedGenericStore(t *testing.T) {
 	))
 }
 
-func TestUpsert(t *testing.T) {
+// TestStoreWithAllScenarios runs all store tests with different transaction and store type combinations
+func TestStoreWithAllScenarios(t *testing.T) {
+	txScenarios := []struct {
+		name     string
+		setupCtx func(t *testing.T, db *pgtest.TestPostgres) (context.Context, func())
+	}{
+		{
+			name: "without transaction in context",
+			setupCtx: func(t *testing.T, db *pgtest.TestPostgres) (context.Context, func()) {
+				ctx := sac.WithAllAccess(context.Background())
+				return ctx, func() {} // no cleanup
+			},
+		},
+		{
+			name: "with transaction in context",
+			setupCtx: func(t *testing.T, db *pgtest.TestPostgres) (context.Context, func()) {
+				conn, err := db.Acquire(context.Background())
+				require.NoError(t, err)
+
+				tx, txCtx, err := conn.Begin(sac.WithAllAccess(context.Background()))
+				require.NoError(t, err)
+
+				cleanup := func() {
+					assert.NoError(t, tx.Commit(txCtx))
+					conn.Release()
+				}
+
+				return txCtx, cleanup
+			},
+		},
+	}
+
+	storeTypes := []struct {
+		name         string
+		storeFactory storeFactory
+	}{
+		{
+			name:         "generic store",
+			storeFactory: newStore,
+		},
+		{
+			name:         "cached store",
+			storeFactory: newCachedStoreForTest,
+		},
+	}
+
+	storeTests := []struct {
+		name string
+		test func(t *testing.T, ctx context.Context, store Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct])
+	}{
+
+		{name: "Upsert", test: testUpsertImpl},
+		{name: "UpsertMany", test: testUpsertManyImpl},
+		{name: "Delete", test: testDeleteImpl},
+		{name: "DeleteMany", test: testDeleteManyImpl},
+		{name: "Exists", test: testExistsImpl},
+		{name: "Count", test: testCountImpl},
+		{name: "Walk", test: testWalkImpl},
+		{name: "WalkByQuery", test: testWalkByQueryImpl},
+		{name: "GetIDs", test: testGetIDsImpl},
+		{name: "Get", test: testGetImpl},
+		{name: "GetMany", test: testGetManyImpl},
+		{name: "GetByQuery", test: testGetByQueryImpl},
+		{name: "GetByQueryFn", test: testGetByQueryFnImpl},
+		{name: "DeleteByQuery", test: testDeleteByQueryImpl},
+		{name: "DeleteByQueryReturningIDs", test: testDeleteByQueryReturningIDsImpl},
+		{name: "testPruneManyImpl", test: testPruneManyImpl},
+	}
+
+	for _, txScenario := range txScenarios {
+		t.Run(txScenario.name, func(t *testing.T) {
+			for _, storeType := range storeTypes {
+				t.Run(storeType.name, func(t *testing.T) {
+					for _, storeTest := range storeTests {
+						t.Run(storeTest.name, func(t *testing.T) {
+							testCtx, store := setup(t, txScenario.setupCtx, storeType.storeFactory)
+							storeTest.test(t, testCtx, store)
+						})
+					}
+				})
+			}
+		})
+	}
+}
+
+func setup(t *testing.T,
+	setupCtx func(t *testing.T, db *pgtest.TestPostgres) (context.Context, func()),
+	storeFactory storeFactory,
+) (context.Context, Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]) {
 	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+	store := storeFactory(testDB)
+	testCtx, cleanup := setupCtx(t, testDB)
+	t.Cleanup(cleanup)
+	return testCtx, store
+}
+
+func testUpsertImpl(t *testing.T, ctx context.Context, store Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]) {
 	key := "TestUpsert"
 	name := "Test Upsert"
 	testObject := newTestSingleKeyStruct(key, name, int64(1))
@@ -86,10 +176,7 @@ func TestUpsert(t *testing.T) {
 	assert.NoError(t, errAfter)
 }
 
-func TestUpsertMany(t *testing.T) {
-	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
-
+func testUpsertManyImpl(t *testing.T, ctx context.Context, store Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]) {
 	testObjects := sampleTestSingleKeyStructArray("UpsertMany")
 
 	for _, obj := range testObjects {
@@ -109,9 +196,7 @@ func TestUpsertMany(t *testing.T) {
 	}
 }
 
-func TestDelete(t *testing.T) {
-	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+func testDeleteImpl(t *testing.T, ctx context.Context, store Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]) {
 	require.NotNil(t, store)
 
 	key := "TestDelete"
@@ -147,9 +232,7 @@ func TestDelete(t *testing.T) {
 
 }
 
-func TestDeleteMany(t *testing.T) {
-	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+func testDeleteManyImpl(t *testing.T, ctx context.Context, store Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]) {
 	require.NotNil(t, store)
 
 	objectBatch := sampleTestSingleKeyStructArray("DeleteMany")
@@ -190,9 +273,7 @@ func TestDeleteMany(t *testing.T) {
 	assert.NoError(t, missingErrAfter)
 }
 
-func TestExists(t *testing.T) {
-	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+func testExistsImpl(t *testing.T, ctx context.Context, store Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]) {
 	require.NotNil(t, store)
 
 	key := "TestExists"
@@ -212,9 +293,7 @@ func TestExists(t *testing.T) {
 	assert.NoError(t, errMissing)
 }
 
-func TestCount(t *testing.T) {
-	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+func testCountImpl(t *testing.T, ctx context.Context, store Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]) {
 	require.NotNil(t, store)
 
 	firstCount, err1 := store.Count(ctx, nil)
@@ -236,9 +315,7 @@ func TestCount(t *testing.T) {
 	assert.NoError(t, err3)
 }
 
-func TestWalk(t *testing.T) {
-	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+func testWalkImpl(t *testing.T, ctx context.Context, store Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]) {
 	require.NotNil(t, store)
 
 	testObjects := sampleTestSingleKeyStructArray("Walk")
@@ -264,9 +341,7 @@ func TestWalk(t *testing.T) {
 	protoassert.ElementsMatch(t, testObjects, walkedObjects)
 }
 
-func TestWalkByQuery(t *testing.T) {
-	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+func testWalkByQueryImpl(t *testing.T, ctx context.Context, store Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]) {
 	require.NotNil(t, store)
 
 	testObjects := sampleTestSingleKeyStructArray("WalkByQuery")
@@ -284,9 +359,7 @@ func TestWalkByQuery(t *testing.T) {
 	protoassert.ElementsMatch(t, expectedObjects, walkedObjects)
 }
 
-func TestGetIDs(t *testing.T) {
-	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+func testGetIDsImpl(t *testing.T, ctx context.Context, store Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]) {
 	require.NotNil(t, store)
 
 	testObjects := sampleTestSingleKeyStructArray("GetIDs")
@@ -302,9 +375,7 @@ func TestGetIDs(t *testing.T) {
 	assert.ElementsMatch(t, fetchedIDs, expectedIDs)
 }
 
-func TestGet(t *testing.T) {
-	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+func testGetImpl(t *testing.T, ctx context.Context, store Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]) {
 	key := "TestGet"
 	name := "Test Get"
 	testObject := newTestSingleKeyStruct(key, name, int64(15))
@@ -326,10 +397,7 @@ func TestGet(t *testing.T) {
 	assert.NoError(t, missingErr)
 }
 
-func TestGetMany(t *testing.T) {
-	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
-
+func testGetManyImpl(t *testing.T, ctx context.Context, store Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]) {
 	missingKey := "TestGetManyMissing"
 	testObjects := sampleTestSingleKeyStructArray("GetMany")
 	assert.NoError(t, store.UpsertMany(ctx, testObjects))
@@ -351,10 +419,7 @@ func TestGetMany(t *testing.T) {
 	assert.Equal(t, []int{0}, missingIndices)
 }
 
-func TestGetByQuery(t *testing.T) {
-	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
-
+func testGetByQueryImpl(t *testing.T, ctx context.Context, store Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]) {
 	testObjects := sampleTestSingleKeyStructArray("GetByQuery")
 	query2 := getMatchFieldQuery("Test Name", "Test GetByQuery 2")
 	query4 := getMatchFieldQuery("Test Key", "TestGetByQuery4")
@@ -375,10 +440,7 @@ func TestGetByQuery(t *testing.T) {
 	protoassert.ElementsMatch(t, objectsAfter, expectedObjectsAfter)
 }
 
-func TestGetByQueryFn(t *testing.T) {
-	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
-
+func testGetByQueryFnImpl(t *testing.T, ctx context.Context, store Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]) {
 	var objects []*storage.TestSingleKeyStruct
 	collect := func(obj *storage.TestSingleKeyStruct) error {
 		objects = append(objects, obj)
@@ -413,10 +475,7 @@ func TestGetByQueryFn(t *testing.T) {
 	assert.Equal(t, 1, count)
 }
 
-func TestDeleteByQuery(t *testing.T) {
-	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
-
+func testDeleteByQueryImpl(t *testing.T, ctx context.Context, store Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]) {
 	testObjects := sampleTestSingleKeyStructArray("DeleteByQuery")
 	query2 := getMatchFieldQuery("Test Name", "Test DeleteByQuery 2")
 	query4 := getMatchFieldQuery("Test Key", "TestDeleteByQuery4")
@@ -453,10 +512,7 @@ func TestDeleteByQuery(t *testing.T) {
 	}
 }
 
-func TestDeleteByQueryReturningIDs(t *testing.T) {
-	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
-
+func testDeleteByQueryReturningIDsImpl(t *testing.T, ctx context.Context, store Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]) {
 	testObjects := sampleTestSingleKeyStructArray("DeleteByQuery")
 	query2 := getMatchFieldQuery("Test Name", "Test DeleteByQuery 2")
 	query4 := getMatchFieldQuery("Test Key", "TestDeleteByQuery4")
@@ -496,9 +552,7 @@ func TestDeleteByQueryReturningIDs(t *testing.T) {
 	}
 }
 
-func TestPruneMany(t *testing.T) {
-	testDB := pgtest.ForT(t)
-	store := newStore(testDB)
+func testPruneManyImpl(t *testing.T, ctx context.Context, store Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]) {
 	require.NotNil(t, store)
 
 	objectBatch := sampleTestSingleKeyStructArray("PruneMany")
@@ -551,6 +605,8 @@ func TestGetAllFromCache(t *testing.T) {
 
 // region Helper Functions
 
+type storeFactory func(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct]
+
 func newStore(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct] {
 	return NewGenericStore[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](
 		testDB.DB,
@@ -558,6 +614,23 @@ func newStore(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *s
 		pkGetter,
 		insertIntoTestSingleKeyStructs,
 		copyFromTestSingleKeyStructs,
+		doNothingDurationTimeSetter,
+		doNothingDurationTimeSetter,
+		globallyScopedUpsertChecker[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](resources.Namespace),
+		resources.Namespace,
+		nil,
+		nil,
+	)
+}
+
+func newCachedStoreForTest(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct] {
+	return NewGenericStoreWithCache[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](
+		testDB.DB,
+		pkgSchema.TestSingleKeyStructsSchema,
+		pkGetter,
+		insertIntoTestSingleKeyStructs,
+		copyFromTestSingleKeyStructs,
+		doNothingDurationTimeSetter,
 		doNothingDurationTimeSetter,
 		doNothingDurationTimeSetter,
 		globallyScopedUpsertChecker[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](resources.Namespace),

@@ -33,6 +33,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName(TRIGGER_MOST)
+                    .setImagePrefetcherAffinity()
                     .setImage(TRIGGER_MOST_IMAGE)
                     // For: "Emergency Deployment Annotation"
                     .addAnnotation("admission.stackrox.io/break-glass", "yay")
@@ -48,17 +49,20 @@ class BuiltinPoliciesTest extends BaseSpecification {
             // For: "Alpine Linux Package Manager (apk) in Image"
             new Deployment()
                     .setName(TRIGGER_ALPINE)
+                    .setImagePrefetcherAffinity()
                     .setImage(TRIGGER_ALPINE_IMAGE),
     ]
     static final private List<Deployment> NO_WAIT_DEPLOYMENTS = [
             new Deployment()
                     .setName(TRIGGER_DOCKER_MOUNT)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-latest")
                     .addVolume(new Volume(name: "docker-sock",
                             hostPath: "/var/run/docker.sock",
                             mountPath: "/var/run/docker.sock")),
             new Deployment()
                     .setName(TRIGGER_CRIO_MOUNT)
+                    .setImagePrefetcherAffinity()
                     .setImage("quay.io/rhacs-eng/qa-multi-arch:nginx-latest")
                     .addVolume(new Volume(name: "crio-sock",
                             hostPath: "/run/crio/crio.sock",

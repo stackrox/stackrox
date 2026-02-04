@@ -8,8 +8,8 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import type { Schedule } from 'services/ComplianceScanConfigurationService';
-import { formatScanSchedule } from '../compliance.scanConfigs.utils';
+import type { Schedule } from 'types/schedule.proto';
+import { formatRecurringSchedule } from 'utils/dateUtils';
 
 type ScanConfigParametersViewProps = {
     headingLevel: 'h2' | 'h3';
@@ -43,7 +43,7 @@ function ScanConfigParametersView({
                 <DescriptionListGroup>
                     <DescriptionListTerm>Schedule</DescriptionListTerm>
                     <DescriptionListDescription>
-                        {formatScanSchedule(scanSchedule)}
+                        {formatRecurringSchedule(scanSchedule)}
                     </DescriptionListDescription>
                 </DescriptionListGroup>
                 {children}

@@ -3,12 +3,51 @@ package booleanpolicy
 import (
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/set"
+)
+
+var (
+	// fieldDependencies defines the dependencies between fields in a policy
+	// section. For each key field name in the map, the values is the set of
+	// one OR more fields that must also exist to pass the validation
+	//
+	// Note that the Key -> [Values] dependency exists, but the reverse
+	// is not valid. The values can exist on their own in a policy without
+	// requiring the key to also exist.
+	fieldDependencies = map[string]set.StringSet{
+		fieldnames.FileOperation: set.NewStringSet(
+			fieldnames.ActualPath,
+			fieldnames.EffectivePath,
+		),
+		fieldnames.KubeUserName: set.NewStringSet(
+			fieldnames.KubeResource,
+		),
+		fieldnames.KubeUserGroups: set.NewStringSet(
+			fieldnames.KubeResource,
+		),
+	}
+
+	// eventSourceRequirements defines the minimum required fields for a
+	// given event source.
+	eventSourceRequirements = map[storage.EventSource]set.StringSet{
+		storage.EventSource_AUDIT_LOG_EVENT: set.NewStringSet(
+			fieldnames.KubeResource,
+			fieldnames.KubeAPIVerb,
+		),
+		// FileAccess fields are currently the only ones supported for
+		// node events. In the future, when more node events are supported,
+		// this constraint can be relaxed.
+		storage.EventSource_NODE_EVENT: set.NewStringSet(
+			fieldnames.ActualPath,
+		),
+	}
 )
 
 type validateConfiguration struct {
@@ -100,8 +139,9 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("validation of section %q", s.GetSectionName()))
 
 	seenFields := set.NewStringSet()
+	metadata := FieldMetadataSingleton()
 	for _, g := range s.GetPolicyGroups() {
-		m, err := FieldMetadataSingleton().findFieldMetadata(g.GetFieldName(), configuration)
+		m, err := metadata.findFieldMetadata(g.GetFieldName(), configuration)
 		switch err {
 		case nil:
 			// All good, proceed
@@ -110,6 +150,13 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 			continue
 		default:
 			errorList.AddWrapf(err, "failed to resolve metadata for field %q", g.GetFieldName())
+			continue
+		}
+
+		// For fields that apply to an event source, validate that they match
+		// the policy's event source.
+		if !m.IsNotApplicableEventSource() && !m.IsFromEventSource(eventSource) {
+			errorList.AddStringf("%q is not supported for event source %q", g.GetFieldName(), eventSource)
 			continue
 		}
 
@@ -132,20 +179,44 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 		}
 	}
 
-	if eventSource == storage.EventSource_AUDIT_LOG_EVENT {
-		// For Audit Log source based policies, both the k8s resource and verb must be provided.
-		if !seenFields.Contains(fieldnames.KubeResource) {
-			errorList.AddStringf("policies with audit log event source must have the `%s` criteria", fieldnames.KubeResource)
-		}
-		if !seenFields.Contains(fieldnames.KubeAPIVerb) {
-			errorList.AddStringf("policies with audit log event source must have the `%s` criteria", fieldnames.KubeAPIVerb)
+	if err := validateEventSourceRequirements(s, &seenFields, eventSource); err != nil {
+		errorList.AddError(err)
+	}
+
+	if err := validateFieldDependencies(s, &seenFields); err != nil {
+		errorList.AddError(err)
+	}
+
+	return errorList.ToError()
+}
+
+// validateFieldDependencies validates a policy section with respect to field dependencies,
+// as outlined in the fieldDependencies map.
+func validateFieldDependencies(s *storage.PolicySection, seenFields *set.StringSet) error {
+	errorList := errorhelpers.NewErrorList(fmt.Sprintf("validating field dependencies for %q", s.GetSectionName()))
+
+	for field, dependencies := range fieldDependencies {
+		if seenFields.Contains(field) && !slices.ContainsFunc(dependencies.AsSlice(), seenFields.Contains) {
+			errorList.AddStringf("policy sections with %s must also contain %s", field, strings.Join(dependencies.AsSlice(), " or "))
 		}
 	}
 
-	if eventSource == storage.EventSource_DEPLOYMENT_EVENT {
-		if seenFields.Contains(fieldnames.KubeUserName) || seenFields.Contains(fieldnames.KubeUserGroups) {
-			if !seenFields.Contains(fieldnames.KubeResource) {
-				errorList.AddString("kubernetes events policy must have the `Kubernetes Action` criteria")
+	return errorList.ToError()
+}
+
+// validateEventSourceRequirements validates a policy section with respect to
+// required fields as outlined in the eventSourceRequirements map.
+func validateEventSourceRequirements(s *storage.PolicySection, seenFields *set.StringSet, eventSource storage.EventSource) error {
+	errorList := errorhelpers.NewErrorList(fmt.Sprintf("validating event source requirements for %s", s.GetSectionName()))
+
+	for es, requiredFields := range eventSourceRequirements {
+		if eventSource != es {
+			continue
+		}
+
+		for required := range requiredFields {
+			if !seenFields.Contains(required) {
+				errorList.AddStringf("%q policies require field %q", eventSource, required)
 			}
 		}
 	}

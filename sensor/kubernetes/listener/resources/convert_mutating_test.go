@@ -6,6 +6,8 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -19,6 +21,9 @@ import (
 
 func TestConvertDifferentContainerNumbers(t *testing.T) {
 
+	defaultSecurityContext := &storage.SecurityContext{
+		AllowPrivilegeEscalation: true,
+	}
 	storeProvider := InitializeStore(nil)
 	cases := []struct {
 		name               string
@@ -139,7 +144,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 						Config: &storage.ContainerConfig{
 							Env: []*storage.ContainerConfig_EnvironmentConfig{},
 						},
-						SecurityContext: &storage.SecurityContext{},
+						SecurityContext: defaultSecurityContext,
 						Resources:       &storage.Resources{},
 						LivenessProbe:   &storage.LivenessProbe{Defined: false},
 						ReadinessProbe:  &storage.ReadinessProbe{Defined: false},
@@ -160,7 +165,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 						Config: &storage.ContainerConfig{
 							Env: []*storage.ContainerConfig_EnvironmentConfig{},
 						},
-						SecurityContext: &storage.SecurityContext{},
+						SecurityContext: defaultSecurityContext,
 						Resources:       &storage.Resources{},
 						LivenessProbe:   &storage.LivenessProbe{Defined: false},
 						ReadinessProbe:  &storage.ReadinessProbe{Defined: false},
@@ -277,7 +282,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 						Config: &storage.ContainerConfig{
 							Env: []*storage.ContainerConfig_EnvironmentConfig{},
 						},
-						SecurityContext: &storage.SecurityContext{},
+						SecurityContext: defaultSecurityContext,
 						Resources:       &storage.Resources{},
 						LivenessProbe:   &storage.LivenessProbe{Defined: false},
 						ReadinessProbe:  &storage.ReadinessProbe{Defined: false},
@@ -298,7 +303,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 						Config: &storage.ContainerConfig{
 							Env: []*storage.ContainerConfig_EnvironmentConfig{},
 						},
-						SecurityContext: &storage.SecurityContext{},
+						SecurityContext: defaultSecurityContext,
 						Resources:       &storage.Resources{},
 						LivenessProbe:   &storage.LivenessProbe{Defined: false},
 						ReadinessProbe:  &storage.ReadinessProbe{Defined: false},
@@ -310,6 +315,11 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
+			if features.FlattenImageData.Enabled() {
+				for _, container := range c.expectedDeployment.GetContainers() {
+					container.GetImage().IdV2 = utils.NewImageV2ID(container.GetImage().GetName(), container.GetImage().GetId())
+				}
+			}
 			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, testClusterID, c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), "", c.systemNamespaces).GetDeployment()
 			if actual != nil {
 				actual.StateTimestamp = 0

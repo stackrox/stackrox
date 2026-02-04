@@ -10,27 +10,14 @@
 set -euo pipefail
 
 TAG="$1"
-PRERELEASE="$2"
+RELEASE_BRANCH="$2"
+PRERELEASE="$3"
 
 check_not_empty \
   TAG \
   PRERELEASE \
   \
   DRY_RUN
-
-create_release_notes() {
-    CHANGELOG="$(gh api \
-      -H "Accept: application/vnd.github.v3.raw" \
-      "/repos/${GITHUB_REPOSITORY}/contents/CHANGELOG.md?ref=${TAG}"
-    )"
-    VERSION_WITHOUT_RC="${TAG/-rc.[0-9]*/}"
-    ESCAPED_VERSION="${VERSION_WITHOUT_RC//./\.}"
-    OUTPUT="$(echo "$CHANGELOG" | sed -n "/^## \[$ESCAPED_VERSION]$/,/^## \[/p" | sed '1d;$d')"
-    if [ "$(wc -m <<< "$OUTPUT" | awk '{ print $1 }')" -gt 150000 ]; then
-        PREVIOUS_VERSION=$(echo "$CHANGELOG" | sed -n "/^## \[$ESCAPED_VERSION]$/,/^## \[/p" | tail -n 1 | tr -d '#[] ')
-        OUTPUT="**Full Changelog**: https://github.com/${GITHUB_REPOSITORY}/compare/${PREVIOUS_VERSION}...${TAG}"
-    fi
-}
 
 delete_existing_release() {
   if gh release view "$TAG" > /dev/null 2>&1; then
@@ -51,12 +38,14 @@ create_release() {
   if [ "$DRY_RUN" = "false" ]; then
     URL=$(gh release create "$TAG" \
       --prerelease="${PRERELEASE}" \
-      --notes "$OUTPUT" \
+      --notes "$RELEASE_NOTES" \
       --repo "$GITHUB_REPOSITORY" \
       --target "$COMMIT_HASH_FOR_TAG")
   fi
+  gh_summary "Created GitHub release [$TAG]($URL)"
   echo "url=$URL" >> "$GITHUB_OUTPUT"
 }
 
-create_release_notes
+VERSION="${TAG/-rc.[0-9]*/}"
+RELEASE_NOTES="$(fetch_changelog "${RELEASE_BRANCH}" "${VERSION}")"
 create_release

@@ -67,7 +67,7 @@ func tearDownImportExportTest(t *testing.T) {
 
 	var cleanupErrors []error
 	for _, id := range addedPolicies {
-		log.Infof("Added policy: %s", id)
+		t.Logf("Added policy: %s", id)
 		if id == knownPolicyID {
 			continue
 		}
@@ -77,7 +77,7 @@ func tearDownImportExportTest(t *testing.T) {
 		})
 		cancel()
 		if err != nil {
-			log.Infof("error deleting policy %s, error: %v", id, err)
+			t.Logf("error deleting policy %s, error: %v", id, err)
 			cleanupErrors = append(cleanupErrors, err)
 		}
 	}
@@ -135,7 +135,7 @@ func validateImport(t *testing.T, importResp *v1.ImportPoliciesResponse, policie
 
 func validateSuccess(t *testing.T, importPolicyResponse *v1.ImportPolicyResponse, expectedPolicy *storage.Policy, ignoreID bool) {
 	require.True(t, importPolicyResponse.GetSucceeded())
-	log.Infof("Adding policy %s with id: %s", importPolicyResponse.GetPolicy().GetName(), importPolicyResponse.GetPolicy().GetId())
+	t.Logf("Adding policy %s with id: %s", importPolicyResponse.GetPolicy().GetName(), importPolicyResponse.GetPolicy().GetId())
 	addedPolicies = append(addedPolicies, importPolicyResponse.GetPolicy().GetId())
 	if ignoreID {
 		expectedPolicy.Id = ""

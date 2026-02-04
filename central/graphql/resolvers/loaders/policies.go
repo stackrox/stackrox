@@ -93,10 +93,10 @@ func (idl *policyLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query
 	return int32(numResults), nil
 }
 
-// CountFromQuery returns the total number of policies.
+// CountAll returns the total number of policies.
 func (idl *policyLoaderImpl) CountAll(ctx context.Context) (int32, error) {
 	count, err := idl.CountFromQuery(ctx, search.EmptyQuery())
-	return int32(count), err
+	return count, err
 }
 
 func (idl *policyLoaderImpl) load(ctx context.Context, ids []string) ([]*storage.Policy, error) {

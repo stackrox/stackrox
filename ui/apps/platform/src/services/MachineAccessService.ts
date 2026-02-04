@@ -28,7 +28,7 @@ export function fetchMachineAccessConfigs(): Promise<{
         .get<{ configs: AuthMachineToMachineConfig[] }>(machineAccessURL)
         .then((response) => {
             return {
-                response: response.data || { configs: [] },
+                response: response.data ?? { configs: [] },
             };
         });
 }
@@ -48,7 +48,7 @@ export function createMachineAccessConfig(data: AuthMachineToMachineConfig): Pro
         .post<AuthMachineToMachineConfig>(machineAccessURL, { config: data })
         .then((response) => {
             return {
-                response: response.data || {},
+                response: response.data ?? {},
             };
         });
 }

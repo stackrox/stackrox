@@ -14,6 +14,7 @@ tests:
     verifyMonitoringExposed(.services["scanner-v4-indexer"]) | assertThat(not)
     verifyMonitoringContainerPortExposed(container(.deployments["scanner-v4-indexer"]; "indexer")) | assertThat(not)
     .networkpolicys["scanner-v4-indexer-monitoring"] | assertThat(. == null)
+    .services["compliance-metrics"] | assertThat(. == null)
 
 - name: monitoring should be exposed when enabled
   set:
@@ -29,6 +30,10 @@ tests:
     verifyMonitoringExposed(.services["scanner-v4-indexer"])
     verifyMonitoringContainerPortExposed(container(.deployments["scanner-v4-indexer"]; "indexer"))
     .networkpolicys["scanner-v4-indexer-monitoring"] | assertThat(. != null)
+    .services["compliance-metrics"] | assertThat(. != null)
+    .services["compliance-metrics"].spec.clusterIP | assertThat(. == "None")
+    .services["compliance-metrics"].spec.ports[0].name | assertThat(. == "monitoring")
+    .services["compliance-metrics"].spec.ports[0].port | assertThat(. == 9091)
 
 - name: network policies should not be created when disabled
   set:
@@ -53,6 +58,7 @@ tests:
     .networkpolicys["admission-control-monitoring"] | assertThat(. != null)
     verifyMonitoringContainerPortExposed(container(.deployments["scanner-v4-indexer"]; "indexer"))
     .networkpolicys["scanner-v4-indexer-monitoring"] | assertThat(. != null)
+    .services["compliance-metrics"] | assertThat(. != null)
 
 - name: monitoring should be overridable on a per-component basis (collector)
   set:
@@ -67,6 +73,7 @@ tests:
     .networkpolicys["admission-control-monitoring"] | assertThat(. != null)
     verifyMonitoringContainerPortExposed(container(.deployments["scanner-v4-indexer"]; "indexer"))
     .networkpolicys["scanner-v4-indexer-monitoring"] | assertThat(. != null)
+    .services["compliance-metrics"] | assertThat(. == null)
 
 - name: monitoring should be overridable on a per-component basis (admission control)
   set:
@@ -81,6 +88,7 @@ tests:
     .networkpolicys["admission-control-monitoring"] | assertThat(. == null)
     verifyMonitoringContainerPortExposed(container(.deployments["scanner-v4-indexer"]; "indexer"))
     .networkpolicys["scanner-v4-indexer-monitoring"] | assertThat(. != null)
+    .services["compliance-metrics"] | assertThat(. != null)
 
 - name: monitoring should be overridable on a per-component basis (scanner v4)
   set:
@@ -96,3 +104,4 @@ tests:
     .networkpolicys["admission-control-monitoring"] | assertThat(. != null)
     verifyMonitoringContainerPortExposed(container(.deployments["scanner-v4-indexer"]; "indexer")) | assertThat(not)
     .networkpolicys["scanner-v4-indexer-monitoring"] | assertThat(. == null)
+    .services["compliance-metrics"] | assertThat(. != null)

@@ -108,6 +108,12 @@ func insertIntoLogImbues(batch *pgx.Batch, obj *storage.LogImbue) error {
 	return nil
 }
 
+var copyColsLogImbues = []string{
+	"id",
+	"timestamp",
+	"serialized",
+}
+
 func copyFromLogImbues(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.LogImbue) error {
 	if len(objs) == 0 {
 		return nil
@@ -123,12 +129,6 @@ func copyFromLogImbues(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 		if err := s.DeleteMany(ctx, deletes); err != nil {
 			return err
 		}
-	}
-
-	copyCols := []string{
-		"id",
-		"timestamp",
-		"serialized",
 	}
 
 	idx := 0
@@ -151,7 +151,7 @@ func copyFromLogImbues(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 		}, nil
 	})
 
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"log_imbues"}, copyCols, inputRows); err != nil {
+	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"log_imbues"}, copyColsLogImbues, inputRows); err != nil {
 		return err
 	}
 

@@ -107,9 +107,9 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 		return nil, errors.Wrap(err, "could not parse protobuf-encoded config data from configmap")
 	}
 
-	cacheVersion := string(cm.Data[admissioncontrol.CacheVersionDataKey])
-	centralEndpoint := string(cm.Data[admissioncontrol.CentralEndpointDataKey])
-	clusterID := string(cm.Data[admissioncontrol.ClusterIDDataKey])
+	cacheVersion := cm.Data[admissioncontrol.CacheVersionDataKey]
+	centralEndpoint := cm.Data[admissioncontrol.CentralEndpointDataKey]
+	clusterID := cm.Data[admissioncontrol.ClusterIDDataKey]
 
 	settings := &sensor.AdmissionControlSettings{
 		ClusterConfig:              &config,

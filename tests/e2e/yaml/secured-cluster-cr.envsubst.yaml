@@ -6,8 +6,8 @@ spec:
   centralEndpoint: $central_endpoint
   clusterName: remote
   perNode:
-    collector:
-      collection: $collection_method
+    sfa:
+      agent: $sfa_agent_setting
   scanner:
     scannerComponent: $scanner_component_setting
     analyzer:

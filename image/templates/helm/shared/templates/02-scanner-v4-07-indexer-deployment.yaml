@@ -44,10 +44,6 @@ spec:
       {{- if ._rox.scannerV4.indexer.hostAliases }}
       hostAliases: {{ toYaml ._rox.scannerV4.indexer.hostAliases | nindent 8 }}
       {{- end }}
-      initContainers:
-      {{- if ._rox._securedClusterCertRefresh }}
-      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
-      {{- end }}
       containers:
       - name: indexer
         image: {{ ._rox.scannerV4.indexer.image.fullRef | quote }}
@@ -105,6 +101,7 @@ spec:
           name: monitoring-tls
         {{- end }}
         securityContext:
+          allowPrivilegeEscalation: false
           capabilities:
             drop: ["NET_RAW"]
           runAsNonRoot: true
@@ -113,8 +110,10 @@ spec:
             scheme: HTTPS
             path: /health/readiness
             port: 9443
-          periodSeconds: 5
-          timeoutSeconds: 1
+          timeoutSeconds: 10
+          periodSeconds: 10
+          failureThreshold: 5
+          successThreshold: 1
         volumeMounts:
         - name: additional-ca-volume
           mountPath: /usr/local/share/ca-certificates/
@@ -163,22 +162,9 @@ spec:
         emptyDir: {}
       - name: etc-pki-volume
         emptyDir: {}
-      {{- if ._rox._securedClusterCertRefresh }}
-      - name: certs
-        emptyDir: {}
-      - name: certs-legacy
-        secret:
-          secretName: scanner-v4-indexer-tls
-          optional: true
-      - name: certs-new
-        secret:
-          secretName: tls-cert-scanner-v4-indexer
-          optional: true
-      {{- else }}
       - name: certs
         secret:
-          secretName: scanner-v4-indexer-tls
-      {{- end }}
+          secretName: {{ (default false ._rox._securedClusterCertRefresh) | ternary "tls-cert-scanner-v4-indexer" "scanner-v4-indexer-tls" }}
       - name: config-volume
         configMap:
           name: scanner-v4-indexer-config

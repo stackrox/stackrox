@@ -79,10 +79,7 @@ var (
             }...)
             {{- end }}
         {{- end }}
-
-        {{- if or (.Obj.IsGloballyScoped) (.Obj.IsDirectlyScoped) (.Obj.IsIndirectlyScoped) }}
-            schema.ScopingResource = resources.{{.Type | storageToResource}}
-        {{- end }}
+            schema.ScopingResource = resources.{{.ScopingResource}}
         {{- if .RegisterSchema }}
         RegisterTable(schema, {{template "createTableStmtVar" .Schema }}{{ if .FeatureFlag }}, features.{{.FeatureFlag}}.Enabled {{ end }})
             {{- if .SearchCategory }}

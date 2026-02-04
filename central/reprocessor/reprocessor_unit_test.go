@@ -7,7 +7,10 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	mockDeploymentDataStore "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	"github.com/stackrox/rox/central/deployment/views"
 	mockImageDataStore "github.com/stackrox/rox/central/image/datastore/mocks"
+	mockImageV2DataStore "github.com/stackrox/rox/central/imagev2/datastore/mocks"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	riskManagerMocks "github.com/stackrox/rox/central/risk/manager/mocks"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -108,6 +111,7 @@ func Test_loopImpl_reprocessNode(t *testing.T) {
 }
 
 func TestReprocessWatchedImageDelegation(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.FlattenImageData, false)
 	t.Run("delegation disabled", func(t *testing.T) {
 		testutils.MustUpdateFeature(t, features.DelegateWatchedImageReprocessing, false)
 
@@ -152,7 +156,54 @@ func TestReprocessWatchedImageDelegation(t *testing.T) {
 	})
 }
 
+func TestReprocessWatchedImageV2Delegation(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+	t.Run("delegation disabled", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.DelegateWatchedImageReprocessing, false)
+
+		enrichmentCtx := gomock.Cond(func(ctxRaw any) bool {
+			// Ensure that the enrichment isn't delegable.
+			ectx := ctxRaw.(imageEnricher.EnrichmentContext)
+			return !ectx.Delegable
+		})
+
+		ctrl := gomock.NewController(t)
+		enricher := mocks.NewMockImageEnricherV2(ctrl)
+		enricher.EXPECT().EnrichImage(emptyCtx, enrichmentCtx, gomock.Any())
+
+		loop := &loopImpl{imageEnricherV2: enricher}
+		loop.reprocessWatchedImageV2("example.com/repo/path:tag")
+	})
+
+	t.Run("delegation enabled", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.DelegateWatchedImageReprocessing, true)
+
+		ctx := gomock.Cond(func(ctxRaw any) bool {
+			// Delegation will fail if context does not have image read access.
+			ctx := ctxRaw.(context.Context)
+			scopeChecker := sac.GlobalAccessScopeChecker(ctx).
+				AccessMode(storage.Access_READ_ACCESS).
+				Resource(resources.Image)
+
+			return scopeChecker.IsAllowed()
+		})
+		enrichmentCtx := gomock.Cond(func(ctxRaw any) bool {
+			// The enrichment must be delegable.
+			ectx := ctxRaw.(imageEnricher.EnrichmentContext)
+			return ectx.Delegable
+		})
+
+		ctrl := gomock.NewController(t)
+		enricher := mocks.NewMockImageEnricherV2(ctrl)
+		enricher.EXPECT().EnrichImage(ctx, enrichmentCtx, gomock.Any())
+
+		loop := &loopImpl{imageEnricherV2: enricher}
+		loop.reprocessWatchedImageV2("example.com/repo/path:tag")
+	})
+}
+
 func TestReprocessImage(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.FlattenImageData, false)
 	newTestLoop := func(tt *testing.T) (*loopImpl, *mockImageDataStore.MockDataStore, *riskManagerMocks.MockManager) {
 		ctrl := gomock.NewController(t)
 		imageDS := mockImageDataStore.NewMockDataStore(ctrl)
@@ -267,7 +318,191 @@ func TestReprocessImage(t *testing.T) {
 	})
 }
 
+func TestReprocessImageV2(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+	newTestLoop := func(tt *testing.T) (*loopImpl, *mockImageV2DataStore.MockDataStore, *mockImageDataStore.MockDataStore, *riskManagerMocks.MockManager) {
+		ctrl := gomock.NewController(t)
+		imageDS := mockImageV2DataStore.NewMockDataStore(ctrl)
+		legacyImageDS := mockImageDataStore.NewMockDataStore(ctrl)
+		riskManager := riskManagerMocks.NewMockManager(ctrl)
+		testLoop := &loopImpl{
+			imagesV2: imageDS,
+			images:   legacyImageDS,
+			risk:     riskManager,
+		}
+		return testLoop, imageDS, legacyImageDS, riskManager
+	}
+	reprocessFuncError := func(_ context.Context, _ imageEnricher.EnrichmentContext, _ *storage.ImageV2) (imageEnricher.EnrichmentResult, error) {
+		return imageEnricher.EnrichmentResult{}, errors.New("some error")
+	}
+	reprocessFuncUpdate := func(_ context.Context, _ imageEnricher.EnrichmentContext, _ *storage.ImageV2) (imageEnricher.EnrichmentResult, error) {
+		return imageEnricher.EnrichmentResult{ImageUpdated: true}, nil
+	}
+	reprocessFuncNoUpdate := func(_ context.Context, _ imageEnricher.EnrichmentContext, _ *storage.ImageV2) (imageEnricher.EnrichmentResult, error) {
+		return imageEnricher.EnrichmentResult{ImageUpdated: false}, nil
+	}
+	imageID := "id"
+	imageDigest := "sha256:test"
+	t.Run("error retrieving the image", func(tt *testing.T) {
+		testLoop, imageDS, _, _ := newTestLoop(tt)
+		imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(nil, false, errors.New("some error"))
+		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, nil)
+		assert.Nil(tt, image)
+		assert.False(tt, reprocessed)
+	})
+	t.Run("image does not exist in V2 or legacy store", func(tt *testing.T) {
+		testLoop, imageDS, legacyImageDS, _ := newTestLoop(tt)
+		gomock.InOrder(
+			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(nil, false, nil),
+			legacyImageDS.EXPECT().GetImageMetadata(gomock.Any(), gomock.Eq(imageDigest)).Times(1).Return(nil, false, nil),
+		)
+		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, nil)
+		assert.Nil(tt, image)
+		assert.False(tt, reprocessed)
+	})
+	t.Run("image does not exist in V2 and error fetching from legacy store", func(tt *testing.T) {
+		testLoop, imageDS, legacyImageDS, _ := newTestLoop(tt)
+		gomock.InOrder(
+			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(nil, false, nil),
+			legacyImageDS.EXPECT().GetImageMetadata(gomock.Any(), gomock.Eq(imageDigest)).Times(1).Return(nil, false, errors.New("some error")),
+		)
+		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, nil)
+		assert.Nil(tt, image)
+		assert.False(tt, reprocessed)
+	})
+	t.Run("image is not pullable", func(tt *testing.T) {
+		testLoop, imageDS, _, _ := newTestLoop(tt)
+		imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(&storage.ImageV2{NotPullable: true}, true, nil)
+		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, nil)
+		assert.Nil(tt, image)
+		assert.False(tt, reprocessed)
+	})
+	t.Run("image is cluster local", func(tt *testing.T) {
+		testLoop, imageDS, _, _ := newTestLoop(tt)
+		imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(&storage.ImageV2{IsClusterLocal: true}, true, nil)
+		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, nil)
+		assert.Nil(tt, image)
+		assert.False(tt, reprocessed)
+	})
+	t.Run("legacy image not pullable triggers migration", func(tt *testing.T) {
+		testLoop, imageDS, legacyImageDS, _ := newTestLoop(tt)
+		legacyImage := &storage.Image{Id: imageDigest, NotPullable: true}
+		gomock.InOrder(
+			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(nil, false, nil),
+			legacyImageDS.EXPECT().GetImageMetadata(gomock.Any(), gomock.Eq(imageDigest)).Times(1).Return(legacyImage, true, nil),
+			imageDS.EXPECT().UpsertImage(gomock.Any(), gomock.Any()).Times(1).Return(nil),
+		)
+		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, nil)
+		assert.Nil(tt, image)
+		assert.False(tt, reprocessed)
+	})
+	t.Run("legacy image cluster local triggers migration", func(tt *testing.T) {
+		testLoop, imageDS, legacyImageDS, _ := newTestLoop(tt)
+		legacyImage := &storage.Image{Id: imageDigest, IsClusterLocal: true}
+		gomock.InOrder(
+			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(nil, false, nil),
+			legacyImageDS.EXPECT().GetImageMetadata(gomock.Any(), gomock.Eq(imageDigest)).Times(1).Return(legacyImage, true, nil),
+			imageDS.EXPECT().UpsertImage(gomock.Any(), gomock.Any()).Times(1).Return(nil),
+		)
+		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, nil)
+		assert.Nil(tt, image)
+		assert.False(tt, reprocessed)
+	})
+	t.Run("legacy image migration upsert error", func(tt *testing.T) {
+		testLoop, imageDS, legacyImageDS, _ := newTestLoop(tt)
+		legacyImage := &storage.Image{Id: imageDigest, NotPullable: true}
+		gomock.InOrder(
+			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(nil, false, nil),
+			legacyImageDS.EXPECT().GetImageMetadata(gomock.Any(), gomock.Eq(imageDigest)).Times(1).Return(legacyImage, true, nil),
+			imageDS.EXPECT().UpsertImage(gomock.Any(), gomock.Any()).Times(1).Return(errors.New("upsert error")),
+		)
+		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, nil)
+		assert.Nil(tt, image)
+		assert.False(tt, reprocessed)
+	})
+	t.Run("reprocessingFunc error", func(tt *testing.T) {
+		testLoop, imageDS, _, _ := newTestLoop(tt)
+		imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(&storage.ImageV2{}, true, nil)
+		image, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, reprocessFuncError)
+		assert.Nil(tt, image)
+		assert.False(tt, reprocessed)
+	})
+	t.Run("reprocessingFunc update calculate risk and upsert error", func(tt *testing.T) {
+		testLoop, imageDS, _, riskManager := newTestLoop(tt)
+		image := &storage.ImageV2{}
+		imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(image, true, nil)
+		riskManager.EXPECT().CalculateRiskAndUpsertImageV2(gomock.Eq(image)).Times(1).Return(errors.New("some error"))
+		retImage, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, reprocessFuncUpdate)
+		assert.Nil(tt, retImage)
+		assert.False(tt, reprocessed)
+	})
+	t.Run("re-fetch error", func(tt *testing.T) {
+		testLoop, imageDS, _, riskManager := newTestLoop(tt)
+		image := &storage.ImageV2{}
+		gomock.InOrder(
+			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(image, true, nil),
+			riskManager.EXPECT().CalculateRiskAndUpsertImageV2(gomock.Eq(image)).Times(1).Return(nil),
+			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(nil, false, errors.New("some error")),
+		)
+		retImage, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, reprocessFuncUpdate)
+		assert.Nil(tt, retImage)
+		assert.False(tt, reprocessed)
+	})
+	t.Run("re-fetch not found", func(tt *testing.T) {
+		testLoop, imageDS, _, riskManager := newTestLoop(tt)
+		image := &storage.ImageV2{}
+		gomock.InOrder(
+			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(image, true, nil),
+			riskManager.EXPECT().CalculateRiskAndUpsertImageV2(gomock.Eq(image)).Times(1).Return(nil),
+			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(nil, false, nil),
+		)
+		retImage, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, reprocessFuncUpdate)
+		assert.Nil(tt, retImage)
+		assert.False(tt, reprocessed)
+	})
+	t.Run("re-fetch image", func(tt *testing.T) {
+		testLoop, imageDS, _, riskManager := newTestLoop(tt)
+		initialImage := &storage.ImageV2{}
+		secondImage := &storage.ImageV2{Scan: &storage.ImageScan{}}
+		gomock.InOrder(
+			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(initialImage, true, nil),
+			riskManager.EXPECT().CalculateRiskAndUpsertImageV2(gomock.Eq(initialImage)).Times(1).Return(nil),
+			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(secondImage, true, nil),
+		)
+		retImage, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, reprocessFuncUpdate)
+		assert.NotNil(tt, retImage)
+		assert.False(tt, proto.Equal(initialImage, retImage))
+		assert.True(tt, proto.Equal(secondImage, retImage))
+		assert.True(tt, reprocessed)
+	})
+	t.Run("reprocessingFunc no scan update", func(tt *testing.T) {
+		testLoop, imageDS, _, _ := newTestLoop(tt)
+		image := &storage.ImageV2{}
+		imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(image, true, nil)
+		retImage, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, reprocessFuncNoUpdate)
+		assert.NotNil(tt, retImage)
+		assert.True(tt, proto.Equal(image, retImage))
+		assert.True(tt, reprocessed)
+	})
+	t.Run("legacy image found and successfully reprocessed", func(tt *testing.T) {
+		testLoop, imageDS, legacyImageDS, riskManager := newTestLoop(tt)
+		legacyImage := &storage.Image{Id: imageDigest}
+		secondImage := &storage.ImageV2{Id: imageID, Scan: &storage.ImageScan{}}
+		gomock.InOrder(
+			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(nil, false, nil),
+			legacyImageDS.EXPECT().GetImageMetadata(gomock.Any(), gomock.Eq(imageDigest)).Times(1).Return(legacyImage, true, nil),
+			riskManager.EXPECT().CalculateRiskAndUpsertImageV2(gomock.Any()).Times(1).Return(nil),
+			imageDS.EXPECT().GetImage(gomock.Any(), gomock.Eq(imageID)).Times(1).Return(secondImage, true, nil),
+		)
+		retImage, reprocessed := testLoop.reprocessImageV2(imageID, imageDigest, imageEnricher.UseCachesIfPossible, reprocessFuncUpdate)
+		assert.NotNil(tt, retImage)
+		assert.True(tt, proto.Equal(secondImage, retImage))
+		assert.True(tt, reprocessed)
+	})
+}
+
 func TestReprocessImagesAndResyncDeployments_SkipBrokenSensor(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.FlattenImageData, false)
 	imgs := []*storage.Image{}
 	for _, cluster := range []string{"a", "b"} { // two clusters
 		// Create at least one more image than max semaphore size to ensure skip logic is executed.
@@ -356,6 +591,103 @@ func TestReprocessImagesAndResyncDeployments_SkipBrokenSensor(t *testing.T) {
 		connB.EXPECT().InjectMessage(gomock.Any(), reprocessDeploymentsTypeCond).Times(0).Return(nil)
 
 		testLoop.reprocessImagesAndResyncDeployments(0, reprocessFuncUpdate, nil)
+	})
+}
+
+func TestReprocessImagesV2AndResyncDeployments_SkipBrokenSensor(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+	imgs := []*storage.ImageV2{}
+	for _, cluster := range []string{"a", "b"} { // two clusters
+		// Create at least one more image than max semaphore size to ensure skip logic is executed.
+		for i := range imageReprocessorSemaphoreSize + 1 {
+			imgs = append(imgs, &storage.ImageV2{Id: fmt.Sprintf("img%d-%s", i, cluster)})
+		}
+	}
+
+	containerImageViews := []*views.ContainerImageView{}
+	for _, img := range imgs {
+		containerImageViews = append(containerImageViews, &views.ContainerImageView{
+			ImageIDV2: img.GetId(),
+			// Last character of image ID is the cluster.
+			ClusterIDs: []string{img.GetId()[len(img.GetId())-1:]},
+		})
+	}
+
+	newReprocessorLoop := func(t *testing.T) (*loopImpl, *connectionMocks.MockSensorConnection, *connectionMocks.MockSensorConnection) {
+		ctrl := gomock.NewController(t)
+
+		connA := connectionMocks.NewMockSensorConnection(ctrl)
+		connB := connectionMocks.NewMockSensorConnection(ctrl)
+		connManager := connectionMocks.NewMockManager(ctrl)
+		deploymentDS := mockDeploymentDataStore.NewMockDataStore(ctrl)
+		imageDS := mockImageV2DataStore.NewMockDataStore(ctrl)
+		riskManager := riskManagerMocks.NewMockManager(ctrl)
+
+		connA.EXPECT().ClusterID().AnyTimes().Return("a")
+		connB.EXPECT().ClusterID().AnyTimes().Return("b")
+
+		connManager.EXPECT().GetConnection("a").AnyTimes().Return(connA)
+		connManager.EXPECT().GetConnection("b").AnyTimes().Return(connB)
+		connManager.EXPECT().GetActiveConnections().Return([]connection.SensorConnection{connA, connB})
+		connManager.EXPECT().AllSensorsHaveCapability(gomock.Any()).AnyTimes().Return(false)
+
+		deploymentDS.EXPECT().GetContainerImageViews(gomock.Any(), gomock.Any()).AnyTimes().Return(containerImageViews, nil)
+		for _, img := range imgs {
+			imageDS.EXPECT().GetImage(gomock.Any(), img.GetId()).AnyTimes().Return(img, true, nil)
+			imageDS.EXPECT().GetImageNames(gomock.Any(), img.GetDigest()).
+				AnyTimes().
+				Return([]*storage.ImageName{img.GetName()}, nil)
+		}
+
+		riskManager.EXPECT().CalculateRiskAndUpsertImageV2(gomock.Any()).AnyTimes().Return(nil)
+
+		testLoop := &loopImpl{
+			deployments: deploymentDS,
+			imagesV2:    imageDS,
+			risk:        riskManager,
+			connManager: connManager,
+			stopSig:     concurrency.NewSignal(),
+		}
+		return testLoop, connA, connB
+	}
+
+	reprocessFuncUpdate := func(_ context.Context, _ imageEnricher.EnrichmentContext, _ *storage.ImageV2) (imageEnricher.EnrichmentResult, error) {
+		return imageEnricher.EnrichmentResult{ImageUpdated: true}, nil
+	}
+	updatedImageTypeCond := gomock.Cond(func(msg *central.MsgToSensor) bool {
+		return event.GetEventTypeWithoutPrefix(msg.GetMsg()) == "UpdatedImage"
+	})
+	reprocessDeploymentsTypeCond := gomock.Cond(func(msg *central.MsgToSensor) bool {
+		return event.GetEventTypeWithoutPrefix(msg.GetMsg()) == "ReprocessDeployments"
+	})
+
+	t.Run("send all messages when clusters are healthy", func(t *testing.T) {
+		testLoop, connA, connB := newReprocessorLoop(t)
+
+		// Expect every updated image to be sent.
+		connA.EXPECT().InjectMessage(gomock.Any(), updatedImageTypeCond).Times(len(imgs) / 2).Return(nil)
+		connB.EXPECT().InjectMessage(gomock.Any(), updatedImageTypeCond).Times(len(imgs) / 2).Return(nil)
+
+		// Expect each cluster to be sent a reprocess deployments message.
+		connA.EXPECT().InjectMessage(gomock.Any(), reprocessDeploymentsTypeCond).Times(1).Return(nil)
+		connB.EXPECT().InjectMessage(gomock.Any(), reprocessDeploymentsTypeCond).Times(1).Return(nil)
+
+		testLoop.reprocessImagesV2AndResyncDeployments(0, reprocessFuncUpdate, search.EmptyQuery())
+	})
+
+	t.Run("skip some messages when are broken clusters", func(t *testing.T) {
+		testLoop, connA, connB := newReprocessorLoop(t)
+
+		// Cluster "a" is healthy, expect all applicable images to be sent.
+		connA.EXPECT().InjectMessage(gomock.Any(), updatedImageTypeCond).Times(len(imgs) / 2).Return(nil)
+		// Cluster "b" is not healthy, expect at MOST imageReprocessorSemaphoreSize attempted messages.
+		connB.EXPECT().InjectMessage(gomock.Any(), updatedImageTypeCond).MaxTimes(int(imageReprocessorSemaphoreSize)).Return(errors.New("broken"))
+
+		connA.EXPECT().InjectMessage(gomock.Any(), reprocessDeploymentsTypeCond).Times(1).Return(nil)
+		// No reprocess deployments message is sent due to previous failures.
+		connB.EXPECT().InjectMessage(gomock.Any(), reprocessDeploymentsTypeCond).Times(0).Return(nil)
+
+		testLoop.reprocessImagesV2AndResyncDeployments(0, reprocessFuncUpdate, search.EmptyQuery())
 	})
 }
 

@@ -31,10 +31,10 @@ function PolicyCategoriesSelectField(): ReactElement {
     // Used to temporarily prevent dropdown from closing after selecting an item to maintain multi-select UX
     const [preventClose, setPreventClose] = useState(false);
 
-    const selectedCategories: string[] = (field.value as string[]) || [];
+    const selectedCategories: string[] = (field.value as string[]) ?? [];
 
     const onToggle = () => {
-        setIsOpen(!isOpen);
+        setIsOpen((prev) => !prev);
     };
 
     const onSelect = (

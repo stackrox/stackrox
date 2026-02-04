@@ -73,7 +73,7 @@ func TestFetchSensorDeploymentOwnerRef(t *testing.T) {
 			name:      "Success",
 			podName:   sensorPodName,
 			namespace: sensorNamespace,
-			k8sClient: fake.NewSimpleClientset(
+			k8sClient: fake.NewClientset(
 				createTestPod(sensorPodName, sensorNamespace, replicaSetName),
 				createTestReplicaSet(replicaSetName, sensorNamespace, deploymentName),
 			),
@@ -84,7 +84,7 @@ func TestFetchSensorDeploymentOwnerRef(t *testing.T) {
 			name:          "EmptyPodName",
 			podName:       "",
 			namespace:     sensorNamespace,
-			k8sClient:     fake.NewSimpleClientset(),
+			k8sClient:     fake.NewClientset(),
 			expectedErr:   true,
 			expectedOwner: nil,
 		},
@@ -92,7 +92,7 @@ func TestFetchSensorDeploymentOwnerRef(t *testing.T) {
 			name:          "PodNotFound",
 			podName:       sensorPodName,
 			namespace:     sensorNamespace,
-			k8sClient:     fake.NewSimpleClientset(),
+			k8sClient:     fake.NewClientset(),
 			expectedErr:   true,
 			expectedOwner: nil,
 		},
@@ -100,7 +100,7 @@ func TestFetchSensorDeploymentOwnerRef(t *testing.T) {
 			name:      "ReplicaSetNotFound",
 			podName:   sensorPodName,
 			namespace: sensorNamespace,
-			k8sClient: fake.NewSimpleClientset(
+			k8sClient: fake.NewClientset(
 				createTestPod(sensorPodName, sensorNamespace, replicaSetName),
 			),
 			expectedErr:   true,
@@ -117,7 +117,7 @@ func TestFetchSensorDeploymentOwnerRef(t *testing.T) {
 					Kind:       "Kind",
 					Name:       "second-owner",
 				})
-				return fake.NewSimpleClientset(pod)
+				return fake.NewClientset(pod)
 			}(),
 			expectedErr:    true,
 			expectedErrMsg: "pod \"" + sensorPodName + "\" has unexpected owners",
@@ -135,7 +135,7 @@ func TestFetchSensorDeploymentOwnerRef(t *testing.T) {
 					Kind:       "Kind",
 					Name:       "second-owner",
 				})
-				return fake.NewSimpleClientset(pod, replicaSet)
+				return fake.NewClientset(pod, replicaSet)
 			}(),
 			expectedErr:    true,
 			expectedErrMsg: "replica set \"" + replicaSetName + "\" has unexpected owners",

@@ -43,7 +43,7 @@ jobs:
             if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event.action}}" = "milestoned" ]; then
               EVENT_ACTION="added to"
               EVENT_ICON=":white_check_mark:"
-              echo "call-to-action=:arrow_right: Release Engineers <!subteam^S051ZQXP97X|acs-release-eng> and <!subteam^S04TXGK6B32|acs-eng-staff>: Review whether this PR meets the criteria for being included in the release." >> "${GITHUB_OUTPUT}"
+              echo "call-to-action=:arrow_right: Release Engineers <!subteam^S051ZQXP97X|acs-release-eng>: Review whether this PR meets the criteria for being included in the release." >> "${GITHUB_OUTPUT}"
             else
               EVENT_ACTION="removed from"
               EVENT_ICON=":x:"
