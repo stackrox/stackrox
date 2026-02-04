@@ -12,8 +12,8 @@
 
 | Python File | Go Replacement | Interface |
 |------------|----------------|-----------|
-| `patch-csv.py` | `cmd/csv-patcher/` | stdin/stdout |
-| `fix-spec-descriptor-order.py` | `cmd/fix-spec-descriptors/` | stdin/stdout |
+| `patch-csv.py` | `bundle_helpers/csv-patcher/` | stdin/stdout |
+| `fix-spec-descriptor-order.py` | `bundle_helpers/fix-spec-descriptors/` | stdin/stdout |
 | `prepare-bundle-manifests.sh` (wrapper) | `bundle_helpers/prepare-bundle-manifests.sh` (wrapper) | Same script interface |
 
 ### Key Implementation Decisions
@@ -45,7 +45,7 @@
 
 ### Go CLI Tools (1384 lines total)
 
-#### cmd/csv-patcher/
+#### bundle_helpers/csv-patcher/
 - **version.go** - XyzVersion type, Y-Stream calculation, replace version logic
 - **patch.go** - Main CSV patching (versions, images, replaces, related images)
 - **csv.go** - CSV document structure types
@@ -53,7 +53,7 @@
 - **main.go** - CLI entry point (flags, stdin/stdout)
 - **Tests** - Comprehensive unit tests for all logic
 
-#### cmd/fix-spec-descriptors/
+#### bundle_helpers/fix-spec-descriptors/
 - **main.go** - Sort descriptors, resolve relative field dependencies
 - **Tests** - Unit tests for descriptor ordering
 
@@ -81,7 +81,7 @@ test-bundle-helpers # Run Go unit tests
 **Konflux Dockerfile:**
 ```dockerfile
 FROM openshift-golang-builder AS builder
-RUN go build -o /usr/local/bin/csv-patcher ./cmd/csv-patcher
+RUN cd /stackrox/operator/bundle_helpers/csv-patcher && go build -o /usr/local/bin/csv-patcher .
 RUN ./bundle_helpers/prepare-bundle-manifests.sh \
       --use-version="${OPERATOR_IMAGE_TAG}" \
       --related-images-mode=konflux
@@ -92,8 +92,8 @@ RUN ./bundle_helpers/prepare-bundle-manifests.sh \
 ## Files Changed
 
 ### Added
-- `operator/cmd/csv-patcher/` - Go CSV patcher implementation
-- `operator/cmd/fix-spec-descriptors/` - Go descriptor fixer implementation
+- `operator/bundle_helpers/csv-patcher/` - Go CSV patcher implementation
+- `operator/bundle_helpers/fix-spec-descriptors/` - Go descriptor fixer implementation
 - `operator/bundle_helpers/prepare-bundle-manifests.sh` - Thin wrapper (replaces Python version)
 
 ### Deleted

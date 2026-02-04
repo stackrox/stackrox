@@ -54,7 +54,7 @@ ENV RELATED_IMAGE_CENTRAL_DB=$RELATED_IMAGE_CENTRAL_DB
 RUN echo "Checking required RELATED_IMAGE_CENTRAL_DB"; [[ "${RELATED_IMAGE_CENTRAL_DB}" != "" ]]
 
 # Build csv-patcher from source (Go replacement for patch-csv.py)
-RUN cd /stackrox/operator/cmd/csv-patcher && go build -o /usr/local/bin/csv-patcher .
+RUN cd /stackrox/operator/bundle_helpers/csv-patcher && go build -o /usr/local/bin/csv-patcher .
 
 # Prepare bundle using the csv-patcher Go tool
 RUN ./bundle_helpers/prepare-bundle-manifests.sh \
