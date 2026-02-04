@@ -43,7 +43,6 @@ type clusterIDHandler interface {
 	Set(string)
 	Get() string
 	GetNoWait() string
-	GetFromCert() string
 }
 
 // ConfigWithDefaults creates a new config object with default properties.

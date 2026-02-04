@@ -54,7 +54,6 @@ type centralCommunicationImpl struct {
 type clusterIDPeekSetter interface {
 	Set(string)
 	GetNoWait() string
-	GetFromCert() string
 }
 
 var (
@@ -238,11 +237,7 @@ func (s *centralCommunicationImpl) hello(stream central.SensorService_Communicat
 		return errors.Errorf("first message received from central was not CentralHello but of type %T", firstMsg.GetMsg())
 	}
 
-	clusterID := centralHello.GetClusterId()
-	if fromCert := s.clusterID.GetFromCert(); clusterID != fromCert {
-		return errors.Errorf("cluster ID value %q from central conflicts with the certificate value %q", clusterID, fromCert)
-	}
-	s.clusterID.Set(clusterID)
+	s.clusterID.Set(centralHello.GetClusterId())
 
 	if centralHello.GetManagedCentral() {
 		log.Info("Central is managed")
@@ -264,7 +259,7 @@ func (s *centralCommunicationImpl) hello(stream central.SensorService_Communicat
 		strconv.FormatBool(centralHello.GetSendDeduperState()))
 
 	if hello.GetHelmManagedConfigInit() != nil {
-		if err := helmconfig.StoreCachedClusterID(clusterID); err != nil {
+		if err := helmconfig.StoreCachedClusterID(s.clusterID.GetNoWait()); err != nil {
 			log.Warnf("Could not cache cluster ID: %v", err)
 		}
 	}

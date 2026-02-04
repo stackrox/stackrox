@@ -37,7 +37,7 @@ func NewHandler() *handlerImpl {
 // Get returns the cluster id parsed from the service certificate
 func (c *handlerImpl) Get() string {
 	c.once.Do(func() {
-		id := c.GetFromCert()
+		id := c.clusterIDFromCert()
 		if c.isInitCertClusterID(id) {
 			log.Infof("Certificate has wildcard subject %s. Waiting to receive cluster ID from central...", id)
 			c.clusterIDAvailable.Wait()
@@ -60,7 +60,7 @@ func (c *handlerImpl) GetNoWait() string {
 
 // Set sets the global cluster ID value.
 func (c *handlerImpl) Set(value string) {
-	effectiveClusterID, err := c.getClusterID(value, c.GetFromCert())
+	effectiveClusterID, err := c.getClusterID(value, c.clusterIDFromCert())
 	if err != nil {
 		log.Panicf("Invalid dynamic cluster ID value %q: %v", value, err)
 	}
@@ -79,7 +79,7 @@ func (c *handlerImpl) Set(value string) {
 	}
 }
 
-func (c *handlerImpl) GetFromCert() string {
+func (c *handlerImpl) clusterIDFromCert() string {
 	id, err := c.parseClusterIDFromServiceCert(storage.ServiceType_SENSOR_SERVICE)
 	if err != nil {
 		log.Panicf("Error parsing cluster id from certificate: %v", err)
