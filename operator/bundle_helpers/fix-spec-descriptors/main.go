@@ -78,7 +78,10 @@ func main() {
 	fmt.Print(string(output))
 }
 
-// fixDescriptorOrder performs stable sort so parents appear before children
+// fixDescriptorOrder performs stable sort by parent path to preserve sibling ordering.
+// This matches the Python implementation: descriptors.sort(key=lambda d: f'.{d["path"]}'.rsplit('.', 1)[0])
+// Sorting by parent path ensures that siblings (items at the same nesting level) retain their
+// original relative order, while still ensuring parents appear before children.
 func fixDescriptorOrder(descriptors []map[string]interface{}) {
 	sort.SliceStable(descriptors, func(i, j int) bool {
 		pathI, okI := descriptors[i]["path"].(string)
@@ -89,10 +92,30 @@ func fixDescriptorOrder(descriptors []map[string]interface{}) {
 			return false
 		}
 
-		// Sort lexicographically - this ensures parents come before children
-		// because "central" < "central.db" < "central.db.enabled"
-		return pathI < pathJ
+		// Sort by parent path - this matches Python's behavior
+		parentI := getParentPath(pathI)
+		parentJ := getParentPath(pathJ)
+		return parentI < parentJ
 	})
+}
+
+// getParentPath extracts the parent path from a descriptor path.
+// For "scanner.db.enabled", returns ".scanner.db"
+// For "scanner.db", returns ".scanner"
+// For "scanner", returns ""
+// This matches Python's: f'.{d["path"]}'.rsplit('.', 1)[0]
+func getParentPath(path string) string {
+	// Prepend '.' to match Python behavior
+	fullPath := "." + path
+
+	// Find the last '.' to split off the last component
+	lastDot := strings.LastIndex(fullPath, ".")
+	if lastDot == -1 {
+		return fullPath
+	}
+
+	// Return everything before the last dot (the parent path)
+	return fullPath[:lastDot]
 }
 
 // allowRelativeFieldDependencies converts relative field dependencies to absolute
