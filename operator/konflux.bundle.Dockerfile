@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-FROM registry.access.redhat.com/ubi9/python-39:latest@sha256:bdc09052ddc6fca1b707b12672ce97c4ac538f412841a4d90c82e50d1bbf154f AS builder
-=======
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:5dc6ba426ccbeb3954ead6b015f36b4a2d22320e5b356b074198d08422464ed2 AS builder
->>>>>>> 7ec23fb757 (build: Use PyYAML dependency as RPM in bundle build (#18778))
 
 # This installs both PyYAML and Python.
 RUN microdnf -y install python3.12-pyyaml
