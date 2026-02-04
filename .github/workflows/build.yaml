@@ -146,6 +146,20 @@ jobs:
           key: built-docs-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('proto/**', 'generated/**') }}
           path: image/rhel/docs
 
+      - name: Setup Go
+        if: |
+          steps.restore-roxctl-build.outputs.cache-hit != 'true'
+          || steps.restore-central-build.outputs.cache-hit != 'true'
+          || steps.restore-compliance-build.outputs.cache-hit != 'true'
+          || steps.restore-config-controller-build.outputs.cache-hit != 'true'
+          || steps.restore-migrator-build.outputs.cache-hit != 'true'
+          || steps.restore-sensor-build.outputs.cache-hit != 'true'
+          || steps.restore-docs-build.outputs.cache-hit != 'true'
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: false
+
       - name: Cache Go dependencies
         if: |
           steps.restore-roxctl-build.outputs.cache-hit != 'true'
@@ -465,6 +479,13 @@ jobs:
             bin/*/roxctl
             bin/*/roxctl.exe
 
+      - name: Setup Go
+        if: ${{ steps.restore-roxctl-build.outputs.cache-hit != 'true' }}
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: false
+
       - name: Cache Go dependencies
         if: ${{ steps.restore-roxctl-build.outputs.cache-hit != 'true' }}
         uses: ./.github/actions/cache-go-dependencies
@@ -556,6 +577,18 @@ jobs:
             bin/${{ env.GOOS }}_${{ env.GOARCH }}/kubernetes
             bin/${{ env.GOOS }}_${{ env.GOARCH }}/upgrader
 
+      - name: Setup Go
+        if: |
+          steps.restore-central-build.outputs.cache-hit != 'true'
+          || steps.restore-compliance-build.outputs.cache-hit != 'true'
+          || steps.restore-config-controller-build.outputs.cache-hit != 'true'
+          || steps.restore-migrator-build.outputs.cache-hit != 'true'
+          || steps.restore-sensor-build.outputs.cache-hit != 'true'
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: false
+
       - name: Cache Go dependencies
         if: |
           steps.restore-central-build.outputs.cache-hit != 'true'
@@ -644,6 +677,13 @@ jobs:
         with:
           key: built-docs-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('proto/**', 'generated/**') }}
           path: image/rhel/docs
+
+      - name: Setup Go
+        if: steps.restore-docs-build.outputs.cache-hit != 'true'
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: false
 
       - name: Cache Go dependencies
         if: steps.restore-docs-build.outputs.cache-hit != 'true'

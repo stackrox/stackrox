@@ -37,6 +37,12 @@ jobs:
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
 
+    - name: Setup Go
+      uses: actions/setup-go@v6
+      with:
+        go-version-file: 'go.mod'
+        cache: false
+
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
