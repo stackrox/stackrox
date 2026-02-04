@@ -38,3 +38,6 @@ tests/*/*/init-bundle.yaml
 
 # Backups for what we've edited with sed
 *.bak
+
+bundle_helpers/csv-patcher/csv-patcher
+bundle_helpers/fix-spec-descriptors/fix-spec-descriptors

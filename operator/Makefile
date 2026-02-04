@@ -225,13 +225,13 @@ yq: $(YQ) ## Download yq.
 CSV_PATCHER := $(LOCALBIN)/csv-patcher
 FIX_SPEC_DESCRIPTORS := $(LOCALBIN)/fix-spec-descriptors
 
-$(CSV_PATCHER): cmd/csv-patcher/*.go
+$(CSV_PATCHER): bundle_helpers/csv-patcher/*.go
 	@echo "+ $(notdir $@)"
-	$(SILENT)cd cmd/csv-patcher && go build -o $@ .
+	$(SILENT)cd bundle_helpers/csv-patcher && go build -o $@ .
 
-$(FIX_SPEC_DESCRIPTORS): cmd/fix-spec-descriptors/*.go
+$(FIX_SPEC_DESCRIPTORS): bundle_helpers/fix-spec-descriptors/*.go
 	@echo "+ $(notdir $@)"
-	$(SILENT)cd cmd/fix-spec-descriptors && go build -o $@ .
+	$(SILENT)cd bundle_helpers/fix-spec-descriptors && go build -o $@ .
 
 .PHONY: csv-patcher
 csv-patcher: $(CSV_PATCHER) ## Build csv-patcher tool
@@ -298,8 +298,8 @@ test-upgrade: kuttl bundle-post-process ## Run OLM-based operator upgrade tests.
 
 .PHONY: test-bundle-helpers
 test-bundle-helpers: ## Run unit tests against CSV patcher tools.
-	cd cmd/csv-patcher && go test -v ./...
-	cd cmd/fix-spec-descriptors && go test -v ./...
+	cd bundle_helpers/csv-patcher && go test -v ./...
+	cd bundle_helpers/fix-spec-descriptors && go test -v ./...
 
 .PHONY: stackrox-image-pull-secret
 stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on Quay.io. Used by Helm chart.
