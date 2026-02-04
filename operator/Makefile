@@ -76,7 +76,7 @@ INSTALL_CHANNEL ?= latest
 # INDEX_IMG_BASE and INDEX_IMG_TAG define the image:tag used for the index (a.k.a. catalog) image.
 # These variables can be overridden when calling deploy*-via-olm targets,
 # e.g. to deploy catalogs from IIB or other externally-built indexes.
-INDEX_IMG_BASE = $(IMAGE_TAG_BASE)-index
+INDEX_IMG_BASE ?= $(IMAGE_TAG_BASE)-index
 INDEX_IMG_TAG ?= $(CSV_VERSION)
 INDEX_IMG ?= $(INDEX_IMG_BASE):$(INDEX_IMG_TAG)
 
@@ -433,7 +433,7 @@ upgrade-dirty-tag-via-olm: kuttl
 # Commands to enter local Python virtual environment and get needed dependencies there.
 ACTIVATE_PYTHON = $(PYTHON) -m venv bundle_helpers/.venv ;\
 	. bundle_helpers/.venv/bin/activate ;\
-	pip3 install --upgrade pip==21.3.1 setuptools==59.6.0 ;\
+	pip3 install --upgrade pip setuptools ;\
 	pip3 install -r bundle_helpers/requirements-gha.txt
 
 .PHONY: bundle
@@ -522,6 +522,10 @@ index-build: bundle-post-process yq ## Build Index (a.k.a. Catalog) image with t
 # the first dot in `replaces:` value. E.g. `  replaces: rhacs-operator.v3.62.0` -> `v3.62.0`
 	$(SILENT)set -euo pipefail ;\
 	replaced_version=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
+	echo $(INDEX_IMG_BASE); \
+	echo $(INDEX_IMG); \
+	echo $(BUNDLE_IMG); \
+	echo $(replaced_version); \
 	YQ=$(YQ) ./hack/build-index-image.sh \
 		--base-index-tag "$(INDEX_IMG_BASE):$${replaced_version}" \
 		--index-tag "$(INDEX_IMG)" \
