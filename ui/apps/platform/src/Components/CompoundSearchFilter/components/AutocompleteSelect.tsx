@@ -18,7 +18,7 @@ import { SearchIcon, TimesIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 import type { SearchAutocompleteQueryResponse } from 'queries/searchAutocomplete';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getRequestQueryStringForSearchFilter, wrapInQuotes } from 'utils/searchUtils';
 import type { SearchFilter } from 'types/search';
 import { ensureString } from 'utils/ensure';
 
@@ -160,13 +160,24 @@ function AutocompleteSelect({
         setIsOpen((prev) => !prev);
     };
 
+    // Wraps the value in quotes if it's an actual autocomplete suggestion from the backend,
+    // otherwise returns it unchanged. This provides exact-match search for suggestions
+    // and regex search for manual/fallback entries.
+    const applySelectedText = (rawValue: string | number) => {
+        const value = ensureString(rawValue);
+        const isAutocompleteSuggestion = data.searchAutocomplete.includes(value);
+        const valueToApply = isAutocompleteSuggestion ? wrapInQuotes(value) : value;
+        onChange(valueToApply);
+        onSearch(valueToApply);
+        setFilterValue('');
+    };
+
     const onSelect = (
         _event: ReactMouseEvent<Element, MouseEvent> | undefined,
         value: string | number | undefined
     ) => {
         if (value) {
-            onChange(ensureString(value));
-            setFilterValue('');
+            applySelectedText(value);
         }
         setIsOpen(false);
         setFocusedItemIndex(null);
@@ -214,16 +225,16 @@ function AutocompleteSelect({
 
     const onInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
         const enabledMenuItems = selectOptions.filter((option) => !option.isDisabled);
-        const [firstMenuItem] = enabledMenuItems;
-        const focusedItem = focusedItemIndex ? enabledMenuItems[focusedItemIndex] : firstMenuItem;
+        const focusedItem = focusedItemIndex !== null ? enabledMenuItems[focusedItemIndex] : null;
 
         switch (event.key) {
-            // Select the first available option
             case 'Enter':
-                if (isOpen) {
-                    const newValue = ensureString(focusedItem.value);
-                    onChange(newValue);
-                    onSearch(newValue);
+                if (isOpen && focusedItem) {
+                    applySelectedText(focusedItem.value);
+                } else if (value) {
+                    // Manual text entry - apply without quotes for regex search
+                    onSearch(value);
+                    onChange('');
                     setFilterValue('');
                 }
 
@@ -310,8 +321,7 @@ function AutocompleteSelect({
                         isSelected={false}
                         className={option.className}
                         onClick={() => {
-                            onChange(option.value);
-                            onSearch(option.value);
+                            applySelectedText(option.value);
                         }}
                         id={`select-typeahead-${option?.value?.replace(' ', '-space-')}`}
                         {...option}
