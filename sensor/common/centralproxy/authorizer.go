@@ -44,7 +44,7 @@ func (k authzCacheKey) String() string {
 }
 
 // authzResult wraps the authorization result for caching.
-// We need a wrapper because expiringcache treats nil values as "not found".
+// The zero value (nil error) represents successful authorization.
 type authzResult struct {
 	err error
 }
@@ -71,13 +71,13 @@ func (r k8sResource) String() string {
 type k8sAuthorizer struct {
 	client           kubernetes.Interface
 	tokenCache       expiringcache.Cache[string, *authenticationv1.UserInfo]
-	authzCache       expiringcache.Cache[authzCacheKey, *authzResult]
+	authzCache       expiringcache.Cache[authzCacheKey, authzResult]
 	verbsToCheck     []string
 	resourcesToCheck []k8sResource
 	// tokenReviewGroup coalesces concurrent authentication requests for the same token.
 	tokenReviewGroup *coalescer.Coalescer[*authenticationv1.UserInfo]
 	// authzGroup coalesces concurrent authorization requests for the same user/namespace.
-	authzGroup *coalescer.Coalescer[*authzResult]
+	authzGroup *coalescer.Coalescer[authzResult]
 }
 
 // newK8sAuthorizer creates a new Kubernetes-based authorizer with TokenReview and
@@ -86,10 +86,10 @@ func newK8sAuthorizer(client kubernetes.Interface) *k8sAuthorizer {
 	return &k8sAuthorizer{
 		client:           client,
 		tokenCache:       expiringcache.NewExpiringCache[string, *authenticationv1.UserInfo](defaultCacheTTL),
-		authzCache:       expiringcache.NewExpiringCache[authzCacheKey, *authzResult](defaultCacheTTL),
+		authzCache:       expiringcache.NewExpiringCache[authzCacheKey, authzResult](defaultCacheTTL),
 		verbsToCheck:     []string{"get", "list"},
 		tokenReviewGroup: coalescer.New[*authenticationv1.UserInfo](),
-		authzGroup:       coalescer.New[*authzResult](),
+		authzGroup:       coalescer.New[authzResult](),
 		resourcesToCheck: []k8sResource{
 			{Resource: "pods", Group: ""},
 			{Resource: "replicationcontrollers", Group: ""},
@@ -215,7 +215,7 @@ func (a *k8sAuthorizer) authorize(ctx context.Context, userInfo *authenticationv
 	}
 
 	// Slow path: coalesce concurrent authorization requests for the same user/namespace.
-	cached, err := a.authzGroup.Coalesce(ctx, cacheKey.String(), func() (*authzResult, error) {
+	cached, err := a.authzGroup.Coalesce(ctx, cacheKey.String(), func() (authzResult, error) {
 		// Double-check cache inside coalesce to avoid redundant API calls.
 		if cached, ok := a.authzCache.Get(cacheKey); ok {
 			return cached, nil
@@ -255,7 +255,7 @@ func (a *k8sAuthorizer) buildAuthzCacheKey(userInfo *authenticationv1.UserInfo, 
 }
 
 // checkAllPermissions runs all SubjectAccessReview checks in parallel.
-func (a *k8sAuthorizer) checkAllPermissions(ctx context.Context, userInfo *authenticationv1.UserInfo, namespace string) *authzResult {
+func (a *k8sAuthorizer) checkAllPermissions(ctx context.Context, userInfo *authenticationv1.UserInfo, namespace string) authzResult {
 	// Use errgroup with context cancellation to short-circuit on first error/denial.
 	g, groupCtx := errgroup.WithContext(ctx)
 
@@ -277,7 +277,7 @@ func (a *k8sAuthorizer) checkAllPermissions(ctx context.Context, userInfo *authe
 		}
 	}
 
-	return &authzResult{err: g.Wait()}
+	return authzResult{err: g.Wait()}
 }
 
 // performSubjectAccessReview performs a SubjectAccessReview API call.
