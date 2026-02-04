@@ -1858,13 +1858,13 @@ spec:
     \ back to Central. These services allow users to enforce policies and monitor\
     \ your OpenShift and Kubernetes clusters. Secured Cluster Services come as two\
     \ Deployments (Sensor and Admission Controller) and one DaemonSet (Collector).\n\
-    \n**Console Plugin:** RHACS provides a dynamic plugin that displays vulnerability\
-    \ management information in the OpenShift web console. Install a SecuredCluster\
-    \ to deploy the plugin. Enable the plugin by selecting *Operators* > *Installed\
-    \ Operators* or by modifying the console Operator configuration.\n**Important:**\
-    \ The Console Plugin requires OpenShift 4.19 or later.\n\n### Central Services\
-    \ Explained\n\n| Service                          | Deployment Type | Description\
-    \     |\n| :------------------------------- | :-------------- | :--------------\
+    \n**Console Plugin (Tech Preview):** RHACS provides a dynamic plugin that displays\
+    \ vulnerability management information in the OpenShift web console. Install a\
+    \ SecuredCluster to deploy the plugin. Enable the plugin by selecting *Operators*\
+    \ > *Installed Operators* or by modifying the console Operator configuration.\n\
+    **Important:** The Console Plugin requires OpenShift 4.19 or later.\n\n### Central\
+    \ Services Explained\n\n| Service                          | Deployment Type |\
+    \ Description     |\n| :------------------------------- | :-------------- | :--------------\
     \ |\n| Central                          | Deployment      | Users interact with\
     \ Red Hat Advanced Cluster Security through the user interface or APIs on Central.\
     \ Central also sends notifications for violations and interacts with integrations.\
