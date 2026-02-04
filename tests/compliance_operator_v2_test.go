@@ -146,7 +146,7 @@ func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, 
 		)
 		require.NoError(c, err)
 
-		require.Equal(c, "DONE", suite.Status.Phase,
+		require.Equal(c, complianceoperatorv1.PhaseDone, suite.Status.Phase,
 			"ComplianceSuite %s not DONE: is in %s phase", suiteName, suite.Status.Phase)
 	}, timeout, interval)
 	t.Logf("ComplianceSuite %s has reached DONE phase", suiteName)
