@@ -112,7 +112,7 @@ function NodeCvePage() {
     return (
         <>
             <PageTitle title={`Node CVEs - NodeCVE ${nodeCveName}`} />
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
+            <PageSection>
                 <Breadcrumb>
                     <BreadcrumbItemLink to={nodeCveOverviewCvePath}>Node CVEs</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>
@@ -122,14 +122,12 @@ function NodeCvePage() {
                     </BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
-            <Divider component="div" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <CvePageHeader data={cveMetadata} />
             </PageSection>
             <Divider component="div" />
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-flex-grow-1">
+            <PageSection hasBodyWrapper={false}>
                 <AdvancedFiltersToolbar
-                    className="pf-v6-u-pt-lg pf-v6-u-pb-0 pf-v6-u-px-sm"
                     searchFilter={searchFilter}
                     searchFilterConfig={searchFilterConfig}
                     defaultSearchFilterEntity="Node"
@@ -172,37 +170,33 @@ function NodeCvePage() {
                     />
                 </SummaryCardLayout>
                 <Divider component="div" />
-                <div className="pf-v6-u-background-color-100 pf-v6-u-flex-grow-1 pf-v6-u-p-lg">
-                    <Split className="pf-v6-u-pb-lg pf-v6-u-align-items-baseline">
-                        <SplitItem isFilled>
-                            <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                                <Title headingLevel="h2">
-                                    {pluralize(nodeCount, 'node')} affected
-                                </Title>
-                                {isFiltered && <DynamicTableLabel />}
-                            </Flex>
-                        </SplitItem>
-                        <SplitItem>
-                            <Pagination
-                                itemCount={nodeCount}
-                                perPage={perPage}
-                                page={page}
-                                onSetPage={(_, newPage) => setPage(newPage)}
-                                onPerPageSelect={(_, newPerPage) => {
-                                    setPerPage(newPerPage);
-                                }}
-                            />
-                        </SplitItem>
-                    </Split>
-                    <AffectedNodesTable
-                        tableState={tableState}
-                        getSortParams={getSortParams}
-                        onClearFilters={() => {
-                            setSearchFilter({});
-                            setPage(1);
-                        }}
-                    />
-                </div>
+                <Split hasGutter className="pf-v6-u-align-items-baseline">
+                    <SplitItem isFilled>
+                        <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                            <Title headingLevel="h2">{pluralize(nodeCount, 'node')} affected</Title>
+                            {isFiltered && <DynamicTableLabel />}
+                        </Flex>
+                    </SplitItem>
+                    <SplitItem>
+                        <Pagination
+                            itemCount={nodeCount}
+                            perPage={perPage}
+                            page={page}
+                            onSetPage={(_, newPage) => setPage(newPage)}
+                            onPerPageSelect={(_, newPerPage) => {
+                                setPerPage(newPerPage);
+                            }}
+                        />
+                    </SplitItem>
+                </Split>
+                <AffectedNodesTable
+                    tableState={tableState}
+                    getSortParams={getSortParams}
+                    onClearFilters={() => {
+                        setSearchFilter({});
+                        setPage(1);
+                    }}
+                />
             </PageSection>
         </>
     );
