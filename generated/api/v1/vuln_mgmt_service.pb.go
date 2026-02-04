@@ -144,11 +144,183 @@ func (x *VulnMgmtExportWorkloadsResponse) GetLivePods() int32 {
 	return 0
 }
 
+type ImageVulnFindingsResponse struct {
+	state         protoimpl.MessageState               `protogen:"open.v1"`
+	Findings      []*ImageVulnFindingsResponse_Finding `protobuf:"bytes,1,rep,name=findings,proto3" json:"findings,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageVulnFindingsResponse) Reset() {
+	*x = ImageVulnFindingsResponse{}
+	mi := &file_api_v1_vuln_mgmt_service_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageVulnFindingsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageVulnFindingsResponse) ProtoMessage() {}
+
+func (x *ImageVulnFindingsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_vuln_mgmt_service_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageVulnFindingsResponse.ProtoReflect.Descriptor instead.
+func (*ImageVulnFindingsResponse) Descriptor() ([]byte, []int) {
+	return file_api_v1_vuln_mgmt_service_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ImageVulnFindingsResponse) GetFindings() []*ImageVulnFindingsResponse_Finding {
+	if x != nil {
+		return x.Findings
+	}
+	return nil
+}
+
+type ImageVulnFindingsResponse_Finding struct {
+	state         protoimpl.MessageState                         `protogen:"open.v1"`
+	ImageSha      string                                         `protobuf:"bytes,1,opt,name=image_sha,json=imageSha,proto3" json:"image_sha,omitempty"`
+	Components    []*ImageVulnFindingsResponse_Finding_Component `protobuf:"bytes,2,rep,name=components,proto3" json:"components,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageVulnFindingsResponse_Finding) Reset() {
+	*x = ImageVulnFindingsResponse_Finding{}
+	mi := &file_api_v1_vuln_mgmt_service_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageVulnFindingsResponse_Finding) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageVulnFindingsResponse_Finding) ProtoMessage() {}
+
+func (x *ImageVulnFindingsResponse_Finding) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_vuln_mgmt_service_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageVulnFindingsResponse_Finding.ProtoReflect.Descriptor instead.
+func (*ImageVulnFindingsResponse_Finding) Descriptor() ([]byte, []int) {
+	return file_api_v1_vuln_mgmt_service_proto_rawDescGZIP(), []int{2, 0}
+}
+
+func (x *ImageVulnFindingsResponse_Finding) GetImageSha() string {
+	if x != nil {
+		return x.ImageSha
+	}
+	return ""
+}
+
+func (x *ImageVulnFindingsResponse_Finding) GetComponents() []*ImageVulnFindingsResponse_Finding_Component {
+	if x != nil {
+		return x.Components
+	}
+	return nil
+}
+
+type ImageVulnFindingsResponse_Finding_Component struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Name             string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Version          string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	LayerIndex       int32                  `protobuf:"varint,3,opt,name=layer_index,json=layerIndex,proto3" json:"layer_index,omitempty"`
+	Location         string                 `protobuf:"bytes,4,opt,name=location,proto3" json:"location,omitempty"`
+	VulnerabilityIds []string               `protobuf:"bytes,5,rep,name=vulnerability_ids,json=vulnerabilityIds,proto3" json:"vulnerability_ids,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *ImageVulnFindingsResponse_Finding_Component) Reset() {
+	*x = ImageVulnFindingsResponse_Finding_Component{}
+	mi := &file_api_v1_vuln_mgmt_service_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageVulnFindingsResponse_Finding_Component) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageVulnFindingsResponse_Finding_Component) ProtoMessage() {}
+
+func (x *ImageVulnFindingsResponse_Finding_Component) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_vuln_mgmt_service_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageVulnFindingsResponse_Finding_Component.ProtoReflect.Descriptor instead.
+func (*ImageVulnFindingsResponse_Finding_Component) Descriptor() ([]byte, []int) {
+	return file_api_v1_vuln_mgmt_service_proto_rawDescGZIP(), []int{2, 0, 0}
+}
+
+func (x *ImageVulnFindingsResponse_Finding_Component) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ImageVulnFindingsResponse_Finding_Component) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+func (x *ImageVulnFindingsResponse_Finding_Component) GetLayerIndex() int32 {
+	if x != nil {
+		return x.LayerIndex
+	}
+	return 0
+}
+
+func (x *ImageVulnFindingsResponse_Finding_Component) GetLocation() string {
+	if x != nil {
+		return x.Location
+	}
+	return ""
+}
+
+func (x *ImageVulnFindingsResponse_Finding_Component) GetVulnerabilityIds() []string {
+	if x != nil {
+		return x.VulnerabilityIds
+	}
+	return nil
+}
+
 var File_api_v1_vuln_mgmt_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_vuln_mgmt_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1eapi/v1/vuln_mgmt_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a\x18storage/deployment.proto\x1a\x13storage/image.proto\"P\n" +
+	"\x1eapi/v1/vuln_mgmt_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x18storage/deployment.proto\x1a\x13storage/image.proto\"P\n" +
 	"\x1eVulnMgmtExportWorkloadsRequest\x12\x18\n" +
 	"\atimeout\x18\x01 \x01(\x05R\atimeout\x12\x14\n" +
 	"\x05query\x18\x02 \x01(\tR\x05query\"\x9b\x01\n" +
@@ -157,10 +329,25 @@ const file_api_v1_vuln_mgmt_service_proto_rawDesc = "" +
 	"deployment\x18\x01 \x01(\v2\x13.storage.DeploymentR\n" +
 	"deployment\x12&\n" +
 	"\x06images\x18\x02 \x03(\v2\x0e.storage.ImageR\x06images\x12\x1b\n" +
-	"\tlive_pods\x18\x03 \x01(\x05R\blivePods2\xa0\x01\n" +
+	"\tlive_pods\x18\x03 \x01(\x05R\blivePods\"\xfe\x02\n" +
+	"\x19ImageVulnFindingsResponse\x12A\n" +
+	"\bfindings\x18\x01 \x03(\v2%.v1.ImageVulnFindingsResponse.FindingR\bfindings\x1a\x9d\x02\n" +
+	"\aFinding\x12\x1b\n" +
+	"\timage_sha\x18\x01 \x01(\tR\bimageSha\x12O\n" +
+	"\n" +
+	"components\x18\x02 \x03(\v2/.v1.ImageVulnFindingsResponse.Finding.ComponentR\n" +
+	"components\x1a\xa3\x01\n" +
+	"\tComponent\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
+	"\aversion\x18\x02 \x01(\tR\aversion\x12\x1f\n" +
+	"\vlayer_index\x18\x03 \x01(\x05R\n" +
+	"layerIndex\x12\x1a\n" +
+	"\blocation\x18\x04 \x01(\tR\blocation\x12+\n" +
+	"\x11vulnerability_ids\x18\x05 \x03(\tR\x10vulnerabilityIds2\x91\x02\n" +
 	"\x0fVulnMgmtService\x12\x8c\x01\n" +
-	"\x17VulnMgmtExportWorkloads\x12\".v1.VulnMgmtExportWorkloadsRequest\x1a#.v1.VulnMgmtExportWorkloadsResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/v1/export/vuln-mgmt/workloads0\x01B'\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x00b\x06proto3"
+	"\x17VulnMgmtExportWorkloads\x12\".v1.VulnMgmtExportWorkloadsRequest\x1a#.v1.VulnMgmtExportWorkloadsResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/v1/export/vuln-mgmt/workloads0\x01\x12o\n" +
+	"\x11ImageVulnFindings\x12\t.v1.Empty\x1a\x1d.v1.ImageVulnFindingsResponse\"0\x82\xd3\xe4\x93\x02*\x12(/v1/export/vuln-mgmt/image-vuln-findingsB'\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x01b\x06proto3"
 
 var (
 	file_api_v1_vuln_mgmt_service_proto_rawDescOnce sync.Once
@@ -174,23 +361,31 @@ func file_api_v1_vuln_mgmt_service_proto_rawDescGZIP() []byte {
 	return file_api_v1_vuln_mgmt_service_proto_rawDescData
 }
 
-var file_api_v1_vuln_mgmt_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_api_v1_vuln_mgmt_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_api_v1_vuln_mgmt_service_proto_goTypes = []any{
-	(*VulnMgmtExportWorkloadsRequest)(nil),  // 0: v1.VulnMgmtExportWorkloadsRequest
-	(*VulnMgmtExportWorkloadsResponse)(nil), // 1: v1.VulnMgmtExportWorkloadsResponse
-	(*storage.Deployment)(nil),              // 2: storage.Deployment
-	(*storage.Image)(nil),                   // 3: storage.Image
+	(*VulnMgmtExportWorkloadsRequest)(nil),              // 0: v1.VulnMgmtExportWorkloadsRequest
+	(*VulnMgmtExportWorkloadsResponse)(nil),             // 1: v1.VulnMgmtExportWorkloadsResponse
+	(*ImageVulnFindingsResponse)(nil),                   // 2: v1.ImageVulnFindingsResponse
+	(*ImageVulnFindingsResponse_Finding)(nil),           // 3: v1.ImageVulnFindingsResponse.Finding
+	(*ImageVulnFindingsResponse_Finding_Component)(nil), // 4: v1.ImageVulnFindingsResponse.Finding.Component
+	(*storage.Deployment)(nil),                          // 5: storage.Deployment
+	(*storage.Image)(nil),                               // 6: storage.Image
+	(*Empty)(nil),                                       // 7: v1.Empty
 }
 var file_api_v1_vuln_mgmt_service_proto_depIdxs = []int32{
-	2, // 0: v1.VulnMgmtExportWorkloadsResponse.deployment:type_name -> storage.Deployment
-	3, // 1: v1.VulnMgmtExportWorkloadsResponse.images:type_name -> storage.Image
-	0, // 2: v1.VulnMgmtService.VulnMgmtExportWorkloads:input_type -> v1.VulnMgmtExportWorkloadsRequest
-	1, // 3: v1.VulnMgmtService.VulnMgmtExportWorkloads:output_type -> v1.VulnMgmtExportWorkloadsResponse
-	3, // [3:4] is the sub-list for method output_type
-	2, // [2:3] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	5, // 0: v1.VulnMgmtExportWorkloadsResponse.deployment:type_name -> storage.Deployment
+	6, // 1: v1.VulnMgmtExportWorkloadsResponse.images:type_name -> storage.Image
+	3, // 2: v1.ImageVulnFindingsResponse.findings:type_name -> v1.ImageVulnFindingsResponse.Finding
+	4, // 3: v1.ImageVulnFindingsResponse.Finding.components:type_name -> v1.ImageVulnFindingsResponse.Finding.Component
+	0, // 4: v1.VulnMgmtService.VulnMgmtExportWorkloads:input_type -> v1.VulnMgmtExportWorkloadsRequest
+	7, // 5: v1.VulnMgmtService.ImageVulnFindings:input_type -> v1.Empty
+	1, // 6: v1.VulnMgmtService.VulnMgmtExportWorkloads:output_type -> v1.VulnMgmtExportWorkloadsResponse
+	2, // 7: v1.VulnMgmtService.ImageVulnFindings:output_type -> v1.ImageVulnFindingsResponse
+	6, // [6:8] is the sub-list for method output_type
+	4, // [4:6] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_vuln_mgmt_service_proto_init() }
@@ -198,13 +393,14 @@ func file_api_v1_vuln_mgmt_service_proto_init() {
 	if File_api_v1_vuln_mgmt_service_proto != nil {
 		return
 	}
+	file_api_v1_empty_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_vuln_mgmt_service_proto_rawDesc), len(file_api_v1_vuln_mgmt_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

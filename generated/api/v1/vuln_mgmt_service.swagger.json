@@ -16,6 +16,28 @@
     "application/json"
   ],
   "paths": {
+    "/v1/export/vuln-mgmt/image-vuln-findings": {
+      "get": {
+        "operationId": "VulnMgmtService_ImageVulnFindings",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ImageVulnFindingsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "VulnMgmtService"
+        ]
+      }
+    },
     "/v1/export/vuln-mgmt/workloads": {
       "get": {
         "summary": "Streams vulnerability data upon request. Each entry consists of a deployment and the associated container images.",
@@ -150,6 +172,45 @@
       ],
       "default": "UNSET",
       "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
+    },
+    "ImageVulnFindingsResponseFinding": {
+      "type": "object",
+      "properties": {
+        "imageSha": {
+          "type": "string"
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ImageVulnFindingsResponseFindingComponent"
+          }
+        }
+      }
+    },
+    "ImageVulnFindingsResponseFindingComponent": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "layerIndex": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "location": {
+          "type": "string"
+        },
+        "vulnerabilityIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
     },
     "PortConfigExposureInfo": {
       "type": "object",
@@ -1596,6 +1657,18 @@
       ],
       "default": "OBSERVED",
       "description": "VulnerabilityState indicates if vulnerability is being observed or deferred(/suppressed). By default, it vulnerabilities are observed.\n\n - OBSERVED: [Default state]"
+    },
+    "v1ImageVulnFindingsResponse": {
+      "type": "object",
+      "properties": {
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ImageVulnFindingsResponseFinding"
+          }
+        }
+      }
     },
     "v1VulnMgmtExportWorkloadsResponse": {
       "type": "object",

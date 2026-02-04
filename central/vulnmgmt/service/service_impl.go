@@ -35,6 +35,9 @@ var (
 		user.With(permissions.View(resources.Deployment), permissions.View(resources.Image)): {
 			v1.VulnMgmtService_VulnMgmtExportWorkloads_FullMethodName,
 		},
+		user.With(permissions.View(resources.Image)): {
+			v1.VulnMgmtService_ImageVulnFindings_FullMethodName,
+		},
 	})
 	log = logging.LoggerForModule()
 )
@@ -157,4 +160,85 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 	}
 	committed = true
 	return nil
+}
+
+func (s *serviceImpl) ImageVulnFindings(ctx context.Context, _ *v1.Empty) (*v1.ImageVulnFindingsResponse, error) {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return nil, errors.Wrap(errox.ServerError, "failed to begin transaction")
+	}
+	var committed bool
+	defer func() {
+		if !committed {
+			_ = tx.Rollback(ctx)
+		}
+	}()
+
+	txCtx := postgres.ContextWithTx(ctx, tx)
+
+	var findings []*v1.ImageVulnFindingsResponse_Finding
+
+	err = s.images.WalkByQuery(txCtx, search.EmptyQuery(), func(img *storage.Image) error {
+		scan := img.GetScan()
+		if scan == nil {
+			return nil
+		}
+
+		components := scan.GetComponents()
+		if len(components) == 0 {
+			return nil
+		}
+
+		var responseComponents []*v1.ImageVulnFindingsResponse_Finding_Component
+		for _, comp := range components {
+			vulns := comp.GetVulns()
+			if len(vulns) == 0 {
+				continue
+			}
+
+			vulnIDs := make([]string, 0, len(vulns))
+			for _, vuln := range vulns {
+				if cve := vuln.GetCve(); cve != "" {
+					vulnIDs = append(vulnIDs, cve)
+				}
+			}
+
+			if len(vulnIDs) == 0 {
+				continue
+			}
+
+			var layerIndex int32
+			if li, ok := comp.GetHasLayerIndex().(*storage.EmbeddedImageScanComponent_LayerIndex); ok {
+				layerIndex = li.LayerIndex
+			}
+
+			responseComponents = append(responseComponents, &v1.ImageVulnFindingsResponse_Finding_Component{
+				Name:             comp.GetName(),
+				Version:          comp.GetVersion(),
+				LayerIndex:       layerIndex,
+				Location:         comp.GetLocation(),
+				VulnerabilityIds: vulnIDs,
+			})
+		}
+
+		if len(responseComponents) > 0 {
+			findings = append(findings, &v1.ImageVulnFindingsResponse_Finding{
+				ImageSha:   img.GetId(),
+				Components: responseComponents,
+			})
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(txCtx); err != nil {
+		return nil, err
+	}
+	committed = true
+
+	return &v1.ImageVulnFindingsResponse{Findings: findings}, nil
 }
