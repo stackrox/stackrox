@@ -42,13 +42,6 @@ var (
 		Name:      "process_indicators_added_total",
 		Help:      "Total number of process indicators written to the database",
 	})
-
-	processArgsWrittenCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "process_args_written_bytes_total",
-		Help:      "Total bytes of process arguments written to the database",
-	})
 )
 
 func incrementPrunedProcessesMetric(num int) {
@@ -76,7 +69,6 @@ func getProcessArgsSizeBytes(indicator *storage.ProcessIndicator) int {
 func recordProcessIndicatorAdded(argsSize int) {
 	processArgsHistogram.Observe(float64(argsSize))
 	processIndicatorsAddedCounter.Inc()
-	processArgsWrittenCounter.Add(float64(argsSize))
 }
 
 // recordProcessIndicatorsBatchAdded records metrics for a batch of process indicators successfully written to DB.
@@ -94,6 +86,5 @@ func init() {
 		processPruningCacheMisses,
 		processArgsHistogram,
 		processIndicatorsAddedCounter,
-		processArgsWrittenCounter,
 	)
 }
