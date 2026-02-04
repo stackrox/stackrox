@@ -1,4 +1,5 @@
 import withAuth from '../../../helpers/basicAuth';
+import { addAutocompleteFilter, compoundFiltersSelectors } from '../../../helpers/compoundFilters';
 import { hasFeatureFlag } from '../../../helpers/features';
 import {
     getRouteMatcherMapForGraphQL,
@@ -17,7 +18,6 @@ import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import {
     applyLocalSeverityFilters,
     selectEntityTab,
-    typeAndEnterSearchFilterValue,
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
@@ -45,10 +45,10 @@ describe('Workload CVE Image Single page', () => {
         visitFirstImage();
 
         // Check that only applicable resource menu items are present in the toolbar
-        cy.get(selectors.searchEntityDropdown).click();
-        cy.get(selectors.searchEntityMenuItem).contains('Image');
-        cy.get(selectors.searchEntityMenuItem).contains('Image component');
-        cy.get(selectors.searchEntityDropdown).click();
+        cy.get(compoundFiltersSelectors.entityMenuToggle).click();
+        cy.get(compoundFiltersSelectors.entityMenuItem).contains('Image');
+        cy.get(compoundFiltersSelectors.entityMenuItem).contains('Image component');
+        cy.get(compoundFiltersSelectors.entityMenuToggle).click();
     });
 
     it('should display consistent data between the cards and the table test', () => {
@@ -138,7 +138,7 @@ describe('Workload CVE Image Single page', () => {
             .then(([$cveNameCell]) => {
                 const cveName = $cveNameCell.innerText;
                 // Enter the CVE name into the CVE filter
-                typeAndEnterSearchFilterValue('CVE', 'Name', cveName);
+                addAutocompleteFilter('CVE', 'Name', cveName);
                 // Check that the header above the table shows only one result
                 cy.get(`*:contains("1 result found")`);
                 // Check that the only row in the table has the correct CVE name

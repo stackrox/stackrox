@@ -1,6 +1,5 @@
 import type { ReactElement, ReactNode } from 'react';
 import {
-    Divider,
     Pagination,
     Toolbar,
     ToolbarContent,
@@ -45,9 +44,8 @@ function TableEntityToolbar({
     return (
         <>
             {filterToolbar}
-            <Divider component="div" />
             <Toolbar>
-                <ToolbarContent className="pf-v6-u-justify-content-space-between">
+                <ToolbarContent>
                     <ToolbarGroup className="pf-v6-u-flex-grow-1">
                         <ToolbarItem>{entityToggleGroup}</ToolbarItem>
                         {isFiltered && (

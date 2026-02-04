@@ -1,3 +1,5 @@
+import pf6 from '../../../selectors/pf6';
+
 const watchedImageLabelText = 'Watched image';
 const filterChipSection =
     '.pf-v6-c-toolbar .pf-v6-c-toolbar__group[aria-label="applied search filters"]';
@@ -13,7 +15,7 @@ export const selectors = {
     searchOptionsValueMenuItem: (searchOption) =>
         `.pf-v6-c-toolbar ul[aria-label="Filter by ${searchOption}"] button`,
     severityDropdown: '.pf-v6-c-toolbar button[aria-label="CVE severity"]',
-    severityMenuItems: '.pf-v6-c-toolbar [aria-label="CVE severity select menu"] ul',
+    severityMenuItems: `${pf6.select}[aria-label="CVE severity select menu"] ul`,
     severityMenuItem: (severity) => `${selectors.severityMenuItems} label:contains("${severity}")`,
     fixabilityDropdown: '.pf-v6-c-toolbar button[aria-label="CVE status"]',
     fixabilityMenuItems: '.pf-v6-c-toolbar [aria-label="CVE status select menu"] ul',
@@ -29,7 +31,7 @@ export const selectors = {
         `${selectors.filterChipGroupForCategory(category)} + ul li:contains("${item}")`,
     filterChipGroupItemRemove: (category, item) =>
         `${selectors.filterChipGroupItem(category, item)} button[aria-label="close"]`,
-    filterLabelGroup: `${filterChipSection} .pf-v5-c-label-group`,
+    filterLabelGroup: `${filterChipSection} .pf-v6-c-label-group`,
     filterLabelGroupForCategory: (category) =>
         `${selectors.filterLabelGroup} *:contains("${category}")`,
     filterLabelGroupRemove: (category) =>
@@ -41,14 +43,6 @@ export const selectors = {
     filterLabelGroupItemRemove: (category, item) =>
         `${selectors.filterLabelGroupItem(category, item)} button[aria-label="close"]`,
 
-    searchEntityDropdown:
-        '.pf-v6-c-toolbar button[aria-label="compound search filter entity selector toggle"]',
-    searchEntityMenuItem:
-        '.pf-v6-c-toolbar [aria-label="compound search filter entity selector menu"] button',
-    searchAttributeDropdown:
-        '.pf-v6-c-toolbar button[aria-label="compound search filter attribute selector toggle"]',
-    searchAttributeMenuItem:
-        '.pf-v6-c-toolbar [aria-label="compound search filter attribute selector menu"] button',
     searchValueTypeahead: '.pf-v6-c-toolbar input[aria-label^="Filter results by"]',
     searchValueMenuItem: '.pf-v6-c-toolbar [aria-label="Filter results select menu"] button',
     searchValueApplyButton:
@@ -56,7 +50,6 @@ export const selectors = {
 
     // General selectors
     filteredViewLabel: '.pf-v6-c-label:contains("Filtered view")',
-    iconText: (textContent) => `svg ~ *:contains("${textContent}")`,
     bulkActionMenuToggle: 'button:contains("Bulk actions")',
     menuOption: (optionText) => `*[role="menu"] button:contains("${optionText}")`,
     severityIcon: (severity) => `span.pf-v6-c-icon:contains('${severity}')`,

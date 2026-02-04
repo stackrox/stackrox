@@ -33,15 +33,7 @@ function WatchedImagesTable({
                 </Bullseye>
             )}
             {watchedImages.length > 0 && (
-                <Table
-                    aria-labelledby={props['aria-labelledby']}
-                    variant="compact"
-                    style={
-                        {
-                            '--pf-v5-c-table--m-compact--cell--first-last-child--PaddingLeft': '0',
-                        } as CSSProperties
-                    }
-                >
+                <Table aria-labelledby={props['aria-labelledby']} variant="compact">
                     <Thead noWrap>
                         <Tr>
                             <Th>Image</Th>
@@ -57,7 +49,6 @@ function WatchedImagesTable({
                                 <Td dataLabel="Row action" className="pf-v6-u-text-align-right">
                                     <Button
                                         variant="link"
-                                        isInline
                                         icon={
                                             <Icon>
                                                 <MinusCircleIcon color="var(--pf-t--global--icon--color--status--danger--default)" />
