@@ -259,7 +259,7 @@ func (p *tokenProvider) requestToken(ctx context.Context, client centralv1.Token
 }
 
 // invalidateToken removes the cached token for the given scope.
-// It also removes the singleflight key so subsequent callers will
+// It also removes the coalescer key so subsequent callers will
 // trigger a fresh token request rather than joining any in-progress request.
 // Note: This does not cancel already running requests; they will complete
 // normally but their results will not be used by new callers.
