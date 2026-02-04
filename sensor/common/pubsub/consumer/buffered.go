@@ -112,6 +112,10 @@ func (c *BufferedConsumer) Stop() {
 	c.stopper.Client().Stop()
 	<-c.stopper.Client().Stopped().Done()
 	c.buffer.Close()
+	// Drain events and close their errC
+	for ev := range c.buffer.Chan() {
+		close(ev.errC)
+	}
 }
 
 func (c *BufferedConsumer) run() {

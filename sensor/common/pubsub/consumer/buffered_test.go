@@ -346,3 +346,54 @@ func TestBufferedConsumer_ConsumeAfterStop(t *testing.T) {
 		assert.Nil(t, err)
 	})
 }
+
+func TestBufferedConsumer_StopDrainsBufferedEvents(t *testing.T) {
+	defer goleak.AssertNoGoroutineLeaks(t)
+
+	synctest.Test(t, func(t *testing.T) {
+		blockCallback := make(chan struct{})
+
+		c, err := NewBufferedConsumer(
+			pubsub.DefaultLane,
+			pubsub.DefaultTopic,
+			pubsub.DefaultConsumer,
+			func(event pubsub.Event) error {
+				<-blockCallback
+				return nil
+			},
+			WithBufferedConsumerSize(3),
+		)
+		require.NoError(t, err)
+
+		ctx := context.Background()
+
+		// Consume first event - it will be picked up by the consumer and block on callback
+		errC1 := c.Consume(ctx, &testEvent{data: "1"})
+		synctest.Wait()
+
+		// Consume second and third events - they will be buffered but not yet processed
+		errC2 := c.Consume(ctx, &testEvent{data: "2"})
+		errC3 := c.Consume(ctx, &testEvent{data: "3"})
+		synctest.Wait()
+
+		// Stop the consumer while events 2 and 3 are still buffered
+		c.Stop()
+		close(blockCallback)
+
+		// All errC channels should be closed by Stop()
+		// errC1: closed because handleEvent detects stop
+		// errC2 and errC3: closed by the drain loop in Stop()
+
+		err, ok := <-errC1
+		assert.False(t, ok, "errC1 should be closed after Stop")
+		assert.Nil(t, err)
+
+		err, ok = <-errC2
+		assert.False(t, ok, "errC2 should be closed by drain loop in Stop")
+		assert.Nil(t, err)
+
+		err, ok = <-errC3
+		assert.False(t, ok, "errC3 should be closed by drain loop in Stop")
+		assert.Nil(t, err)
+	})
+}
