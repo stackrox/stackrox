@@ -96,7 +96,7 @@ function PlatformCvePage() {
     return (
         <>
             <PageTitle title={`Kubernetes components - Vulnerability ${cveName}`} />
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
+            <PageSection>
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewCvePath}>
                         Kubernetes components
@@ -106,16 +106,14 @@ function PlatformCvePage() {
                     </BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
-            <Divider component="div" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 {cveMetadata ? (
                     <Flex
                         direction={{ default: 'column' }}
                         alignItems={{ default: 'alignItemsFlexStart' }}
+                        spaceItems={{ default: 'spaceItemsSm' }}
                     >
-                        <Title headingLevel="h1" className="pf-v6-u-mb-sm">
-                            {cveMetadata.cve}
-                        </Title>
+                        <Title headingLevel="h1">{cveMetadata.cve}</Title>
                         {cveMetadata.firstDiscoveredTime && (
                             <LabelGroup numLabels={1}>
                                 <Label>
@@ -143,9 +141,8 @@ function PlatformCvePage() {
                 )}
             </PageSection>
             <Divider component="div" />
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-flex-grow-1">
+            <PageSection hasBodyWrapper={false} isFilled>
                 <AdvancedFiltersToolbar
-                    className="pf-v6-u-pb-0 pf-v6-u-px-sm"
                     searchFilter={searchFilter}
                     searchFilterConfig={searchFilterConfig}
                     cveStatusFilterField="CLUSTER CVE FIXABLE"
@@ -180,37 +177,35 @@ function PlatformCvePage() {
                     />
                 </SummaryCardLayout>
                 <Divider component="div" />
-                <div className="pf-v6-u-background-color-100 pf-v6-u-flex-grow-1 pf-v6-u-p-lg">
-                    <Split className="pf-v6-u-pb-lg pf-v6-u-align-items-baseline">
-                        <SplitItem isFilled>
-                            <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                                <Title headingLevel="h2">
-                                    {pluralize(clusterCount, 'cluster')} affected
-                                </Title>
-                                {isFiltered && <DynamicTableLabel />}
-                            </Flex>
-                        </SplitItem>
-                        <SplitItem>
-                            <Pagination
-                                itemCount={clusterCount}
-                                perPage={perPage}
-                                page={page}
-                                onSetPage={(_, newPage) => setPage(newPage)}
-                                onPerPageSelect={(_, newPerPage) => {
-                                    setPerPage(newPerPage);
-                                }}
-                            />
-                        </SplitItem>
-                    </Split>
-                    <AffectedClustersTable
-                        tableState={tableState}
-                        getSortParams={getSortParams}
-                        onClearFilters={() => {
-                            setSearchFilter({});
-                            setPage(1);
-                        }}
-                    />
-                </div>
+                <Split hasGutter className="pf-v6-u-align-items-baseline">
+                    <SplitItem isFilled>
+                        <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                            <Title headingLevel="h2">
+                                {pluralize(clusterCount, 'cluster')} affected
+                            </Title>
+                            {isFiltered && <DynamicTableLabel />}
+                        </Flex>
+                    </SplitItem>
+                    <SplitItem>
+                        <Pagination
+                            itemCount={clusterCount}
+                            perPage={perPage}
+                            page={page}
+                            onSetPage={(_, newPage) => setPage(newPage)}
+                            onPerPageSelect={(_, newPerPage) => {
+                                setPerPage(newPerPage);
+                            }}
+                        />
+                    </SplitItem>
+                </Split>
+                <AffectedClustersTable
+                    tableState={tableState}
+                    getSortParams={getSortParams}
+                    onClearFilters={() => {
+                        setSearchFilter({});
+                        setPage(1);
+                    }}
+                />
             </PageSection>
         </>
     );
