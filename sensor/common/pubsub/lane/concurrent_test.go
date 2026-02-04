@@ -283,14 +283,14 @@ func TestErrorHandling(t *testing.T) {
 		assert.NoError(t, lane.RegisterConsumer(pubsub.DefaultConsumer, pubsub.DefaultTopic, func(_ pubsub.Event) error {
 			return expectedErr
 		}))
-		initialCounter := testutil.ToFloat64(metrics.GetConsumerOperationMetric().WithLabelValues(
+		initialCounter := testutil.ToFloat64(metrics.LaneConsumerOperations.WithLabelValues(
 			pubsub.DefaultLane.String(),
 			pubsub.DefaultTopic.String(),
 			pubsub.DefaultConsumer.String(),
 			metrics.ConsumerError.String()))
 		assert.NoError(t, lane.Publish(&concurrentTestEvent{data: "error event"}))
 		assert.Eventually(t, func() bool {
-			counter := metrics.GetConsumerOperationMetric().WithLabelValues(
+			counter := metrics.LaneConsumerOperations.WithLabelValues(
 				pubsub.DefaultLane.String(),
 				pubsub.DefaultTopic.String(),
 				pubsub.DefaultConsumer.String(),
@@ -312,7 +312,7 @@ func TestErrorHandling(t *testing.T) {
 			return nil
 		}))
 
-		initialCounter := testutil.ToFloat64(metrics.GetConsumerOperationMetric().WithLabelValues(
+		initialCounter := testutil.ToFloat64(metrics.LaneConsumerOperations.WithLabelValues(
 			pubsub.DefaultLane.String(),
 			unknownTopic.String(),
 			pubsub.NoConsumers.String(),
@@ -330,7 +330,7 @@ func TestErrorHandling(t *testing.T) {
 		}
 
 		// Verify metrics were updated
-		counter := metrics.GetConsumerOperationMetric().WithLabelValues(
+		counter := metrics.LaneConsumerOperations.WithLabelValues(
 			pubsub.DefaultLane.String(),
 			unknownTopic.String(),
 			pubsub.NoConsumers.String(),
