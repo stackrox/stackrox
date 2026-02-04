@@ -131,12 +131,16 @@ func createDynamicClient(t testutils.T) dynclient.Client {
 
 func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, timeout time.Duration) {
 	client := createDynamicClient(t)
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
 
 	t.Logf("Waiting for ComplianceSuite %s to reach DONE phase", suiteName)
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		callCtx, callCancel := context.WithTimeout(ctx, interval)
+		defer callCancel()
+
 		var suite complianceoperatorv1.ComplianceSuite
-		err := client.Get(ctx,
+		err := client.Get(callCtx,
 			types.NamespacedName{Name: suiteName, Namespace: "openshift-compliance"},
 			&suite,
 		)
@@ -700,7 +704,10 @@ func TestComplianceV2ComplianceObjectMetadata(t *testing.T) {
 	client := createDynamicClient(t)
 	var scanSetting complianceoperatorv1.ScanSetting
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
-		err := client.Get(ctx,
+		callCtx, callCancel := context.WithTimeout(ctx, 10*time.Second)
+		defer callCancel()
+
+		err := client.Get(callCtx,
 			types.NamespacedName{Name: testName, Namespace: "openshift-compliance"},
 			&scanSetting,
 		)
