@@ -237,7 +237,7 @@ function ImageOverviewTable({
     const [sbomTargetImage, setSbomTargetImage] = useState<GenerateSbomImageParams>();
 
     return (
-        <Table borders={false} variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th className={getVisibilityClass('image')} sort={getSortParams('Image')}>
@@ -387,13 +387,12 @@ function ImageOverviewTable({
                         // Td style={{ paddingTop: 0 }} prop emulates vertical space when label was in cell instead of row
                         // and assumes adjacent empty cell has no paddingTop.
                         return (
-                            <Tbody
-                                key={id}
-                                style={{
-                                    borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
-                                }}
-                            >
-                                <Tr>
+                            <Tbody key={id}>
+                                <Tr
+                                    style={
+                                        labels.length !== 0 ? { borderBlockEnd: 'none' } : undefined
+                                    }
+                                >
                                     <Td className={getVisibilityClass('image')} dataLabel="Image">
                                         {name ? (
                                             <ImageNameLink

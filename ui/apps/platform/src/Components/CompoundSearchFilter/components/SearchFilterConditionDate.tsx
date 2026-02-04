@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, DatePicker, Flex, SelectOption, ToolbarItem } from '@patternfly/react-core';
+import { Button, DatePicker, SelectOption, ToolbarItem } from '@patternfly/react-core';
 import { ArrowRightIcon } from '@patternfly/react-icons';
 import { format } from 'date-fns';
 

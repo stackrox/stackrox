@@ -232,7 +232,7 @@ function WorkloadCVEOverviewTable({
     const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
 
     return (
-        <Table borders={false} variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <ExpandRowTh />
@@ -379,14 +379,14 @@ function WorkloadCVEOverviewTable({
                             // Td style={{ paddingTop: 0 }} prop emulates vertical space when label was in cell instead of row
                             // and assumes adjacent empty cell has no paddingTop.
                             return (
-                                <Tbody
-                                    key={cve}
-                                    style={{
-                                        borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
-                                    }}
-                                    isExpanded={isExpanded}
-                                >
-                                    <Tr>
+                                <Tbody key={cve} isExpanded={isExpanded}>
+                                    <Tr
+                                        style={
+                                            labels.length !== 0
+                                                ? { borderBlockEnd: 'none' }
+                                                : undefined
+                                        }
+                                    >
                                         <Td
                                             expand={{
                                                 rowIndex,
@@ -455,6 +455,7 @@ function WorkloadCVEOverviewTable({
                                         <Td
                                             dataLabel="Affected images"
                                             className={getVisibilityClass('affectedImages')}
+                                            modifier="nowrap"
                                         >
                                             {affectedImageCount}/{unfilteredImageCount} affected
                                             images
@@ -503,7 +504,11 @@ function WorkloadCVEOverviewTable({
                                         </Td>
                                     </Tr>
                                     {labels.length !== 0 && (
-                                        <Tr>
+                                        <Tr
+                                            style={
+                                                isExpanded ? { borderBlockEnd: 'none' } : undefined
+                                            }
+                                        >
                                             <Td colSpan={2} />
                                             <Td colSpan={colSpan - 2} style={{ paddingTop: 0 }}>
                                                 <LabelGroup numLabels={labels.length}>

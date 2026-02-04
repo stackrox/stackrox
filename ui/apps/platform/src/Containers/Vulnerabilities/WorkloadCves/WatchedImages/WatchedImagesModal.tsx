@@ -86,7 +86,7 @@ function WatchedImagesModal({
                 </Button>,
             ]}
         >
-            <Flex direction={{ default: 'column' }}>
+            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
                 {watchImageMutation.isSuccess && (
                     <Alert
                         variant="success"
@@ -157,7 +157,7 @@ function WatchedImagesModal({
                             style={
                                 {
                                     overflowY: 'auto',
-                                    '--pf-v5-u-max-height--MaxHeight': '280px',
+                                    '--pf-v6-u-max-height--MaxHeight': '280px',
                                 } as CSSProperties
                             }
                             watchedImages={watchedImages}

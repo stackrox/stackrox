@@ -45,7 +45,7 @@ export type ImageResourceTableProps = {
 
 function ImageResourceTable({ data, getSortParams }: ImageResourceTableProps) {
     return (
-        <Table borders={false} variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th sort={getSortParams('Image')}>Name</Th>
@@ -57,12 +57,7 @@ function ImageResourceTable({ data, getSortParams }: ImageResourceTableProps) {
             {data.images.length === 0 && <EmptyTableResults colSpan={4} />}
             {data.images.map(({ id, name, deploymentCount, operatingSystem, scanTime }) => {
                 return (
-                    <Tbody
-                        key={id}
-                        style={{
-                            borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
-                        }}
-                    >
+                    <Tbody key={id}>
                         <Tr>
                             <Td dataLabel="Name" width={50}>
                                 {name ? <ImageNameLink id={id} name={name} /> : 'NAME UNKNOWN'}

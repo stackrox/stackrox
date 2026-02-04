@@ -47,7 +47,7 @@ function DiscoveredClustersToolbar({
                         setSearchFilter(updateSearchFilter(searchFilter, payload))
                     }
                 />
-                <ToolbarGroup className="pf-v5-u-w-100">
+                <ToolbarGroup className="pf-v6-u-w-100">
                     <ToolbarItem>
                         <CompoundSearchFilterLabels
                             attributesSeparateFromConfig={[]}
