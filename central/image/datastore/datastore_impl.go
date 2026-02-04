@@ -414,6 +414,7 @@ func (ds *datastoreImpl) upsertImageCVEInfos(ctx context.Context, image *storage
 
 			info := &storage.ImageCVEInfo{
 				Id:                    cve.ImageCVEInfoID(vuln.GetCve(), component.GetName(), vuln.GetDatasource()),
+				Cve:                   vuln.GetCve(),
 				FixAvailableTimestamp: fixAvailableTimestamp,
 				FirstSystemOccurrence: now, // Smart upsert in ImageCVEInfo datastore preserves existing
 			}
