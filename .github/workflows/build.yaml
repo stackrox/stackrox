@@ -134,7 +134,6 @@ jobs:
           key: built-sensor-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('**/go.sum', 'Makefile', 'make/**', 'sensor/**', 'proto/**', 'generated/**') }}
           path: |
             bin/${{ env.GOOS }}_${{ env.GOARCH }}/admission-control
-            bin/${{ env.GOOS }}_${{ env.GOARCH }}/init-tls-certs
             bin/${{ env.GOOS }}_${{ env.GOARCH }}/kubernetes
             bin/${{ env.GOOS }}_${{ env.GOARCH }}/upgrader
 
@@ -410,6 +409,13 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: 'ui/.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: 'ui/apps/platform/package-lock.json'
+
       - uses: actions/cache@v4
         id: restore-ui-build
         with:
@@ -573,7 +579,6 @@ jobs:
           key: built-sensor-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('**/go.sum', 'Makefile', 'make/**', 'sensor/**', 'proto/**', 'generated/**') }}
           path: |
             bin/${{ env.GOOS }}_${{ env.GOARCH }}/admission-control
-            bin/${{ env.GOOS }}_${{ env.GOARCH }}/init-tls-certs
             bin/${{ env.GOOS }}_${{ env.GOARCH }}/kubernetes
             bin/${{ env.GOOS }}_${{ env.GOARCH }}/upgrader
 
