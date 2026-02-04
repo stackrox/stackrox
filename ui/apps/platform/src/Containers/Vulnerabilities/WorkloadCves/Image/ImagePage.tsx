@@ -7,7 +7,6 @@ import {
     Bullseye,
     Button,
     ClipboardCopy,
-    Divider,
     Flex,
     FlexItem,
     PageSection,
@@ -196,7 +195,7 @@ function ImagePage({
 
     if (error) {
         mainContent = (
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <Bullseye>
                     <EmptyStateTemplate
                         title={getAxiosErrorMessage(error)}
@@ -211,7 +210,7 @@ function ImagePage({
         const sha = imageData?.id;
         mainContent = (
             <>
-                <PageSection hasBodyWrapper={false}>
+                <PageSection>
                     {imageData ? (
                         <Flex
                             direction={{ default: 'column' }}
@@ -294,23 +293,17 @@ function ImagePage({
                         />
                     )}
                 </PageSection>
-                <PageSection
-                    hasBodyWrapper={false}
-                    className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
-                    padding={{ default: 'noPadding' }}
-                >
+                <PageSection type="tabs">
                     <Tabs
                         activeKey={activeTabKey}
                         onSelect={(_e, key) => {
                             setActiveTabKey(key);
                             pagination.setPage(1);
                         }}
-                        className="pf-v6-u-pl-md pf-v6-u-background-color-100"
                         mountOnEnter
                         unmountOnExit
                     >
                         <Tab
-                            className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
                             eventKey="Vulnerabilities"
                             title={<TabTitleText>Vulnerabilities</TabTitleText>}
                         >
@@ -337,11 +330,7 @@ function ImagePage({
                                 }
                             />
                         </Tab>
-                        <Tab
-                            className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
-                            eventKey="Resources"
-                            title={<TabTitleText>Resources</TabTitleText>}
-                        >
+                        <Tab eventKey="Resources" title={<TabTitleText>Resources</TabTitleText>}>
                             <ImagePageResources
                                 imageId={imageId}
                                 pagination={pagination}
@@ -351,7 +340,6 @@ function ImagePage({
                             />
                         </Tab>
                         <Tab
-                            className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
                             eventKey="Signature verification"
                             title={<TabTitleText>Signature verification</TabTitleText>}
                         >
@@ -368,7 +356,7 @@ function ImagePage({
     return (
         <>
             <PageTitle title={`${pageTitle} - Image ${imageData ? imageDisplayName : ''}`} />
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
+            <PageSection>
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewImagePath}>
                         Images
@@ -384,7 +372,6 @@ function ImagePage({
                     )}
                 </Breadcrumb>
             </PageSection>
-            <Divider component="div" />
             {mainContent}
             {isViewBasedReportsEnabled && isCreateViewBasedReportModalOpen && (
                 <CreateViewBasedReportModal
