@@ -1,9 +1,6 @@
 import { useEffect } from 'react';
 import {
     Alert,
-    Card,
-    CardBody,
-    Divider,
     DropdownItem,
     Flex,
     FlexItem,
@@ -172,13 +169,9 @@ function NodeCvesOverviewPage() {
                 />
             )}
             <PageTitle title="Node CVEs Overview" />
-            <Divider component="div" />
-            <PageSection
-                hasBodyWrapper={false}
-                className="pf-v6-u-display-flex pf-v6-u-flex-direction-row pf-v6-u-align-items-center"
-            >
-                <Flex alignItems={{ default: 'alignItemsCenter' }} className="pf-v6-u-flex-grow-1">
-                    <Flex direction={{ default: 'column' }} className="pf-v6-u-flex-grow-1">
+            <PageSection>
+                <Flex alignItems={{ default: 'alignItemsCenter' }} grow={{ default: 'grow' }}>
+                    <Flex direction={{ default: 'column' }} grow={{ default: 'grow' }}>
                         <Title headingLevel="h1">Node CVEs</Title>
                         <FlexItem>Prioritize and manage scanned CVEs across nodes</FlexItem>
                     </Flex>
@@ -192,7 +185,7 @@ function NodeCvesOverviewPage() {
                 </Flex>
             </PageSection>
             {scannerV4NodeScanResultsPossible && (
-                <PageSection hasBodyWrapper={false} className="pf-v6-u-pt-0">
+                <PageSection>
                     <Alert
                         isInline
                         variant="info"
@@ -215,77 +208,64 @@ function NodeCvesOverviewPage() {
                     </Alert>
                 </PageSection>
             )}
-            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
-                <PageSection hasBodyWrapper={false} isCenterAligned>
-                    <Card>
-                        <CardBody>
-                            <TableEntityToolbar
-                                filterToolbar={filterToolbar}
-                                entityToggleGroup={entityToggleGroup}
-                                pagination={pagination}
-                                tableRowCount={
-                                    activeEntityTabKey === 'CVE'
-                                        ? entityCounts.CVE
-                                        : entityCounts.Node
-                                }
-                                isFiltered={isFiltered}
+            <PageSection isCenterAligned>
+                <TableEntityToolbar
+                    filterToolbar={filterToolbar}
+                    entityToggleGroup={entityToggleGroup}
+                    pagination={pagination}
+                    tableRowCount={
+                        activeEntityTabKey === 'CVE' ? entityCounts.CVE : entityCounts.Node
+                    }
+                    isFiltered={isFiltered}
+                >
+                    {hasLegacySnoozeAbility && (
+                        <ToolbarItem align={{ default: 'alignEnd' }}>
+                            <MenuDropdown
+                                toggleText="Bulk actions"
+                                isDisabled={selectedCves.size === 0}
                             >
-                                {hasLegacySnoozeAbility && (
-                                    <ToolbarItem align={{ default: 'alignEnd' }}>
-                                        <MenuDropdown
-                                            toggleText="Bulk actions"
-                                            isDisabled={selectedCves.size === 0}
-                                        >
-                                            <DropdownItem
-                                                key="bulk-snooze-cve"
-                                                onClick={() =>
-                                                    setSnoozeModalOptions({
-                                                        action: isViewingSnoozedCves
-                                                            ? 'UNSNOOZE'
-                                                            : 'SNOOZE',
-                                                        cveType: 'NODE_CVE',
-                                                        cves: Array.from(selectedCves.values()),
-                                                    })
-                                                }
-                                            >
-                                                {isViewingSnoozedCves
-                                                    ? 'Unsnooze CVEs'
-                                                    : 'Snooze CVEs'}
-                                            </DropdownItem>
-                                        </MenuDropdown>
-                                    </ToolbarItem>
-                                )}
-                            </TableEntityToolbar>
-                            <Divider component="div" />
-                            {activeEntityTabKey === 'CVE' && (
-                                <CVEsTable
-                                    querySearchFilter={querySearchFilter}
-                                    isFiltered={isFiltered}
-                                    pagination={pagination}
-                                    selectedCves={selectedCves}
-                                    canSelectRows={hasLegacySnoozeAbility}
-                                    createRowActions={snoozeActionCreator(
-                                        'NODE_CVE',
-                                        isViewingSnoozedCves ? 'UNSNOOZE' : 'SNOOZE'
-                                    )}
-                                    sortOption={sortOption}
-                                    getSortParams={getSortParams}
-                                    onClearFilters={onClearFilters}
-                                />
-                            )}
-                            {activeEntityTabKey === 'Node' && (
-                                <NodesTable
-                                    querySearchFilter={querySearchFilter}
-                                    isFiltered={isFiltered}
-                                    pagination={pagination}
-                                    sortOption={sortOption}
-                                    getSortParams={getSortParams}
-                                    onClearFilters={onClearFilters}
-                                />
-                            )}
-                        </CardBody>
-                    </Card>
-                </PageSection>
+                                <DropdownItem
+                                    key="bulk-snooze-cve"
+                                    onClick={() =>
+                                        setSnoozeModalOptions({
+                                            action: isViewingSnoozedCves ? 'UNSNOOZE' : 'SNOOZE',
+                                            cveType: 'NODE_CVE',
+                                            cves: Array.from(selectedCves.values()),
+                                        })
+                                    }
+                                >
+                                    {isViewingSnoozedCves ? 'Unsnooze CVEs' : 'Snooze CVEs'}
+                                </DropdownItem>
+                            </MenuDropdown>
+                        </ToolbarItem>
+                    )}
+                </TableEntityToolbar>
+                {activeEntityTabKey === 'CVE' && (
+                    <CVEsTable
+                        querySearchFilter={querySearchFilter}
+                        isFiltered={isFiltered}
+                        pagination={pagination}
+                        selectedCves={selectedCves}
+                        canSelectRows={hasLegacySnoozeAbility}
+                        createRowActions={snoozeActionCreator(
+                            'NODE_CVE',
+                            isViewingSnoozedCves ? 'UNSNOOZE' : 'SNOOZE'
+                        )}
+                        sortOption={sortOption}
+                        getSortParams={getSortParams}
+                        onClearFilters={onClearFilters}
+                    />
+                )}
+                {activeEntityTabKey === 'Node' && (
+                    <NodesTable
+                        querySearchFilter={querySearchFilter}
+                        isFiltered={isFiltered}
+                        pagination={pagination}
+                        sortOption={sortOption}
+                        getSortParams={getSortParams}
+                        onClearFilters={onClearFilters}
+                    />
+                )}
             </PageSection>
         </>
     );

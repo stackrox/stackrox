@@ -26,6 +26,7 @@ body {
 /* PatternFly style for links in classic related entity, cluster page, side panel, widget headerComponents, widget body, and React Table cell plus PatternFly table in classic page. */
 /* Also PatternFly Popover element. */
 
+a,
 button[data-testid="related-entity-list-count-value"],
 button[data-testid="related-entity-value"],
 [data-testid="cluster-page"] a,
@@ -44,6 +45,7 @@ button[data-testid="related-entity-list-count-value"]:hover {
     /* but no underline */
 }
 
+a:hover,
 button[data-testid="related-entity-value"]:hover,
 [data-testid="cluster-page"] a:hover,
 [data-testid="panel"] a:hover,

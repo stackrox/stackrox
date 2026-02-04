@@ -83,22 +83,14 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
 
     return (
         <>
-            <PageSection
-                hasBodyWrapper={false}
-                component="div"
-                className="pf-v6-u-py-md pf-v6-u-px-xl"
-            >
+            <PageSection>
                 <Content component="p">
                     Review and triage vulnerability data scanned on this node
                 </Content>
             </PageSection>
-            <PageSection
-                hasBodyWrapper={false}
-                isFilled
-                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column"
-            >
+            <Divider component="div" />
+            <PageSection hasBodyWrapper={false} isFilled>
                 <AdvancedFiltersToolbar
-                    className="pf-v6-u-px-sm pf-v6-u-pb-0"
                     searchFilter={searchFilter}
                     searchFilterConfig={searchFilterConfig}
                     defaultSearchFilterEntity="CVE"
@@ -132,44 +124,39 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                     />
                 </SummaryCardLayout>
                 <Divider component="div" />
-                <div className="pf-v6-u-flex-grow-1 pf-v6-u-background-color-100 pf-v6-u-p-lg">
-                    <Split className="pf-v6-u-pb-lg pf-v6-u-align-items-baseline">
-                        <SplitItem isFilled>
-                            <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                                <Title headingLevel="h2">
-                                    {data && data.node ? (
-                                        `${pluralize(
-                                            data.node.nodeVulnerabilityCount,
-                                            'result'
-                                        )} found`
-                                    ) : (
-                                        <Skeleton screenreaderText="Loading node vulnerability count" />
-                                    )}
-                                </Title>
-                                {isFiltered && <DynamicTableLabel />}
-                            </Flex>
-                        </SplitItem>
-                        <SplitItem>
-                            <Pagination
-                                itemCount={nodeCount}
-                                perPage={perPage}
-                                page={page}
-                                onSetPage={(_, newPage) => setPage(newPage)}
-                                onPerPageSelect={(_, newPerPage) => {
-                                    setPerPage(newPerPage);
-                                }}
-                            />
-                        </SplitItem>
-                    </Split>
-                    <CVEsTable
-                        tableState={tableState}
-                        getSortParams={getSortParams}
-                        onClearFilters={() => {
-                            setSearchFilter({});
-                            setPage(1);
-                        }}
-                    />
-                </div>
+                <Split hasGutter className="pf-v6-u-align-items-baseline">
+                    <SplitItem isFilled>
+                        <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                            <Title headingLevel="h2">
+                                {data && data.node ? (
+                                    `${pluralize(data.node.nodeVulnerabilityCount, 'result')} found`
+                                ) : (
+                                    <Skeleton screenreaderText="Loading node vulnerability count" />
+                                )}
+                            </Title>
+                            {isFiltered && <DynamicTableLabel />}
+                        </Flex>
+                    </SplitItem>
+                    <SplitItem>
+                        <Pagination
+                            itemCount={nodeCount}
+                            perPage={perPage}
+                            page={page}
+                            onSetPage={(_, newPage) => setPage(newPage)}
+                            onPerPageSelect={(_, newPerPage) => {
+                                setPerPage(newPerPage);
+                            }}
+                        />
+                    </SplitItem>
+                </Split>
+                <CVEsTable
+                    tableState={tableState}
+                    getSortParams={getSortParams}
+                    onClearFilters={() => {
+                        setSearchFilter({});
+                        setPage(1);
+                    }}
+                />
             </PageSection>
         </>
     );
