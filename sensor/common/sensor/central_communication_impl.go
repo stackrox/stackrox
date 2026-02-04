@@ -211,8 +211,20 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 }
 
 func (s *centralCommunicationImpl) hello(stream central.SensorService_CommunicateClient, hello *central.SensorHello) error {
+	rawHdr, err := stream.Header()
+	if err != nil {
+		return errors.Wrap(err, "receiving headers from central")
+	}
+
+	if metautils.MD(rawHdr).Get(centralsensor.SensorHelloMetadataKey) != "true" {
+		return errors.New("central did not acknowledge SensorHello," +
+			" likely due to a networking or TLS configuration issue" +
+			" (e.g., re-encrypt routes or TLS termination)" +
+			" preventing central from receiving sensor's TLS certificate")
+	}
+
 	var centralHello *central.CentralHello
-	err := stream.Send(&central.MsgFromSensor{Msg: &central.MsgFromSensor_Hello{Hello: hello}})
+	err = stream.Send(&central.MsgFromSensor{Msg: &central.MsgFromSensor_Hello{Hello: hello}})
 	if err != nil {
 		return errors.Wrap(err, "sending SensorHello message to central")
 	}
@@ -262,27 +274,8 @@ func (s *centralCommunicationImpl) hello(stream central.SensorService_Communicat
 func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream central.SensorService_CommunicateClient,
 	hello *central.SensorHello, configHandler config.Handler, detector detector.Detector,
 ) error {
-	rawHdr, err := stream.Header()
-	if err != nil {
-		return errors.Wrap(err, "receiving headers from central")
-	}
-
-	if metautils.MD(rawHdr).Get(centralsensor.SensorHelloMetadataKey) == "true" {
-		err := s.hello(stream, hello)
-		if err != nil {
-			return errors.Wrap(err, "error while executing the sensor hello protocol")
-		}
-	} else {
-		log.Warn("Central is running a legacy version that might not support all current features")
-
-		fromCert := s.clusterID.GetFromCert()
-		if centralsensor.IsInitCertClusterID(fromCert) {
-			return errors.New("certificate has a wildcard cluster ID")
-		}
-		s.clusterID.Set(fromCert)
-
-		// Disable features that require hello protocol.
-		s.clientReconcile = false
+	if err := s.hello(stream, hello); err != nil {
+		return errors.Wrap(err, "error while executing the sensor hello protocol")
 	}
 
 	// DO NOT CHANGE THE ORDER. Please refer to `Run()` at `central/sensor/service/connection/connection_impl.go`
