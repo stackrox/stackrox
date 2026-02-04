@@ -1,11 +1,13 @@
 package config
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.yaml.in/yaml/v3"
@@ -97,6 +99,7 @@ func TestDetermineConfigPath(t *testing.T) {
 
 func TestDetermineConfigDirPermissionDenied(t *testing.T) {
 	// This test verifies that when directory creation fails (e.g., permission denied),
+	// a clear filesystem error is returned (not wrapped as a NoCredentials error).
 
 	testDir := t.TempDir()
 
@@ -114,14 +117,26 @@ func TestDetermineConfigDirPermissionDenied(t *testing.T) {
 	_, err := determineConfigDir()
 	require.Error(t, err)
 
+	// Verify the error is NOT wrapped as a NoCredentials error
+	assert.False(t, errors.Is(err, errox.NoCredentials),
+		"filesystem error should not be wrapped as NoCredentials")
+
 	// Verify the error mentions the config path that failed
 	errMsg := err.Error()
 	assert.Contains(t, errMsg, expectedConfigPath, "error should mention the config path that failed")
+
+	// Verify the error does NOT contain authentication guidance text
+	assert.NotContains(t, errMsg, "No authentication credentials are available",
+		"filesystem error should not include auth guidance")
+	assert.NotContains(t, errMsg, "--password",
+		"filesystem error should not suggest auth methods")
+	assert.NotContains(t, errMsg, "ROX_API_TOKEN",
+		"filesystem error should not suggest auth methods")
 }
 
 func TestEnsureRoxctlConfigFilePathExistsPermissionDenied(t *testing.T) {
 	// This test verifies that ensureRoxctlConfigFilePathExists returns
-	// a clear filesystem error when directory creation fails.
+	// a clear filesystem error when directory creation fails (not wrapped as NoCredentials).
 
 	testDir := t.TempDir()
 
@@ -135,7 +150,19 @@ func TestEnsureRoxctlConfigFilePathExistsPermissionDenied(t *testing.T) {
 	_, err := ensureRoxctlConfigFilePathExists(configDirPath)
 	require.Error(t, err)
 
+	// Verify the error is NOT wrapped as a NoCredentials error
+	assert.False(t, errors.Is(err, errox.NoCredentials),
+		"filesystem error should not be wrapped as NoCredentials")
+
 	// Verify the error mentions the config path that failed
 	errMsg := err.Error()
 	assert.Contains(t, errMsg, configDirPath, "error should mention the config path that failed")
+
+	// Verify the error does NOT contain authentication guidance text
+	assert.NotContains(t, errMsg, "No authentication credentials are available",
+		"filesystem error should not include auth guidance")
+	assert.NotContains(t, errMsg, "--password",
+		"filesystem error should not suggest auth methods")
+	assert.NotContains(t, errMsg, "ROX_API_TOKEN",
+		"filesystem error should not suggest auth methods")
 }

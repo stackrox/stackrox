@@ -192,9 +192,11 @@ func (c *configMethodWithGuidance) GetCredentials(url string) (credentials.PerRP
 
 	// Check if this is already a NoCredentials error (from auth_config.go when no saved credentials exist)
 	if errors.Is(err, errox.NoCredentials) {
-		// Replace with the full list of auth options since no explicit auth was provided
+		// Preserve the URL from the original error while providing full auth options
 		// (avoiding duplication of "roxctl central login" message from the original error)
-		return nil, errox.NoCredentials.New(missingAuthCredsMessage)
+		return nil, errox.NoCredentials.Newf(
+			"no credentials found for %s. Please provide authentication using one of the following methods:\n%s",
+			url, authOptionsListMessage)
 	}
 
 	// Some other error occurred (filesystem permissions, config parsing, etc.)
