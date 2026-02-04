@@ -76,8 +76,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		var err error
 		internalMessageDispatcher, err = pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs(
 			[]pubsub.LaneConfig{
-				lane.NewDefaultLane(pubsub.KubernetesDispatcherEventLane),
-				lane.NewDefaultLane(pubsub.FromCentralResolverEventLane),
+				lane.NewBlockingLane(pubsub.KubernetesDispatcherEventLane),
+				lane.NewBlockingLane(pubsub.FromCentralResolverEventLane),
 			},
 		))
 		if err != nil {
