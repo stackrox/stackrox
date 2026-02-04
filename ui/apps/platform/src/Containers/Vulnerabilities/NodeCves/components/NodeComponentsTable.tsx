@@ -67,7 +67,7 @@ function NodeComponentsTable({ data }: NodeComponentsTableProps) {
     }
 
     return (
-        <Table style={{ border: '1px solid var(--pf-v5-c-table--BorderColor)' }}>
+        <Table>
             <Thead noWrap>
                 <Tr>
                     <Th sort={getSortParams('Component')}>Component</Th>
