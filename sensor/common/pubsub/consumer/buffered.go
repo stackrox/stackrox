@@ -11,6 +11,10 @@ import (
 	"github.com/stackrox/rox/sensor/common/pubsub/metrics"
 )
 
+const (
+	defaultBufferSize = 1000
+)
+
 // bufferedEvent wraps an event with its error channel to pipe callback errors back to the caller
 type bufferedEvent struct {
 	event     pubsub.Event
@@ -41,7 +45,7 @@ func NewBufferedConsumer(laneID pubsub.LaneID, topic pubsub.Topic, consumerID pu
 		consumerID: consumerID,
 		callback:   callback,
 		stopper:    concurrency.NewStopper(),
-		size:       1000,
+		size:       defaultBufferSize,
 	}
 	for _, opt := range opts {
 		opt(ret)
