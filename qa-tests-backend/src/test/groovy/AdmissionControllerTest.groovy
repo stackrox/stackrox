@@ -163,6 +163,7 @@ class AdmissionControllerTest extends BaseSpecification {
                                 .setDisableBypass(!bypassable)
                                 .setScanInline(scan)
                                 .setTimeoutSeconds(timeout)
+                                .setEnforceOnUpdates(true)
                             .build()
 
         assert ClusterService.updateAdmissionController(ac)
@@ -261,6 +262,7 @@ class AdmissionControllerTest extends BaseSpecification {
                 .setEnabled(true)
                 .setScanInline(false)
                 .setTimeoutSeconds(10)
+                .setEnforceOnUpdates(true)
                 .build()
 
         assert ClusterService.updateAdmissionController(ac)
@@ -335,6 +337,7 @@ class AdmissionControllerTest extends BaseSpecification {
                 .setEnabled(false)
                 .setScanInline(false)
                 .setTimeoutSeconds(10)
+                .setEnforceOnUpdates(true)
                 .build()
 
         assert ClusterService.updateAdmissionController(ac)
