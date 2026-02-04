@@ -1,4 +1,4 @@
-import { Toolbar, ToolbarContent, ToolbarGroup, ToolbarItem } from '@patternfly/react-core';
+import { Toolbar, ToolbarContent, ToolbarGroup } from '@patternfly/react-core';
 
 import type { SearchFilter } from 'types/search';
 import useAnalytics from 'hooks/useAnalytics';

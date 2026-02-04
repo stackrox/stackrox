@@ -101,7 +101,7 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
     return (
         <>
             <PageTitle title={`${pageTitle} - Deployment ${deploymentName ?? ''}`} />
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
+            <PageSection>
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewDeploymentsPath}>
                         Deployments
@@ -118,7 +118,6 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                     )}
                 </Breadcrumb>
             </PageSection>
-            <Divider component="div" />
             {deploymentNotFound ? (
                 <NotFoundMessage
                     title="404: We couldn't find that page"
@@ -126,7 +125,7 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                 />
             ) : (
                 <>
-                    <PageSection hasBodyWrapper={false}>
+                    <PageSection>
                         {metadataRequest.error && (
                             <TableErrorComponent
                                 error={metadataRequest.error}
@@ -135,31 +134,22 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                         )}
                         <DeploymentPageHeader data={metadataRequest.data?.deployment} />
                     </PageSection>
-                    <PageSection
-                        hasBodyWrapper={false}
-                        className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
-                        padding={{ default: 'noPadding' }}
-                    >
+                    <PageSection type="tabs">
                         <Tabs
                             activeKey={activeTabKey}
                             onSelect={(_e, key) => {
                                 setActiveTabKey(key);
                                 pagination.setPage(1);
                             }}
-                            className="pf-v6-u-pl-md pf-v6-u-background-color-100"
+                            usePageInsets
                             mountOnEnter
                             unmountOnExit
                         >
                             <Tab
-                                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
                                 eventKey="Vulnerabilities"
                                 title={<TabTitleText>Vulnerabilities</TabTitleText>}
                             >
-                                <PageSection
-                                    hasBodyWrapper={false}
-                                    component="div"
-                                    className="pf-v6-u-py-md pf-v6-u-px-xl"
-                                >
+                                <PageSection component="div">
                                     <Content component="p">
                                         Review and triage vulnerability data scanned for images
                                         within this deployment
@@ -180,15 +170,10 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
                                     }
                                 />
                             </Tab>
-                            <Tab
-                                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
-                                eventKey="Details"
-                                title={<TabTitleText>Details</TabTitleText>}
-                            >
+                            <Tab eventKey="Details" title={<TabTitleText>Details</TabTitleText>}>
                                 <DeploymentPageDetails deploymentId={deploymentId} />
                             </Tab>
                             <Tab
-                                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
                                 eventKey="Resources"
                                 title={<TabTitleText>Resources</TabTitleText>}
                             >

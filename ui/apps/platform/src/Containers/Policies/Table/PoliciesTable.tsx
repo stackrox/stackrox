@@ -209,9 +209,7 @@ function PoliciesTable({
                             config={searchFilterConfig}
                             searchFilter={searchFilter}
                             onSearch={(payload) => {
-                                handleChangeSearchFilter(
-                                    updateSearchFilter(searchFilter, payload)
-                                );
+                                handleChangeSearchFilter(updateSearchFilter(searchFilter, payload));
                             }}
                             defaultEntity={'Policy'}
                         />

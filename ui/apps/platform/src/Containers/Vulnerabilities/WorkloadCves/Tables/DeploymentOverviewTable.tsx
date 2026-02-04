@@ -120,7 +120,7 @@ function DeploymentOverviewTable({
     const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
 
     return (
-        <Table borders={false} variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th
@@ -184,12 +184,7 @@ function DeploymentOverviewTable({
                         const lowCount = imageCVECountBySeverity.low.total;
                         const unknownCount = imageCVECountBySeverity.unknown.total;
                         return (
-                            <Tbody
-                                key={id}
-                                style={{
-                                    borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
-                                }}
-                            >
+                            <Tbody key={id}>
                                 <Tr>
                                     <Td
                                         className={getVisibilityClass('deployment')}
@@ -230,7 +225,11 @@ function DeploymentOverviewTable({
                                     >
                                         {namespace}
                                     </Td>
-                                    <Td dataLabel="Images" className={getVisibilityClass('images')}>
+                                    <Td
+                                        dataLabel="Images"
+                                        className={getVisibilityClass('images')}
+                                        modifier="nowrap"
+                                    >
                                         <>
                                             {imageCount} {pluralize('image', imageCount)}
                                         </>
@@ -238,6 +237,7 @@ function DeploymentOverviewTable({
                                     <Td
                                         dataLabel="First discovered"
                                         className={getVisibilityClass('firstDiscovered')}
+                                        modifier="nowrap"
                                     >
                                         <DateDistance date={created} />
                                     </Td>

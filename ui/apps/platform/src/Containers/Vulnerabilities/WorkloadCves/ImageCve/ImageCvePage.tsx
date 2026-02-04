@@ -383,7 +383,7 @@ function ImageCvePage({
             <PageTitle
                 title={`${pageTitle} - ImageCVE ${metadataRequest.data?.imageCVE?.cve ?? ''}`}
             />
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
+            <PageSection>
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewCvePath}>CVEs</BreadcrumbItemLink>
                     {!metadataRequest.error && (
@@ -395,8 +395,7 @@ function ImageCvePage({
                     )}
                 </Breadcrumb>
             </PageSection>
-            <Divider component="div" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 {metadataRequest.error ? (
                     <TableErrorComponent
                         error={metadataRequest.error}
@@ -409,11 +408,7 @@ function ImageCvePage({
                 )}
             </PageSection>
             <Divider component="div" />
-            <PageSection
-                hasBodyWrapper={false}
-                id={vulnStateTabContentId}
-                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1"
-            >
+            <PageSection type="tabs">
                 {showVulnerabilityStateTabs && (
                     <VulnerabilityStateTabs
                         titleOverrides={{ observed: 'Workloads' }}
@@ -424,127 +419,115 @@ function ImageCvePage({
                         }}
                     />
                 )}
-                <div className="pf-v6-u-background-color-100">
-                    <div className="pf-v6-u-px-sm">
-                        <AdvancedFiltersToolbar
-                            className="pf-v6-u-py-md"
-                            searchFilterConfig={searchFilterConfig}
-                            defaultSearchFilterEntity="Image"
-                            searchFilter={searchFilter}
-                            onFilterChange={(newFilter, searchPayload) => {
-                                setSearchFilter(newFilter);
-                                setPage(1);
-                                trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
-                            }}
-                            additionalContextFilter={{
-                                // Only allow exact match for CVE ID using quotes, the autocomplete API does not
-                                // support regex for exact matching
-                                CVE: `"${cveId}"`,
-                                ...baseSearchFilter,
-                            }}
-                        />
-                    </div>
-                    <SummaryCardLayout
-                        error={summaryRequest.error}
-                        isLoading={summaryRequest.loading}
-                    >
-                        <SummaryCard
-                            data={summaryRequest.data}
-                            loadingText="Loading image CVE summary data"
-                            renderer={({ data }) => (
-                                <AffectedImages
-                                    className="pf-v6-u-h-100"
-                                    affectedImageCount={severitySummary.affectedImageCount}
-                                    totalImagesCount={data.totalImageCount}
-                                />
-                            )}
-                        />
-                        <SummaryCard
-                            data={severitySummary}
-                            loadingText="Loading image CVE summary data"
-                            renderer={({ data }) => (
-                                <BySeveritySummaryCard
-                                    title="Images by severity"
-                                    severityCounts={data.affectedImageCountBySeverity}
-                                    hiddenSeverities={hiddenSeverities}
-                                />
-                            )}
-                        />
-                    </SummaryCardLayout>
-                </div>
-                <Divider />
-                <div className="pf-v6-u-background-color-100 pf-v6-u-flex-grow-1">
-                    <Split
-                        hasGutter
-                        className="pf-v6-u-px-lg pf-v6-u-py-md pf-v6-u-align-items-baseline"
-                    >
-                        <SplitItem isFilled>
-                            <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                                <EntityTypeToggleGroup
-                                    entityTabs={imageCveEntities}
-                                    entityCounts={{
-                                        Image: imageCount,
-                                        Deployment: deploymentCount,
-                                    }}
-                                    onChange={onEntityTypeChange}
-                                />
-                                {isFiltered && <DynamicTableLabel />}
-                            </Flex>
-                        </SplitItem>
-                        <SplitItem>
-                            {entityTab === 'Image' && (
-                                <ColumnManagementButton
-                                    columnConfig={imageTableColumnConfig}
-                                    onApplyColumns={imageTableManagedState.setVisibility}
-                                />
-                            )}
-                            {entityTab === 'Deployment' && (
-                                <ColumnManagementButton
-                                    columnConfig={deploymentTableColumnConfig}
-                                    onApplyColumns={deploymentTableManagedState.setVisibility}
-                                />
-                            )}
-                        </SplitItem>
-                        <SplitItem>
-                            <Pagination
-                                itemCount={tableRowCount}
-                                page={page}
-                                perPage={perPage}
-                                onSetPage={(_, newPage) => setPage(newPage)}
-                                onPerPageSelect={(_, newPerPage) => {
-                                    setPerPage(newPerPage);
-                                }}
+            </PageSection>
+            <PageSection hasBodyWrapper={false} id={vulnStateTabContentId}>
+                <AdvancedFiltersToolbar
+                    searchFilterConfig={searchFilterConfig}
+                    defaultSearchFilterEntity="Image"
+                    searchFilter={searchFilter}
+                    onFilterChange={(newFilter, searchPayload) => {
+                        setSearchFilter(newFilter);
+                        setPage(1);
+                        trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
+                    }}
+                    additionalContextFilter={{
+                        // Only allow exact match for CVE ID using quotes, the autocomplete API does not
+                        // support regex for exact matching
+                        CVE: `"${cveId}"`,
+                        ...baseSearchFilter,
+                    }}
+                />
+                <SummaryCardLayout error={summaryRequest.error} isLoading={summaryRequest.loading}>
+                    <SummaryCard
+                        data={summaryRequest.data}
+                        loadingText="Loading image CVE summary data"
+                        renderer={({ data }) => (
+                            <AffectedImages
+                                className="pf-v6-u-h-100"
+                                affectedImageCount={severitySummary.affectedImageCount}
+                                totalImagesCount={data.totalImageCount}
                             />
-                        </SplitItem>
-                    </Split>
-                    <Divider />
-                    <div className="pf-v6-u-px-lg" style={{ overflowX: 'auto' }}>
+                        )}
+                    />
+                    <SummaryCard
+                        data={severitySummary}
+                        loadingText="Loading image CVE summary data"
+                        renderer={({ data }) => (
+                            <BySeveritySummaryCard
+                                title="Images by severity"
+                                severityCounts={data.affectedImageCountBySeverity}
+                                hiddenSeverities={hiddenSeverities}
+                            />
+                        )}
+                    />
+                </SummaryCardLayout>
+                <Divider component="div" />
+                <Split hasGutter>
+                    <SplitItem isFilled>
+                        <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                            <EntityTypeToggleGroup
+                                entityTabs={imageCveEntities}
+                                entityCounts={{
+                                    Image: imageCount,
+                                    Deployment: deploymentCount,
+                                }}
+                                onChange={onEntityTypeChange}
+                            />
+                            {isFiltered && <DynamicTableLabel />}
+                        </Flex>
+                    </SplitItem>
+                    <SplitItem>
                         {entityTab === 'Image' && (
-                            <AffectedImagesTable
-                                tableState={imageTableState}
-                                getSortParams={getSortParams}
-                                isFiltered={isFiltered}
-                                cve={cveId}
-                                vulnerabilityState={vulnerabilityState}
-                                onClearFilters={onClearFilters}
-                                tableConfig={imageTableColumnConfig}
+                            <ColumnManagementButton
+                                columnConfig={imageTableColumnConfig}
+                                onApplyColumns={imageTableManagedState.setVisibility}
                             />
                         )}
                         {entityTab === 'Deployment' && (
-                            <AffectedDeploymentsTable
-                                tableState={deploymentTableState}
-                                getSortParams={getSortParams}
-                                isFiltered={isFiltered}
-                                filteredSeverities={
-                                    searchFilter.SEVERITY as VulnerabilitySeverityLabel[]
-                                }
-                                cve={cveId}
-                                vulnerabilityState={vulnerabilityState}
-                                onClearFilters={onClearFilters}
-                                tableConfig={deploymentTableColumnConfig}
+                            <ColumnManagementButton
+                                columnConfig={deploymentTableColumnConfig}
+                                onApplyColumns={deploymentTableManagedState.setVisibility}
                             />
                         )}
-                    </div>
+                    </SplitItem>
+                    <SplitItem>
+                        <Pagination
+                            itemCount={tableRowCount}
+                            page={page}
+                            perPage={perPage}
+                            onSetPage={(_, newPage) => setPage(newPage)}
+                            onPerPageSelect={(_, newPerPage) => {
+                                setPerPage(newPerPage);
+                            }}
+                        />
+                    </SplitItem>
+                </Split>
+                <div style={{ overflowX: 'auto' }}>
+                    {entityTab === 'Image' && (
+                        <AffectedImagesTable
+                            tableState={imageTableState}
+                            getSortParams={getSortParams}
+                            isFiltered={isFiltered}
+                            cve={cveId}
+                            vulnerabilityState={vulnerabilityState}
+                            onClearFilters={onClearFilters}
+                            tableConfig={imageTableColumnConfig}
+                        />
+                    )}
+                    {entityTab === 'Deployment' && (
+                        <AffectedDeploymentsTable
+                            tableState={deploymentTableState}
+                            getSortParams={getSortParams}
+                            isFiltered={isFiltered}
+                            filteredSeverities={
+                                searchFilter.SEVERITY as VulnerabilitySeverityLabel[]
+                            }
+                            cve={cveId}
+                            vulnerabilityState={vulnerabilityState}
+                            onClearFilters={onClearFilters}
+                            tableConfig={deploymentTableColumnConfig}
+                        />
+                    )}
                 </div>
             </PageSection>
         </>

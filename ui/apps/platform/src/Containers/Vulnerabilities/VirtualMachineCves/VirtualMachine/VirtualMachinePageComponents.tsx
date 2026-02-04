@@ -120,7 +120,7 @@ function VirtualMachinePageComponents({
     };
 
     return (
-        <PageSection variant="light" isFilled padding={{ default: 'padding' }}>
+        <PageSection isFilled>
             <Toolbar>
                 <ToolbarContent>
                     <CompoundSearchFilter
@@ -134,7 +134,7 @@ function VirtualMachinePageComponents({
                         onSearch={onSearchScanStatus}
                         searchFilter={searchFilter}
                     />
-                    <ToolbarGroup className="pf-v5-u-w-100">
+                    <ToolbarGroup className="pf-v6-u-w-100">
                         <CompoundSearchFilterLabels
                             attributesSeparateFromConfig={[attributeForScanStatus]}
                             config={searchFilterConfig}
