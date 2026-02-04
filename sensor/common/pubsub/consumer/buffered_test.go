@@ -330,7 +330,7 @@ func TestBufferedConsumer_StopDrainsBufferedEvents(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		blockCallback := make(chan struct{})
 
-		c, err := NewBufferedConsumer(
+		c, err := NewBufferedConsumer(WithBufferedConsumerSize(3))(
 			pubsub.DefaultLane,
 			pubsub.DefaultTopic,
 			pubsub.DefaultConsumer,
@@ -339,7 +339,6 @@ func TestBufferedConsumer_StopDrainsBufferedEvents(t *testing.T) {
 				// We should not receive an error since we are Stopping before reading
 				return errors.New("some error")
 			},
-			WithBufferedConsumerSize(3),
 		)
 		require.NoError(t, err)
 

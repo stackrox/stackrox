@@ -31,26 +31,18 @@ func WithBufferedConsumerSize(size int) pubsub.ConsumerOption[*BufferedConsumer]
 	}
 }
 
-func newBufferedConsumer(laneID pubsub.LaneID, topic pubsub.Topic, consumerID pubsub.ConsumerID, callback pubsub.EventCallback) (*BufferedConsumer, error) {
-	if callback == nil {
-		return nil, errors.Wrap(pubsubErrors.UndefinedEventCallbackErr, "")
-	}
-	ret := &BufferedConsumer{
-		laneID:     laneID,
-		topic:      topic,
-		consumerID: consumerID,
-		callback:   callback,
-		stopper:    concurrency.NewStopper(),
-		size:       defaultBufferSize,
-	}
-	return ret, nil
-}
-
 func NewBufferedConsumer(opts ...pubsub.ConsumerOption[*BufferedConsumer]) pubsub.NewConsumer {
 	return func(laneID pubsub.LaneID, topic pubsub.Topic, consumerID pubsub.ConsumerID, callback pubsub.EventCallback) (pubsub.Consumer, error) {
-		ret, err := newBufferedConsumer(laneID, topic, consumerID, callback)
-		if err != nil {
-			return nil, err
+		if callback == nil {
+			return nil, errors.Wrap(pubsubErrors.UndefinedEventCallbackErr, "")
+		}
+		ret := &BufferedConsumer{
+			laneID:     laneID,
+			topic:      topic,
+			consumerID: consumerID,
+			callback:   callback,
+			stopper:    concurrency.NewStopper(),
+			size:       defaultBufferSize,
 		}
 		for _, opt := range opts {
 			opt(ret)

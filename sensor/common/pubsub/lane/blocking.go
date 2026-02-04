@@ -126,7 +126,6 @@ func (l *blockingLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pubs
 	if callback == nil {
 		return errors.New("cannot register a 'nil' callback")
 	}
-	// c, err := l.newConsumerFn(l.id, topic, consumerID, callback, l.consumerOpts...)
 	c, err := l.newConsumerFn(l.id, topic, consumerID, callback)
 	if err != nil {
 		return errors.Wrap(err, "unable to create the consumer")
