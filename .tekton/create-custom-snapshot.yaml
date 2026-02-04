@@ -204,7 +204,7 @@ spec:
               "component": "collector"
             },
             {
-              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-fact-rhel8",
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-fact-rhel9",
               "internalRepo": "quay.io/rhacs-eng/release-fact",
               "component": "fact"
             },
