@@ -78,6 +78,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 			[]pubsub.LaneConfig{
 				lane.NewDefaultLane(pubsub.KubernetesDispatcherEventLane),
 				lane.NewDefaultLane(pubsub.FromCentralResolverEventLane),
+				lane.NewDefaultLane(pubsub.UnenrichedProcessIndicatorLane),
+				lane.NewDefaultLane(pubsub.EnrichedProcessIndicatorLane),
 			},
 		))
 		if err != nil {
@@ -153,7 +155,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	// Create Process Pipeline
 	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
-	processPipeline := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
+	processPipeline := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector, internalMessageDispatcher)
 	if cfg.processPipelineObserver != nil {
 		cfg.processPipelineObserver(processPipeline)
 	}
@@ -270,7 +272,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	if features.SensitiveFileActivity.Enabled() {
 		activityChan := make(chan *sensorInternal.FileActivity)
-		fileSystemPipeline := filesystemPipeline.NewFileSystemPipeline(policyDetector, storeProvider.Entities(), activityChan)
+		fileSystemPipeline := filesystemPipeline.NewFileSystemPipeline(policyDetector, storeProvider.Entities(), activityChan, internalMessageDispatcher)
 		fileSystemService := filesystemService.NewService(fileSystemPipeline, activityChan)
 		apiServices = append(apiServices, fileSystemService)
 	}

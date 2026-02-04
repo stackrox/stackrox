@@ -2,15 +2,21 @@ package pipeline
 
 import (
 	"context"
+	"fmt"
 
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/processsignal"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 )
 
 var (
@@ -24,28 +30,44 @@ type Pipeline struct {
 	activityChan    chan *sensorAPI.FileActivity
 	clusterEntities *clusterentities.Store
 
+	bufferedActivity map[string][]*sensorAPI.FileActivity
+	activityMutex    sync.Mutex
+
+	pubSubDispatcher common.PubSubDispatcher
+
 	msgCtx context.Context
 }
 
-func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clusterentities.Store, activityChan chan *sensorAPI.FileActivity) *Pipeline {
+func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clusterentities.Store, activityChan chan *sensorAPI.FileActivity, pubSubDispatcher common.PubSubDispatcher) *Pipeline {
 	msgCtx := context.Background()
 
 	p := &Pipeline{
-		detector:        detector,
-		activityChan:    activityChan,
-		clusterEntities: clusterEntities,
-		stopper:         concurrency.NewStopper(),
-		msgCtx:          msgCtx,
+		detector:         detector,
+		activityChan:     activityChan,
+		clusterEntities:  clusterEntities,
+		pubSubDispatcher: pubSubDispatcher,
+		stopper:          concurrency.NewStopper(),
+		msgCtx:           msgCtx,
+		bufferedActivity: make(map[string][]*sensorAPI.FileActivity),
+	}
+
+	if features.SensorInternalPubSub.Enabled() && pubSubDispatcher != nil {
+		log.Info("File system pipeline using pub/sub mode for process enrichment")
+
+		if err := pubSubDispatcher.RegisterConsumerToLane(pubsub.EnrichedProcessIndicatorTopic, pubsub.EnrichedProcessIndicatorLane, p.processEnrichedIndicator); err != nil {
+			log.Errorf("Failed to register consumer for enriched process indicators in file system pipeline: %v", err)
+		}
+	} else {
+		log.Info("File system pipeline using legacy mode (direct enrichment)")
 	}
 
 	go p.run()
 	return p
 }
 
-func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
-
+func (p *Pipeline) translateWithIndicator(fs *sensorAPI.FileActivity, indicator *storage.ProcessIndicator) *storage.FileAccess {
 	access := &storage.FileAccess{
-		Process:   p.getIndicator(fs.GetProcess()),
+		Process:   indicator,
 		Hostname:  fs.GetHostname(),
 		Timestamp: fs.GetTimestamp(),
 	}
@@ -108,6 +130,66 @@ func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 	return access
 }
 
+func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
+	indicator := p.getIndicator(fs.GetProcess())
+	if indicator == nil {
+		p.bufferActivity(fs)
+		return nil
+	}
+
+	return p.translateWithIndicator(fs, indicator)
+}
+
+func cacheKey(containerID, processSignalID string) string {
+	return fmt.Sprintf("%s:%s", containerID, processSignalID)
+}
+
+func (p *Pipeline) bufferActivity(fs *sensorAPI.FileActivity) {
+	process := fs.GetProcess()
+	if process == nil {
+		return
+	}
+
+	key := cacheKey(process.GetContainerId(), process.GetId())
+	p.activityMutex.Lock()
+	defer p.activityMutex.Unlock()
+
+	p.bufferedActivity[key] = append(p.bufferedActivity[key], fs)
+}
+
+func (p *Pipeline) popBufferedActivity(key string) []*sensorAPI.FileActivity {
+	p.activityMutex.Lock()
+	defer p.activityMutex.Unlock()
+
+	buffered := p.bufferedActivity[key]
+	delete(p.bufferedActivity, key)
+	return buffered
+}
+
+func (p *Pipeline) processEnrichedIndicator(event pubsub.Event) error {
+	enrichedEvent, ok := event.(*processsignal.EnrichedProcessIndicatorEvent)
+	if !ok {
+		log.Errorf("File system pipeline received unexpected event type: %T", event)
+		return fmt.Errorf("unexpected event type: %T", event)
+	}
+
+	indicator := enrichedEvent.Indicator
+	if indicator == nil || indicator.GetSignal() == nil {
+		return nil
+	}
+
+	key := cacheKey(indicator.GetSignal().GetContainerId(), indicator.GetSignal().GetId())
+	buffered := p.popBufferedActivity(key)
+	for _, fs := range buffered {
+		access := p.translateWithIndicator(fs, indicator)
+		if access != nil {
+			p.detector.ProcessFileAccess(enrichedEvent.Context, access)
+		}
+	}
+
+	return nil
+}
+
 func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.ProcessIndicator {
 	signal := &storage.ProcessSignal{
 		Id:           process.GetId(),
@@ -140,6 +222,15 @@ func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.Proce
 	if process.GetContainerId() == "" {
 		// Process is running on the host (not in a container)
 		return pi
+	}
+
+	if features.SensorInternalPubSub.Enabled() && p.pubSubDispatcher != nil {
+		event := processsignal.NewUnenrichedProcessIndicatorEvent(p.msgCtx, pi)
+		if err := p.pubSubDispatcher.Publish(event); err != nil {
+			log.Errorf("Failed to publish unenriched process indicator for file activity: %v", err)
+			return nil
+		}
+		return nil
 	}
 
 	metadata, ok, _ := p.clusterEntities.LookupByContainerID(process.GetContainerId())
@@ -177,7 +268,9 @@ func (p *Pipeline) run() {
 				return
 			}
 			event := p.translate(fs)
-			p.detector.ProcessFileAccess(p.msgCtx, event)
+			if event != nil {
+				p.detector.ProcessFileAccess(p.msgCtx, event)
+			}
 		}
 	}
 }

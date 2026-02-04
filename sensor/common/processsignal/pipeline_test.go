@@ -96,7 +96,7 @@ func TestProcessPipelineOfflineV3(t *testing.T) {
 			mockDetector := mocks.NewMockDetector(mockCtrl)
 			pipeline := NewProcessPipeline(sensorEvents, mockStore,
 				filter.NewFilter(5, 5, []int{3, 3, 3}),
-				mockDetector)
+				mockDetector, nil)
 			t.Cleanup(func() {
 				pipeline.Shutdown()
 				for _, entity := range tc.entities {
@@ -179,7 +179,7 @@ func TestProcessPipelineOnline(t *testing.T) {
 	mockDetector := mocks.NewMockDetector(mockCtrl)
 
 	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
-		mockDetector)
+		mockDetector, nil)
 	p.Notify(common.SensorComponentEventCentralReachable)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -289,7 +289,7 @@ func TestProcessPipelineShutdownRace(t *testing.T) {
 	mockDetector := mocks.NewMockDetector(mockCtrl)
 
 	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
-		mockDetector)
+		mockDetector, nil)
 
 	containerID := "test-container-id"
 	containerMetadata := clusterentities.ContainerMetadata{
