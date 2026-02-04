@@ -1,5 +1,10 @@
 tests:
 - name: "Defaults for OpenShift3"
+  values:
+    admissionControl:
+      dynamic:
+        enforceOnCreates: true
+        enforceOnUpdates: false
   set:
     env.openshift: 3
   expect: |
@@ -8,14 +13,24 @@ tests:
    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.scanInline == true)
    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.timeoutSeconds == 10)
 - name: "Defaults for OpenShift4"
-  set:
-    env.openshift: 4
+  values:
+    admissionControl:
+      dynamic:
+        enforceOnCreates: true
+        enforceOnUpdates: false
+    set:
+      env.openshift: 4
   expect: |
    .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0] | assertThat(.operations == ["CREATE", "UPDATE"])
    [.validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io")] | assertThat(length == 1)
    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.scanInline == true)
    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.timeoutSeconds == 10)
 - name: "Defaults for vanilla K8s"
+  values:
+    admissionControl:
+      dynamic:
+        enforceOnCreates: true
+        enforceOnUpdates: false
   set:
     env.openshift: false
   expect: |
@@ -24,9 +39,12 @@ tests:
    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.scanInline == true)
    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.timeoutSeconds == 10)
 - name: "disabling listenOn* is ignored"
-  set:
-    admissionControl.enforce: true
-    admissionControl.listenOnEvents: false
+  values:
+    admissionControl:
+      dynamic:
+        enforceOnCreates: true
+        enforceOnUpdates: false
+      listenOnEvents: false
   expect: |
    .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0].operations | assertThat(contains(["CREATE"]))
    .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0].operations | assertThat(contains(["UPDATE"]))
@@ -68,8 +86,11 @@ tests:
     release:
       isInstall: true
       isUpgrade: false
-    set:
-      admissionControl.enforce: true
+    values:
+      admissionControl:
+        dynamic:
+          enforceOnCreates: true
+          enforceOnUpdates: true
     expect: |
       [.validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io")] | assertThat(length == 1)
   - name: "policyeval webhook is NOT deployed when enforce is false"
