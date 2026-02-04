@@ -1,7 +1,6 @@
 import {
     Breadcrumb,
     BreadcrumbItem,
-    Divider,
     Flex,
     FlexItem,
     PageSection,
@@ -146,7 +145,7 @@ function NamespaceViewPage() {
     return (
         <>
             <PageTitle title={`${pageTitle} - Namespace view`} />
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
+            <PageSection>
                 <Breadcrumb>
                     <BreadcrumbItemLink to={urlBuilder.vulnMgmtBase('')}>
                         {pageTitle}
@@ -154,8 +153,7 @@ function NamespaceViewPage() {
                     <BreadcrumbItem isActive>Namespace view</BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
-            <Divider component="div" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <Flex
                     direction={{ default: 'column' }}
                     alignItems={{ default: 'alignItemsFlexStart' }}
@@ -166,8 +164,7 @@ function NamespaceViewPage() {
                     <FlexItem>Discover and prioritize namespaces by risk priority</FlexItem>
                 </Flex>
             </PageSection>
-            <Divider component="div" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <Toolbar>
                     <ToolbarContent>
                         <CompoundSearchFilter

@@ -32,11 +32,11 @@ export type VerifiedSignatureLabelProps = {
 
 // Separate list from the title with same margin-top as second list item from the first.
 const styleList = {
-    marginTop: 'var(--pf-v5-c-list--li--MarginTop)',
+    marginTop: 'var(--pf-v6-c-list--li--MarginTop)',
 } as CSSProperties;
 
 const clipboardCopyMaxWidthStyle = {
-    '--pf-v5-u-max-width--MaxWidth': '64ch',
+    '--pf-v6-u-max-width--MaxWidth': '64ch',
 } as CSSProperties;
 
 function VerifiedSignatureLabel({
@@ -66,7 +66,7 @@ function VerifiedSignatureLabel({
                                         {result.verifiedImageReferences?.map((name) => (
                                             <ListItem key={name}>
                                                 <ClipboardCopy
-                                                    className="pf-v5-u-max-width pf-v5-u-display-inline-flex pf-v5-u-align-items-center"
+                                                    className="pf-v6-u-max-width pf-v6-u-display-inline-flex pf-v6-u-align-items-center"
                                                     style={clipboardCopyMaxWidthStyle}
                                                     clickTip="Copied!"
                                                     hoverTip="Copy"
