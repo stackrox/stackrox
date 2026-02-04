@@ -80,6 +80,7 @@ jobs:
 
       # TODO: review if handle-tag-build is needed or can be replaced/reduced
 
+      # Keep UI cache - changes less frequently than Go code
       - name: restore cached ui
         uses: actions/cache@v4
         id: restore-ui-build
@@ -90,84 +91,13 @@ jobs:
       - uses: ./.github/actions/cache-ui-dependencies
         if: steps.restore-ui-build.outputs.cache-hit != 'true'
 
-      - name: restore cached roxctl
-        uses: actions/cache/restore@v4
-        id: restore-roxctl-build
-        with:
-          key: built-roxctl-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('**/go.sum', 'Makefile', 'make/**', 'roxctl/**', 'proto/**', 'generated/**') }}
-          path: |
-            bin/*/roxctl
-            bin/*/roxctl.exe
-
-      - name: restore cached central go build
-        uses: actions/cache@v4
-        id: restore-central-build
-        with:
-          key: built-central-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('**/go.sum', 'Makefile', 'make/**', 'central/**', 'proto/**', 'generated/**') }}
-          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/central
-
-      - name: restore cached compliance go build
-        uses: actions/cache@v4
-        id: restore-compliance-build
-        with:
-          key: built-compliance-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('**/go.sum', 'Makefile', 'make/**', 'compliance/**', 'proto/**', 'generated/**') }}
-          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/compliance
-
-      - name: restore cached config-controller go build
-        uses: actions/cache@v4
-        id: restore-config-controller-build
-        with:
-          key: built-config-controller-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('**/go.sum', 'Makefile', 'make/**', 'config-controller/**', 'proto/**', 'generated/**') }}
-          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/config-controller
-
-      - name: restore cached migrator go build
-        uses: actions/cache@v4
-        id: restore-migrator-build
-        with:
-          key: built-migrator-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('**/go.sum', 'Makefile', 'make/**', 'migrator/**', 'proto/**', 'generated/**') }}
-          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/migrator
-
-      - name: restore cached sensor go build
-        uses: actions/cache@v4
-        id: restore-sensor-build
-        with:
-          key: built-sensor-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('**/go.sum', 'Makefile', 'make/**', 'sensor/**', 'proto/**', 'generated/**') }}
-          path: |
-            bin/${{ env.GOOS }}_${{ env.GOARCH }}/admission-control
-            bin/${{ env.GOOS }}_${{ env.GOARCH }}/kubernetes
-            bin/${{ env.GOOS }}_${{ env.GOARCH }}/upgrader
-
-      # TODO: update make/protogen to not always rebuild (rebuilds even when files are not updated)
-      - name: restore cached docs build
-        uses: actions/cache@v4
-        id: restore-docs-build
-        with:
-          key: built-docs-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('proto/**', 'generated/**') }}
-          path: image/rhel/docs
-
       - name: Setup Go
-        if: |
-          steps.restore-roxctl-build.outputs.cache-hit != 'true'
-          || steps.restore-central-build.outputs.cache-hit != 'true'
-          || steps.restore-compliance-build.outputs.cache-hit != 'true'
-          || steps.restore-config-controller-build.outputs.cache-hit != 'true'
-          || steps.restore-migrator-build.outputs.cache-hit != 'true'
-          || steps.restore-sensor-build.outputs.cache-hit != 'true'
-          || steps.restore-docs-build.outputs.cache-hit != 'true'
         uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
           cache: false
 
       - name: Cache Go dependencies
-        if: |
-          steps.restore-roxctl-build.outputs.cache-hit != 'true'
-          || steps.restore-central-build.outputs.cache-hit != 'true'
-          || steps.restore-compliance-build.outputs.cache-hit != 'true'
-          || steps.restore-config-controller-build.outputs.cache-hit != 'true'
-          || steps.restore-migrator-build.outputs.cache-hit != 'true'
-          || steps.restore-sensor-build.outputs.cache-hit != 'true'
-          || steps.restore-docs-build.outputs.cache-hit != 'true'
         uses: ./.github/actions/cache-go-dependencies
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
@@ -201,30 +131,12 @@ jobs:
 
       - name: compile
         run: |
-          # TODO: modify gobuild.sh/Makefile/this to only rebuild if the files changed (from restored state), then only restore go deps if changed also?
           set -x
-          export SKIP_CLI_BUILD=true  # or cli-build's in cli even if already built
-          export SKIP_UI_BUILD=true  # or ui-build's in all-builds even if already built
-          parallel="${{ matrix.parallel }}"  # sequential until verified working. TODO: test parallel=>1
-          # cli-build  # reduced to linux amd64 for CI test-use
-          # make cli_host-arch could work, but we specifically want linux-amd64 for CI test clusters
-          if [[ "${{ steps.restore-docs-build.outputs.cache-hit }}" != 'true' ]]; then
-            time make -j"${parallel}" -Oline cli_linux-amd64 main-build-check-exists ui-build swagger-docs
-          else
-            time make -j"${parallel}" -Oline cli_linux-amd64 main-build-check-exists ui-build
-          fi
-            # main-build-nodeps: gobuild *. then, build roxctl if not CI
-            # ui-build: test -d ui/build || make -C ui build
-            # ui-build condition is if ./ui/build exists (sot it is skipped if cache restored it)
-
-      - name: cache roxctl
-        uses: actions/cache/save@v4
-        if: ${{ steps.restore-roxctl-build.outputs.cache-hit != 'true' }}
-        with:
-          key: ${{ steps.restore-roxctl-build.outputs.cache-primary-key }}
-          path: |
-            bin/*/roxctl
-            bin/*/roxctl.exe
+          export SKIP_CLI_BUILD=true  # skip if already built
+          export SKIP_UI_BUILD=true   # skip if already built (from cache)
+          parallel="${{ matrix.parallel }}"
+          # Build all components - uses main-build-nodeps for parallel Go compilation
+          time make -j"${parallel}" -Oline cli_linux-amd64 main-build-nodeps ui-build swagger-docs
 
       - name: Generate OSS notice
         if: false
@@ -544,65 +456,13 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: restore cached central go build
-        uses: actions/cache@v4
-        id: restore-central-build
-        with:
-          key: built-central-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('**/go.sum', 'Makefile', 'make/**', 'central/**', 'proto/**', 'generated/**') }}
-          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/central
-
-      - name: restore cached compliance go build
-        uses: actions/cache@v4
-        id: restore-compliance-build
-        with:
-          key: built-compliance-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('**/go.sum', 'Makefile', 'make/**', 'compliance/**', 'proto/**', 'generated/**') }}
-          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/compliance
-
-      - name: restore cached config-controller go build
-        uses: actions/cache@v4
-        id: restore-config-controller-build
-        with:
-          key: built-config-controller-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('**/go.sum', 'Makefile', 'make/**', 'config-controller/**', 'proto/**', 'generated/**') }}
-          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/config-controller
-
-      - name: restore cached migrator go build
-        uses: actions/cache@v4
-        id: restore-migrator-build
-        with:
-          key: built-migrator-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('**/go.sum', 'Makefile', 'make/**', 'migrator/**', 'proto/**', 'generated/**') }}
-          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/migrator
-
-      - name: restore cached sensor go build
-        uses: actions/cache@v4
-        id: restore-sensor-build
-        with:
-          key: built-sensor-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('**/go.sum', 'Makefile', 'make/**', 'sensor/**', 'proto/**', 'generated/**') }}
-          path: |
-            bin/${{ env.GOOS }}_${{ env.GOARCH }}/admission-control
-            bin/${{ env.GOOS }}_${{ env.GOARCH }}/kubernetes
-            bin/${{ env.GOOS }}_${{ env.GOARCH }}/upgrader
-
       - name: Setup Go
-        if: |
-          steps.restore-central-build.outputs.cache-hit != 'true'
-          || steps.restore-compliance-build.outputs.cache-hit != 'true'
-          || steps.restore-config-controller-build.outputs.cache-hit != 'true'
-          || steps.restore-migrator-build.outputs.cache-hit != 'true'
-          || steps.restore-sensor-build.outputs.cache-hit != 'true'
         uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
           cache: false
 
       - name: Cache Go dependencies
-        if: |
-          steps.restore-central-build.outputs.cache-hit != 'true'
-          || steps.restore-compliance-build.outputs.cache-hit != 'true'
-          || steps.restore-config-controller-build.outputs.cache-hit != 'true'
-          || steps.restore-migrator-build.outputs.cache-hit != 'true'
-          || steps.restore-sensor-build.outputs.cache-hit != 'true'
-        env:
-          GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
 
       - uses: ./.github/actions/handle-tagged-build
@@ -637,11 +497,11 @@ jobs:
       - name: Build Go Binaries
         run: |
           if [[ "${{ matrix.arch }}" != "amd64" ]]; then
-            echo "Building non-amd binary"
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-check-exists
+            echo "Building non-amd64 binary (CGO_ENABLED=0)"
+            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
           else
-            echo "Building amd binary"
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-check-exists
+            echo "Building amd64 binary (CGO_ENABLED=1)"
+            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-nodeps
           fi
 
       - name: Bundle the build to preserve permissions
@@ -811,6 +671,20 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Login to ghcr.io for Docker layer caching
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Setup Docker cache args
+        run: |
+          cache_registry='ghcr.io'
+          cache_image="${GITHUB_REPOSITORY,,}"
+          cache_tag="main-${{ matrix.arch }}-${GITHUB_REF_NAME,,}-${ROX_PRODUCT_BRANDING,,}"
+          cache_tag=${cache_tag//\//_}
+          cache_tag_master="main-${{ matrix.arch }}-master-${ROX_PRODUCT_BRANDING,,}"
+
+          echo "DOCKER_BUILD_CACHE_ARGS=--cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max,ignore-error=true --cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag} --cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag_master}" >> "$GITHUB_ENV"
 
       - name: Checkout submodules
         run: |
