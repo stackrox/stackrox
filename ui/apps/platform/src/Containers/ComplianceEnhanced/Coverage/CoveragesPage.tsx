@@ -10,7 +10,6 @@ import {
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
-    ToolbarItem,
 } from '@patternfly/react-core';
 
 import ComplianceUsageDisclaimer, {

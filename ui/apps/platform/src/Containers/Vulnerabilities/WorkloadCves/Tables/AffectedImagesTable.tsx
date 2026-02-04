@@ -154,7 +154,7 @@ function AffectedImagesTable({
     const colSpanForComponentVulnerabilitiesTable = colSpan - 1; // minus ExpandRowTh
 
     return (
-        <Table borders={false} variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <ExpandRowTh className={getVisibilityClass('rowExpansion')} />
@@ -220,20 +220,13 @@ function AffectedImagesTable({
 
                         const isExpanded = expandedRowSet.has(id);
 
-                        // Table borders={false} prop above and Tbody style prop below
-                        // to prevent unwanted border between main row and conditional labels row.
-                        //
-                        // Td style={{ paddingTop: 0 }} prop emulates vertical space when label was in cell instead of row
-                        // and assumes adjacent empty cell has no paddingTop.
                         return (
-                            <Tbody
-                                key={id}
-                                style={{
-                                    borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
-                                }}
-                                isExpanded={isExpanded}
-                            >
-                                <Tr>
+                            <Tbody key={id} isExpanded={isExpanded}>
+                                <Tr
+                                    style={
+                                        labels.length !== 0 ? { borderBlockEnd: 'none' } : undefined
+                                    }
+                                >
                                     <Td
                                         className={getVisibilityClass('rowExpansion')}
                                         expand={{
@@ -315,7 +308,7 @@ function AffectedImagesTable({
                                     </Td>
                                 </Tr>
                                 {labels.length !== 0 && (
-                                    <Tr>
+                                    <Tr style={isExpanded ? { borderBlockEnd: 'none' } : undefined}>
                                         <Td />
                                         <Td
                                             colSpan={colSpanForComponentVulnerabilitiesTable - 1}
