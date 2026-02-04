@@ -16,14 +16,14 @@
     "application/json"
   ],
   "paths": {
-    "/v1/export/vuln-mgmt/image-vuln-findings": {
+    "/v1/export/vuln-mgmt/image-vulnerabilities": {
       "get": {
-        "operationId": "VulnMgmtService_ImageVulnFindings",
+        "operationId": "VulnMgmtService_ImageVulnerabilities",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1ImageVulnFindingsResponse"
+              "$ref": "#/definitions/v1ImageVulnerabilitiesResponse"
             }
           },
           "default": {
@@ -173,22 +173,7 @@
       "default": "UNSET",
       "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
     },
-    "ImageVulnFindingsResponseFinding": {
-      "type": "object",
-      "properties": {
-        "imageSha": {
-          "type": "string"
-        },
-        "components": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/ImageVulnFindingsResponseFindingComponent"
-          }
-        }
-      }
-    },
-    "ImageVulnFindingsResponseFindingComponent": {
+    "ImageVulnerabilitiesResponseImageComponent": {
       "type": "object",
       "properties": {
         "name": {
@@ -1658,14 +1643,29 @@
       "default": "OBSERVED",
       "description": "VulnerabilityState indicates if vulnerability is being observed or deferred(/suppressed). By default, it vulnerabilities are observed.\n\n - OBSERVED: [Default state]"
     },
-    "v1ImageVulnFindingsResponse": {
+    "v1ImageVulnerabilitiesResponse": {
       "type": "object",
       "properties": {
-        "findings": {
+        "images": {
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/ImageVulnFindingsResponseFinding"
+            "$ref": "#/definitions/v1ImageVulnerabilitiesResponseImage"
+          }
+        }
+      }
+    },
+    "v1ImageVulnerabilitiesResponseImage": {
+      "type": "object",
+      "properties": {
+        "sha": {
+          "type": "string"
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ImageVulnerabilitiesResponseImageComponent"
           }
         }
       }

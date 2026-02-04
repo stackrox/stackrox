@@ -20,7 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	VulnMgmtService_VulnMgmtExportWorkloads_FullMethodName = "/v1.VulnMgmtService/VulnMgmtExportWorkloads"
-	VulnMgmtService_ImageVulnFindings_FullMethodName       = "/v1.VulnMgmtService/ImageVulnFindings"
+	VulnMgmtService_ImageVulnerabilities_FullMethodName    = "/v1.VulnMgmtService/ImageVulnerabilities"
 )
 
 // VulnMgmtServiceClient is the client API for VulnMgmtService service.
@@ -36,7 +36,7 @@ type VulnMgmtServiceClient interface {
 	// ...
 	// {"result": {"deployment": {...}, "images": [...]}}
 	VulnMgmtExportWorkloads(ctx context.Context, in *VulnMgmtExportWorkloadsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[VulnMgmtExportWorkloadsResponse], error)
-	ImageVulnFindings(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ImageVulnFindingsResponse, error)
+	ImageVulnerabilities(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ImageVulnerabilitiesResponse, error)
 }
 
 type vulnMgmtServiceClient struct {
@@ -66,10 +66,10 @@ func (c *vulnMgmtServiceClient) VulnMgmtExportWorkloads(ctx context.Context, in 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type VulnMgmtService_VulnMgmtExportWorkloadsClient = grpc.ServerStreamingClient[VulnMgmtExportWorkloadsResponse]
 
-func (c *vulnMgmtServiceClient) ImageVulnFindings(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ImageVulnFindingsResponse, error) {
+func (c *vulnMgmtServiceClient) ImageVulnerabilities(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ImageVulnerabilitiesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ImageVulnFindingsResponse)
-	err := c.cc.Invoke(ctx, VulnMgmtService_ImageVulnFindings_FullMethodName, in, out, cOpts...)
+	out := new(ImageVulnerabilitiesResponse)
+	err := c.cc.Invoke(ctx, VulnMgmtService_ImageVulnerabilities_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ type VulnMgmtServiceServer interface {
 	// ...
 	// {"result": {"deployment": {...}, "images": [...]}}
 	VulnMgmtExportWorkloads(*VulnMgmtExportWorkloadsRequest, grpc.ServerStreamingServer[VulnMgmtExportWorkloadsResponse]) error
-	ImageVulnFindings(context.Context, *Empty) (*ImageVulnFindingsResponse, error)
+	ImageVulnerabilities(context.Context, *Empty) (*ImageVulnerabilitiesResponse, error)
 }
 
 // UnimplementedVulnMgmtServiceServer should be embedded to have
@@ -102,8 +102,8 @@ type UnimplementedVulnMgmtServiceServer struct{}
 func (UnimplementedVulnMgmtServiceServer) VulnMgmtExportWorkloads(*VulnMgmtExportWorkloadsRequest, grpc.ServerStreamingServer[VulnMgmtExportWorkloadsResponse]) error {
 	return status.Error(codes.Unimplemented, "method VulnMgmtExportWorkloads not implemented")
 }
-func (UnimplementedVulnMgmtServiceServer) ImageVulnFindings(context.Context, *Empty) (*ImageVulnFindingsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ImageVulnFindings not implemented")
+func (UnimplementedVulnMgmtServiceServer) ImageVulnerabilities(context.Context, *Empty) (*ImageVulnerabilitiesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ImageVulnerabilities not implemented")
 }
 func (UnimplementedVulnMgmtServiceServer) testEmbeddedByValue() {}
 
@@ -136,20 +136,20 @@ func _VulnMgmtService_VulnMgmtExportWorkloads_Handler(srv interface{}, stream gr
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type VulnMgmtService_VulnMgmtExportWorkloadsServer = grpc.ServerStreamingServer[VulnMgmtExportWorkloadsResponse]
 
-func _VulnMgmtService_ImageVulnFindings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _VulnMgmtService_ImageVulnerabilities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(VulnMgmtServiceServer).ImageVulnFindings(ctx, in)
+		return srv.(VulnMgmtServiceServer).ImageVulnerabilities(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: VulnMgmtService_ImageVulnFindings_FullMethodName,
+		FullMethod: VulnMgmtService_ImageVulnerabilities_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VulnMgmtServiceServer).ImageVulnFindings(ctx, req.(*Empty))
+		return srv.(VulnMgmtServiceServer).ImageVulnerabilities(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -162,8 +162,8 @@ var VulnMgmtService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*VulnMgmtServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "ImageVulnFindings",
-			Handler:    _VulnMgmtService_ImageVulnFindings_Handler,
+			MethodName: "ImageVulnerabilities",
+			Handler:    _VulnMgmtService_ImageVulnerabilities_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

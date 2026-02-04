@@ -74,11 +74,11 @@ func (m *VulnMgmtExportWorkloadsResponse) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *ImageVulnFindingsResponse_Finding_Component) CloneVT() *ImageVulnFindingsResponse_Finding_Component {
+func (m *ImageVulnerabilitiesResponse_Image_Component) CloneVT() *ImageVulnerabilitiesResponse_Image_Component {
 	if m == nil {
-		return (*ImageVulnFindingsResponse_Finding_Component)(nil)
+		return (*ImageVulnerabilitiesResponse_Image_Component)(nil)
 	}
-	r := new(ImageVulnFindingsResponse_Finding_Component)
+	r := new(ImageVulnerabilitiesResponse_Image_Component)
 	r.Name = m.Name
 	r.Version = m.Version
 	r.LayerIndex = m.LayerIndex
@@ -95,18 +95,18 @@ func (m *ImageVulnFindingsResponse_Finding_Component) CloneVT() *ImageVulnFindin
 	return r
 }
 
-func (m *ImageVulnFindingsResponse_Finding_Component) CloneMessageVT() proto.Message {
+func (m *ImageVulnerabilitiesResponse_Image_Component) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *ImageVulnFindingsResponse_Finding) CloneVT() *ImageVulnFindingsResponse_Finding {
+func (m *ImageVulnerabilitiesResponse_Image) CloneVT() *ImageVulnerabilitiesResponse_Image {
 	if m == nil {
-		return (*ImageVulnFindingsResponse_Finding)(nil)
+		return (*ImageVulnerabilitiesResponse_Image)(nil)
 	}
-	r := new(ImageVulnFindingsResponse_Finding)
-	r.ImageSha = m.ImageSha
+	r := new(ImageVulnerabilitiesResponse_Image)
+	r.Sha = m.Sha
 	if rhs := m.Components; rhs != nil {
-		tmpContainer := make([]*ImageVulnFindingsResponse_Finding_Component, len(rhs))
+		tmpContainer := make([]*ImageVulnerabilitiesResponse_Image_Component, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
@@ -119,21 +119,21 @@ func (m *ImageVulnFindingsResponse_Finding) CloneVT() *ImageVulnFindingsResponse
 	return r
 }
 
-func (m *ImageVulnFindingsResponse_Finding) CloneMessageVT() proto.Message {
+func (m *ImageVulnerabilitiesResponse_Image) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *ImageVulnFindingsResponse) CloneVT() *ImageVulnFindingsResponse {
+func (m *ImageVulnerabilitiesResponse) CloneVT() *ImageVulnerabilitiesResponse {
 	if m == nil {
-		return (*ImageVulnFindingsResponse)(nil)
+		return (*ImageVulnerabilitiesResponse)(nil)
 	}
-	r := new(ImageVulnFindingsResponse)
-	if rhs := m.Findings; rhs != nil {
-		tmpContainer := make([]*ImageVulnFindingsResponse_Finding, len(rhs))
+	r := new(ImageVulnerabilitiesResponse)
+	if rhs := m.Images; rhs != nil {
+		tmpContainer := make([]*ImageVulnerabilitiesResponse_Image, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
-		r.Findings = tmpContainer
+		r.Images = tmpContainer
 	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -142,7 +142,7 @@ func (m *ImageVulnFindingsResponse) CloneVT() *ImageVulnFindingsResponse {
 	return r
 }
 
-func (m *ImageVulnFindingsResponse) CloneMessageVT() proto.Message {
+func (m *ImageVulnerabilitiesResponse) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -217,7 +217,7 @@ func (this *VulnMgmtExportWorkloadsResponse) EqualMessageVT(thatMsg proto.Messag
 	}
 	return this.EqualVT(that)
 }
-func (this *ImageVulnFindingsResponse_Finding_Component) EqualVT(that *ImageVulnFindingsResponse_Finding_Component) bool {
+func (this *ImageVulnerabilitiesResponse_Image_Component) EqualVT(that *ImageVulnerabilitiesResponse_Image_Component) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -247,20 +247,20 @@ func (this *ImageVulnFindingsResponse_Finding_Component) EqualVT(that *ImageVuln
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *ImageVulnFindingsResponse_Finding_Component) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*ImageVulnFindingsResponse_Finding_Component)
+func (this *ImageVulnerabilitiesResponse_Image_Component) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*ImageVulnerabilitiesResponse_Image_Component)
 	if !ok {
 		return false
 	}
 	return this.EqualVT(that)
 }
-func (this *ImageVulnFindingsResponse_Finding) EqualVT(that *ImageVulnFindingsResponse_Finding) bool {
+func (this *ImageVulnerabilitiesResponse_Image) EqualVT(that *ImageVulnerabilitiesResponse_Image) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.ImageSha != that.ImageSha {
+	if this.Sha != that.Sha {
 		return false
 	}
 	if len(this.Components) != len(that.Components) {
@@ -270,10 +270,10 @@ func (this *ImageVulnFindingsResponse_Finding) EqualVT(that *ImageVulnFindingsRe
 		vy := that.Components[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
-				p = &ImageVulnFindingsResponse_Finding_Component{}
+				p = &ImageVulnerabilitiesResponse_Image_Component{}
 			}
 			if q == nil {
-				q = &ImageVulnFindingsResponse_Finding_Component{}
+				q = &ImageVulnerabilitiesResponse_Image_Component{}
 			}
 			if !p.EqualVT(q) {
 				return false
@@ -283,30 +283,30 @@ func (this *ImageVulnFindingsResponse_Finding) EqualVT(that *ImageVulnFindingsRe
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *ImageVulnFindingsResponse_Finding) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*ImageVulnFindingsResponse_Finding)
+func (this *ImageVulnerabilitiesResponse_Image) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*ImageVulnerabilitiesResponse_Image)
 	if !ok {
 		return false
 	}
 	return this.EqualVT(that)
 }
-func (this *ImageVulnFindingsResponse) EqualVT(that *ImageVulnFindingsResponse) bool {
+func (this *ImageVulnerabilitiesResponse) EqualVT(that *ImageVulnerabilitiesResponse) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
 		return false
 	}
-	if len(this.Findings) != len(that.Findings) {
+	if len(this.Images) != len(that.Images) {
 		return false
 	}
-	for i, vx := range this.Findings {
-		vy := that.Findings[i]
+	for i, vx := range this.Images {
+		vy := that.Images[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
-				p = &ImageVulnFindingsResponse_Finding{}
+				p = &ImageVulnerabilitiesResponse_Image{}
 			}
 			if q == nil {
-				q = &ImageVulnFindingsResponse_Finding{}
+				q = &ImageVulnerabilitiesResponse_Image{}
 			}
 			if !p.EqualVT(q) {
 				return false
@@ -316,8 +316,8 @@ func (this *ImageVulnFindingsResponse) EqualVT(that *ImageVulnFindingsResponse) 
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *ImageVulnFindingsResponse) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*ImageVulnFindingsResponse)
+func (this *ImageVulnerabilitiesResponse) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*ImageVulnerabilitiesResponse)
 	if !ok {
 		return false
 	}
@@ -452,7 +452,7 @@ func (m *VulnMgmtExportWorkloadsResponse) MarshalToSizedBufferVT(dAtA []byte) (i
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageVulnFindingsResponse_Finding_Component) MarshalVT() (dAtA []byte, err error) {
+func (m *ImageVulnerabilitiesResponse_Image_Component) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -465,12 +465,12 @@ func (m *ImageVulnFindingsResponse_Finding_Component) MarshalVT() (dAtA []byte, 
 	return dAtA[:n], nil
 }
 
-func (m *ImageVulnFindingsResponse_Finding_Component) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ImageVulnerabilitiesResponse_Image_Component) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ImageVulnFindingsResponse_Finding_Component) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ImageVulnerabilitiesResponse_Image_Component) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -520,7 +520,7 @@ func (m *ImageVulnFindingsResponse_Finding_Component) MarshalToSizedBufferVT(dAt
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageVulnFindingsResponse_Finding) MarshalVT() (dAtA []byte, err error) {
+func (m *ImageVulnerabilitiesResponse_Image) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -533,12 +533,12 @@ func (m *ImageVulnFindingsResponse_Finding) MarshalVT() (dAtA []byte, err error)
 	return dAtA[:n], nil
 }
 
-func (m *ImageVulnFindingsResponse_Finding) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ImageVulnerabilitiesResponse_Image) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ImageVulnFindingsResponse_Finding) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ImageVulnerabilitiesResponse_Image) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -562,17 +562,17 @@ func (m *ImageVulnFindingsResponse_Finding) MarshalToSizedBufferVT(dAtA []byte) 
 			dAtA[i] = 0x12
 		}
 	}
-	if len(m.ImageSha) > 0 {
-		i -= len(m.ImageSha)
-		copy(dAtA[i:], m.ImageSha)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ImageSha)))
+	if len(m.Sha) > 0 {
+		i -= len(m.Sha)
+		copy(dAtA[i:], m.Sha)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Sha)))
 		i--
 		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
 
-func (m *ImageVulnFindingsResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *ImageVulnerabilitiesResponse) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -585,12 +585,12 @@ func (m *ImageVulnFindingsResponse) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ImageVulnFindingsResponse) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ImageVulnerabilitiesResponse) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ImageVulnFindingsResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ImageVulnerabilitiesResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -602,9 +602,9 @@ func (m *ImageVulnFindingsResponse) MarshalToSizedBufferVT(dAtA []byte) (int, er
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.Findings) > 0 {
-		for iNdEx := len(m.Findings) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.Findings[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+	if len(m.Images) > 0 {
+		for iNdEx := len(m.Images) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.Images[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -669,7 +669,7 @@ func (m *VulnMgmtExportWorkloadsResponse) SizeVT() (n int) {
 	return n
 }
 
-func (m *ImageVulnFindingsResponse_Finding_Component) SizeVT() (n int) {
+func (m *ImageVulnerabilitiesResponse_Image_Component) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -700,13 +700,13 @@ func (m *ImageVulnFindingsResponse_Finding_Component) SizeVT() (n int) {
 	return n
 }
 
-func (m *ImageVulnFindingsResponse_Finding) SizeVT() (n int) {
+func (m *ImageVulnerabilitiesResponse_Image) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.ImageSha)
+	l = len(m.Sha)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -720,14 +720,14 @@ func (m *ImageVulnFindingsResponse_Finding) SizeVT() (n int) {
 	return n
 }
 
-func (m *ImageVulnFindingsResponse) SizeVT() (n int) {
+func (m *ImageVulnerabilitiesResponse) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if len(m.Findings) > 0 {
-		for _, e := range m.Findings {
+	if len(m.Images) > 0 {
+		for _, e := range m.Images {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
@@ -994,7 +994,7 @@ func (m *VulnMgmtExportWorkloadsResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImageVulnFindingsResponse_Finding_Component) UnmarshalVT(dAtA []byte) error {
+func (m *ImageVulnerabilitiesResponse_Image_Component) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1017,10 +1017,10 @@ func (m *ImageVulnFindingsResponse_Finding_Component) UnmarshalVT(dAtA []byte) e
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ImageVulnFindingsResponse_Finding_Component: wiretype end group for non-group")
+			return fmt.Errorf("proto: ImageVulnerabilitiesResponse_Image_Component: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ImageVulnFindingsResponse_Finding_Component: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ImageVulnerabilitiesResponse_Image_Component: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1192,7 +1192,7 @@ func (m *ImageVulnFindingsResponse_Finding_Component) UnmarshalVT(dAtA []byte) e
 	}
 	return nil
 }
-func (m *ImageVulnFindingsResponse_Finding) UnmarshalVT(dAtA []byte) error {
+func (m *ImageVulnerabilitiesResponse_Image) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1215,15 +1215,15 @@ func (m *ImageVulnFindingsResponse_Finding) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ImageVulnFindingsResponse_Finding: wiretype end group for non-group")
+			return fmt.Errorf("proto: ImageVulnerabilitiesResponse_Image: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ImageVulnFindingsResponse_Finding: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ImageVulnerabilitiesResponse_Image: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImageSha", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Sha", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1251,7 +1251,7 @@ func (m *ImageVulnFindingsResponse_Finding) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ImageSha = string(dAtA[iNdEx:postIndex])
+			m.Sha = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -1282,7 +1282,7 @@ func (m *ImageVulnFindingsResponse_Finding) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Components = append(m.Components, &ImageVulnFindingsResponse_Finding_Component{})
+			m.Components = append(m.Components, &ImageVulnerabilitiesResponse_Image_Component{})
 			if err := m.Components[len(m.Components)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -1309,7 +1309,7 @@ func (m *ImageVulnFindingsResponse_Finding) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImageVulnFindingsResponse) UnmarshalVT(dAtA []byte) error {
+func (m *ImageVulnerabilitiesResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1332,15 +1332,15 @@ func (m *ImageVulnFindingsResponse) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ImageVulnFindingsResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: ImageVulnerabilitiesResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ImageVulnFindingsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ImageVulnerabilitiesResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Findings", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Images", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1367,8 +1367,8 @@ func (m *ImageVulnFindingsResponse) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Findings = append(m.Findings, &ImageVulnFindingsResponse_Finding{})
-			if err := m.Findings[len(m.Findings)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			m.Images = append(m.Images, &ImageVulnerabilitiesResponse_Image{})
+			if err := m.Images[len(m.Images)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -1656,7 +1656,7 @@ func (m *VulnMgmtExportWorkloadsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ImageVulnFindingsResponse_Finding_Component) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *ImageVulnerabilitiesResponse_Image_Component) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1679,10 +1679,10 @@ func (m *ImageVulnFindingsResponse_Finding_Component) UnmarshalVTUnsafe(dAtA []b
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ImageVulnFindingsResponse_Finding_Component: wiretype end group for non-group")
+			return fmt.Errorf("proto: ImageVulnerabilitiesResponse_Image_Component: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ImageVulnFindingsResponse_Finding_Component: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ImageVulnerabilitiesResponse_Image_Component: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1870,7 +1870,7 @@ func (m *ImageVulnFindingsResponse_Finding_Component) UnmarshalVTUnsafe(dAtA []b
 	}
 	return nil
 }
-func (m *ImageVulnFindingsResponse_Finding) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *ImageVulnerabilitiesResponse_Image) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1893,15 +1893,15 @@ func (m *ImageVulnFindingsResponse_Finding) UnmarshalVTUnsafe(dAtA []byte) error
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ImageVulnFindingsResponse_Finding: wiretype end group for non-group")
+			return fmt.Errorf("proto: ImageVulnerabilitiesResponse_Image: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ImageVulnFindingsResponse_Finding: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ImageVulnerabilitiesResponse_Image: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ImageSha", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Sha", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1933,7 +1933,7 @@ func (m *ImageVulnFindingsResponse_Finding) UnmarshalVTUnsafe(dAtA []byte) error
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.ImageSha = stringValue
+			m.Sha = stringValue
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -1964,7 +1964,7 @@ func (m *ImageVulnFindingsResponse_Finding) UnmarshalVTUnsafe(dAtA []byte) error
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Components = append(m.Components, &ImageVulnFindingsResponse_Finding_Component{})
+			m.Components = append(m.Components, &ImageVulnerabilitiesResponse_Image_Component{})
 			if err := m.Components[len(m.Components)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -1991,7 +1991,7 @@ func (m *ImageVulnFindingsResponse_Finding) UnmarshalVTUnsafe(dAtA []byte) error
 	}
 	return nil
 }
-func (m *ImageVulnFindingsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *ImageVulnerabilitiesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2014,15 +2014,15 @@ func (m *ImageVulnFindingsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ImageVulnFindingsResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: ImageVulnerabilitiesResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ImageVulnFindingsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ImageVulnerabilitiesResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Findings", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Images", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -2049,8 +2049,8 @@ func (m *ImageVulnFindingsResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Findings = append(m.Findings, &ImageVulnFindingsResponse_Finding{})
-			if err := m.Findings[len(m.Findings)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			m.Images = append(m.Images, &ImageVulnerabilitiesResponse_Image{})
+			if err := m.Images[len(m.Images)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

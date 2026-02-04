@@ -36,7 +36,7 @@ var (
 			v1.VulnMgmtService_VulnMgmtExportWorkloads_FullMethodName,
 		},
 		user.With(permissions.View(resources.Image)): {
-			v1.VulnMgmtService_ImageVulnFindings_FullMethodName,
+			v1.VulnMgmtService_ImageVulnerabilities_FullMethodName,
 		},
 	})
 	log = logging.LoggerForModule()
@@ -162,7 +162,7 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 	return nil
 }
 
-func (s *serviceImpl) ImageVulnFindings(ctx context.Context, _ *v1.Empty) (*v1.ImageVulnFindingsResponse, error) {
+func (s *serviceImpl) ImageVulnerabilities(ctx context.Context, _ *v1.Empty) (*v1.ImageVulnerabilitiesResponse, error) {
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
 		return nil, errors.Wrap(errox.ServerError, "failed to begin transaction")
@@ -176,7 +176,7 @@ func (s *serviceImpl) ImageVulnFindings(ctx context.Context, _ *v1.Empty) (*v1.I
 
 	txCtx := postgres.ContextWithTx(ctx, tx)
 
-	var findings []*v1.ImageVulnFindingsResponse_Finding
+	var images []*v1.ImageVulnerabilitiesResponse_Image
 
 	err = s.images.WalkByQuery(txCtx, search.EmptyQuery(), func(img *storage.Image) error {
 		scan := img.GetScan()
@@ -189,7 +189,7 @@ func (s *serviceImpl) ImageVulnFindings(ctx context.Context, _ *v1.Empty) (*v1.I
 			return nil
 		}
 
-		var responseComponents []*v1.ImageVulnFindingsResponse_Finding_Component
+		var responseComponents []*v1.ImageVulnerabilitiesResponse_Image_Component
 		for _, comp := range components {
 			vulns := comp.GetVulns()
 			if len(vulns) == 0 {
@@ -212,7 +212,7 @@ func (s *serviceImpl) ImageVulnFindings(ctx context.Context, _ *v1.Empty) (*v1.I
 				layerIndex = li.LayerIndex
 			}
 
-			responseComponents = append(responseComponents, &v1.ImageVulnFindingsResponse_Finding_Component{
+			responseComponents = append(responseComponents, &v1.ImageVulnerabilitiesResponse_Image_Component{
 				Name:             comp.GetName(),
 				Version:          comp.GetVersion(),
 				LayerIndex:       layerIndex,
@@ -222,8 +222,8 @@ func (s *serviceImpl) ImageVulnFindings(ctx context.Context, _ *v1.Empty) (*v1.I
 		}
 
 		if len(responseComponents) > 0 {
-			findings = append(findings, &v1.ImageVulnFindingsResponse_Finding{
-				ImageSha:   img.GetId(),
+			images = append(images, &v1.ImageVulnerabilitiesResponse_Image{
+				Sha:        img.GetId(),
 				Components: responseComponents,
 			})
 		}
@@ -240,5 +240,5 @@ func (s *serviceImpl) ImageVulnFindings(ctx context.Context, _ *v1.Empty) (*v1.I
 	}
 	committed = true
 
-	return &v1.ImageVulnFindingsResponse{Findings: findings}, nil
+	return &v1.ImageVulnerabilitiesResponse{Images: images}, nil
 }

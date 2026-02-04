@@ -30,8 +30,8 @@ message VulnMgmtExportWorkloadsResponse {
   int32 live_pods = 3;
 }
 
-message ImageVulnFindingsResponse {
-  message Finding {
+message ImageVulnerabilitiesResponse {
+  message Image {
     message Component {
       string name = 1;
       string version = 2;
@@ -39,10 +39,10 @@ message ImageVulnFindingsResponse {
       string location = 4;
       repeated string vulnerability_ids = 5;
     }
-    string image_sha = 1;
+    string sha = 1;
     repeated Component components = 2;
   }
-  repeated Finding findings = 1;
+  repeated Image images = 1;
 }
 
 // VulnMgmtService APIs are used to manage workload vulnerabilities.
@@ -57,7 +57,7 @@ service VulnMgmtService {
     option (google.api.http) = {get: "/v1/export/vuln-mgmt/workloads"};
   }
 
-  rpc ImageVulnFindings(Empty) returns (ImageVulnFindingsResponse) {
-    option (google.api.http) = {get: "/v1/export/vuln-mgmt/image-vuln-findings"};
+  rpc ImageVulnerabilities(Empty) returns (ImageVulnerabilitiesResponse) {
+    option (google.api.http) = {get: "/v1/export/vuln-mgmt/image-vulnerabilities"};
   }
 }

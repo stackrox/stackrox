@@ -144,27 +144,27 @@ func (x *VulnMgmtExportWorkloadsResponse) GetLivePods() int32 {
 	return 0
 }
 
-type ImageVulnFindingsResponse struct {
-	state         protoimpl.MessageState               `protogen:"open.v1"`
-	Findings      []*ImageVulnFindingsResponse_Finding `protobuf:"bytes,1,rep,name=findings,proto3" json:"findings,omitempty"`
+type ImageVulnerabilitiesResponse struct {
+	state         protoimpl.MessageState                `protogen:"open.v1"`
+	Images        []*ImageVulnerabilitiesResponse_Image `protobuf:"bytes,1,rep,name=images,proto3" json:"images,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ImageVulnFindingsResponse) Reset() {
-	*x = ImageVulnFindingsResponse{}
+func (x *ImageVulnerabilitiesResponse) Reset() {
+	*x = ImageVulnerabilitiesResponse{}
 	mi := &file_api_v1_vuln_mgmt_service_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ImageVulnFindingsResponse) String() string {
+func (x *ImageVulnerabilitiesResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ImageVulnFindingsResponse) ProtoMessage() {}
+func (*ImageVulnerabilitiesResponse) ProtoMessage() {}
 
-func (x *ImageVulnFindingsResponse) ProtoReflect() protoreflect.Message {
+func (x *ImageVulnerabilitiesResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_api_v1_vuln_mgmt_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -176,40 +176,40 @@ func (x *ImageVulnFindingsResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ImageVulnFindingsResponse.ProtoReflect.Descriptor instead.
-func (*ImageVulnFindingsResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ImageVulnerabilitiesResponse.ProtoReflect.Descriptor instead.
+func (*ImageVulnerabilitiesResponse) Descriptor() ([]byte, []int) {
 	return file_api_v1_vuln_mgmt_service_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ImageVulnFindingsResponse) GetFindings() []*ImageVulnFindingsResponse_Finding {
+func (x *ImageVulnerabilitiesResponse) GetImages() []*ImageVulnerabilitiesResponse_Image {
 	if x != nil {
-		return x.Findings
+		return x.Images
 	}
 	return nil
 }
 
-type ImageVulnFindingsResponse_Finding struct {
-	state         protoimpl.MessageState                         `protogen:"open.v1"`
-	ImageSha      string                                         `protobuf:"bytes,1,opt,name=image_sha,json=imageSha,proto3" json:"image_sha,omitempty"`
-	Components    []*ImageVulnFindingsResponse_Finding_Component `protobuf:"bytes,2,rep,name=components,proto3" json:"components,omitempty"`
+type ImageVulnerabilitiesResponse_Image struct {
+	state         protoimpl.MessageState                          `protogen:"open.v1"`
+	Sha           string                                          `protobuf:"bytes,1,opt,name=sha,proto3" json:"sha,omitempty"`
+	Components    []*ImageVulnerabilitiesResponse_Image_Component `protobuf:"bytes,2,rep,name=components,proto3" json:"components,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ImageVulnFindingsResponse_Finding) Reset() {
-	*x = ImageVulnFindingsResponse_Finding{}
+func (x *ImageVulnerabilitiesResponse_Image) Reset() {
+	*x = ImageVulnerabilitiesResponse_Image{}
 	mi := &file_api_v1_vuln_mgmt_service_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ImageVulnFindingsResponse_Finding) String() string {
+func (x *ImageVulnerabilitiesResponse_Image) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ImageVulnFindingsResponse_Finding) ProtoMessage() {}
+func (*ImageVulnerabilitiesResponse_Image) ProtoMessage() {}
 
-func (x *ImageVulnFindingsResponse_Finding) ProtoReflect() protoreflect.Message {
+func (x *ImageVulnerabilitiesResponse_Image) ProtoReflect() protoreflect.Message {
 	mi := &file_api_v1_vuln_mgmt_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -221,26 +221,26 @@ func (x *ImageVulnFindingsResponse_Finding) ProtoReflect() protoreflect.Message 
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ImageVulnFindingsResponse_Finding.ProtoReflect.Descriptor instead.
-func (*ImageVulnFindingsResponse_Finding) Descriptor() ([]byte, []int) {
+// Deprecated: Use ImageVulnerabilitiesResponse_Image.ProtoReflect.Descriptor instead.
+func (*ImageVulnerabilitiesResponse_Image) Descriptor() ([]byte, []int) {
 	return file_api_v1_vuln_mgmt_service_proto_rawDescGZIP(), []int{2, 0}
 }
 
-func (x *ImageVulnFindingsResponse_Finding) GetImageSha() string {
+func (x *ImageVulnerabilitiesResponse_Image) GetSha() string {
 	if x != nil {
-		return x.ImageSha
+		return x.Sha
 	}
 	return ""
 }
 
-func (x *ImageVulnFindingsResponse_Finding) GetComponents() []*ImageVulnFindingsResponse_Finding_Component {
+func (x *ImageVulnerabilitiesResponse_Image) GetComponents() []*ImageVulnerabilitiesResponse_Image_Component {
 	if x != nil {
 		return x.Components
 	}
 	return nil
 }
 
-type ImageVulnFindingsResponse_Finding_Component struct {
+type ImageVulnerabilitiesResponse_Image_Component struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	Name             string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Version          string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
@@ -251,20 +251,20 @@ type ImageVulnFindingsResponse_Finding_Component struct {
 	sizeCache        protoimpl.SizeCache
 }
 
-func (x *ImageVulnFindingsResponse_Finding_Component) Reset() {
-	*x = ImageVulnFindingsResponse_Finding_Component{}
+func (x *ImageVulnerabilitiesResponse_Image_Component) Reset() {
+	*x = ImageVulnerabilitiesResponse_Image_Component{}
 	mi := &file_api_v1_vuln_mgmt_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ImageVulnFindingsResponse_Finding_Component) String() string {
+func (x *ImageVulnerabilitiesResponse_Image_Component) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ImageVulnFindingsResponse_Finding_Component) ProtoMessage() {}
+func (*ImageVulnerabilitiesResponse_Image_Component) ProtoMessage() {}
 
-func (x *ImageVulnFindingsResponse_Finding_Component) ProtoReflect() protoreflect.Message {
+func (x *ImageVulnerabilitiesResponse_Image_Component) ProtoReflect() protoreflect.Message {
 	mi := &file_api_v1_vuln_mgmt_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -276,40 +276,40 @@ func (x *ImageVulnFindingsResponse_Finding_Component) ProtoReflect() protoreflec
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ImageVulnFindingsResponse_Finding_Component.ProtoReflect.Descriptor instead.
-func (*ImageVulnFindingsResponse_Finding_Component) Descriptor() ([]byte, []int) {
+// Deprecated: Use ImageVulnerabilitiesResponse_Image_Component.ProtoReflect.Descriptor instead.
+func (*ImageVulnerabilitiesResponse_Image_Component) Descriptor() ([]byte, []int) {
 	return file_api_v1_vuln_mgmt_service_proto_rawDescGZIP(), []int{2, 0, 0}
 }
 
-func (x *ImageVulnFindingsResponse_Finding_Component) GetName() string {
+func (x *ImageVulnerabilitiesResponse_Image_Component) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-func (x *ImageVulnFindingsResponse_Finding_Component) GetVersion() string {
+func (x *ImageVulnerabilitiesResponse_Image_Component) GetVersion() string {
 	if x != nil {
 		return x.Version
 	}
 	return ""
 }
 
-func (x *ImageVulnFindingsResponse_Finding_Component) GetLayerIndex() int32 {
+func (x *ImageVulnerabilitiesResponse_Image_Component) GetLayerIndex() int32 {
 	if x != nil {
 		return x.LayerIndex
 	}
 	return 0
 }
 
-func (x *ImageVulnFindingsResponse_Finding_Component) GetLocation() string {
+func (x *ImageVulnerabilitiesResponse_Image_Component) GetLocation() string {
 	if x != nil {
 		return x.Location
 	}
 	return ""
 }
 
-func (x *ImageVulnFindingsResponse_Finding_Component) GetVulnerabilityIds() []string {
+func (x *ImageVulnerabilitiesResponse_Image_Component) GetVulnerabilityIds() []string {
 	if x != nil {
 		return x.VulnerabilityIds
 	}
@@ -329,13 +329,13 @@ const file_api_v1_vuln_mgmt_service_proto_rawDesc = "" +
 	"deployment\x18\x01 \x01(\v2\x13.storage.DeploymentR\n" +
 	"deployment\x12&\n" +
 	"\x06images\x18\x02 \x03(\v2\x0e.storage.ImageR\x06images\x12\x1b\n" +
-	"\tlive_pods\x18\x03 \x01(\x05R\blivePods\"\xfe\x02\n" +
-	"\x19ImageVulnFindingsResponse\x12A\n" +
-	"\bfindings\x18\x01 \x03(\v2%.v1.ImageVulnFindingsResponse.FindingR\bfindings\x1a\x9d\x02\n" +
-	"\aFinding\x12\x1b\n" +
-	"\timage_sha\x18\x01 \x01(\tR\bimageSha\x12O\n" +
+	"\tlive_pods\x18\x03 \x01(\x05R\blivePods\"\xf2\x02\n" +
+	"\x1cImageVulnerabilitiesResponse\x12>\n" +
+	"\x06images\x18\x01 \x03(\v2&.v1.ImageVulnerabilitiesResponse.ImageR\x06images\x1a\x91\x02\n" +
+	"\x05Image\x12\x10\n" +
+	"\x03sha\x18\x01 \x01(\tR\x03sha\x12P\n" +
 	"\n" +
-	"components\x18\x02 \x03(\v2/.v1.ImageVulnFindingsResponse.Finding.ComponentR\n" +
+	"components\x18\x02 \x03(\v20.v1.ImageVulnerabilitiesResponse.Image.ComponentR\n" +
 	"components\x1a\xa3\x01\n" +
 	"\tComponent\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
@@ -343,10 +343,10 @@ const file_api_v1_vuln_mgmt_service_proto_rawDesc = "" +
 	"\vlayer_index\x18\x03 \x01(\x05R\n" +
 	"layerIndex\x12\x1a\n" +
 	"\blocation\x18\x04 \x01(\tR\blocation\x12+\n" +
-	"\x11vulnerability_ids\x18\x05 \x03(\tR\x10vulnerabilityIds2\x91\x02\n" +
+	"\x11vulnerability_ids\x18\x05 \x03(\tR\x10vulnerabilityIds2\x99\x02\n" +
 	"\x0fVulnMgmtService\x12\x8c\x01\n" +
-	"\x17VulnMgmtExportWorkloads\x12\".v1.VulnMgmtExportWorkloadsRequest\x1a#.v1.VulnMgmtExportWorkloadsResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/v1/export/vuln-mgmt/workloads0\x01\x12o\n" +
-	"\x11ImageVulnFindings\x12\t.v1.Empty\x1a\x1d.v1.ImageVulnFindingsResponse\"0\x82\xd3\xe4\x93\x02*\x12(/v1/export/vuln-mgmt/image-vuln-findingsB'\n" +
+	"\x17VulnMgmtExportWorkloads\x12\".v1.VulnMgmtExportWorkloadsRequest\x1a#.v1.VulnMgmtExportWorkloadsResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/v1/export/vuln-mgmt/workloads0\x01\x12w\n" +
+	"\x14ImageVulnerabilities\x12\t.v1.Empty\x1a .v1.ImageVulnerabilitiesResponse\"2\x82\xd3\xe4\x93\x02,\x12*/v1/export/vuln-mgmt/image-vulnerabilitiesB'\n" +
 	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x01b\x06proto3"
 
 var (
@@ -363,24 +363,24 @@ func file_api_v1_vuln_mgmt_service_proto_rawDescGZIP() []byte {
 
 var file_api_v1_vuln_mgmt_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_api_v1_vuln_mgmt_service_proto_goTypes = []any{
-	(*VulnMgmtExportWorkloadsRequest)(nil),              // 0: v1.VulnMgmtExportWorkloadsRequest
-	(*VulnMgmtExportWorkloadsResponse)(nil),             // 1: v1.VulnMgmtExportWorkloadsResponse
-	(*ImageVulnFindingsResponse)(nil),                   // 2: v1.ImageVulnFindingsResponse
-	(*ImageVulnFindingsResponse_Finding)(nil),           // 3: v1.ImageVulnFindingsResponse.Finding
-	(*ImageVulnFindingsResponse_Finding_Component)(nil), // 4: v1.ImageVulnFindingsResponse.Finding.Component
-	(*storage.Deployment)(nil),                          // 5: storage.Deployment
-	(*storage.Image)(nil),                               // 6: storage.Image
-	(*Empty)(nil),                                       // 7: v1.Empty
+	(*VulnMgmtExportWorkloadsRequest)(nil),               // 0: v1.VulnMgmtExportWorkloadsRequest
+	(*VulnMgmtExportWorkloadsResponse)(nil),              // 1: v1.VulnMgmtExportWorkloadsResponse
+	(*ImageVulnerabilitiesResponse)(nil),                 // 2: v1.ImageVulnerabilitiesResponse
+	(*ImageVulnerabilitiesResponse_Image)(nil),           // 3: v1.ImageVulnerabilitiesResponse.Image
+	(*ImageVulnerabilitiesResponse_Image_Component)(nil), // 4: v1.ImageVulnerabilitiesResponse.Image.Component
+	(*storage.Deployment)(nil),                           // 5: storage.Deployment
+	(*storage.Image)(nil),                                // 6: storage.Image
+	(*Empty)(nil),                                        // 7: v1.Empty
 }
 var file_api_v1_vuln_mgmt_service_proto_depIdxs = []int32{
 	5, // 0: v1.VulnMgmtExportWorkloadsResponse.deployment:type_name -> storage.Deployment
 	6, // 1: v1.VulnMgmtExportWorkloadsResponse.images:type_name -> storage.Image
-	3, // 2: v1.ImageVulnFindingsResponse.findings:type_name -> v1.ImageVulnFindingsResponse.Finding
-	4, // 3: v1.ImageVulnFindingsResponse.Finding.components:type_name -> v1.ImageVulnFindingsResponse.Finding.Component
+	3, // 2: v1.ImageVulnerabilitiesResponse.images:type_name -> v1.ImageVulnerabilitiesResponse.Image
+	4, // 3: v1.ImageVulnerabilitiesResponse.Image.components:type_name -> v1.ImageVulnerabilitiesResponse.Image.Component
 	0, // 4: v1.VulnMgmtService.VulnMgmtExportWorkloads:input_type -> v1.VulnMgmtExportWorkloadsRequest
-	7, // 5: v1.VulnMgmtService.ImageVulnFindings:input_type -> v1.Empty
+	7, // 5: v1.VulnMgmtService.ImageVulnerabilities:input_type -> v1.Empty
 	1, // 6: v1.VulnMgmtService.VulnMgmtExportWorkloads:output_type -> v1.VulnMgmtExportWorkloadsResponse
-	2, // 7: v1.VulnMgmtService.ImageVulnFindings:output_type -> v1.ImageVulnFindingsResponse
+	2, // 7: v1.VulnMgmtService.ImageVulnerabilities:output_type -> v1.ImageVulnerabilitiesResponse
 	6, // [6:8] is the sub-list for method output_type
 	4, // [4:6] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name
