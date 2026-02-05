@@ -45,6 +45,11 @@ func (suite *SecretDataStoreTestSuite) SetupSuite() {
 			sac.ResourceScopeKeys(resources.Secret)))
 }
 
+func (suite *SecretDataStoreTestSuite) TearDownTest() {
+	_, err := suite.pool.Exec(suite.ctx, "TRUNCATE TABLE secrets CASCADE")
+	suite.Require().NoError(err)
+}
+
 func (suite *SecretDataStoreTestSuite) TearDownSuite() {
 	suite.pool.Close()
 }
@@ -78,8 +83,7 @@ func (suite *SecretDataStoreTestSuite) assertSearchResults(q *v1.Query, s *stora
 	}
 }
 
-func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_SinglePass() {
-	// Test that SearchListSecrets uses single-pass query with correct field selections
+func (suite *SecretDataStoreTestSuite) TestSearchListSecrets() {
 	secret1 := fixtures.GetSecret()
 	secret1.Id = uuid.NewV4().String()
 	secret1.Name = "test-secret-1"
@@ -103,7 +107,7 @@ func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_SinglePass() {
 	// Test retrieval with empty query
 	results, err := suite.datastore.SearchListSecrets(suite.ctx, search.EmptyQuery())
 	suite.NoError(err)
-	suite.GreaterOrEqual(len(results), 2) // May have other secrets from other tests
+	suite.Equal(len(results), 2)
 
 	// Find our test secrets
 	var found1, found2 *storage.ListSecret

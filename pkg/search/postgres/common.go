@@ -245,9 +245,7 @@ func (q *query) getPortionBeforeFromClause() string {
 
 		selectStrs := make([]string, 0, len(allSelectFields))
 		for _, field := range allSelectFields {
-			// Apply aggregation based on field type and context:
-			// 1. Old behavior: If explicitly grouping by non-PK fields, aggregate non-group-by fields
-			// 2. New behavior: If field is marked as ChildTableAgg, apply array_agg with NULL filtering
+			// Apply aggregation based on field type and context
 			if field.ChildTableAgg {
 				// Child table field - use array_agg with DISTINCT and NULL filtering
 				// COALESCE ensures empty array instead of NULL for secrets with no files
@@ -255,7 +253,7 @@ func (q *query) getPortionBeforeFromClause() string {
 					fmt.Sprintf("COALESCE(array_agg(DISTINCT %s) FILTER (WHERE %s IS NOT NULL), '{}') as %s",
 						field.SelectPath, field.SelectPath, field.Alias))
 			} else if q.groupByNonPKFields() && !field.FromGroupBy && !field.DerivedField {
-				// Legacy behavior: group by aggregation for non-child-table use cases
+				// grouping by non-PK fields, aggregate non-group-by fields
 				selectStrs = append(selectStrs, fmt.Sprintf("jsonb_agg(%s) as %s", field.SelectPath, field.Alias))
 			} else {
 				// Regular field - no aggregation
@@ -326,7 +324,8 @@ func (q *query) AsSQL() string {
 		// Auto-generate GROUP BY when child table fields are selected
 		// Group by all non-child-table (parent table) selected fields
 		var groupByParts []string
-		groupByFields := set.NewStringSet() // Track added fields to avoid duplicates
+		// Track added fields to avoid duplicates
+		groupByFields := set.NewStringSet()
 
 		for _, field := range q.SelectedFields {
 			if !field.ChildTableAgg {
@@ -513,7 +512,6 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 		return nil, sacErr
 	}
 	standardizeFieldNamesInQuery(q)
-	// No type info available in this path (not using generic API), so arrayFields is nil
 	joins, dbFields := getJoinsAndFields(schema, q, nil)
 
 	queryEntry, err := compileQueryToPostgres(schema, q, dbFields, nowForQuery)
@@ -556,7 +554,6 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 
 	// If selects are provided in a SEARCH query, process them to enable single-pass SearchResult construction (ROX-29943)
 	if len(q.GetSelects()) > 0 && queryType == SEARCH {
-		// No type info available in this path (not using generic API), so arrayFields is nil
 		if err := populateSelect(parsedQuery, schema, q, dbFields, nowForQuery, nil); err != nil {
 			return nil, errors.Wrapf(err, "failed to parse select portion of query -- %s --", q.String())
 		}
