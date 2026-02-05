@@ -197,7 +197,7 @@ func (s *serviceImpl) ImageVulnerabilities(ctx context.Context, _ *v1.Empty) (*v
 		layerShas := metadata.GetLayerShas()
 		v1Layers := metadata.GetV1().GetLayers()
 
-		layerIndicesWithVulns := set.NewIntSet()
+		responseLayers := make(map[string]*storage.ImageLayer)
 		var responseComponents []*v1.ImageVulnerabilitiesResponse_Image_Component
 
 		for _, comp := range components {
@@ -206,56 +206,67 @@ func (s *serviceImpl) ImageVulnerabilities(ctx context.Context, _ *v1.Empty) (*v
 				continue
 			}
 
-			vulnIDs := make([]string, 0, len(vulns))
+			responseVulns := make([]*v1.ImageVulnerabilitiesResponse_Image_Component_Vulnerability, 0, len(vulns))
 			for _, vuln := range vulns {
-				if cve := vuln.GetCve(); cve != "" {
-					vulnIDs = append(vulnIDs, cve)
+				if vuln.GetCve() != "" {
+					responseVulns = append(responseVulns, &v1.ImageVulnerabilitiesResponse_Image_Component_Vulnerability{
+						Id:                    vuln.GetCve(),
+						Suppressed:            vuln.GetSuppressed(),
+						SuppressActivation:    vuln.GetSuppressActivation(),
+						SuppressExpiry:        vuln.GetSuppressExpiry(),
+						FirstSystemOccurrence: vuln.GetFirstSystemOccurrence(),
+						FirstImageOccurrence:  vuln.GetFirstImageOccurrence(),
+					})
 				}
 			}
 
-			if len(vulnIDs) == 0 {
+			if len(responseVulns) == 0 {
 				continue
 			}
 
-			var layerIndex int32
 			var layerSha string
 			if li, ok := comp.GetHasLayerIndex().(*storage.EmbeddedImageScanComponent_LayerIndex); ok {
-				layerIndex = li.LayerIndex
+				layerIndex := li.LayerIndex
 				if int(layerIndex) < len(layerShas) {
 					layerSha = layerShas[layerIndex]
-					layerIndicesWithVulns.Add(int(layerIndex))
+					if int(layerIndex) < len(v1Layers) {
+						responseLayers[layerSha] = v1Layers[layerIndex]
+					}
 				}
 			}
 
 			responseComponents = append(responseComponents, &v1.ImageVulnerabilitiesResponse_Image_Component{
-				Name:             comp.GetName(),
-				Version:          comp.GetVersion(),
-				LayerSha:         layerSha,
-				Location:         comp.GetLocation(),
-				VulnerabilityIds: vulnIDs,
+				Name:            comp.GetName(),
+				Version:         comp.GetVersion(),
+				LayerSha:        layerSha,
+				Location:        comp.GetLocation(),
+				Vulnerabilities: responseVulns,
 			})
 		}
 
-		if len(responseComponents) > 0 {
-			var responseLayers []*storage.ImageLayer
-			for idx := range v1Layers {
-				if layerIndicesWithVulns.Contains(idx) {
-					responseLayers = append(responseLayers, v1Layers[idx])
-				}
-			}
-
-			findings, err := s.getImageFindings(txCtx, img.GetId())
-			if err != nil {
-				return errors.Wrapf(err, "failed to get findings for image %s", img.GetId())
-			}
-
-			images = append(images, &v1.ImageVulnerabilitiesResponse_Image{
-				Sha:        img.GetId(),
-				Layers:     responseLayers,
-				Components: responseComponents,
-				Findings:   findings,
-			})
+		if len(responseComponents) == 0 {
+			return nil
 		}
+
+		findings, err := s.getImageFindings(txCtx, img.GetId())
+		if err != nil {
+			return errors.Wrapf(err, "failed to get findings for image %s", img.GetId())
+		}
+
+		imageNames := make([]string, 0, len(img.GetNames()))
+		for _, name := range img.GetNames() {
+			if fullName := name.GetFullName(); fullName != "" {
+				imageNames = append(imageNames, fullName)
+			}
+		}
+
+		images = append(images, &v1.ImageVulnerabilitiesResponse_Image{
+			Sha:        img.GetId(),
+			Names:      imageNames,
+			Layers:     responseLayers,
+			Components: responseComponents,
+			Findings:   findings,
+		})
 
 		return nil
 	})
@@ -283,11 +294,10 @@ func (s *serviceImpl) getImageFindings(ctx context.Context, imageID string) ([]*
 		for _, container := range deployment.GetContainers() {
 			if container.GetImage().GetId() == imageID {
 				finding := &v1.ImageVulnerabilitiesResponse_Image_Finding{
-					Cluster:       deployment.GetClusterName(),
-					Namespace:     deployment.GetNamespace(),
-					Workload:      deployment.GetName(),
-					WorkloadType:  deployment.GetType(),
-					ImageFullname: container.GetImage().GetName().GetFullName(),
+					Cluster:      deployment.GetClusterName(),
+					Namespace:    deployment.GetNamespace(),
+					Workload:     deployment.GetName(),
+					WorkloadType: deployment.GetType(),
 				}
 				findings = append(findings, finding)
 				break

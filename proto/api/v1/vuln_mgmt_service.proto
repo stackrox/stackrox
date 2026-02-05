@@ -4,6 +4,7 @@ package v1;
 
 import "api/v1/empty.proto";
 import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
 import "storage/deployment.proto";
 import "storage/image.proto";
 
@@ -33,23 +34,33 @@ message VulnMgmtExportWorkloadsResponse {
 message ImageVulnerabilitiesResponse {
   message Image {
     message Component {
+      message Vulnerability {
+        string id = 1;
+        bool suppressed = 2;
+        google.protobuf.Timestamp suppress_activation = 3;
+        google.protobuf.Timestamp suppress_expiry = 4;
+  // Time when the CVE was first seen, for this specific distro, in the system.
+        google.protobuf.Timestamp first_system_occurrence = 5;
+  // Time when the CVE was first seen in this image.
+        google.protobuf.Timestamp first_image_occurrence = 6;
+      }
       string name = 1;
       string version = 2;
       string layer_sha = 3;
       string location = 4;
-      repeated string vulnerability_ids = 5;
+      repeated Vulnerability vulnerabilities = 5;
     }
     message Finding {
       string cluster = 1;
       string namespace = 2;
       string workload = 3;
       string workload_type = 4;
-      string image_fullname = 6;
     }
     string sha = 1;
-    repeated storage.ImageLayer layers = 2;
-    repeated Component components = 3;
-    repeated Finding findings = 4;
+    repeated string names = 2;
+    map<string, storage.ImageLayer> layers = 3;
+    repeated Component components = 4;
+    repeated Finding findings = 5;
   }
   repeated Image images = 1;
 }

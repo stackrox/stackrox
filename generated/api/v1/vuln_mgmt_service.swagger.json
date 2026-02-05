@@ -173,6 +173,35 @@
       "default": "UNSET",
       "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
     },
+    "ImageComponentVulnerability": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "suppressed": {
+          "type": "boolean"
+        },
+        "suppressActivation": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "suppressExpiry": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "firstSystemOccurrence": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Time when the CVE was first seen, for this specific distro, in the system."
+        },
+        "firstImageOccurrence": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Time when the CVE was first seen in this image."
+        }
+      }
+    },
     "ImageFinding": {
       "type": "object",
       "properties": {
@@ -186,9 +215,6 @@
           "type": "string"
         },
         "workloadType": {
-          "type": "string"
-        },
-        "imageFullname": {
           "type": "string"
         }
       }
@@ -208,10 +234,11 @@
         "location": {
           "type": "string"
         },
-        "vulnerabilityIds": {
+        "vulnerabilities": {
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "object",
+            "$ref": "#/definitions/ImageComponentVulnerability"
           }
         }
       }
@@ -1680,10 +1707,15 @@
         "sha": {
           "type": "string"
         },
-        "layers": {
+        "names": {
           "type": "array",
           "items": {
-            "type": "object",
+            "type": "string"
+          }
+        },
+        "layers": {
+          "type": "object",
+          "additionalProperties": {
             "$ref": "#/definitions/storageImageLayer"
           }
         },
