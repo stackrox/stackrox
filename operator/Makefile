@@ -307,6 +307,13 @@ run: check-ci-setup manifests generate ensure-rox-main-image-exists fmt vet ## R
 ensure-rox-main-image-exists:
 	./hack/ensure-rox-image-exist.sh
 
+.PHONY: run-central-renderer
+# No deps other than envtest, for speed.
+run-central-renderer: envtest ## Run StackRox CR renderer to demonstrate reconciler behavior with example Central and SecuredCluster CRs.
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" \
+	ROX_FAKE_CRS=true \
+		../scripts/go-run.sh ./renderer --central-cr ./renderer/example-central.yaml --securedcluster-cr ./renderer/example-securedcluster.yaml # --verbose
+
 ##@ Build
 
 .PHONY: build-installer
