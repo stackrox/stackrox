@@ -300,7 +300,8 @@ jobs:
             matrix="$(jq '.build_and_push_operator.arch += ["arm64"]' <<< "$matrix")"
           fi
 
-          # Compute operator multiarch manifests based on final arch list
+          # Compute multiarch manifests based on final arch list
+          matrix="$(jq '.push_main_multiarch_manifests.archs = [.build_and_push_main.arch | join(",")]' <<< "$matrix")"
           matrix="$(jq '.push_operator_multiarch_manifests.name += ["RHACS_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.push_operator_multiarch_manifests.archs = [.build_and_push_operator.arch | join(",")]' <<< "$matrix")"
 
@@ -1006,13 +1007,13 @@ jobs:
         if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
           push_context="merge-to-master"
         fi
-        architectures="amd64,arm64"
-        if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
-          architectures="amd64,arm64,ppc64le,s390x"
-        fi
+        # Use architectures from matrix (computed in define-job-matrix based on PR labels)
+        architectures="${{ matrix.archs }}"
+        # race-condition-debug is always amd64 only
         if [[ "${{ matrix.name }}" == "race-condition-debug" ]]; then
           architectures="amd64"
         fi
+        echo "Creating manifest for architectures: $architectures"
         push_image_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "$architectures"
 
     - name: Comment on the PR
