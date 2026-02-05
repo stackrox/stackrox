@@ -90,6 +90,5 @@ webhooks:
     rules:
       - operations:
           - CONNECT
-          - CREATE
     failurePolicy: Ignore
     timeoutSeconds: 12
