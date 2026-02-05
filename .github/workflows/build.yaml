@@ -136,7 +136,7 @@ jobs:
           export SKIP_UI_BUILD=true   # skip if already built (from cache)
           parallel="${{ matrix.parallel }}"
           # Build all components - uses main-build-nodeps for parallel Go compilation
-          time make -j"${parallel}" -Oline cli_linux-amd64 main-build-nodeps ui-build swagger-docs
+          time make -j"${parallel}" -Oline roxctl_linux-amd64 main-build-nodeps ui-build swagger-docs
 
       - name: Generate OSS notice
         if: false
