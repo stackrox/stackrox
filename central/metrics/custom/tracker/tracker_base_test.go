@@ -197,7 +197,7 @@ func TestTrackerBase_Track(t *testing.T) {
 		registry:   rf,
 		aggregator: makeAggregator(tracker.config.metrics, tracker.config.includeFilters, tracker.config.excludeFilters, tracker.getters),
 	}
-	assert.NoError(t, tracker.track(context.Background(), testGatherer, tracker.config))
+	assert.NoError(t, testGatherer.updateMetrics(tracker.generator(context.Background(), tracker.config.metrics)))
 
 	if assert.Len(t, result, 2) &&
 		assert.Contains(t, result, "test_TestTrackerBase_Track_metric1") &&
@@ -261,7 +261,7 @@ func TestTrackerBase_error(t *testing.T) {
 		registry:   rf,
 		aggregator: makeAggregator(tracker.config.metrics, tracker.config.includeFilters, tracker.config.excludeFilters, tracker.getters),
 	}
-	assert.ErrorIs(t, tracker.track(context.Background(), testGatherer, tracker.config),
+	assert.ErrorIs(t, testGatherer.updateMetrics(tracker.generator(context.Background(), tracker.config.metrics)),
 		errox.InvariantViolation)
 }
 
