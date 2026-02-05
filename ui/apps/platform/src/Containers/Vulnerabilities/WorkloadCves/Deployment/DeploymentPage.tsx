@@ -101,7 +101,7 @@ function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: Depl
     return (
         <>
             <PageTitle title={`${pageTitle} - Deployment ${deploymentName ?? ''}`} />
-            <PageSection>
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewDeploymentsPath}>
                         Deployments

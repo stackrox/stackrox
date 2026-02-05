@@ -96,7 +96,7 @@ function PlatformCvePage() {
     return (
         <>
             <PageTitle title={`Kubernetes components - Vulnerability ${cveName}`} />
-            <PageSection>
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewCvePath}>
                         Kubernetes components
