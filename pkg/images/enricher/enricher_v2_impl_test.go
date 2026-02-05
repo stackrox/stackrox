@@ -1064,8 +1064,9 @@ func TestEnrichImageV2_Delegate(t *testing.T) {
 	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
 	deleEnrichCtx := EnrichmentContext{Delegable: true}
 	e := enricherV2Impl{
-		cvesSuppressor: &fakeCVESuppressorV2{},
-		imageGetter:    emptyImageGetterV2,
+		cvesSuppressor:  &fakeCVESuppressorV2{},
+		imageGetter:     emptyImageGetterV2,
+		baseImageGetter: emptyBaseImageGetterV2,
 	}
 
 	var dele *delegatorMocks.MockDelegator

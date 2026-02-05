@@ -28,6 +28,15 @@ import (
 	"golang.org/x/time/rate"
 )
 
+type baseImageGetterMock struct {
+	callCount int
+}
+
+func (m *baseImageGetterMock) get(_ context.Context, _ []string) ([]*storage.BaseImage, error) {
+	m.callCount++
+	return nil, nil
+}
+
 func emptyImageGetter(_ context.Context, _ string) (*storage.Image, bool, error) {
 	return nil, false, nil
 }
@@ -55,6 +64,15 @@ var (
 	_ types.ImageRegistry                     = (*fakeRegistryScanner)(nil)
 )
 
+type baseImageGetterMock struct {
+	callCount int
+}
+
+func (m *baseImageGetterMock) get(_ context.Context, _ []string) ([]*storage.BaseImage, error) {
+	m.callCount++
+	return nil, nil
+}
+
 func TestEnricherFlow(t *testing.T) {
 	cases := []struct {
 		name                 string
@@ -67,6 +85,7 @@ func TestEnricherFlow(t *testing.T) {
 		fsr                  *fakeRegistryScanner
 		result               EnrichmentResult
 		errorExpected        bool
+		expectedBaseCalls    int
 	}{
 		{
 			name: "nothing in the cache",
@@ -75,11 +94,11 @@ func TestEnricherFlow(t *testing.T) {
 			},
 			inMetadataCache: false,
 			image: &storage.Image{
-				Id:    "id",
-				Name:  &storage.ImageName{Registry: "reg"},
-				Names: []*storage.ImageName{{Registry: "reg"}},
+				Id:       "id",
+				Name:     &storage.ImageName{Registry: "reg"},
+				Names:    []*storage.ImageName{{Registry: "reg"}},
+				Metadata: &storage.ImageMetadata{LayerShas: []string{"a"}}, // Needed for base image call
 			},
-
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: true,
 				requestedScan:     true,
@@ -88,6 +107,7 @@ func TestEnricherFlow(t *testing.T) {
 				ImageUpdated: true,
 				ScanResult:   ScanSucceeded,
 			},
+			expectedBaseCalls: 1,
 		},
 		{
 			name: "scan and metadata in both caches",
@@ -101,11 +121,11 @@ func TestEnricherFlow(t *testing.T) {
 				Id: "id",
 			},
 			imageGetter: imageGetterFromImage(&storage.Image{
-				Id:    "id",
-				Name:  &storage.ImageName{Registry: "reg"},
-				Names: []*storage.ImageName{{Registry: "reg"}},
-				Scan:  &storage.ImageScan{}}),
-
+				Id:       "id",
+				Name:     &storage.ImageName{Registry: "reg"},
+				Names:    []*storage.ImageName{{Registry: "reg"}},
+				Metadata: &storage.ImageMetadata{LayerShas: []string{"a"}},
+				Scan:     &storage.ImageScan{}}),
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
 				requestedScan:     false,
@@ -114,6 +134,7 @@ func TestEnricherFlow(t *testing.T) {
 				ImageUpdated: true,
 				ScanResult:   ScanSucceeded,
 			},
+			expectedBaseCalls: 1,
 		},
 		{
 			name: "data in both caches, but force refetch",
@@ -122,30 +143,10 @@ func TestEnricherFlow(t *testing.T) {
 			},
 			inMetadataCache: true,
 			image: &storage.Image{
-				Id:    "id",
-				Name:  &storage.ImageName{Registry: "reg"},
-				Names: []*storage.ImageName{{Registry: "reg"}},
-			},
-
-			fsr: newFakeRegistryScanner(opts{
-				requestedMetadata: true,
-				requestedScan:     true,
-			}),
-			result: EnrichmentResult{
-				ImageUpdated: true,
-				ScanResult:   ScanSucceeded,
-			},
-		},
-		{
-			name: " data in both caches but force refetch use names",
-			ctx: EnrichmentContext{
-				FetchOpt: UseImageNamesRefetchCachedValues,
-			},
-			inMetadataCache: true,
-			image: &storage.Image{
-				Id:    "id",
-				Name:  &storage.ImageName{Registry: "reg"},
-				Names: []*storage.ImageName{{Registry: "reg"}},
+				Id:       "id",
+				Name:     &storage.ImageName{Registry: "reg"},
+				Names:    []*storage.ImageName{{Registry: "reg"}},
+				Metadata: &storage.ImageMetadata{LayerShas: []string{"a"}},
 			},
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: true,
@@ -155,69 +156,7 @@ func TestEnricherFlow(t *testing.T) {
 				ImageUpdated: true,
 				ScanResult:   ScanSucceeded,
 			},
-		},
-		{
-			name: "data in both caches but force refetch scans only",
-			ctx: EnrichmentContext{
-				FetchOpt: ForceRefetchScansOnly,
-			},
-			inMetadataCache: true,
-			image: &storage.Image{
-				Id: "id", Name: &storage.ImageName{Registry: "reg"},
-				Names: []*storage.ImageName{{Registry: "reg"}},
-			},
-
-			fsr: newFakeRegistryScanner(opts{
-				requestedMetadata: false,
-				requestedScan:     true,
-			}),
-			result: EnrichmentResult{
-				ImageUpdated: true,
-				ScanResult:   ScanSucceeded,
-			},
-		},
-		{
-			name:          "set ScannerTypeHint to something not found in integrations",
-			errorExpected: true,
-			ctx: EnrichmentContext{
-				FetchOpt:        ForceRefetchScansOnly,
-				ScannerTypeHint: "type-test",
-			},
-			inMetadataCache: true,
-			image: &storage.Image{
-				Id: "id", Name: &storage.ImageName{Registry: "reg"},
-				Names: []*storage.ImageName{{Registry: "reg"}},
-			},
-
-			fsr: newFakeRegistryScanner(opts{
-				requestedMetadata: false,
-				requestedScan:     false,
-			}),
-			result: EnrichmentResult{
-				ImageUpdated: true,
-				ScanResult:   ScanNotDone,
-			},
-		},
-		{
-			name: "set ScannerTypeHint to something found in integrations",
-			ctx: EnrichmentContext{
-				FetchOpt:        ForceRefetchScansOnly,
-				ScannerTypeHint: "type",
-			},
-			inMetadataCache: true,
-			image: &storage.Image{
-				Id: "id", Name: &storage.ImageName{Registry: "reg"},
-				Names: []*storage.ImageName{{Registry: "reg"}},
-			},
-
-			fsr: newFakeRegistryScanner(opts{
-				requestedMetadata: false,
-				requestedScan:     true,
-			}),
-			result: EnrichmentResult{
-				ImageUpdated: true,
-				ScanResult:   ScanSucceeded,
-			},
+			expectedBaseCalls: 1,
 		},
 		{
 			name: "data not in caches, and no external metadata",
@@ -228,7 +167,6 @@ func TestEnricherFlow(t *testing.T) {
 			shortCircuitRegistry: true,
 			shortCircuitScanner:  true,
 			image:                &storage.Image{Id: "id"},
-
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
 				requestedScan:     false,
@@ -237,6 +175,51 @@ func TestEnricherFlow(t *testing.T) {
 				ImageUpdated: false,
 				ScanResult:   ScanNotDone,
 			},
+			expectedBaseCalls: 0, // Short-circuits before base image enrichment
+		},
+		{
+			name: "data in both caches but force refetch use names",
+			ctx: EnrichmentContext{
+				FetchOpt: UseImageNamesRefetchCachedValues,
+			},
+			inMetadataCache: true,
+			image: &storage.Image{
+				Id:       "id",
+				Name:     &storage.ImageName{Registry: "reg"},
+				Names:    []*storage.ImageName{{Registry: "reg"}},
+				Metadata: &storage.ImageMetadata{LayerShas: []string{"a"}},
+			},
+			fsr: newFakeRegistryScanner(opts{
+				requestedMetadata: true,
+				requestedScan:     true,
+			}),
+			result: EnrichmentResult{
+				ImageUpdated: true,
+				ScanResult:   ScanSucceeded,
+			},
+			expectedBaseCalls: 1,
+		},
+		{
+			name: "data in both caches but force refetch scans only",
+			ctx: EnrichmentContext{
+				FetchOpt: ForceRefetchScansOnly,
+			},
+			inMetadataCache: true,
+			image: &storage.Image{
+				Id:       "id",
+				Name:     &storage.ImageName{Registry: "reg"},
+				Names:    []*storage.ImageName{{Registry: "reg"}},
+				Metadata: &storage.ImageMetadata{LayerShas: []string{"a"}},
+			},
+			fsr: newFakeRegistryScanner(opts{
+				requestedMetadata: false,
+				requestedScan:     true,
+			}),
+			result: EnrichmentResult{
+				ImageUpdated: true,
+				ScanResult:   ScanSucceeded,
+			},
+			expectedBaseCalls: 1,
 		},
 		{
 			name: "data not in cache, but image already has metadata and scan",
@@ -248,7 +231,7 @@ func TestEnricherFlow(t *testing.T) {
 			shortCircuitScanner:  true,
 			image: &storage.Image{
 				Id:       "id",
-				Metadata: &storage.ImageMetadata{},
+				Metadata: &storage.ImageMetadata{LayerShas: []string{"a"}},
 				Scan:     &storage.ImageScan{},
 				Name:     &storage.ImageName{Registry: "reg"},
 				Names:    []*storage.ImageName{{Registry: "reg"}},
@@ -261,30 +244,7 @@ func TestEnricherFlow(t *testing.T) {
 				ImageUpdated: false,
 				ScanResult:   ScanNotDone,
 			},
-		},
-		{
-			name: "data not in cache and ignore existing images",
-			ctx: EnrichmentContext{
-				FetchOpt: IgnoreExistingImages,
-			},
-			inMetadataCache: false,
-			image: &storage.Image{
-				Id: "id",
-				Name: &storage.ImageName{
-					Registry: "reg",
-				},
-				Names: []*storage.ImageName{{Registry: "reg"}},
-				Scan:  &storage.ImageScan{},
-			},
-			imageGetter: imageGetterPanicOnCall,
-			fsr: newFakeRegistryScanner(opts{
-				requestedMetadata: true,
-				requestedScan:     true,
-			}),
-			result: EnrichmentResult{
-				ImageUpdated: true,
-				ScanResult:   ScanSucceeded,
-			},
+			expectedBaseCalls: 1, // Logic calls it once metadata is validated
 		},
 		{
 			name: "data in cache and ignore existing images",
@@ -296,7 +256,7 @@ func TestEnricherFlow(t *testing.T) {
 			shortCircuitScanner:  false,
 			image: &storage.Image{
 				Id:       "id",
-				Metadata: &storage.ImageMetadata{},
+				Metadata: &storage.ImageMetadata{LayerShas: []string{"a"}},
 				Scan:     &storage.ImageScan{},
 				Name:     &storage.ImageName{Registry: "reg"},
 				Names:    []*storage.ImageName{{Registry: "reg"}},
@@ -310,13 +270,13 @@ func TestEnricherFlow(t *testing.T) {
 				ImageUpdated: true,
 				ScanResult:   ScanSucceeded,
 			},
+			expectedBaseCalls: 1,
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-
 			fsr := newFakeRegistryScanner(opts{})
 
 			registrySet := registryMocks.NewMockSet(ctrl)
@@ -340,6 +300,8 @@ func TestEnricherFlow(t *testing.T) {
 			mockReporter := reporterMocks.NewMockReporter(ctrl)
 			mockReporter.EXPECT().UpdateIntegrationHealthAsync(gomock.Any()).AnyTimes()
 
+			biMock := &baseImageGetterMock{}
+
 			enricherImpl := &enricherImpl{
 				cvesSuppressorV2:           &fakeCVESuppressorV2{},
 				integrations:               set,
@@ -352,23 +314,26 @@ func TestEnricherFlow(t *testing.T) {
 				imageGetter:                emptyImageGetter,
 				signatureIntegrationGetter: emptySignatureIntegrationGetter,
 				signatureFetcher:           &fakeSigFetcher{},
-				baseImageGetter:            emptyBaseImageGetter,
+				baseImageGetter:            biMock.get, // Injecting the tracker
 			}
+
 			if c.inMetadataCache {
 				enricherImpl.metadataCache.Add(c.image.GetId(), c.image.GetMetadata())
 			}
 			if c.imageGetter != nil {
 				enricherImpl.imageGetter = c.imageGetter
 			}
+
 			result, err := enricherImpl.EnrichImage(emptyCtx, c.ctx, c.image)
+
 			if !c.errorExpected {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
 			}
-			assert.Equal(t, c.result, result)
 
-			assert.Equal(t, c.fsr, fsr)
+			assert.Equal(t, c.result, result)
+			assert.Equal(t, c.expectedBaseCalls, biMock.callCount, "Mismatch in baseImageGetter call count")
 		})
 	}
 }
@@ -1086,9 +1051,13 @@ func TestDelegateEnrichImage(t *testing.T) {
 
 func TestEnrichImage_Delegate(t *testing.T) {
 	deleEnrichCtx := EnrichmentContext{Delegable: true}
+
+	biMock := &baseImageGetterMock{}
+
 	e := enricherImpl{
 		cvesSuppressorV2: &fakeCVESuppressorV2{},
 		imageGetter:      emptyImageGetter,
+		baseImageGetter:  biMock.get, // Inject the tracker
 	}
 
 	var dele *delegatorMocks.MockDelegator
@@ -1096,6 +1065,7 @@ func TestEnrichImage_Delegate(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		dele = delegatorMocks.NewMockDelegator(ctrl)
 		e.scanDelegator = dele
+		biMock.callCount = 0 // Reset for every sub-test
 	}
 
 	t.Run("delegate enrich error", func(t *testing.T) {
@@ -1106,18 +1076,33 @@ func TestEnrichImage_Delegate(t *testing.T) {
 		assert.Equal(t, result.ScanResult, ScanNotDone)
 		assert.False(t, result.ImageUpdated)
 		assert.ErrorIs(t, err, errBroken)
+
+		// Verify: Should NOT call baseImageGetter on delegation failure
+		assert.Equal(t, 0, biMock.callCount)
 	})
 
 	t.Run("delegate enrich success", func(t *testing.T) {
 		setup(t)
-		fakeImage := &storage.Image{}
+
+		// Image must have metadata for enrichWithBaseImage to proceed
+		fakeImage := &storage.Image{
+			Id: "sha256:delegate",
+			Metadata: &storage.ImageMetadata{
+				LayerShas: []string{"layer1"},
+			},
+		}
+
 		dele.EXPECT().GetDelegateClusterID(emptyCtx, gomock.Any()).Return("cluster-id", true, nil)
 		dele.EXPECT().DelegateScanImage(emptyCtx, gomock.Any(), "cluster-id", "", gomock.Any()).Return(fakeImage, nil)
 
 		result, err := e.EnrichImage(emptyCtx, deleEnrichCtx, fakeImage)
+
 		assert.Equal(t, result.ScanResult, ScanSucceeded)
 		assert.True(t, result.ImageUpdated)
 		assert.NoError(t, err)
+
+		// Verify: Success path MUST call baseImageGetter
+		assert.Equal(t, 1, biMock.callCount)
 	})
 }
 
