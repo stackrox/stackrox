@@ -81,7 +81,7 @@ func (m *ImageVulnerabilitiesResponse_Image_Component) CloneVT() *ImageVulnerabi
 	r := new(ImageVulnerabilitiesResponse_Image_Component)
 	r.Name = m.Name
 	r.Version = m.Version
-	r.LayerIndex = m.LayerIndex
+	r.LayerSha = m.LayerSha
 	r.Location = m.Location
 	if rhs := m.VulnerabilityIds; rhs != nil {
 		tmpContainer := make([]string, len(rhs))
@@ -105,6 +105,17 @@ func (m *ImageVulnerabilitiesResponse_Image) CloneVT() *ImageVulnerabilitiesResp
 	}
 	r := new(ImageVulnerabilitiesResponse_Image)
 	r.Sha = m.Sha
+	if rhs := m.Layers; rhs != nil {
+		tmpContainer := make([]*storage.ImageLayer, len(rhs))
+		for k, v := range rhs {
+			if vtpb, ok := interface{}(v).(interface{ CloneVT() *storage.ImageLayer }); ok {
+				tmpContainer[k] = vtpb.CloneVT()
+			} else {
+				tmpContainer[k] = proto.Clone(v).(*storage.ImageLayer)
+			}
+		}
+		r.Layers = tmpContainer
+	}
 	if rhs := m.Components; rhs != nil {
 		tmpContainer := make([]*ImageVulnerabilitiesResponse_Image_Component, len(rhs))
 		for k, v := range rhs {
@@ -229,7 +240,7 @@ func (this *ImageVulnerabilitiesResponse_Image_Component) EqualVT(that *ImageVul
 	if this.Version != that.Version {
 		return false
 	}
-	if this.LayerIndex != that.LayerIndex {
+	if this.LayerSha != that.LayerSha {
 		return false
 	}
 	if this.Location != that.Location {
@@ -262,6 +273,29 @@ func (this *ImageVulnerabilitiesResponse_Image) EqualVT(that *ImageVulnerabiliti
 	}
 	if this.Sha != that.Sha {
 		return false
+	}
+	if len(this.Layers) != len(that.Layers) {
+		return false
+	}
+	for i, vx := range this.Layers {
+		vy := that.Layers[i]
+		if p, q := vx, vy; p != q {
+			if p == nil {
+				p = &storage.ImageLayer{}
+			}
+			if q == nil {
+				q = &storage.ImageLayer{}
+			}
+			if equal, ok := interface{}(p).(interface {
+				EqualVT(*storage.ImageLayer) bool
+			}); ok {
+				if !equal.EqualVT(q) {
+					return false
+				}
+			} else if !proto.Equal(p, q) {
+				return false
+			}
+		}
 	}
 	if len(this.Components) != len(that.Components) {
 		return false
@@ -498,10 +532,12 @@ func (m *ImageVulnerabilitiesResponse_Image_Component) MarshalToSizedBufferVT(dA
 		i--
 		dAtA[i] = 0x22
 	}
-	if m.LayerIndex != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.LayerIndex))
+	if len(m.LayerSha) > 0 {
+		i -= len(m.LayerSha)
+		copy(dAtA[i:], m.LayerSha)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.LayerSha)))
 		i--
-		dAtA[i] = 0x18
+		dAtA[i] = 0x1a
 	}
 	if len(m.Version) > 0 {
 		i -= len(m.Version)
@@ -558,6 +594,30 @@ func (m *ImageVulnerabilitiesResponse_Image) MarshalToSizedBufferVT(dAtA []byte)
 			}
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if len(m.Layers) > 0 {
+		for iNdEx := len(m.Layers) - 1; iNdEx >= 0; iNdEx-- {
+			if vtmsg, ok := interface{}(m.Layers[iNdEx]).(interface {
+				MarshalToSizedBufferVT([]byte) (int, error)
+			}); ok {
+				size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			} else {
+				encoded, err := proto.Marshal(m.Layers[iNdEx])
+				if err != nil {
+					return 0, err
+				}
+				i -= len(encoded)
+				copy(dAtA[i:], encoded)
+				i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+			}
 			i--
 			dAtA[i] = 0x12
 		}
@@ -683,8 +743,9 @@ func (m *ImageVulnerabilitiesResponse_Image_Component) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.LayerIndex != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.LayerIndex))
+	l = len(m.LayerSha)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.Location)
 	if l > 0 {
@@ -709,6 +770,18 @@ func (m *ImageVulnerabilitiesResponse_Image) SizeVT() (n int) {
 	l = len(m.Sha)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if len(m.Layers) > 0 {
+		for _, e := range m.Layers {
+			if size, ok := interface{}(e).(interface {
+				SizeVT() int
+			}); ok {
+				l = size.SizeVT()
+			} else {
+				l = proto.Size(e)
+			}
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
 	}
 	if len(m.Components) > 0 {
 		for _, e := range m.Components {
@@ -1088,10 +1161,10 @@ func (m *ImageVulnerabilitiesResponse_Image_Component) UnmarshalVT(dAtA []byte) 
 			m.Version = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LayerIndex", wireType)
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LayerSha", wireType)
 			}
-			m.LayerIndex = 0
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1101,11 +1174,24 @@ func (m *ImageVulnerabilitiesResponse_Image_Component) UnmarshalVT(dAtA []byte) 
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.LayerIndex |= int32(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LayerSha = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Location", wireType)
@@ -1254,6 +1340,48 @@ func (m *ImageVulnerabilitiesResponse_Image) UnmarshalVT(dAtA []byte) error {
 			m.Sha = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Layers", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Layers = append(m.Layers, &storage.ImageLayer{})
+			if unmarshal, ok := interface{}(m.Layers[len(m.Layers)-1]).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Layers[len(m.Layers)-1]); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Components", wireType)
 			}
@@ -1758,10 +1886,10 @@ func (m *ImageVulnerabilitiesResponse_Image_Component) UnmarshalVTUnsafe(dAtA []
 			m.Version = stringValue
 			iNdEx = postIndex
 		case 3:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field LayerIndex", wireType)
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LayerSha", wireType)
 			}
-			m.LayerIndex = 0
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -1771,11 +1899,28 @@ func (m *ImageVulnerabilitiesResponse_Image_Component) UnmarshalVTUnsafe(dAtA []
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.LayerIndex |= int32(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.LayerSha = stringValue
+			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Location", wireType)
@@ -1936,6 +2081,48 @@ func (m *ImageVulnerabilitiesResponse_Image) UnmarshalVTUnsafe(dAtA []byte) erro
 			m.Sha = stringValue
 			iNdEx = postIndex
 		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Layers", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Layers = append(m.Layers, &storage.ImageLayer{})
+			if unmarshal, ok := interface{}(m.Layers[len(m.Layers)-1]).(interface {
+				UnmarshalVTUnsafe([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.Layers[len(m.Layers)-1]); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Components", wireType)
 			}

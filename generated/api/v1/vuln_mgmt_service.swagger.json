@@ -182,9 +182,8 @@
         "version": {
           "type": "string"
         },
-        "layerIndex": {
-          "type": "integer",
-          "format": "int32"
+        "layerSha": {
+          "type": "string"
         },
         "location": {
           "type": "string"
@@ -1660,6 +1659,13 @@
       "properties": {
         "sha": {
           "type": "string"
+        },
+        "layers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageImageLayer"
+          }
         },
         "components": {
           "type": "array",

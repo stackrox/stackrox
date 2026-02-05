@@ -35,12 +35,13 @@ message ImageVulnerabilitiesResponse {
     message Component {
       string name = 1;
       string version = 2;
-      int32 layer_index = 3;
+      string layer_sha = 3;
       string location = 4;
       repeated string vulnerability_ids = 5;
     }
     string sha = 1;
-    repeated Component components = 2;
+    repeated storage.ImageLayer layers = 2;
+    repeated Component components = 3;
   }
   repeated Image images = 1;
 }

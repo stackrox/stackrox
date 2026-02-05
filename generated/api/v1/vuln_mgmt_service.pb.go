@@ -191,7 +191,8 @@ func (x *ImageVulnerabilitiesResponse) GetImages() []*ImageVulnerabilitiesRespon
 type ImageVulnerabilitiesResponse_Image struct {
 	state         protoimpl.MessageState                          `protogen:"open.v1"`
 	Sha           string                                          `protobuf:"bytes,1,opt,name=sha,proto3" json:"sha,omitempty"`
-	Components    []*ImageVulnerabilitiesResponse_Image_Component `protobuf:"bytes,2,rep,name=components,proto3" json:"components,omitempty"`
+	Layers        []*storage.ImageLayer                           `protobuf:"bytes,2,rep,name=layers,proto3" json:"layers,omitempty"`
+	Components    []*ImageVulnerabilitiesResponse_Image_Component `protobuf:"bytes,3,rep,name=components,proto3" json:"components,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -233,6 +234,13 @@ func (x *ImageVulnerabilitiesResponse_Image) GetSha() string {
 	return ""
 }
 
+func (x *ImageVulnerabilitiesResponse_Image) GetLayers() []*storage.ImageLayer {
+	if x != nil {
+		return x.Layers
+	}
+	return nil
+}
+
 func (x *ImageVulnerabilitiesResponse_Image) GetComponents() []*ImageVulnerabilitiesResponse_Image_Component {
 	if x != nil {
 		return x.Components
@@ -244,7 +252,7 @@ type ImageVulnerabilitiesResponse_Image_Component struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	Name             string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Version          string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
-	LayerIndex       int32                  `protobuf:"varint,3,opt,name=layer_index,json=layerIndex,proto3" json:"layer_index,omitempty"`
+	LayerSha         string                 `protobuf:"bytes,3,opt,name=layer_sha,json=layerSha,proto3" json:"layer_sha,omitempty"`
 	Location         string                 `protobuf:"bytes,4,opt,name=location,proto3" json:"location,omitempty"`
 	VulnerabilityIds []string               `protobuf:"bytes,5,rep,name=vulnerability_ids,json=vulnerabilityIds,proto3" json:"vulnerability_ids,omitempty"`
 	unknownFields    protoimpl.UnknownFields
@@ -295,11 +303,11 @@ func (x *ImageVulnerabilitiesResponse_Image_Component) GetVersion() string {
 	return ""
 }
 
-func (x *ImageVulnerabilitiesResponse_Image_Component) GetLayerIndex() int32 {
+func (x *ImageVulnerabilitiesResponse_Image_Component) GetLayerSha() string {
 	if x != nil {
-		return x.LayerIndex
+		return x.LayerSha
 	}
-	return 0
+	return ""
 }
 
 func (x *ImageVulnerabilitiesResponse_Image_Component) GetLocation() string {
@@ -329,19 +337,19 @@ const file_api_v1_vuln_mgmt_service_proto_rawDesc = "" +
 	"deployment\x18\x01 \x01(\v2\x13.storage.DeploymentR\n" +
 	"deployment\x12&\n" +
 	"\x06images\x18\x02 \x03(\v2\x0e.storage.ImageR\x06images\x12\x1b\n" +
-	"\tlive_pods\x18\x03 \x01(\x05R\blivePods\"\xf2\x02\n" +
+	"\tlive_pods\x18\x03 \x01(\x05R\blivePods\"\x9b\x03\n" +
 	"\x1cImageVulnerabilitiesResponse\x12>\n" +
-	"\x06images\x18\x01 \x03(\v2&.v1.ImageVulnerabilitiesResponse.ImageR\x06images\x1a\x91\x02\n" +
+	"\x06images\x18\x01 \x03(\v2&.v1.ImageVulnerabilitiesResponse.ImageR\x06images\x1a\xba\x02\n" +
 	"\x05Image\x12\x10\n" +
-	"\x03sha\x18\x01 \x01(\tR\x03sha\x12P\n" +
+	"\x03sha\x18\x01 \x01(\tR\x03sha\x12+\n" +
+	"\x06layers\x18\x02 \x03(\v2\x13.storage.ImageLayerR\x06layers\x12P\n" +
 	"\n" +
-	"components\x18\x02 \x03(\v20.v1.ImageVulnerabilitiesResponse.Image.ComponentR\n" +
-	"components\x1a\xa3\x01\n" +
+	"components\x18\x03 \x03(\v20.v1.ImageVulnerabilitiesResponse.Image.ComponentR\n" +
+	"components\x1a\x9f\x01\n" +
 	"\tComponent\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
-	"\aversion\x18\x02 \x01(\tR\aversion\x12\x1f\n" +
-	"\vlayer_index\x18\x03 \x01(\x05R\n" +
-	"layerIndex\x12\x1a\n" +
+	"\aversion\x18\x02 \x01(\tR\aversion\x12\x1b\n" +
+	"\tlayer_sha\x18\x03 \x01(\tR\blayerSha\x12\x1a\n" +
 	"\blocation\x18\x04 \x01(\tR\blocation\x12+\n" +
 	"\x11vulnerability_ids\x18\x05 \x03(\tR\x10vulnerabilityIds2\x99\x02\n" +
 	"\x0fVulnMgmtService\x12\x8c\x01\n" +
@@ -370,22 +378,24 @@ var file_api_v1_vuln_mgmt_service_proto_goTypes = []any{
 	(*ImageVulnerabilitiesResponse_Image_Component)(nil), // 4: v1.ImageVulnerabilitiesResponse.Image.Component
 	(*storage.Deployment)(nil),                           // 5: storage.Deployment
 	(*storage.Image)(nil),                                // 6: storage.Image
-	(*Empty)(nil),                                        // 7: v1.Empty
+	(*storage.ImageLayer)(nil),                           // 7: storage.ImageLayer
+	(*Empty)(nil),                                        // 8: v1.Empty
 }
 var file_api_v1_vuln_mgmt_service_proto_depIdxs = []int32{
 	5, // 0: v1.VulnMgmtExportWorkloadsResponse.deployment:type_name -> storage.Deployment
 	6, // 1: v1.VulnMgmtExportWorkloadsResponse.images:type_name -> storage.Image
 	3, // 2: v1.ImageVulnerabilitiesResponse.images:type_name -> v1.ImageVulnerabilitiesResponse.Image
-	4, // 3: v1.ImageVulnerabilitiesResponse.Image.components:type_name -> v1.ImageVulnerabilitiesResponse.Image.Component
-	0, // 4: v1.VulnMgmtService.VulnMgmtExportWorkloads:input_type -> v1.VulnMgmtExportWorkloadsRequest
-	7, // 5: v1.VulnMgmtService.ImageVulnerabilities:input_type -> v1.Empty
-	1, // 6: v1.VulnMgmtService.VulnMgmtExportWorkloads:output_type -> v1.VulnMgmtExportWorkloadsResponse
-	2, // 7: v1.VulnMgmtService.ImageVulnerabilities:output_type -> v1.ImageVulnerabilitiesResponse
-	6, // [6:8] is the sub-list for method output_type
-	4, // [4:6] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	7, // 3: v1.ImageVulnerabilitiesResponse.Image.layers:type_name -> storage.ImageLayer
+	4, // 4: v1.ImageVulnerabilitiesResponse.Image.components:type_name -> v1.ImageVulnerabilitiesResponse.Image.Component
+	0, // 5: v1.VulnMgmtService.VulnMgmtExportWorkloads:input_type -> v1.VulnMgmtExportWorkloadsRequest
+	8, // 6: v1.VulnMgmtService.ImageVulnerabilities:input_type -> v1.Empty
+	1, // 7: v1.VulnMgmtService.VulnMgmtExportWorkloads:output_type -> v1.VulnMgmtExportWorkloadsResponse
+	2, // 8: v1.VulnMgmtService.ImageVulnerabilities:output_type -> v1.ImageVulnerabilitiesResponse
+	7, // [7:9] is the sub-list for method output_type
+	5, // [5:7] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_vuln_mgmt_service_proto_init() }

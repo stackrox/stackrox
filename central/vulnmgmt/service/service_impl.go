@@ -189,7 +189,17 @@ func (s *serviceImpl) ImageVulnerabilities(ctx context.Context, _ *v1.Empty) (*v
 			return nil
 		}
 
+		metadata := img.GetMetadata()
+		if metadata == nil {
+			return nil
+		}
+
+		layerShas := metadata.GetLayerShas()
+		v1Layers := metadata.GetV1().GetLayers()
+
+		layerIndicesWithVulns := set.NewIntSet()
 		var responseComponents []*v1.ImageVulnerabilitiesResponse_Image_Component
+
 		for _, comp := range components {
 			vulns := comp.GetVulns()
 			if len(vulns) == 0 {
@@ -208,22 +218,35 @@ func (s *serviceImpl) ImageVulnerabilities(ctx context.Context, _ *v1.Empty) (*v
 			}
 
 			var layerIndex int32
+			var layerSha string
 			if li, ok := comp.GetHasLayerIndex().(*storage.EmbeddedImageScanComponent_LayerIndex); ok {
 				layerIndex = li.LayerIndex
+				if int(layerIndex) < len(layerShas) {
+					layerSha = layerShas[layerIndex]
+					layerIndicesWithVulns.Add(int(layerIndex))
+				}
 			}
 
 			responseComponents = append(responseComponents, &v1.ImageVulnerabilitiesResponse_Image_Component{
 				Name:             comp.GetName(),
 				Version:          comp.GetVersion(),
-				LayerIndex:       layerIndex,
+				LayerSha:         layerSha,
 				Location:         comp.GetLocation(),
 				VulnerabilityIds: vulnIDs,
 			})
 		}
 
 		if len(responseComponents) > 0 {
+			var responseLayers []*storage.ImageLayer
+			for idx := range v1Layers {
+				if layerIndicesWithVulns.Contains(idx) {
+					responseLayers = append(responseLayers, v1Layers[idx])
+				}
+			}
+
 			images = append(images, &v1.ImageVulnerabilitiesResponse_Image{
 				Sha:        img.GetId(),
+				Layers:     responseLayers,
 				Components: responseComponents,
 			})
 		}
