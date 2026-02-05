@@ -423,7 +423,7 @@ jobs:
           [[ -z "$image" || "$image" =~ ^# ]] && continue
           echo "Loading $image into Kind..."
           docker pull "$image"
-          kind load docker-image "$image"
+          kind load docker-image "$image" --name chart-testing
         done < sensor/tests/images-to-prefetch.txt
 
     - name: Run sensor integration tests
