@@ -237,30 +237,39 @@ jobs:
             "scan_images_with_roxctl": { "name":[], "image":[], "exclude":[] }
           }'
 
-          # The base matrix
+          # The base matrix - amd64 only for PRs, arm64 added with label or non-PR
           matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
-          matrix="$(jq '.pre_build_go_binaries.arch += ["amd64", "arm64"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_go_binaries.arch += ["amd64"]' <<< "$matrix")"
 
           matrix="$(jq '.build_and_push_main.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_main.arch += ["amd64", "arm64"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_main.arch += ["amd64"]' <<< "$matrix")"
 
           matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
 
           matrix="$(jq '.build_and_push_operator.name += ["RHACS_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_operator.arch += ["amd64", "arm64"]' <<< "$matrix")"
-
-          matrix="$(jq '.push_operator_multiarch_manifests.name += ["RHACS_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.push_operator_multiarch_manifests.archs = [.build_and_push_operator.arch | join(",")]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_operator.arch += ["amd64"]' <<< "$matrix")"
 
           matrix="$(jq '.scan_images_with_roxctl.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.scan_images_with_roxctl.image += ["central-db", "collector", "main", "roxctl", "scanner", "scanner-db", "scanner-db-slim", "scanner-slim", "stackrox-operator"]' <<< "$matrix")"
           # TODO(ROX-27191): remove the exclusion once there's a community operator.
           matrix="$(jq '.scan_images_with_roxctl.exclude += [{ "name": "STACKROX_BRANDING", "image": "stackrox-operator" }]' <<< "$matrix")"
 
+          # Add arm64 for non-PRs or PRs with ci-build-arm64 label
+          if ! is_in_PR_context || pr_has_label ci-build-arm64 || pr_has_label ci-build-all-arch; then
+            matrix="$(jq '.pre_build_go_binaries.arch += ["arm64"]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_main.arch += ["arm64"]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_operator.arch += ["arm64"]' <<< "$matrix")"
+          fi
+
+          # Compute operator multiarch manifests based on final arch list
+          matrix="$(jq '.push_operator_multiarch_manifests.name += ["RHACS_BRANDING"]' <<< "$matrix")"
+          matrix="$(jq '.push_operator_multiarch_manifests.archs = [.build_and_push_operator.arch | join(",")]' <<< "$matrix")"
+
+          # Add ppc64le/s390x for non-PRs or PRs with ci-build-all-arch label
           if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
             matrix="$(jq '.pre_build_go_binaries.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
-          fi;
+          fi
 
           # Conditionally add a prerelease build (binaries built with GOTAGS=release)
           if ! is_tagged; then
@@ -357,8 +366,22 @@ jobs:
             ui/build
             ui/apps/platform/package-lock.json
 
+  # Build CLI binaries in parallel per OS group
   pre-build-cli:
     runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux: 4 archs + roxagent (bulk of work)
+          - os: linux
+            targets: roxctl_linux-amd64 roxctl_linux-arm64 roxctl_linux-ppc64le roxctl_linux-s390x roxagent-linux
+          # Darwin: 2 archs (cross-compiled, faster)
+          - os: darwin
+            targets: roxctl_darwin-amd64 roxctl_darwin-arm64
+          # Windows: 1 arch (cross-compiled, fastest)
+          - os: windows
+            targets: roxctl_windows-amd64
     steps:
       - name: Collect Workflow Telemetry
         uses: catchpoint/workflow-telemetry-action@v2
@@ -380,45 +403,51 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Check git history
-        run: |
-          set +e
-          set -x
-          git blame README.md
-          git blame scripts/ci/lib.sh
-          true
-
-      - name: cache bin/os_arch/roxctl binaries
-        id: restore-roxctl-build
-        uses: actions/cache@v4
-        with:
-          key: built-roxctl-${{ hashFiles('**/go.sum', 'Makefile', 'make/**', 'roxctl/**', 'proto/**', 'generated/**') }}
-          path: |
-            bin/*/roxctl
-            bin/*/roxctl.exe
+      - uses: ./.github/actions/handle-tagged-build
 
       - name: Setup Go
-        if: ${{ steps.restore-roxctl-build.outputs.cache-hit != 'true' }}
         uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
           cache: false
 
       - name: Cache Go dependencies
-        if: ${{ steps.restore-roxctl-build.outputs.cache-hit != 'true' }}
         uses: ./.github/actions/cache-go-dependencies
 
-      - uses: ./.github/actions/handle-tagged-build
-
-      - name: Build CLI
-        run: |
-          export SKIP_CLI_BUILD=true  # for each os_arch if binary exists, do not rebuild
-          make cli
+      - name: Build CLI for ${{ matrix.os }}
+        run: make ${{ matrix.targets }}
 
       - name: Bundle build to preserve permissions
-        run: tar -cvzf cli-build.tgz bin
+        run: tar -cvzf cli-build-${{ matrix.os }}.tgz bin
 
       - uses: ./.github/actions/upload-artifact-with-retry
+        with:
+          name: cli-build-${{ matrix.os }}
+          path: cli-build-${{ matrix.os }}.tgz
+
+  # Merge CLI artifacts from parallel builds into single artifact
+  pre-build-cli-merge:
+    runs-on: ubuntu-22.04
+    needs: pre-build-cli
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cli-build-*
+          merge-multiple: false
+
+      - name: Merge CLI builds
+        run: |
+          mkdir -p bin
+          for archive in cli-build-*/cli-build-*.tgz; do
+            echo "Extracting $archive"
+            tar -xzf "$archive"
+          done
+          ls -la bin/
+
+      - name: Bundle merged build
+        run: tar -cvzf cli-build.tgz bin
+
+      - uses: actions/upload-artifact@v4
         with:
           name: cli-build
           path: cli-build.tgz
@@ -578,7 +607,7 @@ jobs:
     needs:
       - define-job-matrix
       - pre-build-ui
-      - pre-build-cli
+      - pre-build-cli-merge
       - pre-build-go-binaries
       - pre-build-docs
     # This step will run even if required pre-* steps failed. By following this
@@ -1096,7 +1125,7 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     needs:
-    - pre-build-cli
+    - pre-build-cli-merge
     - pre-build-go-binaries
     steps:
     - name: Checkout
@@ -1218,7 +1247,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - pre-build-ui
-      - pre-build-cli
+      - pre-build-cli-merge
       - pre-build-go-binaries
       - pre-build-docs
       - build-and-push-main
