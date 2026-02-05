@@ -9,8 +9,8 @@ import (
 )
 
 func populateGroupBy(querySoFar *query, groupBy *v1.QueryGroupBy, schema *walker.Schema, queryFields map[string]searchFieldMetadata) error {
-	if querySoFar.QueryType != SELECT && len(groupBy.GetFields()) > 0 {
-		return errors.New("GROUP BY clause not supported with SEARCH query type; Use SELECT")
+	if len(groupBy.GetFields()) > 0 && !(querySoFar.QueryType == SELECT || querySoFar.QueryType == COUNTBY) {
+		return errors.New("GROUP BY clause not supported with SEARCH query type; Use SELECT or COUNTBY")
 	}
 
 	// If explicit group by clauses are not specified and if a query field (in select or order by) is a derived field requiring a group by clause,
