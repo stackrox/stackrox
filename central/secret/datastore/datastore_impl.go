@@ -73,7 +73,6 @@ func (d *datastoreImpl) SearchListSecrets(ctx context.Context, request *v1.Query
 	}
 
 	// Apply default sort (Created Time ascending) if no sort specified
-	// This matches the default sort configured in the store (central/secret/internal/store/postgres/store.go:80)
 	defaultSort := &v1.QuerySortOption{
 		Field:    pkgSearch.CreatedTime.String(),
 		Reversed: false,
@@ -92,11 +91,6 @@ func (d *datastoreImpl) SearchListSecrets(ctx context.Context, request *v1.Query
 	}
 
 	// Execute single database query using search framework
-	// Framework will:
-	// 1. Detect SecretType comes from secrets_files child table
-	// 2. Apply array_agg(DISTINCT ...) FILTER (WHERE ... IS NOT NULL) to aggregate types
-	// 3. Auto-generate GROUP BY on parent table fields (id, name, etc.)
-	// 4. Use LEFT JOIN for optional relationship (secrets with no files)
 	var responses []*listSecretResponse
 	err := pgSearch.RunSelectRequestForSchemaFn(ctx, d.db, pkgSchema.SecretsSchema, query,
 		func(r *listSecretResponse) error {

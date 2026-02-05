@@ -229,16 +229,13 @@ func populateSelect(querySoFar *query, schema *walker.Schema, q *v1.Query, query
 		// Check if this is a child table field
 		isChildField := isChildTableField(dbField, schema)
 
-		// Array types are only supported for child table fields (which will be aggregated)
-		// Parent table arrays are still unsupported
+		// TODO(mandar): Add support for the following.
 		if !isChildField && (dbField.DataType == postgres.StringArray || dbField.DataType == postgres.IntArray ||
 			dbField.DataType == postgres.EnumArray || dbField.DataType == postgres.Map) {
 			return errors.Errorf("array field %s in parent table is unsupported in select", field)
 		}
 
 		// Check if destination type expects array for this field
-		// Match against SQL alias (same format as db tag: lowercase with underscores)
-		// Only auto-aggregate when there's NO GROUP BY (existing GROUP BY logic handles it via jsonb_agg)
 		shouldAggregate := false
 		if arrayFields != nil && isChildField && !hasGroupBy {
 			// Compute the SQL alias that will be used (matches db tag format)

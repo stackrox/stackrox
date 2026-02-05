@@ -8,8 +8,6 @@ import (
 )
 
 // listSecretResponse is a helper struct for scanning ListSecret query results.
-// The search framework will automatically use array_agg for the Types field
-// since it comes from the secrets_files child table and is marked with ChildTableAgg flag.
 type listSecretResponse struct {
 	ID          string               `db:"secret_id"`
 	Name        string               `db:"secret"`
@@ -17,7 +15,7 @@ type listSecretResponse struct {
 	ClusterName string               `db:"cluster"`
 	Namespace   string               `db:"namespace"`
 	CreatedAt   *time.Time           `db:"created_time"`
-	Types       []storage.SecretType `db:"secret_type"` // Will be aggregated via array_agg
+	Types       []storage.SecretType `db:"secret_type"`
 }
 
 // toListSecret converts the database response to a storage.ListSecret protobuf.
