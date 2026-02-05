@@ -41,9 +41,9 @@ func TestFixDescriptorOrder(t *testing.T) {
 func TestFixDescriptorOrderPreservesSiblingOrder(t *testing.T) {
 	// Test that siblings (items with same parent) maintain their original relative order
 	descriptors := []map[string]interface{}{
-		{"path": "scanner.resources"},      // Parent: ".scanner"
-		{"path": "scanner.db"},             // Parent: ".scanner"
-		{"path": "scanner.db.enabled"},     // Parent: ".scanner.db"
+		{"path": "scanner.resources"},        // Parent: ".scanner"
+		{"path": "scanner.db"},               // Parent: ".scanner"
+		{"path": "scanner.db.enabled"},       // Parent: ".scanner.db"
 		{"path": "scanner.resources.limits"}, // Parent: ".scanner.resources"
 	}
 
@@ -57,9 +57,9 @@ func TestFixDescriptorOrderPreservesSiblingOrder(t *testing.T) {
 	// With lexicographic sort, "scanner.db" would come before "scanner.resources"
 	// With parent-path sort (Python behavior), siblings maintain original order
 	assert.Equal(t, []string{
-		"scanner.resources",      // First sibling (parent: ".scanner")
-		"scanner.db",             // Second sibling (parent: ".scanner")
-		"scanner.db.enabled",     // Child of "scanner.db"
+		"scanner.resources",        // First sibling (parent: ".scanner")
+		"scanner.db",               // Second sibling (parent: ".scanner")
+		"scanner.db.enabled",       // Child of "scanner.db"
 		"scanner.resources.limits", // Child of "scanner.resources"
 	}, paths, "Siblings with same parent should maintain original relative order")
 }
