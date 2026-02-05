@@ -170,13 +170,14 @@ jobs:
           parallel="${{ matrix.parallel }}"
           cache_registry='ghcr.io'
           cache_image="${GITHUB_REPOSITORY,,}"
-          cache_tag="TAG-${GITHUB_REF_NAME,,}-${ROX_PRODUCT_BRANDING,,}"
-          cache_tag=${cache_tag//\//_}
-          cache_tag_master="TAG-master-${ROX_PRODUCT_BRANDING,,}"
+          cache_tag="TAG-master-${ROX_PRODUCT_BRANDING,,}"
 
-          args_template="--cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max,ignore-error=true \
-            --cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag} \
-            --cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag_master}"
+          # Build cache args: always read from master cache
+          args_template="--cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag}"
+          # Only write cache on master branch pushes
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/master" ]]; then
+            args_template="${args_template} --cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max,ignore-error=true"
+          fi
 
           make copy-binaries-to-image-dir
 
@@ -827,11 +828,21 @@ jobs:
         run: |
           cache_registry='ghcr.io'
           cache_image="${GITHUB_REPOSITORY,,}"
-          cache_tag="main-${{ matrix.arch }}-${GITHUB_REF_NAME,,}-${ROX_PRODUCT_BRANDING,,}"
-          cache_tag=${cache_tag//\//_}
-          cache_tag_master="main-${{ matrix.arch }}-master-${ROX_PRODUCT_BRANDING,,}"
+          cache_tag="main-${{ matrix.arch }}-master-${ROX_PRODUCT_BRANDING,,}"
 
-          echo "DOCKER_BUILD_CACHE_ARGS=--cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max,ignore-error=true --cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag} --cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag_master}" >> "$GITHUB_ENV"
+          # Build cache-from args: always pull from master cache
+          cache_args="--cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag}"
+
+          # Only write cache on master branch pushes to avoid PR cache pollution
+          # and reduce build time (cache-to adds upload overhead)
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/master" ]]; then
+            cache_args="${cache_args} --cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max,ignore-error=true"
+            echo "Docker cache: read/write (master push)"
+          else
+            echo "Docker cache: read-only (PR or non-master)"
+          fi
+
+          echo "DOCKER_BUILD_CACHE_ARGS=${cache_args}" >> "$GITHUB_ENV"
 
       - name: Checkout submodules
         run: |
