@@ -231,7 +231,8 @@ jobs:
           matrix='{
             "pre_build_ui": { "branding":[] },
             "pre_build_cli": { "include":[] },
-            "pre_build_go_binaries": { "name":[], "arch":[] },
+            "pre_build_go_binaries": { "include":[] },
+            "pre_build_go_binaries_merge": { "include":[] },
             "build_and_push_main": { "name":[], "arch":[] },
             "push_main_multiarch_manifests": { "name":[] },
             "build_and_push_operator": { "name":[], "arch":[] },
@@ -239,9 +240,27 @@ jobs:
             "scan_images_with_roxctl": { "name":[], "image":[], "exclude":[] }
           }'
 
-          # The base matrix - amd64 only, RHACS_BRANDING only for PRs
-          matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
-          matrix="$(jq '.pre_build_go_binaries.arch += ["amd64"]' <<< "$matrix")"
+          # Go binaries: split into 3 component groups for parallelization
+          # - central: largest component
+          # - sensor: admission-control, kubernetes, upgrader
+          # - support: compliance, config-controller, migrator
+          add_go_binary_jobs() {
+            local arch="$1"
+            local name="$2"
+            # Add build jobs for each component
+            matrix="$(jq --arg arch "$arch" --arg name "$name" \
+              '.pre_build_go_binaries.include += [
+                {"arch": $arch, "name": $name, "component": "central", "packages": "central"},
+                {"arch": $arch, "name": $name, "component": "sensor", "packages": "sensor/admission-control sensor/kubernetes sensor/upgrader"},
+                {"arch": $arch, "name": $name, "component": "support", "packages": "compliance/cmd/compliance config-controller migrator"}
+              ]' <<< "$matrix")"
+            # Add merge job for this (arch, name) combination
+            matrix="$(jq --arg arch "$arch" --arg name "$name" \
+              '.pre_build_go_binaries_merge.include += [{"arch": $arch, "name": $name}]' <<< "$matrix")"
+          }
+
+          # The base matrix - amd64 only for PRs
+          add_go_binary_jobs "amd64" "default"
 
           # CLI: For PRs, only linux-amd64; add darwin/windows for non-PRs or with label
           matrix="$(jq '.pre_build_cli.include += [{"os": "linux-amd64", "targets": "roxctl_linux-amd64 roxagent_linux-amd64"}]' <<< "$matrix")"
@@ -276,7 +295,7 @@ jobs:
           # Add arm64 for non-PRs or PRs with ci-build-arm64 label
           if ! is_in_PR_context || pr_has_label ci-build-arm64 || pr_has_label ci-build-all-arch; then
             matrix="$(jq '.pre_build_cli.include += [{"os": "linux-arm64", "targets": "roxctl_linux-arm64 roxagent_linux-arm64"}]' <<< "$matrix")"
-            matrix="$(jq '.pre_build_go_binaries.arch += ["arm64"]' <<< "$matrix")"
+            add_go_binary_jobs "arm64" "default"
             matrix="$(jq '.build_and_push_main.arch += ["arm64"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_operator.arch += ["arm64"]' <<< "$matrix")"
           fi
@@ -289,28 +308,26 @@ jobs:
           if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
             matrix="$(jq '.pre_build_cli.include += [{"os": "linux-ppc64le", "targets": "roxctl_linux-ppc64le roxagent_linux-ppc64le"}]' <<< "$matrix")"
             matrix="$(jq '.pre_build_cli.include += [{"os": "linux-s390x", "targets": "roxctl_linux-s390x roxagent_linux-s390x"}]' <<< "$matrix")"
-            matrix="$(jq '.pre_build_go_binaries.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
+            add_go_binary_jobs "ppc64le" "default"
+            add_go_binary_jobs "s390x" "default"
             matrix="$(jq '.build_and_push_main.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
           fi
 
           # Conditionally add a prerelease build (binaries built with GOTAGS=release)
           if ! is_tagged; then
             if ! is_in_PR_context || pr_has_label ci-build-prerelease; then
-              matrix="$(jq '.pre_build_go_binaries.name += ["prerelease"]' <<< "$matrix")"
+              add_go_binary_jobs "amd64" "prerelease"
               matrix="$(jq '.build_and_push_main.name += ["prerelease"]' <<< "$matrix")"
               matrix="$(jq '.push_main_multiarch_manifests.name += ["prerelease"]' <<< "$matrix")"
             fi
           fi
 
-          # Conditionally add a -race debug build (binaries built with -race)
+          # Conditionally add a -race debug build (binaries built with -race, amd64 only)
           if ! is_in_PR_context || pr_has_label ci-build-race-condition-debug; then
-            matrix="$(jq '.pre_build_go_binaries.name += ["race-condition-debug"]' <<< "$matrix")"
+            add_go_binary_jobs "amd64" "race-condition-debug"
             matrix="$(jq '.build_and_push_main.name += ["race-condition-debug"]' <<< "$matrix")"
             matrix="$(jq '.push_main_multiarch_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
-            # Exclude "arm64", "ppc64le", "s390x"
-            matrix="$(jq '.pre_build_go_binaries.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
-            matrix="$(jq '.pre_build_go_binaries.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
-            matrix="$(jq '.pre_build_go_binaries.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
+            # Exclude non-amd64 for race-condition-debug in build_and_push_main
             matrix="$(jq '.build_and_push_main.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
@@ -588,20 +605,54 @@ jobs:
           )
         run: echo "RACE=true" >> "$GITHUB_ENV"
 
-      - name: Build Go Binaries
+      - name: Build Go Binaries (${{ matrix.component }})
         run: |
+          # Build only the packages for this component: ${{ matrix.packages }}
+          make build-prep
           if [[ "${{ matrix.arch }}" != "amd64" ]]; then
             echo "Building non-amd64 binary (CGO_ENABLED=0)"
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
+            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 ./scripts/go-build.sh ${{ matrix.packages }}
           else
             echo "Building amd64 binary (CGO_ENABLED=1)"
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-nodeps
+            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 ./scripts/go-build.sh ${{ matrix.packages }}
           fi
 
       - name: Bundle the build to preserve permissions
         run: tar -cvzf go-binaries-build.tgz bin/linux_${{ matrix.arch }}
 
       - uses: ./.github/actions/upload-artifact-with-retry
+        with:
+          name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}-${{ matrix.component }}
+          path: go-binaries-build.tgz
+
+  # Merge Go binary artifacts from parallel component builds into single artifact per arch/name
+  pre-build-go-binaries-merge:
+    runs-on: ubuntu-22.04
+    needs:
+      - define-job-matrix
+      - pre-build-go-binaries
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries_merge }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}-*
+          merge-multiple: false
+
+      - name: Merge Go binary builds
+        run: |
+          mkdir -p bin/linux_${{ matrix.arch }}
+          for archive in go-binaries-build-*/go-binaries-build.tgz; do
+            echo "Extracting $archive"
+            tar -xzf "$archive"
+          done
+          ls -la bin/linux_${{ matrix.arch }}/
+
+      - name: Bundle merged build
+        run: tar -cvzf go-binaries-build.tgz bin/linux_${{ matrix.arch }}
+
+      - uses: actions/upload-artifact@v4
         with:
           name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
           path: go-binaries-build.tgz
@@ -673,7 +724,7 @@ jobs:
       - define-job-matrix
       - pre-build-ui
       - pre-build-cli-merge
-      - pre-build-go-binaries
+      - pre-build-go-binaries-merge
       - pre-build-docs
       - pre-build-oss-notice
     # This step will run even if required pre-* steps failed. By following this
@@ -1169,7 +1220,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
     - pre-build-cli-merge
-    - pre-build-go-binaries
+    - pre-build-go-binaries-merge
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -1291,7 +1342,7 @@ jobs:
     needs:
       - pre-build-ui
       - pre-build-cli-merge
-      - pre-build-go-binaries
+      - pre-build-go-binaries-merge
       - pre-build-docs
       - build-and-push-main
       - build-and-push-operator
