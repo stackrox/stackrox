@@ -7,6 +7,8 @@ packages:
 # final stage in image/rhel/konflux.Dockerfile
 - findutils
 - postgresql
+# builder stage in operator/konflux.bundle.Dockerfile
+- python3.12-pyyaml
 moduleEnable:
 # final stage in image/rhel/konflux.Dockerfile
 - postgresql:15
