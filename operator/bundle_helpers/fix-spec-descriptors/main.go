@@ -63,7 +63,13 @@ func main() {
 			fixDescriptorOrder(descriptors)
 			allowRelativeFieldDependencies(descriptors)
 
-			// No need to reassign, we modified in place
+			// Reassign the sorted descriptors back to the CRD
+			// (we created a new slice, so we must update the original)
+			newSpecDescriptors := make([]interface{}, len(descriptors))
+			for i, d := range descriptors {
+				newSpecDescriptors[i] = d
+			}
+			crdMap["specDescriptors"] = newSpecDescriptors
 		}
 	}
 
