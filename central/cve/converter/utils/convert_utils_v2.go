@@ -68,12 +68,17 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, index
 		}
 	}
 
+	// Determine the CVSS score version based on available CVSS data.
+	// Only set a specific version (V2 or V3) if the score is greater than 0.
+	// A score of 0 indicates that the CVSS score is not available for this CVE,
+	// in which case we should return UNKNOWN to avoid confusion.
 	var scoreVersion storage.CVEInfo_ScoreVersion
 	var impactScore float32
-	if from.GetCvssV3() != nil {
+	scoreVersion = storage.CVEInfo_UNKNOWN // Default to UNKNOWN
+	if from.GetCvssV3() != nil && from.GetCvssV3().GetScore() > 0 {
 		scoreVersion = storage.CVEInfo_V3
 		impactScore = from.GetCvssV3().GetImpactScore()
-	} else if from.GetCvssV2() != nil {
+	} else if from.GetCvssV2() != nil && from.GetCvssV2().GetScore() > 0 {
 		scoreVersion = storage.CVEInfo_V2
 		impactScore = from.GetCvssV2().GetImpactScore()
 	}

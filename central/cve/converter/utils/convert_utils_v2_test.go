@@ -131,6 +131,47 @@ var (
 			NvdCvss:               0,
 			Epss:                  nil,
 		},
+		// Test case 3: CVSS exists but score is 0 (unavailable).
+		// This should result in ScoreVersion being UNKNOWN, not V3.
+		{
+			Cve:          "cve3",
+			Cvss:         5.0,
+			Summary:      "Test vulnerability with zero CVSS score",
+			Link:         "http://example.com/cve3",
+			SetFixedBy:   nil,
+			ScoreVersion: 1,
+			CvssV2:       nil,
+			// CvssV3 exists but with score = 0
+			CvssV3: &storage.CVSSV3{
+				Vector:              "",
+				ExploitabilityScore: 0,
+				ImpactScore:         0,
+				AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
+				AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+				PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
+				UserInteraction:     storage.CVSSV3_UI_NONE,
+				Scope:               storage.CVSSV3_UNCHANGED,
+				Confidentiality:     storage.CVSSV3_IMPACT_NONE,
+				Integrity:           storage.CVSSV3_IMPACT_NONE,
+				Availability:        storage.CVSSV3_IMPACT_NONE,
+				Score:               0, // Score is 0 - not available
+				Severity:            storage.CVSSV3_NONE,
+			},
+			PublishedOn:           ts,
+			LastModified:          ts,
+			VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+			VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
+			Suppressed:            false,
+			SuppressActivation:    nil,
+			SuppressExpiry:        nil,
+			FirstSystemOccurrence: ts,
+			FirstImageOccurrence:  ts,
+			Severity:              storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+			State:                 0,
+			CvssMetrics:           nil,
+			NvdCvss:               0,
+			Epss:                  nil,
+		},
 	}
 )
 
@@ -270,6 +311,50 @@ func getTestCVEs(t *testing.T) []*storage.ImageCVEV2 {
 			},
 			ComponentId: getTestComponentID(1),
 		},
+		// Test case 3: Expected result when CVSS score is 0 (unavailable).
+		// ScoreVersion should be UNKNOWN, not V3.
+		{
+			Id:      getTestCVEID(testVulns[2], getTestComponentID(2), 2),
+			ImageId: "sha",
+			CveBaseInfo: &storage.CVEInfo{
+				Cve:          "cve3",
+				Summary:      "Test vulnerability with zero CVSS score",
+				Link:         "http://example.com/cve3",
+				PublishedOn:  ts,
+				CreatedAt:    ts,
+				LastModified: ts,
+				ScoreVersion: storage.CVEInfo_UNKNOWN, // Should be UNKNOWN
+				CvssV2:       nil,
+				CvssV3: &storage.CVSSV3{
+					Vector:              "",
+					ExploitabilityScore: 0,
+					ImpactScore:         0,
+					AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
+					AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+					PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
+					UserInteraction:     storage.CVSSV3_UI_NONE,
+					Scope:               storage.CVSSV3_UNCHANGED,
+					Confidentiality:     storage.CVSSV3_IMPACT_NONE,
+					Integrity:           storage.CVSSV3_IMPACT_NONE,
+					Availability:        storage.CVSSV3_IMPACT_NONE,
+					Score:               0,
+					Severity:            storage.CVSSV3_NONE,
+				},
+				References:  nil,
+				CvssMetrics: nil,
+				Epss:        nil,
+			},
+			Cvss:                 5.0,
+			Severity:             storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+			ImpactScore:          0, // Impact score is 0 because CVSS score is 0
+			Nvdcvss:              0,
+			NvdScoreVersion:      storage.CvssScoreVersion_UNKNOWN_VERSION,
+			FirstImageOccurrence: ts,
+			State:                0,
+			IsFixable:            false,
+			HasFixedBy:           nil,
+			ComponentId:          getTestComponentID(2),
+		},
 	}
 }
 
@@ -284,6 +369,11 @@ func getComponentInfo(t *testing.T) []*componentPieces {
 			imageID:     "sha",
 			componentID: getTestComponentID(1),
 			cveIndex:    1,
+		},
+		{
+			imageID:     "sha",
+			componentID: getTestComponentID(2),
+			cveIndex:    2,
 		},
 	}
 }
