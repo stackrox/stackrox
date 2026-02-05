@@ -244,10 +244,16 @@ func (s *serviceImpl) ImageVulnerabilities(ctx context.Context, _ *v1.Empty) (*v
 				}
 			}
 
+			findings, err := s.getImageFindings(txCtx, img.GetId())
+			if err != nil {
+				return errors.Wrapf(err, "failed to get findings for image %s", img.GetId())
+			}
+
 			images = append(images, &v1.ImageVulnerabilitiesResponse_Image{
 				Sha:        img.GetId(),
 				Layers:     responseLayers,
 				Components: responseComponents,
+				Findings:   findings,
 			})
 		}
 
@@ -264,4 +270,35 @@ func (s *serviceImpl) ImageVulnerabilities(ctx context.Context, _ *v1.Empty) (*v
 	committed = true
 
 	return &v1.ImageVulnerabilitiesResponse{Images: images}, nil
+}
+
+func (s *serviceImpl) getImageFindings(ctx context.Context, imageID string) ([]*v1.ImageVulnerabilitiesResponse_Image_Finding, error) {
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ImageSHA, imageID).
+		ProtoQuery()
+
+	var findings []*v1.ImageVulnerabilitiesResponse_Image_Finding
+
+	err := s.deployments.WalkByQuery(ctx, query, func(deployment *storage.Deployment) error {
+		for _, container := range deployment.GetContainers() {
+			if container.GetImage().GetId() == imageID {
+				finding := &v1.ImageVulnerabilitiesResponse_Image_Finding{
+					Cluster:       deployment.GetClusterName(),
+					Namespace:     deployment.GetNamespace(),
+					Workload:      deployment.GetName(),
+					WorkloadType:  deployment.GetType(),
+					ImageFullname: container.GetImage().GetName().GetFullName(),
+				}
+				findings = append(findings, finding)
+				break
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return findings, nil
 }

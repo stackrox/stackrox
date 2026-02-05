@@ -39,9 +39,17 @@ message ImageVulnerabilitiesResponse {
       string location = 4;
       repeated string vulnerability_ids = 5;
     }
+    message Finding {
+      string cluster = 1;
+      string namespace = 2;
+      string workload = 3;
+      string workload_type = 4;
+      string image_fullname = 6;
+    }
     string sha = 1;
     repeated storage.ImageLayer layers = 2;
     repeated Component components = 3;
+    repeated Finding findings = 4;
   }
   repeated Image images = 1;
 }

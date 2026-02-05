@@ -193,6 +193,7 @@ type ImageVulnerabilitiesResponse_Image struct {
 	Sha           string                                          `protobuf:"bytes,1,opt,name=sha,proto3" json:"sha,omitempty"`
 	Layers        []*storage.ImageLayer                           `protobuf:"bytes,2,rep,name=layers,proto3" json:"layers,omitempty"`
 	Components    []*ImageVulnerabilitiesResponse_Image_Component `protobuf:"bytes,3,rep,name=components,proto3" json:"components,omitempty"`
+	Findings      []*ImageVulnerabilitiesResponse_Image_Finding   `protobuf:"bytes,4,rep,name=findings,proto3" json:"findings,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -244,6 +245,13 @@ func (x *ImageVulnerabilitiesResponse_Image) GetLayers() []*storage.ImageLayer {
 func (x *ImageVulnerabilitiesResponse_Image) GetComponents() []*ImageVulnerabilitiesResponse_Image_Component {
 	if x != nil {
 		return x.Components
+	}
+	return nil
+}
+
+func (x *ImageVulnerabilitiesResponse_Image) GetFindings() []*ImageVulnerabilitiesResponse_Image_Finding {
+	if x != nil {
+		return x.Findings
 	}
 	return nil
 }
@@ -324,6 +332,82 @@ func (x *ImageVulnerabilitiesResponse_Image_Component) GetVulnerabilityIds() []s
 	return nil
 }
 
+type ImageVulnerabilitiesResponse_Image_Finding struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Cluster       string                 `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	Workload      string                 `protobuf:"bytes,3,opt,name=workload,proto3" json:"workload,omitempty"`
+	WorkloadType  string                 `protobuf:"bytes,4,opt,name=workload_type,json=workloadType,proto3" json:"workload_type,omitempty"`
+	ImageFullname string                 `protobuf:"bytes,6,opt,name=image_fullname,json=imageFullname,proto3" json:"image_fullname,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImageVulnerabilitiesResponse_Image_Finding) Reset() {
+	*x = ImageVulnerabilitiesResponse_Image_Finding{}
+	mi := &file_api_v1_vuln_mgmt_service_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImageVulnerabilitiesResponse_Image_Finding) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImageVulnerabilitiesResponse_Image_Finding) ProtoMessage() {}
+
+func (x *ImageVulnerabilitiesResponse_Image_Finding) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_vuln_mgmt_service_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImageVulnerabilitiesResponse_Image_Finding.ProtoReflect.Descriptor instead.
+func (*ImageVulnerabilitiesResponse_Image_Finding) Descriptor() ([]byte, []int) {
+	return file_api_v1_vuln_mgmt_service_proto_rawDescGZIP(), []int{2, 0, 1}
+}
+
+func (x *ImageVulnerabilitiesResponse_Image_Finding) GetCluster() string {
+	if x != nil {
+		return x.Cluster
+	}
+	return ""
+}
+
+func (x *ImageVulnerabilitiesResponse_Image_Finding) GetNamespace() string {
+	if x != nil {
+		return x.Namespace
+	}
+	return ""
+}
+
+func (x *ImageVulnerabilitiesResponse_Image_Finding) GetWorkload() string {
+	if x != nil {
+		return x.Workload
+	}
+	return ""
+}
+
+func (x *ImageVulnerabilitiesResponse_Image_Finding) GetWorkloadType() string {
+	if x != nil {
+		return x.WorkloadType
+	}
+	return ""
+}
+
+func (x *ImageVulnerabilitiesResponse_Image_Finding) GetImageFullname() string {
+	if x != nil {
+		return x.ImageFullname
+	}
+	return ""
+}
+
 var File_api_v1_vuln_mgmt_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_vuln_mgmt_service_proto_rawDesc = "" +
@@ -337,21 +421,28 @@ const file_api_v1_vuln_mgmt_service_proto_rawDesc = "" +
 	"deployment\x18\x01 \x01(\v2\x13.storage.DeploymentR\n" +
 	"deployment\x12&\n" +
 	"\x06images\x18\x02 \x03(\v2\x0e.storage.ImageR\x06images\x12\x1b\n" +
-	"\tlive_pods\x18\x03 \x01(\x05R\blivePods\"\x9b\x03\n" +
+	"\tlive_pods\x18\x03 \x01(\x05R\blivePods\"\x93\x05\n" +
 	"\x1cImageVulnerabilitiesResponse\x12>\n" +
-	"\x06images\x18\x01 \x03(\v2&.v1.ImageVulnerabilitiesResponse.ImageR\x06images\x1a\xba\x02\n" +
+	"\x06images\x18\x01 \x03(\v2&.v1.ImageVulnerabilitiesResponse.ImageR\x06images\x1a\xb2\x04\n" +
 	"\x05Image\x12\x10\n" +
 	"\x03sha\x18\x01 \x01(\tR\x03sha\x12+\n" +
 	"\x06layers\x18\x02 \x03(\v2\x13.storage.ImageLayerR\x06layers\x12P\n" +
 	"\n" +
 	"components\x18\x03 \x03(\v20.v1.ImageVulnerabilitiesResponse.Image.ComponentR\n" +
-	"components\x1a\x9f\x01\n" +
+	"components\x12J\n" +
+	"\bfindings\x18\x04 \x03(\v2..v1.ImageVulnerabilitiesResponse.Image.FindingR\bfindings\x1a\x9f\x01\n" +
 	"\tComponent\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12\x1b\n" +
 	"\tlayer_sha\x18\x03 \x01(\tR\blayerSha\x12\x1a\n" +
 	"\blocation\x18\x04 \x01(\tR\blocation\x12+\n" +
-	"\x11vulnerability_ids\x18\x05 \x03(\tR\x10vulnerabilityIds2\x99\x02\n" +
+	"\x11vulnerability_ids\x18\x05 \x03(\tR\x10vulnerabilityIds\x1a\xa9\x01\n" +
+	"\aFinding\x12\x18\n" +
+	"\acluster\x18\x01 \x01(\tR\acluster\x12\x1c\n" +
+	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x1a\n" +
+	"\bworkload\x18\x03 \x01(\tR\bworkload\x12#\n" +
+	"\rworkload_type\x18\x04 \x01(\tR\fworkloadType\x12%\n" +
+	"\x0eimage_fullname\x18\x06 \x01(\tR\rimageFullname2\x99\x02\n" +
 	"\x0fVulnMgmtService\x12\x8c\x01\n" +
 	"\x17VulnMgmtExportWorkloads\x12\".v1.VulnMgmtExportWorkloadsRequest\x1a#.v1.VulnMgmtExportWorkloadsResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/v1/export/vuln-mgmt/workloads0\x01\x12w\n" +
 	"\x14ImageVulnerabilities\x12\t.v1.Empty\x1a .v1.ImageVulnerabilitiesResponse\"2\x82\xd3\xe4\x93\x02,\x12*/v1/export/vuln-mgmt/image-vulnerabilitiesB'\n" +
@@ -369,33 +460,35 @@ func file_api_v1_vuln_mgmt_service_proto_rawDescGZIP() []byte {
 	return file_api_v1_vuln_mgmt_service_proto_rawDescData
 }
 
-var file_api_v1_vuln_mgmt_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_api_v1_vuln_mgmt_service_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_api_v1_vuln_mgmt_service_proto_goTypes = []any{
 	(*VulnMgmtExportWorkloadsRequest)(nil),               // 0: v1.VulnMgmtExportWorkloadsRequest
 	(*VulnMgmtExportWorkloadsResponse)(nil),              // 1: v1.VulnMgmtExportWorkloadsResponse
 	(*ImageVulnerabilitiesResponse)(nil),                 // 2: v1.ImageVulnerabilitiesResponse
 	(*ImageVulnerabilitiesResponse_Image)(nil),           // 3: v1.ImageVulnerabilitiesResponse.Image
 	(*ImageVulnerabilitiesResponse_Image_Component)(nil), // 4: v1.ImageVulnerabilitiesResponse.Image.Component
-	(*storage.Deployment)(nil),                           // 5: storage.Deployment
-	(*storage.Image)(nil),                                // 6: storage.Image
-	(*storage.ImageLayer)(nil),                           // 7: storage.ImageLayer
-	(*Empty)(nil),                                        // 8: v1.Empty
+	(*ImageVulnerabilitiesResponse_Image_Finding)(nil),   // 5: v1.ImageVulnerabilitiesResponse.Image.Finding
+	(*storage.Deployment)(nil),                           // 6: storage.Deployment
+	(*storage.Image)(nil),                                // 7: storage.Image
+	(*storage.ImageLayer)(nil),                           // 8: storage.ImageLayer
+	(*Empty)(nil),                                        // 9: v1.Empty
 }
 var file_api_v1_vuln_mgmt_service_proto_depIdxs = []int32{
-	5, // 0: v1.VulnMgmtExportWorkloadsResponse.deployment:type_name -> storage.Deployment
-	6, // 1: v1.VulnMgmtExportWorkloadsResponse.images:type_name -> storage.Image
+	6, // 0: v1.VulnMgmtExportWorkloadsResponse.deployment:type_name -> storage.Deployment
+	7, // 1: v1.VulnMgmtExportWorkloadsResponse.images:type_name -> storage.Image
 	3, // 2: v1.ImageVulnerabilitiesResponse.images:type_name -> v1.ImageVulnerabilitiesResponse.Image
-	7, // 3: v1.ImageVulnerabilitiesResponse.Image.layers:type_name -> storage.ImageLayer
+	8, // 3: v1.ImageVulnerabilitiesResponse.Image.layers:type_name -> storage.ImageLayer
 	4, // 4: v1.ImageVulnerabilitiesResponse.Image.components:type_name -> v1.ImageVulnerabilitiesResponse.Image.Component
-	0, // 5: v1.VulnMgmtService.VulnMgmtExportWorkloads:input_type -> v1.VulnMgmtExportWorkloadsRequest
-	8, // 6: v1.VulnMgmtService.ImageVulnerabilities:input_type -> v1.Empty
-	1, // 7: v1.VulnMgmtService.VulnMgmtExportWorkloads:output_type -> v1.VulnMgmtExportWorkloadsResponse
-	2, // 8: v1.VulnMgmtService.ImageVulnerabilities:output_type -> v1.ImageVulnerabilitiesResponse
-	7, // [7:9] is the sub-list for method output_type
-	5, // [5:7] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	5, // 5: v1.ImageVulnerabilitiesResponse.Image.findings:type_name -> v1.ImageVulnerabilitiesResponse.Image.Finding
+	0, // 6: v1.VulnMgmtService.VulnMgmtExportWorkloads:input_type -> v1.VulnMgmtExportWorkloadsRequest
+	9, // 7: v1.VulnMgmtService.ImageVulnerabilities:input_type -> v1.Empty
+	1, // 8: v1.VulnMgmtService.VulnMgmtExportWorkloads:output_type -> v1.VulnMgmtExportWorkloadsResponse
+	2, // 9: v1.VulnMgmtService.ImageVulnerabilities:output_type -> v1.ImageVulnerabilitiesResponse
+	8, // [8:10] is the sub-list for method output_type
+	6, // [6:8] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_vuln_mgmt_service_proto_init() }
@@ -410,7 +503,7 @@ func file_api_v1_vuln_mgmt_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_vuln_mgmt_service_proto_rawDesc), len(file_api_v1_vuln_mgmt_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

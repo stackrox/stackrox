@@ -173,6 +173,26 @@
       "default": "UNSET",
       "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
     },
+    "ImageFinding": {
+      "type": "object",
+      "properties": {
+        "cluster": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "workload": {
+          "type": "string"
+        },
+        "workloadType": {
+          "type": "string"
+        },
+        "imageFullname": {
+          "type": "string"
+        }
+      }
+    },
     "ImageVulnerabilitiesResponseImageComponent": {
       "type": "object",
       "properties": {
@@ -1672,6 +1692,13 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/ImageVulnerabilitiesResponseImageComponent"
+          }
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ImageFinding"
           }
         }
       }
