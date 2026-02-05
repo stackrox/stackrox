@@ -657,7 +657,7 @@ _image_prefetcher_system_start() {
     case "$CI_JOB_NAME" in
     # ROX-24818: GKE is excluded from system image prefetch as it causes
     # flakes in test.
-    *-operator-e2e-tests|*ocp*qa-e2e-tests)
+    *-operator-e2e-tests|*ocp*qa-e2e-tests|*ibmcloudz*)
         image_prefetcher_start_set stackrox-images
         ;;
     # Enabling scanner V4 installation tests as well, even though they also run on GKE,
