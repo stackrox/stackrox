@@ -1,11 +1,4 @@
-import {
-    Pagination,
-    Title,
-    Toolbar,
-    ToolbarContent,
-    ToolbarItem,
-    pluralize,
-} from '@patternfly/react-core';
+import { Pagination, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
@@ -62,9 +55,6 @@ function RiskTablePanel({
         <div>
             <Toolbar>
                 <ToolbarContent>
-                    <ToolbarItem>
-                        <Title headingLevel="h2">{pluralize(deploymentCount, 'deployment')}</Title>
-                    </ToolbarItem>
                     <ToolbarItem align={{ default: 'alignEnd' }} variant="pagination">
                         <Pagination
                             itemCount={deploymentCount}
