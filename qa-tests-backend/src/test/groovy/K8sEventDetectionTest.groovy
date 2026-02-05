@@ -1,16 +1,12 @@
 import static util.Helpers.withRetry
 
-import orchestratormanager.OrchestratorTypes
-
 import io.stackrox.proto.storage.AlertOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 
 import objects.Deployment
 import services.AlertService
 import services.PolicyService
-import util.Env
 
-import spock.lang.IgnoreIf
 import spock.lang.Tag
 import spock.lang.Unroll
 
@@ -20,8 +16,10 @@ class K8sEventDetectionTest extends BaseSpecification {
     static private registerDeployment(String name, boolean privileged) {
         DEPLOYMENTS.add(
             new Deployment().setName(name)
-                .setImage(TEST_IMAGE).addLabel("app", name).
-                setPrivilegedFlag(privileged)
+                .setImage(TEST_IMAGE).addLabel("app", name)
+                .setPrivilegedFlag(privileged)
+                .setStdin(true)
+                .setTty(true)
         )
         return name
     }
@@ -35,50 +33,69 @@ class K8sEventDetectionTest extends BaseSpecification {
     static final private String KUBECTL_EXEC_POLICY_NAME = "Kubernetes Actions: Exec into Pod"
     static final private String CLONED_KUBECTL_EXEC_POLICY_NAME = "CLONED: Kubernetes Actions: Exec into Pod"
 
+    static final private String KUBECTL_ATTACH_POLICY_NAME = "Kubernetes Actions: Attach to Pod"
+    static final private String CLONED_KUBECTL_ATTACH_POLICY_NAME = "CLONED: Kubernetes Actions: Attach to Pod"
+
     def setupSpec() {
-        if (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) {
-            // K8s event detection is not supported on OpenShift.
-            return
-        }
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)
         }
 
-        // If MITRE feature is enabled, work on the cloned policy instead of default policy.
-        def policy = Services.getPolicyByName(KUBECTL_EXEC_POLICY_NAME)
-        policy = PolicyService.createNewPolicy(
-                PolicyOuterClass.Policy.newBuilder(policy)
+        def execPolicy = Services.getPolicyByName(KUBECTL_EXEC_POLICY_NAME)
+        execPolicy = PolicyService.createNewPolicy(
+                PolicyOuterClass.Policy.newBuilder(execPolicy)
                         .setId("")
                         .setName(CLONED_KUBECTL_EXEC_POLICY_NAME)
                         .setMitreVectorsLocked(false)
                         .setCriteriaLocked(false)
                         .build()
         )
-        assert policy
+        assert execPolicy
+
+        def attachPolicy = Services.getPolicyByName(KUBECTL_ATTACH_POLICY_NAME)
+        attachPolicy = PolicyService.createNewPolicy(
+                PolicyOuterClass.Policy.newBuilder(attachPolicy)
+                        .setId("")
+                        .setName(CLONED_KUBECTL_ATTACH_POLICY_NAME)
+                        .setMitreVectorsLocked(false)
+                        .setCriteriaLocked(false)
+                        .build()
+        )
+        assert attachPolicy
 
         Services.setPolicyDisabled(KUBECTL_EXEC_POLICY_NAME, true)
+        Services.setPolicyDisabled(KUBECTL_ATTACH_POLICY_NAME, true)
     }
 
     def cleanupSpec() {
-        if (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) {
-            // K8s event detection is not supported on OpenShift.
-            return
-        }
         for (def deployment: DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }
 
-        def policy = Services.getPolicyByName(CLONED_KUBECTL_EXEC_POLICY_NAME)
-        if (policy) {
-            PolicyService.deletePolicy(policy.getId())
+        def execPolicy = Services.getPolicyByName(CLONED_KUBECTL_EXEC_POLICY_NAME)
+        if (execPolicy) {
+            PolicyService.deletePolicy(execPolicy.getId())
         }
         Services.setPolicyDisabled(KUBECTL_EXEC_POLICY_NAME, false)
+
+        def attachPolicy = Services.getPolicyByName(CLONED_KUBECTL_ATTACH_POLICY_NAME)
+        if (attachPolicy) {
+            PolicyService.deletePolicy(attachPolicy.getId())
+        }
+        Services.setPolicyDisabled(KUBECTL_ATTACH_POLICY_NAME, false)
     }
 
     def runExec(List<Deployment> deployments) {
         for (def deployment: deployments) {
             assert orchestrator.execInContainer(deployment, "ls -l")
+        }
+        return true
+    }
+
+    def runAttach(List<Deployment> deployments) {
+        for (def deployment: deployments) {
+            assert orchestrator.attachToContainer(deployment)
         }
         return true
     }
@@ -102,13 +119,21 @@ class K8sEventDetectionTest extends BaseSpecification {
             def podName = podNames.get(violatingDeploymentName)
             assert k8sSubViolations.size() == expectedK8sViolationsCount
             for (def subViolation: k8sSubViolations) {
-                assert subViolation.message == "Kubernetes API received exec 'ls -l' request into pod '${podName}'" +
+                if (policyName == CLONED_KUBECTL_EXEC_POLICY_NAME) {
+                    assert subViolation.message == "Kubernetes API received exec 'ls -l' request into pod " +
+                        "'${podName}' container '${violatingDeploymentName}'"
+                }
+                if (policyName == CLONED_KUBECTL_ATTACH_POLICY_NAME) {
+                    assert subViolation.message == "Kubernetes API received attach request to pod '${podName}'" +
                         " container '${violatingDeploymentName}'"
+                }
                 def kvAttrs = subViolation.getKeyValueAttrs().getAttrsList()
                 def podAttr = kvAttrs.find { it.key == "pod" }
                 assert podAttr != null && podAttr.value == podName
-                def commandsAttr = kvAttrs.find { it.key == "commands" }
-                assert commandsAttr != null && commandsAttr.value == "ls -l"
+                if (policyName == CLONED_KUBECTL_EXEC_POLICY_NAME) {
+                    def commandsAttr = kvAttrs.find { it.key == "commands" }
+                    assert commandsAttr != null && commandsAttr.value == "ls -l"
+                }
             }
 
             // Ensure the deployment enrichment works.
@@ -133,8 +158,6 @@ class K8sEventDetectionTest extends BaseSpecification {
     @Tag("BAT")
     @Tag("RUNTIME")
     @Tag("K8sEvents")
-    // K8s event detection is currently not supported on OpenShift.
-    @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT })
     def "Verify k8s exec detection into #execIntoDeploymentNames with addl groups #additionalPolicyGroups"() {
         when:
         "Create the deployments, modify the policy, exec into them"
@@ -225,5 +248,99 @@ class K8sEventDetectionTest extends BaseSpecification {
             setFieldName("Privileged Container").
             addValues(PolicyOuterClass.PolicyValue.newBuilder().setValue("true").build()).
             build(),] | [NGINX_2_DEP_NAME, PRIV_NGINX_2_DEPNAME] | [PRIV_NGINX_2_DEPNAME]
+    }
+
+    @Unroll
+    @Tag("BAT")
+    @Tag("RUNTIME")
+    @Tag("K8sEvents")
+    def "Verify k8s attach detection into #attachToDeploymentNames with addl groups #additionalPolicyGroups"() {
+        when:
+        "Create the deployments, modify the policy, attach to pods in them"
+        def originalPolicy = Services.getPolicyByName(CLONED_KUBECTL_ATTACH_POLICY_NAME)
+        assert originalPolicy != null && originalPolicy.getName() == CLONED_KUBECTL_ATTACH_POLICY_NAME
+
+        def currentPolicy = originalPolicy
+        if (additionalPolicyGroups != null && additionalPolicyGroups.size() > 0) {
+            assert originalPolicy.getPolicySectionsCount() == 1
+            def policySection = originalPolicy.getPolicySections(0)
+            def newPolicySection = PolicyOuterClass.PolicySection.newBuilder(policySection).
+                addAllPolicyGroups(additionalPolicyGroups).
+                build()
+            currentPolicy = PolicyOuterClass.Policy.newBuilder(originalPolicy).
+                clearPolicySections().
+                addPolicySections(newPolicySection).
+                build()
+            Services.updatePolicy(currentPolicy)
+            // Sleep to allow policy update to propagate
+            sleep(3000)
+        }
+
+        def podNames = new HashMap<String, String>()
+        def attachToPodsInDeployments = []
+        for (def deploymentName: attachToDeploymentNames) {
+            def deployment = DEPLOYMENTS.find { it.name == deploymentName }
+            assert deployment
+            attachToPodsInDeployments.add(deployment)
+
+            def podsForDeployment = orchestrator.getPods(deployment.namespace, deployment.getLabels()["app"])
+            assert podsForDeployment != null && podsForDeployment.size() == 1
+            podNames.put(deployment.name, podsForDeployment.get(0).metadata.name)
+        }
+
+        assert runAttach(attachToPodsInDeployments)
+
+        then:
+        "Fetch violations and assert on properties"
+        assert checkViolationsAreAsExpected(
+                CLONED_KUBECTL_ATTACH_POLICY_NAME, attachToDeploymentNames, violatingDeploymentNames, podNames, 1,
+        )
+
+        when:
+        "Run another attach"
+        assert runAttach(attachToPodsInDeployments)
+
+        then:
+        "Violations should have the new attach appended to them"
+        withRetry(2, 3) {
+            assert checkViolationsAreAsExpected(
+                    CLONED_KUBECTL_ATTACH_POLICY_NAME, attachToDeploymentNames, violatingDeploymentNames, podNames, 2,
+            )
+        }
+
+        when:
+        "Update the policy to have enforcement"
+        currentPolicy = PolicyOuterClass.Policy.newBuilder(currentPolicy)
+            .clearEnforcementActions()
+            .addEnforcementActions(PolicyOuterClass.EnforcementAction.FAIL_KUBE_REQUEST_ENFORCEMENT)
+            .build()
+        Services.updatePolicy(currentPolicy)
+        // Allow to propagate
+        sleep(3000)
+
+        then:
+        "Attach should fail for all violating deployments, but not for the others, and violations should not be updated"
+        for (def deploymentName: attachToDeploymentNames) {
+            def deployment = DEPLOYMENTS.find { it.name == deploymentName }
+            assert deployment
+             // these pods/attach events should be blocked by the enforced policy
+            orchestrator.attachToContainer(deployment)
+        }
+
+        // Still the same number of k8s violations as previously since enforcement has caused
+        // the to should not have been updated
+        assert checkViolationsAreAsExpected(
+                CLONED_KUBECTL_ATTACH_POLICY_NAME, attachToDeploymentNames, violatingDeploymentNames, podNames,
+                2,
+        )
+
+        cleanup:
+        Services.updatePolicy(originalPolicy)
+
+        where:
+        "Data inputs are"
+        additionalPolicyGroups | attachToDeploymentNames | violatingDeploymentNames
+
+        [] | [NGINX_1_DEP_NAME, NGINX_2_DEP_NAME] | [NGINX_1_DEP_NAME, NGINX_2_DEP_NAME]
     }
 }

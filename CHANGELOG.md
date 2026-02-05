@@ -12,6 +12,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ## [NEXT RELEASE]
 
 ### Added Features
+- ROX-24311: Detection and enforcement for pods/attach Kubernetes event
 
 ### Removed Features
 

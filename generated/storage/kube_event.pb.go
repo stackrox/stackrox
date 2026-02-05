@@ -103,21 +103,23 @@ const (
 	KubernetesEvent_Object_NETWORK_POLICIES             KubernetesEvent_Object_Resource = 7
 	KubernetesEvent_Object_SECURITY_CONTEXT_CONSTRAINTS KubernetesEvent_Object_Resource = 8
 	KubernetesEvent_Object_EGRESS_FIREWALLS             KubernetesEvent_Object_Resource = 9
+	KubernetesEvent_Object_PODS_ATTACH                  KubernetesEvent_Object_Resource = 10
 )
 
 // Enum value maps for KubernetesEvent_Object_Resource.
 var (
 	KubernetesEvent_Object_Resource_name = map[int32]string{
-		0: "UNKNOWN",
-		1: "PODS_EXEC",
-		2: "PODS_PORTFORWARD",
-		3: "SECRETS",
-		4: "CONFIGMAPS",
-		5: "CLUSTER_ROLES",
-		6: "CLUSTER_ROLE_BINDINGS",
-		7: "NETWORK_POLICIES",
-		8: "SECURITY_CONTEXT_CONSTRAINTS",
-		9: "EGRESS_FIREWALLS",
+		0:  "UNKNOWN",
+		1:  "PODS_EXEC",
+		2:  "PODS_PORTFORWARD",
+		3:  "SECRETS",
+		4:  "CONFIGMAPS",
+		5:  "CLUSTER_ROLES",
+		6:  "CLUSTER_ROLE_BINDINGS",
+		7:  "NETWORK_POLICIES",
+		8:  "SECURITY_CONTEXT_CONSTRAINTS",
+		9:  "EGRESS_FIREWALLS",
+		10: "PODS_ATTACH",
 	}
 	KubernetesEvent_Object_Resource_value = map[string]int32{
 		"UNKNOWN":                      0,
@@ -130,6 +132,7 @@ var (
 		"NETWORK_POLICIES":             7,
 		"SECURITY_CONTEXT_CONSTRAINTS": 8,
 		"EGRESS_FIREWALLS":             9,
+		"PODS_ATTACH":                  10,
 	}
 )
 
@@ -160,6 +163,7 @@ func (KubernetesEvent_Object_Resource) EnumDescriptor() ([]byte, []int) {
 	return file_storage_kube_event_proto_rawDescGZIP(), []int{0, 0, 0}
 }
 
+// Next Tag: 22
 type KubernetesEvent struct {
 	state     protoimpl.MessageState  `protogen:"open.v1"`
 	Id        string                  `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -173,6 +177,7 @@ type KubernetesEvent struct {
 	//
 	//	*KubernetesEvent_PodExecArgs_
 	//	*KubernetesEvent_PodPortForwardArgs_
+	//	*KubernetesEvent_PodAttachArgs_
 	ObjectArgs isKubernetesEvent_ObjectArgs `protobuf_oneof:"ObjectArgs"`
 	// Extended arguments. May not be available for pod exec and port forward events.
 	// These start at 15 because they were added after ObjectArgs and the previous tags are reserved in case it needs to be extended in the future.
@@ -269,6 +274,15 @@ func (x *KubernetesEvent) GetPodPortForwardArgs() *KubernetesEvent_PodPortForwar
 	return nil
 }
 
+func (x *KubernetesEvent) GetPodAttachArgs() *KubernetesEvent_PodAttachArgs {
+	if x != nil {
+		if x, ok := x.ObjectArgs.(*KubernetesEvent_PodAttachArgs_); ok {
+			return x.PodAttachArgs
+		}
+	}
+	return nil
+}
+
 func (x *KubernetesEvent) GetUser() *KubernetesEvent_User {
 	if x != nil {
 		return x.User
@@ -323,9 +337,15 @@ type KubernetesEvent_PodPortForwardArgs_ struct {
 	PodPortForwardArgs *KubernetesEvent_PodPortForwardArgs `protobuf:"bytes,6,opt,name=pod_port_forward_args,json=podPortForwardArgs,proto3,oneof"`
 }
 
+type KubernetesEvent_PodAttachArgs_ struct {
+	PodAttachArgs *KubernetesEvent_PodAttachArgs `protobuf:"bytes,21,opt,name=pod_attach_args,json=podAttachArgs,proto3,oneof"`
+}
+
 func (*KubernetesEvent_PodExecArgs_) isKubernetesEvent_ObjectArgs() {}
 
 func (*KubernetesEvent_PodPortForwardArgs_) isKubernetesEvent_ObjectArgs() {}
+
+func (*KubernetesEvent_PodAttachArgs_) isKubernetesEvent_ObjectArgs() {}
 
 type KubernetesEvent_Object struct {
 	state         protoimpl.MessageState          `protogen:"open.v1"`
@@ -491,6 +511,50 @@ func (x *KubernetesEvent_PodPortForwardArgs) GetPorts() []int32 {
 	return nil
 }
 
+type KubernetesEvent_PodAttachArgs struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Container     string                 `protobuf:"bytes,1,opt,name=container,proto3" json:"container,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *KubernetesEvent_PodAttachArgs) Reset() {
+	*x = KubernetesEvent_PodAttachArgs{}
+	mi := &file_storage_kube_event_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *KubernetesEvent_PodAttachArgs) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*KubernetesEvent_PodAttachArgs) ProtoMessage() {}
+
+func (x *KubernetesEvent_PodAttachArgs) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_kube_event_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use KubernetesEvent_PodAttachArgs.ProtoReflect.Descriptor instead.
+func (*KubernetesEvent_PodAttachArgs) Descriptor() ([]byte, []int) {
+	return file_storage_kube_event_proto_rawDescGZIP(), []int{0, 3}
+}
+
+func (x *KubernetesEvent_PodAttachArgs) GetContainer() string {
+	if x != nil {
+		return x.Container
+	}
+	return ""
+}
+
 type KubernetesEvent_ResponseStatus struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	StatusCode    int32                  `protobuf:"varint,1,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"`
@@ -501,7 +565,7 @@ type KubernetesEvent_ResponseStatus struct {
 
 func (x *KubernetesEvent_ResponseStatus) Reset() {
 	*x = KubernetesEvent_ResponseStatus{}
-	mi := &file_storage_kube_event_proto_msgTypes[4]
+	mi := &file_storage_kube_event_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -513,7 +577,7 @@ func (x *KubernetesEvent_ResponseStatus) String() string {
 func (*KubernetesEvent_ResponseStatus) ProtoMessage() {}
 
 func (x *KubernetesEvent_ResponseStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_kube_event_proto_msgTypes[4]
+	mi := &file_storage_kube_event_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -526,7 +590,7 @@ func (x *KubernetesEvent_ResponseStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KubernetesEvent_ResponseStatus.ProtoReflect.Descriptor instead.
 func (*KubernetesEvent_ResponseStatus) Descriptor() ([]byte, []int) {
-	return file_storage_kube_event_proto_rawDescGZIP(), []int{0, 3}
+	return file_storage_kube_event_proto_rawDescGZIP(), []int{0, 4}
 }
 
 func (x *KubernetesEvent_ResponseStatus) GetStatusCode() int32 {
@@ -553,7 +617,7 @@ type KubernetesEvent_User struct {
 
 func (x *KubernetesEvent_User) Reset() {
 	*x = KubernetesEvent_User{}
-	mi := &file_storage_kube_event_proto_msgTypes[5]
+	mi := &file_storage_kube_event_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -565,7 +629,7 @@ func (x *KubernetesEvent_User) String() string {
 func (*KubernetesEvent_User) ProtoMessage() {}
 
 func (x *KubernetesEvent_User) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_kube_event_proto_msgTypes[5]
+	mi := &file_storage_kube_event_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -578,7 +642,7 @@ func (x *KubernetesEvent_User) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KubernetesEvent_User.ProtoReflect.Descriptor instead.
 func (*KubernetesEvent_User) Descriptor() ([]byte, []int) {
-	return file_storage_kube_event_proto_rawDescGZIP(), []int{0, 4}
+	return file_storage_kube_event_proto_rawDescGZIP(), []int{0, 5}
 }
 
 func (x *KubernetesEvent_User) GetUsername() string {
@@ -599,14 +663,15 @@ var File_storage_kube_event_proto protoreflect.FileDescriptor
 
 const file_storage_kube_event_proto_rawDesc = "" +
 	"\n" +
-	"\x18storage/kube_event.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa3\v\n" +
+	"\x18storage/kube_event.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb5\f\n" +
 	"\x0fKubernetesEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x127\n" +
 	"\x06object\x18\x02 \x01(\v2\x1f.storage.KubernetesEvent.ObjectR\x06object\x128\n" +
 	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12;\n" +
 	"\bapi_verb\x18\x04 \x01(\x0e2 .storage.KubernetesEvent.APIVerbR\aapiVerb\x12J\n" +
 	"\rpod_exec_args\x18\x05 \x01(\v2$.storage.KubernetesEvent.PodExecArgsH\x00R\vpodExecArgs\x12`\n" +
-	"\x15pod_port_forward_args\x18\x06 \x01(\v2+.storage.KubernetesEvent.PodPortForwardArgsH\x00R\x12podPortForwardArgs\x121\n" +
+	"\x15pod_port_forward_args\x18\x06 \x01(\v2+.storage.KubernetesEvent.PodPortForwardArgsH\x00R\x12podPortForwardArgs\x12P\n" +
+	"\x0fpod_attach_args\x18\x15 \x01(\v2&.storage.KubernetesEvent.PodAttachArgsH\x00R\rpodAttachArgs\x121\n" +
 	"\x04user\x18\x0f \x01(\v2\x1d.storage.KubernetesEvent.UserR\x04user\x12J\n" +
 	"\x11impersonated_user\x18\x10 \x01(\v2\x1d.storage.KubernetesEvent.UserR\x10impersonatedUser\x12\x1d\n" +
 	"\n" +
@@ -615,13 +680,13 @@ const file_storage_kube_event_proto_rawDesc = "" +
 	"user_agent\x18\x12 \x01(\tR\tuserAgent\x12P\n" +
 	"\x0fresponse_status\x18\x13 \x01(\v2'.storage.KubernetesEvent.ResponseStatusR\x0eresponseStatus\x12\x1f\n" +
 	"\vrequest_uri\x18\x14 \x01(\tR\n" +
-	"requestUri\x1a\xf7\x02\n" +
+	"requestUri\x1a\x88\x03\n" +
 	"\x06Object\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12D\n" +
 	"\bresource\x18\x02 \x01(\x0e2(.storage.KubernetesEvent.Object.ResourceR\bresource\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12\x1c\n" +
-	"\tnamespace\x18\x04 \x01(\tR\tnamespace\"\xd5\x01\n" +
+	"\tnamespace\x18\x04 \x01(\tR\tnamespace\"\xe6\x01\n" +
 	"\bResource\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\r\n" +
 	"\tPODS_EXEC\x10\x01\x12\x14\n" +
@@ -633,12 +698,16 @@ const file_storage_kube_event_proto_rawDesc = "" +
 	"\x15CLUSTER_ROLE_BINDINGS\x10\x06\x12\x14\n" +
 	"\x10NETWORK_POLICIES\x10\a\x12 \n" +
 	"\x1cSECURITY_CONTEXT_CONSTRAINTS\x10\b\x12\x14\n" +
-	"\x10EGRESS_FIREWALLS\x10\t\x1aG\n" +
+	"\x10EGRESS_FIREWALLS\x10\t\x12\x0f\n" +
+	"\vPODS_ATTACH\x10\n" +
+	"\x1aG\n" +
 	"\vPodExecArgs\x12\x1c\n" +
 	"\tcontainer\x18\x01 \x01(\tR\tcontainer\x12\x1a\n" +
 	"\bcommands\x18\x02 \x03(\tR\bcommands\x1a*\n" +
 	"\x12PodPortForwardArgs\x12\x14\n" +
-	"\x05ports\x18\x01 \x03(\x05R\x05ports\x1aI\n" +
+	"\x05ports\x18\x01 \x03(\x05R\x05ports\x1a-\n" +
+	"\rPodAttachArgs\x12\x1c\n" +
+	"\tcontainer\x18\x01 \x01(\tR\tcontainer\x1aI\n" +
 	"\x0eResponseStatus\x12\x1f\n" +
 	"\vstatus_code\x18\x01 \x01(\x05R\n" +
 	"statusCode\x12\x16\n" +
@@ -676,7 +745,7 @@ func file_storage_kube_event_proto_rawDescGZIP() []byte {
 }
 
 var file_storage_kube_event_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_storage_kube_event_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_storage_kube_event_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_storage_kube_event_proto_goTypes = []any{
 	(KubernetesEvent_APIVerb)(0),               // 0: storage.KubernetesEvent.APIVerb
 	(KubernetesEvent_Object_Resource)(0),       // 1: storage.KubernetesEvent.Object.Resource
@@ -684,25 +753,27 @@ var file_storage_kube_event_proto_goTypes = []any{
 	(*KubernetesEvent_Object)(nil),             // 3: storage.KubernetesEvent.Object
 	(*KubernetesEvent_PodExecArgs)(nil),        // 4: storage.KubernetesEvent.PodExecArgs
 	(*KubernetesEvent_PodPortForwardArgs)(nil), // 5: storage.KubernetesEvent.PodPortForwardArgs
-	(*KubernetesEvent_ResponseStatus)(nil),     // 6: storage.KubernetesEvent.ResponseStatus
-	(*KubernetesEvent_User)(nil),               // 7: storage.KubernetesEvent.User
-	(*timestamppb.Timestamp)(nil),              // 8: google.protobuf.Timestamp
+	(*KubernetesEvent_PodAttachArgs)(nil),      // 6: storage.KubernetesEvent.PodAttachArgs
+	(*KubernetesEvent_ResponseStatus)(nil),     // 7: storage.KubernetesEvent.ResponseStatus
+	(*KubernetesEvent_User)(nil),               // 8: storage.KubernetesEvent.User
+	(*timestamppb.Timestamp)(nil),              // 9: google.protobuf.Timestamp
 }
 var file_storage_kube_event_proto_depIdxs = []int32{
-	3, // 0: storage.KubernetesEvent.object:type_name -> storage.KubernetesEvent.Object
-	8, // 1: storage.KubernetesEvent.timestamp:type_name -> google.protobuf.Timestamp
-	0, // 2: storage.KubernetesEvent.api_verb:type_name -> storage.KubernetesEvent.APIVerb
-	4, // 3: storage.KubernetesEvent.pod_exec_args:type_name -> storage.KubernetesEvent.PodExecArgs
-	5, // 4: storage.KubernetesEvent.pod_port_forward_args:type_name -> storage.KubernetesEvent.PodPortForwardArgs
-	7, // 5: storage.KubernetesEvent.user:type_name -> storage.KubernetesEvent.User
-	7, // 6: storage.KubernetesEvent.impersonated_user:type_name -> storage.KubernetesEvent.User
-	6, // 7: storage.KubernetesEvent.response_status:type_name -> storage.KubernetesEvent.ResponseStatus
-	1, // 8: storage.KubernetesEvent.Object.resource:type_name -> storage.KubernetesEvent.Object.Resource
-	9, // [9:9] is the sub-list for method output_type
-	9, // [9:9] is the sub-list for method input_type
-	9, // [9:9] is the sub-list for extension type_name
-	9, // [9:9] is the sub-list for extension extendee
-	0, // [0:9] is the sub-list for field type_name
+	3,  // 0: storage.KubernetesEvent.object:type_name -> storage.KubernetesEvent.Object
+	9,  // 1: storage.KubernetesEvent.timestamp:type_name -> google.protobuf.Timestamp
+	0,  // 2: storage.KubernetesEvent.api_verb:type_name -> storage.KubernetesEvent.APIVerb
+	4,  // 3: storage.KubernetesEvent.pod_exec_args:type_name -> storage.KubernetesEvent.PodExecArgs
+	5,  // 4: storage.KubernetesEvent.pod_port_forward_args:type_name -> storage.KubernetesEvent.PodPortForwardArgs
+	6,  // 5: storage.KubernetesEvent.pod_attach_args:type_name -> storage.KubernetesEvent.PodAttachArgs
+	8,  // 6: storage.KubernetesEvent.user:type_name -> storage.KubernetesEvent.User
+	8,  // 7: storage.KubernetesEvent.impersonated_user:type_name -> storage.KubernetesEvent.User
+	7,  // 8: storage.KubernetesEvent.response_status:type_name -> storage.KubernetesEvent.ResponseStatus
+	1,  // 9: storage.KubernetesEvent.Object.resource:type_name -> storage.KubernetesEvent.Object.Resource
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_storage_kube_event_proto_init() }
@@ -713,6 +784,7 @@ func file_storage_kube_event_proto_init() {
 	file_storage_kube_event_proto_msgTypes[0].OneofWrappers = []any{
 		(*KubernetesEvent_PodExecArgs_)(nil),
 		(*KubernetesEvent_PodPortForwardArgs_)(nil),
+		(*KubernetesEvent_PodAttachArgs_)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -720,7 +792,7 @@ func file_storage_kube_event_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_kube_event_proto_rawDesc), len(file_storage_kube_event_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
