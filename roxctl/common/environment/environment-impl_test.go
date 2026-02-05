@@ -1,6 +1,7 @@
 package environment
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/credentials"
 )
 
 func Test_colorWriter_Write(t *testing.T) {
@@ -140,4 +142,67 @@ func TestConfigMethodWithGuidance(t *testing.T) {
 
 	// Verify Type is delegated
 	assert.Equal(t, "local configuration", wrapper.Type())
+
+	t.Run("NoCredentials error gets enhanced", func(t *testing.T) {
+		// Create wrapper with mock that returns NoCredentials error
+		mock := &mockAuthMethod{
+			getCredsErr: errox.NoCredentials.New("test error"),
+		}
+		wrapper := &configMethodWithGuidance{wrapped: mock}
+
+		_, err := wrapper.GetCredentials("test-url:443")
+		require.Error(t, err)
+
+		// Should still be NoCredentials error
+		assert.True(t, errox.IsAny(err, errox.NoCredentials))
+
+		// Should contain URL and auth options
+		errMsg := err.Error()
+		assert.Contains(t, errMsg, "test-url:443")
+		assert.Contains(t, errMsg, "--password")
+		assert.Contains(t, errMsg, "ROX_API_TOKEN")
+	})
+
+	t.Run("Other errors get wrapped with context", func(t *testing.T) {
+		// Create wrapper with mock that returns a different error
+		mock := &mockAuthMethod{
+			getCredsErr: fmt.Errorf("permission denied"),
+		}
+		wrapper := &configMethodWithGuidance{wrapped: mock}
+
+		_, err := wrapper.GetCredentials("test-url:443")
+		require.Error(t, err)
+
+		// Should contain context about no explicit auth
+		errMsg := err.Error()
+		assert.Contains(t, errMsg, "no explicit authentication credentials were provided")
+		assert.Contains(t, errMsg, "--password")
+	})
+}
+
+// mockAuthMethod is a simple mock for testing
+type mockAuthMethod struct {
+	getCredsErr error
+}
+
+func (m *mockAuthMethod) Type() string {
+	return "mock"
+}
+
+func (m *mockAuthMethod) GetCredentials(url string) (credentials.PerRPCCredentials, error) {
+	if m.getCredsErr != nil {
+		return nil, m.getCredsErr
+	}
+	// Return anonymous credentials
+	return &mockPerRPCCreds{}, nil
+}
+
+type mockPerRPCCreds struct{}
+
+func (a *mockPerRPCCreds) GetRequestMetadata(_ context.Context, _ ...string) (map[string]string, error) {
+	return nil, nil
+}
+
+func (a *mockPerRPCCreds) RequireTransportSecurity() bool {
+	return false
 }
