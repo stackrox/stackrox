@@ -1,5 +1,10 @@
 name: Cache Go Dependencies
-description: Cache Go Dependencies
+description: Cache Go Dependencies (restore-only for PRs, save on master)
+inputs:
+  save-cache:
+    description: 'Whether to save cache after job completes (default: only on master)'
+    required: false
+    default: 'auto'
 runs:
   using: composite
   steps:
@@ -17,20 +22,42 @@ runs:
         versionSpec="$(go env GOVERSION)"
         versionSpec=${versionSpec#go}
         echo "key=${platform}-${arch}-${linuxVersion}-go-${versionSpec}" >> "$GITHUB_OUTPUT"
+        # Determine if we should save cache
+        save_cache="${{ inputs.save-cache }}"
+        if [[ "$save_cache" == "auto" ]]; then
+          # Only save on master branch pushes, not PRs
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/master" ]]; then
+            save_cache="true"
+          else
+            save_cache="false"
+          fi
+        fi
+        echo "save-cache=${save_cache}" >> "$GITHUB_OUTPUT"
       shell: bash
 
-    - name: Cache Go Dependencies
-      uses: actions/cache@v5
+    - name: Restore Go cache
+      id: cache-restore
+      uses: actions/cache/restore@v4
       with:
         path: |
           ${{ steps.cache-vars.outputs.GOCACHE }}
           ${{ steps.cache-vars.outputs.GOMODCACHE }}
         key: setup-go-${{ steps.cache-vars.outputs.key }}-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          # match actions/setup-go automatic caching: setup-go-Linux-x64-ubuntu24-go-1.24.4-77e80c4c2cea3e3fe3c8188302d5f5cb3d0de367fe8d8c5e6dcb5ec4da1b547b
+          setup-go-${{ steps.cache-vars.outputs.key }}-
           setup-go-Linux-x64-
 
     - name: Download Go modules
       run: |
         make deps --always-make
       shell: bash
+
+    # Save cache only on master (runs as post step at end of job)
+    - name: Save Go cache
+      if: steps.cache-vars.outputs.save-cache == 'true' && steps.cache-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          ${{ steps.cache-vars.outputs.GOCACHE }}
+          ${{ steps.cache-vars.outputs.GOMODCACHE }}
+        key: setup-go-${{ steps.cache-vars.outputs.key }}-${{ hashFiles('**/go.sum') }}
