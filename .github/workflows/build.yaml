@@ -1168,10 +1168,14 @@ jobs:
           # Build cache-from args: always pull from master cache
           cache_args="--cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag}"
 
-          # TEMPORARY: Write cache to seed it before merging to master
-          # TODO: Revert this after cache is seeded
-          cache_args="${cache_args} --cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max,ignore-error=true"
-          echo "Docker cache: read/write (TEMPORARY CACHE SEEDING)"
+          # Only write cache on master branch pushes to avoid PR cache pollution
+          # and reduce build time (cache-to adds upload overhead)
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/master" ]]; then
+            cache_args="${cache_args} --cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max,ignore-error=true"
+            echo "Docker cache: read/write (master push)"
+          else
+            echo "Docker cache: read-only (PR or non-master)"
+          fi
 
           echo "OPERATOR_DOCKER_CACHE_ARGS=${cache_args}" >> "$GITHUB_ENV"
 
