@@ -3,9 +3,7 @@ import {
     Flex,
     PageSection,
     Pagination,
-    Title,
     Toolbar,
-    ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
@@ -104,27 +102,20 @@ function RequestCVEsTable({
     const colSpan = 6;
 
     return (
-        <PageSection hasBodyWrapper={false}>
+        <PageSection>
             <Flex direction={{ default: 'column' }}>
                 <Toolbar>
-                    <ToolbarContent className="pf-v6-u-justify-content-space-between">
-                        <ToolbarItem variant="label">
-                            <Title headingLevel="h2">
-                                {countQuery.data?.imageCVECount || 0} results found
-                            </Title>
-                        </ToolbarItem>
-                        <ToolbarItem variant="pagination">
-                            <Pagination
-                                itemCount={countQuery.data?.imageCVECount}
-                                perPage={perPage}
-                                page={page}
-                                onSetPage={(_, newPage) => setPage(newPage)}
-                                onPerPageSelect={(_, newPerPage) => {
-                                    setPerPage(newPerPage);
-                                }}
-                            />
-                        </ToolbarItem>
-                    </ToolbarContent>
+                    <ToolbarItem variant="pagination">
+                        <Pagination
+                            itemCount={countQuery.data?.imageCVECount}
+                            perPage={perPage}
+                            page={page}
+                            onSetPage={(_, newPage) => setPage(newPage)}
+                            onPerPageSelect={(_, newPerPage) => {
+                                setPerPage(newPerPage);
+                            }}
+                        />
+                    </ToolbarItem>
                 </Toolbar>
                 <Table variant="compact">
                     <Thead noWrap>

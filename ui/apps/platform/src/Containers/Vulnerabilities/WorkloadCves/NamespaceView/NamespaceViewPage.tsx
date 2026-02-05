@@ -145,7 +145,7 @@ function NamespaceViewPage() {
     return (
         <>
             <PageTitle title={`${pageTitle} - Namespace view`} />
-            <PageSection>
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={urlBuilder.vulnMgmtBase('')}>
                         {pageTitle}

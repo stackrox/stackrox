@@ -78,7 +78,7 @@ function ApprovedFalsePositives() {
 
     if (tableState.type === 'ERROR') {
         return (
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <TableErrorComponent
                     error={tableState.error}
                     message="An error occurred. Try refreshing again"
@@ -88,7 +88,7 @@ function ApprovedFalsePositives() {
     }
 
     return (
-        <PageSection hasBodyWrapper={false}>
+        <PageSection>
             <PageTitle title="Exception Management - Approved False Positives" />
             <AdvancedFiltersToolbar
                 searchFilterConfig={vulnRequestSearchFilterConfig}
@@ -115,7 +115,7 @@ function ApprovedFalsePositives() {
                     />
                 </ToolbarItem>
             </AdvancedFiltersToolbar>
-            <Table borders={false}>
+            <Table>
                 <Thead noWrap>
                     <Tr>
                         <Th sort={getSortParams('Request Name')}>Request name</Th>

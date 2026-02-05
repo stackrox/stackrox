@@ -5,7 +5,6 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
-    Divider,
     Flex,
     FlexItem,
     PageSection,
@@ -133,7 +132,7 @@ function ExceptionRequestDetailsPage() {
 
     if (error) {
         return (
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <TableErrorComponent
                     error={error}
                     message="An error occurred. Try refreshing again"
@@ -188,7 +187,7 @@ function ExceptionRequestDetailsPage() {
                     please submit a new request
                 </Alert>
             )}
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={exceptionManagementPath}>
                         Exception management
@@ -196,8 +195,7 @@ function ExceptionRequestDetailsPage() {
                     <BreadcrumbItem isActive>{vulnerabilityException.name}</BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
-            <Divider component="div" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <Flex>
                     <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h1">Request {vulnerabilityException.name}</Title>
@@ -229,13 +227,9 @@ function ExceptionRequestDetailsPage() {
                     )}
                 </Flex>
             </PageSection>
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
-                {isApprovedPendingUpdate && (
-                    <Tabs
-                        activeKey={selectedContext}
-                        onSelect={handleTabClick}
-                        className="pf-v6-u-pl-lg pf-v6-u-background-color-100"
-                    >
+            {isApprovedPendingUpdate && (
+                <PageSection type="tabs">
+                    <Tabs activeKey={selectedContext} onSelect={handleTabClick} usePageInsets>
                         <Tab
                             eventKey="PENDING_UPDATE"
                             tabContentId={tabContentId}
@@ -247,24 +241,17 @@ function ExceptionRequestDetailsPage() {
                             title={<TabTitleText>Latest approved</TabTitleText>}
                         />
                     </Tabs>
-                )}
-                <TabContent id={tabContentId}>
-                    <PageSection hasBodyWrapper={false}>
-                        <RequestOverview
-                            exception={vulnerabilityException}
-                            context={selectedContext}
-                        />
-                    </PageSection>
-                    <PageSection hasBodyWrapper={false}>
-                        <RequestCVEsTable
-                            cves={relevantCVEs}
-                            scope={scope}
-                            expandedRowSet={expandedRowSet}
-                            vulnerabilityState={vulnerabilityState}
-                        />
-                    </PageSection>
-                </TabContent>
-            </PageSection>
+                </PageSection>
+            )}
+            <TabContent id={tabContentId}>
+                <RequestOverview exception={vulnerabilityException} context={selectedContext} />
+                <RequestCVEsTable
+                    cves={relevantCVEs}
+                    scope={scope}
+                    expandedRowSet={expandedRowSet}
+                    vulnerabilityState={vulnerabilityState}
+                />
+            </TabContent>
         </>
     );
 }
