@@ -44,6 +44,14 @@ const tabsSelectors = {
     tabButton: '[data-ouia-component-type="PF6/TabButton"]',
 } as const;
 
+const titleSelectors = {
+    title: '[data-ouia-component-type="PF6/Title"]',
+} as const;
+
+const wizardSelectors = {
+    wizardNavItem: '[data-ouia-component-type="PF6/WizardNavItem"]',
+} as const;
+
 export default {
     ...actionsColumnSelectors,
     ...columnManagementSelectors,
@@ -53,4 +61,6 @@ export default {
     ...pageHeaderSelectors,
     ...selectSelectors,
     ...tabsSelectors,
+    ...titleSelectors,
+    ...wizardSelectors,
 };
