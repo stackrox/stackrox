@@ -70,6 +70,9 @@ jobs:
     - name: Go Operator Integration Tests
       run: ${{ matrix.gotags }} make -C operator/ test-integration
 
+    - name: Operator Bundle Helper Tests
+      run: make -C operator/ test-bundle-helpers
+
     - name: Generate junit report
       if: always()
       run: make generate-junit-reports

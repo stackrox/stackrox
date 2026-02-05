@@ -510,7 +510,7 @@ bundle-ci: yq kustomize operator-sdk ## Generate bundle (for CI after separate m
 # Skipping validation here - bundle-post-process validates the final result in build/bundle/
 
 .PHONY: bundle-post-process
-bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file to include correct operator versions, etc.
+bundle-post-process: operator-sdk ## Post-process CSV file to include correct operator versions, etc.
 	set -euo pipefail ;\
 	$(ACTIVATE_PYTHON) ;\
 	first_version=3.62.0 `# 3.62.0 is the first operator version ever released` ;\
