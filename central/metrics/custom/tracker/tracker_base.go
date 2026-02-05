@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const inactiveGathererTTL = 2 * 24 * time.Hour
@@ -70,6 +71,30 @@ type gatherer[F Finding] struct {
 	registry   metrics.CustomRegistry
 	aggregator *aggregator[F]
 	config     *Configuration
+}
+
+// updateMetrics aggregates the fetched findings and updates the gauges.
+func (g *gatherer[F]) updateMetrics(generator iter.Seq2[F, error]) error {
+	g.aggregator.reset()
+	for finding, err := range generator {
+		if err != nil {
+			return err
+		}
+		g.aggregator.count(finding)
+	}
+	g.registry.Lock()
+	defer g.registry.Unlock()
+	for metric, records := range g.aggregator.result {
+		g.registry.Reset(string(metric))
+		for _, rec := range records {
+			g.registry.SetTotal(string(metric), rec.labels, rec.total)
+		}
+	}
+	return nil
+}
+
+func (g *gatherer[F]) trySetRunning() bool {
+	return g.running.CompareAndSwap(false, true)
 }
 
 // TrackerBase implements a generic finding tracker.
@@ -245,28 +270,6 @@ func (tracker *TrackerBase[F]) setConfiguration(config *Configuration) *Configur
 	return previous
 }
 
-// track aggregates the fetched findings and updates the gauges.
-func (tracker *TrackerBase[F]) track(ctx context.Context, gatherer *gatherer[F], cfg *Configuration) error {
-	aggregator := gatherer.aggregator
-	registry := gatherer.registry
-	aggregator.reset()
-	for finding, err := range tracker.generator(ctx, cfg.metrics) {
-		if err != nil {
-			return err
-		}
-		aggregator.count(finding)
-	}
-	registry.Lock()
-	defer registry.Unlock()
-	for metric, records := range aggregator.result {
-		registry.Reset(string(metric))
-		for _, rec := range records {
-			registry.SetTotal(string(metric), rec.labels, rec.total)
-		}
-	}
-	return nil
-}
-
 // Gather the data not more often then maxAge.
 func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
 	cfg := tracker.getConfiguration()
@@ -275,6 +278,7 @@ func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
 	}
 	id, err := authn.IdentityFromContext(ctx)
 	if err != nil {
+		utils.Should(err)
 		return
 	}
 	// Pass the cfg so that the same configuration is used there and here.
@@ -290,7 +294,7 @@ func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
 		return
 	}
 	begin := time.Now()
-	if err := tracker.track(ctx, gatherer, cfg); err != nil {
+	if err := gatherer.updateMetrics(tracker.generator(ctx, cfg.metrics)); err != nil {
 		log.Errorf("Failed to gather %s metrics: %v", tracker.description, err)
 	}
 	end := time.Now()
@@ -361,10 +365,6 @@ func (tracker *TrackerBase[F]) getGatherer(userID string, cfg *Configuration) *g
 		}
 	}
 	return gr
-}
-
-func (g *gatherer[F]) trySetRunning() bool {
-	return g.running.CompareAndSwap(false, true)
 }
 
 // cleanupInactiveGatherers frees the registries for the userIDs, that haven't
