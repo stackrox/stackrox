@@ -261,6 +261,12 @@ func (s *centralCommunicationImpl) hello(stream central.SensorService_Communicat
 			log.Warnf("Could not cache cluster ID: %v", err)
 		}
 	}
+
+	if err := safe.RunE(func() error {
+		return certdistribution.PersistCertificates(centralHello.GetCertBundle())
+	}); err != nil {
+		log.Warnf("Failed to persist certificates for distribution: %v. This might cause issues with the admission control service.", err)
+	}
 	return nil
 }
 
@@ -269,12 +275,6 @@ func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream centr
 ) error {
 	if err := s.hello(stream, hello); err != nil {
 		return errors.Wrap(err, "error while executing the sensor hello protocol")
-	}
-
-	if err := safe.RunE(func() error {
-		return certdistribution.PersistCertificates(centralHello.GetCertBundle())
-	}); err != nil {
-		log.Warnf("Failed to persist certificates for distribution: %v. This might cause issues with the admission control service.", err)
 	}
 
 	// DO NOT CHANGE THE ORDER. Please refer to `Run()` at `central/sensor/service/connection/connection_impl.go`
