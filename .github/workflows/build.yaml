@@ -1125,6 +1125,15 @@ jobs:
           echo "OPERATOR_TAG=${OPERATOR_TAG}" >> "$GITHUB_ENV"
           echo "Captured operator tag: ${OPERATOR_TAG}"
 
+      - name: Cache operator tools
+        id: cache-operator-tools
+        uses: actions/cache@v4
+        with:
+          path: operator/.gotools
+          key: operator-tools-${{ runner.os }}-${{ matrix.arch }}-${{ hashFiles('operator/tools/*/go.sum') }}
+          restore-keys: |
+            operator-tools-${{ runner.os }}-${{ matrix.arch }}-
+
       - name: Generate operator manifests (shared dependency)
         run: |
           make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" manifests generate
