@@ -48,13 +48,9 @@ func TestBufferedConsumer_ConsumeSuccess(t *testing.T) {
 		synctest.Wait()
 		assert.True(t, callbackCalled)
 
-		// Verify errC receives nil and closes
+		// Verify errC closes without sending anything (success case)
 		err, ok := <-errC
-		assert.True(t, ok, "errC should be open for first read")
-		assert.Nil(t, err)
-
-		err, ok = <-errC
-		assert.False(t, ok, "errC should be closed after first read")
+		assert.False(t, ok, "errC should be closed on success without sending nil")
 		assert.Nil(t, err)
 	})
 }
@@ -147,22 +143,14 @@ func TestBufferedConsumer_BufferFull(t *testing.T) {
 		blockCallback.Signal()
 		synctest.Wait()
 
-		// Now errC1 should complete
+		// Now errC1 should complete (close without sending on success)
 		err, ok = <-errC1
-		assert.True(t, ok)
+		assert.False(t, ok, "errC1 should be closed on success without sending nil")
 		assert.Nil(t, err)
 
-		err, ok = <-errC1
-		assert.False(t, ok)
-		assert.Nil(t, err)
-
-		// Now errC2 should complete
+		// Now errC2 should complete (close without sending on success)
 		err, ok = <-errC2
-		assert.True(t, ok)
-		assert.Nil(t, err)
-
-		err, ok = <-errC2
-		assert.False(t, ok)
+		assert.False(t, ok, "errC2 should be closed on success without sending nil")
 		assert.Nil(t, err)
 	})
 }
@@ -198,7 +186,8 @@ func TestBufferedConsumer_StopDuringConsume(t *testing.T) {
 
 		c, err := NewBufferedConsumer(pubsub.DefaultLane, pubsub.DefaultTopic, pubsub.DefaultConsumer, func(event pubsub.Event) error {
 			<-blockCallback
-			return nil
+			// We should not receive an error since we are Stopping before reading
+			return errors.New("some error")
 		})
 		require.NoError(t, err)
 
@@ -210,12 +199,13 @@ func TestBufferedConsumer_StopDuringConsume(t *testing.T) {
 
 		// Stop the consumer (callback is still blocked)
 		c.Stop()
-		close(blockCallback)
 
 		// errC should close without sending error
 		err, ok := <-errC
 		assert.False(t, ok, "errC should be closed after Stop")
 		assert.Nil(t, err)
+		// close blockCallback to not leak goroutines
+		close(blockCallback)
 	})
 }
 
@@ -253,15 +243,11 @@ func TestBufferedConsumer_ConcurrentConsume(t *testing.T) {
 		// All callbacks should have been called
 		assert.Equal(t, int32(numEvents), callbackCount.Load())
 
-		// All errC channels should complete successfully
+		// All errC channels should complete successfully (close without sending)
 		for i, errC := range errChannels {
 			err, ok := <-errC
-			assert.True(t, ok, "errC %d should be open", i)
+			assert.False(t, ok, "errC %d should be closed on success without sending nil", i)
 			assert.Nil(t, err, "errC %d should have no error", i)
-
-			err, ok = <-errC
-			assert.False(t, ok, "errC %d should be closed", i)
-			assert.Nil(t, err)
 		}
 	})
 }
@@ -269,59 +255,53 @@ func TestBufferedConsumer_ConcurrentConsume(t *testing.T) {
 func TestBufferedConsumer_WithBufferedConsumerSize(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 
-	synctest.Test(t, func(t *testing.T) {
-		c, err := NewBufferedConsumer(
-			pubsub.DefaultLane,
-			pubsub.DefaultTopic,
-			pubsub.DefaultConsumer,
-			func(event pubsub.Event) error { return nil },
-			WithBufferedConsumerSize(5),
-		)
-		require.NoError(t, err)
-		defer c.Stop()
+	c, err := NewBufferedConsumer(
+		pubsub.DefaultLane,
+		pubsub.DefaultTopic,
+		pubsub.DefaultConsumer,
+		func(event pubsub.Event) error { return nil },
+		WithBufferedConsumerSize(5),
+	)
+	require.NoError(t, err)
+	defer c.Stop()
 
-		impl, ok := c.(*BufferedConsumer)
-		require.True(t, ok)
-		assert.Equal(t, 5, impl.size)
-		assert.Equal(t, 5, impl.buffer.Cap())
-	})
+	impl, ok := c.(*BufferedConsumer)
+	require.True(t, ok)
+	assert.Equal(t, 5, impl.size)
+	assert.Equal(t, 5, impl.buffer.Cap())
 }
 
 func TestBufferedConsumer_WithBufferedConsumerSize_Negative(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 
-	synctest.Test(t, func(t *testing.T) {
-		// Negative size should be ignored
-		c, err := NewBufferedConsumer(
-			pubsub.DefaultLane,
-			pubsub.DefaultTopic,
-			pubsub.DefaultConsumer,
-			func(event pubsub.Event) error { return nil },
-			WithBufferedConsumerSize(-1),
-		)
-		require.NoError(t, err)
-		defer c.Stop()
+	// Negative size should be ignored
+	c, err := NewBufferedConsumer(
+		pubsub.DefaultLane,
+		pubsub.DefaultTopic,
+		pubsub.DefaultConsumer,
+		func(event pubsub.Event) error { return nil },
+		WithBufferedConsumerSize(-1),
+	)
+	require.NoError(t, err)
+	defer c.Stop()
 
-		impl, ok := c.(*BufferedConsumer)
-		require.True(t, ok)
-		assert.Equal(t, 1000, impl.size, "should use default size")
-	})
+	impl, ok := c.(*BufferedConsumer)
+	require.True(t, ok)
+	assert.Equal(t, 1000, impl.size, "should use default size")
 }
 
 func TestBufferedConsumer_StopIdempotent(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 
-	synctest.Test(t, func(t *testing.T) {
-		c, err := NewBufferedConsumer(pubsub.DefaultLane, pubsub.DefaultTopic, pubsub.DefaultConsumer, func(event pubsub.Event) error {
-			return nil
-		})
-		require.NoError(t, err)
-
-		// Multiple Stop() calls should not panic
-		c.Stop()
-		c.Stop()
-		c.Stop()
+	c, err := NewBufferedConsumer(pubsub.DefaultLane, pubsub.DefaultTopic, pubsub.DefaultConsumer, func(event pubsub.Event) error {
+		return nil
 	})
+	require.NoError(t, err)
+
+	// Multiple Stop() calls should not panic
+	c.Stop()
+	c.Stop()
+	c.Stop()
 }
 
 func TestBufferedConsumer_ConsumeAfterStop(t *testing.T) {
@@ -359,7 +339,8 @@ func TestBufferedConsumer_StopDrainsBufferedEvents(t *testing.T) {
 			pubsub.DefaultConsumer,
 			func(event pubsub.Event) error {
 				<-blockCallback
-				return nil
+				// We should not receive an error since we are Stopping before reading
+				return errors.New("some error")
 			},
 			WithBufferedConsumerSize(3),
 		)
@@ -378,7 +359,6 @@ func TestBufferedConsumer_StopDrainsBufferedEvents(t *testing.T) {
 
 		// Stop the consumer while events 2 and 3 are still buffered
 		c.Stop()
-		close(blockCallback)
 
 		// All errC channels should be closed by Stop()
 		// errC1: closed because handleEvent detects stop
@@ -395,5 +375,8 @@ func TestBufferedConsumer_StopDrainsBufferedEvents(t *testing.T) {
 		err, ok = <-errC3
 		assert.False(t, ok, "errC3 should be closed by drain loop in Stop")
 		assert.Nil(t, err)
+
+		// close blockCallback to not leak goroutines
+		close(blockCallback)
 	})
 }

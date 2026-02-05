@@ -145,6 +145,7 @@ func (c *BufferedConsumer) run() {
 }
 
 func (c *BufferedConsumer) handleEvent(wrappedEv *bufferedEvent) {
+	defer close(wrappedEv.errC)
 	// Execute callback in separate goroutine to prevent blocking the consumer
 	callbackDone := make(chan error, 1)
 	go func() {
@@ -157,18 +158,15 @@ func (c *BufferedConsumer) handleEvent(wrappedEv *bufferedEvent) {
 	case <-c.stopper.Flow().StopRequested():
 		// Consumer is stopping - close the errC without waiting for callback
 		operation = metrics.ConsumerError
-		close(wrappedEv.errC)
-		c.recordMetrics(operation, wrappedEv.startTime)
-		return
 	case err := <-callbackDone:
-		// Callback completed - send result (nil or error) and close errC
+		// Callback completed - send error if present, otherwise just close errC
 		if err != nil {
 			operation = metrics.ConsumerError
+			wrappedEv.errC <- err
 		}
-		wrappedEv.errC <- err
-		close(wrappedEv.errC)
-		c.recordMetrics(operation, wrappedEv.startTime)
+		// On success (err == nil), defer close handles it without sending
 	}
+	c.recordMetrics(operation, wrappedEv.startTime)
 }
 
 func (c *BufferedConsumer) recordMetrics(op metrics.Operation, start time.Time) {
