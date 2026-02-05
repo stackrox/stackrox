@@ -173,6 +173,17 @@
       "default": "UNSET",
       "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
     },
+    "FindingWorkload": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      }
+    },
     "ImageComponentVulnerability": {
       "type": "object",
       "properties": {
@@ -205,17 +216,34 @@
     "ImageFinding": {
       "type": "object",
       "properties": {
-        "cluster": {
-          "type": "string"
-        },
-        "namespace": {
-          "type": "string"
-        },
-        "workload": {
-          "type": "string"
-        },
-        "workloadType": {
-          "type": "string"
+        "findings": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ImageFindingCluster"
+          }
+        }
+      }
+    },
+    "ImageFindingCluster": {
+      "type": "object",
+      "properties": {
+        "namespaces": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ImageFindingNamespace"
+          }
+        }
+      }
+    },
+    "ImageFindingNamespace": {
+      "type": "object",
+      "properties": {
+        "workloads": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/FindingWorkload"
+          }
         }
       }
     },

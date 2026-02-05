@@ -39,9 +39,9 @@ message ImageVulnerabilitiesResponse {
         bool suppressed = 2;
         google.protobuf.Timestamp suppress_activation = 3;
         google.protobuf.Timestamp suppress_expiry = 4;
-  // Time when the CVE was first seen, for this specific distro, in the system.
+        // Time when the CVE was first seen, for this specific distro, in the system.
         google.protobuf.Timestamp first_system_occurrence = 5;
-  // Time when the CVE was first seen in this image.
+        // Time when the CVE was first seen in this image.
         google.protobuf.Timestamp first_image_occurrence = 6;
       }
       string name = 1;
@@ -51,10 +51,20 @@ message ImageVulnerabilitiesResponse {
       repeated Vulnerability vulnerabilities = 5;
     }
     message Finding {
-      string cluster = 1;
-      string namespace = 2;
-      string workload = 3;
-      string workload_type = 4;
+      message Workload {
+        string name = 1;
+        string type = 2;
+      }
+
+      message Namespace {
+        repeated Workload workloads = 1;
+      }
+
+      message Cluster {
+        map<string, Namespace> namespaces = 1;
+      }
+
+      map<string, Cluster> findings = 5;
     }
     string sha = 1;
     repeated string names = 2;
