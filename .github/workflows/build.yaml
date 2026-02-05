@@ -389,6 +389,55 @@ jobs:
             ui/build
             ui/apps/platform/package-lock.json
 
+  # Generate OSS notice in parallel - needs UI deps but runs independently
+  pre-build-oss-notice:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'ui/apps/platform/package-lock.json'
+
+      - name: Fetch UI deps
+        run: make -C ui deps
+
+      - name: Generate OSS notice
+        env:
+          GITHUB_OAUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          FETCH_VERSION=0.4.6
+          FETCH_SHA256=a67ed3141d6deb7e7841f40505cba11eb7a37abbab78374712a42373e7854209
+          wget --no-verbose -O fetch https://github.com/gruntwork-io/fetch/releases/download/v${FETCH_VERSION}/fetch_linux_amd64
+          echo "${FETCH_SHA256} fetch" | sha256sum -c -
+          install fetch /usr/bin \
+            || install fetch /usr/local/bin
+
+          OSSLS_VERSION=0.11.1
+          OSSLS_SHA256=f1bf3012961c1d90ba307a46263f29025028d35c209b9a65e5c7d502c470c95f
+          fetch --repo="https://github.com/stackrox/ossls" --tag="${OSSLS_VERSION}" --release-asset="ossls_linux_amd64" .
+          echo "${OSSLS_SHA256} *ossls_linux_amd64" | sha256sum -c -
+          install ossls_linux_amd64 /usr/bin/ossls \
+            || install ossls_linux_amd64 /usr/local/bin/ossls
+          rm ossls_linux_amd64
+          ossls version
+          make ossls-notice
+
+      - uses: ./.github/actions/upload-artifact-with-retry
+        with:
+          name: oss-notice
+          path: image/rhel/THIRD_PARTY_NOTICES
+
   # Build CLI binaries in parallel per OS/arch
   # PRs: linux-amd64, darwin, windows (3 jobs)
   # Non-PRs: adds linux-arm64, linux-ppc64le, linux-s390x (6 jobs)
@@ -626,6 +675,7 @@ jobs:
       - pre-build-cli-merge
       - pre-build-go-binaries
       - pre-build-docs
+      - pre-build-oss-notice
     # This step will run even if required pre-* steps failed. By following this
     # approach as much of the build matrix as possible is completed despite
     # transient issues e.g. docker pull timeouts. In this way some e2e jobs that
@@ -763,33 +813,10 @@ jobs:
           name: docs-build
           path: image/rhel/docs
 
-      # needed to restore node_modules for ossls-nostice
-      - uses: ./.github/actions/cache-ui-dependencies
-
-      # explicitly fetch deps just in case cache was not ready
-      - name: Fetch UI deps
-        run: make -C ui deps
-
-      - name: Generate OSS notice
-        env:
-          GITHUB_OAUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          FETCH_VERSION=0.4.6
-          FETCH_SHA256=a67ed3141d6deb7e7841f40505cba11eb7a37abbab78374712a42373e7854209
-          wget --no-verbose -O fetch https://github.com/gruntwork-io/fetch/releases/download/v${FETCH_VERSION}/fetch_linux_amd64
-          echo "${FETCH_SHA256} fetch" | sha256sum -c -
-          install fetch /usr/bin \
-            || install fetch /usr/local/bin
-
-          OSSLS_VERSION=0.11.1
-          OSSLS_SHA256=f1bf3012961c1d90ba307a46263f29025028d35c209b9a65e5c7d502c470c95f
-          fetch --repo="https://github.com/stackrox/ossls" --tag="${OSSLS_VERSION}" --release-asset="ossls_linux_amd64" .
-          echo "${OSSLS_SHA256} *ossls_linux_amd64" | sha256sum -c -
-          install ossls_linux_amd64 /usr/bin/ossls \
-            || install ossls_linux_amd64 /usr/local/bin/ossls
-          rm ossls_linux_amd64
-          ossls version
-          make ossls-notice
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: oss-notice
+          path: image/rhel
 
       - name: Set build tag for prerelease images
         if: matrix.name == 'prerelease'
