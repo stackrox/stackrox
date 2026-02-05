@@ -383,7 +383,7 @@ function ImageCvePage({
             <PageTitle
                 title={`${pageTitle} - ImageCVE ${metadataRequest.data?.imageCVE?.cve ?? ''}`}
             />
-            <PageSection>
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewCvePath}>CVEs</BreadcrumbItemLink>
                     {!metadataRequest.error && (

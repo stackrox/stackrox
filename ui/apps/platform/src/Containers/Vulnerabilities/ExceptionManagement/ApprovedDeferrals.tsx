@@ -22,9 +22,8 @@ import {
     RequestedItems,
     Requester,
 } from './components/ExceptionRequestTableCells';
-
-import { DEFAULT_VM_PAGE_SIZE } from '../constants';
 import AdvancedFiltersToolbar from '../components/AdvancedFiltersToolbar';
+import { DEFAULT_VM_PAGE_SIZE } from '../constants';
 import { vulnRequestSearchFilterConfig } from './searchFilterConfig';
 
 const sortFields = [
@@ -85,7 +84,7 @@ function ApprovedDeferrals() {
 
     if (tableState.type === 'ERROR') {
         return (
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <TableErrorComponent
                     error={tableState.error}
                     message="An error occurred. Try refreshing again"
@@ -95,7 +94,7 @@ function ApprovedDeferrals() {
     }
 
     return (
-        <PageSection hasBodyWrapper={false}>
+        <PageSection>
             <PageTitle title="Exception Management - Approved Deferrals" />
             <AdvancedFiltersToolbar
                 searchFilterConfig={vulnRequestSearchFilterConfig}
@@ -122,7 +121,7 @@ function ApprovedDeferrals() {
                     />
                 </ToolbarItem>
             </AdvancedFiltersToolbar>
-            <Table borders={false}>
+            <Table>
                 <Thead noWrap>
                     <Tr>
                         <Th sort={getSortParams('Request Name')}>Request name</Th>

@@ -58,7 +58,7 @@ function NodePage() {
     return (
         <>
             <PageTitle title={`Node CVEs - Node ${nodeName}`} />
-            <PageSection>
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={nodeCveOverviewPath}>Nodes</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>
