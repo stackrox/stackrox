@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/v60/github"
+	"github.com/pkg/errors"
 )
 
 // allowedCheckFailures defines a set of PR checks that should not prevent the retest job starting
@@ -93,7 +94,11 @@ issues:
 			continue
 		}
 		log.Printf("#%d jobs to retest: %s", prNumber, strings.Join(jobsToRetest, ", "))
-		newComments := commentsToCreate(statuses, jobsToRetest, shouldRetestFailedStatuses(statuses, userComments))
+		shouldRetestErr := shouldRetestFailedStatuses(statuses, userComments)
+		if shouldRetestErr != nil {
+			log.Printf("PR %d retest status due to failures: %v", prNumber, shouldRetestErr)
+		}
+		newComments := commentsToCreate(statuses, jobsToRetest, shouldRetestErr == nil)
 		createComment(ctx, client, prNumber, strings.Join(newComments, "\n"))
 	}
 	return nil
@@ -109,6 +114,7 @@ func commentsToCreate(statuses map[string]string, jobsToRetest []string, shouldR
 	for _, job := range jobsToRetest {
 		state := statuses[job]
 		if state == "pending" {
+			log.Printf("Not issuing /test %q because the job is %s", job, state)
 			continue
 		}
 		comments = append(comments, "/test "+job)
@@ -163,6 +169,7 @@ func jobsToRetestFromComments(userComments, allComments []string) ([]string, err
 	for job, times := range jobsToRetest {
 		toTest := times - testedJobs[job]
 		if toTest < 1 {
+			log.Printf("Exceeded max number (%d) of retests for %q: %d", times, job, testedJobs[job])
 			continue
 		}
 		missingTests = append(missingTests, job)
@@ -174,7 +181,7 @@ func jobsToRetestFromComments(userComments, allComments []string) ([]string, err
 
 const retestComment = "/retest"
 
-func shouldRetestFailedStatuses(statuses map[string]string, comments []string) bool {
+func shouldRetestFailedStatuses(statuses map[string]string, comments []string) error {
 	retested := 0
 	for _, c := range comments {
 		if c == retestComment {
@@ -182,13 +189,13 @@ func shouldRetestFailedStatuses(statuses map[string]string, comments []string) b
 		}
 	}
 	if retested > 3 {
-		return false
+		return fmt.Errorf("job has been retested already %d times", retested)
 	}
 
 	for _, status := range statuses {
 		if status == "failure" {
-			return true
+			return nil
 		}
 	}
-	return false
+	return errors.New("job has not failed")
 }
