@@ -1140,11 +1140,16 @@ jobs:
 
       - name: Build Operator Bundle and Go binary (parallel)
         run: |
-          # Run bundle and build in parallel since they share manifests dependency
-          make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" bundle bundle-build &
+          # Run bundle and Go binary build in parallel
+          # Use *-ci targets which skip 'manifests' dependency since we already
+          # ran it in the previous step. This avoids running controller-gen 3x.
+
+          # Bundle: use bundle-ci which skips manifests dependency
+          make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" bundle-ci bundle-build &
           bundle_pid=$!
 
-          CGO_ENABLED=0 GOARCH=${{ matrix.arch }} make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" build &
+          # Go binary: use build-ci which skips manifests/generate/fmt/vet deps
+          CGO_ENABLED=0 GOARCH=${{ matrix.arch }} make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" build-ci &
           build_pid=$!
 
           # Wait for both and capture exit codes

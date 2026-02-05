@@ -330,6 +330,10 @@ build-installer: manifests generate kustomize ## Generate a consolidated YAML wi
 build: manifests generate fmt vet ## Build operator local binary.
 	../scripts/go-build-file.sh ./cmd/main.go bin/manager
 
+.PHONY: build-ci
+build-ci: ## Build operator binary without running manifests/generate (for CI after separate manifests step)
+	../scripts/go-build-file.sh ./cmd/main.go bin/manager
+
 .PHONY: smuggled-status-sh
 smuggled-status-sh:
 	$(SILENT)( \
@@ -472,6 +476,30 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 # Therefore we append ".extra" file to the end of bundle's dockerfile.
 	cat bundle.Dockerfile.extra >> bundle.Dockerfile
 # Run a python script to fix the orders in the specDescriptors (children must not appear before their parents).
+	set -euo pipefail ;\
+	$(ACTIVATE_PYTHON) ;\
+	bundle_helpers/fix-spec-descriptor-order.py \
+	  <bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
+	  >bundle/manifests/rhacs-operator.clusterserviceversion.yaml.fixed
+	mv bundle/manifests/rhacs-operator.clusterserviceversion.yaml.fixed \
+       bundle/manifests/rhacs-operator.clusterserviceversion.yaml
+	$(OPERATOR_SDK) bundle validate ./bundle --select-optional suite=operatorframework
+
+.PHONY: bundle-ci
+bundle-ci: yq kustomize operator-sdk ## Generate bundle (for CI after separate manifests step, skips manifests dependency)
+	rm -rf bundle
+	rm -rf config/manifests/bases && $(OPERATOR_SDK) generate kustomize manifests --input-dir=config/ui-metadata
+	cd config/scorecard-versioned && $(KUSTOMIZE) edit set image quay.io/operator-framework/scorecard-test=quay.io/operator-framework/scorecard-test:$(OPERATOR_SDK_VERSION)
+	rm -rf build/manifests
+	mkdir -p build/manifests
+	echo 'resources: [ "../../config/flavors/$(ROX_IMAGE_FLAVOR)", "../../config/manifests" ]' > build/manifests/kustomization.yaml
+	$(KUSTOMIZE) build build/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
+	$(YQ) -i '.metadata.annotations.createdAt = ""' bundle/manifests/rhacs-operator.clusterserviceversion.yaml
+	sed -i'.bak' -e '/operators\.operatorframework\.io\.bundle\.channel/d' bundle.Dockerfile
+	sed -i'.bak' -e '/# Copy files to locations specified by labels./d' bundle.Dockerfile
+	sed -i'.bak' -E -e '/^COPY .* \/(manifests|metadata|tests\/scorecard)\/$$/d' bundle.Dockerfile
+	rm -f bundle.Dockerfile.bak
+	cat bundle.Dockerfile.extra >> bundle.Dockerfile
 	set -euo pipefail ;\
 	$(ACTIVATE_PYTHON) ;\
 	bundle_helpers/fix-spec-descriptor-order.py \
