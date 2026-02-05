@@ -25,7 +25,7 @@ import (
 var scanAPI = newScanAPI(newDBScanAPI(dbscan.WithAllowUnknownColumns(true)))
 
 // getArrayFieldsFromType inspects the type T and returns a map of db tag names to whether
-// the field is an array/slice type. This is used to automatically detect which fields should
+// the field is a slice type. This is used to automatically detect which fields should
 // be aggregated from child tables without requiring explicit flags.
 func getArrayFieldsFromType[T any]() map[string]bool {
 	var zero T
@@ -49,7 +49,7 @@ func getArrayFieldsFromType[T any]() map[string]bool {
 			continue
 		}
 
-		// Check if field type is array/slice
+		// Check if field type is slice
 		if field.Type.Kind() == reflect.Slice {
 			arrayFields[dbTag] = true
 		}
@@ -239,7 +239,7 @@ func populateSelect(querySoFar *query, schema *walker.Schema, q *v1.Query, query
 		shouldAggregate := false
 		if arrayFields != nil && isChildField && !hasGroupBy {
 			// Compute the SQL alias that will be used (matches db tag format)
-			alias := strings.Join(strings.Fields(strings.ToLower(field.GetName())), "_")
+			alias := FieldNameToDBAlias(field.GetName())
 			shouldAggregate = arrayFields[alias]
 		}
 

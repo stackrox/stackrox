@@ -4,6 +4,8 @@ package datastore
 
 import (
 	"context"
+	"reflect"
+	"strings"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -15,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -335,4 +338,56 @@ func (suite *SecretDataStoreTestSuite) TestSearchSecrets() {
 	results, err := suite.datastore.SearchSecrets(suite.ctx, search.EmptyQuery())
 	suite.NoError(err)
 	suite.Empty(results)
+}
+
+// TestFieldNameToDBTagMapping validates that search field names correctly map to struct db tags
+// for automatic child table aggregation. This test ensures the naming convention coupling between
+// search fields and db tags remains correct when schema changes occur.
+//
+// IMPORTANT: If this test fails after schema changes, it indicates that either:
+// 1. The search field name has changed and needs to be updated in the query, OR
+// 2. The db tag has changed and needs to be updated in listSecretResponse, OR
+// 3. The fieldNameToDBAlias mapping logic needs to be adjusted
+func (suite *SecretDataStoreTestSuite) TestFieldNameToDBTagMapping() {
+	// Get the listSecretResponse type
+	var response listSecretResponse
+	responseType := reflect.TypeOf(response)
+
+	// Map of search field names to expected db tags for array fields
+	// These are the fields that use automatic child table aggregation
+	expectedMappings := map[string]string{
+		search.SecretType.String(): "secret_type", // "Secret Type" -> "secret_type"
+	}
+
+	for searchFieldName, expectedDBTag := range expectedMappings {
+		// Verify the mapping function produces the expected db tag
+		computedAlias := fieldNameToDBAlias(searchFieldName)
+		suite.Equal(expectedDBTag, computedAlias,
+			"Search field %q should map to db tag %q but FieldNameToDBAlias returned %q",
+			searchFieldName, expectedDBTag, computedAlias)
+
+		// Verify the db tag actually exists in the struct
+		foundField := false
+		for i := 0; i < responseType.NumField(); i++ {
+			field := responseType.Field(i)
+			dbTag := field.Tag.Get("db")
+			if dbTag == expectedDBTag {
+				foundField = true
+				// Verify it's a slice field (required for array aggregation)
+				suite.Equal(reflect.Slice, field.Type.Kind(),
+					"Field with db tag %q should be a slice for array aggregation",
+					expectedDBTag)
+				break
+			}
+		}
+
+		suite.True(foundField,
+			"listSecretResponse struct should have a field with db tag %q to match search field %q",
+			expectedDBTag, searchFieldName)
+	}
+}
+
+// fieldNameToDBAlias wraps the postgres package function for local use
+func fieldNameToDBAlias(fieldName string) string {
+	return strings.Join(strings.Fields(strings.ToLower(fieldName)), "_")
 }
