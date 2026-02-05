@@ -31,6 +31,15 @@ test_sensor() {
 
     test_preamble
     setup_deployment_env false false
+
+    # Prefetch images for OSCI (DaemonSet-based prefetcher)
+    # For Kind (GitHub Actions), images are loaded directly via kind load
+    if [[ "${IMAGE_PREFETCH_DISABLED:-false}" != "true" ]]; then
+        info "Starting image prefetching for sensor integration tests"
+        image_prefetcher_prebuilt_start
+        image_prefetcher_prebuilt_await
+    fi
+
     # shellcheck disable=SC2119
     remove_existing_stackrox_resources
 

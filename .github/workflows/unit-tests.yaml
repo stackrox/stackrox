@@ -417,15 +417,14 @@ jobs:
 
     - name: Load test images into Kind
       run: |
-        # Pull images from quay.io (already authenticated)
-        docker pull quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1
-        docker pull quay.io/rhacs-eng/qa:alpine-3.16.0
-        docker pull quay.io/rhacs-eng/qa-multi-arch-busybox:1.30
-
-        # Load images into Kind cluster
-        kind load docker-image quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1
-        kind load docker-image quay.io/rhacs-eng/qa:alpine-3.16.0
-        kind load docker-image quay.io/rhacs-eng/qa-multi-arch-busybox:1.30
+        # Read images from prefetch list (single source of truth)
+        while IFS= read -r image; do
+          # Skip empty lines and comments
+          [[ -z "$image" || "$image" =~ ^# ]] && continue
+          echo "Loading $image into Kind..."
+          docker pull "$image"
+          kind load docker-image "$image"
+        done < sensor/tests/images-to-prefetch.txt
 
     - name: Run sensor integration tests
       run: make sensor-integration-test
