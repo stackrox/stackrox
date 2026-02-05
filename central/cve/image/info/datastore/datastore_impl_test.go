@@ -44,6 +44,7 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpdateTimestamps_NilOld() {
 	now := time.Now()
 	newInfo := &storage.ImageCVEInfo{
 		Id:                    "test-id",
+		Cve:                   "test-cve",
 		FirstSystemOccurrence: timestamppb.New(now),
 		FixAvailableTimestamp: timestamppb.New(now),
 	}
@@ -62,10 +63,12 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpdateTimestamps_PreservesEarlierFirstS
 
 	oldInfo := &storage.ImageCVEInfo{
 		Id:                    "test-id",
+		Cve:                   "test-cve",
 		FirstSystemOccurrence: timestamppb.New(earlier),
 	}
 	newInfo := &storage.ImageCVEInfo{
 		Id:                    "test-id",
+		Cve:                   "test-cve",
 		FirstSystemOccurrence: timestamppb.New(later),
 	}
 
@@ -82,10 +85,12 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpdateTimestamps_PreservesEarlierFixAva
 
 	oldInfo := &storage.ImageCVEInfo{
 		Id:                    "test-id",
+		Cve:                   "test-cve",
 		FixAvailableTimestamp: timestamppb.New(earlier),
 	}
 	newInfo := &storage.ImageCVEInfo{
 		Id:                    "test-id",
+		Cve:                   "test-cve",
 		FixAvailableTimestamp: timestamppb.New(later),
 	}
 
@@ -101,10 +106,12 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpdateTimestamps_UsesNewWhenOldIsZero()
 
 	oldInfo := &storage.ImageCVEInfo{
 		Id:                    "test-id",
+		Cve:                   "test-cve",
 		FirstSystemOccurrence: nil, // Zero timestamp
 	}
 	newInfo := &storage.ImageCVEInfo{
 		Id:                    "test-id",
+		Cve:                   "test-cve",
 		FirstSystemOccurrence: timestamppb.New(now),
 	}
 
@@ -120,10 +127,12 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpdateTimestamps_UsesOldWhenNewIsZero()
 
 	oldInfo := &storage.ImageCVEInfo{
 		Id:                    "test-id",
+		Cve:                   "test-cve",
 		FirstSystemOccurrence: timestamppb.New(earlier),
 	}
 	newInfo := &storage.ImageCVEInfo{
 		Id:                    "test-id",
+		Cve:                   "test-cve",
 		FirstSystemOccurrence: nil, // Zero timestamp
 	}
 
@@ -141,6 +150,7 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpsert_PreservesTimestamps() {
 	// First, insert an info with an earlier timestamp
 	firstInfo := &storage.ImageCVEInfo{
 		Id:                    "test-cve#test-pkg#test-ds",
+		Cve:                   "test-cve",
 		FirstSystemOccurrence: timestamppb.New(earlier),
 		FixAvailableTimestamp: timestamppb.New(earlier),
 	}
@@ -150,6 +160,7 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpsert_PreservesTimestamps() {
 	// Now upsert with a later timestamp
 	secondInfo := &storage.ImageCVEInfo{
 		Id:                    "test-cve#test-pkg#test-ds",
+		Cve:                   "test-cve",
 		FirstSystemOccurrence: timestamppb.New(later),
 		FixAvailableTimestamp: timestamppb.New(later),
 	}
@@ -167,19 +178,29 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpsert_PreservesTimestamps() {
 // TestUpsertMany_PreservesTimestamps tests that UpsertMany preserves earlier timestamps.
 func (s *ImageCVEInfoDataStoreSuite) TestUpsertMany_PreservesTimestamps() {
 	earlier := time.Now().Add(-24 * time.Hour)
+	earlier2 := time.Now().Add(-12 * time.Hour)
 	later := time.Now()
 
-	// First, insert infos with earlier timestamps
+	// First, insert infos with earlier timestamps.
+	// If there are multiple infos with same id, earlier timestamps should be preserved.
 	firstInfos := []*storage.ImageCVEInfo{
 		{
 			Id:                    "test-cve-1#test-pkg#test-ds",
+			Cve:                   "test-cve-1",
 			FirstSystemOccurrence: timestamppb.New(earlier),
 			FixAvailableTimestamp: timestamppb.New(earlier),
 		},
 		{
 			Id:                    "test-cve-2#test-pkg#test-ds",
+			Cve:                   "test-cve-2",
 			FirstSystemOccurrence: timestamppb.New(earlier),
 			FixAvailableTimestamp: timestamppb.New(earlier),
+		},
+		{
+			Id:                    "test-cve-1#test-pkg#test-ds",
+			Cve:                   "test-cve-1",
+			FirstSystemOccurrence: nil,
+			FixAvailableTimestamp: timestamppb.New(earlier2),
 		},
 	}
 	err := s.datastore.UpsertMany(s.ctx, firstInfos)
@@ -189,11 +210,13 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpsertMany_PreservesTimestamps() {
 	secondInfos := []*storage.ImageCVEInfo{
 		{
 			Id:                    "test-cve-1#test-pkg#test-ds",
+			Cve:                   "test-cve-1",
 			FirstSystemOccurrence: timestamppb.New(later),
 			FixAvailableTimestamp: timestamppb.New(later),
 		},
 		{
 			Id:                    "test-cve-2#test-pkg#test-ds",
+			Cve:                   "test-cve-2",
 			FirstSystemOccurrence: timestamppb.New(later),
 			FixAvailableTimestamp: timestamppb.New(later),
 		},
@@ -218,6 +241,7 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpsert_NewInfo() {
 
 	info := &storage.ImageCVEInfo{
 		Id:                    "new-cve#new-pkg#new-ds",
+		Cve:                   "new-cve",
 		FirstSystemOccurrence: timestamppb.New(now),
 		FixAvailableTimestamp: timestamppb.New(now),
 	}

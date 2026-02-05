@@ -1,26 +1,24 @@
 package lane
 
 import (
-	"time"
-
 	"github.com/pkg/errors"
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	"github.com/stackrox/rox/sensor/common/pubsub/consumer"
 	pubsubErrors "github.com/stackrox/rox/sensor/common/pubsub/errors"
 	"github.com/stackrox/rox/sensor/common/pubsub/metrics"
 )
 
-type DefaultConfig struct {
+type BlockingConfig struct {
 	Config
 }
 
-func WithDefaultLaneSize(size int) pubsub.LaneOption {
+func WithBlockingLaneSize(size int) pubsub.LaneOption {
 	return func(lane pubsub.Lane) {
-		laneImpl, ok := lane.(*defaultLane)
+		laneImpl, ok := lane.(*blockingLane)
 		if !ok {
 			panic("cannot use default lane option for this type of lane")
 		}
@@ -31,9 +29,9 @@ func WithDefaultLaneSize(size int) pubsub.LaneOption {
 	}
 }
 
-func WithDefaultLaneConsumer(consumer pubsub.NewConsumer, opts ...pubsub.ConsumerOption) pubsub.LaneOption {
+func WithBlockingLaneConsumer(consumer pubsub.NewConsumer, opts ...pubsub.ConsumerOption) pubsub.LaneOption {
 	return func(lane pubsub.Lane) {
-		laneImpl, ok := lane.(*defaultLane)
+		laneImpl, ok := lane.(*blockingLane)
 		if !ok {
 			panic("cannot use default lane option for this type of lane")
 		}
@@ -45,8 +43,8 @@ func WithDefaultLaneConsumer(consumer pubsub.NewConsumer, opts ...pubsub.Consume
 	}
 }
 
-func NewDefaultLane(id pubsub.LaneID, opts ...pubsub.LaneOption) *DefaultConfig {
-	return &DefaultConfig{
+func NewBlockingLane(id pubsub.LaneID, opts ...pubsub.LaneOption) *BlockingConfig {
+	return &BlockingConfig{
 		Config: Config{
 			id:          id,
 			opts:        opts,
@@ -55,8 +53,8 @@ func NewDefaultLane(id pubsub.LaneID, opts ...pubsub.LaneOption) *DefaultConfig 
 	}
 }
 
-func (c *DefaultConfig) NewLane() pubsub.Lane {
-	lane := &defaultLane{
+func (c *BlockingConfig) NewLane() pubsub.Lane {
+	lane := &blockingLane{
 		Lane: Lane{
 			id:            c.LaneID(),
 			newConsumerFn: c.newConsumer,
@@ -67,48 +65,35 @@ func (c *DefaultConfig) NewLane() pubsub.Lane {
 	for _, opt := range c.opts {
 		opt(lane)
 	}
-	lane.ch = make(chan pubsub.Event, lane.size)
+	lane.ch = safe.NewChannel[pubsub.Event](lane.size, lane.stopper.LowLevel().GetStopRequestSignal())
 	go lane.run()
 	return lane
 }
 
-type defaultLane struct {
+type blockingLane struct {
 	Lane
-	mu      sync.Mutex
 	size    int
-	ch      chan pubsub.Event
+	ch      *safe.Channel[pubsub.Event]
 	stopper concurrency.Stopper
 }
 
-func (l *defaultLane) Publish(event pubsub.Event) error {
-	// We need to lock here and nest two selects to avoid races stopping and
-	// publishing events
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	select {
-	case <-l.stopper.Flow().StopRequested():
+func (l *blockingLane) Publish(event pubsub.Event) error {
+	if err := l.ch.Write(event); err != nil {
 		metrics.RecordPublishOperation(l.id, event.Topic(), metrics.PublishError)
 		return errors.Wrap(pubsubErrors.NewPublishOnStoppedLaneErr(l.id), "unable to publish event")
-	default:
 	}
-	select {
-	case <-l.stopper.Flow().StopRequested():
-		metrics.RecordPublishOperation(l.id, event.Topic(), metrics.PublishError)
-		return errors.Wrap(pubsubErrors.NewPublishOnStoppedLaneErr(l.id), "unable to publish event")
-	case l.ch <- event:
-		metrics.RecordPublishOperation(l.id, event.Topic(), metrics.Published)
-		metrics.SetQueueSize(l.id, len(l.ch))
-		return nil
-	}
+	metrics.RecordPublishOperation(l.id, event.Topic(), metrics.Published)
+	metrics.SetQueueSize(l.id, l.ch.Len())
+	return nil
 }
 
-func (l *defaultLane) run() {
+func (l *blockingLane) run() {
 	defer l.stopper.Flow().ReportStopped()
 	for {
 		select {
 		case <-l.stopper.Flow().StopRequested():
 			return
-		case event, ok := <-l.ch:
+		case event, ok := <-l.ch.Chan():
 			if !ok {
 				return
 			}
@@ -119,19 +104,16 @@ func (l *defaultLane) run() {
 	}
 }
 
-func (l *defaultLane) handleEvent(event pubsub.Event) error {
-	start := time.Now()
-	operation := metrics.Processed
+func (l *blockingLane) handleEvent(event pubsub.Event) error {
 	defer func() {
-		metrics.ObserveProcessingDuration(l.id, event.Topic(), time.Since(start), operation)
-		metrics.SetQueueSize(l.id, len(l.ch))
+		metrics.SetQueueSize(l.id, l.ch.Len())
 	}()
 
 	l.consumerLock.RLock()
 	defer l.consumerLock.RUnlock()
 	consumers, ok := l.consumers[event.Topic()]
 	if !ok {
-		metrics.RecordConsumerOperation(l.id, event.Topic(), metrics.NoConsumers)
+		metrics.RecordConsumerOperation(l.id, event.Topic(), pubsub.NoConsumers, metrics.NoConsumers)
 		return errors.Wrap(pubsubErrors.NewConsumersNotFoundForTopicErr(event.Topic(), l.id), "unable to handle event")
 	}
 	errList := errorhelpers.NewErrorList("handle event")
@@ -146,19 +128,14 @@ func (l *defaultLane) handleEvent(event pubsub.Event) error {
 		}
 	}
 
-	if errList.ToError() != nil {
-		operation = metrics.ConsumerError
-	}
-	metrics.RecordConsumerOperation(l.id, event.Topic(), operation)
-
 	return errList.ToError()
 }
 
-func (l *defaultLane) RegisterConsumer(topic pubsub.Topic, callback pubsub.EventCallback) error {
+func (l *blockingLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pubsub.Topic, callback pubsub.EventCallback) error {
 	if callback == nil {
 		return errors.New("cannot register a 'nil' callback")
 	}
-	c, err := l.newConsumerFn(callback, l.consumerOpts...)
+	c, err := l.newConsumerFn(l.id, topic, consumerID, callback, l.consumerOpts...)
 	if err != nil {
 		return errors.Wrap(err, "unable to create the consumer")
 	}
@@ -169,15 +146,11 @@ func (l *defaultLane) RegisterConsumer(topic pubsub.Topic, callback pubsub.Event
 	return nil
 }
 
-func (l *defaultLane) Stop() {
+func (l *blockingLane) Stop() {
 	l.stopper.Client().Stop()
+	// Wait for the run() goroutine to fully exit before closing the channel.
+	// This ensures an orderly shutdown where event processing is complete.
 	<-l.stopper.Client().Stopped().Done()
-	concurrency.WithLock(&l.mu, func() {
-		if l.ch == nil {
-			return
-		}
-		close(l.ch)
-		l.ch = nil
-	})
+	l.ch.Close()
 	l.Lane.Stop()
 }

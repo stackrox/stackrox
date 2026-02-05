@@ -57,6 +57,9 @@ function VirtualMachinePageHeader({
                 {virtualMachine.scan?.scanTime && (
                     <Label>Scan time: {getDateTime(virtualMachine.scan.scanTime)}</Label>
                 )}
+                {virtualMachine?.facts?.guestOS && (
+                    <Label>Guest OS: {virtualMachine.facts.guestOS}</Label>
+                )}
             </LabelGroup>
         </Flex>
     );

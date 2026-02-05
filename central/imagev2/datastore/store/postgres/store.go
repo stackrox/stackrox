@@ -15,7 +15,9 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/baseimage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -295,6 +297,7 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 		"operatingsystem",
 		"imageidv2",
 		"location",
+		"layertype",
 		"serialized",
 	}
 
@@ -315,6 +318,7 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 			obj.GetOperatingSystem(),
 			obj.GetImageIdV2(),
 			obj.GetLocation(),
+			obj.GetLayerType(),
 			serialized,
 		})
 
@@ -517,6 +521,13 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.ImageV2) error {
 	}
 
 	scanUpdated = scanUpdated || componentsEmpty
+
+	if features.BaseImageDetection.Enabled() {
+		// Re-verify base images when base image detection is enabled:
+		// 1. Legacy images may lack base image info if the feature was enabled after they were scanned.
+		// 2. User-provided base images may change over time.
+		scanUpdated = scanUpdated || baseimage.BaseImagesUpdated(oldImage.GetBaseImageInfo(), obj.GetBaseImageInfo())
+	}
 
 	splitParts, err := common.Split(obj, scanUpdated)
 	if err != nil {

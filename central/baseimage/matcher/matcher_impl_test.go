@@ -27,7 +27,7 @@ func TestMatchWithBaseImages(t *testing.T) {
 		desc      string
 		imgLayers []string
 		mockSetup func()
-		expected  []*storage.BaseImageInfo
+		expected  []*storage.BaseImage
 	}{
 		{
 			desc:      "Match found: Base image layers are returned out of order",
@@ -49,12 +49,13 @@ func TestMatchWithBaseImages(t *testing.T) {
 						},
 					}, nil)
 			},
-			expected: []*storage.BaseImageInfo{
+			expected: []*storage.BaseImage{
 				{
-					BaseImageId:       "base-1",
-					BaseImageFullName: "rhel:8",
-					BaseImageDigest:   "sha-base",
-					Created:           testCreatedTime,
+					Id:             "base-1",
+					Repository:     "rhel",
+					Tag:            "8",
+					ManifestDigest: "sha-base",
+					Created:        testCreatedTime,
 				},
 			},
 		},
@@ -99,8 +100,8 @@ func TestMatchWithBaseImages(t *testing.T) {
 						},
 					}, nil)
 			},
-			expected: []*storage.BaseImageInfo{
-				{BaseImageId: "match"},
+			expected: []*storage.BaseImage{
+				{Id: "match"},
 			},
 		},
 		{
@@ -120,6 +121,67 @@ func TestMatchWithBaseImages(t *testing.T) {
 					}, nil)
 			},
 			expected: nil,
+		}, {
+			desc:      "Max layers only: Returns 3-layer match and ignores 2-layer match",
+			imgLayers: []string{"L1", "L2", "L3", "L4"},
+			mockSetup: func() {
+				mockDS.EXPECT().
+					ListCandidateBaseImages(gomock.Any(), "L1").
+					Return([]*storage.BaseImage{
+						{
+							Id: "short-match", // 2 layers
+							Layers: []*storage.BaseImageLayer{
+								{LayerDigest: "L1", Index: 0},
+								{LayerDigest: "L2", Index: 1},
+							},
+						},
+						{
+							Id: "long-match", // 3 layers - the winner
+							Layers: []*storage.BaseImageLayer{
+								{LayerDigest: "L1", Index: 0},
+								{LayerDigest: "L2", Index: 1},
+								{LayerDigest: "L3", Index: 2},
+							},
+						},
+					}, nil)
+			},
+			expected: []*storage.BaseImage{
+				{Id: "long-match"},
+			},
+		},
+		{
+			desc:      "Max layers only: Returns multiple matches if they have same max length",
+			imgLayers: []string{"L1", "L2", "L3"},
+			mockSetup: func() {
+				mockDS.EXPECT().
+					ListCandidateBaseImages(gomock.Any(), "L1").
+					Return([]*storage.BaseImage{
+						{
+							Id: "match-A",
+							Layers: []*storage.BaseImageLayer{
+								{LayerDigest: "L1", Index: 0},
+								{LayerDigest: "L2", Index: 1},
+							},
+						},
+						{
+							Id: "match-B",
+							Layers: []*storage.BaseImageLayer{
+								{LayerDigest: "L1", Index: 0},
+								{LayerDigest: "L2", Index: 1},
+							},
+						},
+						{
+							Id: "too-short",
+							Layers: []*storage.BaseImageLayer{
+								{LayerDigest: "L1", Index: 0},
+							},
+						},
+					}, nil)
+			},
+			expected: []*storage.BaseImage{
+				{Id: "match-A"},
+				{Id: "match-B"},
+			},
 		},
 	}
 
@@ -134,9 +196,10 @@ func TestMatchWithBaseImages(t *testing.T) {
 			} else {
 				require.Equal(t, len(tc.expected), len(actual))
 				for i := range tc.expected {
-					assert.Equal(t, tc.expected[i].GetBaseImageId(), actual[i].GetBaseImageId())
-					if tc.expected[i].GetBaseImageFullName() != "" {
-						assert.Equal(t, tc.expected[i].GetBaseImageFullName(), actual[i].GetBaseImageFullName())
+					assert.Equal(t, tc.expected[i].GetId(), actual[i].GetId())
+					if tc.expected[i].GetRepository() != "" {
+						assert.Equal(t, tc.expected[i].GetRepository(), actual[i].GetRepository())
+						assert.Equal(t, tc.expected[i].GetTag(), actual[i].GetTag())
 					}
 					if tc.expected[i].GetCreated() != nil {
 						assert.Equal(t, tc.expected[i].GetCreated(), actual[i].GetCreated())

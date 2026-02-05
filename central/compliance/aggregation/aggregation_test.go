@@ -584,11 +584,10 @@ func mockBenchmarkRunResult() *storage.ComplianceRunResults {
 func BenchmarkAggregatedResults(b *testing.B) {
 	result := mockBenchmarkRunResult()
 
-	b.ResetTimer()
 	a := &aggregatorImpl{
 		standards: mockStandardsRepo(b),
 	}
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		a.getAggregatedResults(nil, storage.ComplianceAggregation_CHECK, []*storage.ComplianceRunResults{result}, &mask{})
 	}
 }

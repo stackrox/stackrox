@@ -704,6 +704,7 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestImageCVEInfoIntegration_Enrich
 
 	preExistingInfo := &storage.ImageCVEInfo{
 		Id:                    pkgCVE.ImageCVEInfoID("CVE-2021-5678", "curl", "debian-updater::debian:11"),
+		Cve:                   "CVE-2021-5678",
 		FixAvailableTimestamp: earlierTime,
 		FirstSystemOccurrence: earlierTime,
 	}

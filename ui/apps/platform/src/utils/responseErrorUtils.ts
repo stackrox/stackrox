@@ -8,6 +8,17 @@ function isAxiosError(error: Error): error is AxiosError<{ message?: string }> {
     );
 }
 
+const commonStatusCodeNameMap = {
+    401: 'Unauthorized',
+    403: 'Forbidden',
+    404: 'Not Found',
+    500: 'Internal Server Error',
+    501: 'Not Implemented',
+    502: 'Bad Gateway',
+    503: 'Service Unavailable',
+    504: 'Gateway Timeout',
+} as const;
+
 /*
  * Given argument of promise-catch method or try-catch block for an axios call,
  * return error message.
@@ -23,7 +34,11 @@ export function getAxiosErrorMessage(error: unknown): string {
             'result' in error.networkError &&
             typeof error.networkError.result === 'string'
         ) {
-            return `${error.networkError.message} [${error.networkError.result}]`;
+            // Display a user-friendly error message for common HTTP status codes, falling back to
+            // the error name for less common codes
+            const name =
+                commonStatusCodeNameMap[error.networkError.statusCode] ?? error.networkError.name;
+            return `${name}: ${error.networkError.result}`;
         }
 
         if (isAxiosError(error)) {

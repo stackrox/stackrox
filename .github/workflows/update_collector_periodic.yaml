@@ -2,7 +2,7 @@ name: Update collector version
 on:
   workflow_dispatch:
   schedule:
-    - cron: 0 5 * * 1-5
+    - cron: 0 5 * * 1
 jobs:
   update-collector:
     if:  ${{ github.repository_owner == 'stackrox' }}
@@ -37,6 +37,7 @@ jobs:
         labels: |
           ci-all-qa-tests
           dependencies
+          konflux-build
         team-reviewers: |
           collector-team
         draft: false

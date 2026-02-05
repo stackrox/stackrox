@@ -1590,6 +1590,7 @@ type ImageCVEV2 struct {
 	ImageIdV2   string                  `protobuf:"bytes,15,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty" sql:"fk(ImageV2:id),index=btree,allow-null"` // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
 	// Timestamp when the fix for this CVE was made available according to the sources.
 	FixAvailableTimestamp *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=fix_available_timestamp,json=fixAvailableTimestamp,proto3" json:"fix_available_timestamp,omitempty" search:"CVE Fix Available Timestamp,hidden"` // @gotags: search:"CVE Fix Available Timestamp,hidden"
+	Datasource            string                 `protobuf:"bytes,17,opt,name=datasource,proto3" json:"datasource,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -1744,6 +1745,13 @@ func (x *ImageCVEV2) GetFixAvailableTimestamp() *timestamppb.Timestamp {
 		return x.FixAvailableTimestamp
 	}
 	return nil
+}
+
+func (x *ImageCVEV2) GetDatasource() string {
+	if x != nil {
+		return x.Datasource
+	}
+	return ""
 }
 
 type isImageCVEV2_HasFixedBy interface {
@@ -2357,6 +2365,7 @@ type ImageCVEInfo struct {
 	Id                    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE Info" sql:"pk"`                                                                      // @gotags: search:"CVE Info" sql:"pk"
 	FixAvailableTimestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=fix_available_timestamp,json=fixAvailableTimestamp,proto3" json:"fix_available_timestamp,omitempty" search:"CVE Fix Available Timestamp,hidden"` // @gotags: search:"CVE Fix Available Timestamp,hidden"
 	FirstSystemOccurrence *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=first_system_occurrence,json=firstSystemOccurrence,proto3" json:"first_system_occurrence,omitempty" search:"First System Occurrence Timestamp,hidden"` // @gotags: search:"First System Occurrence Timestamp,hidden"
+	Cve                   string                 `protobuf:"bytes,4,opt,name=cve,proto3" json:"cve,omitempty" search:"CVE" sql:"index"`                                                                    // @gotags: search:"CVE" sql:"index"
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -2410,6 +2419,13 @@ func (x *ImageCVEInfo) GetFirstSystemOccurrence() *timestamppb.Timestamp {
 		return x.FirstSystemOccurrence
 	}
 	return nil
+}
+
+func (x *ImageCVEInfo) GetCve() string {
+	if x != nil {
+		return x.Cve
+	}
+	return ""
 }
 
 type CVE_DistroSpecific struct {
@@ -2689,7 +2705,7 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\anvdcvss\x18\n" +
 	" \x01(\x02R\anvdcvss\x125\n" +
 	"\fcvss_metrics\x18\v \x03(\v2\x12.storage.CVSSScoreR\vcvssMetrics\x12E\n" +
-	"\x11nvd_score_version\x18\f \x01(\x0e2\x19.storage.CvssScoreVersionR\x0fnvdScoreVersion:\x02\x18\x01\"\xdc\x05\n" +
+	"\x11nvd_score_version\x18\f \x01(\x0e2\x19.storage.CvssScoreVersionR\x0fnvdScoreVersion:\x02\x18\x01\"\xfc\x05\n" +
 	"\n" +
 	"ImageCVEV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
@@ -2709,7 +2725,10 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\fcomponent_id\x18\r \x01(\tR\vcomponentId\x12-\n" +
 	"\badvisory\x18\x0e \x01(\v2\x11.storage.AdvisoryR\badvisory\x12\x1e\n" +
 	"\vimage_id_v2\x18\x0f \x01(\tR\timageIdV2\x12R\n" +
-	"\x17fix_available_timestamp\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\x15fixAvailableTimestampB\x0e\n" +
+	"\x17fix_available_timestamp\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\x15fixAvailableTimestamp\x12\x1e\n" +
+	"\n" +
+	"datasource\x18\x11 \x01(\tR\n" +
+	"datasourceB\x0e\n" +
 	"\fhas_fixed_by\"\xe4\x03\n" +
 	"\aNodeCVE\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x124\n" +
@@ -2825,11 +2844,12 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\n" +
 	"\x06MEDIUM\x10\x03\x12\b\n" +
 	"\x04HIGH\x10\x04\x12\f\n" +
-	"\bCRITICAL\x10\x05\"\xc6\x01\n" +
+	"\bCRITICAL\x10\x05\"\xd8\x01\n" +
 	"\fImageCVEInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12R\n" +
 	"\x17fix_available_timestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x15fixAvailableTimestamp\x12R\n" +
-	"\x17first_system_occurrence\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x15firstSystemOccurrence*D\n" +
+	"\x17first_system_occurrence\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x15firstSystemOccurrence\x12\x10\n" +
+	"\x03cve\x18\x04 \x01(\tR\x03cve*D\n" +
 	"\x12VulnerabilityState\x12\f\n" +
 	"\bOBSERVED\x10\x00\x12\f\n" +
 	"\bDEFERRED\x10\x01\x12\x12\n" +

@@ -198,7 +198,9 @@ func (s *Sensor) Start() {
 		}
 	}
 	s.imageService.SetClient(s.centralConnection)
-	s.profilingServer = s.startProfilingServer()
+	if !env.ContinuousProfiling.BooleanSetting() {
+		s.profilingServer = s.startProfilingServer()
+	}
 
 	var centralReachable concurrency.Flag
 
@@ -247,7 +249,7 @@ func (s *Sensor) Start() {
 
 	// Enable proxy endpoint for forwarding requests to Central on OpenShift.
 	// The proxy is served on a dedicated HTTPS server with a service CA signed certificate.
-	if features.OCPConsoleIntegration.Enabled() && env.OpenshiftAPI.Setting() != "" {
+	if features.OCPConsoleIntegration.Enabled() && env.OpenshiftAPI.BooleanSetting() {
 		handler, err := centralproxy.NewProxyHandler(s.centralEndpoint, centralCertificates, s.clusterID)
 		if err != nil {
 			utils.Should(errors.Wrap(err, "creating central proxy handler"))

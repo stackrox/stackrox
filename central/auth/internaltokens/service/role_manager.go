@@ -42,7 +42,7 @@ type roleManager struct {
 func generateTraitsWithExpiry(expiresAt time.Time) (*storage.Traits, error) {
 	ts, err := protocompat.ConvertTimeToTimestampOrError(expiresAt)
 	return &storage.Traits{
-		Origin:    storage.Traits_DYNAMIC,
+		Origin:    storage.Traits_EPHEMERAL,
 		ExpiresAt: ts,
 	}, err
 }

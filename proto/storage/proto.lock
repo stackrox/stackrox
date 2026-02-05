@@ -6603,6 +6603,11 @@
                 "id": 16,
                 "name": "fix_available_timestamp",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 17,
+                "name": "datasource",
+                "type": "string"
               }
             ]
           },
@@ -6890,6 +6895,11 @@
                 "id": 3,
                 "name": "first_system_occurrence",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 4,
+                "name": "cve",
+                "type": "string"
               }
             ]
           }
@@ -9491,6 +9501,11 @@
                 "id": 4,
                 "name": "created",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "max_layer_index",
+                "type": "int32"
               }
             ]
           }
@@ -10660,6 +10675,10 @@
               {
                 "name": "EGRESS_FIREWALLS",
                 "integer": 9
+              },
+              {
+                "name": "PODS_ATTACH",
+                "integer": 10
               }
             ]
           }
@@ -10698,6 +10717,12 @@
                 "id": 6,
                 "name": "pod_port_forward_args",
                 "type": "PodPortForwardArgs",
+                "oneof_parent": "ObjectArgs"
+              },
+              {
+                "id": 21,
+                "name": "pod_attach_args",
+                "type": "PodAttachArgs",
                 "oneof_parent": "ObjectArgs"
               },
               {
@@ -10782,6 +10807,16 @@
                     "name": "ports",
                     "type": "int32",
                     "is_repeated": true
+                  }
+                ]
+              },
+              {
+                "name": "PodAttachArgs",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "container",
+                    "type": "string"
                   }
                 ]
               },
@@ -16499,6 +16534,16 @@
                 "id": 3,
                 "name": "label",
                 "type": "Label"
+              },
+              {
+                "id": 4,
+                "name": "cluster_label",
+                "type": "Label"
+              },
+              {
+                "id": 5,
+                "name": "namespace_label",
+                "type": "Label"
               }
             ],
             "messages": [
@@ -18617,7 +18662,7 @@
                 "integer": 3
               },
               {
-                "name": "DYNAMIC",
+                "name": "EPHEMERAL",
                 "integer": 4
               }
             ]

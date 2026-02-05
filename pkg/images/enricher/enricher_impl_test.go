@@ -42,6 +42,10 @@ func imageGetterPanicOnCall(_ context.Context, _ string) (*storage.Image, bool, 
 	panic("Unexpected call to imageGetter")
 }
 
+func emptyBaseImageGetter(_ context.Context, _ []string) ([]*storage.BaseImage, error) {
+	return nil, nil
+}
+
 var _ signatures.SignatureFetcher = (*fakeSigFetcher)(nil)
 
 var _ scannertypes.Scanner = (*fakeScanner)(nil)
@@ -348,6 +352,7 @@ func TestEnricherFlow(t *testing.T) {
 				imageGetter:                emptyImageGetter,
 				signatureIntegrationGetter: emptySignatureIntegrationGetter,
 				signatureFetcher:           &fakeSigFetcher{},
+				baseImageGetter:            emptyBaseImageGetter,
 			}
 			if c.inMetadataCache {
 				enricherImpl.metadataCache.Add(c.image.GetId(), c.image.GetMetadata())
@@ -400,6 +405,7 @@ func TestCVESuppression(t *testing.T) {
 		imageGetter:                emptyImageGetter,
 		signatureIntegrationGetter: emptySignatureIntegrationGetter,
 		signatureFetcher:           &fakeSigFetcher{},
+		baseImageGetter:            emptyBaseImageGetter,
 	}
 
 	img := &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"},
@@ -1388,11 +1394,15 @@ func TestEnrichImageWithBaseImages(t *testing.T) {
 	const expectedDigest = "sha256:abcdef123456"
 
 	// CHANGE: Replace mockMatcher with a function closure
-	mockBaseImageGetter := func(ctx context.Context, layers []string) ([]*storage.BaseImageInfo, error) {
-		return []*storage.BaseImageInfo{
+	mockBaseImageGetter := func(ctx context.Context, layers []string) ([]*storage.BaseImage, error) {
+		return []*storage.BaseImage{
 			{
-				BaseImageFullName: expectedName,
-				BaseImageDigest:   expectedDigest,
+				Repository:     "docker.io/library/alpine",
+				Tag:            "3.18",
+				ManifestDigest: expectedDigest,
+				Layers: []*storage.BaseImageLayer{
+					{LayerDigest: "sha1", Index: 0},
+				},
 			},
 		}, nil
 	}
@@ -1421,6 +1431,12 @@ func TestEnrichImageWithBaseImages(t *testing.T) {
 		Metadata: &storage.ImageMetadata{
 			LayerShas:  []string{"sha1", "sha2"},
 			DataSource: &storage.DataSource{Id: "test-id"},
+			V1: &storage.V1Metadata{
+				Layers: []*storage.ImageLayer{
+					{Instruction: "ADD"},
+					{Instruction: "RUN"},
+				},
+			},
 		},
 	}
 
@@ -1436,7 +1452,203 @@ func TestEnrichImageWithBaseImages(t *testing.T) {
 func newEnricher(set *mocks.MockSet, mockReporter *reporterMocks.MockReporter) ImageEnricher {
 	return New(&fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		newCache(),
-		nil,
+		emptyBaseImageGetter,
 		emptyImageGetter,
 		mockReporter, emptySignatureIntegrationGetter, nil)
+}
+
+func TestResolveLayerBoundary(t *testing.T) {
+	cases := map[string]struct {
+		metadata          *storage.ImageMetadata
+		baseContentLayers int
+		expected          int
+		expectError       bool
+	}{
+		"V2 present with empty layers": {
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{
+						{Empty: true},  // 0: empty (ENV)
+						{Empty: false}, // 1: content layer 0
+						{Empty: false}, // 2: content layer 1
+						{Empty: true},  // 3: empty (LABEL)
+						{Empty: false}, // 4: content layer 2
+					},
+				},
+				V2: &storage.V2Metadata{},
+			},
+			baseContentLayers: 2, // base has 2 content layers
+			expected:          2, // manifest index of last base layer
+		},
+		"V2 present all content layers": {
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{
+						{Empty: false}, // 0
+						{Empty: false}, // 1
+						{Empty: false}, // 2
+					},
+				},
+				V2: &storage.V2Metadata{},
+			},
+			baseContentLayers: 2,
+			expected:          1,
+		},
+		"V1 only - direct mapping": {
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{
+						{}, // 0
+						{}, // 1
+						{}, // 2
+					},
+				},
+				// No V2
+			},
+			baseContentLayers: 2,
+			expected:          1,
+		},
+		"error: no content layers": {
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{{Empty: false}},
+				},
+				V2: &storage.V2Metadata{},
+			},
+			baseContentLayers: 0,
+			expectError:       true,
+		},
+		"error: not enough layers V1": {
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{{}},
+				},
+			},
+			baseContentLayers: 5,
+			expectError:       true,
+		},
+		"error: not enough content layers V2": {
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{
+						{Empty: true},
+						{Empty: false},
+					},
+				},
+				V2: &storage.V2Metadata{},
+			},
+			baseContentLayers: 5,
+			expectError:       true,
+		},
+		"V2 without V1 layers - uses LayerShas": {
+			metadata: &storage.ImageMetadata{
+				V2:        &storage.V2Metadata{},
+				LayerShas: []string{"sha1", "sha2", "sha3"},
+				// V1 is nil or has no layers
+			},
+			baseContentLayers: 2,
+			expected:          1,
+		},
+		"no layer metadata at all": {
+			metadata:          &storage.ImageMetadata{},
+			baseContentLayers: 2,
+			expectError:       true,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			result, err := resolveLayerBoundary(c.metadata, c.baseContentLayers)
+			if c.expectError {
+				assert.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, c.expected, result)
+			}
+		})
+	}
+}
+
+func TestToBaseImageInfos(t *testing.T) {
+	cases := map[string]struct {
+		metadata   *storage.ImageMetadata
+		baseImages []*storage.BaseImage
+		expected   []*storage.BaseImageInfo
+	}{
+		"computes max layer index with empty layers": {
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{
+						{Empty: false}, // 0: content 0
+						{Empty: true},  // 1: empty
+						{Empty: false}, // 2: content 1
+						{Empty: false}, // 3: content 2 (app layer)
+					},
+				},
+				V2: &storage.V2Metadata{},
+			},
+			baseImages: []*storage.BaseImage{
+				{
+					Id:             "base-1",
+					Repository:     "rhel",
+					Tag:            "8",
+					ManifestDigest: "sha256:abc",
+					Layers: []*storage.BaseImageLayer{
+						{LayerDigest: "layer-1", Index: 0},
+						{LayerDigest: "layer-2", Index: 1},
+					},
+				},
+			},
+			expected: []*storage.BaseImageInfo{
+				{
+					BaseImageId:       "base-1",
+					BaseImageFullName: "rhel:8",
+					BaseImageDigest:   "sha256:abc",
+					MaxLayerIndex:     2, // content layer 1 is at manifest index 2
+				},
+			},
+		},
+		"skips base image if boundary resolution fails": {
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{
+						{Empty: false},
+					},
+				},
+				V2: &storage.V2Metadata{},
+			},
+			baseImages: []*storage.BaseImage{
+				{
+					Id:         "bad-base",
+					Repository: "too-many",
+					Tag:        "layers",
+					Layers: []*storage.BaseImageLayer{
+						{}, {}, {}, {}, {}, // 5 layers but image only has 1
+					},
+				},
+			},
+			expected: nil, // skipped due to error
+		},
+		"empty base images returns nil": {
+			metadata:   &storage.ImageMetadata{},
+			baseImages: nil,
+			expected:   nil,
+		},
+	}
+
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			result := toBaseImageInfos(c.metadata, c.baseImages)
+			if c.expected == nil {
+				assert.Empty(t, result)
+			} else {
+				require.Len(t, result, len(c.expected))
+				for i, exp := range c.expected {
+					assert.Equal(t, exp.GetBaseImageId(), result[i].GetBaseImageId())
+					assert.Equal(t, exp.GetBaseImageFullName(), result[i].GetBaseImageFullName())
+					assert.Equal(t, exp.GetMaxLayerIndex(), result[i].GetMaxLayerIndex())
+				}
+			}
+		})
+	}
 }

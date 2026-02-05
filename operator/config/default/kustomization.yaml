@@ -1,18 +1,4 @@
-# Adds namespace to all resources.
-namespace: rhacs-operator-system
-
-# Value of this field is prepended to the
-# names of all resources, e.g. a deployment named
-# "wordpress" becomes "alices-wordpress".
-# Note that it should also match with the prefix (text before '-') of the namespace
-# field above.
-namePrefix: rhacs-operator-
-
-# Labels to add to all resources and selectors.
-labels:
-- includeSelectors: true
-  pairs:
-    app: rhacs-operator
+# This file is meant to be used by the kustomizations in the flavors/ subdirectories.
 
 resources:
 - ../crd

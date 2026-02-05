@@ -420,6 +420,7 @@ func (ds *datastoreImpl) upsertImageCVEInfos(ctx context.Context, image *storage
 
 			info := &storage.ImageCVEInfo{
 				Id:                    cve.ImageCVEInfoID(vuln.GetCve(), component.GetName(), vuln.GetDatasource()),
+				Cve:                   vuln.GetCve(),
 				FixAvailableTimestamp: fixAvailableTimestamp,
 				FirstSystemOccurrence: now, // Smart upsert in ImageCVEInfo datastore preserves existing
 			}
@@ -465,11 +466,12 @@ func (ds *datastoreImpl) enrichCVEsFromImageCVEInfo(ctx context.Context, image *
 		for _, vuln := range component.GetVulns() {
 			id := cve.ImageCVEInfoID(vuln.GetCve(), component.GetName(), vuln.GetDatasource())
 			if info, ok := infoMap[id]; ok {
-				vuln.FixAvailableTimestamp = info.GetFixAvailableTimestamp()
+				if vuln.GetFixAvailableTimestamp() == nil && vuln.GetFixedBy() != "" {
+					// Set the fix timestamp if it was not provided by the scanner
+					vuln.FixAvailableTimestamp = info.GetFixAvailableTimestamp()
+				}
 				vuln.FirstSystemOccurrence = info.GetFirstSystemOccurrence()
 			}
-			// Blank out datasource after using it - this is internal scanner data not meant for end users
-			vuln.Datasource = ""
 		}
 	}
 

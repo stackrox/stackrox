@@ -1,16 +1,6 @@
 import { useMemo } from 'react';
-import {
-    Flex,
-    PageSection,
-    Pagination,
-    Skeleton,
-    Split,
-    SplitItem,
-    Title,
-    pluralize,
-} from '@patternfly/react-core';
+import { Flex, PageSection, Pagination } from '@patternfly/react-core';
 
-import { DynamicTableLabel } from 'Components/DynamicIcon';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import type { UseUrlSearchReturn } from 'hooks/useURLSearch';
@@ -19,7 +9,6 @@ import { useManagedColumns } from 'hooks/useManagedColumns';
 import type { VirtualMachine } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
 
-import { getHasSearchApplied } from 'utils/searchUtils';
 import {
     applyVirtualMachineCveTableFilters,
     applyVirtualMachineCveTableSort,
@@ -75,7 +64,6 @@ function VirtualMachinePageVulnerabilities({
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
-    const isFiltered = getHasSearchApplied(searchFilter);
 
     const managedColumnState = useManagedColumns(tableId, defaultColumns);
 
@@ -157,45 +145,27 @@ function VirtualMachinePageVulnerabilities({
                     )}
                 />
             </SummaryCardLayout>
-            <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100 pf-v5-u-p-lg">
-                <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
-                    <SplitItem isFilled>
-                        <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                            <Title headingLevel="h2">
-                                {!isLoadingVirtualMachine ? (
-                                    `${pluralize(filteredVirtualMachineTableData.length, 'result')} found`
-                                ) : (
-                                    <Skeleton screenreaderText="Loading virtual machine vulnerability count" />
-                                )}
-                            </Title>
-                            {isFiltered && <DynamicTableLabel />}
-                        </Flex>
-                    </SplitItem>
-                    <SplitItem>
-                        <ColumnManagementButton
-                            columnConfig={managedColumnState.columns}
-                            onApplyColumns={managedColumnState.setVisibility}
-                        />
-                    </SplitItem>
-                    <SplitItem>
-                        <Pagination
-                            itemCount={filteredVirtualMachineTableData.length}
-                            perPage={perPage}
-                            page={page}
-                            onSetPage={(_, newPage) => setPage(newPage)}
-                            onPerPageSelect={(_, newPerPage) => {
-                                setPerPage(newPerPage);
-                            }}
-                        />
-                    </SplitItem>
-                </Split>
-                <VirtualMachineVulnerabilitiesTable
-                    onClearFilters={onClearFilters}
-                    getSortParams={getSortParams}
-                    tableState={tableState}
-                    tableConfig={managedColumnState.columns}
+            <Flex justifyContent={{ default: 'justifyContentFlexEnd' }}>
+                <ColumnManagementButton
+                    columnConfig={managedColumnState.columns}
+                    onApplyColumns={managedColumnState.setVisibility}
                 />
-            </div>
+                <Pagination
+                    itemCount={filteredVirtualMachineTableData.length}
+                    perPage={perPage}
+                    page={page}
+                    onSetPage={(_, newPage) => setPage(newPage)}
+                    onPerPageSelect={(_, newPerPage) => {
+                        setPerPage(newPerPage);
+                    }}
+                />
+            </Flex>
+            <VirtualMachineVulnerabilitiesTable
+                onClearFilters={onClearFilters}
+                getSortParams={getSortParams}
+                tableState={tableState}
+                tableConfig={managedColumnState.columns}
+            />
         </PageSection>
     );
 }

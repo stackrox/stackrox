@@ -15,11 +15,13 @@ import (
 const (
 	podExecOptionsKind        = "PodExecOptions"
 	podPortForwardOptionsKind = "PodPortForwardOptions"
+	podAttachOptionsKind      = "PodAttachOptions"
 )
 
 var (
 	supportedAPIVerbs = map[admission.Operation]storage.KubernetesEvent_APIVerb{
 		admission.Connect: storage.KubernetesEvent_CREATE,
+		admission.Create:  storage.KubernetesEvent_CREATE,
 	}
 
 	universalDeserializer = serializer.NewCodecFactory(runtime.NewScheme()).UniversalDeserializer()
@@ -53,6 +55,8 @@ func AdmissionRequestToKubeEventObj(req *admission.AdmissionRequest) (*storage.K
 		return podExecEvent(req)
 	case podPortForwardOptionsKind:
 		return podPortForwardEvent(req)
+	case podAttachOptionsKind:
+		return podAttachEvent(req)
 	default:
 		return nil, ErrUnsupportedRequestKind.CausedByf("%q", req.Kind)
 	}
@@ -81,6 +85,37 @@ func podExecEvent(req *admission.AdmissionRequest) (*storage.KubernetesEvent, er
 			PodExecArgs: &storage.KubernetesEvent_PodExecArgs{
 				Container: obj.Container,
 				Commands:  obj.Command,
+			},
+		},
+		User: &storage.KubernetesEvent_User{
+			Username: req.UserInfo.Username,
+			Groups:   req.UserInfo.Groups,
+		},
+	}, nil
+}
+
+func podAttachEvent(req *admission.AdmissionRequest) (*storage.KubernetesEvent, error) {
+	apiVerb, supported := supportedAPIVerbs[req.Operation]
+	if !supported {
+		return nil, ErrUnsupportedAPIVerb.CausedByf("%q", req.Operation)
+	}
+
+	var obj core.PodAttachOptions
+	if _, _, err := universalDeserializer.Decode(req.Object.Raw, nil, &obj); err != nil {
+		return nil, err
+	}
+
+	return &storage.KubernetesEvent{
+		Id:      string(req.UID),
+		ApiVerb: apiVerb,
+		Object: &storage.KubernetesEvent_Object{
+			Name:      req.Name,
+			Resource:  storage.KubernetesEvent_Object_PODS_ATTACH,
+			Namespace: req.Namespace,
+		},
+		ObjectArgs: &storage.KubernetesEvent_PodAttachArgs_{
+			PodAttachArgs: &storage.KubernetesEvent_PodAttachArgs{
+				Container: obj.Container,
 			},
 		},
 		User: &storage.KubernetesEvent_User{
