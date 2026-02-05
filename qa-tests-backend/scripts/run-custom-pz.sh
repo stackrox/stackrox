@@ -69,6 +69,8 @@ reuse_config_part_1() {
     export_webhook_server_certs "$ROOT/$DEPLOY_DIR/webhook_server_certs"
     get_ECR_docker_pull_password
 
+    image_prefetcher_prebuilt_await
+
     wait_for_api
     export_central_basic_auth_creds
 
