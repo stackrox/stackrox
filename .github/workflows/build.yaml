@@ -1162,13 +1162,6 @@ jobs:
         run: |
           make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" manifests generate
 
-      - name: Build Operator Bundle
-        run: |
-          # Build bundle only - the Go binary is built inside Docker (see Dockerfile line 56)
-          # No need to pre-build it here since Docker rebuilds from scratch anyway.
-          # Use bundle-ci which skips 'manifests' dependency since we already ran it.
-          make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" bundle-ci bundle-build
-
       - name: Login to ghcr.io for Docker layer caching
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
@@ -1193,9 +1186,19 @@ jobs:
 
           echo "OPERATOR_DOCKER_CACHE_ARGS=${cache_args}" >> "$GITHUB_ENV"
 
-      - name: Build Operator Docker image
+      - name: Build Operator Bundle and Docker image (parallel)
         run: |
-          # Generate Dockerfile and status.sh
+          # Start bundle build in background - it's independent of Docker build
+          # Use bundle-ci which skips 'manifests' dependency since we already ran it
+          # Use bundle-build-ci which assumes unreleased (skips network check)
+          (
+            make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" bundle-ci bundle-build-ci
+            echo "Bundle build completed"
+          ) &
+          bundle_pid=$!
+
+          # Build Docker image in foreground (takes longer than bundle)
+          # Generate Dockerfile and status.sh first
           make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" build/Dockerfile.gen smuggled-status-sh
 
           # Build with buildx and registry caching
@@ -1206,6 +1209,11 @@ jobs:
             ${{ env.OPERATOR_DOCKER_CACHE_ARGS }} \
             -f operator/build/Dockerfile.gen \
             .
+
+          # Wait for bundle build to complete
+          echo "Waiting for bundle build..."
+          wait $bundle_pid
+          echo "Both builds completed"
 
       - name: Set up QEMU
         if: matrix.arch != 'amd64'

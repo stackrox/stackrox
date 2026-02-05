@@ -537,8 +537,26 @@ bundle-post-process: operator-sdk ## Post-process CSV file to include correct op
 # Check that the resulting bundle still passes validations.
 	$(OPERATOR_SDK) bundle validate ./build/bundle --select-optional suite=operatorframework
 
+.PHONY: bundle-post-process-ci
+bundle-post-process-ci: operator-sdk ## Post-process CSV for CI (assumes unreleased, skips network check)
+	set -euo pipefail ;\
+	$(ACTIVATE_PYTHON) ;\
+	first_version=3.62.0 ;\
+	./bundle_helpers/prepare-bundle-manifests.sh \
+		--use-version=$(VERSION) \
+		--first-version=$${first_version} \
+		--operator-image=$(IMG) \
+		--related-images-mode=omit \
+		--unreleased=$(VERSION)
+# Check that the resulting bundle still passes validations.
+	$(OPERATOR_SDK) bundle validate ./build/bundle --select-optional suite=operatorframework
+
 .PHONY: bundle-build
 bundle-build: bundle.Dockerfile bundle-post-process ## Build the bundle image.
+	docker build $(if $(DOCKER_BUILD_LOAD),--load) -f $< -t $(BUNDLE_IMG) .
+
+.PHONY: bundle-build-ci
+bundle-build-ci: bundle.Dockerfile bundle-post-process-ci ## Build the bundle image for CI (assumes unreleased)
 	docker build $(if $(DOCKER_BUILD_LOAD),--load) -f $< -t $(BUNDLE_IMG) .
 
 .PHONY: bundle-test
