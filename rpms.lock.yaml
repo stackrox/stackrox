@@ -18,6 +18,13 @@ arches:
     name: libxkbcommon
     evr: 0.9.1-1.el8
     sourcerpm: libxkbcommon-0.9.1-1.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/m/mpdecimal-2.5.1-3.el8.aarch64.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 95196
+    checksum: sha256:02fdb7a4c616e2705ee31f6f834fbbb7aed91ca3cedf0ed3d5fd4c771ca46336
+    name: mpdecimal
+    evr: 2.5.1-3.el8
+    sourcerpm: mpdecimal-2.5.1-3.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/o/oniguruma-6.8.2-3.el8.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
     size: 185652
@@ -37,8 +44,46 @@ arches:
     size: 129939
     checksum: sha256:48e3f2c86fe94721c78b0c824a3dc6c75bd848291a502493cccb3ea953a09810
     name: postgresql-private-libs
+<<<<<<< HEAD
     evr: 15.15-1.module+el8.10.0+23782+2d6b2a31
     sourcerpm: postgresql-15.15-1.module+el8.10.0+23782+2d6b2a31.src.rpm
+=======
+<<<<<<< HEAD
+    evr: 15.14-1.module+el8.10.0+23423+5a199198
+    sourcerpm: postgresql-15.14-1.module+el8.10.0+23423+5a199198.src.rpm
+=======
+    evr: 15.15-1.module+el8.10.0+23782+2d6b2a31
+    sourcerpm: postgresql-15.15-1.module+el8.10.0+23782+2d6b2a31.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/python3.12-3.12.12-1.el8_10.aarch64.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 31172
+    checksum: sha256:3196808862e0ca0de2e4f0e4320ce542168c24894405a87ae516eccb83d037af
+    name: python3.12
+    evr: 3.12.12-1.el8_10
+    sourcerpm: python3.12-3.12.12-1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/python3.12-libs-3.12.12-1.el8_10.aarch64.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 10268632
+    checksum: sha256:76108f4835e417d3b9e6f07edf65c992e27255281a09736d591abc67d7b43049
+    name: python3.12-libs
+    evr: 3.12.12-1.el8_10
+    sourcerpm: python3.12-3.12.12-1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/python3.12-pip-wheel-23.2.1-4.el8.noarch.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 1539820
+    checksum: sha256:c5daaf3d7ef6c52f178ec6c20e49fa9ddb4506f1b0ee5cd1688046c28eb5e1cb
+    name: python3.12-pip-wheel
+    evr: 23.2.1-4.el8
+    sourcerpm: python3.12-pip-23.2.1-4.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/python3.12-pyyaml-6.0.1-2.el8.aarch64.rpm
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 198784
+    checksum: sha256:6a4945457be6e77d81f9dd7dce182d501d7fe90277b351db15f2b95589545711
+    name: python3.12-pyyaml
+    evr: 6.0.1-2.el8
+    sourcerpm: python3.12-pyyaml-6.0.1-2.el8.src.rpm
+>>>>>>> 7ec23fb757 (build: Use PyYAML dependency as RPM in bundle build (#18778))
+>>>>>>> edc5ecb256 (build: Use PyYAML dependency as RPM in bundle build (#18778))
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/x/xkeyboard-config-2.28-1.el8.noarch.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
     size: 801000
@@ -795,6 +840,13 @@ arches:
     name: libxml2
     evr: 2.9.7-21.el8_10.3
     sourcerpm: libxml2-2.9.7-21.el8_10.3.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/l/libyaml-0.1.7-5.el8.aarch64.rpm
+    repoid: rhel-8-for-aarch64-baseos-rpms
+    size: 58456
+    checksum: sha256:7864fbc866ae5a3e59b4f0f114b77ff52b55e76c5388a917f82a6097f02a4db7
+    name: libyaml
+    evr: 0.1.7-5.el8
+    sourcerpm: libyaml-0.1.7-5.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/os/Packages/l/libzstd-1.4.4-1.el8.aarch64.rpm
     repoid: rhel-8-for-aarch64-baseos-rpms
     size: 246104
@@ -1165,6 +1217,12 @@ arches:
     checksum: sha256:ca72f33bbbdd245bf1d2385e5f934d36b0ebdc9854b242fce7be0bb56bfa8255
     name: libxkbcommon
     evr: 0.9.1-1.el8
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/m/mpdecimal-2.5.1-3.el8.src.rpm
+    repoid: rhel-8-for-aarch64-appstream-source-rpms
+    size: 3333112
+    checksum: sha256:36811086e6cf10de04a5cfcbc3599228e073a44e032fac74d72857c970f06cae
+    name: mpdecimal
+    evr: 2.5.1-3.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/o/oniguruma-6.8.2-3.el8.src.rpm
     repoid: rhel-8-for-aarch64-appstream-source-rpms
     size: 982385
@@ -1176,7 +1234,33 @@ arches:
     size: 45654458
     checksum: sha256:30795de4ed7a01becc64ee50796e7c76b9195ff1eed0a341b279aeb3e4b15527
     name: postgresql
+<<<<<<< HEAD
     evr: 15.15-1.module+el8.10.0+23782+2d6b2a31
+=======
+<<<<<<< HEAD
+    evr: 15.14-1.module+el8.10.0+23423+5a199198
+=======
+    evr: 15.15-1.module+el8.10.0+23782+2d6b2a31
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/p/python3.12-3.12.12-1.el8_10.src.rpm
+    repoid: rhel-8-for-aarch64-appstream-source-rpms
+    size: 20869970
+    checksum: sha256:0f8e31ed00a577ddbf493a04b70ea364dd0b35fd2a30f2a0e5719b68aeb244b9
+    name: python3.12
+    evr: 3.12.12-1.el8_10
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/p/python3.12-pip-23.2.1-4.el8.src.rpm
+    repoid: rhel-8-for-aarch64-appstream-source-rpms
+    size: 9393232
+    checksum: sha256:5661eadc28225da228c8a053fe6606cd2159238a469bc9a55fce9dbebb5e2232
+    name: python3.12-pip
+    evr: 23.2.1-4.el8
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/p/python3.12-pyyaml-6.0.1-2.el8.src.rpm
+    repoid: rhel-8-for-aarch64-appstream-source-rpms
+    size: 131090
+    checksum: sha256:4254452a01f54622981f2716889690c281d1a5352ec07dbc919c96c3724ff7dc
+    name: python3.12-pyyaml
+    evr: 6.0.1-2.el8
+>>>>>>> 7ec23fb757 (build: Use PyYAML dependency as RPM in bundle build (#18778))
+>>>>>>> edc5ecb256 (build: Use PyYAML dependency as RPM in bundle build (#18778))
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/x/xkeyboard-config-2.28-1.el8.src.rpm
     repoid: rhel-8-for-aarch64-appstream-source-rpms
     size: 1699339
@@ -1603,6 +1687,12 @@ arches:
     checksum: sha256:a236b9807436c13e06c88926d7d3b25c2746f5b7fb12fadc41462a00d448a1f7
     name: libxml2
     evr: 2.9.7-21.el8_10.3
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/l/libyaml-0.1.7-5.el8.src.rpm
+    repoid: rhel-8-for-aarch64-baseos-source-rpms
+    size: 540142
+    checksum: sha256:5053fdb2c1384f513795f67c997eef3bc41290958ed8da17cf19edebc3dfdc83
+    name: libyaml
+    evr: 0.1.7-5.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/baseos/source/SRPMS/Packages/l/lua-5.3.4-12.el8.src.rpm
     repoid: rhel-8-for-aarch64-baseos-source-rpms
     size: 437265
@@ -1844,10 +1934,31 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
+<<<<<<< HEAD
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/ce2e22f0a250d029d10bed4bc31bfc7b658664c0fd40c04e581f6074a793a791-modules.yaml.gz
     repoid: rhel-8-for-aarch64-appstream-rpms
     size: 760949
     checksum: sha256:ce2e22f0a250d029d10bed4bc31bfc7b658664c0fd40c04e581f6074a793a791
+=======
+<<<<<<< HEAD
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/25be956846b5cef874bf04027dd634d1f2ab0e79fc2273ade1b8ddde58acb20f-modules.yaml.gz
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 760949
+    checksum: sha256:25be956846b5cef874bf04027dd634d1f2ab0e79fc2273ade1b8ddde58acb20f
+=======
+<<<<<<< HEAD
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/1f6247087f10c5eaeccd512675154440e86abecf4842fae14e6d9835b61d44c7-modules.yaml.gz
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 755348
+    checksum: sha256:1f6247087f10c5eaeccd512675154440e86abecf4842fae14e6d9835b61d44c7
+=======
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/99ee9d15ef425ab46ff91056aa839108249d2918ce58cf257344cd15c0836335-modules.yaml.gz
+    repoid: rhel-8-for-aarch64-appstream-rpms
+    size: 760949
+    checksum: sha256:99ee9d15ef425ab46ff91056aa839108249d2918ce58cf257344cd15c0836335
+>>>>>>> 7ec23fb757 (build: Use PyYAML dependency as RPM in bundle build (#18778))
+>>>>>>> edc5ecb256 (build: Use PyYAML dependency as RPM in bundle build (#18778))
+>>>>>>> b94bcf55c7 (build: Use PyYAML dependency as RPM in bundle build (#18778))
 - arch: ppc64le
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/j/jq-1.6-11.el8_10.ppc64le.rpm
@@ -1864,6 +1975,13 @@ arches:
     name: libxkbcommon
     evr: 0.9.1-1.el8
     sourcerpm: libxkbcommon-0.9.1-1.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/m/mpdecimal-2.5.1-3.el8.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 107920
+    checksum: sha256:becf9d9d37f87c08958351a21b6e83adb3a80beb1d3e68b4dab4e409e8167dc6
+    name: mpdecimal
+    evr: 2.5.1-3.el8
+    sourcerpm: mpdecimal-2.5.1-3.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/o/oniguruma-6.8.2-3.el8.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
     size: 204564
@@ -1883,8 +2001,46 @@ arches:
     size: 151435
     checksum: sha256:80c3061d69e75e725dd9de7084f948b82e37ec98e62a8522c7a79dcea803b74a
     name: postgresql-private-libs
+<<<<<<< HEAD
     evr: 15.15-1.module+el8.10.0+23782+2d6b2a31
     sourcerpm: postgresql-15.15-1.module+el8.10.0+23782+2d6b2a31.src.rpm
+=======
+<<<<<<< HEAD
+    evr: 15.14-1.module+el8.10.0+23423+5a199198
+    sourcerpm: postgresql-15.14-1.module+el8.10.0+23423+5a199198.src.rpm
+=======
+    evr: 15.15-1.module+el8.10.0+23782+2d6b2a31
+    sourcerpm: postgresql-15.15-1.module+el8.10.0+23782+2d6b2a31.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/python3.12-3.12.12-1.el8_10.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 31364
+    checksum: sha256:4d6ec6c8c07ba2e884184c2f76d28bd4d8ab5fec56fdb5635ba417c4576fccc2
+    name: python3.12
+    evr: 3.12.12-1.el8_10
+    sourcerpm: python3.12-3.12.12-1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/python3.12-libs-3.12.12-1.el8_10.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 10779132
+    checksum: sha256:ceb7cd166122b72964673c77a5a6bb32a28caec8479d926c41bdafa1f8b91aa9
+    name: python3.12-libs
+    evr: 3.12.12-1.el8_10
+    sourcerpm: python3.12-3.12.12-1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/python3.12-pip-wheel-23.2.1-4.el8.noarch.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 1539820
+    checksum: sha256:c5daaf3d7ef6c52f178ec6c20e49fa9ddb4506f1b0ee5cd1688046c28eb5e1cb
+    name: python3.12-pip-wheel
+    evr: 23.2.1-4.el8
+    sourcerpm: python3.12-pip-23.2.1-4.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/python3.12-pyyaml-6.0.1-2.el8.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 206180
+    checksum: sha256:c7c68c07ce5ffe935b07cc4c886c95707ad8e05be1c9ba32e2371bab2d4182ff
+    name: python3.12-pyyaml
+    evr: 6.0.1-2.el8
+    sourcerpm: python3.12-pyyaml-6.0.1-2.el8.src.rpm
+>>>>>>> 7ec23fb757 (build: Use PyYAML dependency as RPM in bundle build (#18778))
+>>>>>>> edc5ecb256 (build: Use PyYAML dependency as RPM in bundle build (#18778))
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/x/xkeyboard-config-2.28-1.el8.noarch.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
     size: 801000
@@ -2648,6 +2804,13 @@ arches:
     name: libxml2
     evr: 2.9.7-21.el8_10.3
     sourcerpm: libxml2-2.9.7-21.el8_10.3.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/l/libyaml-0.1.7-5.el8.ppc64le.rpm
+    repoid: rhel-8-for-ppc64le-baseos-rpms
+    size: 69348
+    checksum: sha256:9f1810ee304c2827027a4dadb0142f6940c28991b5371cbe302593eece6c25e4
+    name: libyaml
+    evr: 0.1.7-5.el8
+    sourcerpm: libyaml-0.1.7-5.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/os/Packages/l/libzstd-1.4.4-1.el8.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-baseos-rpms
     size: 282940
@@ -3018,6 +3181,12 @@ arches:
     checksum: sha256:ca72f33bbbdd245bf1d2385e5f934d36b0ebdc9854b242fce7be0bb56bfa8255
     name: libxkbcommon
     evr: 0.9.1-1.el8
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/m/mpdecimal-2.5.1-3.el8.src.rpm
+    repoid: rhel-8-for-ppc64le-appstream-source-rpms
+    size: 3333112
+    checksum: sha256:36811086e6cf10de04a5cfcbc3599228e073a44e032fac74d72857c970f06cae
+    name: mpdecimal
+    evr: 2.5.1-3.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/o/oniguruma-6.8.2-3.el8.src.rpm
     repoid: rhel-8-for-ppc64le-appstream-source-rpms
     size: 982385
@@ -3029,7 +3198,33 @@ arches:
     size: 45654458
     checksum: sha256:30795de4ed7a01becc64ee50796e7c76b9195ff1eed0a341b279aeb3e4b15527
     name: postgresql
+<<<<<<< HEAD
     evr: 15.15-1.module+el8.10.0+23782+2d6b2a31
+=======
+<<<<<<< HEAD
+    evr: 15.14-1.module+el8.10.0+23423+5a199198
+=======
+    evr: 15.15-1.module+el8.10.0+23782+2d6b2a31
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/p/python3.12-3.12.12-1.el8_10.src.rpm
+    repoid: rhel-8-for-ppc64le-appstream-source-rpms
+    size: 20869970
+    checksum: sha256:0f8e31ed00a577ddbf493a04b70ea364dd0b35fd2a30f2a0e5719b68aeb244b9
+    name: python3.12
+    evr: 3.12.12-1.el8_10
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/p/python3.12-pip-23.2.1-4.el8.src.rpm
+    repoid: rhel-8-for-ppc64le-appstream-source-rpms
+    size: 9393232
+    checksum: sha256:5661eadc28225da228c8a053fe6606cd2159238a469bc9a55fce9dbebb5e2232
+    name: python3.12-pip
+    evr: 23.2.1-4.el8
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/p/python3.12-pyyaml-6.0.1-2.el8.src.rpm
+    repoid: rhel-8-for-ppc64le-appstream-source-rpms
+    size: 131090
+    checksum: sha256:4254452a01f54622981f2716889690c281d1a5352ec07dbc919c96c3724ff7dc
+    name: python3.12-pyyaml
+    evr: 6.0.1-2.el8
+>>>>>>> 7ec23fb757 (build: Use PyYAML dependency as RPM in bundle build (#18778))
+>>>>>>> edc5ecb256 (build: Use PyYAML dependency as RPM in bundle build (#18778))
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/x/xkeyboard-config-2.28-1.el8.src.rpm
     repoid: rhel-8-for-ppc64le-appstream-source-rpms
     size: 1699339
@@ -3462,6 +3657,12 @@ arches:
     checksum: sha256:a236b9807436c13e06c88926d7d3b25c2746f5b7fb12fadc41462a00d448a1f7
     name: libxml2
     evr: 2.9.7-21.el8_10.3
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/l/libyaml-0.1.7-5.el8.src.rpm
+    repoid: rhel-8-for-ppc64le-baseos-source-rpms
+    size: 540142
+    checksum: sha256:5053fdb2c1384f513795f67c997eef3bc41290958ed8da17cf19edebc3dfdc83
+    name: libyaml
+    evr: 0.1.7-5.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/baseos/source/SRPMS/Packages/l/lua-5.3.4-12.el8.src.rpm
     repoid: rhel-8-for-ppc64le-baseos-source-rpms
     size: 437265
@@ -3703,10 +3904,31 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
+<<<<<<< HEAD
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/7d3d2b6f7189af836d753cfdd753ec24833a60ff2921241fc7a2b044421e66a8-modules.yaml.gz
     repoid: rhel-8-for-ppc64le-appstream-rpms
     size: 758113
     checksum: sha256:7d3d2b6f7189af836d753cfdd753ec24833a60ff2921241fc7a2b044421e66a8
+=======
+<<<<<<< HEAD
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/df2eeda2b11e5c9b9f11a7a97a9a2c4725f099aa334f08e77e59bcc8055068a6-modules.yaml.gz
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 758113
+    checksum: sha256:df2eeda2b11e5c9b9f11a7a97a9a2c4725f099aa334f08e77e59bcc8055068a6
+=======
+<<<<<<< HEAD
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/82f87cf7ecb10bffa94c725b33719688bb26f81e8390cfbde8c23b0d68b0afe8-modules.yaml.gz
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 752834
+    checksum: sha256:82f87cf7ecb10bffa94c725b33719688bb26f81e8390cfbde8c23b0d68b0afe8
+=======
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/d9a4652fdaffa79cccb4bdb9abcc531af0cdd945e3eb06164e040c185de0e362-modules.yaml.gz
+    repoid: rhel-8-for-ppc64le-appstream-rpms
+    size: 758113
+    checksum: sha256:d9a4652fdaffa79cccb4bdb9abcc531af0cdd945e3eb06164e040c185de0e362
+>>>>>>> 7ec23fb757 (build: Use PyYAML dependency as RPM in bundle build (#18778))
+>>>>>>> edc5ecb256 (build: Use PyYAML dependency as RPM in bundle build (#18778))
+>>>>>>> b94bcf55c7 (build: Use PyYAML dependency as RPM in bundle build (#18778))
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/j/jq-1.6-11.el8_10.s390x.rpm
@@ -3723,6 +3945,13 @@ arches:
     name: libxkbcommon
     evr: 0.9.1-1.el8
     sourcerpm: libxkbcommon-0.9.1-1.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/m/mpdecimal-2.5.1-3.el8.s390x.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 97316
+    checksum: sha256:68089fe2afcbc5ce486d6e233de53df547052182afc88ac47c539d2841d55dab
+    name: mpdecimal
+    evr: 2.5.1-3.el8
+    sourcerpm: mpdecimal-2.5.1-3.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/o/oniguruma-6.8.2-3.el8.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
     size: 188988
@@ -3798,8 +4027,46 @@ arches:
     size: 128795
     checksum: sha256:32f31046e29c5dc0d48ae70fd732028069dbb5d6531a2bd72b538b850f27ffd1
     name: postgresql-private-libs
+<<<<<<< HEAD
     evr: 15.15-1.module+el8.10.0+23782+2d6b2a31
     sourcerpm: postgresql-15.15-1.module+el8.10.0+23782+2d6b2a31.src.rpm
+=======
+<<<<<<< HEAD
+    evr: 15.14-1.module+el8.10.0+23423+5a199198
+    sourcerpm: postgresql-15.14-1.module+el8.10.0+23423+5a199198.src.rpm
+=======
+    evr: 15.15-1.module+el8.10.0+23782+2d6b2a31
+    sourcerpm: postgresql-15.15-1.module+el8.10.0+23782+2d6b2a31.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/python3.12-3.12.12-1.el8_10.s390x.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 30920
+    checksum: sha256:e0ee3c56e277aedd7d012000b6fd7aff9dc2089cafdba18e798e15375e983985
+    name: python3.12
+    evr: 3.12.12-1.el8_10
+    sourcerpm: python3.12-3.12.12-1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/python3.12-libs-3.12.12-1.el8_10.s390x.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 10205140
+    checksum: sha256:bf57c4f939ea41bf95af15f8377664842d27af5eb8d51f85f42a9d5f4bbf0d12
+    name: python3.12-libs
+    evr: 3.12.12-1.el8_10
+    sourcerpm: python3.12-3.12.12-1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/python3.12-pip-wheel-23.2.1-4.el8.noarch.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 1539820
+    checksum: sha256:c5daaf3d7ef6c52f178ec6c20e49fa9ddb4506f1b0ee5cd1688046c28eb5e1cb
+    name: python3.12-pip-wheel
+    evr: 23.2.1-4.el8
+    sourcerpm: python3.12-pip-23.2.1-4.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/python3.12-pyyaml-6.0.1-2.el8.s390x.rpm
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 198108
+    checksum: sha256:23a5eead78f86d5f5b4382e6c6fed3eca6a4fcd21e6620a3f2c590d97e8354db
+    name: python3.12-pyyaml
+    evr: 6.0.1-2.el8
+    sourcerpm: python3.12-pyyaml-6.0.1-2.el8.src.rpm
+>>>>>>> 7ec23fb757 (build: Use PyYAML dependency as RPM in bundle build (#18778))
+>>>>>>> edc5ecb256 (build: Use PyYAML dependency as RPM in bundle build (#18778))
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/x/xkeyboard-config-2.28-1.el8.noarch.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
     size: 801000
@@ -4465,6 +4732,13 @@ arches:
     name: libxml2
     evr: 2.9.7-21.el8_10.3
     sourcerpm: libxml2-2.9.7-21.el8_10.3.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/l/libyaml-0.1.7-5.el8.s390x.rpm
+    repoid: rhel-8-for-s390x-baseos-rpms
+    size: 56044
+    checksum: sha256:998276e153886e014ce37c429a0f22b76f3ca955c1c9ba89999ce3dface1cf10
+    name: libyaml
+    evr: 0.1.7-5.el8
+    sourcerpm: libyaml-0.1.7-5.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/os/Packages/l/libzstd-1.4.4-1.el8.s390x.rpm
     repoid: rhel-8-for-s390x-baseos-rpms
     size: 248556
@@ -5059,6 +5333,12 @@ arches:
     checksum: sha256:ca72f33bbbdd245bf1d2385e5f934d36b0ebdc9854b242fce7be0bb56bfa8255
     name: libxkbcommon
     evr: 0.9.1-1.el8
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/m/mpdecimal-2.5.1-3.el8.src.rpm
+    repoid: rhel-8-for-s390x-appstream-source-rpms
+    size: 3333112
+    checksum: sha256:36811086e6cf10de04a5cfcbc3599228e073a44e032fac74d72857c970f06cae
+    name: mpdecimal
+    evr: 2.5.1-3.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/o/oniguruma-6.8.2-3.el8.src.rpm
     repoid: rhel-8-for-s390x-appstream-source-rpms
     size: 982385
@@ -5118,7 +5398,33 @@ arches:
     size: 45654458
     checksum: sha256:30795de4ed7a01becc64ee50796e7c76b9195ff1eed0a341b279aeb3e4b15527
     name: postgresql
+<<<<<<< HEAD
     evr: 15.15-1.module+el8.10.0+23782+2d6b2a31
+=======
+<<<<<<< HEAD
+    evr: 15.14-1.module+el8.10.0+23423+5a199198
+=======
+    evr: 15.15-1.module+el8.10.0+23782+2d6b2a31
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/p/python3.12-3.12.12-1.el8_10.src.rpm
+    repoid: rhel-8-for-s390x-appstream-source-rpms
+    size: 20869970
+    checksum: sha256:0f8e31ed00a577ddbf493a04b70ea364dd0b35fd2a30f2a0e5719b68aeb244b9
+    name: python3.12
+    evr: 3.12.12-1.el8_10
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/p/python3.12-pip-23.2.1-4.el8.src.rpm
+    repoid: rhel-8-for-s390x-appstream-source-rpms
+    size: 9393232
+    checksum: sha256:5661eadc28225da228c8a053fe6606cd2159238a469bc9a55fce9dbebb5e2232
+    name: python3.12-pip
+    evr: 23.2.1-4.el8
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/p/python3.12-pyyaml-6.0.1-2.el8.src.rpm
+    repoid: rhel-8-for-s390x-appstream-source-rpms
+    size: 131090
+    checksum: sha256:4254452a01f54622981f2716889690c281d1a5352ec07dbc919c96c3724ff7dc
+    name: python3.12-pyyaml
+    evr: 6.0.1-2.el8
+>>>>>>> 7ec23fb757 (build: Use PyYAML dependency as RPM in bundle build (#18778))
+>>>>>>> edc5ecb256 (build: Use PyYAML dependency as RPM in bundle build (#18778))
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/x/xkeyboard-config-2.28-1.el8.src.rpm
     repoid: rhel-8-for-s390x-appstream-source-rpms
     size: 1699339
@@ -5515,6 +5821,12 @@ arches:
     checksum: sha256:a236b9807436c13e06c88926d7d3b25c2746f5b7fb12fadc41462a00d448a1f7
     name: libxml2
     evr: 2.9.7-21.el8_10.3
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/l/libyaml-0.1.7-5.el8.src.rpm
+    repoid: rhel-8-for-s390x-baseos-source-rpms
+    size: 540142
+    checksum: sha256:5053fdb2c1384f513795f67c997eef3bc41290958ed8da17cf19edebc3dfdc83
+    name: libyaml
+    evr: 0.1.7-5.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/baseos/source/SRPMS/Packages/l/lua-5.3.4-12.el8.src.rpm
     repoid: rhel-8-for-s390x-baseos-source-rpms
     size: 437265
@@ -5918,10 +6230,31 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
+<<<<<<< HEAD
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/97cc55f7d84cbb9fb0e94e2ec965f03a8d99e5a5da115b56cd8bb87bc7a077df-modules.yaml.gz
     repoid: rhel-8-for-s390x-appstream-rpms
     size: 759639
     checksum: sha256:97cc55f7d84cbb9fb0e94e2ec965f03a8d99e5a5da115b56cd8bb87bc7a077df
+=======
+<<<<<<< HEAD
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/d817cfb2041d9563617f1459186cd4ee7aa2c8c94fe9ef9922df8145a0f77ff4-modules.yaml.gz
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 759639
+    checksum: sha256:d817cfb2041d9563617f1459186cd4ee7aa2c8c94fe9ef9922df8145a0f77ff4
+=======
+<<<<<<< HEAD
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/2aab1f5f2b7b1ae8a7f1106bb2ffc435b97804e418e7c63776b5dc8dca03888b-modules.yaml.gz
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 755049
+    checksum: sha256:2aab1f5f2b7b1ae8a7f1106bb2ffc435b97804e418e7c63776b5dc8dca03888b
+=======
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/e68681399aa8ed3b5eb734bfa9c6fa22fdd0171fad35faa9626064b2d1b648a2-modules.yaml.gz
+    repoid: rhel-8-for-s390x-appstream-rpms
+    size: 759639
+    checksum: sha256:e68681399aa8ed3b5eb734bfa9c6fa22fdd0171fad35faa9626064b2d1b648a2
+>>>>>>> 7ec23fb757 (build: Use PyYAML dependency as RPM in bundle build (#18778))
+>>>>>>> edc5ecb256 (build: Use PyYAML dependency as RPM in bundle build (#18778))
+>>>>>>> b94bcf55c7 (build: Use PyYAML dependency as RPM in bundle build (#18778))
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/j/jq-1.6-11.el8_10.x86_64.rpm
@@ -5938,6 +6271,13 @@ arches:
     name: libxkbcommon
     evr: 0.9.1-1.el8
     sourcerpm: libxkbcommon-0.9.1-1.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/m/mpdecimal-2.5.1-3.el8.x86_64.rpm
+    repoid: rhel-8-for-x86_64-appstream-rpms
+    size: 95204
+    checksum: sha256:fd75319ca80fbfbf4ef5abe886033586aed718ed10e56ec42a345f56c1ca72b6
+    name: mpdecimal
+    evr: 2.5.1-3.el8
+    sourcerpm: mpdecimal-2.5.1-3.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/o/oniguruma-6.8.2-3.el8.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
     size: 192632
@@ -5957,8 +6297,46 @@ arches:
     size: 136383
     checksum: sha256:895d79b877c063d33ef9806403e5a70815e7c5720556dd93b1aa3d041b1703e8
     name: postgresql-private-libs
+<<<<<<< HEAD
     evr: 15.15-1.module+el8.10.0+23782+2d6b2a31
     sourcerpm: postgresql-15.15-1.module+el8.10.0+23782+2d6b2a31.src.rpm
+=======
+<<<<<<< HEAD
+    evr: 15.14-1.module+el8.10.0+23423+5a199198
+    sourcerpm: postgresql-15.14-1.module+el8.10.0+23423+5a199198.src.rpm
+=======
+    evr: 15.15-1.module+el8.10.0+23782+2d6b2a31
+    sourcerpm: postgresql-15.15-1.module+el8.10.0+23782+2d6b2a31.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/python3.12-3.12.12-1.el8_10.x86_64.rpm
+    repoid: rhel-8-for-x86_64-appstream-rpms
+    size: 30956
+    checksum: sha256:e7ceeceeadc49a91aae41fadd4c1f363003d423043ec97124884023682e0231b
+    name: python3.12
+    evr: 3.12.12-1.el8_10
+    sourcerpm: python3.12-3.12.12-1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/python3.12-libs-3.12.12-1.el8_10.x86_64.rpm
+    repoid: rhel-8-for-x86_64-appstream-rpms
+    size: 10502688
+    checksum: sha256:e41dd02b13469b669a97fa9be509003e2df9b010af94630a025adde7e31fbddb
+    name: python3.12-libs
+    evr: 3.12.12-1.el8_10
+    sourcerpm: python3.12-3.12.12-1.el8_10.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/python3.12-pip-wheel-23.2.1-4.el8.noarch.rpm
+    repoid: rhel-8-for-x86_64-appstream-rpms
+    size: 1539820
+    checksum: sha256:c5daaf3d7ef6c52f178ec6c20e49fa9ddb4506f1b0ee5cd1688046c28eb5e1cb
+    name: python3.12-pip-wheel
+    evr: 23.2.1-4.el8
+    sourcerpm: python3.12-pip-23.2.1-4.el8.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/python3.12-pyyaml-6.0.1-2.el8.x86_64.rpm
+    repoid: rhel-8-for-x86_64-appstream-rpms
+    size: 208020
+    checksum: sha256:9ccc9476927eba0e14c39897bb0a7b5e4b3d5fc95586871b579cdb39341c3cc8
+    name: python3.12-pyyaml
+    evr: 6.0.1-2.el8
+    sourcerpm: python3.12-pyyaml-6.0.1-2.el8.src.rpm
+>>>>>>> 7ec23fb757 (build: Use PyYAML dependency as RPM in bundle build (#18778))
+>>>>>>> edc5ecb256 (build: Use PyYAML dependency as RPM in bundle build (#18778))
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/x/xkeyboard-config-2.28-1.el8.noarch.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
     size: 801000
@@ -6715,6 +7093,13 @@ arches:
     name: libxml2
     evr: 2.9.7-21.el8_10.3
     sourcerpm: libxml2-2.9.7-21.el8_10.3.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/l/libyaml-0.1.7-5.el8.x86_64.rpm
+    repoid: rhel-8-for-x86_64-baseos-rpms
+    size: 62872
+    checksum: sha256:018409b1eda8be48a11a5b76b95e82ff1d9002569e0644291532d8424dc31edf
+    name: libyaml
+    evr: 0.1.7-5.el8
+    sourcerpm: libyaml-0.1.7-5.el8.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/os/Packages/l/libzstd-1.4.4-1.el8.x86_64.rpm
     repoid: rhel-8-for-x86_64-baseos-rpms
     size: 272364
@@ -7085,6 +7470,12 @@ arches:
     checksum: sha256:ca72f33bbbdd245bf1d2385e5f934d36b0ebdc9854b242fce7be0bb56bfa8255
     name: libxkbcommon
     evr: 0.9.1-1.el8
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/m/mpdecimal-2.5.1-3.el8.src.rpm
+    repoid: rhel-8-for-x86_64-appstream-source-rpms
+    size: 3333112
+    checksum: sha256:36811086e6cf10de04a5cfcbc3599228e073a44e032fac74d72857c970f06cae
+    name: mpdecimal
+    evr: 2.5.1-3.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/o/oniguruma-6.8.2-3.el8.src.rpm
     repoid: rhel-8-for-x86_64-appstream-source-rpms
     size: 982385
@@ -7096,7 +7487,33 @@ arches:
     size: 45654458
     checksum: sha256:30795de4ed7a01becc64ee50796e7c76b9195ff1eed0a341b279aeb3e4b15527
     name: postgresql
+<<<<<<< HEAD
     evr: 15.15-1.module+el8.10.0+23782+2d6b2a31
+=======
+<<<<<<< HEAD
+    evr: 15.14-1.module+el8.10.0+23423+5a199198
+=======
+    evr: 15.15-1.module+el8.10.0+23782+2d6b2a31
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/p/python3.12-3.12.12-1.el8_10.src.rpm
+    repoid: rhel-8-for-x86_64-appstream-source-rpms
+    size: 20869970
+    checksum: sha256:0f8e31ed00a577ddbf493a04b70ea364dd0b35fd2a30f2a0e5719b68aeb244b9
+    name: python3.12
+    evr: 3.12.12-1.el8_10
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/p/python3.12-pip-23.2.1-4.el8.src.rpm
+    repoid: rhel-8-for-x86_64-appstream-source-rpms
+    size: 9393232
+    checksum: sha256:5661eadc28225da228c8a053fe6606cd2159238a469bc9a55fce9dbebb5e2232
+    name: python3.12-pip
+    evr: 23.2.1-4.el8
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/p/python3.12-pyyaml-6.0.1-2.el8.src.rpm
+    repoid: rhel-8-for-x86_64-appstream-source-rpms
+    size: 131090
+    checksum: sha256:4254452a01f54622981f2716889690c281d1a5352ec07dbc919c96c3724ff7dc
+    name: python3.12-pyyaml
+    evr: 6.0.1-2.el8
+>>>>>>> 7ec23fb757 (build: Use PyYAML dependency as RPM in bundle build (#18778))
+>>>>>>> edc5ecb256 (build: Use PyYAML dependency as RPM in bundle build (#18778))
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/x/xkeyboard-config-2.28-1.el8.src.rpm
     repoid: rhel-8-for-x86_64-appstream-source-rpms
     size: 1699339
@@ -7523,6 +7940,12 @@ arches:
     checksum: sha256:a236b9807436c13e06c88926d7d3b25c2746f5b7fb12fadc41462a00d448a1f7
     name: libxml2
     evr: 2.9.7-21.el8_10.3
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/l/libyaml-0.1.7-5.el8.src.rpm
+    repoid: rhel-8-for-x86_64-baseos-source-rpms
+    size: 540142
+    checksum: sha256:5053fdb2c1384f513795f67c997eef3bc41290958ed8da17cf19edebc3dfdc83
+    name: libyaml
+    evr: 0.1.7-5.el8
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/baseos/source/SRPMS/Packages/l/lua-5.3.4-12.el8.src.rpm
     repoid: rhel-8-for-x86_64-baseos-source-rpms
     size: 437265
@@ -7764,7 +8187,28 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
+<<<<<<< HEAD
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/c572d16999e8ac4ef74acc14a4b73d2939f7f16e72058a2784c0e7f70a17cad1-modules.yaml.gz
     repoid: rhel-8-for-x86_64-appstream-rpms
     size: 784123
     checksum: sha256:c572d16999e8ac4ef74acc14a4b73d2939f7f16e72058a2784c0e7f70a17cad1
+=======
+<<<<<<< HEAD
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/8a32578434a9fadf8e1c3fcc5507caa7952479a54fe8042c996b50fea309cd30-modules.yaml.gz
+    repoid: rhel-8-for-x86_64-appstream-rpms
+    size: 784123
+    checksum: sha256:8a32578434a9fadf8e1c3fcc5507caa7952479a54fe8042c996b50fea309cd30
+=======
+<<<<<<< HEAD
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/c93f84d60dd3f9517e7fb58a40d7b88b99fca36bfc2b19cfdb461a6b511993d9-modules.yaml.gz
+    repoid: rhel-8-for-x86_64-appstream-rpms
+    size: 779063
+    checksum: sha256:c93f84d60dd3f9517e7fb58a40d7b88b99fca36bfc2b19cfdb461a6b511993d9
+=======
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/550e1b946b2d79d0d0894346109db66cc7af465f5f4f27425a16ffc0cf4dc5cd-modules.yaml.gz
+    repoid: rhel-8-for-x86_64-appstream-rpms
+    size: 784123
+    checksum: sha256:550e1b946b2d79d0d0894346109db66cc7af465f5f4f27425a16ffc0cf4dc5cd
+>>>>>>> 7ec23fb757 (build: Use PyYAML dependency as RPM in bundle build (#18778))
+>>>>>>> edc5ecb256 (build: Use PyYAML dependency as RPM in bundle build (#18778))
+>>>>>>> b94bcf55c7 (build: Use PyYAML dependency as RPM in bundle build (#18778))

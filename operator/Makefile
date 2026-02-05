@@ -429,7 +429,7 @@ upgrade-dirty-tag-via-olm: kuttl
 ACTIVATE_PYTHON = python3 -m venv bundle_helpers/.venv ;\
 	. bundle_helpers/.venv/bin/activate ;\
 	pip3 install --upgrade pip==21.3.1 setuptools==59.6.0 ;\
-	pip3 install -r bundle_helpers/requirements-gha.txt
+	pip3 install -r bundle_helpers/requirements.txt
 
 .PHONY: bundle
 bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
