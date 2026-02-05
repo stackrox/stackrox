@@ -22,6 +22,7 @@ const roxPrefix = "github.com/stackrox/rox/"
 var (
 	// Keep this in alphabetic order.
 	validRoots = set.NewFrozenStringSet(
+		"agent",
 		"central",
 		"compliance",
 		"config-controller",
