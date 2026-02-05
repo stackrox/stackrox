@@ -61,7 +61,7 @@ function ClusterPage() {
     return (
         <>
             <PageTitle title={`Platform CVEs - Cluster ${clusterName}`} />
-            <PageSection>
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={platformCvesClusterOverviewPath}>
                         Clusters

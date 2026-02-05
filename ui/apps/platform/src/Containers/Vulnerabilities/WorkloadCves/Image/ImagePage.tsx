@@ -356,7 +356,7 @@ function ImagePage({
     return (
         <>
             <PageTitle title={`${pageTitle} - Image ${imageData ? imageDisplayName : ''}`} />
-            <PageSection>
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewImagePath}>
                         Images
