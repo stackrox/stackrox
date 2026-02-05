@@ -175,9 +175,7 @@ jobs:
           # Build cache args: always read from master cache
           args_template="--cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag}"
           # Only write cache on master branch pushes
-          # TEMPORARY: Force cache write to seed the cache before merging to master
-          FORCE_CACHE_WRITE=true  # TODO: Remove after cache is seeded
-          if [[ "$FORCE_CACHE_WRITE" == "true" ]] || [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/master" ]]; then
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/master" ]]; then
             args_template="${args_template} --cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max,ignore-error=true"
           fi
 
@@ -837,11 +835,9 @@ jobs:
 
           # Only write cache on master branch pushes to avoid PR cache pollution
           # and reduce build time (cache-to adds upload overhead)
-          # TEMPORARY: Force cache write to seed the cache before merging to master
-          FORCE_CACHE_WRITE=true  # TODO: Remove after cache is seeded
-          if [[ "$FORCE_CACHE_WRITE" == "true" ]] || [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/master" ]]; then
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/master" ]]; then
             cache_args="${cache_args} --cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max,ignore-error=true"
-            echo "Docker cache: read/write (forced or master push)"
+            echo "Docker cache: read/write (master push)"
           else
             echo "Docker cache: read-only (PR or non-master)"
           fi
