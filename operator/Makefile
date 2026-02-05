@@ -498,7 +498,6 @@ bundle-post-process: csv-patcher operator-sdk ## Post-process CSV file to includ
 	mkdir -p build/; \
 	rm -rf build/bundle; \
 	cp -a bundle build/; \
-	cp -v ../config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml build/bundle/manifests/; \
 	$(CSV_PATCHER) \
 		--use-version $(VERSION) \
 		--first-version $${first_version} \
