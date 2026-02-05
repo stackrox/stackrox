@@ -50,27 +50,22 @@ message ImageVulnerabilitiesResponse {
       string location = 4;
       repeated Vulnerability vulnerabilities = 5;
     }
-    message Finding {
-      message Workload {
-        string name = 1;
-        string type = 2;
-      }
-
+    message Cluster {
       message Namespace {
+        message Workload {
+          string name = 1;
+          string type = 2;
+        }
         repeated Workload workloads = 1;
       }
-
-      message Cluster {
-        map<string, Namespace> namespaces = 1;
-      }
-
-      map<string, Cluster> findings = 5;
+      map<string, Namespace> namespaces = 1;
     }
     string sha = 1;
     repeated string names = 2;
     map<string, storage.ImageLayer> layers = 3;
     repeated Component components = 4;
-    repeated Finding findings = 5;
+    // Map of cluster names to cluster namespaces and workloads.
+    map<string, Cluster> clusters = 5;
   }
   repeated Image images = 1;
 }

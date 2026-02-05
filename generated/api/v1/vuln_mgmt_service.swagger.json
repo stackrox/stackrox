@@ -173,14 +173,15 @@
       "default": "UNSET",
       "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
     },
-    "FindingWorkload": {
+    "ImageClusterNamespace": {
       "type": "object",
       "properties": {
-        "name": {
-          "type": "string"
-        },
-        "type": {
-          "type": "string"
+        "workloads": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/NamespaceWorkload"
+          }
         }
       }
     },
@@ -213,36 +214,13 @@
         }
       }
     },
-    "ImageFinding": {
-      "type": "object",
-      "properties": {
-        "findings": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/ImageFindingCluster"
-          }
-        }
-      }
-    },
-    "ImageFindingCluster": {
+    "ImageVulnerabilitiesResponseImageCluster": {
       "type": "object",
       "properties": {
         "namespaces": {
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/ImageFindingNamespace"
-          }
-        }
-      }
-    },
-    "ImageFindingNamespace": {
-      "type": "object",
-      "properties": {
-        "workloads": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/FindingWorkload"
+            "$ref": "#/definitions/ImageClusterNamespace"
           }
         }
       }
@@ -268,6 +246,17 @@
             "type": "object",
             "$ref": "#/definitions/ImageComponentVulnerability"
           }
+        }
+      }
+    },
+    "NamespaceWorkload": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
         }
       }
     },
@@ -1754,12 +1743,12 @@
             "$ref": "#/definitions/ImageVulnerabilitiesResponseImageComponent"
           }
         },
-        "findings": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/ImageFinding"
-          }
+        "clusters": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ImageVulnerabilitiesResponseImageCluster"
+          },
+          "description": "Map of cluster names to cluster namespaces and workloads."
         }
       }
     },
