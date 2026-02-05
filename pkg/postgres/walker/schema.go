@@ -527,6 +527,10 @@ type Field struct {
 	DerivedSearchFields []DerivedSearchField
 	// Derived indicates whether the search field (if valid search field) is derived from other search field.
 	Derived bool
+	// HasEncryptAnnotation tells whether the field should be encrypted prior to storage
+	HasEncryptAnnotation bool
+	// EncryptAnnotationCount provides the number of fields within the structure and nested structure
+	EncryptAnnotationCount int
 }
 
 // DerivedSearchField represents a search field that's derived.
