@@ -12,7 +12,6 @@ import (
 	clusterCVEEdgePostgres "github.com/stackrox/rox/central/clustercveedge/datastore/store/postgres"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	clusterCVEPostgres "github.com/stackrox/rox/central/cve/cluster/datastore/store/postgres"
-	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
 	imageCVEV2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	imageCVEV2Postgres "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
@@ -142,7 +141,7 @@ func SetupTestResolver(t testing.TB, datastores ...interface{}) (*Resolver, *gra
 }
 
 // CreateTestImageV2Datastore creates image datastore for testing
-func CreateTestImageV2Datastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageDS.DataStore {
+func CreateTestImageV2Datastore(_ testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageDS.DataStore {
 	risks := mockRisks.NewMockDataStore(ctrl)
 	risks.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	return imageDS.NewWithPostgres(
@@ -150,12 +149,11 @@ func CreateTestImageV2Datastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl 
 		risks,
 		ranking.NewRanker(),
 		ranking.NewRanker(),
-		imageCVEInfoDS.GetTestPostgresDataStore(t, testDB.DB),
 	)
 }
 
 // CreateTestImageV2V2Datastore creates image datastore for testing
-func CreateTestImageV2V2Datastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageV2DS.DataStore {
+func CreateTestImageV2V2Datastore(_ testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageV2DS.DataStore {
 	risks := mockRisks.NewMockDataStore(ctrl)
 	risks.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	return imageV2DS.NewWithPostgres(
@@ -163,7 +161,6 @@ func CreateTestImageV2V2Datastore(t testing.TB, testDB *pgtest.TestPostgres, ctr
 		risks,
 		ranking.NewRanker(),
 		ranking.NewRanker(),
-		imageCVEInfoDS.GetTestPostgresDataStore(t, testDB.DB),
 	)
 }
 

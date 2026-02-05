@@ -3,7 +3,6 @@ package datastore
 import (
 	"testing"
 
-	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
 	"github.com/stackrox/rox/central/image/datastore/keyfence"
 	pgStoreV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
 	"github.com/stackrox/rox/central/ranking"
@@ -17,6 +16,5 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
 	riskStore := riskDS.GetTestPostgresDataStore(t, pool)
 	imageRanker := ranking.ImageRanker()
 	imageComponentRanker := ranking.ComponentRanker()
-	imageCVEInfo := imageCVEInfoDS.GetTestPostgresDataStore(t, pool)
-	return NewWithPostgres(dbstore, riskStore, imageRanker, imageComponentRanker, imageCVEInfo)
+	return NewWithPostgres(dbstore, riskStore, imageRanker, imageComponentRanker)
 }

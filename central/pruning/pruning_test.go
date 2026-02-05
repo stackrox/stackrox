@@ -17,7 +17,6 @@ import (
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
-	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -255,14 +254,12 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 
 	var images imageDatastore.DataStore
 	var imagesV2 imageV2Datastore.DataStore
-	imageCVEInfo := imageCVEInfoDS.GetTestPostgresDataStore(s.T(), s.pool)
 	if features.FlattenImageData.Enabled() {
 		imagesV2 = imageV2Datastore.NewWithPostgres(
 			imageV2Postgres.New(s.pool, true, concurrency.NewKeyFence()),
 			mockRiskDatastore,
 			ranking.ImageRanker(),
 			ranking.ComponentRanker(),
-			imageCVEInfo,
 		)
 	} else {
 		images = imageDatastore.NewWithPostgres(
@@ -270,7 +267,6 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 			mockRiskDatastore,
 			ranking.ImageRanker(),
 			ranking.ComponentRanker(),
-			imageCVEInfo,
 		)
 	}
 
