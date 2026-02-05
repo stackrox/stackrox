@@ -507,7 +507,7 @@ bundle-ci: yq kustomize operator-sdk ## Generate bundle (for CI after separate m
 	  >bundle/manifests/rhacs-operator.clusterserviceversion.yaml.fixed
 	mv bundle/manifests/rhacs-operator.clusterserviceversion.yaml.fixed \
        bundle/manifests/rhacs-operator.clusterserviceversion.yaml
-	$(OPERATOR_SDK) bundle validate ./bundle --select-optional suite=operatorframework
+# Skipping validation here - bundle-post-process validates the final result in build/bundle/
 
 .PHONY: bundle-post-process
 bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file to include correct operator versions, etc.

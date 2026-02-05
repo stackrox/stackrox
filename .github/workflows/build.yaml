@@ -270,6 +270,21 @@ jobs:
             matrix="$(jq '.pre_build_cli.include += [{"os": "windows", "targets": "roxctl_windows-amd64"}]' <<< "$matrix")"
           fi
 
+          # Check if operator-related files changed (for PRs only)
+          # If no operator files changed, skip the operator build to save ~10 minutes
+          operator_files_changed() {
+            if ! is_in_PR_context; then
+              return 0  # Always build operator for non-PRs (master, tags)
+            fi
+            # Get the base ref for comparison
+            local base_ref="${{ github.event.pull_request.base.sha }}"
+            if [[ -z "$base_ref" ]]; then
+              return 0  # Can't determine base, assume changed
+            fi
+            # Check for changes in operator-related paths
+            git diff --name-only "$base_ref" HEAD | grep -qE '^(operator/|pkg/|go\.(mod|sum)$|scripts/go-build|generated/|image/rhel/)'
+          }
+
           # For PRs: only RHACS_BRANDING (used by e2e tests), add STACKROX with label
           matrix="$(jq '.pre_build_ui.branding += ["RHACS_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_main.name += ["RHACS_BRANDING"]' <<< "$matrix")"
@@ -277,8 +292,14 @@ jobs:
 
           matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING"]' <<< "$matrix")"
 
-          matrix="$(jq '.build_and_push_operator.name += ["RHACS_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_operator.arch += ["amd64"]' <<< "$matrix")"
+          # Only build operator if operator-related files changed (or non-PR builds)
+          if operator_files_changed || pr_has_label ci-build-operator; then
+            matrix="$(jq '.build_and_push_operator.name += ["RHACS_BRANDING"]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_operator.arch += ["amd64"]' <<< "$matrix")"
+          else
+            echo "Skipping operator build - no operator-related files changed"
+            echo "Add label 'ci-build-operator' to force operator build"
+          fi
 
           matrix="$(jq '.scan_images_with_roxctl.name += ["RHACS_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.scan_images_with_roxctl.image += ["central-db", "collector", "main", "roxctl", "scanner", "scanner-db", "scanner-db-slim", "scanner-slim", "stackrox-operator"]' <<< "$matrix")"
@@ -298,7 +319,10 @@ jobs:
             matrix="$(jq '.pre_build_cli.include += [{"os": "linux-arm64", "targets": "roxctl_linux-arm64 roxagent_linux-arm64"}]' <<< "$matrix")"
             add_go_binary_jobs "arm64" "default"
             matrix="$(jq '.build_and_push_main.arch += ["arm64"]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_operator.arch += ["arm64"]' <<< "$matrix")"
+            # Only add arm64 operator if operator files changed
+            if operator_files_changed || pr_has_label ci-build-operator; then
+              matrix="$(jq '.build_and_push_operator.arch += ["arm64"]' <<< "$matrix")"
+            fi
           fi
 
           # Compute multiarch manifests based on final arch list
