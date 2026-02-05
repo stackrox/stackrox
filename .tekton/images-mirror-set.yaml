@@ -17,7 +17,7 @@ spec:
     mirrors:
     - quay.io/rhacs-eng/release-collector
     - quay.io/rhacs-eng/release-collector-slim
-  - source: registry.redhat.io/advanced-cluster-security/rhacs-fact-rhel9
+  - source: registry.redhat.io/advanced-cluster-security/rhacs-fact-rhel8
     mirrors:
     - quay.io/rhacs-eng/release-fact
   - source: registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8

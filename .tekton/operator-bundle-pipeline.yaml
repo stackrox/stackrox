@@ -208,7 +208,7 @@ spec:
   - name: fact-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the fact image is pushed to during the release.
     type: string
-    default: "registry.redhat.io/advanced-cluster-security/rhacs-fact-rhel9"
+    default: "registry.redhat.io/advanced-cluster-security/rhacs-fact-rhel8"
 
   - name: roxctl-image-build-repo
     description: Repository where the (unreleased) roxctl image is pushed by its build pipeline.
