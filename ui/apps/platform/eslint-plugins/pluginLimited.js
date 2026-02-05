@@ -278,7 +278,7 @@ const rules = {
                         'rule-selector-name-value-input',
 
                         'resource-icon', // Components ResourceIcon.tsx
-                        'search-filter-labels', // Components CompoundSearchFilterLabels.tsx
+                        'search-filter-chips', // Components SearchFilterChips.tsx
                         'severity-count-labels', // Vulnerabilities SeverityCountLabels.tsx
                         'truncate-multiline', // SystemConfig components folder
                         'vm-filter-toolbar-dropdown', // Vulnerabilities components folder

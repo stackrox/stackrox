@@ -68,11 +68,6 @@ var staticDefaults = platform.SecuredClusterSpec{
 	Network: &platform.GlobalNetworkSpec{
 		Policies: ptr.To(platform.NetworkPoliciesEnabled),
 	},
-	Customize: &platform.CustomizeSpec{
-		DeploymentDefaults: &platform.DeploymentDefaultsSpec{
-			PinToNodes: ptr.To(platform.PinToNodesNone),
-		},
-	},
 }
 
 var SecuredClusterStaticDefaults = SecuredClusterDefaultingFlow{

@@ -89,11 +89,7 @@ const predefinedMetrics: Record<
     },
 };
 
-export type PrometheusMetricsLabelGroupProps = {
-    labels: PrometheusMetricsLabels;
-};
-
-function PrometheusMetricsLabelGroup({ labels }: PrometheusMetricsLabelGroupProps): ReactElement {
+function labelGroup(labels: PrometheusMetricsLabels): ReactElement {
     return (
         <LabelGroup isCompact numLabels={Infinity}>
             {labels.labels.map((label) => {
@@ -107,11 +103,8 @@ function PrometheusMetricsLabelGroup({ labels }: PrometheusMetricsLabelGroupProp
     );
 }
 
-export type PrometheusMetricsFilterGroupProps = {
-    labels: PrometheusMetricsLabels;
-};
-
-function PrometheusMetricsFilterGroup({ labels }: PrometheusMetricsFilterGroupProps): ReactElement {
+// TODO: refactor it in order to make it a proper react component.
+function filterGroup(labels: PrometheusMetricsLabels): ReactElement {
     const includeEntries = Object.entries(labels.includeFilters ?? {}).sort(([a], [b]) =>
         a.localeCompare(b)
     );
@@ -138,25 +131,16 @@ function PrometheusMetricsFilterGroup({ labels }: PrometheusMetricsFilterGroupPr
     );
 }
 
-export type PrometheusMetricsPredefinedMetricTableRowProps = {
-    category: PrometheusMetricsCategory;
-    enabled: boolean;
-    metric: string;
+function predefinedMetricTableRow(
+    rowIndex: number,
+    enabled: boolean,
+    category: PrometheusMetricsCategory,
+    metric: string,
     onCustomChange:
         | ((value: unknown, id: string) => Promise<void> | Promise<FormikErrors<FormikValues>>)
-        | undefined;
-    rowIndex: number;
-    showFilters: boolean;
-};
-
-function PrometheusMetricsPredefinedMetricTableRow({
-    rowIndex,
-    enabled,
-    category,
-    metric,
-    onCustomChange,
-    showFilters,
-}: PrometheusMetricsPredefinedMetricTableRowProps): ReactElement {
+        | undefined,
+    showFilters: boolean
+): ReactElement {
     return (
         <Tr key={`${category}-${metric}-row`}>
             {onCustomChange ? (
@@ -185,11 +169,11 @@ function PrometheusMetricsPredefinedMetricTableRow({
             </Td>
             <Td key={`${category}-${metric}-predefined`}>Predefined</Td>
             <Td key={`${category}-${metric}-descriptors`}>
-                <PrometheusMetricsLabelGroup labels={predefinedMetrics[category][metric]} />
+                {labelGroup(predefinedMetrics[category][metric])}
             </Td>
             {showFilters && (
                 <Td key={`${category}-${metric}-filters`}>
-                    <PrometheusMetricsFilterGroup labels={predefinedMetrics[category][metric]} />
+                    {filterGroup(predefinedMetrics[category][metric])}
                 </Td>
             )}
         </Tr>
@@ -299,15 +283,13 @@ function PrometheusMetricsTable({
                         const enabled =
                             descriptors !== undefined && predefinedMetric in descriptors;
                         if (isEnabledOriginal || (onCustomChange && !enabled)) {
-                            return (
-                                <PrometheusMetricsPredefinedMetricTableRow
-                                    rowIndex={rowIndex}
-                                    enabled={isEnabledOriginal}
-                                    category={category}
-                                    metric={predefinedMetric}
-                                    onCustomChange={onCustomChange}
-                                    showFilters={showFilters}
-                                />
+                            return predefinedMetricTableRow(
+                                rowIndex,
+                                isEnabledOriginal,
+                                category,
+                                predefinedMetric,
+                                onCustomChange,
+                                showFilters
                             );
                         }
                         return null;
@@ -334,14 +316,8 @@ function PrometheusMetricsTable({
                                 <strong>{metric}</strong>
                             </Td>
                             <Td>Custom</Td>
-                            <Td>
-                                <PrometheusMetricsLabelGroup labels={labels} />
-                            </Td>
-                            {showFilters && (
-                                <Td>
-                                    <PrometheusMetricsFilterGroup labels={labels} />
-                                </Td>
-                            )}
+                            <Td>{labelGroup(labels)}</Td>
+                            {showFilters && <Td>{filterGroup(labels)}</Td>}
                         </Tr>
                     );
                 })}
@@ -362,7 +338,7 @@ export function PrometheusMetricsCard({
     period,
     descriptors,
     title,
-}: PrometheusMetricsCardProps): ReactElement {
+}: PrometheusMetricsCardProps) {
     const hasMetrics = descriptors && Object.keys(descriptors).length > 0;
     return (
         <GridItem key={category} md={hasMetrics ? 12 : 6} lg={hasMetrics ? 12 : 6}>
@@ -473,7 +449,7 @@ export function PrometheusMetricsForm({
     title,
     onChange,
     onCustomChange,
-}: PrometheusMetricsFormProps): ReactElement {
+}: PrometheusMetricsFormProps) {
     return (
         <GridItem>
             <Card isFlat data-testid={`${category}-metrics-config`}>

@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
@@ -35,10 +36,17 @@ func (v *imageCVEFlatViewImpl) Count(ctx context.Context, q *v1.Query) (int, err
 		return 0, err
 	}
 
+	var err error
+	q, err = common.WithSACFilter(ctx, resources.Image, q)
+	if err != nil {
+		return 0, err
+	}
+
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	results, err := pgSearch.RunSelectRequestForSchema[imageCVEFlatCount](queryCtx, v.db, v.schema, common.WithCountQuery(q, search.CVE))
+	var results []*imageCVEFlatCount
+	results, err = pgSearch.RunSelectRequestForSchema[imageCVEFlatCount](queryCtx, v.db, v.schema, common.WithCountQuery(q, search.CVE))
 	if err != nil {
 		return 0, err
 	}
@@ -57,14 +65,19 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
+	var err error
 	// Avoid changing the passed query
 	cloned := q.CloneVT()
 	// Update the sort options to use aggregations if necessary as we are grouping by CVEs
 	cloned = common.UpdateSortAggs(cloned)
+	cloned, err = common.WithSACFilter(ctx, resources.Image, cloned)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
 
 	// Performance improvements to narrow aggregations performed
 	var cveIDsToFilter []string
-	var err error
 	if cloned.GetPagination().GetLimit() > 0 || cloned.GetPagination().GetOffset() > 0 {
 		cveIDsToFilter, err = v.getFilteredCVEs(ctx, cloned)
 		if err != nil {

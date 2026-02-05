@@ -19,7 +19,6 @@ import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useMan
 import type { ManagedColumns } from 'hooks/useManagedColumns';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import usePermissions from 'hooks/usePermissions';
-import type { GenerateSbomImageParams } from 'services/ImageSbomService';
 import GenerateSbomModal, {
     getSbomGenerationStatusMessage,
 } from '../../components/GenerateSbomModal';
@@ -76,7 +75,6 @@ export const imageListQuery = gql`
     query getImageList($query: String, $pagination: Pagination) {
         images(query: $query, pagination: $pagination) {
             id
-            digest: id
             name {
                 registry
                 remote
@@ -234,7 +232,7 @@ function ImageOverviewTable({
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
 
     const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
-    const [sbomTargetImage, setSbomTargetImage] = useState<GenerateSbomImageParams>();
+    const [sbomTargetImage, setSbomTargetImage] = useState<string>();
 
     return (
         <Table borders={false} variant="compact">
@@ -328,8 +326,7 @@ function ImageOverviewTable({
                         }
 
                         if (hasWriteAccessForImage) {
-                            const isAriaDisabled =
-                                !isScannerV4Enabled || hasScanMessage || !name?.fullName;
+                            const isAriaDisabled = !isScannerV4Enabled || hasScanMessage;
                             const description = getSbomGenerationStatusMessage({
                                 isScannerV4Enabled,
                                 hasScanMessage,
@@ -340,10 +337,7 @@ function ImageOverviewTable({
                                 isAriaDisabled,
                                 description,
                                 onClick: () => {
-                                    setSbomTargetImage({
-                                        name: name?.fullName ?? '',
-                                        digest: image.digest,
-                                    });
+                                    setSbomTargetImage(name?.fullName);
                                 },
                             });
                         }
@@ -481,7 +475,7 @@ function ImageOverviewTable({
             {sbomTargetImage && (
                 <GenerateSbomModal
                     onClose={() => setSbomTargetImage(undefined)}
-                    image={sbomTargetImage}
+                    imageName={sbomTargetImage}
                 />
             )}
         </Table>

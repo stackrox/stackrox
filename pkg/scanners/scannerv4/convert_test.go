@@ -1606,6 +1606,13 @@ func TestVulnDataSource(t *testing.T) {
 			ccVuln:   &v4.VulnerabilityReport_Vulnerability{},
 		},
 		{
+			expected: "",
+			os:       "os",
+			ccVuln: &v4.VulnerabilityReport_Vulnerability{
+				Updater: "rhel-vex",
+			},
+		},
+		{
 			expected: "updater",
 			os:       "",
 			ccVuln: &v4.VulnerabilityReport_Vulnerability{

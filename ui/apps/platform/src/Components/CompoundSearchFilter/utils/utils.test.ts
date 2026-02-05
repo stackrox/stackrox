@@ -1,44 +1,119 @@
-import { convertFromInternalToExternalDatePicker } from './utils';
+import { deploymentAttributes } from '../attributes/deployment';
+import { imageAttributes } from '../attributes/image';
+import { imageCVEAttributes } from '../attributes/imageCVE';
+import { makeFilterChipDescriptors } from '../components/SearchFilterChips';
+import {
+    getDefaultAttributeName,
+    getDefaultEntityName,
+    getEntityAttributes,
+    getSearchFilterConfigWithFeatureFlagDependency,
+} from './utils';
+import type { CompoundSearchFilterEntity } from '../types';
+
+const imageSearchFilterConfig: CompoundSearchFilterEntity = {
+    displayName: 'Image',
+    searchCategory: 'IMAGES',
+    attributes: imageAttributes,
+};
+
+const deploymentSearchFilterConfig: CompoundSearchFilterEntity = {
+    displayName: 'Deployment',
+    searchCategory: 'DEPLOYMENTS',
+    attributes: deploymentAttributes,
+};
+
+const imageCVESearchFilterConfig: CompoundSearchFilterEntity = {
+    displayName: 'Image CVE',
+    searchCategory: 'IMAGE_VULNERABILITIES_V2', // flat CVE data model
+    attributes: imageCVEAttributes,
+};
 
 describe('utils', () => {
-    describe('convertFromInternalToExternalDatePicker', () => {
-        it('formats "after" condition correctly', () => {
-            expect(convertFromInternalToExternalDatePicker('>2024-01-01')).toEqual(
-                'After Jan 01, 2024'
+    describe('getEntityAttributes', () => {
+        it('should get the attributes of an entity in a config object', () => {
+            // Omit EPSSProbability object that has been added to imageCVE attributes.
+            const config = getSearchFilterConfigWithFeatureFlagDependency(
+                () => false,
+                [imageSearchFilterConfig, deploymentSearchFilterConfig, imageCVESearchFilterConfig]
             );
-        });
 
-        it('formats "before" condition correctly', () => {
-            expect(convertFromInternalToExternalDatePicker('<2024-12-31')).toEqual(
-                'Before Dec 31, 2024'
+            const result = getEntityAttributes(config, 'Image CVE');
+
+            expect(result).toStrictEqual([
+                {
+                    displayName: 'CVSS',
+                    filterChipLabel: 'CVSS',
+                    searchTerm: 'CVSS',
+                    inputType: 'condition-number',
+                },
+                {
+                    displayName: 'Discovered time',
+                    filterChipLabel: 'Image CVE discovered time',
+                    searchTerm: 'CVE Created Time',
+                    inputType: 'date-picker',
+                },
+                {
+                    displayName: 'Name',
+                    filterChipLabel: 'Image CVE',
+                    searchTerm: 'CVE',
+                    inputType: 'autocomplete',
+                },
+            ]);
+        });
+    });
+
+    describe('getDefaultEntity', () => {
+        it('should get the default (first) entity in a config object', () => {
+            const config = [
+                imageSearchFilterConfig,
+                deploymentSearchFilterConfig,
+                imageCVESearchFilterConfig,
+            ];
+
+            const result = getDefaultEntityName(config);
+
+            expect(result).toStrictEqual('Image');
+        });
+    });
+
+    describe('getDefaultAttribute', () => {
+        it('should get the default (first) attribute of a specific entity in a config object', () => {
+            const config = [
+                imageSearchFilterConfig,
+                deploymentSearchFilterConfig,
+                imageCVESearchFilterConfig,
+            ];
+
+            const result = getDefaultAttributeName(config, 'Image CVE');
+
+            expect(result).toStrictEqual('CVSS');
+        });
+    });
+
+    describe('makeFilterChipDescriptors', () => {
+        it('should create an array of FilterChipGroupDescriptor objects from a config object', () => {
+            // Omit EPSSProbability object that has been added to imageCVE attributes.
+            const config = getSearchFilterConfigWithFeatureFlagDependency(
+                () => false,
+                [imageCVESearchFilterConfig]
             );
-        });
 
-        it('formats date without condition as "on"', () => {
-            expect(convertFromInternalToExternalDatePicker('2024-06-15')).toEqual(
-                'On Jun 15, 2024'
-            );
-        });
+            const result = makeFilterChipDescriptors(config);
 
-        it('returns original value for invalid date', () => {
-            expect(convertFromInternalToExternalDatePicker('>invalid-date')).toEqual(
-                '>invalid-date'
-            );
-        });
-
-        it('returns original value for empty string', () => {
-            expect(convertFromInternalToExternalDatePicker('')).toEqual('');
-        });
-
-        it('handles multiple condition characters', () => {
-            expect(convertFromInternalToExternalDatePicker('>>2024-01-01')).toEqual(
-                'After Jan 01, 2024'
-            );
-        });
-
-        it('does not throw errors and returns original value for malformed input', () => {
-            expect(() => convertFromInternalToExternalDatePicker('>2024-13-50')).not.toThrow();
-            expect(convertFromInternalToExternalDatePicker('>2024-13-50')).toEqual('>2024-13-50');
+            expect(result).toStrictEqual([
+                {
+                    displayName: 'CVSS',
+                    searchFilterName: 'CVSS',
+                },
+                {
+                    displayName: 'Image CVE discovered time',
+                    searchFilterName: 'CVE Created Time',
+                },
+                {
+                    displayName: 'Image CVE',
+                    searchFilterName: 'CVE',
+                },
+            ]);
         });
     });
 });

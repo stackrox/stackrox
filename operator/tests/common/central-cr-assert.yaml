@@ -8,9 +8,6 @@ collectors:
   selector: app=central-db
   tail: -1
 - type: pod
-  selector: app=config-controller
-  tail: -1
-- type: pod
   selector: app=scanner
   tail: -1
 - type: pod
@@ -27,14 +24,13 @@ collectors:
   tail: -1
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=central
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=central-db
-- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=config-controller
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-db
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-v4-indexer
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-v4-matcher
 - command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-v4-db
+# Please keep the above lists in sync with pods-debug.yaml
 - command: retry-kubectl.sh describe central.platform.stackrox.io -n $NAMESPACE stackrox-central-services
-# Please keep the above lists in sync with pods-debug.yaml and 021-assert-status-conditions.yaml
 resourceRefs:
 - apiVersion: platform.stackrox.io/v1alpha1
   kind: Central

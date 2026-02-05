@@ -467,8 +467,7 @@ func WithFileAccessViolation(alert *storage.Alert) *storage.Alert {
 			Timestamp: protocompat.TimestampNow(),
 			Process: &storage.ProcessIndicator{
 				Signal: &storage.ProcessSignal{
-					Name:         "cp",
-					ExecFilePath: "/bin/cp",
+					Name: "cp",
 				},
 			},
 		}),

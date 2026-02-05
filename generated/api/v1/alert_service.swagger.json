@@ -760,6 +760,7 @@
         "RENAME",
         "PERMISSION_CHANGE",
         "OWNERSHIP_CHANGE",
+        "WRITE",
         "OPEN"
       ],
       "default": "CREATE"
@@ -1746,13 +1747,6 @@
           "type": "string"
         },
         "label": {
-          "$ref": "#/definitions/storageScopeLabel",
-          "title": "Deployment label."
-        },
-        "clusterLabel": {
-          "$ref": "#/definitions/storageScopeLabel"
-        },
-        "namespaceLabel": {
           "$ref": "#/definitions/storageScopeLabel"
         }
       }

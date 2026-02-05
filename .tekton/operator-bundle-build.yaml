@@ -49,7 +49,7 @@ spec:
   - name: prefetch-input
     value: |
       [
-        { "type": "rpm", "path": "." }
+        { "type": "pip", "path": "operator/bundle_helpers" }
       ]
   - name: build-source-image
     value: 'true'

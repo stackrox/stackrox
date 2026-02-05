@@ -113,8 +113,6 @@ The recommended approach is the following.
    ```bash
    $ docker save stackrox/stackrox-operator:$(make tag) | ssh -o StrictHostKeyChecking=no -i $(minikube ssh-key) docker@$(minikube ip) docker load
    ```
-   _Alternatively you can also set `DOCKER_BUILD_LOAD=1` in the make environment in the previous build step. This will load images into the local Docker daemon instead of leaving them just in BuildKit cache._
-   
 3. Install CRDs and deploy operator resources
    ```bash
    $ make deploy
@@ -135,13 +133,7 @@ The recommended approach is the following.
    $ make undeploy uninstall
    ```
 
-### Building and using the operator bundle
-
-*Note:* currently creating a bundle is only supported using the RH ACS branding (ROX-11744).
-You need to have the following set before running most targets mentioned in this section.
-```bash
-$ export ROX_PRODUCT_BRANDING=RHACS_BRANDING
-```
+### Bundling
 
 ```bash
 # Refresh bundle metadata. Make sure to check the diff and commit it.
@@ -151,8 +143,6 @@ $ make docker-build docker-push
 # Build and push bundle image
 $ make bundle-build docker-push-bundle
 ```
-_Note: Bundle helpers depend on Python <=3.13. By default, the build process will use the default Python version installed on the build host. You can override the python version if needed via the optional `PYTHON` env var, e.g. `PYTHON=python3.10 make bundle-build`_
-
 
 Build and push everything as **one-liner**
 
@@ -169,20 +159,19 @@ $ make bundle-test
 $ make bundle-test-image
 ```
 
-#### Launching the operator on the cluster with OLM and the bundle
+### Launch the operator on the cluster with OLM and the bundle
 
 ```bash
 # 0. Get the operator-sdk program.
 $ make operator-sdk
 
-# 1. Install OLM, unless running on OpenShift.
+# 1. Install OLM.
 $ make olm-install
 
 # 2. Create a namespace for testing bundle.
 $ kubectl create ns bundle-test
 
 # 2. Create image pull secrets.
-# You can skip this and the next patch step when using cluster from infra.rox.systems.
 # If the inner magic does not work, just provide --docker-username and --docker-password with your DockerHub creds.
 $ kubectl -n bundle-test create secret docker-registry my-opm-image-pull-secrets \
   --docker-server=https://quay.io/v2/ \
@@ -289,12 +278,12 @@ Push your changes to a GitHub PR (draft is OK) to let CI build and push images f
 Now the latest version (based off of `make tag`) can be installed like so:
 
 ```bash
-# TODO(ROX-11744): drop branding here once operator is available via OLM from quay.io/stackrox-io
+# TODO(ROX-11744): drop branding here once operator is available from quay.io/stackrox-io
 
 ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-via-olm
 ```
 
-This installs the operator into the `stackrox-operator-system` namespace.
+This installs the operator into the `stackrox-operator` namespace.
 This can be overridden with a `TEST_NAMESPACE` argument.
 The version can be overridden with a `VERSION` argument.
 
@@ -310,7 +299,7 @@ You can blow everything away with:
 
 ```bash
 $ make olm-uninstall
-$ kubectl delete ns stackrox-operator-system
+$ kubectl delete ns stackrox-operator
 
 # Optionally remove CRDs
 $ make uninstall

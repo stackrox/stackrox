@@ -140,50 +140,6 @@ func TestWithinScope(t *testing.T) {
 			},
 			result: true,
 		},
-		{
-			name: "scope with cluster_label",
-			scope: &storage.Scope{
-				ClusterLabel: &storage.Scope_Label{
-					Key:   "env",
-					Value: "prod",
-				},
-			},
-			deployment: &storage.Deployment{
-				ClusterId: "cluster",
-			},
-			result: true,
-		},
-		{
-			name: "scope with namespace_label",
-			scope: &storage.Scope{
-				NamespaceLabel: &storage.Scope_Label{
-					Key:   "team",
-					Value: "backend",
-				},
-			},
-			deployment: &storage.Deployment{
-				Namespace: "default",
-			},
-			result: true,
-		},
-		{
-			name: "scope with cluster_label and namespace_label",
-			scope: &storage.Scope{
-				ClusterLabel: &storage.Scope_Label{
-					Key:   "env",
-					Value: "prod",
-				},
-				NamespaceLabel: &storage.Scope_Label{
-					Key:   "team",
-					Value: "backend",
-				},
-			},
-			deployment: &storage.Deployment{
-				ClusterId: "cluster",
-				Namespace: "default",
-			},
-			result: true,
-		},
 	}
 	for _, test := range subtests {
 		cs, err := CompileScope(test.scope)

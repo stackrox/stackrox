@@ -12,10 +12,6 @@ CSV_VERSION ?= v$(VERSION)
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
-# Python binary to use for bundle helpers. Can be overridden to use a specific version (e.g., python3.9).
-# The Konflux build uses Python 3.9, so using python3.9 locally ensures compatibility.
-PYTHON ?= python3
-
 # This can be adjusted if deploying into non-standard namespaces. For example, as in
 #
 #   NAMESPACE=... make -C operator stackrox-image-pull-secret
@@ -109,14 +105,14 @@ SCORECARD_ARGS ?= --storage-image="$(SCORECARD_STORAGE_IMAGE)" --wait-time="$(SC
 PROJECT_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 # TEST_NAMESPACE is where the operator is installed for e2e tests by CI.
-TEST_NAMESPACE ?= stackrox-operator-system
+TEST_NAMESPACE ?= stackrox-operator
 
 # TEST_E2E_ENV_IS_OPENSHIFT is "true" when the cluster to run e2e tests on is an
 # OpenShift one, and "false" otherwise.
 TEST_E2E_ENV_IS_OPENSHIFT ?= $(shell $(PROJECT_DIR)/hack/retry-kubectl.sh < /dev/null get scc > /dev/null 2>&1 && echo true || echo false)
 
-# KUTTL_TEST_RUN_ARGS specifies what label set and templating vars to use for kuttl tests.
-KUTTL_TEST_RUN_ARGS ?= --test-run-labels openshift=$(TEST_E2E_ENV_IS_OPENSHIFT) --template-var operator_ns=$(TEST_NAMESPACE)
+# KUTTL_TEST_RUN_LABELS_ARGS specifies what label set to use for kuttl tests.
+KUTTL_TEST_RUN_LABELS_ARGS ?= --test-run-labels openshift=$(TEST_E2E_ENV_IS_OPENSHIFT)
 
 # ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scanner, and collector images.
 # ROX_IMAGE_FLAVOR valid values are: development_build, opensource, rhacs.
@@ -268,19 +264,19 @@ validate-crs: yq
 .PHONY: test-e2e
 test-e2e: build install validate-crs kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" $(KUTTL) test $(KUTTL_TEST_RUN_ARGS)
+	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" $(KUTTL) test $(KUTTL_TEST_RUN_LABELS_ARGS)
 
 .PHONY: test-e2e-deployed
 test-e2e-deployed: validate-crs kuttl ## Run e2e tests with manager deployed on cluster.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" SKIP_MANAGER_START=1 $(KUTTL) test $(KUTTL_TEST_RUN_ARGS)
+	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" SKIP_MANAGER_START=1 $(KUTTL) test $(KUTTL_TEST_RUN_LABELS_ARGS)
 
 .PHONY: test-upgrade
 test-upgrade: kuttl bundle-post-process ## Run OLM-based operator upgrade tests.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts-upgrade
 	SKIP_MANAGER_START=1 \
 	NEW_PRODUCT_VERSION=$$(make --quiet --no-print-directory -C .. tag) \
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" $(KUTTL) test --config kuttl-test.yaml --artifacts-dir build/kuttl-test-artifacts-upgrade $(KUTTL_TEST_RUN_ARGS) tests/upgrade
+	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" $(KUTTL) test --config kuttl-test.yaml --artifacts-dir build/kuttl-test-artifacts-upgrade $(KUTTL_TEST_RUN_LABELS_ARGS) tests/upgrade
 
 .PHONY: test-bundle-helpers
 test-bundle-helpers: ## Run Python unit tests against helper scripts.
@@ -311,11 +307,9 @@ ensure-rox-main-image-exists:
 
 .PHONY: build-installer
 build-installer: manifests generate kustomize ## Generate a consolidated YAML with CRDs and deployment.
-	mkdir -p build/dist
-	echo 'resources: [ "../../config/flavors/$(ROX_IMAGE_FLAVOR)" ]' > build/dist/kustomization.yaml
-	cd build/dist && $(KUSTOMIZE) edit set image controller=${IMG}
 	mkdir -p dist
-	$(KUSTOMIZE) build build/dist > dist/install.yaml
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/default > dist/install.yaml
 
 .PHONY: build
 build: manifests generate fmt vet ## Build operator local binary.
@@ -348,7 +342,6 @@ build/Dockerfile.gen: Dockerfile
 .PHONY: docker-build
 docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with the operator.
 	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
-		$(if $(DOCKER_BUILD_LOAD),--load) \
 		-t ${IMG} \
 		$(if $(GOARCH),--build-arg TARGET_ARCH=$(GOARCH)) \
 		-f $< \
@@ -382,7 +375,7 @@ deploy: check-ci-setup manifests kustomize ## Deploy operator image to the K8s c
 		mkdir config/local-deploy-versioned && \
 		cd config/local-deploy-versioned && \
 		$(KUSTOMIZE) create --resources ../default && \
-		$(KUSTOMIZE) edit set image controller=$(IMG)
+		$(KUSTOMIZE) edit set image quay.io/stackrox-io/stackrox-operator=$(IMG)
 	$(KUSTOMIZE) build config/local-deploy-versioned | $(PROJECT_DIR)/hack/retry-kubectl.sh apply -f -
 
 .PHONY: undeploy
@@ -408,18 +401,6 @@ deploy-previous-via-olm: kuttl bundle-post-process ## Deploy replaced version of
 	set -x ;\
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $${replaced_version} $(INSTALL_CHANNEL)
 
-.PHONY: deploy-via-installer
-deploy-via-installer: ## Deploy current version of operator via distribution manifest file.
-	./hack/retry-kubectl.sh </dev/null apply -f dist/install.yaml
-# A hack for the NO_PROXY assertions in the e2e tests.
-	./hack/retry-kubectl.sh </dev/null set env -n $(TEST_NAMESPACE) deployment/rhacs-operator-controller-manager NO_PROXY=127.1.2.3/8
-# Need to hardcode the deployment name here and above, since kubectl barfs on the CRDs in the manifest when working on deployment:
-# $ oc rollout status  -f operator/dist/install.yaml --timeout=300s
-# deployment "rhacs-operator-controller-manager" successfully rolled out
-# unable to decode "operator/dist/install.yaml": no kind "CustomResourceDefinition" is registered for version "apiextensions.k8s.io/v1" in scheme "k8s.io/kubectl/pkg/scheme/scheme.go:28"
-# TODO(ROX-11901): work this around somehow to make it possible to deploy and e2e-test the community build
-	./hack/retry-kubectl.sh </dev/null rollout status deployment -n $(TEST_NAMESPACE) rhacs-operator-controller-manager --timeout=300s
-
 .PHONY: upgrade-via-olm
 upgrade-via-olm: kuttl
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-upgrade.sh $(TEST_NAMESPACE) $(INSTALL_VERSION)
@@ -431,10 +412,10 @@ upgrade-dirty-tag-via-olm: kuttl
 ##@ Bundle and Index build
 
 # Commands to enter local Python virtual environment and get needed dependencies there.
-ACTIVATE_PYTHON = $(PYTHON) -m venv bundle_helpers/.venv ;\
+ACTIVATE_PYTHON = python3 -m venv bundle_helpers/.venv ;\
 	. bundle_helpers/.venv/bin/activate ;\
 	pip3 install --upgrade pip==21.3.1 setuptools==59.6.0 ;\
-	pip3 install -r bundle_helpers/requirements.txt
+	pip3 install -r bundle_helpers/requirements-gha.txt
 
 .PHONY: bundle
 bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
@@ -442,11 +423,11 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 # The operator-sdk command both reads and writes config/manifests by default.
 # We re-generate it from scratch each time based on a minimal set of inputs, to be able to catch cases when operator-sdk stops working (ROX-25872)
 	rm -rf config/manifests/bases && $(OPERATOR_SDK) generate kustomize manifests --input-dir=config/ui-metadata
+# We hardcode the image reference to quay.io/stackrox-io/stackrox-operator. If this is overridden via
+# the IMG_REPO environment variable, the final reference will be injected in the bundle-post-process step.
+	cd config/manager && $(KUSTOMIZE) edit set image controller=quay.io/stackrox-io/stackrox-operator:0.0.1
 	cd config/scorecard-versioned && $(KUSTOMIZE) edit set image quay.io/operator-framework/scorecard-test=quay.io/operator-framework/scorecard-test:$(OPERATOR_SDK_VERSION)
-	rm -rf build/manifests
-	mkdir -p build/manifests
-	echo 'resources: [ "../../config/flavors/$(ROX_IMAGE_FLAVOR)", "../../config/manifests" ]' > build/manifests/kustomization.yaml
-	$(KUSTOMIZE) build build/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
+	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
 # Fix the createdAt annotation
 	$(YQ) -i '.metadata.annotations.createdAt = ""' bundle/manifests/rhacs-operator.clusterserviceversion.yaml
 # Remove autogenerated operator channel LABEL from the bundle to avoid confusion because it's ignored anyways.
@@ -502,7 +483,7 @@ bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file t
 
 .PHONY: bundle-build
 bundle-build: bundle.Dockerfile bundle-post-process ## Build the bundle image.
-	docker build $(if $(DOCKER_BUILD_LOAD),--load) -f $< -t $(BUNDLE_IMG) .
+	docker build -f $< -t $(BUNDLE_IMG) .
 
 .PHONY: bundle-test
 bundle-test: operator-sdk bundle-post-process ## Run scorecard tests against bundle files.

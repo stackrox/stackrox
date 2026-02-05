@@ -434,7 +434,6 @@ payments/gateway[Deployment] => payments/visa-processor[Deployment] : TCP 8080'
   check_acs_security_demos_files
   run roxctl-release netpol connectivity map "${acs_security_demos_dir}" --exposure
   assert_success
-  output=$(strip_deprecation_notice "$output")
   echo "$output" > "$ofile"
   assert_file_exist "$ofile"
   # normalizing tabs and whitespaces in output so it will be easier to compare with expected
@@ -500,7 +499,6 @@ frontend/webapp[Deployment]             <=      entire-cluster : TCP 8080'
   run roxctl-release netpol connectivity map "${acs_security_demos_dir}" --output-format=dot --exposure
   assert_success
 
-  output=$(strip_deprecation_notice "$output")
   echo "$output" > "$ofile"
   assert_file_exist "$ofile"
   # normalizing tabs and whitespaces in output so it will be easier to compare with expected
@@ -588,7 +586,6 @@ payments/gateway[Deployment]    =>      entire-cluster : UDP 5353'
   run roxctl-release netpol connectivity map "${test_data}/np-guard/exposure-example" --exposure
   assert_success
 
-  output=$(strip_deprecation_notice "$output")
   echo "$output" > "$ofile"
   assert_file_exist "$ofile"
   # normalizing tabs and whitespaces in output so it will be easier to compare with expected
@@ -618,7 +615,6 @@ hello-world/workload-a[Deployment] is not protected on Egress'
   run roxctl-release netpol connectivity map "${test_data}/np-guard/anp_banp_demo"
   assert_success
 
-  output=$(strip_deprecation_notice "$output")
   echo "$output" > "$ofile"
   assert_file_exist "$ofile"
   # normalizing tabs and whitespaces in output so it will be easier to compare with expected
@@ -689,7 +685,6 @@ Denied connections:
   run roxctl-release netpol connectivity map "${test_data}/np-guard/netpols-analysis-example-minimal" --explain --output-format=md
   assert_success
 
-  output=$(strip_deprecation_notice "$output")
   echo "$output" > "$ofile"
   assert_file_exist "$ofile"
    # normalizing tabs and whitespaces in output so it will be easier to compare with expected

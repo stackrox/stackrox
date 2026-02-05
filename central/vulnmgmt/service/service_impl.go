@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -121,7 +120,6 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 				continue
 			}
 			if found {
-				utils.StripDatasourceNoClone(img.GetScan())
 				images = append(images, img)
 				imageCache.Add(imgID, img)
 			} else {

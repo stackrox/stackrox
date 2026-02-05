@@ -7,6 +7,7 @@ import type { SearchFilter } from 'types/search';
 import { searchValueAsArray } from 'utils/searchUtils';
 
 import type { OnSearchCallback, SelectSearchFilterAttribute } from '../types';
+import { hasGroupedSelectOptions, hasSelectOptions } from '../utils/utils';
 
 export type SearchFilterSelectInclusiveProps = {
     attribute: SelectSearchFilterAttribute;
@@ -31,7 +32,7 @@ function SearchFilterSelectInclusive({
         </SelectList>
     );
 
-    if ('groupOptions' in inputProps && inputProps.groupOptions.length !== 0) {
+    if (hasGroupedSelectOptions(inputProps) && inputProps.groupOptions.length !== 0) {
         content = inputProps.groupOptions.map(({ name, options }, index) => {
             return (
                 <Fragment key={name}>
@@ -53,7 +54,7 @@ function SearchFilterSelectInclusive({
                 </Fragment>
             );
         });
-    } else if ('options' in inputProps && inputProps.options.length !== 0) {
+    } else if (hasSelectOptions(inputProps) && inputProps.options.length !== 0) {
         content = (
             <SelectList>
                 {inputProps.options.map((option) => (

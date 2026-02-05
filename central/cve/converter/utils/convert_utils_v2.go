@@ -24,7 +24,6 @@ func ImageCVEV2ToEmbeddedVulnerability(vuln *storage.ImageCVEV2) *storage.Embedd
 		PublishedOn:           vuln.GetCveBaseInfo().GetPublishedOn(),
 		LastModified:          vuln.GetCveBaseInfo().GetLastModified(),
 		FirstSystemOccurrence: vuln.GetCveBaseInfo().GetCreatedAt(),
-		FixAvailableTimestamp: vuln.GetFixAvailableTimestamp(),
 		Severity:              vuln.GetSeverity(),
 		CvssMetrics:           vuln.GetCveBaseInfo().GetCvssMetrics(),
 		NvdCvss:               vuln.GetNvdcvss(),
@@ -33,7 +32,6 @@ func ImageCVEV2ToEmbeddedVulnerability(vuln *storage.ImageCVEV2) *storage.Embedd
 		VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 		VulnerabilityTypes:    []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY},
 		State:                 vuln.GetState(),
-		Datasource:            vuln.GetDatasource(),
 	}
 
 	if vuln.GetIsFixable() {
@@ -96,17 +94,15 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, index
 			Epss:         from.GetEpss(),
 			ScoreVersion: scoreVersion,
 		},
-		Cvss:                  from.GetCvss(),
-		Nvdcvss:               nvdCvss,
-		NvdScoreVersion:       nvdVersion,
-		Severity:              from.GetSeverity(),
-		FirstImageOccurrence:  from.GetFirstImageOccurrence(),
-		FixAvailableTimestamp: from.GetFixAvailableTimestamp(),
-		State:                 from.GetState(),
-		IsFixable:             from.GetFixedBy() != "",
-		ImpactScore:           impactScore,
-		Advisory:              from.GetAdvisory(),
-		Datasource:            from.GetDatasource(),
+		Cvss:                 from.GetCvss(),
+		Nvdcvss:              nvdCvss,
+		NvdScoreVersion:      nvdVersion,
+		Severity:             from.GetSeverity(),
+		FirstImageOccurrence: from.GetFirstImageOccurrence(),
+		State:                from.GetState(),
+		IsFixable:            from.GetFixedBy() != "",
+		ImpactScore:          impactScore,
+		Advisory:             from.GetAdvisory(),
 	}
 	if !features.FlattenImageData.Enabled() {
 		ret.ImageId = imageID

@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	clusterPkg "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
@@ -41,15 +40,14 @@ func trackClusterRegistered(cluster *storage.Cluster) {
 
 func makeClusterProperties(cluster *storage.Cluster) map[string]any {
 	return map[string]any{
-		"Main Image":                  cluster.GetMainImage(),
-		"Admission Controller":        cluster.GetAdmissionController(),
-		"Collection Method":           cluster.GetCollectionMethod().String(),
-		"Collector Image":             cluster.GetCollectorImage(),
-		"Managed By":                  cluster.GetManagedBy().String(),
-		"Priority":                    cluster.GetPriority(),
-		"Cluster Type":                cluster.GetType().String(),
-		"Slim Collector":              cluster.GetSlimCollector(),
-		"Auto Lock Process Baselines": clusterPkg.GetAutoLockProcessBaselinesEnabled(cluster),
+		"Main Image":           cluster.GetMainImage(),
+		"Admission Controller": cluster.GetAdmissionController(),
+		"Collection Method":    cluster.GetCollectionMethod().String(),
+		"Collector Image":      cluster.GetCollectorImage(),
+		"Managed By":           cluster.GetManagedBy().String(),
+		"Priority":             cluster.GetPriority(),
+		"Cluster Type":         cluster.GetType().String(),
+		"Slim Collector":       cluster.GetSlimCollector(),
 	}
 }
 

@@ -5,7 +5,6 @@ package tests
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -17,7 +16,6 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/docker/config"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/retryablehttp"
@@ -943,21 +941,6 @@ func (ks *KubernetesSuite) ensureSecretExists(ctx context.Context, namespace str
 		}
 		ks.Require().NoError(err, "cannot create secret %q in namespace %q", name, namespace)
 	}
-}
-
-// ensureQuayImagePullSecretExists creates an image pull secret for quay.io using credentials from
-// REGISTRY_USERNAME and REGISTRY_PASSWORD environment variables. This is a common pattern across e2e tests.
-func (ks *KubernetesSuite) ensureQuayImagePullSecretExists(ctx context.Context, namespace string, secretName string) {
-	configBytes, err := json.Marshal(config.DockerConfigJSON{
-		Auths: map[string]config.DockerConfigEntry{
-			"https://quay.io": {
-				Username: mustGetEnv(ks.T(), "REGISTRY_USERNAME"),
-				Password: mustGetEnv(ks.T(), "REGISTRY_PASSWORD"),
-			},
-		},
-	})
-	ks.Require().NoError(err, "cannot serialize docker config for image pull secret %q in namespace %q", secretName, namespace)
-	ks.ensureSecretExists(ctx, namespace, secretName, coreV1.SecretTypeDockerConfigJson, map[string][]byte{coreV1.DockerConfigJsonKey: configBytes})
 }
 
 // ensureConfigMapExists creates a k8s ConfigMap object. If one exists, it makes sure the data matches.

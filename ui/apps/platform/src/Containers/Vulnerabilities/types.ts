@@ -14,7 +14,7 @@ export function isVulnerabilitySeverityLabel(value: unknown): value is Vulnerabi
     return vulnerabilitySeverityLabels.some((severity) => severity === value);
 }
 
-export const fixableStatuses = ['Fixable', 'Not fixable'] as const;
+const fixableStatuses = ['Fixable', 'Not fixable'] as const;
 export type FixableStatus = (typeof fixableStatuses)[number];
 export function isFixableStatus(value: unknown): value is FixableStatus {
     return fixableStatuses.some((status) => status === value);

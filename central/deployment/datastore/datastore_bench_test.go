@@ -32,7 +32,7 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 	}
 
 	b.Run("SearchRetrievalList", func(b *testing.B) {
-		for b.Loop() {
+		for i := 0; i < b.N; i++ {
 			deployments, err := deploymentsDatastore.SearchListDeployments(ctx, search2.EmptyQuery())
 			assert.NoError(b, err)
 			assert.Len(b, deployments, numDeployments)
@@ -40,7 +40,7 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 	})
 
 	b.Run("SearchRetrievalFull", func(b *testing.B) {
-		for b.Loop() {
+		for i := 0; i < b.N; i++ {
 			deployments, err := deploymentsDatastore.SearchRawDeployments(ctx, search2.EmptyQuery())
 			assert.NoError(b, err)
 			assert.Len(b, deployments, numDeployments)

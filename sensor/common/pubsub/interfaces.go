@@ -21,11 +21,11 @@ type LaneConfig interface {
 
 type Lane interface {
 	Publish(Event) error
-	RegisterConsumer(ConsumerID, Topic, EventCallback) error
+	RegisterConsumer(Topic, EventCallback) error
 	Stop()
 }
 
-type NewConsumer func(laneID LaneID, topic Topic, consumerID ConsumerID, callback EventCallback, opts ...ConsumerOption) (Consumer, error)
+type NewConsumer func(EventCallback, ...ConsumerOption) (Consumer, error)
 
 type Consumer interface {
 	Consume(concurrency.Waitable, Event) <-chan error

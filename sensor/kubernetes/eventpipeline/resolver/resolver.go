@@ -12,7 +12,7 @@ import (
 )
 
 type pubSubRegister interface {
-	RegisterConsumerToLane(pubsub.ConsumerID, pubsub.Topic, pubsub.LaneID, pubsub.EventCallback) error
+	RegisterConsumerToLane(pubsub.Topic, pubsub.LaneID, pubsub.EventCallback) error
 }
 
 // New instantiates a Resolver component.
@@ -29,10 +29,10 @@ func New(outputQueue component.OutputQueue, provider store.Provider, queueSize i
 		if pubsubDispatcher == nil {
 			return nil, errors.Errorf("pubsub dispatcher is null and the feature flag %q is enabled", features.SensorInternalPubSub.EnvVar())
 		}
-		if err := pubsubDispatcher.RegisterConsumerToLane(pubsub.ResolverConsumer, pubsub.KubernetesDispatcherEventTopic, pubsub.KubernetesDispatcherEventLane, res.ProcessResourceEvent); err != nil {
+		if err := pubsubDispatcher.RegisterConsumerToLane(pubsub.KubernetesDispatcherEventTopic, pubsub.KubernetesDispatcherEventLane, res.ProcessResourceEvent); err != nil {
 			return nil, errors.Wrapf(err, "unable to register resolver as consumer of topic %q in lane %q", pubsub.KubernetesDispatcherEventTopic.String(), pubsub.KubernetesDispatcherEventLane.String())
 		}
-		if err := pubsubDispatcher.RegisterConsumerToLane(pubsub.ResolverConsumer, pubsub.FromCentralResolverEventTopic, pubsub.FromCentralResolverEventLane, res.ProcessResourceEvent); err != nil {
+		if err := pubsubDispatcher.RegisterConsumerToLane(pubsub.FromCentralResolverEventTopic, pubsub.FromCentralResolverEventLane, res.ProcessResourceEvent); err != nil {
 			return nil, errors.Wrapf(err, "unable to register resolver as consumer of topic %q in lane %q", pubsub.FromCentralResolverEventTopic.String(), pubsub.FromCentralResolverEventLane.String())
 		}
 	}

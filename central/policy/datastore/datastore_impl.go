@@ -268,8 +268,7 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 	}
 
 	if findPolicyWithSameName(policyNameToPolicyMap, policy.GetName()) != nil {
-		nameError := fmt.Errorf("Could not add policy due to name validation, policy with name %s already exists", policy.GetName())
-		return "", ds.wrapWithRollback(ctx, tx, nameError)
+		return "", fmt.Errorf("Could not add policy due to name validation, policy with name %s already exists", policy.GetName())
 	}
 	policyutils.FillSortHelperFields(policy)
 	// Any policy added after startup must be marked custom policy.

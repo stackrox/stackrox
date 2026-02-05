@@ -122,7 +122,7 @@ func BenchmarkProtoUnmarshal(b *testing.B) {
 
 	b.Run("small", func(b *testing.B) {
 		b.ResetTimer()
-		for b.Loop() {
+		for i := 0; i < b.N; i++ {
 			_, _ = svc.SuppressCVEs(context.Background(), &request)
 		}
 	})
@@ -132,7 +132,7 @@ func BenchmarkProtoUnmarshal(b *testing.B) {
 			request.Cves = append(request.Cves, fmt.Sprintf("CVE-%d", i))
 		}
 		b.ResetTimer()
-		for b.Loop() {
+		for i := 0; i < b.N; i++ {
 			_, _ = svc.SuppressCVEs(context.Background(), &request)
 		}
 	})

@@ -4,14 +4,14 @@ import type { CompoundSearchFilterAttribute } from '../types';
 
 export const Name: CompoundSearchFilterAttribute = {
     displayName: 'Name',
-    filterChipLabel: 'Node component name',
+    filterChipLabel: 'Image component name',
     searchTerm: 'Component',
     inputType: 'autocomplete',
 };
 
 export const Version: CompoundSearchFilterAttribute = {
     displayName: 'Version',
-    filterChipLabel: 'Node component version',
+    filterChipLabel: 'Image component version',
     searchTerm: 'Component Version',
     inputType: 'text',
 };

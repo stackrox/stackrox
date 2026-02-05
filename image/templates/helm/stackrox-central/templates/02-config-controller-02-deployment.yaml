@@ -54,7 +54,7 @@ spec:
       - name: manager
         image: {{ ._rox.central.image.fullRef | quote }}
         command:
-          - /stackrox/config-controller
+          - /stackrox/bin/config-controller
         args:
           - --health-probe-bind-address=:8081
         resources:
@@ -64,8 +64,6 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        - name: ROX_CENTRAL_ENDPOINT
-          value: central.{{ .Release.Namespace }}.svc:443
         {{- include "srox.envVars" (list . "deployment" "config-controller" "manager") | nindent 8 }}
         livenessProbe:
           httpGet:
@@ -90,13 +88,6 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: central-certs-volume
           readOnly: true
-        - name: additional-ca-volume
-          mountPath: /usr/local/share/ca-certificates/
-          readOnly: true
-        - name: etc-ssl-volume
-          mountPath: /etc/ssl
-        - name: etc-pki-volume
-          mountPath: /etc/pki/ca-trust
       terminationGracePeriodSeconds: 10
       volumes:
       - name: central-certs-volume
@@ -106,12 +97,4 @@ spec:
           - key: ca.pem
             path: ca.pem
           secretName: central-tls
-      - name: additional-ca-volume
-        secret:
-          secretName: additional-ca
-          optional: true
-      - name: etc-ssl-volume
-        emptyDir: {}
-      - name: etc-pki-volume
-        emptyDir: {}
 {{- end }}

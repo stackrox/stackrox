@@ -11,13 +11,7 @@ const menuSelectors = {
     menuItem: `${menu} *[role="menuitem"]`,
 } as const;
 
-const tabsSelectors = {
-    tab: '[data-ouia-component-type="PF6/Tab"]',
-    tabButton: '[data-ouia-component-type="PF6/TabButton"]',
-} as const;
-
 export default {
     ...navSelectors,
     ...menuSelectors,
-    ...tabsSelectors,
 };

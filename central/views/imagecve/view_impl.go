@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
@@ -33,10 +34,17 @@ func (v *imageCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, err
 		return 0, err
 	}
 
+	var err error
+	q, err = common.WithSACFilter(ctx, resources.Image, q)
+	if err != nil {
+		return 0, err
+	}
+
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	results, err := pgSearch.RunSelectRequestForSchema[imageCVECoreCount](queryCtx, v.db, v.schema, common.WithCountQuery(q, search.CVE))
+	var results []*imageCVECoreCount
+	results, err = pgSearch.RunSelectRequestForSchema[imageCVECoreCount](queryCtx, v.db, v.schema, common.WithCountQuery(q, search.CVE))
 	if err != nil {
 		return 0, err
 	}
@@ -56,10 +64,17 @@ func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query)
 		return nil, err
 	}
 
+	var err error
+	q, err = common.WithSACFilter(ctx, resources.Image, q)
+	if err != nil {
+		return nil, err
+	}
+
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	results, err := pgSearch.RunSelectRequestForSchema[common.ResourceCountByImageCVESeverity](queryCtx, v.db, v.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE))
+	var results []*common.ResourceCountByImageCVESeverity
+	results, err = pgSearch.RunSelectRequestForSchema[common.ResourceCountByImageCVESeverity](queryCtx, v.db, v.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE))
 	if err != nil {
 		return nil, err
 	}
@@ -95,13 +110,17 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 		return nil, err
 	}
 
+	var err error
 	// Avoid changing the passed query
 	cloned := q.CloneVT()
 	// Update the sort options to use aggregations if necessary as we are grouping by CVEs
 	cloned = common.UpdateSortAggs(cloned)
+	cloned, err = common.WithSACFilter(ctx, resources.Image, cloned)
+	if err != nil {
+		return nil, err
+	}
 
 	var cveIDsToFilter []string
-	var err error
 	if cloned.GetPagination().GetLimit() > 0 || cloned.GetPagination().GetOffset() > 0 {
 		cveIDsToFilter, err = v.getFilteredCVEs(ctx, cloned)
 		if err != nil {
@@ -135,6 +154,12 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 }
 
 func (v *imageCVECoreViewImpl) GetDeploymentIDs(ctx context.Context, q *v1.Query) ([]string, error) {
+	var err error
+	q, err = common.WithSACFilter(ctx, resources.Deployment, q)
+	if err != nil {
+		return nil, err
+	}
+
 	q.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.DeploymentID).Distinct().Proto(),
 	}
@@ -142,7 +167,8 @@ func (v *imageCVECoreViewImpl) GetDeploymentIDs(ctx context.Context, q *v1.Query
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	results, err := pgSearch.RunSelectRequestForSchema[deploymentResponse](queryCtx, v.db, v.schema, q)
+	var results []*deploymentResponse
+	results, err = pgSearch.RunSelectRequestForSchema[deploymentResponse](queryCtx, v.db, v.schema, q)
 	if err != nil || len(results) == 0 {
 		return nil, err
 	}
@@ -155,6 +181,12 @@ func (v *imageCVECoreViewImpl) GetDeploymentIDs(ctx context.Context, q *v1.Query
 }
 
 func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]string, error) {
+	var err error
+	q, err = common.WithSACFilter(ctx, resources.Image, q)
+	if err != nil {
+		return nil, err
+	}
+
 	searchField := search.ImageSHA
 	if features.FlattenImageData.Enabled() {
 		searchField = search.ImageID
@@ -167,7 +199,8 @@ func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]
 	defer cancel()
 
 	if features.FlattenImageData.Enabled() {
-		results, err := pgSearch.RunSelectRequestForSchema[imageV2Response](queryCtx, v.db, v.schema, q)
+		var results []*imageV2Response
+		results, err = pgSearch.RunSelectRequestForSchema[imageV2Response](queryCtx, v.db, v.schema, q)
 		if err != nil || len(results) == 0 {
 			return nil, err
 		}
@@ -178,7 +211,8 @@ func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]
 		}
 		return ret, nil
 	}
-	results, err := pgSearch.RunSelectRequestForSchema[imageResponse](queryCtx, v.db, v.schema, q)
+	var results []*imageResponse
+	results, err = pgSearch.RunSelectRequestForSchema[imageResponse](queryCtx, v.db, v.schema, q)
 	if err != nil || len(results) == 0 {
 		return nil, err
 	}

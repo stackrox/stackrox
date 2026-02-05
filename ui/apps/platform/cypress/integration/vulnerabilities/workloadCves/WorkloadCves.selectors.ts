@@ -77,7 +77,7 @@ export const selectors = {
     nonZeroImageSeverityCounts:
         'td[data-label="Images by severity"] *[aria-label$="severity"i]:not([aria-label^="0"])',
     nonZeroCveSeverityCount: (severity) =>
-        `span[aria-label*="${severity.toLowerCase()} severity CVE count across this"]`,
+        `span[aria-label*="${severity.toLowerCase()} severity cve count across this"]`,
     nonZeroImageSeverityCount: (severity) =>
         `span[aria-label*="with ${severity.toLowerCase()} severity"]`,
     hiddenSeverityCount: `span[aria-label$="severity is hidden by the applied filter"]`,

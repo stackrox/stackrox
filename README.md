@@ -6,7 +6,6 @@
     - [Deploying StackRox](#deploying-stackrox)
         - [Quick Installation using Helm](#quick-installation-using-helm)
         - [Manual Installation using Helm](#manual-installation-using-helm)
-        - [Installation using the Operator](#installation-using-the-operator)
         - [Installation via Scripts](#installation-via-scripts)
             - [Kubernetes Distributions (EKS, AKS, GKE)](#kubernetes-distributions-eks-aks-gke)
             - [OpenShift](#openshift)
@@ -214,11 +213,6 @@ To further customize your Helm installation consult these documents:
 
 </details>
 
-### Installation using the Operator
-
-As of release 4.10 it's possible to [install StackRox using the operator](operator/install).
-We encourage you to try this out and give us your feedback.
-
 ### Installation via Scripts
 
 The `deploy` script will:
@@ -323,12 +317,13 @@ Then go to https://localhost:8000/ in your web browser.
 ---
 ## Development
 
-- Start with [**pull request guidelines**](./.github/contributing.md) if you plan to make a contribution
-- Look at [**shepherding**](./.github/shepherding.md) for non-trivial code submissions
-- Check out our [**AI policy**](./.github/using-llms.md)
-- **Go coding style guide**: [go-coding-style.md](./.github/go-coding-style.md)
 - **UI Dev Docs**: Refer to [ui/README.md](./ui/README.md)
+
 - **E2E Dev Docs**: Refer to [qa-tests-backend/README.md](./qa-tests-backend/README.md)
+
+- **Pull request guidelines**: [contributing.md](./.github/contributing.md)
+
+- **Go coding style guide**: [go-coding-style.md](./.github/go-coding-style.md)
 
 ### Quickstart
 

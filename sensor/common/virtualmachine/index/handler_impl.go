@@ -111,34 +111,12 @@ func (h *handlerImpl) Notify(e common.SensorComponentEvent) {
 }
 
 func (h *handlerImpl) Accepts(msg *central.MsgToSensor) bool {
-	if sensorAck := msg.GetSensorAck(); sensorAck != nil {
-		return sensorAck.GetMessageType() == central.SensorACK_VM_INDEX_REPORT
-	}
 	return false
 }
 
-// ProcessMessage handles SensorACK messages for VM index reports.
-func (h *handlerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
-	sensorAck := msg.GetSensorAck()
-	if sensorAck == nil || sensorAck.GetMessageType() != central.SensorACK_VM_INDEX_REPORT {
-		return nil
-	}
-
-	vmID := sensorAck.GetResourceId()
-	action := sensorAck.GetAction()
-	reason := sensorAck.GetReason()
-
-	switch action {
-	case central.SensorACK_ACK:
-		log.Debugf("Received ACK from Central for VM index report: vm_id=%s", vmID)
-		metrics.IndexReportAcksReceived.WithLabelValues(action.String()).Inc()
-	case central.SensorACK_NACK:
-		log.Warnf("Received NACK from Central for VM index report: vm_id=%s, reason=%s", vmID, reason)
-		metrics.IndexReportAcksReceived.WithLabelValues(action.String()).Inc()
-		// TODO(ROX-xxxxx): Implement retry logic or notifying VM relay.
-		// Currently, the VM relay has its own retry mechanism, but it's not aware of Central's rate limiting.
-	}
-
+// ProcessMessage is a no-op because Sensor does not receive any virtual machine data
+// from Central.
+func (h *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	return nil
 }
 

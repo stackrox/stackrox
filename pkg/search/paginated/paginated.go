@@ -125,9 +125,7 @@ func FillPaginationV2(query *v1.Query, pagination *v2.Pagination, maxLimit int32
 
 	// Fill in sort options.
 	for _, so := range pagination.GetSortOptions() {
-		if so != nil {
-			queryPagination.SortOptions = append(queryPagination.SortOptions, toQuerySortOptionV2(so))
-		}
+		queryPagination.SortOptions = append(queryPagination.SortOptions, toQuerySortOptionV2(so))
 	}
 
 	// Prefer the new field over the old one.

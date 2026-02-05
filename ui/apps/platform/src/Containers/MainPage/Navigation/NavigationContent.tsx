@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactElement, ReactNode } from 'react';
 import { Label } from '@patternfly/react-core';
 
-import TechPreviewLabel from 'Components/PatternFly/PreviewLabel/TechPreviewLabel';
+import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
 
 type NavigationContentVariant = 'Deprecated' | 'TechPreview';
 

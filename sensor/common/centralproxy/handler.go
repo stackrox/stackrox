@@ -2,56 +2,50 @@ package centralproxy
 
 import (
 	"crypto/x509"
-	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"path"
+	"strings"
 	"sync/atomic"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/centralsensor"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retryablehttp"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/common/centralcaps"
-	"google.golang.org/grpc"
 	"k8s.io/client-go/kubernetes"
 )
 
 var (
-	log            = logging.LoggerForModule()
-	k8sClientQPS   = 50.0
-	k8sClientBurst = 100
+	log = logging.LoggerForModule()
 
-	_ common.Notifiable           = (*Handler)(nil)
-	_ common.CentralGRPCConnAware = (*Handler)(nil)
-)
+	_ common.Notifiable = (*Handler)(nil)
 
-// proxyErrorHandler is the error handler for the reverse proxy.
-// It returns 503 for service unavailable errors and 500 for other errors.
-func proxyErrorHandler(w http.ResponseWriter, _ *http.Request, err error) {
-	log.Errorf("Proxy error: %v", err)
-	if errors.Is(err, errServiceUnavailable) {
-		http.Error(w, fmt.Sprintf("proxy temporarily unavailable: %v", err), http.StatusServiceUnavailable)
-		return
+	// authzSkipPathPrefixes contains endpoint path prefixes that skip Central authorization checks
+	// but still require authentication. Matching enforces segment boundaries: exact match or path
+	// starting with prefix + "/".
+	authzSkipPathPrefixes = []string{
+		"/static",
+		"/v1/config/public",
+		"/v1/featureflags",
+		"/v1/metadata",
+		"/v1/mypermissions",
+		"/v1/telemetry/config",
 	}
-	http.Error(w, fmt.Sprintf("failed to contact central: %v", err), http.StatusInternalServerError)
-}
+)
 
 // Handler handles HTTP proxy requests to Central.
 type Handler struct {
-	centralReachable atomic.Bool
-	clusterIDGetter  clusterIDGetter
-	authorizer       *k8sAuthorizer
-	transport        *scopedTokenTransport
 	proxy            *httputil.ReverseProxy
+	centralReachable atomic.Bool
+	authorizer       *k8sAuthorizer
 }
 
 // NewProxyHandler creates a new proxy handler that forwards requests to Central.
-func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certificate, clusterIDGetter clusterIDGetter) (*Handler, error) {
+func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certificate, token string) (*Handler, error) {
 	centralBaseURL, err := url.Parse(
 		urlfmt.FormatURL(centralEndpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash),
 	)
@@ -59,28 +53,15 @@ func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certifi
 		return nil, errors.Wrap(err, "parsing endpoint")
 	}
 
-	baseTransport, err := createBaseTransport(centralBaseURL, centralCertificates)
+	proxy, err := newCentralReverseProxy(centralBaseURL, centralCertificates, token)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating base transport")
-	}
-
-	transport := newScopedTokenTransport(baseTransport, clusterIDGetter)
-
-	proxy := &httputil.ReverseProxy{
-		Transport:    transport,
-		Rewrite:      func(r *httputil.ProxyRequest) { r.SetURL(centralBaseURL) },
-		ErrorHandler: proxyErrorHandler,
+		return nil, errors.Wrap(err, "creating central reverse proxy")
 	}
 
 	restConfig, err := k8sutil.GetK8sInClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "getting in-cluster config")
 	}
-	// Set QPS and Burst to avoid client-side throttling.
-	// The default k8s client-go values (QPS=5, Burst=10) are quite conservative
-	// and can cause "client-side throttling, not priority and fairness" warnings.
-	restConfig.QPS = float32(k8sClientQPS)
-	restConfig.Burst = k8sClientBurst
 	retryablehttp.ConfigureRESTConfig(restConfig)
 
 	k8sClient, err := kubernetes.NewForConfig(restConfig)
@@ -89,17 +70,9 @@ func NewProxyHandler(centralEndpoint string, centralCertificates []*x509.Certifi
 	}
 
 	return &Handler{
-		clusterIDGetter: clusterIDGetter,
-		authorizer:      newK8sAuthorizer(k8sClient),
-		transport:       transport,
-		proxy:           proxy,
+		proxy:      proxy,
+		authorizer: newK8sAuthorizer(k8sClient),
 	}, nil
-}
-
-// SetCentralGRPCClient implements common.CentralGRPCConnAware.
-// It sets the gRPC connection used by the token provider to request tokens from Central.
-func (h *Handler) SetCentralGRPCClient(cc grpc.ClientConnInterface) {
-	h.transport.SetClient(cc)
 }
 
 // Notify reacts to sensor going into online/offline mode.
@@ -130,43 +103,48 @@ func (h *Handler) validateRequest(request *http.Request) error {
 	return nil
 }
 
-// checkInternalTokenAPISupport checks if Central supports the internal token API capability.
-// The proxy requires this capability to function; all requests are rejected if unsupported.
-func checkInternalTokenAPISupport() error {
-	if !centralcaps.Has(centralsensor.InternalTokenAPISupported) {
-		return pkghttputil.NewError(http.StatusNotImplemented,
-			"proxy to Central is not available; Central does not support the internal token API required by this proxy")
+// isAuthzSkipPath checks if the request path matches any of the authorization-skip patterns.
+// These paths still require authentication but skip the authorization (SubjectAccessReview) check.
+// Matching enforces segment boundaries: path must equal pattern exactly or start with pattern + "/".
+// This prevents "/v1/metadata" from matching "/v1/metadataExtra".
+func isAuthzSkipPath(requestPath string) bool {
+	// Normalize the path before authorization checks to prevent bypass via path manipulation
+	// (e.g., double slashes, dot segments).
+	normalizedPath := path.Clean(requestPath)
+
+	for _, pattern := range authzSkipPathPrefixes {
+		if normalizedPath == pattern || strings.HasPrefix(normalizedPath, pattern+"/") {
+			return true
+		}
 	}
-	return nil
+	return false
 }
 
 // ServeHTTP handles incoming HTTP requests and proxies them to Central.
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
-	if err := checkInternalTokenAPISupport(); err != nil {
-		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
-		return
-	}
-
 	if err := h.validateRequest(request); err != nil {
-		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
+		pkghttputil.WriteError(writer, err)
 		return
 	}
 
 	if h.authorizer == nil {
 		log.Error("Authorizer is nil - this indicates a misconfiguration in the central proxy handler")
-		http.Error(writer, "authorizer not configured", http.StatusInternalServerError)
+		pkghttputil.WriteError(writer, pkghttputil.NewError(http.StatusInternalServerError, "authorizer not configured"))
 		return
 	}
 
+	// Require authentication for all endpoints.
 	userInfo, err := h.authorizer.authenticate(request.Context(), request)
 	if err != nil {
-		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
+		pkghttputil.WriteError(writer, err)
 		return
 	}
 
-	if err := h.authorizer.authorize(request.Context(), userInfo, request); err != nil {
-		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
-		return
+	if !isAuthzSkipPath(request.URL.Path) {
+		if err := h.authorizer.authorize(request.Context(), userInfo, request); err != nil {
+			pkghttputil.WriteError(writer, err)
+			return
+		}
 	}
 
 	h.proxy.ServeHTTP(writer, request)

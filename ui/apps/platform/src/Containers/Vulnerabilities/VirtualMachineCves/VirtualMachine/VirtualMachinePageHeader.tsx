@@ -1,6 +1,6 @@
 import { Alert, Flex, Label, LabelGroup, Title } from '@patternfly/react-core';
 
-import TechnologyPreviewLabel from 'Components/PatternFly/PreviewLabel/TechnologyPreviewLabel';
+import DeveloperPreviewLabel from 'Components/PatternFly/DeveloperPreviewLabel';
 import type { VirtualMachine } from 'services/VirtualMachineService';
 import { getDateTime } from 'utils/dateUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
@@ -8,13 +8,13 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 
 export type VirtualMachinePageHeaderProps = {
-    virtualMachine: VirtualMachine | undefined;
+    virtualMachineData: VirtualMachine | undefined;
     isLoading: boolean;
     error: Error | undefined;
 };
 
 function VirtualMachinePageHeader({
-    virtualMachine,
+    virtualMachineData,
     isLoading,
     error,
 }: VirtualMachinePageHeaderProps) {
@@ -40,25 +40,22 @@ function VirtualMachinePageHeader({
         );
     }
 
-    if (!virtualMachine) {
+    if (!virtualMachineData) {
         return null;
     }
 
     return (
         <Flex direction={{ default: 'column' }} alignItems={{ default: 'alignItemsFlexStart' }}>
             <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                <Title headingLevel="h1">{virtualMachine.name}</Title>
-                <TechnologyPreviewLabel />
+                <Title headingLevel="h1">{virtualMachineData.name}</Title>
+                <DeveloperPreviewLabel />
             </Flex>
             <LabelGroup numLabels={5}>
                 <Label>
-                    In: {virtualMachine.clusterName}/{virtualMachine.namespace}
+                    In: {virtualMachineData.clusterName}/{virtualMachineData.namespace}
                 </Label>
-                {virtualMachine.scan?.scanTime && (
-                    <Label>Scan time: {getDateTime(virtualMachine.scan.scanTime)}</Label>
-                )}
-                {virtualMachine?.facts?.guestOS && (
-                    <Label>Guest OS: {virtualMachine.facts.guestOS}</Label>
+                {virtualMachineData.scan?.scanTime && (
+                    <Label>Scan time: {getDateTime(virtualMachineData.scan.scanTime)}</Label>
                 )}
             </LabelGroup>
         </Flex>

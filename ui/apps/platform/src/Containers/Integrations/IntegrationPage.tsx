@@ -18,7 +18,7 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import type { Traits } from 'types/traits.proto';
 import TraitsOriginLabel from 'Components/TraitsOriginLabel';
 import { isUserResource } from 'utils/traits.utils';
-import TechnologyPreviewLabel from 'Components/PatternFly/PreviewLabel/TechnologyPreviewLabel';
+import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
 import { getIntegrationLabel } from './utils/integrationsList';
 import { getEditDisabledMessage, getIsMachineAccessConfig } from './utils/integrationUtils';
 import usePageState from './hooks/usePageState';
@@ -72,7 +72,7 @@ function IntegrationPage({ title, name, traits, children }: IntegrationPageProps
                     )}
                     {isTechPreview && (
                         <FlexItem>
-                            <TechnologyPreviewLabel />
+                            <TechPreviewLabel />
                         </FlexItem>
                     )}
                     {hasTraitsLabel && <TraitsOriginLabel traits={traits} />}

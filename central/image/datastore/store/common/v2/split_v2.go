@@ -96,12 +96,7 @@ func GenerateImageComponentV2(os string, image *storage.Image, index int, from *
 			LayerIndex: from.GetLayerIndex(),
 		}
 	}
-
-	ret.LayerType = storage.LayerType_APPLICATION
-	if len(image.GetBaseImageInfo()) > 0 && from.GetHasLayerIndex() != nil {
-		if from.GetLayerIndex() <= image.GetBaseImageInfo()[0].GetMaxLayerIndex() {
-			ret.LayerType = storage.LayerType_BASE_IMAGE
-		}
-	}
+	// TODO ROX-31847 compute image component base image layer type
+	ret.FromBaseImage = len(image.GetBaseImageInfo()) > 0
 	return ret, nil
 }

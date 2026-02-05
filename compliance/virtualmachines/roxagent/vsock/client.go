@@ -17,10 +17,9 @@ import (
 var log = logging.LoggerForModule()
 
 type Client struct {
-	Port     uint32
-	HostPath string
-	Timeout  time.Duration
-	Verbose  bool
+	Port    uint32
+	Timeout time.Duration
+	Verbose bool
 }
 
 func (c *Client) SendIndexReport(report *v4.IndexReport) error {
@@ -33,13 +32,15 @@ func (c *Client) SendIndexReport(report *v4.IndexReport) error {
 		IndexV4:  report,
 	}
 
-	// Discover VM data from host system
-	discovered := DiscoverVMData(c.HostPath)
-
-	// Create VMReport with discovered data values.
+	// Create VMReport with placeholder discovered data values.
 	vmReport := &v1.VMReport{
-		IndexReport:    wrappedReport,
-		DiscoveredData: discovered,
+		IndexReport: wrappedReport,
+		DiscoveredData: &v1.DiscoveredData{
+			DetectedOs:        v1.DetectedOS_UNKNOWN, // TODO: get proper values from VM.
+			OsVersion:         "",
+			ActivationStatus:  v1.ActivationStatus_ACTIVATION_UNSPECIFIED,
+			DnfMetadataStatus: v1.DnfMetadataStatus_DNF_METADATA_UNSPECIFIED,
+		},
 	}
 
 	if c.Verbose {

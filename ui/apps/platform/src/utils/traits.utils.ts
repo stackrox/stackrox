@@ -9,7 +9,6 @@ export const traitsOriginLabels = {
     IMPERATIVE: 'User',
     DECLARATIVE: 'Declarative',
     DECLARATIVE_ORPHANED: 'Declarative, Orphaned',
-    EPHEMERAL: 'Ephemeral',
 } as const;
 
 export const originLabelColours = {

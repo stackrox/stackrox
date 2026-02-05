@@ -32,8 +32,8 @@ func BenchmarkAddIndicator(b *testing.B) {
 	datastore := New(db, store, plopStore, nil)
 
 	ctx := sac.WithAllAccess(context.Background())
-
-	for b.Loop() {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
 		err := datastore.AddProcessIndicators(ctx, indicators...)
 		require.NoError(b, err)
 	}
@@ -131,7 +131,8 @@ func BenchmarkProcessIndicators(b *testing.B) {
 	// Search benchmarks - non-destructive, can run multiple times
 	b.Run("Search/ByDeployment1", func(b *testing.B) {
 		query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, fixtureconsts.Deployment1).ProtoQuery()
-		for b.Loop() {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
 			results, err := datastore.SearchRawProcessIndicators(ctx, query)
 			require.NoError(b, err)
 			require.True(b, len(results) > 0)
@@ -140,7 +141,8 @@ func BenchmarkProcessIndicators(b *testing.B) {
 
 	b.Run("Search/ByDeployment2", func(b *testing.B) {
 		query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, fixtureconsts.Deployment2).ProtoQuery()
-		for b.Loop() {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
 			results, err := datastore.SearchRawProcessIndicators(ctx, query)
 			require.NoError(b, err)
 			require.True(b, len(results) > 0)
@@ -149,7 +151,8 @@ func BenchmarkProcessIndicators(b *testing.B) {
 
 	b.Run("Search/ByDeployment3", func(b *testing.B) {
 		query := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, fixtureconsts.Deployment3).ProtoQuery()
-		for b.Loop() {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
 			results, err := datastore.SearchRawProcessIndicators(ctx, query)
 			require.NoError(b, err)
 			require.True(b, len(results) > 0)
@@ -158,7 +161,8 @@ func BenchmarkProcessIndicators(b *testing.B) {
 
 	b.Run("Search/ByD1PodID1", func(b *testing.B) {
 		query := search.NewQueryBuilder().AddExactMatches(search.PodUID, d1PodID1).ProtoQuery()
-		for b.Loop() {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
 			results, err := datastore.SearchRawProcessIndicators(ctx, query)
 			require.NoError(b, err)
 			require.True(b, len(results) > 0)
@@ -167,7 +171,8 @@ func BenchmarkProcessIndicators(b *testing.B) {
 
 	b.Run("Search/ByD2PodID1", func(b *testing.B) {
 		query := search.NewQueryBuilder().AddExactMatches(search.PodUID, d2PodID1).ProtoQuery()
-		for b.Loop() {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
 			results, err := datastore.SearchRawProcessIndicators(ctx, query)
 			require.NoError(b, err)
 			require.True(b, len(results) > 0)
@@ -176,7 +181,8 @@ func BenchmarkProcessIndicators(b *testing.B) {
 
 	b.Run("Search/ByD3PodID1", func(b *testing.B) {
 		query := search.NewQueryBuilder().AddExactMatches(search.PodUID, d3PodID1).ProtoQuery()
-		for b.Loop() {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
 			results, err := datastore.SearchRawProcessIndicators(ctx, query)
 			require.NoError(b, err)
 			require.True(b, len(results) > 0)
@@ -211,7 +217,8 @@ func BenchmarkProcessIndicators(b *testing.B) {
 	}
 
 	b.Run("Delete/ByDeployment1", func(b *testing.B) {
-		for b.Loop() {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
 			b.StopTimer()
 			// Re-add before each iteration
 			err := datastore.AddProcessIndicators(ctx, d1Results...)
@@ -225,7 +232,8 @@ func BenchmarkProcessIndicators(b *testing.B) {
 	})
 
 	b.Run("Delete/ByD1PodID2", func(b *testing.B) {
-		for b.Loop() {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
 			b.StopTimer()
 			// Re-add before each iteration
 			err := datastore.AddProcessIndicators(ctx, d1PodID2Results...)

@@ -18,14 +18,14 @@ var (
 		Help:      "Total number of pubsub lane publish operations by lane, topic, and operation type",
 	}, []string{"lane_id", "topic", "operation"})
 
-	// LaneConsumerOperations tracks all publish operations across lanes.
+	// laneConsumerOperations tracks all publish operations across lanes.
 	// Operations: success, error, no_consumers
-	LaneConsumerOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
+	laneConsumerOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "pubsub_lane_consumer_operations_total",
-		Help:      "Total number of pubsub lane consumer operations by lane, topic, consumer, and operation type",
-	}, []string{"lane_id", "topic", "consumer_id", "operation"})
+		Help:      "Total number of pubsub lane consumer operations by lane, topic, and operation type",
+	}, []string{"lane_id", "topic", "operation"})
 
 	// laneQueueSize tracks the current number of events in each lane's buffer.
 	laneQueueSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -40,9 +40,9 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "pubsub_lane_event_processing_duration_seconds",
-		Help:      "Time spent processing an event by each consumer callback",
+		Help:      "Time spent processing an event through all consumer callbacks",
 		Buckets:   []float64{0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5},
-	}, []string{"lane_id", "topic", "consumer_id", "operation"})
+	}, []string{"lane_id", "topic", "operation"})
 
 	// consumersCurrent tracks the number of registered consumers per lane/topic.
 	consumersCurrent = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -57,16 +57,16 @@ func RecordPublishOperation(laneID pubsub.LaneID, topic pubsub.Topic, operation 
 	lanePublishOperations.WithLabelValues(laneID.String(), topic.String(), operation.String()).Inc()
 }
 
-func RecordConsumerOperation(laneID pubsub.LaneID, topic pubsub.Topic, consumerID pubsub.ConsumerID, operation Operation) {
-	LaneConsumerOperations.WithLabelValues(laneID.String(), topic.String(), consumerID.String(), operation.String()).Inc()
+func RecordConsumerOperation(laneID pubsub.LaneID, topic pubsub.Topic, operation Operation) {
+	laneConsumerOperations.WithLabelValues(laneID.String(), topic.String(), operation.String()).Inc()
 }
 
 func SetQueueSize(laneID pubsub.LaneID, size int) {
 	laneQueueSize.WithLabelValues(laneID.String()).Set(float64(size))
 }
 
-func ObserveProcessingDuration(laneID pubsub.LaneID, topic pubsub.Topic, consumerID pubsub.ConsumerID, duration time.Duration, operation Operation) {
-	laneEventProcessingDuration.WithLabelValues(laneID.String(), topic.String(), consumerID.String(), operation.String()).Observe(duration.Seconds())
+func ObserveProcessingDuration(laneID pubsub.LaneID, topic pubsub.Topic, duration time.Duration, operation Operation) {
+	laneEventProcessingDuration.WithLabelValues(laneID.String(), topic.String(), operation.String()).Observe(duration.Seconds())
 }
 
 func RecordConsumerCount(laneID pubsub.LaneID, topic pubsub.Topic, count int) {
@@ -76,7 +76,7 @@ func RecordConsumerCount(laneID pubsub.LaneID, topic pubsub.Topic, count int) {
 func init() {
 	prometheus.MustRegister(
 		lanePublishOperations,
-		LaneConsumerOperations,
+		laneConsumerOperations,
 		laneQueueSize,
 		laneEventProcessingDuration,
 		consumersCurrent,

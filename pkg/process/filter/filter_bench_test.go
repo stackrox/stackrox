@@ -26,7 +26,8 @@ func BenchmarkAdd(b *testing.B) {
 		}
 	}
 
-	for i := 0; b.Loop(); i++ {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
 		filter.Add(indicators[i%len(indicators)])
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
@@ -41,7 +40,7 @@ func (c *TestClock) Advance(d time.Duration) {
 // mustNewLimiter creates a limiter or fails the test.
 func mustNewLimiter(t *testing.T, workloadName string, globalRate float64, bucketCapacity int) *Limiter {
 	t.Helper()
-	limiter, err := NewLimiter(workloadName, globalRate, bucketCapacity).ForAllWorkloads()
+	limiter, err := NewLimiter(workloadName, globalRate, bucketCapacity)
 	require.NoError(t, err)
 	return limiter
 }
@@ -49,127 +48,51 @@ func mustNewLimiter(t *testing.T, workloadName string, globalRate float64, bucke
 // mustNewLimiterWithClock creates a limiter with an injectable clock or fails the test.
 func mustNewLimiterWithClock(t *testing.T, workloadName string, globalRate float64, bucketCapacity int, clock Clock) *Limiter {
 	t.Helper()
-	limiter, err := NewLimiterWithClock(workloadName, globalRate, bucketCapacity, clock).ForAllWorkloads()
+	limiter, err := NewLimiterWithClock(workloadName, globalRate, bucketCapacity, clock)
 	require.NoError(t, err)
 	return limiter
 }
 
 func TestNewLimiter(t *testing.T) {
 	t.Run("should create a new limiter", func(t *testing.T) {
-		limiter, err := NewLimiter(workloadName, 10.0, 50).ForAllWorkloads()
+		limiter, err := NewLimiter(workloadName, 10.0, 50)
 		require.NoError(t, err)
 		assert.Equal(t, 10.0, limiter.GlobalRate())
 		assert.Equal(t, 50, limiter.BucketCapacity())
 		assert.Equal(t, workloadName, limiter.WorkloadName())
 	})
 	t.Run("should create a new limiter with rate limiting disabled", func(t *testing.T) {
-		limiter, err := NewLimiter(workloadName, 0.0, 1).ForAllWorkloads() // rate=0 disables limiting, bucketCapacity still must be >= 1
+		limiter, err := NewLimiter(workloadName, 0.0, 1) // rate=0 disables limiting, bucketCapacity still must be >= 1
 		require.NoError(t, err)
 		assert.Equal(t, 0.0, limiter.GlobalRate())
 		assert.Equal(t, 1, limiter.BucketCapacity())
 		assert.Equal(t, workloadName, limiter.WorkloadName())
 	})
 	t.Run("should create a new limiter with rate higher than bucket capacity", func(t *testing.T) {
-		limiter, err := NewLimiter(workloadName, 50.0, 2).ForAllWorkloads()
+		limiter, err := NewLimiter(workloadName, 50.0, 2)
 		require.NoError(t, err)
 		assert.Equal(t, 50.0, limiter.GlobalRate())
 		assert.Equal(t, 2, limiter.BucketCapacity())
 		assert.Equal(t, workloadName, limiter.WorkloadName())
 	})
 	t.Run("should error on empty workload name", func(t *testing.T) {
-		_, err := NewLimiter("", 10.0, 50).ForAllWorkloads()
+		_, err := NewLimiter("", 10.0, 50)
 		assert.ErrorIs(t, err, ErrEmptyWorkloadName)
 	})
 	t.Run("should error on negative rate", func(t *testing.T) {
-		_, err := NewLimiter(workloadName, -1.0, 50).ForAllWorkloads()
+		_, err := NewLimiter(workloadName, -1.0, 50)
 		assert.ErrorIs(t, err, ErrNegativeRate)
 	})
 	t.Run("should error on zero bucket capacity", func(t *testing.T) {
-		_, err := NewLimiter(workloadName, 10.0, 0).ForAllWorkloads()
+		_, err := NewLimiter(workloadName, 10.0, 0)
 		assert.ErrorIs(t, err, ErrInvalidBucketCapacity)
 	})
-}
-
-func TestLimiterOption_ForWorkload(t *testing.T) {
-	tests := map[string]struct {
-		workloadName    string
-		globalRate      float64
-		bucketCapacity  int
-		acceptsFn       func(msg *central.MsgFromSensor) bool
-		expectedErr     error
-		expectedErrText string
-		expectLimiter   bool
-		shouldSkipCheck bool
-	}{
-		"should return error when acceptsFn is nil": {
-			workloadName:    workloadName,
-			globalRate:      1,
-			bucketCapacity:  1,
-			acceptsFn:       nil,
-			expectedErrText: "acceptsFn must not be nil",
-		},
-		"should return error when limiter creation fails": {
-			workloadName:   "",
-			globalRate:     1,
-			bucketCapacity: 1,
-			acceptsFn: func(msg *central.MsgFromSensor) bool {
-				return msg != nil
-			},
-			expectedErr: ErrEmptyWorkloadName,
-		},
-		"should allow configuring a workload filter": {
-			workloadName:   workloadName,
-			globalRate:     1,
-			bucketCapacity: 1,
-			acceptsFn: func(msg *central.MsgFromSensor) bool {
-				return msg != nil
-			},
-			expectLimiter:   true,
-			shouldSkipCheck: true,
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			limiter, err := NewLimiter(tt.workloadName, tt.globalRate, tt.bucketCapacity).ForWorkload(tt.acceptsFn)
-			if tt.expectedErr != nil || tt.expectedErrText != "" {
-				require.Error(t, err)
-				if tt.expectedErr != nil {
-					assert.ErrorIs(t, err, tt.expectedErr)
-				}
-				if tt.expectedErrText != "" {
-					assert.EqualError(t, err, tt.expectedErrText)
-				}
-				assert.Nil(t, limiter)
-				return
-			}
-			require.NoError(t, err)
-			if tt.expectLimiter {
-				assert.NotNil(t, limiter)
-			}
-			if !tt.shouldSkipCheck {
-				return
-			}
-
-			allowed, reason := limiter.TryConsume("client-1", &central.MsgFromSensor{})
-			require.True(t, allowed)
-			assert.Empty(t, reason)
-
-			allowed, reason = limiter.TryConsume("client-1", &central.MsgFromSensor{})
-			assert.False(t, allowed)
-			assert.Equal(t, ReasonRateLimitExceeded, reason)
-
-			allowed, reason = limiter.TryConsume("client-1", nil)
-			assert.True(t, allowed)
-			assert.Empty(t, reason)
-		})
-	}
 }
 
 func TestTryConsume_Disabled(t *testing.T) {
 	limiter := mustNewLimiter(t, "test", 0, 5)
 	for i := range 100 {
-		allowed, reason := limiter.TryConsume("test-cluster", nil)
+		allowed, reason := limiter.TryConsume("test-cluster")
 		assert.True(t, allowed, "request %d should be allowed when rate limiting is disabled", i)
 		assert.Empty(t, reason)
 	}
@@ -181,24 +104,24 @@ func TestTryConsume_SingleClient(t *testing.T) {
 
 	// With 1 client, per-client burst = 50/1 = 50 requests
 	for i := range 50 {
-		allowed, reason := limiter.TryConsume("client-1", nil)
+		allowed, reason := limiter.TryConsume("client-1")
 		assert.True(t, allowed, "request %d should be allowed within burst", i)
 		assert.Empty(t, reason)
 	}
 
 	// Time is frozen - no new tokens can be added between requests.
 	// 51st request should be rejected (burst exhausted)
-	allowed, reason := limiter.TryConsume("client-1", nil)
+	allowed, reason := limiter.TryConsume("client-1")
 	assert.False(t, allowed, "request should be rejected after burst exhausted")
 	assert.Equal(t, "rate limit exceeded", reason)
 
 	// Advance time and verify tokens refill correctly
 	clock.Advance(500 * time.Millisecond) // At 10 req/s, expect ~5 tokens
 	for i := range 5 {
-		allowed, _ := limiter.TryConsume("client-1", nil)
+		allowed, _ := limiter.TryConsume("client-1")
 		assert.True(t, allowed, "request %d should be allowed after time advance", i)
 	}
-	allowed, _ = limiter.TryConsume("client-1", nil)
+	allowed, _ = limiter.TryConsume("client-1")
 	assert.False(t, allowed, "should be rejected after consuming refilled tokens")
 }
 
@@ -218,26 +141,26 @@ func TestTryConsume_MultipleClients_Fairness(t *testing.T) {
 
 	// Exhaust burst for client-1 (20 requests)
 	for i := range 20 {
-		allowed, _ := limiter.TryConsume(client1, nil)
+		allowed, _ := limiter.TryConsume(client1)
 		assert.True(t, allowed, "client-1 request %d should be allowed", i)
 	}
-	allowed, _ := limiter.TryConsume(client1, nil)
+	allowed, _ := limiter.TryConsume(client1)
 	assert.False(t, allowed, "client-1 should be rate limited after burst")
 
 	// client-2 and client-3 should still have their full burst capacity
 	for i := range 20 {
-		allowed, _ := limiter.TryConsume(client2, nil)
+		allowed, _ := limiter.TryConsume(client2)
 		assert.True(t, allowed, "client-2 request %d should be allowed", i)
 	}
 	for i := range 20 {
-		allowed, _ := limiter.TryConsume(client3, nil)
+		allowed, _ := limiter.TryConsume(client3)
 		assert.True(t, allowed, "client-3 request %d should be allowed", i)
 	}
 
 	// All clients exhausted - time is frozen so no tokens refilled
-	allowed, _ = limiter.TryConsume(client2, nil)
+	allowed, _ = limiter.TryConsume(client2)
 	assert.False(t, allowed, "client-2 should be rate limited")
-	allowed, _ = limiter.TryConsume(client3, nil)
+	allowed, _ = limiter.TryConsume(client3)
 	assert.False(t, allowed, "client-3 should be rate limited")
 }
 
@@ -248,19 +171,19 @@ func TestTryConsume_Rebalancing(t *testing.T) {
 
 	// Start with client-1: per-client burst = 100/1 = 100
 	for i := range 100 {
-		allowed, _ := limiter.TryConsume("client-1", nil)
+		allowed, _ := limiter.TryConsume("client-1")
 		assert.True(t, allowed, "client-1 initial request %d should be allowed", i)
 	}
-	allowed, _ := limiter.TryConsume("client-1", nil)
+	allowed, _ := limiter.TryConsume("client-1")
 	assert.False(t, allowed, "client-1 should be rate limited after initial burst")
 
 	// Add client-2: rebalances to per-client burst = 100/2 = 50
 	// client-2 gets fresh bucket with capacity 50
 	for i := range 50 {
-		allowed, _ := limiter.TryConsume("client-2", nil)
+		allowed, _ := limiter.TryConsume("client-2")
 		assert.True(t, allowed, "client-2 request %d should be allowed after rebalancing", i)
 	}
-	allowed, _ = limiter.TryConsume("client-2", nil)
+	allowed, _ = limiter.TryConsume("client-2")
 	assert.False(t, allowed, "client-2 should be rate limited after burst")
 
 	// Advance time for token refill (at 5 req/s per client, 7 tokens refill in 1.4 seconds)
@@ -269,9 +192,9 @@ func TestTryConsume_Rebalancing(t *testing.T) {
 	// Both clients should get ~7 tokens back (5 req/s * 1.5s)
 	// Verify we can make a few requests
 	for range 5 {
-		allowed, _ := limiter.TryConsume("client-1", nil)
+		allowed, _ := limiter.TryConsume("client-1")
 		assert.True(t, allowed, "client-1 should have refilled tokens")
-		allowed, _ = limiter.TryConsume("client-2", nil)
+		allowed, _ = limiter.TryConsume("client-2")
 		assert.True(t, allowed, "client-2 should have refilled tokens")
 	}
 }
@@ -283,12 +206,12 @@ func TestTryConsume_BurstWindow(t *testing.T) {
 
 	// With 1 client, per-client burst = 100/1 = 100
 	for i := range 100 {
-		allowed, _ := limiter.TryConsume("client-1", nil)
+		allowed, _ := limiter.TryConsume("client-1")
 		assert.True(t, allowed, "request %d should be allowed within burst", i)
 	}
 
 	// 101st request rejected
-	allowed, _ := limiter.TryConsume("client-1", nil)
+	allowed, _ := limiter.TryConsume("client-1")
 	assert.False(t, allowed, "request should be rejected after burst exhausted")
 
 	// Advance time for refill (at 10 req/s, 15 tokens refill in 1.5 seconds)
@@ -296,7 +219,7 @@ func TestTryConsume_BurstWindow(t *testing.T) {
 
 	// Should get ~15 tokens back - verify we can make at least 10 requests
 	for range 10 {
-		allowed, _ = limiter.TryConsume("client-1", nil)
+		allowed, _ = limiter.TryConsume("client-1")
 		assert.True(t, allowed, "should have refilled tokens")
 	}
 }
@@ -340,28 +263,28 @@ func TestRebalancing_DynamicClientCount(t *testing.T) {
 
 	// Client 1: gets 30/1 = 30 req/s, burst = 30*10s = 300
 	for range 300 {
-		allowed, _ := limiter.TryConsume("client-1", nil)
+		allowed, _ := limiter.TryConsume("client-1")
 		assert.True(t, allowed)
 	}
 
 	// Add client 2: rebalances to 30/2 = 15 req/s each, burst = 15*10s = 150
 	for range 150 {
-		allowed, _ := limiter.TryConsume("client-2", nil)
+		allowed, _ := limiter.TryConsume("client-2")
 		assert.True(t, allowed)
 	}
 
 	// Add client 3: rebalances to 30/3 = 10 req/s each, burst = 10*10s = 100
 	for range 100 {
-		allowed, _ := limiter.TryConsume("client-3", nil)
+		allowed, _ := limiter.TryConsume("client-3")
 		assert.True(t, allowed)
 	}
 
 	// All clients should be limited now - time is frozen
-	allowed, _ := limiter.TryConsume("client-1", nil)
+	allowed, _ := limiter.TryConsume("client-1")
 	assert.False(t, allowed)
-	allowed, _ = limiter.TryConsume("client-2", nil)
+	allowed, _ = limiter.TryConsume("client-2")
 	assert.False(t, allowed)
-	allowed, _ = limiter.TryConsume("client-3", nil)
+	allowed, _ = limiter.TryConsume("client-3")
 	assert.False(t, allowed)
 
 	// Advance time for token refill (at 10 req/s per client, 15 tokens refill in 1.5s)
@@ -369,25 +292,13 @@ func TestRebalancing_DynamicClientCount(t *testing.T) {
 
 	// Each client should get ~15 tokens back - verify at least 10 work
 	for range 10 {
-		allowed, _ := limiter.TryConsume("client-1", nil)
+		allowed, _ := limiter.TryConsume("client-1")
 		assert.True(t, allowed, "client-1 should get tokens after refill")
-		allowed, _ = limiter.TryConsume("client-2", nil)
+		allowed, _ = limiter.TryConsume("client-2")
 		assert.True(t, allowed, "client-2 should get tokens after refill")
-		allowed, _ = limiter.TryConsume("client-3", nil)
+		allowed, _ = limiter.TryConsume("client-3")
 		assert.True(t, allowed, "client-3 should get tokens after refill")
 	}
-}
-
-func TestOnClientDisconnect_Nil(t *testing.T) {
-	clock := NewTestClock(time.Now())
-	// intentionally broken rate-limiter
-	limiter, err := NewLimiterWithClock(workloadName, -1.0, -2.0, clock).ForAllWorkloads()
-	assert.Error(t, err)
-	assert.Nil(t, limiter)
-	assert.NotPanics(t, func() {
-		limiter.OnClientDisconnect("client-2")
-		limiter.TryConsume("client-2", nil)
-	})
 }
 
 func TestOnClientDisconnect(t *testing.T) {
@@ -400,10 +311,10 @@ func TestOnClientDisconnect(t *testing.T) {
 
 	// Exhaust client-1's burst
 	for i := 0; i < 50; i++ {
-		allowed, _ := limiter.TryConsume("client-1", nil)
+		allowed, _ := limiter.TryConsume("client-1")
 		assert.True(t, allowed)
 	}
-	allowed, _ := limiter.TryConsume("client-1", nil)
+	allowed, _ := limiter.TryConsume("client-1")
 	assert.False(t, allowed, "client-1 should be limited after burst")
 
 	// Disconnect client-2

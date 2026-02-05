@@ -10,6 +10,7 @@ import (
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/common"
 	"github.com/stackrox/rox/operator/internal/securedcluster/defaults"
+	"github.com/stackrox/rox/pkg/features"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -18,7 +19,6 @@ import (
 var defaultingFlows = []defaults.SecuredClusterDefaultingFlow{
 	defaults.SecuredClusterStaticDefaults, // Must go first
 	defaults.SecuredClusterScannerV4DefaultingFlow,
-	defaults.SecuredClusterAdmissionControllerDefaultingFlow,
 }
 
 // FeatureDefaultingExtension executes "defaulting flows". A Secured Cluster defaulting flow is of type
@@ -69,10 +69,15 @@ func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *
 // If an update is necessary, it patches the object on the cluster and returns an error to indicate that reconciliation should be retried.
 // In this case the provided unstructured u will also be updated as part of the patching.
 func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, u *unstructured.Unstructured, securedCluster *platform.SecuredCluster, client ctrlClient.Client) error {
+	effectiveDefaultingFlows := defaultingFlows
+	if features.AdmissionControllerConfig.Enabled() {
+		effectiveDefaultingFlows = append(effectiveDefaultingFlows, defaults.SecuredClusterAdmissionControllerDefaultingFlow)
+	}
+
 	uBase := u.DeepCopy()
 	patch := ctrlClient.MergeFrom(uBase)
 
-	for _, flow := range defaultingFlows {
+	for _, flow := range effectiveDefaultingFlows {
 		if err := executeSingleDefaultingFlow(logger, u, securedCluster, flow); err != nil {
 			return err
 		}

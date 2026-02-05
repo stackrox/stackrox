@@ -8,7 +8,6 @@ import (
 	"sort"
 	"testing"
 
-	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/image/datastore/keyfence"
@@ -20,7 +19,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgCVE "github.com/stackrox/rox/pkg/cve"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -45,14 +43,13 @@ func TestImageFlatDataStoreWithPostgres(t *testing.T) {
 type ImageFlatPostgresDataStoreTestSuite struct {
 	suite.Suite
 
-	ctx                   context.Context
-	testDB                *pgtest.TestPostgres
-	db                    postgres.DB
-	datastore             DataStore
-	mockRisk              *mockRisks.MockDataStore
-	componentDataStore    imageComponentDS.DataStore
-	cveDataStore          imageCVEDS.DataStore
-	imageCVEInfoDatastore imageCVEInfoDS.DataStore
+	ctx                context.Context
+	testDB             *pgtest.TestPostgres
+	db                 postgres.DB
+	datastore          DataStore
+	mockRisk           *mockRisks.MockDataStore
+	componentDataStore imageComponentDS.DataStore
+	cveDataStore       imageCVEDS.DataStore
 }
 
 func (s *ImageFlatPostgresDataStoreTestSuite) SetupSuite() {
@@ -63,9 +60,8 @@ func (s *ImageFlatPostgresDataStoreTestSuite) SetupSuite() {
 
 func (s *ImageFlatPostgresDataStoreTestSuite) SetupTest() {
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
-	s.imageCVEInfoDatastore = imageCVEInfoDS.GetTestPostgresDataStore(s.T(), s.db)
 	dbStore := pgStoreV2.New(s.db, false, keyfence.ImageKeyFenceSingleton())
-	s.datastore = NewWithPostgres(dbStore, s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker(), s.imageCVEInfoDatastore)
+	s.datastore = NewWithPostgres(dbStore, s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
 
 	componentStorage := imageComponentPostgres.New(s.db)
 	s.componentDataStore = imageComponentDS.New(componentStorage, s.mockRisk, ranking.NewRanker())
@@ -80,7 +76,6 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TearDownTest() {
 	s.truncateTable(postgresSchema.ImagesTableName)
 	s.truncateTable(postgresSchema.ImageComponentV2TableName)
 	s.truncateTable(postgresSchema.ImageCvesV2TableName)
-	s.truncateTable(postgresSchema.ImageCveInfosTableName)
 }
 
 func (s *ImageFlatPostgresDataStoreTestSuite) TestSearchWithPostgres() {
@@ -353,14 +348,9 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestImageDeletes() {
 	storedImage, found, err := s.datastore.GetImage(ctx, testImage.GetId())
 	s.NoError(err)
 	s.True(found)
-	for compI, component := range testImage.GetScan().GetComponents() {
-		for cveI, cve := range component.GetVulns() {
-			if features.CVEFixTimestampCriteria.Enabled() {
-				cve.FirstSystemOccurrence = storedImage.GetScan().GetComponents()[compI].GetVulns()[cveI].GetFirstSystemOccurrence()
-				cve.FixAvailableTimestamp = storedImage.GetScan().GetComponents()[compI].GetVulns()[cveI].GetFixAvailableTimestamp()
-			} else {
-				cve.FirstSystemOccurrence = storedImage.GetLastUpdated()
-			}
+	for _, component := range testImage.GetScan().GetComponents() {
+		for _, cve := range component.GetVulns() {
+			cve.FirstSystemOccurrence = storedImage.GetLastUpdated()
 			cve.FirstImageOccurrence = storedImage.GetLastUpdated()
 			cve.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
 		}
@@ -412,7 +402,7 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestImageDeletes() {
 	s.True(found)
 	for _, component := range testImage2.GetScan().GetComponents() {
 		for _, cve := range component.GetVulns() {
-			// System Occurrence and fix available times remain unchanged.
+			// System Occurrence remains unchanged.
 			cve.FirstImageOccurrence = storedImage.GetLastUpdated()
 			cve.VulnerabilityTypes = []storage.EmbeddedVulnerability_VulnerabilityType{storage.EmbeddedVulnerability_IMAGE_VULNERABILITY}
 		}
@@ -446,15 +436,10 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestImageDeletes() {
 	storedImage, found, err = s.datastore.GetImage(ctx, testImage2.GetId())
 	s.NoError(err)
 	s.True(found)
-	for compI, component := range testImage2.GetScan().GetComponents() {
+	for _, component := range testImage2.GetScan().GetComponents() {
 		// Components and Vulns are deduped, therefore, update testImage structure.
-		for cveI, cve := range component.GetVulns() {
-			if features.CVEFixTimestampCriteria.Enabled() {
-				cve.FirstSystemOccurrence = storedImage.GetScan().GetComponents()[compI].GetVulns()[cveI].GetFirstSystemOccurrence()
-				cve.FixAvailableTimestamp = storedImage.GetScan().GetComponents()[compI].GetVulns()[cveI].GetFixAvailableTimestamp()
-			} else {
-				cve.FirstSystemOccurrence = storedImage.GetLastUpdated()
-			}
+		for _, cve := range component.GetVulns() {
+			cve.FirstSystemOccurrence = storedImage.GetLastUpdated()
 			cve.FirstImageOccurrence = storedImage.GetLastUpdated()
 		}
 	}
@@ -636,205 +621,5 @@ func cloneAndUpdateRiskPriority(image *storage.Image) *storage.Image {
 	for _, component := range cloned.GetScan().GetComponents() {
 		component.Priority = 1
 	}
-	cloned.LastUpdated = image.GetLastUpdated()
 	return cloned
-}
-
-// TestImageCVEInfoIntegration tests the ImageCVEInfo lookup table integration
-func (s *ImageFlatPostgresDataStoreTestSuite) TestImageCVEInfoIntegration_PopulatesTable() {
-	// Enable the feature flag
-	s.T().Setenv("ROX_CVE_FIX_TIMESTAMP", "true")
-
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-		sac.ResourceScopeKeys(resources.Image),
-	))
-
-	// Create an image with CVEs that have fix timestamps
-	fixTime := protocompat.TimestampNow()
-	image := &storage.Image{
-		Id: "test-image-cve-info",
-		Name: &storage.ImageName{
-			FullName: "test/image:tag",
-		},
-		Scan: &storage.ImageScan{
-			OperatingSystem: "debian",
-			ScanTime:        protocompat.TimestampNow(),
-			Components: []*storage.EmbeddedImageScanComponent{
-				{
-					Name:    "openssl",
-					Version: "1.1.1",
-					Vulns: []*storage.EmbeddedVulnerability{
-						{
-							Cve:                   "CVE-2021-1234",
-							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-							Datasource:            "debian-bookworm-updater::debian:12",
-							FixAvailableTimestamp: fixTime,
-						},
-					},
-				},
-			},
-		},
-	}
-
-	// Upsert the image
-	s.NoError(s.datastore.UpsertImage(ctx, image))
-
-	// Verify ImageCVEInfo was populated
-	expectedID := pkgCVE.ImageCVEInfoID("CVE-2021-1234", "openssl", "debian-bookworm-updater::debian:12")
-	info, found, err := s.imageCVEInfoDatastore.Get(ctx, expectedID)
-	s.NoError(err)
-	s.True(found, "ImageCVEInfo should be populated after image upsert")
-	s.NotNil(info.GetFirstSystemOccurrence(), "FirstSystemOccurrence should be set")
-	s.Equal(fixTime.GetSeconds(), info.GetFixAvailableTimestamp().GetSeconds(), "FixAvailableTimestamp should match")
-}
-
-func (s *ImageFlatPostgresDataStoreTestSuite) TestImageCVEInfoIntegration_EnrichesFromLookupTable() {
-	// Enable the feature flag
-	s.T().Setenv("ROX_CVE_FIX_TIMESTAMP", "true")
-
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-		sac.ResourceScopeKeys(resources.Image),
-	))
-
-	// Pre-populate ImageCVEInfo with known timestamps
-	earlierTime := protocompat.TimestampNow()
-	earlierTime.Seconds -= 86400 // 1 day ago
-
-	preExistingInfo := &storage.ImageCVEInfo{
-		Id:                    pkgCVE.ImageCVEInfoID("CVE-2021-5678", "curl", "debian-updater::debian:11"),
-		Cve:                   "CVE-2021-5678",
-		FixAvailableTimestamp: earlierTime,
-		FirstSystemOccurrence: earlierTime,
-	}
-	s.NoError(s.imageCVEInfoDatastore.Upsert(ctx, preExistingInfo))
-
-	// Create an image with a CVE that matches the pre-existing info
-	image := &storage.Image{
-		Id: "test-image-enrich",
-		Name: &storage.ImageName{
-			FullName: "test/enrich:tag",
-		},
-		Scan: &storage.ImageScan{
-			OperatingSystem: "debian",
-			ScanTime:        protocompat.TimestampNow(),
-			Components: []*storage.EmbeddedImageScanComponent{
-				{
-					Name:    "curl",
-					Version: "7.68.0",
-					Vulns: []*storage.EmbeddedVulnerability{
-						{
-							Cve:               "CVE-2021-5678",
-							VulnerabilityType: storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-							Datasource:        "debian-updater::debian:11",
-							// No fix timestamp set - should be enriched from lookup
-						},
-					},
-				},
-			},
-		},
-	}
-
-	// Upsert the image
-	s.NoError(s.datastore.UpsertImage(ctx, image))
-
-	// Retrieve the image and verify CVE was enriched
-	storedImage, found, err := s.datastore.GetImage(ctx, image.GetId())
-	s.NoError(err)
-	s.True(found)
-
-	// Check that the CVE was enriched with timestamps from the lookup table
-	vuln := storedImage.GetScan().GetComponents()[0].GetVulns()[0]
-	s.NotNil(vuln.GetFirstSystemOccurrence(), "FirstSystemOccurrence should be enriched")
-	s.Equal(earlierTime.GetSeconds(), vuln.GetFirstSystemOccurrence().GetSeconds(), "FirstSystemOccurrence should match pre-existing value")
-}
-
-func (s *ImageFlatPostgresDataStoreTestSuite) TestImageCVEInfoIntegration_PreservesEarlierTimestamps() {
-	// Enable the feature flag
-	s.T().Setenv("ROX_CVE_FIX_TIMESTAMP", "true")
-
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
-		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-		sac.ResourceScopeKeys(resources.Image),
-	))
-
-	// First image upsert - establishes initial timestamps
-	firstFixTime := protocompat.TimestampNow()
-	firstFixTime.Seconds -= 86400 // 1 day ago
-
-	image1 := &storage.Image{
-		Id: "test-image-preserve-1",
-		Name: &storage.ImageName{
-			FullName: "test/preserve:v1",
-		},
-		Scan: &storage.ImageScan{
-			OperatingSystem: "alpine",
-			ScanTime:        protocompat.TimestampNow(),
-			Components: []*storage.EmbeddedImageScanComponent{
-				{
-					Name:    "busybox",
-					Version: "1.33.0",
-					Vulns: []*storage.EmbeddedVulnerability{
-						{
-							Cve:                   "CVE-2021-9999",
-							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-							Datasource:            "alpine-updater::alpine:3.14",
-							FixAvailableTimestamp: firstFixTime,
-						},
-					},
-				},
-			},
-		},
-	}
-	s.NoError(s.datastore.UpsertImage(ctx, image1))
-
-	// Get the first system occurrence time
-	infoID := pkgCVE.ImageCVEInfoID("CVE-2021-9999", "busybox", "alpine-updater::alpine:3.14")
-	info1, found, err := s.imageCVEInfoDatastore.Get(ctx, infoID)
-	s.NoError(err)
-	s.True(found)
-	firstOccurrence := info1.GetFirstSystemOccurrence()
-
-	// Second image upsert with a later fix timestamp - should preserve earlier timestamps
-	laterFixTime := protocompat.TimestampNow()
-
-	image2 := &storage.Image{
-		Id: "test-image-preserve-2",
-		Name: &storage.ImageName{
-			FullName: "test/preserve:v2",
-		},
-		Scan: &storage.ImageScan{
-			OperatingSystem: "alpine",
-			ScanTime:        protocompat.TimestampNow(),
-			Components: []*storage.EmbeddedImageScanComponent{
-				{
-					Name:    "busybox",
-					Version: "1.33.1",
-					Vulns: []*storage.EmbeddedVulnerability{
-						{
-							Cve:                   "CVE-2021-9999",
-							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
-							Datasource:            "alpine-updater::alpine:3.14",
-							FixAvailableTimestamp: laterFixTime, // Later timestamp
-						},
-					},
-				},
-			},
-		},
-	}
-	s.NoError(s.datastore.UpsertImage(ctx, image2))
-
-	// Verify earlier timestamps are preserved
-	info2, found, err := s.imageCVEInfoDatastore.Get(ctx, infoID)
-	s.NoError(err)
-	s.True(found)
-
-	// FirstSystemOccurrence should remain the same (earlier value preserved)
-	s.Equal(firstOccurrence.GetSeconds(), info2.GetFirstSystemOccurrence().GetSeconds(),
-		"FirstSystemOccurrence should preserve the earlier timestamp")
-
-	// FixAvailableTimestamp should also preserve the earlier value
-	s.Equal(firstFixTime.GetSeconds(), info2.GetFixAvailableTimestamp().GetSeconds(),
-		"FixAvailableTimestamp should preserve the earlier timestamp")
 }

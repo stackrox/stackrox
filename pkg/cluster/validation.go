@@ -78,14 +78,3 @@ func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 
 	return errorList
 }
-
-// GetAutoLockProcessBaselinesEnabled returns whether the auto-lock process baselines feature is enabled
-// for the given cluster. For manually managed clusters, it reads from the cluster's dynamic config.
-// For helm/operator-managed clusters, it reads from the cluster's helm config.
-func GetAutoLockProcessBaselinesEnabled(cluster *storage.Cluster) bool {
-	if cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_MANUAL || cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_UNKNOWN {
-		return cluster.GetDynamicConfig().GetAutoLockProcessBaselinesConfig().GetEnabled()
-	}
-
-	return cluster.GetHelmConfig().GetDynamicConfig().GetAutoLockProcessBaselinesConfig().GetEnabled()
-}

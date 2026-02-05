@@ -46,7 +46,9 @@ func BenchmarkNetEntityCreates(b *testing.B) {
 	entities, err := testutils.GenRandomExtSrcNetworkEntity(pkgNet.IPv4, b.N, testconsts.Cluster1)
 	require.NoError(b, err)
 
-	for i := 0; b.Loop(); i++ {
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
 		require.NoError(b, ds.CreateExternalNetworkEntity(globalAccessCtx, entities[i], true))
 	}
 }
@@ -66,7 +68,9 @@ func BenchmarkNetEntityCreateBatch(b *testing.B) {
 	entities, err := testutils.GenRandomExtSrcNetworkEntity(pkgNet.IPv4, 10000, testconsts.Cluster1)
 	require.NoError(b, err)
 
-	for b.Loop() {
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
 		_, err = ds.CreateExtNetworkEntitiesForCluster(globalAccessCtx, testconsts.Cluster1, entities...)
 		require.NoError(b, err)
 
@@ -94,7 +98,9 @@ func BenchmarkNetEntityUpdates(b *testing.B) {
 		require.NoError(b, ds.CreateExternalNetworkEntity(globalAccessCtx, e, true))
 	}
 
-	for i := 0; b.Loop(); i++ {
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
 		require.NoError(b, ds.UpdateExternalNetworkEntity(globalAccessCtx, entities[i], true))
 	}
 }

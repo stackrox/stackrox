@@ -33,12 +33,10 @@ import {
 } from '../../utils/sortFields';
 import VirtualMachinePageHeader from './VirtualMachinePageHeader';
 import VirtualMachinePageComponents from './VirtualMachinePageComponents';
-import VirtualMachinePageDetails from './VirtualMachinePageDetails';
 import VirtualMachinePageVulnerabilities from './VirtualMachinePageVulnerabilities';
 
 const VULNERABILITIES_TAB_ID = 'vulnerabilities-tab-content';
 const COMPONENTS_TAB_ID = 'components-tab-content';
-const DETAILS_TAB_ID = 'details-tab-content';
 
 const virtualMachineCveOverviewPath = getOverviewPagePath('VirtualMachine', {
     entityTab: 'VirtualMachine',
@@ -74,15 +72,14 @@ function VirtualMachinePage() {
         [virtualMachineId]
     );
 
-    const { data: virtualMachine, isLoading, error } = useRestQuery(fetchVirtualMachine);
+    const { data: virtualMachineData, isLoading, error } = useRestQuery(fetchVirtualMachine);
 
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
 
     const vulnTabKey = detailsTabValues[0];
     const componentsTabKey = detailsTabValues[4];
-    const detailsTabKey = detailsTabValues[1];
 
-    const virtualMachineName = virtualMachine?.name;
+    const virtualMachineName = virtualMachineData?.name;
 
     function onTabChange(value: string | number) {
         if (value === componentsTabKey) {
@@ -116,7 +113,7 @@ function VirtualMachinePage() {
             <Divider component="div" />
             <PageSection variant="light">
                 <VirtualMachinePageHeader
-                    virtualMachine={virtualMachine}
+                    virtualMachineData={virtualMachineData}
                     isLoading={isLoading}
                     error={error}
                 />
@@ -139,11 +136,6 @@ function VirtualMachinePage() {
                         tabContentId={COMPONENTS_TAB_ID}
                         title={componentsTabKey}
                     />
-                    <Tab
-                        eventKey={detailsTabKey}
-                        tabContentId={DETAILS_TAB_ID}
-                        title={detailsTabKey}
-                    />
                 </Tabs>
             </PageSection>
             <PageSection variant="light" padding={{ default: 'padding' }}>
@@ -153,8 +145,6 @@ function VirtualMachinePage() {
                             'Prioritize and remediate observed CVEs for this virtual machine'}
                         {activeTabKey === componentsTabKey &&
                             'View all components from this virtual machine'}
-                        {activeTabKey === detailsTabKey &&
-                            'View details about this virtual machine'}
                     </Text>
                 </Text>
             </PageSection>
@@ -169,9 +159,9 @@ function VirtualMachinePage() {
                 {activeTabKey === vulnTabKey && (
                     <TabContent id={VULNERABILITIES_TAB_ID}>
                         <VirtualMachinePageVulnerabilities
-                            virtualMachine={virtualMachine}
-                            isLoadingVirtualMachine={isLoading}
-                            errorVirtualMachine={error}
+                            virtualMachineData={virtualMachineData}
+                            isLoadingVirtualMachineData={isLoading}
+                            errorVirtualMachineData={error}
                             urlSearch={urlSearch}
                             urlSorting={urlSorting}
                             urlPagination={urlPagination}
@@ -181,18 +171,13 @@ function VirtualMachinePage() {
                 {activeTabKey === componentsTabKey && (
                     <TabContent id={COMPONENTS_TAB_ID}>
                         <VirtualMachinePageComponents
-                            virtualMachine={virtualMachine}
-                            isLoadingVirtualMachine={isLoading}
-                            errorVirtualMachine={error}
+                            virtualMachineData={virtualMachineData}
+                            isLoadingVirtualMachineData={isLoading}
+                            errorVirtualMachineData={error}
                             urlSearch={urlSearch}
                             urlSorting={urlSorting}
                             urlPagination={urlPagination}
                         />
-                    </TabContent>
-                )}
-                {activeTabKey === detailsTabKey && (
-                    <TabContent id={DETAILS_TAB_ID}>
-                        <VirtualMachinePageDetails virtualMachine={virtualMachine} />
                     </TabContent>
                 )}
             </PageSection>

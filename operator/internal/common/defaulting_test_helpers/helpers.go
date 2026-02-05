@@ -125,7 +125,9 @@ func checkObjectNoDefaults(t *testing.T, schema chartutil.Values) {
 
 func checkNoDefaultsInSchema(t *testing.T, schema chartutil.Values) {
 	requireNoDefaultProperty(t, schema)
-	requireNoDefaultInDescription(t, schema)
+	desc, err := schema.PathValue("description")
+	require.NoError(t, err)
+	require.False(t, strings.HasPrefix(desc.(string), defaultPrefix))
 }
 
 func getJSONName(t *testing.T, structField reflect.StructField) (field string, embedded bool) {
@@ -141,7 +143,7 @@ func checkPtrLeafField(t *testing.T, field reflect.Value, schema chartutil.Value
 	if field.IsNil() {
 		// Operator code specifies no default for this field.
 		// Make sure the schema does not mention one either.
-		requireNoDefaultInDescription(t, schema)
+		require.Falsef(t, strings.HasPrefix(lastDescriptionLine(t, schema), defaultPrefix), "unexpected default in schema %v", schema)
 		return
 	}
 	checkLeafField(t, field.Elem(), schema)
@@ -162,19 +164,7 @@ func checkLeafField(t *testing.T, inCodeDefault reflect.Value, schema chartutil.
 	}
 	inCodeDefaultDescription := fmt.Sprintf(defaultFormat, inCodeDefaultString)
 	inCRDDefaultDescription := lastDescriptionLine(t, schema)
-	require.True(t, endsWithCaseInsensitive(inCRDDefaultDescription, inCodeDefaultDescription), "%q should end (modulo case) with %q", inCRDDefaultDescription, inCodeDefaultDescription)
-}
-
-func endsWithCaseInsensitive(s, suffix string) bool {
-	return strings.HasSuffix(strings.ToLower(s), strings.ToLower(suffix))
-}
-
-func requireNoDefaultInDescription(t *testing.T, schema chartutil.Values) {
-	require.Falsef(t, containsCaseInsensitive(lastDescriptionLine(t, schema), defaultPrefix), "unexpected default in schema description %v", schema)
-}
-
-func containsCaseInsensitive(s, substr string) bool {
-	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
+	require.Equal(t, inCodeDefaultDescription, inCRDDefaultDescription)
 }
 
 func lastDescriptionLine(t *testing.T, schema chartutil.Values) string {

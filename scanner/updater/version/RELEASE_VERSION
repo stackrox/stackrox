@@ -6,7 +6,6 @@
 # is not specified in this file, then the vulnerability updater workflow (a.)
 # won't take into account its vulnerability schema, and (b.) won't create the
 # offline bundle for that release.
-4.10.0
 4.4.0
 4.4.1
 4.4.2

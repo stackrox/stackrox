@@ -17,7 +17,6 @@ func init() {
 		totalNetworkFlowsReceivedCounter,
 		totalNetworkEndpointsReceivedCounter,
 		totalExternalPoliciesGauge,
-		currentExternalPolicies,
 		sensorEventDurationHistogramVec,
 		riskProcessingHistogramVec,
 		datastoreFunctionDurationHistogramVec,

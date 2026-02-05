@@ -16,7 +16,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "index_op_duration",
-		Help:      "Time spent performing an index operation in milliseconds",
+		Help:      "Time taken to perform an index operation",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
@@ -25,7 +25,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "cache_op_duration",
-		Help:      "Time spent performing a cache operation in milliseconds",
+		Help:      "Time taken to perform a cache operation",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
@@ -34,7 +34,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "prune_duration",
-		Help:      "Time to perform a pruning operation in milliseconds",
+		Help:      "Time to perform a pruning operation",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Type"})
@@ -43,7 +43,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "postgres_op_duration",
-		Help:      "Time spent performing a postgres operation in milliseconds",
+		Help:      "Time taken to perform a postgres operation",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
@@ -52,7 +52,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "postgres_acquire_conn_op_duration",
-		Help:      "Time spent acquiring a Postgres connection in milliseconds",
+		Help:      "Time taken to acquire a Postgres connection",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
@@ -61,7 +61,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "graphql_op_duration",
-		Help:      "Time spent running a single graphql sub resolver/sub query in milliseconds",
+		Help:      "Time taken to run a single graphql sub resolver/sub query",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Resolver", "Operation"})
@@ -70,7 +70,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "graphql_query_duration",
-		Help:      "Time spent running a single graphql query in milliseconds",
+		Help:      "Time taken to run a single graphql query",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Query"})
@@ -79,7 +79,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "sensor_event_duration",
-		Help:      "Time spent performing a sensor event operation in milliseconds",
+		Help:      "Time taken to perform an process a sensor event operation",
 		// We care more about precision at lower latencies, or outliers at higher latencies.
 		Buckets: prometheus.ExponentialBuckets(4, 2, 13),
 	}, []string{"Type", "Action"})
@@ -88,14 +88,14 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "sensor_event_queue",
-		Help:      "Number of enqueue and dequeue operations on Central's event deduping queues for messages arriving from Sensor",
+		Help:      "Number of elements in removed from the queue",
 	}, []string{"Operation", "Type"})
 
 	resourceProcessedCounterVec = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "resource_processed_count",
-		Help:      "Number of sensor event resources successfully processed by Central pipelines",
+		Help:      "Number of elements received and processed",
 	}, []string{"Operation", "Resource"})
 
 	totalNetworkFlowsReceivedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -112,26 +112,18 @@ var (
 		Help:      "A counter of the total number of network endpoints received by Central from Sensor",
 	}, []string{"ClusterID"})
 
-	// totalExternalPoliciesGauge is deprecated due to naming confusion (vector vs. gauge), use currentExternalPolicies instead.
 	totalExternalPoliciesGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "total_external_policies_count",
-		Help:      "Number of policy-as-code CRs accepted by Central from Config Controller",
-	})
-	// currentExternalPolicies replaces the totalExternalPoliciesGauge
-	currentExternalPolicies = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "number_of_external_policies_current",
-		Help:      "Number of policy-as-code CRs accepted by Central from Config Controller",
+		Help:      "A gauge of the total number of policy as code CRs that have been accepted by Central from Config Controller",
 	})
 
 	riskProcessingHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "risk_processing_duration",
-		Help:      "Time in milliseconds spent recomputing and persisting risk scores in Central's risk manager for deployments, nodes, images, and their components",
+		Help:      "Histogram of how long risk processing takes",
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Risk_Reprocessor"})
 
@@ -139,7 +131,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "datastore_function_duration",
-		Help:      "Histogram of how long a datastore function takes in milliseconds",
+		Help:      "Histogram of how long a datastore function takes",
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Type", "Function"})
 
@@ -147,7 +139,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "function_segment_duration",
-		Help:      "Histogram of how long a particular segment within a function takes in milliseconds",
+		Help:      "Histogram of how long a particular segment within a function takes",
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Segment"})
 
@@ -177,35 +169,34 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "orphaned_plop_total",
-		Help:      "Count of process-listening-on-port records that arrived without a matching process indicator",
+		Help:      "A counter of the total number of PLOP objects without a reference to a ProcessIndicator",
 	}, []string{"ClusterID"})
 
 	processQueueLengthGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "process_queue_length",
-		Help:      "Current number of process indicators queued for baseline evaluation and persistence",
+		Help:      "A gauge that indicates the current number of processes that have not been flushed",
 	})
 
 	sensorEventsDeduperCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "sensor_event_deduper",
-		Help:      "Counts sensor events skipped by the deduper vs processed as new",
+		Help:      "A counter that tracks objects that has passed the sensor event deduper in the connection stream",
 	}, []string{"status", "type"})
 
 	pipelinePanicCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "pipeline_panics",
-		Help:      "Count of panics recovered in Central processing pipelines",
+		Help:      "A counter that tracks the number of panics that have occurred in the processing pipelines",
 	}, []string{"resource"})
 
 	sensorConnectedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "sensor_connected",
-		Help:      "Count of sensor connections observed by Central",
 	}, []string{"ClusterID", "connection_state"})
 
 	grpcLastMessageSizeReceived = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -430,12 +421,10 @@ func IncrementTotalNetworkEndpointsReceivedCounter(clusterID string, numberOfEnd
 
 func IncrementTotalExternalPoliciesGauge() {
 	totalExternalPoliciesGauge.Inc()
-	currentExternalPolicies.Inc()
 }
 
 func DecrementTotalExternalPoliciesGauge() {
 	totalExternalPoliciesGauge.Dec()
-	currentExternalPolicies.Dec()
 }
 
 // ObserveRiskProcessingDuration adds an observation for risk processing duration.

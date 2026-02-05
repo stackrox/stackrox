@@ -91,7 +91,7 @@ func BenchmarkImageResolver(b *testing.B) {
 	}
 
 	b.Run("GetImageComponentsInImageScanResolver", func(b *testing.B) {
-		for b.Loop() {
+		for i := 0; i < b.N; i++ {
 			response := schema.Exec(ctx,
 				imageWithScanQuery,
 				"getImages",
@@ -106,7 +106,7 @@ func BenchmarkImageResolver(b *testing.B) {
 	})
 
 	b.Run("GetImageComponentsWithoutImageScanResolver", func(b *testing.B) {
-		for b.Loop() {
+		for i := 0; i < b.N; i++ {
 			response := schema.Exec(ctx,
 				imageWithoutScanQuery,
 				"getImages",
@@ -121,7 +121,7 @@ func BenchmarkImageResolver(b *testing.B) {
 	})
 
 	b.Run("GetImageComponentsDerivedFieldsWithImageScanResolver", func(b *testing.B) {
-		for b.Loop() {
+		for i := 0; i < b.N; i++ {
 			response := schema.Exec(ctx,
 				imageWithScanLongQuery,
 				"getImages",
@@ -136,7 +136,7 @@ func BenchmarkImageResolver(b *testing.B) {
 	})
 
 	b.Run("GetImageComponentsDerivedWithoutImageScanResolver", func(b *testing.B) {
-		for b.Loop() {
+		for i := 0; i < b.N; i++ {
 			response := schema.Exec(ctx,
 				imageWithoutScanLongQuery,
 				"getImages",
@@ -151,7 +151,7 @@ func BenchmarkImageResolver(b *testing.B) {
 	})
 
 	b.Run("GetImageOnly", func(b *testing.B) {
-		for b.Loop() {
+		for i := 0; i < b.N; i++ {
 			response := schema.Exec(ctx,
 				imageOnlyQuery,
 				"getImages",
@@ -166,7 +166,7 @@ func BenchmarkImageResolver(b *testing.B) {
 	})
 
 	b.Run("GetImageWithCounts", func(b *testing.B) {
-		for b.Loop() {
+		for i := 0; i < b.N; i++ {
 			response := schema.Exec(ctx,
 				imageWithCountsQuery,
 				"getImages",
@@ -181,7 +181,7 @@ func BenchmarkImageResolver(b *testing.B) {
 	})
 
 	b.Run("GetImageScanTimeTopLevel", func(b *testing.B) {
-		for b.Loop() {
+		for i := 0; i < b.N; i++ {
 			response := schema.Exec(ctx,
 				imageWithTopLevelScanTimeQuery,
 				"getImages",
@@ -196,7 +196,7 @@ func BenchmarkImageResolver(b *testing.B) {
 	})
 
 	b.Run("GetImageScanTimeNested", func(b *testing.B) {
-		for b.Loop() {
+		for i := 0; i < b.N; i++ {
 			response := schema.Exec(ctx,
 				imageWithNestedScanTimeQuery,
 				"getImages",

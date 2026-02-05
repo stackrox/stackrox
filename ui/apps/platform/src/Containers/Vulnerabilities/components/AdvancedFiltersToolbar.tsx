@@ -15,9 +15,9 @@ import { getHasSearchApplied, searchValueAsArray } from 'utils/searchUtils';
 
 import type { DefaultFilters } from '../types';
 import {
-    attributeForClusterCveFixableInFrontend,
-    attributeForFixableInFrontendAndLocalStorage,
-    attributeForSeverityInFrontendAndLocalStorage,
+    attributeForClusterCveFixable,
+    attributeForFixable,
+    attributeForSeverity,
     attributeForSnoozed,
 } from '../searchFilterConfig';
 
@@ -57,13 +57,10 @@ function AdvancedFiltersToolbar({
 }: AdvancedFiltersToolbarProps): ReactElement {
     const attributesSeparateFromConfig: CompoundSearchFilterAttribute[] = [attributeForSnoozed];
     if (includeCveSeverityFilters) {
-        attributesSeparateFromConfig.push(attributeForSeverityInFrontendAndLocalStorage);
+        attributesSeparateFromConfig.push(attributeForSeverity);
     }
     if (includeCveStatusFilters) {
-        attributesSeparateFromConfig.push(
-            attributeForFixableInFrontendAndLocalStorage,
-            attributeForClusterCveFixableInFrontend
-        );
+        attributesSeparateFromConfig.push(attributeForFixable, attributeForClusterCveFixable);
     }
 
     function isGlobalPredicate(category: string, value: string) {
@@ -94,7 +91,7 @@ function AdvancedFiltersToolbar({
                     <ToolbarGroup className="vm-filter-toolbar-dropdown">
                         {includeCveSeverityFilters && (
                             <SearchFilterSelectInclusive
-                                attribute={attributeForSeverityInFrontendAndLocalStorage}
+                                attribute={attributeForSeverity}
                                 isSeparate
                                 onSearch={onFilterApplied}
                                 searchFilter={searchFilter}
@@ -104,8 +101,8 @@ function AdvancedFiltersToolbar({
                             <SearchFilterSelectInclusive
                                 attribute={
                                     cveStatusFilterField === 'FIXABLE'
-                                        ? attributeForFixableInFrontendAndLocalStorage
-                                        : attributeForClusterCveFixableInFrontend
+                                        ? attributeForFixable
+                                        : attributeForClusterCveFixable
                                 }
                                 isSeparate
                                 onSearch={onFilterApplied}

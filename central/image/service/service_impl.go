@@ -164,7 +164,6 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.GetImageRequest)
 		// This modifies the image object
 		utils.StripCVEDescriptionsNoClone(image)
 	}
-	utils.StripDatasourceNoClone(image.GetScan())
 
 	return image, nil
 }
@@ -217,7 +216,6 @@ func (s *serviceImpl) ExportImages(req *v1.ExportImageRequest, srv v1.ImageServi
 		defer cancel()
 	}
 	return s.mappingDatastore.WalkByQuery(ctx, parsedQuery, func(image *storage.Image) error {
-		utils.StripDatasourceNoClone(image.GetScan())
 		if err := srv.Send(&v1.ExportImageResponse{Image: image}); err != nil {
 			return err
 		}
@@ -624,7 +622,6 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 		if !request.GetIncludeSnoozed() {
 			utils.FilterSuppressedCVEsNoCloneV2(imgV2)
 		}
-		utils.StripDatasourceNoClone(imgV2.GetScan())
 
 		return utils.ConvertToV1(imgV2), nil
 	}
@@ -651,7 +648,7 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 	if !request.GetIncludeSnoozed() {
 		utils.FilterSuppressedCVEsNoClone(img)
 	}
-	utils.StripDatasourceNoClone(img.GetScan())
+
 	return img, nil
 }
 

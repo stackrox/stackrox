@@ -16,9 +16,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/baseimage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -271,7 +269,6 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 		"operatingsystem",
 		"imageid",
 		"location",
-		"layertype",
 		"serialized",
 	}
 
@@ -292,7 +289,6 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 			obj.GetOperatingSystem(),
 			obj.GetImageId(),
 			obj.GetLocation(),
-			obj.GetLayerType(),
 			serialized,
 		})
 
@@ -334,7 +330,6 @@ func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTime ti
 		"componentid",
 		"advisory_name",
 		"advisory_link",
-		"fixavailabletimestamp",
 		"serialized",
 	}
 
@@ -375,7 +370,6 @@ func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTime ti
 			obj.GetComponentId(),
 			obj.GetAdvisory().GetName(),
 			obj.GetAdvisory().GetLink(),
-			protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
 			serialized,
 		})
 
@@ -476,13 +470,6 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 	}
 
 	scanUpdated = scanUpdated || componentsEmpty
-
-	if features.BaseImageDetection.Enabled() {
-		// Re-verify base images when base image detection is enabled:
-		// 1. Legacy images may lack base image info if the feature was enabled after they were scanned.
-		// 2. User-provided base images may change over time.
-		scanUpdated = scanUpdated || baseimage.BaseImagesUpdated(oldImage.GetBaseImageInfo(), obj.GetBaseImageInfo())
-	}
 
 	splitParts, err := common.SplitV2(obj, scanUpdated)
 	if err != nil {
@@ -1008,11 +995,10 @@ func (s *storeImpl) insertIntoImageComponentV2Cves(batch *pgx.Batch, obj *storag
 		obj.GetFixedBy(),
 		obj.GetComponentId(),
 		obj.GetAdvisory().GetName(),
-		protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_cves_v2 (Id, ImageId, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, Cvss, Severity, ImpactScore, Nvdcvss, FirstImageOccurrence, State, IsFixable, FixedBy, ComponentId, advisory_name, FixAvailableTimestamp, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ImageId = EXCLUDED.ImageId, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, State = EXCLUDED.State, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy, ComponentId = EXCLUDED.ComponentId, advisory_name = EXCLUDED.advisory_name, FixAvailableTimestamp = EXCLUDED.FixAvailableTimestamp, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_cves_v2 (Id, ImageId, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, Cvss, Severity, ImpactScore, Nvdcvss, FirstImageOccurrence, State, IsFixable, FixedBy, ComponentId, advisory_name, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,$17) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ImageId = EXCLUDED.ImageId, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Nvdcvss = EXCLUDED.Nvdcvss, FirstImageOccurrence = EXCLUDED.FirstImageOccurrence, State = EXCLUDED.State, IsFixable = EXCLUDED.IsFixable, FixedBy = EXCLUDED.FixedBy, ComponentId = EXCLUDED.ComponentId, advisory_name = EXCLUDED.advisory_name, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil

@@ -16,7 +16,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/continuousprofiling"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -168,20 +167,15 @@ func createGRPCService(backends *Backends, cfg *config.Config) (grpc.API, error)
 	}
 
 	// Custom routes: debugging.
-	var customRoutes []routes.CustomRoute
-	if !env.ContinuousProfiling.BooleanSetting() {
-		customRoutes = make([]routes.CustomRoute, 0, len(routes.DebugRoutes)+
-			len(backends.HealthRoutes()))
-		for path, handler := range routes.DebugRoutes {
-			customRoutes = append(customRoutes, routes.CustomRoute{
-				Route:         path,
-				Authorizer:    allow.Anonymous(),
-				ServerHandler: handler,
-				Compression:   true,
-			})
-		}
-	} else {
-		customRoutes = make([]routes.CustomRoute, 0, len(backends.HealthRoutes()))
+	customRoutes := make([]routes.CustomRoute, 0, len(routes.DebugRoutes)+
+		len(backends.HealthRoutes()))
+	for path, handler := range routes.DebugRoutes {
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         path,
+			Authorizer:    allow.Anonymous(),
+			ServerHandler: handler,
+			Compression:   true,
+		})
 	}
 
 	// Custom routes: health checking.

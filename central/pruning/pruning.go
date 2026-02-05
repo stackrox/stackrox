@@ -2,8 +2,6 @@ package pruning
 
 import (
 	"context"
-	"sync/atomic"
-	"testing"
 	"time"
 
 	"github.com/pkg/errors"
@@ -31,7 +29,6 @@ import (
 	"github.com/stackrox/rox/central/reports/common"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
-	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	vulnReqDataStore "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -81,23 +78,7 @@ var (
 
 	pruneInterval = env.PruneInterval.DurationSetting()
 	orphanWindow  = env.PruneOrphanedWindow.DurationSetting()
-
-	// dynamicRBACPruningEnabled controls whether expired dynamic RBAC objects should be pruned.
-	// It is disabled by default and enabled on the first call to the internaltoken API service.
-	dynamicRBACPruningEnabled atomic.Bool
 )
-
-// EnableDynamicRBACPruning enables pruning of expired dynamic RBAC objects.
-// This should be called on requests to the internaltoken API service.
-func EnableDynamicRBACPruning() {
-	dynamicRBACPruningEnabled.Store(true)
-}
-
-// disableDynamicRBACPruningForTest disables pruning of expired dynamic RBAC objects.
-// This is for testing purposes only.
-func disableDynamicRBACPruningForTest(*testing.T) {
-	dynamicRBACPruningEnabled.Store(false)
-}
 
 // GarbageCollector implements a generic garbage collection mechanism.
 type GarbageCollector interface {
@@ -127,7 +108,6 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	plops plopDataStore.DataStore,
 	blobStore blobDatastore.Datastore,
 	nodeCVEStore nodeCVEDS.DataStore,
-	roleStore roleDataStore.DataStore,
 ) GarbageCollector {
 	return &garbageCollectorImpl{
 		alerts:            alerts,
@@ -154,7 +134,6 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		plops:             plops,
 		blobStore:         blobStore,
 		nodeCVEStore:      nodeCVEStore,
-		roleStore:         roleStore,
 	}
 }
 
@@ -184,7 +163,6 @@ type garbageCollectorImpl struct {
 	plops             plopDataStore.DataStore
 	blobStore         blobDatastore.Datastore
 	nodeCVEStore      nodeCVEDS.DataStore
-	roleStore         roleDataStore.DataStore
 }
 
 func (g *garbageCollectorImpl) Start() {
@@ -214,7 +192,6 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeExpiredAdministrationEvents(pvtConfig)
 	g.removeExpiredDiscoveredClusters()
 	g.removeInvalidAPITokens()
-	g.removeExpiredDynamicRBACObjects()
 	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
 
 	g.pruneLogImbues()
@@ -1169,65 +1146,6 @@ func (g *garbageCollectorImpl) pruneOrphanedNodeCVEs() {
 	err = g.nodeCVEStore.PruneNodeCVEs(pruningCtx, ids)
 	if err != nil {
 		log.Error(errors.Wrap(err, "Pruning orphaned node CVEs"))
-	}
-}
-
-// traitsHolder is an interface for objects that have traits.
-type traitsHolder interface {
-	GetTraits() *storage.Traits
-}
-
-// withTraitsFilter creates a filter function that applies a traits-based predicate to objects.
-func withTraitsFilter[T traitsHolder](traitsPredicate func(*storage.Traits) bool) func(T) bool {
-	return func(obj T) bool {
-		return traitsPredicate(obj.GetTraits())
-	}
-}
-
-// isExpired returns true if the traits have a non-nil expires_at timestamp in the past.
-func isExpired(traits *storage.Traits, now time.Time) bool {
-	expiresAt := traits.GetExpiresAt()
-	return expiresAt != nil && now.After(expiresAt.AsTime())
-}
-
-// removeExpiredDynamicRBACObjects removes roles, permission sets, and access scopes
-// that have an expiry timestamp in the past and have IMPERATIVE origin.
-// These objects are created dynamically by the internal token API for sensors.
-func (g *garbageCollectorImpl) removeExpiredDynamicRBACObjects() {
-	// Check if dynamic RBAC pruning is enabled.
-	if !dynamicRBACPruningEnabled.Load() {
-		return
-	}
-
-	defer metrics.SetPruningDuration(time.Now(), "DynamicRBACObjects")
-
-	now := time.Now()
-	expiredFilter := func(traits *storage.Traits) bool {
-		return isExpired(traits, now)
-	}
-
-	// First, remove expired roles (must be done before permission sets/access scopes
-	// because roles reference them and deletion will fail if still referenced).
-	expiredRoleCount, err := g.roleStore.RemoveFilteredRoles(pruningCtx, withTraitsFilter[*storage.Role](expiredFilter))
-	if err != nil {
-		log.Error("Failed to remove expired roles: ", err)
-	}
-
-	// Then remove expired permission sets that are no longer referenced.
-	expiredPSCount, err := g.roleStore.RemoveFilteredPermissionSets(pruningCtx, withTraitsFilter[*storage.PermissionSet](expiredFilter))
-	if err != nil {
-		log.Error("Failed to remove expired permission sets: ", err)
-	}
-
-	// Finally remove expired access scopes that are no longer referenced.
-	expiredASCount, err := g.roleStore.RemoveFilteredAccessScopes(pruningCtx, withTraitsFilter[*storage.SimpleAccessScope](expiredFilter))
-	if err != nil {
-		log.Error("Failed to remove expired access scopes: ", err)
-	}
-
-	if expiredRoleCount+expiredPSCount+expiredASCount > 0 {
-		log.Infof("[Expired objects pruning] Removed %d roles, %d permission sets, %d access scopes",
-			expiredRoleCount, expiredPSCount, expiredASCount)
 	}
 }
 

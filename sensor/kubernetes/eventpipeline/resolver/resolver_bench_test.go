@@ -74,7 +74,7 @@ func BenchmarkProcessDeploymentReferences(b *testing.B) {
 		b.Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", value))
 		for _, bc := range cases {
 			b.Run(fmt.Sprintf("Benchmark with %d events and %d deployments per event and %q is %t", bc.numEvents, bc.numDeployments, features.SensorInternalPubSub.EnvVar(), value), func(b *testing.B) {
-				for b.Loop() {
+				for i := 0; i < b.N; i++ {
 					b.StopTimer()
 					doneSignal := concurrency.NewSignal()
 					setupMocks(b, &doneSignal, value)
@@ -98,7 +98,7 @@ func BenchmarkProcessRandomDeploymentReferences(b *testing.B) {
 		b.Setenv(features.SensorInternalPubSub.EnvVar(), fmt.Sprintf("%t", value))
 		for _, bc := range cases {
 			b.Run(fmt.Sprintf("Benchmark with %d events and %d random deployments per event and %q is %t", bc.numEvents, bc.numDeployments, features.SensorInternalPubSub.EnvVar(), value), func(b *testing.B) {
-				for b.Loop() {
+				for i := 0; i < b.N; i++ {
 					b.StopTimer()
 					doneSignal := concurrency.NewSignal()
 					setupMocks(b, &doneSignal, value)
@@ -145,7 +145,7 @@ func setupMocks(b *testing.B, doneSignal *concurrency.Signal, pubsubEnabled bool
 	mockPubSubDispatcher = mocksComponent.NewMockPubSubDispatcher(mockCtrl)
 	// Set up the EXPECT
 	if pubsubEnabled {
-		mockPubSubDispatcher.EXPECT().RegisterConsumerToLane(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(2).Return(nil)
+		mockPubSubDispatcher.EXPECT().RegisterConsumerToLane(gomock.Any(), gomock.Any(), gomock.Any()).Times(2).Return(nil)
 	}
 	mockOutput.EXPECT().Send(gomock.Any()).AnyTimes().DoAndReturn(func(resourceEvent *component.ResourceEvent) {
 		for _, m := range resourceEvent.ForwardMessages {

@@ -15,26 +15,14 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/mtls/verifier"
-	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/size"
 	"google.golang.org/grpc"
 )
 
 var (
-	log = logging.LoggerForModule()
+	centralHostPort = fmt.Sprintf("central.%s.svc:443", env.Namespace.Setting())
+	log             = logging.LoggerForModule()
 )
-
-func centralEndpoint() string {
-	// Check if ROX_CENTRAL_ENDPOINT is explicitly set (not just the default value).
-	// This provides backwards compatibility for deployments that don't set ROX_CENTRAL_ENDPOINT.
-	endpoint, exists := os.LookupEnv("ROX_CENTRAL_ENDPOINT")
-	if exists && endpoint != "" {
-		return endpoint
-	}
-	// Fall back to namespace-based endpoint for backwards compatibility
-	return fmt.Sprintf("central.%s.svc:443", env.Namespace.Setting())
-}
 
 type perRPCCreds struct {
 	svc         v1.AuthServiceClient
@@ -110,19 +98,6 @@ type grpcClient struct {
 func newGrpcClient(ctx context.Context) (CentralClient, error) {
 	clientconn.SetUserAgent(clientconn.ConfigController)
 
-	// Use system cert pool to include additional CAs from import-additional-cas
-	rootCAs, err := verifier.SystemCertPool()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get system cert pool")
-	}
-
-	// Parse the endpoint to get the hostname for TLS ServerName verification
-	endpoint := centralEndpoint()
-	host, _, _, err := netutil.ParseEndpoint(endpoint)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse central endpoint %q", endpoint)
-	}
-
 	dialOpts := []grpc.DialOption{
 		grpc.WithNoProxy(),
 	}
@@ -133,15 +108,11 @@ func newGrpcClient(ctx context.Context) (CentralClient, error) {
 		InsecureAllowCredsViaPlaintext: false,
 		DialOptions:                    dialOpts,
 		PerRPCCreds:                    perRPCCreds,
-		TLS: clientconn.TLSConfigOptions{
-			RootCAs:    rootCAs,
-			ServerName: host,
-		},
 	}
 
 	callOpts := []grpc.CallOption{grpc.MaxCallRecvMsgSize(12 * size.MB)}
 
-	conn, err := clientconn.GRPCConnection(ctx, mtls.CentralSubject, endpoint, opts, grpc.WithDefaultCallOptions(callOpts...))
+	conn, err := clientconn.GRPCConnection(ctx, mtls.CentralSubject, centralHostPort, opts, grpc.WithDefaultCallOptions(callOpts...))
 
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to create gRPC connection")

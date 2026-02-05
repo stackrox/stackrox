@@ -1,40 +1,5 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
-collectors:
-- type: pod
-  selector: app=central
-  tail: -1
-- type: pod
-  selector: app=central-db
-  tail: -1
-- type: pod
-  selector: app=config-controller
-  tail: -1
-- type: pod
-  selector: app=scanner
-  tail: -1
-- type: pod
-  selector: app=scanner-db
-  tail: -1
-- type: pod
-  selector: app=scanner-v4-indexer
-  tail: -1
-- type: pod
-  selector: app=scanner-v4-matcher
-  tail: -1
-- type: pod
-  selector: app=scanner-v4-db
-  tail: -1
-- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=central
-- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=central-db
-- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=config-controller
-- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner
-- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-db
-- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-v4-indexer
-- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-v4-matcher
-- command: retry-kubectl.sh describe pod -n $NAMESPACE -l app=scanner-v4-db
-- command: retry-kubectl.sh describe central.platform.stackrox.io -n $NAMESPACE stackrox-central-services
-# Please keep the above lists in sync with pods-debug.yaml and central-cr-assert.yaml
 resourceRefs:
 - apiVersion: platform.stackrox.io/v1alpha1
   kind: Central

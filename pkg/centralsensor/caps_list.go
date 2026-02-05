@@ -82,8 +82,4 @@ const (
 	// instead of the deprecated NodeInventoryACK message. This enables proper ACK/NACK handling for
 	// VM index reports and future compliance-related messages.
 	SensorACKSupport SensorCapability = "SensorACKSupport"
-
-	// InternalTokenAPISupported identifies the capability of Central to issue internal tokens
-	// for authenticated proxy requests.
-	InternalTokenAPISupported CentralCapability = "InternalTokenAPISupported"
 )

@@ -91,7 +91,6 @@ var (
 				EpssProbability: 22,
 				EpssPercentile:  98,
 			},
-			Datasource: "test-ds",
 		},
 		{
 			Cve:     "cve2",
@@ -226,7 +225,6 @@ func getTestCVEs(t *testing.T) []*storage.ImageCVEV2 {
 			IsFixable:            false,
 			HasFixedBy:           nil,
 			ComponentId:          getTestComponentID(0),
-			Datasource:           "test-ds",
 		},
 		{
 			Id:      getTestCVEID(testVulns[1], getTestComponentID(1), 1),

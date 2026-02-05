@@ -58,12 +58,12 @@ func TestReplaceVars(t *testing.T) {
 func BenchmarkReplaceVars(b *testing.B) {
 	veryLongString := strings.Repeat("$$ ", 1000)
 	b.Run("short", func(b *testing.B) {
-		for b.Loop() {
+		for i := 0; i < b.N; i++ {
 			replaceVars("$$ $$ $$ $$ $$ $$ $$ $$ $$ $$ $$")
 		}
 	})
 	b.Run("long", func(b *testing.B) {
-		for b.Loop() {
+		for i := 0; i < b.N; i++ {
 			replaceVars(veryLongString)
 		}
 	})
@@ -671,7 +671,7 @@ func TestSelectQueries(t *testing.T) {
 		},
 		{
 			desc: "base schema; select w/ where; image scope",
-			ctx: scoped.Context(sac.WithAllAccess(context.Background()), scoped.Scope{
+			ctx: scoped.Context(context.Background(), scoped.Scope{
 				IDs:   []string{"fake-image"},
 				Level: v1.SearchCategory_IMAGES,
 			}),
@@ -685,7 +685,7 @@ func TestSelectQueries(t *testing.T) {
 		},
 		{
 			desc: "base schema; select w/ multiple scopes",
-			ctx: scoped.Context(sac.WithAllAccess(context.Background()), scoped.Scope{
+			ctx: scoped.Context(context.Background(), scoped.Scope{
 				IDs:   []string{uuid.NewV4().String()},
 				Level: v1.SearchCategory_NAMESPACES,
 				Parent: &scoped.Scope{
@@ -740,7 +740,7 @@ func TestSelectQueries(t *testing.T) {
 		t.Run(c.desc, func(t *testing.T) {
 			ctx := c.ctx
 			if c.ctx == nil {
-				ctx = sac.WithAllAccess(context.Background())
+				ctx = context.Background()
 			}
 			testSchema := c.schema
 			actualQ, err := standardizeSelectQueryAndPopulatePath(ctx, c.q, testSchema, SELECT)

@@ -37,7 +37,7 @@ func WithRetryTimeout(timeout time.Duration) GRPCOption {
 func GetGRPCConnection(am auth.Method, connectionOpts ...GRPCOption) (*grpc.ClientConn, error) {
 	endpoint, serverName, usePlaintext, err := ConnectNames()
 	if err != nil {
-		return nil, EnhanceConnectionError(errors.Wrap(err, "could not get endpoint for gRPC connection"))
+		return nil, errors.Wrap(err, "could not get endpoint for gRPC connection")
 	}
 	perRPCCreds, err := am.GetCredentials(endpoint)
 	if err != nil {

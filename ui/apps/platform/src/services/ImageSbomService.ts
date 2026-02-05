@@ -3,16 +3,11 @@ import { parseAxiosResponseAttachment } from 'utils/fileUtils';
 
 import axios from './instance';
 
-export type GenerateSbomImageParams = {
-    name: string;
-    digest?: string;
-};
-
-export function generateAndSaveSbom({ image }: { image: GenerateSbomImageParams }): Promise<void> {
+export function generateAndSaveSbom({ imageName }: { imageName: string }): Promise<void> {
     return axios({
         method: 'POST',
         url: '/api/v1/images/sbom',
-        data: { imageName: image.name, digest: image.digest },
+        data: { imageName },
         timeout: 0,
     }).then((response) => {
         const { filename } = parseAxiosResponseAttachment(response);

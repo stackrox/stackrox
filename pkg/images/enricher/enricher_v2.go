@@ -35,7 +35,7 @@ type ImageEnricherV2 interface {
 type ImageGetterV2 func(ctx context.Context, id string) (*storage.ImageV2, bool, error)
 
 // BaseImageGetterV2 will be used to get base images of a given image
-type BaseImageGetterV2 func(ctx context.Context, layers []string) ([]*storage.BaseImage, error)
+type BaseImageGetterV2 func(ctx context.Context, layers []string) ([]*storage.BaseImageInfo, error)
 
 // NewV2 returns a new ImageEnricherV2 instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)

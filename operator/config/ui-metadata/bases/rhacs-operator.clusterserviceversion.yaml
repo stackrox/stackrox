@@ -4,8 +4,7 @@ metadata:
   annotations:
     capabilities: Seamless Upgrades
     categories: Security
-    console.openshift.io/plugins: '["advanced-cluster-security"]'
-    containerImage: controller:latest
+    containerImage: quay.io/stackrox-io/stackrox-operator:0.0.1
     createdAt: "1999-12-31T23:59:59Z"
     description: Red Hat Advanced Cluster Security (RHACS) operator provisions the
       services necessary to secure each of your OpenShift and Kubernetes clusters.
@@ -64,9 +63,6 @@ spec:
     1. **Central Services** - Central is a deployment required on only one cluster in your environment. Users interact with RHACS via the user interface or APIs on Central. Central also sends notifications for violations and interacts with integrations. Users may select exposures for Central that best meet their environment.
 
     2. **Secured Cluster Services** - Secured cluster services are placed on each cluster you manage and report back to Central. These services allow users to enforce policies and monitor your OpenShift and Kubernetes clusters. Secured Cluster Services come as two Deployments (Sensor and Admission Controller) and one DaemonSet (Collector).
-
-    **Console Plugin:** RHACS provides a dynamic plugin that displays vulnerability management information in the OpenShift web console. Install a SecuredCluster to deploy the plugin. Enable the plugin by selecting *Operators* > *Installed Operators* or by modifying the console Operator configuration.
-    **Important:** The Console Plugin requires OpenShift 4.19 or later.
 
     ### Central Services Explained
 

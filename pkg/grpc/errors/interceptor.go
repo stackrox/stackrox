@@ -5,9 +5,8 @@ import (
 	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/stackrox/rox/pkg/errox"
-	erroxgrpc "github.com/stackrox/rox/pkg/errox/grpc"
+	errox_grpc "github.com/stackrox/rox/pkg/errox/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -103,23 +102,7 @@ func ErrToGrpcStatus(err error) *status.Status {
 	if s := unwrapGRPCStatus(err); s != nil {
 		code = s.Code()
 	} else {
-		code = erroxgrpc.RoxErrorToGRPCCode(err)
+		code = errox_grpc.RoxErrorToGRPCCode(err)
 	}
-	return status.New(code, sanitizeErrorMessage(err))
-}
-
-// sanitizeErrorMessage removes sensitive internal error details from error messages before they are sent to clients.
-// This prevents disclosure of database schema, SQL syntax errors, and other implementation details.
-func sanitizeErrorMessage(err error) string {
-	if err == nil {
-		return ""
-	}
-
-	// Check if this is a PostgreSQL error - if so, don't expose internal details
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) {
-		return "Database operation failed"
-	}
-
-	return err.Error()
+	return status.New(code, err.Error())
 }

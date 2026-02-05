@@ -160,17 +160,17 @@ func (mr *MockLaneMockRecorder) Publish(arg0 any) *gomock.Call {
 }
 
 // RegisterConsumer mocks base method.
-func (m *MockLane) RegisterConsumer(arg0 pubsub.ConsumerID, arg1 pubsub.Topic, arg2 pubsub.EventCallback) error {
+func (m *MockLane) RegisterConsumer(arg0 pubsub.Topic, arg1 pubsub.EventCallback) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RegisterConsumer", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "RegisterConsumer", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RegisterConsumer indicates an expected call of RegisterConsumer.
-func (mr *MockLaneMockRecorder) RegisterConsumer(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockLaneMockRecorder) RegisterConsumer(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterConsumer", reflect.TypeOf((*MockLane)(nil).RegisterConsumer), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterConsumer", reflect.TypeOf((*MockLane)(nil).RegisterConsumer), arg0, arg1)
 }
 
 // Stop mocks base method.

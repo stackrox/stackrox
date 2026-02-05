@@ -9,11 +9,9 @@ import (
 
 // Scope represents storage.Scope in the Custom Resource.
 type Scope struct {
-	Cluster        string               `yaml:",omitempty"`
-	Namespace      string               `yaml:",omitempty"`
-	Label          *storage.Scope_Label `yaml:",omitempty"`
-	ClusterLabel   *storage.Scope_Label `yaml:",omitempty"`
-	NamespaceLabel *storage.Scope_Label `yaml:",omitempty"`
+	Cluster   string               `yaml:",omitempty"`
+	Namespace string               `yaml:",omitempty"`
+	Label     *storage.Scope_Label `yaml:",omitempty"`
 }
 
 // convertScope Converts storage.Scope to *Scope
@@ -23,11 +21,9 @@ func convertScope(p *storage.Scope) *Scope {
 	}
 
 	return &Scope{
-		Cluster:        p.Cluster,
-		Namespace:      p.Namespace,
-		Label:          p.Label,
-		ClusterLabel:   p.ClusterLabel,
-		NamespaceLabel: p.NamespaceLabel,
+		Cluster:   p.Cluster,
+		Namespace: p.Namespace,
+		Label:     p.Label,
 	}
 }
 

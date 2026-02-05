@@ -45,7 +45,8 @@ message FileAccess {
     RENAME = 2;
     PERMISSION_CHANGE = 3;
     OWNERSHIP_CHANGE = 4;
-    OPEN = 5;
+    WRITE = 5;
+    OPEN = 6;
   }
 
   File file = 1;

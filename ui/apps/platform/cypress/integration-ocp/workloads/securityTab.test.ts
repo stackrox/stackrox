@@ -2,11 +2,10 @@ import { visitFromConsoleLeftNavExpandable } from '../../helpers/nav';
 import { withOcpAuth } from '../../helpers/ocpAuth';
 import { selectProject } from '../../helpers/ocpConsole';
 import { interceptAndWatchRequests } from '../../helpers/request';
-import pf6 from '../../selectors/pf6';
 import {
     acsAuthNamespaceHeader,
+    deploymentListRoute,
     deploymentListRouteMatcher,
-    deploymentsRoute,
     getCVEsForDeploymentRoute,
     getCVEsForDeploymentRouteMatcher,
     routeMatcherMapForBasePlugin,
@@ -16,7 +15,7 @@ describe('Workloads - Security tab', () => {
     it('should send the correct auth headers for namespace scoped requests on workload security tab', () => {
         interceptAndWatchRequests({
             ...routeMatcherMapForBasePlugin,
-            [deploymentsRoute]: deploymentListRouteMatcher,
+            [deploymentListRoute]: deploymentListRouteMatcher,
             [getCVEsForDeploymentRoute]: getCVEsForDeploymentRouteMatcher,
         }).then(({ waitForRequests }) => {
             withOcpAuth();
@@ -25,7 +24,7 @@ describe('Workloads - Security tab', () => {
 
             cy.get('input[aria-label="Name filter"]').type('central-db');
             cy.get('[title="Deployment"] + a').contains('central-db').click();
-            cy.get(pf6.tabButton).contains('Security').click();
+            cy.get('[role="tab"]').contains('Security').click();
 
             waitForRequests([]).then(
                 ([

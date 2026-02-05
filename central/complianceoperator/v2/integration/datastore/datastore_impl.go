@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	store "github.com/stackrox/rox/central/complianceoperator/v2/integration/store/postgres"
+	complianceUtils "github.com/stackrox/rox/central/complianceoperator/v2/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
@@ -44,6 +45,12 @@ func (ds *datastoreImpl) GetComplianceIntegrations(ctx context.Context, query *v
 
 // GetComplianceIntegrationsView provides an in memory layer on top of the underlying DB based storage.
 func (ds *datastoreImpl) GetComplianceIntegrationsView(ctx context.Context, query *v1.Query) ([]*IntegrationDetails, error) {
+	var err error
+	query, err = complianceUtils.WithSACFilter(ctx, resources.Compliance, query)
+	if err != nil {
+		return nil, err
+	}
+
 	cloned := query.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.Cluster).Proto(),

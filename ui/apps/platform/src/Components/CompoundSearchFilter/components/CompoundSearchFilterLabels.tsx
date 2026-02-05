@@ -8,7 +8,7 @@ import type { CompoundSearchFilterAttribute, CompoundSearchFilterConfig } from '
 import { getCompoundSearchFilterLabelDescriptionOrNull, updateSearchFilter } from '../utils/utils';
 import type { CompoundSearchFilterLabelDescription, IsGlobalPredicate } from '../utils/utils';
 
-import './CompoundSearchFilterLabels.css';
+import './SearchFilterChips.css';
 
 const isGlobalPredicateFalse: IsGlobalPredicate = () => false;
 
@@ -29,10 +29,8 @@ function CompoundSearchFilterLabels({
     onFilterChange,
     searchFilter,
 }: CompoundSearchFilterLabelsProps): ReactElement {
-    // Render separate attributes (more likely to be specified) preceding config.
     const attributesFromConfig = config.flatMap(({ attributes }) => attributes);
-    const attributes = [...attributesSeparateFromConfig, ...attributesFromConfig];
-
+    const attributes = [...attributesFromConfig, ...attributesSeparateFromConfig];
     const labelGroupDescriptions: CompoundSearchFilterLabelDescription[] = [];
     attributes.forEach((attribute) => {
         const labelDescriptionOrNull = getCompoundSearchFilterLabelDescriptionOrNull(
@@ -47,7 +45,7 @@ function CompoundSearchFilterLabels({
     });
 
     return (
-        <Flex className="search-filter-labels" spaceItems={{ default: 'spaceItemsXs' }}>
+        <Flex className="search-filter-chips" spaceItems={{ default: 'spaceItemsXs' }}>
             {labelGroupDescriptions.map(({ group, items }) => {
                 return (
                     <FlexItem key={group.label}>

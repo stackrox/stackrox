@@ -2,6 +2,7 @@
 # used to generate the 'manifests/' directory in a bundle.
 resources:
 - bases/rhacs-operator.clusterserviceversion.yaml
+- ../default
 - ../samples
 - ../scorecard-versioned
 

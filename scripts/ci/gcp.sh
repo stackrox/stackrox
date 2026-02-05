@@ -32,8 +32,7 @@ setup_gcp() {
         die "Support is missing for this environment"
     fi
 
-    retry 7 true gcloud auth activate-service-account --key-file <(echo "$service_account")
-
+    gcloud auth activate-service-account --key-file <(echo "$service_account")
     gcloud auth list
     gcloud config set project acs-san-stackroxci
     gcloud config set compute/region us-central1

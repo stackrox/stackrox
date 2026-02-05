@@ -21,6 +21,7 @@ import {
     clustersSecureClusterCrsPath,
 } from 'routePaths';
 
+import ClusterRegistrationSecretTechPreviewAlert from './ClusterRegistrationSecretTechPreviewAlert';
 import SecureClusterUsingHelmChart from './SecureClusterUsingHelmChart';
 import SecureClusterUsingOperator from './SecureClusterUsingOperator';
 
@@ -65,6 +66,7 @@ function SecureClusterPage(): ReactElement {
                         <Title headingLevel="h1">
                             Secure a cluster with a cluster registration secret
                         </Title>
+                        <ClusterRegistrationSecretTechPreviewAlert />
                     </Flex>
                     <FlexItem>
                         <TabNav

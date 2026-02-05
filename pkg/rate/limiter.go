@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -49,8 +48,6 @@ type Limiter struct {
 	buckets    map[string]*gorate.Limiter
 	numClients int
 
-	acceptsFn func(msg *central.MsgFromSensor) bool
-
 	clock Clock // time source (injectable for testing)
 }
 
@@ -62,38 +59,6 @@ func (RealClock) Now() time.Time {
 	return time.Now()
 }
 
-// limiterOption is an intermediary type for creating a rate limiter.
-// It forces the caller to define the workload type to which the rate limiter would react.
-type limiterOption struct {
-	l   *Limiter
-	err error
-}
-
-// ForAllWorkloads configures the rate limiter to analyze all types of messages (including nil).
-func (lo *limiterOption) ForAllWorkloads() (*Limiter, error) {
-	if lo.l == nil {
-		return nil, lo.err
-	}
-	lo.l.acceptsFn = func(msg *central.MsgFromSensor) bool {
-		return true
-	}
-	return lo.l, lo.err
-}
-
-// ForWorkload allows specifying a function that should return `true` if the given MsgFromSensor is to be evaluated by
-// the rate-limiter (and later accepted or rejected) and `false` if the rate-limiter should ignore this message
-// (allowing it to pass). This function must handle `nil` arguments and execute quickly.
-func (lo *limiterOption) ForWorkload(acceptsFn func(msg *central.MsgFromSensor) bool) (*Limiter, error) {
-	if lo.l == nil {
-		return nil, lo.err
-	}
-	if acceptsFn == nil {
-		return nil, errors.New("acceptsFn must not be nil")
-	}
-	lo.l.acceptsFn = acceptsFn
-	return lo.l, lo.err
-}
-
 // NewLimiter creates a new per-client rate limiter for the given workload.
 // globalRate of 0 disables rate limiting (unlimited).
 // bucketCapacity is the max tokens per client bucket (allows temporary bursts above sustained rate).
@@ -103,22 +68,22 @@ func (lo *limiterOption) ForWorkload(acceptsFn func(msg *central.MsgFromSensor) 
 //   - workloadName is empty
 //   - globalRate is negative
 //   - bucketCapacity is less than 1
-func NewLimiter(workloadName string, globalRate float64, bucketCapacity int) *limiterOption {
+func NewLimiter(workloadName string, globalRate float64, bucketCapacity int) (*Limiter, error) {
 	return NewLimiterWithClock(workloadName, globalRate, bucketCapacity, RealClock{})
 }
 
 // NewLimiterWithClock creates a new per-client rate limiter with an injectable clock.
 // This is primarily useful for testing to control time and avoid flaky tests.
 // For production use, prefer NewLimiter which uses the real system clock.
-func NewLimiterWithClock(workloadName string, globalRate float64, bucketCapacity int, clock Clock) *limiterOption {
+func NewLimiterWithClock(workloadName string, globalRate float64, bucketCapacity int, clock Clock) (*Limiter, error) {
 	if workloadName == "" {
-		return &limiterOption{nil, ErrEmptyWorkloadName}
+		return nil, ErrEmptyWorkloadName
 	}
 	if globalRate < 0 {
-		return &limiterOption{nil, ErrNegativeRate}
+		return nil, ErrNegativeRate
 	}
 	if bucketCapacity < 1 {
-		return &limiterOption{nil, ErrInvalidBucketCapacity}
+		return nil, ErrInvalidBucketCapacity
 	}
 
 	// Initialize metrics for this workload so they're visible in Prometheus immediately.
@@ -129,30 +94,19 @@ func NewLimiterWithClock(workloadName string, globalRate float64, bucketCapacity
 	PerClientRate.WithLabelValues(workloadName).Set(globalRate)
 	PerClientBucketCapacity.WithLabelValues(workloadName).Set(float64(bucketCapacity))
 
-	return &limiterOption{
-		l: &Limiter{
-			workloadName:   workloadName,
-			globalRate:     globalRate,
-			bucketCapacity: bucketCapacity,
-			buckets:        make(map[string]*gorate.Limiter),
-			clock:          clock,
-		},
-		err: nil,
-	}
+	return &Limiter{
+		workloadName:   workloadName,
+		globalRate:     globalRate,
+		bucketCapacity: bucketCapacity,
+		buckets:        make(map[string]*gorate.Limiter),
+		clock:          clock,
+	}, nil
 }
 
 // TryConsume attempts to consume one token for the given client.
 // Returns true if allowed, false if rate limit exceeded.
 // Metrics are automatically recorded.
-func (l *Limiter) TryConsume(clientID string, msg *central.MsgFromSensor) (allowed bool, reason string) {
-	if l == nil {
-		return true, "nil rate limiter"
-	}
-	if !l.accepts(msg) {
-		// This is not the correct rateLimiter to evaluate this request - allow request to pass.
-		return true, ""
-	}
-
+func (l *Limiter) TryConsume(clientID string) (allowed bool, reason string) {
 	if l.globalRate <= 0 {
 		// Rate limiting disabled, but still record metrics for visibility into request volume.
 		RequestsTotal.WithLabelValues(l.workloadName, OutcomeAccepted).Inc()
@@ -169,13 +123,6 @@ func (l *Limiter) TryConsume(clientID string, msg *central.MsgFromSensor) (allow
 
 	RequestsTotal.WithLabelValues(l.workloadName, OutcomeRejected).Inc()
 	return false, ReasonRateLimitExceeded
-}
-
-func (l *Limiter) accepts(msg *central.MsgFromSensor) bool {
-	if l.acceptsFn == nil {
-		return true
-	}
-	return l.acceptsFn(msg)
 }
 
 // getOrCreateLimiter returns the rate limiter for a given client, creating one if needed.
@@ -238,9 +185,6 @@ func (l *Limiter) perClientBucketCapacity(numClients int) int {
 // OnClientDisconnect removes a client from rate limiting and rebalances remaining limiters.
 // This should be called when a client connection is terminated.
 func (l *Limiter) OnClientDisconnect(clientID string) {
-	if l == nil {
-		return
-	}
 	if l.globalRate <= 0 {
 		// Rate limiting disabled
 		return

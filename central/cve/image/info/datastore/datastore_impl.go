@@ -2,12 +2,14 @@ package datastore
 
 import (
 	"context"
+	"math"
 
 	"github.com/stackrox/rox/central/cve/image/info/datastore/store"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sliceutils"
+
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type datastoreImpl struct {
@@ -63,18 +65,16 @@ func (ds *datastoreImpl) UpsertMany(ctx context.Context, infos []*storage.ImageC
 	}
 	newInfoMap := make(map[string]*storage.ImageCVEInfo)
 	oldInfoMap := make(map[string]*storage.ImageCVEInfo)
-	// Populate both maps separately - can't use index-based loop because
-	// existing may not be in the same order as infos
-	for _, info := range infos {
-		if prev, ok := newInfoMap[info.GetId()]; ok {
-			// if there are are multiple infos with same id, earlier timestamps take precedence
-			newInfoMap[info.GetId()] = updateTimestamps(prev, info)
-		} else {
-			newInfoMap[info.GetId()] = info
+	// Populate both maps at the same time by looping through up to the length of the longer list to save time
+	for i := range int(math.Max(float64(len(infos)), float64(len(existing)))) {
+		// Check if this was the shorter list
+		if i < len(infos) {
+			newInfoMap[infos[i].GetId()] = infos[i]
 		}
-	}
-	for _, info := range existing {
-		oldInfoMap[info.GetId()] = info
+		// Same as above
+		if i < len(existing) {
+			oldInfoMap[infos[i].GetId()] = existing[i]
+		}
 	}
 	// Create our list that we're going to actually upsert
 	toUpsert := make([]*storage.ImageCVEInfo, 0)

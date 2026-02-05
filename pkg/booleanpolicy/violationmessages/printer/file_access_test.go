@@ -47,7 +47,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 					},
 				},
 			},
-			expected: "'/etc/passwd' opened writable",
+			expected: "'/etc/passwd' accessed (OPEN)",
 		},
 		{
 			desc: "file CREATE operation",
@@ -56,7 +56,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 				Operation: storage.FileAccess_CREATE,
 				Process:   &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "touch"}},
 			},
-			expected: "'/tmp/new_file' created",
+			expected: "'/tmp/new_file' accessed (CREATE)",
 		},
 		{
 			desc: "file UNLINK operation",
@@ -65,7 +65,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 				Operation: storage.FileAccess_UNLINK,
 				Process:   &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "rm"}},
 			},
-			expected: "'/tmp/old_file' deleted",
+			expected: "'/tmp/old_file' accessed (UNLINK)",
 		},
 		{
 			desc: "file RENAME operation",
@@ -74,7 +74,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 				Operation: storage.FileAccess_RENAME,
 				Process:   &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "mv"}},
 			},
-			expected: "'/tmp/renamed_file' renamed",
+			expected: "'/tmp/renamed_file' accessed (RENAME)",
 		},
 		{
 			desc: "file PERMISSION_CHANGE operation",
@@ -83,7 +83,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 				Operation: storage.FileAccess_PERMISSION_CHANGE,
 				Process:   &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "chmod"}},
 			},
-			expected: "'/tmp/chmod_file' permission changed",
+			expected: "'/tmp/chmod_file' accessed (PERMISSION_CHANGE)",
 		},
 		{
 			desc: "file OWNERSHIP_CHANGE operation",
@@ -92,7 +92,16 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 				Operation: storage.FileAccess_OWNERSHIP_CHANGE,
 				Process:   &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "chown"}},
 			},
-			expected: "'/tmp/chown_file' ownership changed",
+			expected: "'/tmp/chown_file' accessed (OWNERSHIP_CHANGE)",
+		},
+		{
+			desc: "file WRITE operation",
+			activity: &storage.FileAccess{
+				File:      &storage.FileAccess_File{ActualPath: "/etc/passwd"},
+				Operation: storage.FileAccess_WRITE,
+				Process:   &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "vim"}},
+			},
+			expected: "'/etc/passwd' accessed (WRITE)",
 		},
 		{
 			desc: "nil file path handling",
@@ -103,7 +112,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 					Signal: &storage.ProcessSignal{Name: "test"},
 				},
 			},
-			expected: "'" + UNKNOWN_FILE + "' opened writable",
+			expected: "'" + UNKNOWN_FILE + "' accessed (OPEN)",
 		},
 		{
 			desc: "nil process handling",
@@ -112,7 +121,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 				Operation: storage.FileAccess_OPEN,
 				Process:   nil,
 			},
-			expected: "'/test/file' opened writable",
+			expected: "'/test/file' accessed (OPEN)",
 		},
 		{
 			desc: "nil process signal handling",
@@ -123,7 +132,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 					Signal: nil,
 				},
 			},
-			expected: "'/test/file' opened writable",
+			expected: "'/test/file' accessed (OPEN)",
 		},
 		{
 			desc: "empty file path",
@@ -134,7 +143,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 					Signal: &storage.ProcessSignal{Name: "test"},
 				},
 			},
-			expected: "'" + UNKNOWN_FILE + "' opened writable",
+			expected: "'" + UNKNOWN_FILE + "' accessed (OPEN)",
 		},
 		{
 			desc: "Use EffectivePath if ActualPath is empty",
@@ -145,7 +154,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 					Signal: &storage.ProcessSignal{Name: "test"},
 				},
 			},
-			expected: "'/test/file' opened writable",
+			expected: "'/test/file' accessed (OPEN)",
 		},
 		{
 			desc: "empty process name",
@@ -156,7 +165,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 					Signal: &storage.ProcessSignal{Name: ""},
 				},
 			},
-			expected: "'/test/file' opened writable",
+			expected: "'/test/file' accessed (OPEN)",
 		},
 	}
 

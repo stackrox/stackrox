@@ -21,34 +21,29 @@ import { CloudSecurityIcon } from '@patternfly/react-icons';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import { getProductBranding } from 'constants/productBranding';
 import useAnalytics, {
-    CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED,
+    CREATE_INIT_BUNDLE_CLICKED,
     LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
     SECURE_A_CLUSTER_LINK_CLICKED,
-    VIEW_INIT_BUNDLES_CLICKED,
 } from 'hooks/useAnalytics';
 // import useAuthStatus from 'hooks/useAuthStatus'; // TODO after 4.4 release
-import { fetchClusterRegistrationSecrets } from 'services/ClustersService';
+import { fetchClusterInitBundles } from 'services/ClustersService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import {
-    clustersBasePath,
-    clustersClusterRegistrationSecretsPath,
-    clustersInitBundlesPath,
-} from 'routePaths';
+import { clustersBasePath, clustersInitBundlesPath } from 'routePaths';
 
-import SecureClusterModal from './ClusterRegistrationSecrets/SecureClusterModal';
+import SecureClusterModal from './InitBundles/SecureClusterModal';
 
 const headingLevel = 'h1'; // Replace with h2 if refactoring restores h1 element with Clusters
 
 /*
  * Comments about data flow:
  *
- * 1. It is important that /main/clusters NoClustersPage **Create cluster registration secret**
- *    goes to /main/clusters/cluster-registration-secrets ClusterRegistrationSecretForm in the same tab,
- *    so when **Download** goes back, NoClustersPage makes a new GET /v1/cluster-init/crs request
+ * 1. It is important that /main/clusters NoClustersPage **Create bundle**
+ *    goes to /main/clusters/init-bundles InitBundlesWizard in the same tab,
+ *    so when **Download** goes back, NoClustersPage makes a new GET /v1/init-bundles request
  *    and therefore renders the link instead of the button.
  *
- * 2. It is important that /main/clusters NoClustersPage **View installation methods**
- *    opens the modal SecureClusterModal in the same tab,
+ * 2. It is important that /main/clusters NoClustersPage **Review installation methods**
+ *    opens the modal SecureCluster in the same tab,
  *    so polling loop in original tab will cause conditional rendering of table
  *    whenever there is a secured cluster.
  */
@@ -69,7 +64,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
 
     // Use promise instead of useRestQuery hook because of role-based access control.
     const [errorMessage, setErrorMessage] = useState('');
-    const [registrationSecretsCount, setRegistrationSecretsCount] = useState(0);
+    const [initBundlesCount, setInitBundlesCount] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
 
     const { basePageTitle } = getProductBranding();
@@ -77,10 +72,10 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
     useEffect(() => {
         // TODO after 4.4 release: if (hasAdminRole) {
         setIsLoading(true);
-        fetchClusterRegistrationSecrets()
-            .then(({ items }) => {
+        fetchClusterInitBundles()
+            .then(({ response }) => {
                 setErrorMessage('');
-                setRegistrationSecretsCount(items.length);
+                setInitBundlesCount(response.items.length);
             })
             .catch((error) => {
                 setErrorMessage(getAxiosErrorMessage(error));
@@ -111,7 +106,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                 ) : errorMessage ? (
                     <Alert
                         variant="warning"
-                        title="Unable to fetch cluster registration secrets"
+                        title="Unable to fetch cluster init bundles"
                         component="p"
                         isInline
                     >
@@ -120,7 +115,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                 ) : (
                     <EmptyState variant="xl">
                         <EmptyStateHeader
-                            titleText="Secure clusters with a registration secret"
+                            titleText="Secure clusters with a reusable init bundle"
                             icon={<EmptyStateIcon icon={CloudSecurityIcon} />}
                             headingLevel={headingLevel}
                         />
@@ -129,14 +124,13 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                 direction={{ default: 'column' }}
                                 spaceItems={{ default: 'spaceItemsLg' }}
                             >
-                                {registrationSecretsCount === 0 ? (
+                                {initBundlesCount === 0 ? (
                                     <FlexItem>
                                         <Text component="p">
                                             {`You have successfully deployed a ${basePageTitle} platform.`}
                                         </Text>
                                         <Text component="p">
-                                            Before you can secure clusters, create a registration
-                                            secret.
+                                            Before you can secure clusters, create an init bundle.
                                         </Text>
                                     </FlexItem>
                                 ) : (
@@ -154,20 +148,20 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                             </Flex>
                         </EmptyStateBody>
                         <EmptyStateFooter>
-                            {registrationSecretsCount === 0 ? (
+                            {initBundlesCount === 0 ? (
                                 <Button
                                     variant="primary"
                                     size="lg"
                                     component={LinkShim}
-                                    href={`${clustersClusterRegistrationSecretsPath}?action=create`}
+                                    href={`${clustersInitBundlesPath}?action=create`}
                                     onClick={() =>
                                         analyticsTrack({
-                                            event: CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED,
+                                            event: CREATE_INIT_BUNDLE_CLICKED,
                                             properties: { source: 'No Clusters' },
                                         })
                                     }
                                 >
-                                    Create cluster registration secret
+                                    Create init bundle
                                 </Button>
                             ) : (
                                 <Button
@@ -186,17 +180,6 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                             )}
                             <Flex direction={{ default: 'column' }} className="pf-v5-u-mt-xl">
                                 <Link
-                                    to={clustersInitBundlesPath}
-                                    onClick={() => {
-                                        analyticsTrack({
-                                            event: VIEW_INIT_BUNDLES_CLICKED,
-                                            properties: { source: 'No Clusters' },
-                                        });
-                                    }}
-                                >
-                                    Init bundles installation method
-                                </Link>
-                                <Link
                                     to={`${clustersBasePath}/new`}
                                     onClick={() => {
                                         analyticsTrack({
@@ -207,15 +190,15 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                                 >
                                     Legacy installation method
                                 </Link>
-                                {registrationSecretsCount !== 0 && (
+                                {initBundlesCount !== 0 && (
                                     <Text component="p" className="pf-v5-u-w-50vw">
-                                        If you misplaced your registration secret, we recommend
-                                        locating the previously downloaded YAML on your device first
-                                        by the name of the{' '}
-                                        <Link to={clustersClusterRegistrationSecretsPath}>
-                                            generated registration secret
+                                        If you misplaced your init bundle, we recommend locating the
+                                        previously downloaded YAML on your device first by the name
+                                        of the{' '}
+                                        <Link to={clustersInitBundlesPath}>
+                                            generated init bundle
                                         </Link>
-                                        , or you may need to create a new registration secret.
+                                        , or you may need to create a new init bundle.
                                     </Text>
                                 )}
                             </Flex>

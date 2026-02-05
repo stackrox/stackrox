@@ -3,7 +3,6 @@ package continuousprofiling
 import (
 	"net/url"
 	"runtime"
-	"strings"
 
 	"github.com/grafana/pyroscope-go"
 	"github.com/pkg/errors"
@@ -58,10 +57,6 @@ var (
 
 // DefaultConfig creates a new configuration with default properties.
 func DefaultConfig() *pyroscope.Config {
-	labels, err := parseLabels(env.ContinuousProfilingLabels.Setting())
-	if err != nil {
-		log.Errorf("Unable to parse Labels in %q: %v", env.ContinuousProfilingLabels.EnvVar(), err)
-	}
 	return &pyroscope.Config{
 		ApplicationName:   env.ContinuousProfilingAppName.Setting(),
 		ServerAddress:     env.ContinuousProfilingServerAddress.Setting(),
@@ -69,7 +64,6 @@ func DefaultConfig() *pyroscope.Config {
 		BasicAuthPassword: env.ContinuousProfilingBasicAuthPassword.Setting(),
 		ProfileTypes:      DefaultProfiles,
 		Logger:            nil,
-		Tags:              labels,
 	}
 }
 
@@ -109,31 +103,6 @@ func validateServerAddress(address string) (string, error) {
 		return "", errox.InvalidArgs.Newf("unable to parse server address %q", address).CausedBy(err)
 	}
 	return sanitizedAddress, nil
-}
-
-func parseLabels(labels string) (map[string]string, error) {
-	parsedLabels := make(map[string]string)
-	entries := strings.Split(labels, ",")
-	for _, entry := range entries {
-		entry = strings.TrimSpace(entry)
-		if entry == "" {
-			continue
-		}
-		parts := strings.SplitN(entry, "=", 2)
-		if len(parts) != 2 {
-			return nil, errors.Errorf("invalid label format: %q (expected key=value)", entry)
-		}
-		key := strings.TrimSpace(parts[0])
-		value := strings.TrimSpace(parts[1])
-		if key == "" {
-			return nil, errors.Errorf("empty label key in %q", entry)
-		}
-		if value == "" {
-			return nil, errors.Errorf("empty label value in %q", entry)
-		}
-		parsedLabels[key] = value
-	}
-	return parsedLabels, nil
 }
 
 func validateConfig(cfg *pyroscope.Config) error {

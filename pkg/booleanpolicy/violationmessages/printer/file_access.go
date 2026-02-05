@@ -10,24 +10,6 @@ const (
 	UNKNOWN_FILE = "Unknown file"
 )
 
-var (
-	operationToPretty = map[storage.FileAccess_Operation]string{
-		storage.FileAccess_OPEN:              "opened writable",
-		storage.FileAccess_UNLINK:            "deleted",
-		storage.FileAccess_CREATE:            "created",
-		storage.FileAccess_OWNERSHIP_CHANGE:  "ownership changed",
-		storage.FileAccess_PERMISSION_CHANGE: "permission changed",
-		storage.FileAccess_RENAME:            "renamed",
-	}
-)
-
-func prettifyOperation(op storage.FileAccess_Operation) string {
-	if pretty, ok := operationToPretty[op]; ok {
-		return pretty
-	}
-	return "Unknown operation"
-}
-
 func UpdateFileAccessAlertViolationMessage(v *storage.Alert_Violation) {
 	if v.GetType() != storage.Alert_Violation_FILE_ACCESS {
 		return
@@ -45,7 +27,7 @@ func UpdateFileAccessAlertViolationMessage(v *storage.Alert_Violation) {
 		path = access.GetFile().GetEffectivePath()
 	}
 
-	v.Message = fmt.Sprintf("'%v' %s", path, prettifyOperation(access.GetOperation()))
+	v.Message = fmt.Sprintf("'%v' accessed (%s)", path, access.GetOperation())
 }
 
 func GenerateFileAccessViolation(access *storage.FileAccess) *storage.Alert_Violation {

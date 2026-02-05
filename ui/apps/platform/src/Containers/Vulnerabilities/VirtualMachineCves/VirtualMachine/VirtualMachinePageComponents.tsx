@@ -1,11 +1,17 @@
 import { useMemo } from 'react';
 import {
+    Flex,
     PageSection,
     Pagination,
+    Skeleton,
+    Split,
+    SplitItem,
+    Title,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
+    pluralize,
 } from '@patternfly/react-core';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
@@ -16,11 +22,13 @@ import type {
 } from 'Components/CompoundSearchFilter/types';
 import SearchFilterSelectInclusive from 'Components/CompoundSearchFilter/components/SearchFilterSelectInclusive';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
+import { DynamicTableLabel } from 'Components/DynamicIcon';
 import type { UseURLPaginationResult } from 'hooks/useURLPagination';
 import type { UseUrlSearchReturn } from 'hooks/useURLSearch';
 import type { UseURLSortResult } from 'hooks/useURLSort';
 import type { VirtualMachine } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
+import { getHasSearchApplied } from 'utils/searchUtils';
 
 import {
     applyVirtualMachineComponentsTableFilters,
@@ -43,9 +51,9 @@ export const attributeForScannable: SelectSearchFilterAttribute = {
 };
 
 export type VirtualMachinePageComponentsProps = {
-    virtualMachine: VirtualMachine | undefined;
-    isLoadingVirtualMachine: boolean;
-    errorVirtualMachine: Error | undefined;
+    virtualMachineData: VirtualMachine | undefined;
+    isLoadingVirtualMachineData: boolean;
+    errorVirtualMachineData: Error | undefined;
     urlSearch: UseUrlSearchReturn;
     urlSorting: UseURLSortResult;
     urlPagination: UseURLPaginationResult;
@@ -54,9 +62,9 @@ export type VirtualMachinePageComponentsProps = {
 const searchFilterConfig = [virtualMachineComponentSearchFilterConfig];
 
 function VirtualMachinePageComponents({
-    virtualMachine,
-    isLoadingVirtualMachine,
-    errorVirtualMachine,
+    virtualMachineData,
+    isLoadingVirtualMachineData,
+    errorVirtualMachineData,
     urlSearch,
     urlSorting,
     urlPagination,
@@ -65,9 +73,11 @@ function VirtualMachinePageComponents({
     const { page, perPage, setPage, setPerPage } = urlPagination;
     const { sortOption, getSortParams } = urlSorting;
 
+    const isFiltered = getHasSearchApplied(searchFilter);
+
     const virtualMachineComponentsTableData = useMemo(
-        () => getVirtualMachineComponentsTableData(virtualMachine),
-        [virtualMachine]
+        () => getVirtualMachineComponentsTableData(virtualMachineData),
+        [virtualMachineData]
     );
 
     const filteredVirtualMachineComponentsTableData = useMemo(
@@ -100,9 +110,9 @@ function VirtualMachinePageComponents({
     }, [sortedVirtualMachineComponentsTableData, page, perPage]);
 
     const tableState = getTableUIState({
-        isLoading: isLoadingVirtualMachine,
+        isLoading: isLoadingVirtualMachineData,
         data: paginatedVirtualMachineComponentsTableData,
-        error: errorVirtualMachine,
+        error: errorVirtualMachineData,
         searchFilter,
     });
 
@@ -152,20 +162,38 @@ function VirtualMachinePageComponents({
                     </ToolbarGroup>
                 </ToolbarContent>
             </Toolbar>
-            <Pagination
-                itemCount={filteredVirtualMachineComponentsTableData.length}
-                perPage={perPage}
-                page={page}
-                onSetPage={(_, newPage) => setPage(newPage)}
-                onPerPageSelect={(_, newPerPage) => {
-                    setPerPage(newPerPage);
-                }}
-            />
-            <VirtualMachineComponentsPageTable
-                tableState={tableState}
-                getSortParams={getSortParams}
-                onClearFilters={onClearFilters}
-            />
+            <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100 pf-v5-u-p-lg">
+                <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
+                    <SplitItem isFilled>
+                        <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                            <Title headingLevel="h2">
+                                {!isLoadingVirtualMachineData ? (
+                                    `${pluralize(filteredVirtualMachineComponentsTableData.length, 'result')} found`
+                                ) : (
+                                    <Skeleton screenreaderText="Loading virtual machine vulnerability count" />
+                                )}
+                            </Title>
+                            {isFiltered && <DynamicTableLabel />}
+                        </Flex>
+                    </SplitItem>
+                    <SplitItem>
+                        <Pagination
+                            itemCount={filteredVirtualMachineComponentsTableData.length}
+                            perPage={perPage}
+                            page={page}
+                            onSetPage={(_, newPage) => setPage(newPage)}
+                            onPerPageSelect={(_, newPerPage) => {
+                                setPerPage(newPerPage);
+                            }}
+                        />
+                    </SplitItem>
+                </Split>
+                <VirtualMachineComponentsPageTable
+                    tableState={tableState}
+                    getSortParams={getSortParams}
+                    onClearFilters={onClearFilters}
+                />
+            </div>
         </PageSection>
     );
 }

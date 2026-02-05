@@ -39,14 +39,14 @@ func BenchmarkNodes(b *testing.B) {
 	// Stored node is read because it contains new scan.
 	b.Run("upsertNodeWithOldScan", func(b *testing.B) {
 		fakeNode.Scan.ScanTime.Seconds = fakeNode.GetScan().GetScanTime().GetSeconds() - 500
-		for b.Loop() {
+		for i := 0; i < b.N; i++ {
 			require.NoError(b, nodeDS.UpsertNode(ctx, fakeNode))
 		}
 	})
 
 	b.Run("upsertNodeWithNewScan", func(b *testing.B) {
 		fakeNode.Scan.ScanTime.Seconds = fakeNode.GetScan().GetScanTime().GetSeconds() + 500
-		for b.Loop() {
+		for i := 0; i < b.N; i++ {
 			require.NoError(b, nodeDS.UpsertNode(ctx, fakeNode))
 		}
 	})
@@ -64,7 +64,7 @@ func BenchmarkNodes(b *testing.B) {
 	})
 
 	b.Run("deleteForClusters", func(b *testing.B) {
-		for i := 0; b.Loop(); i++ {
+		for i := 0; i < b.N; i++ {
 			idx := i % len(nodes)
 			err := nodeDS.DeleteAllNodesForCluster(ctx, nodes[idx].GetClusterId())
 			require.NoError(b, err)

@@ -82,10 +82,7 @@ func securedClusterScannerV4Defaulting(logger logr.Logger, status *platform.Secu
 		annotations[common.FeatureDefaultKeyScannerV4] = string(componentPolicy)
 	}
 
-	if defaults.ScannerV4 == nil {
-		defaults.ScannerV4 = &platform.LocalScannerV4ComponentSpec{}
-	}
-	defaults.ScannerV4.ScannerComponent = &componentPolicy
+	defaults.ScannerV4 = &platform.LocalScannerV4ComponentSpec{ScannerComponent: &componentPolicy}
 	return nil
 }
 

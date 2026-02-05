@@ -38,14 +38,14 @@ func BenchmarkCreateNetworkTree(b *testing.B) {
 	// hence resulting in comparison with every node for each new entry.
 
 	b.Run("initialize", func(b *testing.B) {
-		for b.Loop() {
+		for i := 0; i < b.N; i++ {
 			mgr := initialize(b, entitiesByCluster)
 			require.NotNil(b, mgr)
 		}
 	})
 
 	b.Run("insertIntoNetworkTree", func(b *testing.B) {
-		for b.Loop() {
+		for i := 0; i < b.N; i++ {
 			b.StopTimer()
 			mgr := initialize(b, entitiesByCluster)
 			t := mgr.CreateNetworkTree(context.Background(), "c2")

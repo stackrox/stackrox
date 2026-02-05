@@ -213,7 +213,6 @@ deploy_stackrox_operator() {
         ocp_version=$(kubectl get clusterversion -o=jsonpath='{.items[0].status.desired.version}' | cut -d '.' -f 1,2)
 
         make -C operator kuttl deploy-via-olm \
-          TEST_NAMESPACE="rhacs-operator-system" \
           INDEX_IMG_BASE="quay.io/rhacs-eng/stackrox-operator-index" \
           INDEX_IMG_TAG="$(< operator/midstream/iib.json jq -r --arg version "$ocp_version" '.iibs[$version]')" \
           INSTALL_CHANNEL="$(< operator/midstream/iib.json jq -r '.operator.channel')" \
@@ -221,7 +220,6 @@ deploy_stackrox_operator() {
     else
         info "Deploying ACS operator"
         make -C operator kuttl deploy-via-olm \
-          TEST_NAMESPACE="rhacs-operator-system" \
           ROX_PRODUCT_BRANDING=RHACS_BRANDING
     fi
 }
@@ -990,9 +988,6 @@ remove_existing_stackrox_resources() {
     if echo "${k8s_api_resources}" | grep -q "^securitycontextconstraints\.security\.openshift\.io$"; then
         resource_types="${resource_types},SecurityContextConstraints"
     fi
-    if echo "${k8s_api_resources}" | grep -q "^consoleplugins\.console\.openshift\.io$"; then
-        global_resource_types="${global_resource_types},consoleplugins.console.openshift.io"
-    fi
     if echo "${k8s_api_resources}" | grep -q "^podsecuritypolicies\.policy$"; then
         psps_supported=true
         global_resource_types="${global_resource_types},psp"
@@ -1059,17 +1054,17 @@ remove_existing_stackrox_resources() {
             kubectl delete --wait "$namespace"
         done
 
-        if kubectl get ns rhacs-operator-system >/dev/null 2>&1; then
+        if kubectl get ns stackrox-operator >/dev/null 2>&1; then
             # Delete subscription first to give OLM a chance to notice and prevent errors on re-install.
             # See https://issues.redhat.com/browse/ROX-30450
-            kubectl -n rhacs-operator-system delete --ignore-not-found --wait subscription.operators.coreos.com --all
+            kubectl -n stackrox-operator delete --ignore-not-found --wait subscription.operators.coreos.com --all
             # Then delete remaining OLM resources.
             # The awk is a quick hack to omit templating that might confuse kubectl's YAML parser.
             # We only care about apiVersion, kind and metadata, which do not contain any templating.
             awk 'BEGIN{interesting=1} /^spec:/{interesting=0} /^---$/{interesting=1} interesting{print}' operator/hack/operator.envsubst.yaml | \
-              kubectl -n rhacs-operator-system delete --ignore-not-found --wait -f -
+              kubectl -n stackrox-operator delete --ignore-not-found --wait -f -
         fi
-        kubectl delete --ignore-not-found ns rhacs-operator-system --wait
+        kubectl delete --ignore-not-found ns stackrox-operator --wait
         kubectl delete --ignore-not-found crd {centrals.platform,securedclusters.platform,securitypolicies.config}.stackrox.io --wait
     ) 2>&1 | sed -e 's/^/out: /' || true # (prefix output to avoid triggering prow log focus)
     info "Finished tearing down resources."

@@ -145,7 +145,7 @@ type CVESuppressor interface {
 type ImageGetter func(ctx context.Context, id string) (*storage.Image, bool, error)
 
 // BaseImageGetter will be used to get base images of a given image
-type BaseImageGetter func(ctx context.Context, layers []string) ([]*storage.BaseImage, error)
+type BaseImageGetter func(ctx context.Context, layers []string) ([]*storage.BaseImageInfo, error)
 
 // SignatureIntegrationGetter will be used to retrieve all available signature integrations.
 type SignatureIntegrationGetter func(ctx context.Context) ([]*storage.SignatureIntegration, error)

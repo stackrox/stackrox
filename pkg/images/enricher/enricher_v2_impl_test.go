@@ -43,10 +43,6 @@ func imageGetterV2PanicOnCall(_ context.Context, _ string) (*storage.ImageV2, bo
 	panic("Unexpected call to imageGetter")
 }
 
-func emptyBaseImageGetterV2(_ context.Context, _ []string) ([]*storage.BaseImage, error) {
-	return nil, nil
-}
-
 var _ signatures.SignatureFetcher = (*fakeSigFetcher)(nil)
 
 var _ scannertypes.Scanner = (*fakeScanner)(nil)
@@ -361,7 +357,6 @@ func TestEnricherV2Flow(t *testing.T) {
 				imageGetter:                emptyImageGetterV2,
 				signatureIntegrationGetter: emptySignatureIntegrationGetter,
 				signatureFetcher:           &fakeSigFetcher{},
-				baseImageGetter:            emptyBaseImageGetterV2,
 			}
 			if c.inMetadataCache {
 				enricherImpl.metadataCache.Add(c.image.GetId(), c.image.GetMetadata())
@@ -414,7 +409,6 @@ func TestCVESuppressionV2(t *testing.T) {
 		imageGetter:                emptyImageGetterV2,
 		signatureIntegrationGetter: emptySignatureIntegrationGetter,
 		signatureFetcher:           &fakeSigFetcher{},
-		baseImageGetter:            emptyBaseImageGetterV2,
 	}
 
 	img := &storage.ImageV2{
@@ -1256,15 +1250,11 @@ func TestEnrichImageWithBaseImagesV2(t *testing.T) {
 	const expectedDigest = "sha256:abcdef123456"
 
 	// CHANGE: Define the mock function instead of the gomock matcher
-	mockBaseImageGetter := func(ctx context.Context, layers []string) ([]*storage.BaseImage, error) {
-		return []*storage.BaseImage{
+	mockBaseImageGetter := func(ctx context.Context, layers []string) ([]*storage.BaseImageInfo, error) {
+		return []*storage.BaseImageInfo{
 			{
-				Repository:     "docker.io/library/alpine",
-				Tag:            "3.18",
-				ManifestDigest: expectedDigest,
-				Layers: []*storage.BaseImageLayer{
-					{LayerDigest: "sha1", Index: 0},
-				},
+				BaseImageFullName: expectedName,
+				BaseImageDigest:   expectedDigest,
 			},
 		}, nil
 	}
@@ -1295,12 +1285,6 @@ func TestEnrichImageWithBaseImagesV2(t *testing.T) {
 		Metadata: &storage.ImageMetadata{
 			LayerShas:  []string{"sha1", "sha2"},
 			DataSource: &storage.DataSource{Id: "test-id"},
-			V1: &storage.V1Metadata{
-				Layers: []*storage.ImageLayer{
-					{Instruction: "ADD"},
-					{Instruction: "RUN"},
-				},
-			},
 		},
 	}
 
@@ -1319,7 +1303,7 @@ func TestEnrichImageWithBaseImagesV2(t *testing.T) {
 func newEnricherV2(set *mocks.MockSet, mockReporter *reporterMocks.MockReporter) ImageEnricherV2 {
 	return NewV2(&fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
 		newCache(),
-		emptyBaseImageGetterV2,
+		nil,
 		emptyImageGetterV2,
 		mockReporter, emptySignatureIntegrationGetter, nil)
 }

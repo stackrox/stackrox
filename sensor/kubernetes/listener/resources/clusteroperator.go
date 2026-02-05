@@ -3,7 +3,6 @@ package resources
 import (
 	v1 "github.com/openshift/api/config/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 )
@@ -39,16 +38,8 @@ func (c *clusterOperatorDispatcher) ProcessEvent(obj, _ interface{}, _ central.R
 	    namespace: openshift-machine-api
 	    resource: machines
 	*/
-	sensorNamespace := pods.GetPodNamespace()
 	for _, obj := range clusterOperator.Status.RelatedObjects {
 		if obj.Resource == "namespaces" {
-			// Skip sensor's own namespace to avoid marking StackRox components as orchestrator components.
-			// This can happen when a ConsolePlugin references the sensor namespace, causing the
-			// console-operator to add it to its relatedObjects.
-			if obj.Name == sensorNamespace {
-				log.Debugf("Skipping sensor namespace %s from orchestrator namespace map", obj.Name)
-				continue
-			}
 			log.Debugf("Adding namespace %s to orchestrator namespace map", obj.Name)
 			c.orchestratorNamespaces.AddNamespace(obj.Name)
 		}

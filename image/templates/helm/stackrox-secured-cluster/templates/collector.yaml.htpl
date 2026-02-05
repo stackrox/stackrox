@@ -129,8 +129,6 @@ spec:
           value: "/var/run/secrets/stackrox.io/certs/"
         - name: FACT_HOST_MOUNT
           value: "/host"
-        - name: FACT_PATHS
-          value: "/etc/ssh/sshd_config:/etc/sudoers:/etc/passwd:/etc/shadow"
         {{- include "srox.envVars" (list . "daemonset" "collector" "fact") | nindent 8 }}
         resources:
           {{- ._rox.collector._sfaResources | nindent 10 }}

@@ -365,15 +365,6 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 			default:
 				log.Errorf("Unknown ACK Action: %s", t.Ack.GetAction())
 			}
-		case *sensor.MsgToCompliance_ComplianceAck:
-			complianceAck := t.ComplianceAck
-			log.Debugf("Received ComplianceACK: type=%s, action=%s, resource_id=%s, reason=%s",
-				complianceAck.GetMessageType(),
-				complianceAck.GetAction(),
-				complianceAck.GetResourceId(),
-				complianceAck.GetReason(),
-			)
-		// TODO: Handle ComplianceACK message from Sensor/Central 4.10.
 		default:
 			utils.Should(errors.Errorf("Unhandled msg type: %T", t))
 		}

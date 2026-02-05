@@ -173,7 +173,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      netFlowManagerPrefix + "processes_listening_on_port_enrichment_events_total",
-		Help:      "Counts enrichment outcomes for process-listening-on-port endpoints during flow enrichment",
+		Help:      "Total number of enrichment outcomes for the plop",
 	}, []string{"containerIDfound", "result", "action", "isHistorical", "reason", "isClosed", "rotten", "mature", "fresh"})
 )
 

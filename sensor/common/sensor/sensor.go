@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -198,9 +198,7 @@ func (s *Sensor) Start() {
 		}
 	}
 	s.imageService.SetClient(s.centralConnection)
-	if !env.ContinuousProfiling.BooleanSetting() {
-		s.profilingServer = s.startProfilingServer()
-	}
+	s.profilingServer = s.startProfilingServer()
 
 	var centralReachable concurrency.Flag
 
@@ -249,16 +247,17 @@ func (s *Sensor) Start() {
 
 	// Enable proxy endpoint for forwarding requests to Central on OpenShift.
 	// The proxy is served on a dedicated HTTPS server with a service CA signed certificate.
-	if features.OCPConsoleIntegration.Enabled() && env.OpenshiftAPI.BooleanSetting() {
-		handler, err := centralproxy.NewProxyHandler(s.centralEndpoint, centralCertificates, s.clusterID)
-		if err != nil {
-			utils.Should(errors.Wrap(err, "creating central proxy handler"))
-		} else {
-			handler.SetCentralGRPCClient(s.centralConnection)
-			s.AddNotifiable(handler)
-			s.proxyServer, err = centralproxy.StartProxyServer(handler)
+	if features.OCPConsoleIntegration.Enabled() && env.OpenshiftAPI.Setting() != "" {
+		if proxyToken := env.CentralProxyToken.Setting(); proxyToken != "" {
+			handler, err := centralproxy.NewProxyHandler(s.centralEndpoint, centralCertificates, proxyToken)
 			if err != nil {
-				utils.Should(errors.Wrap(err, "starting proxy server"))
+				utils.Should(errors.Wrap(err, "creating central proxy handler"))
+			} else {
+				s.AddNotifiable(handler)
+				s.proxyServer, err = centralproxy.StartProxyServer(handler)
+				if err != nil {
+					utils.Should(errors.Wrap(err, "starting proxy server"))
+				}
 			}
 		}
 	}
@@ -449,19 +448,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 	exponential.MaxInterval = env.ConnectionRetryMaxInterval.DurationSetting()
 
 	s.reconcile.Store(true)
-	err := backoff.RetryNotify(s.communicationWithCentral(centralReachable, exponential), exponential, func(err error, d time.Duration) {
-		log.Infof("Central communication stopped: %s. Retrying after %s...", err, d.Round(time.Second))
-	})
-
-	log.Info("Stopping gRPC connection retry loop.")
-
-	if err != nil {
-		log.Warnf("Backoff returned error: %s", err)
-	}
-}
-
-func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag, exponential *backoff.ExponentialBackOff) func() error {
-	return func() error {
+	err := backoff.RetryNotify(func() error {
 		log.Infof("Attempting connection setup (client reconciliation = %s)", strconv.FormatBool(s.reconcile.Load()))
 		select {
 		case <-s.centralConnectionFactory.OkSignal().WaitC():
@@ -486,14 +473,8 @@ func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag, ex
 		})
 		centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
 		go s.notifySyncDone(&syncDone, centralCommunication)
-
-		defer func() {
-			if syncDone.IsDone() {
-				log.Debug("Reset the exponential back-off if the sync succeeds")
-				exponential.Reset()
-			}
-		}()
-
+		// Reset the exponential back-off if the connection succeeds
+		exponential.Reset()
 		select {
 		case <-s.centralCommunication.Stopped().WaitC():
 			if err := s.centralCommunication.Stopped().Err(); err != nil {
@@ -525,6 +506,14 @@ func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag, ex
 			s.centralCommunication.Stop()
 			return backoff.Permanent(wrapOrNewError(s.stoppedSig.Err(), "received sensor stop signal"))
 		}
+	}, exponential, func(err error, d time.Duration) {
+		log.Infof("Central communication stopped: %s. Retrying after %s...", err, d.Round(time.Second))
+	})
+
+	log.Info("Stopping gRPC connection retry loop.")
+
+	if err != nil {
+		log.Warnf("Backoff returned error: %s", err)
 	}
 }
 

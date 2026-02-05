@@ -59,7 +59,6 @@ jobs:
           [
             "central-db",
             "collector",
-            "fact",
             "main",
             "roxctl",
             "scanner",
@@ -95,7 +94,7 @@ jobs:
 
       - name: Upload scan result artifact
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: upstream_quay_io_rhacs-eng_${{ matrix.image }}_${{ needs.run-parameters.outputs.version }}.json
           path: ${{ steps.scan-image.outputs.result-path }}
@@ -115,7 +114,6 @@ jobs:
           [
             "release-central-db",
             "release-collector",
-            "release-fact",
             "release-main",
             "release-roxctl",
             "release-scanner",
@@ -153,7 +151,7 @@ jobs:
 
       - name: Upload scan result artifact
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v4
         with:
           name: konflux_quay_io_rhacs-eng_${{ matrix.image }}_${{ needs.run-parameters.outputs.version }}.json
           path: ${{ steps.scan-image.outputs.result-path }}

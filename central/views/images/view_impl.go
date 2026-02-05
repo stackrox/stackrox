@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
@@ -28,12 +29,18 @@ func (v *imageCoreViewImpl) Get(ctx context.Context, query *v1.Query) ([]ImageCo
 		return nil, err
 	}
 
+	var err error
+	query, err = common.WithSACFilter(ctx, resources.Image, query)
+	if err != nil {
+		return nil, err
+	}
 	query = withSelectQuery(query)
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	results, err := pgSearch.RunSelectRequestForSchema[imageResponse](queryCtx, v.db, v.schema, query)
+	var results []*imageResponse
+	results, err = pgSearch.RunSelectRequestForSchema[imageResponse](queryCtx, v.db, v.schema, query)
 	if err != nil {
 		return nil, err
 	}

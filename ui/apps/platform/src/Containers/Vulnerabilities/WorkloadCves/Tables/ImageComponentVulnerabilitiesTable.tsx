@@ -26,7 +26,7 @@ export const imageComponentVulnerabilitiesFragment = gql`
         location
         source
         layerIndex
-        inBaseImageLayer
+        # TODO: Add inBaseImageLayer field once backend implements it
         imageVulnerabilities(query: $query) {
             severity
             fixedByVersion

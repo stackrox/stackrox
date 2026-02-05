@@ -1584,15 +1584,12 @@ type ImageCVEV2 struct {
 	// Types that are valid to be assigned to HasFixedBy:
 	//
 	//	*ImageCVEV2_FixedBy
-	HasFixedBy  isImageCVEV2_HasFixedBy `protobuf_oneof:"has_fixed_by"`
-	ComponentId string                  `protobuf:"bytes,13,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty" sql:"fk(ImageComponentV2:id),index=btree"` // @gotags: sql:"fk(ImageComponentV2:id),index=btree"
-	Advisory    *Advisory               `protobuf:"bytes,14,opt,name=advisory,proto3" json:"advisory,omitempty"`
-	ImageIdV2   string                  `protobuf:"bytes,15,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty" sql:"fk(ImageV2:id),index=btree,allow-null"` // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
-	// Timestamp when the fix for this CVE was made available according to the sources.
-	FixAvailableTimestamp *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=fix_available_timestamp,json=fixAvailableTimestamp,proto3" json:"fix_available_timestamp,omitempty" search:"CVE Fix Available Timestamp,hidden"` // @gotags: search:"CVE Fix Available Timestamp,hidden"
-	Datasource            string                 `protobuf:"bytes,17,opt,name=datasource,proto3" json:"datasource,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	HasFixedBy    isImageCVEV2_HasFixedBy `protobuf_oneof:"has_fixed_by"`
+	ComponentId   string                  `protobuf:"bytes,13,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty" sql:"fk(ImageComponentV2:id),index=btree"` // @gotags: sql:"fk(ImageComponentV2:id),index=btree"
+	Advisory      *Advisory               `protobuf:"bytes,14,opt,name=advisory,proto3" json:"advisory,omitempty"`
+	ImageIdV2     string                  `protobuf:"bytes,15,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty" sql:"fk(ImageV2:id),index=btree,allow-null"` // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ImageCVEV2) Reset() {
@@ -1736,20 +1733,6 @@ func (x *ImageCVEV2) GetAdvisory() *Advisory {
 func (x *ImageCVEV2) GetImageIdV2() string {
 	if x != nil {
 		return x.ImageIdV2
-	}
-	return ""
-}
-
-func (x *ImageCVEV2) GetFixAvailableTimestamp() *timestamppb.Timestamp {
-	if x != nil {
-		return x.FixAvailableTimestamp
-	}
-	return nil
-}
-
-func (x *ImageCVEV2) GetDatasource() string {
-	if x != nil {
-		return x.Datasource
 	}
 	return ""
 }
@@ -2365,7 +2348,6 @@ type ImageCVEInfo struct {
 	Id                    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE Info" sql:"pk"`                                                                      // @gotags: search:"CVE Info" sql:"pk"
 	FixAvailableTimestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=fix_available_timestamp,json=fixAvailableTimestamp,proto3" json:"fix_available_timestamp,omitempty" search:"CVE Fix Available Timestamp,hidden"` // @gotags: search:"CVE Fix Available Timestamp,hidden"
 	FirstSystemOccurrence *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=first_system_occurrence,json=firstSystemOccurrence,proto3" json:"first_system_occurrence,omitempty" search:"First System Occurrence Timestamp,hidden"` // @gotags: search:"First System Occurrence Timestamp,hidden"
-	Cve                   string                 `protobuf:"bytes,4,opt,name=cve,proto3" json:"cve,omitempty" search:"CVE" sql:"index"`                                                                    // @gotags: search:"CVE" sql:"index"
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -2419,13 +2401,6 @@ func (x *ImageCVEInfo) GetFirstSystemOccurrence() *timestamppb.Timestamp {
 		return x.FirstSystemOccurrence
 	}
 	return nil
-}
-
-func (x *ImageCVEInfo) GetCve() string {
-	if x != nil {
-		return x.Cve
-	}
-	return ""
 }
 
 type CVE_DistroSpecific struct {
@@ -2705,7 +2680,7 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\anvdcvss\x18\n" +
 	" \x01(\x02R\anvdcvss\x125\n" +
 	"\fcvss_metrics\x18\v \x03(\v2\x12.storage.CVSSScoreR\vcvssMetrics\x12E\n" +
-	"\x11nvd_score_version\x18\f \x01(\x0e2\x19.storage.CvssScoreVersionR\x0fnvdScoreVersion:\x02\x18\x01\"\xfc\x05\n" +
+	"\x11nvd_score_version\x18\f \x01(\x0e2\x19.storage.CvssScoreVersionR\x0fnvdScoreVersion:\x02\x18\x01\"\x88\x05\n" +
 	"\n" +
 	"ImageCVEV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
@@ -2724,11 +2699,7 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\bfixed_by\x18\f \x01(\tH\x00R\afixedBy\x12!\n" +
 	"\fcomponent_id\x18\r \x01(\tR\vcomponentId\x12-\n" +
 	"\badvisory\x18\x0e \x01(\v2\x11.storage.AdvisoryR\badvisory\x12\x1e\n" +
-	"\vimage_id_v2\x18\x0f \x01(\tR\timageIdV2\x12R\n" +
-	"\x17fix_available_timestamp\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\x15fixAvailableTimestamp\x12\x1e\n" +
-	"\n" +
-	"datasource\x18\x11 \x01(\tR\n" +
-	"datasourceB\x0e\n" +
+	"\vimage_id_v2\x18\x0f \x01(\tR\timageIdV2B\x0e\n" +
 	"\fhas_fixed_by\"\xe4\x03\n" +
 	"\aNodeCVE\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x124\n" +
@@ -2844,12 +2815,11 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\n" +
 	"\x06MEDIUM\x10\x03\x12\b\n" +
 	"\x04HIGH\x10\x04\x12\f\n" +
-	"\bCRITICAL\x10\x05\"\xd8\x01\n" +
+	"\bCRITICAL\x10\x05\"\xc6\x01\n" +
 	"\fImageCVEInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12R\n" +
 	"\x17fix_available_timestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x15fixAvailableTimestamp\x12R\n" +
-	"\x17first_system_occurrence\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x15firstSystemOccurrence\x12\x10\n" +
-	"\x03cve\x18\x04 \x01(\tR\x03cve*D\n" +
+	"\x17first_system_occurrence\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x15firstSystemOccurrence*D\n" +
 	"\x12VulnerabilityState\x12\f\n" +
 	"\bOBSERVED\x10\x00\x12\f\n" +
 	"\bDEFERRED\x10\x01\x12\x12\n" +
@@ -2960,48 +2930,47 @@ var file_storage_cve_proto_depIdxs = []int32{
 	35, // 31: storage.ImageCVEV2.first_image_occurrence:type_name -> google.protobuf.Timestamp
 	0,  // 32: storage.ImageCVEV2.state:type_name -> storage.VulnerabilityState
 	22, // 33: storage.ImageCVEV2.advisory:type_name -> storage.Advisory
-	35, // 34: storage.ImageCVEV2.fix_available_timestamp:type_name -> google.protobuf.Timestamp
-	21, // 35: storage.NodeCVE.cve_base_info:type_name -> storage.CVEInfo
-	1,  // 36: storage.NodeCVE.severity:type_name -> storage.VulnerabilitySeverity
-	35, // 37: storage.NodeCVE.snooze_start:type_name -> google.protobuf.Timestamp
-	35, // 38: storage.NodeCVE.snooze_expiry:type_name -> google.protobuf.Timestamp
-	35, // 39: storage.NodeCVE.orphaned_time:type_name -> google.protobuf.Timestamp
-	21, // 40: storage.ClusterCVE.cve_base_info:type_name -> storage.CVEInfo
-	1,  // 41: storage.ClusterCVE.severity:type_name -> storage.VulnerabilitySeverity
-	35, // 42: storage.ClusterCVE.snooze_start:type_name -> google.protobuf.Timestamp
-	35, // 43: storage.ClusterCVE.snooze_expiry:type_name -> google.protobuf.Timestamp
-	4,  // 44: storage.ClusterCVE.type:type_name -> storage.CVE.CVEType
-	2,  // 45: storage.CVSSScore.source:type_name -> storage.Source
-	28, // 46: storage.CVSSScore.cvssv2:type_name -> storage.CVSSV2
-	29, // 47: storage.CVSSScore.cvssv3:type_name -> storage.CVSSV3
-	8,  // 48: storage.CVSSV2.attack_vector:type_name -> storage.CVSSV2.AttackVector
-	9,  // 49: storage.CVSSV2.access_complexity:type_name -> storage.CVSSV2.AccessComplexity
-	10, // 50: storage.CVSSV2.authentication:type_name -> storage.CVSSV2.Authentication
-	7,  // 51: storage.CVSSV2.confidentiality:type_name -> storage.CVSSV2.Impact
-	7,  // 52: storage.CVSSV2.integrity:type_name -> storage.CVSSV2.Impact
-	7,  // 53: storage.CVSSV2.availability:type_name -> storage.CVSSV2.Impact
-	11, // 54: storage.CVSSV2.severity:type_name -> storage.CVSSV2.Severity
-	13, // 55: storage.CVSSV3.attack_vector:type_name -> storage.CVSSV3.AttackVector
-	14, // 56: storage.CVSSV3.attack_complexity:type_name -> storage.CVSSV3.Complexity
-	15, // 57: storage.CVSSV3.privileges_required:type_name -> storage.CVSSV3.Privileges
-	16, // 58: storage.CVSSV3.user_interaction:type_name -> storage.CVSSV3.UserInteraction
-	17, // 59: storage.CVSSV3.scope:type_name -> storage.CVSSV3.Scope
-	12, // 60: storage.CVSSV3.confidentiality:type_name -> storage.CVSSV3.Impact
-	12, // 61: storage.CVSSV3.integrity:type_name -> storage.CVSSV3.Impact
-	12, // 62: storage.CVSSV3.availability:type_name -> storage.CVSSV3.Impact
-	18, // 63: storage.CVSSV3.severity:type_name -> storage.CVSSV3.Severity
-	35, // 64: storage.ImageCVEInfo.fix_available_timestamp:type_name -> google.protobuf.Timestamp
-	35, // 65: storage.ImageCVEInfo.first_system_occurrence:type_name -> google.protobuf.Timestamp
-	1,  // 66: storage.CVE.DistroSpecific.severity:type_name -> storage.VulnerabilitySeverity
-	5,  // 67: storage.CVE.DistroSpecific.score_version:type_name -> storage.CVE.ScoreVersion
-	28, // 68: storage.CVE.DistroSpecific.cvss_v2:type_name -> storage.CVSSV2
-	29, // 69: storage.CVE.DistroSpecific.cvss_v3:type_name -> storage.CVSSV3
-	31, // 70: storage.CVE.DistroSpecificsEntry.value:type_name -> storage.CVE.DistroSpecific
-	71, // [71:71] is the sub-list for method output_type
-	71, // [71:71] is the sub-list for method input_type
-	71, // [71:71] is the sub-list for extension type_name
-	71, // [71:71] is the sub-list for extension extendee
-	0,  // [0:71] is the sub-list for field type_name
+	21, // 34: storage.NodeCVE.cve_base_info:type_name -> storage.CVEInfo
+	1,  // 35: storage.NodeCVE.severity:type_name -> storage.VulnerabilitySeverity
+	35, // 36: storage.NodeCVE.snooze_start:type_name -> google.protobuf.Timestamp
+	35, // 37: storage.NodeCVE.snooze_expiry:type_name -> google.protobuf.Timestamp
+	35, // 38: storage.NodeCVE.orphaned_time:type_name -> google.protobuf.Timestamp
+	21, // 39: storage.ClusterCVE.cve_base_info:type_name -> storage.CVEInfo
+	1,  // 40: storage.ClusterCVE.severity:type_name -> storage.VulnerabilitySeverity
+	35, // 41: storage.ClusterCVE.snooze_start:type_name -> google.protobuf.Timestamp
+	35, // 42: storage.ClusterCVE.snooze_expiry:type_name -> google.protobuf.Timestamp
+	4,  // 43: storage.ClusterCVE.type:type_name -> storage.CVE.CVEType
+	2,  // 44: storage.CVSSScore.source:type_name -> storage.Source
+	28, // 45: storage.CVSSScore.cvssv2:type_name -> storage.CVSSV2
+	29, // 46: storage.CVSSScore.cvssv3:type_name -> storage.CVSSV3
+	8,  // 47: storage.CVSSV2.attack_vector:type_name -> storage.CVSSV2.AttackVector
+	9,  // 48: storage.CVSSV2.access_complexity:type_name -> storage.CVSSV2.AccessComplexity
+	10, // 49: storage.CVSSV2.authentication:type_name -> storage.CVSSV2.Authentication
+	7,  // 50: storage.CVSSV2.confidentiality:type_name -> storage.CVSSV2.Impact
+	7,  // 51: storage.CVSSV2.integrity:type_name -> storage.CVSSV2.Impact
+	7,  // 52: storage.CVSSV2.availability:type_name -> storage.CVSSV2.Impact
+	11, // 53: storage.CVSSV2.severity:type_name -> storage.CVSSV2.Severity
+	13, // 54: storage.CVSSV3.attack_vector:type_name -> storage.CVSSV3.AttackVector
+	14, // 55: storage.CVSSV3.attack_complexity:type_name -> storage.CVSSV3.Complexity
+	15, // 56: storage.CVSSV3.privileges_required:type_name -> storage.CVSSV3.Privileges
+	16, // 57: storage.CVSSV3.user_interaction:type_name -> storage.CVSSV3.UserInteraction
+	17, // 58: storage.CVSSV3.scope:type_name -> storage.CVSSV3.Scope
+	12, // 59: storage.CVSSV3.confidentiality:type_name -> storage.CVSSV3.Impact
+	12, // 60: storage.CVSSV3.integrity:type_name -> storage.CVSSV3.Impact
+	12, // 61: storage.CVSSV3.availability:type_name -> storage.CVSSV3.Impact
+	18, // 62: storage.CVSSV3.severity:type_name -> storage.CVSSV3.Severity
+	35, // 63: storage.ImageCVEInfo.fix_available_timestamp:type_name -> google.protobuf.Timestamp
+	35, // 64: storage.ImageCVEInfo.first_system_occurrence:type_name -> google.protobuf.Timestamp
+	1,  // 65: storage.CVE.DistroSpecific.severity:type_name -> storage.VulnerabilitySeverity
+	5,  // 66: storage.CVE.DistroSpecific.score_version:type_name -> storage.CVE.ScoreVersion
+	28, // 67: storage.CVE.DistroSpecific.cvss_v2:type_name -> storage.CVSSV2
+	29, // 68: storage.CVE.DistroSpecific.cvss_v3:type_name -> storage.CVSSV3
+	31, // 69: storage.CVE.DistroSpecificsEntry.value:type_name -> storage.CVE.DistroSpecific
+	70, // [70:70] is the sub-list for method output_type
+	70, // [70:70] is the sub-list for method input_type
+	70, // [70:70] is the sub-list for extension type_name
+	70, // [70:70] is the sub-list for extension extendee
+	0,  // [0:70] is the sub-list for field type_name
 }
 
 func init() { file_storage_cve_proto_init() }

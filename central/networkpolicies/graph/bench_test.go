@@ -102,8 +102,8 @@ func benchmarkEvaluateCluster(b *testing.B, numDeployments, numNetworkPolicies, 
 	applyPolicies(networkPolicies, deployments, numPoliciesApplyTo)
 	matchIngressRules(networkPolicies, deployments, ingressMatches)
 	matchEgressRules(networkPolicies, deployments, egressMatches)
-
-	for b.Loop() {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
 		m.GetGraph("", nil, deployments, nil, networkPolicies, false)
 	}
 }

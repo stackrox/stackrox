@@ -50,11 +50,9 @@ const bplPolicyFormat = `
 				{{end}}
 			{{else if isFileAccess .MessageAttributes }}
 				{{stringify "Effective Path:" .MessageAttributes.FileAccess.File.EffectivePath | nestedList}}
-				{{if .MessageAttributes.FileAccess.File.ActualPath }}
-					{{stringify "Actual Path:" .MessageAttributes.FileAccess.File.ActualPath | nestedList}}
-				{{end}}
+				{{stringify "Actual Path:" .MessageAttributes.FileAccess.File.ActualPath | nestedList}}
+				{{stringify "Operation:" .MessageAttributes.FileAccess.Operation | nestedList}}
 				{{stringify "Process Name:" .MessageAttributes.FileAccess.Process.Signal.Name | nestedList}}
-				{{stringify "Process Executable:" .MessageAttributes.FileAccess.Process.Signal.ExecFilePath | nestedList }}
 			{{end}}
 		{{end}}
 	{{end}}

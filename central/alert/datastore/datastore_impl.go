@@ -22,12 +22,9 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
 	searchCommon "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/sync"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 const whenUnlimited = 100
@@ -87,39 +84,25 @@ func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excl
 func (ds *datastoreImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlerts")
 
-	if q == nil {
-		q = search.EmptyQuery()
-	}
-
-	// Clone the query and add select fields for SearchResult construction
-	clonedQuery := q.CloneVT()
-	selectSelects := []*v1.QuerySelect{
-		search.NewQuerySelect(search.PolicyName).Proto(),
-		search.NewQuerySelect(search.Cluster).Proto(),
-		search.NewQuerySelect(search.Namespace).Proto(),
-		search.NewQuerySelect(search.DeploymentName).Proto(),
-		search.NewQuerySelect(search.EntityType).Proto(),
-		search.NewQuerySelect(search.ResourceName).Proto(),
-		search.NewQuerySelect(search.ResourceType).Proto(),
-	}
-	clonedQuery.Selects = append(clonedQuery.GetSelects(), selectSelects...)
-
-	results, err := ds.Search(ctx, clonedQuery, false)
+	results, err := ds.Search(ctx, q, true)
 	if err != nil {
 		return nil, err
 	}
-
-	// Populate Name and Location fields from FieldValues for each result
-	for i := range results {
-
-		if results[i].FieldValues != nil {
-			if nameVal, ok := results[i].FieldValues[strings.ToLower(search.PolicyName.String())]; ok {
-				results[i].Name = nameVal
-			}
-		}
+	alerts, missingIndices, err := ds.storage.GetMany(ctx, searchCommon.ResultsToIDs(results))
+	if err != nil {
+		return nil, err
 	}
+	listAlerts := make([]*storage.ListAlert, 0, len(alerts))
+	for _, alert := range alerts {
+		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
+	}
+	results = searchCommon.RemoveMissingResults(results, missingIndices)
 
-	return search.ResultsToSearchResultProtos(results, &AlertSearchResultConverter{}), nil
+	protoResults := make([]*v1.SearchResult, 0, len(alerts))
+	for i, alert := range listAlerts {
+		protoResults = append(protoResults, convertAlert(alert, results[i]))
+	}
+	return protoResults, nil
 }
 
 // SearchRawAlerts returns search results for the given request in the form of a slice of alerts.
@@ -405,55 +388,36 @@ func applyDefaultState(q *v1.Query) *v1.Query {
 			storage.ViolationState_ACTIVE.String(),
 			storage.ViolationState_ATTEMPTED.String()).ProtoQuery())
 		cq.Pagination = q.GetPagination()
-		cq.Selects = q.GetSelects()
 		return cq
 	}
 	return q
 }
 
-// AlertSearchResultConverter implements search.SearchResultConverter for alert search results.
-// This enables single-pass query construction for SearchResult protos.
-type AlertSearchResultConverter struct{}
-
-func (c *AlertSearchResultConverter) BuildName(result *search.Result) string {
-	return result.Name
-}
-
-func (c *AlertSearchResultConverter) BuildLocation(result *search.Result) string {
-	fv := result.FieldValues
-	clusterName := fv[strings.ToLower(search.Cluster.String())]
-	namespace := fv[strings.ToLower(search.Namespace.String())]
-	deploymentName := fv[strings.ToLower(search.DeploymentName.String())]
-	entityType := fv[strings.ToLower(search.EntityType.String())]
-	resourceName := fv[strings.ToLower(search.ResourceName.String())]
-	resourceType := fv[strings.ToLower(search.ResourceType.String())]
-
+// convertAlert returns proto search result from an alert object and the internal search result
+func convertAlert(alert *storage.ListAlert, result searchCommon.Result) *v1.SearchResult {
+	entityInfo := alert.GetCommonEntityInfo()
 	var entityName string
-	switch entityType {
-	case "DEPLOYMENT":
-		entityName = deploymentName
-		resourceType = entityType
-	case "RESOURCE":
-		entityName = resourceName
+	switch entity := alert.GetEntity().(type) {
+	case *storage.ListAlert_Resource:
+		entityName = entity.Resource.GetName()
+	case *storage.ListAlert_Deployment:
+		entityName = entity.Deployment.GetName()
 	}
-
+	resourceTypeTitleCase := strings.Title(strings.ToLower(entityInfo.GetResourceType().String()))
 	var location string
-
-	casePkg := cases.Title(language.English)
-	if namespace != "" {
+	if entityInfo.GetNamespace() != "" {
 		location = fmt.Sprintf("/%s/%s/%s/%s",
-			clusterName, namespace, casePkg.String(resourceType), entityName)
+			entityInfo.GetClusterName(), entityInfo.GetNamespace(), resourceTypeTitleCase, entityName)
 	} else {
 		location = fmt.Sprintf("/%s/%s/%s",
-			clusterName, casePkg.String(resourceType), entityName)
+			entityInfo.GetClusterName(), resourceTypeTitleCase, entityName)
 	}
-	return location
-}
-
-func (c *AlertSearchResultConverter) GetCategory() v1.SearchCategory {
-	return v1.SearchCategory_ALERTS
-}
-
-func (c *AlertSearchResultConverter) GetScore(result *search.Result) float64 {
-	return result.Score
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_ALERTS,
+		Id:             alert.GetId(),
+		Name:           alert.GetPolicy().GetName(),
+		FieldToMatches: searchCommon.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
+		Location:       location,
+	}
 }

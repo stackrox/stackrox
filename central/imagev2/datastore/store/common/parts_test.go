@@ -175,13 +175,11 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 				BaseImageId:       "some-id",
 				BaseImageFullName: "registry.example.com/ns/base:tag",
 				BaseImageDigest:   "sha256:...",
-				MaxLayerIndex:     3,
 			},
 			{
 				BaseImageId:       "another-id",
 				BaseImageFullName: "registry.example.com/ns/other:tag",
 				BaseImageDigest:   "sha256:...",
-				MaxLayerIndex:     3,
 			},
 		},
 		Metadata: &storage.ImageMetadata{
@@ -325,13 +323,11 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 				{
 					BaseImageId:       "some-id",
 					BaseImageFullName: "registry.example.com/ns/base:tag",
-					MaxLayerIndex:     3,
 					BaseImageDigest:   "sha256:...",
 				},
 				{
 					BaseImageId:       "another-id",
 					BaseImageFullName: "registry.example.com/ns/other:tag",
-					MaxLayerIndex:     3,
 					BaseImageDigest:   "sha256:...",
 				},
 			},
@@ -346,7 +342,7 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
 						LayerIndex: 1,
 					},
-					LayerType: storage.LayerType_BASE_IMAGE,
+					FromBaseImage: true,
 				},
 				Children: []CVEPartsV2{},
 			},
@@ -359,7 +355,7 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
 						LayerIndex: 3,
 					},
-					LayerType: storage.LayerType_BASE_IMAGE,
+					FromBaseImage: true,
 				},
 				Children: []CVEPartsV2{
 					{
@@ -420,7 +416,7 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
 						LayerIndex: 2,
 					},
-					LayerType: storage.LayerType_BASE_IMAGE,
+					FromBaseImage: true,
 				},
 				Children: []CVEPartsV2{
 					{
@@ -464,7 +460,7 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 					HasLayerIndex: &storage.ImageComponentV2_LayerIndex{
 						LayerIndex: 2,
 					},
-					LayerType: storage.LayerType_BASE_IMAGE,
+					FromBaseImage: true,
 				},
 				Children: []CVEPartsV2{
 					{

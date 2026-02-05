@@ -15,10 +15,6 @@ export type BaseImagesResponse = {
     baseImageReferences: BaseImageReference[];
 };
 
-export type CreateBaseImageReferenceResponse = {
-    baseImageReference: BaseImageReference;
-};
-
 /**
  * Fetch the list of configured base images.
  */
@@ -36,11 +32,8 @@ export function addBaseImage(
     baseImageTagPattern: string
 ): Promise<BaseImageReference> {
     return axios
-        .post<CreateBaseImageReferenceResponse>(baseImagesUrl, {
-            baseImageRepoPath,
-            baseImageTagPattern,
-        })
-        .then((response) => response.data.baseImageReference);
+        .post<BaseImageReference>(baseImagesUrl, { baseImageRepoPath, baseImageTagPattern })
+        .then((response) => response.data);
 }
 
 /**

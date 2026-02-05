@@ -157,8 +157,7 @@ func TestK8sAuthorizer_AllPermissionsGranted_ClusterWide(t *testing.T) {
 	}
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	// Set cluster-wide scope header to trigger cluster-wide authorization check
-	req.Header.Set(stackroxNamespaceHeader, FullClusterAccessScope)
+	// No namespace header = cluster-wide
 
 	err := authorizer.authorize(context.Background(), userInfo, req)
 
@@ -196,8 +195,8 @@ func TestK8sAuthorizer_MissingPermission_Namespace(t *testing.T) {
 	err := authorizer.authorize(context.Background(), userInfo, req)
 
 	assert.Error(t, err)
-	// With parallel execution, any resource could fail first - check for the general pattern.
-	assert.Contains(t, err.Error(), `user "limited-user" lacks LIST permission for resource`)
+	assert.Contains(t, err.Error(), "lacks list permission for resource")
+	assert.Contains(t, err.Error(), "in namespace my-namespace")
 }
 
 func TestK8sAuthorizer_MissingPermission_ClusterWide(t *testing.T) {
@@ -226,14 +225,12 @@ func TestK8sAuthorizer_MissingPermission_ClusterWide(t *testing.T) {
 	}
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	// Set cluster-wide scope header to trigger cluster-wide authorization check
-	req.Header.Set(stackroxNamespaceHeader, FullClusterAccessScope)
+	// No namespace header = cluster-wide
 
 	err := authorizer.authorize(context.Background(), userInfo, req)
 
 	assert.Error(t, err)
-	// With parallel execution, any resource could fail first - check for the general pattern.
-	assert.Contains(t, err.Error(), `user "namespace-admin" lacks cluster-wide LIST permission for resource`)
+	assert.Contains(t, err.Error(), "lacks cluster-wide list permission")
 }
 
 func TestK8sAuthorizer_SubjectAccessReviewError(t *testing.T) {
@@ -251,11 +248,11 @@ func TestK8sAuthorizer_SubjectAccessReviewError(t *testing.T) {
 	}
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	req.Header.Set(stackroxNamespaceHeader, "test-namespace")
 
 	err := authorizer.authorize(context.Background(), userInfo, req)
 
 	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "checking get permission")
 	assert.Contains(t, err.Error(), "API server unavailable")
 }
 
@@ -281,7 +278,6 @@ func TestK8sAuthorizer_SubjectAccessReviewEvaluationError(t *testing.T) {
 	}
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	req.Header.Set(stackroxNamespaceHeader, "test-namespace")
 
 	err := authorizer.authorize(context.Background(), userInfo, req)
 

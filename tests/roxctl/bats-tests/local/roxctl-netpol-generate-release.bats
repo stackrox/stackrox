@@ -24,9 +24,9 @@ teardown() {
   rm -f "$ofile"
 }
 
-@test "roxctl-release netpol generate shows deprecation info" {
+@test "roxctl-release netpol generate should not show deprecation info" {
     run roxctl-release netpol generate
-    assert_line --partial "is deprecated"
+    refute_line --partial "is deprecated"
 }
 
 @test "roxctl-release netpol generate should return error on empty or non-existing directory" {
@@ -48,7 +48,6 @@ teardown() {
     run roxctl-release netpol generate "${test_data}/np-guard/scenario-minimal-service"
     assert_success
 
-    output=$(strip_deprecation_notice "$output")
     echo "$output" > "$ofile"
     assert_file_exist "$ofile"
     yaml_valid "$ofile"
@@ -108,7 +107,6 @@ teardown() {
     run roxctl-release netpol generate "${test_data}/np-guard/scenario-minimal-service" --dnsport ${dns_port}
     assert_success
 
-    output=$(strip_deprecation_notice "$output")
     echo "$output" > "$ofile"
     assert_file_exist "$ofile"
     yaml_valid "$ofile"
@@ -147,7 +145,6 @@ teardown() {
     run roxctl-release netpol generate "${test_data}/np-guard/scenario-minimal-service" --dnsport ${dns_port}
     assert_success
 
-    output=$(strip_deprecation_notice "$output")
     echo "$output" > "$ofile"
     assert_file_exist "$ofile"
     yaml_valid "$ofile"

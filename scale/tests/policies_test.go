@@ -80,7 +80,8 @@ func BenchmarkDryRunPolicies(b *testing.B) {
 		log.Fatal(err)
 	}
 
-	for b.Loop() {
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
 		jobChan := make(chan string, len(defPolicies))
 		wg := concurrency.NewWaitGroup(0)
 		// Consumer of submitted jobs.

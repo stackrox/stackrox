@@ -32,9 +32,6 @@ func RootCmd(ctx context.Context) *cobra.Command {
 	cmd.Flags().StringVar(&cfg.IndexHostPath, "host-path", "/",
 		"Path where the indexer starts searching for the RPM and DNF databases.",
 	)
-	cmd.Flags().DurationVar(&cfg.MaxInitialReportDelay, "max-initial-report-delay", 20*time.Minute,
-		"Max delay before starting to send in daemon mode.",
-	)
 	cmd.Flags().StringVar(&cfg.RepoToCPEMappingURL, "repo-cpe-url", repoToCPEMappingURL,
 		"URL for the repository to CPE mapping.",
 	)
@@ -48,12 +45,7 @@ func RootCmd(ctx context.Context) *cobra.Command {
 		"VSock port to connect with the virtual machine host.",
 	)
 	cmd.Run = func(cmd *cobra.Command, _ []string) {
-		client := &vsock.Client{
-			Port:     cfg.VsockPort,
-			HostPath: cfg.IndexHostPath,
-			Timeout:  cfg.Timeout,
-			Verbose:  cfg.Verbose,
-		}
+		client := &vsock.Client{Port: cfg.VsockPort, Timeout: cfg.Timeout, Verbose: cfg.Verbose}
 		if cfg.DaemonMode {
 			if err := index.RunDaemon(ctx, cfg, client); err != nil {
 				log.Errorf("Running indexer daemon: %v", err)

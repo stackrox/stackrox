@@ -22,7 +22,13 @@ import (
 
 var (
 	errDummy = errors.New("test error")
+
+	expectedExpiration = time.Date(1989, time.November, 9, 18, 10, 35, 987654321, time.UTC)
 )
+
+func testClock() time.Time {
+	return time.Date(1989, time.November, 9, 18, 05, 35, 987654321, time.UTC)
+}
 
 func TestGetExpiresAt(t *testing.T) {
 	for name, tc := range map[string]struct {
@@ -65,7 +71,7 @@ func TestGetExpiresAt(t *testing.T) {
 				},
 			},
 			expectsErr:         false,
-			expectedExpiration: testTokenExpiry,
+			expectedExpiration: expectedExpiration,
 		},
 	} {
 		t.Run(name, func(it *testing.T) {
@@ -127,9 +133,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
 		mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
 		svc := createService(nil, mockClusterStore, mockRoleStore)
-		// Note: With the new code structure, getExpiresAt is called first.
-		// Since Lifetime is nil, getExpiresAt returns an error before createRole is called,
-		// so we don't set up any role store expectations.
+		setClusterStoreExpectations(input, mockClusterStore)
+		setNormalRoleStoreExpectations(deploymentPS, singleNSScope, expectedRole, nil, mockRoleStore)
 
 		rsp, err := svc.GenerateTokenForPermissionsAndScope(t.Context(), input)
 		assert.Nil(it, rsp)
@@ -139,7 +144,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		input := &v1.GenerateTokenForPermissionsAndScopeRequest{
 			Permissions:   deploymentPermission,
 			ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
-			Lifetime:      testExpirationDuration,
+			Lifetime:      nil,
 		}
 
 		mockCtrl := gomock.NewController(it)
@@ -160,7 +165,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		input := &v1.GenerateTokenForPermissionsAndScopeRequest{
 			Permissions:   deploymentPermission,
 			ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
-			Lifetime:      testExpirationDuration,
+			Lifetime:      &durationpb.Duration{Seconds: 300},
 		}
 
 		mockCtrl := gomock.NewController(it)
@@ -175,7 +180,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			Name: fmt.Sprintf(
 				claimNameFormat,
 				expectedRole.GetName(),
-				testTokenExpiry.Format(time.RFC3339Nano),
+				expectedExpiration.Format(time.RFC3339Nano),
 			),
 		}
 		mockIssuer.EXPECT().
@@ -190,7 +195,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		input := &v1.GenerateTokenForPermissionsAndScopeRequest{
 			Permissions:   deploymentPermission,
 			ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
-			Lifetime:      testExpirationDuration,
+			Lifetime:      &durationpb.Duration{Seconds: 300},
 		}
 
 		mockCtrl := gomock.NewController(it)
@@ -205,7 +210,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			Name: fmt.Sprintf(
 				"Generated claims for role %s expiring at %s",
 				expectedRole.GetName(),
-				testTokenExpiry.Format(time.RFC3339Nano),
+				expectedExpiration.Format(time.RFC3339Nano),
 			),
 		}
 		mockIssuer.EXPECT().

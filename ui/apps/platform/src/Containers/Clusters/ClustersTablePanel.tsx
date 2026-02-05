@@ -53,7 +53,7 @@ import {
 
 import ClustersTable from './ClustersTable';
 import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
-import SecureClusterModal from './ClusterRegistrationSecrets/SecureClusterModal';
+import SecureClusterModal from './InitBundles/SecureClusterModal';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
 import NoClustersPage from './NoClustersPage';
 import { searchFilterConfig } from './searchFilterConfig';
@@ -319,20 +319,6 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                                     }}
                                 >
                                     <DropdownItem
-                                        key="cluster-registration-secret"
-                                        onClick={() => {
-                                            analyticsTrack({
-                                                event: CRS_SECURE_A_CLUSTER_LINK_CLICKED,
-                                                properties: {
-                                                    source: 'Secure a Cluster Dropdown',
-                                                },
-                                            });
-                                            navigate(clustersSecureClusterCrsPath);
-                                        }}
-                                    >
-                                        Cluster registration secret installation methods
-                                    </DropdownItem>
-                                    <DropdownItem
                                         key="init-bundle"
                                         onClick={() => {
                                             analyticsTrack({
@@ -345,6 +331,20 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                                         }}
                                     >
                                         Init bundle installation methods
+                                    </DropdownItem>
+                                    <DropdownItem
+                                        key="cluster-registration-secret"
+                                        onClick={() => {
+                                            analyticsTrack({
+                                                event: CRS_SECURE_A_CLUSTER_LINK_CLICKED,
+                                                properties: {
+                                                    source: 'Secure a Cluster Dropdown',
+                                                },
+                                            });
+                                            navigate(clustersSecureClusterCrsPath);
+                                        }}
+                                    >
+                                        Cluster registration secret installation methods
                                     </DropdownItem>
                                     <DropdownItem
                                         key="legacy"

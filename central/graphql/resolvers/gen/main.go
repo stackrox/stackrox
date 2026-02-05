@@ -69,7 +69,6 @@ var (
 			reflect.TypeOf((*v1.SearchResult)(nil)),
 		},
 		SkipResolvers: []reflect.Type{
-			reflect.TypeOf(storage.BaseImageInfo{}),
 			reflect.TypeOf(storage.EmbeddedVulnerability{}),
 			reflect.TypeOf(storage.EmbeddedImageScanComponent{}),
 			reflect.TypeOf(storage.EmbeddedNodeScanComponent{}),
@@ -84,20 +83,12 @@ var (
 				FieldName:  "Scan",
 			},
 			{
-				ParentType: reflect.TypeOf(storage.Image{}),
-				FieldName:  "BaseImageInfo",
-			},
-			{
 				ParentType: reflect.TypeOf(storage.ImageV2{}),
 				FieldName:  "Scan",
 			},
 			{
 				ParentType: reflect.TypeOf(storage.ImageV2{}),
 				FieldName:  "ScanStats",
-			},
-			{
-				ParentType: reflect.TypeOf(storage.ImageV2{}),
-				FieldName:  "BaseImageInfo",
 			},
 			{
 				ParentType: reflect.TypeOf(storage.ImageScan{}),
