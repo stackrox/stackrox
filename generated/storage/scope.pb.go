@@ -22,12 +22,14 @@ const (
 )
 
 type Scope struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Cluster       string                 `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty" crYaml:",omitempty"`     // @gotags: crYaml:",omitempty"`
-	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"`
-	Label         *Scope_Label           `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty" crYaml:",omitempty"`         // @gotags: crYaml:",omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Cluster        string                 `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty" crYaml:",omitempty"`                                     // @gotags: crYaml:",omitempty"`
+	Namespace      string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty" crYaml:",omitempty"`                                 // @gotags: crYaml:",omitempty"`
+	Label          *Scope_Label           `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty" crYaml:",omitempty"`                                         // Deployment label. @gotags: crYaml:",omitempty"`
+	ClusterLabel   *Scope_Label           `protobuf:"bytes,4,opt,name=cluster_label,json=clusterLabel,proto3" json:"cluster_label,omitempty" crYaml:",omitempty"`       // @gotags: crYaml:",omitempty"`
+	NamespaceLabel *Scope_Label           `protobuf:"bytes,5,opt,name=namespace_label,json=namespaceLabel,proto3" json:"namespace_label,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Scope) Reset() {
@@ -77,6 +79,20 @@ func (x *Scope) GetNamespace() string {
 func (x *Scope) GetLabel() *Scope_Label {
 	if x != nil {
 		return x.Label
+	}
+	return nil
+}
+
+func (x *Scope) GetClusterLabel() *Scope_Label {
+	if x != nil {
+		return x.ClusterLabel
+	}
+	return nil
+}
+
+func (x *Scope) GetNamespaceLabel() *Scope_Label {
+	if x != nil {
+		return x.NamespaceLabel
 	}
 	return nil
 }
@@ -137,11 +153,13 @@ var File_storage_scope_proto protoreflect.FileDescriptor
 
 const file_storage_scope_proto_rawDesc = "" +
 	"\n" +
-	"\x13storage/scope.proto\x12\astorage\"\x9c\x01\n" +
+	"\x13storage/scope.proto\x12\astorage\"\x96\x02\n" +
 	"\x05Scope\x12\x18\n" +
 	"\acluster\x18\x01 \x01(\tR\acluster\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12*\n" +
-	"\x05label\x18\x03 \x01(\v2\x14.storage.Scope.LabelR\x05label\x1a/\n" +
+	"\x05label\x18\x03 \x01(\v2\x14.storage.Scope.LabelR\x05label\x129\n" +
+	"\rcluster_label\x18\x04 \x01(\v2\x14.storage.Scope.LabelR\fclusterLabel\x12=\n" +
+	"\x0fnamespace_label\x18\x05 \x01(\v2\x14.storage.Scope.LabelR\x0enamespaceLabel\x1a/\n" +
 	"\x05Label\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05valueB.\n" +
@@ -166,11 +184,13 @@ var file_storage_scope_proto_goTypes = []any{
 }
 var file_storage_scope_proto_depIdxs = []int32{
 	1, // 0: storage.Scope.label:type_name -> storage.Scope.Label
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	1, // 1: storage.Scope.cluster_label:type_name -> storage.Scope.Label
+	1, // 2: storage.Scope.namespace_label:type_name -> storage.Scope.Label
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_storage_scope_proto_init() }

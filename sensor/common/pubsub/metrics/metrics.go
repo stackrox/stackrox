@@ -18,9 +18,9 @@ var (
 		Help:      "Total number of pubsub lane publish operations by lane, topic, and operation type",
 	}, []string{"lane_id", "topic", "operation"})
 
-	// laneConsumerOperations tracks all publish operations across lanes.
+	// LaneConsumerOperations tracks all publish operations across lanes.
 	// Operations: success, error, no_consumers
-	laneConsumerOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
+	LaneConsumerOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "pubsub_lane_consumer_operations_total",
@@ -58,7 +58,7 @@ func RecordPublishOperation(laneID pubsub.LaneID, topic pubsub.Topic, operation 
 }
 
 func RecordConsumerOperation(laneID pubsub.LaneID, topic pubsub.Topic, consumerID pubsub.ConsumerID, operation Operation) {
-	laneConsumerOperations.WithLabelValues(laneID.String(), topic.String(), consumerID.String(), operation.String()).Inc()
+	LaneConsumerOperations.WithLabelValues(laneID.String(), topic.String(), consumerID.String(), operation.String()).Inc()
 }
 
 func SetQueueSize(laneID pubsub.LaneID, size int) {
@@ -76,7 +76,7 @@ func RecordConsumerCount(laneID pubsub.LaneID, topic pubsub.Topic, count int) {
 func init() {
 	prometheus.MustRegister(
 		lanePublishOperations,
-		laneConsumerOperations,
+		LaneConsumerOperations,
 		laneQueueSize,
 		laneEventProcessingDuration,
 		consumersCurrent,

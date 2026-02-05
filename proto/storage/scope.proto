@@ -12,5 +12,7 @@ message Scope {
     string key = 1;
     string value = 2;
   }
-  Label label = 3; // @gotags: crYaml:",omitempty"`
+  Label label = 3; // Deployment label. @gotags: crYaml:",omitempty"`
+  Label cluster_label = 4; // @gotags: crYaml:",omitempty"`
+  Label namespace_label = 5; // @gotags: crYaml:",omitempty"`
 }
