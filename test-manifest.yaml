@@ -1,0 +1,60 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central
+  namespace: stackrox
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: central
+  template:
+    metadata:
+      labels:
+        app: central
+    spec:
+      containers:
+      - name: central
+        image: quay.io/stackrox-io/main:4.5.0
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "1500m"
+          limits:
+            memory: "8Gi"
+            cpu: "4000m"
+        env:
+        - name: ROX_TELEMETRY_ENDPOINT
+          value: "https://sensor.stackrox.io"
+        - name: ROX_TELEMETRY_STORAGE_KEY_V1
+          value: "12345-test-key"
+      nodeSelector:
+        kubernetes.io/os: linux
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: central
+  namespace: stackrox
+spec:
+  type: LoadBalancer
+  ports:
+  - name: api
+    port: 443
+    targetPort: 8443
+  selector:
+    app: central
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: central-db
+  namespace: stackrox
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: fast-ssd
