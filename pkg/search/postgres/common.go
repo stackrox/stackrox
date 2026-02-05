@@ -111,8 +111,21 @@ type query struct {
 	// This field indicates if 'Distinct' is applied in the select portion of the query
 	DistinctAppliedToSelects bool
 
-	// HasChildTableFields indicates if any selected fields come from child tables
-	// When true, child table fields will be aggregated and GROUP BY will be auto-generated
+	// HasChildTableFields indicates if any selected fields come from child tables and should
+	// be automatically aggregated using array_agg() with auto-generated GROUP BY clauses.
+	//
+	// When to use this flag:
+	// - Set to true when selecting fields from child tables that should be returned as arrays
+	//   in a single query pass (avoiding separate search + fetch operations)
+	// - Typically used in LIST operations that need to include child table data efficiently
+	// - Should NOT be set when using explicit GROUP BY clauses (the existing GROUP BY framework
+	//   handles child table aggregation via jsonb_agg in those cases)
+	//
+	// Example use case: ListSecrets that includes secret names from a child table in a single query
+	//
+	// Implementation note: Child table fields are automatically detected by comparing destination
+	// struct field types (slice fields) with schema metadata. The aggregation uses LEFT JOINs to
+	// include parent rows even when no child rows exist.
 	HasChildTableFields bool
 }
 

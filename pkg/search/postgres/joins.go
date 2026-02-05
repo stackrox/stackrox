@@ -215,7 +215,7 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query, arrayFields map[string]b
 					// Check if this is a child table field that should be aggregated
 					// If so, use LEFT JOIN to include parent rows with no child rows
 					if arrayFields != nil && isChildSchema(currElem.schema, src) && !hasGroupBy {
-						alias := strings.Join(strings.Fields(lowerCaseName), "_")
+						alias := FieldNameToDBAlias(lowerCaseName)
 						if arrayFields[alias] {
 							joinType = Left
 						}
