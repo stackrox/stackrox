@@ -1,26 +1,39 @@
 #!/usr/bin/env bash
 
-# Generate version_data_generated.go with version info from status.sh
+# Generate version_data_generated.go with version info.
 # This replaces the ldflags approach to improve Go build cache efficiency.
 # When version changes, only pkg/version/internal needs recompilation,
 # not all packages that depend on it.
+#
+# Computes version values directly (avoiding 5 separate make calls via status.sh)
+# for faster execution (~0.5s vs ~12s).
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="${SCRIPT_DIR}/.."
 
-# Read version info from status.sh
-declare -A versions
-while read -r line || [[ -n "$line" ]]; do
-    if [[ "$line" =~ ^[[:space:]]*$ ]]; then
-        continue
-    elif [[ "$line" =~ ^([^[:space:]]+)[[:space:]]+(.*)[[:space:]]*$ ]]; then
-        var="${BASH_REMATCH[1]}"
-        def="${BASH_REMATCH[2]}"
-        versions["$var"]="$def"
-    fi
-done < <(cd "${ROOT_DIR}"; ./status.sh)
+cd "${ROOT_DIR}"
+
+# Compute version values directly (same logic as Makefile/status.sh)
+# Use BUILD_TAG if set, otherwise use git describe
+if [[ -n "${BUILD_TAG}" ]]; then
+    MAIN_VERSION="${BUILD_TAG}"
+else
+    MAIN_VERSION="$(git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' 2>/dev/null || echo "0.0.0-unknown")"
+fi
+
+# Read component versions from files
+COLLECTOR_VERSION="$(cat COLLECTOR_VERSION 2>/dev/null || echo "0.0.0")"
+FACT_VERSION="$(cat FACT_VERSION 2>/dev/null || echo "0.0.0")"
+SCANNER_VERSION="$(cat SCANNER_VERSION 2>/dev/null || echo "0.0.0")"
+
+# Use SHORTCOMMIT if set, otherwise use git rev-parse
+if [[ -n "${SHORTCOMMIT}" ]]; then
+    GIT_SHORT_SHA="${SHORTCOMMIT}"
+else
+    GIT_SHORT_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")"
+fi
 
 # Generate the Go file
 OUTPUT_FILE="${ROOT_DIR}/pkg/version/internal/version_data_generated.go"
@@ -31,11 +44,11 @@ cat > "${OUTPUT_FILE}" << EOF
 package internal
 
 func init() {
-	MainVersion = "${versions[STABLE_MAIN_VERSION]}"
-	CollectorVersion = "${versions[STABLE_COLLECTOR_VERSION]}"
-	FactVersion = "${versions[STABLE_FACT_VERSION]}"
-	ScannerVersion = "${versions[STABLE_SCANNER_VERSION]}"
-	GitShortSha = "${versions[STABLE_GIT_SHORT_SHA]}"
+	MainVersion = "${MAIN_VERSION}"
+	CollectorVersion = "${COLLECTOR_VERSION}"
+	FactVersion = "${FACT_VERSION}"
+	ScannerVersion = "${SCANNER_VERSION}"
+	GitShortSha = "${GIT_SHORT_SHA}"
 }
 EOF
 
