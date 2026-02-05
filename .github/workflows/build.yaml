@@ -230,6 +230,7 @@ jobs:
 
           matrix='{
             "pre_build_ui": { "branding":[] },
+            "pre_build_cli": { "include":[] },
             "pre_build_go_binaries": { "name":[], "arch":[] },
             "build_and_push_main": { "name":[], "arch":[] },
             "push_main_multiarch_manifests": { "name":[] },
@@ -241,6 +242,13 @@ jobs:
           # The base matrix - amd64 only, RHACS_BRANDING only for PRs
           matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
           matrix="$(jq '.pre_build_go_binaries.arch += ["amd64"]' <<< "$matrix")"
+
+          # CLI: For PRs, only linux-amd64; add darwin/windows for non-PRs or with label
+          matrix="$(jq '.pre_build_cli.include += [{"os": "linux-amd64", "targets": "roxctl_linux-amd64 roxagent_linux-amd64"}]' <<< "$matrix")"
+          if ! is_in_PR_context || pr_has_label ci-build-all-cli; then
+            matrix="$(jq '.pre_build_cli.include += [{"os": "darwin", "targets": "roxctl_darwin-amd64 roxctl_darwin-arm64"}]' <<< "$matrix")"
+            matrix="$(jq '.pre_build_cli.include += [{"os": "windows", "targets": "roxctl_windows-amd64"}]' <<< "$matrix")"
+          fi
 
           # For PRs: only RHACS_BRANDING (used by e2e tests), add STACKROX with label
           matrix="$(jq '.pre_build_ui.branding += ["RHACS_BRANDING"]' <<< "$matrix")"
@@ -267,6 +275,7 @@ jobs:
 
           # Add arm64 for non-PRs or PRs with ci-build-arm64 label
           if ! is_in_PR_context || pr_has_label ci-build-arm64 || pr_has_label ci-build-all-arch; then
+            matrix="$(jq '.pre_build_cli.include += [{"os": "linux-arm64", "targets": "roxctl_linux-arm64 roxagent_linux-arm64"}]' <<< "$matrix")"
             matrix="$(jq '.pre_build_go_binaries.arch += ["arm64"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.arch += ["arm64"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_operator.arch += ["arm64"]' <<< "$matrix")"
@@ -278,6 +287,8 @@ jobs:
 
           # Add ppc64le/s390x for non-PRs or PRs with ci-build-all-arch label
           if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
+            matrix="$(jq '.pre_build_cli.include += [{"os": "linux-ppc64le", "targets": "roxctl_linux-ppc64le roxagent_linux-ppc64le"}]' <<< "$matrix")"
+            matrix="$(jq '.pre_build_cli.include += [{"os": "linux-s390x", "targets": "roxctl_linux-s390x roxagent_linux-s390x"}]' <<< "$matrix")"
             matrix="$(jq '.pre_build_go_binaries.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
           fi
@@ -378,22 +389,15 @@ jobs:
             ui/build
             ui/apps/platform/package-lock.json
 
-  # Build CLI binaries in parallel per OS group
+  # Build CLI binaries in parallel per OS/arch
+  # PRs: linux-amd64, darwin, windows (3 jobs)
+  # Non-PRs: adds linux-arm64, linux-ppc64le, linux-s390x (6 jobs)
   pre-build-cli:
+    needs: define-job-matrix
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          # Linux: 4 archs + roxagent (bulk of work)
-          - os: linux
-            targets: roxctl_linux-amd64 roxctl_linux-arm64 roxctl_linux-ppc64le roxctl_linux-s390x roxagent-linux
-          # Darwin: 2 archs (cross-compiled, faster)
-          - os: darwin
-            targets: roxctl_darwin-amd64 roxctl_darwin-arm64
-          # Windows: 1 arch (cross-compiled, fastest)
-          - os: windows
-            targets: roxctl_windows-amd64
+      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_cli }}
     steps:
       - name: Collect Workflow Telemetry
         uses: catchpoint/workflow-telemetry-action@v2
