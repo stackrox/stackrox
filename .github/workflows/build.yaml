@@ -229,6 +229,7 @@ jobs:
           source './scripts/ci/lib.sh'
 
           matrix='{
+            "pre_build_ui": { "branding":[] },
             "pre_build_go_binaries": { "name":[], "arch":[] },
             "build_and_push_main": { "name":[], "arch":[] },
             "push_main_multiarch_manifests": { "name":[] },
@@ -237,22 +238,32 @@ jobs:
             "scan_images_with_roxctl": { "name":[], "image":[], "exclude":[] }
           }'
 
-          # The base matrix - amd64 only for PRs, arm64 added with label or non-PR
+          # The base matrix - amd64 only, RHACS_BRANDING only for PRs
           matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
           matrix="$(jq '.pre_build_go_binaries.arch += ["amd64"]' <<< "$matrix")"
 
-          matrix="$(jq '.build_and_push_main.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
+          # For PRs: only RHACS_BRANDING (used by e2e tests), add STACKROX with label
+          matrix="$(jq '.pre_build_ui.branding += ["RHACS_BRANDING"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_main.name += ["RHACS_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_main.arch += ["amd64"]' <<< "$matrix")"
 
-          matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
+          matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING"]' <<< "$matrix")"
 
           matrix="$(jq '.build_and_push_operator.name += ["RHACS_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_operator.arch += ["amd64"]' <<< "$matrix")"
 
-          matrix="$(jq '.scan_images_with_roxctl.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
+          matrix="$(jq '.scan_images_with_roxctl.name += ["RHACS_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.scan_images_with_roxctl.image += ["central-db", "collector", "main", "roxctl", "scanner", "scanner-db", "scanner-db-slim", "scanner-slim", "stackrox-operator"]' <<< "$matrix")"
-          # TODO(ROX-27191): remove the exclusion once there's a community operator.
-          matrix="$(jq '.scan_images_with_roxctl.exclude += [{ "name": "STACKROX_BRANDING", "image": "stackrox-operator" }]' <<< "$matrix")"
+
+          # Add STACKROX_BRANDING for non-PRs or PRs with ci-build-stackrox-branding label
+          if ! is_in_PR_context || pr_has_label ci-build-stackrox-branding; then
+            matrix="$(jq '.pre_build_ui.branding += ["STACKROX_BRANDING"]' <<< "$matrix")"
+            matrix="$(jq '.build_and_push_main.name += ["STACKROX_BRANDING"]' <<< "$matrix")"
+            matrix="$(jq '.push_main_multiarch_manifests.name += ["STACKROX_BRANDING"]' <<< "$matrix")"
+            matrix="$(jq '.scan_images_with_roxctl.name += ["STACKROX_BRANDING"]' <<< "$matrix")"
+            # TODO(ROX-27191): remove the exclusion once there's a community operator.
+            matrix="$(jq '.scan_images_with_roxctl.exclude += [{ "name": "STACKROX_BRANDING", "image": "stackrox-operator" }]' <<< "$matrix")"
+          fi
 
           # Add arm64 for non-PRs or PRs with ci-build-arm64 label
           if ! is_in_PR_context || pr_has_label ci-build-arm64 || pr_has_label ci-build-all-arch; then
@@ -301,10 +312,11 @@ jobs:
           echo "matrix=$condensed" >> "$GITHUB_OUTPUT"
 
   pre-build-ui:
+    needs: define-job-matrix
     strategy:
       fail-fast: false
       matrix:
-        branding: [ RHACS_BRANDING, STACKROX_BRANDING ]
+        branding: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_ui.branding }}
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
       # For consistency with `image/rhel/konflux.Dockerfile`, see comment there.
