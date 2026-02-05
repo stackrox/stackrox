@@ -1450,7 +1450,7 @@ func TestEnrichImageWithBaseImages(t *testing.T) {
 }
 
 func newEnricher(set *mocks.MockSet, mockReporter *reporterMocks.MockReporter) ImageEnricher {
-	return New(&fakeCVESuppressorV2{}, set, pkgMetrics.CentralSubsystem,
+	return New(&fakeCVESuppressorV2{}, nil, set, pkgMetrics.CentralSubsystem,
 		newCache(),
 		emptyBaseImageGetter,
 		emptyImageGetter,

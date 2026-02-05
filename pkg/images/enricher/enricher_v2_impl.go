@@ -37,8 +37,9 @@ import (
 var _ ImageEnricherV2 = (*enricherV2Impl)(nil)
 
 type enricherV2Impl struct {
-	cvesSuppressor CVESuppressor
-	integrations   integration.Set
+	cvesSuppressor  CVESuppressor
+	cveInfoEnricher CVEInfoEnricher
+	integrations    integration.Set
 
 	errorsPerRegistry  map[registryTypes.ImageRegistry]int32
 	registryErrorsLock sync.RWMutex
@@ -87,6 +88,14 @@ func (e *enricherV2Impl) EnrichWithVulnerabilities(imageV2 *storage.ImageV2, com
 					ScanResult: ScanNotDone,
 				}, errors.Wrapf(err, "retrieving image vulnerabilities from %s [%s]", scanner.Name(), scanner.Type())
 			}
+
+			// Enrich CVEs with timing metadata (FixAvailableTimestamp, FirstSystemOccurrence)
+			if e.cveInfoEnricher != nil {
+				if err := e.cveInfoEnricher.EnrichImageV2WithCVEInfo(context.Background(), imageV2); err != nil {
+					log.Warnf("Failed to enrich CVEs from ImageCVEInfo: %v", err)
+				}
+			}
+
 			e.cvesSuppressor.EnrichImageV2WithSuppressedCVEs(imageV2)
 
 			return EnrichmentResult{
@@ -176,6 +185,13 @@ func (e *enricherV2Impl) delegateEnrichImage(ctx context.Context, enrichCtx Enri
 	// Copy the fields from scannedImage into image, EnrichImage expecting modification in place
 	imageV2.Reset()
 	protocompat.Merge(imageV2, scannedImage)
+
+	// Enrich CVEs with timing metadata (FixAvailableTimestamp, FirstSystemOccurrence)
+	if e.cveInfoEnricher != nil {
+		if err := e.cveInfoEnricher.EnrichImageV2WithCVEInfo(ctx, imageV2); err != nil {
+			log.Warnf("Failed to enrich CVEs from ImageCVEInfo: %v", err)
+		}
+	}
 
 	e.cvesSuppressor.EnrichImageV2WithSuppressedCVEs(imageV2)
 	return true, nil
@@ -313,6 +329,13 @@ func (e *enricherV2Impl) EnrichImage(ctx context.Context, enrichContext Enrichme
 	}
 
 	updated = updated || didUpdateSigVerificationData
+
+	// Enrich CVEs with timing metadata (FixAvailableTimestamp, FirstSystemOccurrence)
+	if e.cveInfoEnricher != nil {
+		if err := e.cveInfoEnricher.EnrichImageV2WithCVEInfo(ctx, imageV2); err != nil {
+			log.Warnf("Failed to enrich CVEs from ImageCVEInfo: %v", err)
+		}
+	}
 
 	e.cvesSuppressor.EnrichImageV2WithSuppressedCVEs(imageV2)
 
