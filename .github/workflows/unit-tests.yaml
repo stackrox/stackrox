@@ -403,6 +403,13 @@ jobs:
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
+    - name: Login to Quay.io
+      uses: docker/login-action@v3
+      with:
+        registry: quay.io
+        username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+        password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
     - name: Create k8s Kind Cluster
       uses: helm/kind-action@v1
       with:

@@ -23,7 +23,7 @@ var (
 	NginxService    = helper.K8sResourceInfo{Kind: "Service", YamlFile: "nginx-service.yaml", Name: "nginx-service"}
 	TalkPod         = helper.K8sResourceInfo{Kind: "Pod", YamlFile: "talk.yaml", Name: "talk"}
 
-	processIndicatorPolicyName = "test-pi-curl"
+	processIndicatorPolicyName = "test-pi-wget"
 	networkFlowPolicyName      = "test-flow"
 )
 
@@ -95,7 +95,7 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 			nginxIP := c.GetIPFromService(srvObj)
 			require.NotEqual(t, "", nginxIP)
 
-			helper.SendSignalMessage(fakeCollector, talkContainerIds[0], "curl")
+			helper.SendSignalMessage(fakeCollector, talkContainerIds[0], "wget")
 			helper.SendFlowMessage(fakeCollector,
 				sensor.SocketFamily_SOCKET_FAMILY_UNKNOWN,
 				storage.L4Protocol_L4_PROTOCOL_TCP,
@@ -119,7 +119,7 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 		}
 		expectedSignals := []helper.ExpectedSignalMessageFn{
 			func(msg *sensor.SignalStreamMessage) bool {
-				return msg.GetSignal().GetProcessSignal().GetName() == "curl" && msg.GetSignal().GetProcessSignal().GetContainerId() == talkContainerIds[0]
+				return msg.GetSignal().GetProcessSignal().GetName() == "wget" && msg.GetSignal().GetProcessSignal().GetContainerId() == talkContainerIds[0]
 			},
 		}
 		go helper.WaitToReceiveMessagesFromCollector(ctx, &messagesReceivedSignal,
@@ -143,7 +143,7 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 
 		msg, err := testContext.WaitForMessageWithMatcher(func(event *central.MsgFromSensor) bool {
 			return event.GetEvent().GetProcessIndicator().GetDeploymentId() == talkUID &&
-				event.GetEvent().GetProcessIndicator().GetSignal().GetName() == "curl"
+				event.GetEvent().GetProcessIndicator().GetSignal().GetName() == "wget"
 		}, time.Minute)
 		assert.NoError(t, err)
 		assert.NotNil(t, msg)

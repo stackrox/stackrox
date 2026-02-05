@@ -7,6 +7,6 @@ metadata:
 spec:
   containers:
   - name: app
-    image: nginx:1.14.1
+    image: quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1
     ports:
     - containerPort: 80
