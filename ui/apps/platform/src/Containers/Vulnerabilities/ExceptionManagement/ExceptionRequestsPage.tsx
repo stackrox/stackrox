@@ -66,10 +66,7 @@ function ExceptionRequestsPage() {
     return (
         <>
             <PageTitle title="Exception Management" />
-            <PageSection
-                hasBodyWrapper={false}
-                className="pf-v6-u-display-flex pf-v6-u-flex-direction-row pf-v6-u-align-items-center"
-            >
+            <PageSection>
                 <Flex direction={{ default: 'column' }}>
                     <Title headingLevel="h1">Exception management</Title>
                     <FlexItem>
@@ -77,12 +74,8 @@ function ExceptionRequestsPage() {
                     </FlexItem>
                 </Flex>
             </PageSection>
-            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
-                <Tabs
-                    activeKey={activeTabKey}
-                    onSelect={handleTabClick}
-                    className="pf-v6-u-pl-lg pf-v6-u-background-color-100"
-                >
+            <PageSection type="tabs">
+                <Tabs activeKey={activeTabKey} onSelect={handleTabClick} usePageInsets>
                     <Tab
                         eventKey="PENDING_REQUESTS"
                         title={<TabTitleText>Pending requests</TabTitleText>}
@@ -100,14 +93,14 @@ function ExceptionRequestsPage() {
                         title={<TabTitleText>Denied requests</TabTitleText>}
                     />
                 </Tabs>
-                <Routes>
-                    <Route index element={<Navigate to={pendingRequestsURL} replace />} />
-                    <Route path="pending-requests" element={<PendingRequests />} />
-                    <Route path="approved-deferrals" element={<ApprovedDeferrals />} />
-                    <Route path="approved-false-positives" element={<ApprovedFalsePositives />} />
-                    <Route path="denied-requests" element={<DeniedRequests />} />
-                </Routes>
             </PageSection>
+            <Routes>
+                <Route index element={<Navigate to={pendingRequestsURL} replace />} />
+                <Route path="pending-requests" element={<PendingRequests />} />
+                <Route path="approved-deferrals" element={<ApprovedDeferrals />} />
+                <Route path="approved-false-positives" element={<ApprovedFalsePositives />} />
+                <Route path="denied-requests" element={<DeniedRequests />} />
+            </Routes>
         </>
     );
 }
