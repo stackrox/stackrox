@@ -183,6 +183,18 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 						remoteIP = host
 					}
 					metrics.ObserveALPN(sub.String(), c.ListenEndpoint, remoteIP, proto)
+					// Log TLS info for HTTP connections only; gRPC connections are logged in tls_conn_creds.go.
+					if proto != alpn.PureGRPCALPNString {
+						if tlsConn, ok := conn.(*tls.Conn); ok {
+							connState := tlsConn.ConnectionState()
+							log.Infof("TLS handshake from %q: %s, cipher %s, key exchange %s, ALPN %q",
+								conn.RemoteAddr(),
+								tls.VersionName(connState.Version),
+								tls.CipherSuiteName(connState.CipherSuite),
+								connState.CurveID.String(),
+								proto)
+						}
+					}
 				},
 				TLSHandshakeTimeout: env.TLSHandshakeTimeout.DurationSetting(),
 			})
