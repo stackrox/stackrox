@@ -230,7 +230,16 @@ yq: $(YQ) ## Download yq.
 
 .PHONY: parent-proto-generate
 parent-proto-generate: ## Make sure ../generated directory has up-to-date content that this operator (transitively) depends upon.
+ifdef CI
+	@# In CI, proto-generated-srcs should already be committed. Skip regeneration if files exist.
+	@if [ -d "../generated" ] && [ "$$(ls -A ../generated 2>/dev/null)" ]; then \
+		echo "Skipping proto-generated-srcs in CI (files already exist)"; \
+	else \
+		$(MAKE) -C .. proto-generated-srcs; \
+	fi
+else
 	$(MAKE) -C .. proto-generated-srcs
+endif
 
 .PHONY: manifests
 manifests: parent-proto-generate controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
