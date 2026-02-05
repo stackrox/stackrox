@@ -1125,13 +1125,35 @@ jobs:
           echo "OPERATOR_TAG=${OPERATOR_TAG}" >> "$GITHUB_ENV"
           echo "Captured operator tag: ${OPERATOR_TAG}"
 
-      - name: Build Operator Bundle image
+      - name: Generate operator manifests (shared dependency)
         run: |
-          make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" bundle bundle-build
+          make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" manifests generate
 
-      - name: Build Operator Go binary
+      - name: Build Operator Bundle and Go binary (parallel)
         run: |
-          CGO_ENABLED=0 GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" build
+          # Run bundle and build in parallel since they share manifests dependency
+          make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" bundle bundle-build &
+          bundle_pid=$!
+
+          CGO_ENABLED=0 GOARCH=${{ matrix.arch }} make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" build &
+          build_pid=$!
+
+          # Wait for both and capture exit codes
+          bundle_exit=0
+          build_exit=0
+          wait $bundle_pid || bundle_exit=$?
+          wait $build_pid || build_exit=$?
+
+          # Report failures
+          if [ $bundle_exit -ne 0 ]; then
+            echo "Bundle build failed with exit code $bundle_exit"
+          fi
+          if [ $build_exit -ne 0 ]; then
+            echo "Go binary build failed with exit code $build_exit"
+          fi
+
+          # Exit with failure if either failed
+          [ $bundle_exit -eq 0 ] && [ $build_exit -eq 0 ]
 
       - name: Login to ghcr.io for Docker layer caching
         run: |
