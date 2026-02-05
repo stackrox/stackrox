@@ -1,3 +1,13 @@
 .json-input {
     min-height: 20ex;
 }
+
+.pf-c-check__input {
+    min-height: 16px;
+    min-width: 16px;
+}
+
+.api-token-role-select {
+    max-height: 320px;
+    overflow-y: auto;
+}

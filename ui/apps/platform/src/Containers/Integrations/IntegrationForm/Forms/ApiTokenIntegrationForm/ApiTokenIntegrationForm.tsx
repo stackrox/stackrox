@@ -7,7 +7,6 @@ import {
     DescriptionListTerm,
     Form,
     PageSection,
-    SelectOption,
     TextInput,
     yyyyMMddFormat,
 } from '@patternfly/react-core';
@@ -16,7 +15,6 @@ import * as yup from 'yup';
 
 import type { ApiToken } from 'types/apiToken.proto';
 
-import SelectSingle from 'Components/SelectSingle';
 import { getDateTime } from 'utils/dateUtils';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
@@ -30,6 +28,7 @@ import IntegrationFormActions from '../../IntegrationFormActions';
 import ApiTokenFormMessageAlert from './ApiTokenFormMessageAlert';
 import type { ApiTokenFormResponseMessage } from './ApiTokenFormMessageAlert';
 import useAllowedRoles from './useAllowedRoles';
+import RoleSelector from './RoleSelector';
 
 export type ApiTokenIntegrationFormValues = {
     name: string;
@@ -94,9 +93,17 @@ function ApiTokenIntegrationForm({
         return setFieldValue(event.target.id, value);
     }
 
-    function onRoleChange(id, selection) {
-        return setFieldValue(id, [selection]);
-    }
+    const onRoleSelect = (_, selected) => {
+        const newSelection = values.roles.find((roleFilter) => roleFilter === selected)
+            ? values.roles.filter((roleFilter) => roleFilter !== selected)
+            : values.roles.concat(selected);
+
+        return setFieldValue('roles', newSelection);
+    };
+
+    const onClearRoleSelections = () => {
+        return setFieldValue('roles', []);
+    };
 
     // The edit flow doesn't make sense for API Tokens so we'll show an empty state message here
     if (isEditing) {
@@ -168,26 +175,21 @@ function ApiTokenIntegrationForm({
                         </FormLabelGroup>
                         <FormLabelGroup
                             isRequired
-                            label="Role"
+                            label="Roles"
                             fieldId="roles"
                             touched={touched}
                             errors={errors}
                         >
-                            <SelectSingle
+                            <RoleSelector
                                 id="roles"
-                                value={values.roles[0]}
-                                handleSelect={onRoleChange}
-                                isDisabled={!isEditable || isRolesLoading || isGenerated}
-                                placeholderText="Choose role..."
-                            >
-                                {roleNames.map((roleName) => {
-                                    return (
-                                        <SelectOption key={roleName} value={roleName}>
-                                            {roleName}
-                                        </SelectOption>
-                                    );
-                                })}
-                            </SelectSingle>
+                                roles={roleNames}
+                                selectedRoles={values.roles}
+                                isEditable={isEditable}
+                                isGenerated={isGenerated}
+                                isRolesLoading={isRolesLoading}
+                                onRoleSelect={onRoleSelect}
+                                onRoleSelectionClear={onClearRoleSelections}
+                            />
                         </FormLabelGroup>
                         {isEditable && !isGenerated && (
                             <FormLabelGroup
