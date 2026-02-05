@@ -260,7 +260,6 @@ webhooks:
         - '*'
         operations:
         - CONNECT
-        - CREATE
         resources:
           - pods
           - pods/exec
