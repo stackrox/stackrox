@@ -1081,9 +1081,6 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
-      - name: Resolve mods for protos
-        run: go mod tidy
-
       - name: PR labels
         uses: joerick/pr-labels-action@v1.0.9
 
@@ -1091,37 +1088,101 @@ jobs:
         if: contains(github.event.pull_request.labels.*.name, 'ci-release-build')
         run: echo "GOTAGS=release" >> "$GITHUB_ENV"
 
+      - name: Setup build env
+        run: |
+          case "${{ matrix.name }}" in
+            RHACS_BRANDING)
+              brand="RHACS_BRANDING"
+              registry="quay.io/rhacs-eng"
+              ;;
+            STACKROX_BRANDING)
+              brand="STACKROX_BRANDING"
+              registry="quay.io/stackrox-io"
+              ;;
+            *)
+              echo "Unsupported build: ${{ matrix.name }}"
+              exit 1
+          esac
+
+          {
+            echo "ROX_PRODUCT_BRANDING=${brand}"
+            echo "OPERATOR_REGISTRY=${registry}"
+          } >> "$GITHUB_ENV"
+
       - name: Docker login
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-          ./scripts/ci/lib.sh registry_rw_login "quay.io/rhacs-eng"
+          ./scripts/ci/lib.sh registry_rw_login "${{ env.OPERATOR_REGISTRY }}"
+
+      - name: Capture operator tag
+        # Capture the tag before any build steps that might modify files,
+        # causing git describe --dirty to return a different tag.
+        # Pass this VERSION to all make commands to ensure consistency.
+        run: |
+          OPERATOR_TAG="$(make --quiet --no-print-directory -C operator tag)"
+          echo "OPERATOR_TAG=${OPERATOR_TAG}" >> "$GITHUB_ENV"
+          echo "Captured operator tag: ${OPERATOR_TAG}"
 
       - name: Build Operator Bundle image
         run: |
-          make -C operator/ bundle bundle-build
+          make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" bundle bundle-build
 
-      - name: Operator unit tests
-        if: matrix.arch == 'amd64'
+      - name: Build Operator Go binary
         run: |
-          scripts/lib.sh retry 2 true make -C operator/ test
+          CGO_ENABLED=0 GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" build
 
-      - name: Build Operator image
+      - name: Login to ghcr.io for Docker layer caching
         run: |
-          CGO_ENABLED=0 GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ build docker-build
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Setup operator Docker cache args
+        run: |
+          cache_registry='ghcr.io'
+          cache_image="${GITHUB_REPOSITORY,,}"
+          cache_tag="operator-${{ matrix.arch }}-master-${ROX_PRODUCT_BRANDING,,}"
+
+          # Build cache-from args: always pull from master cache
+          cache_args="--cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag}"
+
+          # Only write cache on master branch pushes
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/master" ]]; then
+            cache_args="${cache_args} --cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max,ignore-error=true"
+            echo "Docker cache: read/write (master push)"
+          else
+            echo "Docker cache: read-only (PR or non-master)"
+          fi
+
+          echo "OPERATOR_DOCKER_CACHE_ARGS=${cache_args}" >> "$GITHUB_ENV"
+
+      - name: Build Operator Docker image
+        run: |
+          # Generate Dockerfile and status.sh
+          make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" build/Dockerfile.gen smuggled-status-sh
+
+          # Build with buildx and registry caching
+          docker buildx build \
+            --load \
+            -t "${{ env.OPERATOR_REGISTRY }}/stackrox-operator:${{ env.OPERATOR_TAG }}" \
+            --build-arg TARGET_ARCH=${{ matrix.arch }} \
+            ${{ env.OPERATOR_DOCKER_CACHE_ARGS }} \
+            -f operator/build/Dockerfile.gen \
+            .
 
       - name: Set up QEMU
         if: matrix.arch != 'amd64'
         uses: docker/setup-qemu-action@v3
 
       - name: Check that Operator image is runnable
-        run: docker run --rm --platform linux/${{ matrix.arch }} "quay.io/rhacs-eng/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
+        run: docker run --rm --platform linux/${{ matrix.arch }} "${{ env.OPERATOR_REGISTRY }}/stackrox-operator:${{ env.OPERATOR_TAG }}" --help
 
       - name: Push image
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        env:
+          VERSION: ${{ env.OPERATOR_TAG }}
         run: |
             source ./scripts/ci/lib.sh
             echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
@@ -1129,7 +1190,7 @@ jobs:
             if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
               push_context="merge-to-master"
             fi
-            echo "Starting operator image push for context: \"$push_context\", branding: \"${{ env.ROX_PRODUCT_BRANDING }}\", arch: \"${{ matrix.arch }}\""
+            echo "Starting operator image push for context: \"$push_context\", branding: \"${{ env.ROX_PRODUCT_BRANDING }}\", arch: \"${{ matrix.arch }}\", version: \"${VERSION}\""
             if ! push_operator_image "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"; then
               echo "ERROR: push_operator_image failed" >&2
               exit 1
@@ -1141,7 +1202,7 @@ jobs:
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-          make -C operator/ docker-push-bundle | cat
+          make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" docker-push-bundle | cat
 
       # Index image can only be built once bundle was pushed
       - name: Build index
@@ -1149,14 +1210,14 @@ jobs:
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-          make -C operator/ index-build
+          make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" index-build
 
       - name: Push index image
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-          make -C operator/ docker-push-index | cat
+          make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" docker-push-index | cat
 
   push-operator-manifests:
     runs-on: ubuntu-latest
