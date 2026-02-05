@@ -129,3 +129,15 @@ func Test_determineAuthMethodEx(t *testing.T) {
 		})
 	}
 }
+func TestConfigMethodWithGuidance(t *testing.T) {
+	// Simple test to verify the wrapper delegates Type() correctly
+	testIO, _, _, _ := io.TestIO()
+	env := NewTestCLIEnvironment(t, testIO, printer.NoColorPrinter())
+
+	wrapper := &configMethodWithGuidance{
+		wrapped: ConfigMethod(env),
+	}
+
+	// Verify Type is delegated
+	assert.Equal(t, "local configuration", wrapper.Type())
+}

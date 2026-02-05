@@ -22,15 +22,10 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-const (
-	authOptionsListMessage = `  - Use the --password flag or set the ROX_ADMIN_PASSWORD environment variable
+const authOptionsListMessage = `  - Use the --password flag or set the ROX_ADMIN_PASSWORD environment variable
   - Use the --token-file flag and point to a file containing your API token
   - Set the ROX_API_TOKEN environment variable with your API token
   - Run "roxctl central login" to save credentials (requires writable home directory)`
-
-	missingAuthCredsMessage = `No authentication credentials are available. Please provide authentication using one of the following methods:
-` + authOptionsListMessage
-)
 
 type cliEnvironmentImpl struct {
 	io              cliIO.IO
