@@ -867,7 +867,7 @@ jobs:
       - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: oss-notice
-          path: image/rhel
+          path: image/rhel/THIRD_PARTY_NOTICES
 
       - name: Set build tag for prerelease images
         if: matrix.name == 'prerelease'
