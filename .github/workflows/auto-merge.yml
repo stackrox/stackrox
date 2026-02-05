@@ -13,7 +13,7 @@ jobs:
   auto-merge:
     name: Auto-merge any version bumps
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]' && contains(github.event.label.name, 'auto-merge')
+    if: github.actor == 'dependabot[bot]' && (github.event.label.name == 'auto-merge' || github.event.label.name == 'auto-merge-any')
     steps:
     - name: Dependabot metadata
       id: dependabot-metadata
