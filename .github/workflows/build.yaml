@@ -1679,7 +1679,7 @@ jobs:
             ls -lh bin/linux_amd64/ | head -5
           else
             echo "--- Building Go binaries ---"
-            CGO_ENABLED=0 ./scripts/go-build.sh \
+            GOOS=linux GOARCH=amd64 CGO_ENABLED=0 ./scripts/go-build.sh \
               central \
               compliance/cmd/compliance \
               config-controller \
@@ -1840,7 +1840,7 @@ jobs:
             make main-build
             # Also build roxagent (part of CLI, needed for Docker image)
             echo "--- Building roxagent ---"
-            CGO_ENABLED=0 ./scripts/go-build.sh compliance/virtualmachines/roxagent
+            GOOS=linux GOARCH=amd64 CGO_ENABLED=0 ./scripts/go-build.sh compliance/virtualmachines/roxagent
           fi
 
           go_end=$(date +%s)
