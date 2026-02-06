@@ -68,20 +68,17 @@ func (d *datastoreImpl) SearchSecrets(ctx context.Context, q *v1.Query) ([]*v1.S
 }
 
 func (d *datastoreImpl) SearchListSecrets(ctx context.Context, request *v1.Query) ([]*storage.ListSecret, error) {
-	// Clone the query and add field selections for ListSecret fields
 	query := request.CloneVT()
 	if query == nil {
 		query = pkgSearch.EmptyQuery()
 	}
 
-	// Apply default sort (Created Time ascending) if no sort specified
 	defaultSort := &v1.QuerySortOption{
 		Field:    pkgSearch.CreatedTime.String(),
 		Reversed: false,
 	}
 	query = paginated.FillDefaultSortOption(query, defaultSort)
 
-	// Specify exact fields to select - framework will detect child table fields and aggregate them
 	query.Selects = []*v1.QuerySelect{
 		pkgSearch.NewQuerySelect(pkgSearch.SecretID).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.SecretName).Proto(),
@@ -92,7 +89,6 @@ func (d *datastoreImpl) SearchListSecrets(ctx context.Context, request *v1.Query
 		pkgSearch.NewQuerySelect(pkgSearch.SecretType).Proto(),
 	}
 
-	// Execute single database query using search framework
 	var responses []*listSecretResponse
 	err := pgSearch.RunSelectRequestForSchemaFn(ctx, d.db, pkgSchema.SecretsSchema, query,
 		func(r *listSecretResponse) error {
@@ -103,7 +99,6 @@ func (d *datastoreImpl) SearchListSecrets(ctx context.Context, request *v1.Query
 		return nil, err
 	}
 
-	// Convert response structs to protobuf ListSecret objects
 	listSecrets := make([]*storage.ListSecret, 0, len(responses))
 	for _, r := range responses {
 		listSecrets = append(listSecrets, r.toListSecret())

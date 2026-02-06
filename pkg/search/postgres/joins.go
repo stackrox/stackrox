@@ -178,8 +178,6 @@ func isChildSchema(childSchema *walker.Schema, parentSchema *walker.Schema) bool
 func getJoinsAndFields(src *walker.Schema, q *v1.Query, arrayFields map[string]bool) ([]Join, map[string]searchFieldMetadata) {
 	unreachedFields, nullableFields := collectFields(q)
 
-	// Only enable automatic child table LEFT JOIN if there's NO GROUP BY
-	// When there's a GROUP BY, the existing framework uses INNER JOIN with jsonb_agg
 	hasGroupBy := len(q.GetGroupBy().GetFields()) > 0
 
 	joinTreeRoot := &joinTreeNode{

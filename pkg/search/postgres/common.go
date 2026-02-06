@@ -245,18 +245,13 @@ func (q *query) getPortionBeforeFromClause() string {
 
 		selectStrs := make([]string, 0, len(allSelectFields))
 		for _, field := range allSelectFields {
-			// Apply aggregation based on field type and context
 			if field.ChildTableAgg {
-				// Child table field - use array_agg with DISTINCT and NULL filtering
-				// COALESCE ensures empty array instead of NULL for secrets with no files
 				selectStrs = append(selectStrs,
 					fmt.Sprintf("COALESCE(array_agg(DISTINCT %s) FILTER (WHERE %s IS NOT NULL), '{}') as %s",
 						field.SelectPath, field.SelectPath, field.Alias))
 			} else if q.groupByNonPKFields() && !field.FromGroupBy && !field.DerivedField {
-				// grouping by non-PK fields, aggregate non-group-by fields
 				selectStrs = append(selectStrs, fmt.Sprintf("jsonb_agg(%s) as %s", field.SelectPath, field.Alias))
 			} else {
-				// Regular field - no aggregation
 				selectStrs = append(selectStrs, field.PathForSelectPortion())
 			}
 		}
@@ -321,22 +316,17 @@ func (q *query) AsSQL() string {
 		querySB.WriteString(" group by ")
 		querySB.WriteString(strings.Join(groupByClauses, ", "))
 	} else if q.HasChildTableFields && q.QueryType == SELECT {
-		// Auto-generate GROUP BY when child table fields are selected
-		// Group by all non-child-table (parent table) selected fields
 		var groupByParts []string
-		// Track added fields to avoid duplicates
 		groupByFields := set.NewStringSet()
 
 		for _, field := range q.SelectedFields {
 			if !field.ChildTableAgg {
-				// This is a parent table field, add to GROUP BY
 				if groupByFields.Add(field.SelectPath) {
 					groupByParts = append(groupByParts, field.SelectPath)
 				}
 			}
 		}
 
-		// Also add any extra selected fields (from ordering, etc.) that aren't child fields
 		for _, field := range q.ExtraSelectedFieldPaths() {
 			if !field.ChildTableAgg {
 				if groupByFields.Add(field.SelectPath) {

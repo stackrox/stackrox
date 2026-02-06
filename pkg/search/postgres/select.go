@@ -218,8 +218,6 @@ func populateSelect(querySoFar *query, schema *walker.Schema, q *v1.Query, query
 		return errors.New("select portion of the query cannot be empty")
 	}
 
-	// Only enable automatic child table aggregation if there's NO GROUP BY
-	// When there's a GROUP BY, the existing framework logic handles child table aggregation via jsonb_agg
 	hasGroupBy := len(q.GetGroupBy().GetFields()) > 0
 
 	for idx, qs := range querySelects {
@@ -230,7 +228,6 @@ func populateSelect(querySoFar *query, schema *walker.Schema, q *v1.Query, query
 			return errors.Errorf("field %s in select portion of query does not exist in table %s or connected tables", field, schema.Table)
 		}
 
-		// Check if this is a child table field
 		isChildField := isChildTableField(dbField, schema)
 
 		// TODO(mandar): Add support for the following.
