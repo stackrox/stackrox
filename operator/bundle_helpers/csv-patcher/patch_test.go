@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -380,4 +381,168 @@ func TestConstructRelatedImages_NameTransformation(t *testing.T) {
 		}
 	}
 	assert.True(t, found, "should have scanner_db_slim entry with lowercase name")
+}
+
+func TestSplitComma(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []string
+	}{
+		{
+			name:     "empty string",
+			input:    "",
+			expected: nil,
+		},
+		{
+			name:     "single value",
+			input:    "amd64",
+			expected: []string{"amd64"},
+		},
+		{
+			name:     "multiple values",
+			input:    "amd64,arm64,ppc64le,s390x",
+			expected: []string{"amd64", "arm64", "ppc64le", "s390x"},
+		},
+		{
+			name:     "values with spaces",
+			input:    "amd64 , arm64 ,  ppc64le  ,s390x",
+			expected: []string{"amd64", "arm64", "ppc64le", "s390x"},
+		},
+		{
+			name:     "empty parts filtered out",
+			input:    "amd64,,arm64,  ,ppc64le",
+			expected: []string{"amd64", "arm64", "ppc64le"},
+		},
+		{
+			name:     "only commas and spaces",
+			input:    " , , , ",
+			expected: []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := splitComma(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestEchoReplacedVersion(t *testing.T) {
+	tests := []struct {
+		name         string
+		doc          map[string]interface{}
+		version      string
+		firstVersion string
+		unreleased   string
+		wantErr      bool
+		expectedOut  string
+	}{
+		{
+			name: "basic replacement calculation",
+			doc: map[string]interface{}{
+				"metadata": map[string]interface{}{
+					"name": "rhacs-operator.v0.0.1",
+				},
+				"spec": map[string]interface{}{},
+			},
+			version:      "4.5.1",
+			firstVersion: "4.5.0",
+			unreleased:   "",
+			wantErr:      false,
+			expectedOut:  "4.5.0",
+		},
+		{
+			name: "with skips list",
+			doc: map[string]interface{}{
+				"metadata": map[string]interface{}{
+					"name": "rhacs-operator.v0.0.1",
+				},
+				"spec": map[string]interface{}{
+					"skips": []interface{}{
+						"rhacs-operator.v4.5.0",
+						"rhacs-operator.v0.0.1", // Should be filtered
+					},
+				},
+			},
+			version:      "4.5.2",
+			firstVersion: "4.5.0",
+			unreleased:   "",
+			wantErr:      false,
+			expectedOut:  "4.5.1",
+		},
+		{
+			name: "no replacement for first version",
+			doc: map[string]interface{}{
+				"metadata": map[string]interface{}{
+					"name": "rhacs-operator.v0.0.1",
+				},
+				"spec": map[string]interface{}{},
+			},
+			version:      "4.5.0",
+			firstVersion: "4.5.0",
+			unreleased:   "",
+			wantErr:      false,
+			expectedOut:  "", // No output when no replacement
+		},
+		{
+			name: "error on missing metadata",
+			doc: map[string]interface{}{
+				"spec": map[string]interface{}{},
+			},
+			version:      "4.5.1",
+			firstVersion: "4.5.0",
+			wantErr:      true,
+		},
+		{
+			name: "error on missing metadata.name",
+			doc: map[string]interface{}{
+				"metadata": map[string]interface{}{},
+				"spec":     map[string]interface{}{},
+			},
+			version:      "4.5.1",
+			firstVersion: "4.5.0",
+			wantErr:      true,
+		},
+		{
+			name: "error on unexpected name format",
+			doc: map[string]interface{}{
+				"metadata": map[string]interface{}{
+					"name": "unexpected-format.v1.0.0",
+				},
+				"spec": map[string]interface{}{},
+			},
+			version:      "4.5.1",
+			firstVersion: "4.5.0",
+			wantErr:      true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Capture stdout
+			oldStdout := os.Stdout
+			r, w, _ := os.Pipe()
+			os.Stdout = w
+
+			err := echoReplacedVersion(tt.doc, tt.version, tt.firstVersion, tt.unreleased)
+
+			// Restore stdout
+			w.Close()
+			os.Stdout = oldStdout
+
+			// Read captured output
+			capturedBytes, _ := io.ReadAll(r)
+			output := strings.TrimSpace(string(capturedBytes))
+
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.expectedOut, output)
+		})
+	}
 }
