@@ -114,8 +114,10 @@ RUN rpm --import RPM-GPG-KEY-CentOS-Official && \
     chown -R 4000:4000 /tmp
 
 COPY --from=stackrox_data /stackrox-data /stackrox/static-data
-COPY image/rhel/docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
-COPY image/rhel/docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
+# Swagger docs are optional for experimental builds
+RUN mkdir -p /stackrox/static-data/docs/api/v1 /stackrox/static-data/docs/api/v2 && \
+    echo '{}' > /stackrox/static-data/docs/api/v1/swagger.json && \
+    echo '{}' > /stackrox/static-data/docs/api/v2/swagger.json
 COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
 
 # Copy UI from ui-builder
@@ -125,7 +127,7 @@ COPY --from=ui-builder /src/ui/build /ui
 COPY --from=go-builder /src/bin/linux_${TARGET_ARCH}/central            /stackrox/central
 COPY --from=go-builder /src/bin/linux_${TARGET_ARCH}/migrator           /stackrox/bin/migrator
 COPY --from=go-builder /src/bin/linux_${TARGET_ARCH}/compliance         /stackrox/bin/compliance
-COPY --from=go-builder /src/bin/linux_${TARGET_ARCH}/kubernetes-sensor  /stackrox/bin/kubernetes-sensor
+COPY --from=go-builder /src/bin/linux_${TARGET_ARCH}/kubernetes  /stackrox/bin/kubernetes-sensor
 COPY --from=go-builder /src/bin/linux_${TARGET_ARCH}/sensor-upgrader    /stackrox/bin/sensor-upgrader
 COPY --from=go-builder /src/bin/linux_${TARGET_ARCH}/admission-control  /stackrox/bin/admission-control
 COPY --from=go-builder /src/bin/linux_${TARGET_ARCH}/config-controller  /stackrox/bin/config-controller

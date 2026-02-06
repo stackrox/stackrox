@@ -1611,6 +1611,7 @@ jobs:
       - define-job-matrix
       - pre-build-ui  # Still need UI
       - pre-build-docs  # Still need docs
+      - pre-build-oss-notice  # Need THIRD_PARTY_NOTICES
     # Only run on PRs with the experimental label
     if: contains(github.event.pull_request.labels.*.name, 'ci-experiment-go-same-job')
     steps:
@@ -1657,6 +1658,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: docs-build
+          path: image/rhel/docs
+
+      - name: Download OSS notice
+        uses: actions/download-artifact@v4
+        with:
+          name: oss-notice
+          path: image/rhel/THIRD_PARTY_NOTICES
 
       - name: Extract UI
         run: |
@@ -1686,8 +1694,8 @@ jobs:
 
           docker_start=$(date +%s)
 
-          # Prepare image context
-          make -C image/rhel copy-binaries
+          # Prepare image context (UI, docs, THIRD_PARTY_NOTICES already in image/rhel/)
+          make copy-go-binaries-to-image-dir
 
           # Build Docker image
           echo "--- Building Docker image ---"
