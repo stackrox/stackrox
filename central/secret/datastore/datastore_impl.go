@@ -17,7 +17,9 @@ import (
 
 type datastoreImpl struct {
 	storage store.Store
-	db      postgres.DB
+	// TODO(ROX-31142): No way to call RunSelectRequestForSchemaFn via
+	// the store so we have to allow for access to the DB here.
+	db postgres.DB
 }
 
 func newPostgres(db postgres.DB) DataStore {
