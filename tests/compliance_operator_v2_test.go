@@ -39,8 +39,8 @@ import (
 const (
 	coNamespaceV2     = "openshift-compliance"
 	stackroxNamespace = "stackrox"
-	defaultTimeout    = 90 * time.Second
-	eventuallyTimeout = 120 * time.Second
+	defaultTimeout    = 120 * time.Second
+	defaultInterval   = 5 * time.Second
 )
 
 var (
@@ -166,65 +166,45 @@ func cleanUpResources(ctx context.Context, t *testing.T, resourceName string, na
 	}
 }
 
-func assertResourceDoesExist(ctx context.Context, t testutils.T, resourceName string, namespace string, obj dynclient.Object) dynclient.Object {
+func assertResourceDoesNotExist[T any, PT interface {
+	dynclient.Object
+	*T
+}](ctx context.Context, t testutils.T, name, namespace string) {
 	client := createDynamicClient(t)
 	require.Eventually(t, func() bool {
-		return client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, obj) == nil
-	}, defaultTimeout, 10*time.Millisecond)
-	return obj
-}
-
-func assertResourceWasUpdated(ctx context.Context, t testutils.T, resourceName string, namespace string, obj dynclient.Object) dynclient.Object {
-	client := createDynamicClient(t)
-	oldResourceVersion := obj.GetResourceVersion()
-	timeout := time.NewTimer(defaultTimeout)
-	ticker := time.NewTicker(10 * time.Millisecond)
-	for {
-		select {
-		case <-ticker.C:
-			if client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, obj) == nil && obj.GetResourceVersion() != oldResourceVersion {
-				return obj
-			}
-		case <-timeout.C:
-			// Timing-out in here does not necessarily indicate that the
-			// resource was not updated as the retrieval and assertion of the
-			// resource can race.
-			t.Logf("Timeout before we got a new resource version for %s %s (this might be ok)", obj.GetObjectKind().GroupVersionKind().String(), resourceName)
-			return obj
-		}
-	}
-	return obj
-}
-
-func assertResourceDoesNotExist(ctx context.Context, t testutils.T, resourceName string, namespace string, obj dynclient.Object) {
-	client := createDynamicClient(t)
-	require.Eventually(t, func() bool {
-		err := client.Get(ctx, types.NamespacedName{Name: resourceName, Namespace: namespace}, obj)
+		var obj T
+		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, PT(&obj))
 		return errors2.IsNotFound(err)
-	}, defaultTimeout, 10*time.Millisecond)
+	}, defaultTimeout, defaultInterval)
 }
 
-func assertScanSetting(t testutils.T, scanConfig v2.ComplianceScanConfiguration, scanSetting *complianceoperatorv1.ScanSetting) {
-	require.NotNil(t, scanSetting)
+func assertScanSetting(ctx context.Context, t testutils.T, client dynclient.Client, name, namespace string, scanConfig *v2.ComplianceScanConfiguration) {
+	scanSetting := &complianceoperatorv1.ScanSetting{}
+	err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, scanSetting)
+	require.NoError(t, err, "ScanSetting %s/%s does not exist", namespace, name)
+
 	cron, err := schedule.ConvertToCronTab(service.ConvertV2ScheduleToProto(scanConfig.GetScanConfig().GetScanSchedule()))
 	require.NoError(t, err)
 	assert.Equal(t, scanConfig.GetScanName(), scanSetting.GetName())
 	assert.Equal(t, cron, scanSetting.ComplianceSuiteSettings.Schedule)
-	assert.Contains(t, scanSetting.Labels, "app.kubernetes.io/name")
-	assert.Equal(t, scanSetting.Labels["app.kubernetes.io/name"], "stackrox")
-	assert.Contains(t, scanSetting.Annotations, "owner")
-	assert.Equal(t, scanSetting.Annotations["owner"], "stackrox")
+	require.Contains(t, scanSetting.GetLabels(), "app.kubernetes.io/name")
+	assert.Equal(t, scanSetting.GetLabels()["app.kubernetes.io/name"], "stackrox")
+	require.Contains(t, scanSetting.GetAnnotations(), "owner")
+	assert.Equal(t, scanSetting.GetAnnotations()["owner"], "stackrox")
 }
 
-func assertScanSettingBinding(t testutils.T, scanConfig v2.ComplianceScanConfiguration, scanSettingBinding *complianceoperatorv1.ScanSettingBinding) {
-	require.NotNil(t, scanSettingBinding)
+func assertScanSettingBinding(ctx context.Context, t testutils.T, client dynclient.Client, name, namespace string, scanConfig *v2.ComplianceScanConfiguration) {
+	scanSettingBinding := &complianceoperatorv1.ScanSettingBinding{}
+	err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, scanSettingBinding)
+	require.NoError(t, err, "ScanSettingBinding %s/%s does not exist", namespace, name)
+
 	assert.Equal(t, scanConfig.GetScanName(), scanSettingBinding.GetName())
 	for _, profile := range scanSettingBinding.Profiles {
 		assert.Contains(t, scanConfig.GetScanConfig().GetProfiles(), profile.Name)
 	}
-	assert.Contains(t, scanSettingBinding.Labels, "app.kubernetes.io/name")
+	require.Contains(t, scanSettingBinding.Labels, "app.kubernetes.io/name")
 	assert.Equal(t, scanSettingBinding.Labels["app.kubernetes.io/name"], "stackrox")
-	assert.Contains(t, scanSettingBinding.Annotations, "owner")
+	require.Contains(t, scanSettingBinding.Annotations, "owner")
 	assert.Equal(t, scanSettingBinding.Annotations["owner"], "stackrox")
 }
 
@@ -233,7 +213,7 @@ func waitForDeploymentReady(ctx context.Context, t *testing.T, name string, name
 	require.Eventually(t, func() bool {
 		deployment := &appsv1.Deployment{}
 		return client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, deployment) == nil && deployment.Status.ReadyReplicas == numReplicas
-	}, defaultTimeout, 10*time.Millisecond)
+	}, defaultTimeout, defaultInterval)
 }
 
 func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
@@ -276,14 +256,11 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	waitForDeploymentReady(ctx, t, "sensor", stackroxNamespace, 1)
 
 	// Assert the ScanSetting and the ScanSettingBinding are created
-	scanSetting := &complianceoperatorv1.ScanSetting{}
-	scanSettingBinding := &complianceoperatorv1.ScanSettingBinding{}
+	client := createDynamicClient(t)
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
-		assertResourceDoesExist(ctx, wrapCollectT(t, c), scanName, coNamespaceV2, scanSetting)
-		assertResourceDoesExist(ctx, wrapCollectT(t, c), scanName, coNamespaceV2, scanSettingBinding)
-		assertScanSetting(wrapCollectT(t, c), scanConfig, scanSetting)
-		assertScanSettingBinding(wrapCollectT(t, c), scanConfig, scanSettingBinding)
-	}, eventuallyTimeout, 2*time.Second)
+		assertScanSetting(ctx, wrapCollectT(t, c), client, scanName, coNamespaceV2, &scanConfig)
+		assertScanSettingBinding(ctx, wrapCollectT(t, c), client, scanName, coNamespaceV2, &scanConfig)
+	}, defaultTimeout, defaultInterval)
 
 	// Scale down Sensor
 	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 0))
@@ -302,11 +279,9 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 
 	// Assert the ScanSetting and the ScanSettingBinding are updated
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
-		assertResourceWasUpdated(ctx, wrapCollectT(t, c), scanName, coNamespaceV2, scanSetting)
-		assertResourceWasUpdated(ctx, wrapCollectT(t, c), scanName, coNamespaceV2, scanSettingBinding)
-		assertScanSetting(wrapCollectT(t, c), scanConfig, scanSetting)
-		assertScanSettingBinding(wrapCollectT(t, c), scanConfig, scanSettingBinding)
-	}, eventuallyTimeout, 2*time.Second)
+		assertScanSetting(ctx, wrapCollectT(t, c), client, scanName, coNamespaceV2, &scanConfig)
+		assertScanSettingBinding(ctx, wrapCollectT(t, c), client, scanName, coNamespaceV2, &scanConfig)
+	}, defaultTimeout, defaultInterval)
 
 	// Scale down Sensor
 	assert.NoError(t, scaleToN(ctx, k8sClient, "sensor", stackroxNamespace, 0))
@@ -323,8 +298,8 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	waitForDeploymentReady(ctx, t, "sensor", stackroxNamespace, 1)
 
 	// Assert the ScanSetting and the ScanSettingBinding are deleted
-	assertResourceDoesNotExist(ctx, t, scanName, coNamespaceV2, scanSetting)
-	assertResourceDoesNotExist(ctx, t, scanName, coNamespaceV2, scanSettingBinding)
+	assertResourceDoesNotExist[complianceoperatorv1.ScanSetting](ctx, t, scanName, coNamespaceV2)
+	assertResourceDoesNotExist[complianceoperatorv1.ScanSettingBinding](ctx, t, scanName, coNamespaceV2)
 }
 
 // ACS API test suite for integration testing for the Compliance Operator.
@@ -566,14 +541,11 @@ func TestComplianceV2UpdateScanConfigurations(t *testing.T) {
 	assert.GreaterOrEqual(t, scanConfigs.TotalCount, int32(1))
 
 	// Assert the ScanSetting and the ScanSettingBinding are created
-	scanSetting := &complianceoperatorv1.ScanSetting{}
-	scanSettingBinding := &complianceoperatorv1.ScanSettingBinding{}
+	client := createDynamicClient(t)
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
-		assertResourceDoesExist(ctx, wrapCollectT(t, c), scanName, coNamespaceV2, scanSetting)
-		assertResourceDoesExist(ctx, wrapCollectT(t, c), scanName, coNamespaceV2, scanSettingBinding)
-		assertScanSetting(wrapCollectT(t, c), *req, scanSetting)
-		assertScanSettingBinding(wrapCollectT(t, c), *req, scanSettingBinding)
-	}, eventuallyTimeout, 2*time.Second)
+		assertScanSetting(ctx, wrapCollectT(t, c), client, scanName, coNamespaceV2, req)
+		assertScanSettingBinding(ctx, wrapCollectT(t, c), client, scanName, coNamespaceV2, req)
+	}, defaultTimeout, defaultInterval)
 
 	// Update the scan configuration
 	updateReq := req.CloneVT()
@@ -600,11 +572,9 @@ func TestComplianceV2UpdateScanConfigurations(t *testing.T) {
 
 	// Assert the ScanSetting and the ScanSettingBinding are updated
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
-		assertResourceWasUpdated(ctx, wrapCollectT(t, c), scanName, coNamespaceV2, scanSetting)
-		assertResourceWasUpdated(ctx, wrapCollectT(t, c), scanName, coNamespaceV2, scanSettingBinding)
-		assertScanSetting(wrapCollectT(t, c), *updateReq, scanSetting)
-		assertScanSettingBinding(wrapCollectT(t, c), *updateReq, scanSettingBinding)
-	}, eventuallyTimeout, 2*time.Second)
+		assertScanSetting(ctx, wrapCollectT(t, c), client, scanName, coNamespaceV2, updateReq)
+		assertScanSettingBinding(ctx, wrapCollectT(t, c), client, scanName, coNamespaceV2, updateReq)
+	}, defaultTimeout, defaultInterval)
 }
 
 func TestComplianceV2DeleteComplianceScanConfigurations(t *testing.T) {
@@ -712,7 +682,7 @@ func TestComplianceV2ComplianceObjectMetadata(t *testing.T) {
 			&scanSetting,
 		)
 		require.NoError(c, err)
-	}, defaultTimeout, 5*time.Second)
+	}, defaultTimeout, defaultInterval)
 
 	assert.Contains(t, scanSetting.Labels, "app.kubernetes.io/name")
 	assert.Equal(t, scanSetting.Labels["app.kubernetes.io/name"], "stackrox")
