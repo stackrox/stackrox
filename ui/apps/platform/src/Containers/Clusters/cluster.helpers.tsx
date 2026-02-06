@@ -129,17 +129,17 @@ const styleUninitialized = {
 
 const styleHealthy = {
     Icon: CheckCircleIcon,
-    fgColor: 'pf-v6-u-text-color-status-success',
+    fgColor: 'pf-v6-u-icon-color-status-success',
 };
 
 const styleDegraded = {
     Icon: ExclamationTriangleIcon,
-    fgColor: 'pf-v6-u-warning-color-100',
+    fgColor: 'pf-v6-u-icon-color-status-warning',
 };
 
 const styleUnhealthy = {
     Icon: ExclamationCircleIcon,
-    fgColor: 'pf-v6-u-text-color-status-danger',
+    fgColor: 'pf-v6-u-icon-color-status-danger',
 };
 
 const styleUnavailable = {
@@ -190,11 +190,11 @@ export const sensorUpgradeStyles = {
     current: styleHealthy,
     progress: {
         Icon: InProgressIcon,
-        fgColor: 'pf-v6-u-primary-color-100',
+        fgColor: 'pf-v6-u-icon-color-primary',
     },
     download: {
         Icon: DownloadCloud,
-        fgColor: 'pf-v6-u-link-color',
+        fgColor: 'pf-v6-u-text-color-link',
     },
     intervention: styleDegraded,
     failure: styleUnhealthy,

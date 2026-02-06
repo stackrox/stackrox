@@ -55,7 +55,6 @@ function ErrorBoundaryPage({ error, errorInfo }: ErrorBoundaryPageProps): ReactE
                     <ErrorBoundaryCodeBlock
                         code={error.message}
                         idForButton="error-boundary-button-error-message"
-                        idForContent="error-boundary-content-error-message"
                         phraseForCopied="Copied to clipboard: Error message"
                         phraseForCopy="Copy to clipboard: Error message"
                     />
@@ -82,7 +81,6 @@ function ErrorBoundaryPage({ error, errorInfo }: ErrorBoundaryPageProps): ReactE
                                 <ErrorBoundaryCodeBlock
                                     code={error.stack ?? ''}
                                     idForButton="error-boundary-button-error-stack"
-                                    idForContent="error-boundary-content-error-stack"
                                     phraseForCopied="Copied to clipboard: Error stack"
                                     phraseForCopy="Copy to clipboard: Error stack"
                                 />
@@ -104,7 +102,6 @@ function ErrorBoundaryPage({ error, errorInfo }: ErrorBoundaryPageProps): ReactE
                                 <ErrorBoundaryCodeBlock
                                     code={errorInfo.componentStack ?? ''}
                                     idForButton="error-boundary-button-component-stack"
-                                    idForContent="error-boundary-content-component-stack"
                                     phraseForCopied="Copied to clipboard: Component stack"
                                     phraseForCopy="Copy to clipboard: Component stack"
                                 />

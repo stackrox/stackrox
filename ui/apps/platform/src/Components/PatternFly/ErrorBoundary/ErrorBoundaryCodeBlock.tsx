@@ -10,7 +10,6 @@ import useClipboardCopy from 'hooks/useClipboardCopy';
 export type ErrorBoundaryCodeBlockProps = {
     code: string;
     idForButton: string;
-    idForContent: string;
     phraseForCopied: string;
     phraseForCopy: string;
 };
@@ -18,7 +17,6 @@ export type ErrorBoundaryCodeBlockProps = {
 function ErrorBoundaryCodeBlock({
     code,
     idForButton,
-    idForContent,
     phraseForCopied,
     phraseForCopy,
 }: ErrorBoundaryCodeBlockProps): ReactElement {
@@ -30,7 +28,6 @@ function ErrorBoundaryCodeBlock({
                 aria-label={phraseForCopy}
                 id={idForButton}
                 onClick={() => copyToClipboard(code)}
-                textId={idForContent}
                 variant="plain"
             >
                 {wasCopied ? phraseForCopied : phraseForCopy}

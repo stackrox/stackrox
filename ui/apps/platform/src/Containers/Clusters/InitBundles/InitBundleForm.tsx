@@ -5,7 +5,6 @@ import {
     ActionGroup,
     Alert,
     Button,
-    Divider,
     Flex,
     Form,
     FormGroup,
@@ -119,8 +118,7 @@ function InitBundleForm(): ReactElement {
     return (
         <>
             <InitBundlesHeader title="Create bundle" />
-            <Divider component="div" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <Flex direction={{ default: 'column' }}>
                     <Form>
                         <FormLabelGroup
