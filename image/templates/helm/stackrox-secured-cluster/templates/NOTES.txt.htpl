@@ -12,7 +12,7 @@ Secured Cluster Configuration Summary:
   OpenShift Cluster:                           {{ if eq ._rox.env.openshift 0 -}} false {{ else -}} {{ ._rox.env.openshift }} {{ end }}
 [<- if not .FeatureFlags.ROX_ADMISSION_CONTROLLER_CONFIG >]
   Admission Control Webhooks deployed:         {{ or ._rox.admissionControl.dynamic.listenOnCreates ._rox.admissionControl.dynamic.listenOnUpdates ._rox.admissionControl.dynamic.listenOnEvents}}
-[ <- else >]
+[<- else >]
   Admission Control Webhooks deployed:         {{ or ._rox.admissionControl.dynamic.enforceOnCreates ._rox.admissionControl.dynamic.enforceOnUpdates ._rox.admissionControl.dynamic.listenOnEvents}}
 [<- end >]
   Admission Control Enforcement:               {{ or ._rox.admissionControl.dynamic.enforceOnCreates ._rox.admissionControl.dynamic.enforceOnUpdates }}
