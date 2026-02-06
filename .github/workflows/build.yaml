@@ -1661,6 +1661,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ui-RHACS_BRANDING-build
+          path: ui
 
       - name: Download docs artifact
         uses: actions/download-artifact@v4
@@ -1674,10 +1675,10 @@ jobs:
           name: oss-notice
           path: image/rhel/THIRD_PARTY_NOTICES
 
-      - name: Extract UI
+      - name: Copy UI to image directory
         run: |
           mkdir -p image/rhel/ui
-          tar xzf ui-build.tgz -C image/rhel/ui
+          cp -r ui/build/* image/rhel/ui/
 
       - name: Login to ghcr.io for Docker layer caching
         run: |
