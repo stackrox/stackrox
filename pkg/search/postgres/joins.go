@@ -167,17 +167,12 @@ type searchFieldMetadata struct {
 	derivedMetadata *walker.DerivedSearchField
 }
 
-// isChildSchema checks if a schema is a child of the parent schema
+// isChildSchema checks if a schema is a child (or grandchild, etc.) of the parent schema.
 func isChildSchema(childSchema *walker.Schema, parentSchema *walker.Schema) bool {
 	if childSchema == nil || parentSchema == nil {
 		return false
 	}
-	for _, child := range parentSchema.Children {
-		if child != nil && child.Table == childSchema.Table {
-			return true
-		}
-	}
-	return false
+	return isChildTable(childSchema.Table, parentSchema)
 }
 
 func getJoinsAndFields(src *walker.Schema, q *v1.Query, arrayFields map[string]bool) ([]Join, map[string]searchFieldMetadata) {
