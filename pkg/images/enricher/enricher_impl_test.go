@@ -42,7 +42,7 @@ func imageGetterPanicOnCall(_ context.Context, _ string) (*storage.Image, bool, 
 	panic("Unexpected call to imageGetter")
 }
 
-func emptyBaseImageGetter(_ context.Context, _ []string) ([]*storage.BaseImageInfo, error) {
+func emptyBaseImageGetter(_ context.Context, _ []string) ([]*storage.BaseImage, error) {
 	return nil, nil
 }
 
