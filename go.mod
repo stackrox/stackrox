@@ -62,7 +62,7 @@ require (
 	github.com/google/go-containerregistry v0.20.7
 	github.com/google/go-github/v60 v60.0.0
 	github.com/google/uuid v1.6.0
-	github.com/googleapis/gax-go/v2 v2.16.0
+	github.com/googleapis/gax-go/v2 v2.17.0
 	github.com/gorilla/schema v1.4.1
 	github.com/grafana/pyroscope-go v1.2.7
 	github.com/graph-gophers/graphql-go v1.5.0
@@ -151,8 +151,8 @@ require (
 	golang.org/x/tools v0.41.0
 	golang.stackrox.io/grpc-http1 v0.5.1
 	google.golang.org/api v0.265.0
-	google.golang.org/genproto v0.0.0-20251202230838-ff82c1b0f217
-	google.golang.org/genproto/googleapis/api v0.0.0-20251222181119-0a764e51fe1b
+	google.golang.org/genproto v0.0.0-20260128011058-8636f8732409
+	google.golang.org/genproto/googleapis/api v0.0.0-20260128011058-8636f8732409
 	google.golang.org/grpc v1.78.0
 	google.golang.org/grpc/examples v0.0.0-20250407062114-b368379ef8f6
 	google.golang.org/protobuf v1.36.11
@@ -185,7 +185,7 @@ require (
 	cloud.google.com/go/auth v0.18.1 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/iam v1.5.3 // indirect
-	cloud.google.com/go/longrunning v0.7.0 // indirect
+	cloud.google.com/go/longrunning v0.8.0 // indirect
 	cloud.google.com/go/monitoring v1.24.3 // indirect
 	github.com/AliyunContainerService/ack-ram-tool/pkg/credentials/provider v0.14.0 // indirect
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible // indirect
