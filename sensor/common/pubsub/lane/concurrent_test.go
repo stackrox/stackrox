@@ -24,7 +24,7 @@ func TestNewLaneOptions(t *testing.T) {
 		lane := config.NewLane()
 		assert.NotNil(t, lane)
 		defer lane.Stop()
-		laneImpl, ok := lane.(*concurrentLane)
+		laneImpl, ok := lane.(*ConcurrentLane)
 		require.True(t, ok)
 		assert.Equal(t, 0, laneImpl.ch.Cap())
 	})
@@ -35,7 +35,7 @@ func TestNewLaneOptions(t *testing.T) {
 		lane := config.NewLane()
 		assert.NotNil(t, lane)
 		defer lane.Stop()
-		laneImpl, ok := lane.(*concurrentLane)
+		laneImpl, ok := lane.(*ConcurrentLane)
 		require.True(t, ok)
 		assert.Equal(t, laneSize, laneImpl.ch.Cap())
 	})
@@ -46,7 +46,7 @@ func TestNewLaneOptions(t *testing.T) {
 		lane := config.NewLane()
 		assert.NotNil(t, lane)
 		defer lane.Stop()
-		laneImpl, ok := lane.(*concurrentLane)
+		laneImpl, ok := lane.(*ConcurrentLane)
 		require.True(t, ok)
 		assert.Equal(t, 0, laneImpl.ch.Cap())
 	})
@@ -56,7 +56,7 @@ func TestNewLaneOptions(t *testing.T) {
 		lane := config.NewLane()
 		assert.NotNil(t, lane)
 		defer lane.Stop()
-		laneImpl, ok := lane.(*concurrentLane)
+		laneImpl, ok := lane.(*ConcurrentLane)
 		require.True(t, ok)
 		assert.NotNil(t, laneImpl.newConsumerFn)
 	})
@@ -87,7 +87,7 @@ func TestRegisterConsumer(t *testing.T) {
 		assert.NoError(t, lane.RegisterConsumer(pubsub.DefaultConsumer, pubsub.DefaultTopic, func(_ pubsub.Event) error {
 			return nil
 		}))
-		laneImpl, ok := lane.(*concurrentLane)
+		laneImpl, ok := lane.(*ConcurrentLane)
 		require.True(t, ok)
 		assert.Len(t, laneImpl.consumers[pubsub.DefaultTopic], 1)
 	})
@@ -311,7 +311,7 @@ func TestStop(t *testing.T) {
 		lane := NewConcurrentLane(pubsub.DefaultLane).NewLane()
 		assert.NotNil(t, lane)
 		lane.Stop()
-		laneImpl, ok := lane.(*concurrentLane)
+		laneImpl, ok := lane.(*ConcurrentLane)
 		require.True(t, ok)
 
 		_, ok = <-laneImpl.ch.Chan()
@@ -326,7 +326,7 @@ func TestStop(t *testing.T) {
 				consumerStopped = true
 			},
 		}
-		laneImpl := lane.(*concurrentLane)
+		laneImpl := lane.(*ConcurrentLane)
 		laneImpl.consumers[pubsub.DefaultTopic] = []pubsub.Consumer{mockConsumer}
 		lane.Stop()
 		assert.True(t, consumerStopped)
