@@ -6,7 +6,6 @@ import {
     BreadcrumbItem,
     Bullseye,
     Content,
-    Flex,
     PageSection,
     Spinner,
     Title,
@@ -87,25 +86,20 @@ function DiscoveredClustersPage(): ReactElement {
 
     return (
         <>
-            <PageSection hasBodyWrapper={false} component="div">
-                <PageTitle title={title} />
-                <Flex direction={{ default: 'column' }}>
-                    <Breadcrumb>
-                        <BreadcrumbItemLink to={clustersBasePath}>Clusters</BreadcrumbItemLink>
-                        <BreadcrumbItem isActive>{title}</BreadcrumbItem>
-                    </Breadcrumb>
-                    <Flex
-                        direction={{ default: 'column' }}
-                        spaceItems={{ default: 'spaceItemsSm' }}
-                    >
-                        <Title headingLevel="h1">{title}</Title>
-                        <Content component="p">
-                            Discovered clusters might not yet have secured cluster services.
-                        </Content>
-                    </Flex>
-                </Flex>
+            <PageTitle title={title} />
+            <PageSection type="breadcrumb">
+                <Breadcrumb>
+                    <BreadcrumbItemLink to={clustersBasePath}>Clusters</BreadcrumbItemLink>
+                    <BreadcrumbItem isActive>{title}</BreadcrumbItem>
+                </Breadcrumb>
             </PageSection>
-            <PageSection hasBodyWrapper={false} component="div">
+            <PageSection>
+                <Title headingLevel="h1">{title}</Title>
+                <Content component="p">
+                    Discovered clusters might not yet have secured cluster services.
+                </Content>
+            </PageSection>
+            <PageSection>
                 {currentDatetime === null ? (
                     <Bullseye>
                         <Spinner />
