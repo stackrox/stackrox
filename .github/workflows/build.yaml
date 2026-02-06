@@ -144,6 +144,14 @@ jobs:
             cache_args="${cache_args} --cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max,ignore-error=true"
           fi
 
+          # Create placeholder directories for all-in-one build
+          # THIRD_PARTY_NOTICES would normally come from pre-build-oss-notice job
+          mkdir -p image/rhel/THIRD_PARTY_NOTICES
+          # Swagger docs would normally come from pre-build-docs job
+          mkdir -p image/rhel/docs/api/v1 image/rhel/docs/api/v2
+          echo '{}' > image/rhel/docs/api/v1/swagger.json
+          echo '{}' > image/rhel/docs/api/v2/swagger.json
+
           # Copy binaries to image context
           make copy-binaries-to-image-dir
 
