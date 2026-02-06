@@ -9,6 +9,12 @@ Put an entry in this file if your change is user-visible and you consider it _pa
 
 Changes should still be described appropriately in JIRA/doc input pages, for inclusion in downstream release notes.
 
+## [4.9.4]
+
+**Full Changelog**: [4.9.3...4.9.4](https://github.com/stackrox/stackrox/compare/4.9.3...4.9.4)
+
+For a description of the changes, review the [Release Notes](https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/4.9/html/release_notes/index) on the Red Hat Documentation portal.
+
 ## [4.9.3]
 
 **Full Changelog**: [4.9.2...4.9.3](https://github.com/stackrox/stackrox/compare/4.9.2...4.9.3)
