@@ -50,12 +50,13 @@ ENV GOOS=linux
 ENV GOARCH=${TARGET_ARCH}
 ENV GOTAGS=${GOTAGS}
 ENV CI=1
+ENV CGO_ENABLED=0
 
 # Build binaries - this layer is cached if source hasn't changed
 # Build main binaries and CLI (roxctl, roxagent) which are required for the final image
 RUN make main-build-nodeps && \
-    RACE=0 CGO_ENABLED=0 go build -o bin/linux_${GOARCH}/roxctl-linux-${GOARCH} ./roxctl && \
-    RACE=0 CGO_ENABLED=0 go build -o bin/linux_${GOARCH}/roxagent ./compliance/virtualmachines/roxagent
+    RACE=0 go build -o bin/linux_${GOARCH}/roxctl-linux-${GOARCH} ./roxctl && \
+    RACE=0 go build -o bin/linux_${GOARCH}/roxagent ./compliance/virtualmachines/roxagent
 
 # Stage 4: Build UI (can run in parallel with go-builder)
 FROM registry.access.redhat.com/ubi9/nodejs-20:latest AS ui-builder
