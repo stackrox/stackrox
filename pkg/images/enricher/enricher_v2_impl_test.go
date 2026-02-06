@@ -223,6 +223,7 @@ func TestEnricherV2Flow(t *testing.T) {
 				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
 				Digest: "sha",
 				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+				// no need to pass metadata
 			},
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
@@ -1122,7 +1123,7 @@ func TestEnrichImageV2_Delegate(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		dele = delegatorMocks.NewMockDelegator(ctrl)
 		e.scanDelegator = dele
-		biMock.callCount = 0 // Reset for isolation
+		e.baseImageGetter = biMock.get // Reset for every sub-test
 	}
 
 	t.Run("delegate enrich error", func(t *testing.T) {
