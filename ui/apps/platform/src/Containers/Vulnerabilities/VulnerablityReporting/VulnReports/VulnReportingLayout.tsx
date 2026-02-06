@@ -33,15 +33,17 @@ function VulnReportingLayout() {
     return (
         <>
             <PageTitle title="Vulnerability reporting" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <Title headingLevel="h1">Vulnerability reporting</Title>
             </PageSection>
-            <PageSection
-                hasBodyWrapper={false}
-                padding={{ default: 'noPadding' }}
-                className="pf-v6-u-pl-lg pf-v6-u-background-color-100"
-            >
-                <Tabs activeKey={activeTabIndex} onSelect={onTabSelect}>
+            <PageSection type="tabs">
+                <Tabs
+                    activeKey={activeTabIndex}
+                    onSelect={onTabSelect}
+                    usePageInsets
+                    mountOnEnter
+                    unmountOnExit
+                >
                     {tabs.map((tab, index) => (
                         <Tab
                             key={tab.id}
@@ -52,9 +54,7 @@ function VulnReportingLayout() {
                     ))}
                 </Tabs>
             </PageSection>
-            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
-                <Outlet />
-            </PageSection>
+            <Outlet />
         </>
     );
 }
