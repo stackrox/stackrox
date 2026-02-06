@@ -8,7 +8,7 @@ ARG RPMS_BASE_TAG=latest
 ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
 ARG BASE_TAG=latest
-ARG GO_VERSION=1.24
+ARG GO_VERSION=1.25
 
 # Stage 1: Download RPMs and Go runtime
 FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS downloads
