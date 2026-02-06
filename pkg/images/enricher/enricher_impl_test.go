@@ -90,6 +90,9 @@ func TestEnricherFlow(t *testing.T) {
 				Id:    "id",
 				Name:  &storage.ImageName{Registry: "reg"},
 				Names: []*storage.ImageName{{Registry: "reg"}},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
 			},
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: true,
@@ -111,6 +114,9 @@ func TestEnricherFlow(t *testing.T) {
 			shortCircuitScanner:  true,
 			image: &storage.Image{
 				Id: "id",
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
 			},
 			imageGetter: imageGetterFromImage(&storage.Image{
 				Id:    "id",
@@ -138,6 +144,9 @@ func TestEnricherFlow(t *testing.T) {
 				Id:    "id",
 				Name:  &storage.ImageName{Registry: "reg"},
 				Names: []*storage.ImageName{{Registry: "reg"}},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
 			},
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: true,
@@ -159,6 +168,9 @@ func TestEnricherFlow(t *testing.T) {
 				Id:    "id",
 				Name:  &storage.ImageName{Registry: "reg"},
 				Names: []*storage.ImageName{{Registry: "reg"}},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
 			},
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: true,
@@ -179,6 +191,9 @@ func TestEnricherFlow(t *testing.T) {
 			image: &storage.Image{
 				Id: "id", Name: &storage.ImageName{Registry: "reg"},
 				Names: []*storage.ImageName{{Registry: "reg"}},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
 			},
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
@@ -201,6 +216,9 @@ func TestEnricherFlow(t *testing.T) {
 			image: &storage.Image{
 				Id: "id", Name: &storage.ImageName{Registry: "reg"},
 				Names: []*storage.ImageName{{Registry: "reg"}},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
 			},
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
@@ -222,6 +240,9 @@ func TestEnricherFlow(t *testing.T) {
 			image: &storage.Image{
 				Id: "id", Name: &storage.ImageName{Registry: "reg"},
 				Names: []*storage.ImageName{{Registry: "reg"}},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
 			},
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
@@ -242,7 +263,6 @@ func TestEnricherFlow(t *testing.T) {
 			shortCircuitRegistry: true,
 			shortCircuitScanner:  true,
 			image:                &storage.Image{Id: "id", Name: &storage.ImageName{Registry: "reg"}},
-
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
 				requestedScan:     false,
@@ -263,7 +283,7 @@ func TestEnricherFlow(t *testing.T) {
 			shortCircuitScanner:  true,
 			image: &storage.Image{
 				Id:       "id",
-				Metadata: &storage.ImageMetadata{DataSource: &storage.DataSource{Id: "exists"}},
+				Metadata: &storage.ImageMetadata{DataSource: &storage.DataSource{Id: "exists"}, LayerShas: []string{"SHA1"}},
 				Scan:     &storage.ImageScan{},
 				Name:     &storage.ImageName{Registry: "reg"},
 				Names:    []*storage.ImageName{{Registry: "reg"}},
@@ -290,7 +310,10 @@ func TestEnricherFlow(t *testing.T) {
 					Registry: "reg",
 				},
 				Names: []*storage.ImageName{{Registry: "reg"}},
-				Scan:  &storage.ImageScan{},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
+				Scan: &storage.ImageScan{},
 			},
 			imageGetter: imageGetterPanicOnCall,
 			fsr: newFakeRegistryScanner(opts{
@@ -313,7 +336,7 @@ func TestEnricherFlow(t *testing.T) {
 			shortCircuitScanner:  false,
 			image: &storage.Image{
 				Id:       "id",
-				Metadata: &storage.ImageMetadata{DataSource: &storage.DataSource{Id: "exists"}},
+				Metadata: &storage.ImageMetadata{DataSource: &storage.DataSource{Id: "exists"}, LayerShas: []string{"SHA1"}},
 				Scan:     &storage.ImageScan{},
 				Name:     &storage.ImageName{Registry: "reg"},
 				Names:    []*storage.ImageName{{Registry: "reg"}},
@@ -1140,8 +1163,6 @@ func TestEnrichImage_Delegate(t *testing.T) {
 
 	t.Run("delegate enrich success", func(t *testing.T) {
 		setup(t)
-
-		// Image must have metadata for enrichWithBaseImage to proceed
 		fakeImage := &storage.Image{
 			Id: "sha256:delegate",
 			Metadata: &storage.ImageMetadata{
@@ -1158,8 +1179,42 @@ func TestEnrichImage_Delegate(t *testing.T) {
 		assert.True(t, result.ImageUpdated)
 		assert.NoError(t, err)
 
-		// Verify: Success path MUST call baseImageGetter
-		assert.Equal(t, 1, biMock.callCount)
+		// No cached image.
+		assert.Equal(t, 0, biMock.callCount)
+	})
+
+	t.Run("delegate enrich success with image cache", func(t *testing.T) {
+		setup(t)
+
+		inputImage := &storage.Image{
+			Id:   "sha256:delegate-cached",
+			Name: &storage.ImageName{FullName: "reg/img:tag"},
+		}
+
+		cachedImage := &storage.Image{
+			Id: "sha256:delegate-cached",
+			Metadata: &storage.ImageMetadata{
+				LayerShas: []string{"layer1", "layer2"},
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{{Instruction: "FROM"}},
+				},
+			},
+			Scan: &storage.ImageScan{
+				ScannerVersion: "1.0",
+			},
+		}
+		e.imageGetter = imageGetterFromImage(cachedImage)
+
+		dele.EXPECT().GetDelegateClusterID(gomock.Any(), gomock.Any()).Return("cluster-id", true, nil)
+
+		result, err := e.EnrichImage(emptyCtx, deleEnrichCtx, inputImage)
+
+		assert.NoError(t, err)
+		assert.True(t, result.ImageUpdated)
+		assert.Equal(t, ScanSucceeded, result.ScanResult)
+
+		assert.Equal(t, 1, biMock.callCount, "Base image getter should be called for cached delegated images")
+		assert.NotNil(t, inputImage.GetMetadata())
 	})
 }
 

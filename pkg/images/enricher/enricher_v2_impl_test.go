@@ -93,6 +93,9 @@ func TestEnricherV2Flow(t *testing.T) {
 				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
 				Digest: "sha",
 				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
 			},
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: true,
@@ -116,6 +119,9 @@ func TestEnricherV2Flow(t *testing.T) {
 				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
 				Digest: "sha",
 				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
 			},
 			imageGetter: imageGetterV2FromImage(&storage.ImageV2{
 				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
@@ -142,6 +148,9 @@ func TestEnricherV2Flow(t *testing.T) {
 				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
 				Digest: "sha",
 				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
 			},
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: true,
@@ -163,6 +172,9 @@ func TestEnricherV2Flow(t *testing.T) {
 				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
 				Digest: "sha",
 				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
 			},
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: true,
@@ -184,6 +196,9 @@ func TestEnricherV2Flow(t *testing.T) {
 				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
 				Digest: "sha",
 				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
 			},
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
@@ -216,7 +231,7 @@ func TestEnricherV2Flow(t *testing.T) {
 				ImageUpdated: true,
 				ScanResult:   ScanNotDone,
 			},
-			expectedBaseImageCalls: 1,
+			expectedBaseImageCalls: 0,
 		},
 		{
 			name: "set ScannerTypeHint to something found in integrations",
@@ -229,6 +244,9 @@ func TestEnricherV2Flow(t *testing.T) {
 				Id:     utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
 				Digest: "sha",
 				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
 			},
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
@@ -274,7 +292,7 @@ func TestEnricherV2Flow(t *testing.T) {
 			image: &storage.ImageV2{
 				Id:       utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
 				Digest:   "sha",
-				Metadata: &storage.ImageMetadata{DataSource: &storage.DataSource{Id: "exists"}},
+				Metadata: &storage.ImageMetadata{DataSource: &storage.DataSource{Id: "exists"}, LayerShas: []string{"SHA1"}},
 				Scan:     &storage.ImageScan{},
 				Name:     &storage.ImageName{Registry: "reg", FullName: "reg"},
 			},
@@ -299,6 +317,9 @@ func TestEnricherV2Flow(t *testing.T) {
 				Digest: "sha",
 				Name:   &storage.ImageName{Registry: "reg", FullName: "reg"},
 				Scan:   &storage.ImageScan{},
+				Metadata: &storage.ImageMetadata{
+					LayerShas: []string{"SHA1"},
+				},
 			},
 			imageGetter: imageGetterV2PanicOnCall,
 			fsr: newFakeRegistryScanner(opts{
@@ -322,7 +343,7 @@ func TestEnricherV2Flow(t *testing.T) {
 			image: &storage.ImageV2{
 				Id:       utils.NewImageV2ID(&storage.ImageName{Registry: "reg", FullName: "reg"}, "sha"),
 				Digest:   "sha",
-				Metadata: &storage.ImageMetadata{DataSource: &storage.DataSource{Id: "exists"}},
+				Metadata: &storage.ImageMetadata{DataSource: &storage.DataSource{Id: "exists"}, LayerShas: []string{"SHA1"}},
 				Scan:     &storage.ImageScan{},
 				Name:     &storage.ImageName{Registry: "reg", FullName: "reg"},
 			},

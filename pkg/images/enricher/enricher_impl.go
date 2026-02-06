@@ -377,7 +377,6 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 		}
 	}
 
-	e.enrichWithBaseImage(ctx, image)
 	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
 
 	if !errorList.Empty() {
