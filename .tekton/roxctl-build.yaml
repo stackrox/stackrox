@@ -23,8 +23,8 @@ metadata:
     # added to the PR. See the Slack tread linked from ROX-30580.
     pipelinesascode.tekton.dev/on-label: "[]"
   labels:
-    appstudio.openshift.io/application: acs
-    appstudio.openshift.io/component: roxctl
+    appstudio.openshift.io/application: acs-4-10
+    appstudio.openshift.io/component: roxctl-4-10
     pipelines.appstudio.openshift.io/type: build
   name: roxctl-on-push
   namespace: rh-acs-tenant
@@ -59,7 +59,7 @@ spec:
   - name: extra-labels
     value:
     # X.Y in the cpe label must be adjusted for every version stream.
-    - "cpe=cpe:/a:redhat:advanced_cluster_security:X.Y::el8"
+    - "cpe=cpe:/a:redhat:advanced_cluster_security:4.10::el8"
 
   pipelineRef:
     name: basic-component-pipeline
@@ -85,7 +85,7 @@ spec:
           memory: 3Gi
 
   taskRunTemplate:
-    serviceAccountName: build-pipeline-roxctl
+    serviceAccountName: build-pipeline-roxctl-4-10
 
   # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:
