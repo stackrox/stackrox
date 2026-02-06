@@ -247,7 +247,7 @@ function CollectionSelection({
         <>
             <Flex
                 direction={{ default: 'row' }}
-                spaceItems={{ default: 'spaceItemsNone' }}
+                spaceItems={{ default: 'spaceItemsSm' }}
                 alignItems={{ default: 'alignItemsFlexEnd' }}
             >
                 <FlexItem>
@@ -327,7 +327,7 @@ function CollectionSelection({
                     </Select>
                 </FlexItem>
                 {isRouteEnabledForCollections && (
-                    <FlexItem spacer={{ default: 'spacerMd' }}>
+                    <FlexItem>
                         <Button
                             variant="tertiary"
                             onClick={onOpenViewCollectionModal}
