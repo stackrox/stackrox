@@ -74,12 +74,12 @@ function EmailTemplateModal({
               >
                   Apply
               </Button>,
-              <Button key="cancel" variant="link" isInline onClick={onClose}>
+              <Button key="cancel" variant="link" onClick={onClose}>
                   Cancel
               </Button>,
           ]
         : [
-              <Button key="cancel" variant="secondary" isInline onClick={onClose}>
+              <Button key="cancel" variant="secondary" onClick={onClose}>
                   Close
               </Button>,
           ];
