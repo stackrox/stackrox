@@ -140,6 +140,15 @@ type CVESuppressor interface {
 	EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2)
 }
 
+// CVEInfoEnricher provides enrichment for CVE timing metadata (FixAvailableTimestamp and FirstSystemOccurrence).
+type CVEInfoEnricher interface {
+	// EnrichImageWithCVEInfo enriches a V1 image's CVEs with timing metadata from the ImageCVEInfo lookup table.
+	EnrichImageWithCVEInfo(ctx context.Context, image *storage.Image) error
+
+	// EnrichImageV2WithCVEInfo enriches a V2 image's CVEs with timing metadata from the ImageCVEInfo lookup table.
+	EnrichImageV2WithCVEInfo(ctx context.Context, image *storage.ImageV2) error
+}
+
 // TODO(ROX-30117): Remove this and use ImageGetterV2 after ImageV2 model is fully rolled out.
 // ImageGetter will be used to retrieve a specific image from the datastore.
 type ImageGetter func(ctx context.Context, id string) (*storage.Image, bool, error)
@@ -156,11 +165,12 @@ type signatureVerifierForIntegrations func(ctx context.Context, integrations []*
 
 // New returns a new ImageEnricher instance for the given subsystem.
 // (The subsystem is just used for Prometheus metrics.)
-func New(cvesSuppressorV2 CVESuppressor, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache cache.ImageMetadata, baseImageGetter BaseImageGetter,
+func New(cvesSuppressorV2 CVESuppressor, cveInfoEnricher CVEInfoEnricher, is integration.Set, subsystem pkgMetrics.Subsystem, metadataCache cache.ImageMetadata, baseImageGetter BaseImageGetter,
 	imageGetter ImageGetter, healthReporter integrationhealth.Reporter,
 	signatureIntegrationGetter SignatureIntegrationGetter, scanDelegator delegatedregistry.Delegator) ImageEnricher {
 	enricher := &enricherImpl{
 		cvesSuppressorV2: cvesSuppressorV2,
+		cveInfoEnricher:  cveInfoEnricher,
 		integrations:     is,
 
 		// number of consecutive errors per registry or scanner to ascertain health of the integration

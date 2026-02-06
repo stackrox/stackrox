@@ -8,7 +8,6 @@ import (
 	"sort"
 	"testing"
 
-	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
@@ -64,8 +63,7 @@ func (s *ImageV2DataStoreTestSuite) SetupSuite() {
 func (s *ImageV2DataStoreTestSuite) SetupTest() {
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
 	dbStore := pgStore.New(s.testDB.DB, false, keyfence.ImageKeyFenceSingleton())
-	imageCVEInfo := imageCVEInfoDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	s.datastore = imageDataStoreV2.NewWithPostgres(dbStore, s.mockRisk, ranking.NewRanker(), ranking.NewRanker(), imageCVEInfo)
+	s.datastore = imageDataStoreV2.NewWithPostgres(dbStore, s.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	componentStorage := imageComponentPostgres.New(s.testDB.DB)
 	s.componentDataStore = imageComponentDS.New(componentStorage, s.mockRisk, ranking.NewRanker())
