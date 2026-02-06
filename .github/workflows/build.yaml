@@ -32,16 +32,16 @@ jobs:
       GOARCH: amd64
       CGO_ENABLED: 0
       ROX_PRODUCT_BRANDING: STACKROX_BRANDING
-    strategy:
-      fail-fast: false
-      matrix:
-        parallel: [ 1 ]
     steps:
-      # Telemetry action disabled - requires apikey configuration
-      # - uses: davdhacs/workflow-telemetry-action@master
-      #   with:
-      #     comment_on_pr: false
-      #     job_summary: true
+      - name: Collect Workflow Telemetry
+        uses: catchpoint/workflow-telemetry-action@v2
+        with:
+          theme: dark
+          comment_on_pr: false
+          job_summary: true
+          metric_frequency: 5
+          proc_trace_sys_enable: false
+          proc_trace_chart_max_count: 100
 
       - name: Checkout
         uses: actions/checkout@v6
@@ -78,7 +78,7 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      # TODO: review if handle-tag-build is needed or can be replaced/reduced
+      - uses: ./.github/actions/handle-tagged-build
 
       # Keep UI cache - changes less frequently than Go code
       - name: restore cached ui
@@ -114,30 +114,31 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Checkout submodules
-        run: |
-          git submodule update --init
+        run: git submodule update --init
 
-      - name: go mod tidy
+      - name: Build Go binaries
+        env:
+          CI: "true"  # Prevents duplicate roxctl build in main-build-nodeps
         run: |
-          set -x
-          export CI=true  # or builds roxctl separately in main-build-nodeps even if built
-          parallel="${{ matrix.parallel }}"
-          make -j"${parallel}" -Oline deps  # go mod tidy all go.sum files
-            # semaphore ./deps controls if run
-            # if [[ ! -d ./deps ]]; then for d in $(find . -name go.sum | xargs dirname); do pushd $d; go mod tidy; popd; done; fi
-            # make -j${parallel} -Oline build-prep  # depends on deps and creates empty build binary output path
-              # mkdir -p bin/linux_amd64
-            # clean-image: clear image context dir contents
+          # cache-go-dependencies already ran make deps, just need build-prep
+          make build-prep
+          # Build all Go binaries in one invocation for better cache utilization
+          # Go's internal parallelism handles concurrent package compilation
+          time ./scripts/go-build.sh \
+            central \
+            compliance/cmd/compliance \
+            config-controller \
+            migrator \
+            sensor/admission-control \
+            sensor/kubernetes \
+            sensor/upgrader \
+            roxctl \
+            compliance/virtualmachines/roxagent
 
-      - name: compile
+      - name: Build UI and docs
         run: |
-          set -x
-          export SKIP_CLI_BUILD=true  # skip if already built
-          export SKIP_UI_BUILD=true   # skip if already built (from cache)
-          parallel="${{ matrix.parallel }}"
-          # Build all components - uses main-build-nodeps for parallel Go compilation
-          # roxagent_linux-amd64 is needed for copy-binaries-to-image-dir
-          time make -j"${parallel}" -Oline roxctl_linux-amd64 roxagent_linux-amd64 main-build-nodeps ui-build swagger-docs
+          export SKIP_UI_BUILD=true  # skip if already built (from cache)
+          make ui-build swagger-docs
 
       - name: Generate OSS notice
         if: false
@@ -163,11 +164,8 @@ jobs:
           ossls version
           make ossls-notice
 
-      - name: Build image
+      - name: Build Docker images
         run: |
-          set -x
-          unset CI  # include only the host arch build of roxctl
-          parallel="${{ matrix.parallel }}"
           cache_registry='ghcr.io'
           cache_image="${GITHUB_REPOSITORY,,}"
           cache_tag="TAG-master-${ROX_PRODUCT_BRANDING,,}"
@@ -179,40 +177,28 @@ jobs:
             args_template="${args_template} --cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max,ignore-error=true"
           fi
 
+          # Copy binaries to image context (unset CI to use simpler copy path)
+          unset CI
           make copy-binaries-to-image-dir
 
+          # Build all Docker images with layer caching
           export DOCKER_BUILD_CACHE_ARGS="${args_template//TAG/roxctl}"
-          make -j"${parallel}" -Oline docker-build-roxctl-image
+          make docker-build-roxctl-image
 
           export DOCKER_BUILD_CACHE_ARGS="${args_template//TAG/central-db}"
-          make -j"${parallel}" -Oline central-db-image
+          make central-db-image
 
           export DOCKER_BUILD_CACHE_ARGS="${args_template//TAG/main}"
-          make -j"${parallel}" -Oline build-main-image
-            # copies bin/*/ to image/rhel/bin/
-            # copies ui/build to image/rhel/ui/
-            # builds image/rhel/Dockerfile tagged image/rhel
-            # builds image/postgres/Dockerfile tagged image/postgres
-            # docker-build-roxctl-image
-              # copies bin/linux_$GOARCH/roxctl to image/roxctl/roxctl-linux
-              # builds image/roxctl/Dockerfile tagged image/roxctl
+          make build-main-image
 
-      - name: Check images
+      - name: Verify build artifacts
         if: always()
-        continue-on-error: true
         run: |
-          set -x
-          set +e
-          echo '${{ toJSON(steps.files-changed.outputs.matches) }}'
-          echo '${{ toJSON(steps.files-changed.outputs) }}'
-          echo '${{ toJSON(steps.files-changed) }}'
-          docker images
-          tail /tmp/git.fetching.log
-          ls -la /tmp/git.fetching.log
-          ps -f -p$(pgrep git)
-          ps -f -p$(pgrep -F /tmp/git.fetching.pid)
-          ls -latr bin/linux_amd64/
-          true
+          echo "=== Docker images ==="
+          docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
+          echo ""
+          echo "=== Built binaries ==="
+          ls -lh bin/linux_amd64/
 
   define-job-matrix:
     outputs:
