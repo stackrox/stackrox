@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"runtime/debug"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/georgysavva/scany/v2/dbscan"
@@ -22,23 +23,26 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-var scanAPI = newScanAPI(newDBScanAPI(dbscan.WithAllowUnknownColumns(true)))
+var (
+	scanAPI          = newScanAPI(newDBScanAPI(dbscan.WithAllowUnknownColumns(true)))
+	arrayFieldsCache sync.Map // reflect.Type -> map[string]bool
+)
 
-// getArrayFieldsFromType inspects the type T and returns a map of db tag names to whether
-// the field is a slice type. This is used to automatically detect which fields should
-// be aggregated from child tables without requiring explicit flags.
+// getArrayFieldsFromType returns a map of db tag names to whether the field is a
+// slice type. Results are cached per type since reflect inspection is invariant.
 func getArrayFieldsFromType[T any]() map[string]bool {
 	var zero T
 	t := reflect.TypeOf(zero)
 
-	// Handle pointer types
 	if t != nil && t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
-
-	// Only works with structs
 	if t == nil || t.Kind() != reflect.Struct {
 		return nil
+	}
+
+	if cached, ok := arrayFieldsCache.Load(t); ok {
+		return cached.(map[string]bool)
 	}
 
 	arrayFields := make(map[string]bool)
@@ -48,12 +52,12 @@ func getArrayFieldsFromType[T any]() map[string]bool {
 		if dbTag == "" || dbTag == "-" {
 			continue
 		}
-
-		// Check if field type is slice
 		if field.Type.Kind() == reflect.Slice {
 			arrayFields[dbTag] = true
 		}
 	}
+
+	arrayFieldsCache.Store(t, arrayFields)
 	return arrayFields
 }
 
