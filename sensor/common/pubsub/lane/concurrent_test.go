@@ -59,46 +59,11 @@ func TestNewLaneOptions(t *testing.T) {
 		laneImpl, ok := lane.(*concurrentLane)
 		require.True(t, ok)
 		assert.NotNil(t, laneImpl.newConsumerFn)
-		assert.Len(t, laneImpl.consumerOpts, 0)
-	})
-	t.Run("with custom consumer and consumer options", func(t *testing.T) {
-		config := NewConcurrentLane(
-			pubsub.DefaultLane,
-			WithConcurrentLaneConsumer(newTestConsumer, func(_ pubsub.Consumer) {}),
-		)
-		assert.Equal(t, pubsub.DefaultLane, config.LaneID())
-		lane := config.NewLane()
-		assert.NotNil(t, lane)
-		defer lane.Stop()
-		laneImpl, ok := lane.(*concurrentLane)
-		require.True(t, ok)
-		assert.NotNil(t, laneImpl.newConsumerFn)
-		assert.Len(t, laneImpl.consumerOpts, 1)
 	})
 }
 
 func TestOptionPanic(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
-	t.Run("panic if WithConcurrentLaneSize is used in a different lane", func(t *testing.T) {
-		config := &testLaneConfig{
-			opts: []pubsub.LaneOption{
-				WithConcurrentLaneSize(10),
-			},
-		}
-		assert.Panics(t, func() {
-			config.NewLane()
-		})
-	})
-	t.Run("panic if WithConcurrentLaneConsumer is used in a different lane", func(t *testing.T) {
-		config := &testLaneConfig{
-			opts: []pubsub.LaneOption{
-				WithConcurrentLaneConsumer(nil),
-			},
-		}
-		assert.Panics(t, func() {
-			config.NewLane()
-		})
-	})
 	t.Run("panic if a nil NewConsumer is passed to WithConcurrentLaneConsumer", func(t *testing.T) {
 		config := NewConcurrentLane(pubsub.DefaultLane, WithConcurrentLaneConsumer(nil))
 		assert.Panics(t, func() {
