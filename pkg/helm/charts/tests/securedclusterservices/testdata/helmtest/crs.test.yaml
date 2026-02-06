@@ -45,6 +45,9 @@ tests:
           .deployments.sensor.spec.template.spec.initContainers[] | select(.name == "init-tls-certs") | assertThat(. != null)
           .deployments["admission-control"].spec.template.spec.initContainers[] | select(.name == "init-tls-certs") | assertThat(. != null)
           .daemonsets.collector.spec.template.spec.initContainers[] | select(.name == "init-tls-certs") | assertThat(. != null)
+      - name: "sensor crs init container has secure container security context"
+        expect: |
+          .deployments["sensor"].spec.template.spec.initContainers[] | select(.name == "crs") | .securityContext.allowPrivilegeEscalation | assertThat(. == false)
       - name: "Validating webhooks contain CA"
         expect: |
           .validatingwebhookconfigurations[].webhooks[].clientConfig.caBundle | assertThat(. != null)

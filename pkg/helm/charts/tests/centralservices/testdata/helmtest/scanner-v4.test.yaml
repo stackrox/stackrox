@@ -397,3 +397,27 @@ tests:
                     createClaim: false
           expect: |
             .persistentvolumeclaims["starfleet"] | assertThat(. == null)
+
+- name: "Scanner V4 indexer has secure container security context"
+  set:
+    scannerV4.disable: false
+  expect: |
+    .deployments["scanner-v4-indexer"].spec.template.spec.containers[] | select(.name == "indexer") | .securityContext.allowPrivilegeEscalation | assertThat(. == false)
+
+- name: "Scanner V4 matcher has secure container security context"
+  set:
+    scannerV4.disable: false
+  expect: |
+    .deployments["scanner-v4-matcher"].spec.template.spec.containers[] | select(.name == "matcher") | .securityContext.allowPrivilegeEscalation | assertThat(. == false)
+
+- name: "Scanner V4 DB has secure container security context"
+  set:
+    scannerV4.disable: false
+  expect: |
+    .deployments["scanner-v4-db"].spec.template.spec.containers[] | select(.name == "db") | .securityContext.allowPrivilegeEscalation | assertThat(. == false)
+
+- name: "Scanner V4 DB init container has secure container security context"
+  set:
+    scannerV4.disable: false
+  expect: |
+    .deployments["scanner-v4-db"].spec.template.spec.initContainers[] | select(.name == "init-db") | .securityContext.allowPrivilegeEscalation | assertThat(. == false)
