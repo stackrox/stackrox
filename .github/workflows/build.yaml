@@ -744,6 +744,101 @@ jobs:
           path: |
             image/rhel/docs
 
+  pre-build-operator-bundle:
+    runs-on: ubuntu-22.04
+    needs: define-job-matrix
+    # Only run if operator build is needed (matrix has operator entries)
+    if: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator.arch[0] != null }}
+    env:
+      QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+      QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+    steps:
+      - name: Collect Workflow Telemetry
+        uses: catchpoint/workflow-telemetry-action@v2
+        with:
+          theme: dark
+          comment_on_pr: false
+          job_summary: true
+          metric_frequency: 5
+          proc_trace_sys_enable: false
+          proc_trace_chart_max_count: 100
+
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: false
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - uses: ./.github/actions/handle-tagged-build
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: pip install -r operator/bundle_helpers/requirements.txt
+
+      - name: Cache operator tools
+        id: cache-operator-tools
+        uses: actions/cache@v4
+        with:
+          path: operator/.gotools
+          key: operator-tools-${{ runner.os }}-amd64-${{ hashFiles('operator/tools/*/go.sum') }}
+          restore-keys: |
+            operator-tools-${{ runner.os }}-amd64-
+
+      - name: Capture operator tag
+        run: |
+          OPERATOR_TAG="$(make --quiet --no-print-directory -C operator tag)"
+          echo "OPERATOR_TAG=${OPERATOR_TAG}" >> "$GITHUB_ENV"
+          echo "Captured operator tag: ${OPERATOR_TAG}"
+
+      - name: Generate operator manifests
+        run: |
+          make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" manifests generate
+
+      - name: Build operator bundle
+        run: |
+          # Build bundle with CI-optimized targets (skip network check, assume unreleased)
+          make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" bundle-ci bundle-build-ci
+
+      - name: Docker login
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        run: |
+          echo "${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}" | \
+            docker login quay.io -u "${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}" --password-stdin
+
+      - name: Push bundle image
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        run: |
+          make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" docker-push-bundle | cat
+
+      - name: Save bundle artifacts
+        run: |
+          # Save bundle directory for operator job (in case push failed or for verification)
+          tar -czf operator-bundle.tgz -C operator build/bundle bundle.Dockerfile
+
+      - uses: ./.github/actions/upload-artifact-with-retry
+        with:
+          name: operator-bundle
+          path: operator-bundle.tgz
+
   build-and-push-main:
     runs-on: ubuntu-22.04
     needs:
@@ -1068,22 +1163,29 @@ jobs:
         EOT
 
   build-and-push-operator:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs:
       - define-job-matrix
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
-      env:
-        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-        QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+      - pre-build-operator-bundle
+    # Run even if pre-build-operator-bundle was skipped (e.g., fork PRs)
+    if: ${{ !cancelled() }}
+    env:
+      QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+      QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
     steps:
+      - name: Collect Workflow Telemetry
+        uses: catchpoint/workflow-telemetry-action@v2
+        with:
+          theme: dark
+          comment_on_pr: false
+          job_summary: true
+          metric_frequency: 5
+          proc_trace_sys_enable: false
+          proc_trace_chart_max_count: 100
+
       - name: Checkout
         uses: actions/checkout@v6
         with:
@@ -1092,8 +1194,13 @@ jobs:
 
       - uses: ./.github/actions/job-preamble
         with:
-          free-disk-space: 30
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: false
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -1158,8 +1265,9 @@ jobs:
           restore-keys: |
             operator-tools-${{ runner.os }}-${{ matrix.arch }}-
 
-      - name: Generate operator manifests (shared dependency)
+      - name: Generate operator manifests
         run: |
+          # Generate CRDs and code (needed for Docker build)
           make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" manifests generate
 
       - name: Login to ghcr.io for Docker layer caching
@@ -1186,19 +1294,9 @@ jobs:
 
           echo "OPERATOR_DOCKER_CACHE_ARGS=${cache_args}" >> "$GITHUB_ENV"
 
-      - name: Build Operator Bundle and Docker image (parallel)
+      - name: Build Operator Docker image
         run: |
-          # Start bundle build in background - it's independent of Docker build
-          # Use bundle-ci which skips 'manifests' dependency since we already ran it
-          # Use bundle-build-ci which assumes unreleased (skips network check)
-          (
-            make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" bundle-ci bundle-build-ci
-            echo "Bundle build completed"
-          ) &
-          bundle_pid=$!
-
-          # Build Docker image in foreground (takes longer than bundle)
-          # Generate Dockerfile and status.sh first
+          # Generate Dockerfile and status.sh
           make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" build/Dockerfile.gen smuggled-status-sh
 
           # Build with buildx and registry caching
@@ -1209,11 +1307,6 @@ jobs:
             ${{ env.OPERATOR_DOCKER_CACHE_ARGS }} \
             -f operator/build/Dockerfile.gen \
             .
-
-          # Wait for bundle build to complete
-          echo "Waiting for bundle build..."
-          wait $bundle_pid
-          echo "Both builds completed"
 
       - name: Set up QEMU
         if: matrix.arch != 'amd64'
@@ -1242,26 +1335,22 @@ jobs:
             fi
             echo "Operator image push completed successfully"
 
-      - name: Push bundle image
-        # Skip for external contributions.
+      # Bundle for RHACS_BRANDING is pushed by pre-build-operator-bundle job
+      # For STACKROX_BRANDING, build and push bundle here (rare case, only non-PRs or with label)
+      - name: Build and push bundle (STACKROX_BRANDING only)
         if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+          matrix.name == 'STACKROX_BRANDING' && matrix.arch == 'amd64' && (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
         run: |
+          make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" bundle-ci bundle-build-ci
           make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" docker-push-bundle | cat
 
-      # Index image can only be built once bundle was pushed
-      - name: Build index
-        # Skip for external contributions as the build relies on the previous image to be pushed.
+      # Index image only needs to be built once per branding (bundle is arch-independent)
+      - name: Build and push index
+        # Skip for external contributions and only run on amd64 (bundle is arch-independent)
         if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+          matrix.arch == 'amd64' && (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
         run: |
           make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" index-build
-
-      - name: Push index image
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        run: |
           make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" docker-push-index | cat
 
   push-operator-manifests:
