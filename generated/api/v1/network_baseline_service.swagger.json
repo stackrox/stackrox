@@ -29,7 +29,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -67,7 +67,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -105,7 +105,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -193,7 +193,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -223,7 +223,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -261,7 +261,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -330,6 +330,27 @@
     "NetworkBaselineServiceUnlockNetworkBaselineBody": {
       "type": "object"
     },
+    "NetworkEntityInfoDeployment": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "cluster": {
+          "type": "string"
+        },
+        "listenPorts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/DeploymentListenPort"
+          }
+        }
+      }
+    },
     "NetworkEntityInfoExternalSource": {
       "type": "object",
       "properties": {
@@ -350,7 +371,7 @@
       },
       "description": "Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated."
     },
-    "googlerpcStatus": {
+    "googleRpcStatus": {
       "type": "object",
       "properties": {
         "code": {
@@ -492,31 +513,10 @@
           "type": "string"
         },
         "deployment": {
-          "$ref": "#/definitions/storageNetworkEntityInfoDeployment"
+          "$ref": "#/definitions/NetworkEntityInfoDeployment"
         },
         "externalSource": {
           "$ref": "#/definitions/NetworkEntityInfoExternalSource"
-        }
-      }
-    },
-    "storageNetworkEntityInfoDeployment": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "namespace": {
-          "type": "string"
-        },
-        "cluster": {
-          "type": "string"
-        },
-        "listenPorts": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/DeploymentListenPort"
-          }
         }
       }
     },
