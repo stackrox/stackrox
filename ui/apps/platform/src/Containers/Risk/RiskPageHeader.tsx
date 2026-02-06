@@ -13,7 +13,7 @@ function RiskPageHeader() {
         hasReadWriteAccess('WorkflowAdministration') && isRouteEnabled('policy-management');
 
     return (
-        <PageSection variant="light">
+        <PageSection>
             <Flex
                 alignItems={{ default: 'alignItemsCenter' }}
                 justifyContent={{ default: 'justifyContentSpaceBetween' }}
