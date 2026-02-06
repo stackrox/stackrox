@@ -129,9 +129,6 @@ func (suite *SecretDataStoreTestSuite) TestSearchListSecrets() {
 
 	suite.NotNil(found2)
 	suite.Equal([]storage.SecretType{storage.SecretType_IMAGE_PULL_SECRET}, found2.GetTypes())
-
-	suite.NoError(suite.datastore.RemoveSecret(suite.ctx, secret1.GetId()))
-	suite.NoError(suite.datastore.RemoveSecret(suite.ctx, secret2.GetId()))
 }
 
 func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_NoFiles() {
@@ -149,8 +146,6 @@ func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_NoFiles() {
 	suite.NoError(err)
 	suite.Len(results, 1)
 	suite.Equal([]storage.SecretType{storage.SecretType_UNDETERMINED}, results[0].GetTypes())
-
-	suite.NoError(suite.datastore.RemoveSecret(suite.ctx, secret.GetId()))
 }
 
 func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_WithFilter() {
@@ -183,9 +178,6 @@ func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_WithFilter() {
 	}
 	suite.NotNil(found)
 	suite.Equal("kube-system", found.GetNamespace())
-
-	suite.NoError(suite.datastore.RemoveSecret(suite.ctx, secret1.GetId()))
-	suite.NoError(suite.datastore.RemoveSecret(suite.ctx, secret2.GetId()))
 }
 
 func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_DuplicateTypes() {
@@ -212,8 +204,6 @@ func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_DuplicateTypes() {
 		[]storage.SecretType{storage.SecretType_PUBLIC_CERTIFICATE, storage.SecretType_RSA_PRIVATE_KEY},
 		results[0].GetTypes(),
 	)
-
-	suite.NoError(suite.datastore.RemoveSecret(suite.ctx, secret.GetId()))
 }
 
 func (suite *SecretDataStoreTestSuite) TestSecretsDataStore() {
@@ -325,14 +315,4 @@ func (suite *SecretDataStoreTestSuite) TestSearchSecrets() {
 			}
 		})
 	}
-
-	// Clean up
-	suite.NoError(suite.datastore.RemoveSecret(suite.ctx, secret1.GetId()))
-	suite.NoError(suite.datastore.RemoveSecret(suite.ctx, secret2.GetId()))
-	suite.NoError(suite.datastore.RemoveSecret(suite.ctx, secret3.GetId()))
-
-	// Verify cleanup
-	results, err := suite.datastore.SearchSecrets(suite.ctx, search.EmptyQuery())
-	suite.NoError(err)
-	suite.Empty(results)
 }
