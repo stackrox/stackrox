@@ -5,6 +5,7 @@ package datastore
 import (
 	"context"
 	"testing"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -204,6 +206,46 @@ func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_DuplicateTypes() {
 		[]storage.SecretType{storage.SecretType_PUBLIC_CERTIFICATE, storage.SecretType_RSA_PRIVATE_KEY},
 		results[0].GetTypes(),
 	)
+}
+
+func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_DefaultSortOrder() {
+	now := time.Now()
+	older := now.Add(-1 * time.Hour)
+	newer := now.Add(1 * time.Hour)
+
+	secret1 := fixtures.GetSecret()
+	secret1.Id = uuid.NewV4().String()
+	secret1.Name = "newer-secret"
+	secret1.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&newer)
+
+	secret2 := fixtures.GetSecret()
+	secret2.Id = uuid.NewV4().String()
+	secret2.Name = "older-secret"
+	secret2.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&older)
+
+	// Insert newer first to ensure ordering comes from sort, not insertion order
+	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret1))
+	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret2))
+
+	// Default sort is CreatedTime ascending
+	results, err := suite.datastore.SearchListSecrets(suite.ctx, search.EmptyQuery())
+	suite.NoError(err)
+	suite.Require().Len(results, 2)
+	suite.Equal(secret2.GetId(), results[0].GetId(), "older secret should be first in ascending order")
+	suite.Equal(secret1.GetId(), results[1].GetId(), "newer secret should be second in ascending order")
+
+	// Caller-provided descending sort should override default
+	q := search.EmptyQuery()
+	q.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{
+			{Field: search.CreatedTime.String(), Reversed: true},
+		},
+	}
+	results, err = suite.datastore.SearchListSecrets(suite.ctx, q)
+	suite.NoError(err)
+	suite.Require().Len(results, 2)
+	suite.Equal(secret1.GetId(), results[0].GetId(), "newer secret should be first in descending order")
+	suite.Equal(secret2.GetId(), results[1].GetId(), "older secret should be second in descending order")
 }
 
 func (suite *SecretDataStoreTestSuite) TestSecretsDataStore() {
