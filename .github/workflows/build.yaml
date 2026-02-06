@@ -79,11 +79,10 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
-          cache: true
-          cache-dependency-path: '**/go.sum'
+          cache: false
 
-      - name: Download Go modules
-        run: go mod download
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@v3
