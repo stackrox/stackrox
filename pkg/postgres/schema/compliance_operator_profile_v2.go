@@ -67,7 +67,7 @@ type ComplianceOperatorProfileV2 struct {
 	Standard       string `gorm:"column:standard;type:varchar"`
 	ClusterID      string `gorm:"column:clusterid;type:uuid;index:complianceoperatorprofilev2_sac_filter,type:hash"`
 	ProfileRefID   string `gorm:"column:profilerefid;type:uuid"`
-	Serialized     []byte `gorm:"column:serialized;type:bytea"`
+	Serialized     []byte `gorm:"column:serialized;type:jsonb"`
 }
 
 // ComplianceOperatorProfileV2Rules holds the Gorm model for Postgres table `compliance_operator_profile_v2_rules`.

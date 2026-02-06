@@ -51,5 +51,5 @@ type K8sRoles struct {
 	ClusterRole bool              `gorm:"column:clusterrole;type:bool"`
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
-	Serialized  []byte            `gorm:"column:serialized;type:bytea"`
+	Serialized  []byte            `gorm:"column:serialized;type:jsonb"`
 }

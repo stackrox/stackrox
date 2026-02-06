@@ -54,6 +54,6 @@ type TestParent2 struct {
 	ID                  string           `gorm:"column:id;type:uuid;primaryKey"`
 	ParentID            string           `gorm:"column:parentid;type:varchar"`
 	Val                 string           `gorm:"column:val;type:varchar"`
-	Serialized          []byte           `gorm:"column:serialized;type:bytea"`
+	Serialized          []byte           `gorm:"column:serialized;type:jsonb"`
 	TestGrandparentsRef TestGrandparents `gorm:"foreignKey:parentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

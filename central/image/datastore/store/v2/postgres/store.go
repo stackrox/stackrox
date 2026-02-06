@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/sortfields"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -148,7 +149,7 @@ func (s *storeImpl) insertIntoImages(
 		cloned = parts.image.CloneVT()
 		cloned.Scan.Components = nil
 	}
-	serialized, marshalErr := cloned.MarshalVT()
+	serialized, marshalErr := protojson.Marshal(cloned)
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -276,7 +277,7 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 	}
 
 	for idx, obj := range objs {
-		serialized, marshalErr := obj.MarshalVT()
+		serialized, marshalErr := protojson.Marshal(obj)
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -352,7 +353,7 @@ func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTime ti
 			}
 		}
 
-		serialized, marshalErr := obj.MarshalVT()
+		serialized, marshalErr := protojson.Marshal(obj)
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -617,7 +618,7 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx *postgres.Tx, imageID s
 	}
 
 	var image storage.Image
-	if err := image.UnmarshalVTUnsafe(data); err != nil {
+	if err := protojson.Unmarshal(data, &image); err != nil {
 		return nil, false, err
 	}
 
@@ -986,7 +987,7 @@ func (s *storeImpl) updateCVEVulnState(ctx context.Context, tx *postgres.Tx, obj
 }
 
 func (s *storeImpl) insertIntoImageComponentV2Cves(batch *pgx.Batch, obj *storage.ImageCVEV2) error {
-	serialized, marshalErr := obj.MarshalVT()
+	serialized, marshalErr := protojson.Marshal(obj)
 	if marshalErr != nil {
 		return marshalErr
 	}

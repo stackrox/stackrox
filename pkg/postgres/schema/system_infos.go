@@ -42,5 +42,5 @@ const (
 // SystemInfos holds the Gorm model for Postgres table `system_infos`.
 type SystemInfos struct {
 	BackupInfoRequestorName string `gorm:"column:backupinfo_requestor_name;type:varchar"`
-	Serialized              []byte `gorm:"column:serialized;type:bytea"`
+	Serialized              []byte `gorm:"column:serialized;type:jsonb"`
 }

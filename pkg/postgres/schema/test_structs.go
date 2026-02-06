@@ -66,7 +66,7 @@ type TestStructs struct {
 	String            string                  `gorm:"column:string_;type:varchar"`
 	Int32Slice        *pq.Int32Array          `gorm:"column:int32slice;type:int[]"`
 	OneofnestedNested string                  `gorm:"column:oneofnested_nested;type:varchar"`
-	Serialized        []byte                  `gorm:"column:serialized;type:bytea"`
+	Serialized        []byte                  `gorm:"column:serialized;type:jsonb"`
 }
 
 // TestStructsNesteds holds the Gorm model for Postgres table `test_structs_nesteds`.

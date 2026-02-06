@@ -77,7 +77,7 @@ type BaseImages struct {
 	DiscoveredAt             *time.Time            `gorm:"column:discoveredat;type:timestamp"`
 	Active                   bool                  `gorm:"column:active;type:bool"`
 	FirstLayerDigest         string                `gorm:"column:firstlayerdigest;type:varchar;index:baseimages_firstlayerdigest,type:btree"`
-	Serialized               []byte                `gorm:"column:serialized;type:bytea"`
+	Serialized               []byte                `gorm:"column:serialized;type:jsonb"`
 	BaseImageRepositoriesRef BaseImageRepositories `gorm:"foreignKey:baseimagerepositoryid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 

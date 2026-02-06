@@ -20,6 +20,7 @@ import (
     "github.com/stackrox/rox/pkg/postgres/pgutils"
     "github.com/stackrox/rox/pkg/protocompat"
     "github.com/stackrox/rox/pkg/sac"
+    "google.golang.org/protobuf/encoding/protojson"
 	"github.com/stackrox/rox/pkg/sac/resources"
     "github.com/stackrox/rox/pkg/search"
     pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -67,7 +68,7 @@ func New(db postgres.DB) Store {
 {{- define "insertObject"}}
 {{- $schema := .schema }}
 func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx *postgres.Tx, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
-    serialized, marshalErr := obj.MarshalVT()
+    serialized, marshalErr := protojson.Marshal(obj)
     if marshalErr != nil {
         return marshalErr
     }
@@ -154,7 +155,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*{{.Type}}, bool, error) 
 	}
 
 	var msg {{.Type}}
-	if err := msg.UnmarshalVTUnsafe(data); err != nil {
+	if err := protojson.Unmarshal(data, &msg); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil

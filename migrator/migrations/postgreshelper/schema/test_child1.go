@@ -38,5 +38,5 @@ const (
 type TestChild1 struct {
 	ID         string `gorm:"column:id;type:varchar;primaryKey"`
 	Val        string `gorm:"column:val;type:varchar"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	Serialized []byte `gorm:"column:serialized;type:jsonb"`
 }

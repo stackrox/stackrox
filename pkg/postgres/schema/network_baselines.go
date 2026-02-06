@@ -46,5 +46,5 @@ type NetworkBaselines struct {
 	DeploymentID string `gorm:"column:deploymentid;type:uuid;primaryKey"`
 	ClusterID    string `gorm:"column:clusterid;type:uuid;index:networkbaselines_sac_filter,type:btree"`
 	Namespace    string `gorm:"column:namespace;type:varchar;index:networkbaselines_sac_filter,type:btree"`
-	Serialized   []byte `gorm:"column:serialized;type:bytea"`
+	Serialized   []byte `gorm:"column:serialized;type:jsonb"`
 }

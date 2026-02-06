@@ -59,7 +59,7 @@ type RoleBindings struct {
 	Labels      map[string]string `gorm:"column:labels;type:jsonb"`
 	Annotations map[string]string `gorm:"column:annotations;type:jsonb"`
 	RoleID      string            `gorm:"column:roleid;type:uuid"`
-	Serialized  []byte            `gorm:"column:serialized;type:bytea"`
+	Serialized  []byte            `gorm:"column:serialized;type:jsonb"`
 }
 
 // RoleBindingsSubjects holds the Gorm model for Postgres table `role_bindings_subjects`.

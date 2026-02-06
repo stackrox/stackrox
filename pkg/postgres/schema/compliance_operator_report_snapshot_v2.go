@@ -71,7 +71,7 @@ type ComplianceOperatorReportSnapshotV2 struct {
 	ReportStatusReportNotificationMethod     storage.ComplianceOperatorReportStatus_NotificationMethod `gorm:"column:reportstatus_reportnotificationmethod;type:integer"`
 	UserID                                   string                                                    `gorm:"column:user_id;type:varchar"`
 	UserName                                 string                                                    `gorm:"column:user_name;type:varchar"`
-	Serialized                               []byte                                                    `gorm:"column:serialized;type:bytea"`
+	Serialized                               []byte                                                    `gorm:"column:serialized;type:jsonb"`
 	ComplianceOperatorScanConfigurationV2Ref ComplianceOperatorScanConfigurationV2                     `gorm:"foreignKey:scanconfigurationid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 

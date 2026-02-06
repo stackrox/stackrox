@@ -39,5 +39,5 @@ const (
 // ComplianceOperatorProfiles holds the Gorm model for Postgres table `compliance_operator_profiles`.
 type ComplianceOperatorProfiles struct {
 	ID         string `gorm:"column:id;type:varchar;primaryKey"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	Serialized []byte `gorm:"column:serialized;type:jsonb"`
 }
