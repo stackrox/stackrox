@@ -216,9 +216,6 @@ func TestEnricherFlow(t *testing.T) {
 			image: &storage.Image{
 				Id: "id", Name: &storage.ImageName{Registry: "reg"},
 				Names: []*storage.ImageName{{Registry: "reg"}},
-				Metadata: &storage.ImageMetadata{
-					LayerShas: []string{"SHA1"},
-				},
 			},
 			fsr: newFakeRegistryScanner(opts{
 				requestedMetadata: false,
@@ -228,7 +225,7 @@ func TestEnricherFlow(t *testing.T) {
 				ImageUpdated: true, // Updated via base image before scan failure
 				ScanResult:   ScanNotDone,
 			},
-			expectedBaseImageCalls: 1,
+			expectedBaseImageCalls: 0,
 		},
 		{
 			name: "set ScannerTypeHint to something found in integrations",

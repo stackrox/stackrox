@@ -17,6 +17,7 @@ import (
 	reporterMocks "github.com/stackrox/rox/pkg/integrationhealth/mocks"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	registryMocks "github.com/stackrox/rox/pkg/registries/mocks"
 	"github.com/stackrox/rox/pkg/registries/types"
 	scannerMocks "github.com/stackrox/rox/pkg/scanners/mocks"
@@ -1107,10 +1108,13 @@ func TestDelegateEnrichImageV2(t *testing.T) {
 func TestEnrichImageV2_Delegate(t *testing.T) {
 	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
 	deleEnrichCtx := EnrichmentContext{Delegable: true}
+
+	biMock := &baseImageV2GetterMock{}
+
 	e := enricherV2Impl{
 		cvesSuppressor:  &fakeCVESuppressorV2{},
 		imageGetter:     emptyImageGetterV2,
-		baseImageGetter: emptyBaseImageGetterV2,
+		baseImageGetter: biMock.get, // Inject tracker
 	}
 
 	var dele *delegatorMocks.MockDelegator
@@ -1118,6 +1122,7 @@ func TestEnrichImageV2_Delegate(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		dele = delegatorMocks.NewMockDelegator(ctrl)
 		e.scanDelegator = dele
+		biMock.callCount = 0 // Reset for isolation
 	}
 
 	t.Run("delegate enrich error", func(t *testing.T) {
@@ -1125,21 +1130,70 @@ func TestEnrichImageV2_Delegate(t *testing.T) {
 		dele.EXPECT().GetDelegateClusterID(emptyCtx, gomock.Any()).Return("", true, errBroken)
 
 		result, err := e.EnrichImage(emptyCtx, deleEnrichCtx, nil)
-		assert.Equal(t, result.ScanResult, ScanNotDone)
+
+		assert.Equal(t, ScanNotDone, result.ScanResult)
 		assert.False(t, result.ImageUpdated)
 		assert.ErrorIs(t, err, errBroken)
+		assert.Equal(t, 0, biMock.callCount, "Base image should not be fetched on error")
 	})
 
 	t.Run("delegate enrich success", func(t *testing.T) {
 		setup(t)
-		fakeImage := &storage.ImageV2{}
+		fakeImage := &storage.ImageV2{Id: "sha256:delegate"}
+
 		dele.EXPECT().GetDelegateClusterID(emptyCtx, gomock.Any()).Return("cluster-id", true, nil)
 		dele.EXPECT().DelegateScanImageV2(emptyCtx, gomock.Any(), "cluster-id", "", gomock.Any()).Return(fakeImage, nil)
 
 		result, err := e.EnrichImage(emptyCtx, deleEnrichCtx, fakeImage)
-		assert.Equal(t, result.ScanResult, ScanSucceeded)
+
+		assert.Equal(t, ScanSucceeded, result.ScanResult)
 		assert.True(t, result.ImageUpdated)
 		assert.NoError(t, err)
+
+		assert.Equal(t, 0, biMock.callCount, "Base image should not be fetched for fresh scans")
+	})
+	t.Run("delegate enrich success with image cache", func(t *testing.T) {
+		setup(t)
+
+		const sha = "sha256:delegate-cached"
+		imgName := &storage.ImageName{FullName: "reg/img:tag"}
+
+		derivedID := utils.NewImageV2ID(imgName, sha)
+
+		inputImage := &storage.ImageV2{
+			Id:     derivedID, // Use the derived ID
+			Digest: sha,
+			Name:   imgName,
+		}
+
+		cachedImage := &storage.ImageV2{
+			Id:     derivedID, // Use the same derived ID
+			Digest: sha,
+			Name:   imgName,
+			Metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{{Instruction: "FROM"}},
+				},
+				V2: &storage.V2Metadata{
+					Digest: sha,
+				},
+				LayerShas: []string{"layer1", "layer2"},
+			},
+			Scan: &storage.ImageScan{
+				ScannerVersion: "1.0",
+				ScanTime:       protocompat.TimestampNow(),
+			},
+		}
+
+		e.imageGetter = imageGetterV2FromImage(cachedImage)
+
+		dele.EXPECT().GetDelegateClusterID(gomock.Any(), gomock.Any()).Return("cluster-id", true, nil)
+
+		result, err := e.EnrichImage(emptyCtx, deleEnrichCtx, inputImage)
+
+		assert.NoError(t, err)
+		assert.True(t, result.ImageUpdated)
+		assert.Equal(t, 1, biMock.callCount, "Base image getter should be hit")
 	})
 }
 
