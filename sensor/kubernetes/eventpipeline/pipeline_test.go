@@ -45,6 +45,9 @@ func TestEventPipelineSuite(t *testing.T) {
 }
 
 func (s *eventPipelineSuite) TearDownTest() {
+	if s.pipeline != nil && s.pipeline.stopper != nil {
+		s.pipeline.stopper.Client().Stop()
+	}
 	s.T().Cleanup(s.mockCtrl.Finish)
 }
 

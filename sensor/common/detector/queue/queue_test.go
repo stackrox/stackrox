@@ -78,6 +78,8 @@ func (s *queueSuite) noPull(q *Queue[*string], stopper concurrency.Stopper) {
 	}()
 	select {
 	case <-time.After(500 * time.Millisecond):
+		stopper.Client().Stop()
+		<-ch // Wait for goroutine to finish
 		return
 	case item := <-ch:
 		s.Failf("should not pull from the queue", "%s was pulled", *item)

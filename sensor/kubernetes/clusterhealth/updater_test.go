@@ -247,6 +247,7 @@ func (s *UpdaterTestSuite) TestNotExpiredMessage() {
 	fakeTicker := make(chan time.Time)
 	defer close(fakeTicker)
 	go updater.run(fakeTicker)
+	defer updater.Stop()
 	updater.Notify(common.SensorComponentEventCentralReachable)
 	fakeTicker <- time.Now()
 	select {
@@ -271,6 +272,7 @@ func (s *UpdaterTestSuite) TestExpiredMessage() {
 	fakeTicker := make(chan time.Time)
 	defer close(fakeTicker)
 	go updater.run(fakeTicker)
+	defer updater.Stop()
 	updater.Notify(common.SensorComponentEventCentralReachable)
 	fakeTicker <- time.Now()
 	var msg *message.ExpiringMessage
