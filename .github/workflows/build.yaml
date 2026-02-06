@@ -131,18 +131,6 @@ jobs:
           export SKIP_UI_BUILD=true  # skip if already built (from cache)
           make ui-build
 
-      # Cache swagger docs - regenerating from proto is slow
-      - name: Restore cached docs
-        uses: actions/cache@v4
-        id: restore-docs-build
-        with:
-          key: built-docs-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('proto/**', 'generated/**') }}
-          path: image/rhel/docs
-
-      - name: Build swagger docs
-        if: steps.restore-docs-build.outputs.cache-hit != 'true'
-        run: make swagger-docs
-
       - name: Build Docker images
         run: |
           cache_registry='ghcr.io'
@@ -1604,7 +1592,7 @@ jobs:
             --build-arg TARGET_ARCH=amd64 \
             --build-arg ROX_PRODUCT_BRANDING=RHACS_BRANDING \
             --build-arg ROX_IMAGE_FLAVOR=rhacs \
-            --cache-from type=registry,ref=ghcr.io/${{ github.repository }}:experimental-go-in-docker-cache \
+            --cache-from type=registry,ref=ghcr.io/${{ github.repository }}:experimental-go-in-docker-cache,ignore-error=true \
             --cache-to type=registry,ref=ghcr.io/${{ github.repository }}:experimental-go-in-docker-cache,mode=max,ignore-error=true \
             -f image/rhel/Dockerfile.go-in-docker \
             .
@@ -1665,7 +1653,7 @@ jobs:
       - name: Download UI artifact
         uses: actions/download-artifact@v4
         with:
-          name: ui-build-RHACS_BRANDING
+          name: ui-RHACS_BRANDING-build
 
       - name: Download docs artifact
         uses: actions/download-artifact@v4
