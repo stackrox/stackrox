@@ -75,13 +75,25 @@ jobs:
       - uses: ./.github/actions/cache-ui-dependencies
         if: steps.restore-ui-build.outputs.cache-hit != 'true'
 
+      # Cache compiled Go binaries - skip build entirely if source unchanged
+      # Note: Version info is baked in at build time, so cached binaries will have stale version
+      # This is acceptable for the all-in-one experimental job since we're optimizing for speed
+      - name: Restore cached Go binaries
+        uses: actions/cache@v4
+        id: restore-go-binaries
+        with:
+          key: go-binaries-${{ env.GOARCH }}-${{ hashFiles('**/*.go', 'go.mod', 'go.sum') }}
+          path: bin/linux_${{ env.GOARCH }}
+
       - name: Setup Go
         uses: actions/setup-go@v6
+        if: steps.restore-go-binaries.outputs.cache-hit != 'true'
         with:
           go-version-file: 'go.mod'
           cache: false
 
       - name: Cache Go dependencies
+        if: steps.restore-go-binaries.outputs.cache-hit != 'true'
         uses: ./.github/actions/cache-go-dependencies
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
@@ -107,11 +119,10 @@ jobs:
           fi
 
       - name: Build Go binaries
+        if: steps.restore-go-binaries.outputs.cache-hit != 'true'
         env:
           CI: "true"  # Prevents duplicate roxctl build in main-build-nodeps
         run: |
-          # cache-go-dependencies already ran make deps, just need build-prep
-          make build-prep
           # Build all Go binaries in one invocation for better cache utilization
           # Go's internal parallelism handles concurrent package compilation
           time ./scripts/go-build.sh \
@@ -124,6 +135,16 @@ jobs:
             sensor/upgrader \
             roxctl \
             compliance/virtualmachines/roxagent
+
+      - name: Skip Go build (using cached binaries)
+        if: steps.restore-go-binaries.outputs.cache-hit == 'true'
+        run: |
+          echo "=== Go binaries restored from cache ==="
+          echo "Skipping Go build - source files unchanged"
+          ls -lh bin/linux_${{ env.GOARCH }}/
+
+      - name: Prepare build directories
+        run: mkdir -p bin/{darwin_amd64,darwin_arm64,linux_amd64,linux_arm64,linux_ppc64le,linux_s390x,windows_amd64}
 
       - name: Build UI
         run: |
