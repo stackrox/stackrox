@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	sensorInternal "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pods"
+	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/sensor/common"
@@ -42,8 +44,8 @@ import (
 	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/common/processsignal"
 	"github.com/stackrox/rox/sensor/common/pubsub"
+	pubsubConfig "github.com/stackrox/rox/sensor/common/pubsub/config"
 	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
-	"github.com/stackrox/rox/sensor/common/pubsub/lane"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/sensor"
@@ -74,15 +76,35 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	var internalMessageDispatcher common.PubSubDispatcher
 	if features.SensorInternalPubSub.Enabled() {
 		log.Info("Internal PubSub system enabled")
-		var err error
-		internalMessageDispatcher, err = pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs(
-			[]pubsub.LaneConfig{
-				lane.NewBlockingLane(pubsub.KubernetesDispatcherEventLane),
-				lane.NewBlockingLane(pubsub.FromCentralResolverEventLane),
-				lane.NewBlockingLane(pubsub.EnrichedProcessIndicatorLane),
-				lane.NewBlockingLane(pubsub.UnenrichedProcessIndicatorLane),
-			},
-		))
+
+		laneType := pubsubConfig.LaneTypeConcurrent
+		consumerType := pubsubConfig.ConsumerTypeBuffered
+		if !buildinfo.ReleaseBuild {
+			laneType = pubsubConfig.LaneTypeBlocking
+			consumerType = pubsubConfig.ConsumerTypeDefault
+			if env.PubSubConcurrentLanes.BooleanSetting() {
+				laneType = pubsubConfig.LaneTypeConcurrent
+				consumerType = pubsubConfig.ConsumerTypeBuffered
+			}
+		}
+
+		laneSpecs := []pubsubConfig.LaneSpec{
+			{ID: pubsub.KubernetesDispatcherEventLane, Type: laneType,
+				Consumer: &pubsubConfig.ConsumerSpec{Type: consumerType, Size: pointers.Int(1000)}},
+			{ID: pubsub.FromCentralResolverEventLane, Type: laneType,
+				Consumer: &pubsubConfig.ConsumerSpec{Type: consumerType, Size: pointers.Int(100)}},
+			{ID: pubsub.EnrichedProcessIndicatorLane, Type: laneType,
+				Consumer: &pubsubConfig.ConsumerSpec{Type: consumerType, Size: pointers.Int(5000)}},
+			{ID: pubsub.UnenrichedProcessIndicatorLane, Type: laneType,
+				Consumer: &pubsubConfig.ConsumerSpec{Type: consumerType, Size: pointers.Int(10000)}},
+		}
+
+		laneConfigs, err := pubsubConfig.SpecsToConfigs(laneSpecs)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create lane configurations")
+		}
+
+		internalMessageDispatcher, err = pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs(laneConfigs))
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create the pubsub dispatcher")
 		}

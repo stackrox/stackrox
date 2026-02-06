@@ -148,4 +148,8 @@ var (
 	NetworkFlowBatching = RegisterBooleanSetting("ROX_NETFLOW_BATCHING", false)
 	// NetworkFlowCacheLimiting enables limiting the network flow cache size to prevent memory issues.
 	NetworkFlowCacheLimiting = RegisterBooleanSetting("ROX_NETFLOW_CACHE_LIMITING", false)
+
+	// PubSubConcurrentLanes switches the internal pubsub lanes to concurrent mode with buffered consumers
+	// in development builds. In release builds, concurrent lanes are always used regardless of this setting.
+	PubSubConcurrentLanes = RegisterBooleanSetting("ROX_SENSOR_PUBSUB_CONCURRENT_LANES", false)
 )
