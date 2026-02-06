@@ -327,8 +327,11 @@ jobs:
 
           # Compute multiarch manifests based on final arch list
           matrix="$(jq '.push_main_multiarch_manifests.archs = [.build_and_push_main.arch | join(",")]' <<< "$matrix")"
-          matrix="$(jq '.push_operator_multiarch_manifests.name += ["RHACS_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.push_operator_multiarch_manifests.archs = [.build_and_push_operator.arch | join(",")]' <<< "$matrix")"
+          # Only add operator manifest push if operator builds are happening
+          if [[ "$(jq -r '.build_and_push_operator.arch | length' <<< "$matrix")" -gt 0 ]]; then
+            matrix="$(jq '.push_operator_multiarch_manifests.name += ["RHACS_BRANDING"]' <<< "$matrix")"
+            matrix="$(jq '.push_operator_multiarch_manifests.archs = [.build_and_push_operator.arch | join(",")]' <<< "$matrix")"
+          fi
 
           # Add ppc64le/s390x for non-PRs or PRs with ci-build-all-arch label
           if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
