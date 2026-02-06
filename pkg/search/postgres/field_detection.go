@@ -35,4 +35,3 @@ func isChildTable(tableName string, schema *walker.Schema) bool {
 
 	return false
 }
-
