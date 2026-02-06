@@ -27,12 +27,11 @@ runs:
         # Determine if we should save cache
         save_cache="${{ inputs.save-cache }}"
         if [[ "$save_cache" == "auto" ]]; then
-          # TEMPORARY: Always save cache to seed it before merging to master
-          # TODO: Revert this after cache is seeded (change back to "false" for non-master)
+          # Only save on master branch pushes, not PRs
           if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/master" ]]; then
             save_cache="true"
           else
-            save_cache="true"  # TEMPORARY: seeding cache
+            save_cache="false"
           fi
         fi
         echo "save-cache=${save_cache}" >> "$GITHUB_OUTPUT"
