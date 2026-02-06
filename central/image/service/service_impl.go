@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
+	signatureIntegrationDS "github.com/stackrox/rox/central/signatureintegration/datastore"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -43,6 +44,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/signatureintegration"
 	"github.com/stackrox/rox/pkg/timestamp"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/waiter"
@@ -123,6 +125,8 @@ type serviceImpl struct {
 	scanWaiterManagerV2 waiter.Manager[*storage.ImageV2]
 
 	clusterSACHelper sachelper.ClusterSacHelper
+
+	signatureIntegrationDataStore signatureIntegrationDS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -165,6 +169,9 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.GetImageRequest)
 		utils.StripCVEDescriptionsNoClone(image)
 	}
 	utils.StripDatasourceNoClone(image.GetScan())
+
+	// Enrich with signature integration names for UX
+	signatureintegration.EnrichVerificationResults(ctx, s.signatureIntegrationDataStore, image.GetSignatureVerificationData().GetResults())
 
 	return image, nil
 }
@@ -218,6 +225,8 @@ func (s *serviceImpl) ExportImages(req *v1.ExportImageRequest, srv v1.ImageServi
 	}
 	return s.mappingDatastore.WalkByQuery(ctx, parsedQuery, func(image *storage.Image) error {
 		utils.StripDatasourceNoClone(image.GetScan())
+		// Enrich with signature integration names for UX
+		signatureintegration.EnrichVerificationResults(ctx, s.signatureIntegrationDataStore, image.GetSignatureVerificationData().GetResults())
 		if err := srv.Send(&v1.ExportImageResponse{Image: image}); err != nil {
 			return err
 		}
@@ -626,7 +635,10 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 		}
 		utils.StripDatasourceNoClone(imgV2.GetScan())
 
-		return utils.ConvertToV1(imgV2), nil
+		img := utils.ConvertToV1(imgV2)
+		// Enrich with signature integration names for UX
+		signatureintegration.EnrichVerificationResults(ctx, s.signatureIntegrationDataStore, img.GetSignatureVerificationData().GetResults())
+		return img, nil
 	}
 
 	img, err := enricher.EnrichImageByName(ctx, s.enricher, enrichmentCtx, request.GetImageName())
@@ -652,6 +664,9 @@ func (s *serviceImpl) ScanImage(ctx context.Context, request *v1.ScanImageReques
 		utils.FilterSuppressedCVEsNoClone(img)
 	}
 	utils.StripDatasourceNoClone(img.GetScan())
+
+	// Enrich with signature integration names for UX
+	signatureintegration.EnrichVerificationResults(ctx, s.signatureIntegrationDataStore, img.GetSignatureVerificationData().GetResults())
 	return img, nil
 }
 

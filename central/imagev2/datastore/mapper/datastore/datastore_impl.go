@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	searchPkg "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/signatureintegration"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -245,9 +244,4 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return ds.imageDataStore.Exists(ctx, id)
 	}
 	return ds.imageV2DataStore.Exists(ctx, id)
-}
-
-func (ds *datastoreImpl) SetSignatureIntegrationGetterFunc(fn signatureintegration.GetterFunc) {
-	ds.imageDataStore.SetSignatureIntegrationGetterFunc(fn)
-	ds.imageV2DataStore.SetSignatureIntegrationGetterFunc(fn)
 }

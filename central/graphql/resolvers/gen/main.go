@@ -127,6 +127,10 @@ var (
 				ParentType: reflect.TypeOf(storage.ImageComponentV2{}),
 				FieldName:  "Location",
 			},
+			{
+				ParentType: reflect.TypeOf(storage.ImageSignatureVerificationResult{}),
+				FieldName:  "VerifierName",
+			},
 		},
 		InputTypes: []reflect.Type{
 			reflect.TypeOf((*inputtypes.FalsePositiveVulnRequest)(nil)),

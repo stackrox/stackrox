@@ -23,8 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/signatureintegration"
-	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -40,10 +38,8 @@ type datastoreImpl struct {
 
 	risks riskDS.DataStore
 
-	imageRanker                    *ranking.Ranker
-	imageComponentRanker           *ranking.Ranker
-	signatureIntegrationGetterFunc signatureintegration.GetterFunc
-	signatureIntegrationMutex      sync.RWMutex
+	imageRanker          *ranking.Ranker
+	imageComponentRanker *ranking.Ranker
 }
 
 func newDatastoreImpl(storage store.Store, risks riskDS.DataStore,
@@ -127,7 +123,6 @@ func (ds *datastoreImpl) SearchRawImages(ctx context.Context, q *v1.Query) ([]*s
 	}
 
 	ds.updateImagePriority(images...)
-	ds.injectSignatureIntegrationName(ctx, images...)
 
 	return images, nil
 }
@@ -135,7 +130,6 @@ func (ds *datastoreImpl) SearchRawImages(ctx context.Context, q *v1.Query) ([]*s
 func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image *storage.ImageV2) error) error {
 	wrappedFn := func(image *storage.ImageV2) error {
 		ds.updateImagePriority(image)
-		ds.injectSignatureIntegrationName(ctx, image)
 		return fn(image)
 	}
 	return ds.storage.WalkByQuery(ctx, q, wrappedFn)
@@ -169,7 +163,6 @@ func (ds *datastoreImpl) GetManyImageMetadata(ctx context.Context, ids []string)
 	}
 	for _, img := range imgs {
 		ds.updateImagePriority(img)
-		ds.injectSignatureIntegrationName(ctx, img)
 	}
 	return imgs, nil
 }
@@ -184,7 +177,6 @@ func (ds *datastoreImpl) GetImageMetadata(ctx context.Context, id string) (*stor
 		return nil, false, err
 	}
 	ds.updateImagePriority(img)
-	ds.injectSignatureIntegrationName(ctx, img)
 
 	return img, true, nil
 }
@@ -200,7 +192,6 @@ func (ds *datastoreImpl) GetImage(ctx context.Context, id string) (*storage.Imag
 	}
 
 	ds.updateImagePriority(img)
-	ds.injectSignatureIntegrationName(ctx, img)
 
 	return img, true, nil
 }
@@ -224,7 +215,6 @@ func (ds *datastoreImpl) GetImagesBatch(ctx context.Context, ids []string) ([]*s
 	}
 
 	ds.updateImagePriority(imgs...)
-	ds.injectSignatureIntegrationName(ctx, imgs...)
 
 	return imgs, nil
 }
@@ -400,39 +390,4 @@ func (c *ImageSearchResultConverter) BuildLocation(result *search.Result) string
 
 func (c *ImageSearchResultConverter) GetCategory() v1.SearchCategory {
 	return v1.SearchCategory_IMAGES
-}
-
-func (ds *datastoreImpl) SetSignatureIntegrationGetterFunc(fn signatureintegration.GetterFunc) {
-	ds.signatureIntegrationMutex.Lock()
-	defer ds.signatureIntegrationMutex.Unlock()
-	ds.signatureIntegrationGetterFunc = fn
-}
-
-func (ds *datastoreImpl) injectSignatureIntegrationName(ctx context.Context, images ...*storage.ImageV2) {
-	// Early exit if the signature integration getter has not been set up yet.
-	ds.signatureIntegrationMutex.RLock()
-	defer ds.signatureIntegrationMutex.RUnlock()
-
-	if ds.signatureIntegrationGetterFunc == nil {
-		log.Debug("Signature integration getter has not been set.")
-		return
-	}
-
-	signatureIntegrationCtx := sac.WithGlobalAccessScopeChecker(ctx,
-		sac.AllowFixedScopes(
-			sac.ResourceScopeKeys(resources.Integration),
-			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-		),
-	)
-	for _, image := range images {
-		for _, result := range image.GetSignatureVerificationData().GetResults() {
-			verifierName, err := signatureintegration.GetVerifierName(signatureIntegrationCtx,
-				ds.signatureIntegrationGetterFunc(), result)
-			if err != nil {
-				log.Warnf("Failed to get signature integration name: %v", err)
-				continue
-			}
-			result.VerifierName = verifierName
-		}
-	}
 }
