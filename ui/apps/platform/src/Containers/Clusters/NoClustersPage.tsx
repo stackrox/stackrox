@@ -101,7 +101,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                 component="p"
                 isInline
             />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 {isLoading ? (
                     <Bullseye>
                         <Spinner />

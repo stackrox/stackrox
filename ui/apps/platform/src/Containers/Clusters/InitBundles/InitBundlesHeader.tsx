@@ -22,9 +22,9 @@ export type InitBundlesHeaderProps = {
 
 function InitBundlesHeader({ headerActions, title }: InitBundlesHeaderProps): ReactElement {
     return (
-        <PageSection hasBodyWrapper={false} component="div">
+        <>
             <PageTitle title={title} />
-            <Flex direction={{ default: 'column' }}>
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={clustersBasePath}>Clusters</BreadcrumbItemLink>
                     {title !== titleInitBundles && (
@@ -34,6 +34,8 @@ function InitBundlesHeader({ headerActions, title }: InitBundlesHeaderProps): Re
                     )}
                     <BreadcrumbItem isActive>{title}</BreadcrumbItem>
                 </Breadcrumb>
+            </PageSection>
+            <PageSection component="div">
                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
                     <Flex
                         direction={{ default: 'column' }}
@@ -49,8 +51,8 @@ function InitBundlesHeader({ headerActions, title }: InitBundlesHeaderProps): Re
                         <FlexItem align={{ default: 'alignRight' }}>{headerActions}</FlexItem>
                     )}
                 </Flex>
-            </Flex>
-        </PageSection>
+            </PageSection>
+        </>
     );
 }
 

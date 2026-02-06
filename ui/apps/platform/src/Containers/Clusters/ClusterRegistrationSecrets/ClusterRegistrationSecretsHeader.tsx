@@ -25,9 +25,9 @@ function ClusterRegistrationSecretsHeader({
     title,
 }: ClusterRegistrationSecretsHeaderProps): ReactElement {
     return (
-        <PageSection hasBodyWrapper={false} component="div">
+        <>
             <PageTitle title={title} />
-            <Flex direction={{ default: 'column' }}>
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={clustersBasePath}>Clusters</BreadcrumbItemLink>
                     {title !== titleClusterRegistrationSecrets && (
@@ -37,6 +37,8 @@ function ClusterRegistrationSecretsHeader({
                     )}
                     <BreadcrumbItem isActive>{title}</BreadcrumbItem>
                 </Breadcrumb>
+            </PageSection>
+            <PageSection component="div">
                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
                     <Flex
                         direction={{ default: 'column' }}
@@ -52,8 +54,8 @@ function ClusterRegistrationSecretsHeader({
                         <FlexItem align={{ default: 'alignRight' }}>{headerActions}</FlexItem>
                     )}
                 </Flex>
-            </Flex>
-        </PageSection>
+            </PageSection>
+        </>
     );
 }
 

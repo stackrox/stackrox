@@ -7,7 +7,6 @@ import {
     BreadcrumbItem,
     Bullseye,
     Button,
-    Divider,
     Flex,
     FlexItem,
     PageSection,
@@ -294,14 +293,13 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
     return (
         <>
             <PageTitle title="Cluster" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={clustersBasePath}>Clusters</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{selectedClusterName}</BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
-            <Divider component="div" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
                     <Flex
                         direction={{ default: 'row' }}

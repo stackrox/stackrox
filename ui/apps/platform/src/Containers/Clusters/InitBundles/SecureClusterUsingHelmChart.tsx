@@ -40,10 +40,9 @@ function SecureClusterUsingHelmChart({
     const actions = (
         <CodeBlockAction>
             <ClipboardCopyButton
-                aria-label="Copy to clipboard"
+                aria-label="Copy command to clipboard"
                 id="ClipboardCopyButton"
                 onClick={() => copyToClipboard(codeBlock)}
-                textId="CodeBlockCode"
                 variant="plain"
             >
                 {wasCopied ? 'Copied to clipboard' : 'Copy to clipboard'}

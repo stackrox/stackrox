@@ -81,7 +81,6 @@ export default function CodeViewer({
             <CodeBlockAction>
                 <ClipboardCopyButton
                     id="copy-code-button"
-                    textId="copy-code-button"
                     aria-label="Copy code to clipboard"
                     onClick={() => copyToClipboard(code)}
                     exitDelay={wasCopied ? 1500 : 600}

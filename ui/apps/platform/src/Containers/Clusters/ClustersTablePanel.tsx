@@ -274,7 +274,7 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
     // Conditionally render a subsequent error in addition to most recent successful respnse.
     return (
         <>
-            <PageSection variant="light" component="div" hasBodyWrapper={false}>
+            <PageSection>
                 <Flex
                     direction={{ default: 'row' }}
                     alignItems={{ default: 'alignItemsCenter' }}
@@ -365,11 +365,9 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                         )}
                     </Flex>
                 </Flex>
-                <Content component="p" className="pf-v6-u-font-size-md">
-                    View the status of secured cluster services
-                </Content>
+                <Content component="p">View the status of secured cluster services</Content>
             </PageSection>
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <Toolbar>
                     <ToolbarContent>
                         <CompoundSearchFilter
