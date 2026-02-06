@@ -144,8 +144,7 @@ jobs:
             cache_args="${cache_args} --cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max,ignore-error=true"
           fi
 
-          # Copy binaries to image context (unset CI to use simpler copy path)
-          unset CI
+          # Copy binaries to image context
           make copy-binaries-to-image-dir
 
           # Build all Docker images in parallel with layer caching
