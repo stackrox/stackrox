@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	sensorInternal "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -41,8 +42,8 @@ import (
 	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/common/processsignal"
 	"github.com/stackrox/rox/sensor/common/pubsub"
+	pubsubConfig "github.com/stackrox/rox/sensor/common/pubsub/config"
 	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
-	"github.com/stackrox/rox/sensor/common/pubsub/lane"
 	"github.com/stackrox/rox/sensor/common/reprocessor"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/sensor"
@@ -73,13 +74,23 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	var internalMessageDispatcher common.PubSubDispatcher
 	if features.SensorInternalPubSub.Enabled() {
 		log.Info("Internal PubSub system enabled")
-		var err error
-		internalMessageDispatcher, err = pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs(
-			[]pubsub.LaneConfig{
-				lane.NewBlockingLane(pubsub.KubernetesDispatcherEventLane),
-				lane.NewBlockingLane(pubsub.FromCentralResolverEventLane),
-			},
-		))
+
+		laneType := pubsubConfig.LaneTypeBlocking
+		if buildinfo.ReleaseBuild {
+			laneType = pubsubConfig.LaneTypeConcurrent
+		}
+
+		laneSpecs := []pubsubConfig.LaneSpec{
+			{ID: pubsub.KubernetesDispatcherEventLane, Type: laneType},
+			{ID: pubsub.FromCentralResolverEventLane, Type: laneType},
+		}
+
+		laneConfigs, err := pubsubConfig.SpecsToConfigs(laneSpecs)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create lane configurations")
+		}
+
+		internalMessageDispatcher, err = pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs(laneConfigs))
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create the pubsub dispatcher")
 		}

@@ -13,11 +13,11 @@ import (
 )
 
 type BlockingConfig struct {
-	Config[*blockingLane]
+	Config[*BlockingLane]
 }
 
-func WithBlockingLaneSize(size int) pubsub.LaneOption[*blockingLane] {
-	return func(lane *blockingLane) {
+func WithBlockingLaneSize(size int) pubsub.LaneOption[*BlockingLane] {
+	return func(lane *BlockingLane) {
 		if size < 0 {
 			return
 		}
@@ -25,8 +25,8 @@ func WithBlockingLaneSize(size int) pubsub.LaneOption[*blockingLane] {
 	}
 }
 
-func WithBlockingLaneConsumer(consumer pubsub.NewConsumer) pubsub.LaneOption[*blockingLane] {
-	return func(lane *blockingLane) {
+func WithBlockingLaneConsumer(consumer pubsub.NewConsumer) pubsub.LaneOption[*BlockingLane] {
+	return func(lane *BlockingLane) {
 		if consumer == nil {
 			panic("cannot configure a 'nil' NewConsumer function")
 		}
@@ -34,9 +34,9 @@ func WithBlockingLaneConsumer(consumer pubsub.NewConsumer) pubsub.LaneOption[*bl
 	}
 }
 
-func NewBlockingLane(id pubsub.LaneID, opts ...pubsub.LaneOption[*blockingLane]) *BlockingConfig {
+func NewBlockingLane(id pubsub.LaneID, opts ...pubsub.LaneOption[*BlockingLane]) *BlockingConfig {
 	return &BlockingConfig{
-		Config: Config[*blockingLane]{
+		Config: Config[*BlockingLane]{
 			id:          id,
 			opts:        opts,
 			newConsumer: consumer.NewDefaultConsumer(),
@@ -45,7 +45,7 @@ func NewBlockingLane(id pubsub.LaneID, opts ...pubsub.LaneOption[*blockingLane])
 }
 
 func (c *BlockingConfig) NewLane() pubsub.Lane {
-	lane := &blockingLane{
+	lane := &BlockingLane{
 		Lane: Lane{
 			id:            c.Config.LaneID(),
 			newConsumerFn: c.Config.newConsumer,
@@ -61,14 +61,14 @@ func (c *BlockingConfig) NewLane() pubsub.Lane {
 	return lane
 }
 
-type blockingLane struct {
+type BlockingLane struct {
 	Lane
 	size    int
 	ch      *safe.Channel[pubsub.Event]
 	stopper concurrency.Stopper
 }
 
-func (l *blockingLane) Publish(event pubsub.Event) error {
+func (l *BlockingLane) Publish(event pubsub.Event) error {
 	if err := l.ch.Write(event); err != nil {
 		metrics.RecordPublishOperation(l.id, event.Topic(), metrics.PublishError)
 		return errors.Wrap(pubsubErrors.NewPublishOnStoppedLaneErr(l.id), "unable to publish event")
@@ -78,7 +78,7 @@ func (l *blockingLane) Publish(event pubsub.Event) error {
 	return nil
 }
 
-func (l *blockingLane) run() {
+func (l *BlockingLane) run() {
 	defer l.stopper.Flow().ReportStopped()
 	for {
 		select {
@@ -95,7 +95,7 @@ func (l *blockingLane) run() {
 	}
 }
 
-func (l *blockingLane) handleEvent(event pubsub.Event) error {
+func (l *BlockingLane) handleEvent(event pubsub.Event) error {
 	defer func() {
 		metrics.SetQueueSize(l.id, l.ch.Len())
 	}()
@@ -122,7 +122,7 @@ func (l *blockingLane) handleEvent(event pubsub.Event) error {
 	return errList.ToError()
 }
 
-func (l *blockingLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pubsub.Topic, callback pubsub.EventCallback) error {
+func (l *BlockingLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pubsub.Topic, callback pubsub.EventCallback) error {
 	if callback == nil {
 		return errors.New("cannot register a 'nil' callback")
 	}
@@ -137,7 +137,7 @@ func (l *blockingLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pubs
 	return nil
 }
 
-func (l *blockingLane) Stop() {
+func (l *BlockingLane) Stop() {
 	l.stopper.Client().Stop()
 	// Wait for the run() goroutine to fully exit.
 	// The channel will be closed automatically when the waitable is done.
