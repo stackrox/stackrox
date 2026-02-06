@@ -118,38 +118,66 @@ jobs:
             echo "DEBUG_BUILD=yes" >> "${GITHUB_ENV}"
           fi
 
-      - name: Build Go binaries
-        if: steps.restore-go-binaries.outputs.cache-hit != 'true'
-        env:
-          CI: "true"  # Prevents duplicate roxctl build in main-build-nodeps
-        run: |
-          # Build all Go binaries in one invocation for better cache utilization
-          # Go's internal parallelism handles concurrent package compilation
-          time ./scripts/go-build.sh \
-            central \
-            compliance/cmd/compliance \
-            config-controller \
-            migrator \
-            sensor/admission-control \
-            sensor/kubernetes \
-            sensor/upgrader \
-            roxctl \
-            compliance/virtualmachines/roxagent
-
-      - name: Skip Go build (using cached binaries)
-        if: steps.restore-go-binaries.outputs.cache-hit == 'true'
-        run: |
-          echo "=== Go binaries restored from cache ==="
-          echo "Skipping Go build - source files unchanged"
-          ls -lh bin/linux_${{ env.GOARCH }}/
-
       - name: Prepare build directories
         run: mkdir -p bin/{darwin_amd64,darwin_arm64,linux_amd64,linux_arm64,linux_ppc64le,linux_s390x,windows_amd64}
 
-      - name: Build UI
+      - name: Build Go and UI (parallel)
+        env:
+          CI: "true"
+          GO_CACHE_HIT: ${{ steps.restore-go-binaries.outputs.cache-hit }}
+          UI_CACHE_HIT: ${{ steps.restore-ui-build.outputs.cache-hit }}
         run: |
-          export SKIP_UI_BUILD=true  # skip if already built (from cache)
-          make ui-build
+          echo "=== Building Go and UI in parallel ==="
+          echo "Go cache hit: $GO_CACHE_HIT"
+          echo "UI cache hit: $UI_CACHE_HIT"
+
+          # Start Go build in background if not cached
+          if [[ "$GO_CACHE_HIT" != "true" ]]; then
+            echo "--- Starting Go build (background) ---"
+            (
+              time ./scripts/go-build.sh \
+                central \
+                compliance/cmd/compliance \
+                config-controller \
+                migrator \
+                sensor/admission-control \
+                sensor/kubernetes \
+                sensor/upgrader \
+                roxctl \
+                compliance/virtualmachines/roxagent
+              echo "Go build complete"
+            ) &
+            GO_PID=$!
+          else
+            echo "--- Go binaries restored from cache ---"
+            ls -lh bin/linux_${{ env.GOARCH }}/ | head -5
+            GO_PID=""
+          fi
+
+          # Start UI build in background if not cached
+          if [[ "$UI_CACHE_HIT" != "true" ]]; then
+            echo "--- Starting UI build (background) ---"
+            (
+              make ui-build
+              echo "UI build complete"
+            ) &
+            UI_PID=$!
+          else
+            echo "--- UI restored from cache ---"
+            UI_PID=""
+          fi
+
+          # Wait for both to complete
+          exit_code=0
+          if [[ -n "$GO_PID" ]]; then
+            wait $GO_PID || exit_code=$?
+          fi
+          if [[ -n "$UI_PID" ]]; then
+            wait $UI_PID || exit_code=$?
+          fi
+
+          echo "=== Parallel builds complete ==="
+          exit $exit_code
 
       - name: Build Docker images
         run: |
@@ -1602,16 +1630,92 @@ jobs:
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-      - name: Build with Go-in-Docker (Option A)
+      # Hybrid approach: Use runner caching for Go/UI, then Docker for final image
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: false
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      # Cache compiled Go binaries
+      - name: Restore cached Go binaries
+        uses: actions/cache@v4
+        id: restore-go-binaries
+        with:
+          key: go-binaries-amd64-${{ hashFiles('**/*.go', 'go.mod', 'go.sum') }}
+          path: bin/linux_amd64
+
+      # Cache UI build
+      - name: Restore cached UI
+        uses: actions/cache@v4
+        id: restore-ui-build
+        with:
+          key: built-ui-RHACS_BRANDING-${{ hashFiles('ui/**') }}
+          path: ui/build
+
+      - uses: ./.github/actions/cache-ui-dependencies
+        if: steps.restore-ui-build.outputs.cache-hit != 'true'
+
+      - name: Build with Hybrid Caching (Option A)
+        env:
+          GO_CACHE_HIT: ${{ steps.restore-go-binaries.outputs.cache-hit }}
+          UI_CACHE_HIT: ${{ steps.restore-ui-build.outputs.cache-hit }}
         run: |
-          echo "=== EXPERIMENTAL: Building Go inside Docker ==="
-          echo "This approach uses Docker multi-stage builds with layer caching"
-          echo "for Go compilation, eliminating the need for pre-build jobs."
+          echo "=== EXPERIMENTAL: Hybrid Go/UI caching + Docker ==="
+          echo "This approach uses runner caching for Go/UI, Docker for final image."
+          echo "Go cache hit: $GO_CACHE_HIT"
+          echo "UI cache hit: $UI_CACHE_HIT"
           echo ""
 
-          start_time=$(date +%s)
+          total_start=$(date +%s)
 
-          # Build using the experimental Dockerfile
+          # Build Go binaries if not cached
+          go_start=$(date +%s)
+          if [[ "$GO_CACHE_HIT" == "true" ]]; then
+            echo "--- Go binaries restored from cache ---"
+            ls -lh bin/linux_amd64/ | head -5
+          else
+            echo "--- Building Go binaries ---"
+            CGO_ENABLED=0 ./scripts/go-build.sh \
+              central \
+              compliance/cmd/compliance \
+              config-controller \
+              migrator \
+              sensor/admission-control \
+              sensor/kubernetes \
+              sensor/upgrader \
+              roxctl \
+              compliance/virtualmachines/roxagent
+          fi
+          go_end=$(date +%s)
+          echo "Go time: $((go_end - go_start)) seconds"
+
+          # Build UI if not cached
+          ui_start=$(date +%s)
+          if [[ "$UI_CACHE_HIT" == "true" ]]; then
+            echo "--- UI restored from cache ---"
+          else
+            echo "--- Building UI ---"
+            make -C ui build
+          fi
+          ui_end=$(date +%s)
+          echo "UI time: $((ui_end - ui_start)) seconds"
+
+          # Prepare image context
+          echo "--- Preparing image context ---"
+          mkdir -p bin/{darwin_amd64,darwin_arm64,linux_amd64,linux_arm64,linux_ppc64le,linux_s390x,windows_amd64}
+          make copy-binaries-to-image-dir
+          mkdir -p image/rhel/THIRD_PARTY_NOTICES
+          mkdir -p image/rhel/docs/api/v1 image/rhel/docs/api/v2
+          echo '{}' > image/rhel/docs/api/v1/swagger.json
+          echo '{}' > image/rhel/docs/api/v2/swagger.json
+
+          # Build Docker image (thin layer - just copies pre-built artifacts)
+          docker_start=$(date +%s)
+          echo "--- Building Docker image ---"
           docker buildx build \
             --load \
             --progress=plain \
@@ -1619,15 +1723,18 @@ jobs:
             --build-arg TARGET_ARCH=amd64 \
             --build-arg ROX_PRODUCT_BRANDING=RHACS_BRANDING \
             --build-arg ROX_IMAGE_FLAVOR=rhacs \
-            --cache-from type=registry,ref=ghcr.io/${{ github.repository }}:experimental-go-in-docker-cache,ignore-error=true \
-            --cache-to type=registry,ref=ghcr.io/${{ github.repository }}:experimental-go-in-docker-cache,mode=max,ignore-error=true \
-            -f image/rhel/Dockerfile.go-in-docker \
-            .
+            --cache-from type=registry,ref=ghcr.io/${{ github.repository }}:main-amd64-master-rhacs_branding \
+            -f image/rhel/Dockerfile \
+            image/rhel
+          docker_end=$(date +%s)
 
-          end_time=$(date +%s)
+          total_end=$(date +%s)
           echo ""
           echo "=== TIMING RESULTS ==="
-          echo "Total build time: $((end_time - start_time)) seconds"
+          echo "Go build time: $((go_end - go_start)) seconds"
+          echo "UI build time: $((ui_end - ui_start)) seconds"
+          echo "Docker build time: $((docker_end - docker_start)) seconds"
+          echo "Total time: $((total_end - total_start)) seconds"
 
       - name: Verify image
         run: |
@@ -1673,6 +1780,14 @@ jobs:
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
+      # Cache compiled Go binaries - skip build entirely if source unchanged
+      - name: Restore cached Go binaries
+        uses: actions/cache@v4
+        id: restore-go-binaries
+        with:
+          key: go-binaries-amd64-${{ hashFiles('**/*.go', 'go.mod', 'go.sum') }}
+          path: bin/linux_amd64
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -1706,6 +1821,8 @@ jobs:
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
       - name: Build Go and Docker (Option B)
+        env:
+          GO_CACHE_HIT: ${{ steps.restore-go-binaries.outputs.cache-hit }}
         run: |
           echo "=== EXPERIMENTAL: Building Go in same job ==="
           echo "This approach builds Go binaries directly in this job,"
@@ -1714,9 +1831,17 @@ jobs:
 
           go_start=$(date +%s)
 
-          # Build Go binaries with timing
-          echo "--- Building Go binaries ---"
-          make main-build
+          if [[ "$GO_CACHE_HIT" == "true" ]]; then
+            echo "--- Go binaries restored from cache ---"
+            ls -lh bin/linux_amd64/
+          else
+            # Build Go binaries with timing
+            echo "--- Building Go binaries ---"
+            make main-build
+            # Also build roxagent (part of CLI, needed for Docker image)
+            echo "--- Building roxagent ---"
+            CGO_ENABLED=0 ./scripts/go-build.sh compliance/virtualmachines/roxagent
+          fi
 
           go_end=$(date +%s)
           echo "Go build time: $((go_end - go_start)) seconds"
