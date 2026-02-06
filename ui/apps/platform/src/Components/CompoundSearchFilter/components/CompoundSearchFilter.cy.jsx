@@ -474,11 +474,12 @@ describe(Cypress.spec.relative, () => {
 
         cy.get(autocompleteMenuItems).eq(0).click();
 
+        // Autocomplete selections are wrapped in quotes for exact-match search
         cy.get('@onSearch').should('have.been.calledWithExactly', [
             {
                 action: 'APPEND',
                 category: 'Image',
-                value: 'docker.io/library/centos:7',
+                value: '"docker.io/library/centos:7"',
             },
         ]);
 

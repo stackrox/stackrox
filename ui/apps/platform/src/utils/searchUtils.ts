@@ -428,15 +428,31 @@ const regexSearchOptions = [
     .filter(({ inputType }) => inputType === 'text' || inputType === 'autocomplete')
     .map(({ searchTerm }) => searchTerm);
 
+function isQuotedString(value: string): boolean {
+    return value.startsWith('"') && value.endsWith('"') && value.length >= 2;
+}
+
+/**
+ * Wraps a string in double quotes, escaping any internal double quotes with backslashes.
+ * Used to indicate exact-match search values from autocomplete selections.
+ */
+export function wrapInQuotes(value: string): string {
+    const escapedValue = value.replace(/"/g, '\\"');
+    return `"${escapedValue}"`;
+}
+
 /**
  * Adds the regex search modifier to the search filter for any search options that support it.
+ * Skips regex wrapping for values that are already quoted (exact-match strings).
  */
 export function applyRegexSearchModifiers(searchFilter: SearchFilter): SearchFilter {
     const regexSearchFilter = cloneDeep(searchFilter);
 
     Object.entries(regexSearchFilter).forEach(([key, value]) => {
         if (regexSearchOptions.some((option) => option.toLowerCase() === key.toLowerCase())) {
-            regexSearchFilter[key] = searchValueAsArray(value).map((val) => `r/${val}`);
+            regexSearchFilter[key] = searchValueAsArray(value).map((val) =>
+                isQuotedString(val) ? val : `r/${val}`
+            );
         }
     });
 

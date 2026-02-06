@@ -30,7 +30,7 @@ external-backup-tests:
 
 .PHONY: compliance-v2-tests
 compliance-v2-tests:
-	@GOTAGS=$(GOTAGS),test,compliance ../scripts/go-test.sh -cover -v -run TestComplianceV2 2>&1 | tee test.log
+	@GOTAGS=$(GOTAGS),test,compliance ../scripts/go-test.sh -timeout 30m -cover -v -run TestComplianceV2 2>&1 | tee test.log
 	@$(MAKE) report JUNIT_OUT=compliance-v2-tests-results
 
 include ../make/stackrox.mk

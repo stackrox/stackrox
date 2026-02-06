@@ -4,7 +4,6 @@ import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import usePermissions from 'hooks/usePermissions';
 
-import AnnouncementBanner from './AnnouncementBanner';
 import CredentialExpiryBanner from './CredentialExpiryBanner';
 import DatabaseStatusBanner from './DatabaseStatusBanner';
 import OutdatedVersionBanner from './OutdatedVersionBanner';
@@ -23,7 +22,6 @@ function Banners(): ReactElement {
 
     return (
         <>
-            <AnnouncementBanner />
             <CredentialExpiryBanner
                 component="CENTRAL"
                 showCertGenerateAction={showCertGenerateAction}

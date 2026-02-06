@@ -1405,11 +1405,15 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         type: 'select',
         options: [
             {
+                label: 'Pod attach',
+                value: 'PODS_ATTACH',
+            },
+            {
                 label: 'Pod exec',
                 value: 'PODS_EXEC',
             },
             {
-                label: 'Pods port forward',
+                label: 'Pod port forward',
                 value: 'PODS_PORTFORWARD',
             },
         ],
