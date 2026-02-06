@@ -654,6 +654,14 @@ function launch_sensor {
     	extra_json_config+=", \"admissionControllerEvents\": ${bool_val}"
     	extra_helm_config+=(--set "admissionControl.listenOnEvents=${bool_val}")
     fi
+    # Default to true if not set
+    local enforce_val="${ADMISSION_CONTROLLER_ENFORCE:-true}"
+    enforce_val="$(echo "$enforce_val" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$enforce_val" != "false" ]]; then
+      enforce_val="true"
+    fi
+    extra_helm_config+=(--set "admissionControl.enforceOnCreates=${enforce_val}")
+    extra_helm_config+=(--set "admissionControl.enforceOnUpdates=${enforce_val}")
 
     if [[ "${SECURED_CLUSTER_AUTO_LOCK_PROCESS_BASELINES:-}" == "true" ]]; then
         extra_config+=("--auto-lock-process-baselines=true")
