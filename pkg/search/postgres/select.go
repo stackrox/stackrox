@@ -235,18 +235,9 @@ func populateSelect(querySoFar *query, schema *walker.Schema, q *v1.Query, query
 			return errors.Errorf("array field %s in parent table is unsupported in select", field)
 		}
 
-		// Check if destination type expects array for this field
-		shouldAggregate := false
-		if arrayFields != nil && isChildField && !hasGroupBy {
-			// Compute the SQL alias that will be used (matches db tag format)
-			alias := FieldNameToDBAlias(field.GetName())
-			shouldAggregate = arrayFields[alias]
-		}
-
 		if qs.GetFilter() == nil {
 			selectField := selectQueryField(field.GetName(), dbField, field.GetDistinct(), aggregatefunc.GetAggrFunc(field.GetAggregateFunc()), "")
-			// Mark child table fields for aggregation if destination type is array
-			if shouldAggregate {
+			if arrayFields != nil && isChildField && !hasGroupBy && arrayFields[strings.ToLower(selectField.Alias)] {
 				selectField.ChildTableAgg = true
 				querySoFar.HasChildTableFields = true
 			}
@@ -271,8 +262,7 @@ func populateSelect(querySoFar *query, schema *walker.Schema, q *v1.Query, query
 		querySoFar.Data = append(querySoFar.Data, qe.Where.Values...)
 
 		selectField := selectQueryField(field.GetName(), dbField, field.GetDistinct(), aggregatefunc.GetAggrFunc(field.GetAggregateFunc()), qe.Where.Query)
-		// Mark child table fields for aggregation if destination type is array
-		if shouldAggregate {
+		if arrayFields != nil && isChildField && !hasGroupBy && arrayFields[strings.ToLower(selectField.Alias)] {
 			selectField.ChildTableAgg = true
 			querySoFar.HasChildTableFields = true
 		}
