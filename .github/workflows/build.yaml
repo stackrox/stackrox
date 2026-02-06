@@ -136,7 +136,8 @@ jobs:
           export SKIP_UI_BUILD=true   # skip if already built (from cache)
           parallel="${{ matrix.parallel }}"
           # Build all components - uses main-build-nodeps for parallel Go compilation
-          time make -j"${parallel}" -Oline roxctl_linux-amd64 main-build-nodeps ui-build swagger-docs
+          # roxagent_linux-amd64 is needed for copy-binaries-to-image-dir
+          time make -j"${parallel}" -Oline roxctl_linux-amd64 roxagent_linux-amd64 main-build-nodeps ui-build swagger-docs
 
       - name: Generate OSS notice
         if: false
@@ -163,7 +164,6 @@ jobs:
           make ossls-notice
 
       - name: Build image
-        continue-on-error: true
         run: |
           set -x
           unset CI  # include only the host arch build of roxctl
