@@ -31,7 +31,8 @@ jobs:
       GOOS: linux
       GOARCH: amd64
       CGO_ENABLED: 0
-      ROX_PRODUCT_BRANDING: STACKROX_BRANDING
+      # Use RHACS_BRANDING to match main build path and share Docker cache
+      ROX_PRODUCT_BRANDING: RHACS_BRANDING
     steps:
       - name: Collect Workflow Telemetry
         uses: catchpoint/workflow-telemetry-action@v2
@@ -51,28 +52,11 @@ jobs:
           show-progress: false
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - name: fetch origin
-        continue-on-error: true
+      - name: Fetch tags in background
         run: |
-          set +e
-          set -x
-          nohup git fetch --quiet --depth=5000 origin +refs/tags/*:refs/tags/* >>/tmp/git.fetching.log 2>&1 &
-          echo $! | tee /tmp/git.fetching.pid
-
-          function test() {
-            local ret=0
-            git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*'; ret=$(( ret + $? ))
-            git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}; ret=$(( ret + $? ))
-            return $ret
-          }
-          test
-          make tag
-          cat /tmp/git.fetching.log
-
-      - uses: ./.github/actions/files-changed
-        id: files-changed
-        with:
-          filters: ( ['ui']='ui/**' )
+          # Fetch tags in background while other setup steps proceed
+          # Tags are needed for make tag/version generation
+          nohup git fetch --quiet --depth=5000 origin +refs/tags/*:refs/tags/* &
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -95,10 +79,11 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
-          cache: false
+          cache: true
+          cache-dependency-path: '**/go.sum'
 
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
+      - name: Download Go modules
+        run: go mod download
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@v3
@@ -115,6 +100,12 @@ jobs:
 
       - name: Checkout submodules
         run: git submodule update --init
+
+      - name: Setup build env for debugging support
+        run: |
+          if [[ "${GITHUB_HEAD_REF:-}" =~ -debug ]]; then
+            echo "DEBUG_BUILD=yes" >> "${GITHUB_ENV}"
+          fi
 
       - name: Build Go binaries
         env:
@@ -135,61 +126,47 @@ jobs:
             roxctl \
             compliance/virtualmachines/roxagent
 
-      - name: Build UI and docs
+      - name: Build UI
         run: |
           export SKIP_UI_BUILD=true  # skip if already built (from cache)
-          make ui-build swagger-docs
+          make ui-build
 
-      - name: Generate OSS notice
-        if: false
-        env:
-          GITHUB_OAUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # TODO: cache OSS notice with deps?
-          set -x
-          FETCH_VERSION=0.4.6
-          FETCH_SHA256=a67ed3141d6deb7e7841f40505cba11eb7a37abbab78374712a42373e7854209
-          wget --no-verbose -O fetch https://github.com/gruntwork-io/fetch/releases/download/v${FETCH_VERSION}/fetch_linux_amd64
-          echo "${FETCH_SHA256} fetch" | sha256sum -c -
-          install fetch /usr/bin \
-            || install fetch /usr/local/bin
+      # Cache swagger docs - regenerating from proto is slow
+      - name: Restore cached docs
+        uses: actions/cache@v4
+        id: restore-docs-build
+        with:
+          key: built-docs-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('proto/**', 'generated/**') }}
+          path: image/rhel/docs
 
-          OSSLS_VERSION=0.11.1
-          OSSLS_SHA256=f1bf3012961c1d90ba307a46263f29025028d35c209b9a65e5c7d502c470c95f
-          fetch --repo="https://github.com/stackrox/ossls" --tag="${OSSLS_VERSION}" --release-asset="ossls_linux_amd64" .
-          echo "${OSSLS_SHA256} *ossls_linux_amd64" | sha256sum -c -
-          install ossls_linux_amd64 /usr/bin/ossls \
-            || install ossls_linux_amd64 /usr/local/bin/ossls
-          rm ossls_linux_amd64
-          ossls version
-          make ossls-notice
+      - name: Build swagger docs
+        if: steps.restore-docs-build.outputs.cache-hit != 'true'
+        run: make swagger-docs
 
       - name: Build Docker images
         run: |
           cache_registry='ghcr.io'
           cache_image="${GITHUB_REPOSITORY,,}"
-          cache_tag="TAG-master-${ROX_PRODUCT_BRANDING,,}"
+          # Use same cache tag format as build-and-push-main to share cache
+          cache_tag="main-${GOARCH}-master-${ROX_PRODUCT_BRANDING,,}"
 
           # Build cache args: always read from master cache
-          args_template="--cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag}"
+          cache_args="--cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag}"
           # Only write cache on master branch pushes
           if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/master" ]]; then
-            args_template="${args_template} --cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max,ignore-error=true"
+            cache_args="${cache_args} --cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max,ignore-error=true"
           fi
 
           # Copy binaries to image context (unset CI to use simpler copy path)
           unset CI
           make copy-binaries-to-image-dir
 
-          # Build all Docker images with layer caching
-          export DOCKER_BUILD_CACHE_ARGS="${args_template//TAG/roxctl}"
-          make docker-build-roxctl-image
-
-          export DOCKER_BUILD_CACHE_ARGS="${args_template//TAG/central-db}"
-          make central-db-image
-
-          export DOCKER_BUILD_CACHE_ARGS="${args_template//TAG/main}"
-          make build-main-image
+          # Build all Docker images in parallel with layer caching
+          export DOCKER_BUILD_CACHE_ARGS="${cache_args}"
+          make docker-build-roxctl-image &
+          make central-db-image &
+          make build-main-image &
+          wait
 
       - name: Verify build artifacts
         if: always()
