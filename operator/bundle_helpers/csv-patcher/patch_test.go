@@ -324,13 +324,19 @@ func TestConstructRelatedImages_NoEnvVars(t *testing.T) {
 	// Ensure no RELATED_IMAGE_* env vars are set
 	// Note: We can't unset all env vars, but we can verify behavior with none matching our pattern
 	originalEnv := os.Environ()
+	var toRestore []struct{ key, value string }
 	for _, envVar := range originalEnv {
 		if len(envVar) > 14 && envVar[:14] == "RELATED_IMAGE_" {
 			parts := strings.SplitN(envVar, "=", 2)
-			os.Unsetenv(parts[0])
-			defer os.Setenv(parts[0], parts[1])
+			require.NoError(t, os.Unsetenv(parts[0]))
+			toRestore = append(toRestore, struct{ key, value string }{parts[0], parts[1]})
 		}
 	}
+	defer func() {
+		for _, env := range toRestore {
+			require.NoError(t, os.Setenv(env.key, env.value))
+		}
+	}()
 
 	spec := map[string]interface{}{}
 	managerImage := "quay.io/rhacs-eng/rhacs-operator:4.5.0"
