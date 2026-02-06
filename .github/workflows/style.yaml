@@ -136,7 +136,7 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
-          cache-dependency-path: "go.sum"
+          cache: false
 
       - name: ${{ matrix.args }}
         uses: golangci/golangci-lint-action@v8
@@ -155,8 +155,7 @@ jobs:
     - uses: actions/setup-go@v6
       with:
         go-version-file: 'tools/linters/go.mod'
-        cache-dependency-path: "**/go.sum"
-        # TODO: determine if this is caching only for golangci-lint. then cache-dep-path needs to track the linter's go.mod/deps
+        cache: false
 
     - uses: golangci/golangci-lint-action@v8
 

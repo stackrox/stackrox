@@ -65,8 +65,8 @@ jobs:
       - uses: ./.github/actions/handle-tagged-build
 
       # Keep UI cache - changes less frequently than Go code
-      - name: restore cached ui
-        uses: actions/cache@v4
+      - name: Restore cached UI
+        uses: actions/cache/restore@v4
         id: restore-ui-build
         with:
           key: built-ui-${{ env.ROX_PRODUCT_BRANDING }}-${{ hashFiles('ui/**') }}
@@ -79,7 +79,7 @@ jobs:
       # Note: Version info is baked in at build time, so cached binaries will have stale version
       # This is acceptable for the all-in-one experimental job since we're optimizing for speed
       - name: Restore cached Go binaries
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         id: restore-go-binaries
         with:
           key: go-binaries-${{ env.GOARCH }}-${{ hashFiles('**/*.go', 'go.mod', 'go.sum') }}
@@ -210,6 +210,25 @@ jobs:
           make central-db-image &
           make build-main-image &
           wait
+
+      # Save caches only on master or when ci-seed-cache label is present
+      - name: Save Go binaries cache
+        if: |
+          steps.restore-go-binaries.outputs.cache-hit != 'true' &&
+          (github.ref == 'refs/heads/master' || contains(github.event.pull_request.labels.*.name, 'ci-seed-cache'))
+        uses: actions/cache/save@v4
+        with:
+          key: go-binaries-${{ env.GOARCH }}-${{ hashFiles('**/*.go', 'go.mod', 'go.sum') }}
+          path: bin/linux_${{ env.GOARCH }}
+
+      - name: Save UI build cache
+        if: |
+          steps.restore-ui-build.outputs.cache-hit != 'true' &&
+          (github.ref == 'refs/heads/master' || contains(github.event.pull_request.labels.*.name, 'ci-seed-cache'))
+        uses: actions/cache/save@v4
+        with:
+          key: built-ui-${{ env.ROX_PRODUCT_BRANDING }}-${{ hashFiles('ui/**') }}
+          path: ui/build
 
       - name: Verify build artifacts
         if: always()
@@ -409,10 +428,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: 'ui/apps/platform/package-lock.json'
 
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
         id: restore-ui-build
         with:
           key: built-ui-${{ matrix.branding }}-${{ hashFiles('ui/**') }}
@@ -433,6 +450,15 @@ jobs:
           #  || echo 'ERROR: cannot find the last release version tag for this branch'
           export SKIP_UI_BUILD=true  # if true, build only if ui/build does not exist
           make ui-build
+
+      - name: Save UI build cache
+        if: |
+          steps.restore-ui-build.outputs.cache-hit != 'true' &&
+          (github.ref == 'refs/heads/master' || contains(github.event.pull_request.labels.*.name, 'ci-seed-cache'))
+        uses: actions/cache/save@v4
+        with:
+          key: built-ui-${{ matrix.branding }}-${{ hashFiles('ui/**') }}
+          path: ui/build
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
@@ -458,8 +484,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: 'ui/apps/platform/package-lock.json'
 
       - name: Fetch UI deps
         run: make -C ui deps
@@ -728,8 +752,8 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       # TODO: update make/protogen to not always rebuild (rebuilds even when files are not updated)
-      - name: restore cached docs build
-        uses: actions/cache@v4
+      - name: Restore cached docs build
+        uses: actions/cache/restore@v4
         id: restore-docs-build
         with:
           key: built-docs-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('proto/**', 'generated/**') }}
@@ -758,6 +782,15 @@ jobs:
           fi
           # Workaround to handle https://github.com/actions/cache/issues/753
           rm -rf .proto
+
+      - name: Save docs build cache
+        if: |
+          steps.restore-docs-build.outputs.cache-hit != 'true' &&
+          (github.ref == 'refs/heads/master' || contains(github.event.pull_request.labels.*.name, 'ci-seed-cache'))
+        uses: actions/cache/save@v4
+        with:
+          key: built-docs-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('proto/**', 'generated/**') }}
+          path: image/rhel/docs
 
       - uses: ./.github/actions/upload-artifact-with-retry
         with:
@@ -813,9 +846,9 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r operator/bundle_helpers/requirements.txt
 
-      - name: Cache operator tools
+      - name: Restore operator tools cache
         id: cache-operator-tools
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: operator/.gotools
           key: operator-tools-${{ runner.os }}-amd64-${{ hashFiles('operator/tools/*/go.sum') }}
@@ -849,6 +882,15 @@ jobs:
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" docker-push-bundle | cat
+
+      - name: Save operator tools cache
+        if: |
+          steps.cache-operator-tools.outputs.cache-hit != 'true' &&
+          (github.ref == 'refs/heads/master' || contains(github.event.pull_request.labels.*.name, 'ci-seed-cache'))
+        uses: actions/cache/save@v4
+        with:
+          key: operator-tools-${{ runner.os }}-amd64-${{ hashFiles('operator/tools/*/go.sum') }}
+          path: operator/.gotools
 
       - name: Save bundle artifacts
         run: |
@@ -1277,9 +1319,9 @@ jobs:
           echo "OPERATOR_TAG=${OPERATOR_TAG}" >> "$GITHUB_ENV"
           echo "Captured operator tag: ${OPERATOR_TAG}"
 
-      - name: Cache operator tools
+      - name: Restore operator tools cache
         id: cache-operator-tools
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: operator/.gotools
           key: operator-tools-${{ runner.os }}-${{ matrix.arch }}-${{ hashFiles('operator/tools/*/go.sum') }}
@@ -1373,6 +1415,15 @@ jobs:
         run: |
           make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" index-build
           make -C operator/ VERSION="${{ env.OPERATOR_TAG }}" docker-push-index | cat
+
+      - name: Save operator tools cache
+        if: |
+          steps.cache-operator-tools.outputs.cache-hit != 'true' &&
+          (github.ref == 'refs/heads/master' || contains(github.event.pull_request.labels.*.name, 'ci-seed-cache'))
+        uses: actions/cache/save@v4
+        with:
+          key: operator-tools-${{ runner.os }}-${{ matrix.arch }}-${{ hashFiles('operator/tools/*/go.sum') }}
+          path: operator/.gotools
 
   push-operator-manifests:
     runs-on: ubuntu-latest
@@ -1642,7 +1693,7 @@ jobs:
 
       # Cache compiled Go binaries
       - name: Restore cached Go binaries
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         id: restore-go-binaries
         with:
           key: go-binaries-amd64-${{ hashFiles('**/*.go', 'go.mod', 'go.sum') }}
@@ -1650,7 +1701,7 @@ jobs:
 
       # Cache UI build
       - name: Restore cached UI
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         id: restore-ui-build
         with:
           key: built-ui-RHACS_BRANDING-${{ hashFiles('ui/**') }}
@@ -1661,6 +1712,7 @@ jobs:
 
       - name: Build with Hybrid Caching (Option A)
         env:
+          CI: "true"
           GO_CACHE_HIT: ${{ steps.restore-go-binaries.outputs.cache-hit }}
           UI_CACHE_HIT: ${{ steps.restore-ui-build.outputs.cache-hit }}
         run: |
@@ -1736,6 +1788,24 @@ jobs:
           echo "Docker build time: $((docker_end - docker_start)) seconds"
           echo "Total time: $((total_end - total_start)) seconds"
 
+      - name: Save Go binaries cache
+        if: |
+          steps.restore-go-binaries.outputs.cache-hit != 'true' &&
+          (github.ref == 'refs/heads/master' || contains(github.event.pull_request.labels.*.name, 'ci-seed-cache'))
+        uses: actions/cache/save@v4
+        with:
+          key: go-binaries-amd64-${{ hashFiles('**/*.go', 'go.mod', 'go.sum') }}
+          path: bin/linux_amd64
+
+      - name: Save UI build cache
+        if: |
+          steps.restore-ui-build.outputs.cache-hit != 'true' &&
+          (github.ref == 'refs/heads/master' || contains(github.event.pull_request.labels.*.name, 'ci-seed-cache'))
+        uses: actions/cache/save@v4
+        with:
+          key: built-ui-RHACS_BRANDING-${{ hashFiles('ui/**') }}
+          path: ui/build
+
       - name: Verify image
         run: |
           docker run --rm experimental-go-in-docker:test version || true
@@ -1782,7 +1852,7 @@ jobs:
 
       # Cache compiled Go binaries - skip build entirely if source unchanged
       - name: Restore cached Go binaries
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         id: restore-go-binaries
         with:
           key: go-binaries-amd64-${{ hashFiles('**/*.go', 'go.mod', 'go.sum') }}
@@ -1871,6 +1941,15 @@ jobs:
           echo "Go build time: $((go_end - go_start)) seconds"
           echo "Docker build time: $((docker_end - docker_start)) seconds"
           echo "Total time: $((docker_end - go_start)) seconds"
+
+      - name: Save Go binaries cache
+        if: |
+          steps.restore-go-binaries.outputs.cache-hit != 'true' &&
+          (github.ref == 'refs/heads/master' || contains(github.event.pull_request.labels.*.name, 'ci-seed-cache'))
+        uses: actions/cache/save@v4
+        with:
+          key: go-binaries-amd64-${{ hashFiles('**/*.go', 'go.mod', 'go.sum') }}
+          path: bin/linux_amd64
 
       - name: Verify image
         run: |
