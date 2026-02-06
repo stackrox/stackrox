@@ -741,10 +741,11 @@ copy-binaries-to-image-dir: copy-go-binaries-to-image-dir
 	cp -r ui/build image/rhel/ui/
 ifdef CI
 	$(SILENT)[ -d image/rhel/THIRD_PARTY_NOTICES ] || { echo "image/rhel/THIRD_PARTY_NOTICES dir not found! It is required for CI-built images."; exit 1; }
+	$(SILENT)[ -d image/rhel/docs ] || mkdir -p image/rhel/docs
 else
 	$(SILENT)[ -f image/rhel/THIRD_PARTY_NOTICES ] || mkdir -p image/rhel/THIRD_PARTY_NOTICES
-endif
 	$(SILENT)[ -d image/rhel/docs ] || { echo "Generated docs not found in image/rhel/docs. They are required for build."; exit 1; }
+endif
 
 .PHONY: scale-image
 scale-image: scale-build clean-image
