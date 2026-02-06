@@ -7,8 +7,6 @@ import {
     AlertGroup,
     Bullseye,
     Button,
-    Card,
-    CardBody,
     Content,
     DropdownItem,
     EmptyState,
@@ -182,17 +180,15 @@ function ConfigReportsTab() {
                 ))}
             </AlertGroup>
             <PageTitle title="Vulnerability reporting - Report configurations" />
-            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
+            <PageSection>
                 {runError && <Alert variant="danger" isInline title={runError} component="p" />}
-                <Flex
-                    direction={{ default: 'row' }}
-                    alignItems={{ default: 'alignItemsCenter' }}
-                    className="pf-v6-u-py-lg pf-v6-u-px-lg"
-                >
-                    <Content component="p">
-                        Configure reports, define collections, and assign delivery destinations to
-                        report on vulnerabilities across the organization.
-                    </Content>
+                <Flex direction={{ default: 'row' }} alignItems={{ default: 'alignItemsCenter' }}>
+                    <FlexItem>
+                        <Content component="p">
+                            Configure reports, define collections, and assign delivery destinations
+                            to report on vulnerabilities across the organization.
+                        </Content>
+                    </FlexItem>
                     {reportConfigurations &&
                         reportConfigurations.length > 0 &&
                         hasWriteAccessForReport && (
@@ -202,353 +198,314 @@ function ConfigReportsTab() {
                         )}
                 </Flex>
             </PageSection>
-            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
-                <PageSection hasBodyWrapper={false} isCenterAligned>
-                    <Card>
-                        <CardBody className="pf-v6-u-p-0">
-                            <Toolbar>
-                                <ToolbarContent>
-                                    <ToolbarItem className="pf-v6-u-flex-grow-1">
-                                        <SearchInput
-                                            placeholder="Filter by report name"
-                                            value={searchValue}
-                                            onChange={(_event, value) => setSearchValue(value)}
-                                            onSearch={(_event, value) => {
-                                                setSearchValue(value);
-                                                setSearchFilter({ [reportNameSearchKey]: value });
-                                                setPage(1);
-                                            }}
-                                            onClear={() => {
-                                                setSearchValue('');
-                                                setSearchFilter({});
-                                                setPage(1);
-                                            }}
-                                        />
-                                    </ToolbarItem>
-                                    <ToolbarItem>
-                                        <MenuDropdown
-                                            toggleText="Bulk actions"
-                                            isDisabled={!hasSelections}
-                                        >
-                                            <DropdownItem
-                                                key="delete"
-                                                onClick={onConfirmDeleteSelection}
-                                            >
-                                                Delete ({numSelected})
-                                            </DropdownItem>
-                                        </MenuDropdown>
-                                    </ToolbarItem>
-                                    <ToolbarItem
-                                        variant="pagination"
-                                        align={{ default: 'alignEnd' }}
-                                    >
-                                        <Pagination
-                                            itemCount={totalReports}
-                                            page={page}
-                                            perPage={perPage}
-                                            onSetPage={(_, newPage) => setPage(newPage)}
-                                            onPerPageSelect={(_, newPerPage) =>
-                                                setPerPage(newPerPage)
-                                            }
-                                            isCompact
-                                        />
-                                    </ToolbarItem>
-                                </ToolbarContent>
-                            </Toolbar>
-                            {isLoading && !reportConfigurations && (
-                                <div className="pf-v6-u-p-md">
-                                    <Bullseye>
-                                        <Spinner />
-                                    </Bullseye>
-                                </div>
-                            )}
-                            {fetchError && (
-                                <EmptyState
-                                    headingLevel="h2"
-                                    icon={ExclamationCircleIcon}
-                                    titleText="Unable to get vulnerability reports"
-                                    variant="sm"
+            <PageSection>
+                <Toolbar>
+                    <ToolbarContent>
+                        <ToolbarItem className="pf-v6-u-flex-grow-1">
+                            <SearchInput
+                                placeholder="Filter by report name"
+                                value={searchValue}
+                                onChange={(_event, value) => setSearchValue(value)}
+                                onSearch={(_event, value) => {
+                                    setSearchValue(value);
+                                    setSearchFilter({ [reportNameSearchKey]: value });
+                                    setPage(1);
+                                }}
+                                onClear={() => {
+                                    setSearchValue('');
+                                    setSearchFilter({});
+                                    setPage(1);
+                                }}
+                            />
+                        </ToolbarItem>
+                        <ToolbarItem>
+                            <MenuDropdown toggleText="Bulk actions" isDisabled={!hasSelections}>
+                                <DropdownItem key="delete" onClick={onConfirmDeleteSelection}>
+                                    Delete ({numSelected})
+                                </DropdownItem>
+                            </MenuDropdown>
+                        </ToolbarItem>
+                        <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
+                            <Pagination
+                                itemCount={totalReports}
+                                page={page}
+                                perPage={perPage}
+                                onSetPage={(_, newPage) => setPage(newPage)}
+                                onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
+                                isCompact
+                            />
+                        </ToolbarItem>
+                    </ToolbarContent>
+                </Toolbar>
+                {isLoading && !reportConfigurations && (
+                    <div className="pf-v6-u-p-md">
+                        <Bullseye>
+                            <Spinner />
+                        </Bullseye>
+                    </div>
+                )}
+                {fetchError && (
+                    <EmptyState
+                        headingLevel="h2"
+                        icon={ExclamationCircleIcon}
+                        titleText="Unable to get vulnerability reports"
+                        variant="sm"
+                    >
+                        <EmptyStateBody>{fetchError}</EmptyStateBody>
+                    </EmptyState>
+                )}
+                {reportConfigurations && (
+                    <Table>
+                        <Thead noWrap>
+                            <Tr>
+                                <Th
+                                    select={{
+                                        onSelect: onSelectAll,
+                                        isSelected: allRowsSelected,
+                                    }}
+                                />
+                                <Th sort={getSortParams(reportNameSearchKey)}>Report</Th>
+                                <HelpIconTh
+                                    popoverContent={
+                                        <div>
+                                            A set of user-configured rules for selecting deployments
+                                            as part of the collection
+                                        </div>
+                                    }
                                 >
-                                    <EmptyStateBody>{fetchError}</EmptyStateBody>
-                                </EmptyState>
-                            )}
-                            {reportConfigurations && (
-                                <Table borders={false}>
-                                    <Thead noWrap>
-                                        <Tr>
-                                            <Th
-                                                select={{
-                                                    onSelect: onSelectAll,
-                                                    isSelected: allRowsSelected,
-                                                }}
-                                            />
-                                            <Th sort={getSortParams(reportNameSearchKey)}>
-                                                Report
-                                            </Th>
-                                            <HelpIconTh
-                                                popoverContent={
-                                                    <div>
-                                                        A set of user-configured rules for selecting
-                                                        deployments as part of the collection
-                                                    </div>
-                                                }
+                                    Collection
+                                </HelpIconTh>
+                                <Th>Description</Th>
+                                <HelpIconTh
+                                    popoverContent={
+                                        <JobStatusPopoverContent
+                                            statuses={[
+                                                'WAITING',
+                                                'PREPARING',
+                                                'DOWNLOAD_GENERATED',
+                                                'EMAIL_DELIVERED',
+                                                'ERROR',
+                                            ]}
+                                        />
+                                    }
+                                >
+                                    My last job status
+                                </HelpIconTh>
+                                {hasWriteAccessForReport && (
+                                    <Th>
+                                        <span className="pf-v6-screen-reader">Row actions</span>
+                                    </Th>
+                                )}
+                            </Tr>
+                        </Thead>
+                        {reportConfigurations.length === 0 && isEmpty(searchFilter) && (
+                            <Tbody>
+                                <Tr>
+                                    <Td colSpan={6}>
+                                        <Bullseye>
+                                            <EmptyStateTemplate
+                                                title="No vulnerability reports yet"
+                                                headingLevel="h2"
+                                                icon={FileIcon}
                                             >
-                                                Collection
-                                            </HelpIconTh>
-                                            <Th>Description</Th>
-                                            <HelpIconTh
-                                                popoverContent={
-                                                    <JobStatusPopoverContent
-                                                        statuses={[
-                                                            'WAITING',
-                                                            'PREPARING',
-                                                            'DOWNLOAD_GENERATED',
-                                                            'EMAIL_DELIVERED',
-                                                            'ERROR',
-                                                        ]}
-                                                    />
-                                                }
-                                            >
-                                                My last job status
-                                            </HelpIconTh>
-                                            {hasWriteAccessForReport && (
-                                                <Th>
-                                                    <span className="pf-v6-screen-reader">
-                                                        Row actions
-                                                    </span>
-                                                </Th>
-                                            )}
-                                        </Tr>
-                                    </Thead>
-                                    {reportConfigurations.length === 0 && isEmpty(searchFilter) && (
-                                        <Tbody>
-                                            <Tr>
-                                                <Td colSpan={6}>
-                                                    <Bullseye>
-                                                        <EmptyStateTemplate
-                                                            title="No vulnerability reports yet"
-                                                            headingLevel="h2"
-                                                            icon={FileIcon}
-                                                        >
-                                                            {hasWriteAccessForReport && (
-                                                                <Flex
-                                                                    direction={{
-                                                                        default: 'column',
-                                                                    }}
-                                                                >
-                                                                    <FlexItem>
-                                                                        <Content component="p">
-                                                                            To get started, create a
-                                                                            report
-                                                                        </Content>
-                                                                    </FlexItem>
-                                                                    <FlexItem>
-                                                                        <CreateReportsButton />
-                                                                    </FlexItem>
-                                                                </Flex>
-                                                            )}
-                                                        </EmptyStateTemplate>
-                                                    </Bullseye>
-                                                </Td>
-                                            </Tr>
-                                        </Tbody>
-                                    )}
-                                    {reportConfigurations.length === 0 &&
-                                        !isEmpty(searchFilter) && (
-                                            <Tbody>
-                                                <Tr>
-                                                    <Td colSpan={6}>
-                                                        <Bullseye>
-                                                            <EmptyStateTemplate
-                                                                title="No results found"
-                                                                headingLevel="h2"
-                                                                icon={SearchIcon}
-                                                            >
-                                                                {hasWriteAccessForReport && (
-                                                                    <Flex
-                                                                        direction={{
-                                                                            default: 'column',
-                                                                        }}
-                                                                    >
-                                                                        <FlexItem>
-                                                                            <Content component="p">
-                                                                                No results match
-                                                                                this filter
-                                                                                criteria. Clear the
-                                                                                filter and try
-                                                                                again.
-                                                                            </Content>
-                                                                        </FlexItem>
-                                                                        <FlexItem>
-                                                                            <Button
-                                                                                variant="link"
-                                                                                onClick={() => {
-                                                                                    setSearchValue(
-                                                                                        ''
-                                                                                    );
-                                                                                    setSearchFilter(
-                                                                                        {}
-                                                                                    );
-                                                                                }}
-                                                                            >
-                                                                                Clear filter
-                                                                            </Button>
-                                                                        </FlexItem>
-                                                                    </Flex>
-                                                                )}
-                                                            </EmptyStateTemplate>
-                                                        </Bullseye>
-                                                    </Td>
-                                                </Tr>
-                                            </Tbody>
-                                        )}
-                                    {reportConfigurations.map((report, rowIndex) => {
-                                        const vulnReportURL = generatePath(
-                                            vulnerabilityConfigurationReportDetailsPath,
-                                            {
-                                                reportId: report.id,
-                                            }
-                                        );
-                                        const snapshot = reportSnapshots[report.id];
-                                        const isReportStatusPending =
-                                            snapshot?.reportStatus.runState === 'PREPARING' ||
-                                            snapshot?.reportStatus.runState === 'WAITING';
-                                        const rowActions = [
-                                            {
-                                                title: 'Edit report',
-                                                onClick: (event) => {
-                                                    event.preventDefault();
-                                                    navigate(`${vulnReportURL}?action=edit`);
-                                                },
-                                                isDisabled: isReportStatusPending,
-                                            },
-                                            {
-                                                isSeparator: true,
-                                            },
-                                            {
-                                                title: 'Send report',
-                                                description:
-                                                    report.notifiers.length === 0
-                                                        ? 'No delivery destinations set'
-                                                        : '',
-                                                onClick: (event) => {
-                                                    event.preventDefault();
-                                                    runReport(report.id, 'EMAIL');
-                                                },
-                                                isDisabled:
-                                                    isReportStatusPending ||
-                                                    report.notifiers.length === 0,
-                                            },
-                                            {
-                                                title: 'Generate download',
-                                                onClick: (event) => {
-                                                    event.preventDefault();
-                                                    runReport(report.id, 'DOWNLOAD');
-                                                },
-                                                isDisabled: isReportStatusPending,
-                                            },
-                                            {
-                                                title: 'Clone report',
-                                                onClick: (event) => {
-                                                    event.preventDefault();
-                                                    navigate(`${vulnReportURL}?action=clone`);
-                                                },
-                                            },
-                                            {
-                                                isSeparator: true,
-                                            },
-                                            {
-                                                title: (
-                                                    <span
-                                                        className={
-                                                            !isReportStatusPending
-                                                                ? 'pf-v6-u-text-color-status-danger'
-                                                                : ''
-                                                        }
-                                                    >
-                                                        Delete report
-                                                    </span>
-                                                ),
-                                                onClick: (event) => {
-                                                    event.preventDefault();
-                                                    openDeleteModal([report.id]);
-                                                },
-                                                isDisabled: isReportStatusPending,
-                                            },
-                                        ];
-                                        const { collectionName, collectionId } =
-                                            report.resourceScope.collectionScope;
-
-                                        return (
-                                            <Tbody
-                                                key={report.id}
-                                                style={{
-                                                    borderBottom:
-                                                        '1px solid var(--pf-v5-c-table--BorderColor)',
-                                                }}
-                                            >
-                                                <Tr>
-                                                    <Td
-                                                        key={report.id}
-                                                        select={{
-                                                            rowIndex,
-                                                            onSelect,
-                                                            isSelected: selected[rowIndex],
+                                                {hasWriteAccessForReport && (
+                                                    <Flex
+                                                        direction={{
+                                                            default: 'column',
                                                         }}
-                                                    />
-                                                    <Td dataLabel="Report">
-                                                        <Link to={vulnReportURL}>
-                                                            {report.name}
-                                                        </Link>
-                                                    </Td>
-                                                    <Td dataLabel="Collection">
-                                                        {isCollectionsRouteEnabled ? (
+                                                    >
+                                                        <FlexItem>
+                                                            <Content component="p">
+                                                                To get started, create a report
+                                                            </Content>
+                                                        </FlexItem>
+                                                        <FlexItem>
+                                                            <CreateReportsButton />
+                                                        </FlexItem>
+                                                    </Flex>
+                                                )}
+                                            </EmptyStateTemplate>
+                                        </Bullseye>
+                                    </Td>
+                                </Tr>
+                            </Tbody>
+                        )}
+                        {reportConfigurations.length === 0 && !isEmpty(searchFilter) && (
+                            <Tbody>
+                                <Tr>
+                                    <Td colSpan={6}>
+                                        <Bullseye>
+                                            <EmptyStateTemplate
+                                                title="No results found"
+                                                headingLevel="h2"
+                                                icon={SearchIcon}
+                                            >
+                                                {hasWriteAccessForReport && (
+                                                    <Flex
+                                                        direction={{
+                                                            default: 'column',
+                                                        }}
+                                                    >
+                                                        <FlexItem>
+                                                            <Content component="p">
+                                                                No results match this filter
+                                                                criteria. Clear the filter and try
+                                                                again.
+                                                            </Content>
+                                                        </FlexItem>
+                                                        <FlexItem>
                                                             <Button
                                                                 variant="link"
-                                                                isInline
-                                                                onClick={() =>
-                                                                    setCollectionModalId(
-                                                                        collectionId
-                                                                    )
-                                                                }
+                                                                onClick={() => {
+                                                                    setSearchValue('');
+                                                                    setSearchFilter({});
+                                                                }}
                                                             >
-                                                                {collectionName}
+                                                                Clear filter
                                                             </Button>
-                                                        ) : (
-                                                            collectionName
-                                                        )}
-                                                    </Td>
-                                                    <Td dataLabel="Description">
-                                                        {report.description || '-'}
-                                                    </Td>
-                                                    <Td dataLabel="My last job status">
-                                                        <MyLastJobStatus
-                                                            snapshot={snapshot}
-                                                            isLoadingSnapshots={
-                                                                isLoadingReportSnapshots
-                                                            }
-                                                            currentUserId={currentUser.userId}
-                                                            baseDownloadURL={reportDownloadURL}
-                                                        />
-                                                    </Td>
-                                                    {hasWriteAccessForReport && (
-                                                        <Td isActionCell>
-                                                            <ActionsColumn
-                                                                items={rowActions}
-                                                                isDisabled={isRunning}
-                                                                // menuAppendTo={() => document.body}
-                                                            />
-                                                        </Td>
-                                                    )}
-                                                </Tr>
-                                            </Tbody>
-                                        );
-                                    })}
-                                </Table>
-                            )}
-                        </CardBody>
-                    </Card>
-                </PageSection>
+                                                        </FlexItem>
+                                                    </Flex>
+                                                )}
+                                            </EmptyStateTemplate>
+                                        </Bullseye>
+                                    </Td>
+                                </Tr>
+                            </Tbody>
+                        )}
+                        {reportConfigurations.map((report, rowIndex) => {
+                            const vulnReportURL = generatePath(
+                                vulnerabilityConfigurationReportDetailsPath,
+                                {
+                                    reportId: report.id,
+                                }
+                            );
+                            const snapshot = reportSnapshots[report.id];
+                            const isReportStatusPending =
+                                snapshot?.reportStatus.runState === 'PREPARING' ||
+                                snapshot?.reportStatus.runState === 'WAITING';
+                            const rowActions = [
+                                {
+                                    title: 'Edit report',
+                                    onClick: (event) => {
+                                        event.preventDefault();
+                                        navigate(`${vulnReportURL}?action=edit`);
+                                    },
+                                    isDisabled: isReportStatusPending,
+                                },
+                                {
+                                    isSeparator: true,
+                                },
+                                {
+                                    title: 'Send report',
+                                    description:
+                                        report.notifiers.length === 0
+                                            ? 'No delivery destinations set'
+                                            : '',
+                                    onClick: (event) => {
+                                        event.preventDefault();
+                                        runReport(report.id, 'EMAIL');
+                                    },
+                                    isDisabled:
+                                        isReportStatusPending || report.notifiers.length === 0,
+                                },
+                                {
+                                    title: 'Generate download',
+                                    onClick: (event) => {
+                                        event.preventDefault();
+                                        runReport(report.id, 'DOWNLOAD');
+                                    },
+                                    isDisabled: isReportStatusPending,
+                                },
+                                {
+                                    title: 'Clone report',
+                                    onClick: (event) => {
+                                        event.preventDefault();
+                                        navigate(`${vulnReportURL}?action=clone`);
+                                    },
+                                },
+                                {
+                                    isSeparator: true,
+                                },
+                                {
+                                    title: (
+                                        <span
+                                            className={
+                                                !isReportStatusPending
+                                                    ? 'pf-v6-u-text-color-status-danger'
+                                                    : ''
+                                            }
+                                        >
+                                            Delete report
+                                        </span>
+                                    ),
+                                    onClick: (event) => {
+                                        event.preventDefault();
+                                        openDeleteModal([report.id]);
+                                    },
+                                    isDisabled: isReportStatusPending,
+                                },
+                            ];
+                            const { collectionName, collectionId } =
+                                report.resourceScope.collectionScope;
+
+                            return (
+                                <Tbody
+                                    key={report.id}
+                                    style={{
+                                        borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
+                                    }}
+                                >
+                                    <Tr>
+                                        <Td
+                                            key={report.id}
+                                            select={{
+                                                rowIndex,
+                                                onSelect,
+                                                isSelected: selected[rowIndex],
+                                            }}
+                                        />
+                                        <Td dataLabel="Report">
+                                            <Link to={vulnReportURL}>{report.name}</Link>
+                                        </Td>
+                                        <Td dataLabel="Collection">
+                                            {isCollectionsRouteEnabled ? (
+                                                <Button
+                                                    variant="link"
+                                                    isInline
+                                                    onClick={() =>
+                                                        setCollectionModalId(collectionId)
+                                                    }
+                                                >
+                                                    {collectionName}
+                                                </Button>
+                                            ) : (
+                                                collectionName
+                                            )}
+                                        </Td>
+                                        <Td dataLabel="Description">{report.description || '-'}</Td>
+                                        <Td dataLabel="My last job status">
+                                            <MyLastJobStatus
+                                                snapshot={snapshot}
+                                                isLoadingSnapshots={isLoadingReportSnapshots}
+                                                currentUserId={currentUser.userId}
+                                                baseDownloadURL={reportDownloadURL}
+                                            />
+                                        </Td>
+                                        {hasWriteAccessForReport && (
+                                            <Td isActionCell>
+                                                <ActionsColumn
+                                                    items={rowActions}
+                                                    isDisabled={isRunning}
+                                                    // menuAppendTo={() => document.body}
+                                                />
+                                            </Td>
+                                        )}
+                                    </Tr>
+                                </Tbody>
+                            );
+                        })}
+                    </Table>
+                )}
             </PageSection>
             <DeleteModal
                 title={`Permanently delete (${reportIdsToDelete.length}) ${pluralize(
