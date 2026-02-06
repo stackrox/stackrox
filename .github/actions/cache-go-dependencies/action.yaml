@@ -14,14 +14,16 @@ runs:
         echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
         echo "GOMODCACHE=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
         echo "GOARCH=$(go env GOARCH)" >> "$GITHUB_OUTPUT"
-        # match actions/setup-go automatic caching: example "setup-go-Linux-x64-ubuntu24-go-1.24.4-77e80c4c2cea3e3fe3c8188302d5f5cb3d0de367fe8d8c5e6dcb5ec4da1b547b"
+        # Cache key for Go build cache and module cache
+        # Note: We intentionally exclude the OS version (ubuntu22 vs ubuntu24) from the key
+        # because Go compiles to static binaries that work across Linux versions.
+        # This allows cache sharing between different runner versions.
         platform=${RUNNER_OS:-Linux}
         arch=${RUNNER_ARCH:-X64}
         arch=${arch,,}  # js process.arch is lowercase
-        linuxVersion="${ImageOS:-ubuntu24}"
         versionSpec="$(go env GOVERSION)"
         versionSpec=${versionSpec#go}
-        echo "key=${platform}-${arch}-${linuxVersion}-go-${versionSpec}" >> "$GITHUB_OUTPUT"
+        echo "key=${platform}-${arch}-go-${versionSpec}" >> "$GITHUB_OUTPUT"
         # Determine if we should save cache
         save_cache="${{ inputs.save-cache }}"
         if [[ "$save_cache" == "auto" ]]; then

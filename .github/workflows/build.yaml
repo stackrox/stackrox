@@ -635,13 +635,25 @@ jobs:
         run: |
           # Build only the packages for this component: ${{ matrix.packages }}
           make build-prep
-          if [[ "${{ matrix.arch }}" != "amd64" ]]; then
-            echo "Building non-amd64 binary (CGO_ENABLED=0)"
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 ./scripts/go-build.sh ${{ matrix.packages }}
+
+          # Determine CGO setting:
+          # - CGO_ENABLED=1 for amd64 release builds (FIPS compliance)
+          # - CGO_ENABLED=0 for PRs and non-amd64 (faster, better caching)
+          cgo_enabled=0
+          if [[ "${{ matrix.arch }}" == "amd64" ]]; then
+            if [[ "${{ github.event_name }}" == "push" ]]; then
+              # Master/release builds need CGO for FIPS
+              cgo_enabled=1
+              echo "Building amd64 binary with CGO (FIPS build)"
+            else
+              # PR builds can skip CGO for faster builds
+              echo "Building amd64 binary without CGO (PR build, faster)"
+            fi
           else
-            echo "Building amd64 binary (CGO_ENABLED=1)"
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 ./scripts/go-build.sh ${{ matrix.packages }}
+            echo "Building non-amd64 binary (CGO_ENABLED=0)"
           fi
+
+          GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=$cgo_enabled ./scripts/go-build.sh ${{ matrix.packages }}
 
       - name: Bundle the build to preserve permissions
         run: tar -cvzf go-binaries-build.tgz bin/linux_${{ matrix.arch }}
