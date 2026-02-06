@@ -35,7 +35,11 @@ var (
 		user.With(permissions.View(resources.Deployment), permissions.View(resources.Image)): {
 			v1.VulnMgmtService_VulnMgmtExportWorkloads_FullMethodName,
 		},
-		user.With(permissions.View(resources.Image)): {
+		user.With(
+			permissions.View(resources.Cluster),
+			permissions.View(resources.Namespace),
+			permissions.View(resources.Deployment),
+			permissions.View(resources.Image)): {
 			v1.VulnMgmtService_ImageVulnerabilities_FullMethodName,
 		},
 	})
@@ -176,7 +180,7 @@ func (s *serviceImpl) ImageVulnerabilities(ctx context.Context, _ *v1.Empty) (*v
 
 	txCtx := postgres.ContextWithTx(ctx, tx)
 
-	var images []*v1.ImageVulnerabilitiesResponse_Image
+	images := make(map[string]*v1.ImageVulnerabilitiesResponse_Image)
 
 	err = s.images.WalkByQuery(txCtx, search.EmptyQuery(), func(img *storage.Image) error {
 		scan := img.GetScan()
@@ -195,9 +199,7 @@ func (s *serviceImpl) ImageVulnerabilities(ctx context.Context, _ *v1.Empty) (*v
 		}
 
 		layerShas := metadata.GetLayerShas()
-		v1Layers := metadata.GetV1().GetLayers()
 
-		responseLayers := make(map[string]*storage.ImageLayer)
 		var responseComponents []*v1.ImageVulnerabilitiesResponse_Image_Component
 
 		for _, comp := range components {
@@ -229,9 +231,6 @@ func (s *serviceImpl) ImageVulnerabilities(ctx context.Context, _ *v1.Empty) (*v
 				layerIndex := li.LayerIndex
 				if int(layerIndex) < len(layerShas) {
 					layerSha = layerShas[layerIndex]
-					if int(layerIndex) < len(v1Layers) {
-						responseLayers[layerSha] = v1Layers[layerIndex]
-					}
 				}
 			}
 
@@ -248,25 +247,15 @@ func (s *serviceImpl) ImageVulnerabilities(ctx context.Context, _ *v1.Empty) (*v
 			return nil
 		}
 
-		clusters, err := s.getImageFindings(txCtx, img.GetId())
+		workloadIDs, err := s.getImageWorkloadIDs(txCtx, img.GetId())
 		if err != nil {
-			return errors.Wrapf(err, "failed to get findings for image %s", img.GetId())
+			return errors.Wrapf(err, "failed to get workload IDs for image %s", img.GetId())
 		}
 
-		imageNames := make([]string, 0, len(img.GetNames()))
-		for _, name := range img.GetNames() {
-			if fullName := name.GetFullName(); fullName != "" {
-				imageNames = append(imageNames, fullName)
-			}
+		images[img.GetId()] = &v1.ImageVulnerabilitiesResponse_Image{
+			Components:  responseComponents,
+			WorkloadIds: workloadIDs,
 		}
-
-		images = append(images, &v1.ImageVulnerabilitiesResponse_Image{
-			Sha:        img.GetId(),
-			Names:      imageNames,
-			Layers:     responseLayers,
-			Components: responseComponents,
-			Clusters:   clusters,
-		})
 
 		return nil
 	})
@@ -283,40 +272,17 @@ func (s *serviceImpl) ImageVulnerabilities(ctx context.Context, _ *v1.Empty) (*v
 	return &v1.ImageVulnerabilitiesResponse{Images: images}, nil
 }
 
-func (s *serviceImpl) getImageFindings(ctx context.Context, imageID string) (map[string]*v1.ImageVulnerabilitiesResponse_Image_Cluster, error) {
+func (s *serviceImpl) getImageWorkloadIDs(ctx context.Context, imageID string) ([]string, error) {
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.ImageSHA, imageID).
 		ProtoQuery()
 
-	clusters := make(map[string]*v1.ImageVulnerabilitiesResponse_Image_Cluster)
+	workloadIDs := set.NewStringSet()
 
 	err := s.deployments.WalkByQuery(ctx, query, func(deployment *storage.Deployment) error {
 		for _, container := range deployment.GetContainers() {
 			if container.GetImage().GetId() == imageID {
-				clusterName := deployment.GetClusterName()
-				namespaceName := deployment.GetNamespace()
-
-				cluster, ok := clusters[clusterName]
-				if !ok {
-					cluster = &v1.ImageVulnerabilitiesResponse_Image_Cluster{
-						Namespaces: make(map[string]*v1.ImageVulnerabilitiesResponse_Image_Cluster_Namespace),
-					}
-					clusters[clusterName] = cluster
-				}
-
-				namespace, ok := cluster.Namespaces[namespaceName]
-				if !ok {
-					namespace = &v1.ImageVulnerabilitiesResponse_Image_Cluster_Namespace{
-						Workloads: []*v1.ImageVulnerabilitiesResponse_Image_Cluster_Namespace_Workload{},
-					}
-					cluster.Namespaces[namespaceName] = namespace
-				}
-
-				workload := &v1.ImageVulnerabilitiesResponse_Image_Cluster_Namespace_Workload{
-					Name: deployment.GetName(),
-					Type: deployment.GetType(),
-				}
-				namespace.Workloads = append(namespace.Workloads, workload)
+				workloadIDs.Add(deployment.GetId())
 				break
 			}
 		}
@@ -327,5 +293,5 @@ func (s *serviceImpl) getImageFindings(ctx context.Context, imageID string) (map
 		return nil, err
 	}
 
-	return clusters, nil
+	return workloadIDs.AsSlice(), nil
 }

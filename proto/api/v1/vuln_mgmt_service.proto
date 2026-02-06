@@ -50,24 +50,12 @@ message ImageVulnerabilitiesResponse {
       string location = 4;
       repeated Vulnerability vulnerabilities = 5;
     }
-    message Cluster {
-      message Namespace {
-        message Workload {
-          string name = 1;
-          string type = 2;
-        }
-        repeated Workload workloads = 1;
-      }
-      map<string, Namespace> namespaces = 1;
-    }
-    string sha = 1;
-    repeated string names = 2;
-    map<string, storage.ImageLayer> layers = 3;
-    repeated Component components = 4;
-    // Map of cluster names to cluster namespaces and workloads.
-    map<string, Cluster> clusters = 5;
+    repeated Component components = 1;
+    // List of workload IDs where this image is deployed.
+    repeated string workload_ids = 2;
   }
-  repeated Image images = 1;
+  // Map of image SHA to image vulnerability data.
+  map<string, Image> images = 1;
 }
 
 // VulnMgmtService APIs are used to manage workload vulnerabilities.

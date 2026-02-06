@@ -173,18 +173,6 @@
       "default": "UNSET",
       "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
     },
-    "ImageClusterNamespace": {
-      "type": "object",
-      "properties": {
-        "workloads": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/NamespaceWorkload"
-          }
-        }
-      }
-    },
     "ImageComponentVulnerability": {
       "type": "object",
       "properties": {
@@ -214,17 +202,6 @@
         }
       }
     },
-    "ImageVulnerabilitiesResponseImageCluster": {
-      "type": "object",
-      "properties": {
-        "namespaces": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/ImageClusterNamespace"
-          }
-        }
-      }
-    },
     "ImageVulnerabilitiesResponseImageComponent": {
       "type": "object",
       "properties": {
@@ -246,17 +223,6 @@
             "type": "object",
             "$ref": "#/definitions/ImageComponentVulnerability"
           }
-        }
-      }
-    },
-    "NamespaceWorkload": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "type": {
-          "type": "string"
         }
       }
     },
@@ -1710,32 +1676,17 @@
       "type": "object",
       "properties": {
         "images": {
-          "type": "array",
-          "items": {
-            "type": "object",
+          "type": "object",
+          "additionalProperties": {
             "$ref": "#/definitions/v1ImageVulnerabilitiesResponseImage"
-          }
+          },
+          "description": "Map of image SHA to image vulnerability data."
         }
       }
     },
     "v1ImageVulnerabilitiesResponseImage": {
       "type": "object",
       "properties": {
-        "sha": {
-          "type": "string"
-        },
-        "names": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "layers": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/storageImageLayer"
-          }
-        },
         "components": {
           "type": "array",
           "items": {
@@ -1743,12 +1694,12 @@
             "$ref": "#/definitions/ImageVulnerabilitiesResponseImageComponent"
           }
         },
-        "clusters": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/ImageVulnerabilitiesResponseImageCluster"
+        "workloadIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
           },
-          "description": "Map of cluster names to cluster namespaces and workloads."
+          "description": "List of workload IDs where this image is deployed."
         }
       }
     },

@@ -52,6 +52,23 @@ message ExportDeploymentResponse {
   storage.Deployment deployment = 1;
 }
 
+// GetWorkloadMetadataRequest requests reduced workload metadata for specified deployments.
+message GetWorkloadMetadataRequest {
+  repeated string workload_ids = 1;
+}
+
+// GetWorkloadMetadataResponse returns reduced workload metadata.
+message GetWorkloadMetadataResponse {
+  message Metadata {
+    string name = 1;
+    string type = 2;
+    string cluster = 3;
+    string namespace = 4;
+  }
+  // Map of workload ID to metadata.
+  map<string, Metadata> workloads = 1;
+}
+
 // DeploymentService APIs can be used to manage deployments.
 service DeploymentService {
   // GetDeployment returns a deployment given its ID.
@@ -86,5 +103,13 @@ service DeploymentService {
 
   rpc ExportDeployments(ExportDeploymentRequest) returns (stream ExportDeploymentResponse) {
     option (google.api.http) = {get: "/v1/export/deployments"};
+  }
+
+  // GetWorkloadMetadata returns reduced workload metadata (name, type, cluster, namespace) for specified workloads.
+  rpc GetWorkloadMetadata(GetWorkloadMetadataRequest) returns (GetWorkloadMetadataResponse) {
+    option (google.api.http) = {
+      post: "/v1/workloads/metadata"
+      body: "*"
+    };
   }
 }
