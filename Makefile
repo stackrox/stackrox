@@ -429,7 +429,7 @@ endif
 roxagent: roxagent-build
 
 .PHONY: cli-build
-cli-build: roxctl-build roxagent-build
+cli-build: roxctl-build
 
 .PHONY: cli-install
 cli-install: roxctl-install
@@ -491,7 +491,8 @@ main-build-nodeps:
 		migrator \
 		sensor/admission-control \
 		sensor/kubernetes \
-		sensor/upgrader
+		sensor/upgrader \
+		compliance/virtualmachines/roxagent
 ifndef CI
 	CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
