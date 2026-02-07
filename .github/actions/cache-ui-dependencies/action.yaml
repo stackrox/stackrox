@@ -1,5 +1,5 @@
 name: Cache UI Dependencies
-description: Cache UI Dependencies
+description: Cache UI Dependencies (restore-only for PRs, save on master or with ci-seed-cache label)
 inputs:
   lockFile:
     description: Where the package lock is written
@@ -8,11 +8,9 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Cache UI Dependencies
-      uses: actions/cache@v5
+    - name: Restore UI Dependencies
+      uses: actions/cache/restore@v4
       with:
         path: |
-          /github/home/.npm
-          /github/home/.cache/Cypress
-          /usr/local/share/.cache
-        key: npm-v2-${{ hashFiles(inputs.lockFile) }}
+          ui/apps/platform/node_modules
+        key: npm-v3-${{ hashFiles(inputs.lockFile) }}

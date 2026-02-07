@@ -13,45 +13,12 @@ die() {
 
 RACE="${RACE:-false}"
 
-x_defs=()
-x_def_errors=()
+# Generate version file instead of using ldflags for version info.
+# This improves Go build cache efficiency - only pkg/version/internal
+# needs recompilation when version changes, not the entire dependency graph.
+"${SCRIPT_DIR}/generate-version.sh"
 
-while read -r line || [[ -n "$line" ]]; do
-	if [[ "$line" =~ ^[[:space:]]*$ ]]; then
-		continue
-	elif [[ "$line" =~ ^([^[:space:]]+)[[:space:]]+(.*)[[:space:]]*$ ]]; then
-		var="${BASH_REMATCH[1]}"
-		def="${BASH_REMATCH[2]}"
-		eval "status_${var}=$(printf '%q' "$def")"
-	else
-		die "Malformed status.sh output line ${line}"
-	fi
-done < <(cd "${SCRIPT_DIR}/.."; ./status.sh)
-
-while read -r line || [[ -n "$line" ]]; do
-	if [[ "$line" =~ ^[[:space:]]*$ ]]; then
-		continue
-	elif [[ "$line" =~ ^([^:]+):([[:digit:]]+):[[:space:]]*(var[[:space:]]+)?([^[:space:]]+)[[:space:]].*//XDef:([^[:space:]]+)[[:space:]]*$ ]]; then
-		go_file="${BASH_REMATCH[1]}"
-		go_line="${BASH_REMATCH[2]}"
-		go_var="${BASH_REMATCH[4]}"
-		status_var="${BASH_REMATCH[5]}"
-
-		varname="status_${status_var}"
-		[[ -n "${!varname}" ]] || x_def_errors+=(
-			"Variable ${go_var} defined in ${go_file}:${go_line} references status var ${status_var} that is not part of the status.sh output"
-		)
-		go_package="$(cd "${SCRIPT_DIR}/.."; go list -e "./$(dirname "$go_file")")"
-
-		x_defs+=(-X "\"${go_package}.${go_var}=${!varname}\"")
-	fi
-done < <(git -C "${SCRIPT_DIR}/.." grep -n '//XDef:' -- '*.go')
-if [[ "${#x_def_errors[@]}" -gt 0 ]]; then
-	printf >&2 "%s\n" "${x_def_errors[@]}"
-	exit 1
-fi
-
-ldflags=("${x_defs[@]}")
+ldflags=()
 if [[ "$DEBUG_BUILD" != "yes" ]]; then
   ldflags+=(-s -w)
 fi

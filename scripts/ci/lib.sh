@@ -2335,29 +2335,21 @@ add_build_comment_to_pr() {
         return
     fi
 
-    # hub-comment is tied to Circle CI env
     local url
     url=$(jq -r '.html_url' <<<"$pr_details")
-    export CIRCLE_PULL_REQUEST="$url"
 
     local sha
     sha=$(jq -r '.head.sha' <<<"$pr_details")
     sha=${sha:0:7}
-    export _SHA="$sha"
 
     local tag
     tag=$(make tag)
-    export _TAG="$tag"
 
-    local tmpfile
-    tmpfile=$(mktemp)
-    cat > "$tmpfile" <<- EOT
-Images are ready for the commit at {{.Env._SHA}}.
+    gh pr comment "${url}" --body - <<EOT
+Images are ready for the commit at ${sha}.
 
-To use with deploy scripts, first \`export MAIN_IMAGE_TAG={{.Env._TAG}}\`.
+To use with deploy scripts, first \`export MAIN_IMAGE_TAG=${tag}\`.
 EOT
-
-    hub-comment -type build -template-file "$tmpfile"
 }
 
 is_system_test_without_images() {

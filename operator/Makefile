@@ -230,7 +230,16 @@ yq: $(YQ) ## Download yq.
 
 .PHONY: parent-proto-generate
 parent-proto-generate: ## Make sure ../generated directory has up-to-date content that this operator (transitively) depends upon.
+ifdef CI
+	@# In CI, proto-generated-srcs should already be committed. Skip regeneration if files exist.
+	@if [ -d "../generated" ] && [ "$$(ls -A ../generated 2>/dev/null)" ]; then \
+		echo "Skipping proto-generated-srcs in CI (files already exist)"; \
+	else \
+		$(MAKE) -C .. proto-generated-srcs; \
+	fi
+else
 	$(MAKE) -C .. proto-generated-srcs
+endif
 
 .PHONY: manifests
 manifests: parent-proto-generate controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
@@ -319,6 +328,10 @@ build-installer: manifests generate kustomize ## Generate a consolidated YAML wi
 
 .PHONY: build
 build: manifests generate fmt vet ## Build operator local binary.
+	../scripts/go-build-file.sh ./cmd/main.go bin/manager
+
+.PHONY: build-ci
+build-ci: ## Build operator binary without running manifests/generate (for CI after separate manifests step)
 	../scripts/go-build-file.sh ./cmd/main.go bin/manager
 
 .PHONY: smuggled-status-sh
@@ -472,8 +485,32 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
        bundle/manifests/rhacs-operator.clusterserviceversion.yaml
 	$(OPERATOR_SDK) bundle validate ./bundle --select-optional suite=operatorframework
 
+.PHONY: bundle-ci
+bundle-ci: yq kustomize operator-sdk ## Generate bundle (for CI after separate manifests step, skips manifests dependency)
+	rm -rf bundle
+	rm -rf config/manifests/bases && $(OPERATOR_SDK) generate kustomize manifests --input-dir=config/ui-metadata
+	cd config/scorecard-versioned && $(KUSTOMIZE) edit set image quay.io/operator-framework/scorecard-test=quay.io/operator-framework/scorecard-test:$(OPERATOR_SDK_VERSION)
+	rm -rf build/manifests
+	mkdir -p build/manifests
+	echo 'resources: [ "../../config/flavors/$(ROX_IMAGE_FLAVOR)", "../../config/manifests" ]' > build/manifests/kustomization.yaml
+	$(KUSTOMIZE) build build/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
+	$(YQ) -i '.metadata.annotations.createdAt = ""' bundle/manifests/rhacs-operator.clusterserviceversion.yaml
+	sed -i'.bak' -e '/operators\.operatorframework\.io\.bundle\.channel/d' bundle.Dockerfile
+	sed -i'.bak' -e '/# Copy files to locations specified by labels./d' bundle.Dockerfile
+	sed -i'.bak' -E -e '/^COPY .* \/(manifests|metadata|tests\/scorecard)\/$$/d' bundle.Dockerfile
+	rm -f bundle.Dockerfile.bak
+	cat bundle.Dockerfile.extra >> bundle.Dockerfile
+	set -euo pipefail ;\
+	$(ACTIVATE_PYTHON) ;\
+	bundle_helpers/fix-spec-descriptor-order.py \
+	  <bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
+	  >bundle/manifests/rhacs-operator.clusterserviceversion.yaml.fixed
+	mv bundle/manifests/rhacs-operator.clusterserviceversion.yaml.fixed \
+       bundle/manifests/rhacs-operator.clusterserviceversion.yaml
+# Skipping validation here - bundle-post-process validates the final result in build/bundle/
+
 .PHONY: bundle-post-process
-bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file to include correct operator versions, etc.
+bundle-post-process: operator-sdk ## Post-process CSV file to include correct operator versions, etc.
 	set -euo pipefail ;\
 	$(ACTIVATE_PYTHON) ;\
 	first_version=3.62.0 `# 3.62.0 is the first operator version ever released` ;\
@@ -500,8 +537,26 @@ bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file t
 # Check that the resulting bundle still passes validations.
 	$(OPERATOR_SDK) bundle validate ./build/bundle --select-optional suite=operatorframework
 
+.PHONY: bundle-post-process-ci
+bundle-post-process-ci: operator-sdk ## Post-process CSV for CI (assumes unreleased, skips network check)
+	set -euo pipefail ;\
+	$(ACTIVATE_PYTHON) ;\
+	first_version=3.62.0 ;\
+	./bundle_helpers/prepare-bundle-manifests.sh \
+		--use-version=$(VERSION) \
+		--first-version=$${first_version} \
+		--operator-image=$(IMG) \
+		--related-images-mode=omit \
+		--unreleased=$(VERSION)
+# Check that the resulting bundle still passes validations.
+	$(OPERATOR_SDK) bundle validate ./build/bundle --select-optional suite=operatorframework
+
 .PHONY: bundle-build
 bundle-build: bundle.Dockerfile bundle-post-process ## Build the bundle image.
+	docker build $(if $(DOCKER_BUILD_LOAD),--load) -f $< -t $(BUNDLE_IMG) .
+
+.PHONY: bundle-build-ci
+bundle-build-ci: bundle.Dockerfile bundle-post-process-ci ## Build the bundle image for CI (assumes unreleased)
 	docker build $(if $(DOCKER_BUILD_LOAD),--load) -f $< -t $(BUNDLE_IMG) .
 
 .PHONY: bundle-test
