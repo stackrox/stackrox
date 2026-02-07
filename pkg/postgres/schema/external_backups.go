@@ -39,5 +39,5 @@ const (
 // ExternalBackups holds the Gorm model for Postgres table `external_backups`.
 type ExternalBackups struct {
 	ID         string `gorm:"column:id;type:varchar;primaryKey"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	Serialized []byte `gorm:"column:serialized;type:jsonb"`
 }

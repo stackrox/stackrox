@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -101,7 +102,7 @@ func metricsSetCacheOperationDurationTime(start time.Time, op ops.Op) {
 
 func insertIntoCloudSources(batch *pgx.Batch, obj *storage.CloudSource) error {
 
-	serialized, marshalErr := obj.MarshalVT()
+	serialized, marshalErr := protojson.Marshal(obj)
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -152,7 +153,7 @@ func copyFromCloudSources(ctx context.Context, s pgSearch.Deleter, tx *postgres.
 		obj := objs[idx]
 		idx++
 
-		serialized, marshalErr := obj.MarshalVT()
+		serialized, marshalErr := protojson.Marshal(obj)
 		if marshalErr != nil {
 			return nil, marshalErr
 		}

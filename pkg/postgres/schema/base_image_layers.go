@@ -58,5 +58,5 @@ type BaseImageLayers struct {
 	ID          string `gorm:"column:id;type:uuid;primaryKey"`
 	LayerDigest string `gorm:"column:layerdigest;type:varchar;uniqueIndex:base_image_id_layer"`
 	Index       int32  `gorm:"column:index;type:integer"`
-	Serialized  []byte `gorm:"column:serialized;type:bytea"`
+	Serialized  []byte `gorm:"column:serialized;type:jsonb"`
 }

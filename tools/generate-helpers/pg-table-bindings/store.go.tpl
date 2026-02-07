@@ -29,6 +29,7 @@ import (
     "github.com/stackrox/rox/pkg/postgres"
     "github.com/stackrox/rox/pkg/protocompat"
     "github.com/stackrox/rox/pkg/sac"
+    "google.golang.org/protobuf/encoding/protojson"
 	"github.com/stackrox/rox/pkg/sac/resources"
     "github.com/stackrox/rox/pkg/search"
     pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -214,7 +215,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 {{- $schema := .schema }}
 func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
     {{if not $schema.Parent }}
-    serialized, marshalErr := obj.MarshalVT()
+    serialized, marshalErr := protojson.Marshal(obj)
     if marshalErr != nil {
         return marshalErr
     }
@@ -291,7 +292,7 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
         idx++
 
         {{if not $schema.Parent }}
-        serialized, marshalErr := obj.MarshalVT()
+        serialized, marshalErr := protojson.Marshal(obj)
         if marshalErr != nil {
             return nil, marshalErr
         }

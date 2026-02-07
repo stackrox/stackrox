@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -92,7 +93,7 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 
 func insertIntoTestChild1(batch *pgx.Batch, obj *storage.TestChild1) error {
 
-	serialized, marshalErr := obj.MarshalVT()
+	serialized, marshalErr := protojson.Marshal(obj)
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -141,7 +142,7 @@ func copyFromTestChild1(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx
 		obj := objs[idx]
 		idx++
 
-		serialized, marshalErr := obj.MarshalVT()
+		serialized, marshalErr := protojson.Marshal(obj)
 		if marshalErr != nil {
 			return nil, marshalErr
 		}

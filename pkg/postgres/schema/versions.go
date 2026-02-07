@@ -46,5 +46,5 @@ type Versions struct {
 	Version       string     `gorm:"column:version;type:varchar"`
 	LastPersisted *time.Time `gorm:"column:lastpersisted;type:timestamp"`
 	MinSeqNum     int32      `gorm:"column:minseqnum;type:integer"`
-	Serialized    []byte     `gorm:"column:serialized;type:bytea"`
+	Serialized    []byte     `gorm:"column:serialized;type:jsonb"`
 }

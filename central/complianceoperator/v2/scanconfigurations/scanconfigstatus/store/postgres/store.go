@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -115,7 +116,7 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 
 func insertIntoComplianceOperatorClusterScanConfigStatuses(batch *pgx.Batch, obj *storage.ComplianceOperatorClusterScanConfigStatus) error {
 
-	serialized, marshalErr := obj.MarshalVT()
+	serialized, marshalErr := protojson.Marshal(obj)
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -168,7 +169,7 @@ func copyFromComplianceOperatorClusterScanConfigStatuses(ctx context.Context, s 
 		obj := objs[idx]
 		idx++
 
-		serialized, marshalErr := obj.MarshalVT()
+		serialized, marshalErr := protojson.Marshal(obj)
 		if marshalErr != nil {
 			return nil, marshalErr
 		}

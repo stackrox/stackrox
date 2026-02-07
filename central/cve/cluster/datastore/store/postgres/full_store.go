@@ -17,6 +17,7 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"google.golang.org/protobuf/encoding/protojson"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -166,7 +167,7 @@ func copyFromCVEs(ctx context.Context, tx *postgres.Tx, iTime time.Time, objs ..
 				obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
 			}
 
-			serialized, marshalErr := obj.MarshalVT()
+			serialized, marshalErr := protojson.Marshal(obj)
 			if marshalErr != nil {
 				return marshalErr
 			}
@@ -240,7 +241,7 @@ func copyFromClusterCVEEdges(ctx context.Context, tx *postgres.Tx, cveType stora
 		for _, obj := range objBatch {
 			oldEdges.Remove(obj.GetId())
 
-			serialized, marshalErr := obj.MarshalVT()
+			serialized, marshalErr := protojson.Marshal(obj)
 			if marshalErr != nil {
 				return marshalErr
 			}
@@ -294,7 +295,7 @@ func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]
 			return nil, err
 		}
 		msg := &storage.ClusterCVE{}
-		if err := msg.UnmarshalVTUnsafe(data); err != nil {
+		if err := protojson.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		idToCVEMap[msg.GetId()] = msg

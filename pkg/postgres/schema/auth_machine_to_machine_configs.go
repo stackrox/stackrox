@@ -55,7 +55,7 @@ const (
 type AuthMachineToMachineConfigs struct {
 	ID         string `gorm:"column:id;type:uuid;primaryKey"`
 	Issuer     string `gorm:"column:issuer;type:varchar;unique"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	Serialized []byte `gorm:"column:serialized;type:jsonb"`
 }
 
 // AuthMachineToMachineConfigsMappings holds the Gorm model for Postgres table `auth_machine_to_machine_configs_mappings`.

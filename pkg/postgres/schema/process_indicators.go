@@ -66,5 +66,5 @@ type ProcessIndicators struct {
 	ClusterID          string     `gorm:"column:clusterid;type:uuid;index:processindicators_sac_filter,type:btree"`
 	Namespace          string     `gorm:"column:namespace;type:varchar;index:processindicators_sac_filter,type:btree"`
 	ContainerStartTime *time.Time `gorm:"column:containerstarttime;type:timestamp"`
-	Serialized         []byte     `gorm:"column:serialized;type:bytea"`
+	Serialized         []byte     `gorm:"column:serialized;type:jsonb"`
 }

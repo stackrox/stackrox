@@ -3,11 +3,12 @@ package schema
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // ConvertTestGrandChild1FromProto converts a `*storage.TestGrandChild1` to Gorm model
 func ConvertTestGrandChild1FromProto(obj *storage.TestGrandChild1) (*TestGrandChild1, error) {
-	serialized, err := obj.MarshalVT()
+	serialized, err := protojson.Marshal(obj)
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +25,7 @@ func ConvertTestGrandChild1FromProto(obj *storage.TestGrandChild1) (*TestGrandCh
 // ConvertTestGrandChild1ToProto converts Gorm model `TestGrandChild1` to its protobuf type object
 func ConvertTestGrandChild1ToProto(m *TestGrandChild1) (*storage.TestGrandChild1, error) {
 	var msg storage.TestGrandChild1
-	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
+	if err := protojson.Unmarshal(m.Serialized, &msg); err != nil {
 		return nil, err
 	}
 	return &msg, nil
