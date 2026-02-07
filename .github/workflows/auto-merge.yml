@@ -5,26 +5,24 @@ on:
     types:
     - labeled
 
-jobs:
-  auto-merge-minor:
-    name: Auto-merge semver minor and patch bumps
-    runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]' && github.event.label.name == 'auto-merge'
-    steps:
-    - uses: ahmadnassri/action-dependabot-auto-merge@v2.6
-      with:
-        github-token: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
-        command: "squash and merge"
-        approve: true
-        target: minor
+permissions:
+  pull-requests: write
+  contents: write
 
-  auto-merge-any:
-    name: Auto-merge any version bumps
+jobs:
+  auto-merge:
+    name: Auto-merge Dependabot PRs
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]' && github.event.label.name == 'auto-merge-any'
+    if: github.actor == 'dependabot[bot]' && (github.event.label.name == 'auto-merge' || github.event.label.name == 'auto-merge-any')
     steps:
-    - uses: ahmadnassri/action-dependabot-auto-merge@v2.6
-      with:
-        github-token: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
-        command: "squash and merge"
-        approve: true
+    - name: Dependabot metadata
+      id: dependabot-metadata
+      uses: dependabot/fetch-metadata@v2
+    - name: Enable auto-merge for Dependabot PRs
+      if: ${{ github.event.label.name == 'auto-merge-any' || steps.dependabot-metadata.outputs.update-type == 'version-update:semver-minor' || steps.dependabot-metadata.outputs.update-type == 'version-update:semver-patch' }}
+      run: |
+        gh pr review --approve "$PR_URL"
+        gh pr merge --squash --auto "$PR_URL"
+      env:
+        PR_URL: ${{github.event.pull_request.html_url}}
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
