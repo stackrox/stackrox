@@ -19,7 +19,13 @@ import (
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/printer"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
+
+const authOptionsListMessage = `  - Use the --password flag or set the ROX_ADMIN_PASSWORD environment variable
+  - Use the --token-file flag and point to a file containing your API token
+  - Set the ROX_API_TOKEN environment variable with your API token
+  - Run "roxctl central login" to save credentials (requires writable home directory)`
 
 type cliEnvironmentImpl struct {
 	io              cliIO.IO
@@ -143,12 +149,57 @@ func (w colorWriter) Write(p []byte) (int, error) {
 }
 
 func determineAuthMethod(cliEnv Environment) (auth.Method, error) {
-	if method, err := determineAuthMethodExt(
+	// First check if explicit auth was provided (password, token-file, or ROX_API_TOKEN)
+	explicitMethod, err := determineAuthMethodExt(
 		flags.APITokenFileChanged(), flags.PasswordChanged(),
-		flags.APITokenFile() == "", flags.Password() == "", env.TokenEnv.Setting() == ""); method != nil || err != nil {
-		return method, err
+		flags.APITokenFile() == "", flags.Password() == "", env.TokenEnv.Setting() == "")
+
+	if err != nil {
+		return nil, err
 	}
-	return ConfigMethod(cliEnv), nil
+
+	if explicitMethod != nil {
+		return explicitMethod, nil
+	}
+
+	// No explicit auth was provided - fall back to saved credentials from "roxctl central login"
+	// Wrap ConfigMethod to provide helpful guidance if it fails
+	return &configMethodWithGuidance{
+		wrapped: ConfigMethod(cliEnv),
+	}, nil
+}
+
+// configMethodWithGuidance wraps ConfigMethod to provide helpful error messages
+// when no explicit authentication was provided and saved credentials fail to load
+type configMethodWithGuidance struct {
+	wrapped auth.Method
+}
+
+func (c *configMethodWithGuidance) Type() string {
+	return c.wrapped.Type()
+}
+
+func (c *configMethodWithGuidance) GetCredentials(url string) (credentials.PerRPCCredentials, error) {
+	creds, err := c.wrapped.GetCredentials(url)
+	if err == nil {
+		return creds, nil
+	}
+
+	// Check if this is already a NoCredentials error (from auth_config.go when no saved credentials exist)
+	if errors.Is(err, errox.NoCredentials) {
+		// Preserve the URL from the original error while providing full auth options
+		// (avoiding duplication of "roxctl central login" message from the original error)
+		return nil, errox.NoCredentials.Newf(
+			"no credentials found for %s. Please provide authentication using one of the following methods:\n%s",
+			url, authOptionsListMessage)
+	}
+
+	// Some other error occurred (filesystem permissions, config parsing, etc.)
+	// Provide context that no explicit auth was provided and suggest alternatives
+	return nil, errors.Wrapf(err,
+		"no explicit authentication credentials were provided, and failed to retrieve saved credentials from roxctl config."+
+			" Provide authentication using one of the following methods:\n%s",
+		authOptionsListMessage)
 }
 
 func determineAuthMethodExt(tokenFileChanged, passwordChanged, tokenFileNameEmpty, passwordEmpty, tokenEmpty bool) (auth.Method, error) {
