@@ -4,7 +4,35 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
+)
+
+var (
+	// defaultResourcesEnforcementDisabled defines resource requirements when enforcement is disabled.
+	defaultResourcesEnforcementDisabled = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("100Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+			corev1.ResourceMemory: resource.MustParse("500Mi"),
+		},
+	}
+
+	// defaultResourcesEnforcementEnabled defines increased resource requirements when enforcement is enabled.
+	defaultResourcesEnforcementEnabled = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("200m"),
+			corev1.ResourceMemory: resource.MustParse("500Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("1"),
+			corev1.ResourceMemory: resource.MustParse("1Gi"),
+		},
+	}
 )
 
 const (
@@ -101,5 +129,33 @@ func securedClusterAdmissionControllerDefaulting(logger logr.Logger, status *pla
 		}
 	}
 
+	// Set resource defaults based on enforcement status.
+	setAdmissionControllerResourceDefaults(spec, defaults)
+
 	return nil
+}
+
+// setAdmissionControllerResourceDefaults sets default resource requirements for the admission controller
+// based on the enforcement status. Higher resources are allocated when enforcement is enabled.
+func setAdmissionControllerResourceDefaults(spec *platform.SecuredClusterSpec, defaults *platform.SecuredClusterSpec) {
+	// Skip if user has explicitly set resources in the spec.
+	if spec.AdmissionControl != nil && spec.AdmissionControl.Resources != nil {
+		return
+	}
+
+	// Determine enforcement status. Check spec first (user's explicit setting), then use computed defaults.
+	var enforcement platform.PolicyEnforcement
+	if spec.AdmissionControl != nil && spec.AdmissionControl.Enforcement != nil {
+		enforcement = *spec.AdmissionControl.Enforcement
+	} else {
+		// Computed defaults are guaranteed to be set by green/brown field defaulting functions.
+		enforcement = *defaults.AdmissionControl.Enforcement
+	}
+
+	// Set default resources based on enforcement status.
+	if enforcement == platform.PolicyEnforcementEnabled {
+		defaults.AdmissionControl.Resources = defaultResourcesEnforcementEnabled.DeepCopy()
+	} else {
+		defaults.AdmissionControl.Resources = defaultResourcesEnforcementDisabled.DeepCopy()
+	}
 }
