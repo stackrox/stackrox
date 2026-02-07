@@ -13,6 +13,8 @@ tests:
     env.openshift: 4
   values:
     admissionControl:
+      dynamic:
+        enforceOnCreates: true
       listenOnEvents: true
       listenOnCreates: true
       listenOnUpdates: true
@@ -26,6 +28,8 @@ tests:
     .validatingwebhookconfigurations[].webhooks[].admissionReviewVersions | assertThat(sort == ["v1", "v1beta1"])
   values:
     admissionControl:
+      dynamic:
+        enforceOnCreates: true
       listenOnCreates: true
       listenOnEvents: true
   tests:
@@ -46,6 +50,8 @@ tests:
     env.openshift: 3
   values:
     admissionControl:
+      dynamic:
+        enforceOnCreates: true
       listenOnCreates: true
   expect: |
     .validatingwebhookconfigurations[].apiVersion | assertThat(. == "admissionregistration.k8s.io/v1beta1")
@@ -112,6 +118,8 @@ tests:
     - name: "default namespace selector"
       values:
         admissionControl:
+          dynamic:
+            enforceOnCreates: true
           listenOnCreates: true
           listenOnEvents: false
       expect: |
@@ -119,6 +127,8 @@ tests:
     - name: "override namespace selector"
       values:
         admissionControl:
+          dynamic:
+            enforceOnCreates: true
           listenOnCreates: true
           listenOnEvents: false
           namespaceSelector:
@@ -142,6 +152,8 @@ tests:
     - name: "default failure policy ignore"
       values:
         admissionControl:
+          dynamic:
+            enforceOnCreates: true
           listenOnCreates: true
           listenOnEvents: false
       expect: |
@@ -150,6 +162,8 @@ tests:
     - name: "override failurePolicy to fail"
       values:
         admissionControl:
+          dynamic:
+            enforceOnCreates: true
           listenOnCreates: true
           listenOnEvents: false
           failurePolicy: "Fail"

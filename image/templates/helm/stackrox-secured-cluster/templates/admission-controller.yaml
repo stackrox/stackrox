@@ -189,11 +189,8 @@ metadata:
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "validatingwebhookconfiguration" "stackrox") | nindent 4 }}
-{{- if not (or ._rox.admissionControl.listenOnEvents ._rox.admissionControl.listenOnCreates ._rox.admissionControl.listenOnUpdates) }}
-webhooks: []
-{{- else }}
 webhooks:
-  {{- if or ._rox.admissionControl.listenOnCreates ._rox.admissionControl.listenOnUpdates }}
+  {{- if or ._rox.admissionControl.dynamic.enforceOnCreates ._rox.admissionControl.dynamic.enforceOnUpdates }}
   - name: policyeval.stackrox.io
     {{- if ne ._rox.env.openshift 3 }}
     sideEffects: NoneOnDryRun
@@ -206,12 +203,8 @@ webhooks:
         apiVersions:
         - '*'
         operations:
-        {{- if ._rox.admissionControl.listenOnCreates }}
         - CREATE
-        {{- end }}
-        {{- if ._rox.admissionControl.listenOnUpdates }}
         - UPDATE
-        {{- end }}
         resources:
           - pods
           - deployments
@@ -273,4 +266,3 @@ webhooks:
         name: admission-control
         path: /events
   {{- end }}
-{{- end }}

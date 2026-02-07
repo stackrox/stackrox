@@ -102,7 +102,14 @@ func filterOutNoScanAlerts(alerts []*storage.Alert) []*storage.Alert {
 }
 
 func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionRequest) (*admission.AdmissionResponse, error) {
-	log.Debugf("Evaluating request %+v", req)
+	log.Debugf(
+		"Evaluating admission request (uid=%s, ns=%s, name=%s, op=%s, kind=%s)",
+		req.UID,
+		req.Namespace,
+		req.Name,
+		string(req.Operation),
+		req.Kind.String(),
+	)
 
 	if m.shouldBypass(s, req) {
 		return pass(req.UID), nil
