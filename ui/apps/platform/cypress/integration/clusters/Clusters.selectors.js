@@ -7,9 +7,9 @@ export const selectors = {
         // Ignore the first checkbox column and last delete column.
         tableDataCell: '.rt-tr-group:not(.hidden) .rt-td:not(:first-child):not(.hidden)',
     },
-    clusterForm: scopeSelectors('[data-testid="cluster-form"]', {
-        nameInput: 'input[name="name"]',
-    }),
+    clusterForm: {
+        nameInput: `.pf-v5-c-form__group-label:contains("Cluster name") + .pf-v5-c-form__group-control input`,
+    },
     clusterHealth: scopeSelectors(clusterPageSelector, {
         clusterStatus: '[data-testid="clusterStatus"]',
         sensorStatus: '[data-testid="sensorStatus"]',
