@@ -2,7 +2,6 @@ package csaf
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -12,12 +11,12 @@ import (
 	"time"
 
 	"github.com/klauspost/compress/snappy"
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/test"
 	"github.com/stackrox/rox/pkg/scannerv4/enricher/csaf"
 )
 
 func TestParseEnrichment(t *testing.T) {
-	ctx := context.Background()
+	ctx := test.Logging(t)
 	url, err := url.Parse(baseURL)
 	if err != nil {
 		t.Error(err)
@@ -65,7 +64,7 @@ func TestParseEnrichment(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t, ctx)
 			f, err := os.Open(tc.filename)
 			if err != nil {
 				t.Fatalf("failed to open test data file %s: %v", tc.filename, err)

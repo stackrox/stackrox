@@ -3,16 +3,16 @@
 package postgres
 
 import (
-	"context"
 	"testing"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDistributions(t *testing.T) {
-	ctx := context.Background()
+	ctx := test.Logging(t)
 	pool := testDB(t, ctx, "distributions_test")
 	store, err := InitPostgresMatcherStore(ctx, pool, true)
 	require.NoError(t, err)
