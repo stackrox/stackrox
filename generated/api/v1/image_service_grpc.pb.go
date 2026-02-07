@@ -34,6 +34,7 @@ const (
 	ImageService_UnwatchImage_FullMethodName                    = "/v1.ImageService/UnwatchImage"
 	ImageService_GetWatchedImages_FullMethodName                = "/v1.ImageService/GetWatchedImages"
 	ImageService_ExportImages_FullMethodName                    = "/v1.ImageService/ExportImages"
+	ImageService_GetImageMetadata_FullMethodName                = "/v1.ImageService/GetImageMetadata"
 )
 
 // ImageServiceClient is the client API for ImageService service.
@@ -75,6 +76,8 @@ type ImageServiceClient interface {
 	// being watched.
 	GetWatchedImages(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetWatchedImagesResponse, error)
 	ExportImages(ctx context.Context, in *ExportImageRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExportImageResponse], error)
+	// GetImageMetadata returns reduced image metadata (names and layers) for specified images.
+	GetImageMetadata(ctx context.Context, in *GetImageMetadataRequest, opts ...grpc.CallOption) (*GetImageMetadataResponse, error)
 }
 
 type imageServiceClient struct {
@@ -235,6 +238,16 @@ func (c *imageServiceClient) ExportImages(ctx context.Context, in *ExportImageRe
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type ImageService_ExportImagesClient = grpc.ServerStreamingClient[ExportImageResponse]
 
+func (c *imageServiceClient) GetImageMetadata(ctx context.Context, in *GetImageMetadataRequest, opts ...grpc.CallOption) (*GetImageMetadataResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetImageMetadataResponse)
+	err := c.cc.Invoke(ctx, ImageService_GetImageMetadata_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ImageServiceServer is the server API for ImageService service.
 // All implementations should embed UnimplementedImageServiceServer
 // for forward compatibility.
@@ -274,6 +287,8 @@ type ImageServiceServer interface {
 	// being watched.
 	GetWatchedImages(context.Context, *Empty) (*GetWatchedImagesResponse, error)
 	ExportImages(*ExportImageRequest, grpc.ServerStreamingServer[ExportImageResponse]) error
+	// GetImageMetadata returns reduced image metadata (names and layers) for specified images.
+	GetImageMetadata(context.Context, *GetImageMetadataRequest) (*GetImageMetadataResponse, error)
 }
 
 // UnimplementedImageServiceServer should be embedded to have
@@ -324,6 +339,9 @@ func (UnimplementedImageServiceServer) GetWatchedImages(context.Context, *Empty)
 }
 func (UnimplementedImageServiceServer) ExportImages(*ExportImageRequest, grpc.ServerStreamingServer[ExportImageResponse]) error {
 	return status.Error(codes.Unimplemented, "method ExportImages not implemented")
+}
+func (UnimplementedImageServiceServer) GetImageMetadata(context.Context, *GetImageMetadataRequest) (*GetImageMetadataResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetImageMetadata not implemented")
 }
 func (UnimplementedImageServiceServer) testEmbeddedByValue() {}
 
@@ -590,6 +608,24 @@ func _ImageService_ExportImages_Handler(srv interface{}, stream grpc.ServerStrea
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type ImageService_ExportImagesServer = grpc.ServerStreamingServer[ExportImageResponse]
 
+func _ImageService_GetImageMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetImageMetadataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ImageServiceServer).GetImageMetadata(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ImageService_GetImageMetadata_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ImageServiceServer).GetImageMetadata(ctx, req.(*GetImageMetadataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ImageService_ServiceDesc is the grpc.ServiceDesc for ImageService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -648,6 +684,10 @@ var ImageService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetWatchedImages",
 			Handler:    _ImageService_GetWatchedImages_Handler,
+		},
+		{
+			MethodName: "GetImageMetadata",
+			Handler:    _ImageService_GetImageMetadata_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

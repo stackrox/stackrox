@@ -1116,6 +1116,100 @@ func (x *ExportImageResponse) GetImage() *storage.Image {
 	return nil
 }
 
+// GetImageMetadataRequest requests reduced image metadata (names and layers) for specified images.
+type GetImageMetadataRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Map of image SHA to list of requested layer SHAs for that image.
+	// If layer SHAs list is empty for an image, all layers are included.
+	// If the map is empty, all images are returned.
+	Images        map[string]*GetImageMetadataRequest_LayerSHAs `protobuf:"bytes,1,rep,name=images,proto3" json:"images,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetImageMetadataRequest) Reset() {
+	*x = GetImageMetadataRequest{}
+	mi := &file_api_v1_image_service_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetImageMetadataRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetImageMetadataRequest) ProtoMessage() {}
+
+func (x *GetImageMetadataRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_image_service_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetImageMetadataRequest.ProtoReflect.Descriptor instead.
+func (*GetImageMetadataRequest) Descriptor() ([]byte, []int) {
+	return file_api_v1_image_service_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *GetImageMetadataRequest) GetImages() map[string]*GetImageMetadataRequest_LayerSHAs {
+	if x != nil {
+		return x.Images
+	}
+	return nil
+}
+
+// GetImageMetadataResponse returns reduced image metadata (names and layers).
+type GetImageMetadataResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Map of image SHA to metadata.
+	Images        map[string]*GetImageMetadataResponse_Metadata `protobuf:"bytes,1,rep,name=images,proto3" json:"images,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetImageMetadataResponse) Reset() {
+	*x = GetImageMetadataResponse{}
+	mi := &file_api_v1_image_service_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetImageMetadataResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetImageMetadataResponse) ProtoMessage() {}
+
+func (x *GetImageMetadataResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_image_service_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetImageMetadataResponse.ProtoReflect.Descriptor instead.
+func (*GetImageMetadataResponse) Descriptor() ([]byte, []int) {
+	return file_api_v1_image_service_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *GetImageMetadataResponse) GetImages() map[string]*GetImageMetadataResponse_Metadata {
+	if x != nil {
+		return x.Images
+	}
+	return nil
+}
+
 type ScanImageInternalRequest_Source struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	ClusterId        string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
@@ -1127,7 +1221,7 @@ type ScanImageInternalRequest_Source struct {
 
 func (x *ScanImageInternalRequest_Source) Reset() {
 	*x = ScanImageInternalRequest_Source{}
-	mi := &file_api_v1_image_service_proto_msgTypes[18]
+	mi := &file_api_v1_image_service_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1139,7 +1233,7 @@ func (x *ScanImageInternalRequest_Source) String() string {
 func (*ScanImageInternalRequest_Source) ProtoMessage() {}
 
 func (x *ScanImageInternalRequest_Source) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_image_service_proto_msgTypes[18]
+	mi := &file_api_v1_image_service_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1186,7 +1280,7 @@ type ScanImageInternalResponseDetails_TooManyParallelScans struct {
 
 func (x *ScanImageInternalResponseDetails_TooManyParallelScans) Reset() {
 	*x = ScanImageInternalResponseDetails_TooManyParallelScans{}
-	mi := &file_api_v1_image_service_proto_msgTypes[19]
+	mi := &file_api_v1_image_service_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1198,7 +1292,7 @@ func (x *ScanImageInternalResponseDetails_TooManyParallelScans) String() string 
 func (*ScanImageInternalResponseDetails_TooManyParallelScans) ProtoMessage() {}
 
 func (x *ScanImageInternalResponseDetails_TooManyParallelScans) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_image_service_proto_msgTypes[19]
+	mi := &file_api_v1_image_service_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1212,6 +1306,102 @@ func (x *ScanImageInternalResponseDetails_TooManyParallelScans) ProtoReflect() p
 // Deprecated: Use ScanImageInternalResponseDetails_TooManyParallelScans.ProtoReflect.Descriptor instead.
 func (*ScanImageInternalResponseDetails_TooManyParallelScans) Descriptor() ([]byte, []int) {
 	return file_api_v1_image_service_proto_rawDescGZIP(), []int{15, 0}
+}
+
+type GetImageMetadataRequest_LayerSHAs struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Shas          []string               `protobuf:"bytes,1,rep,name=shas,proto3" json:"shas,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetImageMetadataRequest_LayerSHAs) Reset() {
+	*x = GetImageMetadataRequest_LayerSHAs{}
+	mi := &file_api_v1_image_service_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetImageMetadataRequest_LayerSHAs) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetImageMetadataRequest_LayerSHAs) ProtoMessage() {}
+
+func (x *GetImageMetadataRequest_LayerSHAs) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_image_service_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetImageMetadataRequest_LayerSHAs.ProtoReflect.Descriptor instead.
+func (*GetImageMetadataRequest_LayerSHAs) Descriptor() ([]byte, []int) {
+	return file_api_v1_image_service_proto_rawDescGZIP(), []int{18, 0}
+}
+
+func (x *GetImageMetadataRequest_LayerSHAs) GetShas() []string {
+	if x != nil {
+		return x.Shas
+	}
+	return nil
+}
+
+type GetImageMetadataResponse_Metadata struct {
+	state         protoimpl.MessageState         `protogen:"open.v1"`
+	Names         []string                       `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
+	Layers        map[string]*storage.ImageLayer `protobuf:"bytes,2,rep,name=layers,proto3" json:"layers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetImageMetadataResponse_Metadata) Reset() {
+	*x = GetImageMetadataResponse_Metadata{}
+	mi := &file_api_v1_image_service_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetImageMetadataResponse_Metadata) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetImageMetadataResponse_Metadata) ProtoMessage() {}
+
+func (x *GetImageMetadataResponse_Metadata) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_image_service_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetImageMetadataResponse_Metadata.ProtoReflect.Descriptor instead.
+func (*GetImageMetadataResponse_Metadata) Descriptor() ([]byte, []int) {
+	return file_api_v1_image_service_proto_rawDescGZIP(), []int{19, 0}
+}
+
+func (x *GetImageMetadataResponse_Metadata) GetNames() []string {
+	if x != nil {
+		return x.Names
+	}
+	return nil
+}
+
+func (x *GetImageMetadataResponse_Metadata) GetLayers() map[string]*storage.ImageLayer {
+	if x != nil {
+		return x.Layers
+	}
+	return nil
 }
 
 var File_api_v1_image_service_proto protoreflect.FileDescriptor
@@ -1309,7 +1499,26 @@ const file_api_v1_image_service_proto_rawDesc = "" +
 	"\atimeout\x18\x01 \x01(\x05R\atimeout\x12\x14\n" +
 	"\x05query\x18\x02 \x01(\tR\x05query\";\n" +
 	"\x13ExportImageResponse\x12$\n" +
-	"\x05image\x18\x01 \x01(\v2\x0e.storage.ImageR\x05image2\xce\t\n" +
+	"\x05image\x18\x01 \x01(\v2\x0e.storage.ImageR\x05image\"\xdd\x01\n" +
+	"\x17GetImageMetadataRequest\x12?\n" +
+	"\x06images\x18\x01 \x03(\v2'.v1.GetImageMetadataRequest.ImagesEntryR\x06images\x1a\x1f\n" +
+	"\tLayerSHAs\x12\x12\n" +
+	"\x04shas\x18\x01 \x03(\tR\x04shas\x1a`\n" +
+	"\vImagesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12;\n" +
+	"\x05value\x18\x02 \x01(\v2%.v1.GetImageMetadataRequest.LayerSHAsR\x05value:\x028\x01\"\xfc\x02\n" +
+	"\x18GetImageMetadataResponse\x12@\n" +
+	"\x06images\x18\x01 \x03(\v2(.v1.GetImageMetadataResponse.ImagesEntryR\x06images\x1a\xbb\x01\n" +
+	"\bMetadata\x12\x14\n" +
+	"\x05names\x18\x01 \x03(\tR\x05names\x12I\n" +
+	"\x06layers\x18\x02 \x03(\v21.v1.GetImageMetadataResponse.Metadata.LayersEntryR\x06layers\x1aN\n" +
+	"\vLayersEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12)\n" +
+	"\x05value\x18\x02 \x01(\v2\x13.storage.ImageLayerR\x05value:\x028\x01\x1a`\n" +
+	"\vImagesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12;\n" +
+	"\x05value\x18\x02 \x01(\v2%.v1.GetImageMetadataResponse.MetadataR\x05value:\x028\x012\xbd\n" +
+	"\n" +
 	"\fImageService\x12H\n" +
 	"\bGetImage\x12\x13.v1.GetImageRequest\x1a\x0e.storage.Image\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/images/{id}\x12M\n" +
 	"\vCountImages\x12\f.v1.RawQuery\x1a\x17.v1.CountImagesResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/v1/imagescount\x12F\n" +
@@ -1328,7 +1537,8 @@ const file_api_v1_image_service_proto_rawDesc = "" +
 	"WatchImage\x12\x15.v1.WatchImageRequest\x1a\x16.v1.WatchImageResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/v1/watchedimages\x12M\n" +
 	"\fUnwatchImage\x12\x17.v1.UnwatchImageRequest\x1a\t.v1.Empty\"\x19\x82\xd3\xe4\x93\x02\x13*\x11/v1/watchedimages\x12V\n" +
 	"\x10GetWatchedImages\x12\t.v1.Empty\x1a\x1c.v1.GetWatchedImagesResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/watchedimages\x12\\\n" +
-	"\fExportImages\x12\x16.v1.ExportImageRequest\x1a\x17.v1.ExportImageResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/export/images0\x01B'\n" +
+	"\fExportImages\x12\x16.v1.ExportImageRequest\x1a\x17.v1.ExportImageResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/export/images0\x01\x12m\n" +
+	"\x10GetImageMetadata\x12\x1b.v1.GetImageMetadataRequest\x1a\x1c.v1.GetImageMetadataResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/images/metadataB'\n" +
 	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x02b\x06proto3"
 
 var (
@@ -1344,7 +1554,7 @@ func file_api_v1_image_service_proto_rawDescGZIP() []byte {
 }
 
 var file_api_v1_image_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_api_v1_image_service_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_api_v1_image_service_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_api_v1_image_service_proto_goTypes = []any{
 	(WatchImageResponse_ErrorType)(0),                             // 0: v1.WatchImageResponse.ErrorType
 	(*GetImageRequest)(nil),                                       // 1: v1.GetImageRequest
@@ -1365,75 +1575,91 @@ var file_api_v1_image_service_proto_goTypes = []any{
 	(*ScanImageInternalResponseDetails)(nil),                      // 16: v1.ScanImageInternalResponseDetails
 	(*ExportImageRequest)(nil),                                    // 17: v1.ExportImageRequest
 	(*ExportImageResponse)(nil),                                   // 18: v1.ExportImageResponse
-	(*ScanImageInternalRequest_Source)(nil),                       // 19: v1.ScanImageInternalRequest.Source
-	(*ScanImageInternalResponseDetails_TooManyParallelScans)(nil), // 20: v1.ScanImageInternalResponseDetails.TooManyParallelScans
-	(*storage.ListImage)(nil),                                     // 21: storage.ListImage
-	(*storage.ContainerImage)(nil),                                // 22: storage.ContainerImage
-	(*storage.Image)(nil),                                         // 23: storage.Image
-	(*storage.ImageName)(nil),                                     // 24: storage.ImageName
-	(*storage.ImageMetadata)(nil),                                 // 25: storage.ImageMetadata
-	(*v1.Components)(nil),                                         // 26: scannerV1.Components
-	(v1.Note)(0),                                                  // 27: scannerV1.Note
-	(*storage.ImageSignature)(nil),                                // 28: storage.ImageSignature
-	(storage.Image_Note)(0),                                       // 29: storage.Image.Note
-	(*v4.Contents)(nil),                                           // 30: scanner.v4.Contents
-	(*RawQuery)(nil),                                              // 31: v1.RawQuery
-	(*storage.WatchedImage)(nil),                                  // 32: storage.WatchedImage
-	(*Empty)(nil),                                                 // 33: v1.Empty
+	(*GetImageMetadataRequest)(nil),                               // 19: v1.GetImageMetadataRequest
+	(*GetImageMetadataResponse)(nil),                              // 20: v1.GetImageMetadataResponse
+	(*ScanImageInternalRequest_Source)(nil),                       // 21: v1.ScanImageInternalRequest.Source
+	(*ScanImageInternalResponseDetails_TooManyParallelScans)(nil), // 22: v1.ScanImageInternalResponseDetails.TooManyParallelScans
+	(*GetImageMetadataRequest_LayerSHAs)(nil),                     // 23: v1.GetImageMetadataRequest.LayerSHAs
+	nil, // 24: v1.GetImageMetadataRequest.ImagesEntry
+	(*GetImageMetadataResponse_Metadata)(nil), // 25: v1.GetImageMetadataResponse.Metadata
+	nil,                            // 26: v1.GetImageMetadataResponse.ImagesEntry
+	nil,                            // 27: v1.GetImageMetadataResponse.Metadata.LayersEntry
+	(*storage.ListImage)(nil),      // 28: storage.ListImage
+	(*storage.ContainerImage)(nil), // 29: storage.ContainerImage
+	(*storage.Image)(nil),          // 30: storage.Image
+	(*storage.ImageName)(nil),      // 31: storage.ImageName
+	(*storage.ImageMetadata)(nil),  // 32: storage.ImageMetadata
+	(*v1.Components)(nil),          // 33: scannerV1.Components
+	(v1.Note)(0),                   // 34: scannerV1.Note
+	(*storage.ImageSignature)(nil), // 35: storage.ImageSignature
+	(storage.Image_Note)(0),        // 36: storage.Image.Note
+	(*v4.Contents)(nil),            // 37: scanner.v4.Contents
+	(*RawQuery)(nil),               // 38: v1.RawQuery
+	(*storage.WatchedImage)(nil),   // 39: storage.WatchedImage
+	(*storage.ImageLayer)(nil),     // 40: storage.ImageLayer
+	(*Empty)(nil),                  // 41: v1.Empty
 }
 var file_api_v1_image_service_proto_depIdxs = []int32{
-	21, // 0: v1.ListImagesResponse.images:type_name -> storage.ListImage
-	22, // 1: v1.ScanImageInternalRequest.image:type_name -> storage.ContainerImage
-	19, // 2: v1.ScanImageInternalRequest.source:type_name -> v1.ScanImageInternalRequest.Source
-	23, // 3: v1.ScanImageInternalResponse.image:type_name -> storage.Image
-	24, // 4: v1.GetImageVulnerabilitiesInternalRequest.image_name:type_name -> storage.ImageName
-	25, // 5: v1.GetImageVulnerabilitiesInternalRequest.metadata:type_name -> storage.ImageMetadata
-	26, // 6: v1.GetImageVulnerabilitiesInternalRequest.components:type_name -> scannerV1.Components
-	27, // 7: v1.GetImageVulnerabilitiesInternalRequest.notes:type_name -> scannerV1.Note
-	24, // 8: v1.EnrichLocalImageInternalRequest.image_name:type_name -> storage.ImageName
-	25, // 9: v1.EnrichLocalImageInternalRequest.metadata:type_name -> storage.ImageMetadata
-	28, // 10: v1.EnrichLocalImageInternalRequest.image_signature:type_name -> storage.ImageSignature
-	26, // 11: v1.EnrichLocalImageInternalRequest.components:type_name -> scannerV1.Components
-	27, // 12: v1.EnrichLocalImageInternalRequest.notes:type_name -> scannerV1.Note
-	29, // 13: v1.EnrichLocalImageInternalRequest.image_notes:type_name -> storage.Image.Note
-	30, // 14: v1.EnrichLocalImageInternalRequest.v4_contents:type_name -> scanner.v4.Contents
-	31, // 15: v1.DeleteImagesRequest.query:type_name -> v1.RawQuery
+	28, // 0: v1.ListImagesResponse.images:type_name -> storage.ListImage
+	29, // 1: v1.ScanImageInternalRequest.image:type_name -> storage.ContainerImage
+	21, // 2: v1.ScanImageInternalRequest.source:type_name -> v1.ScanImageInternalRequest.Source
+	30, // 3: v1.ScanImageInternalResponse.image:type_name -> storage.Image
+	31, // 4: v1.GetImageVulnerabilitiesInternalRequest.image_name:type_name -> storage.ImageName
+	32, // 5: v1.GetImageVulnerabilitiesInternalRequest.metadata:type_name -> storage.ImageMetadata
+	33, // 6: v1.GetImageVulnerabilitiesInternalRequest.components:type_name -> scannerV1.Components
+	34, // 7: v1.GetImageVulnerabilitiesInternalRequest.notes:type_name -> scannerV1.Note
+	31, // 8: v1.EnrichLocalImageInternalRequest.image_name:type_name -> storage.ImageName
+	32, // 9: v1.EnrichLocalImageInternalRequest.metadata:type_name -> storage.ImageMetadata
+	35, // 10: v1.EnrichLocalImageInternalRequest.image_signature:type_name -> storage.ImageSignature
+	33, // 11: v1.EnrichLocalImageInternalRequest.components:type_name -> scannerV1.Components
+	34, // 12: v1.EnrichLocalImageInternalRequest.notes:type_name -> scannerV1.Note
+	36, // 13: v1.EnrichLocalImageInternalRequest.image_notes:type_name -> storage.Image.Note
+	37, // 14: v1.EnrichLocalImageInternalRequest.v4_contents:type_name -> scanner.v4.Contents
+	38, // 15: v1.DeleteImagesRequest.query:type_name -> v1.RawQuery
 	0,  // 16: v1.WatchImageResponse.error_type:type_name -> v1.WatchImageResponse.ErrorType
-	32, // 17: v1.GetWatchedImagesResponse.watched_images:type_name -> storage.WatchedImage
-	23, // 18: v1.ExportImageResponse.image:type_name -> storage.Image
-	1,  // 19: v1.ImageService.GetImage:input_type -> v1.GetImageRequest
-	31, // 20: v1.ImageService.CountImages:input_type -> v1.RawQuery
-	31, // 21: v1.ImageService.ListImages:input_type -> v1.RawQuery
-	4,  // 22: v1.ImageService.ScanImage:input_type -> v1.ScanImageRequest
-	5,  // 23: v1.ImageService.ScanImageInternal:input_type -> v1.ScanImageInternalRequest
-	7,  // 24: v1.ImageService.GetImageVulnerabilitiesInternal:input_type -> v1.GetImageVulnerabilitiesInternalRequest
-	8,  // 25: v1.ImageService.EnrichLocalImageInternal:input_type -> v1.EnrichLocalImageInternalRequest
-	9,  // 26: v1.ImageService.UpdateLocalScanStatusInternal:input_type -> v1.UpdateLocalScanStatusInternalRequest
-	33, // 27: v1.ImageService.InvalidateScanAndRegistryCaches:input_type -> v1.Empty
-	10, // 28: v1.ImageService.DeleteImages:input_type -> v1.DeleteImagesRequest
-	12, // 29: v1.ImageService.WatchImage:input_type -> v1.WatchImageRequest
-	14, // 30: v1.ImageService.UnwatchImage:input_type -> v1.UnwatchImageRequest
-	33, // 31: v1.ImageService.GetWatchedImages:input_type -> v1.Empty
-	17, // 32: v1.ImageService.ExportImages:input_type -> v1.ExportImageRequest
-	23, // 33: v1.ImageService.GetImage:output_type -> storage.Image
-	3,  // 34: v1.ImageService.CountImages:output_type -> v1.CountImagesResponse
-	2,  // 35: v1.ImageService.ListImages:output_type -> v1.ListImagesResponse
-	23, // 36: v1.ImageService.ScanImage:output_type -> storage.Image
-	6,  // 37: v1.ImageService.ScanImageInternal:output_type -> v1.ScanImageInternalResponse
-	6,  // 38: v1.ImageService.GetImageVulnerabilitiesInternal:output_type -> v1.ScanImageInternalResponse
-	6,  // 39: v1.ImageService.EnrichLocalImageInternal:output_type -> v1.ScanImageInternalResponse
-	33, // 40: v1.ImageService.UpdateLocalScanStatusInternal:output_type -> v1.Empty
-	33, // 41: v1.ImageService.InvalidateScanAndRegistryCaches:output_type -> v1.Empty
-	11, // 42: v1.ImageService.DeleteImages:output_type -> v1.DeleteImagesResponse
-	13, // 43: v1.ImageService.WatchImage:output_type -> v1.WatchImageResponse
-	33, // 44: v1.ImageService.UnwatchImage:output_type -> v1.Empty
-	15, // 45: v1.ImageService.GetWatchedImages:output_type -> v1.GetWatchedImagesResponse
-	18, // 46: v1.ImageService.ExportImages:output_type -> v1.ExportImageResponse
-	33, // [33:47] is the sub-list for method output_type
-	19, // [19:33] is the sub-list for method input_type
-	19, // [19:19] is the sub-list for extension type_name
-	19, // [19:19] is the sub-list for extension extendee
-	0,  // [0:19] is the sub-list for field type_name
+	39, // 17: v1.GetWatchedImagesResponse.watched_images:type_name -> storage.WatchedImage
+	30, // 18: v1.ExportImageResponse.image:type_name -> storage.Image
+	24, // 19: v1.GetImageMetadataRequest.images:type_name -> v1.GetImageMetadataRequest.ImagesEntry
+	26, // 20: v1.GetImageMetadataResponse.images:type_name -> v1.GetImageMetadataResponse.ImagesEntry
+	23, // 21: v1.GetImageMetadataRequest.ImagesEntry.value:type_name -> v1.GetImageMetadataRequest.LayerSHAs
+	27, // 22: v1.GetImageMetadataResponse.Metadata.layers:type_name -> v1.GetImageMetadataResponse.Metadata.LayersEntry
+	25, // 23: v1.GetImageMetadataResponse.ImagesEntry.value:type_name -> v1.GetImageMetadataResponse.Metadata
+	40, // 24: v1.GetImageMetadataResponse.Metadata.LayersEntry.value:type_name -> storage.ImageLayer
+	1,  // 25: v1.ImageService.GetImage:input_type -> v1.GetImageRequest
+	38, // 26: v1.ImageService.CountImages:input_type -> v1.RawQuery
+	38, // 27: v1.ImageService.ListImages:input_type -> v1.RawQuery
+	4,  // 28: v1.ImageService.ScanImage:input_type -> v1.ScanImageRequest
+	5,  // 29: v1.ImageService.ScanImageInternal:input_type -> v1.ScanImageInternalRequest
+	7,  // 30: v1.ImageService.GetImageVulnerabilitiesInternal:input_type -> v1.GetImageVulnerabilitiesInternalRequest
+	8,  // 31: v1.ImageService.EnrichLocalImageInternal:input_type -> v1.EnrichLocalImageInternalRequest
+	9,  // 32: v1.ImageService.UpdateLocalScanStatusInternal:input_type -> v1.UpdateLocalScanStatusInternalRequest
+	41, // 33: v1.ImageService.InvalidateScanAndRegistryCaches:input_type -> v1.Empty
+	10, // 34: v1.ImageService.DeleteImages:input_type -> v1.DeleteImagesRequest
+	12, // 35: v1.ImageService.WatchImage:input_type -> v1.WatchImageRequest
+	14, // 36: v1.ImageService.UnwatchImage:input_type -> v1.UnwatchImageRequest
+	41, // 37: v1.ImageService.GetWatchedImages:input_type -> v1.Empty
+	17, // 38: v1.ImageService.ExportImages:input_type -> v1.ExportImageRequest
+	19, // 39: v1.ImageService.GetImageMetadata:input_type -> v1.GetImageMetadataRequest
+	30, // 40: v1.ImageService.GetImage:output_type -> storage.Image
+	3,  // 41: v1.ImageService.CountImages:output_type -> v1.CountImagesResponse
+	2,  // 42: v1.ImageService.ListImages:output_type -> v1.ListImagesResponse
+	30, // 43: v1.ImageService.ScanImage:output_type -> storage.Image
+	6,  // 44: v1.ImageService.ScanImageInternal:output_type -> v1.ScanImageInternalResponse
+	6,  // 45: v1.ImageService.GetImageVulnerabilitiesInternal:output_type -> v1.ScanImageInternalResponse
+	6,  // 46: v1.ImageService.EnrichLocalImageInternal:output_type -> v1.ScanImageInternalResponse
+	41, // 47: v1.ImageService.UpdateLocalScanStatusInternal:output_type -> v1.Empty
+	41, // 48: v1.ImageService.InvalidateScanAndRegistryCaches:output_type -> v1.Empty
+	11, // 49: v1.ImageService.DeleteImages:output_type -> v1.DeleteImagesResponse
+	13, // 50: v1.ImageService.WatchImage:output_type -> v1.WatchImageResponse
+	41, // 51: v1.ImageService.UnwatchImage:output_type -> v1.Empty
+	15, // 52: v1.ImageService.GetWatchedImages:output_type -> v1.GetWatchedImagesResponse
+	18, // 53: v1.ImageService.ExportImages:output_type -> v1.ExportImageResponse
+	20, // 54: v1.ImageService.GetImageMetadata:output_type -> v1.GetImageMetadataResponse
+	40, // [40:55] is the sub-list for method output_type
+	25, // [25:40] is the sub-list for method input_type
+	25, // [25:25] is the sub-list for extension type_name
+	25, // [25:25] is the sub-list for extension extendee
+	0,  // [0:25] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_image_service_proto_init() }
@@ -1449,7 +1675,7 @@ func file_api_v1_image_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_image_service_proto_rawDesc), len(file_api_v1_image_service_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   20,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

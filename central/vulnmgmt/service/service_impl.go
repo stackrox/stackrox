@@ -35,6 +35,13 @@ var (
 		user.With(permissions.View(resources.Deployment), permissions.View(resources.Image)): {
 			v1.VulnMgmtService_VulnMgmtExportWorkloads_FullMethodName,
 		},
+		user.With(
+			permissions.View(resources.Cluster),
+			permissions.View(resources.Namespace),
+			permissions.View(resources.Deployment),
+			permissions.View(resources.Image)): {
+			v1.VulnMgmtService_ImageVulnerabilities_FullMethodName,
+		},
 	})
 	log = logging.LoggerForModule()
 )
@@ -157,4 +164,134 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 	}
 	committed = true
 	return nil
+}
+
+func (s *serviceImpl) ImageVulnerabilities(ctx context.Context, _ *v1.Empty) (*v1.ImageVulnerabilitiesResponse, error) {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return nil, errors.Wrap(errox.ServerError, "failed to begin transaction")
+	}
+	var committed bool
+	defer func() {
+		if !committed {
+			_ = tx.Rollback(ctx)
+		}
+	}()
+
+	txCtx := postgres.ContextWithTx(ctx, tx)
+
+	images := make(map[string]*v1.ImageVulnerabilitiesResponse_Image)
+
+	err = s.images.WalkByQuery(txCtx, search.EmptyQuery(), func(img *storage.Image) error {
+		scan := img.GetScan()
+		if scan == nil {
+			return nil
+		}
+
+		components := scan.GetComponents()
+		if len(components) == 0 {
+			return nil
+		}
+
+		metadata := img.GetMetadata()
+		if metadata == nil {
+			return nil
+		}
+
+		layerShas := metadata.GetLayerShas()
+
+		var responseComponents []*v1.ImageVulnerabilitiesResponse_Image_Component
+
+		for _, comp := range components {
+			vulns := comp.GetVulns()
+			if len(vulns) == 0 {
+				continue
+			}
+
+			responseVulns := make([]*v1.ImageVulnerabilitiesResponse_Image_Component_Vulnerability, 0, len(vulns))
+			for _, vuln := range vulns {
+				if vuln.GetCve() != "" {
+					responseVulns = append(responseVulns, &v1.ImageVulnerabilitiesResponse_Image_Component_Vulnerability{
+						Id:                    vuln.GetCve(),
+						Suppressed:            vuln.GetSuppressed(),
+						SuppressActivation:    vuln.GetSuppressActivation(),
+						SuppressExpiry:        vuln.GetSuppressExpiry(),
+						FirstSystemOccurrence: vuln.GetFirstSystemOccurrence(),
+						FirstImageOccurrence:  vuln.GetFirstImageOccurrence(),
+					})
+				}
+			}
+
+			if len(responseVulns) == 0 {
+				continue
+			}
+
+			var layerSha string
+			if li, ok := comp.GetHasLayerIndex().(*storage.EmbeddedImageScanComponent_LayerIndex); ok {
+				layerIndex := li.LayerIndex
+				if int(layerIndex) < len(layerShas) {
+					layerSha = layerShas[layerIndex]
+				}
+			}
+
+			responseComponents = append(responseComponents, &v1.ImageVulnerabilitiesResponse_Image_Component{
+				Name:            comp.GetName(),
+				Version:         comp.GetVersion(),
+				LayerSha:        layerSha,
+				Location:        comp.GetLocation(),
+				Vulnerabilities: responseVulns,
+			})
+		}
+
+		if len(responseComponents) == 0 {
+			return nil
+		}
+
+		workloadIDs, err := s.getImageWorkloadIDs(txCtx, img.GetId())
+		if err != nil {
+			return errors.Wrapf(err, "failed to get workload IDs for image %s", img.GetId())
+		}
+
+		images[img.GetId()] = &v1.ImageVulnerabilitiesResponse_Image{
+			Components:  responseComponents,
+			WorkloadIds: workloadIDs,
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(txCtx); err != nil {
+		return nil, err
+	}
+	committed = true
+
+	return &v1.ImageVulnerabilitiesResponse{Images: images}, nil
+}
+
+func (s *serviceImpl) getImageWorkloadIDs(ctx context.Context, imageID string) ([]string, error) {
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ImageSHA, imageID).
+		ProtoQuery()
+
+	workloadIDs := set.NewStringSet()
+
+	err := s.deployments.WalkByQuery(ctx, query, func(deployment *storage.Deployment) error {
+		for _, container := range deployment.GetContainers() {
+			if container.GetImage().GetId() == imageID {
+				workloadIDs.Add(deployment.GetId())
+				break
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return workloadIDs.AsSlice(), nil
 }

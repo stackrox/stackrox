@@ -27,6 +27,7 @@ const (
 	DeploymentService_ListDeploymentsWithProcessInfo_FullMethodName = "/v1.DeploymentService/ListDeploymentsWithProcessInfo"
 	DeploymentService_GetLabels_FullMethodName                      = "/v1.DeploymentService/GetLabels"
 	DeploymentService_ExportDeployments_FullMethodName              = "/v1.DeploymentService/ExportDeployments"
+	DeploymentService_GetWorkloadMetadata_FullMethodName            = "/v1.DeploymentService/GetWorkloadMetadata"
 )
 
 // DeploymentServiceClient is the client API for DeploymentService service.
@@ -48,6 +49,8 @@ type DeploymentServiceClient interface {
 	// GetLabels returns the labels used by deployments.
 	GetLabels(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*DeploymentLabelsResponse, error)
 	ExportDeployments(ctx context.Context, in *ExportDeploymentRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExportDeploymentResponse], error)
+	// GetWorkloadMetadata returns reduced workload metadata (name, type, cluster, namespace) for specified workloads.
+	GetWorkloadMetadata(ctx context.Context, in *GetWorkloadMetadataRequest, opts ...grpc.CallOption) (*GetWorkloadMetadataResponse, error)
 }
 
 type deploymentServiceClient struct {
@@ -137,6 +140,16 @@ func (c *deploymentServiceClient) ExportDeployments(ctx context.Context, in *Exp
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type DeploymentService_ExportDeploymentsClient = grpc.ServerStreamingClient[ExportDeploymentResponse]
 
+func (c *deploymentServiceClient) GetWorkloadMetadata(ctx context.Context, in *GetWorkloadMetadataRequest, opts ...grpc.CallOption) (*GetWorkloadMetadataResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetWorkloadMetadataResponse)
+	err := c.cc.Invoke(ctx, DeploymentService_GetWorkloadMetadata_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DeploymentServiceServer is the server API for DeploymentService service.
 // All implementations should embed UnimplementedDeploymentServiceServer
 // for forward compatibility.
@@ -156,6 +169,8 @@ type DeploymentServiceServer interface {
 	// GetLabels returns the labels used by deployments.
 	GetLabels(context.Context, *Empty) (*DeploymentLabelsResponse, error)
 	ExportDeployments(*ExportDeploymentRequest, grpc.ServerStreamingServer[ExportDeploymentResponse]) error
+	// GetWorkloadMetadata returns reduced workload metadata (name, type, cluster, namespace) for specified workloads.
+	GetWorkloadMetadata(context.Context, *GetWorkloadMetadataRequest) (*GetWorkloadMetadataResponse, error)
 }
 
 // UnimplementedDeploymentServiceServer should be embedded to have
@@ -185,6 +200,9 @@ func (UnimplementedDeploymentServiceServer) GetLabels(context.Context, *Empty) (
 }
 func (UnimplementedDeploymentServiceServer) ExportDeployments(*ExportDeploymentRequest, grpc.ServerStreamingServer[ExportDeploymentResponse]) error {
 	return status.Error(codes.Unimplemented, "method ExportDeployments not implemented")
+}
+func (UnimplementedDeploymentServiceServer) GetWorkloadMetadata(context.Context, *GetWorkloadMetadataRequest) (*GetWorkloadMetadataResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetWorkloadMetadata not implemented")
 }
 func (UnimplementedDeploymentServiceServer) testEmbeddedByValue() {}
 
@@ -325,6 +343,24 @@ func _DeploymentService_ExportDeployments_Handler(srv interface{}, stream grpc.S
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type DeploymentService_ExportDeploymentsServer = grpc.ServerStreamingServer[ExportDeploymentResponse]
 
+func _DeploymentService_GetWorkloadMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetWorkloadMetadataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DeploymentServiceServer).GetWorkloadMetadata(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: DeploymentService_GetWorkloadMetadata_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DeploymentServiceServer).GetWorkloadMetadata(ctx, req.(*GetWorkloadMetadataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DeploymentService_ServiceDesc is the grpc.ServiceDesc for DeploymentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -355,6 +391,10 @@ var DeploymentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetLabels",
 			Handler:    _DeploymentService_GetLabels_Handler,
+		},
+		{
+			MethodName: "GetWorkloadMetadata",
+			Handler:    _DeploymentService_GetWorkloadMetadata_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

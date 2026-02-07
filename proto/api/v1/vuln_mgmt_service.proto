@@ -2,7 +2,9 @@ syntax = "proto3";
 
 package v1;
 
+import "api/v1/empty.proto";
 import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
 import "storage/deployment.proto";
 import "storage/image.proto";
 
@@ -29,6 +31,33 @@ message VulnMgmtExportWorkloadsResponse {
   int32 live_pods = 3;
 }
 
+message ImageVulnerabilitiesResponse {
+  message Image {
+    message Component {
+      message Vulnerability {
+        string id = 1;
+        bool suppressed = 2;
+        google.protobuf.Timestamp suppress_activation = 3;
+        google.protobuf.Timestamp suppress_expiry = 4;
+        // Time when the CVE was first seen, for this specific distro, in the system.
+        google.protobuf.Timestamp first_system_occurrence = 5;
+        // Time when the CVE was first seen in this image.
+        google.protobuf.Timestamp first_image_occurrence = 6;
+      }
+      string name = 1;
+      string version = 2;
+      string layer_sha = 3;
+      string location = 4;
+      repeated Vulnerability vulnerabilities = 5;
+    }
+    repeated Component components = 1;
+    // List of workload IDs where this image is deployed.
+    repeated string workload_ids = 2;
+  }
+  // Map of image SHA to image vulnerability data.
+  map<string, Image> images = 1;
+}
+
 // VulnMgmtService APIs are used to manage workload vulnerabilities.
 service VulnMgmtService {
   // Streams vulnerability data upon request. Each entry consists of a deployment and the associated container images.
@@ -39,5 +68,9 @@ service VulnMgmtService {
   // {"result": {"deployment": {...}, "images": [...]}}
   rpc VulnMgmtExportWorkloads(VulnMgmtExportWorkloadsRequest) returns (stream VulnMgmtExportWorkloadsResponse) {
     option (google.api.http) = {get: "/v1/export/vuln-mgmt/workloads"};
+  }
+
+  rpc ImageVulnerabilities(Empty) returns (ImageVulnerabilitiesResponse) {
+    option (google.api.http) = {get: "/v1/export/vuln-mgmt/image-vulnerabilities"};
   }
 }

@@ -374,6 +374,40 @@
           "DeploymentService"
         ]
       }
+    },
+    "/v1/workloads/metadata": {
+      "post": {
+        "summary": "GetWorkloadMetadata returns reduced workload metadata (name, type, cluster, namespace) for specified workloads.",
+        "operationId": "DeploymentService_GetWorkloadMetadata",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetWorkloadMetadataResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "GetWorkloadMetadataRequest requests reduced workload metadata for specified deployments.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1GetWorkloadMetadataRequest"
+            }
+          }
+        ],
+        "tags": [
+          "DeploymentService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -1255,6 +1289,48 @@
         },
         "risk": {
           "$ref": "#/definitions/storageRisk"
+        }
+      }
+    },
+    "v1GetWorkloadMetadataRequest": {
+      "type": "object",
+      "properties": {
+        "workloadIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "GetWorkloadMetadataRequest requests reduced workload metadata for specified deployments."
+    },
+    "v1GetWorkloadMetadataResponse": {
+      "type": "object",
+      "properties": {
+        "workloads": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v1GetWorkloadMetadataResponseMetadata"
+          },
+          "description": "Map of workload ID to metadata."
+        }
+      },
+      "description": "GetWorkloadMetadataResponse returns reduced workload metadata."
+    },
+    "v1GetWorkloadMetadataResponseMetadata": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "cluster": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
         }
       }
     },
