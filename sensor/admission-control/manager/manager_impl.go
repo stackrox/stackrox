@@ -28,6 +28,13 @@ import (
 	admission "k8s.io/api/admission/v1"
 )
 
+const (
+	// defaultImageCacheSize is the cache size when enforcement is disabled.
+	defaultImageCacheSize = 200 * size.MB
+	// enforcementImageCacheSize is the larger cache size when enforcement is enabled.
+	enforcementImageCacheSize = 500 * size.MB
+)
+
 var (
 	log = logging.LoggerForModule()
 
@@ -327,6 +334,14 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	if newSettings.GetCacheVersion() != m.cacheVersion {
 		m.imageCache.Purge()
 		m.cacheVersion = newSettings.GetCacheVersion()
+	}
+
+	// Resize image cache based on enforcement settings.
+	// When enforcement is enabled, use a larger cache to improve performance.
+	if enforceOnCreates || enforceOnUpdates {
+		m.imageCache.Resize(enforcementImageCacheSize)
+	} else {
+		m.imageCache.Resize(defaultImageCacheSize)
 	}
 
 	m.state.Store(newState)

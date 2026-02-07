@@ -22,6 +22,9 @@ type Cache[K comparable, V any] interface {
 	RemoveIf(key K, valPred func(V) bool)
 	Stats() (objects, size int64)
 	Purge()
+	// Resize changes the maximum cache size. If the new size is smaller than the current
+	// usage, oldest entries are evicted until the cache fits within the new limit.
+	Resize(newMaxSize int64)
 }
 
 type valueEntry[V any] struct {
@@ -139,4 +142,42 @@ func (c *sizeBoundedCache[K, V]) RemoveIf(key K, valPred func(V) bool) {
 
 func (c *sizeBoundedCache[K, V]) Stats() (objects, size int64) {
 	return int64(c.cache.Len()), atomic.LoadInt64(&c.currSize)
+}
+
+// Resize changes the maximum cache size. If the new size is smaller than the current
+// usage, oldest entries are evicted until the cache fits within the new limit.
+// The new size must be greater than maxItemSize.
+func (c *sizeBoundedCache[K, V]) Resize(newMaxSize int64) {
+	if newMaxSize <= c.maxItemSize {
+		log.Errorf("Cannot resize cache: new max size %d must be greater than max item size %d", newMaxSize, c.maxItemSize)
+		return
+	}
+
+	c.cacheLock.Lock()
+	defer c.cacheLock.Unlock()
+
+	oldMaxSize := c.maxSize
+	c.maxSize = newMaxSize
+
+	// Early exit: no eviction needed if growing or current size fits
+	currSize := atomic.LoadInt64(&c.currSize)
+	if newMaxSize >= oldMaxSize || currSize <= newMaxSize {
+		return
+	}
+
+	// Evict oldest entries until we fit within the new limit.
+	// Track evicted size locally to minimize atomic operations.
+	var evictedSize int64
+	for currSize-evictedSize > newMaxSize {
+		_, value, ok := c.cache.RemoveOldest()
+		if !ok {
+			break
+		}
+		evictedSize += value.totalSize
+	}
+
+	// Single atomic update for all evictions
+	if evictedSize > 0 {
+		atomic.AddInt64(&c.currSize, -evictedSize)
+	}
 }
