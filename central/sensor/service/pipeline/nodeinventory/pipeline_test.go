@@ -167,11 +167,73 @@ func Test_pipelineImpl_Run(t *testing.T) {
 				if len(tt.wantInjectorContain) == 0 {
 					assert.Len(t, inj.getSentACKs(), 0)
 				} else {
-					protoassert.SlicesEqual(t, tt.wantInjectorContain, inj.getSentACKs())
+					protoassert.SlicesEqual(t, tt.wantInjectorContain, inj.getSentACKs(), "sent ACKs: %v", inj.getSentACKs())
 				}
 			}
 		})
 	}
+}
+
+func Test_pipelineImpl_Run_SendsSensorAndLegacyACKs(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	clusterStore := clusterDatastoreMocks.NewMockDataStore(ctrl)
+	nodeDatastore := nodeDatastoreMocks.NewMockDataStore(ctrl)
+	riskManager := riskManagerMocks.NewMockManager(ctrl)
+	enricher := nodesEnricherMocks.NewMockNodeEnricher(ctrl)
+
+	clusterID := "cluster-1"
+	nodeName := "node-name"
+	node := storage.Node{
+		Id:        "node-id",
+		ClusterId: clusterID,
+	}
+	msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Action: central.ResourceAction_CREATE_RESOURCE,
+				Resource: &central.SensorEvent_NodeInventory{
+					NodeInventory: &storage.NodeInventory{
+						NodeId:   node.GetId(),
+						NodeName: nodeName,
+					},
+				},
+			},
+		},
+	}
+	injector := &recordingInjector{}
+
+	gomock.InOrder(
+		nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(&node, true, nil),
+		enricher.EXPECT().EnrichNodeWithVulnerabilities(gomock.Any(), gomock.Any(), nil).Times(1).Return(nil),
+		riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil),
+	)
+
+	p := &pipelineImpl{
+		clusterStore:  clusterStore,
+		nodeDatastore: nodeDatastore,
+		enricher:      enricher,
+		riskManager:   riskManager,
+	}
+
+	err := p.Run(context.Background(), clusterID, msg, injector)
+	assert.NoError(t, err)
+
+	protoassert.SlicesEqual(t, []*central.NodeInventoryACK{
+		{
+			ClusterId:   clusterID,
+			NodeName:    nodeName,
+			Action:      central.NodeInventoryACK_ACK,
+			MessageType: central.NodeInventoryACK_NodeInventory,
+		},
+	}, injector.getSentACKs(), "legacy ACKs")
+
+	protoassert.SlicesEqual(t, []*central.SensorACK{
+		{
+			Action:      central.SensorACK_ACK,
+			MessageType: central.SensorACK_NODE_INVENTORY,
+			ResourceId:  nodeName,
+		},
+	}, injector.getSentSensorACKs(), "sensor ACKs")
 }
 
 var _ common.MessageInjector = (*recordingInjector)(nil)
@@ -179,12 +241,18 @@ var _ common.MessageInjector = (*recordingInjector)(nil)
 type recordingInjector struct {
 	lock     sync.Mutex
 	messages []*central.NodeInventoryACK
+	sensor   []*central.SensorACK
 }
 
 func (r *recordingInjector) InjectMessage(_ concurrency.Waitable, msg *central.MsgToSensor) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
-	r.messages = append(r.messages, msg.GetNodeInventoryAck().CloneVT())
+	if ack := msg.GetNodeInventoryAck(); ack != nil {
+		r.messages = append(r.messages, ack.CloneVT())
+	}
+	if ack := msg.GetSensorAck(); ack != nil {
+		r.sensor = append(r.sensor, ack.CloneVT())
+	}
 	return nil
 }
 
@@ -194,6 +262,22 @@ func (r *recordingInjector) getSentACKs() []*central.NodeInventoryACK {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 	copied := make([]*central.NodeInventoryACK, 0, len(r.messages))
-	copied = append(copied, r.messages...)
+	for _, m := range r.messages {
+		if m != nil {
+			copied = append(copied, m)
+		}
+	}
+	return copied
+}
+
+func (r *recordingInjector) getSentSensorACKs() []*central.SensorACK {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	copied := make([]*central.SensorACK, 0, len(r.sensor))
+	for _, m := range r.sensor {
+		if m != nil {
+			copied = append(copied, m)
+		}
+	}
 	return copied
 }
