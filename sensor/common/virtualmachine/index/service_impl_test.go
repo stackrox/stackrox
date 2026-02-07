@@ -9,9 +9,12 @@ import (
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/index/mocks"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
@@ -31,12 +34,15 @@ type virtualMachineServiceSuite struct {
 func (s *virtualMachineServiceSuite) SetupTest() {
 	s.ctrl = gomock.NewController(s.T())
 	s.store = mocks.NewMockVirtualMachineStore(s.ctrl)
-	s.service = &serviceImpl{handler: NewHandler(s.store)}
+	s.service = &serviceImpl{
+		handler: NewHandler(nil, s.store),
+		store:   s.store,
+	}
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
 }
 
 func (s *virtualMachineServiceSuite) TestNewService() {
-	svc := NewService(NewHandler(s.store))
+	svc := NewService(NewHandler(nil, s.store), s.store)
 	s.Require().NotNil(svc)
 	s.Require().IsType(&serviceImpl{}, svc)
 
@@ -73,7 +79,7 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_NilConnection() {
 	ctx := context.Background()
 	req := &sensor.UpsertVirtualMachineIndexReportRequest{
 		IndexReport: &v1.IndexReport{
-			VsockCid: "test-vm-id",
+			VsockCid: "42",
 		},
 	}
 
@@ -81,7 +87,7 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_NilConnection() {
 	s.Assert().NotNil(resp)
 	s.Assert().False(resp.GetSuccess())
 	s.Assert().Error(err)
-	s.Assert().ErrorIs(err, errox.ResourceExhausted)
+	s.Assert().ErrorIs(err, errox.InvariantViolation)
 }
 
 func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_WithConnection() {
@@ -92,10 +98,13 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_WithConnection() {
 	s.Require().NoError(err)
 	defer s.service.handler.Stop()
 	s.service.handler.Notify(common.SensorComponentEventCentralReachable)
+	s.store.EXPECT().GetFromCID(uint32(42)).Times(1).Return(&virtualmachine.Info{
+		ID: "test-vm",
+	})
 
 	req := &sensor.UpsertVirtualMachineIndexReportRequest{
 		IndexReport: &v1.IndexReport{
-			VsockCid: "test-vm-id",
+			VsockCid: "42",
 		},
 	}
 
@@ -120,11 +129,25 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_NilVirtualMachine(
 	s.Require().ErrorIs(err, errox.InvalidArgs)
 }
 
+func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_InvalidVsockCID() {
+	ctx := context.Background()
+	req := &sensor.UpsertVirtualMachineIndexReportRequest{
+		IndexReport: &v1.IndexReport{
+			VsockCid: "invalid-vsock-cid",
+		},
+	}
+
+	resp, err := s.service.UpsertVirtualMachineIndexReport(ctx, req)
+	s.Require().NotNil(resp)
+	s.Require().False(resp.GetSuccess())
+	s.Require().ErrorIs(err, errox.InvalidArgs)
+}
+
 func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_ShouldNotPanicWhenDiscoveredDataMissing() {
 	ctx := context.Background()
 	req := &sensor.UpsertVirtualMachineIndexReportRequest{
 		IndexReport: &v1.IndexReport{
-			VsockCid: "test-vm-id",
+			VsockCid: "42",
 		},
 	}
 
@@ -132,5 +155,44 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_ShouldNotPanicWhen
 		resp, err := s.service.UpsertVirtualMachineIndexReport(ctx, req)
 		s.Require().NotNil(resp)
 		s.Require().Error(err)
+	})
+}
+
+func TestUpsertVirtualMachineIndexReport_DiscoveredFactsUpdate(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+	t.Run("should pass discovered data to handler", func(it *testing.T) {
+		ctrl := gomock.NewController(it)
+		store := mocks.NewMockVirtualMachineStore(ctrl)
+		handler := mocks.NewMockHandler(ctrl)
+		service := &serviceImpl{
+			handler: handler,
+			store:   store,
+		}
+
+		// Service now just passes discovered data to handler.Send
+		// Handler handles all store operations and update emission
+		handler.EXPECT().Send(gomock.Any(), gomock.Any(), gomock.Any()).
+			Do(func(ctx context.Context, report *v1.IndexReport, data *v1.DiscoveredData) {
+				require.NotNil(it, report)
+				require.NotNil(it, data)
+				require.Equal(it, "42", report.GetVsockCid())
+			}).
+			Return(nil)
+
+		req := &sensor.UpsertVirtualMachineIndexReportRequest{
+			IndexReport: &v1.IndexReport{
+				VsockCid: "42",
+			},
+			DiscoveredData: &v1.DiscoveredData{
+				DetectedOs:        v1.DetectedOS_RHEL,
+				OsVersion:         "9.4",
+				ActivationStatus:  v1.ActivationStatus_ACTIVE,
+				DnfMetadataStatus: v1.DnfMetadataStatus_AVAILABLE,
+			},
+		}
+
+		resp, err := service.UpsertVirtualMachineIndexReport(context.Background(), req)
+		require.NoError(it, err)
+		require.True(it, resp.GetSuccess())
 	})
 }

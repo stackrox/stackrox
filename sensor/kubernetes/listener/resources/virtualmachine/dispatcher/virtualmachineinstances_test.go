@@ -51,6 +51,7 @@ func (s *virtualMachineInstanceSuite) SetupSubTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.store = mocks.NewMockvirtualMachineStore(s.mockCtrl)
+	s.store.EXPECT().GetDiscoveredFacts(gomock.Any()).AnyTimes().Return(map[string]string{})
 	s.dispatcher = NewVirtualMachineInstanceDispatcher(clusterID, s.store)
 }
 
@@ -113,7 +114,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), vmInfo.FactsUnknownGuestOS),
 					},
 				},
 			}),
@@ -145,7 +146,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), vmInfo.FactsUnknownGuestOS),
 					},
 				},
 			}),
@@ -169,7 +170,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), vmInfo.FactsUnknownGuestOS),
 					},
 				},
 			}),
@@ -217,7 +218,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), vmInfo.FactsUnknownGuestOS),
 					},
 				},
 			}),
@@ -253,7 +254,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), vmInfo.FactsUnknownGuestOS),
 					},
 				},
 			}),
@@ -274,7 +275,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), vmInfo.FactsUnknownGuestOS),
 					},
 				},
 			}),
@@ -310,7 +311,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), vmInfo.FactsUnknownGuestOS),
 					},
 				},
 			}),
@@ -363,7 +364,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						VsockCid:    int32(vsockVal),
 						VsockCidSet: true,
 						State:       virtualMachineV1.VirtualMachine_RUNNING,
-						Facts:       getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:       getFactsForTest(s.T(), vmInfo.FactsUnknownGuestOS),
 					},
 				},
 			}),

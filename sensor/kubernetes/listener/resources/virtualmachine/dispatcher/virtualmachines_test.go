@@ -45,6 +45,7 @@ func (s *virtualMachineSuite) SetupSubTest() {
 
 	s.mockCtrl = gomock.NewController(s.T())
 	s.store = mocks.NewMockvirtualMachineStore(s.mockCtrl)
+	s.store.EXPECT().GetDiscoveredFacts(gomock.Any()).AnyTimes().Return(map[string]string{})
 	s.dispatcher = NewVirtualMachineDispatcher(clusterID, s.store)
 }
 
@@ -89,7 +90,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), virtualmachine.FactsUnknownGuestOS),
 					},
 				},
 			}),
@@ -122,7 +123,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), virtualmachine.FactsUnknownGuestOS),
 					},
 				},
 			}),
@@ -155,7 +156,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), virtualmachine.FactsUnknownGuestOS),
 					},
 				},
 			}),
@@ -176,7 +177,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), virtualmachine.FactsUnknownGuestOS),
 					},
 				},
 			}),
@@ -224,7 +225,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						State:       virtualMachineV1.VirtualMachine_RUNNING,
 						VsockCid:    int32(runningVSockCID),
 						VsockCidSet: true,
-						Facts:       getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:       getFactsForTest(s.T(), virtualmachine.FactsUnknownGuestOS),
 					},
 				},
 			}),
@@ -260,7 +261,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						State:       virtualMachineV1.VirtualMachine_RUNNING,
 						VsockCid:    int32(runningVSockCID),
 						VsockCidSet: true,
-						Facts:       getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:       getFactsForTest(s.T(), virtualmachine.FactsUnknownGuestOS),
 					},
 				},
 			}),
