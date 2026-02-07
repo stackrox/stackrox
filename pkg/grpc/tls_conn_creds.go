@@ -46,7 +46,13 @@ func (c credsFromConn) ServerHandshake(rawConn net.Conn) (net.Conn, credentials.
 		log.Debugf("TLS handshake error from %q: %v", rawConn.RemoteAddr(), err)
 		return nil, nil, err
 	}
-	return tlsConn, credentials.TLSInfo{State: tlsConn.ConnectionState()}, nil
+	connState := tlsConn.ConnectionState()
+	log.Infof("TLS handshake from %q: %s, cipher %s, key exchange %s",
+		rawConn.RemoteAddr(),
+		tls.VersionName(connState.Version),
+		tls.CipherSuiteName(connState.CipherSuite),
+		connState.CurveID.String())
+	return tlsConn, credentials.TLSInfo{State: connState}, nil
 }
 
 func (c credsFromConn) Clone() credentials.TransportCredentials {
