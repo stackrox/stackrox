@@ -1,7 +1,4 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:5dc6ba426ccbeb3954ead6b015f36b4a2d22320e5b356b074198d08422464ed2 AS builder
-
-# This installs both PyYAML and Python.
-RUN microdnf -y install python3.12-pyyaml
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.25@sha256:527782f4a0270f786192281f68d0374f4a21b3ab759643eee4bfcafb6f539468 AS builder
 
 COPY . /stackrox
 WORKDIR /stackrox/operator
@@ -56,6 +53,13 @@ ARG RELATED_IMAGE_CENTRAL_DB
 ENV RELATED_IMAGE_CENTRAL_DB=$RELATED_IMAGE_CENTRAL_DB
 RUN echo "Checking required RELATED_IMAGE_CENTRAL_DB"; [[ "${RELATED_IMAGE_CENTRAL_DB}" != "" ]]
 
+# Set Go environment variables to ensure hermetic builds work correctly with Cachi2
+ENV CI=1 GOFLAGS="" CGO_ENABLED=1
+
+# Build csv-patcher from source (Go replacement for patch-csv.py)
+RUN cd /stackrox/operator/bundle_helpers/csv-patcher && go build -o /usr/local/bin/csv-patcher .
+
+# Prepare bundle using the csv-patcher Go tool
 RUN ./bundle_helpers/prepare-bundle-manifests.sh \
       --use-version="${OPERATOR_IMAGE_TAG}" \
       --first-version=4.0.0 \

@@ -36,8 +36,8 @@ kubeconfig
 # ignore testing init-bundle which was generated for kuttl e2e tests
 tests/*/*/init-bundle.yaml
 
-# Python virtualenv directory for dependencies of bundle build helpers.
-bundle_helpers/.venv/
-
 # Backups for what we've edited with sed
 *.bak
+
+bundle_helpers/csv-patcher/csv-patcher
+bundle_helpers/fix-spec-descriptors/fix-spec-descriptors
