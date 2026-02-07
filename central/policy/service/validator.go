@@ -341,7 +341,7 @@ func (s *policyValidator) validateScope(scope *storage.Scope) error {
 	if scope.GetNamespace() != "" && scope.GetNamespaceLabel() != nil {
 		return errors.New("scope cannot have both 'namespace' and 'namespace_label' fields populated")
 	}
-	if _, err := scopecomp.CompileScope(scope); err != nil {
+	if _, err := scopecomp.CompileScope(scope, nil, nil); err != nil {
 		return errors.Wrap(err, "could not compile scope")
 	}
 	return nil

@@ -47,7 +47,7 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 
 	scopes := make([]*scopecomp.CompiledScope, 0, len(policy.GetScope()))
 	for _, s := range policy.GetScope() {
-		compiledScope, err := scopecomp.CompileScope(s)
+		compiledScope, err := scopecomp.CompileScope(s, nil, nil)
 		if err != nil {
 			return nil, errors.Wrapf(err, "compiling scope %+v for policy %q", s, policy.GetName())
 		}
@@ -437,7 +437,7 @@ func newCompiledExclusion(exclusion *storage.Exclusion) (*compiledExclusion, err
 		}
 	}
 	if scope := exclusion.GetDeployment().GetScope(); scope != nil {
-		cs, err := scopecomp.CompileScope(exclusion.GetDeployment().GetScope())
+		cs, err := scopecomp.CompileScope(exclusion.GetDeployment().GetScope(), nil, nil)
 		if err != nil {
 			return nil, err
 		}
