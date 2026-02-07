@@ -31,7 +31,7 @@
                   "$ref": "#/definitions/v1VulnMgmtExportWorkloadsResponse"
                 },
                 "error": {
-                  "$ref": "#/definitions/googlerpcStatus"
+                  "$ref": "#/definitions/googleRpcStatus"
                 }
               },
               "title": "Stream result of v1VulnMgmtExportWorkloadsResponse"
@@ -40,7 +40,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -125,6 +125,30 @@
         }
       }
     },
+    "EmbeddedImageScanComponentExecutable": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "EmbeddedVulnerabilityScoreVersion": {
+      "type": "string",
+      "enum": [
+        "V2",
+        "V3"
+      ],
+      "default": "V2",
+      "description": "- V2: No unset for automatic backwards compatibility",
+      "title": "ScoreVersion can be deprecated ROX-26066"
+    },
     "EmbeddedVulnerabilityVulnerabilityType": {
       "type": "string",
       "enum": [
@@ -150,6 +174,24 @@
       ],
       "default": "UNSET",
       "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
+    },
+    "LabelSelectorRequirement": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "op": {
+          "$ref": "#/definitions/storageLabelSelectorOperator"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "Next available tag: 4"
     },
     "PortConfigExposureInfo": {
       "type": "object",
@@ -250,7 +292,7 @@
       ],
       "default": "NONE"
     },
-    "googlerpcStatus": {
+    "googleRpcStatus": {
       "type": "object",
       "properties": {
         "code": {
@@ -827,7 +869,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/storageEmbeddedImageScanComponentExecutable"
+            "$ref": "#/definitions/EmbeddedImageScanComponentExecutable"
           },
           "title": "Values are cleared after moving to cache, remove them from the grpc return as well"
         },
@@ -836,20 +878,6 @@
         }
       },
       "title": "Next Tag: 14"
-    },
-    "storageEmbeddedImageScanComponentExecutable": {
-      "type": "object",
-      "properties": {
-        "path": {
-          "type": "string"
-        },
-        "dependencies": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
     },
     "storageEmbeddedSecret": {
       "type": "object",
@@ -885,7 +913,7 @@
           "type": "string"
         },
         "scoreVersion": {
-          "$ref": "#/definitions/storageEmbeddedVulnerabilityScoreVersion"
+          "$ref": "#/definitions/EmbeddedVulnerabilityScoreVersion"
         },
         "cvssV2": {
           "$ref": "#/definitions/storageCVSSV2",
@@ -965,16 +993,6 @@
         }
       },
       "title": "Next Tag: 27"
-    },
-    "storageEmbeddedVulnerabilityScoreVersion": {
-      "type": "string",
-      "enum": [
-        "V2",
-        "V3"
-      ],
-      "default": "V2",
-      "description": "- V2: No unset for automatic backwards compatibility",
-      "title": "ScoreVersion can be deprecated ROX-26066"
     },
     "storageImage": {
       "type": "object",
@@ -1266,7 +1284,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/storageLabelSelectorRequirement"
+            "$ref": "#/definitions/LabelSelectorRequirement"
           }
         }
       },
@@ -1283,24 +1301,6 @@
         "NOT_EXISTS"
       ],
       "default": "UNKNOWN"
-    },
-    "storageLabelSelectorRequirement": {
-      "type": "object",
-      "properties": {
-        "key": {
-          "type": "string"
-        },
-        "op": {
-          "$ref": "#/definitions/storageLabelSelectorOperator"
-        },
-        "values": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "title": "Next available tag: 4"
     },
     "storageLicense": {
       "type": "object",

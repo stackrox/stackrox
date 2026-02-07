@@ -29,7 +29,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -90,7 +90,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -124,7 +124,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -162,7 +162,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -250,7 +250,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -344,7 +344,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -364,7 +364,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -396,7 +396,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -424,7 +424,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -460,6 +460,27 @@
         },
         "l4protocol": {
           "$ref": "#/definitions/storageL4Protocol"
+        }
+      }
+    },
+    "NetworkEntityInfoDeployment": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "cluster": {
+          "type": "string"
+        },
+        "listenPorts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/DeploymentListenPort"
+          }
         }
       }
     },
@@ -499,7 +520,7 @@
         }
       }
     },
-    "googlerpcStatus": {
+    "googleRpcStatus": {
       "type": "object",
       "properties": {
         "code": {
@@ -564,31 +585,10 @@
           "type": "string"
         },
         "deployment": {
-          "$ref": "#/definitions/storageNetworkEntityInfoDeployment"
+          "$ref": "#/definitions/NetworkEntityInfoDeployment"
         },
         "externalSource": {
           "$ref": "#/definitions/NetworkEntityInfoExternalSource"
-        }
-      }
-    },
-    "storageNetworkEntityInfoDeployment": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "namespace": {
-          "type": "string"
-        },
-        "cluster": {
-          "type": "string"
-        },
-        "listenPorts": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/DeploymentListenPort"
-          }
         }
       }
     },

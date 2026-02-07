@@ -30,7 +30,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -125,7 +125,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -158,7 +158,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -191,7 +191,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -230,7 +230,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -259,7 +259,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -290,7 +290,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -330,6 +330,23 @@
     }
   },
   "definitions": {
+    "CloudSourceCredentials": {
+      "type": "object",
+      "properties": {
+        "secret": {
+          "type": "string",
+          "description": "Used for single-valued authentication via long-lived tokens."
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Used for client authentication in combination with client_secret."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "Used for client authentication in combination with client_id."
+        }
+      }
+    },
     "CloudSourcesServiceUpdateCloudSourceBody": {
       "type": "object",
       "properties": {
@@ -363,7 +380,7 @@
         }
       }
     },
-    "googlerpcStatus": {
+    "googleRpcStatus": {
       "type": "object",
       "properties": {
         "code": {
@@ -427,7 +444,7 @@
           "$ref": "#/definitions/v1CloudSourceType"
         },
         "credentials": {
-          "$ref": "#/definitions/v1CloudSourceCredentials"
+          "$ref": "#/definitions/CloudSourceCredentials"
         },
         "skipTestIntegration": {
           "type": "boolean"
@@ -440,23 +457,6 @@
         }
       },
       "description": "CloudSource is an integration which provides a source for discovered\nclusters."
-    },
-    "v1CloudSourceCredentials": {
-      "type": "object",
-      "properties": {
-        "secret": {
-          "type": "string",
-          "description": "Used for single-valued authentication via long-lived tokens."
-        },
-        "clientId": {
-          "type": "string",
-          "description": "Used for client authentication in combination with client_secret."
-        },
-        "clientSecret": {
-          "type": "string",
-          "description": "Used for client authentication in combination with client_id."
-        }
-      }
     },
     "v1CloudSourceType": {
       "type": "string",

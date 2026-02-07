@@ -29,7 +29,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -49,7 +49,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -81,7 +81,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -101,7 +101,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -134,7 +134,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -156,7 +156,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -178,7 +178,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -198,7 +198,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -230,7 +230,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -288,6 +288,24 @@
         }
       }
     },
+    "PrometheusMetricsGroup": {
+      "type": "object",
+      "properties": {
+        "gatheringPeriodMinutes": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The gathering period for periodically gathered metrics. If set to zero,\ngathering is disabled."
+        },
+        "descriptors": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/GroupLabels"
+          },
+          "description": "Metric descriptors is a map of metric names to the list of allowed\nlabels."
+        }
+      },
+      "description": "A group is a collection of metrics that are computed by the same\naggregator. Metrics in a group may use different subsets of a complete list\nof labels supported by the aggregator."
+    },
     "RuleNamespaceRule": {
       "type": "object",
       "properties": {
@@ -296,7 +314,7 @@
         }
       }
     },
-    "googlerpcStatus": {
+    "googleRpcStatus": {
       "type": "object",
       "properties": {
         "code": {
@@ -501,34 +519,16 @@
       "type": "object",
       "properties": {
         "imageVulnerabilities": {
-          "$ref": "#/definitions/storagePrometheusMetricsGroup"
+          "$ref": "#/definitions/PrometheusMetricsGroup"
         },
         "policyViolations": {
-          "$ref": "#/definitions/storagePrometheusMetricsGroup"
+          "$ref": "#/definitions/PrometheusMetricsGroup"
         },
         "nodeVulnerabilities": {
-          "$ref": "#/definitions/storagePrometheusMetricsGroup"
+          "$ref": "#/definitions/PrometheusMetricsGroup"
         }
       },
       "title": "next available tag: 4"
-    },
-    "storagePrometheusMetricsGroup": {
-      "type": "object",
-      "properties": {
-        "gatheringPeriodMinutes": {
-          "type": "integer",
-          "format": "int64",
-          "description": "The gathering period for periodically gathered metrics. If set to zero,\ngathering is disabled."
-        },
-        "descriptors": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/GroupLabels"
-          },
-          "description": "Metric descriptors is a map of metric names to the list of allowed\nlabels."
-        }
-      },
-      "description": "A group is a collection of metrics that are computed by the same\naggregator. Metrics in a group may use different subsets of a complete list\nof labels supported by the aggregator."
     },
     "storagePublicConfig": {
       "type": "object",
