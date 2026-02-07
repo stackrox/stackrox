@@ -110,6 +110,10 @@ type query struct {
 
 	// This field indicates if 'Distinct' is applied in the select portion of the query
 	DistinctAppliedToSelects bool
+
+	// HasChildTableFields indicates if any selected fields come from child tables and should
+	// be automatically aggregated using array_agg() with auto-generated GROUP BY clauses.
+	HasChildTableFields bool
 }
 
 type groupByEntry struct {
@@ -241,7 +245,11 @@ func (q *query) getPortionBeforeFromClause() string {
 
 		selectStrs := make([]string, 0, len(allSelectFields))
 		for _, field := range allSelectFields {
-			if q.groupByNonPKFields() && !field.FromGroupBy && !field.DerivedField {
+			if field.ChildTableAgg {
+				selectStrs = append(selectStrs,
+					fmt.Sprintf("COALESCE(array_agg(DISTINCT %s) FILTER (WHERE %s IS NOT NULL), '{}') as %s",
+						field.SelectPath, field.SelectPath, field.Alias))
+			} else if q.groupByNonPKFields() && !field.FromGroupBy && !field.DerivedField {
 				selectStrs = append(selectStrs, fmt.Sprintf("jsonb_agg(%s) as %s", field.SelectPath, field.Alias))
 			} else {
 				selectStrs = append(selectStrs, field.PathForSelectPortion())
@@ -307,6 +315,30 @@ func (q *query) AsSQL() string {
 		}
 		querySB.WriteString(" group by ")
 		querySB.WriteString(strings.Join(groupByClauses, ", "))
+	} else if q.HasChildTableFields && q.QueryType == SELECT {
+		var groupByParts []string
+		groupByFields := set.NewStringSet()
+
+		for _, field := range q.SelectedFields {
+			if !field.ChildTableAgg {
+				if groupByFields.Add(field.SelectPath) {
+					groupByParts = append(groupByParts, field.SelectPath)
+				}
+			}
+		}
+
+		for _, field := range q.ExtraSelectedFieldPaths() {
+			if !field.ChildTableAgg {
+				if groupByFields.Add(field.SelectPath) {
+					groupByParts = append(groupByParts, field.SelectPath)
+				}
+			}
+		}
+
+		if len(groupByParts) > 0 {
+			querySB.WriteString(" group by ")
+			querySB.WriteString(strings.Join(groupByParts, ", "))
+		}
 	} else if q.QueryType == GET && len(q.Joins) > 0 {
 		// For GET with joins, group by primary keys and serialized to ensure distinctness
 		var groupByParts []string
@@ -470,7 +502,7 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 		return nil, sacErr
 	}
 	standardizeFieldNamesInQuery(q)
-	joins, dbFields := getJoinsAndFields(schema, q)
+	joins, dbFields := getJoinsAndFields(schema, q, nil)
 
 	queryEntry, err := compileQueryToPostgres(schema, q, dbFields, nowForQuery)
 	if err != nil {
@@ -512,7 +544,7 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 
 	// If selects are provided in a SEARCH query, process them to enable single-pass SearchResult construction (ROX-29943)
 	if len(q.GetSelects()) > 0 && queryType == SEARCH {
-		if err := populateSelect(parsedQuery, schema, q.GetSelects(), dbFields, nowForQuery); err != nil {
+		if err := populateSelect(parsedQuery, schema, q, dbFields, nowForQuery, nil); err != nil {
 			return nil, errors.Wrapf(err, "failed to parse select portion of query -- %s --", q.String())
 		}
 	}

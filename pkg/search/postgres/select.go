@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -18,10 +19,47 @@ import (
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-var scanAPI = newScanAPI(newDBScanAPI(dbscan.WithAllowUnknownColumns(true)))
+var (
+	scanAPI          = newScanAPI(newDBScanAPI(dbscan.WithAllowUnknownColumns(true)))
+	arrayFieldsCache sync.Map // reflect.Type -> map[string]bool
+)
+
+// getArrayFieldsFromType returns a map of db tag names to whether the field is a
+// slice type. Results are cached per type since reflect inspection is invariant.
+func getArrayFieldsFromType[T any]() map[string]bool {
+	var zero T
+	t := reflect.TypeOf(zero)
+
+	if t != nil && t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	if t == nil || t.Kind() != reflect.Struct {
+		return nil
+	}
+
+	if cached, ok := arrayFieldsCache.Load(t); ok {
+		return cached.(map[string]bool)
+	}
+
+	arrayFields := make(map[string]bool)
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		dbTag := field.Tag.Get("db")
+		if dbTag == "" || dbTag == "-" {
+			continue
+		}
+		if field.Type.Kind() == reflect.Slice {
+			arrayFields[dbTag] = true
+		}
+	}
+
+	arrayFieldsCache.Store(t, arrayFields)
+	return arrayFields
+}
 
 func newScanAPI(dbscanAPI *dbscan.API) *pgxscan.API {
 	api, err := pgxscan.NewAPI(dbscanAPI)
@@ -73,7 +111,10 @@ func RunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, sch
 		}
 	}()
 
-	query, err = standardizeSelectQueryAndPopulatePath(ctx, q, schema, SELECT)
+	// Extract array fields from destination type T to automatically detect child table aggregation
+	arrayFields := getArrayFieldsFromType[T]()
+
+	query, err = standardizeSelectQueryAndPopulatePath(ctx, q, schema, SELECT, arrayFields)
 	if err != nil {
 		return err
 	}
@@ -86,7 +127,7 @@ func RunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, sch
 	})
 }
 
-func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType) (*query, error) {
+func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType, arrayFields map[string]bool) (*query, error) {
 	nowForQuery := time.Now()
 
 	var err error
@@ -101,7 +142,7 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 	}
 
 	standardizeFieldNamesInQuery(q)
-	joins, dbFields := getJoinsAndFields(schema, q)
+	joins, dbFields := getJoinsAndFields(schema, q, arrayFields)
 	if len(q.GetSelects()) == 0 && q.GetQuery() == nil {
 		return nil, nil
 	}
@@ -113,7 +154,7 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 		Joins:     joins,
 	}
 
-	if err = populateSelect(parsedQuery, schema, q.GetSelects(), dbFields, nowForQuery); err != nil {
+	if err = populateSelect(parsedQuery, schema, q, dbFields, nowForQuery, arrayFields); err != nil {
 		return nil, errors.Wrapf(err, "failed to parse select portion of query -- %s --", q.String())
 	}
 
@@ -171,10 +212,13 @@ func retryableRunSelectRequestForSchemaFn[T any](ctx context.Context, db postgre
 	return rows.Err()
 }
 
-func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1.QuerySelect, queryFields map[string]searchFieldMetadata, nowForQuery time.Time) error {
+func populateSelect(querySoFar *query, schema *walker.Schema, q *v1.Query, queryFields map[string]searchFieldMetadata, nowForQuery time.Time, arrayFields map[string]bool) error {
+	querySelects := q.GetSelects()
 	if len(querySelects) == 0 {
 		return errors.New("select portion of the query cannot be empty")
 	}
+
+	hasGroupBy := len(q.GetGroupBy().GetFields()) > 0
 
 	for idx, qs := range querySelects {
 		field := qs.GetField()
@@ -183,16 +227,22 @@ func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1
 		if dbField == nil {
 			return errors.Errorf("field %s in select portion of query does not exist in table %s or connected tables", field, schema.Table)
 		}
+
+		isChildField := isChildTableField(dbField, schema)
+
 		// TODO(mandar): Add support for the following.
-		if dbField.DataType == postgres.StringArray || dbField.DataType == postgres.IntArray ||
-			dbField.DataType == postgres.EnumArray || dbField.DataType == postgres.Map {
-			return errors.Errorf("field %s in select portion of query is unsupported", field)
+		if !isChildField && (dbField.DataType == postgres.StringArray || dbField.DataType == postgres.IntArray ||
+			dbField.DataType == postgres.EnumArray || dbField.DataType == postgres.Map) {
+			return errors.Errorf("array field %s in parent table is unsupported in select", field)
 		}
 
 		if qs.GetFilter() == nil {
-			querySoFar.SelectedFields = append(querySoFar.SelectedFields,
-				selectQueryField(field.GetName(), dbField, field.GetDistinct(), aggregatefunc.GetAggrFunc(field.GetAggregateFunc()), ""),
-			)
+			selectField := selectQueryField(field.GetName(), dbField, field.GetDistinct(), aggregatefunc.GetAggrFunc(field.GetAggregateFunc()), "")
+			if arrayFields != nil && isChildField && !hasGroupBy && arrayFields[strings.ToLower(selectField.Alias)] {
+				selectField.ChildTableAgg = true
+				querySoFar.HasChildTableFields = true
+			}
+			querySoFar.SelectedFields = append(querySoFar.SelectedFields, selectField)
 			querySoFar.DistinctAppliedToSelects = querySoFar.DistinctAppliedToSelects || field.GetDistinct()
 			continue
 		}
@@ -213,6 +263,10 @@ func populateSelect(querySoFar *query, schema *walker.Schema, querySelects []*v1
 		querySoFar.Data = append(querySoFar.Data, qe.Where.Values...)
 
 		selectField := selectQueryField(field.GetName(), dbField, field.GetDistinct(), aggregatefunc.GetAggrFunc(field.GetAggregateFunc()), qe.Where.Query)
+		if arrayFields != nil && isChildField && !hasGroupBy && arrayFields[strings.ToLower(selectField.Alias)] {
+			selectField.ChildTableAgg = true
+			querySoFar.HasChildTableFields = true
+		}
 		querySoFar.DistinctAppliedToSelects = querySoFar.DistinctAppliedToSelects || field.GetDistinct()
 		if alias := filter.GetName(); alias != "" {
 			selectField.Alias = alias

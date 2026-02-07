@@ -9,18 +9,24 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/secret/convert"
+	"github.com/stackrox/rox/pkg/search/paginated"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
 type datastoreImpl struct {
 	storage store.Store
+	// TODO(ROX-31142): No way to call RunSelectRequestForSchemaFn via
+	// the store so we have to allow for access to the DB here.
+	db postgres.DB
 }
 
 func newPostgres(db postgres.DB) DataStore {
 	dbStore := pgStore.New(db)
 	return &datastoreImpl{
 		storage: dbStore,
+		db:      db,
 	}
 }
 
@@ -62,12 +68,43 @@ func (d *datastoreImpl) SearchSecrets(ctx context.Context, q *v1.Query) ([]*v1.S
 }
 
 func (d *datastoreImpl) SearchListSecrets(ctx context.Context, request *v1.Query) ([]*storage.ListSecret, error) {
-	results, err := d.Search(ctx, request)
+	query := request.CloneVT()
+	if query == nil {
+		query = pkgSearch.EmptyQuery()
+	}
+
+	defaultSort := &v1.QuerySortOption{
+		Field:    pkgSearch.CreatedTime.String(),
+		Reversed: false,
+	}
+	query = paginated.FillDefaultSortOption(query, defaultSort)
+
+	query.Selects = []*v1.QuerySelect{
+		pkgSearch.NewQuerySelect(pkgSearch.SecretID).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.SecretName).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ClusterID).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.Cluster).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.Namespace).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.CreatedTime).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.SecretType).Proto(),
+	}
+
+	var responses []*listSecretResponse
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, d.db, pkgSchema.SecretsSchema, query,
+		func(r *listSecretResponse) error {
+			responses = append(responses, r)
+			return nil
+		})
 	if err != nil {
 		return nil, err
 	}
-	secrets, _, err := d.resultsToListSecrets(ctx, results)
-	return secrets, err
+
+	listSecrets := make([]*storage.ListSecret, 0, len(responses))
+	for _, r := range responses {
+		listSecrets = append(listSecrets, r.toListSecret())
+	}
+
+	return listSecrets, nil
 }
 
 func (d *datastoreImpl) SearchRawSecrets(ctx context.Context, request *v1.Query) ([]*storage.Secret, error) {
@@ -98,21 +135,6 @@ func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Re
 // Count returns the number of search results from the query
 func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return d.storage.Count(ctx, q)
-}
-
-// ToSecrets returns the secrets from the db for the given search results.
-func (d *datastoreImpl) resultsToListSecrets(ctx context.Context, results []pkgSearch.Result) ([]*storage.ListSecret, []int, error) {
-	ids := pkgSearch.ResultsToIDs(results)
-
-	secrets, missingIndices, err := d.storage.GetMany(ctx, ids)
-	if err != nil {
-		return nil, nil, err
-	}
-	listSecrets := make([]*storage.ListSecret, 0, len(secrets))
-	for _, s := range secrets {
-		listSecrets = append(listSecrets, convert.SecretToSecretList(s))
-	}
-	return listSecrets, missingIndices, nil
 }
 
 type SecretSearchResultConverter struct{}
