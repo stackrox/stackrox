@@ -26,6 +26,10 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
+- ROX-26769: Central API for generating CRSs now supports specifying an upper bound for cluster
+  registrations using the new field "max_registrations".
+  roxctl's "central crs generate" supports specifying a maximum number of cluster registrations
+  using the new parameter "--max-clusters".
 - ROX-31443: Automatic HTTP to HTTPS redirection is now enabled for Central OpenShift routes (passthrough and reencrypt).
 - ROX-29582: A `kubectl get` on a Central CR now shows the following additional columns: Version, AdminPassword, Message, Available, Progressing.
 - ROX-32061: The `spec.configAsCode` field in the Central CR now supports `resources`, `nodeSelector`, `tolerations`, and `hostAliases` settings for the config-controller deployment.

@@ -137,7 +137,7 @@ func (s *serviceImpl) GenerateCRS(ctx context.Context, request *v1.CRSGenRequest
 		return nil, status.Error(codes.Unimplemented, "support for generating Cluster Registration Secrets (CRS) is not enabled")
 	}
 
-	generated, err := s.backend.IssueCRS(ctx, request.GetName(), time.Time{})
+	generated, err := s.backend.IssueCRS(ctx, request.GetName(), time.Time{}, 0)
 	if err != nil {
 		if errors.Is(err, store.ErrInitBundleDuplicateName) {
 			return nil, status.Errorf(codes.AlreadyExists, "generating new CRS: %s", err)
@@ -162,10 +162,6 @@ func (s *serviceImpl) GenerateCRSExtended(ctx context.Context, request *v1.CRSGe
 		return nil, status.Error(codes.Unimplemented, "support for generating Cluster Registration Secrets (CRS) is not enabled")
 	}
 
-	if request.GetMaxRegistrations() != 0 {
-		return nil, errox.NotImplemented.CausedBy("max-registration limits not supported")
-	}
-
 	reqValidUntil := request.GetValidUntil()
 	reqValidFor := request.GetValidFor()
 	if reqValidUntil != nil && reqValidFor != nil {
@@ -177,7 +173,9 @@ func (s *serviceImpl) GenerateCRSExtended(ctx context.Context, request *v1.CRSGe
 		validUntil = protocompat.NilOrNow(reqValidUntil).Add(reqValidFor.AsDuration())
 	}
 
-	generated, err := s.backend.IssueCRS(ctx, request.GetName(), validUntil)
+	reqMaxRegistrations := request.GetMaxRegistrations()
+
+	generated, err := s.backend.IssueCRS(ctx, request.GetName(), validUntil, reqMaxRegistrations)
 	if err != nil {
 		if errors.Is(err, store.ErrInitBundleDuplicateName) {
 			return nil, status.Errorf(codes.AlreadyExists, "generating new CRS: %s", err)

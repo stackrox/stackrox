@@ -43,6 +43,7 @@ import (
 	clusterService "github.com/stackrox/rox/central/cluster/service"
 	"github.com/stackrox/rox/central/clusterinit/backend"
 	clusterInitService "github.com/stackrox/rox/central/clusterinit/service"
+	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store/singleton"
 	clustersHelmConfig "github.com/stackrox/rox/central/clusters/helmconfig"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
 	complianceDatastore "github.com/stackrox/rox/central/compliance/datastore"
@@ -455,7 +456,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		roleService.Singleton(),
 		searchService.Singleton(),
 		secretService.Singleton(),
-		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton(), installationStore.Singleton()),
+		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton(), installationStore.Singleton(), clusterInitStore.Singleton()),
 		sensorUpgradeControlService.Singleton(),
 		sensorUpgradeService.Singleton(),
 		serviceAccountService.Singleton(),

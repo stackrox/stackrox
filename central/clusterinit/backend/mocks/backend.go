@@ -119,18 +119,18 @@ func (mr *MockBackendMockRecorder) Issue(ctx, name any) *gomock.Call {
 }
 
 // IssueCRS mocks base method.
-func (m *MockBackend) IssueCRS(ctx context.Context, name string, validUntil time.Time) (*backend.CRSWithMeta, error) {
+func (m *MockBackend) IssueCRS(ctx context.Context, name string, validUntil time.Time, maxRegistrations uint64) (*backend.CRSWithMeta, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IssueCRS", ctx, name, validUntil)
+	ret := m.ctrl.Call(m, "IssueCRS", ctx, name, validUntil, maxRegistrations)
 	ret0, _ := ret[0].(*backend.CRSWithMeta)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // IssueCRS indicates an expected call of IssueCRS.
-func (mr *MockBackendMockRecorder) IssueCRS(ctx, name, validUntil any) *gomock.Call {
+func (mr *MockBackendMockRecorder) IssueCRS(ctx, name, validUntil, maxRegistrations any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssueCRS", reflect.TypeOf((*MockBackend)(nil).IssueCRS), ctx, name, validUntil)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssueCRS", reflect.TypeOf((*MockBackend)(nil).IssueCRS), ctx, name, validUntil, maxRegistrations)
 }
 
 // Revoke mocks base method.

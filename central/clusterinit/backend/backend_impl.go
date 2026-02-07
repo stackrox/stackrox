@@ -21,6 +21,10 @@ import (
 
 const (
 	currentCrsVersion = 1
+
+	// We enforce an upper bound for this setting because for this feature it is required to maintain a list of cluster names
+	// per CRS in the storage and therefore we need to keep the storage requirements under control.
+	maxRegistrationsUpperLimit = 100
 )
 
 var _ authn.ValidateCertChain = (*backendImpl)(nil)
@@ -156,7 +160,7 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 	}, nil
 }
 
-func (b *backendImpl) IssueCRS(ctx context.Context, name string, validUntil time.Time) (*CRSWithMeta, error) {
+func (b *backendImpl) IssueCRS(ctx context.Context, name string, validUntil time.Time, maxRegistrations uint64) (*CRSWithMeta, error) {
 	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
 		return nil, err
 	}
@@ -164,6 +168,10 @@ func (b *backendImpl) IssueCRS(ctx context.Context, name string, validUntil time
 
 	if err := validateName(name); err != nil {
 		return nil, err
+	}
+
+	if maxRegistrations > maxRegistrationsUpperLimit {
+		return nil, errors.Errorf("cluster registration limit must be in the range 0...%d", maxRegistrationsUpperLimit)
 	}
 
 	caCert, err := b.certProvider.GetCA()
@@ -189,12 +197,13 @@ func (b *backendImpl) IssueCRS(ctx context.Context, name string, validUntil time
 
 	// On the storage side we are reusing the InitBundleMeta.
 	meta := &storage.InitBundleMeta{
-		Id:        id.String(),
-		Name:      name,
-		CreatedAt: protocompat.TimestampNow(),
-		CreatedBy: user,
-		ExpiresAt: expiryTimestamp,
-		Version:   storage.InitBundleMeta_CRS,
+		Id:               id.String(),
+		Name:             name,
+		CreatedAt:        protocompat.TimestampNow(),
+		CreatedBy:        user,
+		ExpiresAt:        expiryTimestamp,
+		Version:          storage.InitBundleMeta_CRS,
+		MaxRegistrations: maxRegistrations,
 	}
 
 	if err := b.store.Add(storeCtx, meta); err != nil {

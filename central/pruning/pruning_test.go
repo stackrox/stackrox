@@ -13,6 +13,7 @@ import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	clusterHealthPostgres "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
+	clusterInitStoreMocks "github.com/stackrox/rox/central/clusterinit/store/mocks"
 	compliancePrunerMocks "github.com/stackrox/rox/central/complianceoperator/v2/pruner/mocks"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
@@ -357,6 +358,7 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	clusterFlows := networkFlowDatastoreMocks.NewMockClusterDataStore(mockCtrl)
 	flows := networkFlowDatastoreMocks.NewMockFlowDataStore(mockCtrl)
 	clusterCVEs := clusterCVEDS.NewMockDataStore(mockCtrl)
+	clusterInitStore := clusterInitStoreMocks.NewMockStore(mockCtrl)
 
 	// A bunch of these get called when a cluster is deleted
 	flowsDataStore.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).AnyTimes().Return(networkFlowDatastoreMocks.NewMockFlowDataStore(mockCtrl), nil)
@@ -415,7 +417,8 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 		notifierMock,
 		ranking.NewRanker(),
 		networkBaselineMgr,
-		compliancePruner)
+		compliancePruner,
+		clusterInitStore)
 	require.NoError(s.T(), err)
 
 	return mockConfigDatastore, deployments, clusterDataStore

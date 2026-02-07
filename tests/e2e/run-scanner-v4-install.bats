@@ -523,6 +523,19 @@ EOT
         "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
 
     ######################
+    _begin "verifying-crs-revoked"
+    echo "Retrieving CRS listing..."
+    run "${ORCH_CMD}" </dev/null -n "$CUSTOM_CENTRAL_NAMESPACE" exec deploy/central -- roxctl \
+        --insecure-skip-tls-verify \
+        -p "$ROX_ADMIN_PASSWORD" \
+        -e "central.${CUSTOM_CENTRAL_NAMESPACE}.svc:443" \
+        central crs list
+    echo "Verifying command succeeded..."
+    [ "$status" -eq 0 ]
+    echo "Verify that the CRS is not listed anymore (i.e. it is auto-revoked)..."
+    refute_output --partial "$secured_cluster_name"
+
+    ######################
     _begin "verifying-central-scanners-deployed"
     verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
@@ -1331,6 +1344,7 @@ deploy_sensor_with_helm() {
     local image_overwrites=""
     local base_helm_values=""
     local upgrade="false"
+    local init_artifact=""
 
     if [[ "$use_default_chart" == "true" ]]; then
         image_overwrites=$(cat <<EOT
@@ -1352,14 +1366,28 @@ EOT
         command=("upgrade" "--install" "--reuse-values")
         upgrade="true"
     else
-        # Later this will be replaced by CRS.
-        echo "Retrieving init-bundle from Central..."
-        init_bundle="$("${ORCH_CMD}" </dev/null -n "$central_namespace" exec deploy/central -- roxctl \
-            --insecure-skip-tls-verify \
-            -p "$central_password" \
-            -e "central.${central_namespace}.svc:443" \
-            central init-bundles generate "$cluster_name" --output=-)"
-
+        # Later we can unify these two paths.
+        if [[ "$use_default_chart" == "true" ]]; then
+            # Using default chart means we are using HEAD, i.e. latest CRS support.
+            echo "Retrieving CRS from Central..."
+            local crs
+            crs="$("${ORCH_CMD}" </dev/null -n "$central_namespace" exec deploy/central -- roxctl \
+                --insecure-skip-tls-verify \
+                -p "$central_password" \
+                -e "central.${central_namespace}.svc:443" \
+                central crs generate "$cluster_name" --valid-for=10m --max-clusters=1 --output=-)"
+            # Wrap the CRS file as expected by the Helm chart.
+            init_artifact="$(echo "$crs" | embed_crs_file)"
+        else
+            # This most likely means that we are deploying from an earlier version.
+            # To get more coverage we are using init-bundles here.
+            echo "Retrieving init-bundle from Central..."
+            init_artifact="$("${ORCH_CMD}" </dev/null -n "$central_namespace" exec deploy/central -- roxctl \
+                --insecure-skip-tls-verify \
+                -p "$central_password" \
+                -e "central.${central_namespace}.svc:443" \
+                central init-bundles generate "$cluster_name" --output=-)"
+        fi
         create_sensor_pull_secrets "$sensor_namespace"
 
         base_helm_values=$(cat <<EOT
@@ -1425,7 +1453,7 @@ EOT
     helm -n "${sensor_namespace}" "${command[@]}" \
         -f <(echo "$image_overwrites") \
         -f <(echo "$base_helm_values") \
-        -f <(echo "$init_bundle") \
+        -f <(echo "$init_artifact") \
         "$@" \
         stackrox-secured-cluster-services "${helm_chart_dir}"
 
@@ -1731,4 +1759,12 @@ safe_count_lines() {
 
 roxctl_built_in_release_mode() {
     ! roxctl helm output central-services --help 2>&1 | grep -- --debug= >/dev/null
+}
+
+embed_crs_file() {
+    cat <<EOT
+crs:
+  file: |
+EOT
+    sed -e 's/^\(.*\)/    \1/;'
 }

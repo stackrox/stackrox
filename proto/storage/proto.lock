@@ -2873,6 +2873,23 @@
                 "id": 7,
                 "name": "version",
                 "type": "InitBundleVersion"
+              },
+              {
+                "id": 8,
+                "name": "max_registrations",
+                "type": "uint64"
+              },
+              {
+                "id": 9,
+                "name": "registrations_initiated",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 10,
+                "name": "registrations_completed",
+                "type": "string",
+                "is_repeated": true
               }
             ]
           }

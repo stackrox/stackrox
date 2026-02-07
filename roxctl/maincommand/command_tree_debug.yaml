@@ -87,6 +87,7 @@ central:
       - use-current-k8s-context
     generate:
       PERSISTENT_FLAGS:
+        - max-clusters
         - output
         - valid-for
         - valid-until

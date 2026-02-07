@@ -254,7 +254,7 @@ func CreateTestClusterDatastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl 
 	connMgr.EXPECT().GetConnection(gomock.Any()).AnyTimes()
 	datastore, err := clusterDataStore.New(storage, healthStorage,
 		clusterCVEDS, nil, nil, namespaceDS, nil, nodeDataStore, nil, nil,
-		netFlows, netEntities, nil, nil, nil, connMgr, nil, ranking.ClusterRanker(), nil, nil)
+		netFlows, netEntities, nil, nil, nil, connMgr, nil, ranking.ClusterRanker(), nil, nil, nil)
 	assert.NoError(t, err, "failed to create cluster datastore")
 	return datastore
 }

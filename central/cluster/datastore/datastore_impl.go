@@ -11,6 +11,7 @@ import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
+	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store"
 	compliancePruning "github.com/stackrox/rox/central/complianceoperator/v2/pruner"
 	"github.com/stackrox/rox/central/convert/storagetoeffectiveaccessscope"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
@@ -71,6 +72,7 @@ var (
 
 type datastoreImpl struct {
 	clusterStorage            clusterStore.Store
+	clusterInitStore          clusterInitStore.Store
 	clusterHealthStorage      clusterHealthStore.Store
 	clusterCVEDataStore       clusterCVEDS.DataStore
 	alertDataStore            alertDataStore.DataStore
@@ -894,7 +896,10 @@ func (ds *datastoreImpl) updateClusterNoLock(ctx context.Context, cluster *stora
 	return nil
 }
 
-// registrantID can be the ID of an init bundle or of a CRS.
+// registrantID can be one of
+// * ID of an init bundle, when connecting with an init bundle certificate.
+// * ID of a CRS, when connecting with a CRS certificate.
+// * Empty, when connecting with non-init service certificates.
 func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, clusterID, registrantID string, hello *central.SensorHello) (*storage.Cluster, error) {
 	if err := checkWriteSac(ctx, clusterID); err != nil {
 		return nil, err
@@ -935,6 +940,10 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 	} else if clusterName != "" {
 		// At this point, we can be sure that the cluster does not exist.
+		if err := ds.clusterInitStore.InitiateClusterRegistration(ctx, registrantID, clusterName); err != nil {
+			return nil, errors.Wrapf(err, "initiating registrations of cluster %s using init artifact %s", clusterName, registrantID)
+		}
+
 		cluster = &storage.Cluster{
 			Name:               clusterName,
 			InitBundleId:       registrantID,
@@ -998,7 +1007,13 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 	cluster = cluster.CloneVT()
 	cluster.ManagedBy = manager
-	cluster.InitBundleId = registrantID
+	// It would be wrong to set cluster.InitBundle to registrantID here.
+	// In the case of cluster creation it was already done above.
+	// And in case the cluster exists already, received registrantID might be empty
+	// and in this case we would delete it from an existing cluster here. This would
+	// e.g., happen on the first real connect after a CRS handshake.
+	// But we actually require the CRS ID to be still associated with the cluster,
+	// to be able to complete the registration later on.
 	cluster.SensorCapabilities = sliceutils.CopySliceSorted(hello.GetCapabilities())
 	if centralsensor.SecuredClusterIsNotManagedManually(helmConfig) {
 		configureFromHelmConfig(cluster, clusterConfig)

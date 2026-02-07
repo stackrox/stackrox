@@ -20,4 +20,7 @@ message InitBundleMeta {
   bool is_revoked = 5;
   google.protobuf.Timestamp expires_at = 6;
   InitBundleVersion version = 7;
+  uint64 max_registrations = 8;
+  repeated string registrations_initiated = 9;
+  repeated string registrations_completed = 10;
 }

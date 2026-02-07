@@ -24,7 +24,7 @@ import (
 // file specified by `outFilename` (if it is non-empty) or to stdout (if `outFilename` is empty).
 func generateCRS(cliEnvironment environment.Environment, name string,
 	outFilename string, timeout time.Duration, retryTimeout time.Duration,
-	validFor time.Duration, validUntil time.Time,
+	validFor time.Duration, validUntil time.Time, maxClusters uint64,
 ) error {
 	var err error
 	var outFile *os.File
@@ -55,11 +55,11 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 	}
 
 	var resp *v1.CRSGenResponse
-	if validFor != 0 || !validUntil.IsZero() {
-		resp, err = generateCrsExtended(ctx, svc, name, validFor, validUntil)
+	if validFor != 0 || !validUntil.IsZero() || maxClusters != 0 {
+		resp, err = generateCrsExtended(ctx, svc, name, validFor, validUntil, maxClusters)
 		if err != nil {
 			if errStatus, ok := status.FromError(err); ok && errStatus.Code() == codes.Unimplemented {
-				cliEnvironment.Logger().ErrfLn("generating a CRS with custom expiration times requires a newer Central")
+				cliEnvironment.Logger().ErrfLn("generating a CRS with extended expiration settings requires a newer Central")
 				return errors.Wrap(err, "missing extended CRS support in Central")
 			}
 			return errors.Wrap(err, "generating new CRS with extended settings")
@@ -79,11 +79,14 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 
 	cliEnvironment.Logger().InfofLn("Successfully generated new CRS")
 	cliEnvironment.Logger().InfofLn("")
-	cliEnvironment.Logger().InfofLn("  Name:       %s", meta.GetName())
-	cliEnvironment.Logger().InfofLn("  Created at: %s", meta.GetCreatedAt().AsTime().Format(time.RFC3339))
-	cliEnvironment.Logger().InfofLn("  Expires at: %s", meta.GetExpiresAt().AsTime().Format(time.RFC3339))
-	cliEnvironment.Logger().InfofLn("  Created By: %s", getPrettyUser(meta.GetCreatedBy()))
-	cliEnvironment.Logger().InfofLn("  ID:         %s", meta.GetId())
+	cliEnvironment.Logger().InfofLn("  Name:               %s", meta.GetName())
+	cliEnvironment.Logger().InfofLn("  Created at:         %s", meta.GetCreatedAt().AsTime().Format(time.RFC3339))
+	cliEnvironment.Logger().InfofLn("  Expires at:         %s", meta.GetExpiresAt().AsTime().Format(time.RFC3339))
+	cliEnvironment.Logger().InfofLn("  Created By:         %s", getPrettyUser(meta.GetCreatedBy()))
+	if meta.GetMaxRegistrations() > 0 {
+		cliEnvironment.Logger().InfofLn("  Registration limit: %d clusters", meta.GetMaxRegistrations())
+	}
+	cliEnvironment.Logger().InfofLn("  ID:                 %s", meta.GetId())
 
 	_, err = outWriter.Write(crs)
 	if err != nil {
@@ -96,7 +99,7 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 		}
 	}
 
-	cliEnvironment.Logger().InfofLn("Then CRS needs to be stored securely, since it contains secrets.")
+	cliEnvironment.Logger().InfofLn("The CRS needs to be stored securely, since it contains secrets.")
 	cliEnvironment.Logger().InfofLn("It is not possible to retrieve previously generated CRSs.")
 	return nil
 }
@@ -107,6 +110,7 @@ func generateCrsExtended(
 	name string,
 	validFor time.Duration,
 	validUntil time.Time,
+	maxClusters uint64,
 ) (*v1.CRSGenResponse, error) {
 	req := v1.CRSGenRequestExtended{Name: name}
 	if validFor != 0 {
@@ -114,6 +118,9 @@ func generateCrsExtended(
 	}
 	if !validUntil.IsZero() {
 		req.ValidUntil = timestamppb.New(validUntil)
+	}
+	if maxClusters != 0 {
+		req.MaxRegistrations = maxClusters
 	}
 
 	crs, err := svc.GenerateCRSExtended(ctx, &req)
@@ -125,6 +132,7 @@ func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 	var outputFile string
 	var validFor string
 	var validUntil string
+	var maxClusters uint64
 
 	c := &cobra.Command{
 		Use:   "generate <CRS name>",
@@ -154,11 +162,12 @@ func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 					return errors.Wrap(err, "Invalid validity timestamp specified using `--valid-until'")
 				}
 			}
-			return generateCRS(cliEnvironment, name, outputFile, flags.Timeout(cmd), flags.RetryTimeout(cmd), validForDuration, validUntilTime)
+			return generateCRS(cliEnvironment, name, outputFile, flags.Timeout(cmd), flags.RetryTimeout(cmd), validForDuration, validUntilTime, maxClusters)
 		},
 	}
 	c.PersistentFlags().StringVarP(&validFor, "valid-for", "", "", "Specify validity duration for the new CRS (e.g. \"10m\", \"1d\").")
 	c.PersistentFlags().StringVarP(&validUntil, "valid-until", "", "", "Specify validity as an RFC3339 timestamp for the new CRS.")
+	c.PersistentFlags().Uint64Var(&maxClusters, "max-clusters", 0, "Specify maximum number of clusters which can be registered with the new CRS (0 means no limit).")
 	c.PersistentFlags().StringVarP(&outputFile, "output", "o", "", "File to be used for storing the newly generated CRS (- for stdout).")
 	c.MarkFlagsMutuallyExclusive("valid-for", "valid-until")
 
