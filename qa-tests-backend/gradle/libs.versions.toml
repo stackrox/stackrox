@@ -4,7 +4,7 @@ protobuf = "4.33.2" # If the proto versions are changed, be sure it is also chan
 netty-tcnative = "2.0.61.Final"
 fabric8 = "7.4.0"
 jackson = "2.14.2"
-groovy = "4.0.28"
+groovy = "5.0.3"
 
 [libraries]
 gson = { module = "com.google.code.gson:gson", version = "2.13.2" }
@@ -15,12 +15,12 @@ grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "grpc" }
 grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
 grpc-auth = { module = "io.grpc:grpc-auth", version.ref = "grpc" }
 netty-tcnative-boringssl-static = { module = "io.netty:netty-tcnative-boringssl-static", version.ref = "netty-tcnative" }
-groovy-bom = { module = "org.apache.groovy:groovy-bom", version = "4.0.28" }
+groovy-bom = { module = "org.apache.groovy:groovy-bom", version = "groovy" }
 groovy = { module = "org.apache.groovy:groovy", version.ref = "groovy" }
-spock-bom = { module = "org.spockframework:spock-bom", version = "2.3-groovy-4.0" }
+spock-bom = { module = "org.spockframework:spock-bom", version = "2.4-M7-groovy-5.0" }
 spock-core = { module = "org.spockframework:spock-core" }
 spock-junit4 = { module = "org.spockframework:spock-junit4" }
-rest-assured = { module = "io.rest-assured:rest-assured", version = "5.5.6" }
+rest-assured = { module = "io.rest-assured:rest-assured", version = "6.0.0" }
 snakeyaml = { module = "org.yaml:snakeyaml", version = "2.5" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.5.22" }
 jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
