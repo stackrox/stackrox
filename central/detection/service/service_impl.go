@@ -336,12 +336,12 @@ func (s *serviceImpl) getAppliedNetpolsForDeployment(ctx context.Context, enrich
 	return networkpolicy.GenerateNetworkPoliciesAppliedObj(matchedPolicies), nil
 }
 
-func convertK8sResource(obj k8sRuntime.Object) (*storage.Deployment, error) {
+func convertK8sResource(obj k8sRuntime.Object, clusterID string) (*storage.Deployment, error) {
 	if !kubernetes.IsDeploymentResource(obj.GetObjectKind().GroupVersionKind().Kind) {
 		return nil, nil
 	}
 
-	return resourcesConv.NewDeploymentFromStaticResource(obj, obj.GetObjectKind().GroupVersionKind().Kind, "", "")
+	return resourcesConv.NewDeploymentFromStaticResource(obj, obj.GetObjectKind().GroupVersionKind().Kind, clusterID, "")
 }
 
 func (s *serviceImpl) runDeployTimeDetect(ctx context.Context, enrichmentContext enricher.EnrichmentContext, deployment *storage.Deployment, policyCategories []string) (*apiV1.DeployDetectionResponse_Run, error) {
@@ -461,7 +461,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 
 	var runs []*apiV1.DeployDetectionResponse_Run
 	for _, r := range resources {
-		d, err := convertK8sResource(r)
+		d, err := convertK8sResource(r, eCtx.ClusterID)
 		if err != nil {
 			errorList.AddError(err)
 			continue
