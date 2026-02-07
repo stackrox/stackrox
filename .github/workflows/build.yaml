@@ -166,6 +166,9 @@ jobs:
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
+        with:
+          save: 'false'
+          cache-group: main-build
 
       - uses: ./.github/actions/handle-tagged-build
 
@@ -209,6 +212,9 @@ jobs:
         env:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
+        with:
+          save: ${{ matrix.name == 'default' }}
+          cache-group: main-build
 
       - uses: ./.github/actions/handle-tagged-build
 
@@ -277,6 +283,8 @@ jobs:
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
+        with:
+          save: 'false'
 
       - uses: ./.github/actions/handle-tagged-build
 
@@ -633,6 +641,8 @@ jobs:
         env:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
+        with:
+          save: 'false'
 
       - uses: ./.github/actions/handle-tagged-build
 

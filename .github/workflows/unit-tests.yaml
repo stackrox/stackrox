@@ -42,6 +42,9 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        save: 'false'
+        cache-group: main-build
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
@@ -122,6 +125,9 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        save: 'false'
+        cache-group: main-build
 
     - name: Is Postgres ready
       run: pg_isready -h 127.0.0.1
@@ -182,6 +188,8 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        save: 'false'
 
     - name: Is Postgres ready
       run: pg_isready -h 127.0.0.1
@@ -303,6 +311,8 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        save: 'false'
 
     - uses: ./.github/actions/handle-tagged-build
 
@@ -395,6 +405,7 @@ jobs:
       uses: actions/setup-go@v6
       with:
         go-version-file: go.mod
+        cache: false
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -402,6 +413,8 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        save: 'false'
 
     - name: Create k8s Kind Cluster
       uses: helm/kind-action@v1

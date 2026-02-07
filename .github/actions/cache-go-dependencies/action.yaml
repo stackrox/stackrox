@@ -1,5 +1,18 @@
 name: Cache Go Dependencies
 description: Cache Go Dependencies
+inputs:
+  save:
+    description: 'Whether this job is eligible to save caches. Actual saving only happens on pushes to save-on-ref.'
+    required: false
+    default: 'true'
+  save-on-ref:
+    description: 'Git ref that triggers cache saving on push events.'
+    required: false
+    default: refs/heads/master
+  cache-group:
+    description: 'GOCACHE group name. Jobs with the same group share a cache. Defaults to github.job for per-job isolation.'
+    required: false
+    default: ''
 runs:
   using: composite
   steps:
@@ -9,21 +22,49 @@ runs:
         echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
         echo "GOMODCACHE=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
         echo "GOARCH=$(go env GOARCH)" >> "$GITHUB_OUTPUT"
+        group="${{ inputs.cache-group }}"
+        echo "group=${group:-${{ github.job }}}" >> "$GITHUB_OUTPUT"
+        # TODO: revert to only save on save-on-ref before merging
+        echo "save=${{ inputs.save }}" >> "$GITHUB_OUTPUT"
       shell: bash
 
     - name: Cache Go Dependencies
+      if: steps.cache-paths.outputs.save == 'true'
       uses: actions/cache@v5
       with:
         path: |
           ${{ steps.cache-paths.outputs.GOMODCACHE }}
         key: go-mod-v1-${{ hashFiles('**/go.sum') }}
+        restore-keys: go-mod-v1-
+
+    - name: Restore Go Dependencies
+      if: steps.cache-paths.outputs.save != 'true'
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          ${{ steps.cache-paths.outputs.GOMODCACHE }}
+        key: go-mod-v1-${{ hashFiles('**/go.sum') }}
+        restore-keys: go-mod-v1-
 
     - name: Cache Go Build
+      if: steps.cache-paths.outputs.save == 'true'
       uses: actions/cache@v5
       with:
         path: |
           ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ hashFiles('**/go.sum') }}
+        key: go-build-v2-${{ steps.cache-paths.outputs.group }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ github.sha }}
+        restore-keys: |
+          go-build-v2-${{ steps.cache-paths.outputs.group }}-${{ steps.cache-paths.outputs.GOARCH }}-
+
+    - name: Restore Go Build
+      if: steps.cache-paths.outputs.save != 'true'
+      uses: actions/cache/restore@v4
+      with:
+        path: |
+          ${{ steps.cache-paths.outputs.GOCACHE }}
+        key: go-build-v2-${{ steps.cache-paths.outputs.group }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ github.sha }}
+        restore-keys: |
+          go-build-v2-${{ steps.cache-paths.outputs.group }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
     - name: Download Go modules
       run: make deps --always-make
