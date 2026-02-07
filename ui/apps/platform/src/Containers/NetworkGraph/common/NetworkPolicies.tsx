@@ -7,7 +7,6 @@ import {
     Button,
     Divider,
     EmptyState,
-    EmptyStateHeader,
     SelectOption,
     Spinner,
     Stack,
@@ -89,7 +88,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                 variant="danger"
                 title={getAxiosErrorMessage(error)}
                 component="p"
-                className="pf-v5-u-mb-lg"
+                className="pf-v6-u-mb-lg"
             />
         );
     }
@@ -98,7 +97,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
 
     if (networkPolicyErrors.length > 0) {
         policyErrorBanner = (
-            <AlertGroup className="pf-v5-u-mb-lg">
+            <AlertGroup className="pf-v6-u-mb-lg">
                 {networkPolicyErrors.map((networkPolicyError) => (
                     <Alert
                         isInline
@@ -118,16 +117,18 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
             <>
                 {policyErrorBanner}
                 <Bullseye>
-                    <EmptyState variant="xs">
-                        <EmptyStateHeader titleText="No network policies" headingLevel="h4" />
-                    </EmptyState>
+                    <EmptyState
+                        headingLevel="h4"
+                        titleText="No network policies"
+                        variant="xs"
+                    ></EmptyState>
                 </Bullseye>
             </>
         );
     }
 
     return (
-        <div className="pf-v5-u-h-100 pf-v5-u-p-md">
+        <div className="pf-v6-u-h-100 pf-v6-u-p-md">
             {policyErrorBanner}
             <Stack hasGutter>
                 <StackItem>
@@ -158,7 +159,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                 {!!selectedNetworkPolicy?.yaml && (
                     <>
                         <StackItem>
-                            <div className="pf-v5-u-h-100">
+                            <div className="pf-v6-u-h-100">
                                 <CodeViewer code={selectedNetworkPolicy.yaml} />
                             </div>
                         </StackItem>

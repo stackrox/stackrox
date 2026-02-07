@@ -1,21 +1,19 @@
 import type { ReactElement } from 'react';
-import { useLocation } from 'react-router-dom-v5-compat';
-import qs from 'qs';
 import {
     Alert,
     Breadcrumb,
     BreadcrumbItem,
-    Divider,
-    Flex,
-    FlexItem,
     PageSection,
+    Tab,
+    TabTitleText,
+    Tabs,
     Title,
 } from '@patternfly/react-core';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
-import TabNav from 'Components/TabNav/TabNav';
-import { clustersBasePath, clustersInitBundlesPath, clustersSecureClusterPath } from 'routePaths';
+import useURLStringUnion from 'hooks/useURLStringUnion';
+import { clustersBasePath, clustersInitBundlesPath } from 'routePaths';
 
 import SecureClusterUsingHelmChart from './SecureClusterUsingHelmChart';
 import SecureClusterUsingOperator from './SecureClusterUsingOperator';
@@ -23,59 +21,62 @@ import SecureClusterUsingOperator from './SecureClusterUsingOperator';
 const title = 'Secure a cluster with an init bundle';
 const headingLevel = 'h2';
 
-const tabHelmChart = 'Helm-chart';
-const titleOperator = 'Operator';
-const titleHelmChart = 'Helm chart';
-const tabLinks = [
-    {
-        href: `${clustersSecureClusterPath}?tab=Operator`,
-        title: titleOperator,
-    },
-    {
-        href: `${clustersSecureClusterPath}?tab=${tabHelmChart}`,
-        title: titleHelmChart,
-    },
-];
+const operatorTab = 'Operator';
+const helmChartTab = 'Helm chart';
 
 function SecureClusterPage(): ReactElement {
-    const { search } = useLocation();
-    const { tab } = qs.parse(search, { ignoreQueryPrefix: true });
-    const isOperator = tab !== tabHelmChart;
+    const [activeTabKey, setActiveTabKey] = useURLStringUnion('tab', [operatorTab, helmChartTab]);
 
     return (
         <>
-            <PageSection component="div" variant="light">
-                <PageTitle title="Secure a cluster" />
-                <Flex direction={{ default: 'column' }}>
-                    <Flex direction={{ default: 'column' }}>
-                        <Breadcrumb>
-                            <BreadcrumbItemLink to={clustersBasePath}>Clusters</BreadcrumbItemLink>
-                            <BreadcrumbItemLink to={clustersInitBundlesPath}>
-                                Cluster init bundles
-                            </BreadcrumbItemLink>
-                            <BreadcrumbItem isActive>{title}</BreadcrumbItem>
-                        </Breadcrumb>
-                        <Title headingLevel="h1">Secure a cluster with an init bundle</Title>
-                    </Flex>
-                    <FlexItem>
-                        <TabNav
-                            currentTabTitle={isOperator ? titleOperator : titleHelmChart}
-                            tabLinks={tabLinks}
-                        />
-                        <Divider component="div" />
-                    </FlexItem>
-                    {isOperator ? (
-                        <SecureClusterUsingOperator headingLevel={headingLevel} />
-                    ) : (
-                        <SecureClusterUsingHelmChart headingLevel={headingLevel} />
-                    )}
-                    <Alert
-                        variant="info"
-                        isInline
-                        title="You can use one bundle to secure multiple clusters that have the same installation method."
-                        component="p"
-                    />
-                </Flex>
+            <PageTitle title="Secure a cluster" />
+            <PageSection type="breadcrumb">
+                <Breadcrumb>
+                    <BreadcrumbItemLink to={clustersBasePath}>Clusters</BreadcrumbItemLink>
+                    <BreadcrumbItemLink to={clustersInitBundlesPath}>
+                        Cluster init bundles
+                    </BreadcrumbItemLink>
+                    <BreadcrumbItem isActive>{title}</BreadcrumbItem>
+                </Breadcrumb>
+            </PageSection>
+            <PageSection>
+                <Title headingLevel="h1">Secure a cluster with an init bundle</Title>
+            </PageSection>
+            <PageSection type="tabs">
+                <Tabs
+                    activeKey={activeTabKey}
+                    onSelect={(_event, tabKey) => setActiveTabKey(tabKey)}
+                    usePageInsets
+                    mountOnEnter
+                    unmountOnExit
+                >
+                    <Tab
+                        eventKey={operatorTab}
+                        title={<TabTitleText>{operatorTab}</TabTitleText>}
+                        tabContentId={operatorTab}
+                    >
+                        <PageSection>
+                            <SecureClusterUsingOperator headingLevel={headingLevel} />
+                        </PageSection>
+                    </Tab>
+                    <Tab
+                        eventKey={helmChartTab}
+                        title={<TabTitleText>{helmChartTab}</TabTitleText>}
+                        tabContentId={helmChartTab}
+                    >
+                        <PageSection>
+                            <SecureClusterUsingHelmChart headingLevel={headingLevel} />
+                        </PageSection>
+                    </Tab>
+                </Tabs>
+            </PageSection>
+            <PageSection>
+                <Alert
+                    variant="info"
+                    isInline
+                    title="You can use one bundle to secure multiple clusters that have the same installation method."
+                    component="p"
+                />
             </PageSection>
         </>
     );

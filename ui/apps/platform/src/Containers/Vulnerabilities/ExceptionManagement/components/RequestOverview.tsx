@@ -28,8 +28,8 @@ function RequestOverview({ exception, context }: RequestOverviewProps) {
     const latestComment = exception.comments.at(-1);
 
     return (
-        <PageSection variant="light">
-            <Flex direction={{ default: 'column' }}>
+        <PageSection>
+            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
                 <Title headingLevel="h2">Overview</Title>
                 <DescriptionList className="vulnerability-exception-request-overview">
                     <DescriptionListGroup>

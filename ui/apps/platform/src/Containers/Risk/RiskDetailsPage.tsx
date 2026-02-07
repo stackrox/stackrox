@@ -41,15 +41,13 @@ function RiskDetailsPage(): ReactElement {
                     <BreadcrumbItem>{deploymentName ?? <Skeleton width="200px" />}</BreadcrumbItem>
                 </Breadcrumb>
             </PageBreadcrumb>
-            <PageSection variant="light">
+            <PageSection>
                 <Flex
                     justifyContent={{ default: 'justifyContentSpaceBetween' }}
                     alignItems={{ default: 'alignItemsCenter' }}
                 >
                     {deploymentName ? (
-                        <Title headingLevel="h1" className="pf-v5-u-mb-sm">
-                            {deploymentName}
-                        </Title>
+                        <Title headingLevel="h1">{deploymentName}</Title>
                     ) : (
                         <Skeleton width="25%" screenreaderText="Loading deployment information" />
                     )}

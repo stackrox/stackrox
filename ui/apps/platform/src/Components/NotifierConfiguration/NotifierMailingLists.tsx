@@ -107,7 +107,6 @@ function NotifierMailingLists({
     return (
         <>
             <FormLabelGroup
-                className="pf-v5-u-mb-md"
                 isRequired
                 label="Email notifier"
                 fieldId={`${fieldIdPrefixForFormikAndPatternFly}.notifier`}
@@ -156,16 +155,15 @@ function NotifierMailingLists({
                 />
             </FormLabelGroup>
             {!!notifierId && (
-                <Button
-                    className="pf-v5-u-mt-sm"
-                    variant="link"
-                    isInline
-                    size="sm"
-                    onClick={onSetToDefaultNotifierMailingLists}
-                    isDisabled={mailingListsString === getMailingListsStringFromNotifier()}
-                >
-                    Reset to default
-                </Button>
+                <div>
+                    <Button
+                        variant="link"
+                        onClick={onSetToDefaultNotifierMailingLists}
+                        isDisabled={mailingListsString === getMailingListsStringFromNotifier()}
+                    >
+                        Reset to default
+                    </Button>
+                </div>
             )}
             <EmailNotifierModal
                 isOpen={isEmailNotifierModalOpen}

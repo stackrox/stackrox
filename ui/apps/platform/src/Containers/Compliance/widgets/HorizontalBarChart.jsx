@@ -121,7 +121,9 @@ const HorizontalBarChart = ({
         if (axisLinks[value]) {
             inner = (
                 <Link
-                    style={{ fill: 'var(--pf-v5-global--link--Color)' }}
+                    style={{
+                        fill: 'var(--pf-t--global--text--color--link--default)',
+                    }}
                     className="text-sm"
                     to={axisLinks[value]}
                 >
@@ -157,7 +159,7 @@ const HorizontalBarChart = ({
                         y: item.y,
                         link: item.link,
                     }))}
-                    color="var(--pf-v5-global--palette--black-200)"
+                    color="var(--pf-t--color--gray--20)"
                     style={{
                         height: seriesPropsMerged.style.height,
                         rx: '2',

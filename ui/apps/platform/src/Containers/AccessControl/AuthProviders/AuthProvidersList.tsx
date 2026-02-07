@@ -3,7 +3,8 @@ import type { ReactElement } from 'react';
 import pluralize from 'pluralize';
 import { useDispatch, useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { Button, Modal } from '@patternfly/react-core';
+import { Button } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import { selectors } from 'reducers';
@@ -17,7 +18,7 @@ import { AccessControlEntityLink } from '../AccessControlLinks';
 // TODO import from where?
 const unselectedRowStyle = {};
 const selectedRowStyle = {
-    borderLeft: '3px solid var(--pf-v5-global--primary-color--100)',
+    borderLeft: 'var(--pf-t--global--border--color--brand--default)',
 };
 
 function getAuthProviderTypeLabel(type: string, availableTypes: AuthProviderInfo[]): string {
@@ -73,7 +74,7 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                         <Th width={20}>Minimum access role</Th>
                         <Th width={25}>Assigned rules</Th>
                         <Th width={10}>
-                            <span className="pf-v5-screen-reader">Row actions</span>
+                            <span className="pf-v6-screen-reader">Row actions</span>
                         </Th>
                     </Tr>
                 </Thead>

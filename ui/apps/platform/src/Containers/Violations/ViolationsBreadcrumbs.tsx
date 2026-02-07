@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { Breadcrumb, BreadcrumbItem, Divider, PageSection } from '@patternfly/react-core';
+import { Breadcrumb, BreadcrumbItem } from '@patternfly/react-core';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
@@ -53,15 +53,10 @@ const ViolationsBreadcrumbs = ({
     const subPageBreadcrumb = current ? <BreadcrumbItem isActive>{current}</BreadcrumbItem> : '';
 
     return (
-        <>
-            <PageSection variant="light" className="pf-v5-u-py-md">
-                <Breadcrumb className="pf-v5-u-mb-0 pf-v5-u-pl-0">
-                    {topLevelBreadcrumb}
-                    {subPageBreadcrumb}
-                </Breadcrumb>
-            </PageSection>
-            <Divider component="div" />
-        </>
+        <Breadcrumb>
+            {topLevelBreadcrumb}
+            {subPageBreadcrumb}
+        </Breadcrumb>
     );
 };
 

@@ -2,11 +2,11 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import {
     Button,
+    Content,
     DropdownItem,
     Flex,
     FlexItem,
     PageSection,
-    Text,
     Title,
     Toolbar,
     ToolbarContent,
@@ -274,7 +274,7 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
     // Conditionally render a subsequent error in addition to most recent successful respnse.
     return (
         <>
-            <PageSection variant="light" component="div">
+            <PageSection>
                 <Flex
                     direction={{ default: 'row' }}
                     alignItems={{ default: 'alignItemsCenter' }}
@@ -365,31 +365,22 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                         )}
                     </Flex>
                 </Flex>
-                <Text className="pf-v5-u-font-size-md">
-                    View the status of secured cluster services
-                </Text>
+                <Content component="p">View the status of secured cluster services</Content>
             </PageSection>
             <PageSection>
                 <Toolbar>
                     <ToolbarContent>
-                        <ToolbarGroup
-                            variant="filter-group"
-                            className="pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1"
-                        >
-                            <ToolbarItem variant="search-filter" className="pf-v5-u-w-100">
-                                <CompoundSearchFilter
-                                    config={searchFilterConfig}
-                                    defaultEntity="Cluster"
-                                    searchFilter={searchFilter}
-                                    onSearch={(payload) =>
-                                        setSearchFilter(updateSearchFilter(searchFilter, payload))
-                                    }
-                                />
-                            </ToolbarItem>
-                        </ToolbarGroup>
-                        <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
+                        <CompoundSearchFilter
+                            config={searchFilterConfig}
+                            defaultEntity="Cluster"
+                            searchFilter={searchFilter}
+                            onSearch={(payload) =>
+                                setSearchFilter(updateSearchFilter(searchFilter, payload))
+                            }
+                        />
+                        <ToolbarGroup variant="action-group" align={{ default: 'alignEnd' }}>
                             {hasWriteAccessForAdministration && (
-                                <ToolbarItem className="pf-v5-u-align-self-center">
+                                <ToolbarItem className="pf-v6-u-align-self-center">
                                     <AutoUpgradeToggle />
                                 </ToolbarItem>
                             )}
@@ -420,7 +411,7 @@ function ClustersTablePanel({ selectedClusterId }: ClustersTablePanelProps) {
                                 </ToolbarItem>
                             )}
                         </ToolbarGroup>
-                        <ToolbarGroup className="pf-v5-u-w-100">
+                        <ToolbarGroup className="pf-v6-u-w-100">
                             <CompoundSearchFilterLabels
                                 attributesSeparateFromConfig={[]}
                                 config={searchFilterConfig}

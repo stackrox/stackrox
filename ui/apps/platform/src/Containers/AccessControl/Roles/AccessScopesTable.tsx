@@ -23,7 +23,7 @@ function AccessScopesTable({
             <Thead>
                 <Tr>
                     <Th>
-                        <span className="pf-v5-screen-reader">Row selection</span>
+                        <span className="pf-v6-screen-reader">Row selection</span>
                     </Th>
                     <Th width={20}>Name</Th>
                     <Th>Description</Th>
@@ -32,7 +32,7 @@ function AccessScopesTable({
             <Tbody>
                 {accessScopes.map(({ id, name, description }) => (
                     <Tr key={id}>
-                        <Td className="pf-v5-c-table__check">
+                        <Td className="pf-v6-c-table__check">
                             <input
                                 type="radio"
                                 name={fieldId}

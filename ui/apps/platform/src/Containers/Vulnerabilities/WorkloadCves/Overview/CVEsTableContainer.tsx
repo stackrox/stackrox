@@ -1,5 +1,5 @@
 import { useQuery } from '@apollo/client';
-import { Divider, DropdownItem, ToolbarItem } from '@patternfly/react-core';
+import { DropdownItem, ToolbarItem } from '@patternfly/react-core';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import type useURLSort from 'hooks/useURLSort';
@@ -121,7 +121,7 @@ function CVEsTableContainer({
                 tableRowCount={rowCount}
                 isFiltered={isFiltered}
             >
-                <ToolbarItem align={{ default: 'alignRight' }}>
+                <ToolbarItem align={{ default: 'alignEnd' }}>
                     <ColumnManagementButton
                         columnConfig={columnConfig}
                         onApplyColumns={managedColumnState.setVisibility}
@@ -159,7 +159,6 @@ function CVEsTableContainer({
                     </ToolbarItem>
                 )}
             </TableEntityToolbar>
-            <Divider component="div" />
             <div
                 style={{ overflowX: 'auto' }}
                 aria-live="polite"

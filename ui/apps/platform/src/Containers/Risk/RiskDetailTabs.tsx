@@ -30,12 +30,12 @@ function RiskDetailTabs({ deployment, risk }: RiskDetailTabsProps) {
 
     return (
         <>
-            <PageSection type="tabs" variant="light" padding={{ default: 'noPadding' }}>
+            <PageSection type="tabs" padding={{ default: 'noPadding' }}>
                 <Tabs
                     activeKey={activeTabKey}
                     onSelect={(_event, tabKey) => setActiveTabKey(tabKey)}
                     role="region"
-                    inset={{ default: 'insetLg' }}
+                    usePageInsets
                 >
                     <Tab
                         eventKey={riskIndicatorsTab}

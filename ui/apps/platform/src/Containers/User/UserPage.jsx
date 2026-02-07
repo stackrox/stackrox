@@ -1,4 +1,4 @@
-import { NavLink, Route, Routes, useMatch, useParams } from 'react-router-dom-v5-compat';
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
@@ -6,68 +6,44 @@ import {
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
+    Divider,
     EmptyState,
     EmptyStateBody,
-    EmptyStateHeader,
     Flex,
     FlexItem,
-    Nav,
-    NavExpandable,
-    NavItem,
-    NavList,
     PageSection,
+    SelectGroup,
+    SelectOption,
     Title,
 } from '@patternfly/react-core';
 
 import DescriptionListCompact from 'Components/DescriptionListCompact';
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import { selectors } from 'reducers';
-import { userBasePath, userRolePath } from 'routePaths';
 import User from 'utils/User';
 
 import UserPermissionsForRolesTable from './UserPermissionsForRolesTable';
 import UserPermissionsTable from './UserPermissionsTable';
 
-const spacerPageSection = 'var(--pf-v5-global--spacer--md)';
-
-const stylePageSection = {
-    '--pf-v5-c-page__main-section--PaddingTop': spacerPageSection,
-    '--pf-v5-c-page__main-section--PaddingRight': spacerPageSection,
-    '--pf-v5-c-page__main-section--PaddingBottom': spacerPageSection,
-    '--pf-v5-c-page__main-section--PaddingLeft': spacerPageSection,
-};
-
-const getUserRolePath = (roleName) => `${userBasePath}/roles/${roleName}`;
+const ALL_ROLES = '##ALL_ROLES##';
 
 function UserPage({ resourceToAccessByRole, userData }) {
     const { email, name, roles, usedAuthProvider } = new User(userData);
     const authProviderName =
         usedAuthProvider?.type === 'basic' ? 'Basic' : (usedAuthProvider?.name ?? '');
 
-    const isUserPathActive = useMatch(userBasePath);
-    const isRolePathActive = useMatch(userRolePath);
+    const [selectedRole, setSelectedRole] = useState(ALL_ROLES);
 
-    const UserRoleRoute = () => {
-        const { roleName } = useParams();
-        const role = roles.find((_role) => _role.name === roleName);
-
-        if (role) {
-            return <UserPermissionsTable permissions={role?.resourceToAccess ?? {}} />;
-        }
-
-        return (
-            <EmptyState>
-                <EmptyStateHeader titleText="Role not found for user" headingLevel="h4" />
-                <EmptyStateBody>{`Role name: ${roleName}`}</EmptyStateBody>
-            </EmptyState>
-        );
+    const handleRoleSelect = (_, selection) => {
+        setSelectedRole(selection);
     };
 
     return (
         <>
-            <PageSection variant="light" style={stylePageSection}>
+            <PageSection hasBodyWrapper={false}>
                 <Title headingLevel="h1">User Profile</Title>
             </PageSection>
-            <PageSection variant="light" style={stylePageSection}>
+            <PageSection hasBodyWrapper={false}>
                 <DescriptionListCompact isHorizontal>
                     <DescriptionListGroup>
                         <DescriptionListTerm>User name</DescriptionListTerm>
@@ -80,50 +56,73 @@ function UserPage({ resourceToAccessByRole, userData }) {
                         </DescriptionListGroup>
                     )}
                     <DescriptionListGroup>
-                        <DescriptionListTerm className="pf-v5-u-text-nowrap">
+                        <DescriptionListTerm className="pf-v6-u-text-nowrap">
                             Auth provider
                         </DescriptionListTerm>
                         <DescriptionListDescription>{authProviderName}</DescriptionListDescription>
                     </DescriptionListGroup>
                 </DescriptionListCompact>
             </PageSection>
-            <PageSection variant="light" style={stylePageSection} isFilled>
-                <Flex>
+            <PageSection hasBodyWrapper={false} isFilled>
+                <Flex direction={{ default: 'column' }} gap={{ default: 'gapMd' }}>
                     <FlexItem>
-                        <div className="pf-v5-u-background-color-200">
-                            <Nav aria-label="Roles" theme="light">
-                                <NavList>
-                                    <NavItem isActive={isUserPathActive}>
-                                        <NavLink to={userBasePath} end>
-                                            User permissions for roles
-                                        </NavLink>
-                                    </NavItem>
-                                    <NavExpandable title="User roles" isExpanded>
-                                        {roles.map((role) => (
-                                            <NavItem key={role.name} isActive={isRolePathActive}>
-                                                <NavLink to={getUserRolePath(role.name)} end>
+                        <Flex direction={{ default: 'column' }} gap={{ default: 'gapMd' }}>
+                            <FlexItem>
+                                <SelectSingle
+                                    id="user-role-selector"
+                                    value={selectedRole}
+                                    handleSelect={handleRoleSelect}
+                                    placeholderText="Select a view"
+                                    isFullWidth={false}
+                                >
+                                    {[
+                                        <SelectOption
+                                            key={ALL_ROLES}
+                                            value={ALL_ROLES}
+                                            description="View aggregated permissions across all assigned roles"
+                                        >
+                                            User permissions for all roles
+                                        </SelectOption>,
+                                        <Divider key="divider" component="li" />,
+                                        <SelectGroup key="roles-group" label="User roles">
+                                            {roles.map((role) => (
+                                                <SelectOption key={role.name} value={role.name}>
                                                     {role.name}
-                                                </NavLink>
-                                            </NavItem>
-                                        ))}
-                                    </NavExpandable>
-                                </NavList>
-                            </Nav>
-                        </div>
-                    </FlexItem>
-                    <FlexItem>
-                        <Routes>
-                            <Route path={'roles/:roleName'} element={<UserRoleRoute />} />
-                            <Route
-                                index
-                                element={
+                                                </SelectOption>
+                                            ))}
+                                        </SelectGroup>,
+                                    ]}
+                                </SelectSingle>
+                            </FlexItem>
+
+                            {selectedRole === ALL_ROLES && (
+                                <FlexItem>
                                     <UserPermissionsForRolesTable
                                         resourceToAccessByRole={resourceToAccessByRole}
                                     />
-                                }
-                            />
-                        </Routes>
+                                </FlexItem>
+                            )}
+
+                            {selectedRole && selectedRole !== ALL_ROLES && (
+                                <FlexItem>
+                                    <UserPermissionsTable
+                                        permissions={
+                                            roles.find((r) => r.name === selectedRole)
+                                                ?.resourceToAccess ?? {}
+                                        }
+                                    />
+                                </FlexItem>
+                            )}
+                        </Flex>
                     </FlexItem>
+
+                    {roles.length === 0 && (
+                        <FlexItem>
+                            <EmptyState headingLevel="h4" titleText="No roles assigned to user">
+                                <EmptyStateBody>User has no roles assigned</EmptyStateBody>
+                            </EmptyState>
+                        </FlexItem>
+                    )}
                 </Flex>
             </PageSection>
         </>

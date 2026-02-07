@@ -1,4 +1,5 @@
 import {
+    Content,
     Divider,
     Flex,
     PageSection,
@@ -6,7 +7,6 @@ import {
     Skeleton,
     Split,
     SplitItem,
-    Text,
     Title,
     pluralize,
 } from '@patternfly/react-core';
@@ -83,12 +83,14 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
 
     return (
         <>
-            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
-                <Text>Review and triage vulnerability data scanned on this node</Text>
+            <PageSection>
+                <Content component="p">
+                    Review and triage vulnerability data scanned on this node
+                </Content>
             </PageSection>
-            <PageSection isFilled className="pf-v5-u-display-flex pf-v5-u-flex-direction-column">
+            <Divider component="div" />
+            <PageSection hasBodyWrapper={false} isFilled>
                 <AdvancedFiltersToolbar
-                    className="pf-v5-u-px-sm pf-v5-u-pb-0"
                     searchFilter={searchFilter}
                     searchFilterConfig={searchFilterConfig}
                     defaultSearchFilterEntity="CVE"
@@ -122,44 +124,39 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                     />
                 </SummaryCardLayout>
                 <Divider component="div" />
-                <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100 pf-v5-u-p-lg">
-                    <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
-                        <SplitItem isFilled>
-                            <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                                <Title headingLevel="h2">
-                                    {data && data.node ? (
-                                        `${pluralize(
-                                            data.node.nodeVulnerabilityCount,
-                                            'result'
-                                        )} found`
-                                    ) : (
-                                        <Skeleton screenreaderText="Loading node vulnerability count" />
-                                    )}
-                                </Title>
-                                {isFiltered && <DynamicTableLabel />}
-                            </Flex>
-                        </SplitItem>
-                        <SplitItem>
-                            <Pagination
-                                itemCount={nodeCount}
-                                perPage={perPage}
-                                page={page}
-                                onSetPage={(_, newPage) => setPage(newPage)}
-                                onPerPageSelect={(_, newPerPage) => {
-                                    setPerPage(newPerPage);
-                                }}
-                            />
-                        </SplitItem>
-                    </Split>
-                    <CVEsTable
-                        tableState={tableState}
-                        getSortParams={getSortParams}
-                        onClearFilters={() => {
-                            setSearchFilter({});
-                            setPage(1);
-                        }}
-                    />
-                </div>
+                <Split hasGutter className="pf-v6-u-align-items-baseline">
+                    <SplitItem isFilled>
+                        <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                            <Title headingLevel="h2">
+                                {data && data.node ? (
+                                    `${pluralize(data.node.nodeVulnerabilityCount, 'result')} found`
+                                ) : (
+                                    <Skeleton screenreaderText="Loading node vulnerability count" />
+                                )}
+                            </Title>
+                            {isFiltered && <DynamicTableLabel />}
+                        </Flex>
+                    </SplitItem>
+                    <SplitItem>
+                        <Pagination
+                            itemCount={nodeCount}
+                            perPage={perPage}
+                            page={page}
+                            onSetPage={(_, newPage) => setPage(newPage)}
+                            onPerPageSelect={(_, newPerPage) => {
+                                setPerPage(newPerPage);
+                            }}
+                        />
+                    </SplitItem>
+                </Split>
+                <CVEsTable
+                    tableState={tableState}
+                    getSortParams={getSortParams}
+                    onClearFilters={() => {
+                        setSearchFilter({});
+                        setPage(1);
+                    }}
+                />
             </PageSection>
         </>
     );

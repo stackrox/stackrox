@@ -21,8 +21,6 @@ import {
     attributeForSnoozed,
 } from '../searchFilterConfig';
 
-import './AdvancedFiltersToolbar.css';
-
 const emptyDefaultFilters = {
     SEVERITY: [],
     FIXABLE: [],
@@ -78,20 +76,15 @@ function AdvancedFiltersToolbar({
     return (
         <Toolbar className={`advanced-filters-toolbar ${className}`}>
             <ToolbarContent>
-                <ToolbarGroup
-                    variant="filter-group"
-                    className="pf-v5-u-display-flex pf-v5-u-flex-grow-1"
-                >
-                    <CompoundSearchFilter
-                        config={searchFilterConfig}
-                        searchFilter={searchFilter}
-                        additionalContextFilter={additionalContextFilter}
-                        onSearch={onFilterApplied}
-                        defaultEntity={defaultSearchFilterEntity}
-                    />
-                </ToolbarGroup>
+                <CompoundSearchFilter
+                    config={searchFilterConfig}
+                    searchFilter={searchFilter}
+                    additionalContextFilter={additionalContextFilter}
+                    onSearch={onFilterApplied}
+                    defaultEntity={defaultSearchFilterEntity}
+                />
                 {(includeCveSeverityFilters || includeCveStatusFilters) && (
-                    <ToolbarGroup className="vm-filter-toolbar-dropdown">
+                    <ToolbarGroup variant="filter-group">
                         {includeCveSeverityFilters && (
                             <SearchFilterSelectInclusive
                                 attribute={attributeForSeverityInFrontendAndLocalStorage}
@@ -116,7 +109,7 @@ function AdvancedFiltersToolbar({
                 )}
                 {children}
                 {getHasSearchApplied(searchFilter) && (
-                    <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
+                    <ToolbarGroup aria-label="applied search filters" className="pf-v6-u-w-100">
                         <CompoundSearchFilterLabels
                             attributesSeparateFromConfig={attributesSeparateFromConfig}
                             config={searchFilterConfig}

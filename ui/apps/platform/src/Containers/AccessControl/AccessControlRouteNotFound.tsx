@@ -12,7 +12,7 @@ function AccessControlRouteNotFound(): ReactElement {
     return (
         <>
             <AccessControlHeading />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Alert
                     title="Access Control route not found"
                     component="p"

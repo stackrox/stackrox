@@ -115,7 +115,7 @@ function RoleForm({
 
     return (
         <Form id="role-form">
-            <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pt-0">
+            <Toolbar inset={{ default: 'insetNone' }} className="pf-v6-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h1">
@@ -128,7 +128,7 @@ function RoleForm({
                         </ToolbarItem>
                     )}
                     {action !== 'create' && (
-                        <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
+                        <ToolbarGroup variant="action-group" align={{ default: 'alignEnd' }}>
                             <ToolbarItem>
                                 {isActionable ? (
                                     <Button
@@ -201,7 +201,7 @@ function RoleForm({
             {hasAction && (
                 <Toolbar inset={{ default: 'insetNone' }}>
                     <ToolbarContent>
-                        <ToolbarGroup variant="button-group">
+                        <ToolbarGroup variant="action-group">
                             <ToolbarItem>
                                 <Button
                                     variant="primary"

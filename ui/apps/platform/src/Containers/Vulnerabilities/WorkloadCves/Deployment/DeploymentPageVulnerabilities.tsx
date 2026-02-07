@@ -234,11 +234,7 @@ function DeploymentPageVulnerabilities({
 
     return (
         <>
-            <PageSection
-                id={vulnStateTabContentId}
-                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
-                component="div"
-            >
+            <PageSection type="tabs">
                 {showVulnerabilityStateTabs && (
                     <VulnerabilityStateTabs
                         isBox
@@ -248,25 +244,24 @@ function DeploymentPageVulnerabilities({
                         }}
                     />
                 )}
-                <div className="pf-v5-u-px-sm pf-v5-u-background-color-100">
-                    <AdvancedFiltersToolbar
-                        className="pf-v5-u-pt-lg pf-v5-u-pb-0"
-                        searchFilterConfig={searchFilterConfig}
-                        defaultSearchFilterEntity="CVE"
-                        searchFilter={searchFilter}
-                        onFilterChange={(newFilter, searchPayload) => {
-                            setSearchFilter(newFilter);
-                            setPage(1);
-                            trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
-                        }}
-                        additionalContextFilter={{
-                            'Deployment ID': deploymentId,
-                            ...baseSearchFilter,
-                        }}
-                    >
-                        {additionalToolbarItems}
-                    </AdvancedFiltersToolbar>
-                </div>
+            </PageSection>
+            <PageSection id={vulnStateTabContentId} component="div" hasBodyWrapper={false}>
+                <AdvancedFiltersToolbar
+                    searchFilterConfig={searchFilterConfig}
+                    defaultSearchFilterEntity="CVE"
+                    searchFilter={searchFilter}
+                    onFilterChange={(newFilter, searchPayload) => {
+                        setSearchFilter(newFilter);
+                        setPage(1);
+                        trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
+                    }}
+                    additionalContextFilter={{
+                        'Deployment ID': deploymentId,
+                        ...baseSearchFilter,
+                    }}
+                >
+                    {additionalToolbarItems}
+                </AdvancedFiltersToolbar>
                 <SummaryCardLayout error={summaryRequest.error} isLoading={summaryRequest.loading}>
                     <SummaryCard
                         data={summaryData?.deployment}
@@ -291,50 +286,45 @@ function DeploymentPageVulnerabilities({
                     />
                 </SummaryCardLayout>
                 <Divider />
-                <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100">
-                    <div className="pf-v5-u-p-lg">
-                        <Split hasGutter className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
-                            <SplitItem isFilled>
-                                <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                                    <Title headingLevel="h2">
-                                        {pluralize(totalVulnerabilityCount, 'result', 'results')}{' '}
-                                        found
-                                    </Title>
-                                    {isFiltered && <DynamicTableLabel />}
-                                </Flex>
-                            </SplitItem>
-                            <SplitItem>
-                                <ColumnManagementButton
-                                    columnConfig={columnConfig}
-                                    onApplyColumns={managedColumnState.setVisibility}
-                                />
-                            </SplitItem>
-                            <SplitItem>
-                                <Pagination
-                                    itemCount={totalVulnerabilityCount}
-                                    page={page}
-                                    perPage={perPage}
-                                    onSetPage={(_, newPage) => setPage(newPage)}
-                                    onPerPageSelect={(_, newPerPage) => {
-                                        setPerPage(newPerPage);
-                                    }}
-                                />
-                            </SplitItem>
-                        </Split>
-                        <div style={{ overflowX: 'auto' }}>
-                            <DeploymentVulnerabilitiesTable
-                                tableState={tableState}
-                                getSortParams={getSortParams}
-                                isFiltered={isFiltered}
-                                vulnerabilityState={vulnerabilityState}
-                                onClearFilters={() => {
-                                    setSearchFilter({});
-                                    setPage(1);
-                                }}
-                                tableConfig={columnConfig}
-                            />
-                        </div>
-                    </div>
+                <Split hasGutter className="pf-v6-u-align-items-baseline">
+                    <SplitItem isFilled>
+                        <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                            <Title headingLevel="h2">
+                                {pluralize(totalVulnerabilityCount, 'result', 'results')} found
+                            </Title>
+                            {isFiltered && <DynamicTableLabel />}
+                        </Flex>
+                    </SplitItem>
+                    <SplitItem>
+                        <ColumnManagementButton
+                            columnConfig={columnConfig}
+                            onApplyColumns={managedColumnState.setVisibility}
+                        />
+                    </SplitItem>
+                    <SplitItem>
+                        <Pagination
+                            itemCount={totalVulnerabilityCount}
+                            page={page}
+                            perPage={perPage}
+                            onSetPage={(_, newPage) => setPage(newPage)}
+                            onPerPageSelect={(_, newPerPage) => {
+                                setPerPage(newPerPage);
+                            }}
+                        />
+                    </SplitItem>
+                </Split>
+                <div style={{ overflowX: 'auto' }}>
+                    <DeploymentVulnerabilitiesTable
+                        tableState={tableState}
+                        getSortParams={getSortParams}
+                        isFiltered={isFiltered}
+                        vulnerabilityState={vulnerabilityState}
+                        onClearFilters={() => {
+                            setSearchFilter({});
+                            setPage(1);
+                        }}
+                        tableConfig={columnConfig}
+                    />
                 </div>
             </PageSection>
         </>

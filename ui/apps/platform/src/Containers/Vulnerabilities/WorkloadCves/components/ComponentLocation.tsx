@@ -19,7 +19,7 @@ function ComponentLocation({ location, source }: ComponentLocationProps) {
                     {source === 'OS' && (
                         <Tooltip content="Location is unavailable for operating system packages">
                             <Icon>
-                                <InfoCircleIcon color="var(--pf-v5-global--info-color--100)" />
+                                <InfoCircleIcon color="var(--pf-t--global--icon--color--status--info--default)" />
                             </Icon>
                         </Tooltip>
                     )}

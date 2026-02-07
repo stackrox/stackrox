@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { SelectOption } from '@patternfly/react-core';
+import { SelectOption, ToolbarItem } from '@patternfly/react-core';
 
 import SelectSingle from 'Components/SelectSingle';
 import type { SearchFilter } from 'types/search';
@@ -38,20 +38,22 @@ function SearchFilterSelectExclusiveSingle({
     const value = values.length === 1 ? values[0] : '';
 
     return (
-        <SelectSingle
-            id={category}
-            isFullWidth={false}
-            placeholderText={placeholderText}
-            toggleAriaLabel={`${placeholderText} select menu`}
-            value={value}
-            handleSelect={handleSelect}
-        >
-            {options.map(({ label, value }) => (
-                <SelectOption key={value} value={value}>
-                    {label}
-                </SelectOption>
-            ))}
-        </SelectSingle>
+        <ToolbarItem>
+            <SelectSingle
+                id={category}
+                isFullWidth={false}
+                placeholderText={placeholderText}
+                toggleAriaLabel={`${placeholderText} select menu`}
+                value={value}
+                handleSelect={handleSelect}
+            >
+                {options.map(({ label, value }) => (
+                    <SelectOption key={value} value={value}>
+                        {label}
+                    </SelectOption>
+                ))}
+            </SelectSingle>
+        </ToolbarItem>
     );
 }
 

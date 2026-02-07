@@ -4,6 +4,7 @@ import {
     Alert,
     Bullseye,
     Button,
+    Content,
     Flex,
     PageSection,
     Popover,
@@ -11,7 +12,6 @@ import {
     Tab,
     TabTitleText,
     Tabs,
-    Text,
     Title,
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
@@ -262,25 +262,27 @@ function ViolationsTablePage(): ReactElement {
 
     return (
         <>
-            <PageSection variant="light" id="violations-table">
+            <PageSection hasBodyWrapper={false} id="violations-table">
                 <Flex
                     direction={{ default: 'row' }}
                     alignItems={{ default: 'alignItemsCenter' }}
                     spaceItems={{ default: 'spaceItemsNone' }}
-                    className="pf-v5-u-flex-grow-1"
+                    className="pf-v6-u-flex-grow-1"
                 >
                     <Title headingLevel="h1">{title}</Title>
                     <Popover
                         aria-label="More information about the current page"
                         bodyContent={description}
                     >
-                        <Button title="Page description" variant="plain">
-                            <OutlinedQuestionCircleIcon />
-                        </Button>
+                        <Button
+                            icon={<OutlinedQuestionCircleIcon />}
+                            title="Page description"
+                            variant="plain"
+                        />
                     </Popover>
                 </Flex>
             </PageSection>
-            <PageSection variant="light" className="pf-v5-u-py-0">
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-0">
                 <Tabs
                     activeKey={selectedViolationStateTab}
                     onSelect={(_e, tab) => {
@@ -308,16 +310,20 @@ function ViolationsTablePage(): ReactElement {
                     />
                 </Tabs>
             </PageSection>
-            <PageSection variant="light">
-                <Text>{getDescriptionForSelectedViolationState(selectedViolationStateTab)}</Text>
+            <PageSection hasBodyWrapper={false}>
+                <Content component="p">
+                    {getDescriptionForSelectedViolationState(selectedViolationStateTab)}
+                </Content>
             </PageSection>
-            <PageSection variant="default" id={tabContentId}>
-                {isLoadingAlerts && (
+            {isLoadingAlerts && (
+                <PageSection variant="default" id={tabContentId} hasBodyWrapper={false}>
                     <Bullseye>
                         <Spinner size="xl" />
                     </Bullseye>
-                )}
-                {!isLoadingAlerts && currentPageAlertsErrorMessage && (
+                </PageSection>
+            )}
+            {!isLoadingAlerts && currentPageAlertsErrorMessage && (
+                <PageSection variant="default" id={tabContentId} hasBodyWrapper={false}>
                     <Bullseye>
                         <Alert
                             variant="danger"
@@ -325,30 +331,28 @@ function ViolationsTablePage(): ReactElement {
                             component="p"
                         />
                     </Bullseye>
-                )}
-                {!isLoadingAlerts && !currentPageAlertsErrorMessage && (
-                    <PageSection variant="light">
-                        <ViolationsTablePanel
-                            violations={currentPageAlerts}
-                            violationsCount={alertCount}
-                            currentPage={page}
-                            setCurrentPage={setPage}
-                            resolvableAlerts={resolvableAlerts}
-                            excludableAlerts={excludableAlerts}
-                            perPage={perPage}
-                            setPerPage={setPerPage}
-                            getSortParams={getSortParams}
-                            columns={columns}
-                            searchFilter={searchFilter}
-                            onFilterChange={setSearchFilter}
-                            onSearch={onSearch}
-                            additionalContextFilter={additionalContextFilter}
-                            hasActiveViolations={selectedViolationStateTab === 'ACTIVE'}
-                            isTableDataUpdating={isTableDataUpdating}
-                        />
-                    </PageSection>
-                )}
-            </PageSection>
+                </PageSection>
+            )}
+            {!isLoadingAlerts && !currentPageAlertsErrorMessage && (
+                <ViolationsTablePanel
+                    violations={currentPageAlerts}
+                    violationsCount={alertCount}
+                    currentPage={page}
+                    setCurrentPage={setPage}
+                    resolvableAlerts={resolvableAlerts}
+                    excludableAlerts={excludableAlerts}
+                    perPage={perPage}
+                    setPerPage={setPerPage}
+                    getSortParams={getSortParams}
+                    columns={columns}
+                    searchFilter={searchFilter}
+                    onFilterChange={setSearchFilter}
+                    onSearch={onSearch}
+                    additionalContextFilter={additionalContextFilter}
+                    hasActiveViolations={selectedViolationStateTab === 'ACTIVE'}
+                    isTableDataUpdating={isTableDataUpdating}
+                />
+            )}
         </>
     );
 }

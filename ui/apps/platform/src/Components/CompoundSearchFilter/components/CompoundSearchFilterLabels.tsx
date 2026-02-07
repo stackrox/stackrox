@@ -8,8 +8,6 @@ import type { CompoundSearchFilterAttribute, CompoundSearchFilterConfig } from '
 import { getCompoundSearchFilterLabelDescriptionOrNull, updateSearchFilter } from '../utils/utils';
 import type { CompoundSearchFilterLabelDescription, IsGlobalPredicate } from '../utils/utils';
 
-import './CompoundSearchFilterLabels.css';
-
 const isGlobalPredicateFalse: IsGlobalPredicate = () => false;
 
 const iconGlobe = <Globe height="15px" />;

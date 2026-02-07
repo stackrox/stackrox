@@ -1,15 +1,14 @@
 import {
     Bullseye,
-    Card,
-    CardBody,
+    Content,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
+    Divider,
     Flex,
     PageSection,
     Spinner,
-    Text,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
@@ -48,90 +47,75 @@ function ClusterPageDetails({ clusterId }: ClusterPageDetailsProps) {
 
     return (
         <>
-            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
-                <Text>View details about this cluster</Text>
+            <PageSection component="div">
+                <Content component="p">View details about this cluster</Content>
             </PageSection>
-            <PageSection isFilled className="pf-v5-u-display-flex pf-v5-u-flex-direction-column">
-                <Card>
-                    <CardBody>
-                        {error ? (
-                            <Bullseye>
-                                <EmptyStateTemplate
-                                    title="There was an error loading the cluster details"
-                                    headingLevel="h2"
-                                    icon={ExclamationCircleIcon}
-                                    iconClassName="pf-v5-u-danger-color-100"
-                                >
-                                    {getAxiosErrorMessage(error)}
-                                </EmptyStateTemplate>
-                            </Bullseye>
-                        ) : loading ? (
-                            <Bullseye>
-                                <Spinner size="xl" />
-                            </Bullseye>
-                        ) : (
-                            data && (
-                                <Flex
-                                    direction={{ default: 'column' }}
-                                    spaceItems={{ default: 'spaceItemsXl' }}
-                                >
-                                    <DescriptionList columnModifier={{ default: '1Col' }}>
-                                        <DescriptionListGroup>
-                                            <DescriptionListTerm>Cluster type</DescriptionListTerm>
-                                            <DescriptionListDescription>
-                                                {displayClusterType(data.cluster.type)}
-                                            </DescriptionListDescription>
-                                        </DescriptionListGroup>
-                                        {getCloudProviderText(
-                                            data.cluster.status?.providerMetadata
-                                        ) && (
-                                            <DescriptionListGroup>
-                                                <DescriptionListTerm>
-                                                    Cloud provider
-                                                </DescriptionListTerm>
-                                                <DescriptionListDescription>
-                                                    {getCloudProviderText(
-                                                        data.cluster.status?.providerMetadata
-                                                    )}
-                                                </DescriptionListDescription>
-                                            </DescriptionListGroup>
-                                        )}
-                                        {data.cluster.status?.orchestratorMetadata?.buildDate && (
-                                            <DescriptionListGroup>
-                                                <DescriptionListTerm>
-                                                    Build date
-                                                </DescriptionListTerm>
-                                                <DescriptionListDescription>
-                                                    {getDateTime(
-                                                        data.cluster.status.orchestratorMetadata
-                                                            .buildDate
-                                                    )}
-                                                </DescriptionListDescription>
-                                            </DescriptionListGroup>
-                                        )}
-                                        {data.cluster.status?.orchestratorMetadata?.version && (
-                                            <DescriptionListGroup>
-                                                <DescriptionListTerm>
-                                                    K8s version
-                                                </DescriptionListTerm>
-                                                <DescriptionListDescription>
-                                                    {
-                                                        data.cluster.status.orchestratorMetadata
-                                                            .version
-                                                    }
-                                                </DescriptionListDescription>
-                                            </DescriptionListGroup>
-                                        )}
-                                    </DescriptionList>
-                                    <ExpandableLabelSection
-                                        toggleText="Labels"
-                                        labels={data.cluster.labels}
-                                    />
-                                </Flex>
-                            )
-                        )}
-                    </CardBody>
-                </Card>
+            <Divider component="div" />
+            <PageSection isFilled>
+                {error ? (
+                    <Bullseye>
+                        <EmptyStateTemplate
+                            title="There was an error loading the cluster details"
+                            headingLevel="h2"
+                            icon={ExclamationCircleIcon}
+                            status="danger"
+                        >
+                            {getAxiosErrorMessage(error)}
+                        </EmptyStateTemplate>
+                    </Bullseye>
+                ) : loading ? (
+                    <Bullseye>
+                        <Spinner size="xl" />
+                    </Bullseye>
+                ) : (
+                    data && (
+                        <Flex
+                            direction={{ default: 'column' }}
+                            spaceItems={{ default: 'spaceItemsXl' }}
+                        >
+                            <DescriptionList columnModifier={{ default: '1Col' }}>
+                                <DescriptionListGroup>
+                                    <DescriptionListTerm>Cluster type</DescriptionListTerm>
+                                    <DescriptionListDescription>
+                                        {displayClusterType(data.cluster.type)}
+                                    </DescriptionListDescription>
+                                </DescriptionListGroup>
+                                {getCloudProviderText(data.cluster.status?.providerMetadata) && (
+                                    <DescriptionListGroup>
+                                        <DescriptionListTerm>Cloud provider</DescriptionListTerm>
+                                        <DescriptionListDescription>
+                                            {getCloudProviderText(
+                                                data.cluster.status?.providerMetadata
+                                            )}
+                                        </DescriptionListDescription>
+                                    </DescriptionListGroup>
+                                )}
+                                {data.cluster.status?.orchestratorMetadata?.buildDate && (
+                                    <DescriptionListGroup>
+                                        <DescriptionListTerm>Build date</DescriptionListTerm>
+                                        <DescriptionListDescription>
+                                            {getDateTime(
+                                                data.cluster.status.orchestratorMetadata.buildDate
+                                            )}
+                                        </DescriptionListDescription>
+                                    </DescriptionListGroup>
+                                )}
+                                {data.cluster.status?.orchestratorMetadata?.version && (
+                                    <DescriptionListGroup>
+                                        <DescriptionListTerm>K8s version</DescriptionListTerm>
+                                        <DescriptionListDescription>
+                                            {data.cluster.status.orchestratorMetadata.version}
+                                        </DescriptionListDescription>
+                                    </DescriptionListGroup>
+                                )}
+                            </DescriptionList>
+                            <ExpandableLabelSection
+                                toggleText="Labels"
+                                labels={data.cluster.labels}
+                            />
+                        </Flex>
+                    )
+                )}
             </PageSection>
         </>
     );

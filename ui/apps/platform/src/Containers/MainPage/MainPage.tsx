@@ -76,7 +76,7 @@ function MainPage(): ReactElement {
             <div id="PageParent">
                 <Button
                     style={{
-                        bottom: 'calc(var(--pf-v5-global--spacer--lg) * 6)',
+                        bottom: 'calc(2 * var(--pf-t--global--spacer--4xl))',
                         position: 'absolute',
                         right: '0',
                         transform: 'rotate(270deg)',
@@ -96,7 +96,7 @@ function MainPage(): ReactElement {
                 {showFeedbackModal && <AcsFeedbackModal />}
                 <Page
                     mainContainerId="main-page-container"
-                    header={<Header />}
+                    masthead={<Header />}
                     isManagedSidebar
                     sidebar={
                         <NavigationSidebar

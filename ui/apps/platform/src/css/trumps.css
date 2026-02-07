@@ -6,38 +6,27 @@
 
 body {
     /* Overrides the tailwind default font-family that clashes with the upgrade to PF 5 */
-    font-family: var(--pf-v5-global--FontFamily--text);
+    font-family: var(--pf-t--global--font--family--body);
 }
 
 .ReactModal__Content,
-#main-page-container > div > :not(.pf-v5-c-page__main-section):not(.pf-c-tab-content) {
+#main-page-container > div > :not(.pf-v6-c-page__main-section):not(.pf-c-tab-content) {
   font-size: 0.875rem;
   color: var(--base-600);
 }
 
 /* Universal selector increases specificity of these override style rules */
 
-* .theme-dark {
-    --base-500: #aaabac;
-    --base-600: #ffffff;
-}
-
 * .theme-light {
-    --base-500: var(--pf-v5-global--palette--black-600);
-    --base-600: var(--pf-v5-global--palette--black-900);
-    --base-700: var(--pf-v5-global--palette--black-1000);
-}
-
-/* overrides the default link styling in Tailwind (`inherit`) with PF's default blue */
-.pf-v5-c-modal-box a, .pf-v5-c-page__main-section a:not(.pf-v5-c-button):not(.pf-v5-c-nav__link) {
-    color: var(--pf-v5-global--link--Color) !important;
-    -webkit-text-decoration: var(--pf-v5-global--link--TextDecoration) !important;
-    text-decoration: var(--pf-v5-global--link--TextDecoration) !important;
+    --base-500: var(--pf-t--color--gray--60);
+    --base-600: var(--pf-t--color--gray--90);
+    --base-700: var(--pf-t--color--black);
 }
 
 /* PatternFly style for links in classic related entity, cluster page, side panel, widget headerComponents, widget body, and React Table cell plus PatternFly table in classic page. */
 /* Also PatternFly Popover element. */
 
+a,
 button[data-testid="related-entity-list-count-value"],
 button[data-testid="related-entity-value"],
 [data-testid="cluster-page"] a,
@@ -46,16 +35,17 @@ button[data-testid="related-entity-value"],
 [data-testid="widget-header"] + div a,
 [data-testid="widget-body"] a,
 .rt-td a,
-.pf-v5-c-table td a,
-.pf-v5-c-popover a {
-    color: var(--pf-v5-global--link--Color);
+.pf-v6-c-table td a,
+.pf-v6-c-popover a {
+    color: var(--pf-t--global--text--color--link--default);
 }
 
 button[data-testid="related-entity-list-count-value"]:hover {
-    color: var(--pf-v5-global--link--Color--hover);
+    color: var(--pf-t--global--text--color--link--hover);
     /* but no underline */
 }
 
+a:hover,
 button[data-testid="related-entity-value"]:hover,
 [data-testid="cluster-page"] a:hover,
 [data-testid="panel"] a:hover,
@@ -63,58 +53,53 @@ button[data-testid="related-entity-value"]:hover,
 [data-testid="widget-header"] + div a:hover,
 [data-testid="widget-body"] a:hover,
 .rt-td a:hover,
-.pf-v5-c-table td a:hover,
-.pf-v5-c-popover a:hover {
-    color: var(--pf-v5-global--link--Color--hover);
-    text-decoration: var(--pf-v5-global--link--TextDecoration--hover);
+.pf-v6-c-table td a:hover,
+.pf-v6-c-popover a:hover {
+    color: var(--pf-t--global--text--color--link--hover);
+    text-decoration: var(--pf-t--global--text-decoration--link--line--hover);
 }
 
-.pf-v5-c-page__sidebar {
-    --pf-v5-c-page__sidebar-body--PaddingTop: 0;
+.pf-v6-c-page__sidebar {
+    --pf-v6-c-page__sidebar-body--PaddingTop: 0;
 }
 
 [data-testid='top-nav-btns'] {
     height: 4.75rem !important;
 }
 
-.pf-v5-c-nav__link {
+.pf-v6-c-nav__link {
     align-items: center !important;
 }
 
-.pf-v5-c-card__header-toggle {
+.pf-v6-c-card__header-toggle {
     align-self: center !important;
 }
 
-.pf-v5-c-expandable-section__toggle-text {
+.pf-v6-c-expandable-section__toggle-text {
     text-align: left;
 }
 
-.pf-v5-c-form-control {
-    border-top-color: var(--pf-v5-global--BorderColor--300);
-    border-right-color: var(--pf-v5-global--BorderColor--300);
-    border-bottom-color: var(--pf-v5-global--BorderColor--200);
-    border-left-color: var(--pf-v5-global--BorderColor--300);
+.pf-v6-c-form-control {
+    border-top-color: var(--pf-t--global--border--color--default);
+    border-right-color: var(--pf-t--global--border--color--default);
+    border-bottom-color: var(--pf-t--global--border--color--default);
+    border-left-color: var(--pf-t--global--border--color--default);
 }
 
-.pf-v5-c-form-control:disabled {
-    color: var(--pf-v5-c-form-control--disabled--Color) !important;
-    background-color: var(--pf-v5-c-form-control--disabled--BackgroundColor) !important;
+.pf-v6-c-form-control:disabled {
+    color: var(--pf-v6-c-form-control--disabled--Color) !important;
+    background-color: var(--pf-v6-c-form-control--disabled--BackgroundColor) !important;
     cursor: not-allowed !important;
-    border-color: var(--pf-v5-c-form-control--disabled--BorderColor) !important;
+    border-color: var(--pf-v6-c-form-control--disabled--BorderColor) !important;
 }
 
 /* Replace override for PatternFly with rule from ui-components.css file for classic disabled buttons. */
-#main-page-container > div > :not(.pf-v5-c-page__main-section) button:disabled {
+#main-page-container > div > :not(.pf-v6-c-page__main-section) button:disabled {
     opacity: 0.5;
     pointer-events: none;
 }
 
-/* SimpleListItem in policy categories: specify color instead of depending on opacity. */
-.pf-v5-c-simple-list button:disabled {
-    color: var(--pf-v5-global--disabled-color--100);
-}
-
-.pf-v5-c-select__toggle:not(.pf-m-plain)::before {
+.pf-v6-c-select__toggle:not(.pf-m-plain)::before {
     position: absolute;
     top: 0;
     right: 0;
@@ -136,12 +121,12 @@ button[data-testid="related-entity-value"]:hover,
 }
 
 /* Un-override the above override when the <Select> component is disabled */
-.pf-v5-c-select__toggle.pf-m-disabled::before {
+.pf-v6-c-select__toggle.pf-m-disabled::before {
     border-width: inherit !important;
 }
 
 /* Un-override the above override when the <Select> component is in an invalid state */
-.pf-m-invalid .pf-v5-c-select__toggle::before {
+.pf-m-invalid .pf-v6-c-select__toggle::before {
     /* Why are these pseudo elements not able to access the vars? */
     /* border-bottom-color: var(--pf-v5-c-select__toggle--before--BorderBottomColor); */
     border-bottom-color: rgb(201, 25, 11) !important;
@@ -149,45 +134,39 @@ button[data-testid="related-entity-value"]:hover,
 }
 
 /* Fix default text in plain PF Select */
-.pf-v5-c-select__toggle.pf-m-plain .pf-v5-c-select__toggle-text {
+.pf-v6-c-select__toggle.pf-m-plain .pf-v6-c-select__toggle-text {
     overflow: visible !important;
 }
 
 
 /* overriding our tailwind config default of display: block for images, because it breaks the patternfly layout */
 .pf-v5-svg,
-.pf-v5-c-page svg {
+.pf-v6-c-page svg {
     display: inline;
 }
 
-.pf-v5-c-progress__status-icon svg {
+.pf-v6-c-progress__status-icon svg {
   display: inline-block;
 }
 
 /* overriding vertical align property for table sort icon */
-.pf-v5-c-table__sort-indicator {
+.pf-v6-c-table__sort-indicator {
     align-self: center;
 }
 
-/* Override filter which simulates dark background color */
-.theme-dark .pf-v5-c-table input[type='checkbox'],
-.theme-dark .pf-v5-c-check input[type='checkbox'] {
-    filter: inherit; /* replace invert(0.3) */
-}
-
 /* override width of thead checkbox so that it's not cut off when table is empty */
-.pf-v5-c-table thead tr > .pf-v5-c-table__check {
+.pf-v6-c-table thead tr > .pf-v6-c-table__check {
     min-width: 44px;
 }
 
 /* Global Search modal */
-.search-modal .pf-v5-c-tab-content {
+.search-modal .pf-v6-c-tab-content {
     height: calc(100% - 112px) !important;
 }
 
 /* Overrides Tailwind bolding of PF ToggleGroup buttons */
-.pf-v5-c-toggle-group__button {
-    font-weight: var(--pf-v5-global--FontWeight--normal);
+.pf-v6-c-toggle-group__button {
+    font-weight: var(--pf-t--global--font--weight--body--default);
 }
 
 /* Overridding Tailwind dropdown arrow */
@@ -196,45 +175,40 @@ select {
 }
 
 /* override PatternFly DescriptionList horizontal variant to allow long keys and values to wrap */
-.pf-v5-c-description-list__term,
-.pf-v5-c-description-list__description{
+.pf-v6-c-description-list__term,
+.pf-v6-c-description-list__description{
     word-break: break-all;
 }
 
 /* Override none value for list-style in Tailwind stylesheet. */
-.pf-v5-c-modal-box ol,
-.pf-v5-c-page__main-section ol {
+.pf-v6-c-modal-box ol,
+.pf-v6-c-page__main-section ol {
     list-style: decimal;
 }
 
 /* Override the preceding override for PatternFly Wizard */
-.pf-v5-c-page__main-section ol.pf-v5-c-wizard__nav-list {
+.pf-v6-c-page__main-section ol.pf-v6-c-wizard__nav-list {
     list-style: none;
 }
 
 /*
  * Override disabled checkbox styles when the input element is in a PF table
  */
-.pf-v5-c-table__check input[type="checkbox"]:disabled,
-.pf-v5-c-form__group input[type="checkbox"]:disabled {
+.pf-v6-c-table__check input[type="checkbox"]:disabled,
+.pf-v6-c-form__group input[type="checkbox"]:disabled {
     cursor: not-allowed;
     border-color: revert;
 }
-.pf-v5-c-table__check input[type="checkbox"]:checked:disabled,
-.pf-v5-c-form__group input[type="checkbox"]:checked:disabled {
-    background-color: var(--pf-v5-global--disabled-color--200);
-    border-color: transparent;
-}
 
 /* fixes flattened radio buttons caused by tailwind appearance when using pf standalone radio button */
-.pf-v5-c-radio.pf-m-standalone input[type="radio"] {
+.pf-v6-c-radio.pf-m-standalone input[type="radio"] {
     appearance: auto;
 }
 
 /* For classic components to equal or exceed z-index of PatternFly elements. */
 
 .z-xs-100 {
-    z-index: 100; /* --pf-v5-global--ZIndex--xs */
+    z-index: 100; /* --pf-t--global--z-index--xs */
 }
 
 .z-xs-101 {
@@ -242,7 +216,7 @@ select {
 }
 
 .z-sm-200 {
-    z-index: 200; /* --pf-v5-global--ZIndex--sm */
+    z-index: 200; /* --pf-t--global--z-index--sm */
 }
 
 .z-sm-201 {
@@ -250,7 +224,7 @@ select {
 }
 
 .z-md-300 {
-    z-index: 300; /* --pf-v5-global--ZIndex--md */
+    z-index: 300; /* --pf-t--global--z-index--md */
 }
 
 .z-md-301 {
@@ -258,7 +232,7 @@ select {
 }
 
 .z-lg-400 {
-    z-index: 400; /* --pf-v5-global--ZIndex--lg */
+    z-index: 400; /* --pf-t--global--z-index--lg */
 }
 
 .z-lg-401 {
@@ -266,7 +240,7 @@ select {
 }
 
 .z-xl-500 {
-    z-index: 500; /* --pf-v5-global--ZIndex--xl */
+    z-index: 500; /* --pf-t--global--z-index--xl */
 }
 
 .z-xl-501 {
@@ -274,9 +248,22 @@ select {
 }
 
 .z-2xl-600 {
-    z-index: 600; /* --pf-v5-global--ZIndex--2xl */
+    z-index: 600; /* --pf-t--global--z-index--2xl */
 }
 
 .z-2xl-601 {
     z-index: 601;
+}
+
+/* Override Tailwind line-height for input elements to match PatternFly, can be removed once Tailwind is removed or isolated */
+input[type="text"],
+input[type="email"],
+input[type="url"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="search"], input[type="tel"], input[type="time"], input[type="week"], textarea, select {
+    line-height: var(--pf-t--global--font--line-height--body);
 }

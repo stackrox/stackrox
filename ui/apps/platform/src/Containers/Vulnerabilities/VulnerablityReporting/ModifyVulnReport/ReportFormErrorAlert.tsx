@@ -21,7 +21,7 @@ function ReportFormErrorAlert({ error }) {
                     variant="danger"
                     title={error}
                     component="p"
-                    className="pf-v5-u-mb-sm"
+                    className="pf-v6-u-mb-sm"
                 />
             )}
         </div>

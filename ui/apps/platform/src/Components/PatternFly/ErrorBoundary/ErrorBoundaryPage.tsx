@@ -2,8 +2,6 @@ import type { ErrorInfo, ReactElement } from 'react';
 import {
     EmptyState,
     EmptyStateFooter,
-    EmptyStateHeader,
-    EmptyStateIcon,
     Flex,
     FlexItem,
     PageSection,
@@ -34,22 +32,14 @@ export type ErrorBoundaryPageProps = {
  */
 function ErrorBoundaryPage({ error, errorInfo }: ErrorBoundaryPageProps): ReactElement {
     return (
-        <PageSection id="error-boundary-page" variant="light">
+        <PageSection hasBodyWrapper={false} id="error-boundary-page">
             <Flex
                 className="error-boundary-page-column"
                 direction={{ default: 'column' }}
                 flexWrap={{ default: 'nowrap' }}
                 spaceItems={{ default: 'spaceItemsXl' }}
             >
-                <EmptyState>
-                    <EmptyStateHeader
-                        icon={
-                            <EmptyStateIcon
-                                icon={ExclamationCircleIcon}
-                                color="var(--pf-v5-global--danger-color--200)"
-                            />
-                        }
-                    />
+                <EmptyState icon={ExclamationCircleIcon}>
                     <EmptyStateFooter>
                         <Flex
                             direction={{ default: 'column' }}
@@ -65,7 +55,6 @@ function ErrorBoundaryPage({ error, errorInfo }: ErrorBoundaryPageProps): ReactE
                     <ErrorBoundaryCodeBlock
                         code={error.message}
                         idForButton="error-boundary-button-error-message"
-                        idForContent="error-boundary-content-error-message"
                         phraseForCopied="Copied to clipboard: Error message"
                         phraseForCopy="Copy to clipboard: Error message"
                     />
@@ -92,7 +81,6 @@ function ErrorBoundaryPage({ error, errorInfo }: ErrorBoundaryPageProps): ReactE
                                 <ErrorBoundaryCodeBlock
                                     code={error.stack ?? ''}
                                     idForButton="error-boundary-button-error-stack"
-                                    idForContent="error-boundary-content-error-stack"
                                     phraseForCopied="Copied to clipboard: Error stack"
                                     phraseForCopy="Copy to clipboard: Error stack"
                                 />
@@ -114,7 +102,6 @@ function ErrorBoundaryPage({ error, errorInfo }: ErrorBoundaryPageProps): ReactE
                                 <ErrorBoundaryCodeBlock
                                     code={errorInfo.componentStack ?? ''}
                                     idForButton="error-boundary-button-component-stack"
-                                    idForContent="error-boundary-content-component-stack"
                                     phraseForCopied="Copied to clipboard: Component stack"
                                     phraseForCopy="Copy to clipboard: Component stack"
                                 />

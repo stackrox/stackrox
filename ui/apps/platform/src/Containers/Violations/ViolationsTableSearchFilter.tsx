@@ -1,4 +1,4 @@
-import { Toolbar, ToolbarContent, ToolbarGroup, ToolbarItem } from '@patternfly/react-core';
+import { Toolbar, ToolbarContent, ToolbarGroup } from '@patternfly/react-core';
 
 import type { SearchFilter } from 'types/search';
 import useAnalytics from 'hooks/useAnalytics';
@@ -102,18 +102,14 @@ function ViolationsTableSearchFilter({
     return (
         <Toolbar>
             <ToolbarContent>
-                <ToolbarGroup className="pf-v5-u-w-100">
-                    <ToolbarItem className="pf-v5-u-flex-1">
-                        <CompoundSearchFilter
-                            config={searchFilterConfig}
-                            defaultEntity="Policy"
-                            searchFilter={searchFilter}
-                            onSearch={onSearchHandler}
-                            additionalContextFilter={additionalContextFilter}
-                        />
-                    </ToolbarItem>
-                </ToolbarGroup>
-                <ToolbarGroup className="pf-v5-u-w-100">
+                <CompoundSearchFilter
+                    config={searchFilterConfig}
+                    defaultEntity="Policy"
+                    searchFilter={searchFilter}
+                    onSearch={onSearchHandler}
+                    additionalContextFilter={additionalContextFilter}
+                />
+                <ToolbarGroup className="pf-v6-u-w-100">
                     <CompoundSearchFilterLabels
                         attributesSeparateFromConfig={[]}
                         config={searchFilterConfig}

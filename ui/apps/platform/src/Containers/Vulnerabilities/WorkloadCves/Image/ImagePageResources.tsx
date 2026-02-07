@@ -1,12 +1,11 @@
-import type { CSSProperties } from 'react';
 import {
     Bullseye,
+    Content,
     Divider,
     ExpandableSection,
     PageSection,
     Pagination,
     Spinner,
-    Text,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 import type { DocumentNode } from '@apollo/client';
@@ -109,14 +108,11 @@ function ImagePageResources({
 
     return (
         <>
-            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
-                <Text>Navigate to resources associated with this image</Text>
+            <PageSection component="div">
+                <Content component="p">Navigate to resources associated with this image</Content>
             </PageSection>
             <Divider component="div" />
-            <PageSection
-                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
-                component="div"
-            >
+            <PageSection component="div">
                 {error && (
                     <TableErrorComponent
                         error={error}
@@ -135,29 +131,21 @@ function ImagePageResources({
                             deploymentTableToggle.onToggle(!deploymentTableToggle.isOpen)
                         }
                         isExpanded={deploymentTableToggle.isOpen}
-                        style={
-                            {
-                                '--pf-v5-c-expandable-section__content--MarginTop':
-                                    'var(--pf-v5-global--spacer--xs)',
-                            } as CSSProperties
-                        }
                     >
-                        <div className="pf-v5-u-background-color-100 pf-v5-u-pt-sm">
-                            <Pagination
-                                itemCount={deploymentCount}
-                                page={page}
-                                perPage={perPage}
-                                onSetPage={(_, newPage) => setPage(newPage)}
-                                onPerPageSelect={(_, newPerPage) => {
-                                    setPerPage(newPerPage);
-                                }}
-                            />
-                            <DeploymentResourceTable
-                                data={imageResourcesData}
-                                getSortParams={getSortParams}
-                                columnVisibilityState={deploymentResourceColumnConfig}
-                            />
-                        </div>
+                        <Pagination
+                            itemCount={deploymentCount}
+                            page={page}
+                            perPage={perPage}
+                            onSetPage={(_, newPage) => setPage(newPage)}
+                            onPerPageSelect={(_, newPerPage) => {
+                                setPerPage(newPerPage);
+                            }}
+                        />
+                        <DeploymentResourceTable
+                            data={imageResourcesData}
+                            getSortParams={getSortParams}
+                            columnVisibilityState={deploymentResourceColumnConfig}
+                        />
                     </ExpandableSection>
                 )}
             </PageSection>

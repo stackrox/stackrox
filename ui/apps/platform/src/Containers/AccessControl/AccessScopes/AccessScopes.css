@@ -1,8 +1,8 @@
 /*
  * Make form group labelIcon prop look similar to info prop in table head cell.
- * From PatternFly rule with selector: .pf-v5-c-table__column-help-action .pf-v5-c-button
+ * From PatternFly rule with selector: .pf-v6-c-table__column-help-action .pf-v6-c-button
  */
-#access-scope-form .pf-v5-c-form__group-label .pf-v5-c-button {
+#access-scope-form .pf-v6-c-form__group-label .pf-v6-c-button {
     padding-right: 8px;
     padding-left: 8px;
     margin-top: -6px;
@@ -15,22 +15,22 @@
  * Override annoying reset rule for info icon.
  * However, table column help action svg does have display: block!
  */
-#access-scope-form .pf-v5-c-form__group-label .pf-v5-c-button svg {
+#access-scope-form .pf-v6-c-form__group-label .pf-v6-c-button svg {
     display: inline;
 }
 
 /*
  * Align table head row with tabs because they are side by side.
  */
-#access-scope-form .pf-v5-c-table {
-    --pf-v5-c-table--m-compact-th--PaddingTop: var(--pf-v5-global--spacer--sm);
+#access-scope-form .pf-v6-c-table {
+    --pf-v6-c-table--m-compact-th--PaddingTop: var(--pf-t--global--spacer--sm);
 }
 
 /*
  * Align tab text with table head row cells because they are side by side.
  */
-#access-scope-form .pf-v5-c-tabs {
-    --pf-v5-c-tabs__link--FontSize: var(--pf-v5-global--FontSize--sm);
+#access-scope-form .pf-v6-c-tabs {
+    --pf-v6-c-tabs__link--FontSize: var(--pf-t--global--font--size--sm);
 }
 
 /*
@@ -43,73 +43,73 @@
 /*
  * Replace primary blue with success green like included state.
  */
-#access-scope-form .pf-v5-c-switch.acs-m-manual-inclusion {
-    --pf-v5-c-switch__input--checked__toggle--BackgroundColor: var(--pf-v5-global--success-color--100);
+#access-scope-form .pf-v6-c-switch.acs-m-manual-inclusion {
+    --pf-v6-c-switch__input--checked__toggle--BackgroundColor: var(--pf-t--global--color--status--success--default);
 }
 
 /*
  * Override annoying reset rule for dropdown toggle for table actions.
  */
-table .pf-v5-c-dropdown__toggle.pf-m-plain svg {
+table .pf-v6-c-dropdown__toggle.pf-m-plain svg {
     display: inline;
 }
 
 /*
  * A smallest button has no padding, because only an icon.
  */
-#access-scope-form .pf-v5-c-button.pf-m-smallest {
-    --pf-v5-c-button--PaddingTop: 0;
-    --pf-v5-c-button--PaddingRight: 0;
-    --pf-v5-c-button--PaddingBottom: 0;
-    --pf-v5-c-button--PaddingLeft: 0;
-    --pf-v5-c-button--FontSize: var(--pf-v5-global--FontSize--sm); /* like form or table */
+#access-scope-form .pf-v6-c-button.pf-m-smallest {
+    --pf-v6-c-button--PaddingBlockStart: 0;
+    --pf-v6-c-button--PaddingInlineEnd: 0;
+    --pf-v6-c-button--PaddingBlockEnd: 0;
+    --pf-v6-c-button--PaddingInlineStart: 0;
+    --pf-v6-c-button--FontSize: var(--pf-t--global--font--size--sm); /* like form or table */
 }
 
-#access-scope-form .pf-v5-c-button.pf-m-smallest svg {
+#access-scope-form .pf-v6-c-button.pf-m-smallest svg {
     display: inline;
 }
 
 /*
  * Dropdown has horizontal spacing compatible with Button.
 */
-#access-scope-form .pf-v5-c-dropdown {
-    --pf-v5-c-dropdown__toggle--PaddingLeft: var(--pf-v5-global--spacer--md);
+#access-scope-form .pf-v6-c-dropdown {
+    --pf-v5-c-dropdown__toggle--PaddingLeft: var(--pf-t--global--spacer--md);
 }
 
 /*
  * Disabled primary Dropdown needs same colors as Button.
  */
-#access-scope-form .pf-v5-c-dropdown__toggle.pf-m-primary[disabled] {
-    background-color: var(--pf-v5-global--disabled-color--200);
-    color: var(--pf-v5-global--disabled-color--100);
+#access-scope-form .pf-v6-c-dropdown__toggle.pf-m-primary[disabled] {
+    background-color: var(--pf-t--global--background--color--disabled--default);
+    color: var(--pf-t--global--text--color--on-disabled);
 }
 
 /*
  * Render SelectSingle with compatible size and padding as small input (see below).
  * Because no border, the padding is one pixel greater than input element.
  */
-#access-scope-form td[data-label="Operator"] .pf-v5-c-select {
-    --pf-v5-c-select__toggle--FontSize: var(--pf-v5-global--FontSize--sm);
+#access-scope-form td[data-label="Operator"] .pf-v6-c-select {
+    --pf-v5-c-select__toggle--FontSize: var(--pf-t--global--font--size--sm);
     --pf-v5-c-select__toggle--PaddingTop: 3px;
     --pf-v5-c-select__toggle--PaddingBottom: 3px;
-    --pf-v5-c-select__menu-item--FontSize: var(--pf-v5-global--FontSize--sm);
-    --pf-v5-c-select__menu-item--PaddingTop: var(--pf-v5-global--spacer--xs);
-    --pf-v5-c-select__menu-item--PaddingBottom: var(--pf-v5-global--spacer--xs);
+    --pf-v5-c-select__menu-item--FontSize: var(--pf-t--global--font--size--sm);
+    --pf-v5-c-select__menu-item--PaddingTop: var(--pf-t--global--spacer--xs);
+    --pf-v5-c-select__menu-item--PaddingBottom: var(--pf-t--global--spacer--xs);
 }
 
 /*
  * Form control has (via className) font size compatible with table.
  */
-#access-scope-form .pf-v5-c-form-control.pf-m-small {
-    --pf-v5-c-form-control--FontSize: var(--pf-v5-global--FontSize--sm);
-    --pf-v5-c-form-control--PaddingTop: 2px;
-    --pf-v5-c-form-control--PaddingBottom: 2px;
+#access-scope-form .pf-v6-c-form-control.pf-m-small {
+    --pf-v6-c-form-control--FontSize: var(--pf-t--global--font--size--sm);
+    --pf-v6-c-form-control--PaddingBlockStart: 2px;
+    --pf-v6-c-form-control--PaddingBlockEnd: 2px;
 }
 
 /*
  * Align text in input with label key or value in other table cells.
  */
-#access-scope-form td input.pf-v5-c-form-control.pf-m-small {
+#access-scope-form td input.pf-v6-c-form-control.pf-m-small {
     position: relative;
     left: -9px;
 }
@@ -118,15 +118,15 @@ table .pf-v5-c-dropdown__toggle.pf-m-plain svg {
  * Form control has (via className) same layout as isHorizontal prop of Form.
  */
 @media (min-width: 768px) {
-    .pf-v5-c-form__group.pf-m-horizontal {
+    .pf-v6-c-form__group.pf-m-horizontal {
         display: grid;
-        grid-column-gap: var(--pf-v5-c-form--m-horizontal__group-label--md--GridColumnGap);
+        grid-column-gap: var(--pf-v6-c-form--m-horizontal__group-label--md--GridColumnGap);
         grid-template-columns:
-            minmax(var(--pf-v5-c-form--m-horizontal__group-label--md--GridColumnWidth), max-content)
-            var(--pf-v5-c-form--m-horizontal__group-control--md--GridColumnWidth);
+            minmax(var(--pf-v6-c-form--m-horizontal__group-label--md--GridColumnWidth), max-content)
+            var(--pf-v6-c-form--m-horizontal__group-control--md--GridColumnWidth);
     }
 
-    .pf-v5-c-form__group.pf-m-horizontal .pf-v5-c-form__group-label {
+    .pf-v6-c-form__group.pf-m-horizontal .pf-v6-c-form__group-label {
         padding-bottom: 0;
     }
 }
@@ -138,7 +138,7 @@ table .pf-v5-c-dropdown__toggle.pf-m-plain svg {
 /*
  * Allow pop-up selects to scroll when customer has more roles than can be shown by height of screen
  */
- #defaultRole.pf-v5-c-select__menu {
+ #defaultRole.pf-v6-c-select__menu {
     max-height: calc(100vh - (3 * var(--pf-v5-c-page__header--MinHeight)));
     overflow: scroll;
 }

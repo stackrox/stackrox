@@ -5,10 +5,9 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
-    Flex,
+    Content,
     PageSection,
     Spinner,
-    Text,
     Title,
 } from '@patternfly/react-core';
 
@@ -87,25 +86,20 @@ function DiscoveredClustersPage(): ReactElement {
 
     return (
         <>
-            <PageSection component="div" variant="light">
-                <PageTitle title={title} />
-                <Flex direction={{ default: 'column' }}>
-                    <Breadcrumb>
-                        <BreadcrumbItemLink to={clustersBasePath}>Clusters</BreadcrumbItemLink>
-                        <BreadcrumbItem isActive>{title}</BreadcrumbItem>
-                    </Breadcrumb>
-                    <Flex
-                        direction={{ default: 'column' }}
-                        spaceItems={{ default: 'spaceItemsSm' }}
-                    >
-                        <Title headingLevel="h1">{title}</Title>
-                        <Text>
-                            Discovered clusters might not yet have secured cluster services.
-                        </Text>
-                    </Flex>
-                </Flex>
+            <PageTitle title={title} />
+            <PageSection type="breadcrumb">
+                <Breadcrumb>
+                    <BreadcrumbItemLink to={clustersBasePath}>Clusters</BreadcrumbItemLink>
+                    <BreadcrumbItem isActive>{title}</BreadcrumbItem>
+                </Breadcrumb>
             </PageSection>
-            <PageSection component="div">
+            <PageSection>
+                <Title headingLevel="h1">{title}</Title>
+                <Content component="p">
+                    Discovered clusters might not yet have secured cluster services.
+                </Content>
+            </PageSection>
+            <PageSection>
                 {currentDatetime === null ? (
                     <Bullseye>
                         <Spinner />

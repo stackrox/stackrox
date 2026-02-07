@@ -48,14 +48,14 @@ function PolicyCategoriesListSection({
 
     return (
         <>
-            <PageSection id="policy-categories-list-section">
+            <PageSection hasBodyWrapper={false} id="policy-categories-list-section">
                 <Flex
                     spaceItems={{ default: 'spaceItemsNone' }}
                     alignItems={{ default: 'alignItemsStretch' }}
-                    className="pf-v5-u-h-100"
+                    className="pf-v6-u-h-100"
                 >
                     <FlexItem flex={{ default: 'flex_1' }}>
-                        <PageSection isFilled variant="light" className="pf-v5-u-h-100">
+                        <PageSection hasBodyWrapper={false} isFilled className="pf-v6-u-h-100">
                             <Flex direction={{ default: 'column' }}>
                                 <Title headingLevel="h2">
                                     <Flex

@@ -118,7 +118,7 @@ function NamespaceSelect({
             }}
         >
             <SelectList style={{ maxHeight: '50vh', overflow: 'auto' }}>
-                <div className="pf-v5-u-p-md">
+                <div className="pf-v6-u-p-md">
                     <SearchInput
                         value={filterValue}
                         onChange={(_event, value) => setFilterValue(value)}
@@ -136,7 +136,7 @@ function NamespaceSelect({
                     All namespaces
                 </SelectOption>
                 {filteredClusters.length > 0 && (
-                    <Divider className="pf-v5-u-mb-0" component="div" />
+                    <Divider className="pf-v6-u-mb-0" component="div" />
                 )}
                 {filteredClusters.map(({ name: clusterName, namespaces }) => (
                     <SelectGroup key={clusterName} label={clusterName}>

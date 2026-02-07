@@ -44,7 +44,7 @@ export function assertSortByColumn(text, direction, search) {
 
 export function sortByColumn(text) {
     return interactAndWaitForResponses(() => {
-        cy.get(`th:contains("${text}")`).click();
+        cy.get(`th button:contains("${text}")`).click();
     }, routeMatcherMapForTable);
 }
 

@@ -1,6 +1,6 @@
 import {
     Bullseye,
-    Card,
+    Content,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
@@ -10,7 +10,6 @@ import {
     FlexItem,
     PageSection,
     Spinner,
-    Text,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 
@@ -87,14 +86,11 @@ function DeploymentPageDetails({ deploymentId }: DeploymentPageDetailsProps) {
 
     return (
         <>
-            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
-                <Text>View details about this deployment</Text>
+            <PageSection component="div">
+                <Content component="p">View details about this deployment</Content>
             </PageSection>
             <Divider component="div" />
-            <PageSection
-                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
-                component="div"
-            >
+            <PageSection component="div">
                 {error && (
                     <TableErrorComponent
                         error={error}
@@ -107,85 +103,83 @@ function DeploymentPageDetails({ deploymentId }: DeploymentPageDetailsProps) {
                     </Bullseye>
                 )}
                 {deploymentDetailsData && (
-                    <Card className="pf-v5-u-m-md pf-v5-u-p-md" isFlat>
-                        <Flex
-                            direction={{ default: 'column' }}
-                            spaceItems={{ default: 'spaceItemsLg' }}
-                        >
-                            <FlexItem>
-                                <DescriptionList
-                                    isFillColumns
-                                    columnModifier={{
-                                        md: '3Col',
-                                        sm: '1Col',
-                                    }}
-                                >
-                                    <DescriptionListGroup>
-                                        <DescriptionListTerm>Name</DescriptionListTerm>
-                                        <DescriptionListDescription>
-                                            {deploymentDetailsData.name}
-                                        </DescriptionListDescription>
-                                    </DescriptionListGroup>
-                                    <DescriptionListGroup>
-                                        <DescriptionListTerm>Cluster</DescriptionListTerm>
-                                        <DescriptionListDescription>
-                                            {deploymentDetailsData.cluster?.name || '-'}
-                                        </DescriptionListDescription>
-                                    </DescriptionListGroup>
-                                    <DescriptionListGroup>
-                                        <DescriptionListTerm>Replicas</DescriptionListTerm>
-                                        <DescriptionListDescription>
-                                            {deploymentDetailsData.replicas}
-                                        </DescriptionListDescription>
-                                    </DescriptionListGroup>
-                                    <DescriptionListGroup>
-                                        <DescriptionListTerm>Created</DescriptionListTerm>
-                                        <DescriptionListDescription>
-                                            {deploymentDetailsData.created
-                                                ? getDateTime(deploymentDetailsData.created)
-                                                : '-'}
-                                        </DescriptionListDescription>
-                                    </DescriptionListGroup>
-                                    <DescriptionListGroup>
-                                        <DescriptionListTerm>Namespace</DescriptionListTerm>
-                                        <DescriptionListDescription>
-                                            {deploymentDetailsData.namespace}
-                                        </DescriptionListDescription>
-                                    </DescriptionListGroup>
-                                    <DescriptionListGroup>
-                                        <DescriptionListTerm>Service account</DescriptionListTerm>
-                                        <DescriptionListDescription>
-                                            {deploymentDetailsData.serviceAccount}
-                                        </DescriptionListDescription>
-                                    </DescriptionListGroup>
-                                    <DescriptionListGroup>
-                                        <DescriptionListTerm>Deployment type</DescriptionListTerm>
-                                        <DescriptionListDescription>
-                                            {deploymentDetailsData.type}
-                                        </DescriptionListDescription>
-                                    </DescriptionListGroup>
-                                    <DescriptionListGroup>
-                                        <DescriptionListTerm>Labels</DescriptionListTerm>
-                                        <DescriptionListDescription>
-                                            <KeyValueListModal
-                                                type="label"
-                                                keyValues={deploymentDetailsData.labels}
-                                            />
-                                        </DescriptionListDescription>
-                                    </DescriptionListGroup>
-                                    <DescriptionListGroup>
-                                        <DescriptionListTerm>Annotations</DescriptionListTerm>
-                                        <DescriptionListDescription>
-                                            <KeyValueListModal
-                                                type="annotation"
-                                                keyValues={deploymentDetailsData.annotations}
-                                            />
-                                        </DescriptionListDescription>
-                                    </DescriptionListGroup>
-                                </DescriptionList>
-                            </FlexItem>
-                        </Flex>
-                    </Card>
+                    <Flex
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsLg' }}
+                    >
+                        <FlexItem>
+                            <DescriptionList
+                                isFillColumns
+                                columnModifier={{
+                                    md: '3Col',
+                                    sm: '1Col',
+                                }}
+                            >
+                                <DescriptionListGroup>
+                                    <DescriptionListTerm>Name</DescriptionListTerm>
+                                    <DescriptionListDescription>
+                                        {deploymentDetailsData.name}
+                                    </DescriptionListDescription>
+                                </DescriptionListGroup>
+                                <DescriptionListGroup>
+                                    <DescriptionListTerm>Cluster</DescriptionListTerm>
+                                    <DescriptionListDescription>
+                                        {deploymentDetailsData.cluster?.name || '-'}
+                                    </DescriptionListDescription>
+                                </DescriptionListGroup>
+                                <DescriptionListGroup>
+                                    <DescriptionListTerm>Replicas</DescriptionListTerm>
+                                    <DescriptionListDescription>
+                                        {deploymentDetailsData.replicas}
+                                    </DescriptionListDescription>
+                                </DescriptionListGroup>
+                                <DescriptionListGroup>
+                                    <DescriptionListTerm>Created</DescriptionListTerm>
+                                    <DescriptionListDescription>
+                                        {deploymentDetailsData.created
+                                            ? getDateTime(deploymentDetailsData.created)
+                                            : '-'}
+                                    </DescriptionListDescription>
+                                </DescriptionListGroup>
+                                <DescriptionListGroup>
+                                    <DescriptionListTerm>Namespace</DescriptionListTerm>
+                                    <DescriptionListDescription>
+                                        {deploymentDetailsData.namespace}
+                                    </DescriptionListDescription>
+                                </DescriptionListGroup>
+                                <DescriptionListGroup>
+                                    <DescriptionListTerm>Service account</DescriptionListTerm>
+                                    <DescriptionListDescription>
+                                        {deploymentDetailsData.serviceAccount}
+                                    </DescriptionListDescription>
+                                </DescriptionListGroup>
+                                <DescriptionListGroup>
+                                    <DescriptionListTerm>Deployment type</DescriptionListTerm>
+                                    <DescriptionListDescription>
+                                        {deploymentDetailsData.type}
+                                    </DescriptionListDescription>
+                                </DescriptionListGroup>
+                                <DescriptionListGroup>
+                                    <DescriptionListTerm>Labels</DescriptionListTerm>
+                                    <DescriptionListDescription>
+                                        <KeyValueListModal
+                                            type="label"
+                                            keyValues={deploymentDetailsData.labels}
+                                        />
+                                    </DescriptionListDescription>
+                                </DescriptionListGroup>
+                                <DescriptionListGroup>
+                                    <DescriptionListTerm>Annotations</DescriptionListTerm>
+                                    <DescriptionListDescription>
+                                        <KeyValueListModal
+                                            type="annotation"
+                                            keyValues={deploymentDetailsData.annotations}
+                                        />
+                                    </DescriptionListDescription>
+                                </DescriptionListGroup>
+                            </DescriptionList>
+                        </FlexItem>
+                    </Flex>
                 )}
             </PageSection>
         </>

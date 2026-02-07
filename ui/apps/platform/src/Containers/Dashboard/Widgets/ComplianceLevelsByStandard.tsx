@@ -4,8 +4,6 @@ import {
     EmptyState,
     EmptyStateBody,
     EmptyStateFooter,
-    EmptyStateHeader,
-    EmptyStateIcon,
     Flex,
     FlexItem,
     Form,
@@ -214,17 +212,18 @@ function ComplianceLevelsByStandard() {
                     complianceLevelsByStandard={complianceData.complianceLevelsByStandard}
                 />
             ) : (
-                <EmptyState className="pf-v5-u-h-100" variant="xs">
-                    <EmptyStateHeader
-                        titleText={
-                            Array.isArray(complianceData?.complianceStandards) &&
-                            complianceData.complianceStandards.length === 0
-                                ? 'No standards selected'
-                                : 'No results available.'
-                        }
-                        icon={<EmptyStateIcon className="pf-v5-u-font-size-xl" icon={SyncIcon} />}
-                        headingLevel="h3"
-                    />
+                <EmptyState
+                    headingLevel="h3"
+                    icon={SyncIcon}
+                    titleText={
+                        Array.isArray(complianceData?.complianceStandards) &&
+                        complianceData.complianceStandards.length === 0
+                            ? 'No standards selected'
+                            : 'No results available.'
+                    }
+                    className="pf-v6-u-h-100"
+                    variant="xs"
+                >
                     <EmptyStateBody>
                         {Array.isArray(complianceData?.complianceStandards) &&
                         complianceData.complianceStandards.length === 0

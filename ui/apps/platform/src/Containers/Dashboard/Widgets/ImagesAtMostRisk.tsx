@@ -145,7 +145,7 @@ function ImagesAtMostRisk() {
                                         >
                                             <ToggleGroup aria-label="Show all CVEs or fixable CVEs only">
                                                 <ToggleGroupItem
-                                                    className="pf-v5-u-font-weight-normal"
+                                                    className="pf-v6-u-font-weight-normal"
                                                     text="Fixable CVEs"
                                                     buttonId={`${fieldIdPrefix}-fixable-only`}
                                                     isSelected={cveStatus === 'Fixable'}

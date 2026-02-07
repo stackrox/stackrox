@@ -1,13 +1,13 @@
-import { Flex, PageSection, Text, Title } from '@patternfly/react-core';
+import { Content, Flex, PageSection, Title } from '@patternfly/react-core';
 
 function CoveragesPageHeader() {
     return (
-        <PageSection component="div" variant="light">
+        <PageSection hasBodyWrapper={false} component="div">
             <Flex direction={{ default: 'column' }}>
                 <Title headingLevel="h1">Coverage</Title>
-                <Text>
+                <Content component="p">
                     Assess profile compliance for nodes and platform resources across clusters
-                </Text>
+                </Content>
             </Flex>
         </PageSection>
     );

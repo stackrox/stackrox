@@ -4,7 +4,6 @@ import {
     Alert,
     AlertActionCloseButton,
     AlertGroup,
-    Divider,
     MenuToggle,
     PageSection,
     Pagination,
@@ -14,6 +13,7 @@ import {
     Title,
     Toolbar,
     ToolbarContent,
+    ToolbarGroup,
     ToolbarItem,
     pluralize,
 } from '@patternfly/react-core';
@@ -235,169 +235,180 @@ function ViolationsTablePanel({
                     </Alert>
                 ))}
             </AlertGroup>
-            <ViolationsTableSearchFilter
-                searchFilter={searchFilter}
-                onFilterChange={onFilterChange}
-                onSearch={onSearch}
-                additionalContextFilter={additionalContextFilter}
-            />
-            <Divider component="div" />
-            <Toolbar>
-                <ToolbarContent>
-                    <ToolbarItem>
-                        <Title headingLevel="h2" className="pf-v5-u-color-100">
-                            {pluralize(violationsCount, 'result')} found
-                        </Title>
-                    </ToolbarItem>
-                    {hasActions && (
-                        <ToolbarItem align={{ default: 'alignRight' }}>
-                            <Select
-                                isOpen={isSelectOpen}
-                                onOpenChange={setIsSelectOpen}
-                                toggle={toggle}
-                            >
-                                <SelectList>
-                                    <SelectOption
-                                        value="resolve"
-                                        isDisabled={!hasWriteAccessForAlert || numResolveable === 0}
-                                        onClick={showResolveConfirmationDialog}
-                                    >
-                                        Mark as resolved ({numResolveable})
-                                    </SelectOption>
-                                    <SelectOption
-                                        value="exclude"
-                                        isDisabled={
-                                            !hasWriteAccessForExcludeDeploymentsFromPolicy ||
-                                            numScopesToExclude === 0
-                                        }
-                                        onClick={showExcludeConfirmationDialog}
-                                    >
-                                        Exclude deployments from policy ({numScopesToExclude})
-                                    </SelectOption>
-                                </SelectList>
-                            </Select>
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-0">
+                <ViolationsTableSearchFilter
+                    searchFilter={searchFilter}
+                    onFilterChange={onFilterChange}
+                    onSearch={onSearch}
+                    additionalContextFilter={additionalContextFilter}
+                />
+            </PageSection>
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-0">
+                <Toolbar className="pf-v6-u-py-md">
+                    <ToolbarContent>
+                        <ToolbarItem alignSelf="center">
+                            <Title headingLevel="h2" className="pf-v6-u-color-100">
+                                {pluralize(violationsCount, 'result')} found
+                            </Title>
                         </ToolbarItem>
-                    )}
-                    <ToolbarItem align={{ default: 'alignRight' }} variant="pagination">
-                        <Pagination
-                            itemCount={violationsCount}
-                            page={currentPage}
-                            onSetPage={changePage}
-                            perPage={perPage}
-                            onPerPageSelect={changePerPage}
-                        />
-                    </ToolbarItem>
-                </ToolbarContent>
-            </Toolbar>
-            <Divider component="div" />
-            <PageSection isFilled padding={{ default: 'noPadding' }} hasOverflowScroll>
-                <Table variant="compact" isStickyHeader>
-                    <Thead>
-                        <Tr>
+                        <ToolbarGroup align={{ default: 'alignEnd' }}>
                             {hasActions && (
-                                <Th
-                                    select={{
-                                        onSelect: onSelectAll,
-                                        isSelected: allRowsSelected,
-                                    }}
-                                />
+                                <ToolbarItem>
+                                    <Select
+                                        isOpen={isSelectOpen}
+                                        onOpenChange={setIsSelectOpen}
+                                        toggle={toggle}
+                                    >
+                                        <SelectList>
+                                            <SelectOption
+                                                value="resolve"
+                                                isDisabled={
+                                                    !hasWriteAccessForAlert || numResolveable === 0
+                                                }
+                                                onClick={showResolveConfirmationDialog}
+                                            >
+                                                Mark as resolved ({numResolveable})
+                                            </SelectOption>
+                                            <SelectOption
+                                                value="exclude"
+                                                isDisabled={
+                                                    !hasWriteAccessForExcludeDeploymentsFromPolicy ||
+                                                    numScopesToExclude === 0
+                                                }
+                                                onClick={showExcludeConfirmationDialog}
+                                            >
+                                                Exclude deployments from policy (
+                                                {numScopesToExclude})
+                                            </SelectOption>
+                                        </SelectList>
+                                    </Select>
+                                </ToolbarItem>
                             )}
-                            {columns.map(({ Header, sortField }) => {
-                                const sortParams = sortField
-                                    ? { sort: getSortParams(sortField) }
-                                    : {};
-                                return (
-                                    <Th key={Header} modifier="wrap" {...sortParams}>
-                                        {Header}
+                            <ToolbarItem variant="pagination">
+                                <Pagination
+                                    itemCount={violationsCount}
+                                    page={currentPage}
+                                    onSetPage={changePage}
+                                    perPage={perPage}
+                                    onPerPageSelect={changePerPage}
+                                />
+                            </ToolbarItem>
+                        </ToolbarGroup>
+                    </ToolbarContent>
+                </Toolbar>
+            </PageSection>
+            <PageSection hasBodyWrapper={false}>
+                <div style={{ overflowX: 'auto' }}>
+                    <Table variant="compact">
+                        <Thead>
+                            <Tr>
+                                {hasActions && (
+                                    <Th
+                                        select={{
+                                            onSelect: onSelectAll,
+                                            isSelected: allRowsSelected,
+                                        }}
+                                    />
+                                )}
+                                {columns.map(({ Header, sortField }) => {
+                                    const sortParams = sortField
+                                        ? { sort: getSortParams(sortField) }
+                                        : {};
+                                    return (
+                                        <Th key={Header} modifier="wrap" {...sortParams}>
+                                            {Header}
+                                        </Th>
+                                    );
+                                })}
+                                {hasActions && (
+                                    <Th>
+                                        <span className="pf-v6-screen-reader">Row actions</span>
                                     </Th>
+                                )}
+                            </Tr>
+                        </Thead>
+                        <Tbody
+                            aria-live="polite"
+                            aria-busy={isTableDataUpdating ? 'true' : 'false'}
+                        >
+                            {violations.map((violation, rowIndex) => {
+                                const { state, lifecycleStage, enforcementAction, policy, id } =
+                                    violation;
+                                const isAttemptedViolation = state === VIOLATION_STATES.ATTEMPTED;
+                                const isResolved = state === VIOLATION_STATES.RESOLVED;
+                                const isRuntimeAlert = lifecycleStage === LIFECYCLE_STAGES.RUNTIME;
+                                const isDeployCreateAttemptedAlert =
+                                    enforcementAction ===
+                                    ENFORCEMENT_ACTIONS.FAIL_DEPLOYMENT_CREATE_ENFORCEMENT;
+
+                                // Instead of items prop of Td element, render ActionsColumn element
+                                // so every cell has vertical ellipsis (also known as kabob)
+                                // even if its items array is empty. For example:
+                                // hasWriteAccessForAlert but alert is not Runtime lifecycle.
+                                // !hasWriteAccessForWorkflowAdministration
+                                const actionItems: ActionItem[] = [];
+                                if (hasWriteAccessForAlert && !isResolved) {
+                                    if (isRuntimeAlert) {
+                                        actionItems.push({
+                                            title: 'Resolve and add to process baseline',
+                                            onClick: () => resolveAlertAction(true, violation.id),
+                                        });
+                                    }
+                                    if (isRuntimeAlert || isAttemptedViolation) {
+                                        actionItems.push({
+                                            title: 'Mark as resolved',
+                                            onClick: () => resolveAlertAction(false, violation.id),
+                                        });
+                                    }
+                                }
+                                if (
+                                    hasWriteAccessForExcludeDeploymentsFromPolicy &&
+                                    !isDeployCreateAttemptedAlert &&
+                                    'deployment' in violation
+                                ) {
+                                    actionItems.push({
+                                        title: 'Exclude deployment from policy',
+                                        onClick: () =>
+                                            excludeDeploymentMutation.mutate({
+                                                policyId: policy.id,
+                                                deploymentNames: [violation.deployment.name],
+                                            }),
+                                    });
+                                }
+                                return (
+                                    <Tr key={id}>
+                                        {hasActions && (
+                                            <Td
+                                                select={{
+                                                    rowIndex,
+                                                    onSelect,
+                                                    isSelected: selected[rowIndex],
+                                                }}
+                                            />
+                                        )}
+                                        {columns.map((column) => {
+                                            return (
+                                                <TableCell
+                                                    key={column.Header}
+                                                    row={violation}
+                                                    column={column}
+                                                />
+                                            );
+                                        })}
+                                        {hasActions && (
+                                            <Td isActionCell>
+                                                <ActionsColumn
+                                                    isDisabled={actionItems.length === 0}
+                                                    items={actionItems}
+                                                />
+                                            </Td>
+                                        )}
+                                    </Tr>
                                 );
                             })}
-                            {hasActions && (
-                                <Th>
-                                    <span className="pf-v5-screen-reader">Row actions</span>
-                                </Th>
-                            )}
-                        </Tr>
-                    </Thead>
-                    <Tbody aria-live="polite" aria-busy={isTableDataUpdating ? 'true' : 'false'}>
-                        {violations.map((violation, rowIndex) => {
-                            const { state, lifecycleStage, enforcementAction, policy, id } =
-                                violation;
-                            const isAttemptedViolation = state === VIOLATION_STATES.ATTEMPTED;
-                            const isResolved = state === VIOLATION_STATES.RESOLVED;
-                            const isRuntimeAlert = lifecycleStage === LIFECYCLE_STAGES.RUNTIME;
-                            const isDeployCreateAttemptedAlert =
-                                enforcementAction ===
-                                ENFORCEMENT_ACTIONS.FAIL_DEPLOYMENT_CREATE_ENFORCEMENT;
-
-                            // Instead of items prop of Td element, render ActionsColumn element
-                            // so every cell has vertical ellipsis (also known as kabob)
-                            // even if its items array is empty. For example:
-                            // hasWriteAccessForAlert but alert is not Runtime lifecycle.
-                            // !hasWriteAccessForWorkflowAdministration
-                            const actionItems: ActionItem[] = [];
-                            if (hasWriteAccessForAlert && !isResolved) {
-                                if (isRuntimeAlert) {
-                                    actionItems.push({
-                                        title: 'Resolve and add to process baseline',
-                                        onClick: () => resolveAlertAction(true, violation.id),
-                                    });
-                                }
-                                if (isRuntimeAlert || isAttemptedViolation) {
-                                    actionItems.push({
-                                        title: 'Mark as resolved',
-                                        onClick: () => resolveAlertAction(false, violation.id),
-                                    });
-                                }
-                            }
-                            if (
-                                hasWriteAccessForExcludeDeploymentsFromPolicy &&
-                                !isDeployCreateAttemptedAlert &&
-                                'deployment' in violation
-                            ) {
-                                actionItems.push({
-                                    title: 'Exclude deployment from policy',
-                                    onClick: () =>
-                                        excludeDeploymentMutation.mutate({
-                                            policyId: policy.id,
-                                            deploymentNames: [violation.deployment.name],
-                                        }),
-                                });
-                            }
-                            return (
-                                <Tr key={id}>
-                                    {hasActions && (
-                                        <Td
-                                            select={{
-                                                rowIndex,
-                                                onSelect,
-                                                isSelected: selected[rowIndex],
-                                            }}
-                                        />
-                                    )}
-                                    {columns.map((column) => {
-                                        return (
-                                            <TableCell
-                                                key={column.Header}
-                                                row={violation}
-                                                column={column}
-                                            />
-                                        );
-                                    })}
-                                    {hasActions && (
-                                        <Td isActionCell>
-                                            <ActionsColumn
-                                                // menuAppendTo={() => document.body}
-                                                isDisabled={actionItems.length === 0}
-                                                items={actionItems}
-                                            />
-                                        </Td>
-                                    )}
-                                </Tr>
-                            );
-                        })}
-                    </Tbody>
-                </Table>
+                        </Tbody>
+                    </Table>
+                </div>
             </PageSection>
             <ExcludeConfirmation
                 isOpen={modalType === 'excludeScopes'}

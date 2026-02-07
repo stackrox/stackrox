@@ -68,7 +68,7 @@ import InviteUsersModal from './InviteUsers/InviteUsersModal';
 
 function NotFoundPage(): ReactElement {
     return (
-        <PageSection variant="light">
+        <PageSection hasBodyWrapper={false}>
             <PageTitle title="Not Found" />
             <PageNotFound />
         </PageSection>

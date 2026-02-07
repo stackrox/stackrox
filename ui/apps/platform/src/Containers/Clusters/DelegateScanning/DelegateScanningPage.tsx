@@ -75,14 +75,14 @@ function DelegateScanningPage() {
     return (
         <>
             <PageTitle title={displayedPageTitle} />
-            <PageSection variant="light">
+            <PageSection type="breadcrumb">
+                <Breadcrumb>
+                    <BreadcrumbItemLink to={clustersBasePath}>Clusters</BreadcrumbItemLink>
+                    <BreadcrumbItem isActive>{displayedPageTitle}</BreadcrumbItem>
+                </Breadcrumb>
+            </PageSection>
+            <PageSection>
                 <Flex direction={{ default: 'column' }}>
-                    <FlexItem>
-                        <Breadcrumb>
-                            <BreadcrumbItemLink to={clustersBasePath}>Clusters</BreadcrumbItemLink>
-                            <BreadcrumbItem isActive>{displayedPageTitle}</BreadcrumbItem>
-                        </Breadcrumb>
-                    </FlexItem>
                     <Flex>
                         <FlexItem flex={{ default: 'flex_1' }}>
                             <Title headingLevel="h1">{displayedPageTitle}</Title>
@@ -106,7 +106,7 @@ function DelegateScanningPage() {
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light">
+            <PageSection>
                 {isLoading ? (
                     <Bullseye>
                         <Spinner />

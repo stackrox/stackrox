@@ -2,15 +2,15 @@
     height: 100%;
 }
 
-#search-page .pf-v5-l-stack__item:nth-child(1) {
+#search-page .pf-v6-l-stack__item:nth-child(1) {
     flex-shrink: 0; /* shrink is counterpart to grow for sibling */
 }
 
-#search-page .pf-v5-l-stack__item:nth-child(2) {
+#search-page .pf-v6-l-stack__item:nth-child(2) {
     overflow-y: hidden;
 }
 
-#search-page .pf-v5-l-split {
+#search-page .pf-v6-l-split {
     height: 100%;
     max-height: 100%;
     overflow-y: hidden;
@@ -19,18 +19,18 @@
 /*
  * Independent scrolling for category nav links at the left and search results table at the right.
  */
-#search-page .pf-v5-l-split__item {
+#search-page .pf-v6-l-split__item {
     overflow-y: scroll;
 }
 
-#search-page .pf-v5-l-split__item:nth-child(1) {
+#search-page .pf-v6-l-split__item:nth-child(1) {
     flex-shrink: 0; /* shrink is counterpart to grow for sibling */
 }
 
-#search-page .pf-v5-c-nav__link {
-    color: var(--pf-v5-global--Color--100); /* instead of blue to avoid confusion with links in table */
+#search-page .pf-v6-c-nav__link {
+    color: var(--pf-t--global--text--color--regular); /* instead of blue to avoid confusion with links in table */
     /* font-size and spacing of sub nav link which is compatible with table row */
-    font-size: var(--pf-v5-global--FontSize--sm);
-    padding-top: var(--pf-v5-global--spacer--sm);
-    padding-bottom: var(--pf-v5-global--spacer--sm);
+    font-size: var(--pf-t--global--font--size--sm);
+    padding-top: var(--pf-t--global--spacer--sm);
+    padding-bottom: var(--pf-t--global--spacer--sm);
 }

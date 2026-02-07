@@ -77,14 +77,13 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPro
 
     return (
         <>
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'column' }} className="pf-v5-u-py-lg pf-v5-u-px-lg">
+            <PageSection>
+                <Flex direction={{ default: 'column' }}>
                     <FlexItem>
                         <Title headingLevel="h2">{title}</Title>
                     </FlexItem>
                 </Flex>
             </PageSection>
-            <Divider component="div" />
             {cvesDiscoveredSinceError && (
                 <Alert
                     isInline
@@ -93,8 +92,8 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPro
                     component="p"
                 />
             )}
-            <PageSection variant="light" padding={{ default: 'noPadding' }}>
-                <Form className="pf-v5-u-py-lg pf-v5-u-px-lg">
+            <PageSection>
+                <Form>
                     <Flex direction={{ default: 'column' }}>
                         <FlexItem flex={{ default: 'flexNone' }}>
                             <NotifierConfigurationForm

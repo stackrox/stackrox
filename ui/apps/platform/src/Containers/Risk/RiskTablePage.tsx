@@ -50,35 +50,30 @@ function RiskTablePage() {
             <RiskPageHeader />
             {/* Nested PageSection here for visual consistency **as-is**. Once we move to Patternfly 6, we can remove this and clean up */}
             <PageSection>
-                <PageSection variant="light" component="div">
-                    <Flex
-                        direction={{ default: 'column' }}
-                        spaceItems={{ default: 'spaceItemsMd' }}
-                    >
-                        <SearchFilterInput
-                            className="w-full"
-                            searchFilter={urlSearch.searchFilter}
-                            searchOptions={filteredSearchOptions}
-                            searchCategory={autoCompleteCategory}
-                            placeholder="Filter deployments"
-                            handleChangeSearchFilter={(newSearchFilter) => {
-                                urlSearch.setSearchFilter(newSearchFilter);
-                                urlPagination.setPage(1);
-                            }}
-                            autocompleteQueryPrefix={searchOptionsToQuery(prependAutocompleteQuery)}
-                        />
-                        <RiskTablePanel
-                            sortOption={urlSort.sortOption}
-                            getSortParams={urlSort.getSortParams}
-                            searchFilter={urlSearch.searchFilter}
-                            onSearchFilterChange={(newSearchFilter) => {
-                                urlSearch.setSearchFilter(newSearchFilter);
-                                urlPagination.setPage(1);
-                            }}
-                            pagination={urlPagination}
-                        />
-                    </Flex>
-                </PageSection>
+                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
+                    <SearchFilterInput
+                        className=""
+                        searchFilter={urlSearch.searchFilter}
+                        searchOptions={filteredSearchOptions}
+                        searchCategory={autoCompleteCategory}
+                        placeholder="Filter deployments"
+                        handleChangeSearchFilter={(newSearchFilter) => {
+                            urlSearch.setSearchFilter(newSearchFilter);
+                            urlPagination.setPage(1);
+                        }}
+                        autocompleteQueryPrefix={searchOptionsToQuery(prependAutocompleteQuery)}
+                    />
+                    <RiskTablePanel
+                        sortOption={urlSort.sortOption}
+                        getSortParams={urlSort.getSortParams}
+                        searchFilter={urlSearch.searchFilter}
+                        onSearchFilterChange={(newSearchFilter) => {
+                            urlSearch.setSearchFilter(newSearchFilter);
+                            urlPagination.setPage(1);
+                        }}
+                        pagination={urlPagination}
+                    />
+                </Flex>
             </PageSection>
         </>
     );

@@ -25,7 +25,7 @@ function ReportJobsHelpAction({ reportType }: ReportJobsHelpActionProps) {
                 until they exceed the limit set by you.
             </div>
             {hasAdministrationReadWriteAccess && (
-                <div className="pf-v5-u-mt-sm">
+                <div className="pf-v6-u-mt-sm">
                     <ExternalLink>
                         <a href={systemConfigPath} target="_blank" rel="noopener noreferrer">
                             System Configuration

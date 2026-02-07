@@ -3,12 +3,11 @@ import { verifyColumnManagement } from '../../../helpers/tableHelpers';
 import {
     applyLocalSeverityFilters,
     selectEntityTab,
-    typeAndEnterCustomSearchFilterValue,
-    typeAndEnterSearchFilterValue,
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
+import { addAutocompleteFilter, compoundFiltersSelectors } from '../../../helpers/compoundFilters';
 
 describe('Workload CVE Image CVE Single page', () => {
     withAuth();
@@ -23,14 +22,14 @@ describe('Workload CVE Image CVE Single page', () => {
         visitFirstCve();
 
         // Check that only applicable resource menu items are present in the toolbar
-        cy.get(selectors.searchEntityDropdown).click();
-        cy.get(selectors.searchEntityMenuItem).contains('CVE').should('not.exist');
-        cy.get(selectors.searchEntityMenuItem).contains('Image');
-        cy.get(selectors.searchEntityMenuItem).contains('Image component');
-        cy.get(selectors.searchEntityMenuItem).contains('Deployment');
-        cy.get(selectors.searchEntityMenuItem).contains('Cluster');
-        cy.get(selectors.searchEntityMenuItem).contains('Namespace');
-        cy.get(selectors.searchEntityDropdown).click();
+        cy.get(compoundFiltersSelectors.entityMenuToggle).click();
+        cy.get(compoundFiltersSelectors.entityMenuItem).contains('CVE').should('not.exist');
+        cy.get(compoundFiltersSelectors.entityMenuItem).contains('Image');
+        cy.get(compoundFiltersSelectors.entityMenuItem).contains('Image component');
+        cy.get(compoundFiltersSelectors.entityMenuItem).contains('Deployment');
+        cy.get(compoundFiltersSelectors.entityMenuItem).contains('Cluster');
+        cy.get(compoundFiltersSelectors.entityMenuItem).contains('Namespace');
+        cy.get(compoundFiltersSelectors.entityMenuToggle).click();
     });
 
     it('should correctly handle local filters on the images tab', () => {
@@ -81,12 +80,12 @@ describe('Workload CVE Image CVE Single page', () => {
         cy.get(vulnSelectors.entityTypeToggleItem('Deployment')).click();
 
         // Wait for the loading spinner to disappear
-        cy.get('.pf-v5-c-spinner').should('not.exist');
+        cy.get('.pf-v6-c-spinner').should('not.exist');
 
         cy.get(`${selectors.firstTableRow} td[data-label="Namespace"]`).then(([$namespace]) => {
             const namespace = $namespace.innerText;
 
-            typeAndEnterCustomSearchFilterValue('Namespace', 'Name', `bogus-${namespace}`);
+            addAutocompleteFilter('Namespace', 'Name', `bogus-${namespace}`);
 
             cy.get(`table tbody tr td[data-label="Namespace"]:contains("${namespace}")`).should(
                 'not.exist'
@@ -94,7 +93,7 @@ describe('Workload CVE Image CVE Single page', () => {
 
             cy.get(vulnSelectors.clearFiltersButton).click();
 
-            typeAndEnterSearchFilterValue('Namespace', 'Name', namespace);
+            addAutocompleteFilter('Namespace', 'Name', namespace);
 
             cy.get(
                 `table tbody tr td[data-label="Namespace"]:not(:contains("${namespace}"))`
@@ -106,7 +105,7 @@ describe('Workload CVE Image CVE Single page', () => {
         visitFirstCve();
 
         // Test that the number of components in the top level row matches the table in the expanded row
-        cy.get(`${selectors.firstTableRow} .pf-v5-c-table__toggle button`).click();
+        cy.get(`${selectors.firstTableRow} .pf-v6-c-table__toggle button`).click();
         cy.get(`${selectors.firstTableRow} td[data-label="Affected components"]`).then(
             ([$componentCell]) => {
                 const componentText = $componentCell.innerText;
