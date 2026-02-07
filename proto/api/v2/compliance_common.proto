@@ -108,7 +108,7 @@ message ComplianceProfileCheckRequest {
   RawQuery query = 3;
 }
 
-// Next Tag: 8
+// Next Tag: 10
 message ComplianceProfileSummary {
   string name = 1;
   string product_type = 2;
@@ -117,4 +117,38 @@ message ComplianceProfileSummary {
   int32 rule_count = 5;
   string profile_version = 6;
   repeated ComplianceBenchmark standards = 7;
+  reserved 8;
+  // Details specific to tailored profiles (set only for TailoredProfiles)
+  TailoredProfileDetails tailored_details = 9;
+}
+
+// TailoredProfileDetails contains information specific to tailored profiles
+message TailoredProfileDetails {
+  // Base profile this tailored profile extends (empty for from-scratch profiles)
+  string extends = 1;
+  // Rules disabled from the base profile
+  repeated TailoredProfileRuleModification disabled_rules = 2;
+  // Rules enabled that were disabled in the base profile
+  repeated TailoredProfileRuleModification enabled_rules = 3;
+  // Rules marked as manual
+  repeated TailoredProfileRuleModification manual_rules = 4;
+  // Variable value overrides
+  repeated TailoredProfileValueOverride set_values = 5;
+  // State of the tailored profile (PENDING, READY, ERROR)
+  string state = 6;
+  // Error message if state is ERROR
+  string error_message = 7;
+}
+
+// TailoredProfileRuleModification represents a rule modification in a tailored profile
+message TailoredProfileRuleModification {
+  string name = 1;
+  string rationale = 2;
+}
+
+// TailoredProfileValueOverride represents a variable value override in a tailored profile
+message TailoredProfileValueOverride {
+  string name = 1;
+  string value = 2;
+  string rationale = 3;
 }

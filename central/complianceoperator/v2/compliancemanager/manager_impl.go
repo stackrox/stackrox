@@ -285,6 +285,15 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		return nil, errors.Errorf("Unable to find all profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
+	// Extract tailored profile names for Sensor to create SSBs with correct Kind
+	// TailoredProfiles are identified by presence of TailoredDetails
+	var tailoredProfileNames []string
+	for _, profile := range returnedProfiles {
+		if profile.GetTailoredDetails() != nil {
+			tailoredProfileNames = append(tailoredProfileNames, profile.GetName())
+		}
+	}
+
 	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
 	if err != nil {
 		log.Error(err)
@@ -295,7 +304,7 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		// id for the request message to sensor
 		sensorRequestID := uuid.NewV4().String()
 
-		sensorMessage := buildScanConfigSensorMsg(sensorRequestID, cron, profiles, scanRequest.GetScanConfigName(), createScanRequest)
+		sensorMessage := buildScanConfigSensorMsg(sensorRequestID, cron, profiles, tailoredProfileNames, scanRequest.GetScanConfigName(), createScanRequest)
 		err := m.sensorConnMgr.SendMessage(clusterID, sensorMessage)
 		var status string
 		if err != nil {

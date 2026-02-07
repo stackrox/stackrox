@@ -341,9 +341,13 @@
             "type": "object",
             "$ref": "#/definitions/v2ComplianceBenchmark"
           }
+        },
+        "tailoredDetails": {
+          "$ref": "#/definitions/v2TailoredProfileDetails",
+          "title": "Details specific to tailored profiles (set only for TailoredProfiles)"
         }
       },
-      "title": "Next Tag: 12"
+      "title": "Next Tag: 14"
     },
     "v2ComplianceProfileSummary": {
       "type": "object",
@@ -373,9 +377,13 @@
             "type": "object",
             "$ref": "#/definitions/v2ComplianceBenchmark"
           }
+        },
+        "tailoredDetails": {
+          "$ref": "#/definitions/v2TailoredProfileDetails",
+          "title": "Details specific to tailored profiles (set only for TailoredProfiles)"
         }
       },
-      "title": "Next Tag: 8"
+      "title": "Next Tag: 10"
     },
     "v2ComplianceRule": {
       "type": "object",
@@ -512,6 +520,83 @@
           "description": "This field is under development. It is not supported on any REST APIs."
         }
       }
+    },
+    "v2TailoredProfileDetails": {
+      "type": "object",
+      "properties": {
+        "extends": {
+          "type": "string",
+          "title": "Base profile this tailored profile extends (empty for from-scratch profiles)"
+        },
+        "disabledRules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2TailoredProfileRuleModification"
+          },
+          "title": "Rules disabled from the base profile"
+        },
+        "enabledRules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2TailoredProfileRuleModification"
+          },
+          "title": "Rules enabled that were disabled in the base profile"
+        },
+        "manualRules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2TailoredProfileRuleModification"
+          },
+          "title": "Rules marked as manual"
+        },
+        "setValues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2TailoredProfileValueOverride"
+          },
+          "title": "Variable value overrides"
+        },
+        "state": {
+          "type": "string",
+          "title": "State of the tailored profile (PENDING, READY, ERROR)"
+        },
+        "errorMessage": {
+          "type": "string",
+          "title": "Error message if state is ERROR"
+        }
+      },
+      "title": "TailoredProfileDetails contains information specific to tailored profiles"
+    },
+    "v2TailoredProfileRuleModification": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "rationale": {
+          "type": "string"
+        }
+      },
+      "title": "TailoredProfileRuleModification represents a rule modification in a tailored profile"
+    },
+    "v2TailoredProfileValueOverride": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "rationale": {
+          "type": "string"
+        }
+      },
+      "title": "TailoredProfileValueOverride represents a variable value override in a tailored profile"
     }
   }
 }
