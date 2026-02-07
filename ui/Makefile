@@ -46,9 +46,11 @@ test-component: deps $(SOURCES)
 .PHONY: test-e2e
 test-e2e: deps $(SOURCES)
 	@echo "+ $@"
-	npm run test-e2e
-# Uncomment this once the plugin is installed via the operator in CI
-# npm run test-e2e:ocp
+# Fail if either test-e2e or test-e2e:ocp fails
+	exit_code=0; \
+	npm run test-e2e || exit_code=1; \
+	npm run test-e2e:ocp || exit_code=1; \
+	exit $$exit_code
 
 .PHONY: clean
 clean:
