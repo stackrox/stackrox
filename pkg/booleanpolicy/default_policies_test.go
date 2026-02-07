@@ -262,6 +262,66 @@ func (suite *DefaultPoliciesTestSuite) TestFixableAndFixTimestampAvailableCriter
 
 }
 
+func (suite *DefaultPoliciesTestSuite) TestDaysSinceFixAvailableOnlyViolationMessage() {
+	// This test verifies the violation message format when only FixAvailableTimestamp is set
+	// (without FixedBy), ensuring the message includes the days since fix available but not the version.
+	fixTimestampOnlyDep := &storage.Deployment{
+		Id: "FIXTIMESTAMPONLYDEPID",
+		Containers: []*storage.Container{
+			{
+				Name:  "testcontainer",
+				Image: &storage.ContainerImage{Id: "FIXTIMESTAMPONLYSHA"},
+			},
+		},
+	}
+
+	// Set fix available timestamp to 5 days ago
+	fixTs := time.Now().AddDate(0, 0, -5)
+	protoFixTs, err := protocompat.ConvertTimeToTimestampOrError(fixTs)
+	require.NoError(suite.T(), err)
+
+	// Create a vulnerability with FixAvailableTimestamp but NO FixedBy
+	suite.addDepAndImages(fixTimestampOnlyDep, &storage.Image{
+		Id:   "FIXTIMESTAMPONLYSHA",
+		Name: &storage.ImageName{FullName: "testimage"},
+		Scan: &storage.ImageScan{
+			Components: []*storage.EmbeddedImageScanComponent{
+				{Name: "vulncomponent", Version: "1.0", Vulns: []*storage.EmbeddedVulnerability{
+					{
+						Cve:                   "CVE-2024-0001",
+						Link:                  "https://example.com/cve-2024-0001",
+						Cvss:                  7.5,
+						Severity:              storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+						FixAvailableTimestamp: protoFixTs,
+						// Note: No SetFixedBy field - this tests the timestamp-only case
+					},
+				}},
+			},
+		},
+	})
+
+	// Policy using DaysSinceFixAvailable criteria
+	fixTimestampGroup := &storage.PolicyGroup{
+		FieldName: fieldnames.DaysSinceFixAvailable,
+		Values:    []*storage.PolicyValue{{Value: "2"}},
+	}
+
+	policy := policyWithGroups(storage.EventSource_NOT_APPLICABLE, fixTimestampGroup)
+
+	deployment := suite.deployments["FIXTIMESTAMPONLYDEPID"]
+	depMatcher, err := BuildDeploymentMatcher(policy)
+	require.NoError(suite.T(), err)
+
+	violations, err := depMatcher.MatchDeployment(nil, enhancedDeployment(deployment, suite.getImagesForDeployment(deployment)))
+	require.NoError(suite.T(), err)
+	require.Len(suite.T(), violations.AlertViolations, 1)
+
+	// Verify the exact message format
+	message := violations.AlertViolations[0].GetMessage()
+	expectedMessage := "Fixable CVE-2024-0001 (CVSS 7.5) (severity Important) found in component 'vulncomponent' (version 1.0) in container 'testcontainer', fix available for at least 5 days"
+	suite.Equal(expectedMessage, message)
+}
+
 func (suite *DefaultPoliciesTestSuite) TestDaysSinceCVEPublishedCriteria() {
 	heartbleedDep := &storage.Deployment{
 		Id: "HEARTBLEEDDEPID",
@@ -1621,7 +1681,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				},
 				fixtureDep.GetId(): {
 					{
-						Message: "Fixable CVE-2014-6200 (CVSS 5) (severity Moderate) found in component 'name' (version 1.2.3.4) in container 'supervulnerable', resolved by version abcdefg",
+						Message: "Fixable CVE-2014-6200 (CVSS 5) (severity Moderate) found in component 'name' (version 1.2.3.4) in container 'supervulnerable', resolved by version 'abcdefg'",
 					},
 				},
 				fixtures.LightweightDeployment().GetId(): {
