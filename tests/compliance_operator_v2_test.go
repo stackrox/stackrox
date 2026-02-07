@@ -131,27 +131,25 @@ func createDynamicClient(t testutils.T) dynclient.Client {
 
 func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, timeout time.Duration) {
 	client := createDynamicClient(t)
-
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	t.Logf("Waiting for ComplianceSuite to reach DONE phase")
-	for range ticker.C {
+	t.Logf("Waiting for ComplianceSuite %s to reach DONE phase", suiteName)
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		callCtx, callCancel := context.WithTimeout(ctx, interval)
+		defer callCancel()
+
 		var suite complianceoperatorv1.ComplianceSuite
-		mustEventually(t, ctx, func() error {
-			return client.Get(ctx, types.NamespacedName{Name: suiteName, Namespace: "openshift-compliance"}, &suite)
+		err := client.Get(callCtx,
+			types.NamespacedName{Name: suiteName, Namespace: "openshift-compliance"},
+			&suite,
+		)
+		require.NoError(c, err)
 
-		}, timeout, fmt.Sprintf("failed to get ComplianceSuite %s", suiteName))
-
-		if suite.Status.Phase == "DONE" {
-			t.Logf("ComplianceSuite %s reached DONE phase", suiteName)
-			return
-		}
-		t.Logf("ComplianceSuite %s is in %s phase", suiteName, suite.Status.Phase)
-	}
+		require.Equal(c, complianceoperatorv1.PhaseDone, suite.Status.Phase,
+			"ComplianceSuite %s not DONE: is in %s phase", suiteName, suite.Status.Phase)
+	}, timeout, interval)
+	t.Logf("ComplianceSuite %s has reached DONE phase", suiteName)
 }
 
 func cleanUpResources(ctx context.Context, t *testing.T, resourceName string, namespace string) {
@@ -705,10 +703,16 @@ func TestComplianceV2ComplianceObjectMetadata(t *testing.T) {
 	// Ensure the ScanSetting and ScanSettingBinding have ACS metadata
 	client := createDynamicClient(t)
 	var scanSetting complianceoperatorv1.ScanSetting
-	mustEventually(t, ctx, func() error {
-		return client.Get(context.TODO(), types.NamespacedName{Name: testName, Namespace: "openshift-compliance"}, &scanSetting)
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		callCtx, callCancel := context.WithTimeout(ctx, 10*time.Second)
+		defer callCancel()
 
-	}, timeout, fmt.Sprintf("failed to get ScanSetting %s", testName))
+		err := client.Get(callCtx,
+			types.NamespacedName{Name: testName, Namespace: "openshift-compliance"},
+			&scanSetting,
+		)
+		require.NoError(c, err)
+	}, defaultTimeout, 5*time.Second)
 
 	assert.Contains(t, scanSetting.Labels, "app.kubernetes.io/name")
 	assert.Equal(t, scanSetting.Labels["app.kubernetes.io/name"], "stackrox")
@@ -738,7 +742,6 @@ func getscanConfigID(configName string, scanConfigs []*v2.ComplianceScanConfigur
 		if scanConfigs[i].GetScanName() == configName {
 			configID = scanConfigs[i].GetId()
 		}
-
 	}
 	return configID
 }
@@ -775,12 +778,12 @@ func TestComplianceV2ScheduleRescan(t *testing.T) {
 
 	defer client.DeleteComplianceScanConfiguration(context.TODO(), &v2.ResourceByID{Id: scanConfig.GetId()})
 
-	waitForComplianceSuiteToComplete(t, scanConfig.ScanName, 2*time.Second, 5*time.Minute)
+	waitForComplianceSuiteToComplete(t, scanConfig.ScanName, 30*time.Second, 5*time.Minute)
 
 	// Invoke a rescan
 	_, err = client.RunComplianceScanConfiguration(context.TODO(), &v2.ResourceByID{Id: scanConfig.GetId()})
 	require.NoError(t, err, "failed to rerun scan schedule %s", scanConfigName)
 
 	// Assert the scan is rerunning on the cluster using the Compliance Operator CRDs
-	waitForComplianceSuiteToComplete(t, scanConfig.ScanName, 2*time.Second, 5*time.Minute)
+	waitForComplianceSuiteToComplete(t, scanConfig.ScanName, 30*time.Second, 5*time.Minute)
 }
