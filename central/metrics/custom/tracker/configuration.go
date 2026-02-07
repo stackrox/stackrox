@@ -41,3 +41,7 @@ type Configuration struct {
 	toDelete       []MetricName
 	period         time.Duration
 }
+
+func (cfg *Configuration) isEnabled() bool {
+	return cfg != nil && len(cfg.metrics) > 0 && cfg.period > 0
+}
