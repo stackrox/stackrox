@@ -105,6 +105,11 @@ func createDeploymentLabels(random bool, numLabels int) map[string]string {
 }
 
 func (w *WorkloadManager) getDeployment(workload DeploymentWorkload, idx int, deploymentIDs, replicaSetIDs, podIDs []string) *deploymentResourcesToBeManaged {
+	return w.getDeploymentWithImage(workload, idx, deploymentIDs, replicaSetIDs, podIDs, "")
+}
+
+// getDeploymentWithImage creates a deployment with a specific image (if provided) or random images
+func (w *WorkloadManager) getDeploymentWithImage(workload DeploymentWorkload, idx int, deploymentIDs, replicaSetIDs, podIDs []string, imageOverride string) *deploymentResourcesToBeManaged {
 	var labels map[string]string
 	if workload.NumLabels == 0 {
 		labels = createDeploymentLabels(workload.RandomLabels, 3)
@@ -114,7 +119,7 @@ func (w *WorkloadManager) getDeployment(workload DeploymentWorkload, idx int, de
 
 	var containers []corev1.Container
 	for i := 0; i < workload.PodWorkload.NumContainers; i++ {
-		containers = append(containers, getContainer(workload.PodWorkload.ContainerWorkload))
+		containers = append(containers, getContainerWithImage(workload.PodWorkload.ContainerWorkload, imageOverride))
 	}
 
 	namespace, valid := namespacePool.randomElem()
@@ -292,8 +297,16 @@ func getPod(replicaSet *appsv1.ReplicaSet, id string, ipPool *pool, containerPoo
 }
 
 func getContainer(workload ContainerWorkload) corev1.Container {
+	return getContainerWithImage(workload, "")
+}
+
+// getContainerWithImage creates a container with either a specific image or a random one
+// If imageOverride is empty, a random image is selected based on workload settings
+func getContainerWithImage(workload ContainerWorkload, imageOverride string) corev1.Container {
 	var imageName string
-	if workload.NumImages == 0 {
+	if imageOverride != "" {
+		imageName = imageOverride
+	} else if workload.NumImages == 0 {
 		imageName = fixtures.GetRandomImage().FullName()
 	} else {
 		imageName = fixtures.GetRandomImageN(workload.NumImages).FullName()
@@ -589,4 +602,23 @@ func (w *WorkloadManager) manageProcessesForPod(ctx context.Context, podSig *con
 			return
 		}
 	}
+}
+
+// getDeploymentPairFromImageCopies creates a pair of deployments using an image copy pair
+// It returns two deployments: one with the _orig image and one with the _copy image
+func (w *WorkloadManager) getDeploymentPairFromImageCopies(workload DeploymentWorkload, idx int, deploymentIDs, replicaSetIDs, podIDs []string) (*deploymentResourcesToBeManaged, *deploymentResourcesToBeManaged) {
+	var imagePair fixtures.ImageCopyPair
+	if workload.PodWorkload.ContainerWorkload.NumImages == 0 {
+		imagePair = fixtures.GetRandomImageCopyPair()
+	} else {
+		imagePair = fixtures.GetRandomImageCopyPairN(workload.PodWorkload.ContainerWorkload.NumImages)
+	}
+
+	// Create deployment with _orig image
+	origDeployment := w.getDeploymentWithImage(workload, idx*2, deploymentIDs, replicaSetIDs, podIDs, imagePair.Orig.FullName())
+
+	// Create deployment with _copy image
+	copyDeployment := w.getDeploymentWithImage(workload, idx*2+1, deploymentIDs, replicaSetIDs, podIDs, imagePair.Copy.FullName())
+
+	return origDeployment, copyDeployment
 }

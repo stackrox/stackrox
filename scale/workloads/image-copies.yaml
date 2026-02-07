@@ -1,0 +1,41 @@
+# Image Copies Workload Profile
+# This workload uses paired images from ImageCopies list.
+# Each deployment creates two deployments: one with _orig image and one with _copy image.
+# This is useful for testing image model scenarios where images share the same digest.
+#
+# Usage:
+#   ./scale/launch_workload.sh image-copies
+#
+# Note: When useImageCopies is enabled, each numDeployments creates TWO deployments
+# (one with _orig image, one with _copy image), effectively doubling the count.
+# With numDeployments: 2500, this will create 5000 total deployments.
+
+deploymentWorkload:
+- deploymentType: Deployment
+  lifecycleDuration: 1h
+  numDeployments: 2500
+  numLifecycles: 0
+  podWorkload:
+    containerWorkload:
+      # Limit to first N image pairs (0 = use all available pairs)
+      numImages: 0
+      # Set useImageCopies to true to use ImageCopies list
+      useImageCopies: true
+    lifecycleDuration: 10m
+    numContainers: 3
+    numPods: 3
+    processWorkload:
+      alertRate: 0.001
+      processInterval: 0
+  updateInterval: 10m
+networkWorkload:
+  batchSize: 100
+  flowInterval: 0
+  generateUnclosedEndpoints: true
+  openPortReuseProbability: 0.05
+nodeWorkload:
+  numNodes: 1000
+rbacWorkload:
+  numBindings: 1000
+  numRoles: 1000
+  numServiceAccounts: 1000
