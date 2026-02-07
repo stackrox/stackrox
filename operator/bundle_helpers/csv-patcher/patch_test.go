@@ -529,7 +529,7 @@ func TestEchoReplacedVersion(t *testing.T) {
 			err := echoReplacedVersion(tt.doc, tt.version, tt.firstVersion, tt.unreleased)
 
 			// Restore stdout
-			w.Close()
+			require.NoError(t, w.Close())
 			os.Stdout = oldStdout
 
 			// Read captured output
