@@ -11,16 +11,16 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var (
-	configPath   = "/etc/stackrox/central-config.yaml"
-	dbConfigPath = "/etc/ext-db/central-external-db.yaml"
+const (
+	configPath      = "/etc/stackrox/central-config.yaml"
+	dbConfigPath    = "/etc/ext-db/central-external-db.yaml"
+	defaultDBSource = "host=central-db.stackrox port=5432 user=postgres sslmode=verify-full statement_timeout=600000 pool_min_conns=1 pool_max_conns=90 client_encoding=UTF8"
+	defaultDatabase = "central_active"
 )
 
 var (
 	defaultBucketFillFraction = 0.5
 	defaultCompactionState    = true
-	defaultDBSource           = "host=central-db.stackrox port=5432 user=postgres sslmode=verify-full statement_timeout=600000 pool_min_conns=1 pool_max_conns=90 client_encoding=UTF8"
-	defaultDatabase           = "central_active"
 
 	once   sync.Once
 	config *Config
@@ -159,7 +159,11 @@ func readConfig[T yamlConfig](path string) (*T, error) {
 }
 
 func readConfigs() (*Config, error) {
-	centralConf, err := readConfig[centralConfig](configPath)
+	return readConfigsImpl(configPath, dbConfigPath)
+}
+
+func readConfigsImpl(centralConfigPath, dbConfigPath string) (*Config, error) {
+	centralConf, err := readConfig[centralConfig](centralConfigPath)
 	if err != nil {
 		return nil, err
 	}
