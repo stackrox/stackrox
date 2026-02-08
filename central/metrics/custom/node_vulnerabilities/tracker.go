@@ -3,6 +3,7 @@ package node_vulnerabilities
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -11,7 +12,7 @@ import (
 
 func New(nodes nodeDS.DataStore) *tracker.TrackerBase[*finding] {
 	return tracker.MakeTrackerBase(
-		"node_vuln",
+		metrics.NodeVulns,
 		"node CVEs",
 		lazyLabels,
 		func(ctx context.Context, _ tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {

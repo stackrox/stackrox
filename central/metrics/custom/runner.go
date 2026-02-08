@@ -99,6 +99,17 @@ func makeRunner(ds *runnerDatastores) trackerRunner {
 	}
 }
 
+// RefreshTracker implements the refresh.Refresher interface.
+func (tr trackerRunner) RefreshTracker(prefix string) {
+	for _, t := range tr {
+		if t.Tracker.GetPrefix() == prefix {
+			go t.Refresh()
+			// do not return, as there could be several trackers with the same
+			// prefix. E.g., cfg.
+		}
+	}
+}
+
 func (tr trackerRunner) initialize(cds configDS.DataStore) {
 	ctx := sac.WithAllAccess(context.Background())
 	systemPrivateConfig, err := cds.GetPrivateConfig(ctx)
@@ -130,7 +141,8 @@ func (tr trackerRunner) ValidateConfiguration(cfg *storage.PrometheusMetrics) (R
 	return runnerConfig, nil
 }
 
-// Reconfigure applies the provided configuration.
+// Reconfigure applies the provided configuration and schedules gatherers to run
+// after next scrape request.
 // Non-nil runner will panic on nil cfg. Don't pass nil.
 func (tr trackerRunner) Reconfigure(cfg RunnerConfiguration) {
 	if tr == nil {
