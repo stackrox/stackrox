@@ -7,8 +7,7 @@ const CustomDialogue = (props) => {
         <Modal
             isOpen
             onRequestClose={props.onCancel}
-            // "ignore-react-onclickoutside" will prevent the workflow side panel from closing due to interactions with this element that lives outside it's scope
-            className={`ignore-react-onclickoutside ${props.className}`}
+            className={props.className}
         >
             <h2 className="flex flex-1 font-700 text-lg p-4">{props.title}</h2>
             {props.children}
