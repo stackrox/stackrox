@@ -11,12 +11,13 @@ runs:
         echo "GOARCH=$(go env GOARCH)" >> "$GITHUB_OUTPUT"
       shell: bash
 
-    - name: Cache Go Dependencies
-      uses: actions/cache@v5
+    - name: Restore Go Dependencies
+      uses: actions/cache/restore@v4
       with:
         path: |
           ${{ steps.cache-paths.outputs.GOMODCACHE }}
         key: go-mod-v1-${{ hashFiles('**/go.sum') }}
+        restore-keys: go-mod-v1-
 
     - name: Cache Go Build
       uses: actions/cache@v5
