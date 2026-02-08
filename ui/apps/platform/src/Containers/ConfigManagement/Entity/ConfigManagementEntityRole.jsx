@@ -12,12 +12,12 @@ import queryService from 'utils/queryService';
 import searchContext from 'Containers/searchContext';
 import { entityComponentDefaultProps, entityComponentPropTypes } from 'constants/entityPageProps';
 import { getDateTime } from 'utils/dateUtils';
-import getSubListFromEntity from 'utils/getSubListFromEntity';
 
 import { getConfigMgmtCountQuery } from '../ConfigMgmt.utils';
 import EntityList from '../List/EntityList';
 import RulePermissions from './widgets/RulePermissions';
 import Rules from './widgets/Rules';
+import getSubListFromEntity from './getSubListFromEntity';
 
 const ConfigManagementEntityRole = ({
     id,

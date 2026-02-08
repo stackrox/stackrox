@@ -13,12 +13,12 @@ import queryService from 'utils/queryService';
 
 import { VULN_IMAGE_COMPONENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
-import removeEntityContextColumns from 'utils/tableUtils';
 import { componentSortFields } from 'constants/sortFields';
 
 import TableCellLink from 'Components/TableCellLink';
 import { getFilteredComponentColumns } from './ListImageComponents.utils';
 import WorkflowListPage from '../WorkflowListPage';
+import removeEntityContextColumns from '../tableUtils';
 import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
 import TableCountLink from '../../TableCountLink';
 

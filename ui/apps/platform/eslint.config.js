@@ -853,7 +853,6 @@ module.exports = [
             'src/utils/URLParser.ts', // deprecated
             'src/utils/WorkflowState.js', // deprecated
             'src/utils/entityRelationships.ts', // deprecated
-            'src/utils/getSubListFromEntity.js', // deprecated
             'src/utils/queryService.js', // deprecated
         ],
 
@@ -934,6 +933,101 @@ module.exports = [
         rules: {
             'limited/no-Tailwind': 'error',
             'limited/no-feather-icons': 'error',
+        },
+    },
+    {
+        files: ['src/**/*.{js,jsx}'],
+        ignores: [
+            'src/**/*.test.js', // unit test
+            'src/**/*.test.jsx', // unit test
+            'src/**/*.cy.jsx', // component test
+            'src/Components/**', // research
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/ConfigManagement/**', // deferred
+            'src/Containers/Docs/ApiPage.jsx', // rewrite
+            'src/Containers/Docs/ApiPageV2.jsx', // rewrite
+            'src/Containers/Docs/SwaggerBrowser.jsx', // rewrite
+            'src/Containers/Images/**', // deprecated
+            'src/Containers/Login/LoginPage.jsx', // rewrite pending PatternFly 6
+            'src/Containers/Login/TestLoginResultsPage.jsx', // rewrite pending PatternFly 6
+            'src/Containers/Risk/**', // rewrite in progress
+            'src/Containers/ThemeProvider.jsx', // deleted in PatternFly 6
+            'src/Containers/User/UserPage.jsx', // rewrite pending PatternFly 6
+            'src/Containers/Violations/useEntitiesByIdsCache.js', // rewrite if still relevant
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Workflow/**', // deprecated
+            'src/Containers/configMgmtPaginationContext.js', // deferred
+            'src/Containers/searchContext.js', // research
+            'src/Containers/workflowStateContext.js', // deprecated
+            'src/constants/complianceStates.js', // research
+            'src/constants/componentTypes.js', // research
+            'src/constants/entityPageProps.js', // research
+            'src/constants/lifecycleStages.js', // rewrite
+            'src/constants/listColumns.jsx', // deferred
+            'src/constants/networkStatuses.js', // deferred
+            'src/constants/pageTypes.js', // deprecated
+            'src/constants/reduxFormPropTypes.js', // deprecated
+            'src/constants/searchParams.js', // deferred
+            'src/constants/sortFields.js', // deferred
+            'src/constants/timelineTypes.js', // move into Containers/Risk/EventTimeline
+            'src/constants/url.js', // deprecated
+            'src/constants/useCaseTypes.js', // deprecated
+            'src/hooks/useEntityName.js', // deprecated
+            'src/hooks/useGraphHoverHint.js', // deprecated
+            'src/hooks/useInterval.js', // rewrite
+            'src/hooks/useTabs.js', // deprecated
+            'src/hooks/useWorkflowMatch.js', // deferred
+            'src/init/**', // JavaScript
+            'src/init/initializeAnalytics.js', // JavaScript
+            'src/init/installRaven.js', // JavaScript
+            'src/messages/entity.js', // deprecated
+            'src/messages/standards.js', // deferred
+            'src/messages/timeline.js', // move into Containers/Risk/EventTimeline
+            'src/messages/useCase.js', // deferred
+            'src/queries/**', // deprecated
+            'src/reducers/**', // deprecated
+            'src/sagas/**', // deprecated
+            'src/services/AttributesService.js', // deferred
+            'src/services/AuthService/AccessTokenManager.js', // deferred
+            'src/services/AuthService/RefreshTokenTimeout.js', // deferred
+            'src/services/AuthService/addTokenRefreshInterceptors.js', // deferred
+            'src/services/CLIService.js', // rewrite
+            'src/services/CSVDownloadService.js', // deprecated
+            'src/services/DownloadService.js', // rewrite
+            'src/services/NetworkService.js', // rewrite
+            'src/services/VulnerabilitiesService.js', // deprecated
+            'src/services/instance.js', // JavaScript
+            'src/services/serverErrorHandler.js', // JavaScript
+            'src/*', // JavaScript
+            'src/sorters/sorters.js', // rewrite
+            'src/test-utils/**', // JavaScript
+            'src/utils/URLGenerator.js', // deprecated
+            'src/utils/URLService.js', // deprecated
+            'src/utils/WorkflowEntity.js', // deprecated
+            'src/utils/WorkflowState.js', // deprecated
+            'src/utils/captureGraphQLErrors.js', // move into Containers/Risk/EventTimeline
+            'src/utils/d3Utils.js', // deprecated
+            'src/utils/download.js', // rewrite
+            'src/utils/flattenObject.js', // deprecated
+            'src/utils/getEntityName.js', // deprecated
+            'src/utils/getPaginatedList.js', // move into Containers/Risk/EventTimeline
+            'src/utils/gqlLoading.js', // deferred
+            'src/utils/mathUtils.js', // rewrite
+            'src/utils/pdfUtils.js', // deprecated
+            'src/utils/permissionRuleGroupUtils.js', // deferred
+            'src/utils/queryMap.js', // deprecated
+            'src/utils/queryService.js', // deferred
+            'src/utils/sagaEffects.js', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-non-deprecated-JavaScript': 'error',
         },
     },
     {

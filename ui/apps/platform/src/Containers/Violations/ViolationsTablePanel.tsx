@@ -22,7 +22,6 @@ import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/reac
 import get from 'lodash/get';
 
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
-import { VIOLATION_STATES } from 'constants/violationStates';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
@@ -323,8 +322,8 @@ function ViolationsTablePanel({
                         {violations.map((violation, rowIndex) => {
                             const { state, lifecycleStage, enforcementAction, policy, id } =
                                 violation;
-                            const isAttemptedViolation = state === VIOLATION_STATES.ATTEMPTED;
-                            const isResolved = state === VIOLATION_STATES.RESOLVED;
+                            const isAttemptedViolation = state === 'ATTEMPTED';
+                            const isResolved = state === 'RESOLVED';
                             const isRuntimeAlert = lifecycleStage === LIFECYCLE_STAGES.RUNTIME;
                             const isDeployCreateAttemptedAlert =
                                 enforcementAction ===

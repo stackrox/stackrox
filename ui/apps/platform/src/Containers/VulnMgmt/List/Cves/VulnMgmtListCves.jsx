@@ -30,7 +30,6 @@ import usePermissions from 'hooks/usePermissions';
 import { actions as notificationActions } from 'reducers/notifications';
 import { suppressVulns, unsuppressVulns } from 'services/VulnerabilitiesService';
 import queryService from 'utils/queryService';
-import removeEntityContextColumns from 'utils/tableUtils';
 import { getViewStateFromSearch } from 'utils/searchUtils';
 import { cveSortFields } from 'constants/sortFields';
 import { snoozeDurations, durations } from 'constants/timeWindows';
@@ -47,6 +46,7 @@ import CveBulkActionDialogue from './CveBulkActionDialogue';
 import { entityCountNounOrdinaryCase } from '../../entitiesForVulnerabilityManagement';
 import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
 import WorkflowListPage from '../WorkflowListPage';
+import removeEntityContextColumns from '../tableUtils';
 import { getFilteredCVEColumns, parseCveNamesFromIds } from './ListCVEs.utils';
 import TableCountLinks from '../../TableCountLinks';
 

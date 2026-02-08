@@ -13,7 +13,7 @@ import queryService from 'utils/queryService';
 
 import { VULN_COMPONENT_LIST_FRAGMENT } from 'Containers/VulnMgmt/VulnMgmt.fragments';
 import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entityPageProps';
-import removeEntityContextColumns from 'utils/tableUtils';
+import removeEntityContextColumns from '../tableUtils';
 import { componentSortFields } from 'constants/sortFields';
 
 import { getFilteredComponentColumns } from './ListComponents.utils';
