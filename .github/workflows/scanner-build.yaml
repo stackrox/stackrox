@@ -104,6 +104,23 @@ jobs:
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
+    - name: GOCACHE diagnostics (pre-build)
+      if: matrix.name == 'default' && matrix.goarch == 'amd64'
+      run: |
+        echo "=== Build flags ==="
+        echo "CGO_ENABLED=${CGO_ENABLED:-$(go env CGO_ENABLED)}"
+        echo "GOARCH=$(go env GOARCH)"
+        echo "GOOS=$(go env GOOS)"
+        echo "GOFLAGS=${GOFLAGS:-}"
+        echo "GOTAGS=${GOTAGS:-}"
+        echo "=== GOCACHE key inputs for a shared package ==="
+        GODEBUG=gocachehash=1 go build ./pkg/errox/... 2>/tmp/cachehash.log || true
+        grep -E "HASH\[build" /tmp/cachehash.log | head -200 || true
+        echo "=== GOCACHE size (after restore) ==="
+        du -sh "$(go env GOCACHE)" 2>/dev/null || echo "empty"
+        echo "=== GOCACHE entry count ==="
+        find "$(go env GOCACHE)" -type f 2>/dev/null | wc -l || echo "0"
+
     - uses: ./.github/actions/handle-tagged-build
 
     - name: Setup Go build environment for release
@@ -126,6 +143,7 @@ jobs:
 
     - name: Build Go binary
       run: |
+        start=$(date +%s)
         if [[ "${{ matrix.goarch }}" != "amd64" ]]; then
           echo "Building non-amd binary (CGO_ENABLED=0)"
           make -C scanner CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} image/scanner/bin/scanner
@@ -133,6 +151,16 @@ jobs:
           echo "Building amd binary (CGO_ENABLED=1)"
           make -C scanner CGO_ENABLED=1 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} image/scanner/bin/scanner
         fi
+        end=$(date +%s)
+        echo "::notice::Scanner build (${{ matrix.name }}/${{ matrix.goarch }}) took $((end - start))s"
+
+    - name: GOCACHE diagnostics (post-build)
+      if: matrix.name == 'default' && matrix.goarch == 'amd64'
+      run: |
+        echo "=== GOCACHE size (after build) ==="
+        du -sh "$(go env GOCACHE)" 2>/dev/null || echo "empty"
+        echo "=== GOCACHE entry count ==="
+        find "$(go env GOCACHE)" -type f 2>/dev/null | wc -l || echo "0"
 
     - name: Archive Go binary to preserve permissions
       run: tar -cvzf go-binary.tgz scanner/image/scanner/bin/scanner

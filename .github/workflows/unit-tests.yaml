@@ -42,9 +42,33 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        save: 'false'
+        cache-group: main-build
+
+    - name: GOCACHE diagnostics (pre-build)
+      if: matrix.gotags == 'GOTAGS=""'
+      run: |
+        echo "=== Build flags ==="
+        echo "CGO_ENABLED=${CGO_ENABLED:-$(go env CGO_ENABLED)}"
+        echo "GOARCH=$(go env GOARCH)"
+        echo "GOOS=$(go env GOOS)"
+        echo "GOFLAGS=${GOFLAGS:-}"
+        echo "GOTAGS=${GOTAGS:-}"
+        echo "=== GOCACHE key inputs for a shared package ==="
+        GODEBUG=gocachehash=1 go build ./pkg/errox/... 2>/tmp/cachehash.log || true
+        grep -E "HASH\[build" /tmp/cachehash.log | head -200 || true
+        echo "=== GOCACHE size (after restore) ==="
+        du -sh "$(go env GOCACHE)" 2>/dev/null || echo "empty"
+        echo "=== GOCACHE entry count ==="
+        find "$(go env GOCACHE)" -type f 2>/dev/null | wc -l || echo "0"
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
+      run: |
+        start=$(date +%s)
+        ${{ matrix.gotags }} make go-unit-tests
+        end=$(date +%s)
+        echo "::notice::Go unit tests (${{ matrix.gotags }}) took $((end - start))s"
 
     - uses: codecov/codecov-action@v3
       with:
@@ -122,12 +146,36 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        save: 'false'
+        cache-group: main-build
+
+    - name: GOCACHE diagnostics (pre-build)
+      if: matrix.gotags == 'GOTAGS=""' && matrix.pg == '15'
+      run: |
+        echo "=== Build flags ==="
+        echo "CGO_ENABLED=${CGO_ENABLED:-$(go env CGO_ENABLED)}"
+        echo "GOARCH=$(go env GOARCH)"
+        echo "GOOS=$(go env GOOS)"
+        echo "GOFLAGS=${GOFLAGS:-}"
+        echo "GOTAGS=${GOTAGS:-}"
+        echo "=== GOCACHE key inputs for a shared package ==="
+        GODEBUG=gocachehash=1 go build ./pkg/errox/... 2>/tmp/cachehash.log || true
+        grep -E "HASH\[build" /tmp/cachehash.log | head -200 || true
+        echo "=== GOCACHE size (after restore) ==="
+        du -sh "$(go env GOCACHE)" 2>/dev/null || echo "empty"
+        echo "=== GOCACHE entry count ==="
+        find "$(go env GOCACHE)" -type f 2>/dev/null | wc -l || echo "0"
 
     - name: Is Postgres ready
       run: pg_isready -h 127.0.0.1
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-postgres-unit-tests
+      run: |
+        start=$(date +%s)
+        ${{ matrix.gotags }} make go-postgres-unit-tests
+        end=$(date +%s)
+        echo "::notice::Go postgres unit tests (${{ matrix.gotags }}, pg${{ matrix.pg }}) took $((end - start))s"
 
     - uses: codecov/codecov-action@v3
       with:
@@ -182,6 +230,8 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        save: 'false'
 
     - name: Is Postgres ready
       run: pg_isready -h 127.0.0.1
@@ -303,6 +353,8 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        save: 'false'
 
     - uses: ./.github/actions/handle-tagged-build
 
@@ -395,6 +447,7 @@ jobs:
       uses: actions/setup-go@v6
       with:
         go-version-file: go.mod
+        cache: false
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -402,6 +455,8 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        save: 'false'
 
     - name: Create k8s Kind Cluster
       uses: helm/kind-action@v1

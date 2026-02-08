@@ -41,6 +41,8 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        save: 'false'
 
     - name: Check Generated
       run: scripts/ci/jobs/check-generated.sh
@@ -109,6 +111,8 @@ jobs:
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
+        with:
+          save: 'false'
 
       - name: Cache UI dependencies
         uses: ./.github/actions/cache-ui-dependencies
@@ -136,18 +140,26 @@ jobs:
     - uses: actions/setup-go@v6
       with:
         go-version-file: 'tools/linters/go.mod'
+        cache: false
 
     - name: Check Cache golangci-lint
       run: make golangci-lint-cache-status
 
     - name: Cache golangci-lint
+      if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       uses: actions/cache@v5
       with:
         path: /github/home/.cache/golangci-lint
         key: go-lint-v2-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          go-lint-v2-${{ hashFiles('**/go.sum') }}
-          go-lint-v2-
+        restore-keys: go-lint-v2-
+
+    - name: Restore golangci-lint cache
+      if: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/master') }}
+      uses: actions/cache/restore@v4
+      with:
+        path: /github/home/.cache/golangci-lint
+        key: go-lint-v2-${{ hashFiles('**/go.sum') }}
+        restore-keys: go-lint-v2-
 
     - name: Check cache golangci-lint
       run: make golangci-lint-cache-status
