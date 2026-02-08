@@ -60,7 +60,7 @@ type CentralSpec struct {
 	// Deprecated field. This field will be removed in a future release.
 	// Miscellaneous settings.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Miscellaneous,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
-	Misc *MiscSpec `json:"misc,omitempty"`
+	Misc *MiscSpec `json:"misc,omitempty" deprecated:"true"`
 
 	// Overlays
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Overlays,order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
