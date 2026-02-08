@@ -257,6 +257,155 @@ jobs:
           name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
           path: go-binaries-build.tgz
 
+  # === CACHE EXPERIMENT: compare style-check with different GOCACHE sources ===
+  # Runs after pre-build-go-binaries so its cache is available.
+  style-check-own-cache:
+    needs: pre-build-go-binaries
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+      - uses: ./.github/actions/job-preamble
+        with:
+          free-disk-space: '30'
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      - name: Restore GOMODCACHE
+        uses: actions/cache/restore@v4
+        with:
+          path: /go/pkg/mod
+          key: go-mod-v1-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-mod-v1-
+      - name: Restore GOCACHE from style-check job
+        uses: actions/cache/restore@v4
+        with:
+          path: /github/home/.cache/go-build
+          key: go-build-v1-style-check-amd64-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-build-v1-style-check-amd64-
+      - name: Cache sizes after restore
+        run: |
+          echo "GOCACHE:" && du -sh "$(go env GOCACHE)" 2>/dev/null || echo "empty"
+          echo "GOMODCACHE:" && du -sh "$(go env GOMODCACHE)" 2>/dev/null || echo "empty"
+        shell: bash
+      - name: Download Go modules
+        run: make deps --always-make
+        shell: bash
+      - name: make style-slim
+        run: make style-slim
+
+  style-check-build-cache:
+    needs: pre-build-go-binaries
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+      - uses: ./.github/actions/job-preamble
+        with:
+          free-disk-space: '30'
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      - name: Restore GOMODCACHE
+        uses: actions/cache/restore@v4
+        with:
+          path: /go/pkg/mod
+          key: go-mod-v1-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-mod-v1-
+      - name: Restore GOCACHE from go unit-test job
+        uses: actions/cache/restore@v4
+        with:
+          path: /github/home/.cache/go-build
+          key: go-build-v1-go-amd64-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-build-v1-go-amd64-
+      - name: Cache sizes after restore
+        run: |
+          echo "GOCACHE:" && du -sh "$(go env GOCACHE)" 2>/dev/null || echo "empty"
+          echo "GOMODCACHE:" && du -sh "$(go env GOMODCACHE)" 2>/dev/null || echo "empty"
+        shell: bash
+      - name: Download Go modules
+        run: make deps --always-make
+        shell: bash
+      - name: make style-slim
+        run: make style-slim
+
+  style-check-no-cache:
+    needs: pre-build-go-binaries
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+      - uses: ./.github/actions/job-preamble
+        with:
+          free-disk-space: '30'
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      - name: Download Go modules
+        run: make deps --always-make
+        shell: bash
+      - name: make style-slim
+        run: make style-slim
+
+  style-check-binaries-cache:
+    needs: pre-build-go-binaries
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+      - uses: ./.github/actions/job-preamble
+        with:
+          free-disk-space: '30'
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      - name: Restore GOMODCACHE
+        uses: actions/cache/restore@v4
+        with:
+          path: /go/pkg/mod
+          key: go-mod-v1-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-mod-v1-
+      - name: Restore GOCACHE from pre-build-go-binaries job
+        uses: actions/cache/restore@v4
+        with:
+          path: /github/home/.cache/go-build
+          key: go-build-v1-pre-build-go-binaries-amd64-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-build-v1-pre-build-go-binaries-amd64-
+      - name: Cache sizes after restore
+        run: |
+          echo "GOCACHE:" && du -sh "$(go env GOCACHE)" 2>/dev/null || echo "empty"
+          echo "GOMODCACHE:" && du -sh "$(go env GOMODCACHE)" 2>/dev/null || echo "empty"
+        shell: bash
+      - name: Download Go modules
+        run: make deps --always-make
+        shell: bash
+      - name: make style-slim
+        run: make style-slim
+
   pre-build-docs:
     runs-on: ubuntu-latest
     container:

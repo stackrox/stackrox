@@ -11,12 +11,13 @@ runs:
         echo "GOARCH=$(go env GOARCH)" >> "$GITHUB_OUTPUT"
       shell: bash
 
-    - name: Cache Go Dependencies
-      uses: actions/cache@v5
+    - name: Restore Go Dependencies
+      uses: actions/cache/restore@v4
       with:
         path: |
           ${{ steps.cache-paths.outputs.GOMODCACHE }}
         key: go-mod-v1-${{ hashFiles('**/go.sum') }}
+        restore-keys: go-mod-v1-
 
     - name: Cache Go Build
       uses: actions/cache@v5
@@ -24,6 +25,26 @@ runs:
         path: |
           ${{ steps.cache-paths.outputs.GOCACHE }}
         key: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ hashFiles('**/go.sum') }}
+
+    - name: Cache diagnostics
+      run: |
+        echo "::group::Cache key info"
+        echo "github.job:    ${{ github.job }}"
+        echo "github.ref:    ${{ github.ref }}"
+        echo "event:         ${{ github.event_name }}"
+        echo "GOARCH:        ${{ steps.cache-paths.outputs.GOARCH }}"
+        echo "go-mod key:    go-mod-v1-${{ hashFiles('**/go.sum') }}"
+        echo "go-build key:  go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ hashFiles('**/go.sum') }}"
+        echo "::endgroup::"
+        echo "::group::Cache sizes after restore"
+        gocache="${{ steps.cache-paths.outputs.GOCACHE }}"
+        gomodcache="${{ steps.cache-paths.outputs.GOMODCACHE }}"
+        echo "GOCACHE ($gocache):"
+        du -sh "$gocache" 2>/dev/null || echo "  (empty or missing)"
+        echo "GOMODCACHE ($gomodcache):"
+        du -sh "$gomodcache" 2>/dev/null || echo "  (empty or missing)"
+        echo "::endgroup::"
+      shell: bash
 
     - name: Download Go modules
       run: make deps --always-make
