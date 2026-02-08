@@ -2,8 +2,10 @@
 
 set -e
 
-# ensure logged in to docker
-docker login
+CONTAINER_RUNTIME="${CONTAINER_RUNTIME:-docker}"
+
+# ensure logged in to container runtime
+${CONTAINER_RUNTIME} login
 
 # get clean cluster name
 CLUSTER_NAME="$(echo $1 | sed 's/-rg//')"
