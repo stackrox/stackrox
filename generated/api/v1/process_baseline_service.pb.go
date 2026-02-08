@@ -527,11 +527,199 @@ func (x *DeleteProcessBaselinesResponse) GetDryRun() bool {
 	return false
 }
 
+type ProcessBaselineQuery struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ClusterIds      []string               `protobuf:"bytes,1,rep,name=cluster_ids,json=clusterIds,proto3" json:"cluster_ids,omitempty"`
+	Namespaces      []string               `protobuf:"bytes,2,rep,name=namespaces,proto3" json:"namespaces,omitempty"`
+	DeploymentIds   []string               `protobuf:"bytes,3,rep,name=deployment_ids,json=deploymentIds,proto3" json:"deployment_ids,omitempty"`
+	DeploymentNames []string               `protobuf:"bytes,4,rep,name=deployment_names,json=deploymentNames,proto3" json:"deployment_names,omitempty"`
+	Images          []string               `protobuf:"bytes,5,rep,name=images,proto3" json:"images,omitempty"`
+	ContainerNames  []string               `protobuf:"bytes,6,rep,name=container_names,json=containerNames,proto3" json:"container_names,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ProcessBaselineQuery) Reset() {
+	*x = ProcessBaselineQuery{}
+	mi := &file_api_v1_process_baseline_service_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProcessBaselineQuery) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProcessBaselineQuery) ProtoMessage() {}
+
+func (x *ProcessBaselineQuery) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_process_baseline_service_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProcessBaselineQuery.ProtoReflect.Descriptor instead.
+func (*ProcessBaselineQuery) Descriptor() ([]byte, []int) {
+	return file_api_v1_process_baseline_service_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *ProcessBaselineQuery) GetClusterIds() []string {
+	if x != nil {
+		return x.ClusterIds
+	}
+	return nil
+}
+
+func (x *ProcessBaselineQuery) GetNamespaces() []string {
+	if x != nil {
+		return x.Namespaces
+	}
+	return nil
+}
+
+func (x *ProcessBaselineQuery) GetDeploymentIds() []string {
+	if x != nil {
+		return x.DeploymentIds
+	}
+	return nil
+}
+
+func (x *ProcessBaselineQuery) GetDeploymentNames() []string {
+	if x != nil {
+		return x.DeploymentNames
+	}
+	return nil
+}
+
+func (x *ProcessBaselineQuery) GetImages() []string {
+	if x != nil {
+		return x.Images
+	}
+	return nil
+}
+
+func (x *ProcessBaselineQuery) GetContainerNames() []string {
+	if x != nil {
+		return x.ContainerNames
+	}
+	return nil
+}
+
+type GetProcessBaselinesBulkRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Query         *ProcessBaselineQuery  `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	Pagination    *Pagination            `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetProcessBaselinesBulkRequest) Reset() {
+	*x = GetProcessBaselinesBulkRequest{}
+	mi := &file_api_v1_process_baseline_service_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProcessBaselinesBulkRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProcessBaselinesBulkRequest) ProtoMessage() {}
+
+func (x *GetProcessBaselinesBulkRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_process_baseline_service_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProcessBaselinesBulkRequest.ProtoReflect.Descriptor instead.
+func (*GetProcessBaselinesBulkRequest) Descriptor() ([]byte, []int) {
+	return file_api_v1_process_baseline_service_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *GetProcessBaselinesBulkRequest) GetQuery() *ProcessBaselineQuery {
+	if x != nil {
+		return x.Query
+	}
+	return nil
+}
+
+func (x *GetProcessBaselinesBulkRequest) GetPagination() *Pagination {
+	if x != nil {
+		return x.Pagination
+	}
+	return nil
+}
+
+type GetProcessBaselinesBulkResponse struct {
+	state         protoimpl.MessageState     `protogen:"open.v1"`
+	Baselines     []*storage.ProcessBaseline `protobuf:"bytes,1,rep,name=baselines,proto3" json:"baselines,omitempty"`
+	TotalCount    int32                      `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetProcessBaselinesBulkResponse) Reset() {
+	*x = GetProcessBaselinesBulkResponse{}
+	mi := &file_api_v1_process_baseline_service_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProcessBaselinesBulkResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProcessBaselinesBulkResponse) ProtoMessage() {}
+
+func (x *GetProcessBaselinesBulkResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_process_baseline_service_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProcessBaselinesBulkResponse.ProtoReflect.Descriptor instead.
+func (*GetProcessBaselinesBulkResponse) Descriptor() ([]byte, []int) {
+	return file_api_v1_process_baseline_service_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *GetProcessBaselinesBulkResponse) GetBaselines() []*storage.ProcessBaseline {
+	if x != nil {
+		return x.Baselines
+	}
+	return nil
+}
+
+func (x *GetProcessBaselinesBulkResponse) GetTotalCount() int32 {
+	if x != nil {
+		return x.TotalCount
+	}
+	return 0
+}
+
 var File_api_v1_process_baseline_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_process_baseline_service_proto_rawDesc = "" +
 	"\n" +
-	"%api/v1/process_baseline_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1estorage/process_baseline.proto\"J\n" +
+	"%api/v1/process_baseline_service.proto\x12\x02v1\x1a\x17api/v1/pagination.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1estorage/process_baseline.proto\"J\n" +
 	"\x19GetProcessBaselineRequest\x12-\n" +
 	"\x03key\x18\x01 \x01(\v2\x1b.storage.ProcessBaselineKeyR\x03key\"\xca\x01\n" +
 	"\x1dUpdateProcessBaselinesRequest\x12/\n" +
@@ -563,15 +751,35 @@ const file_api_v1_process_baseline_service_proto_rawDesc = "" +
 	"\x1eDeleteProcessBaselinesResponse\x12\x1f\n" +
 	"\vnum_deleted\x18\x01 \x01(\x05R\n" +
 	"numDeleted\x12\x17\n" +
-	"\adry_run\x18\x02 \x01(\bR\x06dryRun2\xb5\x06\n" +
+	"\adry_run\x18\x02 \x01(\bR\x06dryRun\"\xea\x01\n" +
+	"\x14ProcessBaselineQuery\x12\x1f\n" +
+	"\vcluster_ids\x18\x01 \x03(\tR\n" +
+	"clusterIds\x12\x1e\n" +
+	"\n" +
+	"namespaces\x18\x02 \x03(\tR\n" +
+	"namespaces\x12%\n" +
+	"\x0edeployment_ids\x18\x03 \x03(\tR\rdeploymentIds\x12)\n" +
+	"\x10deployment_names\x18\x04 \x03(\tR\x0fdeploymentNames\x12\x16\n" +
+	"\x06images\x18\x05 \x03(\tR\x06images\x12'\n" +
+	"\x0fcontainer_names\x18\x06 \x03(\tR\x0econtainerNames\"\x80\x01\n" +
+	"\x1eGetProcessBaselinesBulkRequest\x12.\n" +
+	"\x05query\x18\x01 \x01(\v2\x18.v1.ProcessBaselineQueryR\x05query\x12.\n" +
+	"\n" +
+	"pagination\x18\x02 \x01(\v2\x0e.v1.PaginationR\n" +
+	"pagination\"z\n" +
+	"\x1fGetProcessBaselinesBulkResponse\x126\n" +
+	"\tbaselines\x18\x01 \x03(\v2\x18.storage.ProcessBaselineR\tbaselines\x12\x1f\n" +
+	"\vtotal_count\x18\x02 \x01(\x05R\n" +
+	"totalCount2\xc3\a\n" +
 	"\x16ProcessBaselineService\x12o\n" +
 	"\x12GetProcessBaseline\x12\x1d.v1.GetProcessBaselineRequest\x1a\x18.storage.ProcessBaseline\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/processbaselines/key\x12\x80\x01\n" +
 	"\x16UpdateProcessBaselines\x12!.v1.UpdateProcessBaselinesRequest\x1a\".v1.UpdateProcessBaselinesResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\x1a\x14/v1/processbaselines\x12\x81\x01\n" +
 	"\x14LockProcessBaselines\x12\x1f.v1.LockProcessBaselinesRequest\x1a\".v1.UpdateProcessBaselinesResponse\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\x1a\x19/v1/processbaselines/lock\x12\x8e\x01\n" +
 	"\x18BulkLockProcessBaselines\x12\x1f.v1.BulkProcessBaselinesRequest\x1a&.v1.BulkUpdateProcessBaselinesResponse\")\x82\xd3\xe4\x93\x02#:\x01*\x1a\x1e/v1/processbaselines/bulk/lock\x12\x92\x01\n" +
 	"\x1aBulkUnlockProcessBaselines\x12\x1f.v1.BulkProcessBaselinesRequest\x1a&.v1.BulkUpdateProcessBaselinesResponse\"+\x82\xd3\xe4\x93\x02%:\x01*\x1a /v1/processbaselines/bulk/unlock\x12}\n" +
-	"\x16DeleteProcessBaselines\x12!.v1.DeleteProcessBaselinesRequest\x1a\".v1.DeleteProcessBaselinesResponse\"\x1c\x82\xd3\xe4\x93\x02\x16*\x14/v1/processbaselinesB'\n" +
-	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x00b\x06proto3"
+	"\x16DeleteProcessBaselines\x12!.v1.DeleteProcessBaselinesRequest\x1a\".v1.DeleteProcessBaselinesResponse\"\x1c\x82\xd3\xe4\x93\x02\x16*\x14/v1/processbaselines\x12\x8b\x01\n" +
+	"\x16GetProcessBaselineBulk\x12\".v1.GetProcessBaselinesBulkRequest\x1a#.v1.GetProcessBaselinesBulkResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/v1/processbaselines/bulk/getB'\n" +
+	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x01b\x06proto3"
 
 var (
 	file_api_v1_process_baseline_service_proto_rawDescOnce sync.Once
@@ -585,7 +793,7 @@ func file_api_v1_process_baseline_service_proto_rawDescGZIP() []byte {
 	return file_api_v1_process_baseline_service_proto_rawDescData
 }
 
-var file_api_v1_process_baseline_service_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_api_v1_process_baseline_service_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_api_v1_process_baseline_service_proto_goTypes = []any{
 	(*GetProcessBaselineRequest)(nil),          // 0: v1.GetProcessBaselineRequest
 	(*UpdateProcessBaselinesRequest)(nil),      // 1: v1.UpdateProcessBaselinesRequest
@@ -597,37 +805,46 @@ var file_api_v1_process_baseline_service_proto_goTypes = []any{
 	(*BulkProcessBaselinesRequest)(nil),        // 7: v1.BulkProcessBaselinesRequest
 	(*DeleteProcessBaselinesRequest)(nil),      // 8: v1.DeleteProcessBaselinesRequest
 	(*DeleteProcessBaselinesResponse)(nil),     // 9: v1.DeleteProcessBaselinesResponse
-	(*storage.ProcessBaselineKey)(nil),         // 10: storage.ProcessBaselineKey
-	(*storage.BaselineItem)(nil),               // 11: storage.BaselineItem
-	(*storage.ProcessBaseline)(nil),            // 12: storage.ProcessBaseline
+	(*ProcessBaselineQuery)(nil),               // 10: v1.ProcessBaselineQuery
+	(*GetProcessBaselinesBulkRequest)(nil),     // 11: v1.GetProcessBaselinesBulkRequest
+	(*GetProcessBaselinesBulkResponse)(nil),    // 12: v1.GetProcessBaselinesBulkResponse
+	(*storage.ProcessBaselineKey)(nil),         // 13: storage.ProcessBaselineKey
+	(*storage.BaselineItem)(nil),               // 14: storage.BaselineItem
+	(*storage.ProcessBaseline)(nil),            // 15: storage.ProcessBaseline
+	(*Pagination)(nil),                         // 16: v1.Pagination
 }
 var file_api_v1_process_baseline_service_proto_depIdxs = []int32{
-	10, // 0: v1.GetProcessBaselineRequest.key:type_name -> storage.ProcessBaselineKey
-	10, // 1: v1.UpdateProcessBaselinesRequest.keys:type_name -> storage.ProcessBaselineKey
-	11, // 2: v1.UpdateProcessBaselinesRequest.add_elements:type_name -> storage.BaselineItem
-	11, // 3: v1.UpdateProcessBaselinesRequest.remove_elements:type_name -> storage.BaselineItem
-	12, // 4: v1.ProcessBaselinesResponse.baselines:type_name -> storage.ProcessBaseline
-	10, // 5: v1.ProcessBaselineUpdateError.key:type_name -> storage.ProcessBaselineKey
-	12, // 6: v1.UpdateProcessBaselinesResponse.baselines:type_name -> storage.ProcessBaseline
+	13, // 0: v1.GetProcessBaselineRequest.key:type_name -> storage.ProcessBaselineKey
+	13, // 1: v1.UpdateProcessBaselinesRequest.keys:type_name -> storage.ProcessBaselineKey
+	14, // 2: v1.UpdateProcessBaselinesRequest.add_elements:type_name -> storage.BaselineItem
+	14, // 3: v1.UpdateProcessBaselinesRequest.remove_elements:type_name -> storage.BaselineItem
+	15, // 4: v1.ProcessBaselinesResponse.baselines:type_name -> storage.ProcessBaseline
+	13, // 5: v1.ProcessBaselineUpdateError.key:type_name -> storage.ProcessBaselineKey
+	15, // 6: v1.UpdateProcessBaselinesResponse.baselines:type_name -> storage.ProcessBaseline
 	3,  // 7: v1.UpdateProcessBaselinesResponse.errors:type_name -> v1.ProcessBaselineUpdateError
-	10, // 8: v1.LockProcessBaselinesRequest.keys:type_name -> storage.ProcessBaselineKey
-	0,  // 9: v1.ProcessBaselineService.GetProcessBaseline:input_type -> v1.GetProcessBaselineRequest
-	1,  // 10: v1.ProcessBaselineService.UpdateProcessBaselines:input_type -> v1.UpdateProcessBaselinesRequest
-	6,  // 11: v1.ProcessBaselineService.LockProcessBaselines:input_type -> v1.LockProcessBaselinesRequest
-	7,  // 12: v1.ProcessBaselineService.BulkLockProcessBaselines:input_type -> v1.BulkProcessBaselinesRequest
-	7,  // 13: v1.ProcessBaselineService.BulkUnlockProcessBaselines:input_type -> v1.BulkProcessBaselinesRequest
-	8,  // 14: v1.ProcessBaselineService.DeleteProcessBaselines:input_type -> v1.DeleteProcessBaselinesRequest
-	12, // 15: v1.ProcessBaselineService.GetProcessBaseline:output_type -> storage.ProcessBaseline
-	5,  // 16: v1.ProcessBaselineService.UpdateProcessBaselines:output_type -> v1.UpdateProcessBaselinesResponse
-	5,  // 17: v1.ProcessBaselineService.LockProcessBaselines:output_type -> v1.UpdateProcessBaselinesResponse
-	4,  // 18: v1.ProcessBaselineService.BulkLockProcessBaselines:output_type -> v1.BulkUpdateProcessBaselinesResponse
-	4,  // 19: v1.ProcessBaselineService.BulkUnlockProcessBaselines:output_type -> v1.BulkUpdateProcessBaselinesResponse
-	9,  // 20: v1.ProcessBaselineService.DeleteProcessBaselines:output_type -> v1.DeleteProcessBaselinesResponse
-	15, // [15:21] is the sub-list for method output_type
-	9,  // [9:15] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	13, // 8: v1.LockProcessBaselinesRequest.keys:type_name -> storage.ProcessBaselineKey
+	10, // 9: v1.GetProcessBaselinesBulkRequest.query:type_name -> v1.ProcessBaselineQuery
+	16, // 10: v1.GetProcessBaselinesBulkRequest.pagination:type_name -> v1.Pagination
+	15, // 11: v1.GetProcessBaselinesBulkResponse.baselines:type_name -> storage.ProcessBaseline
+	0,  // 12: v1.ProcessBaselineService.GetProcessBaseline:input_type -> v1.GetProcessBaselineRequest
+	1,  // 13: v1.ProcessBaselineService.UpdateProcessBaselines:input_type -> v1.UpdateProcessBaselinesRequest
+	6,  // 14: v1.ProcessBaselineService.LockProcessBaselines:input_type -> v1.LockProcessBaselinesRequest
+	7,  // 15: v1.ProcessBaselineService.BulkLockProcessBaselines:input_type -> v1.BulkProcessBaselinesRequest
+	7,  // 16: v1.ProcessBaselineService.BulkUnlockProcessBaselines:input_type -> v1.BulkProcessBaselinesRequest
+	8,  // 17: v1.ProcessBaselineService.DeleteProcessBaselines:input_type -> v1.DeleteProcessBaselinesRequest
+	11, // 18: v1.ProcessBaselineService.GetProcessBaselineBulk:input_type -> v1.GetProcessBaselinesBulkRequest
+	15, // 19: v1.ProcessBaselineService.GetProcessBaseline:output_type -> storage.ProcessBaseline
+	5,  // 20: v1.ProcessBaselineService.UpdateProcessBaselines:output_type -> v1.UpdateProcessBaselinesResponse
+	5,  // 21: v1.ProcessBaselineService.LockProcessBaselines:output_type -> v1.UpdateProcessBaselinesResponse
+	4,  // 22: v1.ProcessBaselineService.BulkLockProcessBaselines:output_type -> v1.BulkUpdateProcessBaselinesResponse
+	4,  // 23: v1.ProcessBaselineService.BulkUnlockProcessBaselines:output_type -> v1.BulkUpdateProcessBaselinesResponse
+	9,  // 24: v1.ProcessBaselineService.DeleteProcessBaselines:output_type -> v1.DeleteProcessBaselinesResponse
+	12, // 25: v1.ProcessBaselineService.GetProcessBaselineBulk:output_type -> v1.GetProcessBaselinesBulkResponse
+	19, // [19:26] is the sub-list for method output_type
+	12, // [12:19] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_process_baseline_service_proto_init() }
@@ -635,13 +852,14 @@ func file_api_v1_process_baseline_service_proto_init() {
 	if File_api_v1_process_baseline_service_proto != nil {
 		return
 	}
+	file_api_v1_pagination_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_process_baseline_service_proto_rawDesc), len(file_api_v1_process_baseline_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
