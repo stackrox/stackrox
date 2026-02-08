@@ -69,6 +69,9 @@ echo "ROX_NETWORK_ACCESS_LOG set to $ROX_NETWORK_ACCESS_LOG"
 export ROX_DEVELOPMENT_BUILD=true
 echo "ROX_DEVELOPMENT_BUILD is set to ${ROX_DEVELOPMENT_BUILD}"
 
+export LOGLEVEL=debug
+echo "LOGLEVEL is set to ${LOGLEVEL}"
+
 export API_ENDPOINT="${API_ENDPOINT:-localhost:8000}"
 echo "API_ENDPOINT is set to ${API_ENDPOINT}"
 
