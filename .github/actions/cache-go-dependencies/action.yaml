@@ -24,8 +24,7 @@ runs:
         echo "GOARCH=$(go env GOARCH)" >> "$GITHUB_OUTPUT"
         group="${{ inputs.cache-group }}"
         echo "group=${group:-${{ github.job }}}" >> "$GITHUB_OUTPUT"
-        # TODO: revert to only save on save-on-ref before merging
-        echo "save=${{ inputs.save }}" >> "$GITHUB_OUTPUT"
+        echo "save=${{ inputs.save == 'true' && github.event_name == 'push' && github.ref == inputs.save-on-ref }}" >> "$GITHUB_OUTPUT"
       shell: bash
 
     - name: Cache Go Dependencies
