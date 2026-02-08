@@ -56,7 +56,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/sbom", nil)
 		recorder := httptest.NewRecorder()
 
-		handler := SBOMHandler(imageintegration.Set(), nil, nil, nil, nil)
+		handler := SBOMGenHandler(imageintegration.Set(), nil, nil, nil, nil)
 		handler.ServeHTTP(recorder, req)
 
 		res := recorder.Result()
@@ -99,7 +99,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 				req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(reqJson))
 				recorder := httptest.NewRecorder()
 
-				handler := SBOMHandler(imageintegration.Set(), mockEnricher, mockEnricherV2, nil, nil)
+				handler := SBOMGenHandler(imageintegration.Set(), mockEnricher, mockEnricherV2, nil, nil)
 				handler.ServeHTTP(recorder, req)
 
 				res := recorder.Result()
@@ -142,6 +142,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 				scanner.EXPECT().GetSBOM(gomock.Any()).DoAndReturn(getFakeSBOM).AnyTimes()
 				set.EXPECT().ScannerSet().Return(scannerSet).AnyTimes()
 				fsr.EXPECT().GetScanner().Return(scanner).AnyTimes()
+				fsr.EXPECT().DataSource().Return(nil).AnyTimes()
 				scannerSet.EXPECT().GetAll().Return([]scannerTypes.ImageScannerWithDataSource{fsr}).AnyTimes()
 
 				reqBody := &apiparams.SBOMRequestBody{
@@ -154,7 +155,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 				req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(reqJson))
 				recorder := httptest.NewRecorder()
 
-				handler := SBOMHandler(set, mockEnricher, mockEnricherV2, nil, nil)
+				handler := SBOMGenHandler(set, mockEnricher, mockEnricherV2, nil, nil)
 				handler.ServeHTTP(recorder, req)
 
 				res := recorder.Result()
@@ -172,7 +173,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewBufferString(invalidJson))
 		recorder := httptest.NewRecorder()
 
-		handler := SBOMHandler(imageintegration.Set(), nil, nil, nil, nil)
+		handler := SBOMGenHandler(imageintegration.Set(), nil, nil, nil, nil)
 		handler.ServeHTTP(recorder, req)
 
 		res := recorder.Result()
@@ -189,7 +190,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(reqBody))
 		recorder := httptest.NewRecorder()
 
-		handler := SBOMHandler(imageintegration.Set(), nil, nil, nil, nil)
+		handler := SBOMGenHandler(imageintegration.Set(), nil, nil, nil, nil)
 		handler.ServeHTTP(recorder, req)
 
 		res := recorder.Result()
@@ -205,7 +206,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/sbom", nil)
 		recorder := httptest.NewRecorder()
 
-		handler := SBOMHandler(imageintegration.Set(), nil, nil, nil, nil)
+		handler := SBOMGenHandler(imageintegration.Set(), nil, nil, nil, nil)
 		handler.ServeHTTP(recorder, req)
 
 		res := recorder.Result()
@@ -222,7 +223,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(largeRequestBody))
 		recorder := httptest.NewRecorder()
 
-		handler := SBOMHandler(imageintegration.Set(), nil, nil, nil, nil)
+		handler := SBOMGenHandler(imageintegration.Set(), nil, nil, nil, nil)
 		handler.ServeHTTP(recorder, req)
 
 		res := recorder.Result()
@@ -280,6 +281,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 
 				mockImageScannerWithDS := scannerTypesMocks.NewMockImageScannerWithDataSource(ctrl)
 				mockImageScannerWithDS.EXPECT().GetScanner().Return(mockScanner).AnyTimes()
+				mockImageScannerWithDS.EXPECT().DataSource().Return(nil).AnyTimes()
 
 				mockScannerSet := scannerMocks.NewMockSet(ctrl)
 				mockScannerSet.EXPECT().GetAll().Return([]scannerTypes.ImageScannerWithDataSource{mockImageScannerWithDS}).AnyTimes()
@@ -312,7 +314,7 @@ func TestHttpHandler_ServeHTTP(t *testing.T) {
 				assert.NoError(t, err)
 				req := httptest.NewRequest(http.MethodPost, "/sbom", bytes.NewReader(reqJson))
 				recorder := httptest.NewRecorder()
-				handler := SBOMHandler(mockIntegrationSet, mockEnricher, mockEnricherV2, nil, mockRiskManager)
+				handler := SBOMGenHandler(mockIntegrationSet, mockEnricher, mockEnricherV2, nil, mockRiskManager)
 
 				// Make the SBOM generation request.
 				handler.ServeHTTP(recorder, req)

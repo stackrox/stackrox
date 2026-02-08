@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package v1;
+
+import "google/protobuf/timestamp.proto";
+import "storage/image.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+// SBOMScanResponse wraps metadata and scan results for an SBOM.
+//
+// Components must be JSON marshal/unmarshall compatible with `storage.Image`
+// so that output formatting via roxctl is consistent.
+//
+// There is no service defined for this response as it is handled
+// by a custom route (non-gRPC).
+//
+// next available tag: 3
+message SBOMScanResponse {
+  string id = 1;
+
+  // next available tag: 5
+  message SBOMScan {
+    string scanner_version = 1;
+    google.protobuf.Timestamp scan_time = 2;
+    repeated storage.EmbeddedImageScanComponent components = 3;
+    storage.DataSource data_source = 4;
+  }
+  SBOMScan scan = 2;
+}

@@ -807,7 +807,13 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/api/v1/images/sbom",
 			Authorizer:    user.With(permissions.Modify(resources.Image)),
-			ServerHandler: imageService.SBOMHandler(imageintegration.Set(), enrichment.ImageEnricherSingleton(), enrichment.ImageEnricherV2Singleton(), sachelper.NewClusterSacHelper(clusterDataStore.Singleton()), riskManager.Singleton()),
+			ServerHandler: imageService.SBOMGenHandler(imageintegration.Set(), enrichment.ImageEnricherSingleton(), enrichment.ImageEnricherV2Singleton(), sachelper.NewClusterSacHelper(clusterDataStore.Singleton()), riskManager.Singleton()),
+			Compression:   true,
+		},
+		{
+			Route:         "/api/v1/sboms/scan",
+			Authorizer:    user.With(permissions.Modify(resources.Image)),
+			ServerHandler: imageService.SBOMScanHandler(imageintegration.Set()),
 			Compression:   true,
 		},
 		{
