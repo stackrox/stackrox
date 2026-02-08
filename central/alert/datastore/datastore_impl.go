@@ -131,7 +131,7 @@ func (ds *datastoreImpl) SearchRawAlerts(ctx context.Context, q *v1.Query, exclu
 	}
 
 	alerts := make([]*storage.Alert, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
-	err := ds.storage.GetByQueryFn(ctx, q, func(alert *storage.Alert) error {
+	err := ds.storage.WalkByQuery(ctx, q, func(alert *storage.Alert) error {
 		alerts = append(alerts, alert)
 		return nil
 	})
