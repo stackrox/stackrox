@@ -299,8 +299,19 @@ stackrox-image-pull-secret: ## Create default image pull secret for StackRox ima
 check-ci-setup: ## Make sure this target is not started in CI environment.
 	$(SILENT)if [ -n "$${CI:-}" ]; then echo "Setup error: operator should be installed and started by OLM." >&2; exit 1; fi
 
+## Run operator from your host without deploying it to a cluster.
 .PHONY: run
-run: check-ci-setup manifests generate ensure-rox-main-image-exists fmt vet ## Run operator from your host without deploying it to a cluster.
+run: check-ci-setup manifests generate ensure-rox-main-image-exists fmt vet quick-run
+
+.PHONY: quick-run
+quick-run:
+	if [[ -n "$$MAIN_IMAGE_TAG" ]]; then \
+		export RELATED_IMAGE_MAIN="quay.io/rhacs-eng/main:$$MAIN_IMAGE_TAG"; \
+		export RELATED_IMAGE_CENTRAL_DB="quay.io/rhacs-eng/central-db:$$MAIN_IMAGE_TAG"; \
+		export RELATED_IMAGE_SCANNER_V4="quay.io/rhacs-eng/scanner-v4:$$MAIN_IMAGE_TAG"; \
+		export RELATED_IMAGE_SCANNER_V4_DB="quay.io/rhacs-eng/scanner-v4-db:$$MAIN_IMAGE_TAG"; \
+		echo "MAIN_IMAGE_TAG=$$MAIN_IMAGE_TAG specified, using related images with this tag."; \
+	fi ;\
 	../scripts/go-run.sh ./cmd/main.go
 
 .PHONY: ensure-rox-main-image-exists
