@@ -216,7 +216,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                             isExpandable
                             steps={[
                                 <WizardStep
-                                    name="Scope"
+                                    name="Scopes and Exclusions"
                                     id={POLICY_BEHAVIOR_SCOPE_ID}
                                     key={POLICY_BEHAVIOR_SCOPE_ID}
                                     body={{ hasNoPadding: true }}
