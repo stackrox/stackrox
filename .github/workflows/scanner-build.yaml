@@ -104,6 +104,22 @@ jobs:
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
+    - name: GOCACHE diagnostics
+      if: matrix.name == 'default' && matrix.goarch == 'amd64'
+      run: |
+        echo "=== Build flags ==="
+        echo "CGO_ENABLED=${CGO_ENABLED:-$(go env CGO_ENABLED)}"
+        echo "GOARCH=$(go env GOARCH)"
+        echo "GOOS=$(go env GOOS)"
+        echo "GOFLAGS=${GOFLAGS:-}"
+        echo "GOTAGS=${GOTAGS:-}"
+        echo "=== GOCACHE key inputs for a shared package ==="
+        GODEBUG=gocachehash=1 go build ./pkg/errox/... 2>&1 | head -30
+        echo "=== GOCACHE size ==="
+        du -sh "$(go env GOCACHE)" 2>/dev/null || echo "empty"
+        echo "=== GOCACHE entry count ==="
+        find "$(go env GOCACHE)" -type f 2>/dev/null | wc -l || echo "0"
+
     - uses: ./.github/actions/handle-tagged-build
 
     - name: Setup Go build environment for release
