@@ -80,7 +80,7 @@ func (mr *MockIndexerMetadataStoreMockRecorder) ManifestExists(ctx, manifestID a
 // MigrateManifests mocks base method.
 func (m *MockIndexerMetadataStore) MigrateManifests(ctx context.Context, expiration time.Time) ([]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MigrateManifests", ctx, expiration)
+	ret := m.ctrl.Call(m, "migrateManifests", ctx, expiration)
 	ret0, _ := ret[0].([]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -89,7 +89,7 @@ func (m *MockIndexerMetadataStore) MigrateManifests(ctx context.Context, expirat
 // MigrateManifests indicates an expected call of MigrateManifests.
 func (mr *MockIndexerMetadataStoreMockRecorder) MigrateManifests(ctx, expiration any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MigrateManifests", reflect.TypeOf((*MockIndexerMetadataStore)(nil).MigrateManifests), ctx, expiration)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "migrateManifests", reflect.TypeOf((*MockIndexerMetadataStore)(nil).MigrateManifests), ctx, expiration)
 }
 
 // StoreManifest mocks base method.
