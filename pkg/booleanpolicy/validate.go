@@ -23,8 +23,7 @@ var (
 	// requiring the key to also exist.
 	fieldDependencies = map[string]set.StringSet{
 		fieldnames.FileOperation: set.NewStringSet(
-			fieldnames.ActualPath,
-			fieldnames.EffectivePath,
+			fieldnames.FilePath,
 		),
 		fieldnames.KubeUserName: set.NewStringSet(
 			fieldnames.KubeResource,
@@ -45,7 +44,7 @@ var (
 		// node events. In the future, when more node events are supported,
 		// this constraint can be relaxed.
 		storage.EventSource_NODE_EVENT: set.NewStringSet(
-			fieldnames.ActualPath,
+			fieldnames.FilePath,
 		),
 	}
 )

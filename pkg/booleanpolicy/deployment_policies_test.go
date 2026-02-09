@@ -689,7 +689,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 1",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.ActualPath,
+							FieldName: fieldnames.FilePath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 						},
 						{
@@ -702,7 +702,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 2",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.ActualPath,
+							FieldName: fieldnames.FilePath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/shadow"}},
 						},
 						{
@@ -726,7 +726,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 1",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.ActualPath,
+							FieldName: fieldnames.FilePath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/shadow"}},
 						},
 						{
@@ -739,7 +739,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 2",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.ActualPath,
+							FieldName: fieldnames.FilePath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 						},
 						{
@@ -763,7 +763,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 1",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.ActualPath,
+							FieldName: fieldnames.FilePath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 						},
 					},
@@ -772,7 +772,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 2",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.EffectivePath,
+							FieldName: fieldnames.FilePath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/sudoers"}},
 						},
 					},
@@ -792,7 +792,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 1",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.ActualPath,
+							FieldName: fieldnames.FilePath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/sudoers"}},
 						},
 					},
@@ -801,7 +801,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 2",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.EffectivePath,
+							FieldName: fieldnames.FilePath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/shadow"}},
 						},
 					},
@@ -821,12 +821,11 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 1",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.ActualPath,
-							Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
-						},
-						{
-							FieldName: fieldnames.EffectivePath,
-							Values:    []*storage.PolicyValue{{Value: "/etc/shadow"}},
+							FieldName: fieldnames.FilePath,
+							Values: []*storage.PolicyValue{
+								{Value: "/etc/passwd"},
+								{Value: "/etc/shadow"},
+							},
 						},
 					},
 				},
@@ -834,7 +833,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 2",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.ActualPath,
+							FieldName: fieldnames.FilePath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/ssh/sshd_config"}},
 						},
 					},
@@ -864,22 +863,32 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 			},
 		},
 		{
-			description: "Event with both paths - policy requires BOTH but only actual path matches",
+			description: "Event with both paths - policy requires EITHER and only actual path matches",
 			policy:      s.getDualPathPolicy("/etc/passwd", "/etc/sudoers", []storage.FileAccess_Operation{storage.FileAccess_OPEN}),
 			events: []eventWrapper{
 				{
 					access:      s.getDualPathFileAccessEvent("/etc/passwd", "/etc/shadow", storage.FileAccess_OPEN),
-					expectAlert: false,
+					expectAlert: true,
 				},
 			},
 		},
 		{
-			description: "Event with both paths - policy requires BOTH but only effective matches",
+			description: "Event with both paths - policy requires EITHER and only effective matches",
 			policy:      s.getDualPathPolicy("/etc/sudoers", "/etc/shadow", []storage.FileAccess_Operation{storage.FileAccess_OPEN}),
 			events: []eventWrapper{
 				{
 					access:      s.getDualPathFileAccessEvent("/etc/passwd", "/etc/shadow", storage.FileAccess_OPEN),
-					expectAlert: false,
+					expectAlert: true,
+				},
+			},
+		},
+		{
+			description: "Event with both paths - policy requires EITHER and only BOTH match",
+			policy:      s.getDualPathPolicy("/etc/sudoers", "/etc/shadow", []storage.FileAccess_Operation{storage.FileAccess_OPEN}),
+			events: []eventWrapper{
+				{
+					access:      s.getDualPathFileAccessEvent("/etc/sudoers", "/etc/shadow", storage.FileAccess_OPEN),
+					expectAlert: true,
 				},
 			},
 		},
@@ -900,7 +909,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 1",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.ActualPath,
+							FieldName: fieldnames.FilePath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/ssh/sshd_config"}},
 						},
 					},
@@ -909,7 +918,7 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 2",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.EffectivePath,
+							FieldName: fieldnames.FilePath,
 							Values:    []*storage.PolicyValue{{Value: "/etc/sudoers"}},
 						},
 					},
@@ -929,12 +938,12 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 1",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.ActualPath,
-							Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
+							FieldName: fieldnames.FilePath,
+							Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}, {Value: "/etc/shadow"}},
 						},
 						{
-							FieldName: fieldnames.EffectivePath,
-							Values:    []*storage.PolicyValue{{Value: "/etc/sudoers"}},
+							FieldName: fieldnames.FileOperation,
+							Values:    []*storage.PolicyValue{{Value: "UNLINK"}},
 						},
 					},
 				},
@@ -942,12 +951,12 @@ func (s *DeploymentDetectionTestSuite) TestDeploymentDualPathMatching() {
 					SectionName: "section 2",
 					PolicyGroups: []*storage.PolicyGroup{
 						{
-							FieldName: fieldnames.ActualPath,
-							Values:    []*storage.PolicyValue{{Value: "/etc/ssh/sshd_config"}},
+							FieldName: fieldnames.FilePath,
+							Values:    []*storage.PolicyValue{{Value: "/etc/shadow"}, {Value: "/etc/ssh/sshd_config"}},
 						},
 						{
-							FieldName: fieldnames.EffectivePath,
-							Values:    []*storage.PolicyValue{{Value: "/etc/shadow"}},
+							FieldName: fieldnames.FileOperation,
+							Values:    []*storage.PolicyValue{{Value: "UNLINK"}},
 						},
 					},
 				},
@@ -1024,7 +1033,7 @@ func (s *DeploymentDetectionTestSuite) getDeploymentEffectiveFileAccessEvent(pat
 }
 
 // getFileAccessPolicy is a generic helper for creating file access policies.
-func (s *DeploymentDetectionTestSuite) getFileAccessPolicy(isActualPath bool, operations []storage.FileAccess_Operation, negate bool, paths ...string) *storage.Policy {
+func (s *DeploymentDetectionTestSuite) getFileAccessPolicy(operations []storage.FileAccess_Operation, negate bool, paths ...string) *storage.Policy {
 	var pathValues []*storage.PolicyValue
 	for _, path := range paths {
 		pathValues = append(pathValues, &storage.PolicyValue{
@@ -1032,14 +1041,9 @@ func (s *DeploymentDetectionTestSuite) getFileAccessPolicy(isActualPath bool, op
 		})
 	}
 
-	fieldName := fieldnames.ActualPath
-	if !isActualPath {
-		fieldName = fieldnames.EffectivePath
-	}
-
 	policyGroups := []*storage.PolicyGroup{
 		{
-			FieldName: fieldName,
+			FieldName: fieldnames.FilePath,
 			Values:    pathValues,
 		},
 	}
@@ -1077,19 +1081,19 @@ func (s *DeploymentDetectionTestSuite) getFileAccessPolicy(isActualPath bool, op
 }
 
 func (s *DeploymentDetectionTestSuite) getDeploymentFileAccessPolicyWithOperations(operations []storage.FileAccess_Operation, negate bool, paths ...string) *storage.Policy {
-	return s.getFileAccessPolicy(true, operations, negate, paths...)
+	return s.getFileAccessPolicy(operations, negate, paths...)
 }
 
 func (s *DeploymentDetectionTestSuite) getDeploymentFileAccessPolicy(paths ...string) *storage.Policy {
-	return s.getFileAccessPolicy(true, nil, false, paths...)
+	return s.getFileAccessPolicy(nil, false, paths...)
 }
 
 func (s *DeploymentDetectionTestSuite) getEffectiveFileAccessPolicyWithOperations(operations []storage.FileAccess_Operation, negate bool, paths ...string) *storage.Policy {
-	return s.getFileAccessPolicy(false, operations, negate, paths...)
+	return s.getFileAccessPolicy(operations, negate, paths...)
 }
 
 func (s *DeploymentDetectionTestSuite) getEffectiveFileAccessPolicy(paths ...string) *storage.Policy {
-	return s.getFileAccessPolicy(false, nil, false, paths...)
+	return s.getFileAccessPolicy(nil, false, paths...)
 }
 
 // Helper to create file access events with BOTH actual path and effective path populated
@@ -1107,12 +1111,8 @@ func (s *DeploymentDetectionTestSuite) getDualPathFileAccessEvent(actualPath, ef
 func (s *DeploymentDetectionTestSuite) getDualPathPolicy(actualPath, effectivePath string, operations []storage.FileAccess_Operation) *storage.Policy {
 	policyGroups := []*storage.PolicyGroup{
 		{
-			FieldName: fieldnames.ActualPath,
-			Values:    []*storage.PolicyValue{{Value: actualPath}},
-		},
-		{
-			FieldName: fieldnames.EffectivePath,
-			Values:    []*storage.PolicyValue{{Value: effectivePath}},
+			FieldName: fieldnames.FilePath,
+			Values:    []*storage.PolicyValue{{Value: actualPath}, {Value: effectivePath}},
 		},
 	}
 

@@ -330,7 +330,7 @@ func (s *NodeDetectionTestSuite) getNodeFileAccessPolicyWithOperations(operation
 				SectionName: "section 1",
 				PolicyGroups: []*storage.PolicyGroup{
 					{
-						FieldName: fieldnames.ActualPath,
+						FieldName: fieldnames.FilePath,
 						Values:    pathValues,
 					},
 					{
@@ -365,7 +365,7 @@ func (s *NodeDetectionTestSuite) getNodeFileAccessPolicy(paths ...string) *stora
 				SectionName: "section 1",
 				PolicyGroups: []*storage.PolicyGroup{
 					{
-						FieldName: "Actual Path",
+						FieldName: fieldnames.FilePath,
 						Values:    policyValues,
 					},
 				},

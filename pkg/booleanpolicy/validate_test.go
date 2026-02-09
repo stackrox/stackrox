@@ -655,7 +655,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 				SectionName: "bad2",
 				PolicyGroups: []*storage.PolicyGroup{
 					{
-						FieldName: fieldnames.ActualPath,
+						FieldName: fieldnames.FilePath,
 						Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 					},
 				},
@@ -676,28 +676,7 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 						Values:    []*storage.PolicyValue{{Value: "CREATE"}},
 					},
 					{
-						FieldName: fieldnames.ActualPath,
-						Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
-					},
-				},
-			},
-		},
-	}))
-
-	s.NoError(Validate(&storage.Policy{
-		Name:          "Valid Section with Effective Path",
-		PolicyVersion: policyversion.CurrentVersion().String(),
-		EventSource:   storage.EventSource_DEPLOYMENT_EVENT,
-		PolicySections: []*storage.PolicySection{
-			{
-				SectionName: "good",
-				PolicyGroups: []*storage.PolicyGroup{
-					{
-						FieldName: fieldnames.FileOperation,
-						Values:    []*storage.PolicyValue{{Value: "CREATE"}},
-					},
-					{
-						FieldName: fieldnames.EffectivePath,
+						FieldName: fieldnames.FilePath,
 						Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 					},
 				},
@@ -716,23 +695,6 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 					{
 						FieldName: fieldnames.FileOperation,
 						Values:    []*storage.PolicyValue{{Value: "CREATE"}},
-					},
-				},
-			},
-		},
-	}))
-
-	s.Error(Validate(&storage.Policy{
-		Name:          "Effective Path with NODE_EVENT should error",
-		PolicyVersion: policyversion.CurrentVersion().String(),
-		EventSource:   storage.EventSource_NODE_EVENT,
-		PolicySections: []*storage.PolicySection{
-			{
-				SectionName: "bad",
-				PolicyGroups: []*storage.PolicyGroup{
-					{
-						FieldName: fieldnames.EffectivePath,
-						Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
 					},
 				},
 			},

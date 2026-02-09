@@ -132,7 +132,7 @@ func ConstructNodeWithFileAccess(node *storage.Node, fileAccess *storage.FileAcc
 	}
 
 	err = nodeObj.AddAugmentedObjAt(
-		pathutil.NewAugmentedObj(fileAccess),
+		ConstructFileAccess(fileAccess),
 		pathutil.FieldStep(fileAccessKey),
 	)
 
@@ -161,11 +161,30 @@ func ConstructDeploymentWithFileAccess(
 	if err != nil {
 		return nil, err
 	}
+
 	return obj, nil
 }
 
 func ConstructFileAccess(fileAccess *storage.FileAccess) *pathutil.AugmentedObj {
-	return pathutil.NewAugmentedObj(fileAccess)
+	obj := pathutil.NewAugmentedObj(fileAccess)
+
+	// By combining the actual and effective paths into a single
+	// slice, we allow logical disjunction for a single policy
+	// criterion, avoiding the need for a path criterion for each
+	// type of path.
+	fileAccessPaths := &fileAccessPath{
+		Path: []string{
+			fileAccess.GetFile().GetActualPath(),
+			fileAccess.GetFile().GetEffectivePath(),
+		},
+	}
+
+	err := obj.AddPlainObjAt(fileAccessPaths, pathutil.FieldStep(fileAccessPathKey))
+	if err != nil {
+		return nil
+	}
+
+	return obj
 }
 
 // ConstructDeploymentWithNetworkFlowInfo constructs an augmented object with deployment and network flow.
