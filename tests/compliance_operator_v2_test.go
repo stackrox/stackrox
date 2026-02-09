@@ -37,10 +37,12 @@ import (
 )
 
 const (
-	coNamespaceV2     = "openshift-compliance"
-	stackroxNamespace = "stackrox"
-	defaultTimeout    = 90 * time.Second
-	eventuallyTimeout = 120 * time.Second
+	coNamespaceV2       = "openshift-compliance"
+	stackroxNamespace   = "stackrox"
+	defaultTimeout      = 90 * time.Second
+	eventuallyTimeout   = 120 * time.Second
+	waitForDoneTimeout  = 5 * time.Minute
+	waitForDoneInterval = 30 * time.Second
 )
 
 var (
@@ -144,7 +146,7 @@ func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, 
 			types.NamespacedName{Name: suiteName, Namespace: "openshift-compliance"},
 			&suite,
 		)
-		require.NoError(c, err)
+		require.NoError(c, err, "failed to get ComplianceSuite %s", suiteName)
 
 		require.Equal(c, complianceoperatorv1.PhaseDone, suite.Status.Phase,
 			"ComplianceSuite %s not DONE: is in %s phase", suiteName, suite.Status.Phase)
@@ -711,7 +713,7 @@ func TestComplianceV2ComplianceObjectMetadata(t *testing.T) {
 			types.NamespacedName{Name: testName, Namespace: "openshift-compliance"},
 			&scanSetting,
 		)
-		require.NoError(c, err)
+		require.NoError(c, err, "failed to get ScanSetting %s", testName)
 	}, defaultTimeout, 5*time.Second)
 
 	assert.Contains(t, scanSetting.Labels, "app.kubernetes.io/name")
@@ -778,12 +780,12 @@ func TestComplianceV2ScheduleRescan(t *testing.T) {
 
 	defer client.DeleteComplianceScanConfiguration(context.TODO(), &v2.ResourceByID{Id: scanConfig.GetId()})
 
-	waitForComplianceSuiteToComplete(t, scanConfig.ScanName, 30*time.Second, 5*time.Minute)
+	waitForComplianceSuiteToComplete(t, scanConfig.ScanName, waitForDoneInterval, waitForDoneTimeout)
 
 	// Invoke a rescan
 	_, err = client.RunComplianceScanConfiguration(context.TODO(), &v2.ResourceByID{Id: scanConfig.GetId()})
 	require.NoError(t, err, "failed to rerun scan schedule %s", scanConfigName)
 
 	// Assert the scan is rerunning on the cluster using the Compliance Operator CRDs
-	waitForComplianceSuiteToComplete(t, scanConfig.ScanName, 30*time.Second, 5*time.Minute)
+	waitForComplianceSuiteToComplete(t, scanConfig.ScanName, waitForDoneInterval, waitForDoneTimeout)
 }
