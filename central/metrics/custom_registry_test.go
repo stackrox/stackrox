@@ -50,6 +50,16 @@ func TestMakeCustomRegistry(t *testing.T) {
 	assert.True(t, cr2.UnregisterMetric("test"))
 }
 
+func TestGetGlobalRegistry(t *testing.T) {
+	n := GetCustomRegistriesCount()
+	r0, err0 := GetGlobalRegistry()
+	assert.NoError(t, err0)
+	r1, err1 := GetGlobalRegistry()
+	assert.NoError(t, err1)
+	assert.Equal(t, r0, r1)
+	assert.Equal(t, n, GetCustomRegistriesCount())
+}
+
 func TestCustomRegistry_Reset(t *testing.T) {
 	cr, err := GetCustomRegistry("user1")
 	assert.NoError(t, err)

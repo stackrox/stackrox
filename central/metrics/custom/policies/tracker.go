@@ -9,7 +9,7 @@ import (
 )
 
 func New(ds policyDS.DataStore) *tracker.TrackerBase[*finding] {
-	return tracker.MakeTrackerBase(
+	return tracker.MakeGlobalTrackerBase(
 		"cfg",
 		"policies",
 		LazyLabels,

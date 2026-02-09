@@ -10,7 +10,7 @@ import (
 )
 
 func New(s service.Service) *tracker.TrackerBase[*finding] {
-	return tracker.MakeTrackerBase(
+	return tracker.MakeGlobalTrackerBase(
 		"cert_exp",
 		"certificate expiry",
 		LazyLabels,

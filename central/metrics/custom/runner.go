@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
@@ -162,14 +164,28 @@ func (tr trackerRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			go tracker.Gather(newCtx)
 		}
 	}
-	registry, err := metrics.GetCustomRegistry(userID)
+
+	userRegistry, err := metrics.GetCustomRegistry(userID)
 	if err != nil {
 		httputil.WriteError(w, err)
 		return
 	}
-	registry.Lock()
-	defer registry.Unlock()
-	registry.ServeHTTP(w, req)
+
+	globalRegistry, err := metrics.GetGlobalRegistry()
+	if err != nil {
+		httputil.WriteError(w, err)
+		return
+	}
+
+	userRegistry.Lock()
+	defer userRegistry.Unlock()
+	globalRegistry.Lock()
+	defer globalRegistry.Unlock()
+
+	promhttp.HandlerFor(
+		prometheus.Gatherers{userRegistry, globalRegistry},
+		promhttp.HandlerOpts{}).ServeHTTP(w, req)
+
 	go phonehome()
 }
 
