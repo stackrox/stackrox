@@ -3,7 +3,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.20.0
-  creationTimestamp: null
   labels:
     app: rhacs-operator
   name: securitypolicies.config.stackrox.io
