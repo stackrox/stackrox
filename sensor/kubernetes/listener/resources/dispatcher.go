@@ -56,7 +56,7 @@ type DispatcherRegistry interface {
 	ForComplianceOperatorScanSettingBindings() Dispatcher
 	ForComplianceOperatorScans() Dispatcher
 	ForComplianceOperatorSuites() Dispatcher
-	ForComplianceOperatorTailoredProfiles() Dispatcher
+	ForComplianceOperatorTailoredProfiles(profileLister cache.GenericLister) Dispatcher
 	ForComplianceOperatorRemediations() Dispatcher
 }
 
@@ -64,7 +64,6 @@ type DispatcherRegistry interface {
 func NewDispatcherRegistry(
 	clusterID string,
 	podLister v1Listers.PodLister,
-	profileLister cache.GenericLister,
 	processFilter filter.Filter,
 	configHandler config.Handler,
 	credentialsManager awscredentials.RegistryCredentialsManager,
@@ -106,7 +105,6 @@ func NewDispatcherRegistry(
 		complianceOperatorProfileDispatcher:             dispatchers.NewProfileDispatcher(),
 		complianceOperatorScanSettingBindingsDispatcher: dispatchers.NewScanSettingBindingsDispatcher(),
 		complianceOperatorScanDispatcher:                dispatchers.NewScanDispatcher(),
-		complianceOperatorTailoredProfileDispatcher:     dispatchers.NewTailoredProfileDispatcher(profileLister),
 		complianceOperatorSuiteDispatcher:               dispatchers.NewSuitesDispatcher(),
 		complianceOperatorRemediationDispatcher:         dispatchers.NewRemediationDispatcher(),
 
@@ -301,7 +299,13 @@ func (d *registryImpl) ForComplianceOperatorProfiles() Dispatcher {
 	return wrapDispatcher(d.complianceOperatorProfileDispatcher, d.traceWriter)
 }
 
-func (d *registryImpl) ForComplianceOperatorTailoredProfiles() Dispatcher {
+func (d *registryImpl) ForComplianceOperatorTailoredProfiles(profileLister cache.GenericLister) Dispatcher {
+	// Lazy initialization: create the dispatcher on first call.
+	// This allows the profileLister to be provided after the registry is created,
+	// which is necessary to avoid creating the Profile informer too early in the startup sequence.
+	if d.complianceOperatorTailoredProfileDispatcher == nil {
+		d.complianceOperatorTailoredProfileDispatcher = dispatchers.NewTailoredProfileDispatcher(profileLister)
+	}
 	return wrapDispatcher(d.complianceOperatorTailoredProfileDispatcher, d.traceWriter)
 }
 

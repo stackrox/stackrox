@@ -167,8 +167,6 @@ func (k *listenerImpl) handleAllEvents() {
 	}
 	if coAvailable {
 		log.Info("Initializing compliance operator informers")
-		profileLister = crdSharedInformerFactory.ForResource(complianceoperator.Profile.GroupVersionResource()).Lister()
-
 		complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceCheckResult.GroupVersionResource()).Informer()
 		complianceScanSettingBindingsInformer = crdSharedInformerFactory.ForResource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Informer()
 		complianceRuleInformer = crdSharedInformerFactory.ForResource(complianceoperator.Rule.GroupVersionResource()).Informer()
@@ -233,7 +231,6 @@ func (k *listenerImpl) handleAllEvents() {
 	dispatchers := resources.NewDispatcherRegistry(
 		clusterID,
 		podInformer.Lister(),
-		profileLister,
 		processfilter.Singleton(),
 		k.configHandler,
 		k.credentialsManager,
@@ -391,10 +388,12 @@ func (k *listenerImpl) handleAllEvents() {
 
 	// Compliance operator profiles are handled AFTER results, rules, and scan setting bindings have been synced
 	if coAvailable {
-		complianceProfileInformer := crdSharedInformerFactory.ForResource(complianceoperator.Profile.GroupVersionResource()).Informer()
+		profileGenericInformer := crdSharedInformerFactory.ForResource(complianceoperator.Profile.GroupVersionResource())
+		complianceProfileInformer := profileGenericInformer.Informer()
+		profileLister = profileGenericInformer.Lister()
 		complianceTailoredProfileInformer := crdSharedInformerFactory.ForResource(complianceoperator.TailoredProfile.GroupVersionResource()).Informer()
 		handle(k.context, complianceProfileInformer, dispatchers.ForComplianceOperatorProfiles(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
-		handle(k.context, complianceTailoredProfileInformer, dispatchers.ForComplianceOperatorTailoredProfiles(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+		handle(k.context, complianceTailoredProfileInformer, dispatchers.ForComplianceOperatorTailoredProfiles(profileLister), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
 	}
 
 	if !startAndWait(stopSignal, preTopLevelDeploymentWaitGroup, sif, crdSharedInformerFactory, osRouteFactory) {
