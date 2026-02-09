@@ -415,6 +415,35 @@ describe('Step 4', () => {
             expect(validationSchemaStep4.validateSync(value)).toEqual(value);
         });
 
+        it('passes if name has non-empty string and scope is null', () => {
+            const value: WizardPolicyStep4 = {
+                scope: [],
+                excludedDeploymentScopes: [
+                    {
+                        name: 'node-resolver',
+                        scope: null,
+                    },
+                ],
+                excludedImageNames: [],
+            };
+            expect(validationSchemaStep4.validateSync(value)).toEqual(value);
+        });
+
+        it('throws if scope is null and name is absent', () => {
+            const value: WizardPolicyStep4 = {
+                scope: [],
+                excludedDeploymentScopes: [
+                    {
+                        scope: null,
+                    },
+                ],
+                excludedImageNames: [],
+            };
+            expect(() => {
+                validationSchemaStep4.validateSync(value);
+            }).toThrow();
+        });
+
         it('throws if first excluded deployment has non-empty strings and second excluded deployment has initial values', () => {
             const value: WizardPolicyStep4 = {
                 scope: [],
