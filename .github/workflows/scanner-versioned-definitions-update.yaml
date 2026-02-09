@@ -204,6 +204,7 @@ jobs:
     env:
       SCANNER_BUNDLE_VERSION: ${{ matrix.version }}
       ROX_GIT_REF: ${{ matrix.ref }}
+      STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT: "10m"
     steps:
     # Checkout master to get the latest local actions
     - name: Checkout repository
@@ -288,6 +289,8 @@ jobs:
       - /tmp:/tmp
       - /usr:/mnt/usr
       - /opt:/mnt/opt
+    env:
+      STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT: "10m"
     steps:
     # Checkout master to get the latest local actions
     - name: Checkout repository
