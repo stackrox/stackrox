@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
+	signatureIntegrationDS "github.com/stackrox/rox/central/signatureintegration/datastore"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/pkg/images/cache"
 	"github.com/stackrox/rox/pkg/sync"
@@ -36,6 +37,7 @@ func initialize() {
 		scanwaiter.Singleton(),
 		scanwaiterv2.Singleton(),
 		sachelper.NewClusterSacHelper(clusterDataStore.Singleton()),
+		signatureIntegrationDS.Singleton(),
 	)
 }
 
