@@ -5,7 +5,7 @@ type ClusterLabelProvider interface {
 	GetClusterLabels(clusterID string) (map[string]string, error)
 }
 
-// NamespaceLabelProvider provides namespace labels for a given namespace name.
+// NamespaceLabelProvider provides namespace labels for a given namespace ID.
 type NamespaceLabelProvider interface {
-	GetNamespaceLabels(namespaceName string) (map[string]string, error)
+	GetNamespaceLabels(namespaceID string) (map[string]string, error)
 }

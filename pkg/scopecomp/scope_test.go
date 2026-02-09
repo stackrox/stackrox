@@ -23,7 +23,7 @@ type mockNamespaceLabelProvider struct {
 	labels map[string]string
 }
 
-func (m *mockNamespaceLabelProvider) GetNamespaceLabels(namespaceName string) (map[string]string, error) {
+func (m *mockNamespaceLabelProvider) GetNamespaceLabels(namespaceID string) (map[string]string, error) {
 	return m.labels, nil
 }
 

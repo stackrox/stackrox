@@ -115,9 +115,9 @@ func (c *CompiledScope) MatchesNamespaceLabels(deployment *storage.Deployment) b
 		log.Error("Namespace label matcher defined but provider is nil - failing closed")
 		return false
 	}
-	namespaceLabels, err := c.namespaceLabelProvider.GetNamespaceLabels(deployment.GetNamespace())
+	namespaceLabels, err := c.namespaceLabelProvider.GetNamespaceLabels(deployment.GetNamespaceId())
 	if err != nil {
-		log.Errorf("Failed to fetch namespace labels for namespace %s: %v", deployment.GetNamespace(), err)
+		log.Errorf("Failed to fetch namespace labels for namespace %s: %v", deployment.GetNamespaceId(), err)
 		return false
 	}
 	return c.MatchesLabels(c.NamespaceLabelKey, c.NamespaceLabelValue, namespaceLabels)
