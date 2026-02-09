@@ -74,6 +74,7 @@ jobs:
 
       - name: Run Go unit tests
         run: |
+          go mod tidy
           cd bundle_helpers
           go test ./...
 
