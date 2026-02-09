@@ -111,11 +111,11 @@ describe('policyCriteriaValidators', () => {
 
     describe('File operation requires mounted file path (Deploy) validator', () => {
         const validator = policySectionValidators.find(
-            (v) => v.name === 'File operation requires file path (Deploy)'
+            (v) => v.name === 'File operation requires file path'
         );
 
         if (!validator) {
-            throw new Error('File operation requires file path (Deploy) validator not found');
+            throw new Error('File operation requires file path validator not found');
         }
 
         const context: PolicyContext = {
@@ -155,13 +155,13 @@ describe('policyCriteriaValidators', () => {
         });
     });
 
-    describe('File operation requires node file path (Node) validator', () => {
+    describe('File operation requires node file path validator', () => {
         const validator = policySectionValidators.find(
-            (v) => v.name === 'File operation requires file path (Node)'
+            (v) => v.name === 'File operation requires file path'
         );
 
         if (!validator) {
-            throw new Error('File operation requires file path (Node) validator not found');
+            throw new Error('File operation requires file path validator not found');
         }
 
         const context: PolicyContext = {
