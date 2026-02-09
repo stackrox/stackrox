@@ -274,7 +274,7 @@ export type WizardPolicyStep4 = {
 
 export type WizardExcludedDeployment = {
     name?: string;
-    scope: WizardScope;
+    scope: WizardScope | null;
 };
 
 /*
