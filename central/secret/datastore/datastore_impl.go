@@ -89,19 +89,14 @@ func (d *datastoreImpl) SearchListSecrets(ctx context.Context, request *v1.Query
 		pkgSearch.NewQuerySelect(pkgSearch.SecretType).Proto(),
 	}
 
-	var responses []*listSecretResponse
+	var listSecrets []*storage.ListSecret
 	err := pgSearch.RunSelectRequestForSchemaFn(ctx, d.db, pkgSchema.SecretsSchema, query,
 		func(r *listSecretResponse) error {
-			responses = append(responses, r)
+			listSecrets = append(listSecrets, r.toListSecret())
 			return nil
 		})
 	if err != nil {
 		return nil, err
-	}
-
-	listSecrets := make([]*storage.ListSecret, 0, len(responses))
-	for _, r := range responses {
-		listSecrets = append(listSecrets, r.toListSecret())
 	}
 
 	return listSecrets, nil

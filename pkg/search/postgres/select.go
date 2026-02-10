@@ -177,6 +177,9 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 	if err := populateGroupBy(parsedQuery, q.GetGroupBy(), schema, dbFields); err != nil {
 		return nil, err
 	}
+	if parsedQuery.HasChildTableFields && len(parsedQuery.GroupBys) == 0 {
+		applyGroupByPrimaryKeys(parsedQuery, schema)
+	}
 	if err := populatePagination(parsedQuery, q.GetPagination(), schema, dbFields); err != nil {
 		return nil, err
 	}

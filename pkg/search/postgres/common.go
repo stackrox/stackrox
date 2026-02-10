@@ -111,8 +111,8 @@ type query struct {
 	// This field indicates if 'Distinct' is applied in the select portion of the query
 	DistinctAppliedToSelects bool
 
-	// HasChildTableFields indicates if any selected fields come from child tables and should
-	// be automatically aggregated using array_agg() with auto-generated GROUP BY clauses.
+	// HasChildTableFields indicates if any selected fields come from child tables and need
+	// aggregation. Used to trigger automatic GROUP BY primary keys in SELECT queries.
 	HasChildTableFields bool
 }
 
@@ -315,30 +315,6 @@ func (q *query) AsSQL() string {
 		}
 		querySB.WriteString(" group by ")
 		querySB.WriteString(strings.Join(groupByClauses, ", "))
-	} else if q.HasChildTableFields && q.QueryType == SELECT {
-		var groupByParts []string
-		groupByFields := set.NewStringSet()
-
-		for _, field := range q.SelectedFields {
-			if !field.ChildTableAgg {
-				if groupByFields.Add(field.SelectPath) {
-					groupByParts = append(groupByParts, field.SelectPath)
-				}
-			}
-		}
-
-		for _, field := range q.ExtraSelectedFieldPaths() {
-			if !field.ChildTableAgg {
-				if groupByFields.Add(field.SelectPath) {
-					groupByParts = append(groupByParts, field.SelectPath)
-				}
-			}
-		}
-
-		if len(groupByParts) > 0 {
-			querySB.WriteString(" group by ")
-			querySB.WriteString(strings.Join(groupByParts, ", "))
-		}
 	} else if q.QueryType == GET && len(q.Joins) > 0 {
 		// For GET with joins, group by primary keys and serialized to ensure distinctness
 		var groupByParts []string
