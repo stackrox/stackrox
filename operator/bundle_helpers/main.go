@@ -12,7 +12,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Usage: %s <command> [args...]\n", os.Args[0])
 		fmt.Fprint(os.Stderr, "Available commands:\n")
 		fmt.Fprint(os.Stderr, "  fix-spec-descriptor-order  Fix specDescriptor ordering\n")
-		fmt.Fprint(os.Stderr, "  patch-csv                  Patch ClusterServiceVersion file (not yet implemented)\n")
+		fmt.Fprint(os.Stderr, "  patch-csv                  Patch ClusterServiceVersion file\n")
 		os.Exit(1)
 	}
 
@@ -26,8 +26,10 @@ func main() {
 			os.Exit(1)
 		}
 	case "patch-csv":
-		fmt.Fprint(os.Stderr, "patch-csv command not yet implemented\n")
-		os.Exit(1)
+		if err := cmd.PatchCSV(args); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\n", command)
 		os.Exit(1)
