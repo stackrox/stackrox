@@ -140,8 +140,8 @@ func deleteResource[T any, PT interface {
 }
 
 func cleanUpResources(ctx context.Context, t *testing.T, client dynclient.Client, resourceName string, namespace string) {
-	deleteResource[complianceoperatorv1.ScanSetting](ctx, t, client, resourceName, namespace)
 	deleteResource[complianceoperatorv1.ScanSettingBinding](ctx, t, client, resourceName, namespace)
+	deleteResource[complianceoperatorv1.ScanSetting](ctx, t, client, resourceName, namespace)
 }
 
 func assertResourceDoesNotExist[T any, PT interface {
