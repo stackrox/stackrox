@@ -1,13 +1,23 @@
 import { useEffect, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
-import { Alert, AlertActionCloseButton, AlertGroup, Button, Divider } from '@patternfly/react-core';
+import {
+    Alert,
+    AlertActionCloseButton,
+    AlertGroup,
+    Button,
+    Content,
+    Divider,
+    Flex,
+    FlexItem,
+    PageSection,
+} from '@patternfly/react-core';
 import pluralize from 'pluralize';
 import orderBy from 'lodash/orderBy';
 
 import { policiesBasePath } from 'routePaths';
 import PageTitle from 'Components/PageTitle';
-import TabNavSubHeader from 'Components/TabNav/TabNavSubHeader';
+import PolicyManagementHeader from 'Containers/PolicyManagement/PolicyManagementHeader';
 import {
     deletePolicies,
     exportPolicies,
@@ -28,7 +38,6 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { applyRegexSearchModifiers, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { getTableUIState } from 'utils/getTableUIState';
 
-import PolicyManagementHeader from 'Containers/PolicyManagement/PolicyManagementHeader';
 import ImportPolicyJSONModal from '../Modal/ImportPolicyJSONModal';
 import PoliciesTable from './PoliciesTable';
 import { columns } from './PoliciesTable.utils';
@@ -209,24 +218,27 @@ function PoliciesTablePage({
         <>
             <PageTitle title="Policy Management - Policies" />
             <PolicyManagementHeader currentTabTitle="Policies" />
-            <Divider component="div" />
-            <TabNavSubHeader
-                description="Configure security policies for your resources."
-                actions={
-                    hasWriteAccessForPolicy ? (
-                        <>
-                            <Button variant="primary" onClick={onClickCreatePolicy}>
-                                Create policy
-                            </Button>
-                            <Button variant="secondary" onClick={onClickImportPolicy}>
-                                Import policy
-                            </Button>
-                        </>
-                    ) : (
-                        <></>
-                    )
-                }
-            />
+            <PageSection>
+                <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                    <FlexItem grow={{ default: 'grow' }}>
+                        <Content component="p">
+                            Configure security policies for your resources.
+                        </Content>
+                    </FlexItem>
+                    {hasWriteAccessForPolicy && (
+                        <FlexItem alignSelf={{ default: 'alignSelfFlexEnd' }}>
+                            <Flex>
+                                <Button variant="primary" onClick={onClickCreatePolicy}>
+                                    Create policy
+                                </Button>
+                                <Button variant="secondary" onClick={onClickImportPolicy}>
+                                    Import policy
+                                </Button>
+                            </Flex>
+                        </FlexItem>
+                    )}
+                </Flex>
+            </PageSection>
             <Divider component="div" />
             <PoliciesTable
                 notifiers={notifiers}

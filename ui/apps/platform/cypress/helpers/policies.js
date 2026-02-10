@@ -2,6 +2,7 @@ import * as api from '../constants/apiEndpoints';
 import { selectors, url as policiesUrl } from '../constants/PoliciesPage';
 import { visitFromLeftNavExpandable } from './nav';
 import { visit } from './visit';
+import pf6 from '../selectors/pf6';
 
 // Navigation
 
@@ -25,14 +26,14 @@ export function visitPolicies(staticResponseMap) {
     visit(policiesUrl, routeMatcherMap, staticResponseMap, { requestTimeout: 10000 });
 
     cy.get('h1:contains("Policy management")');
-    cy.get(`.pf-v6-c-nav__link.pf-m-current:contains("Policies")`);
+    cy.get(`${pf6.tabButton}[aria-selected="true"]:contains("Policies")`);
 }
 
 export function visitPoliciesFromLeftNav() {
     visitFromLeftNavExpandable('Platform Configuration', 'Policy Management', routeMatcherMap);
 
     cy.get('h1:contains("Policy management")');
-    cy.get(`.pf-v6-c-nav__link.pf-m-current:contains("Policies")`);
+    cy.get(`${pf6.tabButton}[aria-selected="true"]:contains("Policies")`);
 }
 
 export function visitPolicy(policyId, staticResponseMap) {
@@ -44,7 +45,7 @@ export function visitPolicy(policyId, staticResponseMap) {
     };
 
     visit(`${policiesUrl}/${policyId}`, routeMatcherMapPolicy, staticResponseMap);
-    cy.get('h2:contains("Policy details")');
+    cy.get('h2:contains("Policy overview")');
 }
 
 // Actions on policy table
@@ -53,9 +54,7 @@ export function createPolicy() {}
 
 export function doPolicyRowAction(trSelector, titleOfActionItem) {
     cy.get(`${trSelector} ${selectors.table.actionsToggleButton}`).click();
-    cy.get(`${trSelector} ${selectors.table.actionsItemButton}:contains("${titleOfActionItem}")`)
-        .should('be.enabled')
-        .click({ animationDistanceThreshold: 20 });
+    cy.get(`${pf6.dropdownItem}:contains("${titleOfActionItem}")`).click();
 }
 
 export function changePolicyStatusInTable({ policyName, statusPrev, actionText, statusNext }) {
@@ -115,7 +114,7 @@ export function cloneFirstPolicyFromTable() {
 
 export function doPolicyPageAction(titleOfActionItem) {
     cy.get(selectors.page.actionsToggleButton).click();
-    cy.get(`${selectors.page.actionsItemButton}:contains("${titleOfActionItem}")`).click();
+    cy.get(`${pf6.dropdownItem}:contains("${titleOfActionItem}")`).click();
 }
 
 export function clonePolicy() {}

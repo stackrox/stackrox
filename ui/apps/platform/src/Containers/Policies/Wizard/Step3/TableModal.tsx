@@ -84,7 +84,7 @@ function TableModal({
                 hasNoBodyWrapper
             >
                 <ModalBoxBody>
-                    <PageSection hasBodyWrapper={false}>
+                    <PageSection>
                         {!!rows.length && (
                             <>
                                 Select {typeText}s from the table below.
