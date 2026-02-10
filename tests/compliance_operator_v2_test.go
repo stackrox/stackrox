@@ -323,11 +323,8 @@ func TestComplianceV2ProfileGet(t *testing.T) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	client := v2.NewComplianceProfileServiceClient(conn)
 
-	// Get the clusters
-	resp := getIntegrations(t)
-
 	// Get the profiles for the cluster
-	clusterID := resp.GetIntegrations()[0].GetClusterId()
+	clusterID := getIntegrations(t).GetIntegrations()[0].GetClusterId()
 	profileList, err := client.ListComplianceProfiles(context.TODO(), &v2.ProfilesForClusterRequest{ClusterId: clusterID})
 	assert.Greater(t, len(profileList.GetProfiles()), 0, "failed to assert the cluster has profiles")
 
@@ -344,11 +341,8 @@ func TestComplianceV2ProfileGetSummaries(t *testing.T) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	client := v2.NewComplianceProfileServiceClient(conn)
 
-	// Get the clusters
-	resp := getIntegrations(t)
-
 	// Get the profiles for the cluster
-	clusterID := resp.GetIntegrations()[0].GetClusterId()
+	clusterID := getIntegrations(t).GetIntegrations()[0].GetClusterId()
 	profileSummaries, err := client.ListProfileSummaries(context.TODO(), &v2.ClustersProfileSummaryRequest{ClusterIds: []string{clusterID}})
 	assert.NoError(t, err)
 	assert.Greater(t, len(profileSummaries.GetProfiles()), 0, "failed to assert the cluster has profiles")
@@ -364,7 +358,7 @@ func getIntegrations(t *testing.T) *v2.ListComplianceIntegrationsResponse {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Len(t, resp.GetIntegrations(), 1, "failed to assert there is only a single compliance integration")
+	require.Len(t, resp.GetIntegrations(), 1, "failed to assert there is only a single compliance integration")
 
 	return resp
 }
@@ -744,12 +738,7 @@ func TestComplianceV2ScheduleRescan(t *testing.T) {
 	dynClient := createDynamicClient(t)
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	client := v2.NewComplianceScanConfigurationServiceClient(conn)
-	integrationClient := v2.NewComplianceIntegrationServiceClient(conn)
-	resp, err := integrationClient.ListComplianceIntegrations(context.TODO(), &v2.RawQuery{Query: ""})
-	if err != nil {
-		t.Fatal(err)
-	}
-	clusterId := resp.GetIntegrations()[0].GetClusterId()
+	clusterId := getIntegrations(t).GetIntegrations()[0].GetClusterId()
 
 	scanConfigName := fmt.Sprintf("schedule-rescan-%s", uuid.NewV4().String())
 	sc := v2.ComplianceScanConfiguration{
