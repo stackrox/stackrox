@@ -479,6 +479,8 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
        bundle/manifests/rhacs-operator.clusterserviceversion.yaml
 	$(OPERATOR_SDK) bundle validate ./bundle --select-optional suite=operatorframework
 
+RELATED_IMAGES_MODE ?= omit
+
 .PHONY: bundle-post-process
 bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file to include correct operator versions, etc.
 	set -euo pipefail ;\
@@ -502,7 +504,7 @@ bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file t
 		--use-version=$(VERSION) \
 		--first-version=$${first_version} \
 		--operator-image=$(IMG) \
-		--related-images-mode=omit \
+		--related-images-mode=$(RELATED_IMAGES_MODE) \
 		$${unreleased_opt:-}
 # Check that the resulting bundle still passes validations.
 	$(OPERATOR_SDK) bundle validate ./build/bundle --select-optional suite=operatorframework
