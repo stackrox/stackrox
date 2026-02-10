@@ -428,6 +428,132 @@ func (w *WorkloadManager) manageDeployment(ctx context.Context, resources *deplo
 	}
 }
 
+// manageDeploymentPair manages a pair of deployments created from ImageCopies (one with _orig, one with _copy).
+// When the lifecycle expires, it recreates both deployments together using a new random ImageCopyPair.
+// this function should be called with go w.manageDeploymentPair
+func (w *WorkloadManager) manageDeploymentPair(ctx context.Context, origResources, copyResources *deploymentResourcesToBeManaged) {
+	defer w.wg.Done()
+
+	// NumLifecycles+1 is to handle the initial startup. These start up resources
+	// are like deploying Sensor into a new environment and syncing all objects.
+	for count := 0; origResources.workload.NumLifecycles == 0 || count < origResources.workload.NumLifecycles+1; count++ {
+		w.manageDeploymentPairLifecycle(ctx, origResources, copyResources)
+
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		// Recreate both deployments with a new random ImageCopyPair
+		origResources, copyResources = w.getDeploymentPairFromImageCopies(origResources.workload, 0, nil, nil, nil)
+
+		// Create _orig deployment
+		w.createDeploymentResources(ctx, origResources)
+
+		// Create _copy deployment
+		w.createDeploymentResources(ctx, copyResources)
+	}
+}
+
+// createDeploymentResources creates the Kubernetes resources for a deployment
+func (w *WorkloadManager) createDeploymentResources(ctx context.Context, resources *deploymentResourcesToBeManaged) {
+	deployment, replicaSet, pods := resources.deployment, resources.replicaSet, resources.pods
+	if _, err := w.client.Kubernetes().AppsV1().Deployments(deployment.Namespace).Create(ctx, deployment, metav1.CreateOptions{}); err != nil {
+		log.Errorf("error creating deployment: %v", err)
+	}
+	if _, err := w.client.Kubernetes().AppsV1().ReplicaSets(deployment.Namespace).Create(ctx, replicaSet, metav1.CreateOptions{}); err != nil {
+		log.Errorf("error creating replica set: %v", err)
+	}
+	for _, pod := range pods {
+		if _, err := w.client.Kubernetes().CoreV1().Pods(deployment.Namespace).Create(ctx, pod, metav1.CreateOptions{}); err != nil {
+			log.Errorf("error creating pod: %v", err)
+		}
+	}
+}
+
+// manageDeploymentPairLifecycle manages the lifecycle of a pair of deployments (orig and copy).
+// It waits for the lifecycle duration, then deletes both deployments.
+func (w *WorkloadManager) manageDeploymentPairLifecycle(ctx context.Context, origResources, copyResources *deploymentResourcesToBeManaged) {
+	timer := newTimerWithJitter(origResources.workload.LifecycleDuration/2 + time.Duration(rand.Int63n(int64(origResources.workload.LifecycleDuration))))
+	defer timer.Stop()
+
+	deploymentNextUpdate := calculateDurationWithJitter(origResources.workload.UpdateInterval)
+
+	origDeployment := origResources.deployment
+	origReplicaset := origResources.replicaSet
+	copyDeployment := copyResources.deployment
+	copyReplicaset := copyResources.replicaSet
+
+	stopSig := concurrency.NewSignal()
+
+	origDeploymentClient := w.client.Kubernetes().AppsV1().Deployments(origDeployment.Namespace)
+	origReplicaSetClient := w.client.Kubernetes().AppsV1().ReplicaSets(origDeployment.Namespace)
+	copyDeploymentClient := w.client.Kubernetes().AppsV1().Deployments(copyDeployment.Namespace)
+	copyReplicaSetClient := w.client.Kubernetes().AppsV1().ReplicaSets(copyDeployment.Namespace)
+
+	// Start pod management for both deployments
+	for _, pod := range origResources.pods {
+		go w.managePod(ctx, &stopSig, origResources.workload.PodWorkload, pod)
+	}
+	for _, pod := range copyResources.pods {
+		go w.managePod(ctx, &stopSig, copyResources.workload.PodWorkload, pod)
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			stopSig.Signal()
+			return
+		case <-timer.C:
+			stopSig.Signal()
+			// Delete _orig deployment
+			if err := origDeploymentClient.Delete(ctx, origDeployment.Name, metav1.DeleteOptions{}); err != nil {
+				log.Error(err)
+			}
+			w.deleteID(deploymentPrefix, origDeployment.UID)
+			if err := origReplicaSetClient.Delete(ctx, origReplicaset.Name, metav1.DeleteOptions{}); err != nil {
+				log.Error(err)
+			}
+			w.deleteID(replicaSetPrefix, origReplicaset.UID)
+
+			// Delete _copy deployment
+			if err := copyDeploymentClient.Delete(ctx, copyDeployment.Name, metav1.DeleteOptions{}); err != nil {
+				log.Error(err)
+			}
+			w.deleteID(deploymentPrefix, copyDeployment.UID)
+			if err := copyReplicaSetClient.Delete(ctx, copyReplicaset.Name, metav1.DeleteOptions{}); err != nil {
+				log.Error(err)
+			}
+			w.deleteID(replicaSetPrefix, copyReplicaset.UID)
+			return
+		case <-time.After(deploymentNextUpdate):
+			deploymentNextUpdate = calculateDurationWithJitter(origResources.workload.UpdateInterval)
+
+			// Update annotations on both deployments
+			annotations := createRandMap(16, 3)
+
+			origDeployment.Annotations = annotations
+			origReplicaset.Annotations = annotations
+			copyDeployment.Annotations = annotations
+			copyReplicaset.Annotations = annotations
+
+			if _, err := origDeploymentClient.Update(ctx, origDeployment, metav1.UpdateOptions{}); err != nil {
+				log.Errorf("error updating orig deployment: %v", err)
+			}
+			if _, err := origReplicaSetClient.Update(ctx, origReplicaset, metav1.UpdateOptions{}); err != nil {
+				log.Errorf("error updating orig replica set: %v", err)
+			}
+			if _, err := copyDeploymentClient.Update(ctx, copyDeployment, metav1.UpdateOptions{}); err != nil {
+				log.Errorf("error updating copy deployment: %v", err)
+			}
+			if _, err := copyReplicaSetClient.Update(ctx, copyReplicaset, metav1.UpdateOptions{}); err != nil {
+				log.Errorf("error updating copy replica set: %v", err)
+			}
+		}
+	}
+}
+
 func (w *WorkloadManager) manageDeploymentLifecycle(ctx context.Context, resources *deploymentResourcesToBeManaged) {
 	timer := newTimerWithJitter(resources.workload.LifecycleDuration/2 + time.Duration(rand.Int63n(int64(resources.workload.LifecycleDuration))))
 	defer timer.Stop()
