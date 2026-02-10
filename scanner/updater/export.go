@@ -12,10 +12,12 @@ import (
 
 	"github.com/klauspost/compress/zstd"
 	"github.com/pkg/errors"
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/jsonblob"
 	"github.com/quay/claircore/libvuln/updates"
+	"github.com/quay/claircore/rhel/vex"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
@@ -24,6 +26,10 @@ import (
 
 	// Default updaters. This is required to ensure updater factories are set properly.
 	_ "github.com/quay/claircore/updater/defaults"
+)
+
+const (
+	rhelVexUpdaterName = "rhel-vex"
 )
 
 type ExportOptions struct {
@@ -59,11 +65,15 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 		"oracle",
 		"osv",
 		"photon",
-		"rhel-vex",
+		rhelVexUpdaterName,
 		"suse",
 		"ubuntu",
 	} {
-		bundles[uSet] = []updates.ManagerOption{updates.WithEnabled([]string{uSet})}
+		managerOpts := []updates.ManagerOption{updates.WithEnabled([]string{uSet})}
+		if uSet == rhelVexUpdaterName {
+			managerOpts = rhelVexOpts()
+		}
+		bundles[uSet] = managerOpts
 	}
 
 	// Rate limit to ~16 requests/second by default.
@@ -161,6 +171,43 @@ func epssOpts() []updates.ManagerOption {
 		updates.WithEnabled([]string{}),
 		updates.WithFactories(map[string]driver.UpdaterSetFactory{
 			"clair.epss": epss.NewFactory(),
+		}),
+	}
+}
+
+func rhelVexOpts() []updates.ManagerOption {
+	return []updates.ManagerOption{
+		updates.WithEnabled([]string{rhelVexUpdaterName}),
+		updates.WithConfigs(map[string]driver.ConfigUnmarshaler{
+			rhelVexUpdaterName: func(i any) error {
+				ctx := zlog.ContextWithValues(context.Background(), "updater", rhelVexUpdaterName)
+
+				// This function gets called for both the Factory and the Updater.
+				// We only need to configure the Factory (which has the CompressedFileTimeout field).
+				switch cfg := i.(type) {
+				case *vex.FactoryConfig:
+					// Configure the factory with custom timeout.
+					timeout := os.Getenv("STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT")
+					if timeout != "" {
+						parsedTimeout, err := time.ParseDuration(timeout)
+						if err != nil {
+							zlog.Warn(ctx).
+								Err(err).
+								Msg("using default STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT due to invalid duration")
+						} else {
+							cfg.CompressedFileTimeout = claircore.Duration(parsedTimeout)
+							zlog.Info(ctx).
+								Str("timeout", parsedTimeout.String()).
+								Msg("using compressed file timeout")
+						}
+					}
+				case *vex.UpdaterConfig:
+					// Updater config - nothing to configure here.
+				default:
+					return fmt.Errorf("rhel-vex: unexpected config type: %T", i)
+				}
+				return nil
+			},
 		}),
 	}
 }
