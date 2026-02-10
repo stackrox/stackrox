@@ -166,7 +166,7 @@ jobs:
           echo ""
           echo "=== Listing contents"
           find /tmp/python /tmp/go -ls
-          find /tmp/python /tmp/go -type f | xargs md5sum | sort
+          find /tmp/python /tmp/go -type f -print0 | xargs -0 md5sum | sort
 
   status-check:
     name: Bundle Helper Tests Status
