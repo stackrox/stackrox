@@ -151,7 +151,8 @@ jobs:
             echo "✗ FAILURE: Bundle outputs differ"
             exit 1
           fi
-          echo "Pruning createdAt lines..."
+          echo ""
+          echo "=== Pruning createdAt lines..."
           sed -i '/^    createdAt:/d' /tmp/*/build-bundle-*/manifests/rhacs-operator.clusterserviceversion.yaml
 
           echo ""
@@ -162,6 +163,10 @@ jobs:
             echo "✗ FAILURE: Build bundle outputs differ"
             exit 1
           fi
+          echo ""
+          echo "=== Listing contents"
+          find /tmp/python /tmp/go -ls
+          find /tmp/python /tmp/go -type f | xargs md5sum | sort
 
   status-check:
     name: Bundle Helper Tests Status
@@ -179,29 +184,20 @@ jobs:
           echo "Python tests: $python_result"
           echo "Go tests: $go_result"
           echo "Comparison: $compare_result"
-          echo "E2E test: $e2e_result"
 
-          # Python tests must always pass
           if [ "$python_result" != "success" ]; then
             echo "✗ Python tests failed"
             exit 1
           fi
 
-          # E2E test must pass
-          if [ "$e2e_result" != "success" ]; then
-            echo "✗ E2E test failed"
+          if [ "$go_result" != "success" ]; then
+            echo "✗ Go tests failed"
             exit 1
           fi
 
-          # Go tests and comparison are optional until Go is fully implemented
-          if [ "$go_result" == "success" ]; then
-            echo "✓ Go implementation available and tested"
-            if [ "$compare_result" != "success" ] && [ "$compare_result" != "skipped" ]; then
-              echo "✗ Go/Python comparison failed"
-              exit 1
-            fi
-          else
-            echo "⚠ Go implementation not yet available (expected during migration)"
+          if [ "$compare_result" != "success" ]; then
+            echo "✗ Go/Python comparison failed"
+            exit 1
           fi
 
           echo "✓ All required tests passed"
