@@ -213,48 +213,76 @@ func TestSafeChannel_NegativeSize(t *testing.T) {
 func TestSafeChannel_AutoClose_WhenWaitableTriggered(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	ch := NewChannel[int](5, ctx)
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		ch := NewChannel[int](5, ctx)
 
-	// Write some items
-	require.NoError(t, ch.Write(1))
-	require.NoError(t, ch.Write(2))
+		// Write some items
+		require.NoError(t, ch.Write(1))
+		require.NoError(t, ch.Write(2))
 
-	// Trigger the waitable
-	cancel()
+		// Trigger the waitable
+		cancel()
+		synctest.Wait()
 
-	// Channel should be automatically closed
-	// Read existing items first
-	assert.Equal(t, 1, <-ch.Chan())
-	assert.Equal(t, 2, <-ch.Chan())
+		// Channel should be automatically closed
+		// Read existing items first
+		assert.Equal(t, 1, <-ch.Chan())
+		assert.Equal(t, 2, <-ch.Chan())
 
-	// Eventually the channel should be closed
-	val, ok := <-ch.Chan()
-	assert.False(t, ok, "channel should be automatically closed")
-	assert.Equal(t, 0, val)
+		// Eventually the channel should be closed
+		val, ok := <-ch.Chan()
+		assert.False(t, ok, "channel should be automatically closed")
+		assert.Equal(t, 0, val)
+	})
 }
 
 func TestSafeChannel_AutoClose_PreservesBufferedData(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	ch := NewChannel[int](5, ctx)
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		ch := NewChannel[int](5, ctx)
 
-	// Write some items
-	require.NoError(t, ch.Write(1))
-	require.NoError(t, ch.Write(2))
+		// Write some items
+		require.NoError(t, ch.Write(1))
+		require.NoError(t, ch.Write(2))
 
-	// Trigger shutdown
-	cancel()
+		// Trigger shutdown
+		cancel()
+		synctest.Wait()
 
-	// Should still be able to read existing items even after auto-close
-	assert.Equal(t, 1, <-ch.Chan())
-	assert.Equal(t, 2, <-ch.Chan())
+		// Should still be able to read existing items even after auto-close
+		assert.Equal(t, 1, <-ch.Chan())
+		assert.Equal(t, 2, <-ch.Chan())
 
-	// Channel should be closed now
-	val, ok := <-ch.Chan()
-	assert.False(t, ok, "channel should be closed")
-	assert.Equal(t, 0, val)
+		// Channel should be closed now
+		val, ok := <-ch.Chan()
+		assert.False(t, ok, "channel should be closed")
+		assert.Equal(t, 0, val)
+	})
+}
+
+func TestSafeChannel_AutoClose_PreventsItemsToBeBuffered(t *testing.T) {
+	defer goleak.AssertNoGoroutineLeaks(t)
+
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		ch := NewChannel[int](5, ctx)
+
+		// Trigger shutdown
+		cancel()
+		synctest.Wait()
+
+		// Try to write some items
+		require.Error(t, ch.Write(1))
+		require.Error(t, ch.Write(2))
+
+		// Channel should be closed - no items should be buffered
+		val, ok := <-ch.Chan()
+		assert.False(t, ok, "channel should be closed")
+		assert.Equal(t, 0, val)
+	})
 }
 
 func TestSafeChannel_ConcurrentWrites(t *testing.T) {
