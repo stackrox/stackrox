@@ -51,6 +51,7 @@ jobs:
       - name: Generate bundle with Python
         env:
           USE_GO_BUNDLE_HELPER: false
+          RELATED_IMAGES_MODE: ${{ matrix.related_img_mode }}
         run: |
           go mod tidy
           make bundle bundle-post-process
@@ -112,6 +113,7 @@ jobs:
       - name: Generate bundle with Go
         env:
           USE_GO_BUNDLE_HELPER: true
+          RELATED_IMAGES_MODE: ${{ matrix.related_img_mode }}
         run: |
           go mod tidy
           make bundle bundle-post-process
