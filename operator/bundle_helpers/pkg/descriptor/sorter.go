@@ -1,9 +1,10 @@
 package descriptor
 
 import (
-	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // FixCSVDescriptorsMap processes all CRDs in a CSV and fixes their specDescriptors.
@@ -12,17 +13,17 @@ func FixCSVDescriptorsMap(csvDoc map[string]interface{}) error {
 	// Navigate to spec.customresourcedefinitions.owned
 	spec, ok := csvDoc["spec"].(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("spec not found or not a map")
+		return errors.New("spec not found or not a map")
 	}
 
 	crds, ok := spec["customresourcedefinitions"].(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("customresourcedefinitions not found or not a map")
+		return errors.New("customresourcedefinitions not found or not a map")
 	}
 
 	owned, ok := crds["owned"].([]interface{})
 	if !ok {
-		return fmt.Errorf("owned not found or not a list")
+		return errors.New("owned not found or not a list")
 	}
 
 	// Process each CRD
@@ -50,7 +51,7 @@ func processSpecDescriptorsMap(crd map[string]interface{}) error {
 
 	descriptors, ok := descs.([]interface{})
 	if !ok {
-		return fmt.Errorf("specDescriptors is not a list")
+		return errors.New("specDescriptors is not a list")
 	}
 
 	// Fix descriptor order
