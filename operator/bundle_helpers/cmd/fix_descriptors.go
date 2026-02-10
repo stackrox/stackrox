@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -66,7 +67,7 @@ func normalizeYAMLOutput(goYAML []byte, w io.Writer) error {
 	if _, err := os.Stat(normalizerPath); err != nil {
 		normalizerPath = filepath.Join("bundle_helpers", "yaml-normalizer.py")
 		if _, err := os.Stat(normalizerPath); err != nil {
-			return fmt.Errorf("yaml-normalizer.py not found in current directory or bundle_helpers/ subdirectory")
+			return errors.New("yaml-normalizer.py not found in current directory or bundle_helpers/ subdirectory")
 		}
 	}
 
