@@ -21,11 +21,7 @@ function ImportPolicyJSONSuccess({
                 The following
                 {` ${policies.length === 1 ? 'policy has' : 'policies have'} `}
                 been imported:
-                <Flex
-                    direction={{ default: 'column' }}
-                    className="pf-v6-u-mt-md"
-                    data-testid="policies-imported"
-                >
+                <Flex direction={{ default: 'column' }} data-testid="policies-imported">
                     {policies.map(({ id, name }, idx) => (
                         <FlexItem key={id} className={idx === 0 ? '' : 'pf-v6-u-pt-sm'}>
                             <Link to={`${policiesBasePath}/${id}`}>{name}</Link>
