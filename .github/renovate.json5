@@ -58,12 +58,6 @@
       // Override Konflux custom schedule for this manager to our intended one.
       "after 3am and before 7am",
     ],
-    "postUpgradeTasks": {
-      "commands": [
-        // Refresh the rpm lockfile after updating image references in the dockerfile.
-        "rpm-lockfile-prototype rpms.in.yaml",
-      ],
-    },
   },
   "rpm-lockfile": {
     "schedule": [
