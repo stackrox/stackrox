@@ -66,8 +66,8 @@ function PolicyCategorySidePanel({
 
     return (
         <>
-            <PageSection hasBodyWrapper={false} isFilled className="pf-v6-u-h-100">
-                <Flex direction={{ default: 'column' }} className="pf-v6-u-h-100">
+            <PageSection isFilled>
+                <Flex direction={{ default: 'column' }}>
                     <Flex
                         justifyContent={{ default: 'justifyContentSpaceBetween' }}
                         fullWidth={{ default: 'fullWidth' }}
