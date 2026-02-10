@@ -162,11 +162,13 @@ function PolicyDetail({
 
     return (
         <>
-            <PageSection hasBodyWrapper={false} isFilled id="policy-page" className="pf-v6-u-pb-0">
-                <Breadcrumb className="pf-v6-u-mb-md">
+            <PageSection type="breadcrumb">
+                <Breadcrumb>
                     <BreadcrumbItemLink to={policiesBasePath}>Policies</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{name}</BreadcrumbItem>
                 </Breadcrumb>
+            </PageSection>
+            <PageSection isFilled id="policy-page">
                 <Toolbar inset={{ default: 'insetNone' }}>
                     <ToolbarContent>
                         <ToolbarItem>
@@ -242,12 +244,8 @@ function PolicyDetail({
                     </ToolbarContent>
                 </Toolbar>
             </PageSection>
-            <PageSection hasBodyWrapper={false} isFilled className="pf-v6-u-pt-0">
+            <PageSection isFilled hasBodyWrapper={false}>
                 {requestError}
-                <Title headingLevel="h2" className="pf-v6-u-mb-md">
-                    Policy details
-                </Title>
-                <Divider component="div" className="pf-v6-u-pb-md" />
                 <PolicyDetailContent policy={policy} />
                 <AlertGroup isToast isLiveRegion>
                     {toasts.map(({ key, variant, title, children }: Toast) => (

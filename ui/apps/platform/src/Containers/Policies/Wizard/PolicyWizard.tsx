@@ -6,7 +6,6 @@ import {
     Alert,
     Breadcrumb,
     BreadcrumbItem,
-    Divider,
     PageSection,
     Title,
     Wizard,
@@ -147,16 +146,15 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                     policy will be automatically overwritten during the next resync.
                 </Alert>
             )}
-            <PageSection hasBodyWrapper={false} isFilled id="policy-page" className="pf-v6-u-pb-0">
-                <Breadcrumb className="pf-v6-u-mb-md">
+            <PageSection type="breadcrumb">
+                <Breadcrumb>
                     <BreadcrumbItemLink to={policiesBasePath}>Policies</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{policy?.name || 'Create policy'}</BreadcrumbItem>
                 </Breadcrumb>
+            </PageSection>
+            <PageSection isFilled id="policy-page">
                 <Title headingLevel="h1">{policy?.name || 'Create policy'}</Title>
-                <div className="pf-v6-u-mb-md pf-v6-u-mt-sm">
-                    Design custom security policies for your environment
-                </div>
-                <Divider component="div" />
+                <div>Design custom security policies for your environment</div>
             </PageSection>
             <PageSection
                 hasBodyWrapper={false}
