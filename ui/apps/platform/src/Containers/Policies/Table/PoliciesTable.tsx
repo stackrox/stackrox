@@ -202,7 +202,7 @@ function PoliciesTable({
     // dropdownItems={hasWriteAccessForPolicy ? [Enable, Disable, Export, Delete] : [Export]} see PolicyDetail.tsx
     return (
         <>
-            <PageSection hasBodyWrapper={false} isFilled id="policies-table">
+            <PageSection isFilled id="policies-table">
                 <Toolbar>
                     <ToolbarContent>
                         <CompoundSearchFilter
@@ -311,19 +311,18 @@ function PoliciesTable({
                                     </Button>
                                 </Tooltip>
                             </ToolbarItem>
+                            <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
+                                <Pagination
+                                    isCompact
+                                    isDisabled
+                                    itemCount={policies.length}
+                                    page={1}
+                                    perPage={policies.length}
+                                />
+                            </ToolbarItem>
                         </ToolbarGroup>
-                        <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
-                            <Pagination
-                                isCompact
-                                isDisabled
-                                itemCount={policies.length}
-                                page={1}
-                                perPage={policies.length}
-                            />
-                        </ToolbarItem>
                     </ToolbarContent>
                 </Toolbar>
-                <Divider component="div" />
                 <div style={{ overflowX: 'auto' }}>
                     <Table isStickyHeader aria-label="Policies table" data-testid="policies-table">
                         <Thead>
@@ -530,7 +529,14 @@ function PoliciesTable({
                                                     {formatLifecycleStages(lifecycleStages)}
                                                 </Td>
                                                 <Td isActionCell>
-                                                    <ActionsColumn items={actionItems} />
+                                                    <ActionsColumn
+                                                        items={actionItems}
+                                                        popperProps={{
+                                                            position: 'end',
+                                                            appendTo:
+                                                                document.querySelector('main'),
+                                                        }}
+                                                    />
                                                 </Td>
                                             </Tr>
                                             <Tr isExpanded={isExpanded}>

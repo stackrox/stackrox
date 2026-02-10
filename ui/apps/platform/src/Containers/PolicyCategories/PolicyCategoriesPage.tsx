@@ -6,13 +6,12 @@ import {
     AlertGroup,
     Bullseye,
     Button,
+    Content,
     Divider,
     Flex,
+    FlexItem,
     PageSection,
     Spinner,
-    Toolbar,
-    ToolbarContent,
-    ToolbarItem,
 } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
@@ -38,7 +37,7 @@ function PolicyCategoriesPage(): ReactElement {
     const [selectedCategory, setSelectedCategory] = useState<PolicyCategory>();
 
     let listContent = (
-        <PageSection hasBodyWrapper={false} isFilled id="policies-table-loading">
+        <PageSection isFilled id="policies-table-loading">
             <Bullseye>
                 <Spinner />
             </Bullseye>
@@ -47,7 +46,7 @@ function PolicyCategoriesPage(): ReactElement {
 
     if (errorMessage) {
         listContent = (
-            <PageSection hasBodyWrapper={false} isFilled id="policies-table-error">
+            <PageSection isFilled id="policies-table-error">
                 <Bullseye>
                     <Alert variant="danger" title={errorMessage} component="p" />
                 </Bullseye>
@@ -89,30 +88,19 @@ function PolicyCategoriesPage(): ReactElement {
         <>
             <PageTitle title="Policy management - Policy categories" />
             <PolicyManagementHeader currentTabTitle="Policy categories" />
-            <Divider component="div" />
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-0">
-                <Toolbar inset={{ default: 'insetNone' }}>
-                    <ToolbarContent>
-                        <ToolbarItem>
-                            <div className="pf-v6-u-font-size-sm">
-                                Manage categories for your policies.
-                            </div>
-                        </ToolbarItem>
-                        {hasWriteAccessForPolicy && (
-                            <ToolbarItem align={{ default: 'alignEnd' }}>
-                                <Flex>
-                                    <Button
-                                        variant="primary"
-                                        onClick={() => setIsCreateModalOpen(true)}
-                                        isDisabled={isCreateModalOpen || !!selectedCategory}
-                                    >
-                                        Create category
-                                    </Button>
-                                </Flex>
-                            </ToolbarItem>
-                        )}
-                    </ToolbarContent>
-                </Toolbar>
+            <PageSection>
+                <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                    <FlexItem grow={{ default: 'grow' }}>
+                        <Content component="p">Manage categories for your policies.</Content>
+                    </FlexItem>
+                    {hasWriteAccessForPolicy && (
+                        <FlexItem alignSelf={{ default: 'alignSelfFlexEnd' }}>
+                            <Button variant="primary" onClick={() => setIsCreateModalOpen(true)}>
+                                Create category
+                            </Button>
+                        </FlexItem>
+                    )}
+                </Flex>
             </PageSection>
             <Divider component="div" />
             {listContent}

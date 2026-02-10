@@ -65,7 +65,6 @@ function ImportPolicyJSONUpload({
                 <FileUpload
                     id="policies-json-import"
                     type="text"
-                    className="pf-v6-u-mt-md"
                     value={fileContent}
                     filename={filename}
                     filenamePlaceholder="Drag and drop a file or upload one"
@@ -82,7 +81,7 @@ function ImportPolicyJSONUpload({
                     }}
                 />
                 {policies?.length > 0 && fileContent && (
-                    <Flex direction={{ default: 'column' }} className="pf-v6-u-mt-md">
+                    <Flex direction={{ default: 'column' }}>
                         <FlexItem>
                             <Title headingLevel="h3">
                                 The following {`${pluralize('policy', policies.length)}`} will be
