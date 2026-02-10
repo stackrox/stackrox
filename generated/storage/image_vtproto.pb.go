@@ -211,9 +211,9 @@ func (m *ImageSignatureVerificationResult) CloneVT() *ImageSignatureVerification
 	r := new(ImageSignatureVerificationResult)
 	r.VerificationTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.VerificationTime).CloneVT())
 	r.VerifierId = m.VerifierId
-	r.VerifierName = m.VerifierName
 	r.Status = m.Status
 	r.Description = m.Description
+	r.VerifierName = m.VerifierName
 	if rhs := m.VerifiedImageReferences; rhs != nil {
 		tmpContainer := make([]string, len(rhs))
 		copy(tmpContainer, rhs)

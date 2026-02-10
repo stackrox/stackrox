@@ -96,8 +96,6 @@ message ImageSignatureVerificationResult {
   google.protobuf.Timestamp verification_time = 1;
   // verifier_id correlates to the ID of the signature integration used to verify the signature.
   string verifier_id = 2;
-  // verifier_name is the name of the signature integration associated with `verifier_id`.
-  string verifier_name = 6;
   // Status represents the status of the result.
   enum Status {
     UNSET = 0;
@@ -118,6 +116,8 @@ message ImageSignatureVerificationResult {
   string description = 4;
   // The full image names that are verified by this specific signature integration ID.
   repeated string verified_image_references = 5;
+  // verifier_name is the name of the signature integration associated with `verifier_id`.
+  string verifier_name = 6;
 }
 
 // Next Tag: 14

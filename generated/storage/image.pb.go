@@ -764,16 +764,16 @@ type ImageSignatureVerificationResult struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	VerificationTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=verification_time,json=verificationTime,proto3" json:"verification_time,omitempty"`
 	// verifier_id correlates to the ID of the signature integration used to verify the signature.
-	VerifierId string `protobuf:"bytes,2,opt,name=verifier_id,json=verifierId,proto3" json:"verifier_id,omitempty"`
-	// verifier_name is the name of the signature integration associated with `verifier_id`.
-	VerifierName string                                  `protobuf:"bytes,6,opt,name=verifier_name,json=verifierName,proto3" json:"verifier_name,omitempty"`
-	Status       ImageSignatureVerificationResult_Status `protobuf:"varint,3,opt,name=status,proto3,enum=storage.ImageSignatureVerificationResult_Status" json:"status,omitempty"`
+	VerifierId string                                  `protobuf:"bytes,2,opt,name=verifier_id,json=verifierId,proto3" json:"verifier_id,omitempty"`
+	Status     ImageSignatureVerificationResult_Status `protobuf:"varint,3,opt,name=status,proto3,enum=storage.ImageSignatureVerificationResult_Status" json:"status,omitempty"`
 	// description is set in the case of an error with the specific error's message. Otherwise, this will not be set.
 	Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 	// The full image names that are verified by this specific signature integration ID.
 	VerifiedImageReferences []string `protobuf:"bytes,5,rep,name=verified_image_references,json=verifiedImageReferences,proto3" json:"verified_image_references,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// verifier_name is the name of the signature integration associated with `verifier_id`.
+	VerifierName  string `protobuf:"bytes,6,opt,name=verifier_name,json=verifierName,proto3" json:"verifier_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ImageSignatureVerificationResult) Reset() {
@@ -820,13 +820,6 @@ func (x *ImageSignatureVerificationResult) GetVerifierId() string {
 	return ""
 }
 
-func (x *ImageSignatureVerificationResult) GetVerifierName() string {
-	if x != nil {
-		return x.VerifierName
-	}
-	return ""
-}
-
 func (x *ImageSignatureVerificationResult) GetStatus() ImageSignatureVerificationResult_Status {
 	if x != nil {
 		return x.Status
@@ -846,6 +839,13 @@ func (x *ImageSignatureVerificationResult) GetVerifiedImageReferences() []string
 		return x.VerifiedImageReferences
 	}
 	return nil
+}
+
+func (x *ImageSignatureVerificationResult) GetVerifierName() string {
+	if x != nil {
+		return x.VerifierName
+	}
+	return ""
 }
 
 // Next Tag: 14
@@ -2080,11 +2080,11 @@ const file_storage_image_proto_rawDesc = "" +
 	" ImageSignatureVerificationResult\x12G\n" +
 	"\x11verification_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x10verificationTime\x12\x1f\n" +
 	"\vverifier_id\x18\x02 \x01(\tR\n" +
-	"verifierId\x12#\n" +
-	"\rverifier_name\x18\x06 \x01(\tR\fverifierName\x12H\n" +
+	"verifierId\x12H\n" +
 	"\x06status\x18\x03 \x01(\x0e20.storage.ImageSignatureVerificationResult.StatusR\x06status\x12 \n" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x12:\n" +
-	"\x19verified_image_references\x18\x05 \x03(\tR\x17verifiedImageReferences\"\x82\x01\n" +
+	"\x19verified_image_references\x18\x05 \x03(\tR\x17verifiedImageReferences\x12#\n" +
+	"\rverifier_name\x18\x06 \x01(\tR\fverifierName\"\x82\x01\n" +
 	"\x06Status\x12\t\n" +
 	"\x05UNSET\x10\x00\x12\f\n" +
 	"\bVERIFIED\x10\x01\x12\x17\n" +
