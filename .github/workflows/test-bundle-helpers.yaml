@@ -13,6 +13,17 @@ on:
     - reopened
     - synchronize
 
+env:
+ RELATED_IMAGE_MAIN: foo
+ RELATED_IMAGE_SCANNER: foo
+ RELATED_IMAGE_SCANNER_SLIM: foo
+ RELATED_IMAGE_SCANNER_DB: foo
+ RELATED_IMAGE_SCANNER_DB_SLIM: foo
+ RELATED_IMAGE_COLLECTOR: foo
+ RELATED_IMAGE_ROXCTL: foo
+ RELATED_IMAGE_CENTRAL_DB: foo
+ RELATED_IMAGE_SCANNER_V4_DB: foo
+ RELATED_IMAGE_SCANNER_V4: foo
 
 jobs:
   test-python-implementation:
@@ -70,6 +81,7 @@ jobs:
 
   test-go-implementation:
     strategy:
+      fail-fast: false
       matrix:
         related_img_mode:
         - konflux
@@ -132,6 +144,7 @@ jobs:
 
   compare-implementations:
     strategy:
+      fail-fast: false
       matrix:
         related_img_mode:
         - konflux
