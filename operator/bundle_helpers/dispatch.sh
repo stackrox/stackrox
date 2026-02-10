@@ -20,9 +20,12 @@ shift
 
 script_dir="$(dirname "$0")"
 
-if [[ "${USE_GO_BUNDLE_HELPER:-false}" == "true" ]]; then
+if [[ "${USE_GO_BUNDLE_HELPER:-true}" == "true" ]]; then
     case "$script_name" in
     fix-spec-descriptor-order)
+        exec go run "${script_dir}/main.go" "$script_name" "$@"
+        ;;
+    patch-csv)
         exec go run "${script_dir}/main.go" "$script_name" "$@"
         ;;
     *)
