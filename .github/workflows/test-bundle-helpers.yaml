@@ -64,6 +64,7 @@ jobs:
           USE_GO_BUNDLE_HELPER: false
           RELATED_IMAGES_MODE: ${{ matrix.related_img_mode }}
         run: |
+          set -euo pipefail
           go mod tidy
           make bundle bundle-post-process
           mkdir -p /tmp/artifacts
@@ -71,6 +72,7 @@ jobs:
           if [ -d build/bundle ]; then
             cp -r build/bundle /tmp/artifacts/build-bundle-python
           fi
+          git diff || true
 
       - name: Upload Python bundle artifacts
         uses: actions/upload-artifact@v4
@@ -127,6 +129,7 @@ jobs:
           USE_GO_BUNDLE_HELPER: true
           RELATED_IMAGES_MODE: ${{ matrix.related_img_mode }}
         run: |
+          set -euo pipefail
           go mod tidy
           make bundle bundle-post-process
           mkdir -p /tmp/artifacts
@@ -134,6 +137,7 @@ jobs:
           if [ -d build/bundle ]; then
             cp -r build/bundle /tmp/artifacts/build-bundle-go
           fi
+          git diff || true
 
       - name: Upload Go bundle artifacts
         uses: actions/upload-artifact@v4
