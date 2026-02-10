@@ -44,8 +44,6 @@ const (
 )
 
 var (
-	initialProfiles = []string{"ocp4-cis"}
-	updatedProfiles = []string{"ocp4-high", "ocp4-cis-node"}
 	initialSchedule = &v2.Schedule{
 		Hour:         12,
 		Minute:       0,
@@ -240,7 +238,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			Description:  scanName,
 			OneTimeScan:  false,
-			Profiles:     initialProfiles,
+			Profiles:     []string{"ocp4-cis"},
 			ScanSchedule: initialSchedule,
 		},
 	}
@@ -278,7 +276,7 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 
 	// Update the ScanConfig in Central
 	scanConfig.Id = res.GetId()
-	scanConfig.ScanConfig.Profiles = updatedProfiles
+	scanConfig.ScanConfig.Profiles = []string{"ocp4-pci-dss", "ocp4-pci-dss-node"}
 	scanConfig.ScanConfig.ScanSchedule = updatedSchedule
 	_, err = scanConfigService.UpdateComplianceScanConfiguration(ctx, &scanConfig)
 	assert.NoError(t, err)
