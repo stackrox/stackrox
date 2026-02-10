@@ -13,8 +13,15 @@ on:
     - reopened
     - synchronize
 
+
 jobs:
   test-python-implementation:
+    strategy:
+      matrix:
+        related_img_mode:
+        - konflux
+        - omit
+        - downstream
     name: Test Python Implementation
     runs-on: ubuntu-latest
     defaults:
@@ -61,6 +68,12 @@ jobs:
           retention-days: 1
 
   test-go-implementation:
+    strategy:
+      matrix:
+        related_img_mode:
+        - konflux
+        - omit
+        - downstream
     name: Test Go Implementation
     runs-on: ubuntu-latest
     defaults:
@@ -116,6 +129,12 @@ jobs:
           retention-days: 1
 
   compare-implementations:
+    strategy:
+      matrix:
+        related_img_mode:
+        - konflux
+        - omit
+        - downstream
     name: Compare Python and Go Outputs
     runs-on: ubuntu-latest
     needs: [test-python-implementation, test-go-implementation]
@@ -169,6 +188,12 @@ jobs:
           find /tmp/python /tmp/go -type f -print0 | xargs -0 md5sum | sort
 
   status-check:
+    strategy:
+      matrix:
+        related_img_mode:
+        - konflux
+        - omit
+        - downstream
     name: Bundle Helper Tests Status
     runs-on: ubuntu-latest
     needs: [test-python-implementation, test-go-implementation, compare-implementations]
