@@ -343,7 +343,7 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 		Clusters: []string{clusterID},
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan: false,
-			Profiles:    []string{"rhcos4-moderate"},
+			Profiles:    []string{"rhcos4-e8"},
 			Description: "test config",
 			ScanSchedule: &v2.Schedule{
 				IntervalType: 1,
@@ -397,7 +397,7 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 		Clusters: []string{clusterID},
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan: false,
-			Profiles:    []string{"rhcos4-moderate"},
+			Profiles:    []string{"rhcos4-e8"},
 			Description: "test config with duplicate profile",
 			ScanSchedule: &v2.Schedule{
 				IntervalType: 1,
