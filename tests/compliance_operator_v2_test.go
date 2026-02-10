@@ -20,11 +20,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	autoscalingV1 "k8s.io/api/autoscaling/v1"
 	extscheme "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme"
 	errors2 "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	cached "k8s.io/client-go/discovery/cached"
+	"k8s.io/client-go/kubernetes"
 	cgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
@@ -33,6 +36,7 @@ import (
 
 const (
 	coNamespaceV2       = "openshift-compliance"
+	stackroxNamespace   = "stackrox"
 	defaultTimeout      = 120 * time.Second
 	defaultInterval     = 5 * time.Second
 	waitForDoneTimeout  = 5 * time.Minute
@@ -63,6 +67,23 @@ var (
 		},
 	}
 )
+
+func scaleToN(ctx context.Context, t *testing.T, client kubernetes.Interface, deploymentName string, namespace string, replicas int32) {
+	scaleRequest := &autoscalingV1.Scale{
+		Spec: autoscalingV1.ScaleSpec{
+			Replicas: replicas,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      deploymentName,
+			Namespace: namespace,
+		},
+	}
+
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		_, err := client.AppsV1().Deployments(namespace).UpdateScale(ctx, deploymentName, scaleRequest, metav1.UpdateOptions{})
+		require.NoErrorf(c, err, "failed to scale %q to %q replicas", deploymentName, replicas)
+	}, defaultTimeout, defaultInterval)
+}
 
 func createDynamicClient(t testutils.T) dynclient.Client {
 	restCfg := getConfig(t)
@@ -186,16 +207,18 @@ func assertScanSettingBinding(ctx context.Context, t testutils.T, client dynclie
 }
 
 func waitForDeploymentReady(ctx context.Context, t *testing.T, client dynclient.Client, name string, namespace string, numReplicas int32) {
-	require.Eventually(t, func() bool {
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
 		deployment := &appsv1.Deployment{}
-		return client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, deployment) == nil && deployment.Status.ReadyReplicas == numReplicas
+		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, deployment)
+		require.NoErrorf(c, err, "failed to get deployment %q", name)
+		require.Equal(c, numReplicas, deployment.Status.ReadyReplicas)
 	}, defaultTimeout, defaultInterval)
 }
 
+// Run this test outside of other parllel tests because of the Sensor side effects.
 func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
-	t.Parallel()
-
 	ctx := context.Background()
+	k8sClient := createK8sClient(t)
 	dynClient := createDynamicClient(t)
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
@@ -222,6 +245,10 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 		},
 	}
 
+	// Scale down Sensor
+	scaleToN(ctx, t, k8sClient, "sensor", stackroxNamespace, 0)
+	waitForDeploymentReady(ctx, t, dynClient, "sensor", stackroxNamespace, 0)
+
 	// Create ScanConfig in Central
 	res, err := scanConfigService.CreateComplianceScanConfiguration(ctx, &scanConfig)
 	assert.NoError(t, err)
@@ -235,11 +262,19 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 		cleanUpResources(ctx, t, dynClient, scanName, coNamespaceV2)
 	})
 
+	// Scale up Sensor
+	scaleToN(ctx, t, k8sClient, "sensor", stackroxNamespace, 1)
+	waitForDeploymentReady(ctx, t, dynClient, "sensor", stackroxNamespace, 1)
+
 	// Assert the ScanSetting and the ScanSettingBinding are created
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
 		assertScanSetting(ctx, wrapCollectT(t, c), dynClient, scanName, coNamespaceV2, &scanConfig)
 		assertScanSettingBinding(ctx, wrapCollectT(t, c), dynClient, scanName, coNamespaceV2, &scanConfig)
 	}, defaultTimeout, defaultInterval)
+
+	// Scale down Sensor
+	scaleToN(ctx, t, k8sClient, "sensor", stackroxNamespace, 0)
+	waitForDeploymentReady(ctx, t, dynClient, "sensor", stackroxNamespace, 0)
 
 	// Update the ScanConfig in Central
 	scanConfig.Id = res.GetId()
@@ -248,17 +283,29 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	_, err = scanConfigService.UpdateComplianceScanConfiguration(ctx, &scanConfig)
 	assert.NoError(t, err)
 
+	// Scale up Sensor
+	scaleToN(ctx, t, k8sClient, "sensor", stackroxNamespace, 1)
+	waitForDeploymentReady(ctx, t, dynClient, "sensor", stackroxNamespace, 1)
+
 	// Assert the ScanSetting and the ScanSettingBinding are updated
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
 		assertScanSetting(ctx, wrapCollectT(t, c), dynClient, scanName, coNamespaceV2, &scanConfig)
 		assertScanSettingBinding(ctx, wrapCollectT(t, c), dynClient, scanName, coNamespaceV2, &scanConfig)
 	}, defaultTimeout, defaultInterval)
 
+	// Scale down Sensor
+	scaleToN(ctx, t, k8sClient, "sensor", stackroxNamespace, 0)
+	waitForDeploymentReady(ctx, t, dynClient, "sensor", stackroxNamespace, 0)
+
 	// Delete the ScanConfig in Central
 	reqDelete := &v2.ResourceByID{
 		Id: res.GetId(),
 	}
 	_, err = scanConfigService.DeleteComplianceScanConfiguration(ctx, reqDelete)
+
+	// Scale up Sensor
+	scaleToN(ctx, t, k8sClient, "sensor", stackroxNamespace, 1)
+	waitForDeploymentReady(ctx, t, dynClient, "sensor", stackroxNamespace, 1)
 
 	// Assert the ScanSetting and the ScanSettingBinding are deleted
 	assertResourceDoesNotExist[complianceoperatorv1.ScanSetting](ctx, t, dynClient, scanName, coNamespaceV2)
