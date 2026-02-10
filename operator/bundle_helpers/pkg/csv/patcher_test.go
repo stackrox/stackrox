@@ -1,0 +1,383 @@
+package csv
+
+import (
+	"os"
+	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestPatchCSV(t *testing.T) {
+	// Set up test environment variables
+	require.NoError(t, os.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.0.0"))
+	require.NoError(t, os.Setenv("RELATED_IMAGE_SCANNER", "quay.io/rhacs-eng/scanner:4.0.0"))
+	defer func() {
+		require.NoError(t, os.Unsetenv("RELATED_IMAGE_MAIN"))
+		require.NoError(t, os.Unsetenv("RELATED_IMAGE_SCANNER"))
+	}()
+
+	tests := []struct {
+		name       string
+		input      map[string]any
+		opts       PatchOptions
+		wantErr    bool
+		assertions func(t *testing.T, result map[string]any)
+	}{
+		{
+			name: "basic version patching",
+			input: map[string]any{
+				"metadata": map[string]any{
+					"name": "rhacs-operator.v0.0.1",
+					"annotations": map[string]any{
+						"containerImage": "quay.io/stackrox-io/stackrox-operator:0.0.1",
+						"createdAt":      "",
+					},
+				},
+				"spec": map[string]any{
+					"version": "0.0.1",
+					"customresourcedefinitions": map[string]any{
+						"owned": []any{},
+					},
+				},
+			},
+			opts: PatchOptions{
+				Version:           "4.0.0",
+				OperatorImage:     "quay.io/stackrox-io/stackrox-operator:4.0.0",
+				FirstVersion:      "3.62.0",
+				RelatedImagesMode: "omit",
+			},
+			assertions: func(t *testing.T, result map[string]any) {
+				metadata := result["metadata"].(map[string]any)
+				assert.Equal(t, "rhacs-operator.v4.0.0", metadata["name"])
+
+				annotations := metadata["annotations"].(map[string]any)
+				assert.Equal(t, "quay.io/stackrox-io/stackrox-operator:4.0.0", annotations["containerImage"])
+				assert.NotEmpty(t, annotations["createdAt"])
+
+				spec := result["spec"].(map[string]any)
+				assert.Equal(t, "4.0.0", spec["version"])
+			},
+		},
+		{
+			name: "replaces version calculation",
+			input: map[string]any{
+				"metadata": map[string]any{
+					"name": "rhacs-operator.v0.0.1",
+					"annotations": map[string]any{
+						"containerImage": "quay.io/stackrox-io/stackrox-operator:0.0.1",
+					},
+				},
+				"spec": map[string]any{
+					"version": "0.0.1",
+					"customresourcedefinitions": map[string]any{
+						"owned": []any{},
+					},
+				},
+			},
+			opts: PatchOptions{
+				Version:           "4.0.1",
+				OperatorImage:     "quay.io/stackrox-io/stackrox-operator:4.0.1",
+				FirstVersion:      "4.0.0",
+				RelatedImagesMode: "omit",
+			},
+			assertions: func(t *testing.T, result map[string]any) {
+				spec := result["spec"].(map[string]any)
+				assert.Equal(t, "rhacs-operator.v4.0.0", spec["replaces"])
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := PatchCSV(tt.input, tt.opts)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			if tt.assertions != nil {
+				tt.assertions(t, tt.input)
+			}
+		})
+	}
+}
+
+func TestInjectRelatedImageEnvVars_SingleEnvVar(t *testing.T) {
+	// Set up environment variable
+	require.NoError(t, os.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.5.0"))
+	defer func() {
+		require.NoError(t, os.Unsetenv("RELATED_IMAGE_MAIN"))
+	}()
+
+	spec := map[string]any{
+		"install": map[string]any{
+			"spec": map[string]any{
+				"deployments": []any{
+					map[string]any{
+						"spec": map[string]any{
+							"template": map[string]any{
+								"spec": map[string]any{
+									"containers": []any{
+										map[string]any{
+											"env": []any{
+												map[string]any{
+													"name": "RELATED_IMAGE_MAIN",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := injectRelatedImageEnvVars(spec)
+	require.NoError(t, err)
+
+	// Verify the value was injected
+	deployments := spec["install"].(map[string]any)["spec"].(map[string]any)["deployments"].([]any)
+	deployment := deployments[0].(map[string]any)
+	containers := deployment["spec"].(map[string]any)["template"].(map[string]any)["spec"].(map[string]any)["containers"].([]any)
+	container := containers[0].(map[string]any)
+	env := container["env"].([]any)
+	envVar := env[0].(map[string]any)
+
+	assert.Equal(t, "RELATED_IMAGE_MAIN", envVar["name"])
+	assert.Equal(t, "quay.io/rhacs-eng/main:4.5.0", envVar["value"])
+}
+
+func TestInjectRelatedImageEnvVars_MultipleNested(t *testing.T) {
+	// Set up multiple environment variables
+	require.NoError(t, os.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.5.0"))
+	require.NoError(t, os.Setenv("RELATED_IMAGE_SCANNER", "quay.io/rhacs-eng/scanner:4.5.0"))
+	require.NoError(t, os.Setenv("RELATED_IMAGE_SCANNER_DB", "quay.io/rhacs-eng/scanner-db:4.5.0"))
+	defer func() {
+		require.NoError(t, os.Unsetenv("RELATED_IMAGE_MAIN"))
+		require.NoError(t, os.Unsetenv("RELATED_IMAGE_SCANNER"))
+		require.NoError(t, os.Unsetenv("RELATED_IMAGE_SCANNER_DB"))
+	}()
+
+	spec := map[string]any{
+		"install": map[string]any{
+			"spec": map[string]any{
+				"deployments": []any{
+					map[string]any{
+						"spec": map[string]any{
+							"template": map[string]any{
+								"spec": map[string]any{
+									"containers": []any{
+										map[string]any{
+											"env": []any{
+												map[string]any{
+													"name": "RELATED_IMAGE_MAIN",
+												},
+												map[string]any{
+													"name": "RELATED_IMAGE_SCANNER",
+												},
+												map[string]any{
+													"name": "RELATED_IMAGE_SCANNER_DB",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := injectRelatedImageEnvVars(spec)
+	require.NoError(t, err)
+
+	// Verify all values were injected
+	deployments := spec["install"].(map[string]any)["spec"].(map[string]any)["deployments"].([]any)
+	deployment := deployments[0].(map[string]any)
+	containers := deployment["spec"].(map[string]any)["template"].(map[string]any)["spec"].(map[string]any)["containers"].([]any)
+	container := containers[0].(map[string]any)
+	env := container["env"].([]any)
+
+	assert.Equal(t, "quay.io/rhacs-eng/main:4.5.0", env[0].(map[string]any)["value"])
+	assert.Equal(t, "quay.io/rhacs-eng/scanner:4.5.0", env[1].(map[string]any)["value"])
+	assert.Equal(t, "quay.io/rhacs-eng/scanner-db:4.5.0", env[2].(map[string]any)["value"])
+}
+
+func TestInjectRelatedImageEnvVars_MissingEnvVar(t *testing.T) {
+	spec := map[string]any{
+		"install": map[string]any{
+			"spec": map[string]any{
+				"deployments": []any{
+					map[string]any{
+						"spec": map[string]any{
+							"template": map[string]any{
+								"spec": map[string]any{
+									"containers": []any{
+										map[string]any{
+											"env": []any{
+												map[string]any{
+													"name": "RELATED_IMAGE_NONEXISTENT",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := injectRelatedImageEnvVars(spec)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "RELATED_IMAGE_NONEXISTENT")
+	assert.Contains(t, err.Error(), "not set")
+}
+
+func TestInjectRelatedImageEnvVars_NoRelatedImages(t *testing.T) {
+	spec := map[string]any{
+		"install": map[string]any{
+			"spec": map[string]any{
+				"deployments": []any{
+					map[string]any{
+						"spec": map[string]any{
+							"template": map[string]any{
+								"spec": map[string]any{
+									"containers": []any{
+										map[string]any{
+											"env": []any{
+												map[string]any{
+													"name":  "SOME_OTHER_VAR",
+													"value": "some-value",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	err := injectRelatedImageEnvVars(spec)
+	require.NoError(t, err)
+
+	// Verify spec is unchanged
+	deployments := spec["install"].(map[string]any)["spec"].(map[string]any)["deployments"].([]any)
+	deployment := deployments[0].(map[string]any)
+	containers := deployment["spec"].(map[string]any)["template"].(map[string]any)["spec"].(map[string]any)["containers"].([]any)
+	container := containers[0].(map[string]any)
+	env := container["env"].([]any)
+	envVar := env[0].(map[string]any)
+
+	assert.Equal(t, "SOME_OTHER_VAR", envVar["name"])
+	assert.Equal(t, "some-value", envVar["value"])
+}
+
+func TestConstructRelatedImages_MultipleEnvVars(t *testing.T) {
+	// Set up environment variables
+	require.NoError(t, os.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.5.0"))
+	require.NoError(t, os.Setenv("RELATED_IMAGE_SCANNER", "quay.io/rhacs-eng/scanner:4.5.0"))
+	defer func() {
+		require.NoError(t, os.Unsetenv("RELATED_IMAGE_MAIN"))
+		require.NoError(t, os.Unsetenv("RELATED_IMAGE_SCANNER"))
+	}()
+
+	spec := map[string]any{}
+	managerImage := "quay.io/rhacs-eng/rhacs-operator:4.5.0"
+
+	err := constructRelatedImages(spec, managerImage)
+	require.NoError(t, err)
+
+	// Verify relatedImages was created
+	relatedImages, ok := spec["relatedImages"].([]map[string]any)
+	require.True(t, ok, "relatedImages should be a []map[string]any")
+	require.GreaterOrEqual(t, len(relatedImages), 3, "should have at least 3 entries (main, scanner, manager)")
+
+	// Find entries by name
+	imagesByName := make(map[string]string)
+	for _, img := range relatedImages {
+		name := img["name"].(string)
+		image := img["image"].(string)
+		imagesByName[name] = image
+	}
+
+	// Verify entries
+	assert.Equal(t, "quay.io/rhacs-eng/main:4.5.0", imagesByName["main"])
+	assert.Equal(t, "quay.io/rhacs-eng/scanner:4.5.0", imagesByName["scanner"])
+	assert.Equal(t, "quay.io/rhacs-eng/rhacs-operator:4.5.0", imagesByName["manager"])
+}
+
+func TestConstructRelatedImages_NoEnvVars(t *testing.T) {
+	// Ensure no RELATED_IMAGE_* env vars are set
+	// Note: We can't unset all env vars, but we can verify behavior with none matching our pattern
+	originalEnv := os.Environ()
+	var toRestore []struct{ key, value string }
+	for _, envVar := range originalEnv {
+		if len(envVar) > 14 && envVar[:14] == "RELATED_IMAGE_" {
+			parts := strings.SplitN(envVar, "=", 2)
+			require.NoError(t, os.Unsetenv(parts[0]))
+			toRestore = append(toRestore, struct{ key, value string }{parts[0], parts[1]})
+		}
+	}
+	defer func() {
+		for _, env := range toRestore {
+			require.NoError(t, os.Setenv(env.key, env.value))
+		}
+	}()
+
+	spec := map[string]any{}
+	managerImage := "quay.io/rhacs-eng/rhacs-operator:4.5.0"
+
+	err := constructRelatedImages(spec, managerImage)
+	require.NoError(t, err)
+
+	// Verify only manager entry exists
+	relatedImages, ok := spec["relatedImages"].([]map[string]any)
+	require.True(t, ok)
+	require.Equal(t, 1, len(relatedImages), "should only have manager entry")
+
+	assert.Equal(t, "manager", relatedImages[0]["name"])
+	assert.Equal(t, "quay.io/rhacs-eng/rhacs-operator:4.5.0", relatedImages[0]["image"])
+}
+
+func TestConstructRelatedImages_NameTransformation(t *testing.T) {
+	// Set up environment variable with underscores
+	require.NoError(t, os.Setenv("RELATED_IMAGE_SCANNER_DB_SLIM", "quay.io/rhacs-eng/scanner-db-slim:4.5.0"))
+	defer func() {
+		require.NoError(t, os.Unsetenv("RELATED_IMAGE_SCANNER_DB_SLIM"))
+	}()
+
+	spec := map[string]any{}
+	managerImage := "quay.io/rhacs-eng/rhacs-operator:4.5.0"
+
+	err := constructRelatedImages(spec, managerImage)
+	require.NoError(t, err)
+
+	// Verify name transformation to lowercase
+	relatedImages, ok := spec["relatedImages"].([]map[string]any)
+	require.True(t, ok)
+
+	// Find the scanner_db_slim entry
+	found := false
+	for _, img := range relatedImages {
+		if img["name"].(string) == "scanner_db_slim" {
+			found = true
+			assert.Equal(t, "quay.io/rhacs-eng/scanner-db-slim:4.5.0", img["image"])
+			break
+		}
+	}
+	assert.True(t, found, "should have scanner_db_slim entry with lowercase name")
+}
