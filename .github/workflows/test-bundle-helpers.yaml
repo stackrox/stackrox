@@ -143,33 +143,24 @@ jobs:
 
       - name: Compare bundle outputs
         run: |
-          if [ ! -d /tmp/go/bundle-go ]; then
-            echo "Go bundle not available yet - skipping comparison"
-            exit 0
-          fi
-
           echo "=== Comparing Python and Go bundle outputs ==="
 
-          if diff -r /tmp/python/bundle-python /tmp/go/bundle-go; then
+          if diff -ruN /tmp/python/bundle-python /tmp/go/bundle-go; then
             echo "✓ SUCCESS: Bundle outputs are identical"
           else
             echo "✗ FAILURE: Bundle outputs differ"
-            echo ""
-            echo "Detailed diff of CSV files:"
-            diff -u /tmp/python/bundle-python/manifests/*.clusterserviceversion.yaml \
-                    /tmp/go/bundle-go/manifests/*.clusterserviceversion.yaml || true
             exit 1
           fi
+          echo "Pruning createdAt lines..."
+          sed -i '/^    createdAt:/d' /tmp/*/build-bundle-*/manifests/rhacs-operator.clusterserviceversion.yaml
 
-          if [ -d /tmp/python/build-bundle-python ] && [ -d /tmp/go/build-bundle-go ]; then
-            echo ""
-            echo "=== Comparing build/bundle outputs ==="
-            if diff -r /tmp/python/build-bundle-python /tmp/go/build-bundle-go; then
-              echo "✓ SUCCESS: Build bundle outputs are identical"
-            else
-              echo "✗ FAILURE: Build bundle outputs differ"
-              exit 1
-            fi
+          echo ""
+          echo "=== Comparing build/bundle outputs ==="
+          if diff -ruN /tmp/python/build-bundle-python /tmp/go/build-bundle-go; then
+            echo "✓ SUCCESS: Build bundle outputs are identical"
+          else
+            echo "✗ FAILURE: Build bundle outputs differ"
+            exit 1
           fi
 
   status-check:
