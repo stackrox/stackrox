@@ -21,6 +21,7 @@ type ContainerNameGroup struct {
 }
 
 func TestContainerInstances(testT *testing.T) {
+	testT.Skip("Flaky: https://issues.redhat.com/browse/ROX-30400")
 	// https://stack-rox.atlassian.net/browse/ROX-6493
 	// - the process events expected in this test are not reliably detected.
 	kPod := getPodFromFile(testT, "yamls/multi-container-pod.yaml")
