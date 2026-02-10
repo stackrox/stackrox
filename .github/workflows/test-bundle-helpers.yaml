@@ -184,7 +184,6 @@ jobs:
           python_result="${{ needs.test-python-implementation.result }}"
           go_result="${{ needs.test-go-implementation.result }}"
           compare_result="${{ needs.compare-implementations.result }}"
-          e2e_result="${{ needs.e2e-test.result }}"
 
           echo "Python tests: $python_result"
           echo "Go tests: $go_result"
