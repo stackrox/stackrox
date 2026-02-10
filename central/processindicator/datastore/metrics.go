@@ -65,17 +65,12 @@ func getProcessArgsSizeBytes(indicator *storage.ProcessIndicator) int {
 	return len(indicator.GetSignal().GetArgs())
 }
 
-// recordProcessIndicatorAdded records metrics for a single process indicator added to DB.
-func recordProcessIndicatorAdded(argsSize int) {
-	processArgsHistogram.Observe(float64(argsSize))
-	processIndicatorsAddedCounter.Inc()
-}
-
 // recordProcessIndicatorsBatchAdded records metrics for a batch of process indicators successfully written to DB.
 func recordProcessIndicatorsBatchAdded(indicators []*storage.ProcessIndicator) {
 	for _, indicator := range indicators {
 		argsSize := getProcessArgsSizeBytes(indicator)
-		recordProcessIndicatorAdded(argsSize)
+		processArgsHistogram.Observe(float64(argsSize))
+		processIndicatorsAddedCounter.Inc()
 	}
 }
 
