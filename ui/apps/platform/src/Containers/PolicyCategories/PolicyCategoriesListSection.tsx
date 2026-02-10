@@ -48,58 +48,55 @@ function PolicyCategoriesListSection({
 
     return (
         <>
-            <PageSection hasBodyWrapper={false} id="policy-categories-list-section">
+            <PageSection id="policy-categories-list-section">
                 <Flex
-                    spaceItems={{ default: 'spaceItemsNone' }}
+                    spaceItems={{ default: 'spaceItemsMd' }}
                     alignItems={{ default: 'alignItemsStretch' }}
-                    className="pf-v6-u-h-100"
                 >
                     <FlexItem flex={{ default: 'flex_1' }}>
-                        <PageSection hasBodyWrapper={false} isFilled className="pf-v6-u-h-100">
-                            <Flex direction={{ default: 'column' }}>
-                                <Title headingLevel="h2">
-                                    <Flex
-                                        justifyContent={{ default: 'justifyContentSpaceBetween' }}
-                                        fullWidth={{ default: 'fullWidth' }}
-                                    >
-                                        <span>Categories</span>
-                                        <span>{filteredCategories.length} results found</span>
-                                    </Flex>
-                                </Title>
+                        <Flex direction={{ default: 'column' }}>
+                            <Title headingLevel="h2">
                                 <Flex
-                                    spaceItems={{ default: 'spaceItemsSm' }}
+                                    justifyContent={{ default: 'justifyContentSpaceBetween' }}
                                     fullWidth={{ default: 'fullWidth' }}
-                                    flexWrap={{ default: 'nowrap' }}
                                 >
-                                    <FlexItem flex={{ default: 'flex_1' }}>
-                                        <TextInput
-                                            onChange={(_event, val) => setFilterTerm(val)}
-                                            type="text"
-                                            value={filterTerm}
-                                            placeholder="Filter by category name..."
-                                            id="policy-categories-filter-input"
-                                            isDisabled={!!selectedCategory}
-                                        />
-                                    </FlexItem>
-                                    <FlexItem>
-                                        <PolicyCategoriesFilterSelect
-                                            selectedFilter={selectedFilter}
-                                            setSelectedFilter={setSelectedFilter}
-                                            isDisabled={!!selectedCategory}
-                                        />
-                                    </FlexItem>
+                                    <span>Categories</span>
+                                    <span>{filteredCategories.length} results found</span>
                                 </Flex>
-                                {filteredCategories.length > 0 && (
-                                    <PolicyCategoriesList
-                                        policyCategories={filteredCategories}
-                                        setSelectedCategory={setSelectedCategory}
+                            </Title>
+                            <Flex
+                                spaceItems={{ default: 'spaceItemsSm' }}
+                                fullWidth={{ default: 'fullWidth' }}
+                                flexWrap={{ default: 'nowrap' }}
+                            >
+                                <FlexItem flex={{ default: 'flex_1' }}>
+                                    <TextInput
+                                        onChange={(_event, val) => setFilterTerm(val)}
+                                        type="text"
+                                        value={filterTerm}
+                                        placeholder="Filter by category name..."
+                                        id="policy-categories-filter-input"
+                                        isDisabled={!!selectedCategory}
                                     />
-                                )}
-                                {filteredCategories.length === 0 && (
-                                    <div>No policy categories found.</div>
-                                )}
+                                </FlexItem>
+                                <FlexItem>
+                                    <PolicyCategoriesFilterSelect
+                                        selectedFilter={selectedFilter}
+                                        setSelectedFilter={setSelectedFilter}
+                                        isDisabled={!!selectedCategory}
+                                    />
+                                </FlexItem>
                             </Flex>
-                        </PageSection>
+                            {filteredCategories.length > 0 && (
+                                <PolicyCategoriesList
+                                    policyCategories={filteredCategories}
+                                    setSelectedCategory={setSelectedCategory}
+                                />
+                            )}
+                            {filteredCategories.length === 0 && (
+                                <div>No policy categories found.</div>
+                            )}
+                        </Flex>
                     </FlexItem>
                     {selectedCategory && (
                         <>
