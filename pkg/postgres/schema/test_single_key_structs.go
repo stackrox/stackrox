@@ -49,7 +49,7 @@ type TestSingleKeyStructs struct {
 	Name        string                           `gorm:"column:name;type:varchar;unique"`
 	StringSlice *pq.StringArray                  `gorm:"column:stringslice;type:text[]"`
 	Bool        bool                             `gorm:"column:bool;type:bool"`
-	Uint64      uint64                           `gorm:"column:uint64;type:bigint"`
+	Uint64      uint64                           `gorm:"column:uint64;type:numeric"`
 	Int64       int64                            `gorm:"column:int64;type:bigint"`
 	Float       float32                          `gorm:"column:float;type:numeric"`
 	Labels      map[string]string                `gorm:"column:labels;type:jsonb"`
