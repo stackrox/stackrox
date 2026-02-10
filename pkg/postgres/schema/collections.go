@@ -54,7 +54,7 @@ type Collections struct {
 	Name          string `gorm:"column:name;type:varchar;unique"`
 	CreatedByName string `gorm:"column:createdby_name;type:varchar"`
 	UpdatedByName string `gorm:"column:updatedby_name;type:varchar"`
-	Serialized    []byte `gorm:"column:serialized;type:bytea"`
+	Serialized    []byte `gorm:"column:serialized;type:jsonb"`
 }
 
 // CollectionsEmbeddedCollections holds the Gorm model for Postgres table `collections_embedded_collections`.

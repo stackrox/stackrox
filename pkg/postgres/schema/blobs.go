@@ -47,5 +47,5 @@ type Blobs struct {
 	Name         string     `gorm:"column:name;type:varchar;primaryKey"`
 	Length       int64      `gorm:"column:length;type:bigint"`
 	ModifiedTime *time.Time `gorm:"column:modifiedtime;type:timestamp"`
-	Serialized   []byte     `gorm:"column:serialized;type:bytea"`
+	Serialized   []byte     `gorm:"column:serialized;type:jsonb"`
 }

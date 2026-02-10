@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -51,7 +52,7 @@ func New(db postgres.DB) Store {
 }
 
 func insertIntoConfigs(ctx context.Context, tx *postgres.Tx, obj *storage.Config) error {
-	serialized, marshalErr := obj.MarshalVT()
+	serialized, marshalErr := protojson.Marshal(obj)
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -128,7 +129,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.Config, bool, er
 	}
 
 	var msg storage.Config
-	if err := msg.UnmarshalVTUnsafe(data); err != nil {
+	if err := protojson.Unmarshal(data, &msg); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil

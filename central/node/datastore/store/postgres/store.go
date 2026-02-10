@@ -20,6 +20,7 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"google.golang.org/protobuf/encoding/protojson"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -101,7 +102,7 @@ func (s *storeImpl) insertIntoNodes(
 		cloned = parts.node.CloneVT()
 		cloned.Scan.Components = nil
 	}
-	serialized, marshalErr := cloned.MarshalVT()
+	serialized, marshalErr := protojson.Marshal(cloned)
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -226,7 +227,7 @@ func copyFromNodeComponents(ctx context.Context, tx *postgres.Tx, objs ...*stora
 	}
 
 	for idx, obj := range objs {
-		serialized, marshalErr := obj.MarshalVT()
+		serialized, marshalErr := protojson.Marshal(obj)
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -285,7 +286,7 @@ func copyFromNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID str
 	}
 
 	for idx, obj := range objs {
-		serialized, marshalErr := obj.MarshalVT()
+		serialized, marshalErr := protojson.Marshal(obj)
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -371,7 +372,7 @@ func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, objs ...*storage.Nod
 	}
 
 	for idx, obj := range objs {
-		serialized, marshalErr := obj.MarshalVT()
+		serialized, marshalErr := protojson.Marshal(obj)
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -431,7 +432,7 @@ func copyFromNodeComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs ..
 	}
 
 	for idx, obj := range objs {
-		serialized, marshalErr := obj.MarshalVT()
+		serialized, marshalErr := protojson.Marshal(obj)
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -505,7 +506,7 @@ func markOrphanedNodeCVEs(ctx context.Context, tx *postgres.Tx) error {
 			return err
 		}
 		msg := &storage.NodeCVE{}
-		if err := msg.UnmarshalVTUnsafe(data); err != nil {
+		if err := protojson.Unmarshal(data, msg); err != nil {
 			return err
 		}
 		if ids.Add(msg.GetId()) {
@@ -711,7 +712,7 @@ func (s *storeImpl) getFullNode(ctx context.Context, tx *postgres.Tx, nodeID str
 	}
 
 	var node storage.Node
-	if err := node.UnmarshalVTUnsafe(data); err != nil {
+	if err := protojson.Unmarshal(data, &node); err != nil {
 		return nil, false, err
 	}
 	if err := s.populateNode(ctx, tx, &node); err != nil {
@@ -735,7 +736,7 @@ func getNodeComponentEdges(ctx context.Context, tx *postgres.Tx, nodeID string) 
 			return nil, err
 		}
 		msg := &storage.NodeComponentEdge{}
-		if err := msg.UnmarshalVTUnsafe(data); err != nil {
+		if err := protojson.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		componentIDToEdgeMap[msg.GetNodeComponentId()] = msg
@@ -758,7 +759,7 @@ func getNodeComponents(ctx context.Context, tx *postgres.Tx, componentIDs []stri
 			return nil, err
 		}
 		msg := &storage.NodeComponent{}
-		if err := msg.UnmarshalVTUnsafe(data); err != nil {
+		if err := protojson.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		idToComponentMap[msg.GetId()] = msg
@@ -781,7 +782,7 @@ func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []s
 			return nil, err
 		}
 		msg := &storage.NodeComponentCVEEdge{}
-		if err := msg.UnmarshalVTUnsafe(data); err != nil {
+		if err := protojson.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		componentIDToEdgesMap[msg.GetNodeComponentId()] = append(componentIDToEdgesMap[msg.GetNodeComponentId()], msg)
@@ -924,7 +925,7 @@ func (s *storeImpl) retryableGetNodeMetadata(ctx context.Context, id string) (*s
 	}
 
 	var msg storage.Node
-	if err := msg.UnmarshalVTUnsafe(data); err != nil {
+	if err := protojson.Unmarshal(data, &msg); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil
@@ -1007,7 +1008,7 @@ func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]
 			return nil, err
 		}
 		msg := &storage.NodeCVE{}
-		if err := msg.UnmarshalVTUnsafe(data); err != nil {
+		if err := protojson.Unmarshal(data, msg); err != nil {
 			return nil, err
 		}
 		idToCVEMap[msg.GetId()] = msg

@@ -39,5 +39,5 @@ const (
 // ComplianceOperatorRules holds the Gorm model for Postgres table `compliance_operator_rules`.
 type ComplianceOperatorRules struct {
 	ID         string `gorm:"column:id;type:varchar;primaryKey"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	Serialized []byte `gorm:"column:serialized;type:jsonb"`
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"google.golang.org/protobuf/encoding/protojson"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
 
@@ -212,13 +213,13 @@ func (s *fullStoreImpl) readRows(
 		}
 
 		var msg storage.ProcessListeningOnPortStorage
-		if err := msg.UnmarshalVTUnsafe(serialized); err != nil {
+		if err := protojson.Unmarshal(serialized, &msg); err != nil {
 			return nil, err
 		}
 
 		var procMsg storage.ProcessIndicator
 		if procSerialized != nil {
-			if err := procMsg.UnmarshalVTUnsafe(procSerialized); err != nil {
+			if err := protojson.Unmarshal(procSerialized, &procMsg); err != nil {
 				return nil, err
 			}
 		}

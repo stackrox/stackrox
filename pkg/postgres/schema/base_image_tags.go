@@ -49,6 +49,6 @@ type BaseImageTags struct {
 	ID                       string                `gorm:"column:id;type:uuid;primaryKey"`
 	BaseImageRepositoryID    string                `gorm:"column:baseimagerepositoryid;type:uuid;uniqueIndex:base_image_tags_repo_tag"`
 	Tag                      string                `gorm:"column:tag;type:varchar;uniqueIndex:base_image_tags_repo_tag"`
-	Serialized               []byte                `gorm:"column:serialized;type:bytea"`
+	Serialized               []byte                `gorm:"column:serialized;type:jsonb"`
 	BaseImageRepositoriesRef BaseImageRepositories `gorm:"foreignKey:baseimagerepositoryid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

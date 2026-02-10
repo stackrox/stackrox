@@ -39,5 +39,5 @@ const (
 // ServiceIdentities holds the Gorm model for Postgres table `service_identities`.
 type ServiceIdentities struct {
 	SerialStr  string `gorm:"column:serialstr;type:varchar;primaryKey"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	Serialized []byte `gorm:"column:serialized;type:jsonb"`
 }

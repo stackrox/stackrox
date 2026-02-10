@@ -41,5 +41,5 @@ const (
 
 // NotifierEncConfigs holds the Gorm model for Postgres table `notifier_enc_configs`.
 type NotifierEncConfigs struct {
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	Serialized []byte `gorm:"column:serialized;type:jsonb"`
 }

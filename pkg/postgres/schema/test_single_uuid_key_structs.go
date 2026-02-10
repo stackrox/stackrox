@@ -56,5 +56,5 @@ type TestSingleUUIDKeyStructs struct {
 	Timestamp   *time.Time                           `gorm:"column:timestamp;type:timestamp"`
 	Enum        storage.TestSingleUUIDKeyStruct_Enum `gorm:"column:enum;type:integer"`
 	Enums       *pq.Int32Array                       `gorm:"column:enums;type:int[]"`
-	Serialized  []byte                               `gorm:"column:serialized;type:bytea"`
+	Serialized  []byte                               `gorm:"column:serialized;type:jsonb"`
 }

@@ -41,5 +41,5 @@ const (
 type LogImbues struct {
 	ID         string     `gorm:"column:id;type:varchar;primaryKey"`
 	Timestamp  *time.Time `gorm:"column:timestamp;type:timestamp"`
-	Serialized []byte     `gorm:"column:serialized;type:bytea"`
+	Serialized []byte     `gorm:"column:serialized;type:jsonb"`
 }

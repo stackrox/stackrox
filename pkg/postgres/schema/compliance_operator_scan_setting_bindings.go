@@ -39,5 +39,5 @@ const (
 // ComplianceOperatorScanSettingBindings holds the Gorm model for Postgres table `compliance_operator_scan_setting_bindings`.
 type ComplianceOperatorScanSettingBindings struct {
 	ID         string `gorm:"column:id;type:varchar;primaryKey"`
-	Serialized []byte `gorm:"column:serialized;type:bytea"`
+	Serialized []byte `gorm:"column:serialized;type:jsonb"`
 }

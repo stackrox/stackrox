@@ -48,5 +48,5 @@ type SecuredUnits struct {
 	Timestamp   *time.Time `gorm:"column:timestamp;type:timestamp;unique"`
 	NumNodes    int64      `gorm:"column:numnodes;type:bigint"`
 	NumCPUUnits int64      `gorm:"column:numcpuunits;type:bigint"`
-	Serialized  []byte     `gorm:"column:serialized;type:bytea"`
+	Serialized  []byte     `gorm:"column:serialized;type:jsonb"`
 }

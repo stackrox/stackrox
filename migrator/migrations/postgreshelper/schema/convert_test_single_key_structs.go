@@ -6,11 +6,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // ConvertTestSingleKeyStructFromProto converts a `*storage.TestSingleKeyStruct` to Gorm model
 func ConvertTestSingleKeyStructFromProto(obj *storage.TestSingleKeyStruct) (*TestSingleKeyStructs, error) {
-	serialized, err := obj.MarshalVT()
+	serialized, err := protojson.Marshal(obj)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +35,7 @@ func ConvertTestSingleKeyStructFromProto(obj *storage.TestSingleKeyStruct) (*Tes
 // ConvertTestSingleKeyStructToProto converts Gorm model `TestSingleKeyStructs` to its protobuf type object
 func ConvertTestSingleKeyStructToProto(m *TestSingleKeyStructs) (*storage.TestSingleKeyStruct, error) {
 	var msg storage.TestSingleKeyStruct
-	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
+	if err := protojson.Unmarshal(m.Serialized, &msg); err != nil {
 		return nil, err
 	}
 	return &msg, nil

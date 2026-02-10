@@ -59,5 +59,5 @@ type ClusterHealthStatuses struct {
 	AdmissionControlHealthStatus storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:admissioncontrolhealthstatus;type:integer"`
 	ScannerHealthStatus          storage.ClusterHealthStatus_HealthStatusLabel `gorm:"column:scannerhealthstatus;type:integer"`
 	LastContact                  *time.Time                                    `gorm:"column:lastcontact;type:timestamp"`
-	Serialized                   []byte                                        `gorm:"column:serialized;type:bytea"`
+	Serialized                   []byte                                        `gorm:"column:serialized;type:jsonb"`
 }
