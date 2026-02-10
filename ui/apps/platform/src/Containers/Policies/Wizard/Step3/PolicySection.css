@@ -24,7 +24,6 @@
     }
 
     .policy-section-card-header {
-        background-color: var(--pf-t--global--background--color--primary--default);
         position: sticky;
         top: 0;
         z-index: 101;
