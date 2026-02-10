@@ -243,7 +243,7 @@ function VulnerabilitiesConfiguration({
 
     return (
         <>
-            <div className="pf-v6-u-py-md pf-v6-u-px-md pf-v6-u-px-lg-on-xl">
+            <PageSection>
                 <Split className="pf-v6-u-align-items-center">
                     <SplitItem isFilled>
                         <Content component="p">
@@ -263,11 +263,11 @@ function VulnerabilitiesConfiguration({
                         </SplitItem>
                     )}
                 </Split>
-            </div>
+            </PageSection>
             <Divider component="div" />
             <PageSection hasBodyWrapper={false} component="div">
                 <Title headingLevel="h2">Configure exception times</Title>
-                <Form className="pf-v6-u-py-lg">
+                <Form>
                     <Grid hasGutter>
                         {dayOptions.map(({ numDays, enabled }, index) => {
                             const fieldIdPrefix = `expiryOptions.dayOptions[${index}]`;
