@@ -75,7 +75,7 @@ jobs:
       - name: Upload Python bundle artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: bundle-python
+          name: bundle-python-${{ matrix.related_img_mode }}
           path: /tmp/artifacts/
           retention-days: 1
 
@@ -138,7 +138,7 @@ jobs:
       - name: Upload Go bundle artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: bundle-go
+          name: bundle-go-${{ matrix.related_img_mode }}
           path: /tmp/artifacts/
           retention-days: 1
 
@@ -160,13 +160,13 @@ jobs:
       - name: Download Python bundle
         uses: actions/download-artifact@v4
         with:
-          name: bundle-python
+          name: bundle-python-${{ matrix.related_img_mode }}
           path: /tmp/python
 
       - name: Download Go bundle
         uses: actions/download-artifact@v4
         with:
-          name: bundle-go
+          name: bundle-go-${{ matrix.related_img_mode }}
           path: /tmp/go
         continue-on-error: true
 
