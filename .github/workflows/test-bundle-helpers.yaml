@@ -42,6 +42,7 @@ jobs:
         env:
           USE_GO_BUNDLE_HELPER: false
         run: |
+          go mod tidy
           make bundle bundle-post-process
           mkdir -p /tmp/artifacts
           cp -r bundle /tmp/artifacts/bundle-python
