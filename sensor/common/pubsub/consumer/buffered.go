@@ -82,12 +82,10 @@ func (c *BufferedConsumer) consume(waitable concurrency.Waitable, event pubsub.E
 	// Priority 1: Check if already cancelled
 	select {
 	case <-waitable.Done():
-		close(errC)
-		c.recordMetrics(operation, start)
+		c.closeAndRecord(errC, operation, start)
 		return
 	case <-c.stopper.Flow().StopRequested():
-		close(errC)
-		c.recordMetrics(operation, start)
+		c.closeAndRecord(errC, operation, start)
 		return
 	default:
 	}
@@ -104,10 +102,8 @@ func (c *BufferedConsumer) consume(waitable concurrency.Waitable, event pubsub.E
 
 	// Priority 2: If write failed, send error and close. Otherwise keep errC open.
 	if writeErr != nil {
-		operation := metrics.ConsumerError
 		errC <- writeErr // Won't block - buffered channel of size 1
-		close(errC)
-		c.recordMetrics(operation, start)
+		c.closeAndRecord(errC, operation, start)
 	}
 	// If writeErr is nil, errC stays open and will be closed later when callback completes
 }
@@ -145,7 +141,6 @@ func (c *BufferedConsumer) run() {
 }
 
 func (c *BufferedConsumer) handleEvent(wrappedEv *bufferedEvent) {
-	defer close(wrappedEv.errC)
 	// Execute callback in separate goroutine to prevent blocking the consumer
 	callbackDone := make(chan error, 1)
 	go func() {
@@ -166,7 +161,12 @@ func (c *BufferedConsumer) handleEvent(wrappedEv *bufferedEvent) {
 		}
 		// On success (err == nil), defer close handles it without sending
 	}
-	c.recordMetrics(operation, wrappedEv.startTime)
+	c.closeAndRecord(wrappedEv.errC, operation, wrappedEv.startTime)
+}
+
+func (c *BufferedConsumer) closeAndRecord(errC chan<- error, op metrics.Operation, start time.Time) {
+	close(errC)
+	c.recordMetrics(op, start)
 }
 
 func (c *BufferedConsumer) recordMetrics(op metrics.Operation, start time.Time) {
