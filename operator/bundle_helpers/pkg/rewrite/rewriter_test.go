@@ -79,6 +79,32 @@ func TestRewriteStrings(t *testing.T) {
 			},
 			modified: true,
 		},
+		{
+			name: "nested structures traversed but no match",
+			input: map[string]any{
+				"outer": map[string]any{
+					"inner": []any{
+						"some-other-value",
+						"another-value",
+					},
+					"field": "unchanged",
+				},
+				"top": "also-unchanged",
+			},
+			old: "not-found",
+			new: "replacement",
+			expected: map[string]any{
+				"outer": map[string]any{
+					"inner": []any{
+						"some-other-value",
+						"another-value",
+					},
+					"field": "unchanged",
+				},
+				"top": "also-unchanged",
+			},
+			modified: false,
+		},
 	}
 
 	for _, tt := range tests {
