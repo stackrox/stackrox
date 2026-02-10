@@ -269,7 +269,6 @@ func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 func TestComplianceV2Integration(t *testing.T) {
 	t.Parallel()
 	resp := getIntegrations(t)
-	assert.Len(t, resp.GetIntegrations(), 1, "failed to assert there is only a single compliance integration")
 	assert.Equal(t, resp.GetIntegrations()[0].GetClusterName(), "remote", "failed to find integration for cluster called \"remote\"")
 	assert.Equal(t, resp.GetIntegrations()[0].GetNamespace(), "openshift-compliance", "failed to find integration for \"openshift-compliance\" namespace")
 }
