@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+set -x
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
@@ -11,6 +12,7 @@ if [[ "${CI:-}" == "true" ]]; then
 fi
 
 known_failures_file="scripts/style/shellcheck_skip.txt"
+known_failures_file="/dev/null"
 
 retrieve_shell_scripts() {
     git ls-files | grep -E '.(sh|bats)$'

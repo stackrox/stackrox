@@ -1,30 +1,65 @@
 name: Cache Go Dependencies
-description: Cache Go Dependencies
+description: Cache Go Dependencies (restore-only for PRs, save on master)
+inputs:
+  save-cache:
+    description: 'Whether to save cache after job completes (default: only on master)'
+    required: false
+    default: 'auto'
 runs:
   using: composite
   steps:
     - name: Determine Go cache paths
-      id: cache-paths
+      id: cache-vars
       run: |
         echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
         echo "GOMODCACHE=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
         echo "GOARCH=$(go env GOARCH)" >> "$GITHUB_OUTPUT"
+        # Cache key for Go build cache and module cache
+        # Note: We intentionally exclude the OS version (ubuntu22 vs ubuntu24) from the key
+        # because Go compiles to static binaries that work across Linux versions.
+        # This allows cache sharing between different runner versions.
+        platform=${RUNNER_OS:-Linux}
+        arch=${RUNNER_ARCH:-X64}
+        arch=${arch,,}  # js process.arch is lowercase
+        versionSpec="$(go env GOVERSION)"
+        versionSpec=${versionSpec#go}
+        echo "key=${platform}-${arch}-go-${versionSpec}" >> "$GITHUB_OUTPUT"
+        # Determine if we should save cache
+        save_cache="${{ inputs.save-cache }}"
+        if [[ "$save_cache" == "auto" ]]; then
+          # Only save on master branch pushes, not PRs
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/master" ]]; then
+            save_cache="true"
+          else
+            save_cache="false"
+          fi
+        fi
+        echo "save-cache=${save_cache}" >> "$GITHUB_OUTPUT"
       shell: bash
 
-    - name: Cache Go Dependencies
-      uses: actions/cache@v5
+    - name: Restore Go cache
+      id: cache-restore
+      uses: actions/cache/restore@v4
       with:
         path: |
-          ${{ steps.cache-paths.outputs.GOMODCACHE }}
-        key: go-mod-v1-${{ hashFiles('**/go.sum') }}
-
-    - name: Cache Go Build
-      uses: actions/cache@v5
-      with:
-        path: |
-          ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ hashFiles('**/go.sum') }}
+          ${{ steps.cache-vars.outputs.GOCACHE }}
+          ${{ steps.cache-vars.outputs.GOMODCACHE }}
+        key: setup-go-${{ steps.cache-vars.outputs.key }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          setup-go-${{ steps.cache-vars.outputs.key }}-
+          setup-go-Linux-x64-
 
     - name: Download Go modules
-      run: make deps --always-make
+      run: |
+        make deps --always-make
       shell: bash
+
+    # Save cache only on master (runs as post step at end of job)
+    - name: Save Go cache
+      if: steps.cache-vars.outputs.save-cache == 'true' && steps.cache-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          ${{ steps.cache-vars.outputs.GOCACHE }}
+          ${{ steps.cache-vars.outputs.GOMODCACHE }}
+        key: setup-go-${{ steps.cache-vars.outputs.key }}-${{ hashFiles('**/go.sum') }}

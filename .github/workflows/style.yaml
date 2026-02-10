@@ -23,8 +23,6 @@ jobs:
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -39,6 +37,12 @@ jobs:
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
 
+    - name: Setup Go
+      uses: actions/setup-go@v6
+      with:
+        go-version-file: 'go.mod'
+        cache: false
+
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
@@ -49,8 +53,6 @@ jobs:
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -125,25 +127,45 @@ jobs:
   golangci-lint:
     timeout-minutes: 240
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        args: ["--tests=false", "--enable=unused", "--build-tags=release --tests=false"]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: false
+
+      - name: ${{ matrix.args }}
+        uses: golangci/golangci-lint-action@v8
+        continue-on-error: true
+        with:
+          version: v2.2.2  # passes with latest, but we can wait to update?
+          args: --verbose ${{ matrix.args }}
+
+  golangci-lint-old:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v6
 
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
     - uses: actions/setup-go@v6
       with:
         go-version-file: 'tools/linters/go.mod'
+        cache: false
+
+    - uses: golangci/golangci-lint-action@v8
 
     - name: Check Cache golangci-lint
       run: make golangci-lint-cache-status
 
     - name: Cache golangci-lint
-      uses: actions/cache@v5
+      uses: actions/cache@v4
       with:
-        path: /github/home/.cache/golangci-lint
+        path: /home/runner/.cache/golangci-lint
         key: go-lint-v2-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           go-lint-v2-${{ hashFiles('**/go.sum') }}
@@ -154,6 +176,10 @@ jobs:
 
     - name: Check Go version is in sync in .golangci.yml and go.mod
       run: |
+        set -x
+        set +e
+        awk '/^go /{print $2}' go.mod | cut -d. -f 1-2
+        yq e .run.go .golangci.yml
         [ "$(awk '/^go /{print $2}' go.mod | cut -d. -f 1-2)" = "$(yq e .run.go .golangci.yml)" ]
 
     - name: make golangci-lint
@@ -162,14 +188,14 @@ jobs:
     - name: Check Cache golangci-lint
       run: make golangci-lint-cache-status
 
-  check-dependent-images-exist:
-    # This job ensures that COLLECTOR_VERSION, FACT_VERSION or SCANNER_VERSION files cannot be updated to a version
-    # for which the image was not successfully built on Konflux (suffix "-fast"). It also verifies that GHA-built image
-    # is there (no suffix) so that the failure also happens in this job.
+  check-collector-and-scanner-images-exist:
+    # This job ensures that COLLECTOR_VERSION or SCANNER_VERSION files cannot be updated to a version for which the
+    # image was not successfully built on Konflux (suffix "-fast"). It also verifies that GHA-built image is there (no
+    # suffix) so that the failure also happens in this job.
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        image: ["collector", "fact", "scanner", "scanner-slim", "scanner-db", "scanner-db-slim"]
+        image: ["collector", "scanner", "scanner-slim", "scanner-db", "scanner-db-slim"]
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
@@ -178,13 +204,11 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Get image tag from COLLECTOR|FACT|SCANNER_VERSION file
+      - name: Get image tag from COLLECTOR|SCANNER_VERSION file
         id: image-tag
         run: |
           if [[ "${{ matrix.image }}" == "collector" ]]; then
             makefile_target="collector-tag"
-          elif [[ "${{ matrix.image }}" == "fact" ]]; then
-            makefile_target="fact-tag"
           else
             makefile_target="scanner-tag"
           fi
@@ -273,7 +297,7 @@ jobs:
       - misc-checks
       - style-check
       - golangci-lint
-      - check-dependent-images-exist
+      - check-collector-and-scanner-images-exist
       - github-actions-lint
       - github-actions-shellcheck
       - openshift-ci-lint

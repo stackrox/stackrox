@@ -1,0 +1,148 @@
+# Experimental Dockerfile that builds Go binaries inside Docker
+# This allows Docker layer caching to handle Go compilation caching
+# instead of separate pre-build jobs and artifact transfers.
+
+ARG RPMS_REGISTRY=registry.access.redhat.com
+ARG RPMS_BASE_IMAGE=ubi8
+ARG RPMS_BASE_TAG=latest
+ARG BASE_REGISTRY=registry.access.redhat.com
+ARG BASE_IMAGE=ubi8-minimal
+ARG BASE_TAG=latest
+ARG GO_VERSION=1.25
+
+# Stage 1: Download RPMs and Go runtime
+FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS downloads
+
+ARG DEBUG_BUILD=no
+
+WORKDIR /
+COPY image/rhel/download.sh /download.sh
+RUN /download.sh
+
+# Stage 2: Fetch stackrox data
+FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS stackrox_data
+
+RUN mkdir /stackrox-data
+RUN microdnf upgrade --nobest -y  && microdnf install -y zip
+
+WORKDIR /
+COPY image/rhel/fetch-stackrox-data.sh .
+RUN /fetch-stackrox-data.sh /stackrox-data
+
+# Stage 3: Build Go binaries
+FROM golang:${GO_VERSION} AS go-builder
+
+ARG TARGET_ARCH=amd64
+ARG GOTAGS=""
+ARG DEBUG_BUILD=no
+
+WORKDIR /src
+
+# Copy go.mod/go.sum first for better layer caching
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build all main binaries
+ENV GOOS=linux
+ENV GOARCH=${TARGET_ARCH}
+ENV GOTAGS=${GOTAGS}
+ENV CI=1
+ENV CGO_ENABLED=0
+
+# Build binaries - this layer is cached if source hasn't changed
+# Build main binaries and CLI (roxctl, roxagent) which are required for the final image
+RUN make main-build-nodeps && \
+    RACE=0 go build -o bin/linux_${GOARCH}/roxctl-linux-${GOARCH} ./roxctl && \
+    RACE=0 go build -o bin/linux_${GOARCH}/roxagent ./compliance/virtualmachines/roxagent
+
+# Stage 4: Build UI (can run in parallel with go-builder)
+FROM registry.access.redhat.com/ubi9/nodejs-20:latest AS ui-builder
+
+ARG ROX_PRODUCT_BRANDING=RHACS_BRANDING
+
+WORKDIR /src
+COPY --chown=default . .
+
+ENV ROX_PRODUCT_BRANDING=${ROX_PRODUCT_BRANDING}
+ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
+
+RUN make -C ui build
+
+# Stage 5: Final image
+FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
+
+ARG LABEL_VERSION
+ARG LABEL_RELEASE
+ARG QUAY_TAG_EXPIRATION
+ARG ROX_IMAGE_FLAVOR
+ARG ROX_PRODUCT_BRANDING
+ARG TARGET_ARCH=amd64
+
+LABEL name="main" \
+      vendor="StackRox" \
+      maintainer="https://stackrox.io/" \
+      summary="The StackRox Kubernetes Security Platform" \
+      description="This image contains components required to operate the StackRox Kubernetes Security Platform." \
+      version="${LABEL_VERSION}" \
+      release="${LABEL_RELEASE}" \
+      quay.expires-after="${QUAY_TAG_EXPIRATION}"
+
+ENV PATH="/stackrox:$PATH" \
+    ROX_ROXCTL_IN_MAIN_IMAGE="true" \
+    ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR} \
+    ROX_PRODUCT_BRANDING=${ROX_PRODUCT_BRANDING}
+
+COPY image/rhel/signatures/RPM-GPG-KEY-CentOS-Official /
+COPY image/rhel/static-bin /stackrox/
+
+COPY --from=downloads /output/rpms/ /tmp/
+COPY --from=downloads /output/go/ /go/
+
+RUN rpm --import RPM-GPG-KEY-CentOS-Official && \
+    microdnf -y upgrade --nobest && \
+    rpm -i --nodeps /tmp/postgres-libs.rpm && \
+    rpm -i --nodeps /tmp/postgres.rpm && \
+    microdnf install --setopt=install_weak_deps=0 --nodocs -y util-linux && \
+    microdnf clean all -y && \
+    rm /tmp/postgres.rpm /tmp/postgres-libs.rpm RPM-GPG-KEY-CentOS-Official && \
+    rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rm -rf /var/cache/dnf /var/cache/yum && \
+    chown -R 4000:4000 /etc/pki/ca-trust /etc/ssl && save-dir-contents /etc/pki/ca-trust /etc/ssl && \
+    mkdir -p /var/lib/stackrox && chown -R 4000:4000 /var/lib/stackrox && \
+    mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
+    mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
+    chown -R 4000:4000 /tmp
+
+COPY --from=stackrox_data /stackrox-data /stackrox/static-data
+# Swagger docs and THIRD_PARTY_NOTICES are optional for experimental builds
+RUN mkdir -p /stackrox/static-data/docs/api/v1 /stackrox/static-data/docs/api/v2 /THIRD_PARTY_NOTICES && \
+    echo '{}' > /stackrox/static-data/docs/api/v1/swagger.json && \
+    echo '{}' > /stackrox/static-data/docs/api/v2/swagger.json
+
+# Copy UI from ui-builder
+COPY --from=ui-builder /src/ui/build /ui
+
+# Copy Go binaries from go-builder
+COPY --from=go-builder /src/bin/linux_${TARGET_ARCH}/central            /stackrox/central
+COPY --from=go-builder /src/bin/linux_${TARGET_ARCH}/migrator           /stackrox/bin/migrator
+COPY --from=go-builder /src/bin/linux_${TARGET_ARCH}/compliance         /stackrox/bin/compliance
+COPY --from=go-builder /src/bin/linux_${TARGET_ARCH}/kubernetes  /stackrox/bin/kubernetes-sensor
+COPY --from=go-builder /src/bin/linux_${TARGET_ARCH}/upgrader           /stackrox/bin/sensor-upgrader
+COPY --from=go-builder /src/bin/linux_${TARGET_ARCH}/admission-control  /stackrox/bin/admission-control
+COPY --from=go-builder /src/bin/linux_${TARGET_ARCH}/config-controller  /stackrox/bin/config-controller
+COPY --from=go-builder /src/bin/linux_${TARGET_ARCH}/roxagent           /stackrox/bin/roxagent
+COPY --from=go-builder /src/bin/linux_${TARGET_ARCH}/roxctl*            /assets/downloads/cli/
+
+RUN ln -s /assets/downloads/cli/roxctl-linux-${TARGET_ARCH} /stackrox/roxctl && \
+    ln -s /assets/downloads/cli/roxctl-linux-amd64 /assets/downloads/cli/roxctl-linux
+
+EXPOSE 8443
+
+USER 4000:4000
+
+ENTRYPOINT ["/stackrox/roxctl"]
+
+HEALTHCHECK CMD curl --insecure --fail https://127.0.0.1:8443/v1/ping

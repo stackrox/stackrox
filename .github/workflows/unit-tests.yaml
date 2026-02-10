@@ -64,8 +64,14 @@ jobs:
     - name: Go Integration Unit Tests
       run: ${{ matrix.gotags }} make integration-unit-tests
 
+    - name: Go Operator Unit Tests
+      run: ${{ matrix.gotags }} make -C operator/ test
+
     - name: Go Operator Integration Tests
       run: ${{ matrix.gotags }} make -C operator/ test-integration
+
+    - name: Operator Bundle Helper Tests
+      run: make -C operator/ test-bundle-helpers
 
     - name: Generate junit report
       if: always()
@@ -395,6 +401,7 @@ jobs:
       uses: actions/setup-go@v6
       with:
         go-version-file: go.mod
+        cache: false
 
     - uses: ./.github/actions/job-preamble
       with:
