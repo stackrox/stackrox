@@ -11,11 +11,11 @@ import (
 )
 
 type ConcurrentConfig struct {
-	Config[*concurrentLane]
+	Config[*ConcurrentLane]
 }
 
-func WithConcurrentLaneSize(size int) pubsub.LaneOption[*concurrentLane] {
-	return func(lane *concurrentLane) {
+func WithConcurrentLaneSize(size int) pubsub.LaneOption[*ConcurrentLane] {
+	return func(lane *ConcurrentLane) {
 		if size < 0 {
 			return
 		}
@@ -23,8 +23,8 @@ func WithConcurrentLaneSize(size int) pubsub.LaneOption[*concurrentLane] {
 	}
 }
 
-func WithConcurrentLaneConsumer(consumer pubsub.NewConsumer) pubsub.LaneOption[*concurrentLane] {
-	return func(lane *concurrentLane) {
+func WithConcurrentLaneConsumer(consumer pubsub.NewConsumer) pubsub.LaneOption[*ConcurrentLane] {
+	return func(lane *ConcurrentLane) {
 		if consumer == nil {
 			panic("cannot configure a 'nil' NewConsumer function")
 		}
@@ -32,9 +32,9 @@ func WithConcurrentLaneConsumer(consumer pubsub.NewConsumer) pubsub.LaneOption[*
 	}
 }
 
-func NewConcurrentLane(id pubsub.LaneID, opts ...pubsub.LaneOption[*concurrentLane]) *ConcurrentConfig {
+func NewConcurrentLane(id pubsub.LaneID, opts ...pubsub.LaneOption[*ConcurrentLane]) *ConcurrentConfig {
 	return &ConcurrentConfig{
-		Config: Config[*concurrentLane]{
+		Config: Config[*ConcurrentLane]{
 			id:          id,
 			opts:        opts,
 			newConsumer: consumer.NewDefaultConsumer(),
@@ -43,7 +43,7 @@ func NewConcurrentLane(id pubsub.LaneID, opts ...pubsub.LaneOption[*concurrentLa
 }
 
 func (c *ConcurrentConfig) NewLane() pubsub.Lane {
-	lane := &concurrentLane{
+	lane := &ConcurrentLane{
 		Lane: Lane{
 			id:            c.Config.LaneID(),
 			newConsumerFn: c.Config.newConsumer,
@@ -59,14 +59,14 @@ func (c *ConcurrentConfig) NewLane() pubsub.Lane {
 	return lane
 }
 
-type concurrentLane struct {
+type ConcurrentLane struct {
 	Lane
 	size    int
 	ch      *safe.Channel[pubsub.Event]
 	stopper concurrency.Stopper
 }
 
-func (l *concurrentLane) Publish(event pubsub.Event) error {
+func (l *ConcurrentLane) Publish(event pubsub.Event) error {
 	if err := l.ch.Write(event); err != nil {
 		metrics.RecordPublishOperation(l.id, event.Topic(), metrics.PublishError)
 		return errors.Wrap(pubsubErrors.NewPublishOnStoppedLaneErr(l.id), "unable to publish event")
@@ -76,7 +76,7 @@ func (l *concurrentLane) Publish(event pubsub.Event) error {
 	return nil
 }
 
-func (l *concurrentLane) run() {
+func (l *ConcurrentLane) run() {
 	defer l.stopper.Flow().ReportStopped()
 	for {
 		// Priority 1: Check if stop requested
@@ -98,7 +98,7 @@ func (l *concurrentLane) run() {
 	}
 }
 
-func (l *concurrentLane) getConsumersByTopic(topic pubsub.Topic) ([]pubsub.Consumer, error) {
+func (l *ConcurrentLane) getConsumersByTopic(topic pubsub.Topic) ([]pubsub.Consumer, error) {
 	l.consumerLock.RLock()
 	defer l.consumerLock.RUnlock()
 	consumers, ok := l.consumers[topic]
@@ -108,7 +108,7 @@ func (l *concurrentLane) getConsumersByTopic(topic pubsub.Topic) ([]pubsub.Consu
 	return consumers, nil
 }
 
-func (l *concurrentLane) handleEvent(event pubsub.Event) {
+func (l *ConcurrentLane) handleEvent(event pubsub.Event) {
 	defer metrics.SetQueueSize(l.id, l.ch.Len())
 	consumers, err := l.getConsumersByTopic(event.Topic())
 	if err != nil {
@@ -123,7 +123,7 @@ func (l *concurrentLane) handleEvent(event pubsub.Event) {
 	}
 }
 
-func (l *concurrentLane) handleConsumerError(errC <-chan error) {
+func (l *ConcurrentLane) handleConsumerError(errC <-chan error) {
 	// This blocks until the consumer finishes the processing
 	// TODO: Consider adding a timeout here
 	select {
@@ -136,7 +136,7 @@ func (l *concurrentLane) handleConsumerError(errC <-chan error) {
 	}
 }
 
-func (l *concurrentLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pubsub.Topic, callback pubsub.EventCallback) error {
+func (l *ConcurrentLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pubsub.Topic, callback pubsub.EventCallback) error {
 	if callback == nil {
 		return errors.New("cannot register a 'nil' callback")
 	}
@@ -150,7 +150,7 @@ func (l *concurrentLane) RegisterConsumer(consumerID pubsub.ConsumerID, topic pu
 	return nil
 }
 
-func (l *concurrentLane) Stop() {
+func (l *ConcurrentLane) Stop() {
 	l.stopper.Client().Stop()
 	// Wait for the run() goroutine to fully exit.
 	// The channel will be closed automatically when the waitable is done.
