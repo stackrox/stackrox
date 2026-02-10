@@ -178,7 +178,19 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 		return nil, err
 	}
 	if parsedQuery.HasChildTableFields && len(parsedQuery.GroupBys) == 0 {
-		applyGroupByPrimaryKeys(parsedQuery, schema)
+		// Group by the raw PK column (no cast) so PostgreSQL recognizes functional
+		// dependency and allows non-aggregated parent columns in SELECT.
+		// applyGroupByPrimaryKeys uses selectQueryField which adds ::text for UUIDs,
+		// turning the GROUP BY into an expression that breaks functional dependency.
+		parsedQuery.GroupByPrimaryKey = true
+		for _, pk := range schema.PrimaryKeys() {
+			parsedQuery.GroupBys = append(parsedQuery.GroupBys, groupByEntry{
+				Field: pgsearch.SelectQueryField{
+					SelectPath: qualifyColumn(pk.Schema.Table, pk.ColumnName, ""),
+					FromGroupBy: true,
+				},
+			})
+		}
 	}
 	if err := populatePagination(parsedQuery, q.GetPagination(), schema, dbFields); err != nil {
 		return nil, err
