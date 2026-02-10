@@ -841,7 +841,7 @@ func (x *ComplianceProfileCheckRequest) GetQuery() *RawQuery {
 	return nil
 }
 
-// Next Tag: 8
+// Next Tag: 10
 type ComplianceProfileSummary struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Name           string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -851,8 +851,10 @@ type ComplianceProfileSummary struct {
 	RuleCount      int32                  `protobuf:"varint,5,opt,name=rule_count,json=ruleCount,proto3" json:"rule_count,omitempty"`
 	ProfileVersion string                 `protobuf:"bytes,6,opt,name=profile_version,json=profileVersion,proto3" json:"profile_version,omitempty"`
 	Standards      []*ComplianceBenchmark `protobuf:"bytes,7,rep,name=standards,proto3" json:"standards,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Details specific to tailored profiles (set only for TailoredProfiles)
+	TailoredDetails *TailoredProfileDetails `protobuf:"bytes,9,opt,name=tailored_details,json=tailoredDetails,proto3" json:"tailored_details,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ComplianceProfileSummary) Reset() {
@@ -934,6 +936,227 @@ func (x *ComplianceProfileSummary) GetStandards() []*ComplianceBenchmark {
 	return nil
 }
 
+func (x *ComplianceProfileSummary) GetTailoredDetails() *TailoredProfileDetails {
+	if x != nil {
+		return x.TailoredDetails
+	}
+	return nil
+}
+
+// TailoredProfileDetails contains information specific to tailored profiles
+type TailoredProfileDetails struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Base profile this tailored profile extends (empty for from-scratch profiles)
+	Extends string `protobuf:"bytes,1,opt,name=extends,proto3" json:"extends,omitempty"`
+	// Rules disabled from the base profile
+	DisabledRules []*TailoredProfileRuleModification `protobuf:"bytes,2,rep,name=disabled_rules,json=disabledRules,proto3" json:"disabled_rules,omitempty"`
+	// Rules enabled that were disabled in the base profile
+	EnabledRules []*TailoredProfileRuleModification `protobuf:"bytes,3,rep,name=enabled_rules,json=enabledRules,proto3" json:"enabled_rules,omitempty"`
+	// Rules marked as manual
+	ManualRules []*TailoredProfileRuleModification `protobuf:"bytes,4,rep,name=manual_rules,json=manualRules,proto3" json:"manual_rules,omitempty"`
+	// Variable value overrides
+	SetValues []*TailoredProfileValueOverride `protobuf:"bytes,5,rep,name=set_values,json=setValues,proto3" json:"set_values,omitempty"`
+	// State of the tailored profile (PENDING, READY, ERROR)
+	State string `protobuf:"bytes,6,opt,name=state,proto3" json:"state,omitempty"`
+	// Error message if state is ERROR
+	ErrorMessage  string `protobuf:"bytes,7,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TailoredProfileDetails) Reset() {
+	*x = TailoredProfileDetails{}
+	mi := &file_api_v2_compliance_common_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TailoredProfileDetails) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TailoredProfileDetails) ProtoMessage() {}
+
+func (x *TailoredProfileDetails) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v2_compliance_common_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TailoredProfileDetails.ProtoReflect.Descriptor instead.
+func (*TailoredProfileDetails) Descriptor() ([]byte, []int) {
+	return file_api_v2_compliance_common_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *TailoredProfileDetails) GetExtends() string {
+	if x != nil {
+		return x.Extends
+	}
+	return ""
+}
+
+func (x *TailoredProfileDetails) GetDisabledRules() []*TailoredProfileRuleModification {
+	if x != nil {
+		return x.DisabledRules
+	}
+	return nil
+}
+
+func (x *TailoredProfileDetails) GetEnabledRules() []*TailoredProfileRuleModification {
+	if x != nil {
+		return x.EnabledRules
+	}
+	return nil
+}
+
+func (x *TailoredProfileDetails) GetManualRules() []*TailoredProfileRuleModification {
+	if x != nil {
+		return x.ManualRules
+	}
+	return nil
+}
+
+func (x *TailoredProfileDetails) GetSetValues() []*TailoredProfileValueOverride {
+	if x != nil {
+		return x.SetValues
+	}
+	return nil
+}
+
+func (x *TailoredProfileDetails) GetState() string {
+	if x != nil {
+		return x.State
+	}
+	return ""
+}
+
+func (x *TailoredProfileDetails) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+// TailoredProfileRuleModification represents a rule modification in a tailored profile
+type TailoredProfileRuleModification struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Rationale     string                 `protobuf:"bytes,2,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TailoredProfileRuleModification) Reset() {
+	*x = TailoredProfileRuleModification{}
+	mi := &file_api_v2_compliance_common_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TailoredProfileRuleModification) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TailoredProfileRuleModification) ProtoMessage() {}
+
+func (x *TailoredProfileRuleModification) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v2_compliance_common_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TailoredProfileRuleModification.ProtoReflect.Descriptor instead.
+func (*TailoredProfileRuleModification) Descriptor() ([]byte, []int) {
+	return file_api_v2_compliance_common_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *TailoredProfileRuleModification) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *TailoredProfileRuleModification) GetRationale() string {
+	if x != nil {
+		return x.Rationale
+	}
+	return ""
+}
+
+// TailoredProfileValueOverride represents a variable value override in a tailored profile
+type TailoredProfileValueOverride struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	Rationale     string                 `protobuf:"bytes,3,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TailoredProfileValueOverride) Reset() {
+	*x = TailoredProfileValueOverride{}
+	mi := &file_api_v2_compliance_common_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TailoredProfileValueOverride) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TailoredProfileValueOverride) ProtoMessage() {}
+
+func (x *TailoredProfileValueOverride) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v2_compliance_common_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TailoredProfileValueOverride.ProtoReflect.Descriptor instead.
+func (*TailoredProfileValueOverride) Descriptor() ([]byte, []int) {
+	return file_api_v2_compliance_common_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *TailoredProfileValueOverride) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *TailoredProfileValueOverride) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+func (x *TailoredProfileValueOverride) GetRationale() string {
+	if x != nil {
+		return x.Rationale
+	}
+	return ""
+}
+
 type ComplianceRule_Fix struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Platform      string                 `protobuf:"bytes,1,opt,name=platform,proto3" json:"platform,omitempty"`
@@ -944,7 +1167,7 @@ type ComplianceRule_Fix struct {
 
 func (x *ComplianceRule_Fix) Reset() {
 	*x = ComplianceRule_Fix{}
-	mi := &file_api_v2_compliance_common_proto_msgTypes[12]
+	mi := &file_api_v2_compliance_common_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -956,7 +1179,7 @@ func (x *ComplianceRule_Fix) String() string {
 func (*ComplianceRule_Fix) ProtoMessage() {}
 
 func (x *ComplianceRule_Fix) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_compliance_common_proto_msgTypes[12]
+	mi := &file_api_v2_compliance_common_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1061,7 +1284,7 @@ const file_api_v2_compliance_common_proto_rawDesc = "" +
 	"\fprofile_name\x18\x01 \x01(\tR\vprofileName\x12\x1d\n" +
 	"\n" +
 	"check_name\x18\x02 \x01(\tR\tcheckName\x12\"\n" +
-	"\x05query\x18\x03 \x01(\v2\f.v2.RawQueryR\x05query\"\x88\x02\n" +
+	"\x05query\x18\x03 \x01(\v2\f.v2.RawQueryR\x05query\"\xd5\x02\n" +
 	"\x18ComplianceProfileSummary\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
 	"\fproduct_type\x18\x02 \x01(\tR\vproductType\x12 \n" +
@@ -1070,7 +1293,24 @@ const file_api_v2_compliance_common_proto_rawDesc = "" +
 	"\n" +
 	"rule_count\x18\x05 \x01(\x05R\truleCount\x12'\n" +
 	"\x0fprofile_version\x18\x06 \x01(\tR\x0eprofileVersion\x125\n" +
-	"\tstandards\x18\a \x03(\v2\x17.v2.ComplianceBenchmarkR\tstandards*\x8a\x01\n" +
+	"\tstandards\x18\a \x03(\v2\x17.v2.ComplianceBenchmarkR\tstandards\x12E\n" +
+	"\x10tailored_details\x18\t \x01(\v2\x1a.v2.TailoredProfileDetailsR\x0ftailoredDetailsJ\x04\b\b\x10\t\"\x8c\x03\n" +
+	"\x16TailoredProfileDetails\x12\x18\n" +
+	"\aextends\x18\x01 \x01(\tR\aextends\x12J\n" +
+	"\x0edisabled_rules\x18\x02 \x03(\v2#.v2.TailoredProfileRuleModificationR\rdisabledRules\x12H\n" +
+	"\renabled_rules\x18\x03 \x03(\v2#.v2.TailoredProfileRuleModificationR\fenabledRules\x12F\n" +
+	"\fmanual_rules\x18\x04 \x03(\v2#.v2.TailoredProfileRuleModificationR\vmanualRules\x12?\n" +
+	"\n" +
+	"set_values\x18\x05 \x03(\v2 .v2.TailoredProfileValueOverrideR\tsetValues\x12\x14\n" +
+	"\x05state\x18\x06 \x01(\tR\x05state\x12#\n" +
+	"\rerror_message\x18\a \x01(\tR\ferrorMessage\"S\n" +
+	"\x1fTailoredProfileRuleModification\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1c\n" +
+	"\trationale\x18\x02 \x01(\tR\trationale\"f\n" +
+	"\x1cTailoredProfileValueOverride\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\x12\x1c\n" +
+	"\trationale\x18\x03 \x01(\tR\trationale*\x8a\x01\n" +
 	"\x15ComplianceCheckStatus\x12\x16\n" +
 	"\x12UNSET_CHECK_STATUS\x10\x00\x12\b\n" +
 	"\x04PASS\x10\x01\x12\b\n" +
@@ -1096,7 +1336,7 @@ func file_api_v2_compliance_common_proto_rawDescGZIP() []byte {
 }
 
 var file_api_v2_compliance_common_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_api_v2_compliance_common_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_api_v2_compliance_common_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_api_v2_compliance_common_proto_goTypes = []any{
 	(ComplianceCheckStatus)(0),                        // 0: v2.ComplianceCheckStatus
 	(*ComplianceRule)(nil),                            // 1: v2.ComplianceRule
@@ -1111,28 +1351,36 @@ var file_api_v2_compliance_common_proto_goTypes = []any{
 	(*ComplianceProfileResultsRequest)(nil),           // 10: v2.ComplianceProfileResultsRequest
 	(*ComplianceProfileCheckRequest)(nil),             // 11: v2.ComplianceProfileCheckRequest
 	(*ComplianceProfileSummary)(nil),                  // 12: v2.ComplianceProfileSummary
-	(*ComplianceRule_Fix)(nil),                        // 13: v2.ComplianceRule.Fix
-	(*timestamppb.Timestamp)(nil),                     // 14: google.protobuf.Timestamp
-	(*RawQuery)(nil),                                  // 15: v2.RawQuery
+	(*TailoredProfileDetails)(nil),                    // 13: v2.TailoredProfileDetails
+	(*TailoredProfileRuleModification)(nil),           // 14: v2.TailoredProfileRuleModification
+	(*TailoredProfileValueOverride)(nil),              // 15: v2.TailoredProfileValueOverride
+	(*ComplianceRule_Fix)(nil),                        // 16: v2.ComplianceRule.Fix
+	(*timestamppb.Timestamp)(nil),                     // 17: google.protobuf.Timestamp
+	(*RawQuery)(nil),                                  // 18: v2.RawQuery
 }
 var file_api_v2_compliance_common_proto_depIdxs = []int32{
-	13, // 0: v2.ComplianceRule.fixes:type_name -> v2.ComplianceRule.Fix
+	16, // 0: v2.ComplianceRule.fixes:type_name -> v2.ComplianceRule.Fix
 	0,  // 1: v2.ComplianceCheckStatusCount.status:type_name -> v2.ComplianceCheckStatus
 	3,  // 2: v2.ComplianceCheckResultStatusCount.check_stats:type_name -> v2.ComplianceCheckStatusCount
 	5,  // 3: v2.ComplianceCheckResultStatusCount.controls:type_name -> v2.ComplianceControl
 	4,  // 4: v2.ListComplianceProfileResults.profile_results:type_name -> v2.ComplianceCheckResultStatusCount
 	2,  // 5: v2.ComplianceClusterOverallStats.cluster:type_name -> v2.ComplianceScanCluster
 	3,  // 6: v2.ComplianceClusterOverallStats.check_stats:type_name -> v2.ComplianceCheckStatusCount
-	14, // 7: v2.ComplianceClusterOverallStats.last_scan_time:type_name -> google.protobuf.Timestamp
+	17, // 7: v2.ComplianceClusterOverallStats.last_scan_time:type_name -> google.protobuf.Timestamp
 	8,  // 8: v2.ListComplianceClusterOverallStatsResponse.scan_stats:type_name -> v2.ComplianceClusterOverallStats
-	15, // 9: v2.ComplianceProfileResultsRequest.query:type_name -> v2.RawQuery
-	15, // 10: v2.ComplianceProfileCheckRequest.query:type_name -> v2.RawQuery
+	18, // 9: v2.ComplianceProfileResultsRequest.query:type_name -> v2.RawQuery
+	18, // 10: v2.ComplianceProfileCheckRequest.query:type_name -> v2.RawQuery
 	6,  // 11: v2.ComplianceProfileSummary.standards:type_name -> v2.ComplianceBenchmark
-	12, // [12:12] is the sub-list for method output_type
-	12, // [12:12] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	13, // 12: v2.ComplianceProfileSummary.tailored_details:type_name -> v2.TailoredProfileDetails
+	14, // 13: v2.TailoredProfileDetails.disabled_rules:type_name -> v2.TailoredProfileRuleModification
+	14, // 14: v2.TailoredProfileDetails.enabled_rules:type_name -> v2.TailoredProfileRuleModification
+	14, // 15: v2.TailoredProfileDetails.manual_rules:type_name -> v2.TailoredProfileRuleModification
+	15, // 16: v2.TailoredProfileDetails.set_values:type_name -> v2.TailoredProfileValueOverride
+	17, // [17:17] is the sub-list for method output_type
+	17, // [17:17] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_compliance_common_proto_init() }
@@ -1147,7 +1395,7 @@ func file_api_v2_compliance_common_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v2_compliance_common_proto_rawDesc), len(file_api_v2_compliance_common_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   13,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

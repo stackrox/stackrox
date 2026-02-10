@@ -146,7 +146,7 @@ func (k *listenerImpl) handleAllEvents() {
 
 	// Compliance Operator Watcher and Informers
 	var complianceResultInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer, complianceSuiteInformer, complianceRemediationInformer cache.SharedIndexInformer
-	var profileLister cache.GenericLister
+	var profileLister, tailoredProfileLister cache.GenericLister
 
 	coCrdWatcher := crd.NewCRDWatcher(&k.stopSig, dynamicSif)
 	coAvailabilityChecker := complianceOperatorAvailabilityChecker.NewComplianceOperatorAvailabilityChecker()
@@ -168,6 +168,7 @@ func (k *listenerImpl) handleAllEvents() {
 	if coAvailable {
 		log.Info("Initializing compliance operator informers")
 		profileLister = crdSharedInformerFactory.ForResource(complianceoperator.Profile.GroupVersionResource()).Lister()
+		tailoredProfileLister = crdSharedInformerFactory.ForResource(complianceoperator.TailoredProfile.GroupVersionResource()).Lister()
 
 		complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceCheckResult.GroupVersionResource()).Informer()
 		complianceScanSettingBindingsInformer = crdSharedInformerFactory.ForResource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Informer()
@@ -234,6 +235,7 @@ func (k *listenerImpl) handleAllEvents() {
 		clusterID,
 		podInformer.Lister(),
 		profileLister,
+		tailoredProfileLister,
 		processfilter.Singleton(),
 		k.configHandler,
 		k.credentialsManager,

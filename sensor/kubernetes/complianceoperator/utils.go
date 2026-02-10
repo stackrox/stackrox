@@ -69,11 +69,21 @@ func convertCentralRequestToScanSetting(namespace string, request *central.Apply
 }
 
 func convertCentralRequestToScanSettingBinding(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, _ string) runtime.Object {
+	// Build a set of tailored profile names for O(1) lookup
+	tailoredProfiles := make(map[string]struct{}, len(request.GetTailoredProfileNames()))
+	for _, name := range request.GetTailoredProfileNames() {
+		tailoredProfiles[name] = struct{}{}
+	}
+
 	profileRefs := make([]v1alpha1.NamedObjectReference, 0, len(request.GetProfiles()))
 	for _, profile := range request.GetProfiles() {
+		kind := complianceoperator.Profile.Kind
+		if _, isTailored := tailoredProfiles[profile]; isTailored {
+			kind = complianceoperator.TailoredProfile.Kind
+		}
 		profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
 			Name:     profile,
-			Kind:     complianceoperator.Profile.Kind,
+			Kind:     kind,
 			APIGroup: complianceoperator.GetGroupVersion().String(),
 		})
 	}
@@ -117,11 +127,21 @@ func updateScanSettingFromCentralRequest(scanSetting *v1alpha1.ScanSetting, requ
 }
 
 func updateScanSettingBindingFromCentralRequest(scanSettingBinding *v1alpha1.ScanSettingBinding, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) *v1alpha1.ScanSettingBinding {
+	// Build a set of tailored profile names for O(1) lookup
+	tailoredProfiles := make(map[string]struct{}, len(request.GetTailoredProfileNames()))
+	for _, name := range request.GetTailoredProfileNames() {
+		tailoredProfiles[name] = struct{}{}
+	}
+
 	profileRefs := make([]v1alpha1.NamedObjectReference, 0, len(request.GetProfiles()))
 	for _, profile := range request.GetProfiles() {
+		kind := complianceoperator.Profile.Kind
+		if _, isTailored := tailoredProfiles[profile]; isTailored {
+			kind = complianceoperator.TailoredProfile.Kind
+		}
 		profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
 			Name:     profile,
-			Kind:     complianceoperator.Profile.Kind,
+			Kind:     kind,
 			APIGroup: complianceoperator.GetGroupVersion().String(),
 		})
 	}

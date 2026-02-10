@@ -32,6 +32,7 @@ func (m *ComplianceProfile) CloneVT() *ComplianceProfile {
 	r.Description = m.Description
 	r.Product = m.Product
 	r.Title = m.Title
+	r.TailoredDetails = m.TailoredDetails.CloneVT()
 	if rhs := m.Rules; rhs != nil {
 		tmpContainer := make([]*ComplianceRule, len(rhs))
 		for k, v := range rhs {
@@ -220,6 +221,9 @@ func (this *ComplianceProfile) EqualVT(that *ComplianceProfile) bool {
 			}
 		}
 	}
+	if !this.TailoredDetails.EqualVT(that.TailoredDetails) {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -381,6 +385,16 @@ func (m *ComplianceProfile) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.TailoredDetails != nil {
+		size, err := m.TailoredDetails.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x6a
 	}
 	if len(m.Standards) > 0 {
 		for iNdEx := len(m.Standards) - 1; iNdEx >= 0; iNdEx-- {
@@ -720,6 +734,10 @@ func (m *ComplianceProfile) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	if m.TailoredDetails != nil {
+		l = m.TailoredDetails.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1151,6 +1169,42 @@ func (m *ComplianceProfile) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Standards = append(m.Standards, &ComplianceBenchmark{})
 			if err := m.Standards[len(m.Standards)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TailoredDetails", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.TailoredDetails == nil {
+				m.TailoredDetails = &TailoredProfileDetails{}
+			}
+			if err := m.TailoredDetails.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -2004,6 +2058,42 @@ func (m *ComplianceProfile) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.Standards = append(m.Standards, &ComplianceBenchmark{})
 			if err := m.Standards[len(m.Standards)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TailoredDetails", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.TailoredDetails == nil {
+				m.TailoredDetails = &TailoredProfileDetails{}
+			}
+			if err := m.TailoredDetails.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

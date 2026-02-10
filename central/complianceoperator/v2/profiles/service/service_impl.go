@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"slices"
+	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -175,6 +177,11 @@ func (s *serviceImpl) ListProfileSummaries(ctx context.Context, request *v2.Clus
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance profiles for %v", request)
 	}
 
+	// Filter out TailoredProfiles that have different configurations across clusters.
+	// For OOB profiles, name match is sufficient. For TailoredProfiles, we check
+	// that tailored_details are equivalent across all clusters.
+	profiles = filterEquivalentProfiles(profiles, len(request.GetClusterIds()))
+
 	// Get the benchmarks
 	benchmarkMap, err := s.getBenchmarks(ctx, profiles)
 	if err != nil {
@@ -206,4 +213,156 @@ func (s *serviceImpl) getBenchmarks(ctx context.Context, profiles []*storage.Com
 	}
 
 	return benchmarkMap, nil
+}
+
+// filterEquivalentProfiles filters out profiles that are not equivalent across clusters.
+// For OOB profiles, name equality is sufficient (already handled by GetProfilesNames).
+// For TailoredProfiles, we need to check that tailored_details are equivalent across all clusters.
+func filterEquivalentProfiles(profiles []*storage.ComplianceOperatorProfileV2, numClusters int) []*storage.ComplianceOperatorProfileV2 {
+	if numClusters <= 1 {
+		return profiles
+	}
+
+	// Group profiles by name
+	profilesByName := make(map[string][]*storage.ComplianceOperatorProfileV2)
+	for _, p := range profiles {
+		profilesByName[p.GetName()] = append(profilesByName[p.GetName()], p)
+	}
+
+	var result []*storage.ComplianceOperatorProfileV2
+	for name, group := range profilesByName {
+		// Skip if not present in all clusters
+		if len(group) < numClusters {
+			continue
+		}
+
+		// Check if any profile in the group is a TailoredProfile
+		hasTailoredProfile := false
+		for _, p := range group {
+			if p.GetTailoredDetails() != nil {
+				hasTailoredProfile = true
+				break
+			}
+		}
+
+		if !hasTailoredProfile {
+			// OOB profiles - name match is sufficient, keep first one for deduplication
+			result = append(result, group[0])
+		} else {
+			// TailoredProfiles - check if all instances are equivalent
+			if areTailoredProfilesEquivalent(group) {
+				result = append(result, group[0])
+			}
+			// If not equivalent, don't include this profile (silently filtered out)
+			_ = name // suppress unused warning
+		}
+	}
+
+	// Sort by name to maintain consistent ordering
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].GetName() < result[j].GetName()
+	})
+
+	return result
+}
+
+// areTailoredProfilesEquivalent checks if all TailoredProfiles in the group have equivalent configurations.
+// Two TailoredProfiles are considered equivalent if they have:
+// - Same base profile (extends)
+// - Same disabled rules (by name)
+// - Same enabled rules (by name)
+// - Same manual rules (by name)
+// - Same set values (by name and value)
+func areTailoredProfilesEquivalent(profiles []*storage.ComplianceOperatorProfileV2) bool {
+	if len(profiles) <= 1 {
+		return true
+	}
+
+	// Use first profile as reference
+	ref := profiles[0].GetTailoredDetails()
+
+	for _, p := range profiles[1:] {
+		td := p.GetTailoredDetails()
+
+		// Both must be TailoredProfiles (or both OOB)
+		if (ref == nil) != (td == nil) {
+			return false
+		}
+
+		// If both are OOB (nil tailored_details), they're equivalent by name
+		if ref == nil && td == nil {
+			continue
+		}
+
+		// Check base profile
+		if ref.GetExtends() != td.GetExtends() {
+			return false
+		}
+
+		// Check disabled rules
+		if !areRuleModificationsEquivalent(ref.GetDisabledRules(), td.GetDisabledRules()) {
+			return false
+		}
+
+		// Check enabled rules
+		if !areRuleModificationsEquivalent(ref.GetEnabledRules(), td.GetEnabledRules()) {
+			return false
+		}
+
+		// Check manual rules
+		if !areRuleModificationsEquivalent(ref.GetManualRules(), td.GetManualRules()) {
+			return false
+		}
+
+		// Check set values
+		if !areValueOverridesEquivalent(ref.GetSetValues(), td.GetSetValues()) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// areRuleModificationsEquivalent checks if two slices of rule modifications are equivalent.
+// Rules are compared by name only (rationale may differ across clusters).
+func areRuleModificationsEquivalent(a, b []*storage.StorageTailoredProfileRuleModification) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	// Extract and sort names
+	namesA := make([]string, len(a))
+	namesB := make([]string, len(b))
+	for i, r := range a {
+		namesA[i] = r.GetName()
+	}
+	for i, r := range b {
+		namesB[i] = r.GetName()
+	}
+	slices.Sort(namesA)
+	slices.Sort(namesB)
+
+	return slices.Equal(namesA, namesB)
+}
+
+// areValueOverridesEquivalent checks if two slices of value overrides are equivalent.
+// Values are compared by name and value (rationale may differ).
+func areValueOverridesEquivalent(a, b []*storage.StorageTailoredProfileValueOverride) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	// Create maps for comparison
+	mapA := make(map[string]string, len(a))
+	for _, v := range a {
+		mapA[v.GetName()] = v.GetValue()
+	}
+
+	for _, v := range b {
+		if val, exists := mapA[v.GetName()]; !exists || val != v.GetValue() {
+			return false
+		}
+	}
+
+	return true
 }

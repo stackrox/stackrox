@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -564,7 +564,7 @@ func validateInterface(i interface{}) error {
 
 func (m *handlerImpl) processSuspendScheduledScanRequest(requestID string, request *central.ApplyComplianceScanConfigRequest_SuspendScheduledScan) bool {
 	config := scanScheduleConfiguration{
-		Suspend:        pointer.Bool(true),
+		Suspend:        ptr.To(true),
 		ScanName:       request.GetScanName(),
 		Request:        request,
 		ValidationFunc: validateInterface,
@@ -574,7 +574,7 @@ func (m *handlerImpl) processSuspendScheduledScanRequest(requestID string, reque
 
 func (m *handlerImpl) processResumeScheduledScanRequest(requestID string, request *central.ApplyComplianceScanConfigRequest_ResumeScheduledScan) bool {
 	config := scanScheduleConfiguration{
-		Suspend:        pointer.Bool(false),
+		Suspend:        ptr.To(false),
 		ScanName:       request.GetScanName(),
 		Request:        request,
 		ValidationFunc: validateInterface,
