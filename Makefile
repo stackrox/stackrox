@@ -429,7 +429,7 @@ endif
 roxagent: roxagent-build
 
 .PHONY: cli-build
-cli-build: roxctl-build
+cli-build: roxctl-build roxagent-build
 
 .PHONY: cli-install
 cli-install: roxctl-install
