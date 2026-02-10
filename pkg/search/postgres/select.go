@@ -186,7 +186,7 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 		for _, pk := range schema.PrimaryKeys() {
 			parsedQuery.GroupBys = append(parsedQuery.GroupBys, groupByEntry{
 				Field: pgsearch.SelectQueryField{
-					SelectPath: qualifyColumn(pk.Schema.Table, pk.ColumnName, ""),
+					SelectPath:  qualifyColumn(pk.Schema.Table, pk.ColumnName, ""),
 					FromGroupBy: true,
 				},
 			})
