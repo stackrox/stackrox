@@ -60,19 +60,8 @@ func FixSpecDescriptorOrder(args []string) error {
 // This handles formatting quirks (quote styles, line wrapping, etc.) while keeping
 // all business logic in Go.
 func normalizeYAMLOutput(goYAML []byte, w io.Writer) error {
-	// Find the yaml-normalizer.py script
-	execPath, err := os.Executable()
-	if err != nil {
-		return fmt.Errorf("failed to get executable path: %w", err)
-	}
-	scriptDir := filepath.Dir(execPath)
-	normalizerPath := filepath.Join(scriptDir, "..", "yaml-normalizer.py")
-
-	// If running from source (not installed), try the current directory
-	if _, err := os.Stat(normalizerPath); os.IsNotExist(err) {
-		wd, _ := os.Getwd()
-		normalizerPath = filepath.Join(wd, "yaml-normalizer.py")
-	}
+	wd, _ := os.Getwd()
+	normalizerPath := filepath.Join(wd, "bundle_helpers", "yaml-normalizer.py")
 
 	// Run the normalizer
 	cmd := exec.Command(normalizerPath)
