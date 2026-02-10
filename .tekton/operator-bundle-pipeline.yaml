@@ -481,10 +481,6 @@ spec:
       - name: kind
         value: task
       resolver: bundles
-    when:
-    - input: $(tasks.init.results.build)
-      operator: in
-      values: [ "true" ]
 
   - name: apply-tags
     params:
@@ -525,9 +521,6 @@ spec:
         value: task
       resolver: bundles
     when:
-    - input: $(tasks.init.results.build)
-      operator: in
-      values: [ "true" ]
     - input: $(params.build-source-image)
       operator: in
       values: [ "true" ]
