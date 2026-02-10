@@ -10,7 +10,7 @@ import (
 // EncodePyYAMLStyle encodes data to YAML matching PyYAML's safe_dump() style.
 // This includes:
 // - Single quotes for simple string values
-// - Empty string as '' not ""
+// - Empty strings using single quotes
 // - Flow style for arrays/maps where appropriate
 func EncodePyYAMLStyle(w io.Writer, data interface{}) error {
 	var buf bytes.Buffer
