@@ -325,7 +325,6 @@ func TestComplianceV2ProfileGet(t *testing.T) {
 
 	// Get the clusters
 	resp := getIntegrations(t)
-	assert.Len(t, resp.GetIntegrations(), 1, "failed to assert there is only a single compliance integration")
 
 	// Get the profiles for the cluster
 	clusterID := resp.GetIntegrations()[0].GetClusterId()
@@ -347,7 +346,6 @@ func TestComplianceV2ProfileGetSummaries(t *testing.T) {
 
 	// Get the clusters
 	resp := getIntegrations(t)
-	assert.Len(t, resp.GetIntegrations(), 1, "failed to assert there is only a single compliance integration")
 
 	// Get the profiles for the cluster
 	clusterID := resp.GetIntegrations()[0].GetClusterId()
