@@ -31,7 +31,7 @@ function AdministrationEventsTable({
     searchFilter,
 }: AdministrationEventsTableProps): ReactElement {
     return (
-        <Table variant="compact" borders={false}>
+        <Table variant="compact">
             <Thead>
                 <Tr>
                     <Th>Domain</Th>
@@ -52,14 +52,8 @@ function AdministrationEventsTable({
                     const { type: resourceType } = resource;
 
                     return (
-                        <Tbody
-                            key={id}
-                            isExpanded
-                            style={{
-                                borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
-                            }}
-                        >
-                            <Tr>
+                        <Tbody key={id} isExpanded>
+                            <Tr style={{ borderBottom: 'none' }}>
                                 <Td dataLabel="Domain" modifier="nowrap">
                                     <Link to={`/main/administration-events/${id}`}>{domain}</Link>
                                 </Td>

@@ -93,14 +93,14 @@ function AdministrationEventsPage(): ReactElement {
     return (
         <>
             <PageTitle title="Administration Events" />
-            <PageSection hasBodyWrapper={false} component="div">
+            <PageSection component="div">
                 <Title headingLevel="h1">Administration Events</Title>
                 <Content component="p">
                     Troubleshoot platform issues by reviewing event logs. Events are purged after 4
                     days by default.
                 </Content>
             </PageSection>
-            <PageSection hasBodyWrapper={false} component="div">
+            <PageSection component="div">
                 {isLoading && !lastUpdatedTime ? (
                     <Bullseye>
                         <Spinner />
