@@ -309,3 +309,109 @@ var ClusterCVEService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "api/v1/cve_service.proto",
 }
+
+const (
+	CVEService_GetCVEMetadata_FullMethodName = "/v1.CVEService/GetCVEMetadata"
+)
+
+// CVEServiceClient is the client API for CVEService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// CVEService APIs can be used to export CVE metadata.
+type CVEServiceClient interface {
+	// GetCVEMetadata returns CVE metadata (CVSS scores, severity, types) for specified CVE IDs.
+	GetCVEMetadata(ctx context.Context, in *GetCVEMetadataRequest, opts ...grpc.CallOption) (*GetCVEMetadataResponse, error)
+}
+
+type cVEServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewCVEServiceClient(cc grpc.ClientConnInterface) CVEServiceClient {
+	return &cVEServiceClient{cc}
+}
+
+func (c *cVEServiceClient) GetCVEMetadata(ctx context.Context, in *GetCVEMetadataRequest, opts ...grpc.CallOption) (*GetCVEMetadataResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCVEMetadataResponse)
+	err := c.cc.Invoke(ctx, CVEService_GetCVEMetadata_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// CVEServiceServer is the server API for CVEService service.
+// All implementations should embed UnimplementedCVEServiceServer
+// for forward compatibility.
+//
+// CVEService APIs can be used to export CVE metadata.
+type CVEServiceServer interface {
+	// GetCVEMetadata returns CVE metadata (CVSS scores, severity, types) for specified CVE IDs.
+	GetCVEMetadata(context.Context, *GetCVEMetadataRequest) (*GetCVEMetadataResponse, error)
+}
+
+// UnimplementedCVEServiceServer should be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedCVEServiceServer struct{}
+
+func (UnimplementedCVEServiceServer) GetCVEMetadata(context.Context, *GetCVEMetadataRequest) (*GetCVEMetadataResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCVEMetadata not implemented")
+}
+func (UnimplementedCVEServiceServer) testEmbeddedByValue() {}
+
+// UnsafeCVEServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to CVEServiceServer will
+// result in compilation errors.
+type UnsafeCVEServiceServer interface {
+	mustEmbedUnimplementedCVEServiceServer()
+}
+
+func RegisterCVEServiceServer(s grpc.ServiceRegistrar, srv CVEServiceServer) {
+	// If the following call panics, it indicates UnimplementedCVEServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&CVEService_ServiceDesc, srv)
+}
+
+func _CVEService_GetCVEMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCVEMetadataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CVEServiceServer).GetCVEMetadata(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CVEService_GetCVEMetadata_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CVEServiceServer).GetCVEMetadata(ctx, req.(*GetCVEMetadataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// CVEService_ServiceDesc is the grpc.ServiceDesc for CVEService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var CVEService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "v1.CVEService",
+	HandlerType: (*CVEServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetCVEMetadata",
+			Handler:    _CVEService_GetCVEMetadata_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "api/v1/cve_service.proto",
+}

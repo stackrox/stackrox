@@ -476,6 +476,132 @@ func TestEnrichLocalImageV2Internal_ImageNames(t *testing.T) {
 	require.Len(t, resp.GetImage().GetNames(), 3)
 }
 
+func TestGetLayers(t *testing.T) {
+	testCases := []struct {
+		desc             string
+		metadata         *storage.ImageMetadata
+		requestedLayers  []int32
+		expectedLayers   map[int32]*storage.ImageLayer
+		expectedError    bool
+		expectedErrorMsg string
+	}{
+		{
+			desc:            "empty request returns nil",
+			metadata:        &storage.ImageMetadata{V1: &storage.V1Metadata{Layers: []*storage.ImageLayer{{Instruction: "FROM"}, {Instruction: "RUN"}}}},
+			requestedLayers: []int32{},
+			expectedLayers:  nil,
+			expectedError:   false,
+		},
+		{
+			desc:            "nil request returns nil",
+			metadata:        &storage.ImageMetadata{V1: &storage.V1Metadata{Layers: []*storage.ImageLayer{{Instruction: "FROM"}, {Instruction: "RUN"}}}},
+			requestedLayers: nil,
+			expectedLayers: map[int32]*storage.ImageLayer{
+				0: {Instruction: "FROM"},
+				1: {Instruction: "RUN"},
+			},
+			expectedError: false,
+		},
+		{
+			desc:            "single valid layer request",
+			metadata:        &storage.ImageMetadata{V1: &storage.V1Metadata{Layers: []*storage.ImageLayer{{Instruction: "FROM"}, {Instruction: "RUN"}}}},
+			requestedLayers: []int32{0},
+			expectedLayers: map[int32]*storage.ImageLayer{
+				0: {Instruction: "FROM"},
+			},
+			expectedError: false,
+		},
+		{
+			desc: "multiple valid layers request",
+			metadata: &storage.ImageMetadata{V1: &storage.V1Metadata{Layers: []*storage.ImageLayer{
+				{Instruction: "FROM"},
+				{Instruction: "RUN"},
+				{Instruction: "COPY"},
+			}}},
+			requestedLayers: []int32{0, 2},
+			expectedLayers: map[int32]*storage.ImageLayer{
+				0: {Instruction: "FROM"},
+				2: {Instruction: "COPY"},
+			},
+			expectedError: false,
+		},
+		{
+			desc:             "negative index returns error",
+			metadata:         &storage.ImageMetadata{V1: &storage.V1Metadata{Layers: []*storage.ImageLayer{{Instruction: "FROM"}}}},
+			requestedLayers:  []int32{-1},
+			expectedLayers:   nil,
+			expectedError:    true,
+			expectedErrorMsg: "bad layer index: -1",
+		},
+		{
+			desc:             "index equal to length returns error",
+			metadata:         &storage.ImageMetadata{V1: &storage.V1Metadata{Layers: []*storage.ImageLayer{{Instruction: "FROM"}, {Instruction: "RUN"}}}},
+			requestedLayers:  []int32{2},
+			expectedLayers:   nil,
+			expectedError:    true,
+			expectedErrorMsg: "bad layer index: 2",
+		},
+		{
+			desc:             "index greater than length returns error",
+			metadata:         &storage.ImageMetadata{V1: &storage.V1Metadata{Layers: []*storage.ImageLayer{{Instruction: "FROM"}}}},
+			requestedLayers:  []int32{5},
+			expectedLayers:   nil,
+			expectedError:    true,
+			expectedErrorMsg: "bad layer index: 5",
+		},
+		{
+			desc:            "request last layer in list",
+			metadata:        &storage.ImageMetadata{V1: &storage.V1Metadata{Layers: []*storage.ImageLayer{{Instruction: "FROM"}, {Instruction: "RUN"}, {Instruction: "ENTRYPOINT"}}}},
+			requestedLayers: []int32{2},
+			expectedLayers: map[int32]*storage.ImageLayer{
+				2: {Instruction: "ENTRYPOINT"},
+			},
+			expectedError: false,
+		},
+		{
+			desc:            "all layers requested",
+			metadata:        &storage.ImageMetadata{V1: &storage.V1Metadata{Layers: []*storage.ImageLayer{{Instruction: "FROM"}, {Instruction: "RUN"}}}},
+			requestedLayers: []int32{0, 1},
+			expectedLayers: map[int32]*storage.ImageLayer{
+				0: {Instruction: "FROM"},
+				1: {Instruction: "RUN"},
+			},
+			expectedError: false,
+		},
+		{
+			desc:             "nil metadata v1 returns error for any request",
+			metadata:         &storage.ImageMetadata{V1: nil},
+			requestedLayers:  []int32{0},
+			expectedLayers:   nil,
+			expectedError:    true,
+			expectedErrorMsg: "bad layer index: 0",
+		},
+		{
+			desc:             "empty layers list returns error for any request",
+			metadata:         &storage.ImageMetadata{V1: &storage.V1Metadata{Layers: []*storage.ImageLayer{}}},
+			requestedLayers:  []int32{0},
+			expectedLayers:   nil,
+			expectedError:    true,
+			expectedErrorMsg: "bad layer index: 0",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			result, err := getLayers(tc.metadata, tc.requestedLayers)
+
+			if tc.expectedError {
+				require.Error(t, err)
+				assert.Equal(t, tc.expectedErrorMsg, err.Error())
+				assert.Nil(t, result)
+			} else {
+				require.NoError(t, err)
+				protoassert.MapEqual(t, tc.expectedLayers, result)
+			}
+		})
+	}
+}
+
 // TestDeleteImages_V2 ensures that DeleteImages correctly queries for ImageID and SHA
 // and broadcasts InvalidateImageCache messages with both fields populated.
 func TestDeleteImages_V2(t *testing.T) {

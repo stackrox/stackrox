@@ -7,6 +7,7 @@
 package v1
 
 import (
+	storage "github.com/stackrox/rox/generated/storage"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -129,22 +130,206 @@ func (x *UnsuppressCVERequest) GetCves() []string {
 	return nil
 }
 
+// GetCVEMetadataRequest requests CVE metadata for specified CVE IDs.
+type GetCVEMetadataRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CveIds        []string               `protobuf:"bytes,1,rep,name=cve_ids,json=cveIds,proto3" json:"cve_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetCVEMetadataRequest) Reset() {
+	*x = GetCVEMetadataRequest{}
+	mi := &file_api_v1_cve_service_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCVEMetadataRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCVEMetadataRequest) ProtoMessage() {}
+
+func (x *GetCVEMetadataRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_cve_service_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCVEMetadataRequest.ProtoReflect.Descriptor instead.
+func (*GetCVEMetadataRequest) Descriptor() ([]byte, []int) {
+	return file_api_v1_cve_service_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *GetCVEMetadataRequest) GetCveIds() []string {
+	if x != nil {
+		return x.CveIds
+	}
+	return nil
+}
+
+// GetCVEMetadataResponse returns CVE metadata.
+type GetCVEMetadataResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Map of CVE ID to CVE metadata.
+	Cves          map[string]*GetCVEMetadataResponse_CVEMetadata `protobuf:"bytes,1,rep,name=cves,proto3" json:"cves,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetCVEMetadataResponse) Reset() {
+	*x = GetCVEMetadataResponse{}
+	mi := &file_api_v1_cve_service_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCVEMetadataResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCVEMetadataResponse) ProtoMessage() {}
+
+func (x *GetCVEMetadataResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_cve_service_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCVEMetadataResponse.ProtoReflect.Descriptor instead.
+func (*GetCVEMetadataResponse) Descriptor() ([]byte, []int) {
+	return file_api_v1_cve_service_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetCVEMetadataResponse) GetCves() map[string]*GetCVEMetadataResponse_CVEMetadata {
+	if x != nil {
+		return x.Cves
+	}
+	return nil
+}
+
+type GetCVEMetadataResponse_CVEMetadata struct {
+	state         protoimpl.MessageState        `protogen:"open.v1"`
+	CvssScores    []*storage.CVSSScore          `protobuf:"bytes,1,rep,name=cvss_scores,json=cvssScores,proto3" json:"cvss_scores,omitempty"`
+	Severity      storage.VulnerabilitySeverity `protobuf:"varint,2,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty"`
+	Types         []storage.CVE_CVEType         `protobuf:"varint,3,rep,packed,name=types,proto3,enum=storage.CVE_CVEType" json:"types,omitempty"`
+	Summary       string                        `protobuf:"bytes,4,opt,name=summary,proto3" json:"summary,omitempty"`
+	Link          string                        `protobuf:"bytes,5,opt,name=link,proto3" json:"link,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetCVEMetadataResponse_CVEMetadata) Reset() {
+	*x = GetCVEMetadataResponse_CVEMetadata{}
+	mi := &file_api_v1_cve_service_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCVEMetadataResponse_CVEMetadata) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCVEMetadataResponse_CVEMetadata) ProtoMessage() {}
+
+func (x *GetCVEMetadataResponse_CVEMetadata) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_cve_service_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCVEMetadataResponse_CVEMetadata.ProtoReflect.Descriptor instead.
+func (*GetCVEMetadataResponse_CVEMetadata) Descriptor() ([]byte, []int) {
+	return file_api_v1_cve_service_proto_rawDescGZIP(), []int{3, 0}
+}
+
+func (x *GetCVEMetadataResponse_CVEMetadata) GetCvssScores() []*storage.CVSSScore {
+	if x != nil {
+		return x.CvssScores
+	}
+	return nil
+}
+
+func (x *GetCVEMetadataResponse_CVEMetadata) GetSeverity() storage.VulnerabilitySeverity {
+	if x != nil {
+		return x.Severity
+	}
+	return storage.VulnerabilitySeverity(0)
+}
+
+func (x *GetCVEMetadataResponse_CVEMetadata) GetTypes() []storage.CVE_CVEType {
+	if x != nil {
+		return x.Types
+	}
+	return nil
+}
+
+func (x *GetCVEMetadataResponse_CVEMetadata) GetSummary() string {
+	if x != nil {
+		return x.Summary
+	}
+	return ""
+}
+
+func (x *GetCVEMetadataResponse_CVEMetadata) GetLink() string {
+	if x != nil {
+		return x.Link
+	}
+	return ""
+}
+
 var File_api_v1_cve_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_cve_service_proto_rawDesc = "" +
 	"\n" +
-	"\x18api/v1/cve_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\"e\n" +
+	"\x18api/v1/cve_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x11storage/cve.proto\"e\n" +
 	"\x12SuppressCVERequest\x12\x12\n" +
 	"\x04cves\x18\x01 \x03(\tR\x04cves\x125\n" +
 	"\bduration\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\bdurationJ\x04\b\x02\x10\x03\"*\n" +
 	"\x14UnsuppressCVERequest\x12\x12\n" +
-	"\x04cves\x18\x01 \x03(\tR\x04cves2\xc0\x01\n" +
+	"\x04cves\x18\x01 \x03(\tR\x04cves\"0\n" +
+	"\x15GetCVEMetadataRequest\x12\x17\n" +
+	"\acve_ids\x18\x01 \x03(\tR\x06cveIds\"\x8e\x03\n" +
+	"\x16GetCVEMetadataResponse\x128\n" +
+	"\x04cves\x18\x01 \x03(\v2$.v1.GetCVEMetadataResponse.CvesEntryR\x04cves\x1a\xd8\x01\n" +
+	"\vCVEMetadata\x123\n" +
+	"\vcvss_scores\x18\x01 \x03(\v2\x12.storage.CVSSScoreR\n" +
+	"cvssScores\x12:\n" +
+	"\bseverity\x18\x02 \x01(\x0e2\x1e.storage.VulnerabilitySeverityR\bseverity\x12*\n" +
+	"\x05types\x18\x03 \x03(\x0e2\x14.storage.CVE.CVETypeR\x05types\x12\x18\n" +
+	"\asummary\x18\x04 \x01(\tR\asummary\x12\x12\n" +
+	"\x04link\x18\x05 \x01(\tR\x04link\x1a_\n" +
+	"\tCvesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12<\n" +
+	"\x05value\x18\x02 \x01(\v2&.v1.GetCVEMetadataResponse.CVEMetadataR\x05value:\x028\x012\xc0\x01\n" +
 	"\x0eNodeCVEService\x12S\n" +
 	"\fSuppressCVEs\x12\x16.v1.SuppressCVERequest\x1a\t.v1.Empty\" \x82\xd3\xe4\x93\x02\x1a:\x01*2\x15/v1/nodecves/suppress\x12Y\n" +
 	"\x0eUnsuppressCVEs\x12\x18.v1.UnsuppressCVERequest\x1a\t.v1.Empty\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*2\x17/v1/nodecves/unsuppress2\xc9\x01\n" +
 	"\x11ClusterCVEService\x12V\n" +
 	"\fSuppressCVEs\x12\x16.v1.SuppressCVERequest\x1a\t.v1.Empty\"#\x82\xd3\xe4\x93\x02\x1d:\x01*2\x18/v1/clustercves/suppress\x12\\\n" +
-	"\x0eUnsuppressCVEs\x12\x18.v1.UnsuppressCVERequest\x1a\t.v1.Empty\"%\x82\xd3\xe4\x93\x02\x1f:\x01*2\x1a/v1/clustercves/unsuppressB'\n" +
+	"\x0eUnsuppressCVEs\x12\x18.v1.UnsuppressCVERequest\x1a\t.v1.Empty\"%\x82\xd3\xe4\x93\x02\x1f:\x01*2\x1a/v1/clustercves/unsuppress2s\n" +
+	"\n" +
+	"CVEService\x12e\n" +
+	"\x0eGetCVEMetadata\x12\x19.v1.GetCVEMetadataRequest\x1a\x1a.v1.GetCVEMetadataResponse\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/v1/cves/metadataB'\n" +
 	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x01b\x06proto3"
 
 var (
@@ -159,28 +344,42 @@ func file_api_v1_cve_service_proto_rawDescGZIP() []byte {
 	return file_api_v1_cve_service_proto_rawDescData
 }
 
-var file_api_v1_cve_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_api_v1_cve_service_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_api_v1_cve_service_proto_goTypes = []any{
-	(*SuppressCVERequest)(nil),   // 0: v1.SuppressCVERequest
-	(*UnsuppressCVERequest)(nil), // 1: v1.UnsuppressCVERequest
-	(*durationpb.Duration)(nil),  // 2: google.protobuf.Duration
-	(*Empty)(nil),                // 3: v1.Empty
+	(*SuppressCVERequest)(nil),                 // 0: v1.SuppressCVERequest
+	(*UnsuppressCVERequest)(nil),               // 1: v1.UnsuppressCVERequest
+	(*GetCVEMetadataRequest)(nil),              // 2: v1.GetCVEMetadataRequest
+	(*GetCVEMetadataResponse)(nil),             // 3: v1.GetCVEMetadataResponse
+	(*GetCVEMetadataResponse_CVEMetadata)(nil), // 4: v1.GetCVEMetadataResponse.CVEMetadata
+	nil,                                // 5: v1.GetCVEMetadataResponse.CvesEntry
+	(*durationpb.Duration)(nil),        // 6: google.protobuf.Duration
+	(*storage.CVSSScore)(nil),          // 7: storage.CVSSScore
+	(storage.VulnerabilitySeverity)(0), // 8: storage.VulnerabilitySeverity
+	(storage.CVE_CVEType)(0),           // 9: storage.CVE.CVEType
+	(*Empty)(nil),                      // 10: v1.Empty
 }
 var file_api_v1_cve_service_proto_depIdxs = []int32{
-	2, // 0: v1.SuppressCVERequest.duration:type_name -> google.protobuf.Duration
-	0, // 1: v1.NodeCVEService.SuppressCVEs:input_type -> v1.SuppressCVERequest
-	1, // 2: v1.NodeCVEService.UnsuppressCVEs:input_type -> v1.UnsuppressCVERequest
-	0, // 3: v1.ClusterCVEService.SuppressCVEs:input_type -> v1.SuppressCVERequest
-	1, // 4: v1.ClusterCVEService.UnsuppressCVEs:input_type -> v1.UnsuppressCVERequest
-	3, // 5: v1.NodeCVEService.SuppressCVEs:output_type -> v1.Empty
-	3, // 6: v1.NodeCVEService.UnsuppressCVEs:output_type -> v1.Empty
-	3, // 7: v1.ClusterCVEService.SuppressCVEs:output_type -> v1.Empty
-	3, // 8: v1.ClusterCVEService.UnsuppressCVEs:output_type -> v1.Empty
-	5, // [5:9] is the sub-list for method output_type
-	1, // [1:5] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	6,  // 0: v1.SuppressCVERequest.duration:type_name -> google.protobuf.Duration
+	5,  // 1: v1.GetCVEMetadataResponse.cves:type_name -> v1.GetCVEMetadataResponse.CvesEntry
+	7,  // 2: v1.GetCVEMetadataResponse.CVEMetadata.cvss_scores:type_name -> storage.CVSSScore
+	8,  // 3: v1.GetCVEMetadataResponse.CVEMetadata.severity:type_name -> storage.VulnerabilitySeverity
+	9,  // 4: v1.GetCVEMetadataResponse.CVEMetadata.types:type_name -> storage.CVE.CVEType
+	4,  // 5: v1.GetCVEMetadataResponse.CvesEntry.value:type_name -> v1.GetCVEMetadataResponse.CVEMetadata
+	0,  // 6: v1.NodeCVEService.SuppressCVEs:input_type -> v1.SuppressCVERequest
+	1,  // 7: v1.NodeCVEService.UnsuppressCVEs:input_type -> v1.UnsuppressCVERequest
+	0,  // 8: v1.ClusterCVEService.SuppressCVEs:input_type -> v1.SuppressCVERequest
+	1,  // 9: v1.ClusterCVEService.UnsuppressCVEs:input_type -> v1.UnsuppressCVERequest
+	2,  // 10: v1.CVEService.GetCVEMetadata:input_type -> v1.GetCVEMetadataRequest
+	10, // 11: v1.NodeCVEService.SuppressCVEs:output_type -> v1.Empty
+	10, // 12: v1.NodeCVEService.UnsuppressCVEs:output_type -> v1.Empty
+	10, // 13: v1.ClusterCVEService.SuppressCVEs:output_type -> v1.Empty
+	10, // 14: v1.ClusterCVEService.UnsuppressCVEs:output_type -> v1.Empty
+	3,  // 15: v1.CVEService.GetCVEMetadata:output_type -> v1.GetCVEMetadataResponse
+	11, // [11:16] is the sub-list for method output_type
+	6,  // [6:11] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_cve_service_proto_init() }
@@ -195,9 +394,9 @@ func file_api_v1_cve_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_cve_service_proto_rawDesc), len(file_api_v1_cve_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   6,
 			NumExtensions: 0,
-			NumServices:   2,
+			NumServices:   3,
 		},
 		GoTypes:           file_api_v1_cve_service_proto_goTypes,
 		DependencyIndexes: file_api_v1_cve_service_proto_depIdxs,

@@ -68,6 +68,7 @@ import (
 	imageCveCsv "github.com/stackrox/rox/central/cve/image/csv"
 	nodeCveCsv "github.com/stackrox/rox/central/cve/node/csv"
 	nodeCVEService "github.com/stackrox/rox/central/cve/node/service"
+	cvesService "github.com/stackrox/rox/central/cve/service"
 	"github.com/stackrox/rox/central/cve/suppress"
 	debugService "github.com/stackrox/rox/central/debug/service"
 	"github.com/stackrox/rox/central/declarativeconfig"
@@ -421,6 +422,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		complianceService.Singleton(),
 		configService.Singleton(),
 		credentialExpiryService.Singleton(),
+		cvesService.Singleton(),
 		debugService.Singleton(),
 		declarativeConfigHealthService.Singleton(),
 		delegatedRegistryConfigService.Singleton(),

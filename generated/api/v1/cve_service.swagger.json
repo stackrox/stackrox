@@ -10,6 +10,9 @@
     },
     {
       "name": "ClusterCVEService"
+    },
+    {
+      "name": "CVEService"
     }
   ],
   "consumes": [
@@ -85,6 +88,40 @@
         ]
       }
     },
+    "/v1/cves/metadata": {
+      "post": {
+        "summary": "GetCVEMetadata returns CVE metadata (CVSS scores, severity, types) for specified CVE IDs.",
+        "operationId": "CVEService_GetCVEMetadata",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetCVEMetadataResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "GetCVEMetadataRequest requests CVE metadata for specified CVE IDs.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1GetCVEMetadataRequest"
+            }
+          }
+        ],
+        "tags": [
+          "CVEService"
+        ]
+      }
+    },
     "/v1/nodecves/suppress": {
       "patch": {
         "summary": "SuppressCVE suppresses node cves.",
@@ -153,6 +190,88 @@
     }
   },
   "definitions": {
+    "CVECVEType": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_CVE",
+        "IMAGE_CVE",
+        "K8S_CVE",
+        "ISTIO_CVE",
+        "NODE_CVE",
+        "OPENSHIFT_CVE"
+      ],
+      "default": "UNKNOWN_CVE"
+    },
+    "CVSSV2AccessComplexity": {
+      "type": "string",
+      "enum": [
+        "ACCESS_HIGH",
+        "ACCESS_MEDIUM",
+        "ACCESS_LOW"
+      ],
+      "default": "ACCESS_HIGH"
+    },
+    "CVSSV2Authentication": {
+      "type": "string",
+      "enum": [
+        "AUTH_MULTIPLE",
+        "AUTH_SINGLE",
+        "AUTH_NONE"
+      ],
+      "default": "AUTH_MULTIPLE"
+    },
+    "CVSSV3Complexity": {
+      "type": "string",
+      "enum": [
+        "COMPLEXITY_LOW",
+        "COMPLEXITY_HIGH"
+      ],
+      "default": "COMPLEXITY_LOW"
+    },
+    "CVSSV3Privileges": {
+      "type": "string",
+      "enum": [
+        "PRIVILEGE_NONE",
+        "PRIVILEGE_LOW",
+        "PRIVILEGE_HIGH"
+      ],
+      "default": "PRIVILEGE_NONE"
+    },
+    "CVSSV3UserInteraction": {
+      "type": "string",
+      "enum": [
+        "UI_NONE",
+        "UI_REQUIRED"
+      ],
+      "default": "UI_NONE"
+    },
+    "GetCVEMetadataResponseCVEMetadata": {
+      "type": "object",
+      "properties": {
+        "cvssScores": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageCVSSScore"
+          }
+        },
+        "severity": {
+          "$ref": "#/definitions/storageVulnerabilitySeverity"
+        },
+        "types": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CVECVEType"
+          }
+        },
+        "summary": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        }
+      }
+    },
     "googlerpcStatus": {
       "type": "object",
       "properties": {
@@ -183,8 +302,226 @@
       "additionalProperties": {},
       "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(&foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := &pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := &pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": <string>,\n      \"lastName\": <string>\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
     },
+    "storageCVSSScore": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/storageSource"
+        },
+        "url": {
+          "type": "string"
+        },
+        "cvssv2": {
+          "$ref": "#/definitions/storageCVSSV2"
+        },
+        "cvssv3": {
+          "$ref": "#/definitions/storageCVSSV3"
+        }
+      }
+    },
+    "storageCVSSV2": {
+      "type": "object",
+      "properties": {
+        "vector": {
+          "type": "string"
+        },
+        "attackVector": {
+          "$ref": "#/definitions/storageCVSSV2AttackVector"
+        },
+        "accessComplexity": {
+          "$ref": "#/definitions/CVSSV2AccessComplexity"
+        },
+        "authentication": {
+          "$ref": "#/definitions/CVSSV2Authentication"
+        },
+        "confidentiality": {
+          "$ref": "#/definitions/storageCVSSV2Impact"
+        },
+        "integrity": {
+          "$ref": "#/definitions/storageCVSSV2Impact"
+        },
+        "availability": {
+          "$ref": "#/definitions/storageCVSSV2Impact"
+        },
+        "exploitabilityScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "impactScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "score": {
+          "type": "number",
+          "format": "float"
+        },
+        "severity": {
+          "$ref": "#/definitions/storageCVSSV2Severity"
+        }
+      }
+    },
+    "storageCVSSV2AttackVector": {
+      "type": "string",
+      "enum": [
+        "ATTACK_LOCAL",
+        "ATTACK_ADJACENT",
+        "ATTACK_NETWORK"
+      ],
+      "default": "ATTACK_LOCAL"
+    },
+    "storageCVSSV2Impact": {
+      "type": "string",
+      "enum": [
+        "IMPACT_NONE",
+        "IMPACT_PARTIAL",
+        "IMPACT_COMPLETE"
+      ],
+      "default": "IMPACT_NONE"
+    },
+    "storageCVSSV2Severity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ],
+      "default": "UNKNOWN"
+    },
+    "storageCVSSV3": {
+      "type": "object",
+      "properties": {
+        "vector": {
+          "type": "string"
+        },
+        "exploitabilityScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "impactScore": {
+          "type": "number",
+          "format": "float"
+        },
+        "attackVector": {
+          "$ref": "#/definitions/storageCVSSV3AttackVector"
+        },
+        "attackComplexity": {
+          "$ref": "#/definitions/CVSSV3Complexity"
+        },
+        "privilegesRequired": {
+          "$ref": "#/definitions/CVSSV3Privileges"
+        },
+        "userInteraction": {
+          "$ref": "#/definitions/CVSSV3UserInteraction"
+        },
+        "scope": {
+          "$ref": "#/definitions/storageCVSSV3Scope"
+        },
+        "confidentiality": {
+          "$ref": "#/definitions/storageCVSSV3Impact"
+        },
+        "integrity": {
+          "$ref": "#/definitions/storageCVSSV3Impact"
+        },
+        "availability": {
+          "$ref": "#/definitions/storageCVSSV3Impact"
+        },
+        "score": {
+          "type": "number",
+          "format": "float"
+        },
+        "severity": {
+          "$ref": "#/definitions/storageCVSSV3Severity"
+        }
+      }
+    },
+    "storageCVSSV3AttackVector": {
+      "type": "string",
+      "enum": [
+        "ATTACK_LOCAL",
+        "ATTACK_ADJACENT",
+        "ATTACK_NETWORK",
+        "ATTACK_PHYSICAL"
+      ],
+      "default": "ATTACK_LOCAL"
+    },
+    "storageCVSSV3Impact": {
+      "type": "string",
+      "enum": [
+        "IMPACT_NONE",
+        "IMPACT_LOW",
+        "IMPACT_HIGH"
+      ],
+      "default": "IMPACT_NONE"
+    },
+    "storageCVSSV3Scope": {
+      "type": "string",
+      "enum": [
+        "UNCHANGED",
+        "CHANGED"
+      ],
+      "default": "UNCHANGED"
+    },
+    "storageCVSSV3Severity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "NONE",
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "default": "UNKNOWN"
+    },
+    "storageSource": {
+      "type": "string",
+      "enum": [
+        "SOURCE_UNKNOWN",
+        "SOURCE_RED_HAT",
+        "SOURCE_OSV",
+        "SOURCE_NVD"
+      ],
+      "default": "SOURCE_UNKNOWN"
+    },
+    "storageVulnerabilitySeverity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY_SEVERITY",
+        "LOW_VULNERABILITY_SEVERITY",
+        "MODERATE_VULNERABILITY_SEVERITY",
+        "IMPORTANT_VULNERABILITY_SEVERITY",
+        "CRITICAL_VULNERABILITY_SEVERITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY_SEVERITY"
+    },
     "v1Empty": {
       "type": "object"
+    },
+    "v1GetCVEMetadataRequest": {
+      "type": "object",
+      "properties": {
+        "cveIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "GetCVEMetadataRequest requests CVE metadata for specified CVE IDs."
+    },
+    "v1GetCVEMetadataResponse": {
+      "type": "object",
+      "properties": {
+        "cves": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/GetCVEMetadataResponseCVEMetadata"
+          },
+          "description": "Map of CVE ID to CVE metadata."
+        }
+      },
+      "description": "GetCVEMetadataResponse returns CVE metadata."
     },
     "v1SuppressCVERequest": {
       "type": "object",

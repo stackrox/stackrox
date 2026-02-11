@@ -35,6 +35,13 @@ var (
 		user.With(permissions.View(resources.Deployment), permissions.View(resources.Image)): {
 			v1.VulnMgmtService_VulnMgmtExportWorkloads_FullMethodName,
 		},
+		user.With(
+			permissions.View(resources.Cluster),
+			permissions.View(resources.Namespace),
+			permissions.View(resources.Deployment),
+			permissions.View(resources.Image)): {
+			v1.VulnMgmtService_ImageVulnerabilities_FullMethodName,
+		},
 	})
 	log = logging.LoggerForModule()
 )
@@ -157,4 +164,160 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 	}
 	committed = true
 	return nil
+}
+
+func (s *serviceImpl) ImageVulnerabilities(ctx context.Context, req *v1.ImageVulnerabilitiesRequest) (*v1.ImageVulnerabilitiesResponse, error) {
+	parsedQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errox.InvalidArgs.CausedBy(err)
+	}
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return nil, errors.Wrap(errox.ServerError, "failed to begin transaction")
+	}
+	var committed bool
+	defer func() {
+		if !committed {
+			_ = tx.Rollback(ctx)
+		}
+	}()
+
+	txCtx := postgres.ContextWithTx(ctx, tx)
+
+	images := make(map[string]*v1.ImageVulnerabilitiesResponse_Image)
+
+	err = s.images.WalkByQuery(txCtx, parsedQuery, func(img *storage.Image) error {
+		components, err := s.getVulnerableImageComponents(img)
+		if err != nil {
+			return err
+		}
+		if len(components) == 0 {
+			return nil
+		}
+		workloadIDs, err := s.getImageWorkloadIDs(ctx, parsedQuery, img.GetId())
+		if err != nil {
+			return errors.Wrapf(err, "failed to get workload IDs for image %s", img.GetId())
+		}
+		if !req.GetIncludeUndeployed() && len(workloadIDs) == 0 {
+			return nil
+		}
+
+		images[img.GetId()] = &v1.ImageVulnerabilitiesResponse_Image{
+			Components:  components,
+			WorkloadIds: workloadIDs,
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(txCtx); err != nil {
+		return nil, err
+	}
+	committed = true
+
+	return &v1.ImageVulnerabilitiesResponse{Images: images}, nil
+}
+
+// getVulnerableImageComponents returns vulnerable image components.
+func (s *serviceImpl) getVulnerableImageComponents(img *storage.Image) ([]*v1.ImageVulnerabilitiesResponse_Image_Component, error) {
+	components := img.GetScan().GetComponents()
+	if len(components) == 0 {
+		return nil, nil
+	}
+
+	responseComponents := make([]*v1.ImageVulnerabilitiesResponse_Image_Component, 0, len(components))
+
+	for _, comp := range components {
+		if responseComp := transformComponentToResponse(comp); responseComp != nil {
+			responseComponents = append(responseComponents, responseComp)
+		}
+	}
+
+	return responseComponents, nil
+}
+
+// transformComponentToResponse converts a storage.EmbeddedImageScanComponent to
+// the response format.
+// Returns nil if the component has no vulnerabilities to report.
+func transformComponentToResponse(comp *storage.EmbeddedImageScanComponent) *v1.ImageVulnerabilitiesResponse_Image_Component {
+	vulns := comp.GetVulns()
+	if len(vulns) == 0 {
+		return nil
+	}
+
+	responseVulns := make([]*v1.ImageVulnerabilitiesResponse_Image_Component_Vulnerability, 0, len(vulns))
+	for _, vuln := range vulns {
+		if responseVuln := transformVulnerabilityToResponse(vuln); responseVuln != nil {
+			responseVulns = append(responseVulns, responseVuln)
+		}
+	}
+
+	if len(responseVulns) == 0 {
+		return nil
+	}
+	layer := int32(-1)
+	if comp.GetHasLayerIndex() != nil {
+		layer = comp.GetLayerIndex()
+	}
+	return &v1.ImageVulnerabilitiesResponse_Image_Component{
+		Name:            comp.GetName(),
+		Version:         comp.GetVersion(),
+		LayerIndex:      layer,
+		Location:        comp.GetLocation(),
+		Vulnerabilities: responseVulns,
+	}
+}
+
+// transformVulnerabilityToResponse converts a storage.EmbeddedVulnerability to
+// the response format.
+// Returns nil if the vulnerability has no CVE ID.
+func transformVulnerabilityToResponse(vuln *storage.EmbeddedVulnerability) *v1.ImageVulnerabilitiesResponse_Image_Component_Vulnerability {
+	if vuln.GetCve() == "" {
+		return nil
+	}
+
+	vulnerability := &v1.ImageVulnerabilitiesResponse_Image_Component_Vulnerability{
+		Id:                    vuln.GetCve(),
+		FirstSystemOccurrence: vuln.GetFirstSystemOccurrence(),
+		FirstImageOccurrence:  vuln.GetFirstImageOccurrence(),
+	}
+
+	if vuln.GetSuppressed() {
+		vulnerability.Suppression = &v1.ImageVulnerabilitiesResponse_Image_Component_Vulnerability_Suppression{
+			SuppressActivation: vuln.GetSuppressActivation(),
+			SuppressExpiry:     vuln.GetSuppressExpiry(),
+		}
+	}
+
+	return vulnerability
+}
+
+func (s *serviceImpl) getImageWorkloadIDs(ctx context.Context, query *v1.Query, imageID string) ([]string, error) {
+	imageQuery := search.NewQueryBuilder().
+		AddExactMatches(search.ImageSHA, imageID).
+		ProtoQuery()
+
+	combinedQuery := search.ConjunctionQuery(query, imageQuery)
+
+	workloadIDs := set.NewStringSet()
+
+	err := s.deployments.WalkByQuery(ctx, combinedQuery, func(deployment *storage.Deployment) error {
+		for _, container := range deployment.GetContainers() {
+			if container.GetImage().GetId() == imageID {
+				workloadIDs.Add(deployment.GetId())
+				break
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return workloadIDs.AsSlice(), nil
 }

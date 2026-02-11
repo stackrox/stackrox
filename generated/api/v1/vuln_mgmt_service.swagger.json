@@ -16,6 +16,42 @@
     "application/json"
   ],
   "paths": {
+    "/v1/export/vuln-mgmt/image-vulnerabilities": {
+      "get": {
+        "operationId": "VulnMgmtService_ImageVulnerabilities",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ImageVulnerabilitiesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "includeUndeployed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "VulnMgmtService"
+        ]
+      }
+    },
     "/v1/export/vuln-mgmt/workloads": {
       "get": {
         "summary": "Streams vulnerability data upon request. Each entry consists of a deployment and the associated container images.",
@@ -151,6 +187,69 @@
       "default": "UNSET",
       "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
     },
+    "ImageComponentVulnerability": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "cvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "severity": {
+          "$ref": "#/definitions/storageVulnerabilitySeverity"
+        },
+        "state": {
+          "$ref": "#/definitions/storageVulnerabilityState"
+        },
+        "source": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageSource"
+          }
+        },
+        "firstSystemOccurrence": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Time when the CVE was first seen, for this specific distro, in the system."
+        },
+        "firstImageOccurrence": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Time when the CVE was first seen in this image."
+        },
+        "suppression": {
+          "$ref": "#/definitions/VulnerabilitySuppression"
+        }
+      }
+    },
+    "ImageVulnerabilitiesResponseImageComponent": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "layerIndex": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The image layer index of the vulnerable component. -1 if unknown."
+        },
+        "location": {
+          "type": "string"
+        },
+        "vulnerabilities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ImageComponentVulnerability"
+          }
+        }
+      }
+    },
     "PortConfigExposureInfo": {
       "type": "object",
       "properties": {
@@ -249,6 +348,19 @@
         "BIDIRECTIONAL"
       ],
       "default": "NONE"
+    },
+    "VulnerabilitySuppression": {
+      "type": "object",
+      "properties": {
+        "suppressActivation": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "suppressExpiry": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
     },
     "googlerpcStatus": {
       "type": "object",
@@ -1596,6 +1708,37 @@
       ],
       "default": "OBSERVED",
       "description": "VulnerabilityState indicates if vulnerability is being observed or deferred(/suppressed). By default, it vulnerabilities are observed.\n\n - OBSERVED: [Default state]"
+    },
+    "v1ImageVulnerabilitiesResponse": {
+      "type": "object",
+      "properties": {
+        "images": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v1ImageVulnerabilitiesResponseImage"
+          },
+          "description": "Map of image SHA to image vulnerability data."
+        }
+      }
+    },
+    "v1ImageVulnerabilitiesResponseImage": {
+      "type": "object",
+      "properties": {
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/ImageVulnerabilitiesResponseImageComponent"
+          }
+        },
+        "workloadIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of workload IDs where this image is deployed."
+        }
+      }
     },
     "v1VulnMgmtExportWorkloadsResponse": {
       "type": "object",

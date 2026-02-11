@@ -45,6 +45,7 @@ var (
 			v1.DeploymentService_GetLabels_FullMethodName,
 			v1.DeploymentService_ListDeploymentsWithProcessInfo_FullMethodName,
 			v1.DeploymentService_ExportDeployments_FullMethodName,
+			v1.DeploymentService_GetDeploymentMetadata_FullMethodName,
 		},
 	})
 	deploymentExtensionAuth = user.With(permissions.View(resources.DeploymentExtension))
@@ -79,6 +80,35 @@ func (s *serviceImpl) ExportDeployments(req *v1.ExportDeploymentRequest, srv v1.
 		}
 		return nil
 	})
+}
+
+// GetDeploymentMetadata returns reduced workload metadata for specified workloads.
+func (s *serviceImpl) GetDeploymentMetadata(ctx context.Context, req *v1.GetDeploymentMetadataRequest) (*v1.GetDeploymentMetadataResponse, error) {
+	parsedQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errox.InvalidArgs.CausedBy(err)
+	}
+
+	response := &v1.GetDeploymentMetadataResponse{
+		Deployments: make(map[string]*v1.GetDeploymentMetadataResponse_Metadata),
+	}
+
+	err = s.datastore.WalkByQuery(ctx, parsedQuery, func(deployment *storage.Deployment) error {
+		metadata := &v1.GetDeploymentMetadataResponse_Metadata{
+			Name:              deployment.GetName(),
+			Type:              deployment.GetType(),
+			Cluster:           deployment.GetClusterName(),
+			Namespace:         deployment.GetNamespace(),
+			PlatformComponent: deployment.GetPlatformComponent(),
+		}
+		response.Deployments[deployment.GetId()] = metadata
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
 }
 
 func (s *serviceImpl) baselineResultsForDeployment(ctx context.Context, deployment *storage.ListDeployment) (*storage.ProcessBaselineResults, error) {

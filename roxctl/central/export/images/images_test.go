@@ -120,6 +120,10 @@ func (s *fakeImageService) GetWatchedImages(_ context.Context, _ *v1.Empty) (*v1
 	return nil, errox.NotImplemented
 }
 
+func (s *fakeImageService) GetImageMetadata(_ context.Context, _ *v1.GetImageMetadataRequest) (*v1.GetImageMetadataResponse, error) {
+	return nil, errox.NotImplemented
+}
+
 // getImageForSerializationTest returns a Mock Image for serialization testing purpose.
 func getImageForSerializationTest() *storage.Image {
 	// This image is generated in `deployment.go`

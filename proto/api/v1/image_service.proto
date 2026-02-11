@@ -149,6 +149,31 @@ message ExportImageResponse {
   storage.Image image = 1;
 }
 
+// GetImageMetadataRequest requests reduced image metadata (names and layers)
+// for specified images.
+message GetImageMetadataRequest {
+  message Layers {
+    // If layer indices list is empty for an image, no layers are included.
+    // If layer indices list is nil for an image, all layers are included.
+    repeated int32 layers = 1;
+  }
+  // Map of image SHA to list of requested layer indices for that image.
+  // If the map is empty, all images are returned.
+  map<string, Layers> images = 1;
+  // Optional query.
+  string query = 2;
+}
+
+// GetImageMetadataResponse returns reduced image metadata (names and layers).
+message GetImageMetadataResponse {
+  message Metadata {
+    repeated string names = 1;
+    map<int32, storage.ImageLayer> layers = 2;
+  }
+  // Map of image SHA to metadata.
+  map<string, Metadata> images = 1;
+}
+
 // ImageService APIs manages image metadata.
 service ImageService {
   // GetImage returns the image given its ID.
@@ -223,5 +248,13 @@ service ImageService {
 
   rpc ExportImages(ExportImageRequest) returns (stream ExportImageResponse) {
     option (google.api.http) = {get: "/v1/export/images"};
+  }
+
+  // GetImageMetadata returns reduced image metadata (names and layers) for specified images.
+  rpc GetImageMetadata(GetImageMetadataRequest) returns (GetImageMetadataResponse) {
+    option (google.api.http) = {
+      post: "/v1/images/metadata"
+      body: "*"
+    };
   }
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"slices"
 	"strings"
 	"time"
 
@@ -65,6 +66,7 @@ var (
 			v1.ImageService_CountImages_FullMethodName,
 			v1.ImageService_ListImages_FullMethodName,
 			v1.ImageService_ExportImages_FullMethodName,
+			v1.ImageService_GetImageMetadata_FullMethodName,
 		},
 		or.SensorOr(idcheck.AdmissionControlOnly()): {
 			v1.ImageService_ScanImageInternal_FullMethodName,
@@ -96,6 +98,8 @@ var (
 		"subsystem":     "central",
 		"entity":        "central-image-scan-service",
 		"requestedFrom": "n/a"}
+
+	errBadLayerIndex = errox.InvalidArgs.New("bad layer index")
 )
 
 // serviceImpl provides APIs for alerts.
@@ -223,6 +227,122 @@ func (s *serviceImpl) ExportImages(req *v1.ExportImageRequest, srv v1.ImageServi
 		}
 		return nil
 	})
+}
+
+// GetImageMetadata returns reduced image metadata (names and layers) for
+// specified images and their layers.
+func (s *serviceImpl) GetImageMetadata(ctx context.Context, req *v1.GetImageMetadataRequest) (*v1.GetImageMetadataResponse, error) {
+	response := &v1.GetImageMetadataResponse{
+		Images: make(map[string]*v1.GetImageMetadataResponse_Metadata),
+	}
+
+	walkByQuery := s.getImageMetadataByQueryV1
+	if features.FlattenImageData.Enabled() {
+		walkByQuery = s.getImageMetadataByQueryV2
+	}
+
+	parsedQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	// If images map is provided, add image SHA constraints to the query.
+	if len(req.GetImages()) > 0 {
+		imageSHAs := make([]string, 0, len(req.GetImages()))
+		for sha := range req.GetImages() {
+			imageSHAs = append(imageSHAs, sha)
+		}
+		imageQuery := search.NewQueryBuilder().
+			AddExactMatches(search.ImageSHA, imageSHAs...).
+			ProtoQuery()
+		parsedQuery = search.ConjunctionQuery(parsedQuery, imageQuery)
+	}
+
+	if err := walkByQuery(ctx, parsedQuery, req.GetImages(), response); err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
+func (s *serviceImpl) getImageMetadataByQueryV1(ctx context.Context, query *v1.Query, imageLayerMap map[string]*v1.GetImageMetadataRequest_Layers, response *v1.GetImageMetadataResponse) error {
+	return s.mappingDatastore.WalkByQuery(ctx, query, func(image *storage.Image) error {
+		imageID := image.GetId()
+		var layerIndices []int32
+
+		if len(imageLayerMap) > 0 {
+			layerSpec, exists := imageLayerMap[imageID]
+			if !exists {
+				// Image map is not empty but this image is not in it - skip.
+				return nil
+			}
+			layerIndices = layerSpec.GetLayers()
+		}
+
+		layers, err := getLayers(image.GetMetadata(), layerIndices)
+		if err != nil {
+			return errors.Wrapf(err, "cannot get layers of image %q", imageID)
+		}
+
+		metadata := &v1.GetImageMetadataResponse_Metadata{
+			Names:  make([]string, 0, len(image.GetNames())),
+			Layers: layers,
+		}
+		for _, name := range image.GetNames() {
+			metadata.Names = append(metadata.Names, name.GetFullName())
+		}
+
+		response.Images[imageID] = metadata
+		return nil
+	})
+}
+
+func (s *serviceImpl) getImageMetadataByQueryV2(ctx context.Context, query *v1.Query, imageLayerMap map[string]*v1.GetImageMetadataRequest_Layers, response *v1.GetImageMetadataResponse) error {
+	return s.datastoreV2.WalkByQuery(ctx, query, func(image *storage.ImageV2) error {
+		imageID := image.GetId()
+		var layerIndices []int32
+
+		if len(imageLayerMap) > 0 {
+			layerSpec, exists := imageLayerMap[imageID]
+			if !exists {
+				// Image map is not empty but this image is not in it - skip.
+				return nil
+			}
+			layerIndices = layerSpec.GetLayers()
+		}
+
+		layers, err := getLayers(image.GetMetadata(), layerIndices)
+		if err != nil {
+			return errors.Wrapf(err, "cannot get layers of image %q", imageID)
+		}
+
+		metadata := &v1.GetImageMetadataResponse_Metadata{
+			Names:  []string{image.GetName().GetFullName()},
+			Layers: layers,
+		}
+
+		response.Images[imageID] = metadata
+		return nil
+	})
+}
+
+func getLayers(md *storage.ImageMetadata, indices []int32) (map[int32]*storage.ImageLayer, error) {
+	if indices != nil && len(indices) == 0 {
+		return nil, nil
+	}
+	imageLayers := md.GetV1().GetLayers()
+	for _, i := range indices {
+		if i < 0 || int(i) >= len(imageLayers) {
+			return nil, errBadLayerIndex.CausedByf("%d", i)
+		}
+	}
+	result := make(map[int32]*storage.ImageLayer, len(indices))
+	for i, layer := range imageLayers {
+		if indices == nil || slices.Contains(indices, int32(i)) {
+			result[int32(i)] = layer
+		}
+	}
+	return result, nil
 }
 
 // InvalidateScanAndRegistryCaches invalidates the image scan caches

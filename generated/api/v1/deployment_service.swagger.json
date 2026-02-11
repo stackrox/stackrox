@@ -92,6 +92,40 @@
         ]
       }
     },
+    "/v1/deployments/metadata": {
+      "post": {
+        "summary": "GetDeploymentMetadata returns reduced workload metadata (name, type, cluster, namespace) for specified workloads.",
+        "operationId": "DeploymentService_GetDeploymentMetadata",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetDeploymentMetadataResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "GetDeploymentMetadataRequest requests reduced deployment metadata.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1GetDeploymentMetadataRequest"
+            }
+          }
+        ],
+        "tags": [
+          "DeploymentService"
+        ]
+      }
+    },
     "/v1/deployments/metadata/labels": {
       "get": {
         "summary": "GetLabels returns the labels used by deployments.",
@@ -1244,6 +1278,48 @@
       "properties": {
         "deployment": {
           "$ref": "#/definitions/storageDeployment"
+        }
+      }
+    },
+    "v1GetDeploymentMetadataRequest": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        }
+      },
+      "description": "GetDeploymentMetadataRequest requests reduced deployment metadata."
+    },
+    "v1GetDeploymentMetadataResponse": {
+      "type": "object",
+      "properties": {
+        "deployments": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v1GetDeploymentMetadataResponseMetadata"
+          },
+          "description": "Map of deployment ID to metadata."
+        }
+      },
+      "description": "GetDeploymentMetadataResponse returns reduced deployment metadata."
+    },
+    "v1GetDeploymentMetadataResponseMetadata": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "cluster": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "platformComponent": {
+          "type": "boolean"
         }
       }
     },

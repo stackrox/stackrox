@@ -241,6 +241,40 @@
         ]
       }
     },
+    "/v1/images/metadata": {
+      "post": {
+        "summary": "GetImageMetadata returns reduced image metadata (names and layers) for specified images.",
+        "operationId": "ImageService_GetImageMetadata",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetImageMetadataResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "GetImageMetadataRequest requests reduced image metadata (names and layers)\nfor specified images.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1GetImageMetadataRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ImageService"
+        ]
+      }
+    },
     "/v1/images/scan": {
       "post": {
         "summary": "ScanImage scans a single image and returns the result",
@@ -533,6 +567,19 @@
         "OPENSHIFT_VULNERABILITY"
       ],
       "default": "UNKNOWN_VULNERABILITY"
+    },
+    "GetImageMetadataRequestLayers": {
+      "type": "object",
+      "properties": {
+        "layers": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "description": "If layer indices list is empty for an image, no layers are included.\nIf layer indices list is nil for an image, all layers are included."
+        }
+      }
     },
     "WatchImageResponseErrorType": {
       "type": "string",
@@ -1513,6 +1560,53 @@
       "properties": {
         "image": {
           "$ref": "#/definitions/storageImage"
+        }
+      }
+    },
+    "v1GetImageMetadataRequest": {
+      "type": "object",
+      "properties": {
+        "images": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/GetImageMetadataRequestLayers"
+          },
+          "description": "Map of image SHA to list of requested layer indices for that image.\nIf the map is empty, all images are returned."
+        },
+        "query": {
+          "type": "string",
+          "description": "Optional query."
+        }
+      },
+      "description": "GetImageMetadataRequest requests reduced image metadata (names and layers)\nfor specified images."
+    },
+    "v1GetImageMetadataResponse": {
+      "type": "object",
+      "properties": {
+        "images": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v1GetImageMetadataResponseMetadata"
+          },
+          "description": "Map of image SHA to metadata."
+        }
+      },
+      "description": "GetImageMetadataResponse returns reduced image metadata (names and layers)."
+    },
+    "v1GetImageMetadataResponseMetadata": {
+      "type": "object",
+      "properties": {
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "layers": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/storageImageLayer"
+          }
         }
       }
     },
