@@ -195,8 +195,6 @@ func (suite *ProcessBaselineEvaluatorIntegrationTestSuite) TestLockedProcessBase
 	suite.NoError(err)
 	suite.NotNil(persistedResult)
 	suite.Len(persistedResult.GetBaselineStatuses(), 2)
-	log.Infof("SHREWS -- %v", persistedResult)
-
 	for _, status := range persistedResult.GetBaselineStatuses() {
 		// We only locked the first container
 		if status.GetContainerName() == containerName {

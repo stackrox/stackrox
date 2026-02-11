@@ -142,7 +142,6 @@ func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 // acquireRiskSemaphore acquires the risk reprocessing semaphore with an optional timeout.
 // This follows the same pattern as the image scan semaphore in central/image/service.
 func (s *pipelineImpl) acquireRiskSemaphore(ctx context.Context) error {
-	log.Infof("SHREWS -- Acquiring risk semaphore")
 	waitTime := env.DeploymentRiskSemaphoreWaitTime.DurationSetting()
 
 	acquireCtx := ctx
@@ -168,13 +167,11 @@ func (s *pipelineImpl) acquireRiskSemaphore(ctx context.Context) error {
 		return err
 	}
 
-	log.Infof("SHREWS -- Acquired risk semaphore")
 	riskSemaphoreHoldingSize.Inc()
 	return nil
 }
 
 func (s *pipelineImpl) releaseRiskSemaphore() {
-	log.Infof("SHREWS -- Releasing risk semaphore")
 	s.riskSemaphore.Release(1)
 	riskSemaphoreHoldingSize.Dec()
 }
