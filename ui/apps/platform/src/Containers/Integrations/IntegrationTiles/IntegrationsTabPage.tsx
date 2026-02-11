@@ -1,8 +1,9 @@
 import type { ReactElement, ReactNode } from 'react';
-import { Divider, Flex, FlexItem, PageSection, Title } from '@patternfly/react-core';
+import { Flex, PageSection, Tab, TabTitleText, Tabs, Title } from '@patternfly/react-core';
+import { useNavigate } from 'react-router-dom-v5-compat';
 
 import PageTitle from 'Components/PageTitle';
-import TabNav from 'Components/TabNav/TabNav';
+import { isIntegrationSource } from 'types/integration';
 import type { IntegrationSource } from 'types/integration';
 
 import OcmDeprecatedToken from '../Banners/OcmDeprecatedToken';
@@ -20,25 +21,45 @@ function IntegrationsTabPage({
     sourcesEnabled,
 }: IntegrationsTabPageProps): ReactElement {
     const sourceTitle = integrationSourceTitleMap[source];
-    const tabLinks = sourcesEnabled.map((sourceEnabled) => ({
-        href: getIntegrationTabPath(sourceEnabled),
-        title: integrationSourceTitleMap[sourceEnabled],
-    }));
+    const navigate = useNavigate();
 
     return (
         <>
             <PageTitle title={`Integrations - ${sourceTitle}`} />
-            <PageSection hasBodyWrapper={false} component="div">
+            <PageSection>
                 <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
                     <Title headingLevel="h1">Integrations</Title>
                     {/*TODO(ROX-25633): Remove the banner again.*/}
                     <OcmDeprecatedToken />
-                    <FlexItem>
-                        <TabNav tabLinks={tabLinks} currentTabTitle={sourceTitle} />
-                        <Divider component="div" />
-                    </FlexItem>
-                    {children}
                 </Flex>
+            </PageSection>
+            <PageSection type="tabs">
+                <Tabs
+                    activeKey={source}
+                    onSelect={(_event, tabKey) => {
+                        if (isIntegrationSource(tabKey)) {
+                            navigate(getIntegrationTabPath(tabKey));
+                        }
+                    }}
+                    usePageInsets
+                    mountOnEnter
+                    unmountOnExit
+                >
+                    {sourcesEnabled.map((sourceEnabled) => (
+                        <Tab
+                            key={sourceEnabled}
+                            eventKey={sourceEnabled}
+                            title={
+                                <TabTitleText>
+                                    {integrationSourceTitleMap[sourceEnabled]}
+                                </TabTitleText>
+                            }
+                            tabContentId={sourceEnabled}
+                        >
+                            <PageSection>{children}</PageSection>
+                        </Tab>
+                    ))}
+                </Tabs>
             </PageSection>
         </>
     );

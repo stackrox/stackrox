@@ -122,7 +122,7 @@ function MachineAccessIntegrationForm({
                     {alertRoles}
                 </Alert>
             )}
-            <PageSection hasBodyWrapper={false} isFilled hasOverflowScroll>
+            <PageSection isFilled hasOverflowScroll>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormikProvider value={formik}>

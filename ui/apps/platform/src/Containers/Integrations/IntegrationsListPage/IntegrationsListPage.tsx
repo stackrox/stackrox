@@ -1,13 +1,6 @@
 import { useState } from 'react';
 import type { ReactElement } from 'react';
-import {
-    Breadcrumb,
-    BreadcrumbItem,
-    Divider,
-    Flex,
-    PageSection,
-    Title,
-} from '@patternfly/react-core';
+import { Breadcrumb, BreadcrumbItem, Flex, PageSection, Title } from '@patternfly/react-core';
 import { connect } from 'react-redux';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -103,14 +96,13 @@ function IntegrationsListPage({
     return (
         <>
             <PageTitle title={typeLabel} />
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={integrationsPath}>Integrations</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{typeLabel}</BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
-            <Divider component="div" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <Title headingLevel="h1">
                     {isSignatureIntegration ? 'Signature' : ''} Integrations
                 </Title>
@@ -126,7 +118,7 @@ function IntegrationsListPage({
                     </Title>
                 )}
             </PageSection>
-            <PageSection hasBodyWrapper={false} variant="default">
+            <PageSection>
                 <IntegrationsTable
                     tableState={tableState}
                     hasMultipleDelete
