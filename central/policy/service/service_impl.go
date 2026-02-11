@@ -12,6 +12,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/datastore"
@@ -28,7 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
-	"github.com/stackrox/rox/pkg/detection"
+	pkgDetection "github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -105,6 +106,7 @@ type serviceImpl struct {
 
 	policies          datastore.DataStore
 	clusters          clusterDataStore.DataStore
+	namespaces        namespaceDataStore.DataStore
 	deployments       deploymentDataStore.DataStore
 	networkPolicies   networkPolicyDS.DataStore
 	notifiers         notifierDataStore.DataStore
@@ -443,7 +445,11 @@ func (s *serviceImpl) predicateBasedDryRunPolicy(ctx context.Context, cancelCtx 
 		return &resp, nil
 	}
 
-	compiledPolicy, err := detection.CompilePolicy(request)
+	// Create providers for label-based scope matching
+	clusterProvider := s.clusters
+	namespaceProvider := s.namespaces
+
+	compiledPolicy, err := pkgDetection.CompilePolicy(request, clusterProvider, namespaceProvider)
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "invalid policy: %v", err)
 	}

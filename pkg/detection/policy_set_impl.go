@@ -6,10 +6,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/maputil"
+	"github.com/stackrox/rox/pkg/scopecomp"
 )
 
 type setImpl struct {
 	policyIDToCompiled *maputil.FastRMap[string, CompiledPolicy]
+
+	clusterLabelProvider   scopecomp.ClusterLabelProvider
+	namespaceLabelProvider scopecomp.NamespaceLabelProvider
 }
 
 func (p *setImpl) ForEach(f func(policy CompiledPolicy) error) error {
@@ -34,7 +38,7 @@ func (p *setImpl) ForOne(pID string, f func(CompiledPolicy) error) error {
 
 // UpsertPolicy adds or updates a policy in the set.
 func (p *setImpl) UpsertPolicy(policy *storage.Policy) error {
-	compiled, err := CompilePolicy(policy)
+	compiled, err := CompilePolicy(policy, p.clusterLabelProvider, p.namespaceLabelProvider)
 	if err != nil {
 		log.Errorf("unable to compile policy: %s", err)
 		return err

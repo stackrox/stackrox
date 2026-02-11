@@ -78,7 +78,7 @@ func TestCompiledPolicyScopesAndExclusions(t *testing.T) {
 	} {
 		c := testCase
 		t.Run(c.desc, func(t *testing.T) {
-			compiled, err := CompilePolicy(constructPolicy(c.scopes, c.exclusions))
+			compiled, err := CompilePolicy(constructPolicy(c.scopes, c.exclusions), nil, nil)
 			require.NoError(t, err)
 			for _, dep := range c.shouldApplyTo {
 				assert.True(t, compiled.AppliesTo(dep), "Failed expectation for %s", dep.GetId())

@@ -1193,6 +1193,19 @@ func (ds *datastoreImpl) collectClusters(ctx context.Context) ([]*storage.Cluste
 	return clusters, nil
 }
 
+// GetClusterLabels returns the labels for the specified cluster.
+func (ds *datastoreImpl) GetClusterLabels(clusterID string) (map[string]string, error) {
+	ctx := context.Background()
+	cluster, exists, err := ds.GetCluster(ctx, clusterID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, nil
+	}
+	return cluster.GetLabels(), nil
+}
+
 // ClusterSearchResultConverter implements search.SearchResultConverter for cluster search results.
 // This enables single-pass query construction for SearchResult protos.
 type ClusterSearchResultConverter struct{}

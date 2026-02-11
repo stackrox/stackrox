@@ -31,7 +31,7 @@ type CompiledPolicy interface {
 }
 
 // newCompiledPolicy creates and returns a compiled policy from the policy and legacySearchBasedMatcher.
-func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
+func newCompiledPolicy(policy *storage.Policy, clusterLabelProvider scopecomp.ClusterLabelProvider, namespaceLabelProvider scopecomp.NamespaceLabelProvider) (CompiledPolicy, error) {
 	compiled := &compiledPolicy{
 		policy: policy,
 	}
@@ -47,7 +47,7 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 
 	scopes := make([]*scopecomp.CompiledScope, 0, len(policy.GetScope()))
 	for _, s := range policy.GetScope() {
-		compiledScope, err := scopecomp.CompileScope(s, nil, nil)
+		compiledScope, err := scopecomp.CompileScope(s, clusterLabelProvider, namespaceLabelProvider)
 		if err != nil {
 			return nil, errors.Wrapf(err, "compiling scope %+v for policy %q", s, policy.GetName())
 		}

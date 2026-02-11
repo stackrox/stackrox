@@ -2,19 +2,25 @@ package matcher
 
 import (
 	"github.com/pkg/errors"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scopecomp"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 type deploymentMatcher struct {
-	deployment *storage.Deployment
+	deployment        *storage.Deployment
+	clusterProvider   scopecomp.ClusterLabelProvider
+	namespaceProvider scopecomp.NamespaceLabelProvider
 }
 
 // NewDeploymentMatcher creates a new policy matcher for deployment data.
-func NewDeploymentMatcher(deployment *storage.Deployment) Matcher {
+func NewDeploymentMatcher(deployment *storage.Deployment, clusterDS clusterDataStore.DataStore, namespaceDS namespaceDataStore.DataStore) Matcher {
 	return &deploymentMatcher{
-		deployment: deployment,
+		deployment:        deployment,
+		clusterProvider:   clusterDS,
+		namespaceProvider: namespaceDS,
 	}
 }
 
@@ -74,7 +80,7 @@ func (m *deploymentMatcher) anyScopeMatches(scopes []*storage.Scope) bool {
 }
 
 func (m *deploymentMatcher) scopeMatches(scope *storage.Scope) bool {
-	cs, err := scopecomp.CompileScope(scope, nil, nil)
+	cs, err := scopecomp.CompileScope(scope, m.clusterProvider, m.namespaceProvider)
 	if err != nil {
 		utils.Should(errors.Wrap(err, "could not compile scope"))
 		return false

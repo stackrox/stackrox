@@ -267,7 +267,7 @@ func (resolver *deploymentResolver) getApplicablePolicies(ctx context.Context, q
 		return nil, err
 	}
 
-	applicable, _ := matcher.NewDeploymentMatcher(resolver.data).FilterApplicablePolicies(policies)
+	applicable, _ := matcher.NewDeploymentMatcher(resolver.data, resolver.root.ClusterDataStore, resolver.root.NamespaceDataStore).FilterApplicablePolicies(policies)
 	return applicable, nil
 }
 

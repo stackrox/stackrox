@@ -21,7 +21,7 @@ type RuntimeDetectorTestSuite struct {
 }
 
 func (s *RuntimeDetectorTestSuite) TestUpdateSecrets() {
-	policySet := detection.NewPolicySet()
+	policySet := detection.NewPolicySet(nil, nil)
 
 	err := policySet.UpsertPolicy(s.getUpdateSecretPolicy())
 	s.NoError(err, "upsert policy should succeed")
@@ -39,7 +39,7 @@ func (s *RuntimeDetectorTestSuite) TestUpdateSecrets() {
 }
 
 func (s *RuntimeDetectorTestSuite) TestCreateConfigMap() {
-	policySet := detection.NewPolicySet()
+	policySet := detection.NewPolicySet(nil, nil)
 
 	err := policySet.UpsertPolicy(s.getCreateConfigmapPolicy())
 	s.NoError(err, "upsert policy should succeed")
@@ -57,7 +57,7 @@ func (s *RuntimeDetectorTestSuite) TestCreateConfigMap() {
 }
 
 func (s *RuntimeDetectorTestSuite) TestConfigMapPolicyWithRegex() {
-	policySet := detection.NewPolicySet()
+	policySet := detection.NewPolicySet(nil, nil)
 
 	cmPolicy := s.getCreateConfigmapPolicy()
 	cmPolicy.PolicySections[0].PolicyGroups = append(cmPolicy.PolicySections[0].PolicyGroups, &storage.PolicyGroup{

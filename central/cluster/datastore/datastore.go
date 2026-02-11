@@ -47,6 +47,7 @@ type DataStore interface {
 	GetClusterName(ctx context.Context, id string) (string, bool, error)
 	GetClusters(ctx context.Context) ([]*storage.Cluster, error)
 	GetClustersForSAC() ([]effectiveaccessscope.Cluster, error)
+	GetClusterLabels(clusterID string) (map[string]string, error)
 	CountClusters(ctx context.Context) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	WalkClusters(ctx context.Context, fn func(obj *storage.Cluster) error) error

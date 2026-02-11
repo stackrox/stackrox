@@ -25,7 +25,7 @@ func getPolicy(defaultPolicies []*storage.Policy, name string, t *testing.T) *st
 
 func TestDetector(t *testing.T) {
 	controller := gomock.NewController(t)
-	policySet := detection.NewPolicySet(mocks.NewMockDataStore(controller))
+	policySet := detection.NewPolicySet(mocks.NewMockDataStore(controller), nil, nil)
 	detector := NewDetector(policySet)
 
 	defaultPolicies, err := policies.DefaultPolicies()

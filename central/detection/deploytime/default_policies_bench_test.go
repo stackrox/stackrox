@@ -14,7 +14,7 @@ import (
 
 func BenchmarkDefaultPolicies(b *testing.B) {
 
-	policySet = detection.NewPolicySet(nil)
+	policySet = detection.NewPolicySet(nil, nil, nil)
 
 	policies, err := policies.DefaultPolicies()
 	require.NoError(b, err)
