@@ -5,7 +5,6 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
-    Divider,
     Flex,
     PageSection,
     Spinner,
@@ -51,18 +50,17 @@ function AdministrationEventPage({ id }: AdministrationEventPageProps): ReactEle
     return (
         <>
             <PageTitle title={`Administration events - ${h1}`} />
-            <PageSection hasBodyWrapper={false} component="div">
+            <PageSection type="breadcrumb">
+                <Breadcrumb>
+                    <BreadcrumbItemLink to={administrationEventsBasePath}>
+                        Administration events
+                    </BreadcrumbItemLink>
+                    <BreadcrumbItem>{h1}</BreadcrumbItem>
+                </Breadcrumb>
+            </PageSection>
+            <PageSection component="div">
                 <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsXl' }}>
-                    <Flex direction={{ default: 'column' }}>
-                        <Breadcrumb>
-                            <BreadcrumbItemLink to={administrationEventsBasePath}>
-                                Administration events
-                            </BreadcrumbItemLink>
-                            <BreadcrumbItem>{h1}</BreadcrumbItem>
-                        </Breadcrumb>
-                        <Divider component="div" />
-                        <Title headingLevel="h1">{h1}</Title>
-                    </Flex>
+                    <Title headingLevel="h1">{h1}</Title>
                     {isLoading ? (
                         <Bullseye>
                             <Spinner />
