@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import {
     Badge,
     Card,
@@ -9,7 +9,7 @@ import {
     GalleryItem,
     Truncate,
 } from '@patternfly/react-core';
-import { Link } from 'react-router-dom-v5-compat';
+import { useNavigate } from 'react-router-dom-v5-compat';
 
 import TechPreviewLabel from 'Components/PatternFly/PreviewLabel/TechPreviewLabel';
 
@@ -22,10 +22,6 @@ type IntegrationTileProps = {
     isTechPreview?: boolean;
 };
 
-const styleCard = {
-    cursor: 'pointer',
-} as CSSProperties;
-
 function IntegrationTile({
     categories,
     image,
@@ -34,33 +30,36 @@ function IntegrationTile({
     numIntegrations,
     isTechPreview = false,
 }: IntegrationTileProps): ReactElement {
+    const navigate = useNavigate();
+
     return (
         <GalleryItem>
-            <Link to={linkTo} data-testid="integration-tile">
-                <Card isSelectable isCompact style={styleCard}>
-                    <CardHeader
-                        actions={{
-                            actions: <>{numIntegrations > 0 && <Badge>{numIntegrations}</Badge>}</>,
-                            hasNoOffset: false,
-                            className: undefined,
-                        }}
-                        className="pf-v6-u-mb-lg"
-                    >
-                        <>
-                            <img src={image} alt="" style={{ height: '100px' }} />
-                        </>
-                    </CardHeader>
-                    <CardTitle className="pf-v6-u-color-100" style={{ whiteSpace: 'nowrap' }}>
-                        <Flex spaceItems={{ default: 'spaceItemsSm' }}>
-                            <Truncate position="middle" content={label} />
-                            {isTechPreview && <TechPreviewLabel />}
-                        </Flex>
-                    </CardTitle>
-                    {categories && (
-                        <CardFooter className="pf-v6-u-color-200">{categories}</CardFooter>
-                    )}
-                </Card>
-            </Link>
+            <Card isClickable isCompact data-testid="integration-tile">
+                <CardHeader
+                    actions={{
+                        actions: <>{numIntegrations > 0 && <Badge>{numIntegrations}</Badge>}</>,
+                        // This is needed to reverse the order of the actions, aligning the badge to the right
+                        // and preventing a gap caused by the navigation `selectableAction` (which is invisible, but takes space).
+                        className: 'pf-v6-u-flex-direction-row-reverse',
+                    }}
+                    selectableActions={{
+                        onClickAction: () => navigate(linkTo),
+                        selectableActionAriaLabel: `View ${label} integrations`,
+                    }}
+                    className="pf-v6-u-mb-lg"
+                >
+                    <>
+                        <img src={image} alt="" style={{ height: '100px' }} />
+                    </>
+                </CardHeader>
+                <CardTitle className="pf-v6-u-color-100" style={{ whiteSpace: 'nowrap' }}>
+                    <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                        <Truncate position="middle" content={label} />
+                        {isTechPreview && <TechPreviewLabel />}
+                    </Flex>
+                </CardTitle>
+                {categories && <CardFooter className="pf-v6-u-color-200">{categories}</CardFooter>}
+            </Card>
         </GalleryItem>
     );
 }
