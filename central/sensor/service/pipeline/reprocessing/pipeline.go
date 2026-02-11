@@ -23,7 +23,6 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
-
 var (
 	log = logging.LoggerForModule()
 

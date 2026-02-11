@@ -22,15 +22,10 @@ var (
 	// as possible
 	ReprocessDeploymentsMsgDelay = registerDurationSetting("ROX_REPROCESS_DEPLOYMENTS_MSG_DELAY", 0, WithDurationZeroAllowed())
 	// DeploymentRiskMaxConcurrency limits how many deployments can have their risk reprocessed
-	// concurrently across all clusters. Each reprocessing operation makes multiple DB calls
-	// (risk lookups, baseline evaluations, process indicator queries, upserts). Without a limit,
-	// 17 worker goroutines per cluster can overwhelm the connection pool (default 90) when
-	// multiple clusters trigger reprocessing simultaneously (e.g., sensor reconnect, periodic enrichment).
-	// Default of 15 provides headroom: ~15 concurrent reprocessing operations use ~15 DB connections,
-	// leaving the remaining ~75 connections available for all other Central operations.
+	// concurrently across all clusters.
 	DeploymentRiskMaxConcurrency = RegisterIntegerSetting("ROX_DEPLOYMENT_RISK_MAX_CONCURRENCY", 15).
-				WithMinimum(1).
-				WithMaximum(30)
+					WithMinimum(1).
+					WithMaximum(30)
 	// DeploymentRiskSemaphoreWaitTime is the maximum time a worker will wait to acquire
 	// the risk reprocessing semaphore. If exceeded, the operation is dropped and will be
 	// retried on the next reprocessing cycle. Setting to zero disables the timeout (workers
