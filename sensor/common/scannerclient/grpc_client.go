@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/registries/types"
 	pkgscanner "github.com/stackrox/rox/pkg/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
+	"github.com/stackrox/rox/sensor/common/centralcabundle"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -156,7 +157,15 @@ func dialV2() (ScannerClient, error) {
 // dialV4 connect to scanner V4 gRPC and return a new ScannerClient.
 func dialV4() (ScannerClient, error) {
 	ctx := context.Background()
-	c, err := client.NewGRPCScanner(ctx, client.WithIndexerAddress(env.ScannerV4IndexerEndpoint.Setting()))
+	opts := []client.Option{client.WithIndexerAddress(env.ScannerV4IndexerEndpoint.Setting())}
+
+	// Make sure the Scanner V4 client trusts all internal CAs.
+	if cas := centralcabundle.Get(); len(cas) > 0 {
+		log.Infof("Adding %d Central CA certificate(s) to Scanner V4 client", len(cas))
+		opts = append(opts, client.WithRootCAs(cas...))
+	}
+
+	c, err := client.NewGRPCScanner(ctx, opts...)
 	if err != nil {
 		return nil, errors.Wrap(err, "dialing scanner V4 gRPC client")
 	}

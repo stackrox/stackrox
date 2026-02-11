@@ -287,9 +287,13 @@ func verifyCertMatchesCAHash(t *testing.T, secretData types.SecretDataMap, cache
 		return
 	}
 
+	if secondaryCAPEM, hasSecondaryCA := secretData[mtls.SecondaryCACertFileName]; hasSecondaryCA {
+		caPEM = append(caPEM, secondaryCAPEM...)
+	}
+
 	secretCAHash := confighash.ComputeCAHash(caPEM)
 	assert.Equal(t, secretCAHash, cachedCAHash,
-		"CA hash in RenderCache should match the CA certificate in secret %s", secretName)
+		"CA hash in RenderCache should match the CA certificate(s) in secret %s", secretName)
 }
 
 func verifySecretsMatch(
