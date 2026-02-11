@@ -56,6 +56,8 @@ type serviceImpl struct {
 
 	now func() time.Time
 
+	policy *tokenPolicy
+
 	v1.UnimplementedTokenServiceServer
 }
 
@@ -80,6 +82,12 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 ) (*v1.GenerateTokenForPermissionsAndScopeResponse, error) {
 	// Enable dynamic RBAC pruning.
 	pruning.EnableDynamicRBACPruning()
+
+	// Validate request against policy and modify request if necessary.
+	req, err := s.policy.enforce(ctx, req)
+	if err != nil {
+		return nil, err
+	}
 
 	// Calculate expiry first so we can set it on the RBAC objects.
 	expiresAt, err := s.getExpiresAt(ctx, req)
@@ -119,9 +127,6 @@ func (s *serviceImpl) getExpiresAt(
 	duration, err := protocompat.DurationFromProto(req.GetLifetime())
 	if err != nil {
 		return time.Time{}, errox.InvalidArgs.CausedByf("converting requested token validity duration: %v", err)
-	}
-	if duration <= 0 {
-		return time.Time{}, errox.InvalidArgs.CausedBy("token validity duration should be positive")
 	}
 	return s.now().Add(duration), nil
 }
