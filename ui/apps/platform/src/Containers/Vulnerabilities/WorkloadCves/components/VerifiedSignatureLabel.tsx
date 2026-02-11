@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { Flex, FlexItem, Label, List, ListItem, Popover } from '@patternfly/react-core';
+import { Flex, FlexItem, Label, List, ListItem, Popover, Truncate } from '@patternfly/react-core';
 import { CheckCircleIcon } from '@patternfly/react-icons';
 
 import PopoverBodyContent from 'Components/PopoverBodyContent';
@@ -52,7 +52,9 @@ function VerifiedSignatureLabel({
                                     </strong>
                                     <List style={styleList}>
                                         {result.verifiedImageReferences?.map((name) => (
-                                            <ListItem key={name}>{name}</ListItem>
+                                            <ListItem key={name}>
+                                                <Truncate content={name} position="middle" />
+                                            </ListItem>
                                         ))}
                                     </List>
                                 </FlexItem>
