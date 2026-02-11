@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import {
     getIntegrationsListPath,
-    signatureIntegrationsSource as source,
     signatureIntegrationDescriptor as descriptor,
+    signatureIntegrationsSource as source,
 } from 'Containers/Integrations/utils/integrationsList';
 
 import usePermissions from 'hooks/usePermissions';
