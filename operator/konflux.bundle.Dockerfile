@@ -1,7 +1,7 @@
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.25@sha256:527782f4a0270f786192281f68d0374f4a21b3ab759643eee4bfcafb6f539468 AS builder
 
 # This installs both PyYAML and Python.
-RUN microdnf -y install python3.12-pyyaml
+RUN dnf -y install python3.12-pyyaml
 
 COPY . /stackrox
 WORKDIR /stackrox/operator
