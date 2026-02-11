@@ -153,12 +153,12 @@ func TestConcurrentEvaluationConnectionPressure(t *testing.T) {
 	// and injects messages that are processed by N clusters * 17 workers each.
 
 	var (
-		wg             pkgSync.WaitGroup
-		errCount       atomic.Int64
-		timeoutCount   atomic.Int64
-		successCount   atomic.Int64
-		totalDuration  atomic.Int64
-		maxDurationNs  atomic.Int64
+		wg            pkgSync.WaitGroup
+		errCount      atomic.Int64
+		timeoutCount  atomic.Int64
+		successCount  atomic.Int64
+		totalDuration atomic.Int64
+		maxDurationNs atomic.Int64
 	)
 
 	start := time.Now()
@@ -277,9 +277,9 @@ func TestConcurrentEvaluationBaselineComparison(t *testing.T) {
 	allAccessCtx := sac.WithAllAccess(context.Background())
 
 	const (
-		concurrency              = 17 // production workerQueueTotalSize per cluster
-		numDeployments           = 50
-		numProcessesPerDep       = 200
+		concurrency        = 17 // production workerQueueTotalSize per cluster
+		numDeployments     = 50
+		numProcessesPerDep = 200
 	)
 
 	type result struct {
@@ -336,9 +336,9 @@ func TestConcurrentEvaluationBaselineComparison(t *testing.T) {
 
 			// Run concurrent evaluations
 			var (
-				wg            pkgSync.WaitGroup
-				totalNs       atomic.Int64
-				maxNs         atomic.Int64
+				wg      pkgSync.WaitGroup
+				totalNs atomic.Int64
+				maxNs   atomic.Int64
 			)
 
 			start := time.Now()

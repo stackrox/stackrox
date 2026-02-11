@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/central/processindicator/views"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -23,8 +22,6 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
-
-var log = logging.LoggerForModule()
 
 func TestProcessBaselineEvaluatorIntegration(t *testing.T) {
 	suite.Run(t, new(ProcessBaselineEvaluatorIntegrationTestSuite))
