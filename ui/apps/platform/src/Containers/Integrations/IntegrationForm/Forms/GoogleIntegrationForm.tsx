@@ -151,7 +151,7 @@ function GoogleIntegrationForm({
 
     return (
         <>
-            <PageSection hasBodyWrapper={false} isFilled hasOverflowScroll>
+            <PageSection isFilled hasOverflowScroll>
                 <Alert
                     title="Deprecation notice"
                     component="p"

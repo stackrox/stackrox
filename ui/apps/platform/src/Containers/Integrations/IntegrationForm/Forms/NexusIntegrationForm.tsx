@@ -153,7 +153,7 @@ function NexusIntegrationForm({
 
     return (
         <>
-            <PageSection hasBodyWrapper={false} isFilled hasOverflowScroll>
+            <PageSection isFilled hasOverflowScroll>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup
