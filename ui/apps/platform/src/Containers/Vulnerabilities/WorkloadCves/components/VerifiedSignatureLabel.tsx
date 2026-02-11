@@ -4,6 +4,7 @@ import { CheckCircleIcon } from '@patternfly/react-icons';
 
 import PopoverBodyContent from 'Components/PopoverBodyContent';
 import type { SignatureVerificationResult } from '../../types';
+import SignatureIntegrationLink from './SignatureIntegrationLink';
 
 export function getVerifiedSignatureInResults(
     results: SignatureVerificationResult[] | null | undefined
@@ -46,7 +47,9 @@ function VerifiedSignatureLabel({
                         >
                             {verifiedSignatureResults?.map((result) => (
                                 <FlexItem key={result.verifierId}>
-                                    <strong>{result.verifierId}</strong>
+                                    <strong>
+                                        <SignatureIntegrationLink result={result} />
+                                    </strong>
                                     <List style={styleList}>
                                         {result.verifiedImageReferences?.map((name) => (
                                             <ListItem key={name}>{name}</ListItem>
