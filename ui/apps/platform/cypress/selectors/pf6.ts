@@ -3,6 +3,10 @@ const actionsColumnSelectors = {
     menuListButton: '.pf-v6-c-menu__list button',
 } as const;
 
+const cardSelectors = {
+    card: 'div[data-ouia-component-type="PF6/Card"]',
+} as const;
+
 const columnManagementSelectors = {
     columnManagementLabel:
         // data-ouia-component-id for these labels are in the format of "ColumnManagementModal-column-<index>-label" so
@@ -54,6 +58,7 @@ const wizardSelectors = {
 
 export default {
     ...actionsColumnSelectors,
+    ...cardSelectors,
     ...columnManagementSelectors,
     ...dropdownSelectors,
     ...menuSelectors,
