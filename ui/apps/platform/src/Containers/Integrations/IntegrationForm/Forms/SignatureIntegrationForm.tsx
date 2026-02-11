@@ -194,7 +194,7 @@ function SignatureIntegrationForm({
 
     return (
         <>
-            <PageSection hasBodyWrapper={false} isFilled hasOverflowScroll>
+            <PageSection isFilled hasOverflowScroll>
                 <Alert
                     title="Verifying image signatures"
                     component="p"

@@ -5,6 +5,7 @@ import {
     getInputByLabel,
 } from '../../helpers/formHelpers';
 import fakeGCPServiceAccount from '../../helpers/fakeGCPServiceAccount';
+import pf6 from '../../selectors/pf6';
 
 import {
     clickCreateNewIntegrationInTable,
@@ -228,8 +229,8 @@ describe('Backup Integrations', () => {
             visitIntegrationsWithStaticResponseForCapabilities({
                 body: { centralCanUseCloudBackupIntegrations: 'CapabilityDisabled' },
             });
-            cy.get('nav.pf-m-tertiary a:contains("Notifier")').should('exist'); // preceding tab
-            cy.get('nav.pf-m-tertiary a:contains("Backup")').should('not.exist');
+            cy.get(`${pf6.tabButton}:contains("Notifier")`).should('exist'); // preceding tab
+            cy.get(`${pf6.tabButton}:contains("Backup")`).should('not.exist');
 
             visitIntegrationsAndVerifyNotFoundWithStaticResponseForCapabilities(
                 {
