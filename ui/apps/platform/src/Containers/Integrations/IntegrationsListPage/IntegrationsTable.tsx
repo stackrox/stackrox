@@ -123,7 +123,7 @@ function IntegrationsTable({
                 </Flex>
             </PageSection>
             <Divider component="div" />
-            <PageSection hasBodyWrapper={false} isFilled padding={{ default: 'noPadding' }}>
+            <PageSection isFilled padding={{ default: 'noPadding' }}>
                 <Table variant="compact" isStickyHeader>
                     <Thead>
                         <Tr>
@@ -174,7 +174,7 @@ function IntegrationsTable({
                                     {
                                         title: (
                                             <div className="pf-v6-u-text-color-status-danger">
-                                                Delete Integration
+                                                Delete integration
                                             </div>
                                         ),
                                         onClick: () => onDeleteIntegrations([integration.id]),
