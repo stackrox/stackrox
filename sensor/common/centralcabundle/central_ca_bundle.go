@@ -1,3 +1,11 @@
+// Package centralcabundle provides a global cache for Central CA certificates obtained via TLSChallenge.
+//
+// Used by Scanner V4 client to trust both CAs during CA rotation. Global state is used because
+// storing secondary-ca.pem in tls-cert-* secrets wouldn't work for Helm deployments (pods don't
+// restart to pick up CA changes).
+//
+// This could be replaced by loading certs from secrets if ROX-29506 (certificate hot reloading)
+// is implemented, or if Helm-managed Secured Clusters are deprecated.
 package centralcabundle
 
 import (
