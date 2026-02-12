@@ -101,22 +101,10 @@ func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.DeploymentReprocess)
 
 	// Throttle concurrent risk reprocessing to prevent DB connection pool exhaustion.
-	// Without this, 17 worker goroutines per cluster can all call ReprocessDeploymentRisk
-	// simultaneously, each making ~10 DB operations (GetDeployment, GetRisk, image risks,
-	// process indicators iteration, baseline evaluation, upserts). With multiple clusters
-	// this easily exceeds the connection pool limit (default 90).
-	//
-	// The semaphore is acquired before GetDeployment to also gate the initial DB fetch,
-	// preventing blocked goroutines from holding deserialized deployments in memory.
-	//
-	// Backpressure model: worker goroutines (17 per cluster) block here until a slot opens.
-	// The upstream DedupingQueue deduplicates by deployment ID, so queue growth is bounded
-	// by the number of unique deployments. Workers that are blocked here simply stop pulling
-	// from their queue, which is the desired backpressure behavior.
 	//
 	// A timeout is applied to prevent indefinite blocking if risk operations are stuck.
 	// On timeout, the operation is dropped -- it will be retried on the next reprocessing
-	// cycle (default every 10 minutes via ROX_RISK_REPROCESSING_INTERVAL).
+	// cycle.
 	if err := s.acquireRiskSemaphore(ctx); err != nil {
 		return err
 	}
