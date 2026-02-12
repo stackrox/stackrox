@@ -414,7 +414,7 @@ deploy_sensor_via_operator() {
     local central_namespace=${2:-stackrox}
     local validate=${3:-true}
     local scanner_component_setting="Disabled"
-    local sfa_agent_setting="Disabled"
+    local fam_mode_setting="Disabled"
     local central_endpoint="central.${central_namespace}.svc:443"
 
     info "Deploying sensor using operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
@@ -442,13 +442,13 @@ deploy_sensor_via_operator() {
     fi
 
     if [[ "${SFA_AGENT:-}" == "Enabled" ]]; then
-       echo "Enabling SFA agent due to SFA_AGENT variable: ${SFA_AGENT}"
-       sfa_agent_setting="Enabled"
+       echo "Enabling File Activity Monitoring due to SFA_AGENT variable: ${SFA_AGENT}"
+       fam_mode_setting="Enabled"
     fi
 
     env - \
       scanner_component_setting="$scanner_component_setting" \
-      sfa_agent_setting="$sfa_agent_setting" \
+      fam_mode_setting="$fam_mode_setting" \
       central_endpoint="$central_endpoint" \
     "${envsubst}" \
       < "${secured_cluster_yaml_path}" | kubectl apply -n "${sensor_namespace}" --validate="${validate}" -f -

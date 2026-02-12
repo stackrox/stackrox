@@ -6,8 +6,8 @@ spec:
   centralEndpoint: $central_endpoint
   clusterName: remote
   perNode:
-    sfa:
-      agent: $sfa_agent_setting
+    fileActivityMonitoring:
+      mode: $fam_mode_setting
   scanner:
     scannerComponent: $scanner_component_setting
     analyzer:

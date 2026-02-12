@@ -3062,13 +3062,13 @@ spec:
                             type: object
                         type: object
                     type: object
-                  sfa:
-                    description: Settings for the Sensitive File Activity container,
-                      which is responsible for file activity monitoring on the Node.
+                  fileActivityMonitoring:
+                    description: Settings for the File Activity Monitoring container,
+                      which is responsible for monitoring file operations on the Node.
                     properties:
-                      agent:
+                      mode:
                         description: |-
-                          Specifies whether Sensitive File Activity agent is deployed.
+                          Specifies whether File Activity Monitoring is deployed.
                           The default is: Disabled.
                         enum:
                         - Enabled
