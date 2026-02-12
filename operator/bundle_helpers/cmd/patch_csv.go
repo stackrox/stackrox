@@ -133,25 +133,9 @@ func echoReplacedVersion(doc map[string]any, version, firstVersion, unreleased s
 		return errors.New("spec is not a map")
 	}
 
-	skips := make([]csv.XyzVersion, 0)
-	if rawSkips, ok := spec["skips"].([]any); ok {
-		for _, s := range rawSkips {
-			skipStr, ok := s.(string)
-			if !ok {
-				return errors.New("skip entry is not a string")
-			}
-			if skipStr == rawName+"0.0.1" {
-				continue
-			}
-			// Extract version from "rhacs-operator.vX.Y.Z"
-			skipVer := strings.TrimPrefix(skipStr, rawName)
-
-			v, err := csv.ParseXyzVersion(skipVer)
-			if err != nil {
-				return err
-			}
-			skips = append(skips, v)
-		}
+	skips, err := csv.ProcessSkips(rawName, spec)
+	if err != nil {
+		return err
 	}
 
 	previousYStream, err := csv.GetPreviousYStream(version)
