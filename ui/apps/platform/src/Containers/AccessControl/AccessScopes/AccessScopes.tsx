@@ -186,7 +186,7 @@ function AccessScopes(): ReactElement {
             )}
             {alertAccessScopes}
             {alertRoles}
-            <PageSection hasBodyWrapper={false} variant={isList ? 'default' : 'light'}>
+            <PageSection>
                 {counterFetching !== 0 ? (
                     <Bullseye>
                         <Spinner />

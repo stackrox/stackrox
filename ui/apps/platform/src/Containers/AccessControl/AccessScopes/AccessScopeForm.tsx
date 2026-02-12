@@ -3,6 +3,7 @@ import type { ReactElement } from 'react';
 import type { FormikContextType } from 'formik';
 import {
     Alert,
+    Button,
     Flex,
     FlexItem,
     Form,
@@ -37,9 +38,9 @@ const labelIconEffectiveAccessScope = (
         isContentLeftAligned
         maxWidth="24em"
     >
-        <div className="pf-v6-c-button pf-m-plain pf-m-small">
+        <Button variant="plain" size="sm" aria-label="Effective access scope information">
             <OutlinedQuestionCircleIcon />
-        </div>
+        </Button>
     </Tooltip>
 );
 
@@ -54,9 +55,9 @@ const labelIconLabelInclusion = (
         isContentLeftAligned
         maxWidth="24em"
     >
-        <div className="pf-v6-c-button pf-m-plain pf-m-small">
+        <Button variant="plain" size="sm" aria-label="Label inclusion information">
             <OutlinedQuestionCircleIcon />
-        </div>
+        </Button>
     </Tooltip>
 );
 

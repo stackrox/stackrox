@@ -15,12 +15,6 @@ import { getOriginLabel } from 'utils/traits.utils';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
 
-// TODO import from where?
-const unselectedRowStyle = {};
-const selectedRowStyle = {
-    borderLeft: 'var(--pf-t--global--border--color--brand--default)',
-};
-
 function getAuthProviderTypeLabel(type: string, availableTypes: AuthProviderInfo[]): string {
     return availableTypes.find(({ value }) => value === type)?.label ?? '';
 }
@@ -28,7 +22,6 @@ function getAuthProviderTypeLabel(type: string, availableTypes: AuthProviderInfo
 const entityType = 'AUTH_PROVIDER';
 
 export type AuthProvidersListProps = {
-    entityId?: string;
     authProviders: AuthProvider[];
 };
 
@@ -42,7 +35,7 @@ const authProviderState = createStructuredSelector<AuthProviderState>({
     availableProviderTypes: selectors.getAvailableProviderTypes,
 });
 
-function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps): ReactElement {
+function AuthProvidersList({ authProviders }: AuthProvidersListProps): ReactElement {
     const [authProviderToDelete, setAuthProviderToDelete] = useState('');
     const [idToDelete, setIdToDelete] = useState('');
     const dispatch = useDispatch();
@@ -85,10 +78,7 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                         const isImmutable = getIsAuthProviderImmutable(authProvider);
 
                         return (
-                            <Tr
-                                key={id}
-                                style={id === entityId ? selectedRowStyle : unselectedRowStyle}
-                            >
+                            <Tr key={id}>
                                 <Td dataLabel="Name">
                                     <AccessControlEntityLink
                                         entityType={entityType}

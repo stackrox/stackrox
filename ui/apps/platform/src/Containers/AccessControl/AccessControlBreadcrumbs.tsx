@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { Breadcrumb, BreadcrumbItem, Divider, PageSection } from '@patternfly/react-core';
+import { Breadcrumb, BreadcrumbItem, PageSection } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -20,17 +20,14 @@ function AccessControlBreadcrumbs({
     const entityTypeLabel = entityType ? pluralize(accessControlLabels[entityType]) : null;
 
     return (
-        <>
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
-                <Breadcrumb>
-                    <BreadcrumbItemLink to={getEntityPath(entityType)}>
-                        {entityTypeLabel}
-                    </BreadcrumbItemLink>
-                    {entityName && <BreadcrumbItem>{entityName}</BreadcrumbItem>}
-                </Breadcrumb>
-            </PageSection>
-            <Divider component="div" />
-        </>
+        <PageSection type="breadcrumb">
+            <Breadcrumb>
+                <BreadcrumbItemLink to={getEntityPath(entityType)}>
+                    {entityTypeLabel}
+                </BreadcrumbItemLink>
+                {entityName && <BreadcrumbItem>{entityName}</BreadcrumbItem>}
+            </Breadcrumb>
+        </PageSection>
     );
 }
 

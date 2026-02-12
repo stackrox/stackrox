@@ -91,7 +91,7 @@ function RolesList({
         : roles;
 
     return (
-        <PageSection hasBodyWrapper={false}>
+        <PageSection>
             <Title headingLevel="h2">{pluralize(rolesFiltered.length, 'result')} found</Title>
             {alertDelete}
             {rolesFiltered.length !== 0 && (
