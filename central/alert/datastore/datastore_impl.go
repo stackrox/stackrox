@@ -18,13 +18,16 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	searchCommon "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -42,6 +45,7 @@ var (
 // objects.
 type datastoreImpl struct {
 	storage         store.Store
+	db              postgres.DB
 	keyedMutex      *concurrency.KeyedMutex
 	keyFence        concurrency.KeyFence
 	platformMatcher platformmatcher.PlatformMatcher
@@ -72,11 +76,39 @@ func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excl
 	if excludeResolved {
 		q = applyDefaultState(q)
 	}
-	listAlerts := make([]*storage.ListAlert, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
-	err := ds.storage.GetByQueryFn(ctx, q, func(alert *storage.Alert) error {
-		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
-		return nil
-	})
+
+	query := q.CloneVT()
+	query.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.AlertID).Proto(),
+		search.NewQuerySelect(search.LifecycleStage).Proto(),
+		search.NewQuerySelect(search.ViolationTime).Proto(),
+		search.NewQuerySelect(search.ViolationState).Proto(),
+		search.NewQuerySelect(search.PolicyID).Proto(),
+		search.NewQuerySelect(search.PolicyName).Proto(),
+		search.NewQuerySelect(search.Severity).Proto(),
+		search.NewQuerySelect(search.Description).Proto(),
+		search.NewQuerySelect(search.Category).Proto(),
+		search.NewQuerySelect(search.Enforcement).Proto(),
+		search.NewQuerySelect(search.EntityType).Proto(),
+		search.NewQuerySelect(search.ClusterID).Proto(),
+		search.NewQuerySelect(search.Cluster).Proto(),
+		search.NewQuerySelect(search.Namespace).Proto(),
+		search.NewQuerySelect(search.NamespaceID).Proto(),
+		search.NewQuerySelect(search.DeploymentID).Proto(),
+		search.NewQuerySelect(search.DeploymentName).Proto(),
+		search.NewQuerySelect(search.Inactive).Proto(),
+		search.NewQuerySelect(search.NodeID).Proto(),
+		search.NewQuerySelect(search.Node).Proto(),
+		search.NewQuerySelect(search.ResourceName).Proto(),
+		search.NewQuerySelect(search.ResourceType).Proto(),
+	}
+
+	listAlerts := make([]*storage.ListAlert, 0, paginated.GetLimit(query.GetPagination().GetLimit(), whenUnlimited))
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, pkgSchema.AlertsSchema, query,
+		func(r *listAlertResponse) error {
+			listAlerts = append(listAlerts, r.toListAlert())
+			return nil
+		})
 	if err != nil {
 		return nil, err
 	}

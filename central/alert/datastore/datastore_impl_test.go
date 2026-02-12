@@ -49,7 +49,7 @@ func (s *AlertDatastoreImplSuite) SetupTest() {
 	s.matcher = matcherMocks.NewMockPlatformMatcher(s.mockCtrl)
 
 	store := postgres.New(s.testPostgres.DB)
-	s.datastore = New(store, s.matcher)
+	s.datastore = New(s.testPostgres.DB, store, s.matcher)
 
 	// Initialize alert tracking
 	s.createdAlertIDs = []string{}

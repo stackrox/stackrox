@@ -44,9 +44,10 @@ type DataStore interface {
 }
 
 // New returns a new soleInstance of DataStore using the input store, and searcher.
-func New(alertStore store.Store, platformMatcher platformmatcher.PlatformMatcher) DataStore {
+func New(db postgres.DB, alertStore store.Store, platformMatcher platformmatcher.PlatformMatcher) DataStore {
 	ds := &datastoreImpl{
 		storage:         alertStore,
+		db:              db,
 		keyedMutex:      concurrency.NewKeyedMutex(mutexPoolSize),
 		keyFence:        concurrency.NewKeyFence(),
 		platformMatcher: platformMatcher,
@@ -59,5 +60,5 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
 	alertStore := pgStore.New(pool)
 	mockCtrl := gomock.NewController(t)
 
-	return New(alertStore, platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl))
+	return New(pool, alertStore, platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl))
 }
