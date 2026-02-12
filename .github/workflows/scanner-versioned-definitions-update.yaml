@@ -494,7 +494,7 @@ jobs:
     - build-and-run
     - upload-definitions
     runs-on: ubuntu-latest
-    if: ${{ failure() && github.ref_name == 'master' && github.event.inputs.dry-run != 'true' }}
+    if: ${{ failure() && github.ref_name == 'master' && (github.event_name == 'schedule' || github.event.inputs.dry-run == 'false') }}
     steps:
     - name: Send Slack notification on workflow failure
       run: |
