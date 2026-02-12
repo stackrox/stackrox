@@ -33,6 +33,7 @@ jobs:
           echo "::notice::Querying PRs with auto-merge labels"
 
           # Get all open PRs with auto-merge or auto-merge-any labels
+          # shellcheck disable=SC2016
           PR_DATA=$(gh pr list \
             --repo "${{ github.repository }}" \
             --state open \
