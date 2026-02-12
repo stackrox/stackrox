@@ -1,22 +1,26 @@
-name: Dependabot Auto-Merge
+name: Auto-Merge for Labeled PRs
 
 on:
-  check_run:
-    types: [completed]
+  schedule:
+    - cron: '*/15 * * * *'  # Every 15 minutes
   workflow_dispatch:
 
 permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: auto-merge
+  cancel-in-progress: false
+
 jobs:
   auto-merge:
-    name: Enable auto-merge for eligible Dependabot PRs
+    name: Enable auto-merge for eligible PRs
     runs-on: ubuntu-latest
     if: github.repository_owner == 'stackrox'
 
     steps:
-      - name: Find and process Dependabot PRs
+      - name: Find and process PRs with auto-merge labels
         env:
           GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
         run: |
@@ -26,59 +30,32 @@ jobs:
           OWNER="${{ github.repository_owner }}"
           REPO="${{ github.event.repository.name }}"
 
-          # Get the commit SHA from the check run event
-          # For workflow_dispatch, skip PR finding
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "::notice::Manual workflow dispatch - no PRs to process"
-            exit 0
-          fi
+          echo "::notice::Querying PRs with auto-merge labels"
 
-          COMMIT_SHA="${{ github.event.check_run.head_sha }}"
-          echo "::notice::Processing check_run for commit: $COMMIT_SHA"
+          # Get all open PRs with auto-merge or auto-merge-any labels
+          PR_DATA=$(gh pr list \
+            --repo "${{ github.repository }}" \
+            --state open \
+            --limit 50 \
+            --json number,labels,isDraft,mergeable,author \
+            --jq '.[] | select(
+              .isDraft == false and
+              .mergeable == "MERGEABLE" and
+              (.labels | map(.name) | any(. == "auto-merge" or . == "auto-merge-any"))
+            ) | {number, labels: [.labels[].name], author: .author.login}')
 
-          # Get PRs associated with this commit
-          PR_NUMBERS=$(gh api "/repos/${{ github.repository }}/commits/$COMMIT_SHA/pulls" \
-            --jq '.[].number' || echo "")
-
-          if [[ -z "$PR_NUMBERS" ]]; then
-            echo "::notice::No PRs found for commit $COMMIT_SHA"
+          if [[ -z "$PR_DATA" ]]; then
+            echo "::notice::No eligible PRs found with auto-merge labels"
             exit 0
           fi
 
           # Process each PR
-          for PR_NUMBER in $PR_NUMBERS; do
-            # Get PR details
-            PR_DATA=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" \
-              --json author,labels,isDraft,mergeable \
-              --jq '{author: .author.login, labels: [.labels[].name], isDraft, mergeable}')
+          echo "$PR_DATA" | jq -c '.' | while read -r PR_JSON; do
+            PR_NUMBER=$(echo "$PR_JSON" | jq -r '.number')
+            AUTHOR=$(echo "$PR_JSON" | jq -r '.author')
+            LABELS=$(echo "$PR_JSON" | jq -r '.labels | join(",")')
 
-            AUTHOR=$(echo "$PR_DATA" | jq -r '.author')
-            HAS_AUTO_MERGE=$(echo "$PR_DATA" | jq -r '(.labels | contains(["auto-merge"]))')
-            IS_DRAFT=$(echo "$PR_DATA" | jq -r '.isDraft')
-            IS_MERGEABLE=$(echo "$PR_DATA" | jq -r '.mergeable')
-
-            # Skip if not a Dependabot PR with auto-merge label
-            if [[ "$AUTHOR" != "dependabot[bot]" ]]; then
-              echo "::notice::Skipping PR #$PR_NUMBER - not from Dependabot (author=$AUTHOR)"
-              continue
-            fi
-
-            if [[ "$HAS_AUTO_MERGE" != "true" ]]; then
-              echo "::notice::Skipping PR #$PR_NUMBER - no auto-merge label"
-              continue
-            fi
-
-            if [[ "$IS_DRAFT" == "true" ]]; then
-              echo "::notice::Skipping PR #$PR_NUMBER - is draft"
-              continue
-            fi
-
-            if [[ "$IS_MERGEABLE" != "MERGEABLE" ]]; then
-              echo "::notice::Skipping PR #$PR_NUMBER - not mergeable (status=$IS_MERGEABLE)"
-              continue
-            fi
-
-            echo "::notice::Processing eligible PR #$PR_NUMBER"
+            echo "::notice::Processing PR #$PR_NUMBER (author=$AUTHOR, labels=$LABELS)"
 
             # Check if all checks have passed using GraphQL statusCheckRollup
             STATUS=$(gh api graphql -F owner="$OWNER" -F repo="$REPO" -F number="$PR_NUMBER" -f query='
@@ -104,6 +81,41 @@ jobs:
             # Only proceed if all checks passed
             if [[ "$STATUS" != "SUCCESS" ]]; then
               echo "::warning::Skipping PR #$PR_NUMBER - checks not passed (status: $STATUS)"
+              continue
+            fi
+
+            # Check label and semver eligibility
+            ELIGIBLE=false
+            if echo "$LABELS" | grep -q "auto-merge-any"; then
+              echo "::notice::PR #$PR_NUMBER has auto-merge-any label - proceeding"
+              ELIGIBLE=true
+            elif echo "$LABELS" | grep -q "auto-merge"; then
+              # auto-merge label requires semver check for Dependabot PRs
+              if [[ "$AUTHOR" == "dependabot[bot]" ]]; then
+                # Get PR body to extract update-type
+                PR_BODY=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json body --jq '.body')
+
+                # Extract update type from PR body (Dependabot includes this metadata)
+                # Look for patterns like "Update-type: version-update:semver-minor"
+                UPDATE_TYPE=$(echo "$PR_BODY" | grep -i "update-type:" | grep -oE "semver-[a-z]+" || echo "unknown")
+
+                echo "::notice::PR #$PR_NUMBER update type: $UPDATE_TYPE"
+
+                if [[ "$UPDATE_TYPE" =~ ^(semver-minor|semver-patch)$ ]]; then
+                  echo "::notice::PR #$PR_NUMBER is minor/patch update - proceeding"
+                  ELIGIBLE=true
+                else
+                  echo "::warning::Skipping PR #$PR_NUMBER - major version update requires manual review (type: $UPDATE_TYPE)"
+                  ELIGIBLE=false
+                fi
+              else
+                echo "::warning::Skipping PR #$PR_NUMBER - auto-merge label only works for Dependabot (use auto-merge-any for human PRs)"
+                ELIGIBLE=false
+              fi
+            fi
+
+            if [[ "$ELIGIBLE" != "true" ]]; then
+              echo "::warning::Skipping PR #$PR_NUMBER - not eligible for auto-merge"
               continue
             fi
 
