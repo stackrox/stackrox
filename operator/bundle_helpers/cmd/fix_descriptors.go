@@ -53,7 +53,6 @@ func FixSpecDescriptorOrder(args []string) error {
 	}
 
 	// Normalize through Python to match PyYAML's exact formatting
-	// This is the "escape hatch" mentioned in the migration plan
 	return normalizeYAMLOutput(buf.Bytes(), os.Stdout)
 }
 
@@ -71,7 +70,6 @@ func normalizeYAMLOutput(goYAML []byte, w io.Writer) error {
 		}
 	}
 
-	// Run the normalizer (path is validated above)
 	cmd := exec.Command(normalizerPath)
 	cmd.Stdin = bytes.NewReader(goYAML)
 	cmd.Stdout = w
