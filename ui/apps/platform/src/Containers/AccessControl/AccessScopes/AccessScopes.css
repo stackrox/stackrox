@@ -48,13 +48,6 @@
 }
 
 /*
- * Override annoying reset rule for dropdown toggle for table actions.
- */
-table .pf-v6-c-dropdown__toggle.pf-m-plain svg {
-    display: inline;
-}
-
-/*
  * A smallest button has no padding, because only an icon.
  */
 #access-scope-form .pf-v6-c-button.pf-m-smallest {

@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from 'react';
-import { Divider, PageSection, Split, SplitItem } from '@patternfly/react-core';
+import { Divider, Flex, FlexItem, PageSection } from '@patternfly/react-core';
 
 export type AccessControlHeaderActionBarProps = {
     /**
@@ -25,12 +25,12 @@ function AccessControlHeaderActionBar({
 }: AccessControlHeaderActionBarProps): ReactElement {
     return (
         <>
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
-                <Split>
-                    <SplitItem isFilled>{displayComponent}</SplitItem>
-                    {inviteComponent && <SplitItem>{inviteComponent}</SplitItem>}
-                    {actionComponent && <SplitItem>{actionComponent}</SplitItem>}
-                </Split>
+            <PageSection>
+                <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                    <FlexItem grow={{ default: 'grow' }}>{displayComponent}</FlexItem>
+                    {inviteComponent && <FlexItem>{inviteComponent}</FlexItem>}
+                    {actionComponent && <FlexItem>{actionComponent}</FlexItem>}
+                </Flex>
             </PageSection>
             <Divider component="div" />
         </>

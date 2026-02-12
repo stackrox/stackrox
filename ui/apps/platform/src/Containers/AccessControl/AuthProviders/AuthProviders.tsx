@@ -268,13 +268,13 @@ function AuthProviders(): ReactElement {
                     }
                 />
             )}
-            <PageSection hasBodyWrapper={false} variant={isList ? 'default' : 'light'}>
+            <PageSection>
                 {isFetchingAuthProviders || isFetchingRoles ? (
                     <Bullseye>
                         <Spinner />
                     </Bullseye>
                 ) : isList ? (
-                    <PageSection hasBodyWrapper={false}>
+                    <PageSection>
                         <Title headingLevel="h2">
                             {pluralize(authProvidersWithRules.length, 'result')} found
                         </Title>
@@ -284,10 +284,7 @@ function AuthProviders(): ReactElement {
                             </EmptyStateTemplate>
                         )}
                         {authProvidersWithRules.length > 0 && (
-                            <AuthProvidersList
-                                entityId={entityId}
-                                authProviders={authProvidersWithRules}
-                            />
+                            <AuthProvidersList authProviders={authProvidersWithRules} />
                         )}
                     </PageSection>
                 ) : typeof entityId === 'string' && !selectedAuthProvider ? (
