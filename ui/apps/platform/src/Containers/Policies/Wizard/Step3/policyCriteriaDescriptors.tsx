@@ -1509,7 +1509,6 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         label: 'File path',
         name: 'File Path',
         shortName: 'File path',
-        longName: 'The file path on the filesystem or volume mount',
         category: policyCriteriaCategories.FILE_ACTIVITY,
         type: 'select',
         placeholder: 'Select a file path',
