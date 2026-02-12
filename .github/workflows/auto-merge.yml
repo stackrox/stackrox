@@ -24,7 +24,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
         run: |
-          # shellcheck disable=SC2016
           set -euo pipefail
 
           # Extract repo owner and name
@@ -59,10 +58,10 @@ jobs:
             echo "::notice::Processing PR #$PR_NUMBER (author=$AUTHOR, labels=$LABELS)"
 
             # Check if all checks have passed using GraphQL statusCheckRollup
-            STATUS=$(gh api graphql -F owner="$OWNER" -F repo="$REPO" -F number="$PR_NUMBER" -f query='
-              query($owner: String!, $repo: String!, $number: Int!) {
-                repository(owner: $owner, name: $repo) {
-                  pullRequest(number: $number) {
+            STATUS=$(gh api graphql -F owner="$OWNER" -F repo="$REPO" -F number="$PR_NUMBER" -f query="
+              query(\$owner: String!, \$repo: String!, \$number: Int!) {
+                repository(owner: \$owner, name: \$repo) {
+                  pullRequest(number: \$number) {
                     commits(last: 1) {
                       nodes {
                         commit {
@@ -75,7 +74,7 @@ jobs:
                   }
                 }
               }
-            ' --jq '.data.repository.pullRequest.commits.nodes[0].commit.statusCheckRollup.state' || echo "null")
+            " --jq ".data.repository.pullRequest.commits.nodes[0].commit.statusCheckRollup.state" || echo "null")
 
             echo "::notice::PR #$PR_NUMBER status check rollup: $STATUS"
 
