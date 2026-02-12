@@ -14,8 +14,6 @@ import PopoverBodyContent from 'Components/PopoverBodyContent';
 import type { SignatureVerificationResult } from '../../types';
 import SignatureIntegrationLink from './SignatureIntegrationLink';
 
-import './VerifiedSignatureLabel.css';
-
 export function getVerifiedSignatureInResults(
     results: SignatureVerificationResult[] | null | undefined
 ): SignatureVerificationResult[] {
@@ -35,6 +33,10 @@ export type VerifiedSignatureLabelProps = {
 // Separate list from the title with same margin-top as second list item from the first.
 const styleList = {
     marginTop: 'var(--pf-v5-c-list--li--MarginTop)',
+} as CSSProperties;
+
+const clipboardCopyMaxWidthStyle = {
+    '--pf-v5-u-max-width--MaxWidth': '64ch',
 } as CSSProperties;
 
 function VerifiedSignatureLabel({
@@ -62,9 +64,10 @@ function VerifiedSignatureLabel({
                                     </strong>
                                     <List style={styleList}>
                                         {result.verifiedImageReferences?.map((name) => (
-                                            <ListItem key={name} className="verified-signature-list-item">
+                                            <ListItem key={name}>
                                                 <ClipboardCopy
-                                                    className="verified-signature-clipboard-copy"
+                                                    className="pf-v5-u-max-width pf-v5-u-display-inline-flex pf-v5-u-align-items-center"
+                                                    style={clipboardCopyMaxWidthStyle}
                                                     clickTip="Copied!"
                                                     hoverTip="Copy"
                                                     variant="inline-compact"
