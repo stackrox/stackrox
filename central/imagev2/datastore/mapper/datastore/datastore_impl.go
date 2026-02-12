@@ -36,44 +36,7 @@ func (ds *datastoreImpl) SearchListImages(ctx context.Context, q *v1.Query) ([]*
 		return ds.imageDataStore.SearchListImages(ctx, q)
 	}
 
-	// Get image IDs from search (fast)
-	results, err := ds.imageV2DataStore.Search(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	// Get image metadata in bulk (much faster than GetByIDs with full scan data)
-	ids := make([]string, 0, len(results))
-	for _, result := range results {
-		ids = append(ids, result.ID)
-	}
-
-	images, err := ds.imageV2DataStore.GetManyImageMetadata(ctx, ids)
-	if err != nil {
-		return nil, err
-	}
-
-	// Build a map for O(1) lookup when reordering
-	imageByID := make(map[string]*storage.ImageV2, len(images))
-	for _, image := range images {
-		imageByID[image.GetId()] = image
-	}
-
-	// Convert to list images, preserving the original search order from results
-	listImages := make([]*storage.ListImage, 0, len(ids))
-	for _, id := range ids {
-		image, exists := imageByID[id]
-		if !exists {
-			// Image may have been deleted between search and lookup, skip it
-			continue
-		}
-		// Convert v2 to v1
-		v1Image := imageUtils.ConvertToV1(image)
-		// Convert v1 to ListImage
-		listImage := types.ConvertImageToListImage(v1Image)
-		listImages = append(listImages, listImage)
-	}
-	return listImages, nil
+	return ds.imageV2DataStore.SearchListImages(ctx, q)
 }
 
 func (ds *datastoreImpl) ListImage(ctx context.Context, sha string) (*storage.ListImage, bool, error) {
