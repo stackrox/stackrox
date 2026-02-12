@@ -33,7 +33,7 @@ on:
         required: true
         default: nvd-feeds
       dry-run:
-        description: "Suppress uploads to GCS"
+        description: "Dry-run: suppress uploads to GCS and failure notifications."
         default: false
         type: boolean 
 
