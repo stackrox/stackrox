@@ -32,7 +32,7 @@ function AccessScopesTable({
             <Tbody>
                 {accessScopes.map(({ id, name, description }) => (
                     <Tr key={id}>
-                        <Td className="pf-v6-c-table__check">
+                        <Td>
                             <input
                                 type="radio"
                                 name={fieldId}

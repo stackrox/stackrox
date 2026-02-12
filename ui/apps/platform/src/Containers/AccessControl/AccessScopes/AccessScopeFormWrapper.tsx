@@ -6,6 +6,7 @@ import {
     Alert,
     Button,
     Label,
+    Stack,
     Title,
     Toolbar,
     ToolbarContent,
@@ -121,8 +122,8 @@ function AccessScopeFormWrapper({
     const hasAction = Boolean(action);
 
     return (
-        <>
-            <Toolbar inset={{ default: 'insetNone' }} className="pf-v6-u-pt-0">
+        <Stack hasGutter>
+            <Toolbar>
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h1">
@@ -162,7 +163,7 @@ function AccessScopeFormWrapper({
                 // setLabelSelectorsEditingState={setLabelSelectorsEditingState}
             />
             {hasAction && (
-                <Toolbar inset={{ default: 'insetNone' }} className="pf-v6-u-pb-0">
+                <Toolbar>
                     <ToolbarContent>
                         <ToolbarGroup variant="action-group">
                             <ToolbarItem>
@@ -179,13 +180,12 @@ function AccessScopeFormWrapper({
                                         isSubmitting
                                     }
                                     isLoading={isSubmitting}
-                                    size="sm"
                                 >
                                     Save
                                 </Button>
                             </ToolbarItem>
                             <ToolbarItem>
-                                <Button variant="tertiary" onClick={onClickCancel} size="sm">
+                                <Button variant="tertiary" onClick={onClickCancel}>
                                     Cancel
                                 </Button>
                             </ToolbarItem>
@@ -193,7 +193,7 @@ function AccessScopeFormWrapper({
                     </ToolbarContent>
                 </Toolbar>
             )}
-        </>
+        </Stack>
     );
 }
 
