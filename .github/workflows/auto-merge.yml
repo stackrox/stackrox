@@ -34,17 +34,16 @@ jobs:
           echo "::notice::Querying PRs with auto-merge labels"
 
           # Get all open PRs with auto-merge or auto-merge-any labels
-          # shellcheck disable=SC2016
           PR_DATA=$(gh pr list \
             --repo "${{ github.repository }}" \
             --state open \
             --limit 50 \
             --json number,labels,isDraft,mergeable,author \
-            --jq '.[] | select(
+            --jq ".[] | select(
               .isDraft == false and
-              .mergeable == "MERGEABLE" and
-              (.labels | map(.name) | any(. == "auto-merge" or . == "auto-merge-any"))
-            ) | {number, labels: [.labels[].name], author: .author.login}')
+              .mergeable == \"MERGEABLE\" and
+              (.labels | map(.name) | any(. == \"auto-merge\" or . == \"auto-merge-any\"))
+            ) | {number, labels: [.labels[].name], author: .author.login}")
 
           if [[ -z "$PR_DATA" ]]; then
             echo "::notice::No eligible PRs found with auto-merge labels"
