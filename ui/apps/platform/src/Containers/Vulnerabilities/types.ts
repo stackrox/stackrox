@@ -114,4 +114,5 @@ export type SignatureVerificationResult = {
     verificationTime: string | undefined; // ISO 8601 formatted date time.
     verifiedImageReferences: string[];
     verifierId: string; // Signature integration id of the form `io.stackrox.signatureintegration.<uuid>`.
+    verifierName: string; // Signature integration name.
 };

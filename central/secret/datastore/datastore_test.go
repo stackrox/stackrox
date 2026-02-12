@@ -5,6 +5,7 @@ package datastore
 import (
 	"context"
 	"testing"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -45,6 +47,11 @@ func (suite *SecretDataStoreTestSuite) SetupSuite() {
 			sac.ResourceScopeKeys(resources.Secret)))
 }
 
+func (suite *SecretDataStoreTestSuite) TearDownTest() {
+	_, err := suite.pool.Exec(suite.ctx, "TRUNCATE TABLE secrets CASCADE")
+	suite.Require().NoError(err)
+}
+
 func (suite *SecretDataStoreTestSuite) TearDownSuite() {
 	suite.pool.Close()
 }
@@ -76,6 +83,169 @@ func (suite *SecretDataStoreTestSuite) assertSearchResults(q *v1.Query, s *stora
 	} else {
 		suite.Len(rawSecrets, 0)
 	}
+}
+
+func (suite *SecretDataStoreTestSuite) TestSearchListSecrets() {
+	secret1 := fixtures.GetSecret()
+	secret1.Id = uuid.NewV4().String()
+	secret1.Name = "test-secret-1"
+	secret1.Namespace = "default"
+	secret1.Files = []*storage.SecretDataFile{
+		{Type: storage.SecretType_PUBLIC_CERTIFICATE},
+		{Type: storage.SecretType_RSA_PRIVATE_KEY},
+	}
+
+	secret2 := fixtures.GetSecret()
+	secret2.Id = uuid.NewV4().String()
+	secret2.Name = "test-secret-2"
+	secret2.Namespace = "kube-system"
+	secret2.Files = []*storage.SecretDataFile{
+		{Type: storage.SecretType_IMAGE_PULL_SECRET},
+	}
+
+	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret1))
+	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret2))
+
+	// Test retrieval with empty query
+	results, err := suite.datastore.SearchListSecrets(suite.ctx, search.EmptyQuery())
+	suite.NoError(err)
+	suite.Equal(len(results), 2)
+
+	// Find our test secrets
+	var found1, found2 *storage.ListSecret
+	for _, r := range results {
+		if r.GetId() == secret1.GetId() {
+			found1 = r
+		} else if r.GetId() == secret2.GetId() {
+			found2 = r
+		}
+	}
+
+	suite.NotNil(found1)
+	suite.Equal(secret1.GetName(), found1.GetName())
+	suite.Equal(secret1.GetNamespace(), found1.GetNamespace())
+	suite.ElementsMatch(
+		[]storage.SecretType{storage.SecretType_PUBLIC_CERTIFICATE, storage.SecretType_RSA_PRIVATE_KEY},
+		found1.GetTypes(),
+	)
+
+	suite.NotNil(found2)
+	suite.Equal([]storage.SecretType{storage.SecretType_IMAGE_PULL_SECRET}, found2.GetTypes())
+}
+
+func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_NoFiles() {
+	// Test secret with no files (should return UNDETERMINED type)
+	secret := fixtures.GetSecret()
+	secret.Id = uuid.NewV4().String()
+	secret.Name = "empty-secret"
+	secret.Files = nil // No files
+
+	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret))
+
+	query := search.NewQueryBuilder().AddStrings(search.SecretID, secret.GetId()).ProtoQuery()
+	results, err := suite.datastore.SearchListSecrets(suite.ctx, query)
+
+	suite.NoError(err)
+	suite.Len(results, 1)
+	suite.Equal([]storage.SecretType{storage.SecretType_UNDETERMINED}, results[0].GetTypes())
+}
+
+func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_WithFilter() {
+	// Test that search filters work correctly with single-pass query
+	secret1 := fixtures.GetSecret()
+	secret1.Id = uuid.NewV4().String()
+	secret1.Name = "filter-test-1"
+	secret1.Namespace = "default"
+
+	secret2 := fixtures.GetSecret()
+	secret2.Id = uuid.NewV4().String()
+	secret2.Name = "filter-test-2"
+	secret2.Namespace = "kube-system"
+
+	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret1))
+	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret2))
+
+	// Filter by namespace
+	query := search.NewQueryBuilder().AddExactMatches(search.Namespace, "kube-system").ProtoQuery()
+	results, err := suite.datastore.SearchListSecrets(suite.ctx, query)
+
+	suite.NoError(err)
+	// Find our test secret in results
+	var found *storage.ListSecret
+	for _, r := range results {
+		if r.GetId() == secret2.GetId() {
+			found = r
+			break
+		}
+	}
+	suite.NotNil(found)
+	suite.Equal("kube-system", found.GetNamespace())
+}
+
+func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_DuplicateTypes() {
+	// Test that framework correctly deduplicates types via jsonb_agg
+	secret := fixtures.GetSecret()
+	secret.Id = uuid.NewV4().String()
+	secret.Name = "duplicate-types-secret"
+	secret.Files = []*storage.SecretDataFile{
+		{Type: storage.SecretType_PUBLIC_CERTIFICATE},
+		{Type: storage.SecretType_PUBLIC_CERTIFICATE}, // Duplicate
+		{Type: storage.SecretType_RSA_PRIVATE_KEY},
+	}
+
+	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret))
+
+	query := search.NewQueryBuilder().AddStrings(search.SecretID, secret.GetId()).ProtoQuery()
+	results, err := suite.datastore.SearchListSecrets(suite.ctx, query)
+
+	suite.NoError(err)
+	suite.Len(results, 1)
+	// Should have only 2 unique types
+	suite.Len(results[0].GetTypes(), 2)
+	suite.ElementsMatch(
+		[]storage.SecretType{storage.SecretType_PUBLIC_CERTIFICATE, storage.SecretType_RSA_PRIVATE_KEY},
+		results[0].GetTypes(),
+	)
+}
+
+func (suite *SecretDataStoreTestSuite) TestSearchListSecrets_DefaultSortOrder() {
+	now := time.Now()
+	older := now.Add(-1 * time.Hour)
+	newer := now.Add(1 * time.Hour)
+
+	secret1 := fixtures.GetSecret()
+	secret1.Id = uuid.NewV4().String()
+	secret1.Name = "newer-secret"
+	secret1.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&newer)
+
+	secret2 := fixtures.GetSecret()
+	secret2.Id = uuid.NewV4().String()
+	secret2.Name = "older-secret"
+	secret2.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&older)
+
+	// Insert newer first to ensure ordering comes from sort, not insertion order
+	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret1))
+	suite.NoError(suite.datastore.UpsertSecret(suite.ctx, secret2))
+
+	// Default sort is CreatedTime ascending
+	results, err := suite.datastore.SearchListSecrets(suite.ctx, search.EmptyQuery())
+	suite.NoError(err)
+	suite.Require().Len(results, 2)
+	suite.Equal(secret2.GetId(), results[0].GetId(), "older secret should be first in ascending order")
+	suite.Equal(secret1.GetId(), results[1].GetId(), "newer secret should be second in ascending order")
+
+	// Caller-provided descending sort should override default
+	q := search.EmptyQuery()
+	q.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{
+			{Field: search.CreatedTime.String(), Reversed: true},
+		},
+	}
+	results, err = suite.datastore.SearchListSecrets(suite.ctx, q)
+	suite.NoError(err)
+	suite.Require().Len(results, 2)
+	suite.Equal(secret1.GetId(), results[0].GetId(), "newer secret should be first in descending order")
+	suite.Equal(secret2.GetId(), results[1].GetId(), "older secret should be second in descending order")
 }
 
 func (suite *SecretDataStoreTestSuite) TestSecretsDataStore() {
@@ -187,14 +357,4 @@ func (suite *SecretDataStoreTestSuite) TestSearchSecrets() {
 			}
 		})
 	}
-
-	// Clean up
-	suite.NoError(suite.datastore.RemoveSecret(suite.ctx, secret1.GetId()))
-	suite.NoError(suite.datastore.RemoveSecret(suite.ctx, secret2.GetId()))
-	suite.NoError(suite.datastore.RemoveSecret(suite.ctx, secret3.GetId()))
-
-	// Verify cleanup
-	results, err := suite.datastore.SearchSecrets(suite.ctx, search.EmptyQuery())
-	suite.NoError(err)
-	suite.Empty(results)
 }

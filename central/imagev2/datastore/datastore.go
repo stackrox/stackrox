@@ -20,6 +20,7 @@ type DataStore interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	SearchImages(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawImages(ctx context.Context, q *v1.Query) ([]*storage.ImageV2, error)
+	SearchListImages(ctx context.Context, q *v1.Query) ([]*storage.ListImage, error)
 
 	GetImage(ctx context.Context, id string) (*storage.ImageV2, bool, error)
 	GetImageMetadata(ctx context.Context, id string) (*storage.ImageV2, bool, error)
@@ -33,7 +34,6 @@ type DataStore interface {
 
 	DeleteImages(ctx context.Context, ids ...string) error
 	Exists(ctx context.Context, id string) (bool, error)
-
 	GetImageIDsAndDigests(ctx context.Context, q *v1.Query) ([]*views.ImageIDAndDigestView, error)
 }
 

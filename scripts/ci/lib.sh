@@ -254,8 +254,8 @@ push_image_manifest_lists() {
         fi
     done
 
-    # Push manifest lists for scanner and collector for amd64 only
-    local amd64_image_set=("scanner" "scanner-db" "scanner-slim" "scanner-db-slim" "collector")
+    # Push manifest lists for scanner, fact and collector for amd64 only
+    local amd64_image_set=("scanner" "scanner-db" "scanner-slim" "scanner-db-slim" "collector" "fact")
     for image in "${amd64_image_set[@]}"; do
         retry 5 true \
           "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "amd64" | cat

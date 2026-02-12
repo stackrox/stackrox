@@ -68,7 +68,7 @@ func New(db postgres.DB) Store {
 		schema,
 		pkGetter,
 		insertIntoImageCveInfos,
-		copyFromImageCveInfos,
+		nil,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		metricsSetCacheOperationDurationTime,
@@ -114,60 +114,6 @@ func insertIntoImageCveInfos(batch *pgx.Batch, obj *storage.ImageCVEInfo) error 
 
 	finalStr := "INSERT INTO image_cve_infos (Id, FixAvailableTimestamp, FirstSystemOccurrence, Cve, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, FixAvailableTimestamp = EXCLUDED.FixAvailableTimestamp, FirstSystemOccurrence = EXCLUDED.FirstSystemOccurrence, Cve = EXCLUDED.Cve, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
-
-	return nil
-}
-
-var copyColsImageCveInfos = []string{
-	"id",
-	"fixavailabletimestamp",
-	"firstsystemoccurrence",
-	"cve",
-	"serialized",
-}
-
-func copyFromImageCveInfos(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ImageCVEInfo) error {
-	if len(objs) == 0 {
-		return nil
-	}
-
-	{
-		// CopyFrom does not upsert, so delete existing rows first to achieve upsert behavior.
-		// Parent deletion cascades to children, so only the top-level parent needs deletion.
-		deletes := make([]string, 0, len(objs))
-		for _, obj := range objs {
-			deletes = append(deletes, obj.GetId())
-		}
-		if err := s.DeleteMany(ctx, deletes); err != nil {
-			return err
-		}
-	}
-
-	idx := 0
-	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
-		if idx >= len(objs) {
-			return nil, nil
-		}
-		obj := objs[idx]
-		idx++
-
-		serialized, marshalErr := obj.MarshalVT()
-		if marshalErr != nil {
-			return nil, marshalErr
-		}
-
-		return []interface{}{
-			obj.GetId(),
-			protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
-			protocompat.NilOrTime(obj.GetFirstSystemOccurrence()),
-			obj.GetCve(),
-			serialized,
-		}, nil
-	})
-
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_cve_infos"}, copyColsImageCveInfos, inputRows); err != nil {
-		return err
-	}
 
 	return nil
 }
