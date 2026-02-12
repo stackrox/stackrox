@@ -18,7 +18,7 @@ WORKDIR /src
 RUN make -C scanner NODEPS=1 CGO_ENABLED=1 image/scanner/bin/scanner copy-scripts
 
 
-FROM registry.access.redhat.com/ubi8-minimal:latest@sha256:b3b8ab00587b6629ab7921a2cd0335287908bf4758167d68250a2bac99af57da
+FROM registry.access.redhat.com/ubi8-minimal:latest@sha256:48adecc91f276734fa51987bc2203a31db9ba87a512c436c0a3fcac53135378d
 
 ARG BUILD_TAG
 
