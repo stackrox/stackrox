@@ -10,8 +10,6 @@ export const selectors = scopeSelectors('main', {
     list: {
         authProviders: {
             dataRows: 'tbody tr',
-            createDropdownItem:
-                'button:contains("Create auth provider") + div ul li button[role="menuitem"]',
             tdType: 'td[data-label="Type"]',
             tdMinimumAccessRole: 'td[data-label="Minimum access role',
             tdRules: 'td[data-label="Rules"]',
@@ -56,9 +54,6 @@ export const selectors = scopeSelectors('main', {
                 selectCallbackMode: `${getFormGroupControlForLabel(
                     'Callback mode'
                 )} .pf-v6-c-menu-toggle`,
-                selectCallbackModeItem: `${getFormGroupControlForLabel(
-                    'Callback mode'
-                )} .pf-v6-c-menu .pf-v6-c-menu__list .pf-v6-c-menu__item`,
                 inputIssuer: `${getFormGroupControlForLabel('Issuer')} input`,
                 inputClientID: `${getFormGroupControlForLabel('Client ID')} input`,
                 inputClientSecret: `${getFormGroupControlForLabel('Client Secret')} input`, // TODO sentence case?
@@ -88,9 +83,6 @@ export const selectors = scopeSelectors('main', {
             selectMinimumAccessRole: `${getFormGroupControlForLabel(
                 'Minimum access role'
             )} .pf-v6-c-menu-toggle`,
-            selectMinimumAccessRoleItem: `${getFormGroupControlForLabel(
-                'Minimum access role'
-            )} .pf-v6-c-menu .pf-v6-c-menu__list .pf-v6-c-menu__item`,
         }),
 
         role: scopeSelectors('#role-form', {

@@ -1,6 +1,7 @@
 import { interactAndWaitForResponses } from '../../helpers/request';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import { visit, visitWithStaticResponseForPermissions } from '../../helpers/visit';
+import pf6 from '../../selectors/pf6';
 
 // Keys are path segments which correspond to entitiesKey arguments of functions below.
 export const authProvidersKey = 'auth-providers';
@@ -123,9 +124,10 @@ export function assertAccessControlEntitiesPage(entitiesKey) {
         const entitiesTitle = entitiesTitleMap[entitiesKeyAsserted];
         const isSelected = entitiesKey === entitiesKeyAsserted;
 
-        cy.get(`nav.pf-m-tertiary a.pf-v6-c-nav__link:contains("${entitiesTitle}")`).should(
-            isSelected ? 'have.class' : 'not.have.class',
-            'pf-m-current'
+        cy.get(`${pf6.tabButton}:contains("${entitiesTitle}")`).should(
+            isSelected ? 'have.attr' : 'not.have.attr',
+            'aria-selected',
+            'true'
         );
     });
 
@@ -154,9 +156,7 @@ export function assertAccessControlEntityPage(entitiesKey) {
     entitiesKeys.forEach((entitiesKeyAsserted) => {
         const entitiesTitle = entitiesTitleMap[entitiesKeyAsserted];
 
-        cy.get(`nav.pf-m-tertiary a.pf-v6-c-nav__link:contains("${entitiesTitle}")`).should(
-            'not.exist'
-        );
+        cy.get(`${pf6.tabButton}:contains("${entitiesTitle}")`).should('not.exist');
     });
 }
 
@@ -225,7 +225,7 @@ export function clickRowActionMenuItemInTable(entityName, menuItemText) {
     cy.get(
         `tr:has(td[data-label="Name"] a:contains("${entityName}")) td.pf-v6-c-table__action .pf-v6-c-menu-toggle`
     ).click();
-    cy.get(`td.pf-v6-c-table__action button[role="menuitem"]:contains("${menuItemText}")`).click();
+    cy.get(`${pf6.dropdownItem}:contains("${menuItemText}")`).click();
 }
 
 export const authProvidersAliasForDELETE = 'DELETE_authProviders';

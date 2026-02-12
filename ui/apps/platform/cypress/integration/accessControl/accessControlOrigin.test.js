@@ -14,6 +14,7 @@ import {
     visitAccessControlEntities,
 } from './accessControl.helpers';
 import { selectors } from './accessControl.selectors';
+import pf6 from '../../selectors/pf6';
 
 describe('Access Control declarative resources', () => {
     withAuth();
@@ -68,9 +69,11 @@ describe('Access Control declarative resources', () => {
 
         cy.get('td[data-label="Origin"]').should('have.text', 'Declarative');
         cy.get(`td.pf-v6-c-table__action .pf-v6-c-menu-toggle`).click();
-        cy.get(
-            `td.pf-v6-c-table__action button[role="menuitem"]:contains("Delete auth provider")`
-        ).should('have.attr', 'disabled', 'disabled');
+        cy.get(`${pf6.dropdownItem}:contains("Delete auth provider") button`).should(
+            'have.attr',
+            'disabled',
+            'disabled'
+        );
     });
 
     it('list link for declarative auth provider + groups goes to form which has label instead of button and disabled input values', () => {

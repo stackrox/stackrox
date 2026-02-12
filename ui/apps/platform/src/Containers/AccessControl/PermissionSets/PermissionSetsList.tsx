@@ -63,7 +63,7 @@ function PermissionSetsList({
     }
 
     return (
-        <PageSection hasBodyWrapper={false}>
+        <PageSection>
             <Title headingLevel="h2">{pluralize(permissionSets.length, 'result')} found</Title>
             {alertDelete}
             {permissionSets.length !== 0 && (
