@@ -1,5 +1,6 @@
 import type { SearchCategory } from 'services/SearchService';
 import type { FeatureFlagEnvVar } from 'types/featureFlag';
+import type { SearchFieldLabel } from 'types/searchOptions';
 import type { NonEmptyArray } from 'utils/type.utils';
 import type { ConditionTextInputProps } from './components/SearchFilterConditionText';
 
@@ -31,7 +32,7 @@ export type SelectSearchFilterGroupedOptions = {
 type BaseSearchFilterAttribute = {
     displayName: string;
     filterChipLabel: string;
-    searchTerm: string;
+    searchTerm: SearchFieldLabel;
     inputType: InputType;
     featureFlagDependency?: FeatureFlagEnvVar[];
 };
