@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/centralproxy/allowedpaths"
 	"google.golang.org/grpc"
 	"k8s.io/client-go/kubernetes"
 )
@@ -125,6 +126,19 @@ func (h *Handler) validateRequest(request *http.Request) error {
 
 	if !h.centralReachable.Load() {
 		return pkghttputil.NewError(http.StatusServiceUnavailable, "central not reachable")
+	}
+
+	// Only enforce path filtering when Central advertises the capability.
+	// Otherwise allow the request for backwards compatibility.
+	if centralcaps.Has(centralsensor.CentralProxyPathFiltering) {
+		normalizedPath := request.URL.EscapedPath()
+		if normalizedPath == "" {
+			normalizedPath = "/"
+		}
+		if !allowedpaths.IsAllowed(normalizedPath) {
+			return pkghttputil.Errorf(http.StatusForbidden,
+				"path %q is not allowed by the proxy allow-list", request.URL.Path)
+		}
 	}
 
 	return nil

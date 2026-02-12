@@ -13,6 +13,7 @@ import (
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/centralproxy/allowedpaths"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	authenticationv1 "k8s.io/api/authentication/v1"
@@ -23,13 +24,17 @@ import (
 )
 
 // setupCentralCapsForTest sets the Central capabilities required for the proxy to function.
-// It returns a cleanup function that clears the capabilities.
+// It also configures the allowed proxy paths to include the test paths used by existing tests.
+// It returns a cleanup function that clears the capabilities and allowed paths.
 func setupCentralCapsForTest(t *testing.T) {
 	centralcaps.Set([]centralsensor.CentralCapability{
 		centralsensor.InternalTokenAPISupported,
+		centralsensor.CentralProxyPathFiltering,
 	})
+	allowedpaths.Set([]string{"/v1/", "/v2/", "/api/graphql", "/api/v1/"})
 	t.Cleanup(func() {
 		centralcaps.Set(nil)
+		allowedpaths.Reset()
 	})
 }
 
@@ -745,5 +750,103 @@ func TestServeHTTP_RequiresAuthentication(t *testing.T) {
 
 		assert.False(t, proxyCalled, "proxy should not be called with unauthenticated token")
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+}
+
+func TestServeHTTP_PathFiltering(t *testing.T) {
+	t.Run("disallowed path returns 403", func(t *testing.T) {
+		setupCentralCapsForTest(t)
+
+		var proxyCalled bool
+		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			proxyCalled = true
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		})
+
+		baseURL, err := url.Parse("https://central:443")
+		require.NoError(t, err)
+
+		h := newTestHandler(t, baseURL, mockTransport, newAllowingAuthorizer(t), "test-token")
+		h.centralReachable.Store(true)
+
+		req := httptest.NewRequest(http.MethodGet, "/admin/secret", nil)
+		req.Header.Set("Authorization", "Bearer test-token")
+		w := httptest.NewRecorder()
+
+		h.ServeHTTP(w, req)
+
+		assert.False(t, proxyCalled, "proxy should not be called for disallowed path")
+		assert.Equal(t, http.StatusForbidden, w.Code)
+		assert.Contains(t, w.Body.String(), "not allowed by the proxy allow-list")
+	})
+
+	t.Run("allowed path proceeds normally", func(t *testing.T) {
+		setupCentralCapsForTest(t)
+
+		var proxyCalled bool
+		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			proxyCalled = true
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		})
+
+		baseURL, err := url.Parse("https://central:443")
+		require.NoError(t, err)
+
+		h := newTestHandler(t, baseURL, mockTransport, newAllowingAuthorizer(t), "test-token")
+		h.centralReachable.Store(true)
+
+		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		req.Header.Set("Authorization", "Bearer test-token")
+		w := httptest.NewRecorder()
+
+		h.ServeHTTP(w, req)
+
+		assert.True(t, proxyCalled, "proxy should be called for allowed path")
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("no allow-list configured allows all paths", func(t *testing.T) {
+		// Set up capabilities but no path filtering
+		centralcaps.Set([]centralsensor.CentralCapability{
+			centralsensor.InternalTokenAPISupported,
+		})
+		allowedpaths.Reset()
+		t.Cleanup(func() {
+			centralcaps.Set(nil)
+			allowedpaths.Reset()
+		})
+
+		var proxyCalled bool
+		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			proxyCalled = true
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		})
+
+		baseURL, err := url.Parse("https://central:443")
+		require.NoError(t, err)
+
+		h := newTestHandler(t, baseURL, mockTransport, newAllowingAuthorizer(t), "test-token")
+		h.centralReachable.Store(true)
+
+		req := httptest.NewRequest(http.MethodGet, "/admin/anything", nil)
+		req.Header.Set("Authorization", "Bearer test-token")
+		w := httptest.NewRecorder()
+
+		h.ServeHTTP(w, req)
+
+		assert.True(t, proxyCalled, "proxy should be called when no allow-list is configured")
+		assert.Equal(t, http.StatusOK, w.Code)
 	})
 }
