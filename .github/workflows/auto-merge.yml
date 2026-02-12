@@ -84,41 +84,6 @@ jobs:
               continue
             fi
 
-            # Check label and semver eligibility
-            ELIGIBLE=false
-            if echo "$LABELS" | grep -q "auto-merge-any"; then
-              echo "::notice::PR #$PR_NUMBER has auto-merge-any label - proceeding"
-              ELIGIBLE=true
-            elif echo "$LABELS" | grep -q "auto-merge"; then
-              # auto-merge label requires semver check for Dependabot PRs
-              if [[ "$AUTHOR" == "dependabot[bot]" ]]; then
-                # Get PR body to extract update-type
-                PR_BODY=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json body --jq '.body')
-
-                # Extract update type from PR body (Dependabot includes this metadata)
-                # Look for patterns like "Update-type: version-update:semver-minor"
-                UPDATE_TYPE=$(echo "$PR_BODY" | grep -i "update-type:" | grep -oE "semver-[a-z]+" || echo "unknown")
-
-                echo "::notice::PR #$PR_NUMBER update type: $UPDATE_TYPE"
-
-                if [[ "$UPDATE_TYPE" =~ ^(semver-minor|semver-patch)$ ]]; then
-                  echo "::notice::PR #$PR_NUMBER is minor/patch update - proceeding"
-                  ELIGIBLE=true
-                else
-                  echo "::warning::Skipping PR #$PR_NUMBER - major version update requires manual review (type: $UPDATE_TYPE)"
-                  ELIGIBLE=false
-                fi
-              else
-                echo "::warning::Skipping PR #$PR_NUMBER - auto-merge label only works for Dependabot (use auto-merge-any for human PRs)"
-                ELIGIBLE=false
-              fi
-            fi
-
-            if [[ "$ELIGIBLE" != "true" ]]; then
-              echo "::warning::Skipping PR #$PR_NUMBER - not eligible for auto-merge"
-              continue
-            fi
-
             # All conditions met - enable auto-merge
             echo "::notice::Approving PR #$PR_NUMBER"
             gh pr review --repo "${{ github.repository }}" \
