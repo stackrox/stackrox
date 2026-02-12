@@ -35,7 +35,7 @@ on:
       dry-run:
         description: "Dry-run: suppress uploads to GCS and failure notifications."
         default: false
-        type: boolean 
+        type: boolean
 
 jobs:
   parse-versions:
@@ -79,7 +79,7 @@ jobs:
             fi
             if [ -z "$ref" ]; then
                 # Allow empty ref when dry-run is true (follow normal flow)
-                if [ "$INPUT_DRY_RUN" != "true" ]; then
+                if [ "$INPUT_DRY_RUN" == "false" ]; then
                     echo >&2 "abort: invalid input: could not determine the reference"
                     exit 1
                 fi
