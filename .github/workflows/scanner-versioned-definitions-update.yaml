@@ -15,7 +15,7 @@ on:
         required: false
       ga_ref:
         description: >
-          WARNING - THIS WLL UPDATE A GA BUNDLE STREAM: Sets the git reference
+          WARNING - THIS WLL UPDATE A GA BUNDLE STREAM if not a dry-run: Sets the git reference
           to build a bundle that will be uploaded to the GA version stream.
         required: false
       rc_ref:
@@ -32,8 +32,8 @@ on:
         - nvd-feeds
         required: true
         default: nvd-feeds
-      dry-run:
-        description: "Dry-run: suppress uploads to GCS and failure notifications."
+      dry_run:
+        description: "Dry-run"
         default: false
         type: boolean
 
@@ -54,7 +54,7 @@ jobs:
         INPUT_GA_REF: ${{ github.event.inputs.ga_ref || '' }}
         INPUT_RC_REF: ${{ github.event.inputs.rc_ref || '' }}
         INPUT_STREAM: ${{ github.event.inputs.stream || '' }}
-        INPUT_DRY_RUN: ${{ github.event.inputs.dry-run || 'false' }}
+        INPUT_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
       run: |
         set -o pipefail
 
@@ -78,7 +78,7 @@ jobs:
                 allow_rc=true
             fi
             if [ -z "$ref" ]; then
-                # Allow empty ref when dry-run is true (follow normal flow)
+                # Allow empty ref when dry_run is true (follow normal flow)
                 if [ "$INPUT_DRY_RUN" == "false" ]; then
                     echo >&2 "abort: invalid input: could not determine the reference"
                     exit 1
@@ -86,12 +86,10 @@ jobs:
             fi
 
             # Configure environment to generate the matrix with versions and
-            # references (only if ref was determined).
-            if [ -n "$ref" ]; then
-                export SCANNER_BUNDLE_STREAM="$INPUT_STREAM"
-                export SCANNER_BUNDLE_REFERENCE="$ref"
-                export SCANNER_RELEASE_ALLOW_RC="$allow_rc"
-            fi
+            # references.
+            export SCANNER_BUNDLE_STREAM="$INPUT_STREAM"
+            export SCANNER_BUNDLE_REFERENCE="$ref"
+            export SCANNER_RELEASE_ALLOW_RC="$allow_rc"
         fi
 
         EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
@@ -380,7 +378,7 @@ jobs:
   upload-definitions:
     needs:
     - build-and-run
-    if: ${{ (failure() || success()) && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry-run == 'false')) }}
+    if: ${{ (failure() || success()) && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'false')) }}
     runs-on: ubuntu-latest
     steps:
     # Checkout to run ./.github/actions/download-artifact-with-retry
@@ -494,7 +492,7 @@ jobs:
     - build-and-run
     - upload-definitions
     runs-on: ubuntu-latest
-    if: ${{ failure() && github.ref_name == 'master' && (github.event_name == 'schedule' || github.event.inputs.dry-run == 'false') }}
+    if: ${{ failure() && github.ref_name == 'master' && (github.event_name == 'schedule' || github.event.inputs.dry_run == 'false') }}
     steps:
     - name: Send Slack notification on workflow failure
       run: |
