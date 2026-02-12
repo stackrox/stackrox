@@ -13,7 +13,7 @@ import (
 // AssertSQLQueryString a utility function for test purpose.
 func AssertSQLQueryString(t testing.TB, q *v1.Query, schema *walker.Schema, expected string) {
 	ctx := sac.WithAllAccess(context.Background())
-	actual, err := standardizeSelectQueryAndPopulatePath(ctx, q, schema, SELECT)
+	actual, err := standardizeSelectQueryAndPopulatePath(ctx, q, schema, SELECT, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual.AsSQL())
 }

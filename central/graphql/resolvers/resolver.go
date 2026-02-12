@@ -49,6 +49,7 @@ import (
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
+	signatureIntegrationDataStore "github.com/stackrox/rox/central/signatureintegration/datastore"
 	"github.com/stackrox/rox/central/views/imagecomponentflat"
 	"github.com/stackrox/rox/central/views/imagecve"
 	"github.com/stackrox/rox/central/views/imagecveflat"
@@ -106,6 +107,7 @@ type Resolver struct {
 	ViolationsDataStore           violationsDatastore.DataStore
 	BaselineDataStore             baselineStore.DataStore
 	WatchedImageDataStore         watchedImageDataStore.DataStore
+	SignatureIntegrationDataStore signatureIntegrationDataStore.DataStore
 	orchestratorIstioCVEManager   fetcher.OrchestratorIstioCVEManager
 	cveMatcher                    *cveMatcher.CVEMatcher
 	manager                       complianceOperatorManager.Manager
@@ -156,6 +158,7 @@ func New() *Resolver {
 		ViolationsDataStore:           violationsDatastore.Singleton(),
 		BaselineDataStore:             baselineStore.Singleton(),
 		WatchedImageDataStore:         watchedImageDataStore.Singleton(),
+		SignatureIntegrationDataStore: signatureIntegrationDataStore.Singleton(),
 		orchestratorIstioCVEManager:   fetcher.SingletonManager(),
 		cveMatcher:                    cveMatcher.Singleton(),
 		manager:                       complianceOperatorManager.Singleton(),

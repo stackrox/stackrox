@@ -200,7 +200,8 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
                 .object()
                 .shape({
                     name: yup.string(),
-                    scope: scopeSchema,
+                    // Backend returns scope as null for name only exclusions.
+                    scope: scopeSchema.nullable(),
                 })
                 .test(
                     'excluded-deployment-has-at-least-one-property',

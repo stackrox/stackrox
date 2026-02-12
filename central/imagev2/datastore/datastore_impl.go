@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -105,6 +106,25 @@ func (ds *datastoreImpl) SearchImages(ctx context.Context, q *v1.Query) ([]*v1.S
 
 	// Convert search Results directly to SearchResult protos without a second database pass
 	return search.ResultsToSearchResultProtos(results, &ImageSearchResultConverter{}), nil
+}
+
+func (ds *datastoreImpl) SearchListImages(ctx context.Context, q *v1.Query) ([]*storage.ListImage, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ImageV2", "SearchListImages")
+
+	var imgs []*storage.ListImage
+	err := ds.storage.WalkMetadataByQuery(ctx, q, func(img *storage.ImageV2) error {
+		imgs = append(imgs, imageTypes.ConvertImageToListImage(utils.ConvertToV1(img)))
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, image := range imgs {
+		image.Priority = ds.imageRanker.GetRankForID(image.GetId())
+	}
+
+	return imgs, nil
 }
 
 // TODO(ROX-29943): Eliminate unnecessary 2 pass database queries
