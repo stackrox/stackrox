@@ -23,9 +23,7 @@ var (
 	ReprocessDeploymentsMsgDelay = registerDurationSetting("ROX_REPROCESS_DEPLOYMENTS_MSG_DELAY", 0, WithDurationZeroAllowed())
 	// DeploymentRiskMaxConcurrency limits how many deployments can have their risk reprocessed
 	// concurrently across all clusters.
-	DeploymentRiskMaxConcurrency = RegisterIntegerSetting("ROX_DEPLOYMENT_RISK_MAX_CONCURRENCY", 15).
-		WithMinimum(1).
-		WithMaximum(30)
+	DeploymentRiskMaxConcurrency = RegisterIntegerSetting("ROX_DEPLOYMENT_RISK_MAX_CONCURRENCY", 15).WithMinimum(1).WithMaximum(30)
 	// DeploymentRiskSemaphoreWaitTime is the maximum time a worker will wait to acquire
 	// the risk reprocessing semaphore. Setting to zero disables the timeout (workers
 	// block indefinitely until a slot is available or the sensor disconnects).
