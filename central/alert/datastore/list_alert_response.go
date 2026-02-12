@@ -40,10 +40,10 @@ type listAlertResponse struct {
 // toListAlert converts the database response to a storage.ListAlert protobuf.
 func (r *listAlertResponse) toListAlert() *storage.ListAlert {
 	listAlert := &storage.ListAlert{
-		Id:                r.ID,
-		LifecycleStage:    storage.LifecycleStage(r.LifecycleStage),
-		Time:              protocompat.ConvertTimeToTimestampOrNil(r.Time),
-		State:             storage.ViolationState(r.State),
+		Id:             r.ID,
+		LifecycleStage: storage.LifecycleStage(r.LifecycleStage),
+		Time:           protocompat.ConvertTimeToTimestampOrNil(r.Time),
+		State:          storage.ViolationState(r.State),
 		Policy: &storage.ListAlertPolicy{
 			Id:          r.PolicyID,
 			Name:        r.PolicyName,
