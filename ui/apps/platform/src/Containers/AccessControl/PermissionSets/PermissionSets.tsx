@@ -7,7 +7,6 @@ import {
     Bullseye,
     Button,
     PageSection,
-    PageSectionVariants,
     Spinner,
 } from '@patternfly/react-core';
 
@@ -213,10 +212,7 @@ function PermissionSets(): ReactElement {
             {alertPermissionSets}
             {alertResources}
             {alertRoles}
-            <PageSection
-                hasBodyWrapper={false}
-                variant={isList ? PageSectionVariants.default : PageSectionVariants.light}
-            >
+            <PageSection>
                 {counterFetching !== 0 ? (
                     <Bullseye>
                         <Spinner />

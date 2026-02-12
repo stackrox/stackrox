@@ -115,7 +115,7 @@ function RoleForm({
 
     return (
         <Form id="role-form">
-            <Toolbar inset={{ default: 'insetNone' }} className="pf-v6-u-pt-0">
+            <Toolbar>
                 <ToolbarContent>
                     <ToolbarItem>
                         <Title headingLevel="h1">
