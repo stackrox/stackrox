@@ -19,9 +19,25 @@ type ListImageV2View struct {
 	LastUpdated     *time.Time `db:"last_updated"`
 }
 
+// GetCreated returns the Created timestamp as a protobuf Timestamp, or nil if not set.
+func (v *ListImageV2View) GetCreated() *timestamppb.Timestamp {
+	if v.Created == nil {
+		return nil
+	}
+	return timestamppb.New(*v.Created)
+}
+
+// GetLastUpdated returns the LastUpdated timestamp as a protobuf Timestamp, or nil if not set.
+func (v *ListImageV2View) GetLastUpdated() *timestamppb.Timestamp {
+	if v.LastUpdated == nil {
+		return nil
+	}
+	return timestamppb.New(*v.LastUpdated)
+}
+
 // ToListImage converts a ListImageV2View to a storage.ListImage proto.
 func (v *ListImageV2View) ToListImage() *storage.ListImage {
-	img := &storage.ListImage{
+	return &storage.ListImage{
 		Id:   v.Digest,
 		Name: v.Name,
 		SetComponents: &storage.ListImage_Components{
@@ -33,12 +49,7 @@ func (v *ListImageV2View) ToListImage() *storage.ListImage {
 		SetFixable: &storage.ListImage_FixableCves{
 			FixableCves: v.FixableCVECount,
 		},
+		Created:     v.GetCreated(),
+		LastUpdated: v.GetLastUpdated(),
 	}
-	if v.Created != nil {
-		img.Created = timestamppb.New(*v.Created)
-	}
-	if v.LastUpdated != nil {
-		img.LastUpdated = timestamppb.New(*v.LastUpdated)
-	}
-	return img
 }
