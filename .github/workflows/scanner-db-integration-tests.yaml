@@ -35,6 +35,8 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        save: false  # ~62 MB, test-dominated, no critical path speedup
 
     - name: Is Postgres ready
       run: pg_isready -h 127.0.0.1
