@@ -98,20 +98,9 @@ func PatchCSV(doc map[string]any, opts PatchOptions) error {
 	}
 
 	// Parse skips
-	skips := make([]XyzVersion, 0)
-	if rawSkips, ok := spec["skips"].([]any); ok {
-		for _, s := range rawSkips {
-			skipStr, ok := s.(string)
-			if !ok {
-				return errors.New("skip entry has wrong type (expected string)")
-			}
-			skipVer := strings.TrimPrefix(skipStr, rawName+".v")
-			v, err := ParseXyzVersion(skipVer)
-			if err != nil {
-				return err
-			}
-			skips = append(skips, v)
-		}
+	skips, err := ProcessSkips(rawName+".v", spec)
+	if err != nil {
+		return err
 	}
 
 	// Calculate replaced version
@@ -240,4 +229,32 @@ func addSecurityPolicyCRD(spec map[string]any) error {
 	crds["owned"] = append(filteredOwned, crd)
 
 	return nil
+}
+
+// ProcessSkips extracts and parses skip versions from the spec.
+// It filters out the placeholder "0.0.1" version and returns parsed XyzVersion entries.
+// The prefix parameter should be the operator name prefix (e.g., "rhacs-operator.v").
+func ProcessSkips(prefix string, spec map[string]any) ([]XyzVersion, error) {
+	skips := make([]XyzVersion, 0)
+	if rawSkips, ok := spec["skips"].([]any); ok {
+		for _, s := range rawSkips {
+			skipStr, ok := s.(string)
+			if !ok {
+				return nil, errors.New("skip entry is not a string")
+			}
+			// Filter out the placeholder version
+			if skipStr == prefix+"0.0.1" {
+				continue
+			}
+			// Extract version from prefix
+			skipVer := strings.TrimPrefix(skipStr, prefix)
+
+			v, err := ParseXyzVersion(skipVer)
+			if err != nil {
+				return nil, err
+			}
+			skips = append(skips, v)
+		}
+	}
+	return skips, nil
 }
