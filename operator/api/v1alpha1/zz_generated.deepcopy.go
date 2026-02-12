@@ -952,7 +952,7 @@ func (in *FAMContainerSpec) DeepCopyInto(out *FAMContainerSpec) {
 	*out = *in
 	if in.Mode != nil {
 		in, out := &in.Mode, &out.Mode
-		*out = new(Mode)
+		*out = new(FAMMode)
 		**out = **in
 	}
 	in.ContainerSpec.DeepCopyInto(&out.ContainerSpec)

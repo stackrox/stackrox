@@ -442,7 +442,7 @@ deploy_sensor_via_operator() {
     fi
 
     if [[ "${SFA_AGENT:-}" == "Enabled" ]]; then
-       echo "Enabling SFA agent due to SFA_AGENT variable: ${SFA_AGENT}"
+       echo "Enabling File Activity Monitoring due to SFA_AGENT variable: ${SFA_AGENT}"
        fam_mode_setting="Enabled"
     fi
 

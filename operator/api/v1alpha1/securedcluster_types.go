@@ -375,23 +375,23 @@ type FAMContainerSpec struct {
 	// Specifies whether File Activity Monitoring is deployed.
 	// The default is: Disabled.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enabled", "urn:alm:descriptor:com.tectonic.ui:select:Disabled"}
-	Mode *Mode `json:"mode,omitempty"`
+	Mode *FAMMode `json:"mode,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ContainerSpec `json:",inline"`
 }
 
-// Mode is a type for values of spec.perNode.fileActivityMonitoring.mode
+// FAMMode is a type for values of spec.perNode.fileActivityMonitoring.mode
 // +kubebuilder:validation:Enum=Enabled;Disabled
-type Mode string
+type FAMMode string
 
 const (
-	FileActivityMonitoringEnabled  Mode = "Enabled"
-	FileActivityMonitoringDisabled Mode = "Disabled"
+	FileActivityMonitoringEnabled  FAMMode = "Enabled"
+	FileActivityMonitoringDisabled FAMMode = "Disabled"
 )
 
 // Pointer returns the given Mode value as a pointer, needed in k8s resource structs.
-func (v Mode) Pointer() *Mode {
+func (v FAMMode) Pointer() *FAMMode {
 	return &v
 }
 
