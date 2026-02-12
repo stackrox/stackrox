@@ -40,6 +40,7 @@ var (
 
 	PolicyID           = newFieldLabel("Policy ID")
 	Enforcement        = newFieldLabel("Enforcement")
+	EnforcementCount   = newFieldLabel("Enforcement Count")
 	PolicyName         = newFieldLabel("Policy")
 	PolicyCategoryName = newFieldLabel("Policy Category")
 	PolicyCategoryID   = newFieldLabel("Policy Category ID")

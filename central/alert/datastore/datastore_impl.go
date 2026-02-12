@@ -89,6 +89,7 @@ func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excl
 		search.NewQuerySelect(search.Description).Proto(),
 		search.NewQuerySelect(search.Category).Proto(),
 		search.NewQuerySelect(search.Enforcement).Proto(),
+		search.NewQuerySelect(search.EnforcementCount).Proto(),
 		search.NewQuerySelect(search.EntityType).Proto(),
 		search.NewQuerySelect(search.ClusterID).Proto(),
 		search.NewQuerySelect(search.Cluster).Proto(),
@@ -96,6 +97,7 @@ func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excl
 		search.NewQuerySelect(search.NamespaceID).Proto(),
 		search.NewQuerySelect(search.DeploymentID).Proto(),
 		search.NewQuerySelect(search.DeploymentName).Proto(),
+		search.NewQuerySelect(search.DeploymentType).Proto(),
 		search.NewQuerySelect(search.Inactive).Proto(),
 		search.NewQuerySelect(search.NodeID).Proto(),
 		search.NewQuerySelect(search.Node).Proto(),
@@ -357,8 +359,12 @@ func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*stora
 		return nil
 	}
 
-	if features.PlatformComponents.Enabled() {
-		for _, alert := range alerts {
+	for _, alert := range alerts {
+		// Compute and cache enforcement count so it can be queried directly
+		// from the column without deserializing the full alert blob.
+		alert.EnforcementCount = convert.EnforcementCount(alert)
+
+		if features.PlatformComponents.Enabled() {
 			alert.EntityType = alertutils.GetEntityType(alert)
 			match, err := ds.platformMatcher.MatchAlert(alert)
 			if err != nil {
