@@ -1,0 +1,20 @@
+/* Constrain the list item so the inline ClipboardCopy truncates. */
+.verified-signature-list-item {
+    max-width: 64ch;
+}
+
+/* Override PatternFly inline ClipboardCopy to support text truncation.
+   The default `display: inline` ignores max-width, and the inner text span
+   uses `white-space: normal` which wraps instead of truncating. */
+.verified-signature-clipboard-copy.pf-v5-c-clipboard-copy.pf-m-inline {
+    display: inline-flex;
+    max-width: 100%;
+    align-items: center;
+}
+
+.verified-signature-clipboard-copy .pf-v5-c-clipboard-copy__text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}

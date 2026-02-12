@@ -1,10 +1,20 @@
 import type { CSSProperties } from 'react';
-import { Flex, FlexItem, Label, List, ListItem, Popover, Truncate } from '@patternfly/react-core';
+import {
+    ClipboardCopy,
+    Flex,
+    FlexItem,
+    Label,
+    List,
+    ListItem,
+    Popover,
+} from '@patternfly/react-core';
 import { CheckCircleIcon } from '@patternfly/react-icons';
 
 import PopoverBodyContent from 'Components/PopoverBodyContent';
 import type { SignatureVerificationResult } from '../../types';
 import SignatureIntegrationLink from './SignatureIntegrationLink';
+
+import './VerifiedSignatureLabel.css';
 
 export function getVerifiedSignatureInResults(
     results: SignatureVerificationResult[] | null | undefined
@@ -52,8 +62,15 @@ function VerifiedSignatureLabel({
                                     </strong>
                                     <List style={styleList}>
                                         {result.verifiedImageReferences?.map((name) => (
-                                            <ListItem key={name}>
-                                                <Truncate content={name} position="middle" />
+                                            <ListItem key={name} className="verified-signature-list-item">
+                                                <ClipboardCopy
+                                                    className="verified-signature-clipboard-copy"
+                                                    clickTip="Copied!"
+                                                    hoverTip="Copy"
+                                                    variant="inline-compact"
+                                                >
+                                                    {name}
+                                                </ClipboardCopy>
                                             </ListItem>
                                         ))}
                                     </List>
