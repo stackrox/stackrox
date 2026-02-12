@@ -683,7 +683,7 @@ jobs:
           CGO_ENABLED=0                           scripts/lib.sh retry 6 true make -C operator/ build
           # Once the native architecture dependencies are installed by the above command, the following one
           # simply builds the actual operator binary for the correct target architecture.
-          CGO_ENABLED=0 GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ build docker-build
+          CGO_ENABLED=0 GOARCH=${{ matrix.arch }} DOCKER_BUILD_LOAD=1 scripts/lib.sh retry 6 true make -C operator/ build docker-build
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@v3
