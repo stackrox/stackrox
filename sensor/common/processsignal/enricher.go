@@ -83,7 +83,12 @@ func newEnricher(ctx context.Context, clusterEntities *clusterentities.Store, pu
 	}
 
 	if features.SensorInternalPubSub.Enabled() && pubSubDispatcher != nil {
-		if err := pubSubDispatcher.RegisterConsumerToLane(pubsub.UnenrichedProcessIndicatorTopic, pubsub.UnenrichedProcessIndicatorLane, e.processUnenrichedIndicator); err != nil {
+		if err := pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.UnenrichedProcessConsumer,
+			pubsub.UnenrichedProcessIndicatorTopic,
+			pubsub.UnenrichedProcessIndicatorLane,
+			e.processUnenrichedIndicator,
+		); err != nil {
 			log.Errorf("Failed to register consumer for unenriched process indicators in enricher: %v", err)
 		}
 	}
@@ -99,7 +104,6 @@ func (e *enricher) getEnrichedC() <-chan *storage.ProcessIndicator {
 func (e *enricher) processUnenrichedIndicator(event pubsub.Event) error {
 	unenrichedEvent, ok := event.(*UnenrichedProcessIndicatorEvent)
 	if !ok {
-		log.Errorf("Enricher received unexpected event type: %T", event)
 		return errors.Errorf("unexpected event type: %T", event)
 	}
 

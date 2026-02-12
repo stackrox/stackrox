@@ -6,13 +6,17 @@ const (
 	NoConsumers ConsumerID = iota
 	DefaultConsumer
 	ResolverConsumer
+	EnrichedProcessConsumer
+	UnenrichedProcessConsumer
 )
 
 var (
 	consumerToString = map[ConsumerID]string{
-		NoConsumers:      "NoConsumers",
-		DefaultConsumer:  "Default",
-		ResolverConsumer: "Resolver",
+		NoConsumers:               "NoConsumers",
+		DefaultConsumer:           "Default",
+		ResolverConsumer:          "Resolver",
+		EnrichedProcessConsumer:   "EnrichedProcess",
+		UnenrichedProcessConsumer: "UnenrichedProcess",
 	}
 )
 

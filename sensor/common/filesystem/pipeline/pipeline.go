@@ -54,7 +54,12 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 	if features.SensorInternalPubSub.Enabled() && pubSubDispatcher != nil {
 		log.Info("File system pipeline using pub/sub mode for process enrichment")
 
-		if err := pubSubDispatcher.RegisterConsumerToLane(pubsub.EnrichedProcessIndicatorTopic, pubsub.EnrichedProcessIndicatorLane, p.processEnrichedIndicator); err != nil {
+		if err := pubSubDispatcher.RegisterConsumerToLane(
+			pubsub.EnrichedProcessConsumer,
+			pubsub.EnrichedProcessIndicatorTopic,
+			pubsub.EnrichedProcessIndicatorLane,
+			p.processEnrichedIndicator,
+		); err != nil {
 			log.Errorf("Failed to register consumer for enriched process indicators in file system pipeline: %v", err)
 		}
 	} else {
@@ -133,6 +138,8 @@ func (p *Pipeline) translateWithIndicator(fs *sensorAPI.FileActivity, indicator 
 func (p *Pipeline) translate(fs *sensorAPI.FileActivity) *storage.FileAccess {
 	indicator := p.getIndicator(fs.GetProcess())
 	if indicator == nil {
+		// if nil, we're waiting for enrichment so buffer the activity
+		// to be updated when we get the enriched process indicator.
 		p.bufferActivity(fs)
 		return nil
 	}
