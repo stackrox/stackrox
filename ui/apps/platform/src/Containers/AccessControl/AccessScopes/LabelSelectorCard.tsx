@@ -8,7 +8,6 @@ import {
     CardHeader,
     CardTitle,
     Flex,
-    FlexItem,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
@@ -192,125 +191,123 @@ function LabelSelectorCard({
                 </CardTitle>
             </CardHeader>
             <CardBody>
-                <Flex spaceItems={{ default: 'spaceItemsSm' }} className="pf-v6-u-pb-sm">
-                    <FlexItem>
+                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                    <Flex spaceItems={{ default: 'spaceItemsSm' }}>
                         <strong>Rules</strong>
-                    </FlexItem>
-                    <FlexItem>
                         <Badge isRead>{requirements.length}</Badge>
-                    </FlexItem>
-                </Flex>
-                {(requirements.length !== 0 || hasAddKey) && (
-                    <Table variant="compact">
-                        <Thead>
-                            <Tr>
-                                <Th width={40}>Key</Th>
-                                <Th>
-                                    <span className="pf-v6-screen-reader">Operator</span>
-                                </Th>
-                                <Th width={40}>Values</Th>
-                                {isLabelSelectorActive && <Th modifier="fitContent">Action</Th>}
-                            </Tr>
-                        </Thead>
-                        <Tbody
-                            className={
-                                labelSelectorsKey === 'namespaceLabelSelectors'
-                                    ? 'pf-v6-u-background-color-200'
-                                    : ''
-                            }
-                        >
-                            {requirements.map((requirement, indexRequirement) => (
-                                <RequirementRow
-                                    key={`${requirement.key} ${requirement.op}`}
-                                    requirement={requirement}
-                                    hasAction={isLabelSelectorActive}
-                                    activity={getRequirementActivity(
-                                        indexRequirement,
-                                        indexRequirementActive
-                                    )}
-                                    handleRequirementDelete={() =>
-                                        handleRequirementDelete(indexRequirement)
-                                    }
-                                    handleRequirementEdit={() =>
-                                        handleRequirementEdit(indexRequirement)
-                                    }
-                                    handleRequirementOK={handleRequirementOK}
-                                    handleRequirementCancel={handleRequirementCancel}
-                                    handleValueAdd={(value: string) =>
-                                        handleValueAdd(indexRequirement, value)
-                                    }
-                                    handleValueDelete={(indexValue: number) =>
-                                        handleValueDelete(indexRequirement, indexValue)
-                                    }
-                                />
-                            ))}
-                            {hasAddKey && (
-                                <RequirementRowAddKey
-                                    handleRequirementKeyOK={handleRequirementKeyOK}
-                                    handleRequirementKeyCancel={handleRequirementKeyCancel}
-                                />
-                            )}
-                        </Tbody>
-                    </Table>
-                )}
-                {hasAction && (
-                    <Toolbar className="pf-v6-u-pb-0" inset={{ default: 'insetNone' }}>
-                        {isLabelSelectorActive ? (
-                            <ToolbarContent>
-                                <ToolbarItem>
-                                    <Button
-                                        key="Add rule"
-                                        variant="link"
-                                        isInline
-                                        icon={<PlusCircleIcon className="pf-v6-u-mr-sm" />}
-                                        onClick={onAddRequirement}
-                                        isDisabled={indexRequirementActive !== -1}
-                                    >
-                                        Add rule
-                                    </Button>
-                                </ToolbarItem>
-                                <ToolbarGroup align={{ default: 'alignEnd' }}>
+                    </Flex>
+                    {(requirements.length !== 0 || hasAddKey) && (
+                        <Table variant="compact">
+                            <Thead>
+                                <Tr>
+                                    <Th width={40}>Key</Th>
+                                    <Th>
+                                        <span className="pf-v6-screen-reader">Operator</span>
+                                    </Th>
+                                    <Th width={40}>Values</Th>
+                                    {isLabelSelectorActive && <Th modifier="fitContent">Action</Th>}
+                                </Tr>
+                            </Thead>
+                            <Tbody
+                                className={
+                                    labelSelectorsKey === 'namespaceLabelSelectors'
+                                        ? 'pf-v6-u-background-color-200'
+                                        : ''
+                                }
+                            >
+                                {requirements.map((requirement, indexRequirement) => (
+                                    <RequirementRow
+                                        key={`${requirement.key} ${requirement.op}`}
+                                        requirement={requirement}
+                                        hasAction={isLabelSelectorActive}
+                                        activity={getRequirementActivity(
+                                            indexRequirement,
+                                            indexRequirementActive
+                                        )}
+                                        handleRequirementDelete={() =>
+                                            handleRequirementDelete(indexRequirement)
+                                        }
+                                        handleRequirementEdit={() =>
+                                            handleRequirementEdit(indexRequirement)
+                                        }
+                                        handleRequirementOK={handleRequirementOK}
+                                        handleRequirementCancel={handleRequirementCancel}
+                                        handleValueAdd={(value: string) =>
+                                            handleValueAdd(indexRequirement, value)
+                                        }
+                                        handleValueDelete={(indexValue: number) =>
+                                            handleValueDelete(indexRequirement, indexValue)
+                                        }
+                                    />
+                                ))}
+                                {hasAddKey && (
+                                    <RequirementRowAddKey
+                                        handleRequirementKeyOK={handleRequirementKeyOK}
+                                        handleRequirementKeyCancel={handleRequirementKeyCancel}
+                                    />
+                                )}
+                            </Tbody>
+                        </Table>
+                    )}
+                    {hasAction && (
+                        <Toolbar hasNoPadding>
+                            {isLabelSelectorActive ? (
+                                <ToolbarContent>
                                     <ToolbarItem>
                                         <Button
+                                            key="Add rule"
+                                            variant="link"
+                                            isInline
+                                            icon={<PlusCircleIcon className="pf-v6-u-mr-sm" />}
+                                            onClick={onAddRequirement}
+                                            isDisabled={indexRequirementActive !== -1}
+                                        >
+                                            Add rule
+                                        </Button>
+                                    </ToolbarItem>
+                                    <ToolbarGroup align={{ default: 'alignEnd' }}>
+                                        <ToolbarItem>
+                                            <Button
+                                                variant="primary"
+                                                className="pf-m-smaller"
+                                                onClick={handleLabelSelectorOK}
+                                                isDisabled={
+                                                    indexRequirementActive !== -1 ||
+                                                    !getIsValidRequirements(requirements)
+                                                }
+                                            >
+                                                OK
+                                            </Button>
+                                        </ToolbarItem>
+                                        <ToolbarItem>
+                                            <Button
+                                                variant="tertiary"
+                                                className="pf-m-smaller"
+                                                onClick={handleLabelSelectorCancel}
+                                            >
+                                                Cancel
+                                            </Button>
+                                        </ToolbarItem>
+                                    </ToolbarGroup>
+                                </ToolbarContent>
+                            ) : (
+                                <ToolbarContent>
+                                    <ToolbarItem>
+                                        <Button
+                                            key="Edit label selector"
                                             variant="primary"
                                             className="pf-m-smaller"
-                                            onClick={handleLabelSelectorOK}
-                                            isDisabled={
-                                                indexRequirementActive !== -1 ||
-                                                !getIsValidRequirements(requirements)
-                                            }
+                                            isDisabled={activity === 'DISABLED'}
+                                            onClick={handleLabelSelectorEdit}
                                         >
-                                            OK
+                                            Edit label selector
                                         </Button>
                                     </ToolbarItem>
-                                    <ToolbarItem>
-                                        <Button
-                                            variant="tertiary"
-                                            className="pf-m-smaller"
-                                            onClick={handleLabelSelectorCancel}
-                                        >
-                                            Cancel
-                                        </Button>
-                                    </ToolbarItem>
-                                </ToolbarGroup>
-                            </ToolbarContent>
-                        ) : (
-                            <ToolbarContent>
-                                <ToolbarItem>
-                                    <Button
-                                        key="Edit label selector"
-                                        variant="primary"
-                                        className="pf-m-smaller"
-                                        isDisabled={activity === 'DISABLED'}
-                                        onClick={handleLabelSelectorEdit}
-                                    >
-                                        Edit label selector
-                                    </Button>
-                                </ToolbarItem>
-                            </ToolbarContent>
-                        )}
-                    </Toolbar>
-                )}
+                                </ToolbarContent>
+                            )}
+                        </Toolbar>
+                    )}
+                </Flex>
             </CardBody>
         </Card>
     );

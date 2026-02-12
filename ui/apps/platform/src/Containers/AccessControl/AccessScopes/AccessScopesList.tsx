@@ -64,7 +64,7 @@ function AccessScopesList({
     }
 
     return (
-        <PageSection hasBodyWrapper={false}>
+        <PageSection>
             <Title headingLevel="h2">{pluralize(accessScopes.length, 'result')} found</Title>
             {alertDelete}
             <Table variant="compact">

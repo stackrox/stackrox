@@ -29,6 +29,7 @@ import {
     visitAccessControlEntity,
 } from './accessControl.helpers';
 import { accessModalSelectors, selectors } from './accessControl.selectors';
+import pf6 from '../../selectors/pf6';
 
 describe('Access Control Auth providers', () => {
     withAuth();
@@ -67,7 +68,7 @@ describe('Access Control Auth providers', () => {
         const type = 'Auth0';
 
         cy.get('button:contains("Create auth provider")').click();
-        cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
+        cy.get(`${pf6.dropdownItem}:contains("${type}")`).click();
 
         assertAccessControlEntityPage(entitiesKey);
 
@@ -98,7 +99,7 @@ describe('Access Control Auth providers', () => {
         const type = 'OpenID Connect';
 
         cy.get('button:contains("Create auth provider")').click();
-        cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
+        cy.get(`${pf6.dropdownItem}:contains("${type}")`).click();
 
         assertAccessControlEntityPage(entitiesKey);
 
@@ -112,7 +113,6 @@ describe('Access Control Auth providers', () => {
 
         const {
             selectCallbackMode,
-            selectCallbackModeItem,
             inputIssuer,
             inputClientID,
             inputClientSecret,
@@ -131,12 +131,12 @@ describe('Access Control Auth providers', () => {
         cy.get(selectors.form.cancelButton).should('be.enabled');
 
         cy.get(selectCallbackMode).click();
-        cy.get(`${selectCallbackModeItem}:contains("Fragment")`).click();
+        cy.get(`${pf6.selectItem}:contains("Fragment")`).click();
         cy.get(inputClientSecret).should('be.disabled');
         // cy.get(checkboxDoNotUseClientSecret).should('be.disabled'); // TODO classic test asserts is should be disabled
 
         cy.get(selectCallbackMode).click();
-        cy.get(`${selectCallbackModeItem}:contains("HTTP POST")`).click();
+        cy.get(`${pf6.selectItem}:contains("HTTP POST")`).click();
         cy.get(checkboxDoNotUseClientSecret).check();
         cy.get(inputClientSecret).should('be.disabled').should('not.have.attr', 'required');
         cy.get('button:contains("Add claim mapping")').click();
@@ -209,14 +209,13 @@ describe('Access Control Auth providers', () => {
         };
         visitAccessControlEntity(entitiesKey, entityId, staticResponseMapForAuthProvider);
 
-        const { selectMinimumAccessRole, selectMinimumAccessRoleItem } =
-            selectors.form.minimumAccessRole;
+        const { selectMinimumAccessRole } = selectors.form.minimumAccessRole;
 
         cy.get(selectors.form.editButton).click();
 
         cy.get(selectMinimumAccessRole).should('be.enabled').should('contain', 'Admin');
         cy.get(selectMinimumAccessRole).click();
-        cy.get(`${selectMinimumAccessRoleItem}:contains("Analyst")`).click();
+        cy.get(`${pf6.selectItem}:contains("Analyst")`).click();
 
         // Mock responses to save updated auth provider.
         const staticResponseMapForUpdatedAuthProvider = {
@@ -247,7 +246,7 @@ describe('Access Control Auth providers', () => {
         const type = 'SAML 2.0';
 
         cy.get('button:contains("Create auth provider")').click();
-        cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
+        cy.get(`${pf6.dropdownItem}:contains("${type}")`).click();
 
         assertAccessControlEntityPage(entitiesKey);
 
@@ -298,7 +297,7 @@ describe('Access Control Auth providers', () => {
         const type = 'User Certificates';
 
         cy.get('button:contains("Create auth provider")').click();
-        cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
+        cy.get(`${pf6.dropdownItem}:contains("${type}")`).click();
 
         assertAccessControlEntityPage(entitiesKey);
 
@@ -342,7 +341,7 @@ describe('Access Control Auth providers', () => {
         const type = 'Google IAP';
 
         cy.get('button:contains("Create auth provider")').click();
-        cy.get(`${selectors.list.authProviders.createDropdownItem}:contains("${type}")`).click();
+        cy.get(`${pf6.dropdownItem}:contains("${type}")`).click();
 
         assertAccessControlEntityPage(entitiesKey);
 
