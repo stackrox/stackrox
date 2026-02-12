@@ -848,6 +848,18 @@ function launch_sensor {
         )
       fi
 
+      if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
+        helm_args+=(
+          --set customize.envVars.ROX_NETFLOW_BATCHING="${ROX_NETFLOW_BATCHING}"
+        )
+      fi
+
+      if [[ -n "${ROX_NETFLOW_CACHE_LIMITING:-}" ]]; then
+        helm_args+=(
+          --set customize.envVars.ROX_NETFLOW_CACHE_LIMITING="${ROX_NETFLOW_CACHE_LIMITING}"
+        )
+      fi
+
       # Add a custom values file to Helm
       if [[ -n "$ROX_SENSOR_EXTRA_HELM_VALUES_FILE" ]]; then
         helm_args+=(
