@@ -80,7 +80,7 @@ func PatchCSV(args []string) error {
 	// Parse supported architectures
 	var arches []string
 	if *addSupportedArch != "" {
-		arches = splitComma(*addSupportedArch)
+		arches = extractArches(*addSupportedArch)
 	}
 
 	// Patch the CSV
@@ -122,10 +122,9 @@ func echoReplacedVersion(doc map[string]any, version, firstVersion, unreleased s
 		return errors.New("metadata.name is not a string")
 	}
 
-	rawName := ""
-	if name == "rhacs-operator.v0.0.1" {
-		rawName = "rhacs-operator"
-	} else {
+	rawName := "rhacs-operator.v"
+
+	if name != rawName+"0.0.1" {
 		return fmt.Errorf("unexpected metadata.name format: %s", name)
 	}
 
@@ -141,11 +140,11 @@ func echoReplacedVersion(doc map[string]any, version, firstVersion, unreleased s
 			if !ok {
 				return errors.New("skip entry is not a string")
 			}
-			if skipStr == rawName+".v0.0.1" {
+			if skipStr == rawName+"0.0.1" {
 				continue
 			}
 			// Extract version from "rhacs-operator.vX.Y.Z"
-			skipVer := strings.TrimPrefix(skipStr, rawName+".v")
+			skipVer := strings.TrimPrefix(skipStr, rawName)
 
 			v, err := csv.ParseXyzVersion(skipVer)
 			if err != nil {
@@ -172,12 +171,12 @@ func echoReplacedVersion(doc map[string]any, version, firstVersion, unreleased s
 	return nil
 }
 
-func splitComma(s string) []string {
+func extractArches(s string) []string {
 	if s == "" {
 		return nil
 	}
 	parts := []string{}
-	for _, p := range strings.Split(s, ",") {
+	for p := range strings.SplitSeq(s, ",") {
 		if trimmed := strings.TrimSpace(p); trimmed != "" {
 			parts = append(parts, trimmed)
 		}
