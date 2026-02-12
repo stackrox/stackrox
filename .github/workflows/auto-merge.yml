@@ -1,4 +1,4 @@
-name: Auto-Merge for Labeled PRs
+name: auto-merge
 
 on:
   schedule:
