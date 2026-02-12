@@ -263,6 +263,22 @@ func (s *NodeDetectionTestSuite) TestNodeFileAccess() {
 				},
 			},
 		},
+		{
+			description: "Node file policy with event containing both matching paths",
+			policy:      s.getNodeFileAccessPolicy("/etc/passwd"),
+			events: []eventWrapper{
+				{
+					access: &storage.FileAccess{
+						File: &storage.FileAccess_File{
+							ActualPath:    "/etc/passwd",
+							EffectivePath: "/etc/passwd",
+						},
+						Operation: storage.FileAccess_OPEN,
+					},
+					expectAlert: true,
+				},
+			},
+		},
 	} {
 		testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, true)
 		defer testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, false)
