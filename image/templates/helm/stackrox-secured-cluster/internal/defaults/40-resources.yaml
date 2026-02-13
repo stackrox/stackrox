@@ -43,7 +43,7 @@ collector:
       memory: "500Mi"
       cpu: "1"
 
-  sfaResources:
+  famResources:
     resources:
       requests:
         memory: "320Mi"

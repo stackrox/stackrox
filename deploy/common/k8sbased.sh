@@ -866,8 +866,8 @@ function launch_sensor {
       fi
 
       if [[ "${SFA_AGENT:-false}" == "true" ]]; then
-        echo "Enable Sensitive File Activity agent"
-        extra_helm_config+=(--set "collector.sfaEnabled=true")
+        echo "Enable File Activity Monitoring"
+        extra_helm_config+=(--set "collector.famEnabled=true")
       fi
 
       if [[ -n "$CI" ]]; then
