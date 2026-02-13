@@ -1403,7 +1403,7 @@ func (x *Alert_ProcessViolation) GetProcesses() []*ProcessIndicator {
 
 type Alert_Enforcement struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Action        EnforcementAction      `protobuf:"varint,1,opt,name=action,proto3,enum=storage.EnforcementAction" json:"action,omitempty" search:"Enforcement"` // @gotags: search:"Enforcement"
+	Action        EnforcementAction      `protobuf:"varint,1,opt,name=action,proto3,enum=storage.EnforcementAction" json:"action,omitempty" search:"Enforcement Action"` // @gotags: search:"Enforcement Action"
 	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

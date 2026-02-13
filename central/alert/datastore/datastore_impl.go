@@ -88,7 +88,7 @@ func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excl
 		search.NewQuerySelect(search.Severity).Proto(),
 		search.NewQuerySelect(search.Description).Proto(),
 		search.NewQuerySelect(search.Category).Proto(),
-		search.NewQuerySelect(search.Enforcement).Proto(),
+		search.NewQuerySelect(search.EnforcementAction).Proto(),
 		search.NewQuerySelect(search.EnforcementCount).Proto(),
 		search.NewQuerySelect(search.EntityType).Proto(),
 		search.NewQuerySelect(search.ClusterID).Proto(),
