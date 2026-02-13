@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1
+        image: nginx:1.14.2
         ports:
         - containerPort: 80
       serviceAccountName: nginx-sa

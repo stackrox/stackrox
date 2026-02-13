@@ -640,13 +640,6 @@ _image_prefetcher_prebuilt_start() {
         # prefect list stays up to date with additions.
         ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
         ;;
-    *sensor-integration-tests)
-        image_prefetcher_start_set sensor-integration
-        # Override the default image pull policy for containers with quay.io
-        # images to rely on prefetched images. This helps ensure that the static
-        # prefect list stays up to date with additions.
-        ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
-        ;;
     *-operator-e2e-tests)
         image_prefetcher_start_set operator-e2e
         # TODO(ROX-20508): pre-fetch images of the release from which operator upgrade test starts as well.
@@ -769,9 +762,6 @@ _image_prefetcher_prebuilt_await() {
         ;;
     *nongroovy-e2e-tests)
         image_prefetcher_await_set qa-nongroovy-e2e
-        ;;
-    *sensor-integration-tests)
-        image_prefetcher_await_set sensor-integration
         ;;
     *-operator-e2e-tests)
         image_prefetcher_await_set operator-e2e
@@ -929,9 +919,6 @@ populate_prefetcher_image_list() {
         ;;
     qa-nongroovy-e2e)
         cp "$SCRIPTS_ROOT/tests/images-to-prefetch.txt" "$image_list"
-        ;;
-    sensor-integration)
-        cp "$SCRIPTS_ROOT/sensor/tests/images-to-prefetch.txt" "$image_list"
         ;;
     *)
         die "ERROR: An unsupported image prefetcher target was requested: $name"
