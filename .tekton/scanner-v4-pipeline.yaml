@@ -318,10 +318,6 @@ spec:
       - name: kind
         value: task
       resolver: bundles
-    when:
-    - input: $(tasks.init.results.build)
-      operator: in
-      values: ["true"]
 
   - name: build-image-index
     params:
@@ -345,10 +341,6 @@ spec:
       - name: kind
         value: task
       resolver: bundles
-    when:
-    - input: $(tasks.init.results.build)
-      operator: in
-      values: ["true"]
     runAfter: [build-images]
 
   - name: apply-index-image-tag
@@ -369,10 +361,6 @@ spec:
       - name: kind
         value: task
       resolver: bundles
-    when:
-    - input: $(tasks.init.results.build)
-      operator: in
-      values: ["true"]
 
   - name: build-source-image
     params:
@@ -394,9 +382,6 @@ spec:
         value: task
       resolver: bundles
     when:
-    - input: $(tasks.init.results.build)
-      operator: in
-      values: ["true"]
     - input: $(params.build-source-image)
       operator: in
       values: ["true"]
