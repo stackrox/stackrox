@@ -3,6 +3,7 @@ package reprocessing
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/utils"
@@ -144,12 +145,15 @@ func (s *pipelineImpl) acquireRiskSemaphore(ctx context.Context) error {
 	if err := s.riskSemaphore.Acquire(acquireCtx, 1); err != nil {
 		if ctx.Err() != nil {
 			// Parent context was cancelled (sensor disconnected). This is expected.
-			log.Debugf("Context cancelled while waiting to reprocess deployment risk: %v", err)
-		} else {
-			// Semaphore wait timed out. The deployment will be reprocessed on the next cycle.
+			log.Debugf("Unable to acquire context to reprocess deployment risk: %v", err)
+		} else if errors.Is(err, context.DeadlineExceeded) {
+			// Semaphore wait timed out...
 			riskSemaphoreTimeouts.Inc()
 			log.Warnf("Timed out waiting to reprocess deployment risk (waited %v, queue is full): %v",
 				waitTime, err)
+		} else {
+			// unexpected error
+			log.Errorf("Unexpected error acquiring risk semaphore: %v", err)
 		}
 		return err
 	}
