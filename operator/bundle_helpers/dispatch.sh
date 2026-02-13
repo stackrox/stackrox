@@ -20,12 +20,17 @@ shift
 
 script_dir="$(dirname "$0")"
 
+# Debug logging to stderr
+echo "dispatch.sh: USE_GO_BUNDLE_HELPER=${USE_GO_BUNDLE_HELPER:-true} for script=$script_name" >&2
+
 if [[ "${USE_GO_BUNDLE_HELPER:-true}" == "true" ]]; then
     case "$script_name" in
     fix-spec-descriptor-order)
+        echo "dispatch.sh: Using Go implementation for $script_name" >&2
         exec go run "${script_dir}/main.go" "$script_name" "$@"
         ;;
     patch-csv)
+        echo "dispatch.sh: Using Go implementation for $script_name" >&2
         exec go run "${script_dir}/main.go" "$script_name" "$@"
         ;;
     *)
@@ -34,5 +39,6 @@ if [[ "${USE_GO_BUNDLE_HELPER:-true}" == "true" ]]; then
         ;;
     esac
 else
+    echo "dispatch.sh: Using Python implementation for $script_name" >&2
     exec "${script_dir}/${script_name}.py" "$@"
 fi

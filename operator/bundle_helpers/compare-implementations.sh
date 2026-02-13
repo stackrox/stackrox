@@ -30,6 +30,8 @@ echo ""
 echo "=== Cleaning..."
 git restore bundle/ build/ || true
 git clean -fd bundle/ build/ || true
+# Remove Python artifacts that could affect the next build
+rm -rf bundle_helpers/.venv bundle_helpers/__pycache__ bundle_helpers/.pytest_cache
 
 # Build with Go
 echo ""
@@ -74,6 +76,8 @@ echo ""
 echo "=== Cleaning up..."
 git restore bundle/ build/ || true
 git clean -fd bundle/ build/ || true
+# Remove Python artifacts
+rm -rf bundle_helpers/.venv bundle_helpers/__pycache__ bundle_helpers/.pytest_cache
 
 # Final result
 echo ""
