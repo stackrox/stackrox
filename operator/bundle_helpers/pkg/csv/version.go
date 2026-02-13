@@ -125,7 +125,8 @@ func CalculateReplacedVersion(current, first, previousYStream string, skips []Xy
 		initialReplace = XyzVersion{X: currentXyz.X, Y: currentXyz.Y, Z: currentXyz.Z - 1}
 	}
 
-	// If initial replace is unreleased, try previous one
+	// If this version is not yet released, try previous one.
+	// E.g. 4.5 branch was cut and the 4.6.x tag created, but the 4.5 release process is still in progress.
 	if unreleased != "" && initialReplace.String() == unreleased {
 		prev, err := GetPreviousYStream(initialReplace.String())
 		if err != nil {
