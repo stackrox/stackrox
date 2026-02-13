@@ -134,17 +134,13 @@ func echoReplacedVersion(doc map[string]any, version, firstVersion, unreleased s
 		return errors.New("spec is not a map")
 	}
 
-	skips, err := csv.ProcessSkips(rawName, spec)
-	if err != nil {
-		return err
-	}
-
-	previousYStream, err := csv.GetPreviousYStream(version)
-	if err != nil {
-		return err
-	}
-
-	replacedVersion, err := csv.CalculateReplacedVersion(version, firstVersion, previousYStream, skips, unreleased)
+	_, replacedVersion, err := csv.CalculateReplacedVersionForCSV(
+		version,
+		firstVersion,
+		unreleased,
+		rawName,
+		spec,
+	)
 	if err != nil {
 		return err
 	}
