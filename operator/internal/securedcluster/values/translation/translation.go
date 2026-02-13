@@ -420,7 +420,7 @@ func (t Translator) getCollectorValues(perNode *platform.PerNodeSpec) *translati
 	cv.AddAllFrom(t.getCollectorContainerValues(perNode.Collector))
 	cv.AddAllFrom(t.getComplianceContainerValues(perNode.Compliance))
 	cv.AddAllFrom(t.getNodeInventoryContainerValues(perNode.NodeInventory))
-	cv.AddAllFrom(t.getSFAContainerValues(perNode.SFA))
+	cv.AddAllFrom(t.getFAMContainerValues(perNode.FileActivityMonitoring))
 
 	return &cv
 }
@@ -476,22 +476,22 @@ func (t Translator) getNodeInventoryContainerValues(nodeInventory *platform.Cont
 	return &cv
 }
 
-func (t Translator) getSFAContainerValues(sfaContainerSpec *platform.SFAContainerSpec) *translation.ValuesBuilder {
-	if sfaContainerSpec == nil {
+func (t Translator) getFAMContainerValues(famContainerSpec *platform.FAMContainerSpec) *translation.ValuesBuilder {
+	if famContainerSpec == nil {
 		return nil
 	}
 
 	cv := translation.NewValuesBuilder()
-	switch *sfaContainerSpec.Agent {
-	case platform.SFAAgentEnabled:
-		cv.SetBoolValue("sfaEnabled", true)
-	case platform.SFAAgentDisabled:
-		cv.SetBoolValue("sfaEnabled", false)
+	switch *famContainerSpec.Mode {
+	case platform.FileActivityMonitoringEnabled:
+		cv.SetBoolValue("famEnabled", true)
+	case platform.FileActivityMonitoringDisabled:
+		cv.SetBoolValue("famEnabled", false)
 	default:
-		return cv.SetError(errors.Errorf("invalid spec.perNode.sfa.agent setting %q", *sfaContainerSpec.Agent))
+		return cv.SetError(errors.Errorf("invalid spec.perNode.fileActivityMonitoring.mode setting %q", *famContainerSpec.Mode))
 	}
 
-	cv.AddChild("sfaResources", translation.GetResources(sfaContainerSpec.Resources))
+	cv.AddChild("famResources", translation.GetResources(famContainerSpec.Resources))
 
 	return &cv
 }
