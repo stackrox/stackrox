@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -11,7 +12,10 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-const repoToCPEMappingURL = "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
+const (
+	minDaemonIndexInterval = 10 * time.Minute
+	repoToCPEMappingURL    = "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
+)
 
 var log = logging.LoggerForModule()
 
@@ -27,7 +31,7 @@ func RootCmd(ctx context.Context) *cobra.Command {
 		"Run in daemon mode. Sends index reports continuously.",
 	)
 	cmd.Flags().DurationVar(&cfg.IndexInterval, "index-interval", 240*time.Minute,
-		"Interval duration in which index reports are sent in daemon mode.",
+		fmt.Sprintf("Interval duration in which index reports are sent in daemon mode (minimum: %v).", minDaemonIndexInterval),
 	)
 	cmd.Flags().StringVar(&cfg.IndexHostPath, "host-path", "/",
 		"Path where the indexer starts searching for the RPM and DNF databases.",
@@ -55,6 +59,10 @@ func RootCmd(ctx context.Context) *cobra.Command {
 			Verbose:  cfg.Verbose,
 		}
 		if cfg.DaemonMode {
+			if cfg.IndexInterval < minDaemonIndexInterval {
+				log.Errorf("index interval must be at least %s in daemon mode (got %s)", minDaemonIndexInterval, cfg.IndexInterval)
+				return
+			}
 			if err := index.RunDaemon(ctx, cfg, client); err != nil {
 				log.Errorf("Running indexer daemon: %v", err)
 			}
