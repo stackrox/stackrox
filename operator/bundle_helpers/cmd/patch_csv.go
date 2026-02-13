@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/stackrox/rox/operator/bundle_helpers/pkg/csv"
@@ -55,8 +56,8 @@ func PatchCSV(args []string) error {
 	}
 
 	// Validate related-images-mode
-	validModes := map[string]bool{"downstream": true, "omit": true, "konflux": true}
-	if !validModes[*relatedImagesMode] {
+	validModes := []string{"downstream", "omit", "konflux"}
+	if !slices.Contains(validModes, *relatedImagesMode) {
 		return fmt.Errorf("--related-images-mode must be one of: downstream, omit, konflux (got: %s)", *relatedImagesMode)
 	}
 
