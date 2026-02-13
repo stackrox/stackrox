@@ -46,7 +46,6 @@ func TestIsAllowed_ExactMatch(t *testing.T) {
 	t.Cleanup(Reset)
 
 	assert.True(t, IsAllowed("/api/graphql"), "exact path should match")
-	assert.False(t, IsAllowed("/api/graphql?query=foo"), "no-slash entry must not prefix-match")
 	assert.False(t, IsAllowed("/api/graphql/sub"), "no-slash entry must not prefix-match subpath")
 }
 

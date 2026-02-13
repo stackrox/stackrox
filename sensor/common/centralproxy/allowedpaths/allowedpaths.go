@@ -8,7 +8,6 @@ import (
 )
 
 var (
-	configured   bool
 	mutex        sync.RWMutex
 	allowedPaths set.Set[string]
 )
@@ -20,11 +19,9 @@ func Set(paths []string) {
 	defer mutex.Unlock()
 	if len(paths) == 0 {
 		allowedPaths = nil
-		configured = false
 		return
 	}
 	allowedPaths = set.NewSet(paths...)
-	configured = true
 }
 
 // IsAllowed returns true if the given path matches any of the allowed paths.
@@ -32,10 +29,13 @@ func Set(paths []string) {
 // prefix is allowed). Entries without a trailing "/" require an exact match.
 // If no paths have been configured, all paths are allowed for backward
 // compatibility.
+//
+// The caller must pass a pure path (no query string); IsAllowed does not strip
+// query parameters.
 func IsAllowed(path string) bool {
 	mutex.RLock()
 	defer mutex.RUnlock()
-	if !configured {
+	if allowedPaths == nil {
 		return true
 	}
 	for allowed := range allowedPaths {
@@ -55,5 +55,4 @@ func Reset() {
 	mutex.Lock()
 	defer mutex.Unlock()
 	allowedPaths = nil
-	configured = false
 }
