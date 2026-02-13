@@ -4365,6 +4365,11 @@
                 "id": 17,
                 "name": "instructions",
                 "type": "string"
+              },
+              {
+                "id": 18,
+                "name": "is_custom",
+                "type": "bool"
               }
             ],
             "maps": [

@@ -740,6 +740,7 @@ func (m *ComplianceOperatorRuleV2) CloneVT() *ComplianceOperatorRuleV2 {
 	r.Rationale = m.Rationale
 	r.Warning = m.Warning
 	r.Instructions = m.Instructions
+	r.IsCustom = m.IsCustom
 	if rhs := m.Labels; rhs != nil {
 		tmpContainer := make(map[string]string, len(rhs))
 		for k, v := range rhs {
@@ -2225,6 +2226,9 @@ func (this *ComplianceOperatorRuleV2) EqualVT(that *ComplianceOperatorRuleV2) bo
 		return false
 	}
 	if this.Instructions != that.Instructions {
+		return false
+	}
+	if this.IsCustom != that.IsCustom {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -4304,6 +4308,16 @@ func (m *ComplianceOperatorRuleV2) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.IsCustom {
+		i--
+		if m.IsCustom {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x70
+	}
 	if len(m.Instructions) > 0 {
 		i -= len(m.Instructions)
 		copy(dAtA[i:], m.Instructions)
@@ -5855,6 +5869,9 @@ func (m *ComplianceOperatorRuleV2) SizeVT() (n int) {
 	l = len(m.Instructions)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.IsCustom {
+		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -10824,6 +10841,26 @@ func (m *ComplianceOperatorRuleV2) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Instructions = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 14:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsCustom", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsCustom = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -17892,6 +17929,26 @@ func (m *ComplianceOperatorRuleV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.Instructions = stringValue
 			iNdEx = postIndex
+		case 14:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsCustom", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsCustom = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

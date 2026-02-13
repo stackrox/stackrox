@@ -612,6 +612,7 @@ func (x *ComplianceOperatorProfileV2) GetProfileRefId() string {
 	return ""
 }
 
+// Next tag: 19
 type ComplianceOperatorRuleV2 struct {
 	state         protoimpl.MessageState          `protogen:"open.v1"`
 	Id            string                          `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
@@ -631,6 +632,7 @@ type ComplianceOperatorRuleV2 struct {
 	RuleRefId     string                          `protobuf:"bytes,15,opt,name=rule_ref_id,json=ruleRefId,proto3" json:"rule_ref_id,omitempty" search:"Rule Ref ID,hidden" sql:"type(uuid)"` // @gotags: search:"Rule Ref ID,hidden" sql:"type(uuid)"
 	ParentRule    string                          `protobuf:"bytes,16,opt,name=parent_rule,json=parentRule,proto3" json:"parent_rule,omitempty"`
 	Instructions  string                          `protobuf:"bytes,17,opt,name=instructions,proto3" json:"instructions,omitempty"`
+	IsCustom      bool                            `protobuf:"varint,18,opt,name=is_custom,json=isCustom,proto3" json:"is_custom,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -782,6 +784,13 @@ func (x *ComplianceOperatorRuleV2) GetInstructions() string {
 		return x.Instructions
 	}
 	return ""
+}
+
+func (x *ComplianceOperatorRuleV2) GetIsCustom() bool {
+	if x != nil {
+		return x.IsCustom
+	}
+	return false
 }
 
 // Next Tag: 4
@@ -2862,7 +2871,7 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a#\n" +
 	"\x04Rule\x12\x1b\n" +
-	"\trule_name\x18\x01 \x01(\tR\bruleName\"\xe6\x06\n" +
+	"\trule_name\x18\x01 \x01(\tR\bruleName\"\x83\a\n" +
 	"\x18ComplianceOperatorRuleV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\arule_id\x18\x02 \x01(\tR\x06ruleId\x12\x12\n" +
@@ -2883,7 +2892,8 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\vrule_ref_id\x18\x0f \x01(\tR\truleRefId\x12\x1f\n" +
 	"\vparent_rule\x18\x10 \x01(\tR\n" +
 	"parentRule\x12\"\n" +
-	"\finstructions\x18\x11 \x01(\tR\finstructions\x1a9\n" +
+	"\finstructions\x18\x11 \x01(\tR\finstructions\x12\x1b\n" +
+	"\tis_custom\x18\x12 \x01(\bR\bisCustom\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +

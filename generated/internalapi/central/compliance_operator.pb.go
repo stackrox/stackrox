@@ -1138,7 +1138,7 @@ func (x *ComplianceOperatorProfileV2) GetValues() []string {
 }
 
 // ComplianceOperatorRuleV2 is a message from Sensor (to Central) representing a compliance check rule.
-// Next tag: 14
+// Next tag: 15
 type ComplianceOperatorRuleV2 struct {
 	state         protoimpl.MessageState          `protogen:"open.v1"`
 	RuleId        string                          `protobuf:"bytes,1,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
@@ -1154,6 +1154,7 @@ type ComplianceOperatorRuleV2 struct {
 	Fixes         []*ComplianceOperatorRuleV2_Fix `protobuf:"bytes,11,rep,name=fixes,proto3" json:"fixes,omitempty"`
 	Warning       string                          `protobuf:"bytes,12,opt,name=warning,proto3" json:"warning,omitempty"`
 	Instructions  string                          `protobuf:"bytes,13,opt,name=instructions,proto3" json:"instructions,omitempty"`
+	IsCustom      bool                            `protobuf:"varint,14,opt,name=is_custom,json=isCustom,proto3" json:"is_custom,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1277,6 +1278,13 @@ func (x *ComplianceOperatorRuleV2) GetInstructions() string {
 		return x.Instructions
 	}
 	return ""
+}
+
+func (x *ComplianceOperatorRuleV2) GetIsCustom() bool {
+	if x != nil {
+		return x.IsCustom
+	}
+	return false
 }
 
 type ComplianceOperatorScanV2 struct {
@@ -2789,7 +2797,7 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a#\n" +
 	"\x04Rule\x12\x1b\n" +
-	"\trule_name\x18\x01 \x01(\tR\bruleName\"\xe5\x05\n" +
+	"\trule_name\x18\x01 \x01(\tR\bruleName\"\x82\x06\n" +
 	"\x18ComplianceOperatorRuleV2\x12\x17\n" +
 	"\arule_id\x18\x01 \x01(\tR\x06ruleId\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12\x12\n" +
@@ -2804,7 +2812,8 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	" \x01(\tR\trationale\x12;\n" +
 	"\x05fixes\x18\v \x03(\v2%.central.ComplianceOperatorRuleV2.FixR\x05fixes\x12\x18\n" +
 	"\awarning\x18\f \x01(\tR\awarning\x12\"\n" +
-	"\finstructions\x18\r \x01(\tR\finstructions\x1a9\n" +
+	"\finstructions\x18\r \x01(\tR\finstructions\x12\x1b\n" +
+	"\tis_custom\x18\x0e \x01(\bR\bisCustom\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +

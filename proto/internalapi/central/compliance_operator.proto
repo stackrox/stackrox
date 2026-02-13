@@ -197,7 +197,7 @@ message ComplianceOperatorProfileV2 {
 }
 
 // ComplianceOperatorRuleV2 is a message from Sensor (to Central) representing a compliance check rule.
-// Next tag: 14
+// Next tag: 15
 message ComplianceOperatorRuleV2 {
   string rule_id = 1;
   string id = 2;
@@ -216,6 +216,8 @@ message ComplianceOperatorRuleV2 {
   repeated Fix fixes = 11;
   string warning = 12;
   string instructions = 13;
+
+  bool is_custom = 14;
 }
 
 message ComplianceOperatorScanV2 {
