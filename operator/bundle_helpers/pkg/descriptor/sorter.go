@@ -77,16 +77,13 @@ func fixDescriptorOrderMap(descriptors []any) {
 }
 
 // getParentPath extracts the parent path from a descriptor path.
-// Mimics Python: f'.{d["path"]}'.rsplit('.', 1)[0]
+// Returns everything before the last '.', or empty string if no '.' exists.
 func getParentPath(path string) string {
-	// Add a '.' in front for simplicity
-	fullPath := "." + path
-	// Split by last '.' and take the first part
-	lastDot := strings.LastIndex(fullPath, ".")
+	lastDot := strings.LastIndex(path, ".")
 	if lastDot == -1 {
 		return ""
 	}
-	return fullPath[:lastDot]
+	return path[:lastDot]
 }
 
 // getDescriptorPathMap extracts the 'path' field from a descriptor map.
@@ -149,11 +146,8 @@ func allowRelativeFieldDependenciesMap(descriptors []any) {
 			}
 
 			// Convert relative to absolute
-			// Mimics Python: f'.{d["path"]}'.rsplit('.', 1)[0][1:] + field
+			// Get parent path and concatenate with relative field
 			parentPath := getParentPath(path)
-			if len(parentPath) > 0 {
-				parentPath = parentPath[1:] // Remove leading '.'
-			}
 			absoluteField := parentPath + field
 
 			// Reconstruct the x-descriptor
