@@ -76,15 +76,6 @@ func PatchCSV(doc map[string]any, opts PatchOptions) error {
 		}
 	}
 
-	// Calculate previous Y-Stream
-	previousYStream, err := GetPreviousYStream(opts.Version)
-	if err != nil {
-		return err
-	}
-
-	// Set olm.skipRange
-	annotations["olm.skipRange"] = fmt.Sprintf(">= %s < %s", previousYStream, opts.Version)
-
 	// Add multi-arch labels
 	if metadata["labels"] == nil {
 		metadata["labels"] = make(map[string]any)
@@ -97,23 +88,20 @@ func PatchCSV(doc map[string]any, opts PatchOptions) error {
 		labels[fmt.Sprintf("operatorframework.io/arch.%s", arch)] = "supported"
 	}
 
-	// Parse skips
-	skips, err := ProcessSkips(rawName+".v", spec)
-	if err != nil {
-		return err
-	}
-
-	// Calculate replaced version
-	replacedVersion, err := CalculateReplacedVersion(
+	// Calculate previous Y-stream and replaced version
+	previousYStream, replacedVersion, err := CalculateReplacedVersionForCSV(
 		opts.Version,
 		opts.FirstVersion,
-		previousYStream,
-		skips,
 		opts.Unreleased,
+		rawName+".v",
+		spec,
 	)
 	if err != nil {
 		return err
 	}
+
+	// Set olm.skipRange
+	annotations["olm.skipRange"] = fmt.Sprintf(">= %s < %s", previousYStream, opts.Version)
 
 	if replacedVersion != nil {
 		spec["replaces"] = fmt.Sprintf("%s.v%s", rawName, replacedVersion.String())
@@ -257,4 +245,39 @@ func ProcessSkips(prefix string, spec map[string]any) ([]XyzVersion, error) {
 		}
 	}
 	return skips, nil
+}
+
+// CalculateReplacedVersionForCSV encapsulates the common logic for calculating
+// the replaced version from a CSV document. It returns both the previous
+// Y-stream version (used for skipRange) and the calculated replaced version.
+func CalculateReplacedVersionForCSV(
+	version, firstVersion, unreleased string,
+	operatorNamePrefix string,
+	spec map[string]any,
+) (previousYStream string, replacedVersion *XyzVersion, err error) {
+	// Parse skips
+	skips, err := ProcessSkips(operatorNamePrefix, spec)
+	if err != nil {
+		return "", nil, err
+	}
+
+	// Calculate previous Y-Stream
+	previousYStream, err = GetPreviousYStream(version)
+	if err != nil {
+		return "", nil, err
+	}
+
+	// Calculate replaced version
+	replacedVersion, err = CalculateReplacedVersion(
+		version,
+		firstVersion,
+		previousYStream,
+		skips,
+		unreleased,
+	)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return previousYStream, replacedVersion, nil
 }
