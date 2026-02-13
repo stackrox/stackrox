@@ -2,5 +2,16 @@
   "base": {
     "name": "master",
     "hash": "300a724cee3c409a32bb4424c90df64bc28b28e8"
+  },
+  "upstream": {
+    "branch": "master-base/gualvare/ROX-31226-custom-rules-protos"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 19032,
+        "gqlID": "PR_kwDOGd6UEM7DsJ_5"
+      }
+    }
   }
 }
