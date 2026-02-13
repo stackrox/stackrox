@@ -147,12 +147,19 @@ func injectRelatedImageEnvVars(spec map[string]any) error {
 }
 
 func constructRelatedImages(spec map[string]any, managerImage string) error {
+	if managerImage == "" {
+		return errors.New("managerImage cannot be empty")
+	}
+
 	relatedImages := make([]map[string]any, 0)
 
 	// Collect all RELATED_IMAGE_* env vars
 	for _, envVar := range os.Environ() {
 		if strings.HasPrefix(envVar, "RELATED_IMAGE_") {
 			parts := strings.SplitN(envVar, "=", 2)
+			if len(parts) != 2 {
+				return fmt.Errorf("malformed RELATED_IMAGE environment variable: %s", envVar)
+			}
 			name := strings.TrimPrefix(parts[0], "RELATED_IMAGE_")
 			name = strings.ToLower(name)
 			image := parts[1]
