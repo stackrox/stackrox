@@ -8,27 +8,27 @@ import (
 )
 
 // FixCSVDescriptorsMap processes all CRDs in a CSV and fixes their specDescriptors.
-// This function works with map[string]interface{} to match Python's behavior.
-func FixCSVDescriptorsMap(csvDoc map[string]interface{}) error {
+// This function works with map[string]any to match Python's behavior.
+func FixCSVDescriptorsMap(csvDoc map[string]any) error {
 	// Navigate to spec.customresourcedefinitions.owned
-	spec, ok := csvDoc["spec"].(map[string]interface{})
+	spec, ok := csvDoc["spec"].(map[string]any)
 	if !ok {
 		return errors.New("spec not found or not a map")
 	}
 
-	crds, ok := spec["customresourcedefinitions"].(map[string]interface{})
+	crds, ok := spec["customresourcedefinitions"].(map[string]any)
 	if !ok {
 		return errors.New("customresourcedefinitions not found or not a map")
 	}
 
-	owned, ok := crds["owned"].([]interface{})
+	owned, ok := crds["owned"].([]any)
 	if !ok {
 		return errors.New("owned not found or not a list")
 	}
 
 	// Process each CRD
 	for _, crdItem := range owned {
-		crd, ok := crdItem.(map[string]interface{})
+		crd, ok := crdItem.(map[string]any)
 		if !ok {
 			continue
 		}
@@ -42,14 +42,14 @@ func FixCSVDescriptorsMap(csvDoc map[string]interface{}) error {
 }
 
 // processSpecDescriptorsMap processes specDescriptors for a single CRD.
-func processSpecDescriptorsMap(crd map[string]interface{}) error {
+func processSpecDescriptorsMap(crd map[string]any) error {
 	descs, ok := crd["specDescriptors"]
 	if !ok {
 		// No specDescriptors, that's OK
 		return nil
 	}
 
-	descriptors, ok := descs.([]interface{})
+	descriptors, ok := descs.([]any)
 	if !ok {
 		return errors.New("specDescriptors is not a list")
 	}
@@ -66,7 +66,7 @@ func processSpecDescriptorsMap(crd map[string]interface{}) error {
 // fixDescriptorOrderMap performs a stable sort based on the parent path.
 // This ensures children always come after their parents.
 // Mimics Python: descriptors.sort(key=lambda d: f'.{d["path"]}'.rsplit('.', 1)[0])
-func fixDescriptorOrderMap(descriptors []interface{}) {
+func fixDescriptorOrderMap(descriptors []any) {
 	sort.SliceStable(descriptors, func(i, j int) bool {
 		pathI := getDescriptorPathMap(descriptors[i])
 		pathJ := getDescriptorPathMap(descriptors[j])
@@ -90,8 +90,8 @@ func getParentPath(path string) string {
 }
 
 // getDescriptorPathMap extracts the 'path' field from a descriptor map.
-func getDescriptorPathMap(desc interface{}) string {
-	descMap, ok := desc.(map[string]interface{})
+func getDescriptorPathMap(desc any) string {
+	descMap, ok := desc.(map[string]any)
 	if !ok {
 		return ""
 	}
@@ -105,9 +105,9 @@ func getDescriptorPathMap(desc interface{}) string {
 }
 
 // allowRelativeFieldDependenciesMap converts relative field dependency paths to absolute.
-func allowRelativeFieldDependenciesMap(descriptors []interface{}) {
+func allowRelativeFieldDependenciesMap(descriptors []any) {
 	for _, desc := range descriptors {
-		descMap, ok := desc.(map[string]interface{})
+		descMap, ok := desc.(map[string]any)
 		if !ok {
 			continue
 		}
@@ -118,7 +118,7 @@ func allowRelativeFieldDependenciesMap(descriptors []interface{}) {
 			continue
 		}
 
-		xDescs, ok := xDescsRaw.([]interface{})
+		xDescs, ok := xDescsRaw.([]any)
 		if !ok {
 			continue
 		}
