@@ -976,6 +976,32 @@ func (s *storeImpl) GetImagesIdAndDigestView(ctx context.Context, q *v1.Query) (
 	return results, err
 }
 
+// GetListImagesView retrieves the fields needed for ListImage responses.
+func (s *storeImpl) GetListImagesView(ctx context.Context, q *v1.Query) ([]*views.ListImageV2View, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Search, "ListImagesView")
+
+	q = s.applyDefaultSort(q)
+
+	selects := []*v1.QuerySelect{
+		search.NewQuerySelect(search.ImageSHA).Proto(),
+		search.NewQuerySelect(search.ImageName).Proto(),
+		search.NewQuerySelect(search.ComponentCount).Proto(),
+		search.NewQuerySelect(search.ImageCVECount).Proto(),
+		search.NewQuerySelect(search.FixableCVECount).Proto(),
+		search.NewQuerySelect(search.ImageCreatedTime).Proto(),
+		search.NewQuerySelect(search.LastUpdatedTime).Proto(),
+	}
+	cloned := q.CloneVT()
+	cloned.Selects = selects
+
+	var results []*views.ListImageV2View
+	err := pgSearch.RunSelectRequestForSchemaFn[views.ListImageV2View](ctx, s.db, pkgSchema.ImagesV2Schema, cloned, func(row *views.ListImageV2View) error {
+		results = append(results, row)
+		return nil
+	})
+	return results, err
+}
+
 // UpdateVulnState updates the state of a vulnerability in the store.
 func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Update, "UpdateVulnState")

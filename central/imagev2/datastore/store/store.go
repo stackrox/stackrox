@@ -36,4 +36,6 @@ type Store interface {
 	GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*views.ImageV2RiskView, error)
 	// GetImagesIdAndDigestView retrieves an image id and digest for pruning purposes
 	GetImagesIdAndDigestView(ctx context.Context, q *v1.Query) ([]*views.ImageIDAndDigestView, error)
+	// GetListImagesView retrieves the fields needed for ListImage responses
+	GetListImagesView(ctx context.Context, q *v1.Query) ([]*views.ListImageV2View, error)
 }
