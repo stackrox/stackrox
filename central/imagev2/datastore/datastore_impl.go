@@ -107,6 +107,24 @@ func (ds *datastoreImpl) SearchImages(ctx context.Context, q *v1.Query) ([]*v1.S
 	return search.ResultsToSearchResultProtos(results, &ImageSearchResultConverter{}), nil
 }
 
+func (ds *datastoreImpl) SearchListImages(ctx context.Context, q *v1.Query) ([]*storage.ListImage, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ImageV2", "SearchListImages")
+
+	results, err := ds.storage.GetListImagesView(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	imgs := make([]*storage.ListImage, 0, len(results))
+	for _, r := range results {
+		img := r.ToListImage()
+		img.Priority = ds.imageRanker.GetRankForID(r.Digest)
+		imgs = append(imgs, img)
+	}
+
+	return imgs, nil
+}
+
 // TODO(ROX-29943): Eliminate unnecessary 2 pass database queries
 // SearchRawImages delegates to the underlying searcher.
 func (ds *datastoreImpl) SearchRawImages(ctx context.Context, q *v1.Query) ([]*storage.ImageV2, error) {

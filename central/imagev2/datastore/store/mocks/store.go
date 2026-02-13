@@ -165,6 +165,21 @@ func (mr *MockStoreMockRecorder) GetImagesRiskView(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagesRiskView", reflect.TypeOf((*MockStore)(nil).GetImagesRiskView), ctx, q)
 }
 
+// GetListImagesView mocks base method.
+func (m *MockStore) GetListImagesView(ctx context.Context, q *v1.Query) ([]*views.ListImageV2View, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetListImagesView", ctx, q)
+	ret0, _ := ret[0].([]*views.ListImageV2View)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetListImagesView indicates an expected call of GetListImagesView.
+func (mr *MockStoreMockRecorder) GetListImagesView(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetListImagesView", reflect.TypeOf((*MockStore)(nil).GetListImagesView), ctx, q)
+}
+
 // GetManyImageMetadata mocks base method.
 func (m *MockStore) GetManyImageMetadata(ctx context.Context, id []string) ([]*storage.ImageV2, error) {
 	m.ctrl.T.Helper()
@@ -235,4 +250,18 @@ func (m *MockStore) WalkByQuery(ctx context.Context, q *v1.Query, fn func(*stora
 func (mr *MockStoreMockRecorder) WalkByQuery(ctx, q, fn any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkByQuery", reflect.TypeOf((*MockStore)(nil).WalkByQuery), ctx, q, fn)
+}
+
+// WalkMetadataByQuery mocks base method.
+func (m *MockStore) WalkMetadataByQuery(ctx context.Context, q *v1.Query, fn func(*storage.ImageV2) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WalkMetadataByQuery", ctx, q, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WalkMetadataByQuery indicates an expected call of WalkMetadataByQuery.
+func (mr *MockStoreMockRecorder) WalkMetadataByQuery(ctx, q, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkMetadataByQuery", reflect.TypeOf((*MockStore)(nil).WalkMetadataByQuery), ctx, q, fn)
 }

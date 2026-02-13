@@ -897,6 +897,18 @@ func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image 
 	return nil
 }
 
+func (s *storeImpl) WalkMetadataByQuery(ctx context.Context, q *v1.Query, fn func(image *storage.ImageV2) error) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.WalkMetadataByQuery, "Image")
+
+	q = s.applyDefaultSort(q)
+
+	err := pgSearch.RunCursorQueryForSchemaFn(ctx, pkgSchema.ImagesV2Schema, q, s.db, fn)
+	if err != nil {
+		return errors.Wrap(err, "cursor by query")
+	}
+	return nil
+}
+
 // GetImageMetadata returns the image without scan/component data.
 func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.ImageV2, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageV2Metadata")
@@ -961,6 +973,32 @@ func (s *storeImpl) GetImagesIdAndDigestView(ctx context.Context, q *v1.Query) (
 	if err != nil {
 		log.Errorf("unable to retrieve image id and digests: %v", err)
 	}
+	return results, err
+}
+
+// GetListImagesView retrieves the fields needed for ListImage responses.
+func (s *storeImpl) GetListImagesView(ctx context.Context, q *v1.Query) ([]*views.ListImageV2View, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Search, "ListImagesView")
+
+	q = s.applyDefaultSort(q)
+
+	selects := []*v1.QuerySelect{
+		search.NewQuerySelect(search.ImageSHA).Proto(),
+		search.NewQuerySelect(search.ImageName).Proto(),
+		search.NewQuerySelect(search.ComponentCount).Proto(),
+		search.NewQuerySelect(search.ImageCVECount).Proto(),
+		search.NewQuerySelect(search.FixableCVECount).Proto(),
+		search.NewQuerySelect(search.ImageCreatedTime).Proto(),
+		search.NewQuerySelect(search.LastUpdatedTime).Proto(),
+	}
+	cloned := q.CloneVT()
+	cloned.Selects = selects
+
+	var results []*views.ListImageV2View
+	err := pgSearch.RunSelectRequestForSchemaFn[views.ListImageV2View](ctx, s.db, pkgSchema.ImagesV2Schema, cloned, func(row *views.ListImageV2View) error {
+		results = append(results, row)
+		return nil
+	})
 	return results, err
 }
 

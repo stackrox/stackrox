@@ -88,6 +88,7 @@ export const imageV2DetailsFragment = gql`
                 verificationTime
                 verifiedImageReferences
                 verifierId
+                verifierName
             }
         }
         baseImage {
