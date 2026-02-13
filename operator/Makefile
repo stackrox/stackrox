@@ -347,8 +347,9 @@ build/Dockerfile.gen: Dockerfile
 
 .PHONY: docker-build
 docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with the operator.
-	docker buildx use default
-	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
+	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker buildx build \
+		--platform linux/$(or $(GOARCH),amd64) \
+		--provenance=false \
 		--load \
 		-t ${IMG} \
 		$(if $(GOARCH),--build-arg TARGET_ARCH=$(GOARCH)) \

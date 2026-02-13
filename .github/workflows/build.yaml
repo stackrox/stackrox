@@ -699,7 +699,15 @@ jobs:
           CGO_ENABLED=0 GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ build docker-build
 
       - name: Check that Operator image is runnable
-        run: docker run --rm --platform linux/${{ matrix.arch }} "quay.io/${QUAY_ORG}/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
+        run: |
+          IMAGE="quay.io/${QUAY_ORG}/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)"
+          echo "Checking image: $IMAGE"
+          echo "=== docker images ==="
+          docker images | grep stackrox-operator || echo "Image NOT found in docker images output"
+          echo "=== docker image inspect ==="
+          docker image inspect "$IMAGE" --format 'OS={{.Os}} Arch={{.Architecture}}' || echo "Image inspect FAILED"
+          echo "=== docker run ==="
+          docker run --rm --platform linux/${{ matrix.arch }} "$IMAGE" --help
 
       - name: Push image
         # Skip for external contributions.
