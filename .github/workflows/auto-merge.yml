@@ -1,30 +1,97 @@
 name: auto-merge
 
 on:
-  pull_request_target:
-    types:
-    - labeled
+  schedule:
+    - cron: '*/15 * * * *'  # Every 15 minutes
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: auto-merge
+  cancel-in-progress: false
 
 jobs:
-  auto-merge-minor:
-    name: Auto-merge semver minor and patch bumps
+  auto-merge:
+    name: Enable auto-merge for eligible PRs
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]' && github.event.label.name == 'auto-merge'
-    steps:
-    - uses: ahmadnassri/action-dependabot-auto-merge@v2.6
-      with:
-        github-token: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
-        command: "squash and merge"
-        approve: true
-        target: minor
+    if: github.repository_owner == 'stackrox'
 
-  auto-merge-any:
-    name: Auto-merge any version bumps
-    runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]' && github.event.label.name == 'auto-merge-any'
     steps:
-    - uses: ahmadnassri/action-dependabot-auto-merge@v2.6
-      with:
-        github-token: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
-        command: "squash and merge"
-        approve: true
+      - name: Find and process PRs with auto-merge labels
+        env:
+          GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # Extract repo owner and name
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+
+          echo "::notice::Querying PRs with auto-merge labels"
+
+          # Get all open PRs with auto-merge or auto-merge-any labels
+          PR_DATA=$(gh pr list \
+            --repo "${{ github.repository }}" \
+            --state open \
+            --limit 50 \
+            --json number,labels,isDraft,mergeable,author \
+            --jq ".[] | select(
+              .isDraft == false and
+              .mergeable == \"MERGEABLE\" and
+              (.labels | map(.name) | any(. == \"auto-merge\" or . == \"auto-merge-any\"))
+            ) | {number, labels: [.labels[].name], author: .author.login}")
+
+          if [[ -z "$PR_DATA" ]]; then
+            echo "::notice::No eligible PRs found with auto-merge labels"
+            exit 0
+          fi
+
+          # Process each PR
+          echo "$PR_DATA" | jq -c '.' | while read -r PR_JSON; do
+            PR_NUMBER=$(echo "$PR_JSON" | jq -r '.number')
+            AUTHOR=$(echo "$PR_JSON" | jq -r '.author')
+            LABELS=$(echo "$PR_JSON" | jq -r '.labels | join(",")')
+
+            echo "::notice::Processing PR #$PR_NUMBER (author=$AUTHOR, labels=$LABELS)"
+
+            # Check if all checks have passed using GraphQL statusCheckRollup
+            STATUS=$(gh api graphql -F owner="$OWNER" -F repo="$REPO" -F number="$PR_NUMBER" -f query="
+              query(\$owner: String!, \$repo: String!, \$number: Int!) {
+                repository(owner: \$owner, name: \$repo) {
+                  pullRequest(number: \$number) {
+                    commits(last: 1) {
+                      nodes {
+                        commit {
+                          statusCheckRollup {
+                            state
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            " --jq ".data.repository.pullRequest.commits.nodes[0].commit.statusCheckRollup.state" || echo "null")
+
+            echo "::notice::PR #$PR_NUMBER status check rollup: $STATUS"
+
+            # Only proceed if all checks passed
+            if [[ "$STATUS" != "SUCCESS" ]]; then
+              echo "::warning::Skipping PR #$PR_NUMBER - checks not passed (status: $STATUS)"
+              continue
+            fi
+
+            # All conditions met - enable auto-merge
+            echo "::notice::Approving PR #$PR_NUMBER"
+            gh pr review --repo "${{ github.repository }}" \
+              --approve "$PR_NUMBER" || true
+
+            echo "::notice::Enabling auto-merge for PR #$PR_NUMBER"
+            gh pr merge --repo "${{ github.repository }}" \
+              --auto --squash "$PR_NUMBER"
+
+            echo "::notice::✓ Auto-merge enabled for PR #$PR_NUMBER"
+          done
