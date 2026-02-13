@@ -123,9 +123,9 @@ func echoReplacedVersion(doc map[string]any, version, firstVersion, unreleased s
 		return errors.New("metadata.name is not a string")
 	}
 
-	rawName := "rhacs-operator.v"
+	rawName := "rhacs-operator"
 
-	if name != rawName+"0.0.1" {
+	if name != rawName+".v0.0.1" {
 		return fmt.Errorf("unexpected metadata.name format: %s", name)
 	}
 
