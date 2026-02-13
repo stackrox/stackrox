@@ -1006,7 +1006,7 @@ func (s *PolicyValidatorTestSuite) TestValidateDeploymentFileActivityEventSource
 				}),
 		},
 		{
-			description: "Deployment policy with File Path and FileOperation",
+			description: "Deployment policy with File Path and File Operation",
 			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_DEPLOYMENT_EVENT,
 				map[string]string{
 					fieldnames.FilePath:      "/etc/shadow",
@@ -1014,7 +1014,7 @@ func (s *PolicyValidatorTestSuite) TestValidateDeploymentFileActivityEventSource
 				}),
 		},
 		{
-			description: "Deployment policy with FileOperation but no file path",
+			description: "Deployment policy with File Operation but no file path",
 			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_DEPLOYMENT_EVENT,
 				map[string]string{
 					fieldnames.FileOperation: "open",
@@ -1157,7 +1157,7 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 			errExpected: true,
 		},
 		{
-			description: "Node policy with valid FileOperation field but no file path",
+			description: "Node policy with valid File Operation field but no File Path",
 			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
 				map[string]string{
 					fieldnames.FileOperation: "open",
@@ -1165,7 +1165,7 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 			errExpected: true,
 		},
 		{
-			description: "Node policy with FileOperation and valid File Path field",
+			description: "Node policy with File Operation and valid File Path field",
 			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
 				map[string]string{
 					fieldnames.FileOperation: "open",
@@ -1173,7 +1173,7 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 				}),
 		},
 		{
-			description: "Node policy with invalid FileOperation",
+			description: "Node policy with invalid File Operation",
 			p: booleanPolicyWithFields(storage.LifecycleStage_RUNTIME, storage.EventSource_NODE_EVENT,
 				map[string]string{
 					fieldnames.FileOperation: "execute",
@@ -1181,7 +1181,7 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 			errExpected: true,
 		},
 		{
-			description: "Node policy with FileOperation in wrong lifecycle stage (build)",
+			description: "Node policy with File Operation in wrong lifecycle stage (build)",
 			p: booleanPolicyWithFields(storage.LifecycleStage_BUILD, storage.EventSource_NODE_EVENT,
 				map[string]string{
 					fieldnames.FileOperation: "open",
@@ -1189,7 +1189,7 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 			errExpected: true,
 		},
 		{
-			description: "Node policy with FileOperation in wrong lifecycle stage (deploy)",
+			description: "Node policy with File Operation in wrong lifecycle stage (deploy)",
 			p: booleanPolicyWithFields(storage.LifecycleStage_DEPLOY, storage.EventSource_NODE_EVENT,
 				map[string]string{
 					fieldnames.FileOperation: "open",
