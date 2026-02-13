@@ -84,14 +84,13 @@ jobs:
               continue
             fi
 
-            # All conditions met - enable auto-merge
+            echo "::notice::Enabling auto-merge for PR #$PR_NUMBER"
+            gh pr merge --repo "${{ github.repository }}" \
+              --auto --squash "$PR_NUMBER"
             echo "::notice::Approving PR #$PR_NUMBER"
             gh pr review --repo "${{ github.repository }}" \
               --approve "$PR_NUMBER" || true
 
-            echo "::notice::Enabling auto-merge for PR #$PR_NUMBER"
-            gh pr merge --repo "${{ github.repository }}" \
-              --auto --squash "$PR_NUMBER"
 
             echo "::notice::✓ Auto-merge enabled for PR #$PR_NUMBER"
           done
