@@ -3,6 +3,7 @@ package csv
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 )
 
@@ -139,11 +140,6 @@ func CalculateReplacedVersion(current, first, previousYStream string, skips []Xy
 	currentReplace := initialReplace
 
 	// Skip over broken versions in the skips list
-	skipMap := make(map[string]bool)
-	for _, skip := range skips {
-		skipMap[skip.String()] = true
-	}
-
 	for {
 		// Check safety BEFORE incrementing
 		nextReplace := XyzVersion{X: currentReplace.X, Y: currentReplace.Y, Z: currentReplace.Z + 1}
@@ -151,7 +147,7 @@ func CalculateReplacedVersion(current, first, previousYStream string, skips []Xy
 			break
 		}
 
-		if !skipMap[currentReplace.String()] {
+		if !slices.Contains(skips, currentReplace) {
 			break
 		}
 
