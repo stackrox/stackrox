@@ -287,8 +287,12 @@ test-upgrade: kuttl bundle-post-process ## Run OLM-based operator upgrade tests.
 .PHONY: test-bundle-helpers
 test-bundle-helpers: ## Run Python unit tests against helper scripts.
 	set -euo pipefail ;\
-	$(ACTIVATE_PYTHON) ;\
-	pytest -v bundle_helpers
+	if [ "$${USE_GO_BUNDLE_HELPER:-true}" != "true" ]; then \
+		$(ACTIVATE_PYTHON) ;\
+		pytest -v bundle_helpers ;\
+	else \
+		echo "Skipping Python tests (USE_GO_BUNDLE_HELPER=true)" ;\
+	fi
 
 .PHONY: stackrox-image-pull-secret
 stackrox-image-pull-secret: ## Create default image pull secret for StackRox images on Quay.io. Used by Helm chart.
@@ -477,6 +481,7 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 # Therefore we append ".extra" file to the end of bundle's dockerfile.
 	cat bundle.Dockerfile.extra >> bundle.Dockerfile
 # Fix the orders in the specDescriptors (children must not appear before their parents).
+# Note: Python venv is always needed because the Go implementation uses yaml-normalizer.py
 	set -euo pipefail ;\
 	$(ACTIVATE_PYTHON) ;\
 	./bundle_helpers/dispatch.sh fix-spec-descriptor-order \
@@ -490,6 +495,7 @@ RELATED_IMAGES_MODE ?= omit
 
 .PHONY: bundle-post-process
 bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file to include correct operator versions, etc.
+# Note: Python venv is always needed because dispatch.sh may use yaml-normalizer.py
 	set -euo pipefail ;\
 	$(ACTIVATE_PYTHON) ;\
 	first_version=3.62.0 `# 3.62.0 is the first operator version ever released` ;\
