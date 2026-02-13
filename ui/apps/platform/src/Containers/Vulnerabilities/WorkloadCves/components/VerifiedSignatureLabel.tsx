@@ -1,9 +1,18 @@
 import type { CSSProperties } from 'react';
-import { Flex, FlexItem, Label, List, ListItem, Popover } from '@patternfly/react-core';
+import {
+    ClipboardCopy,
+    Flex,
+    FlexItem,
+    Label,
+    List,
+    ListItem,
+    Popover,
+} from '@patternfly/react-core';
 import { CheckCircleIcon } from '@patternfly/react-icons';
 
 import PopoverBodyContent from 'Components/PopoverBodyContent';
 import type { SignatureVerificationResult } from '../../types';
+import SignatureIntegrationLink from './SignatureIntegrationLink';
 
 export function getVerifiedSignatureInResults(
     results: SignatureVerificationResult[] | null | undefined
@@ -26,6 +35,10 @@ const styleList = {
     marginTop: 'var(--pf-v5-c-list--li--MarginTop)',
 } as CSSProperties;
 
+const clipboardCopyMaxWidthStyle = {
+    '--pf-v5-u-max-width--MaxWidth': '64ch',
+} as CSSProperties;
+
 function VerifiedSignatureLabel({
     verifiedSignatureResults,
     className,
@@ -46,10 +59,22 @@ function VerifiedSignatureLabel({
                         >
                             {verifiedSignatureResults?.map((result) => (
                                 <FlexItem key={result.verifierId}>
-                                    <strong>{result.verifierId}</strong>
+                                    <strong>
+                                        <SignatureIntegrationLink result={result} />
+                                    </strong>
                                     <List style={styleList}>
                                         {result.verifiedImageReferences?.map((name) => (
-                                            <ListItem key={name}>{name}</ListItem>
+                                            <ListItem key={name}>
+                                                <ClipboardCopy
+                                                    className="pf-v5-u-max-width pf-v5-u-display-inline-flex pf-v5-u-align-items-center"
+                                                    style={clipboardCopyMaxWidthStyle}
+                                                    clickTip="Copied!"
+                                                    hoverTip="Copy"
+                                                    variant="inline-compact"
+                                                >
+                                                    {name}
+                                                </ClipboardCopy>
+                                            </ListItem>
                                         ))}
                                     </List>
                                 </FlexItem>

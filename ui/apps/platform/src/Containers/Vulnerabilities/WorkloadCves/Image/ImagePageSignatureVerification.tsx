@@ -1,13 +1,11 @@
 import { Divider, Flex, FlexItem, Label, PageSection, Text } from '@patternfly/react-core';
 import { Table, TableText, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
-import { Link } from 'react-router-dom';
-import { integrationsPath } from 'routePaths';
 
 import DateDistance from 'Components/DateDistance';
-import useIntegrationPermissions from 'Containers/Integrations/hooks/useIntegrationPermissions';
 
 import type { SignatureVerificationResult, VerifiedStatus } from '../../types';
+import SignatureIntegrationLink from '../components/SignatureIntegrationLink';
 
 export type ImagePageSignatureVerificationProps = {
     results?: SignatureVerificationResult[];
@@ -49,23 +47,6 @@ function getStatusMessage({ status, description }: SignatureVerificationResult) 
 }
 
 function ImagePageSignatureVerification({ results }: ImagePageSignatureVerificationProps) {
-    const permissions = useIntegrationPermissions();
-    const getIntegrationDetailsUrl = (verifierId: string): string => {
-        return `${integrationsPath}/signatureIntegrations/signature/view/${verifierId}`;
-    };
-
-    const renderIntegrationCell = (result: SignatureVerificationResult) => {
-        const displayName = result.verifierName || result.verifierId;
-
-        // Show as link only if user has permissions.
-        if (permissions.signatureIntegrations.read) {
-            return <Link to={getIntegrationDetailsUrl(result.verifierId)}>{displayName}</Link>;
-        }
-
-        // Fallback to plain text.
-        return displayName;
-    };
-
     return (
         <>
             <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
@@ -96,7 +77,7 @@ function ImagePageSignatureVerification({ results }: ImagePageSignatureVerificat
                                 >
                                     <Tr>
                                         <Td dataLabel="Integration">
-                                            {renderIntegrationCell(result)}
+                                            <SignatureIntegrationLink result={result} />
                                         </Td>
                                         <Td dataLabel="Status">{getStatusMessage(result)}</Td>
                                         <Td dataLabel="Verification time">
