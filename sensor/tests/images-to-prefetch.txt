@@ -11,6 +11,14 @@
 # Used by sensor/tests/resource/pod/yaml/nginx.yaml
 # Used by sensor/tests/resource/role/yaml/nginx.yaml
 # Used by sensor/tests/resource/service/yaml/nginx.yaml
+quay.io/rhacs-eng/qa-multi-arch@sha256:c3fac7e735043c29e20d73b964c581fc9e1ef15b1b9450b28d2a3c71773bd04e
+quay.io/rhacs-eng/qa-multi-arch@sha256:ed6ce89936f00491a4b049474d33c84fa43c5452182ad0dd9907a9098fe9a275
+quay.io/rhacs-eng/qa-multi-arch@sha256:6bf47794f923462389f5a2cda49cf5777f736db8563edc3ff78fb9d87e6e22ec
+quay.io/rhacs-eng/qa-multi-arch@sha256:3499b248965422b08b354b64ba137df10a0d0bc0b1381a1cb5441b34886b073c
+quay.io/rhacs-eng/qa-multi-arch@sha256:a2482cdd6375dda2d6f885182cc810aea2a75bb2766c14699fa0b61c92be679b
+quay.io/rhacs-eng/qa-multi-arch@sha256:85e0b669a7cc5f030063980d31eae63839d4de1eeccb4b8a95b0770b5e893ce9
+quay.io/rhacs-eng/qa-multi-arch@sha256:d58c14845a3f54527b5dc5a9d54b3e92c62e4912941ef95395136ae868aed4bb
+quay.io/rhacs-eng/qa-multi-arch@sha256:0e520ad2fb94088986252840f9b5d4c92e5aedeb2eded924290d176c5964feb8
 quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1
 
 # Used by sensor/tests/resource/pod/yaml/nginx-pod.yaml
@@ -23,4 +31,12 @@ quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1
 quay.io/rhacs-eng/qa:alpine-3.16.0
 
 # Used by sensor/tests/complianceoperator/yaml/co-deployment.yaml
+quay.io/rhacs-eng/qa-multi-arch-busybox@sha256:4fe8827f51a5e11bb83afa8227cbccb402df840d32c6b633b7ad079bc8144100
+quay.io/rhacs-eng/qa-multi-arch-busybox@sha256:abc043b5132f825e44eefffc35535b1f24bd3f1bb60b11943863563a46795fdc
+quay.io/rhacs-eng/qa-multi-arch-busybox@sha256:07717dd5f074de0cf4f7ca8f635cb63aef63d789f15a22ab482a3d27a0a1f881
+quay.io/rhacs-eng/qa-multi-arch-busybox@sha256:8dfe92e22300734a185375b6316d01aa1a2b0623d425a5e6e406771ba5642bf1
+quay.io/rhacs-eng/qa-multi-arch-busybox@sha256:3bdba83255bf7c575e31e129b2ddf1c0c32382e112cb051af6c5143c24a5ddbd
+quay.io/rhacs-eng/qa-multi-arch-busybox@sha256:bb87f507b42a6efe6f1d5382c826f914673a065f4d777b54b52f5414d688837a
+quay.io/rhacs-eng/qa-multi-arch-busybox@sha256:a09f03056efb5d3facb5077a9e58e83e9bba74ad4d343b2afa92c70b5ae01e2b
+quay.io/rhacs-eng/qa-multi-arch-busybox@sha256:0b671b6a323d86aa6165883f698b557ca257c3a3ffa1e3152ffb6467e7ac11b3
 quay.io/rhacs-eng/qa-multi-arch-busybox:1.30
