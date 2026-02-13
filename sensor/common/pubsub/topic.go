@@ -12,11 +12,11 @@ const (
 
 var (
 	topicToString = map[Topic]string{
-		DefaultTopic:                        "Default",
-		KubernetesDispatcherEventTopic:      "KubernetesDispatcherEvent",
-		FromCentralResolverEventTopic:       "FromCentralResolverEvent",
-		UnenrichedProcessIndicatorTopic:     "UnenrichedProcessIndicator",
-		EnrichedProcessIndicatorTopic:       "EnrichedProcessIndicator",
+		DefaultTopic:                    "Default",
+		KubernetesDispatcherEventTopic:  "KubernetesDispatcherEvent",
+		FromCentralResolverEventTopic:   "FromCentralResolverEvent",
+		UnenrichedProcessIndicatorTopic: "UnenrichedProcessIndicator",
+		EnrichedProcessIndicatorTopic:   "EnrichedProcessIndicator",
 	}
 )
 

@@ -52,13 +52,15 @@ func newBasePipeline(indicators chan *message.ExpiringMessage, enricher *enriche
 	}
 }
 
-func (b *basePipeline) Start() error {
+func (p *basePipeline) Start() error {
 	return nil
 }
 
-func (b *basePipeline) Stop() error {
-	b.cancelEnricherCtx(errors.New("pipeline shutdown"))
-	b.stopper.Flow().ReportStopped()
+func (p *basePipeline) Stop() error {
+	p.cancelEnricherCtx(errors.New("pipeline shutdown"))
+	p.stopper.Client().Stop()
+	_ = p.enricher.Stopped().Wait()
+	_ = p.stopper.Client().Stopped().Wait()
 	return nil
 }
 
@@ -151,16 +153,18 @@ func (p *channelPipeline) Start() error {
 	return errlist.ToError()
 }
 
-func (c *channelPipeline) sendIndicatorEvent() {
-	defer c.stopper.Flow().ReportStopped()
-	for indicator := range c.cm.GetOutput() {
-		if err := c.processEnrichedIndicator(NewEnrichedProcessIndicatorEvent(context.Background(), indicator)); err != nil {
+func (p *channelPipeline) sendIndicatorEvent() {
+	defer p.stopper.Flow().ReportStopped()
+	for indicator := range p.cm.GetOutput() {
+		if err := p.processEnrichedIndicator(NewEnrichedProcessIndicatorEvent(context.Background(), indicator)); err != nil {
 			log.Errorf("failed to process enriched indicator: %v", err)
 		}
 	}
 }
 
 func (p *channelPipeline) Stop() error {
+	close(p.enrichedIndicators)
+
 	errlist := errorhelpers.NewErrorList("stopping channel pipeline")
 	if err := p.basePipeline.Stop(); err != nil {
 		errlist.AddError(err)
@@ -242,6 +246,10 @@ func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntitie
 	} else {
 		log.Info("Process pipeline using legacy channel mode")
 		inner = newChannelPipeline(base, clusterEntities)
+	}
+
+	if err := inner.Start(); err != nil {
+		log.Error("Failed to start process pipeline:", err)
 	}
 
 	return &Pipeline{
