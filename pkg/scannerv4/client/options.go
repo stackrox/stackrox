@@ -1,6 +1,7 @@
 package client
 
 import (
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"net"
@@ -41,6 +42,7 @@ type options struct {
 	indexerOpts connOptions
 	matcherOpts connOptions
 	comboMode   bool
+	rootCAs     []*x509.Certificate
 }
 
 type ImageRegistryOpt struct {
@@ -138,6 +140,13 @@ func SkipMatcherTLSVerification(o *options) {
 func WithMatcherAddress(address string) Option {
 	return func(o *options) {
 		o.matcherOpts.address = address
+	}
+}
+
+// WithRootCAs specifies additional root CAs to trust when verifying the server's certificate.
+func WithRootCAs(certs ...*x509.Certificate) Option {
+	return func(o *options) {
+		o.rootCAs = append(o.rootCAs, certs...)
 	}
 }
 
