@@ -173,10 +173,8 @@ func (k *listenerImpl) handleAllEvents() {
 	if err != nil {
 		log.Errorf("Failed to check the availability of Compliance Operator resources: %v", err)
 	}
-	customRulesAvailable, err := complianceoperator.IsResourceAvailable(k.client.Kubernetes(), complianceoperator.CustomRule)
-	if err != nil {
-		log.Errorf("Failed to check the availability of Compliance Operator Custom Rules, they won't be tracked: %v", err)
-	}
+
+	var customRulesAvailable bool
 	if coAvailable {
 		log.Info("Initializing compliance operator informers")
 		complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceCheckResult.GroupVersionResource()).Informer()
@@ -186,6 +184,10 @@ func (k *listenerImpl) handleAllEvents() {
 		complianceSuiteInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceSuite.GroupVersionResource()).Informer()
 		complianceRemediationInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceRemediation.GroupVersionResource()).Informer()
 
+		customRulesAvailable, err = complianceoperator.IsResourceAvailable(k.client.Kubernetes(), complianceoperator.CustomRule)
+		if err != nil {
+			log.Errorf("Failed to check the availability of Compliance Operator Custom Rules, they won't be tracked: %v", err)
+		}
 		if customRulesAvailable {
 			complianceCustomRuleInformer = crdSharedInformerFactory.ForResource(complianceoperator.CustomRule.GroupVersionResource()).Informer()
 		}
