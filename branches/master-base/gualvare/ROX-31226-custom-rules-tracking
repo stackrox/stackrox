@@ -2,5 +2,16 @@
   "base": {
     "name": "master-base/gualvare/ROX-31226-custom-rules-protos",
     "hash": "51b14e84b713c63b51f3b600da6d7bc0943cb580"
+  },
+  "upstream": {
+    "branch": "master-base/gualvare/ROX-31226-custom-rules-tracking"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 19037,
+        "gqlID": "PR_kwDOGd6UEM7D94bb"
+      }
+    }
   }
 }
