@@ -61,6 +61,20 @@ func (u *updaterImpl) registerDiagnosticComplianceOperatorObjects(info *central.
 		}, k8sintrospect.ObjectConfig{
 			GVK: complianceoperator.Rule.GroupVersionKind(),
 		})
+		for _, resource := range complianceoperator.OptionalAPIResources {
+			isAvailable, err := complianceoperator.IsResourceAvailable(u.client, resource)
+			if err != nil {
+				log.Warnf("Error checking whether CRD %q exists in cluster, skipping adding to diagnostic bundles. Error: %s", resource.Name, err)
+				continue
+			}
+			if !isAvailable {
+				log.Infof("Optional Compliance Operator CRD %q not found, skipping adding to diagnostic bundles", resource.Name)
+				continue
+			}
+			cfg.Objects = append(cfg.Objects, k8sintrospect.ObjectConfig{
+				GVK: resource.GroupVersionKind(),
+			})
+		}
 		cfg.Namespaces = append(cfg.Namespaces, info.GetNamespace())
 		return cfg
 	}

@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8sapi"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/kubernetes"
 )
 
 var (
@@ -13,6 +14,9 @@ var (
 
 	// List of required compliance operator CRDs.
 	requiredAPIResources []k8sapi.APIResource
+
+	// List of optional compliance operator CRDs.
+	OptionalAPIResources []k8sapi.APIResource
 )
 
 // APIResources for compliance operator resources.
@@ -71,6 +75,12 @@ var (
 		Group:   GetGroupVersion().Group,
 		Version: GetGroupVersion().Version,
 	})
+	CustomRule = registerOptionalAPIResource(v1.APIResource{
+		Name:    "customrules",
+		Kind:    "CustomRule",
+		Group:   GetGroupVersion().Group,
+		Version: GetGroupVersion().Version,
+	})
 )
 
 // GetGroupVersion return the group version that uniquely represents the API set of compliance operator CRs.
@@ -84,7 +94,27 @@ func GetRequiredResources() []k8sapi.APIResource {
 }
 
 func registerAPIResource(resource v1.APIResource) k8sapi.APIResource {
-	r := k8sapi.APIResource{resource}
+	r := k8sapi.APIResource{APIResource: resource}
 	requiredAPIResources = append(requiredAPIResources, r)
 	return r
+}
+
+func registerOptionalAPIResource(resource v1.APIResource) k8sapi.APIResource {
+	r := k8sapi.APIResource{APIResource: resource}
+	OptionalAPIResources = append(OptionalAPIResources, r)
+	return r
+}
+
+// IsResourceAvailable checks if a CRD is available in the cluster
+func IsResourceAvailable(client kubernetes.Interface, resource k8sapi.APIResource) (bool, error) {
+	resourceList, err := client.Discovery().ServerResourcesForGroupVersion(GetGroupVersion().String())
+	if err != nil {
+		return false, err
+	}
+	for _, r := range resourceList.APIResources {
+		if r.Name == resource.Name {
+			return true, nil
+		}
+	}
+	return false, nil
 }
