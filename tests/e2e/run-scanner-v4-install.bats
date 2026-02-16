@@ -1438,6 +1438,15 @@ EOT
         )
     fi
 
+    # Add environment variable overrides if set
+    local extra_helm_args=()
+    if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
+        extra_helm_args+=(--set "customize.envVars.ROX_NETFLOW_BATCHING=${ROX_NETFLOW_BATCHING}")
+    fi
+    if [[ -n "${ROX_NETFLOW_CACHE_LIMITING:-}" ]]; then
+        extra_helm_args+=(--set "customize.envVars.ROX_NETFLOW_CACHE_LIMITING=${ROX_NETFLOW_CACHE_LIMITING}")
+    fi
+
     echo "Deploying stackrox-secured-cluster-services Helm chart \"${helm_chart_dir}\" into namespace ${sensor_namespace} with the following settings:"
     if [[ -n "$base_helm_values" ]]; then
         echo "base Helm values:"
@@ -1454,6 +1463,7 @@ EOT
         -f <(echo "$image_overwrites") \
         -f <(echo "$base_helm_values") \
         -f <(echo "$init_artifact") \
+        "${extra_helm_args[@]}" \
         "$@" \
         stackrox-secured-cluster-services "${helm_chart_dir}"
 
