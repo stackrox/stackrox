@@ -378,7 +378,7 @@
       ],
       "default": "TIME"
     },
-    "ScopeImage": {
+    "VulnerabilityExceptionScopeImage": {
       "type": "object",
       "properties": {
         "registry": {
@@ -803,7 +803,7 @@
       "type": "object",
       "properties": {
         "imageScope": {
-          "$ref": "#/definitions/ScopeImage",
+          "$ref": "#/definitions/VulnerabilityExceptionScopeImage",
           "description": "This field can be used to apply the exception to selected images."
         }
       }

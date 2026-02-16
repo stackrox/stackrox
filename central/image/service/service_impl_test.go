@@ -12,6 +12,7 @@ import (
 	riskManagerMocks "github.com/stackrox/rox/central/risk/manager/mocks"
 	connMgrMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -481,7 +482,7 @@ func TestGetLayers(t *testing.T) {
 		desc             string
 		metadata         *storage.ImageMetadata
 		requestedLayers  []int32
-		expectedLayers   map[int32]*storage.ImageLayer
+		expectedLayers   map[int32]*v2.GetImageMetadataResponse_Metadata_ImageLayer
 		expectedError    bool
 		expectedErrorMsg string
 	}{
@@ -496,7 +497,7 @@ func TestGetLayers(t *testing.T) {
 			desc:            "nil request returns nil",
 			metadata:        &storage.ImageMetadata{V1: &storage.V1Metadata{Layers: []*storage.ImageLayer{{Instruction: "FROM"}, {Instruction: "RUN"}}}},
 			requestedLayers: nil,
-			expectedLayers: map[int32]*storage.ImageLayer{
+			expectedLayers: map[int32]*v2.GetImageMetadataResponse_Metadata_ImageLayer{
 				0: {Instruction: "FROM"},
 				1: {Instruction: "RUN"},
 			},
@@ -506,7 +507,7 @@ func TestGetLayers(t *testing.T) {
 			desc:            "single valid layer request",
 			metadata:        &storage.ImageMetadata{V1: &storage.V1Metadata{Layers: []*storage.ImageLayer{{Instruction: "FROM"}, {Instruction: "RUN"}}}},
 			requestedLayers: []int32{0},
-			expectedLayers: map[int32]*storage.ImageLayer{
+			expectedLayers: map[int32]*v2.GetImageMetadataResponse_Metadata_ImageLayer{
 				0: {Instruction: "FROM"},
 			},
 			expectedError: false,
@@ -519,7 +520,7 @@ func TestGetLayers(t *testing.T) {
 				{Instruction: "COPY"},
 			}}},
 			requestedLayers: []int32{0, 2},
-			expectedLayers: map[int32]*storage.ImageLayer{
+			expectedLayers: map[int32]*v2.GetImageMetadataResponse_Metadata_ImageLayer{
 				0: {Instruction: "FROM"},
 				2: {Instruction: "COPY"},
 			},
@@ -553,7 +554,7 @@ func TestGetLayers(t *testing.T) {
 			desc:            "request last layer in list",
 			metadata:        &storage.ImageMetadata{V1: &storage.V1Metadata{Layers: []*storage.ImageLayer{{Instruction: "FROM"}, {Instruction: "RUN"}, {Instruction: "ENTRYPOINT"}}}},
 			requestedLayers: []int32{2},
-			expectedLayers: map[int32]*storage.ImageLayer{
+			expectedLayers: map[int32]*v2.GetImageMetadataResponse_Metadata_ImageLayer{
 				2: {Instruction: "ENTRYPOINT"},
 			},
 			expectedError: false,
@@ -562,7 +563,7 @@ func TestGetLayers(t *testing.T) {
 			desc:            "all layers requested",
 			metadata:        &storage.ImageMetadata{V1: &storage.V1Metadata{Layers: []*storage.ImageLayer{{Instruction: "FROM"}, {Instruction: "RUN"}}}},
 			requestedLayers: []int32{0, 1},
-			expectedLayers: map[int32]*storage.ImageLayer{
+			expectedLayers: map[int32]*v2.GetImageMetadataResponse_Metadata_ImageLayer{
 				0: {Instruction: "FROM"},
 				1: {Instruction: "RUN"},
 			},
@@ -588,7 +589,7 @@ func TestGetLayers(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			result, err := getLayers(tc.metadata, tc.requestedLayers)
+			result, err := getLayersV2(tc.metadata, tc.requestedLayers)
 
 			if tc.expectedError {
 				require.Error(t, err)

@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -33,6 +34,7 @@ type Service interface {
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
 	v1.ImageServiceServer
+	v2.ImageServiceServer
 }
 
 // New returns a new Service instance using the given DataStore.

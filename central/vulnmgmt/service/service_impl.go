@@ -7,10 +7,12 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/convert/storagetov2"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	podDS "github.com/stackrox/rox/central/pod/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
@@ -40,7 +42,7 @@ var (
 			permissions.View(resources.Namespace),
 			permissions.View(resources.Deployment),
 			permissions.View(resources.Image)): {
-			v1.VulnMgmtService_ImageVulnerabilities_FullMethodName,
+			v2.VulnerabilityService_ListImageVulnerabilities_FullMethodName,
 		},
 	})
 	log = logging.LoggerForModule()
@@ -49,6 +51,7 @@ var (
 // serviceImpl provides APIs for vulnerability management.
 type serviceImpl struct {
 	v1.UnimplementedVulnMgmtServiceServer
+	v2.UnimplementedVulnerabilityServiceServer
 
 	db          postgres.DB
 	deployments deploymentDS.DataStore
@@ -59,11 +62,15 @@ type serviceImpl struct {
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 	v1.RegisterVulnMgmtServiceServer(grpcServer, s)
+	v2.RegisterVulnerabilityServiceServer(grpcServer, s)
 }
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return v1.RegisterVulnMgmtServiceHandler(ctx, mux, conn)
+	if err := v1.RegisterVulnMgmtServiceHandler(ctx, mux, conn); err != nil {
+		return err
+	}
+	return v2.RegisterVulnerabilityServiceHandler(ctx, mux, conn)
 }
 
 // AuthFuncOverride specifies the auth criteria for this service.
@@ -166,7 +173,7 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 	return nil
 }
 
-func (s *serviceImpl) ImageVulnerabilities(ctx context.Context, req *v1.ImageVulnerabilitiesRequest) (*v1.ImageVulnerabilitiesResponse, error) {
+func (s *serviceImpl) ListImageVulnerabilities(ctx context.Context, req *v2.ListImageVulnerabilitiesRequest) (*v2.ListImageVulnerabilitiesResponse, error) {
 	parsedQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errox.InvalidArgs.CausedBy(err)
@@ -185,7 +192,7 @@ func (s *serviceImpl) ImageVulnerabilities(ctx context.Context, req *v1.ImageVul
 
 	txCtx := postgres.ContextWithTx(ctx, tx)
 
-	images := make(map[string]*v1.ImageVulnerabilitiesResponse_Image)
+	images := make(map[string]*v2.ListImageVulnerabilitiesResponse_Image)
 
 	err = s.images.WalkByQuery(txCtx, parsedQuery, func(img *storage.Image) error {
 		components, err := s.getVulnerableImageComponents(img)
@@ -203,7 +210,7 @@ func (s *serviceImpl) ImageVulnerabilities(ctx context.Context, req *v1.ImageVul
 			return nil
 		}
 
-		images[img.GetId()] = &v1.ImageVulnerabilitiesResponse_Image{
+		images[img.GetId()] = &v2.ListImageVulnerabilitiesResponse_Image{
 			Components:  components,
 			WorkloadIds: workloadIDs,
 		}
@@ -219,17 +226,17 @@ func (s *serviceImpl) ImageVulnerabilities(ctx context.Context, req *v1.ImageVul
 	}
 	committed = true
 
-	return &v1.ImageVulnerabilitiesResponse{Images: images}, nil
+	return &v2.ListImageVulnerabilitiesResponse{Images: images}, nil
 }
 
 // getVulnerableImageComponents returns vulnerable image components.
-func (s *serviceImpl) getVulnerableImageComponents(img *storage.Image) ([]*v1.ImageVulnerabilitiesResponse_Image_Component, error) {
+func (s *serviceImpl) getVulnerableImageComponents(img *storage.Image) ([]*v2.ListImageVulnerabilitiesResponse_Image_Component, error) {
 	components := img.GetScan().GetComponents()
 	if len(components) == 0 {
 		return nil, nil
 	}
 
-	responseComponents := make([]*v1.ImageVulnerabilitiesResponse_Image_Component, 0, len(components))
+	responseComponents := make([]*v2.ListImageVulnerabilitiesResponse_Image_Component, 0, len(components))
 
 	for _, comp := range components {
 		if responseComp := transformComponentToResponse(comp); responseComp != nil {
@@ -243,13 +250,13 @@ func (s *serviceImpl) getVulnerableImageComponents(img *storage.Image) ([]*v1.Im
 // transformComponentToResponse converts a storage.EmbeddedImageScanComponent to
 // the response format.
 // Returns nil if the component has no vulnerabilities to report.
-func transformComponentToResponse(comp *storage.EmbeddedImageScanComponent) *v1.ImageVulnerabilitiesResponse_Image_Component {
+func transformComponentToResponse(comp *storage.EmbeddedImageScanComponent) *v2.ListImageVulnerabilitiesResponse_Image_Component {
 	vulns := comp.GetVulns()
 	if len(vulns) == 0 {
 		return nil
 	}
 
-	responseVulns := make([]*v1.ImageVulnerabilitiesResponse_Image_Component_Vulnerability, 0, len(vulns))
+	responseVulns := make([]*v2.ListImageVulnerabilitiesResponse_Image_Component_Vulnerability, 0, len(vulns))
 	for _, vuln := range vulns {
 		if responseVuln := transformVulnerabilityToResponse(vuln); responseVuln != nil {
 			responseVulns = append(responseVulns, responseVuln)
@@ -263,7 +270,7 @@ func transformComponentToResponse(comp *storage.EmbeddedImageScanComponent) *v1.
 	if comp.GetHasLayerIndex() != nil {
 		layer = comp.GetLayerIndex()
 	}
-	return &v1.ImageVulnerabilitiesResponse_Image_Component{
+	return &v2.ListImageVulnerabilitiesResponse_Image_Component{
 		Name:            comp.GetName(),
 		Version:         comp.GetVersion(),
 		LayerIndex:      layer,
@@ -275,19 +282,28 @@ func transformComponentToResponse(comp *storage.EmbeddedImageScanComponent) *v1.
 // transformVulnerabilityToResponse converts a storage.EmbeddedVulnerability to
 // the response format.
 // Returns nil if the vulnerability has no CVE ID.
-func transformVulnerabilityToResponse(vuln *storage.EmbeddedVulnerability) *v1.ImageVulnerabilitiesResponse_Image_Component_Vulnerability {
+func transformVulnerabilityToResponse(vuln *storage.EmbeddedVulnerability) *v2.ListImageVulnerabilitiesResponse_Image_Component_Vulnerability {
 	if vuln.GetCve() == "" {
 		return nil
 	}
 
-	vulnerability := &v1.ImageVulnerabilitiesResponse_Image_Component_Vulnerability{
+	sources := make([]v2.Source, 0, len(vuln.GetCvssMetrics()))
+	for _, metric := range vuln.GetCvssMetrics() {
+		sources = append(sources, storagetov2.ConvertCVSSScoreSource(metric.GetSource()))
+	}
+
+	vulnerability := &v2.ListImageVulnerabilitiesResponse_Image_Component_Vulnerability{
 		Id:                    vuln.GetCve(),
+		Cvss:                  vuln.GetCvss(),
+		Severity:              storagetov2.ConvertVulnerabilitySeverity(vuln.GetSeverity()),
+		State:                 storagetov2.ConvertVulnerabilityState(vuln.GetState()),
+		Source:                sources,
 		FirstSystemOccurrence: vuln.GetFirstSystemOccurrence(),
 		FirstImageOccurrence:  vuln.GetFirstImageOccurrence(),
 	}
 
 	if vuln.GetSuppressed() {
-		vulnerability.Suppression = &v1.ImageVulnerabilitiesResponse_Image_Component_Vulnerability_Suppression{
+		vulnerability.Suppression = &v2.ListImageVulnerabilitiesResponse_Image_Component_Vulnerability_Suppression{
 			SuppressActivation: vuln.GetSuppressActivation(),
 			SuppressExpiry:     vuln.GetSuppressExpiry(),
 		}

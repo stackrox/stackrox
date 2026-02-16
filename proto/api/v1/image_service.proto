@@ -5,6 +5,7 @@ package v1;
 import "api/v1/empty.proto";
 import "api/v1/search_service.proto";
 import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
 import "internalapi/scanner/v4/common.proto";
 import "scanner/api/v1/component.proto";
 import "scanner/api/v1/note.proto";
@@ -149,9 +150,11 @@ message ExportImageResponse {
   storage.Image image = 1;
 }
 
+// Deprecated: GetImageMetadataRequest has been moved to v2.ImageService.
 // GetImageMetadataRequest requests reduced image metadata (names and layers)
 // for specified images.
 message GetImageMetadataRequest {
+  option deprecated = true;
   message Layers {
     // If layer indices list is empty for an image, no layers are included.
     // If layer indices list is nil for an image, all layers are included.
@@ -164,11 +167,24 @@ message GetImageMetadataRequest {
   string query = 2;
 }
 
+// Deprecated: GetImageMetadataResponse has been moved to v2.ImageService.
 // GetImageMetadataResponse returns reduced image metadata (names and layers).
 message GetImageMetadataResponse {
+  option deprecated = true;
   message Metadata {
+    message ImageLayer {
+      string instruction = 1;
+      string value = 2;
+      google.protobuf.Timestamp created = 3;
+      string author = 4;
+      bool empty = 5;
+    }
     repeated string names = 1;
-    map<int32, storage.ImageLayer> layers = 2;
+    map<int32, ImageLayer> layers = 2;
+    // The name of the base image for this image or empty.
+    string base_image = 3;
+    // Whether this image is a base image for other images.
+    string is_base_image = 4;
   }
   // Map of image SHA to metadata.
   map<string, Metadata> images = 1;
@@ -248,13 +264,5 @@ service ImageService {
 
   rpc ExportImages(ExportImageRequest) returns (stream ExportImageResponse) {
     option (google.api.http) = {get: "/v1/export/images"};
-  }
-
-  // GetImageMetadata returns reduced image metadata (names and layers) for specified images.
-  rpc GetImageMetadata(GetImageMetadataRequest) returns (GetImageMetadataResponse) {
-    option (google.api.http) = {
-      post: "/v1/images/metadata"
-      body: "*"
-    };
   }
 }

@@ -461,6 +461,23 @@
       "default": "UNSET",
       "title": "For any update to EnvVarSource, please also update 'ui/src/messages/common.js'"
     },
+    "GetDeploymentMetadataResponseMetadataContainer": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "imageId": {
+          "type": "string"
+        },
+        "imageName": {
+          "type": "string"
+        }
+      }
+    },
     "ListDeploymentsWithProcessInfoResponseDeploymentWithProcessInfo": {
       "type": "object",
       "properties": {
@@ -1306,6 +1323,9 @@
     "v1GetDeploymentMetadataResponseMetadata": {
       "type": "object",
       "properties": {
+        "id": {
+          "type": "string"
+        },
         "name": {
           "type": "string"
         },
@@ -1320,6 +1340,13 @@
         },
         "platformComponent": {
           "type": "boolean"
+        },
+        "containers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/GetDeploymentMetadataResponseMetadataContainer"
+          }
         }
       }
     },

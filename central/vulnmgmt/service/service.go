@@ -7,6 +7,7 @@ import (
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	podDS "github.com/stackrox/rox/central/pod/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/postgres"
 )
@@ -18,6 +19,7 @@ type Service interface {
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
 	v1.VulnMgmtServiceServer
+	v2.VulnerabilityServiceServer
 }
 
 // New returns a new vulnerability management service instance.

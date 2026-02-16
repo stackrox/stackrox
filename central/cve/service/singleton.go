@@ -10,15 +10,15 @@ import (
 var (
 	once sync.Once
 
-	as Service
+	svc Service
 )
 
 func initialize() {
-	as = New(imageCVEDatastore.Singleton(), nodeCVEDatastore.Singleton(), clusterCVEDatastore.Singleton())
+	svc = New(imageCVEDatastore.Singleton(), nodeCVEDatastore.Singleton(), clusterCVEDatastore.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.
 func Singleton() Service {
 	once.Do(initialize)
-	return as
+	return svc
 }

@@ -3,7 +3,7 @@ package service
 import (
 	"testing"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
@@ -161,7 +161,7 @@ func TestTransformImageToResponse_Integration(t *testing.T) {
 			},
 		}
 
-		result := []*v1.ImageVulnerabilitiesResponse_Image_Component{}
+		result := []*v2.ListImageVulnerabilitiesResponse_Image_Component{}
 
 		for _, comp := range components {
 			if responseComp := transformComponentToResponse(comp); responseComp != nil {

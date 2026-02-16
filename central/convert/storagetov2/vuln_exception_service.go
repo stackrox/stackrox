@@ -28,7 +28,7 @@ func VulnerabilityException(vulnRequest *storage.VulnerabilityRequest) *v2.Vulne
 	out := &v2.VulnerabilityException{
 		Id:          vulnRequest.GetId(),
 		Name:        vulnRequest.GetName(),
-		TargetState: convertVulnerabilityState(vulnRequest.GetTargetState()),
+		TargetState: ConvertVulnerabilityState(vulnRequest.GetTargetState()),
 		Status:      exceptionStatus(vulnRequest.GetStatus()),
 		Expired:     vulnRequest.GetExpired(),
 		Requester:   requester(vulnRequest.GetRequesterV2()),

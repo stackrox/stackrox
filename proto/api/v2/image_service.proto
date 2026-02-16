@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package v2;
+
+import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./api/v2;v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+// GetImageMetadataRequest requests reduced image metadata (names and layers)
+// for specified images.
+message GetImageMetadataRequest {
+  message Layers {
+    // If layer indices list is empty for an image, no layers are included.
+    // If layer indices list is nil for an image, all layers are included.
+    repeated int32 layers = 1;
+  }
+  // Map of image SHA to list of requested layer indices for that image.
+  // If the map is empty, all images are returned.
+  map<string, Layers> images = 1;
+  // Optional query.
+  string query = 2;
+}
+
+// GetImageMetadataResponse returns reduced image metadata (names and layers).
+message GetImageMetadataResponse {
+  message Metadata {
+    message ImageLayer {
+      string instruction = 1;
+      string value = 2;
+      google.protobuf.Timestamp created = 3;
+      string author = 4;
+      bool empty = 5;
+    }
+    repeated string names = 1;
+    map<int32, ImageLayer> layers = 2;
+    // The name of the base image for this image or empty.
+    string base_image = 3;
+    // Whether this image is a base image for other images.
+    string is_base_image = 4;
+  }
+  // Map of image SHA to metadata.
+  map<string, Metadata> images = 1;
+}
+
+// ImageService APIs manages image metadata.
+service ImageService {
+  // GetImageMetadata returns reduced image metadata (names and layers) for specified images.
+  rpc GetImageMetadata(GetImageMetadataRequest) returns (GetImageMetadataResponse) {
+    option (google.api.http) = {
+      post: "/v2/images/metadata"
+      body: "*"
+    };
+  }
+}

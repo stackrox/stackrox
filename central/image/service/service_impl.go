@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -66,7 +67,7 @@ var (
 			v1.ImageService_CountImages_FullMethodName,
 			v1.ImageService_ListImages_FullMethodName,
 			v1.ImageService_ExportImages_FullMethodName,
-			v1.ImageService_GetImageMetadata_FullMethodName,
+			v2.ImageService_GetImageMetadata_FullMethodName,
 		},
 		or.SensorOr(idcheck.AdmissionControlOnly()): {
 			v1.ImageService_ScanImageInternal_FullMethodName,
@@ -132,11 +133,15 @@ type serviceImpl struct {
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 	v1.RegisterImageServiceServer(grpcServer, s)
+	v2.RegisterImageServiceServer(grpcServer, s)
 }
 
 // RegisterServiceHandler registers this service with the given gRPC Gateway endpoint.
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return v1.RegisterImageServiceHandler(ctx, mux, conn)
+	if err := v1.RegisterImageServiceHandler(ctx, mux, conn); err != nil {
+		return err
+	}
+	return v2.RegisterImageServiceHandler(ctx, mux, conn)
 }
 
 // AuthFuncOverride specifies the auth criteria for this API.
@@ -230,15 +235,15 @@ func (s *serviceImpl) ExportImages(req *v1.ExportImageRequest, srv v1.ImageServi
 }
 
 // GetImageMetadata returns reduced image metadata (names and layers) for
-// specified images and their layers.
-func (s *serviceImpl) GetImageMetadata(ctx context.Context, req *v1.GetImageMetadataRequest) (*v1.GetImageMetadataResponse, error) {
-	response := &v1.GetImageMetadataResponse{
-		Images: make(map[string]*v1.GetImageMetadataResponse_Metadata),
+// specified images and their layers (v2 API).
+func (s *serviceImpl) GetImageMetadata(ctx context.Context, req *v2.GetImageMetadataRequest) (*v2.GetImageMetadataResponse, error) {
+	response := &v2.GetImageMetadataResponse{
+		Images: make(map[string]*v2.GetImageMetadataResponse_Metadata),
 	}
 
-	walkByQuery := s.getImageMetadataByQueryV1
+	walkByQuery := s.getImageMetadataByQueryV1ForV2
 	if features.FlattenImageData.Enabled() {
-		walkByQuery = s.getImageMetadataByQueryV2
+		walkByQuery = s.getImageMetadataByQueryV2ForV2
 	}
 
 	parsedQuery, err := search.ParseQuery(req.GetQuery(), search.MatchAllIfEmpty())
@@ -265,7 +270,7 @@ func (s *serviceImpl) GetImageMetadata(ctx context.Context, req *v1.GetImageMeta
 	return response, nil
 }
 
-func (s *serviceImpl) getImageMetadataByQueryV1(ctx context.Context, query *v1.Query, imageLayerMap map[string]*v1.GetImageMetadataRequest_Layers, response *v1.GetImageMetadataResponse) error {
+func (s *serviceImpl) getImageMetadataByQueryV1ForV2(ctx context.Context, query *v1.Query, imageLayerMap map[string]*v2.GetImageMetadataRequest_Layers, response *v2.GetImageMetadataResponse) error {
 	return s.mappingDatastore.WalkByQuery(ctx, query, func(image *storage.Image) error {
 		imageID := image.GetId()
 		var layerIndices []int32
@@ -279,12 +284,12 @@ func (s *serviceImpl) getImageMetadataByQueryV1(ctx context.Context, query *v1.Q
 			layerIndices = layerSpec.GetLayers()
 		}
 
-		layers, err := getLayers(image.GetMetadata(), layerIndices)
+		layers, err := getLayersV2(image.GetMetadata(), layerIndices)
 		if err != nil {
 			return errors.Wrapf(err, "cannot get layers of image %q", imageID)
 		}
 
-		metadata := &v1.GetImageMetadataResponse_Metadata{
+		metadata := &v2.GetImageMetadataResponse_Metadata{
 			Names:  make([]string, 0, len(image.GetNames())),
 			Layers: layers,
 		}
@@ -297,7 +302,7 @@ func (s *serviceImpl) getImageMetadataByQueryV1(ctx context.Context, query *v1.Q
 	})
 }
 
-func (s *serviceImpl) getImageMetadataByQueryV2(ctx context.Context, query *v1.Query, imageLayerMap map[string]*v1.GetImageMetadataRequest_Layers, response *v1.GetImageMetadataResponse) error {
+func (s *serviceImpl) getImageMetadataByQueryV2ForV2(ctx context.Context, query *v1.Query, imageLayerMap map[string]*v2.GetImageMetadataRequest_Layers, response *v2.GetImageMetadataResponse) error {
 	return s.datastoreV2.WalkByQuery(ctx, query, func(image *storage.ImageV2) error {
 		imageID := image.GetId()
 		var layerIndices []int32
@@ -311,12 +316,12 @@ func (s *serviceImpl) getImageMetadataByQueryV2(ctx context.Context, query *v1.Q
 			layerIndices = layerSpec.GetLayers()
 		}
 
-		layers, err := getLayers(image.GetMetadata(), layerIndices)
+		layers, err := getLayersV2(image.GetMetadata(), layerIndices)
 		if err != nil {
 			return errors.Wrapf(err, "cannot get layers of image %q", imageID)
 		}
 
-		metadata := &v1.GetImageMetadataResponse_Metadata{
+		metadata := &v2.GetImageMetadataResponse_Metadata{
 			Names:  []string{image.GetName().GetFullName()},
 			Layers: layers,
 		}
@@ -326,7 +331,7 @@ func (s *serviceImpl) getImageMetadataByQueryV2(ctx context.Context, query *v1.Q
 	})
 }
 
-func getLayers(md *storage.ImageMetadata, indices []int32) (map[int32]*storage.ImageLayer, error) {
+func getLayersV2(md *storage.ImageMetadata, indices []int32) (map[int32]*v2.GetImageMetadataResponse_Metadata_ImageLayer, error) {
 	if indices != nil && len(indices) == 0 {
 		return nil, nil
 	}
@@ -336,13 +341,26 @@ func getLayers(md *storage.ImageMetadata, indices []int32) (map[int32]*storage.I
 			return nil, errBadLayerIndex.CausedByf("%d", i)
 		}
 	}
-	result := make(map[int32]*storage.ImageLayer, len(indices))
+	result := make(map[int32]*v2.GetImageMetadataResponse_Metadata_ImageLayer, len(indices))
 	for i, layer := range imageLayers {
 		if indices == nil || slices.Contains(indices, int32(i)) {
-			result[int32(i)] = layer
+			result[int32(i)] = convertImageLayerV2(layer)
 		}
 	}
 	return result, nil
+}
+
+func convertImageLayerV2(layer *storage.ImageLayer) *v2.GetImageMetadataResponse_Metadata_ImageLayer {
+	if layer == nil {
+		return nil
+	}
+	return &v2.GetImageMetadataResponse_Metadata_ImageLayer{
+		Instruction: layer.GetInstruction(),
+		Value:       layer.GetValue(),
+		Created:     layer.GetCreated(),
+		Author:      layer.GetAuthor(),
+		Empty:       layer.GetEmpty(),
+	}
 }
 
 // InvalidateScanAndRegistryCaches invalidates the image scan caches

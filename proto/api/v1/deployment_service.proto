@@ -60,11 +60,19 @@ message GetDeploymentMetadataRequest {
 // GetDeploymentMetadataResponse returns reduced deployment metadata.
 message GetDeploymentMetadataResponse {
   message Metadata {
-    string name = 1;
-    string type = 2;
-    string cluster = 3;
-    string namespace = 4;
-    bool platform_component = 5;
+    message Container {
+      string id = 1;
+      string name = 2;
+      string image_id = 3;
+      string image_name = 4;
+    }
+    string id = 1;
+    string name = 2;
+    string type = 3;
+    string cluster = 4;
+    string namespace = 5;
+    bool platform_component = 6;
+    repeated Container containers = 7;
   }
   // Map of deployment ID to metadata.
   map<string, Metadata> deployments = 1;

@@ -1,0 +1,173 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/v2/image_service.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "ImageService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v2/images/metadata": {
+      "post": {
+        "summary": "GetImageMetadata returns reduced image metadata (names and layers) for specified images.",
+        "operationId": "ImageService_GetImageMetadata",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2GetImageMetadataResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "GetImageMetadataRequest requests reduced image metadata (names and layers)\nfor specified images.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2GetImageMetadataRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ImageService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "GetImageMetadataRequestLayers": {
+      "type": "object",
+      "properties": {
+        "layers": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "description": "If layer indices list is empty for an image, no layers are included.\nIf layer indices list is nil for an image, all layers are included."
+        }
+      }
+    },
+    "GetImageMetadataResponseMetadata": {
+      "type": "object",
+      "properties": {
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "layers": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/MetadataImageLayer"
+          }
+        },
+        "baseImage": {
+          "type": "string",
+          "description": "The name of the base image for this image or empty."
+        },
+        "isBaseImage": {
+          "type": "string",
+          "description": "Whether this image is a base image for other images."
+        }
+      }
+    },
+    "MetadataImageLayer": {
+      "type": "object",
+      "properties": {
+        "instruction": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "author": {
+          "type": "string"
+        },
+        "empty": {
+          "type": "boolean"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v2GetImageMetadataRequest": {
+      "type": "object",
+      "properties": {
+        "images": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/GetImageMetadataRequestLayers"
+          },
+          "description": "Map of image SHA to list of requested layer indices for that image.\nIf the map is empty, all images are returned."
+        },
+        "query": {
+          "type": "string",
+          "description": "Optional query."
+        }
+      },
+      "description": "GetImageMetadataRequest requests reduced image metadata (names and layers)\nfor specified images."
+    },
+    "v2GetImageMetadataResponse": {
+      "type": "object",
+      "properties": {
+        "images": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/GetImageMetadataResponseMetadata"
+          },
+          "description": "Map of image SHA to metadata."
+        }
+      },
+      "description": "GetImageMetadataResponse returns reduced image metadata (names and layers)."
+    }
+  }
+}
