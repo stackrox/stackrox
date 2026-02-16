@@ -65,7 +65,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 				Operation: storage.FileAccess_UNLINK,
 				Process:   &storage.ProcessIndicator{Signal: &storage.ProcessSignal{Name: "rm"}},
 			},
-			expected: "'/tmp/old_file' deleted",
+			expected: "'/tmp/old_file' deleted (unlinked)",
 		},
 		{
 			desc: "file RENAME operation",
