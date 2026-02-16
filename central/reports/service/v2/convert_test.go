@@ -422,6 +422,11 @@ func (s *typeConversionTestSuite) TestConvertV2ScheduleToProto() {
 			schedule: newScheduleV2(34, 12, []int32{}, []int32{1}),
 			result:   newSchedule(34, 12, []int32{}, false, []int32{1}),
 		},
+		{
+			testname: "Report Schedule with Daily interval",
+			schedule: newScheduleV2(12, 12, []int32{}, []int32{}),
+			result:   newSchedule(12, 12, []int32{}, false, []int32{}),
+		},
 	}
 
 	for _, c := range cases {
@@ -482,7 +487,7 @@ func newScheduleV2(minute int32, hour int32, weekdays []int32, daysOfMonth []int
 		return &sched
 	}
 	if len(weekdays) == 0 {
-		sched.IntervalType = apiV2.ReportSchedule_UNSET
+		sched.IntervalType = apiV2.ReportSchedule_DAILY
 	} else {
 		sched.IntervalType = apiV2.ReportSchedule_WEEKLY
 		sched.Interval = &apiV2.ReportSchedule_DaysOfWeek_{

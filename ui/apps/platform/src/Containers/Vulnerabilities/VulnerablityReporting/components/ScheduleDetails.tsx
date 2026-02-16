@@ -10,10 +10,13 @@ export type ScheduleDetailsProps = {
 };
 
 function ScheduleDetails({ formValues }: ScheduleDetailsProps): ReactElement {
+    const time = formValues.schedule.time || '00:00';
     let interval = '';
     let days = '';
 
-    if (formValues.schedule.intervalType === 'WEEKLY') {
+    if (formValues.schedule.intervalType === 'DAILY') {
+        // No days needed for daily
+    } else if (formValues.schedule.intervalType === 'WEEKLY') {
         interval = 'week';
         const daysArr = formValues.schedule.daysOfWeek?.map((day) => daysOfWeekMap[day]) ?? [];
         days = commaSeparateWithAnd(daysArr);
@@ -25,11 +28,18 @@ function ScheduleDetails({ formValues }: ScheduleDetailsProps): ReactElement {
     }
 
     let scheduleDetailsText = <span>No schedule set</span>;
-    if (interval !== '' && days !== '') {
+    if (formValues.schedule.intervalType === 'DAILY') {
+        scheduleDetailsText = (
+            <span>
+                Report is scheduled to be sent <strong>daily</strong> at{' '}
+                <strong>{time} UTC</strong>
+            </span>
+        );
+    } else if (interval !== '' && days !== '') {
         scheduleDetailsText = (
             <span>
                 Report is scheduled to be sent on <strong>{days}</strong> every{' '}
-                <strong>{interval}</strong>
+                <strong>{interval}</strong> at <strong>{time} UTC</strong>
             </span>
         );
     }
