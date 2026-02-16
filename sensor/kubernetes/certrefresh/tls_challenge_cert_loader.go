@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/stackrox/rox/pkg/pods"
+	"github.com/stackrox/rox/sensor/common/centralcabundle"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -13,7 +14,8 @@ import (
 
 // TLSChallengeCertLoader returns a centralclient.CertLoader that:
 // - performs the TLS challenge with Central and retrieves its trusted certificates
-// - ceates/updates CA bundle ConfigMap for Admission Control's ValidatingWebhookConfiguration
+// - creates/updates CA bundle ConfigMap for Admission Control's ValidatingWebhookConfiguration
+// - stores Central CAs for use by the Scanner V4 client (Scanner V4 might be using a different CA than the one used by Sensor)
 // This is used for Operator managed clusters to enable CA rotation.
 func TLSChallengeCertLoader(centralClient *centralclient.Client, k8sClient kubernetes.Interface) centralclient.CertLoader {
 	return func() []*x509.Certificate {
@@ -27,6 +29,7 @@ func TLSChallengeCertLoader(centralClient *centralclient.Client, k8sClient kuber
 		} else if len(centralCAs) > 0 {
 			log.Debug("Updating TLS CA bundle ConfigMap from TLSChallenge")
 			handleCABundleConfigMapUpdate(ctx, centralCAs, k8sClient)
+			centralcabundle.Set(centralCAs)
 		}
 		return certs
 	}
