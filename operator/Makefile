@@ -447,14 +447,12 @@ upgrade-dirty-tag-via-olm: kuttl
 ##@ Bundle and Index build
 
 # Commands to enter local Python virtual environment and get needed dependencies there.
-# Two-stage pip upgrade: old pip versions (e.g. 9.0.3) can't find pip 23.3.2,
-# so we first upgrade to 21.3.1 (available in old indexes), then to the final version.
-# pip 21.3.1 and setuptools 59.6.0 use pkgutil.ImpImporter, removed in Python 3.12.
-# The required Python version is tracked in bundle_helpers/.python-version.
+# Old CI environments (with pip 9.0.3) only have pip versions up to 21.3.1 in their PyPI index.
+# We upgrade pip to 21.3.1 first (for compatibility), then upgrade setuptools to 68.2.2 which
+# fixes the pkgutil.ImpImporter issue for Python 3.12 compatibility.
 ACTIVATE_PYTHON = $(PYTHON) -m venv bundle_helpers/.venv ;\
 	. bundle_helpers/.venv/bin/activate ;\
-	pip3 install --upgrade pip==21.3.1 setuptools==59.6.0 ;\
-	pip3 install --upgrade pip==23.3.2 setuptools==69.0.3 ;\
+	pip3 install --upgrade pip==21.3.1 setuptools==68.2.2 ;\
 	pip3 install -r bundle_helpers/requirements.txt
 
 .PHONY: bundle
