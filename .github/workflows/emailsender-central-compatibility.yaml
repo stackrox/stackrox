@@ -57,6 +57,7 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version-file: stackrox/go.mod
+          cache: false  # repo checkout is in stackrox/ subdir, setup-go can't find go.sum
       - uses: ./stackrox/.github/actions/job-preamble
         with:
           free-disk-space: 40
