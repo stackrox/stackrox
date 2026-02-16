@@ -59,9 +59,9 @@ type k8sResource struct {
 // For core API resources (empty group), it returns "resource.core".
 func (r k8sResource) String() string {
 	if r.Group == "" {
-		return r.Resource + ".core"
+		return fmt.Sprintf("%s.core", r.Resource)
 	}
-	return r.Resource + "." + r.Group
+	return fmt.Sprintf("%s.%s", r.Resource, r.Group)
 }
 
 // k8sAuthorizer verifies that a bearer token has the required Kubernetes permissions.
