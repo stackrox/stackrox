@@ -5,7 +5,7 @@ import type { CompoundSearchFilterAttribute } from '../types';
 export const ConfigID: CompoundSearchFilterAttribute = {
     displayName: 'Config ID',
     filterChipLabel: 'Compliance scan config ID',
-    searchTerm: 'Compliance Scan Config Id',
+    searchTerm: 'Compliance Scan Config ID',
     inputType: 'text',
 };
 

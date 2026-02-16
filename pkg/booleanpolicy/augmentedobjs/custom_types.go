@@ -26,6 +26,7 @@ const (
 	KubernetesSourceIPAddressCustomTag = "Source IP Address"
 	KubernetesUserAgentCustomTag       = "User Agent"
 	KubernetesIsImpersonatedCustomTag  = "Is Impersonated User"
+	FileAccessPathCustomTag            = "File Path"
 
 	RuntimeClassCustomTag = "Runtime Class"
 )
@@ -90,4 +91,13 @@ type NodeDetails struct {
 	Name        string `search:"Node"`
 	ClusterId   string `search:"Cluster Id"`
 	ClusterName string `search:"Cluster Name"`
+}
+
+// fileAccessPath is a struct to contain ALL file paths
+// for a given file activity event. This allows us to
+// compare them all against a single criteria instead
+// of requiring a criteria for each "kind" of path
+// (effective or actual)
+type fileAccessPath struct {
+	Path []string `search:"File Path"`
 }

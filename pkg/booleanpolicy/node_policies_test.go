@@ -263,6 +263,22 @@ func (s *NodeDetectionTestSuite) TestNodeFileAccess() {
 				},
 			},
 		},
+		{
+			description: "Node file policy with event containing both matching paths",
+			policy:      s.getNodeFileAccessPolicy("/etc/passwd"),
+			events: []eventWrapper{
+				{
+					access: &storage.FileAccess{
+						File: &storage.FileAccess_File{
+							ActualPath:    "/etc/passwd",
+							EffectivePath: "/etc/passwd",
+						},
+						Operation: storage.FileAccess_OPEN,
+					},
+					expectAlert: true,
+				},
+			},
+		},
 	} {
 		testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, true)
 		defer testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, false)
@@ -330,7 +346,7 @@ func (s *NodeDetectionTestSuite) getNodeFileAccessPolicyWithOperations(operation
 				SectionName: "section 1",
 				PolicyGroups: []*storage.PolicyGroup{
 					{
-						FieldName: fieldnames.ActualPath,
+						FieldName: fieldnames.FilePath,
 						Values:    pathValues,
 					},
 					{
@@ -365,7 +381,7 @@ func (s *NodeDetectionTestSuite) getNodeFileAccessPolicy(paths ...string) *stora
 				SectionName: "section 1",
 				PolicyGroups: []*storage.PolicyGroup{
 					{
-						FieldName: "Actual Path",
+						FieldName: fieldnames.FilePath,
 						Values:    policyValues,
 					},
 				},

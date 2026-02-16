@@ -13,6 +13,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 - ROX-24311: Detection and enforcement for pods/attach Kubernetes event
+- ROX-33098 (Tech Preview): Effective path and Actual Path have been combined into a single File Path policy criterion.
 
 ### Removed Features
 

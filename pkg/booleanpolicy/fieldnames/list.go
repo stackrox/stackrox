@@ -7,7 +7,6 @@ var (
 // This block enumerates all known field names.
 // Please keep in alphabetical order.
 var (
-	ActualPath                     = newFieldName("Actual Path")
 	AddCaps                        = newFieldName("Add Capabilities")
 	AllowPrivilegeEscalation       = newFieldName("Allow Privilege Escalation")
 	AppArmorProfile                = newFieldName("AppArmor Profile")
@@ -27,12 +26,12 @@ var (
 	DisallowedImageLabel           = newFieldName("Disallowed Image Label")
 	DockerfileLine                 = newFieldName("Dockerfile Line")
 	DropCaps                       = newFieldName("Drop Capabilities")
-	EffectivePath                  = newFieldName("Effective Path")
 	EnvironmentVariable            = newFieldName("Environment Variable")
 	ExposedNodePort                = newFieldName("Exposed Node Port")
 	ExposedPort                    = newFieldName("Exposed Port")
 	ExposedPortProtocol            = newFieldName("Exposed Port Protocol")
 	FileOperation                  = newFieldName("File Operation")
+	FilePath                       = newFieldName("File Path")
 	Fixable                        = newFieldName("Fixable")
 	FixedBy                        = newFieldName("Fixed By")
 	HasIngressNetworkPolicy        = newFieldName("Has Ingress Network Policy")

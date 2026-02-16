@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"net/url"
@@ -118,7 +119,7 @@ func NewGRPCScanner(ctx context.Context, opts ...Option) (Scanner, error) {
 
 	if o.comboMode {
 		// Both o.indexerOpts and o.matcherOpts are the same, so just choose one.
-		conn, err := createGRPCConn(ctx, o.indexerOpts)
+		conn, err := createGRPCConn(ctx, o.indexerOpts, o.rootCAs)
 		if err != nil {
 			return nil, err
 		}
@@ -141,7 +142,7 @@ func NewGRPCScanner(ctx context.Context, opts ...Option) (Scanner, error) {
 
 	var indexerClient v4.IndexerClient
 	if o.indexerOpts.address != "" {
-		conn, err := createGRPCConn(ctx, o.indexerOpts)
+		conn, err := createGRPCConn(ctx, o.indexerOpts, o.rootCAs)
 		if err != nil {
 			return nil, err
 		}
@@ -151,7 +152,7 @@ func NewGRPCScanner(ctx context.Context, opts ...Option) (Scanner, error) {
 
 	var matcherClient v4.MatcherClient
 	if o.matcherOpts.address != "" {
-		conn, err := createGRPCConn(ctx, o.matcherOpts)
+		conn, err := createGRPCConn(ctx, o.matcherOpts, o.rootCAs)
 		if err != nil {
 			return nil, err
 		}
@@ -176,7 +177,7 @@ func (c *gRPCScanner) Close() error {
 	return errList.ToError()
 }
 
-func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error) {
+func createGRPCConn(ctx context.Context, o connOptions, rootCAs []*x509.Certificate) (*grpc.ClientConn, error) {
 	// Prefix address with dns:/// to use the DNS name resolver.
 	address := "dns:///" + o.address
 
@@ -218,6 +219,10 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 		clientconn.ServerName(o.serverName),
 		clientconn.MaxMsgReceiveSize(maxRespMsgSize),
 		clientconn.WithDialOptions(dialOpts...),
+	}
+
+	if len(rootCAs) > 0 {
+		connOpts = append(connOpts, clientconn.AddRootCAs(rootCAs...))
 	}
 	return clientconn.AuthenticatedGRPCConnection(ctx, address, o.mTLSSubject, connOpts...)
 }

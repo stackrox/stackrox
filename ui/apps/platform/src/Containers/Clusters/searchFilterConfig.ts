@@ -20,26 +20,49 @@ export const statusSelectOptions: SelectSearchFilterOptions['options'] = [
     { label: 'Uninitialized', value: 'UNINITIALIZED' },
 ];
 
-function createStatusAttribute(entity: string): CompoundSearchFilterAttribute {
-    return {
-        displayName: 'Status',
-        filterChipLabel: `${entity} status`,
-        searchTerm: `${entity} status`,
-        inputType: 'select',
-        inputProps: { options: statusSelectOptions },
-    };
-}
+const admissionControlStatusAttribute: CompoundSearchFilterAttribute = {
+    displayName: 'Status',
+    filterChipLabel: 'Admission control status',
+    searchTerm: 'Admission Control Status',
+    inputType: 'select',
+    inputProps: { options: statusSelectOptions },
+};
+const clusterStatusAttribute: CompoundSearchFilterAttribute = {
+    displayName: 'Status',
+    filterChipLabel: 'Cluster status',
+    searchTerm: 'Cluster Status',
+    inputType: 'select',
+    inputProps: { options: statusSelectOptions },
+};
 
-const admissionControlStatusAttribute = createStatusAttribute('Admission control');
-const clusterStatusAttribute = createStatusAttribute('Cluster');
-const collectorStatusAttribute = createStatusAttribute('Collector');
-const scannerStatusAttribute = createStatusAttribute('Scanner');
-const sensorStatusAttribute = createStatusAttribute('Sensor');
+const collectorStatusAttribute: CompoundSearchFilterAttribute = {
+    displayName: 'Status',
+    filterChipLabel: 'Collector status',
+    searchTerm: 'Collector Status',
+    inputType: 'select',
+    inputProps: { options: statusSelectOptions },
+};
+
+const scannerStatusAttribute: CompoundSearchFilterAttribute = {
+    displayName: 'Status',
+    filterChipLabel: 'Scanner status',
+    searchTerm: 'Scanner Status',
+    inputType: 'select',
+    inputProps: { options: statusSelectOptions },
+};
+
+const sensorStatusAttribute: CompoundSearchFilterAttribute = {
+    displayName: 'Status',
+    filterChipLabel: 'Sensor status',
+    searchTerm: 'Sensor Status',
+    inputType: 'select',
+    inputProps: { options: statusSelectOptions },
+};
 
 const lastContactAttributes: CompoundSearchFilterAttribute = {
     displayName: 'Date',
     filterChipLabel: 'Last contact',
-    searchTerm: 'Last contact',
+    searchTerm: 'Last Contact',
     inputType: 'date-picker',
 };
 
