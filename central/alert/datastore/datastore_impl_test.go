@@ -424,6 +424,11 @@ func (s *AlertDatastoreImplSuite) TestSearchListAlerts() {
 	s.NotNil(matchingCreatedAlert, "Should find matching created alert")
 
 	expectedListAlert := convert.AlertToListAlert(matchingCreatedAlert)
+	// PostgreSQL timestamps have microsecond precision, so truncate the
+	// expected nanos to match what the database returns.
+	if ts := expectedListAlert.GetTime(); ts != nil {
+		ts.Nanos = ts.Nanos / 1000 * 1000
+	}
 	protoassert.Equal(s.T(), expectedListAlert, returnedAlert)
 }
 
