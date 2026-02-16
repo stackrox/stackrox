@@ -214,7 +214,7 @@ kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
 
 .PHONY: envtest
-envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
+envtest: envtest-version $(ENVTEST) ## Download envtest-setup locally if necessary.
 
 .PHONY: operator-sdk
 operator-sdk: $(OPERATOR_SDK) ## Download operator-sdk necessary for scaffolding and bundling.
@@ -224,6 +224,13 @@ kuttl: $(KUTTL) ## Download kuttl.
 
 .PHONY: yq
 yq: $(YQ) ## Download yq.
+
+.PHONY: envtest-version
+envtest-version:  ## Make sure the envtest version matches controller-runtime.
+	$(SILENT)set -eou pipefail; \
+	envtest_release=$$(go list -m -f '{{ .Version }}' sigs.k8s.io/controller-runtime | sed -e 's,^v\([0-9]\+\.[0-9]\+\).*,release-\1,'); \
+	go -C tools/envtest mod edit -require sigs.k8s.io/controller-runtime/tools/setup-envtest@$${envtest_release}; \
+	go -C tools/envtest mod tidy
 
 ##@ Development
 
@@ -251,7 +258,7 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.29
+ENVTEST_K8S_VERSION = $(shell go list -m -f '{{ .Version }}' k8s.io/api | sed -e 's,^v[0-9]\+\.\([0-9]\+\).*,1.\1,')
 
 .PHONY: test
 test: manifests generate fmt vet  ## Run go unit tests
