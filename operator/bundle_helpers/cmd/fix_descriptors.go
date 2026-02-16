@@ -38,7 +38,7 @@ func FixSpecDescriptorOrder(args []string) error {
 	return err
 }
 
-// FixSpecDescriptorOrderBytes fixes the ordering of specDescriptors in CSV YAML bytes
+// fixSpecDescriptorOrderBytes fixes the ordering of specDescriptors in CSV YAML bytes
 func fixSpecDescriptorOrderBytes(in []byte) ([]byte, error) {
 	var csvDoc map[string]any
 	if err := yaml.Unmarshal(in, &csvDoc); err != nil {
