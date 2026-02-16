@@ -12,8 +12,8 @@ CSV_VERSION ?= v$(VERSION)
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
-# Python binary to use for bundle helpers. Can be overridden to use a specific version (e.g., python3.9).
-# The Konflux build uses Python 3.9, so using python3.9 locally ensures compatibility.
+# Python binary to use for bundle helpers. Can be overridden to use a specific version (e.g., python3.12).
+# The Konflux build uses Python 3.12, so using python3.12 locally ensures compatibility.
 PYTHON ?= python3
 
 # This can be adjusted if deploying into non-standard namespaces. For example, as in
@@ -444,7 +444,7 @@ upgrade-dirty-tag-via-olm: kuttl
 # Commands to enter local Python virtual environment and get needed dependencies there.
 ACTIVATE_PYTHON = $(PYTHON) -m venv bundle_helpers/.venv ;\
 	. bundle_helpers/.venv/bin/activate ;\
-	pip3 install --upgrade pip==21.3.1 setuptools==59.6.0 ;\
+	pip3 install --upgrade pip==23.3.2 setuptools==69.0.3 ;\
 	pip3 install -r bundle_helpers/requirements.txt
 
 .PHONY: bundle
