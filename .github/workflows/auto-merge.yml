@@ -37,7 +37,6 @@ jobs:
             --repo "${{ github.repository }}" \
             --author "app/dependabot" \
             --label "auto-merge" \
-            --label "auto-merge-any" \
             --draft=false \
             --state open \
             --limit 50 \
