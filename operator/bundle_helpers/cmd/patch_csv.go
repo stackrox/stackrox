@@ -97,14 +97,8 @@ func PatchCSV(args []string) error {
 		return fmt.Errorf("failed to patch CSV: %w", err)
 	}
 
-	// Encode to YAML using Go's yaml.v3
-	buf, err := encodeToYaml(doc)
-	if err != nil {
-		return err
-	}
-
-	// Normalize through Python to match PyYAML's exact formatting
-	return normalizeYAMLOutput(buf.Bytes(), os.Stdout)
+	// Encode to YAML and normalize through Python to match PyYAML's exact formatting
+	return encodeAndNormalizeYAML(doc, os.Stdout)
 }
 
 func echoReplacedVersion(doc map[string]any, version, firstVersion, unreleased string) error {

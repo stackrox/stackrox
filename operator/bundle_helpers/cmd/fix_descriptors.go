@@ -24,44 +24,50 @@ func FixSpecDescriptorOrder(args []string) error {
 		return nil
 	}
 
-	// Read CSV from stdin
-	data, err := io.ReadAll(os.Stdin)
+	in, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		return fmt.Errorf("failed to read stdin: %w", err)
 	}
 
-	// Parse YAML into a map (like Python's yaml.safe_load)
-	var csvDoc map[string]any
-	if err := yaml.Unmarshal(data, &csvDoc); err != nil {
-		return fmt.Errorf("failed to parse YAML: %w", err)
-	}
-
-	// Process descriptors
-	if err := descriptor.FixCSVDescriptorsMap(csvDoc); err != nil {
-		return fmt.Errorf("failed to fix descriptors: %w", err)
-	}
-
-	// Encode to YAML using Go's yaml.v3
-	buf, err := encodeToYaml(csvDoc)
+	out, err := fixSpecDescriptorOrderBytes(in)
 	if err != nil {
 		return err
 	}
 
-	// Normalize through Python to match PyYAML's exact formatting
-	return normalizeYAMLOutput(buf.Bytes(), os.Stdout)
+	_, err = os.Stdout.Write(out)
+	return err
 }
 
-func encodeToYaml(doc map[string]any) (bytes.Buffer, error) {
+// FixSpecDescriptorOrderBytes fixes the ordering of specDescriptors in CSV YAML bytes
+func fixSpecDescriptorOrderBytes(in []byte) ([]byte, error) {
+	var csvDoc map[string]any
+	if err := yaml.Unmarshal(in, &csvDoc); err != nil {
+		return nil, fmt.Errorf("failed to parse YAML: %w", err)
+	}
+
+	if err := descriptor.FixCSVDescriptorsMap(csvDoc); err != nil {
+		return nil, fmt.Errorf("failed to fix descriptors: %w", err)
+	}
+
 	var buf bytes.Buffer
-	encoder := yaml.NewEncoder(&buf)
-	encoder.SetIndent(2)
-	if err := encoder.Encode(doc); err != nil {
-		return bytes.Buffer{}, fmt.Errorf("failed to encode YAML: %w", err)
+	if err := encodeAndNormalizeYAML(csvDoc, &buf); err != nil {
+		return nil, err
 	}
-	if err := encoder.Close(); err != nil {
-		return bytes.Buffer{}, fmt.Errorf("failed to close encoder: %w", err)
+	return buf.Bytes(), nil
+}
+
+// encodeAndNormalizeYAML encodes a document to YAML and normalizes it via Python
+func encodeAndNormalizeYAML(doc any, w io.Writer) error {
+	var buf bytes.Buffer
+	enc := yaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+	if err := enc.Encode(doc); err != nil {
+		return fmt.Errorf("failed to encode YAML: %w", err)
 	}
-	return buf, nil
+	if err := enc.Close(); err != nil {
+		return fmt.Errorf("failed to close encoder: %w", err)
+	}
+	return normalizeYAMLOutput(buf.Bytes(), w)
 }
 
 // normalizeYAMLOutput pipes YAML through the Python normalizer to match PyYAML formatting.
