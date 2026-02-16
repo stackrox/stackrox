@@ -78,3 +78,16 @@ func TestCoalescer_NilResult(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, result)
 }
+
+func TestCoalescer_ErrorPropagation(t *testing.T) {
+	c := New[string]()
+
+	expectedErr := errors.New("test error from coalesced function")
+
+	result, err := c.Coalesce(context.Background(), "key", func() (string, error) {
+		return "", expectedErr
+	})
+
+	assert.ErrorIs(t, err, expectedErr)
+	assert.Empty(t, result)
+}
