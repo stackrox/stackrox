@@ -92,6 +92,53 @@ func GetPreviousYStream(versionStr string) (string, error) {
 	}
 }
 
+// initialReplaceFor calculates the initial replacement version based on current and previous Y-stream versions
+func initialReplaceFor(current, previousXyz XyzVersion) XyzVersion {
+	if current.Z == 0 {
+		// New minor release replaces previous minor (e.g., 4.2.0 replaces 4.1.0)
+		return previousXyz
+	}
+	// Patch replaces previous patch (e.g., 4.2.2 replaces 4.2.1)
+	return XyzVersion{X: current.X, Y: current.Y, Z: current.Z - 1}
+}
+
+// adjustForUnreleased adjusts the initial replacement if it matches an unreleased version
+func adjustForUnreleased(initialReplace XyzVersion, unreleased string) (XyzVersion, error) {
+	if unreleased == "" || initialReplace.String() != unreleased {
+		return initialReplace, nil
+	}
+
+	prev, err := GetPreviousYStream(initialReplace.String())
+	if err != nil {
+		return XyzVersion{}, err
+	}
+	return ParseXyzVersion(prev)
+}
+
+// advancePastSkips advances the replacement version past any skipped versions
+func advancePastSkips(initialReplace, currentXyz XyzVersion, skips []XyzVersion) XyzVersion {
+	current := initialReplace
+	for {
+		// Check safety BEFORE incrementing
+		next := XyzVersion{X: current.X, Y: current.Y, Z: current.Z + 1}
+		if next.Y != initialReplace.Y || next.Compare(currentXyz) >= 0 {
+			break
+		}
+
+		if !slices.Contains(skips, current) {
+			break
+		}
+
+		current = next
+	}
+
+	// Exception: if we're releasing immediate patch to broken version, still replace it
+	if current.Compare(currentXyz) >= 0 {
+		return initialReplace
+	}
+	return current
+}
+
 // CalculateReplacedVersion determines which version this release replaces
 // This is complex logic that handles Y-Stream vs patch releases, version skips, and unreleased versions
 func CalculateReplacedVersion(current, first, previousYStream string, skips []XyzVersion, unreleased string) (*XyzVersion, error) {
@@ -116,51 +163,17 @@ func CalculateReplacedVersion(current, first, previousYStream string, skips []Xy
 	}
 
 	// Determine initial replace candidate
-	var initialReplace XyzVersion
-	if currentXyz.Z == 0 {
-		// New minor release replaces previous minor (e.g., 4.2.0 replaces 4.1.0)
-		initialReplace = previousXyz
-	} else {
-		// Patch replaces previous patch (e.g., 4.2.2 replaces 4.2.1)
-		initialReplace = XyzVersion{X: currentXyz.X, Y: currentXyz.Y, Z: currentXyz.Z - 1}
-	}
+	initialReplace := initialReplaceFor(currentXyz, previousXyz)
 
-	// If this version is not yet released, try previous one.
-	// E.g. 4.5 branch was cut and the 4.6.x tag created, but the 4.5 release process is still in progress.
-	if unreleased != "" && initialReplace.String() == unreleased {
-		prev, err := GetPreviousYStream(initialReplace.String())
-		if err != nil {
-			return nil, err
-		}
-		initialReplace, err = ParseXyzVersion(prev)
-		if err != nil {
-			return nil, err
-		}
+	// If this version is not yet released, try previous one
+	// E.g. 4.5 branch was cut and the 4.6.x tag created, but the 4.5 release process is still in progress
+	initialReplace, err = adjustForUnreleased(initialReplace, unreleased)
+	if err != nil {
+		return nil, err
 	}
-
-	currentReplace := initialReplace
 
 	// Skip over broken versions in the skips list
-	for {
-		// Check safety BEFORE incrementing
-		nextReplace := XyzVersion{X: currentReplace.X, Y: currentReplace.Y, Z: currentReplace.Z + 1}
-		if nextReplace.Y != initialReplace.Y || nextReplace.Compare(currentXyz) >= 0 {
-			break
-		}
-
-		if !slices.Contains(skips, currentReplace) {
-			break
-		}
-
-		currentReplace = nextReplace
-	}
-
-	// Exception: if we're releasing immediate patch to broken version, still replace it
-	// E.g., 4.1.0 is broken and in skips, 4.1.1 still replaces 4.1.0
-	// This works because 4.1.1 will have skipRange allowing upgrade from 4.0.0
-	if currentReplace.Compare(currentXyz) >= 0 {
-		currentReplace = initialReplace
-	}
+	currentReplace := advancePastSkips(initialReplace, currentXyz, skips)
 
 	return &currentReplace, nil
 }
