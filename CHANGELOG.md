@@ -1,4 +1,5 @@
 
+
 # Changelog
 
 This file helps upstream users learn about what is new in a release.
@@ -12,8 +13,9 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ## [NEXT RELEASE]
 
 ### Added Features
-- ROX-24311: Detection and enforcement for pods/attach Kubernetes event
+- ROX-24311: Detection and enforcement for pods/attach Kubernetes event.
 - ROX-33098 (Tech Preview): Effective path and Actual Path have been combined into a single File Path policy criterion.
+- ROX-33156 (Tech Preview): A new default policy category called "File Activity Monitoring" is now available.
 
 ### Removed Features
 
