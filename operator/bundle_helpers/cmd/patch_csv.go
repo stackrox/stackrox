@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bytes"
 	"errors"
 	"flag"
 	"fmt"
@@ -99,14 +98,9 @@ func PatchCSV(args []string) error {
 	}
 
 	// Encode to YAML using Go's yaml.v3
-	var buf bytes.Buffer
-	encoder := yaml.NewEncoder(&buf)
-	encoder.SetIndent(2)
-	if err := encoder.Encode(doc); err != nil {
-		return fmt.Errorf("failed to encode YAML: %w", err)
-	}
-	if err := encoder.Close(); err != nil {
-		return fmt.Errorf("failed to close encoder: %w", err)
+	buf, err := encodeToYaml(doc)
+	if err != nil {
+		return err
 	}
 
 	// Normalize through Python to match PyYAML's exact formatting
