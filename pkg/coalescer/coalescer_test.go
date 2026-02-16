@@ -2,6 +2,7 @@ package coalescer
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 func TestCoalescer_ContextCancellation(t *testing.T) {
 	c := New[string]()
 	barrier := make(chan struct{})
+	defer close(barrier)
 	fnStarted := make(chan struct{})
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -28,12 +30,12 @@ func TestCoalescer_ContextCancellation(t *testing.T) {
 	})
 
 	assert.ErrorIs(t, err, context.Canceled)
-	close(barrier) // Cleanup
 }
 
 func TestCoalescer_ContextDeadlineExceeded(t *testing.T) {
 	c := New[string]()
 	barrier := make(chan struct{})
+	defer close(barrier)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
 	defer cancel()
@@ -44,7 +46,6 @@ func TestCoalescer_ContextDeadlineExceeded(t *testing.T) {
 	})
 
 	assert.ErrorIs(t, err, context.DeadlineExceeded)
-	close(barrier) // Cleanup
 }
 
 func TestCoalescer_TypedResults(t *testing.T) {
