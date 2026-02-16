@@ -24,11 +24,10 @@ from get_latest_helm_chart_versions import (
 # These are returned only if Helm charts for both versions could be found.
 # After running get_compatibility_test_tuples.py I received the following output:
 # INFO:root:Listing supported versions tuples:
-# INFO:root:Tuple 1: {Central v4.6.x-736-g48077a980e-dirty - Sensor v400.5.3}
-# INFO:root:Tuple 2: {Central v4.6.x-736-g48077a980e-dirty - Sensor v400.4.5}
-# INFO:root:Tuple 3: {Central v400.5.3 - Sensor v4.6.x-736-g48077a980e-dirty}
-# INFO:root:Tuple 4: {Central v400.4.5 - Sensor v4.6.x-736-g48077a980e-dirty}
-# INFO:root:Tuple 5: {Central v4.6.x-736-g48077a980e-dirty - Sensor v74.9.0}
+# INFO:root:Tuple 1: {Central v4.11.x-94-g75a2cb6b34 - Sensor v40009.5.3}
+# INFO:root:Tuple 2: {Central v4.11.x-94-g75a2cb6b34 - Sensor v40008.1.0}
+# INFO:root:Tuple 3: {Central v40009.5.3 - Sensor v4.11.x-94-g75a2cb6b34}
+# INFO:root:Tuple 4: {Central v40008.1.0 - Sensor v4.11.x-94-g75a2cb6b34}
 # If no supported versions with available Helm charts are found, an empty list is returned.
 def main():
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
@@ -48,9 +47,24 @@ def main():
 def is_newer_version(current_version: str, helm_version: str):
     helm_version_split = helm_version.split(sep='.')
     current_version_split = current_version.split(sep='.')
-    # Remove the trailing 0s
-    # Helm chart versions have two trailing 0s in the major version number
-    helm_version_split[0] = helm_version_split[0][:-2]
+
+    # Parse helm version format using numeric encoding:
+    # - New format: X00MM where X=major digit, 00=padding, MM=minor (zero-padded)
+    #   Example: 40009 → major=4, minor=09 (version 4.9)
+    #   Example: 40011 → major=4, minor=11 (version 4.11)
+    #   Formula: major = n // 10000, minor = n % 100
+    # - Old format: X00 where X=major digit, 00=padding (version 4.0.x)
+    #   Formula: major = n // 100
+    helm_major_num = int(helm_version_split[0])
+    if helm_major_num >= 10000:
+        # New format: extract major (first digit) and minor (last 2 digits)
+        helm_major = helm_major_num // 10000
+        helm_minor = helm_major_num % 100
+        helm_version_split = [str(helm_major), str(helm_minor)] + helm_version_split[1:]
+    else:
+        # Old format: extract major by removing padding
+        helm_version_split[0] = str(helm_major_num // 100)
+
     # Remove commit hash from the current version
     current_version_split = current_version_split[:-1]
     # If we are in a release branch, we will have patch version with '-rc'
@@ -59,9 +73,9 @@ def is_newer_version(current_version: str, helm_version: str):
         current_version_split[2] = str(current_version_split[2]).rstrip("-rc")
 
     for (current, helm) in zip(current_version_split, helm_version_split):
-        if current > helm:
+        if int(current) > int(helm):
             break
-        if current < helm:
+        if int(current) < int(helm):
             return True
 
     return False
@@ -125,15 +139,8 @@ def get_compatibility_test_tuples():
 
     # Currently there are no support exceptions, the last one expired on 2024-06-30, see:
     # https://issues.redhat.com/browse/ROX-18223
-    # however a new support exception is being negotiated, add it here when it's ready
-    support_exceptions = [
-        ChartVersions(
-            central_version=latest_tag,
-            sensor_version=get_latest_helm_chart_version_for_specific_release(
-                "stackrox-secured-cluster-services", Release(major=3, minor=74)
-            ),
-        )
-    ]
+    # Add new support exceptions here when negotiated
+    support_exceptions = []
 
     test_tuples.extend(
         support_exception
