@@ -145,3 +145,41 @@ _EO_DETAILS_
     run cat "${junit_dir}/junit-UNITTest.xml"
     assert_output --partial 'name="A &lt;unit&gt; &amp;test"'
 }
+
+@test "junit_contains_failure detects failures from save_junit_failure" {
+    run save_junit_failure "UNITTest" "A unit test" "failure details"
+    assert_success
+    run junit_contains_failure "${ARTIFACT_DIR}"
+    assert_success
+}
+
+@test "junit_contains_failure returns false for empty directory" {
+    run junit_contains_failure "${ARTIFACT_DIR}"
+    assert_failure
+}
+
+@test "junit_contains_failure returns false for non-existent directory" {
+    run junit_contains_failure "${ARTIFACT_DIR}/does-not-exist"
+    assert_failure
+}
+
+@test "junit_contains_failure returns false for success-only junit" {
+    run save_junit_success "UNITTest" "A unit test"
+    assert_success
+    run junit_contains_failure "${ARTIFACT_DIR}"
+    assert_failure
+}
+
+@test "junit_contains_failure detects failures with attributes" {
+    mkdir -p "${junit_dir}"
+    echo '<testsuite><testcase><failure type="error">test</failure></testcase></testsuite>' > "${junit_dir}/test.xml"
+    run junit_contains_failure "${ARTIFACT_DIR}"
+    assert_success
+}
+
+@test "junit_contains_failure detects failures without attributes" {
+    mkdir -p "${junit_dir}"
+    echo '<testsuite><testcase><failure>test</failure></testcase></testsuite>' > "${junit_dir}/test.xml"
+    run junit_contains_failure "${ARTIFACT_DIR}"
+    assert_success
+}
