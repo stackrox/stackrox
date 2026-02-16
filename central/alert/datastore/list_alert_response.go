@@ -39,89 +39,210 @@ type listAlertResponse struct {
 	ResourceType       *int       `db:"resource_type"`
 }
 
-func derefStr(p *string) string {
-	if p == nil {
-		return ""
-	}
-	return *p
-}
-
-func derefBool(p *bool) bool {
-	if p == nil {
-		return false
-	}
-	return *p
-}
-
-func derefInt(p *int) int {
-	if p == nil {
+func (r *listAlertResponse) GetLifecycleStage() storage.LifecycleStage {
+	if r.LifecycleStage == nil {
 		return 0
 	}
-	return *p
+	return storage.LifecycleStage(*r.LifecycleStage)
+}
+
+func (r *listAlertResponse) GetTime() *time.Time {
+	return r.Time
+}
+
+func (r *listAlertResponse) GetState() storage.ViolationState {
+	if r.State == nil {
+		return 0
+	}
+	return storage.ViolationState(*r.State)
+}
+
+func (r *listAlertResponse) GetPolicyID() string {
+	if r.PolicyID == nil {
+		return ""
+	}
+	return *r.PolicyID
+}
+
+func (r *listAlertResponse) GetPolicyName() string {
+	if r.PolicyName == nil {
+		return ""
+	}
+	return *r.PolicyName
+}
+
+func (r *listAlertResponse) GetSeverity() storage.Severity {
+	if r.Severity == nil {
+		return 0
+	}
+	return storage.Severity(*r.Severity)
+}
+
+func (r *listAlertResponse) GetDescription() string {
+	if r.Description == nil {
+		return ""
+	}
+	return *r.Description
+}
+
+func (r *listAlertResponse) GetEnforcementAction() storage.EnforcementAction {
+	if r.EnforcementAction == nil {
+		return 0
+	}
+	return storage.EnforcementAction(*r.EnforcementAction)
+}
+
+func (r *listAlertResponse) GetEnforcementCount() int32 {
+	if r.EnforcementCount == nil {
+		return 0
+	}
+	return int32(*r.EnforcementCount)
+}
+
+func (r *listAlertResponse) GetEntityType() storage.Alert_EntityType {
+	if r.EntityType == nil {
+		return 0
+	}
+	return storage.Alert_EntityType(*r.EntityType)
+}
+
+func (r *listAlertResponse) GetClusterID() string {
+	if r.ClusterID == nil {
+		return ""
+	}
+	return *r.ClusterID
+}
+
+func (r *listAlertResponse) GetClusterName() string {
+	if r.ClusterName == nil {
+		return ""
+	}
+	return *r.ClusterName
+}
+
+func (r *listAlertResponse) GetNamespace() string {
+	if r.Namespace == nil {
+		return ""
+	}
+	return *r.Namespace
+}
+
+func (r *listAlertResponse) GetNamespaceID() string {
+	if r.NamespaceID == nil {
+		return ""
+	}
+	return *r.NamespaceID
+}
+
+func (r *listAlertResponse) GetDeploymentID() string {
+	if r.DeploymentID == nil {
+		return ""
+	}
+	return *r.DeploymentID
+}
+
+func (r *listAlertResponse) GetDeploymentName() string {
+	if r.DeploymentName == nil {
+		return ""
+	}
+	return *r.DeploymentName
+}
+
+func (r *listAlertResponse) GetDeploymentType() string {
+	if r.DeploymentType == nil {
+		return ""
+	}
+	return *r.DeploymentType
+}
+
+func (r *listAlertResponse) GetDeploymentInactive() bool {
+	if r.DeploymentInactive == nil {
+		return false
+	}
+	return *r.DeploymentInactive
+}
+
+func (r *listAlertResponse) GetNodeName() string {
+	if r.NodeName == nil {
+		return ""
+	}
+	return *r.NodeName
+}
+
+func (r *listAlertResponse) GetResourceName() string {
+	if r.ResourceName == nil {
+		return ""
+	}
+	return *r.ResourceName
+}
+
+func (r *listAlertResponse) GetResourceType() storage.ListAlert_ResourceType {
+	if r.ResourceType == nil {
+		return 0
+	}
+	return storage.ListAlert_ResourceType(*r.ResourceType)
 }
 
 // toListAlert converts the database response to a storage.ListAlert protobuf.
 func (r *listAlertResponse) toListAlert() *storage.ListAlert {
 	listAlert := &storage.ListAlert{
 		Id:             r.ID,
-		LifecycleStage: storage.LifecycleStage(derefInt(r.LifecycleStage)),
-		Time:           protocompat.ConvertTimeToTimestampOrNil(r.Time),
-		State:          storage.ViolationState(derefInt(r.State)),
+		LifecycleStage: r.GetLifecycleStage(),
+		Time:           protocompat.ConvertTimeToTimestampOrNil(r.GetTime()),
+		State:          r.GetState(),
 		Policy: &storage.ListAlertPolicy{
-			Id:          derefStr(r.PolicyID),
-			Name:        derefStr(r.PolicyName),
-			Severity:    storage.Severity(derefInt(r.Severity)),
-			Description: derefStr(r.Description),
+			Id:          r.GetPolicyID(),
+			Name:        r.GetPolicyName(),
+			Severity:    r.GetSeverity(),
+			Description: r.GetDescription(),
 			Categories:  r.Categories,
 		},
-		EnforcementAction: storage.EnforcementAction(derefInt(r.EnforcementAction)),
-		EnforcementCount:  int32(derefInt(r.EnforcementCount)),
+		EnforcementAction: r.GetEnforcementAction(),
+		EnforcementCount:  r.GetEnforcementCount(),
 	}
 
-	entityType := storage.Alert_EntityType(derefInt(r.EntityType))
-	switch entityType {
+	switch r.GetEntityType() {
 	case storage.Alert_DEPLOYMENT:
 		listAlert.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
-			ClusterName:  derefStr(r.ClusterName),
-			ClusterId:    derefStr(r.ClusterID),
-			Namespace:    derefStr(r.Namespace),
-			NamespaceId:  derefStr(r.NamespaceID),
+			ClusterName:  r.GetClusterName(),
+			ClusterId:    r.GetClusterID(),
+			Namespace:    r.GetNamespace(),
+			NamespaceId:  r.GetNamespaceID(),
 			ResourceType: storage.ListAlert_DEPLOYMENT,
 		}
 		listAlert.Entity = &storage.ListAlert_Deployment{
 			Deployment: &storage.ListAlertDeployment{
-				Id:             derefStr(r.DeploymentID),
-				Name:           derefStr(r.DeploymentName),
-				ClusterName:    derefStr(r.ClusterName),
-				ClusterId:      derefStr(r.ClusterID),
-				Namespace:      derefStr(r.Namespace),
-				NamespaceId:    derefStr(r.NamespaceID),
-				DeploymentType: derefStr(r.DeploymentType),
-				Inactive:       derefBool(r.DeploymentInactive),
+				Id:             r.GetDeploymentID(),
+				Name:           r.GetDeploymentName(),
+				ClusterName:    r.GetClusterName(),
+				ClusterId:      r.GetClusterID(),
+				Namespace:      r.GetNamespace(),
+				NamespaceId:    r.GetNamespaceID(),
+				DeploymentType: r.GetDeploymentType(),
+				Inactive:       r.GetDeploymentInactive(),
 			},
 		}
 	case storage.Alert_RESOURCE:
-		resType := storage.ListAlert_ResourceType(derefInt(r.ResourceType))
 		listAlert.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
-			ClusterName:  derefStr(r.ClusterName),
-			ClusterId:    derefStr(r.ClusterID),
-			Namespace:    derefStr(r.Namespace),
-			NamespaceId:  derefStr(r.NamespaceID),
-			ResourceType: resType,
+			ClusterName:  r.GetClusterName(),
+			ClusterId:    r.GetClusterID(),
+			Namespace:    r.GetNamespace(),
+			NamespaceId:  r.GetNamespaceID(),
+			ResourceType: r.GetResourceType(),
 		}
 		listAlert.Entity = &storage.ListAlert_Resource{
 			Resource: &storage.ListAlert_ResourceEntity{
-				Name: derefStr(r.ResourceName),
+				Name: r.GetResourceName(),
 			},
 		}
 	case storage.Alert_NODE:
 		listAlert.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
-			ClusterName: derefStr(r.ClusterName),
-			ClusterId:   derefStr(r.ClusterID),
+			ClusterName: r.GetClusterName(),
+			ClusterId:   r.GetClusterID(),
 		}
 		listAlert.Entity = &storage.ListAlert_Node{
 			Node: &storage.ListAlert_NodeEntity{
-				Name: derefStr(r.NodeName),
+				Name: r.GetNodeName(),
 			},
 		}
 	}
