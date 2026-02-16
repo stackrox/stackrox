@@ -32,17 +32,17 @@ jobs:
 
           echo "::notice::Querying PRs with auto-merge labels"
 
-          # Get all open PRs with auto-merge or auto-merge-any labels
+          # Get Dependabot PRs with auto-merge labels (non-draft, mergeable only)
           PR_DATA=$(gh pr list \
             --repo "${{ github.repository }}" \
+            --author "app/dependabot" \
+            --label "auto-merge" \
+            --label "auto-merge-any" \
+            --draft=false \
             --state open \
             --limit 50 \
-            --json number,labels,isDraft,mergeable,author \
-            --jq ".[] | select(
-              .isDraft == false and
-              .mergeable == \"MERGEABLE\" and
-              (.labels | map(.name) | any(. == \"auto-merge\" or . == \"auto-merge-any\"))
-            ) | {number, labels: [.labels[].name], author: .author.login}")
+            --json number,mergeable \
+            --jq ".[] | select(.mergeable == \"MERGEABLE\") | .number")
 
           if [[ -z "$PR_DATA" ]]; then
             echo "::notice::No eligible PRs found with auto-merge labels"
@@ -50,12 +50,8 @@ jobs:
           fi
 
           # Process each PR
-          echo "$PR_DATA" | jq -c '.' | while read -r PR_JSON; do
-            PR_NUMBER=$(echo "$PR_JSON" | jq -r '.number')
-            AUTHOR=$(echo "$PR_JSON" | jq -r '.author')
-            LABELS=$(echo "$PR_JSON" | jq -r '.labels | join(",")')
-
-            echo "::notice::Processing PR #$PR_NUMBER (author=$AUTHOR, labels=$LABELS)"
+          echo "$PR_DATA" | while read -r PR_NUMBER; do
+            echo "::notice::Processing Dependabot PR #$PR_NUMBER"
 
             # Check if all checks have passed using GraphQL statusCheckRollup
             STATUS=$(gh api graphql -F owner="$OWNER" -F repo="$REPO" -F number="$PR_NUMBER" -f query="
