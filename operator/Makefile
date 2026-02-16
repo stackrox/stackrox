@@ -442,12 +442,12 @@ upgrade-dirty-tag-via-olm: kuttl
 ##@ Bundle and Index build
 
 # Commands to enter local Python virtual environment and get needed dependencies there.
-# Old CI environments (with pip 9.0.3) only have pip versions up to 21.3.1 in their PyPI index.
-# We upgrade pip to 21.3.1 first (for compatibility), then upgrade setuptools to 68.2.2 which
-# fixes the pkgutil.ImpImporter issue for Python 3.12 compatibility.
+# Old CI environments have ancient PyPI indexes that only contain pip up to 21.3.1 and
+# setuptools up to 59.6.0. We rely on the venv's default setuptools (which is compatible
+# with the Python version used to create it) and only upgrade pip for better compatibility.
 ACTIVATE_PYTHON = $(PYTHON) -m venv bundle_helpers/.venv ;\
 	. bundle_helpers/.venv/bin/activate ;\
-	pip3 install --upgrade pip==21.3.1 setuptools==68.2.2 ;\
+	pip3 install --upgrade pip==21.3.1 ;\
 	pip3 install -r bundle_helpers/requirements.txt
 
 .PHONY: bundle
