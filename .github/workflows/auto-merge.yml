@@ -32,16 +32,15 @@ jobs:
 
           echo "::notice::Querying PRs with auto-merge labels"
 
-          # Get Dependabot PRs with auto-merge labels (non-draft, mergeable only)
+          # Get all PRs with auto-merge labels (non-draft, mergeable only)
           PR_DATA=$(gh pr list \
             --repo "${{ github.repository }}" \
-            --author "app/dependabot" \
             --label "auto-merge" \
             --draft=false \
             --state open \
             --limit 50 \
-            --json number,mergeable \
-            --jq ".[] | select(.mergeable == \"MERGEABLE\") | .number")
+            --json number,mergeable,author \
+            --jq ".[] | select(.mergeable == \"MERGEABLE\") | {number, author: .author.login}")
 
           if [[ -z "$PR_DATA" ]]; then
             echo "::notice::No eligible PRs found with auto-merge labels"
@@ -49,8 +48,11 @@ jobs:
           fi
 
           # Process each PR
-          echo "$PR_DATA" | while read -r PR_NUMBER; do
-            echo "::notice::Processing Dependabot PR #$PR_NUMBER"
+          echo "$PR_DATA" | jq -c '.' | while read -r PR_JSON; do
+            PR_NUMBER=$(echo "$PR_JSON" | jq -r '.number')
+            AUTHOR=$(echo "$PR_JSON" | jq -r '.author')
+
+            echo "::notice::Processing PR #$PR_NUMBER (author=$AUTHOR)"
 
             # Check if all checks have passed using GraphQL statusCheckRollup
             STATUS=$(gh api graphql -F owner="$OWNER" -F repo="$REPO" -F number="$PR_NUMBER" -f query="
@@ -79,13 +81,17 @@ jobs:
               continue
             fi
 
+            # Enable auto-merge for all PRs with the label
             echo "::notice::Enabling auto-merge for PR #$PR_NUMBER"
             gh pr merge --repo "${{ github.repository }}" \
               --auto --squash "$PR_NUMBER"
-            echo "::notice::Approving PR #$PR_NUMBER"
-            gh pr review --repo "${{ github.repository }}" \
-              --approve "$PR_NUMBER" || true
 
+            # Auto-approve only Dependabot PRs
+            if [[ "$AUTHOR" == "app/dependabot" ]]; then
+              echo "::notice::Approving Dependabot PR #$PR_NUMBER"
+              gh pr review --repo "${{ github.repository }}" \
+                --approve "$PR_NUMBER" || true
+            fi
 
             echo "::notice::✓ Auto-merge enabled for PR #$PR_NUMBER"
           done
