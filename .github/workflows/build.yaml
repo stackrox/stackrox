@@ -44,7 +44,7 @@ jobs:
             "pre_build_go_binaries": { "name":[], "arch":[] },
             "build_and_push_main": { "name":[], "arch":[] },
             "push_main_multiarch_manifests": { "name":[] },
-            "build_and_push_operator": { "name":[], "arch":[] },
+            "build_and_push_operator": { "name":[] },
             "scan_images_with_roxctl": { "name":[], "image":[], "exclude":[] }
           }'
 
@@ -58,7 +58,6 @@ jobs:
           matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
 
           matrix="$(jq '.build_and_push_operator.name += ["RHACS_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_operator.arch += ["amd64"]' <<< "$matrix")"
 
           matrix="$(jq '.scan_images_with_roxctl.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.scan_images_with_roxctl.image += ["central-db", "collector", "main", "roxctl", "scanner", "scanner-db", "scanner-db-slim", "scanner-slim", "stackrox-operator"]' <<< "$matrix")"
@@ -370,6 +369,10 @@ jobs:
           username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
           password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
 
+      - name: Set up QEMU
+        if: matrix.arch != 'amd64'
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -606,10 +609,6 @@ jobs:
           free-disk-space: '30'
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Set up QEMU
-        if: matrix.arch != 'amd64'
-        uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -641,19 +640,10 @@ jobs:
 
       - name: Build Operator image
         run: |
-          # The first invocation builds native architecture dependencies, which helps avoid the following error,
-          # which otherwise happens when cross-building. It also needlessly builds the operator binary for the
-          # native architecture, but this is quick and more robust than trying to repeat the dependencies here
-          # or in a separate intermediate target.
-          #   + protoc-gen-go
-          #   go: cannot install cross-compiled binaries when GOBIN is set
-          CGO_ENABLED=0                           scripts/lib.sh retry 6 true make -C operator/ build
-          # Once the native architecture dependencies are installed by the above command, the following one
-          # simply builds the actual operator binary for the correct target architecture.
-          CGO_ENABLED=0 GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ build docker-build
+          scripts/lib.sh retry 6 true make -C operator/ build docker-build
 
       - name: Check that Operator image is runnable
-        run: docker run --rm --platform linux/${{ matrix.arch }} "quay.io/rhacs-eng/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
+        run: docker run --rm "quay.io/rhacs-eng/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
 
       - name: Push images
         # Skip for external contributions.
