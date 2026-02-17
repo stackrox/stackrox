@@ -8,6 +8,7 @@ import (
 	globstar "github.com/bmatcuk/doublestar/v4"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/glob"
 	"github.com/stackrox/rox/pkg/parse"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoreflect"
