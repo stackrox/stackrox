@@ -9,10 +9,7 @@ import sys
 from collections import namedtuple
 from pathlib import Path
 
-from get_latest_helm_chart_versions import (
-    get_supported_helm_chart_versions,
-    get_latest_helm_chart_version_for_specific_release,
-)
+from get_latest_helm_chart_versions import get_supported_helm_chart_versions
 
 
 # We run compatibility tests against supported older versions of Stackrox.
@@ -82,8 +79,6 @@ def is_newer_version(current_version: str, helm_version: str):
 
 
 def get_compatibility_test_tuples():
-    Release = namedtuple("Release", ["major", "minor"])
-
     # start logging
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
