@@ -96,13 +96,16 @@ function check-operator-generated-files-up-to-date() {
     make -C operator/ chart
     echo 'Expanding the operator helm chart...'
     helm template --namespace rhacs-operator-system rhacs-operator ./operator/dist/chart/ > operator/dist/chart.yaml
+    echo 'Downloading yq...'
+    make -C operator/ yq
+    yq=$(make --no-print-directory --silent -C operator/ which-yq)
     echo 'Normalizing the manifests...'
     # Reorder resources in the files, strip comments, pretty print, and remove expected differences:
     # - "resource-policy: keep" on the CRDs in the chart
     # - namespace resource in the manifest
-    yq -P ea 'del(.metadata.annotations.["helm.sh/resource-policy"]) | [.] | sort_by(.kind, .metadata.name) | .[] | splitDoc | ... comments=""' \
+    $yq -P ea '[.] | sort_by(.kind, .metadata.name) | del(.[].metadata.annotations.["helm.sh/resource-policy"]) | .[] | splitDoc | ... comments=""' \
       operator/dist/chart.yaml > operator/dist/chart-sorted.yaml
-    yq -P ea '[.] | sort_by(.kind, .metadata.name) | filter(.kind != "Namespace")                           | .[] | splitDoc | ... comments=""' \
+    $yq -P ea '[.] | sort_by(.kind, .metadata.name) | filter(.kind != "Namespace")                              | .[] | splitDoc | ... comments=""' \
       operator/dist/install.yaml > operator/dist/install-sorted.yaml
     echo 'Checking for differences between normalized operator manifest and normalized and expanded operator helm chart...'
     diff -U 10 dist/install-sorted.yaml dist/chart-sorted.yaml
