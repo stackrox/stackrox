@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/querybuilders"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/glob"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -954,7 +955,7 @@ func initializeFieldMetadata() FieldMetadata {
 
 	if features.SensitiveFileActivity.Enabled() {
 		f.registerFieldMetadata(fieldnames.FilePath,
-			querybuilders.ForFieldLabelExact(augmentedobjs.FileAccessPathCustomTag), nil,
+			querybuilders.ForFieldLabelFilePath(augmentedobjs.FileAccessPathCustomTag), nil,
 			func(config *validateConfiguration, value string) (bool, error) {
 				if !filepath.IsAbs(value) {
 					return false, errors.New("path must be absolute")
@@ -963,6 +964,12 @@ func initializeFieldMetadata() FieldMetadata {
 				if slices.Contains(strings.Split(value, string(filepath.Separator)), "..") {
 					return false, errors.New("path must not contain traversal '..'")
 				}
+
+				pattern := glob.Pattern(value)
+				if err := pattern.Compile(); err != nil {
+					return false, err
+				}
+
 				return true, nil
 			},
 			[]storage.EventSource{storage.EventSource_NODE_EVENT, storage.EventSource_DEPLOYMENT_EVENT},
