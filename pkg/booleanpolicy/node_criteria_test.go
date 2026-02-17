@@ -230,20 +230,63 @@ func (s *NodeCriteriaTestSuite) TestNodeFileAccess() {
 			},
 		},
 		{
-			description: "Node file policy with rename event",
-			policy:      newFileAccessPolicy(storage.EventSource_NODE_EVENT, []storage.FileAccess_Operation{storage.FileAccess_RENAME}, false, "/etc/passwd"),
+			description: "Node file policy with all allowed files",
+			policy:      newFileAccessPolicy(storage.EventSource_NODE_EVENT, nil, false, "/etc/passwd", "/etc/ssh/sshd_config", "/etc/shadow", "/etc/sudoers"),
 			events: []eventWrapper{
 				{
-					access:      newRenameFileAccessEvent("/etc/passwd", "/foo/bar"),
+					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 				{
-					access:      newRenameFileAccessEvent("/foo/bar", "/etc/passwd"),
+					access:      newActualFileAccessEvent("/etc/shadow", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
 				{
-					access:      newRenameFileAccessEvent("/foo/bar", "/bar/baz"),
-					expectAlert: false,
+					access:      newActualFileAccessEvent("/etc/ssh/sshd_config", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/etc/sudoers", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+			},
+		},
+		{
+			description: "Node file policy with event containing both matching paths",
+			policy:      newFileAccessPolicy(storage.EventSource_NODE_EVENT, nil, false, "/etc/passwd"),
+			events: []eventWrapper{
+				{
+					access: &storage.FileAccess{
+						File: &storage.FileAccess_File{
+							ActualPath:    "/etc/passwd",
+							EffectivePath: "/etc/passwd",
+						},
+						Operation: storage.FileAccess_OPEN,
+					},
+					expectAlert: true,
+				},
+			},
+		},
+		{
+			description: "Node file policy with arbitrary path",
+			policy:      newFileAccessPolicy(storage.EventSource_NODE_EVENT, nil, false, "/usr/local/bin/app"),
+			events: []eventWrapper{
+				{
+					access:      newActualFileAccessEvent("/usr/local/bin/app", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+			},
+		},
+		{
+			description: "Node file policy with arbitrary log path",
+			policy: newFileAccessPolicy(storage.EventSource_NODE_EVENT,
+				[]storage.FileAccess_Operation{storage.FileAccess_CREATE}, false,
+				"/var/log/audit.log",
+			),
+			events: []eventWrapper{
+				{
+					access:      newActualFileAccessEvent("/var/log/audit.log", storage.FileAccess_CREATE),
+					expectAlert: true,
 				},
 			},
 		},
