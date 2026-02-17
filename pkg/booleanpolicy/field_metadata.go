@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -959,7 +960,7 @@ func initializeFieldMetadata() FieldMetadata {
 					return false, errors.New("path must be absolute")
 				}
 
-				if slices.Contains(filepath.SplitList(value), "..") {
+				if slices.Contains(strings.Split(value, string(filepath.Separator)), "..") {
 					return false, errors.New("path must not contain traversal '..'")
 				}
 				return true, nil

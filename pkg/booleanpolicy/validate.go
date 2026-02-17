@@ -172,7 +172,7 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 			errorList.AddStringf("policy criteria %q does not support more than one value %q", g.GetFieldName(), g.GetValues())
 		}
 		for idx, v := range g.GetValues() {
-			if match, err := m.validator(configuration, v.GetValue()); !match && err != nil {
+			if match, err := m.validator(configuration, v.GetValue()); !match || err != nil {
 				errorList.AddStringf("policy criteria %q has invalid value[%d]=%q: %v", g.GetFieldName(), idx, v.GetValue(), err)
 			}
 		}
