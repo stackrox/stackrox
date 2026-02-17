@@ -61,3 +61,18 @@ func TestFindPreviousFireTime(t *testing.T) {
 		})
 	}
 }
+
+func TestFindPreviousFireTimeReturnsZeroWhenNoFireInWindow(t *testing.T) {
+	// Monthly on the 15th at 10:00, now is Jan 16.
+	// The lookback window is 32 days, starting from Dec 15.
+	// Dec 15 at 10:00 is the only fire in that window, so it should be found.
+	// But if the schedule fires only on Feb 29 (leap year), and now is Jan 1,
+	// there may be no fire in the 32-day window. Use a far-future date to simulate.
+	loc := time.Now().Location()
+	schedule, err := cron.Parse("0 10 29 2 *") // Only Feb 29
+	assert.NoError(t, err)
+
+	// Now is March 1, 2027 (non-leap year). Feb 29 doesn't exist, so no fire in window.
+	previousFire := findPreviousFireTime(schedule, time.Date(2027, 3, 1, 0, 0, 0, 0, loc))
+	assert.True(t, previousFire.IsZero(), "Expected zero time when no fire exists in lookback window")
+}

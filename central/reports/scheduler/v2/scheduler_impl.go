@@ -417,6 +417,9 @@ func (s *scheduler) recoverMissedSchedules() {
 		// We approximate the previous fire time by stepping back from now.
 		now := time.Now()
 		previousFireTime := findPreviousFireTime(cronSchedule, now)
+		if previousFireTime.IsZero() {
+			continue
+		}
 
 		// Query for the most recent report snapshot for this config
 		snapshotQuery := search.NewQueryBuilder().
@@ -432,22 +435,29 @@ func (s *scheduler) recoverMissedSchedules() {
 			continue
 		}
 
-		shouldRecover := false
+		// If there are no snapshots, the schedule has never run yet. Don't recover it;
+		// the cron job will fire at the correct time.
 		if len(snapshots) == 0 {
-			// No snapshots at all - schedule was never run, recover it
-			shouldRecover = true
-		} else {
-			lastSnapshot := snapshots[0]
-			lastTime := lastSnapshot.GetReportStatus().GetQueuedAt()
-			if lastTime != nil {
-				lastQueuedAt, err := protocompat.ConvertTimestampToTimeOrError(lastTime)
-				if err != nil {
-					log.Errorf("Error converting timestamp for config '%s': %v", rc.GetId(), err)
-					continue
-				}
-				if lastQueuedAt.Before(previousFireTime) {
-					shouldRecover = true
-				}
+			continue
+		}
+
+		lastSnapshot := snapshots[0]
+		// If the most recent snapshot is still pending, queuePendingReports already handles it.
+		runState := lastSnapshot.GetReportStatus().GetRunState()
+		if runState == storage.ReportStatus_WAITING || runState == storage.ReportStatus_PREPARING {
+			continue
+		}
+
+		shouldRecover := false
+		lastTime := lastSnapshot.GetReportStatus().GetQueuedAt()
+		if lastTime != nil {
+			lastQueuedAt, err := protocompat.ConvertTimestampToTimeOrError(lastTime)
+			if err != nil {
+				log.Errorf("Error converting timestamp for config '%s': %v", rc.GetId(), err)
+				continue
+			}
+			if lastQueuedAt.Before(previousFireTime) {
+				shouldRecover = true
 			}
 		}
 
