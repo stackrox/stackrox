@@ -305,8 +305,8 @@ github.com/aws/aws-sdk-go-v2/internal/ini v1.8.4 h1:WKuaxf++XKWlHWu9ECbMlha8WOEG
 github.com/aws/aws-sdk-go-v2/internal/ini v1.8.4/go.mod h1:ZWy7j6v1vWGmPReu0iSGvRiise4YI5SkR3OHKTZ6Wuc=
 github.com/aws/aws-sdk-go-v2/internal/v4a v1.4.17 h1:JqcdRG//czea7Ppjb+g/n4o8i/R50aTBHkA7vu0lK+k=
 github.com/aws/aws-sdk-go-v2/internal/v4a v1.4.17/go.mod h1:CO+WeGmIdj/MlPel2KwID9Gt7CNq4M65HUfBW97liM0=
-github.com/aws/aws-sdk-go-v2/service/ecr v1.55.1 h1:B7f9R99lCF83XlolTg6d6Lvghyto+/VU83ZrneAVfK8=
-github.com/aws/aws-sdk-go-v2/service/ecr v1.55.1/go.mod h1:cpYRXx5BkmS3mwWRKPbWSPKmyAUNL7aLWAPiiinwk/U=
+github.com/aws/aws-sdk-go-v2/service/ecr v1.55.2 h1:eEiC82g/AJpNtBB73Par9iO/EbWXcl8vh6tbM8wb+EM=
+github.com/aws/aws-sdk-go-v2/service/ecr v1.55.2/go.mod h1:cpYRXx5BkmS3mwWRKPbWSPKmyAUNL7aLWAPiiinwk/U=
 github.com/aws/aws-sdk-go-v2/service/ecrpublic v1.38.2 h1:9fe6w8bydUwNAhFVmjo+SRqAJjbBMOyILL/6hTTVkyA=
 github.com/aws/aws-sdk-go-v2/service/ecrpublic v1.38.2/go.mod h1:x7gU4CAyAz4BsM9hlRkhHiYw2GIr1QCmN45uwQw9l/E=
 github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.4 h1:0ryTNEdJbzUCEWkVXEXoqlXV72J5keC1GvILMOuD00E=
@@ -321,8 +321,8 @@ github.com/aws/aws-sdk-go-v2/service/kms v1.49.4 h1:2gom8MohxN0SnhHZBYAC4S8jHG+E
 github.com/aws/aws-sdk-go-v2/service/kms v1.49.4/go.mod h1:HO31s0qt0lso/ADvZQyzKs8js/ku0fMHsfyXW8OPVYc=
 github.com/aws/aws-sdk-go-v2/service/s3 v1.96.0 h1:oeu8VPlOre74lBA/PMhxa5vewaMIMmILM+RraSyB8KA=
 github.com/aws/aws-sdk-go-v2/service/s3 v1.96.0/go.mod h1:5jggDlZ2CLQhwJBiZJb4vfk4f0GxWdEDruWKEJ1xOdo=
-github.com/aws/aws-sdk-go-v2/service/securityhub v1.67.3 h1:FEs3IkfJWp+Sz3ZY6sAxmebBF0lr1wBcTWkuFW1OFJg=
-github.com/aws/aws-sdk-go-v2/service/securityhub v1.67.3/go.mod h1:3wnS16Wip5w0uh9kVFBhuMFmdkrMBr8Fc96kAY5h13o=
+github.com/aws/aws-sdk-go-v2/service/securityhub v1.67.4 h1:6zZdm6bqf975SA+6+lWlcokd9Z2fW/abVkc5E4tIm4M=
+github.com/aws/aws-sdk-go-v2/service/securityhub v1.67.4/go.mod h1:3wnS16Wip5w0uh9kVFBhuMFmdkrMBr8Fc96kAY5h13o=
 github.com/aws/aws-sdk-go-v2/service/signin v1.0.5 h1:VrhDvQib/i0lxvr3zqlUwLwJP4fpmpyD9wYG1vfSu+Y=
 github.com/aws/aws-sdk-go-v2/service/signin v1.0.5/go.mod h1:k029+U8SY30/3/ras4G/Fnv/b88N4mAfliNn08Dem4M=
 github.com/aws/aws-sdk-go-v2/service/sso v1.30.9 h1:v6EiMvhEYBoHABfbGB4alOYmCIrcgyPPiBE1wZAEbqk=
