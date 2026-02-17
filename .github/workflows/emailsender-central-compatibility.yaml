@@ -69,8 +69,8 @@ jobs:
         run: |
           # kind load docker-image uses docker save | ctr import --all-platforms,
           # which fails on multi-arch OCI images (only one platform's blobs exist).
-          # Pre-load images directly into the Kind node via ctr pull --platform
-          # so that kind load finds them already present and skips the broken path.
+          # Pre-load images directly into the Kind node via ctr pull --platform,
+          # then wrap kind to tolerate load failures for pre-loaded images.
           # See https://github.com/kubernetes-sigs/kind/issues/3795
           # Same approach as #19016 for sensor integration tests.
           TAG=$(make --no-print-directory -C stackrox tag)
@@ -83,6 +83,19 @@ jobs:
               sleep 30
             done
           done
+          # Make kind load non-fatal since multi-arch images are pre-loaded.
+          # Locally-built single-arch images (emailsender) still load normally.
+          REAL_KIND=$(which kind)
+          sudo mv "$REAL_KIND" "${REAL_KIND}.real"
+          printf '%s\n' \
+            '#!/bin/bash' \
+            'if [[ "$1" == "load" ]]; then' \
+            '  "${0}.real" "$@" || echo "::warning::kind load failed (image may be pre-loaded)"' \
+            '  exit 0' \
+            'fi' \
+            'exec "${0}.real" "$@"' \
+            | sudo tee "$REAL_KIND" > /dev/null
+          sudo chmod +x "$REAL_KIND"
       - name: Run Test
         env:
           IMG_WAIT_TIMEOUT_SECONDS: 2100
