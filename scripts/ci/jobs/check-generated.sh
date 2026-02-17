@@ -46,8 +46,7 @@ FAIL_FLAG="/tmp/fail"
 #   2. a single point for handling errors after each check.
 
 # shellcheck disable=SC2016
-github_group 'Check: Generated files are up to date'
-info 'If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.'
+info 'Check: Generated files are up to date. If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.'
 function generated_files-are-up-to-date() {
     git ls-files --others --exclude-standard >/tmp/untracked
 
@@ -84,11 +83,9 @@ bash -c generated_files-are-up-to-date || {
     git reset --hard HEAD
     echo generated_files-are-up-to-date >> "$FAIL_FLAG"
 }
-github_endgroup
 
 # shellcheck disable=SC2016
-github_group 'Check: Operator generated files are up to date'
-info 'If this fails, run `make -C operator manifests generate bundle` and commit the result.'
+info 'Check: Operator generated files are up to date. If this fails, run `make -C operator manifests generate bundle` and commit the result.'
 function check-operator-generated-files-up-to-date() {
     github_group 'Generate operator files'
     make -C operator/ generate
@@ -115,11 +112,9 @@ bash -c check-operator-generated-files-up-to-date || {
     git reset --hard HEAD
     echo check-operator-generated-files-up-to-date >> "$FAIL_FLAG"
 }
-github_endgroup
 
 # shellcheck disable=SC2016
-github_group 'Check: Config-controller generated files are up to date'
-info 'If this fails, run `make config-controller-gen` and commit the result.'
+info 'Check: Config-controller generated files are up to date. If this fails, run `make config-controller-gen` and commit the result.'
 function check-config-controller-generated-files-up-to-date() {
     github_group 'Running make config-controller-gen'
     make config-controller-gen
@@ -136,9 +131,8 @@ bash -c check-config-controller-generated-files-up-to-date || {
     git reset --hard HEAD
     echo check-config-controller-generated-files-up-to-date >> "$FAIL_FLAG"
 }
-github_endgroup
 
-github_group 'Check: .containerignore file is in sync with .dockerignore'
+info 'Check: .containerignore file is in sync with .dockerignore'
 info 'If this fails, follow instructions in .containerignore to update it.'
 function check-containerignore-is-in-sync() {
     diff \
@@ -156,11 +150,9 @@ bash -c check-containerignore-is-in-sync || {
     git reset --hard HEAD
     echo check-containerignore-is-in-sync >> "$FAIL_FLAG"
 }
-github_endgroup
 
 # shellcheck disable=SC2016
-github_group 'Check: Shellcheck skip list is up to date'
-info 'If this fails, run `make update-shellcheck-skip` and commit the result.'
+info 'Check: Shellcheck skip list is up to date. If this fails, run `make update-shellcheck-skip` and commit the result.'
 function check-shellcheck-failing-list() {
     github_group 'Running make update-shellcheck-skip'
     make update-shellcheck-skip
@@ -181,7 +173,6 @@ bash -c check-shellcheck-failing-list || {
     git reset --hard HEAD
     echo check-shellcheck-failing-list >> "$FAIL_FLAG"
 }
-github_endgroup
 
 if [[ -e "$FAIL_FLAG" ]]; then
     echo "ERROR: Some generated file checks failed:"
