@@ -277,6 +277,29 @@ func (s *NodeCriteriaTestSuite) TestNodeFileAccess() {
 				},
 			},
 		},
+		{
+			description: "Node file policy with arbitrary path",
+			policy:      s.getNodeFileAccessPolicy("/usr/local/bin/app"),
+			events: []eventWrapper{
+				{
+					access:      s.getNodeFileAccessEvent("/usr/local/bin/app", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+			},
+		},
+		{
+			description: "Node file policy with arbitrary log path",
+			policy: s.getNodeFileAccessPolicyWithOperations(
+				[]storage.FileAccess_Operation{storage.FileAccess_CREATE}, false,
+				"/var/log/audit.log",
+			),
+			events: []eventWrapper{
+				{
+					access:      s.getNodeFileAccessEvent("/var/log/audit.log", storage.FileAccess_CREATE),
+					expectAlert: true,
+				},
+			},
+		},
 	} {
 		testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, true)
 		defer testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, false)

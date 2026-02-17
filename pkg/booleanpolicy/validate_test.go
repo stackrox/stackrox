@@ -109,9 +109,9 @@ func (s *PolicyValueValidator) TestRegex() {
 		},
 		{
 			name:    "allowed file path",
-			valid:   []string{"/etc/passwd", "/etc/shadow", "/etc/sudoers", "/etc/ssh/sshd_config"},
-			invalid: []string{"", " ", "bin", "/usr/bin", "/etc/", "/etc/../etc/shadow", "~/home", "C:\\Windows", "relative/path"},
-			r:       allowedFilePathRegex,
+			valid:   []string{"/etc/passwd", "/etc/shadow", "/etc/sudoers", "/etc/ssh/sshd_config", "/usr/bin", "/var/log/app.log", "/etc/sshd/.hidden"},
+			invalid: []string{"", " ", "bin", "/etc/", "/etc/../etc/shadow", "~/home", "C:\\Windows", "relative/path", "/"},
+			r:       filePathRegex,
 		},
 		{
 			name:    "file operation",

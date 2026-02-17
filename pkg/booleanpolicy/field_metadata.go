@@ -933,9 +933,7 @@ func initializeFieldMetadata() FieldMetadata {
 		f.registerFieldMetadata(fieldnames.FilePath,
 			querybuilders.ForFieldLabelExact(augmentedobjs.FileAccessPathCustomTag), nil,
 			func(*validateConfiguration) *regexp.Regexp {
-				// TODO(ROX-31449): change to an absolute path regex when arbitrary
-				// paths are supported
-				return allowedFilePathRegex
+				return filePathRegex
 			},
 			[]storage.EventSource{storage.EventSource_NODE_EVENT, storage.EventSource_DEPLOYMENT_EVENT},
 			[]RuntimeFieldType{FileAccess}, negationForbidden,
