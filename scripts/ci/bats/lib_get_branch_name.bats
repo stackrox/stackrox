@@ -25,7 +25,7 @@ function setup() {
     export OPENSHIFT_CI=true
     run get_branch_name
     assert_failure 1
-    assert_output --partial 'Expected'
+    assert_output --partial 'ERROR: Expected'
 }
 
 @test "prow with PULL_HEAD_REF" {
