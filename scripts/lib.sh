@@ -16,7 +16,6 @@ Reuse with:
 info() {
     if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
         echo "::notice::$*"
-        echo "INFO: $*"
     else
         echo "INFO: $(date): $*"
     fi
