@@ -89,6 +89,9 @@ function check-operator-generated-files-up-to-date() {
     echo 'If this fails, check if the invocation of the normalize-metadata.py script in operator/Makefile'
     echo 'needs to change due to formatting changes in the generated files.'
     git diff --exit-code HEAD
+    make -C operator/ envtest-version
+    echo 'Checking for diffs after making envtest-version...'
+    git diff --exit-code HEAD
 }
 export -f check-operator-generated-files-up-to-date
 bash -c check-operator-generated-files-up-to-date || {
