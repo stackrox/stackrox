@@ -401,6 +401,71 @@ func (s *typeConversionTestSuite) TestConvertProtoScheduleToV2() {
 	}
 }
 
+func (s *typeConversionTestSuite) TestConvertSchedulePreservesTime() {
+	var cases = []struct {
+		testname string
+		hour     int32
+		minute   int32
+	}{
+		{
+			testname: "Midnight",
+			hour:     0,
+			minute:   0,
+		},
+		{
+			testname: "Afternoon with non-zero minute",
+			hour:     14,
+			minute:   30,
+		},
+		{
+			testname: "End of day",
+			hour:     23,
+			minute:   59,
+		},
+	}
+
+	for _, c := range cases {
+		s.T().Run(c.testname+" v2 to storage", func(t *testing.T) {
+			v2Schedule := &apiV2.ReportSchedule{
+				IntervalType: apiV2.ReportSchedule_DAILY,
+				Hour:         c.hour,
+				Minute:       c.minute,
+			}
+			converted := s.service.convertV2ScheduleToProto(v2Schedule)
+			assert.Equal(t, c.hour, converted.GetHour())
+			assert.Equal(t, c.minute, converted.GetMinute())
+			assert.Equal(t, storage.Schedule_DAILY, converted.GetIntervalType())
+		})
+
+		s.T().Run(c.testname+" storage to v2", func(t *testing.T) {
+			storageSchedule := &storage.Schedule{
+				IntervalType: storage.Schedule_DAILY,
+				Hour:         c.hour,
+				Minute:       c.minute,
+			}
+			converted := s.service.convertProtoScheduleToV2(storageSchedule)
+			assert.Equal(t, c.hour, converted.GetHour())
+			assert.Equal(t, c.minute, converted.GetMinute())
+			assert.Equal(t, apiV2.ReportSchedule_DAILY, converted.GetIntervalType())
+		})
+
+		s.T().Run(c.testname+" weekly roundtrip", func(t *testing.T) {
+			v2Schedule := &apiV2.ReportSchedule{
+				IntervalType: apiV2.ReportSchedule_WEEKLY,
+				Hour:         c.hour,
+				Minute:       c.minute,
+				Interval: &apiV2.ReportSchedule_DaysOfWeek_{
+					DaysOfWeek: &apiV2.ReportSchedule_DaysOfWeek{Days: []int32{1}},
+				},
+			}
+			storage := s.service.convertV2ScheduleToProto(v2Schedule)
+			roundTripped := s.service.convertProtoScheduleToV2(storage)
+			assert.Equal(t, c.hour, roundTripped.GetHour())
+			assert.Equal(t, c.minute, roundTripped.GetMinute())
+		})
+	}
+}
+
 func (s *typeConversionTestSuite) TestConvertV2ScheduleToProto() {
 	var cases = []struct {
 		testname string

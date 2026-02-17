@@ -470,8 +470,8 @@ func (s *scheduler) recoverMissedSchedules() {
 // findPreviousFireTime finds the most recent time before `now` that the cron schedule would have fired.
 // It does this by stepping back in time and checking when the next fire time from that point would be.
 func findPreviousFireTime(cronSchedule cron.Schedule, now time.Time) time.Time {
-	// Start from 48 hours ago and step forward to find the last fire time before now
-	candidate := now.Add(-48 * time.Hour)
+	// Start from 32 days ago to cover monthly schedules (max interval between fires)
+	candidate := now.Add(-32 * 24 * time.Hour)
 	var previousFire time.Time
 	for {
 		next := cronSchedule.Next(candidate)

@@ -105,3 +105,47 @@ func TestSchedule(t *testing.T) {
 		})
 	}
 }
+
+func TestDailyScheduleTimeInCrontab(t *testing.T) {
+	// Verify that the hour and minute are correctly placed in the crontab for daily schedules.
+	var cases = []struct {
+		testname string
+		hour     int32
+		minute   int32
+		expected string
+	}{
+		{
+			testname: "Daily at midnight",
+			hour:     0,
+			minute:   0,
+			expected: "0 0 * * *",
+		},
+		{
+			testname: "Daily at 14:30",
+			hour:     14,
+			minute:   30,
+			expected: "30 14 * * *",
+		},
+		{
+			testname: "Daily at 23:59",
+			hour:     23,
+			minute:   59,
+			expected: "59 23 * * *",
+		},
+		{
+			testname: "Daily at 06:05",
+			hour:     6,
+			minute:   5,
+			expected: "5 6 * * *",
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.testname, func(t *testing.T) {
+			sched := newSchedule(c.minute, c.hour, []int32{}, []int32{})
+			cron, err := ConvertToCronTab(sched)
+			require.NoError(t, err)
+			assert.Equal(t, c.expected, cron)
+		})
+	}
+}
