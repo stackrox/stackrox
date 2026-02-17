@@ -108,7 +108,7 @@ function check-operator-generated-files-up-to-date() {
     $yq -P ea '[.] | sort_by(.kind, .metadata.name) | filter(.kind != "Namespace")                              | .[] | splitDoc | ... comments=""' \
       operator/dist/install.yaml > operator/dist/install-sorted.yaml
     echo 'Checking for differences between normalized operator manifest and normalized and expanded operator helm chart...'
-    diff -U 10 dist/install-sorted.yaml dist/chart-sorted.yaml
+    diff -U 10 operator/dist/install-sorted.yaml operator/dist/chart-sorted.yaml
 }
 export -f check-operator-generated-files-up-to-date
 bash -c check-operator-generated-files-up-to-date || {
