@@ -34,7 +34,6 @@ export -f warn
 die() {
     if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
         echo >&2 "::error::$*"
-        echo >&2 "ERROR:" "$@"
     else
         echo >&2 "ERROR: $(date):" "$@"
     fi
