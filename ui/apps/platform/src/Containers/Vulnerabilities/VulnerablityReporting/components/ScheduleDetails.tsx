@@ -31,8 +31,7 @@ function ScheduleDetails({ formValues }: ScheduleDetailsProps): ReactElement {
     if (formValues.schedule.intervalType === 'DAILY') {
         scheduleDetailsText = (
             <span>
-                Report is scheduled to be sent <strong>daily</strong> at{' '}
-                <strong>{time} UTC</strong>
+                Report is scheduled to be sent <strong>daily</strong> at <strong>{time} UTC</strong>
             </span>
         );
     } else if (interval !== '' && days !== '') {
