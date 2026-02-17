@@ -14,13 +14,53 @@ Reuse with:
 }
 
 info() {
-    echo "INFO: $(date): $*"
+    if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+        echo "::notice::$*"
+        echo "INFO: $*"
+    else
+        echo "INFO: $(date): $*"
+    fi
 }
+export -f info
+
+warn() {
+    if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+        echo "::warning::$*"
+        echo "WARNING: $*"
+    else
+        echo "WARNING: $(date): $*"
+    fi
+}
+export -f warn
 
 die() {
-    echo >&2 "ERROR:" "$@"
+    if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+        echo >&2 "::error::$*"
+        echo >&2 "ERROR:" "$@"
+    else
+        echo >&2 "ERROR: $(date):" "$@"
+    fi
     exit 1
 }
+export -f die
+
+# Start a collapsible group in GitHub Actions logs
+github_group() {
+    if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+        echo "::group::$*"
+    else
+        info "$*"
+    fi
+}
+export -f github_group
+
+# End a collapsible group in GitHub Actions logs
+github_endgroup() {
+    if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+        echo "::endgroup::"
+    fi
+}
+export -f github_endgroup
 
 # Caution when editing: make sure groups would correspond to BASH_REMATCH use.
 RELEASE_RC_TAG_BASH_REGEX='^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$'

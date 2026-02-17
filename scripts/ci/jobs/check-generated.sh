@@ -46,14 +46,22 @@ FAIL_FLAG="/tmp/fail"
 #   2. a single point for handling errors after each check.
 
 # shellcheck disable=SC2016
-info 'Ensure that generated files are up to date. (If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.)'
+github_group 'Check: Generated files are up to date'
+info 'If this fails, run `make proto-generated-srcs && make go-generated-srcs` and commit the result.'
 function generated_files-are-up-to-date() {
     git ls-files --others --exclude-standard >/tmp/untracked
+
+    github_group 'Running make proto-generated-srcs'
     make proto-generated-srcs
+    github_endgroup
+
     # Remove generated mocks, they should be regenerated and if source was deleted they should be deleted as well.
     git grep --files-with-matches "Package mocks is a generated GoMock package." -- '*.go' | xargs rm
-    # Print the timestamp along with each new line of output, so we can track how long each command takes
-    make go-generated-srcs 2>&1 | while IFS= read -r line; do printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$line"; done
+
+    github_group 'Running make go-generated-srcs'
+    make go-generated-srcs
+    github_endgroup
+
     git diff --exit-code HEAD
     { git ls-files --others --exclude-standard ; cat /tmp/untracked ; } | sort | uniq -u >/tmp/untracked-new
 
@@ -76,15 +84,24 @@ bash -c generated_files-are-up-to-date || {
     git reset --hard HEAD
     echo generated_files-are-up-to-date >> "$FAIL_FLAG"
 }
+github_endgroup
 
 # shellcheck disable=SC2016
-info 'Check operator files are up to date (If this fails, run `make -C operator manifests generate bundle` and commit the result.)'
+github_group 'Check: Operator generated files are up to date'
+info 'If this fails, run `make -C operator manifests generate bundle` and commit the result.'
 function check-operator-generated-files-up-to-date() {
+    github_group 'Generate operator files'
     make -C operator/ generate
     make -C operator/ manifests
+    github_endgroup
+
     echo 'Checking for diffs after making generate and manifests...'
     git diff --exit-code HEAD
+
+    github_group 'Generate operator bundle'
     make -C operator/ bundle
+    github_endgroup
+
     echo 'Checking for diffs after making bundle...'
     echo 'If this fails, check if the invocation of the normalize-metadata.py script in operator/Makefile'
     echo 'needs to change due to formatting changes in the generated files.'
@@ -98,11 +115,16 @@ bash -c check-operator-generated-files-up-to-date || {
     git reset --hard HEAD
     echo check-operator-generated-files-up-to-date >> "$FAIL_FLAG"
 }
+github_endgroup
 
 # shellcheck disable=SC2016
-info 'Check config-controller files are up to date (If this fails, run `make config-controller-gen` and commit the result.)'
+github_group 'Check: Config-controller generated files are up to date'
+info 'If this fails, run `make config-controller-gen` and commit the result.'
 function check-config-controller-generated-files-up-to-date() {
+    github_group 'Running make config-controller-gen'
     make config-controller-gen
+    github_endgroup
+
     echo 'Checking for diffs after making config-controller-gen...'
     git diff --exit-code HEAD
 }
@@ -114,8 +136,10 @@ bash -c check-config-controller-generated-files-up-to-date || {
     git reset --hard HEAD
     echo check-config-controller-generated-files-up-to-date >> "$FAIL_FLAG"
 }
+github_endgroup
 
-info 'Check .containerignore file is in sync with .dockerignore (If this fails, follow instructions in .containerignore to update it.)'
+github_group 'Check: .containerignore file is in sync with .dockerignore'
+info 'If this fails, follow instructions in .containerignore to update it.'
 function check-containerignore-is-in-sync() {
     diff \
         --unified \
@@ -132,11 +156,16 @@ bash -c check-containerignore-is-in-sync || {
     git reset --hard HEAD
     echo check-containerignore-is-in-sync >> "$FAIL_FLAG"
 }
+github_endgroup
 
 # shellcheck disable=SC2016
-echo 'Check if a script that was on the failed shellcheck list is now fixed. (If this fails, run `make update-shellcheck-skip` and commit the result.)'
+github_group 'Check: Shellcheck skip list is up to date'
+info 'If this fails, run `make update-shellcheck-skip` and commit the result.'
 function check-shellcheck-failing-list() {
+    github_group 'Running make update-shellcheck-skip'
     make update-shellcheck-skip
+    github_endgroup
+
     echo 'Checking for diffs after updating shellcheck failing list...'
     if ! git diff --exit-code HEAD; then
         echo 'Failure only if files can be removed from the skip file.'
@@ -152,6 +181,7 @@ bash -c check-shellcheck-failing-list || {
     git reset --hard HEAD
     echo check-shellcheck-failing-list >> "$FAIL_FLAG"
 }
+github_endgroup
 
 if [[ -e "$FAIL_FLAG" ]]; then
     echo "ERROR: Some generated file checks failed:"
