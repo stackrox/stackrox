@@ -117,16 +117,7 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 		return
 	}
 
-	err = retry.WithRetry(func() error {
-		return rg.generateReportAndNotify(req)
-	},
-		retry.Tries(env.ReportGenerationMaxRetries.IntegerSetting()),
-		retry.WithExponentialBackoff(),
-		retry.OnFailedAttempts(func(err error) {
-			log.Warnf("Report generation attempt failed for config '%s', retrying: %v",
-				req.ReportSnapshot.GetName(), err)
-		}),
-	)
+	err = rg.generateReportAndNotify(req)
 	if err != nil {
 		rg.logAndUpsertError(err, req)
 		return
