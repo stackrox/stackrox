@@ -713,6 +713,7 @@ func (s *PolicyValueValidator) TestValidateFilePath() {
 			path:        "/home/user/app/.config.json",
 		},
 		{
+<<<<<<< HEAD
 			description: "valid wildcard path",
 			valid:       true,
 			path:        "/home/*/.config/**/*",
@@ -723,6 +724,9 @@ func (s *PolicyValueValidator) TestValidateFilePath() {
 			path:        "/home/*/.confi?/**/*",
 		},
 		{
+||||||| parent of 35393a7f25 (Add tests, fix validation)
+=======
+>>>>>>> 35393a7f25 (Add tests, fix validation)
 			description: "invalid relative path",
 			valid:       false,
 			path:        "user/app/config.json",

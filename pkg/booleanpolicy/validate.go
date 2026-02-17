@@ -172,14 +172,7 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 			errorList.AddStringf("policy criteria %q does not support more than one value %q", g.GetFieldName(), g.GetValues())
 		}
 		for idx, v := range g.GetValues() {
-<<<<<<< HEAD
 			if match, err := m.validator(configuration, v.GetValue()); !match || err != nil {
-||||||| parent of 318ea295a3 (Refactor fieldmetadata to support arbitrary validation rather than enforcing regex)
-			if !m.valueRegex(configuration).MatchString(v.GetValue()) {
-				errorList.AddStringf("policy criteria %q has invalid value[%d]=%q must match regex %q", g.GetFieldName(), idx, v.GetValue(), m.valueRegex(configuration).String())
-=======
-			if match, err := m.validator(configuration, v.GetValue()); !match && err != nil {
->>>>>>> 318ea295a3 (Refactor fieldmetadata to support arbitrary validation rather than enforcing regex)
 				errorList.AddStringf("policy criteria %q has invalid value[%d]=%q: %v", g.GetFieldName(), idx, v.GetValue(), err)
 			}
 		}
