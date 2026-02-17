@@ -25,7 +25,6 @@ export -f info
 warn() {
     if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
         echo "::warning::$*"
-        echo "WARNING: $*"
     else
         echo "WARNING: $(date): $*"
     fi
