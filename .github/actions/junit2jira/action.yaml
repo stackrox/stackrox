@@ -45,47 +45,15 @@ runs:
     if: always()
     run: |
       set -u
-
       source scripts/ci/lib.sh
       export ARTIFACT_DIR="${{ inputs.directory }}"
 
-      if [[ "${{ job.status }}" != "failure" ]]; then
-        echo "Job status: ${{ job.status }} - no failure record needed"
-        exit 0
-      fi
-
-      if junit_contains_failure "${{ inputs.directory }}"; then
-        echo "JUnit test failures already exist - skipping failure record"
-        exit 0
-      fi
-
-      echo "Job failed but no JUnit test failures found - looking for failed step"
-
-      # Steps context only includes steps with explicit id attribute
-      failed_step=$(echo '${{ toJSON(steps) }}' | jq -r 'to_entries[] | select(.value.outcome == "failure") | .key' | head -1)
-
-      if [[ -n "$failed_step" ]]; then
-        step_outcome=$(echo '${{ toJSON(steps) }}' | jq -r ".[\"$failed_step\"].outcome")
-        step_conclusion=$(echo '${{ toJSON(steps) }}' | jq -r ".[\"$failed_step\"].conclusion")
-
-        failure_details="Step failed during workflow execution.
-Outcome: ${step_outcome}
-Conclusion: ${step_conclusion}
-
-Check workflow logs for details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
-        save_junit_failure "${{ github.job }}" "$failed_step" "$failure_details"
-        echo "Created JUnit failure record for step: $failed_step"
-        exit 0
-      fi
-
-      # Fallback for steps without id (e.g., docker login, built-in setup steps)
-      save_junit_failure \
+      capture_job_failure_as_junit \
+        "${{ inputs.directory }}" \
         "${{ github.job }}" \
-        "error" \
-        "Job failed without producing JUnit test failures. This typically indicates an infrastructure failure in a step without an id (e.g., docker login, setup step, artifact download). Check workflow logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
-      echo "Created generic JUnit failure record for job: ${{ github.job }}"
+        "${{ job.status }}" \
+        '${{ toJSON(steps) }}' \
+        "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   - name: Check files
     id: run
     shell: bash
