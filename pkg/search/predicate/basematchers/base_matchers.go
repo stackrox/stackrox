@@ -5,8 +5,9 @@ import (
 	"strings"
 	"time"
 
+	globstar "github.com/bmatcuk/doublestar/v4"
+
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/glob"
 	"github.com/stackrox/rox/pkg/parse"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoreflect"
@@ -242,12 +243,11 @@ func forStringPrefixMatch(value string, negated bool) (func(string) bool, error)
 
 func forStringGlobMatch(value string, negated bool) (func(string) bool, error) {
 	return func(instance string) bool {
-		pattern := glob.Pattern(value)
-		if err := pattern.Compile(); err != nil {
+		matched, err := globstar.Match(value, instance)
+		if err != nil {
 			return false
 		}
 
-		matched := pattern.Match(instance)
 		// matched != negated is equivalent to (matched XOR negated), which is what we want here
 		return matched != negated
 	}, nil

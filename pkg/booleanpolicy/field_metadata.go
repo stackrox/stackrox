@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	globstar "github.com/bmatcuk/doublestar/v4"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
@@ -16,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/querybuilders"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/glob"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -965,9 +966,8 @@ func initializeFieldMetadata() FieldMetadata {
 					return false, errors.New("path must not contain traversal '..'")
 				}
 
-				pattern := glob.Pattern(value)
-				if err := pattern.Compile(); err != nil {
-					return false, err
+				if !globstar.ValidatePattern(value) {
+					return false, errors.New("path contains invalid wildcard pattern")
 				}
 
 				return true, nil
