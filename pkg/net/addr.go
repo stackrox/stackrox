@@ -64,10 +64,11 @@ func (d ipv4data) isLoopback() bool {
 	return d[0] == 127
 }
 
-func (d ipv4data) isPublic() bool {
-	netIP := net.IP(d.bytes())
+// isPublicIPv4Scalar checks if an IPv4 address is public using scalar (non-SIMD) implementation.
+// This is the baseline implementation used on non-SIMD platforms or as a fallback.
+func isPublicIPv4Scalar(ip net.IP) bool {
 	for _, privateIPNet := range netutil.IPv4PrivateNetworks {
-		if privateIPNet.Contains(netIP) {
+		if privateIPNet.Contains(ip) {
 			return false
 		}
 	}
@@ -102,10 +103,11 @@ func (d ipv6data) isLoopback() bool {
 	return true
 }
 
-func (d ipv6data) isPublic() bool {
-	netIP := net.IP(d.bytes())
+// isPublicIPv6Scalar checks if an IPv6 address is public using scalar (non-SIMD) implementation.
+// This is the baseline implementation used on non-SIMD platforms or as a fallback.
+func isPublicIPv6Scalar(ip net.IP) bool {
 	for _, privateIPNet := range netutil.IPv6PrivateNetworks {
-		if privateIPNet.Contains(netIP) {
+		if privateIPNet.Contains(ip) {
 			return false
 		}
 	}
