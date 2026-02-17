@@ -1,9 +1,9 @@
 ARG RPMS_REGISTRY=registry.access.redhat.com
-ARG RPMS_BASE_IMAGE=ubi8
+ARG RPMS_BASE_IMAGE=ubi9
 ARG RPMS_BASE_TAG=latest
 
 ARG BASE_REGISTRY=registry.access.redhat.com
-ARG BASE_IMAGE=ubi8-minimal
+ARG BASE_IMAGE=ubi9-minimal
 ARG BASE_TAG=latest
 
 FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS postgres_rpms
@@ -46,6 +46,7 @@ RUN microdnf upgrade -y --nobest && \
     rpm --import PGDG-RPM-GPG-KEY-RHEL && \
     microdnf install -y \
         ca-certificates \
+        crypto-policies-scripts \
         glibc-langpack-en \
         glibc-locale-source \
         libicu \
@@ -54,15 +55,15 @@ RUN microdnf upgrade -y --nobest && \
         perl-libs \
         python3 \
         systemd-sysv \
+        uuid \
         zstd \
         && \
-    if [[ $(awk -F'=' '/VERSION_ID/{ gsub(/"/,""); print substr($2,1,1)}' /etc/os-release) -gt 8 ]]; then \
-        microdnf install -y uuid; \
-    fi && \
     rpm -i /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
     # Restore /usr/share/zoneinfo that's empty in ubi-minimal because postgres reads timezone data from it.
     # https://access.redhat.com/solutions/5616681
     microdnf reinstall -y tzdata && \
+    # Enable post-quantum cryptography key exchange for TLS.
+    update-crypto-policies --set DEFAULT:PQ && \
     microdnf clean all && \
     # (Optional) Remove line below to keep package management utilities
     rpm -e --nodeps $(rpm -qa shadow-utils curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
