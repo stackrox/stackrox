@@ -594,10 +594,9 @@ func TestApplyConfigToCluster(t *testing.T) {
 			capabilities:         []string{"new-cap1", "new-cap2"},
 		}
 
-		updated := applyConfigToCluster(original, config, "new-bundle")
+		updated := applyConfigToCluster(original, config)
 
 		assert.Equal(t, storage.ManagerType_MANAGER_TYPE_HELM_CHART, updated.GetManagedBy())
-		assert.Equal(t, "new-bundle", updated.GetInitBundleId())
 		assert.ElementsMatch(t, []string{"new-cap1", "new-cap2"}, updated.GetSensorCapabilities())
 		assert.NotNil(t, updated.GetHelmConfig())
 		assert.Equal(t, "new-fp", updated.GetHelmConfig().GetConfigFingerprint())
@@ -621,7 +620,7 @@ func TestApplyConfigToCluster(t *testing.T) {
 			capabilities:         []string{},
 		}
 
-		updated := applyConfigToCluster(original, config, "bundle")
+		updated := applyConfigToCluster(original, config)
 
 		assert.Equal(t, storage.ManagerType_MANAGER_TYPE_MANUAL, updated.GetManagedBy())
 		assert.Nil(t, updated.GetHelmConfig())
@@ -642,7 +641,7 @@ func TestApplyConfigToCluster(t *testing.T) {
 			capabilities:         []string{"cap1"},
 		}
 
-		updated := applyConfigToCluster(original, config, "new-bundle")
+		updated := applyConfigToCluster(original, config)
 
 		// Original should be unchanged
 		assert.Equal(t, storage.ManagerType_MANAGER_TYPE_MANUAL, original.GetManagedBy())
@@ -650,7 +649,6 @@ func TestApplyConfigToCluster(t *testing.T) {
 
 		// Updated should have new values
 		assert.Equal(t, storage.ManagerType_MANAGER_TYPE_HELM_CHART, updated.GetManagedBy())
-		assert.Equal(t, "new-bundle", updated.GetInitBundleId())
 	})
 }
 

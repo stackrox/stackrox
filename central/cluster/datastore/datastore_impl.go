@@ -968,7 +968,7 @@ func buildClusterFromConfig(clusterName, registrantID string, config clusterConf
 
 // applyConfigToCluster applies configuration updates to a cluster.
 // Returns a new cluster object with updates applied (immutable pattern).
-func applyConfigToCluster(cluster *storage.Cluster, config clusterConfigData, registrantID string) *storage.Cluster {
+func applyConfigToCluster(cluster *storage.Cluster, config clusterConfigData) *storage.Cluster {
 	updated := cluster.CloneVT()
 	updated.ManagedBy = config.manager
 	// It would be wrong to set cluster.InitBundle to registrantID here.
@@ -1099,7 +1099,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	}
 
 	// Apply configuration updates
-	updatedCluster := applyConfigToCluster(cluster, config, registrantID)
+	updatedCluster := applyConfigToCluster(cluster, config)
 
 	// Persist if changed
 	if !cluster.EqualVT(updatedCluster) {
