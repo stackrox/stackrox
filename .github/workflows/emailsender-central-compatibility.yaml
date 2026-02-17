@@ -19,6 +19,10 @@ on:
       - 'central/auth/m2m/**'
       - '.github/workflows/emailsender-central-compatibility.yaml'
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   e2e-test-on-kind:
     timeout-minutes: 60
@@ -29,10 +33,6 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - name: Cancel Previous Runs
-        uses: n1hility/cancel-previous-runs@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Login to Quay.io
         uses: docker/login-action@v3
         with:
@@ -61,10 +61,26 @@ jobs:
       - uses: ./stackrox/.github/actions/job-preamble
         with:
           free-disk-space: 40
-      - name: Create Kind cluster"
+      - name: Create Kind cluster
         uses: helm/kind-action@v1
         with:
           cluster_name: kind
+      - name: Pre-load multi-arch images into Kind
+        run: |
+          # kind load docker-image uses docker save | ctr import --all-platforms,
+          # which fails on multi-arch OCI images (only one platform's blobs exist).
+          # Pre-load images directly into the Kind node via ctr pull --platform
+          # so that kind load finds them already present and skips the broken path.
+          # See https://github.com/kubernetes-sigs/kind/issues/3795
+          TAG=$(make --no-print-directory -C stackrox tag)
+          QUAY_CREDS="${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}:${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}"
+          for img in quay.io/rhacs-eng/main:$TAG quay.io/rhacs-eng/central-db:$TAG; do
+            echo "Waiting for $img ..."
+            until docker exec kind-control-plane ctr -n k8s.io images pull \
+              --user "$QUAY_CREDS" --platform linux/amd64 "$img" 2>/dev/null; do
+              sleep 30
+            done
+          done
       - name: Run Test
         env:
           IMG_WAIT_TIMEOUT_SECONDS: 2100
