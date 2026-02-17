@@ -10,25 +10,6 @@ import (
 const (
 	ipv4Regex = "(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})"
 	ipv6Regex = "((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*::((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*|((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4})){7}"
-
-	// the only disallowed character in linux paths is a null terminator,
-	// but we need to prevent path traversal which means this regex matches
-	// (
-	//     /            - a path separator
-	//     (
-	//        \.[^\0/.] - a . followed by anthing other than a . (prevents path traversal ..)
-	//     	  |         - OR
-	//        [^\0/.]   - one or more non-nil, non-slash characters (a path element)
-	//     )
-	//     [^\0/]+      - one or more non-nil, non-slash characters (a path element)
-	// )+               - one or more times
-	//
-	// This explicitly disallows a single slash because it is too broad for
-	// our monitoring, and disallows path traversal elements, while including
-	// "hidden" files.
-	//
-	// see validate_test.go for valid / invalid examples.
-	absoluteFileRegex = `(/(\.[^\0/.]|[^\0/.])[^\0/]+)+`
 )
 
 var (
@@ -54,7 +35,6 @@ var (
 	kubernetesNameRegex                      = createRegex(`(?i:[a-z0-9])(?i:[-:a-z0-9]*[a-z0-9])?`)
 	ipAddressValueRegex                      = createRegex(fmt.Sprintf(`(%s)|(%s)`, ipv4Regex, ipv6Regex))
 	signatureIntegrationIDValueRegex         = createRegex(regexp.QuoteMeta(signatures.SignatureIntegrationIDPrefix) + "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
-	filePathRegex                            = createRegex(absoluteFileRegex)
 	fileOperationRegex                       = createRegex(`(?i:OPEN|CREATE|UNLINK|OWNERSHIP_CHANGE|PERMISSION_CHANGE)`)
 )
 
