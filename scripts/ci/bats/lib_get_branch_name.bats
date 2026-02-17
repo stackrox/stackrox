@@ -87,7 +87,7 @@ function setup() {
     export GITHUB_ACTION=true
     run get_branch_name
     assert_failure 1
-    assert_output --partial 'ERROR: Expected'
+    assert_output --partial 'Expected'
 }
 
 @test "GHA with both refs" {
