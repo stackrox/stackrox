@@ -21,7 +21,7 @@ import type { TypeaheadSelectOption } from 'Components/TypeaheadSelect/Typeahead
 import type { ClusterScopeObject } from 'services/RolesService';
 import type { SearchFilter } from 'types/search';
 
-type PolicyScopeCardProps = {
+type PolicyScopeCardLegacyProps = {
     type: 'exclusion' | 'inclusion';
     name: string;
     clusters: ClusterScopeObject[];
@@ -29,13 +29,13 @@ type PolicyScopeCardProps = {
     hasAuditLogEventSource: boolean;
 };
 
-function PolicyScopeCard({
+function PolicyScopeCardLegacy({
     type,
     name,
     clusters,
     onDelete,
     hasAuditLogEventSource = false,
-}: PolicyScopeCardProps): ReactElement {
+}: PolicyScopeCardLegacyProps): ReactElement {
     const [field, , helper] = useField(name);
     const { value } = field;
     const { scope } = value ?? {};
@@ -201,4 +201,4 @@ function PolicyScopeCard({
     );
 }
 
-export default PolicyScopeCard;
+export default PolicyScopeCardLegacy;
