@@ -41,7 +41,7 @@ func IsIPv4Public(ip [4]byte) bool {
 	ipInt := binary.BigEndian.Uint32(ip[:])
 
 	// Check each private network range
-	for i := range 5 {
+	for i := range len(ipv4Masks) {
 		if (ipInt & ipv4Masks[i]) == ipv4Prefixes[i] {
 			return false // Is private
 		}
