@@ -137,3 +137,15 @@ tests:
   expectError: true
   expect: |
     .error | assertThat(contains("set to full mode: scanner.mode=full"))
+
+- name: "Scanner deployment has secure container security context"
+  expect: |
+    .deployments["scanner"].spec.template.spec.containers[] | select(.name == "scanner") | .securityContext.allowPrivilegeEscalation | assertThat(. == false)
+
+- name: "Scanner DB has secure container security context"
+  expect: |
+    .deployments["scanner-db"].spec.template.spec.containers[] | select(.name == "db") | .securityContext.allowPrivilegeEscalation | assertThat(. == false)
+
+- name: "Scanner DB init container has secure container security context"
+  expect: |
+    .deployments["scanner-db"].spec.template.spec.initContainers[] | select(.name == "init-db") | .securityContext.allowPrivilegeEscalation | assertThat(. == false)
