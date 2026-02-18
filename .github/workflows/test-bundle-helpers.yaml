@@ -1,3 +1,5 @@
+#  This workflow makes sure that the Go and Python outputs of operator bundle helpers are byte for byte equivalent.
+# It will be removed together with the Python implementation in a follow-up PR.
 name: Test Bundle Helpers
 
 on:
