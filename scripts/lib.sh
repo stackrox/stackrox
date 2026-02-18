@@ -13,8 +13,12 @@ Reuse with:
   method [args...]"
 }
 
+is_GITHUB_ACTIONS() {
+    [[ -n "${GITHUB_ACTION:-}" ]]
+}
+
 info() {
-    if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+    if is_GITHUB_ACTIONS; then
         echo "::notice::$*"
     else
         echo "INFO: $(date): $*"
@@ -23,8 +27,8 @@ info() {
 export -f info
 
 warn() {
-    if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
-        echo "::warning::$*"
+    if is_GITHUB_ACTIONS; then
+        echo "::warning::WARNING: $*"
     else
         echo "WARNING: $(date): $*"
     fi
@@ -32,8 +36,8 @@ warn() {
 export -f warn
 
 die() {
-    if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
-        echo >&2 "::error::$*"
+    if is_GITHUB_ACTIONS; then
+        echo >&2 "::error::ERROR: $*"
     else
         echo >&2 "ERROR: $(date):" "$@"
     fi
@@ -43,7 +47,7 @@ export -f die
 
 # Start a collapsible group in GitHub Actions logs
 github_group() {
-    if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+    if is_GITHUB_ACTIONS; then
         echo "::group::$*"
     else
         info "$*"
@@ -53,7 +57,7 @@ export -f github_group
 
 # End a collapsible group in GitHub Actions logs
 github_endgroup() {
-    if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+    if is_GITHUB_ACTIONS; then
         echo "::endgroup::"
     fi
 }
@@ -109,10 +113,6 @@ is_CI() {
 
 is_OPENSHIFT_CI() {
     [[ "${OPENSHIFT_CI:-}" == "true" ]]
-}
-
-is_GITHUB_ACTIONS() {
-    [[ -n "${GITHUB_ACTION:-}" ]]
 }
 
 is_darwin() {
