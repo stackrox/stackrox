@@ -139,7 +139,8 @@ jobs:
           if [ -d build/bundle ]; then
             cp -r build/bundle /tmp/artifacts/build-bundle-go
           fi
-          git diff || true
+          # Make sure the build is clean.
+          git diff --exit-code HEAD
 
       - name: Upload Go bundle artifacts
         uses: actions/upload-artifact@v4
