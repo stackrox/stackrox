@@ -27,7 +27,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
-	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/search/sortfields"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -986,7 +985,7 @@ func (s *storeImpl) GetListImagesView(ctx context.Context, q *v1.Query) ([]*view
 	selects := []*v1.QuerySelect{
 		search.NewQuerySelect(search.ImageSHA).Proto(),
 		search.NewQuerySelect(search.ImageName).Proto(),
-		search.NewQuerySelect(search.ComponentID).AggrFunc(aggregatefunc.Count).Proto(),
+		search.NewQuerySelect(search.ImageComponentCount).Proto(),
 		search.NewQuerySelect(search.ImageCVECount).Proto(),
 		search.NewQuerySelect(search.FixableCVECount).Proto(),
 		search.NewQuerySelect(search.ImageCreatedTime).Proto(),
@@ -994,9 +993,6 @@ func (s *storeImpl) GetListImagesView(ctx context.Context, q *v1.Query) ([]*view
 	}
 	cloned := q.CloneVT()
 	cloned.Selects = selects
-	cloned.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{search.ImageID.String()},
-	}
 
 	var results []*views.ListImageV2View
 	err := pgSearch.RunSelectRequestForSchemaFn[views.ListImageV2View](ctx, s.db, pkgSchema.ImagesV2Schema, cloned, func(row *views.ListImageV2View) error {

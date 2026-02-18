@@ -97,6 +97,7 @@ var (
 	ImageUser                      = newFieldLabel("Image User")
 	ImageCommand                   = newFieldLabel("Image Command")
 	ImageCVECount                  = newFieldLabel("Image CVE Count")
+	ImageComponentCount            = newFieldLabel("Image Component Count")
 	ImageEntrypoint                = newFieldLabel("Image Entrypoint")
 	ImageLabel                     = newFieldLabel("Image Label")
 	ImageVolumes                   = newFieldLabel("Image Volumes")
