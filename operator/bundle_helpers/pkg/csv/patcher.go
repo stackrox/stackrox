@@ -103,7 +103,10 @@ func PatchCSV(doc map[string]any, opts PatchOptions) error {
 	// Set olm.skipRange
 	annotations["olm.skipRange"] = fmt.Sprintf(">= %s < %s", previousYStream, opts.Version)
 
-	spec["replaces"] = fmt.Sprintf("%s.v%s", rawName, replacedVersion.String())
+	// Only set replaces if there is a replacement version
+	if replacedVersion != nil {
+		spec["replaces"] = fmt.Sprintf("%s.v%s", rawName, replacedVersion.String())
+	}
 
 	// Improve SecurityPolicy CRD metadata in ACS operator CSV
 	if err := addSecurityPolicyCRD(spec); err != nil {
