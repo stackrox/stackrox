@@ -259,21 +259,21 @@ func CalculateReplacedVersionForCSV(
 	version, firstVersion, unreleased string,
 	operatorNamePrefix string,
 	spec map[string]any,
-) (previousYStream string, replacedVersion XyzVersion, err error) {
+) (previousYStream string, replacedVersion *XyzVersion, err error) {
 	// Parse skips
 	skips, err := ProcessSkips(operatorNamePrefix, spec)
 	if err != nil {
-		return "", XyzVersion{}, err
+		return "", nil, err
 	}
 
 	// Calculate previous Y-Stream
 	previousYStream, err = GetPreviousYStream(version)
 	if err != nil {
-		return "", XyzVersion{}, err
+		return "", nil, err
 	}
 
 	// Calculate replaced version
-	replacedVersionPtr, err := CalculateReplacedVersion(
+	replacedVersion, err = CalculateReplacedVersion(
 		version,
 		firstVersion,
 		previousYStream,
@@ -281,11 +281,7 @@ func CalculateReplacedVersionForCSV(
 		unreleased,
 	)
 	if err != nil {
-		return "", XyzVersion{}, err
-	}
-
-	if replacedVersionPtr != nil {
-		replacedVersion = *replacedVersionPtr
+		return "", nil, err
 	}
 
 	return previousYStream, replacedVersion, nil
