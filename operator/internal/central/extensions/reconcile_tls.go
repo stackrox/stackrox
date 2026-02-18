@@ -1,6 +1,7 @@
 package extensions
 
 import (
+	"bytes"
 	"context"
 	"crypto/x509"
 	"fmt"
@@ -62,6 +63,7 @@ type createCentralTLSExtensionRun struct {
 	*commonExtensions.SecretReconciliator
 
 	ca                    mtls.CA // primary CA, used to issue Central-services certificates
+	secondaryCA           mtls.CA // secondary CA, for CA rotation support
 	caRotationAction      carotation.Action
 	centralObj            *platform.Central
 	currentTime           time.Time
@@ -108,8 +110,13 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 	}
 
 	if r.ca != nil {
-		// Add the hash of the CA to the render cache for the pod template annotation post renderer
-		r.renderCache.SetCAHash(r.centralObj, confighash.ComputeCAHash(r.ca.CertPEM()))
+		// Add the hash of the CA(s) to the render cache for the pod template annotation post renderer.
+		caPEM := r.ca.CertPEM()
+		if r.secondaryCA != nil {
+			// Include secondary CA if present so that pods restart when it's added during CA rotation.
+			caPEM = append(caPEM, r.secondaryCA.CertPEM()...)
+		}
+		r.renderCache.SetCAHash(r.centralObj, confighash.ComputeCAHash(caPEM))
 	}
 
 	return nil // reconcileInitBundleSecrets not called due to ROX-9023. TODO(ROX-9969): call after the init-bundle cert rotation stabilization.
@@ -170,11 +177,22 @@ func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap 
 			return errors.Wrap(err, "primary CA is not valid at the present time")
 		}
 
-		rotationAction, err := r.determineCARotationAction(fileMap)
-		if err != nil {
-			return err
+		// Load secondary CA (its presence is optional).
+		r.secondaryCA, err = certgen.LoadSecondaryCAFromFileMap(fileMap)
+		if err != nil && !errors.Is(err, certgen.ErrNoCACert) {
+			return errors.Wrap(err, "loading secondary CA failed")
 		}
-		r.caRotationAction = rotationAction
+		if r.secondaryCA != nil {
+			if err := r.secondaryCA.CheckProperties(); err != nil {
+				return errors.Wrap(err, "loaded secondary CA is invalid")
+			}
+		}
+
+		var secondaryCACert *x509.Certificate
+		if r.secondaryCA != nil {
+			secondaryCACert = r.secondaryCA.Certificate()
+		}
+		r.caRotationAction = carotation.DetermineAction(r.ca.Certificate(), secondaryCACert, r.currentTime)
 		if r.caRotationAction != carotation.NoAction {
 			return errors.New("CA rotation action needed")
 		}
@@ -184,23 +202,6 @@ func (r *createCentralTLSExtensionRun) validateAndConsumeCentralTLSData(fileMap 
 		return errors.Wrap(err, "verifying existing central service TLS certificate failed")
 	}
 	return nil
-}
-
-func (r *createCentralTLSExtensionRun) determineCARotationAction(fileMap types.SecretDataMap) (carotation.Action, error) {
-	secondaryCA, err := certgen.LoadSecondaryCAFromFileMap(fileMap)
-	var secondaryCACert *x509.Certificate
-	// the presence of a secondary CA certificate is optional
-	if err != nil && !errors.Is(err, certgen.ErrNoCACert) {
-		return carotation.NoAction, errors.Wrap(err, "loading secondary CA failed")
-	}
-	if secondaryCA != nil {
-		if err := secondaryCA.CheckProperties(); err != nil {
-			return carotation.NoAction, errors.Wrap(err, "loaded secondary service CA certificate is invalid")
-		}
-		secondaryCACert = secondaryCA.Certificate()
-	}
-
-	return carotation.DetermineAction(r.ca.Certificate(), secondaryCACert, r.currentTime), nil
 }
 
 func (r *createCentralTLSExtensionRun) generateCentralTLSData(old types.SecretDataMap) (types.SecretDataMap, error) {
@@ -223,11 +224,15 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData(old types.SecretDa
 		}
 
 		if r.caRotationAction != carotation.NoAction {
-			primaryCA, err := certgen.LoadCAFromFileMap(newFileMap)
+			r.ca, err = certgen.LoadCAFromFileMap(newFileMap)
 			if err != nil {
 				return nil, errors.Wrap(err, "reloading new primary CA failed")
 			}
-			r.ca = primaryCA
+
+			r.secondaryCA, err = certgen.LoadSecondaryCAFromFileMap(newFileMap)
+			if err != nil && !errors.Is(err, certgen.ErrNoCACert) {
+				return nil, errors.Wrap(err, "loading secondary CA after rotation action failed")
+			}
 		}
 	}
 
@@ -385,6 +390,29 @@ func (r *createCentralTLSExtensionRun) validateServiceTLSData(serviceType storag
 	if err := certgen.VerifyCACertInFileMap(fileMap, r.ca); err != nil {
 		return err
 	}
+
+	if centralCARotationEnabled.BooleanSetting() {
+		if err := r.verifySecondaryCACertInFileMap(fileMap); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *createCentralTLSExtensionRun) verifySecondaryCACertInFileMap(fileMap types.SecretDataMap) error {
+	secondaryCACertPEM := fileMap[mtls.SecondaryCACertFileName]
+	if r.secondaryCA == nil {
+		if len(secondaryCACertPEM) > 0 {
+			return errors.New("unexpected secondary CA certificate in file map")
+		}
+		return nil
+	}
+	if len(secondaryCACertPEM) == 0 {
+		return errors.New("missing secondary CA certificate in file map")
+	}
+	if !bytes.Equal(secondaryCACertPEM, r.secondaryCA.CertPEM()) {
+		return errors.New("mismatching secondary CA certificate in file map")
+	}
 	return nil
 }
 
@@ -410,6 +438,10 @@ func (r *createCentralTLSExtensionRun) generateServiceTLSData(subj mtls.Subject,
 		return err
 	}
 	certgen.AddCACertToFileMap(fileMap, r.ca)
+
+	if centralCARotationEnabled.BooleanSetting() && r.secondaryCA != nil {
+		certgen.AddSecondaryCACertToFileMap(fileMap, r.secondaryCA)
+	}
 	return nil
 }
 
