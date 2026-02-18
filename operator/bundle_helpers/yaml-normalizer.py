@@ -7,7 +7,6 @@ All business logic remains in Go; this only handles YAML formatting quirks.
 import sys
 import yaml
 
-# Read YAML from stdin
 doc = yaml.safe_load(sys.stdin)
 
 # Write YAML to stdout with PyYAML's formatting
