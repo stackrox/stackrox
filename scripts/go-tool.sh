@@ -102,7 +102,7 @@ function invoke_go_build() {
   if [[ "$DEBUG_BUILD" == "yes" ]]; then
     gcflags+=(-gcflags "all=-N -l")
   fi
-  invoke_go build -trimpath "${gcflags[@]}" "$@"
+  invoke_go build -trimpath -buildvcs=false "${gcflags[@]}" "$@"
 }
 
 function go_run() (
