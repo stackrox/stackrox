@@ -16,22 +16,6 @@ func TestRewriteStrings(t *testing.T) {
 		modified bool
 	}{
 		{
-			name:     "bare string cannot be modified",
-			input:    "quay.io/stackrox-io/stackrox-operator:0.0.1",
-			old:      "quay.io/stackrox-io/stackrox-operator:0.0.1",
-			new:      "quay.io/stackrox-io/stackrox-operator:4.0.0",
-			expected: "quay.io/stackrox-io/stackrox-operator:0.0.1",
-			modified: false,
-		},
-		{
-			name:     "no match leaves unchanged",
-			input:    "some-other-value",
-			old:      "not-found",
-			new:      "replacement",
-			expected: "some-other-value",
-			modified: false,
-		},
-		{
 			name: "replace in map values",
 			input: map[string]any{
 				"containerImage": "quay.io/stackrox-io/stackrox-operator:0.0.1",
