@@ -1,9 +1,9 @@
 package rewrite
 
-// RewriteStrings recursively traverses data structures and replaces all
+// Strings recursively traverses data structures and replaces all
 // string values matching 'old' with 'new'
 // Returns true if any replacements were made
-func RewriteStrings(data any, old, new string) bool {
+func Strings(data any, old, new string) bool {
 	modified := false
 
 	switch v := data.(type) {
@@ -16,7 +16,7 @@ func RewriteStrings(data any, old, new string) bool {
 			if str, ok := value.(string); ok && str == old {
 				v[key] = new
 				modified = true
-			} else if RewriteStrings(value, old, new) {
+			} else if Strings(value, old, new) {
 				modified = true
 			}
 		}
@@ -26,7 +26,7 @@ func RewriteStrings(data any, old, new string) bool {
 			if str, ok := value.(string); ok && str == old {
 				v[i] = new
 				modified = true
-			} else if RewriteStrings(value, old, new) {
+			} else if Strings(value, old, new) {
 				modified = true
 			}
 		}
