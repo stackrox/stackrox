@@ -72,7 +72,7 @@ RELATED_IMAGES_MODE=downstream ./bundle_helpers/compare-implementations.sh
 ## Implementation Status
 
 The Go implementation is now the default (`USE_GO_BUNDLE_HELPER` defaults to `true`).
-Python scripts are retained for emergency fallback and reference.
+Python scripts are retained for reference to check byte-for-byte compatibility.
 
 ### Available Commands
 - ✅ `fix-spec-descriptor-order` - Fully implemented in Go
