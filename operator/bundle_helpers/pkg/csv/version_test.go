@@ -326,6 +326,17 @@ func TestCalculateReplacedVersion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Parse version strings early
+			currentXyz, err := ParseXyzVersion(tt.current)
+			require.NoError(t, err)
+
+			firstXyz, err := ParseXyzVersion(tt.first)
+			require.NoError(t, err)
+
+			previousXyz, err := ParseXyzVersion(tt.previous)
+			require.NoError(t, err)
+
+			// Parse skips
 			skipVersions := make([]XyzVersion, 0)
 			for _, s := range tt.skips {
 				v, err := ParseXyzVersion(s)
@@ -333,8 +344,10 @@ func TestCalculateReplacedVersion(t *testing.T) {
 				skipVersions = append(skipVersions, v)
 			}
 
-			got, err := CalculateReplacedVersion(tt.current, tt.first, tt.previous, skipVersions, tt.unreleased)
+			// Call with XyzVersion values instead of strings
+			got, err := CalculateReplacedVersion(currentXyz, firstXyz, previousXyz, skipVersions, tt.unreleased)
 			require.NoError(t, err)
+
 			if tt.wantNil {
 				assert.Nil(t, got)
 			} else {

@@ -141,39 +141,24 @@ func advancePastSkips(initialReplace, currentXyz XyzVersion, skips []XyzVersion)
 
 // CalculateReplacedVersion determines which version this release replaces
 // Handles Y-Stream vs patch releases, version skips, and unreleased versions.
-func CalculateReplacedVersion(current, first, previousYStream string, skips []XyzVersion, unreleased string) (*XyzVersion, error) {
-	currentXyz, err := ParseXyzVersion(current)
-	if err != nil {
-		return nil, err
-	}
-
-	firstXyz, err := ParseXyzVersion(first)
-	if err != nil {
-		return nil, err
-	}
-
-	previousXyz, err := ParseXyzVersion(previousYStream)
-	if err != nil {
-		return nil, err
-	}
-
+func CalculateReplacedVersion(current, first, previousYStream XyzVersion, skips []XyzVersion, unreleased string) (*XyzVersion, error) {
 	// First version or earlier gets no replace
-	if currentXyz.Compare(firstXyz) <= 0 {
+	if current.Compare(first) <= 0 {
 		return nil, nil
 	}
 
 	// Determine initial replace candidate
-	initialReplace := initialReplaceFor(currentXyz, previousXyz)
+	initialReplace := initialReplaceFor(current, previousYStream)
 
 	// If this version is not yet released, try previous one
 	// E.g. 4.5 branch was cut and the 4.6.x tag created, but the 4.5 release process is still in progress
-	initialReplace, err = adjustForUnreleased(initialReplace, unreleased)
+	initialReplace, err := adjustForUnreleased(initialReplace, unreleased)
 	if err != nil {
 		return nil, err
 	}
 
 	// Skip over broken versions in the skips list
-	currentReplace := advancePastSkips(initialReplace, currentXyz, skips)
+	currentReplace := advancePastSkips(initialReplace, current, skips)
 
 	return &currentReplace, nil
 }
