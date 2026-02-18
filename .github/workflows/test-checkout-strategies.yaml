@@ -1,0 +1,114 @@
+name: Test checkout strategies
+
+on:
+  push:
+    branches:
+      - davdhacs/gha-checkout-experiment
+
+jobs:
+  # Strategy 1: Current approach (fetch-depth: 0, full clone)
+  full-clone:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full clone)
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: git describe
+        run: |
+          echo "TAG=$(git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')"
+          echo "SHORT_SHA=$(git rev-parse --short=10 HEAD)"
+
+      - name: Repo stats
+        run: |
+          echo "Git dir size: $(du -sh .git | cut -f1)"
+          echo "Commit count: $(git rev-list --count HEAD)"
+
+  # Strategy 2: Blobless partial clone (filter: blob:none)
+  blobless-clone:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (blobless)
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          filter: blob:none
+
+      - name: git describe
+        run: |
+          echo "TAG=$(git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')"
+          echo "SHORT_SHA=$(git rev-parse --short=10 HEAD)"
+
+      - name: Repo stats
+        run: |
+          echo "Git dir size: $(du -sh .git | cut -f1)"
+          echo "Commit count: $(git rev-list --count HEAD)"
+
+  # Strategy 3: Shallow clone + deepen
+  shallow-deepen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (shallow)
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Deepen and fetch tags
+        run: |
+          git fetch --deepen=200 --tags
+          echo "TAG=$(git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')"
+          echo "SHORT_SHA=$(git rev-parse --short=10 HEAD)"
+
+      - name: Repo stats
+        run: |
+          echo "Git dir size: $(du -sh .git | cut -f1)"
+          echo "Commit count (in shallow history): $(git rev-list --count HEAD)"
+
+  # Strategy 4: Shallow clone + VERSION file (no git describe needed)
+  version-file:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (shallow)
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Compute version from file + SHA
+        run: |
+          # Read base version from VERSION file (e.g., "4.11.x")
+          BASE_VERSION=$(cat VERSION 2>/dev/null || echo "0.0.x")
+          SHORT_SHA=$(git rev-parse --short=10 HEAD)
+          # Construct version without commit count (no history walk needed)
+          TAG="${BASE_VERSION}-g${SHORT_SHA}"
+          echo "TAG=$TAG"
+          echo "SHORT_SHA=$SHORT_SHA"
+          echo "Note: no commit count available without history"
+
+      - name: Repo stats
+        run: |
+          echo "Git dir size: $(du -sh .git | cut -f1)"
+
+  # Strategy 5: Shallow clone + GitHub API for commit count
+  shallow-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (shallow)
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Compute version via API
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BASE_VERSION=$(cat VERSION 2>/dev/null || echo "0.0.x")
+          SHORT_SHA=$(git rev-parse --short=10 HEAD)
+          # Get commit count from GitHub API (compare tag to current SHA)
+          AHEAD=$(gh api "repos/${{ github.repository }}/compare/${BASE_VERSION}...${{ github.sha }}" --jq '.ahead_by' 2>/dev/null || echo "0")
+          TAG="${BASE_VERSION}-${AHEAD}-g${SHORT_SHA}"
+          echo "TAG=$TAG"
+
+      - name: Repo stats
+        run: |
+          echo "Git dir size: $(du -sh .git | cut -f1)"
