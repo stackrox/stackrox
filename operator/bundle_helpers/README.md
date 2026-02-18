@@ -74,10 +74,6 @@ RELATED_IMAGES_MODE=downstream ./bundle_helpers/compare-implementations.sh
 The Go implementation is now the default (`USE_GO_BUNDLE_HELPER` defaults to `true`).
 Python scripts are retained for reference to check byte-for-byte compatibility.
 
-### Available Commands
-- ✅ `fix-spec-descriptor-order` - Fully implemented in Go
-- ✅ `patch-csv` - Fully implemented in Go
-
 ### Feature Flag
 Set `USE_GO_BUNDLE_HELPER=false` to use the Python implementation:
 ```bash
