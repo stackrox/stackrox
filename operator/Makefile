@@ -83,6 +83,14 @@ INDEX_IMG ?= $(INDEX_IMG_BASE):$(INDEX_IMG_TAG)
 # Image URL to use all building/pushing image targets
 IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
 
+# RELATED_IMAGES_MODE controls how container image references are handled in the operator bundle CSV.
+# Valid values:
+#   omit (default)   - No related images in CSV (upstream builds)
+#   downstream       - Inject RELATED_IMAGE_* env vars for Red Hat builds (no spec.relatedImages)
+#   konflux          - Add explicit spec.relatedImages section for Konflux builds
+# Used by bundle-post-process target to support image mirroring and disconnected environments.
+RELATED_IMAGES_MODE ?= omit
+
 # Set up the so-called "storage image" for executing scorecard test suite.
 # By default a busybox image is pulled from docker.io. In order to rule out timing issues related to rate limiting
 # we use our own copy of a busybox image from quay.io.
@@ -487,8 +495,6 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 	mv bundle/manifests/rhacs-operator.clusterserviceversion.yaml.fixed \
        bundle/manifests/rhacs-operator.clusterserviceversion.yaml
 	$(OPERATOR_SDK) bundle validate ./bundle --select-optional suite=operatorframework
-
-RELATED_IMAGES_MODE ?= omit
 
 .PHONY: bundle-post-process
 bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file to include correct operator versions, etc.
