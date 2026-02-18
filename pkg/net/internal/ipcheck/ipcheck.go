@@ -9,30 +9,28 @@ import (
 // IPv4 private network masks and prefixes (generated from netutil.IPv4PrivateNetworks)
 // This maintains a single source of truth while providing optimized constants
 var (
-	ipv4Masks    [5]uint32
-	ipv4Prefixes [5]uint32
+	ipv4Masks    []uint32
+	ipv4Prefixes []uint32
 )
 
 func init() {
 	// Generate masks and prefixes from the canonical definitions in netutil
-	for i, ipNet := range netutil.IPv4PrivateNetworks {
-		if i >= 5 {
-			panic("IPv4PrivateNetworks has more than 5 entries")
-		}
-
+	ipv4Masks = make([]uint32, 0, len(netutil.IPv4PrivateNetworks))
+	ipv4Prefixes = make([]uint32, 0, len(netutil.IPv4PrivateNetworks))
+	for _, ipNet := range netutil.IPv4PrivateNetworks {
 		// Extract mask as uint32
 		maskBytes := ipNet.Mask
 		if len(maskBytes) != 4 {
 			panic("IPv4 network has invalid mask length")
 		}
-		ipv4Masks[i] = binary.BigEndian.Uint32(maskBytes)
+		ipv4Masks = append(ipv4Masks, binary.BigEndian.Uint32(maskBytes))
 
 		// Extract network prefix as uint32
 		ipBytes := ipNet.IP.To4()
 		if ipBytes == nil {
 			panic("IPv4 network has invalid IP")
 		}
-		ipv4Prefixes[i] = binary.BigEndian.Uint32(ipBytes)
+		ipv4Prefixes = append(ipv4Prefixes, binary.BigEndian.Uint32(ipBytes))
 	}
 }
 
