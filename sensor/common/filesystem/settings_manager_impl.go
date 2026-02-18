@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	configMapName     = "fact"
+	configMapName     = "fact-config"
 	configMapPathsKey = "paths"
 
 	factConfigFile = "fact.yml"
@@ -69,6 +69,12 @@ func (f *factSettingsManager) extractFileActivityPaths(policies []*storage.Polic
 			continue
 		}
 
+		// we need to remove any wildcard information in the path values
+		// and construct a deduplicated list of prefixes which Fact
+		// can use to capture events.
+		//
+		// This is a fairly dumb algorithm, just split the string on the first
+		// occurrence of a wildcard character (*?[]{}), and send the prefix
 		booleanpolicy.ForEachValueWithFieldName(policy, fieldnames.FilePath, func(value string) bool {
 			idx := strings.IndexFunc(value, func(r rune) bool {
 				return strings.ContainsRune("*?[]{}", r)
