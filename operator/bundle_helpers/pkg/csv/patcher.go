@@ -273,7 +273,7 @@ func CalculateReplacedVersionForCSV(
 	}
 
 	// Calculate replaced version
-	replacedVersion, err = CalculateReplacedVersion(
+	replacedVersionPtr, err := CalculateReplacedVersion(
 		version,
 		firstVersion,
 		previousYStream,
@@ -282,6 +282,10 @@ func CalculateReplacedVersionForCSV(
 	)
 	if err != nil {
 		return "", XyzVersion{}, err
+	}
+
+	if replacedVersionPtr != nil {
+		replacedVersion = *replacedVersionPtr
 	}
 
 	return previousYStream, replacedVersion, nil
