@@ -7,9 +7,6 @@ func Strings(data any, old, new string) bool {
 	modified := false
 
 	switch v := data.(type) {
-	case string:
-		// Can't modify strings in place, caller must handle
-		return false
 
 	case map[string]any:
 		for key, value := range v {
