@@ -56,6 +56,17 @@ message StoreIndexReportResponse {
   string status = 1;
 }
 
+message GetRepositoryToCPEMappingRequest {}
+
+message RepositoryCPEInfo {
+  repeated string cpes = 1;
+}
+
+message GetRepositoryToCPEMappingResponse {
+  // Maps repository names to their CPE information.
+  map<string, RepositoryCPEInfo> mapping = 1;
+}
+
 // Indexer service creates manifests and store index reports.
 service Indexer {
   // CreateIndexReport creates an index report for the specified resource and returns the report.
@@ -74,4 +85,7 @@ service Indexer {
 
   // StoreIndexReport stores an external index report to the datastore.
   rpc StoreIndexReport(StoreIndexReportRequest) returns (StoreIndexReportResponse);
+
+  // GetRepositoryToCPEMapping returns the repository-to-CPE mapping used for RHEL package matching.
+  rpc GetRepositoryToCPEMapping(GetRepositoryToCPEMappingRequest) returns (GetRepositoryToCPEMappingResponse);
 }
