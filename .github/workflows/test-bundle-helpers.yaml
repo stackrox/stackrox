@@ -158,8 +158,6 @@ jobs:
     name: Compare Python and Go Outputs
     runs-on: ubuntu-latest
     needs: [test-python-implementation, test-go-implementation]
-    # Only run comparison if Go implementation exists
-    if: always() && needs.test-go-implementation.result == 'success'
 
     steps:
       - name: Download Python bundle
