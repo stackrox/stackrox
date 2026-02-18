@@ -193,6 +193,7 @@ include $(PROJECT_DIR)/../make/gotools.mk
 $(call go-tool, CONTROLLER_GEN, sigs.k8s.io/controller-tools/cmd/controller-gen, tools/controller-gen)
 $(call go-tool, ENVTEST, sigs.k8s.io/controller-runtime/tools/setup-envtest, tools/envtest)
 $(call go-tool, KUSTOMIZE, sigs.k8s.io/kustomize/kustomize/v5, tools/kustomize)
+$(call go-tool, KUBEBUILDER, sigs.k8s.io/kubebuilder/v4, tools/kubebuilder)
 $(call go-tool, KUTTL, github.com/kudobuilder/kuttl/cmd/kubectl-kuttl, tools/kuttl)
 $(call go-tool, YQ, github.com/mikefarah/yq/v4, tools/yq)
 
@@ -207,6 +208,9 @@ OPERATOR_SDK_VERSION = $(shell cd tools/operator-sdk; go list -m -f '{{ .Version
 
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
+
+.PHONY: kubebuilder
+kubebuilder: $(KUBEBUILDER) ## Download kubebuilder locally if necessary.
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
@@ -228,7 +232,7 @@ yq: $(YQ) ## Download yq.
 
 .PHONY: parent-proto-generate
 parent-proto-generate: ## Make sure ../generated directory has up-to-date content that this operator (transitively) depends upon.
-	$(MAKE) -C .. proto-generated-srcs
+	[[ $${ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS:-false} = true ]] || $(MAKE) -C .. proto-generated-srcs
 
 .PHONY: manifests
 manifests: parent-proto-generate controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
@@ -314,6 +318,14 @@ build-installer: manifests generate kustomize ## Generate a consolidated YAML wi
 	cd build/dist && $(KUSTOMIZE) edit set image controller=${IMG}
 	mkdir -p dist
 	$(KUSTOMIZE) build build/dist > dist/install.yaml
+
+.PHONY: chart
+chart: kubebuilder manifests ## Generate a helm chart with all necessary resources.
+# The dependency above makes sure protos are up to date, so we can skip this time-consuming process below
+# by specifying the SKIP env var. Otherwise each target that kubebuilder invokes (and there is a bunch) would regen protos.
+	ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true $(KUBEBUILDER) edit --plugins=helm/v2-alpha --force
+	sed -i'.bak' -e 's,0.1.0,$(VERSION),g' dist/chart/Chart.yaml
+	rm -f dist/chart/Chart.yaml.bak
 
 .PHONY: build
 build: manifests generate fmt vet ## Build operator local binary.

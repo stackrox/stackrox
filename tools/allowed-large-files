@@ -30,7 +30,8 @@ operator/config/crd/bases/*.yaml
 operator/config/manifests/bases/*.yaml
 operator/install/manifest.yaml
 operator/tests/img/*.png
-pkg/booleanpolicy/default_policies_test.go
+pkg/booleanpolicy/default_policies_builtin_test.go
+pkg/booleanpolicy/runtime_criteria_test.go
 pkg/branding/files/red_hat_acs_logo_rgb.png
 pkg/branding/files/stackrox_integration_logo.png
 pkg/continuousprofiling/docs/img/*.png
