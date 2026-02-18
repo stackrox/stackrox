@@ -107,6 +107,7 @@ function check-operator-generated-files-up-to-date() {
 
     # For as long as the helm chart kubebuilder plugin is alpha, we want to check that kubebuilder bumps do not surprise
     # us with unexpected divergence compared to the (more seasoned and predictable) manifest output.
+    github_group 'Generate operator chart'
     make -C operator/ chart
     echo 'Expanding the operator helm chart...'
     helm template --namespace rhacs-operator-system rhacs-operator ./operator/dist/chart/ > operator/dist/chart.yaml
@@ -121,6 +122,8 @@ function check-operator-generated-files-up-to-date() {
       operator/dist/chart.yaml > operator/dist/chart-sorted.yaml
     $yq -P ea '[.] | sort_by(.kind, .metadata.name) | filter(.kind != "Namespace")                              | .[] | splitDoc | ... comments=""' \
       operator/dist/install.yaml > operator/dist/install-sorted.yaml
+    github_endgroup
+
     echo 'Checking for differences between normalized operator manifest and normalized and expanded operator helm chart...'
     diff -U 10 operator/dist/install-sorted.yaml operator/dist/chart-sorted.yaml
 }
