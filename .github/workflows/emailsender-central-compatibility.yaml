@@ -57,7 +57,7 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version-file: stackrox/go.mod
-          cache: false  # repo checkout is in stackrox/ subdir, setup-go can't find go.sum
+          cache: false  # rarely runs, and repo checkout is in stackrox/ subdir
       - uses: ./stackrox/.github/actions/job-preamble
         with:
           free-disk-space: 40
@@ -65,42 +65,6 @@ jobs:
         uses: helm/kind-action@v1
         with:
           cluster_name: kind
-      - name: Pre-load multi-arch images into Kind
-        run: |
-          # kind load docker-image uses docker save | ctr import --all-platforms,
-          # which fails on multi-arch OCI images (only one platform's blobs exist).
-          # Pre-load images directly into the Kind node via ctr pull --platform,
-          # then wrap kind to tolerate load failures for pre-loaded images.
-          # See https://github.com/kubernetes-sigs/kind/issues/3795
-          TAG=$(make --no-print-directory -C stackrox tag)
-          for img in quay.io/rhacs-eng/main:$TAG quay.io/rhacs-eng/central-db:$TAG; do
-            echo "Waiting for $img ..."
-            retries=0
-            until docker exec kind-control-plane ctr -n k8s.io images pull \
-              --user "${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}:${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}" \
-              --platform linux/amd64 \
-              "$img" 2>/dev/null; do
-              retries=$((retries + 1))
-              if (( retries >= 60 )); then
-                echo "::error::Timed out waiting for $img after 30 minutes"
-                exit 1
-              fi
-              sleep 30
-            done
-          done
-          # Make kind load non-fatal since multi-arch images are pre-loaded.
-          # Locally-built single-arch images (emailsender) still load normally.
-          REAL_KIND=$(which kind)
-          sudo mv "$REAL_KIND" "${REAL_KIND}.real"
-          printf '%s\n' \
-            '#!/bin/bash' \
-            'if [[ "$1" == "load" ]]; then' \
-            '  "${0}.real" "$@" || echo "::warning::kind load failed (image may be pre-loaded)"' \
-            '  exit 0' \
-            'fi' \
-            'exec "${0}.real" "$@"' \
-            | sudo tee "$REAL_KIND" > /dev/null
-          sudo chmod +x "$REAL_KIND"
       - name: Run Test
         env:
           IMG_WAIT_TIMEOUT_SECONDS: 2100
