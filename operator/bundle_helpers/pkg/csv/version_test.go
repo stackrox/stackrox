@@ -238,21 +238,20 @@ func TestCalculateReplacedVersion(t *testing.T) {
 		skips      []string
 		unreleased string
 		want       string
-		wantNil    bool
 	}{
 		{
 			name:     "downstream trunk builds get no replace",
 			current:  "1.0.0",
 			first:    "4.0.0",
 			previous: "0.0.0",
-			wantNil:  true,
+			want:     "0.0.0",
 		},
 		{
 			name:     "first release gets no replace",
 			current:  "4.0.0",
 			first:    "4.0.0",
 			previous: "3.74.0",
-			wantNil:  true,
+			want:     "0.0.0",
 		},
 		{
 			name:     "patch follows normal release",
@@ -335,13 +334,7 @@ func TestCalculateReplacedVersion(t *testing.T) {
 
 			got, err := CalculateReplacedVersion(tt.current, tt.first, tt.previous, skipVersions, tt.unreleased)
 			require.NoError(t, err)
-
-			if tt.wantNil {
-				assert.Nil(t, got)
-			} else {
-				require.NotNil(t, got)
-				assert.Equal(t, tt.want, got.String())
-			}
+			assert.Equal(t, tt.want, got.String())
 		})
 	}
 }
