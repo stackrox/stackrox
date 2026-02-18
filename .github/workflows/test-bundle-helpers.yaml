@@ -136,9 +136,7 @@ jobs:
           make bundle bundle-post-process
           mkdir -p /tmp/artifacts
           cp -r bundle /tmp/artifacts/bundle-go
-          if [ -d build/bundle ]; then
-            cp -r build/bundle /tmp/artifacts/build-bundle-go
-          fi
+          cp -r build/bundle /tmp/artifacts/build-bundle-go
           # Make sure the build is clean.
           git diff --exit-code HEAD
 
