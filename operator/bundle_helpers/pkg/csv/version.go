@@ -140,7 +140,7 @@ func advancePastSkips(initialReplace, currentXyz XyzVersion, skips []XyzVersion)
 }
 
 // CalculateReplacedVersion determines which version this release replaces
-// This is complex logic that handles Y-Stream vs patch releases, version skips, and unreleased versions
+// Handles Y-Stream vs patch releases, version skips, and unreleased versions.
 func CalculateReplacedVersion(current, first, previousYStream string, skips []XyzVersion, unreleased string) (XyzVersion, error) {
 	currentXyz, err := ParseXyzVersion(current)
 	if err != nil {
