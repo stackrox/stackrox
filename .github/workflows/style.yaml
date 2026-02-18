@@ -41,8 +41,6 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
-      with:
-        save: false  # ~752 MB, style-dominated, no critical path speedup
 
     - name: Check Generated
       run: scripts/ci/jobs/check-generated.sh
@@ -111,8 +109,6 @@ jobs:
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
-        with:
-          save: false  # ~2,183 MB, style-dominated, no critical path speedup
 
       - name: Cache UI dependencies
         uses: ./.github/actions/cache-ui-dependencies
