@@ -55,8 +55,8 @@ spec:
         #   type: RuntimeDefault
       containers:
       - args:
-        - "--health-probe-bind-address=:8081"
         - "--metrics-bind-address=0.0.0.0:8443"
+        - "--health-probe-bind-address=:8081"
         - --leader-elect
         env:
         - name: RELATED_IMAGE_MAIN
@@ -75,6 +75,7 @@ spec:
               containerName: manager
               resource: limits.memory
         image: controller:latest
+        imagePullPolicy: IfNotPresent
         name: manager
         securityContext:
           allowPrivilegeEscalation: false

@@ -41,6 +41,8 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        save: false  # ~752 MB, style-dominated, no critical path speedup
 
     - name: Check Generated
       run: scripts/ci/jobs/check-generated.sh
@@ -109,6 +111,8 @@ jobs:
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
+        with:
+          save: false  # ~2,183 MB, style-dominated, no critical path speedup
 
       - name: Cache UI dependencies
         uses: ./.github/actions/cache-ui-dependencies
@@ -136,17 +140,27 @@ jobs:
     - uses: actions/setup-go@v6
       with:
         go-version-file: 'tools/linters/go.mod'
+        cache: false  # ~3,354 MB via setup-go; disabled to stay within 10 GB budget
 
     - name: Check Cache golangci-lint
       run: make golangci-lint-cache-status
 
     - name: Cache golangci-lint
+      if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
       uses: actions/cache@v5
       with:
-        path: /github/home/.cache/golangci-lint
+        path: ${{ env.HOME }}/.cache/golangci-lint
         key: go-lint-v2-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          go-lint-v2-${{ hashFiles('**/go.sum') }}
+          go-lint-v2-
+
+    - name: Restore golangci-lint analysis cache
+      if: ${{ !(github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) }}
+      uses: actions/cache/restore@v5
+      with:
+        path: ${{ env.HOME }}/.cache/golangci-lint
+        key: go-lint-v2-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
           go-lint-v2-
 
     - name: Check cache golangci-lint

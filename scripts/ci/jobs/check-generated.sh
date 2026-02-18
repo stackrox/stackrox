@@ -84,11 +84,31 @@ function check-operator-generated-files-up-to-date() {
     make -C operator/ manifests
     echo 'Checking for diffs after making generate and manifests...'
     git diff --exit-code HEAD
+
     make -C operator/ bundle
     echo 'Checking for diffs after making bundle...'
     echo 'If this fails, check if the invocation of the normalize-metadata.py script in operator/Makefile'
     echo 'needs to change due to formatting changes in the generated files.'
     git diff --exit-code HEAD
+
+    # For as long as the helm chart kubebuilder plugin is alpha, we want to check that kubebuilder bumps do not surprise
+    # us with unexpected divergence compared to the (more seasoned and predictable) manifest output.
+    make -C operator/ chart
+    echo 'Expanding the operator helm chart...'
+    helm template --namespace rhacs-operator-system rhacs-operator ./operator/dist/chart/ > operator/dist/chart.yaml
+    echo 'Downloading yq...'
+    make -C operator/ yq
+    yq=$(make --no-print-directory --silent -C operator/ which-yq)
+    echo 'Normalizing the manifests...'
+    # Reorder resources in the files, strip comments, pretty print, and remove expected differences:
+    # - "resource-policy: keep" on the CRDs in the chart
+    # - namespace resource in the manifest
+    $yq -P ea '[.] | sort_by(.kind, .metadata.name) | del(.[].metadata.annotations.["helm.sh/resource-policy"]) | .[] | splitDoc | ... comments=""' \
+      operator/dist/chart.yaml > operator/dist/chart-sorted.yaml
+    $yq -P ea '[.] | sort_by(.kind, .metadata.name) | filter(.kind != "Namespace")                              | .[] | splitDoc | ... comments=""' \
+      operator/dist/install.yaml > operator/dist/install-sorted.yaml
+    echo 'Checking for differences between normalized operator manifest and normalized and expanded operator helm chart...'
+    diff -U 10 operator/dist/install-sorted.yaml operator/dist/chart-sorted.yaml
 }
 export -f check-operator-generated-files-up-to-date
 bash -c check-operator-generated-files-up-to-date || {

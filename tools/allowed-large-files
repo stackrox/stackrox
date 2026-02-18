@@ -3,6 +3,7 @@
 CHANGELOG.md
 central/alert/datastore/internal/store/postgres/store.go
 central/baseimage/watcher/watcher_impl_test.go
+central/cluster/datastore/datastore_impl_postgres_test.go
 central/cluster/datastore/datastore_impl_test.go
 central/compliance/checks/fixtures/scraped.go
 central/compliance/standards/metadata/pci_dss_3_2.go

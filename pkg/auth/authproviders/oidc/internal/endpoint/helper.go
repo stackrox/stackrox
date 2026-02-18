@@ -96,7 +96,7 @@ func NewHelper(issuer string) (*Helper, error) {
 	if stringutils.ConsumeSuffix(&urlForDiscovery.Scheme, "+insecure") {
 		httpClient = insecureHTTPClient
 	} else {
-		httpClient = http.DefaultClient
+		httpClient = defaultHTTPClient
 	}
 
 	h := &Helper{

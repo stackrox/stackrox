@@ -1989,8 +1989,8 @@ spec:
             spec:
               containers:
               - args:
-                - --health-probe-bind-address=:8081
                 - --metrics-bind-address=0.0.0.0:8443
+                - --health-probe-bind-address=:8081
                 - --leader-elect
                 env:
                 - name: RELATED_IMAGE_MAIN
@@ -2010,6 +2010,7 @@ spec:
                       divisor: '0'
                       resource: limits.memory
                 image: controller:latest
+                imagePullPolicy: IfNotPresent
                 livenessProbe:
                   httpGet:
                     path: /healthz
