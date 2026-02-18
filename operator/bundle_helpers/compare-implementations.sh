@@ -17,6 +17,19 @@ cd "$OPERATOR_DIR"
 # Use python3.10 which is known to work
 export PYTHON=python3.10
 
+# Set up dummy RELATED_IMAGE_* environment variables for testing
+# These are needed for downstream and konflux modes
+export RELATED_IMAGE_MAIN=foo
+export RELATED_IMAGE_SCANNER=foo
+export RELATED_IMAGE_SCANNER_SLIM=foo
+export RELATED_IMAGE_SCANNER_DB=foo
+export RELATED_IMAGE_SCANNER_DB_SLIM=foo
+export RELATED_IMAGE_COLLECTOR=foo
+export RELATED_IMAGE_ROXCTL=foo
+export RELATED_IMAGE_CENTRAL_DB=foo
+export RELATED_IMAGE_SCANNER_V4_DB=foo
+export RELATED_IMAGE_SCANNER_V4=foo
+
 # Build with Python
 echo ""
 echo "=== Building with Python implementation..."
