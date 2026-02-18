@@ -74,7 +74,7 @@ class UpgradeTest(BaseTest):
 
 
 class OperatorE2eTest(BaseTest):
-    OLM_SETUP_TIMEOUT_SEC = 60 * 10
+    OLM_SETUP_TIMEOUT_SEC = 60 * 2
     TEST_TIMEOUT_SEC = 60 * 60 * 2
     OPERATOR_CLUSTER_TYPE_OPENSHIFT4 = "openshift4"
 
