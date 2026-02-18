@@ -16,6 +16,7 @@ Reuse with:
 is_GITHUB_ACTIONS() {
     [[ -n "${GITHUB_ACTION:-}" ]]
 }
+export -f is_GITHUB_ACTIONS
 
 info() {
     if is_GITHUB_ACTIONS; then
