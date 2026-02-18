@@ -17,24 +17,15 @@ runs:
         echo "TAG=$(date +%Yw%U)" >> "$GITHUB_OUTPUT"
       shell: bash
 
+    # GOMODCACHE caching disabled: the Go module proxy (proxy.golang.org) is a
+    # global CDN that serves modules faster than restoring a 1.7 GB cache archive.
+    # The cache restore (download + extract) takes 25-60s under contention and
+    # accounts for 60% of all cache traffic (24.9 GB/run), while a cold
+    # go mod download takes ~46s with no contention. Disabling this also
+    # reduces bandwidth pressure on the remaining GOCACHE downloads.
+
     # Save caches only on pushes to the default branch.
     # All other events (PRs, etc.) restore only.
-    - name: Cache Go Dependencies (save)
-      if: inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
-      uses: actions/cache@v5
-      with:
-        path: ${{ steps.cache-paths.outputs.GOMODCACHE }}
-        key: go-mod-v1-${{ hashFiles('**/go.sum') }}
-        restore-keys: go-mod-v1-
-
-    - name: Cache Go Dependencies (restore)
-      if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
-      uses: actions/cache/restore@v5
-      with:
-        path: ${{ steps.cache-paths.outputs.GOMODCACHE }}
-        key: go-mod-v1-${{ hashFiles('**/go.sum') }}
-        restore-keys: go-mod-v1-
-
     - name: Cache Go Build (save)
       if: inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
       uses: actions/cache@v5
