@@ -135,7 +135,9 @@ func echoReplacedVersion(doc map[string]any, version, firstVersion, unreleased s
 		return err
 	}
 
-	fmt.Println(replacedVersion.String())
+	if replacedVersion != nil {
+		fmt.Println(replacedVersion.String())
+	}
 
 	return nil
 }
