@@ -17,6 +17,7 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	concurrency "github.com/stackrox/rox/pkg/concurrency"
 	gomock "go.uber.org/mock/gomock"
+	v1 "k8s.io/api/core/v1"
 )
 
 // MockSettingsManager is a mock of SettingsManager interface.
@@ -41,6 +42,20 @@ func NewMockSettingsManager(ctrl *gomock.Controller) *MockSettingsManager {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockSettingsManager) EXPECT() *MockSettingsManagerMockRecorder {
 	return m.recorder
+}
+
+// ConfigMapStream mocks base method.
+func (m *MockSettingsManager) ConfigMapStream() concurrency.ReadOnlyValueStream[*v1.ConfigMap] {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConfigMapStream")
+	ret0, _ := ret[0].(concurrency.ReadOnlyValueStream[*v1.ConfigMap])
+	return ret0
+}
+
+// ConfigMapStream indicates an expected call of ConfigMapStream.
+func (mr *MockSettingsManagerMockRecorder) ConfigMapStream() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigMapStream", reflect.TypeOf((*MockSettingsManager)(nil).ConfigMapStream))
 }
 
 // FlushCache mocks base method.
