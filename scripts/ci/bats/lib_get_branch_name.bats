@@ -21,7 +21,7 @@ function setup() {
 }
 
 @test "prow but nothing else" {
-    unset GITHUB_ACTION
+    unset GITHUB_ACTIONS
     export OPENSHIFT_CI=true
     run get_branch_name
     assert_failure 1
