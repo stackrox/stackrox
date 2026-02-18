@@ -1,7 +1,9 @@
 package printer
 
 import (
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/search"
@@ -19,7 +21,7 @@ func getComponentAndVersion(fieldMap map[string][]string) (component string, ver
 }
 
 const (
-	// Example message: Fixable CVE-2020-0101 (CVSS 8.2, NVD CVSS 8.0) (severity Important) found in component 'nginx' (version 1.12.0-debian1ubuntu2) in container 'nginx-proxy', resolved by version 1.13.0-debian0ubuntu1
+	// Example message: Fixable CVE-2020-0101 (CVSS 8.2, NVD CVSS 8.0) (severity Important) found in component 'nginx' (version 1.12.0-debian1ubuntu2) in container 'nginx-proxy', fix available in component version '1.13.0-debian0ubuntu1'
 	// example both nvd cvss and cvss : CVE-2014-0160 (CVSS 6, NVD CVSS 8) (severity Unknown) found in component 'heartbleed' (version 1.2) in container 'nginx'
 	cveTemplate = `
     {{- if .FixedBy}}Fixable {{end}}{{.CVE}}
@@ -27,21 +29,29 @@ const (
     {{- end}}{{if .Severity}} (severity {{.Severity}}){{end}} found
     {{- if .Component}} in component '{{.Component}}' (version {{.ComponentVersion}}){{end}}
     {{- if .ContainerName }} in container '{{.ContainerName}}'{{end}}
-    {{- if .FixedBy}}, resolved by version {{.FixedBy}}{{end}}`
+	{{- if .FixedBy}}, resolved by version {{.FixedBy}}{{end}}`
+
+	cveFixTimestampTemplate = `Fixable {{.CVE}}
+	{{- if or .CVSS .NVDCVSS}} ({{if .CVSS}}CVSS {{.CVSS}}{{end}}{{if and .CVSS .NVDCVSS}}, {{end}}{{if .NVDCVSS}}NVD CVSS {{.NVDCVSS}}{{end}})
+    {{- end}}{{if .Severity}} (severity {{.Severity}}){{end}} found
+    {{- if .Component}} in component '{{.Component}}' (version {{.ComponentVersion}}){{end}}
+    {{- if .ContainerName }} in container '{{.ContainerName}}'{{end}}, fix available for at least {{.DaysSinceFixAvailable}} days
+	{{- if .FixedBy}} in component version {{.FixedBy}}{{end}}`
 )
 
 func cvePrinter(fieldMap map[string][]string) ([]string, error) {
 
 	type cveResultFields struct {
-		ContainerName    string
-		ImageName        string
-		CVE              string
-		CVSS             string
-		NVDCVSS          string
-		Severity         string
-		FixedBy          string
-		Component        string
-		ComponentVersion string
+		ContainerName         string
+		ImageName             string
+		CVE                   string
+		CVSS                  string
+		NVDCVSS               string
+		Severity              string
+		FixedBy               string
+		Component             string
+		ComponentVersion      string
+		DaysSinceFixAvailable string
 	}
 	r := cveResultFields{}
 
@@ -54,7 +64,20 @@ func cvePrinter(fieldMap map[string][]string) ([]string, error) {
 	r.NVDCVSS = maybeGetSingleValueFromFieldMap(search.NVDCVSS.String(), fieldMap)
 	r.Severity = strings.Title(strings.TrimSuffix(strings.ToLower(maybeGetSingleValueFromFieldMap(search.Severity.String(), fieldMap)), "_vulnerability_severity"))
 	r.FixedBy = maybeGetSingleValueFromFieldMap(search.FixedBy.String(), fieldMap)
+	ts := maybeGetSingleValueFromFieldMap(search.CVEFixAvailable.String(), fieldMap)
+	if ts != "" {
+		t, err := time.Parse(time.DateTime, ts)
+		if err == nil {
+			fixTs := t.UTC().Truncate(24 * time.Hour)
+			now := time.Now().UTC().Truncate(24 * time.Hour)
+			r.DaysSinceFixAvailable = strconv.Itoa(int(now.Sub(fixTs).Hours() / 24))
+		}
+	}
 	r.Component, r.ComponentVersion = getComponentAndVersion(fieldMap)
+
+	if r.DaysSinceFixAvailable != "" {
+		return executeTemplate(cveFixTimestampTemplate, r)
+	}
 	return executeTemplate(cveTemplate, r)
 }
 
