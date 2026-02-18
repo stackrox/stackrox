@@ -103,9 +103,7 @@ func PatchCSV(doc map[string]any, opts PatchOptions) error {
 	// Set olm.skipRange
 	annotations["olm.skipRange"] = fmt.Sprintf(">= %s < %s", previousYStream, opts.Version)
 
-	if replacedVersion != nil {
-		spec["replaces"] = fmt.Sprintf("%s.v%s", rawName, replacedVersion.String())
-	}
+	spec["replaces"] = fmt.Sprintf("%s.v%s", rawName, replacedVersion.String())
 
 	// Improve SecurityPolicy CRD metadata in ACS operator CSV
 	if err := addSecurityPolicyCRD(spec); err != nil {
@@ -261,17 +259,17 @@ func CalculateReplacedVersionForCSV(
 	version, firstVersion, unreleased string,
 	operatorNamePrefix string,
 	spec map[string]any,
-) (previousYStream string, replacedVersion *XyzVersion, err error) {
+) (previousYStream string, replacedVersion XyzVersion, err error) {
 	// Parse skips
 	skips, err := ProcessSkips(operatorNamePrefix, spec)
 	if err != nil {
-		return "", nil, err
+		return "", XyzVersion{}, err
 	}
 
 	// Calculate previous Y-Stream
 	previousYStream, err = GetPreviousYStream(version)
 	if err != nil {
-		return "", nil, err
+		return "", XyzVersion{}, err
 	}
 
 	// Calculate replaced version
@@ -283,7 +281,7 @@ func CalculateReplacedVersionForCSV(
 		unreleased,
 	)
 	if err != nil {
-		return "", nil, err
+		return "", XyzVersion{}, err
 	}
 
 	return previousYStream, replacedVersion, nil
