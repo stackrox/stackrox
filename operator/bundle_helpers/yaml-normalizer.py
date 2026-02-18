@@ -2,8 +2,6 @@
 """
 Thin YAML reformatter that normalizes Go-generated YAML to match PyYAML output.
 This script has NO knowledge of CSV/bundle structure - it only normalizes formatting.
-
-This is the "escape hatch" mentioned in the migration plan (Section 2.2).
 All business logic remains in Go; this only handles YAML formatting quirks.
 """
 import sys
