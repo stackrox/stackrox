@@ -73,7 +73,8 @@ jobs:
           mkdir -p /tmp/artifacts
           cp -r bundle /tmp/artifacts/bundle-python
           cp -r build/bundle /tmp/artifacts/build-bundle-python
-          git diff || true
+          # Make sure the build is clean.
+          git diff --exit-code HEAD
 
       - name: Upload Python bundle artifacts
         uses: actions/upload-artifact@v4
