@@ -1,7 +1,7 @@
 package rewrite
 
 // Strings recursively traverses data structures and replaces all
-// string values matching 'old' with 'new'
+// string values matching 'old' with 'new'.
 // Returns true if any replacements were made
 func Strings(data any, old, new string) bool {
 	modified := false
