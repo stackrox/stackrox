@@ -376,6 +376,7 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.scanner-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
+    # Disabling the git ref check as this image is built in a different repository from a different commit
     - name: ENABLE_GIT_REF_CHECK
       value: false
     taskRef: *wait-for-image-ref
@@ -386,6 +387,7 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.scanner-db-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
+    # Disabling the git ref check as this image is built in a different repository from a different commit
     - name: ENABLE_GIT_REF_CHECK
       value: false
     taskRef: *wait-for-image-ref
@@ -396,6 +398,7 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.scanner-slim-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
+    # Disabling the git ref check as this image is built in a different repository from a different commit
     - name: ENABLE_GIT_REF_CHECK
       value: false
     taskRef: *wait-for-image-ref
@@ -406,6 +409,7 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.scanner-db-slim-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
+    # Disabling the git ref check as this image is built in a different repository from a different commit
     - name: ENABLE_GIT_REF_CHECK
       value: false
     taskRef: *wait-for-image-ref
@@ -432,6 +436,7 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.collector-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
+    # Disabling the git ref check as this image is built in a different repository from a different commit
     - name: ENABLE_GIT_REF_CHECK
       value: false
     taskRef: *wait-for-image-ref
@@ -442,6 +447,7 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.fact-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
+    # Disabling the git ref check as this image is built in a different repository from a different commit
     - name: ENABLE_GIT_REF_CHECK
       value: false
     taskRef: *wait-for-image-ref
