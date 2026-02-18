@@ -19,7 +19,7 @@ is_GITHUB_ACTIONS() {
 
 info() {
     if is_GITHUB_ACTIONS; then
-        echo "::notice::$*"
+        echo "::notice::INFO: $*"
     else
         echo "INFO: $(date): $*"
     fi
@@ -39,7 +39,7 @@ die() {
     if is_GITHUB_ACTIONS; then
         echo >&2 "::error::ERROR: $*"
     else
-        echo >&2 "ERROR: $(date):" "$@"
+        echo >&2 "ERROR:" "$@"
     fi
     exit 1
 }
