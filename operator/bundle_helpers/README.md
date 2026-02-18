@@ -74,12 +74,6 @@ RELATED_IMAGES_MODE=downstream ./bundle_helpers/compare-implementations.sh
 The Go implementation is now the default (`USE_GO_BUNDLE_HELPER` defaults to `true`).
 Python scripts are retained for reference to check byte-for-byte compatibility.
 
-### Feature Flag
-Set `USE_GO_BUNDLE_HELPER=false` to use the Python implementation:
-```bash
-USE_GO_BUNDLE_HELPER=false make bundle bundle-post-process
-```
-
 ## Testing
 
 The Go implementation produces byte-by-byte identical output to the Python implementation
