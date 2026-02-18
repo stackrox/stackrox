@@ -38,7 +38,7 @@ func PatchCSV(doc map[string]any, opts PatchOptions) error {
 	if !ok {
 		return errors.New("annotations.containerImage field is missing or has wrong type")
 	}
-	rewrite.RewriteStrings(doc, placeholderImage, opts.OperatorImage)
+	rewrite.Strings(doc, placeholderImage, opts.OperatorImage)
 
 	// Update metadata name with version
 	metadataName, ok := metadata["name"].(string)

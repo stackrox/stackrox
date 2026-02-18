@@ -109,7 +109,7 @@ func TestRewriteStrings(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			modified := RewriteStrings(tt.input, tt.old, tt.new)
+			modified := Strings(tt.input, tt.old, tt.new)
 			assert.Equal(t, tt.modified, modified)
 			assert.Equal(t, tt.expected, tt.input)
 		})
