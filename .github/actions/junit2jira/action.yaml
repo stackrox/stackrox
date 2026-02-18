@@ -43,6 +43,8 @@ runs:
   - name: Capture job failure as JUnit if no test failures exist
     shell: bash
     if: always()
+    env:
+      STEPS_JSON: ${{ toJSON(steps) }}
     run: |
       set -u
       source scripts/ci/lib.sh
@@ -52,7 +54,7 @@ runs:
         "${{ inputs.directory }}" \
         "${{ github.job }}" \
         "${{ job.status }}" \
-        '${{ toJSON(steps) }}' \
+        "$STEPS_JSON" \
         "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   - name: Check files
     id: run
