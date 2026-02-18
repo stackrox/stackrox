@@ -171,7 +171,6 @@ jobs:
         with:
           name: bundle-go-${{ matrix.related_img_mode }}
           path: /tmp/go
-        continue-on-error: true
 
       - name: Install comparison tools
         run: |
