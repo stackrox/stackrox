@@ -8,7 +8,6 @@ import (
 )
 
 // FixCSVDescriptorsMap processes all CRDs in a CSV and fixes their specDescriptors.
-// This function works with map[string]any to match Python's behavior.
 func FixCSVDescriptorsMap(csvDoc map[string]any) error {
 	// Navigate to spec.customresourcedefinitions.owned
 	spec, ok := csvDoc["spec"].(map[string]any)
