@@ -72,9 +72,7 @@ jobs:
           make bundle bundle-post-process
           mkdir -p /tmp/artifacts
           cp -r bundle /tmp/artifacts/bundle-python
-          if [ -d build/bundle ]; then
-            cp -r build/bundle /tmp/artifacts/build-bundle-python
-          fi
+          cp -r build/bundle /tmp/artifacts/build-bundle-python
           git diff || true
 
       - name: Upload Python bundle artifacts
