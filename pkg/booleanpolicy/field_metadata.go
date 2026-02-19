@@ -99,8 +99,7 @@ func (m *metadataAndQB) IsOfType(expectedType RuntimeFieldType) bool {
 }
 
 func (m *metadataAndQB) IsDeploymentEventField() bool {
-	// TODO(ROX-30809): update with m.IsOfType(FileAccess)
-	return m.IsOfType(Process) || m.IsOfType(NetworkFlow) || m.IsOfType(KubeEvent)
+	return m.IsOfType(Process) || m.IsOfType(NetworkFlow) || m.IsOfType(KubeEvent) || m.IsOfType(FileAccess)
 }
 
 func (m *metadataAndQB) IsAuditLogEventField() bool {

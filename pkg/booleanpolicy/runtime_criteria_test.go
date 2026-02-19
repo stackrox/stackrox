@@ -1672,3 +1672,471 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentDualPathMatching() {
 		})
 	}
 }
+
+func (suite *RuntimeCriteriaTestSuite) TestDeploymentFileAccessWithProcessCriteria() {
+	deployment := &storage.Deployment{
+		Name: "test-deployment",
+		Id:   "test-deployment-id",
+		Containers: []*storage.Container{
+			{
+				Name: "test-container",
+				Config: &storage.ContainerConfig{
+					Env: []*storage.ContainerConfig_EnvironmentConfig{
+						{Key: "PATH", Value: "/usr/bin:/bin"},
+					},
+				},
+			},
+		},
+	}
+
+	type eventWrapper struct {
+		access      *storage.FileAccess
+		expectAlert bool
+	}
+
+	for _, tc := range []struct {
+		description string
+		policy      *storage.Policy
+		events      []eventWrapper
+	}{
+		{
+			description: "File access with specific process name",
+			policy: &storage.Policy{
+				Id:            uuid.NewV4().String(),
+				PolicyVersion: "1.1",
+				Name:          "File Access with Process",
+				Severity:      storage.Severity_HIGH_SEVERITY,
+				Categories:    []string{"File System"},
+				PolicySections: []*storage.PolicySection{
+					{
+						SectionName: "section 1",
+						PolicyGroups: []*storage.PolicyGroup{
+							{
+								FieldName: fieldnames.FilePath,
+								Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
+							},
+							{
+								FieldName: fieldnames.FileOperation,
+								Values:    []*storage.PolicyValue{{Value: storage.FileAccess_OPEN.String()}},
+							},
+							{
+								FieldName: fieldnames.ProcessName,
+								Values:    []*storage.PolicyValue{{Value: "cat"}},
+							},
+						},
+					},
+				},
+				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+				EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
+			},
+			events: []eventWrapper{
+				{
+					access: &storage.FileAccess{
+						File:      &storage.FileAccess_File{ActualPath: "/etc/passwd"},
+						Operation: storage.FileAccess_OPEN,
+						Process: &storage.ProcessIndicator{
+							Signal: &storage.ProcessSignal{
+								Name:         "cat",
+								ExecFilePath: "/bin/cat",
+							},
+						},
+					},
+					expectAlert: true,
+				},
+				{
+					access: &storage.FileAccess{
+						File:      &storage.FileAccess_File{ActualPath: "/etc/passwd"},
+						Operation: storage.FileAccess_OPEN,
+						Process: &storage.ProcessIndicator{
+							Signal: &storage.ProcessSignal{
+								Name:         "vim",
+								ExecFilePath: "/usr/bin/vim",
+							},
+						},
+					},
+					expectAlert: false, // process name doesn't match
+				},
+				{
+					access: &storage.FileAccess{
+						File:      &storage.FileAccess_File{ActualPath: "/etc/shadow"},
+						Operation: storage.FileAccess_OPEN,
+						Process: &storage.ProcessIndicator{
+							Signal: &storage.ProcessSignal{
+								Name:         "cat",
+								ExecFilePath: "/bin/cat",
+							},
+						},
+					},
+					expectAlert: false, // file path doesn't match
+				},
+			},
+		},
+		{
+			description: "File access with process UID",
+			policy: &storage.Policy{
+				Id:            uuid.NewV4().String(),
+				PolicyVersion: "1.1",
+				Name:          "File Access with Process UID",
+				Severity:      storage.Severity_HIGH_SEVERITY,
+				Categories:    []string{"File System"},
+				PolicySections: []*storage.PolicySection{
+					{
+						SectionName: "section 1",
+						PolicyGroups: []*storage.PolicyGroup{
+							{
+								FieldName: fieldnames.FilePath,
+								Values:    []*storage.PolicyValue{{Value: "/etc/shadow"}},
+							},
+							{
+								FieldName: fieldnames.ProcessUID,
+								Values:    []*storage.PolicyValue{{Value: "0"}},
+							},
+						},
+					},
+				},
+				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+				EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
+			},
+			events: []eventWrapper{
+				{
+					access: &storage.FileAccess{
+						File:      &storage.FileAccess_File{ActualPath: "/etc/shadow"},
+						Operation: storage.FileAccess_OPEN,
+						Process: &storage.ProcessIndicator{
+							Signal: &storage.ProcessSignal{
+								Name:         "vi",
+								Uid:          0,
+								ExecFilePath: "/bin/vi",
+							},
+						},
+					},
+					expectAlert: true,
+				},
+				{
+					access: &storage.FileAccess{
+						File:      &storage.FileAccess_File{ActualPath: "/etc/shadow"},
+						Operation: storage.FileAccess_OPEN,
+						Process: &storage.ProcessIndicator{
+							Signal: &storage.ProcessSignal{
+								Name:         "vim",
+								Uid:          1000,
+								ExecFilePath: "/usr/bin/vim",
+							},
+						},
+					},
+					expectAlert: false, // UID doesn't match
+				},
+			},
+		},
+		{
+			description: "File access with process arguments",
+			policy: &storage.Policy{
+				Id:            uuid.NewV4().String(),
+				PolicyVersion: "1.1",
+				Name:          "File Access with Process Args",
+				Severity:      storage.Severity_HIGH_SEVERITY,
+				Categories:    []string{"File System"},
+				PolicySections: []*storage.PolicySection{
+					{
+						SectionName: "section 1",
+						PolicyGroups: []*storage.PolicyGroup{
+							{
+								FieldName: fieldnames.FilePath,
+								Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
+							},
+							{
+								FieldName: fieldnames.ProcessArguments,
+								Values:    []*storage.PolicyValue{{Value: "-l"}},
+							},
+						},
+					},
+				},
+				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+				EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
+			},
+			events: []eventWrapper{
+				{
+					access: &storage.FileAccess{
+						File:      &storage.FileAccess_File{ActualPath: "/etc/passwd"},
+						Operation: storage.FileAccess_OPEN,
+						Process: &storage.ProcessIndicator{
+							Signal: &storage.ProcessSignal{
+								Name:         "cat",
+								Args:         "-l /etc/passwd",
+								ExecFilePath: "/bin/cat",
+							},
+						},
+					},
+					expectAlert: true,
+				},
+				{
+					access: &storage.FileAccess{
+						File:      &storage.FileAccess_File{ActualPath: "/etc/passwd"},
+						Operation: storage.FileAccess_OPEN,
+						Process: &storage.ProcessIndicator{
+							Signal: &storage.ProcessSignal{
+								Name:         "cat",
+								Args:         "/etc/passwd",
+								ExecFilePath: "/bin/cat",
+							},
+						},
+					},
+					expectAlert: false, // args don't match
+				},
+			},
+		},
+		{
+			description: "Multiple operations with process criteria",
+			policy: &storage.Policy{
+				Id:            uuid.NewV4().String(),
+				PolicyVersion: "1.1",
+				Name:          "Multiple Operations with Process",
+				Severity:      storage.Severity_HIGH_SEVERITY,
+				Categories:    []string{"File System"},
+				PolicySections: []*storage.PolicySection{
+					{
+						SectionName: "section 1",
+						PolicyGroups: []*storage.PolicyGroup{
+							{
+								FieldName: fieldnames.FilePath,
+								Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
+							},
+							{
+								FieldName: fieldnames.FileOperation,
+								Values: []*storage.PolicyValue{
+									{Value: storage.FileAccess_OPEN.String()},
+									{Value: storage.FileAccess_CREATE.String()},
+								},
+							},
+							{
+								FieldName: fieldnames.ProcessName,
+								Values:    []*storage.PolicyValue{{Value: "bash"}},
+							},
+						},
+					},
+				},
+				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+				EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
+			},
+			events: []eventWrapper{
+				{
+					access: &storage.FileAccess{
+						File:      &storage.FileAccess_File{ActualPath: "/etc/passwd"},
+						Operation: storage.FileAccess_OPEN,
+						Process: &storage.ProcessIndicator{
+							Signal: &storage.ProcessSignal{
+								Name:         "bash",
+								ExecFilePath: "/bin/bash",
+							},
+						},
+					},
+					expectAlert: true,
+				},
+				{
+					access: &storage.FileAccess{
+						File:      &storage.FileAccess_File{ActualPath: "/etc/passwd"},
+						Operation: storage.FileAccess_CREATE,
+						Process: &storage.ProcessIndicator{
+							Signal: &storage.ProcessSignal{
+								Name:         "bash",
+								ExecFilePath: "/bin/bash",
+							},
+						},
+					},
+					expectAlert: true,
+				},
+				{
+					access: &storage.FileAccess{
+						File:      &storage.FileAccess_File{ActualPath: "/etc/passwd"},
+						Operation: storage.FileAccess_UNLINK,
+						Process: &storage.ProcessIndicator{
+							Signal: &storage.ProcessSignal{
+								Name:         "bash",
+								ExecFilePath: "/bin/bash",
+							},
+						},
+					},
+					expectAlert: false, // operation doesn't match
+				},
+			},
+		},
+		{
+			description: "Negated process name with file access",
+			policy: &storage.Policy{
+				Id:            uuid.NewV4().String(),
+				PolicyVersion: "1.1",
+				Name:          "Negated Process Name",
+				Severity:      storage.Severity_HIGH_SEVERITY,
+				Categories:    []string{"File System"},
+				PolicySections: []*storage.PolicySection{
+					{
+						SectionName: "section 1",
+						PolicyGroups: []*storage.PolicyGroup{
+							{
+								FieldName: fieldnames.FilePath,
+								Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
+							},
+							{
+								FieldName: fieldnames.ProcessName,
+								Values:    []*storage.PolicyValue{{Value: "cat"}},
+								Negate:    true,
+							},
+						},
+					},
+				},
+				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+				EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
+			},
+			events: []eventWrapper{
+				{
+					access: &storage.FileAccess{
+						File:      &storage.FileAccess_File{ActualPath: "/etc/passwd"},
+						Operation: storage.FileAccess_OPEN,
+						Process: &storage.ProcessIndicator{
+							Signal: &storage.ProcessSignal{
+								Name:         "vim",
+								ExecFilePath: "/usr/bin/vim",
+							},
+						},
+					},
+					expectAlert: true, // not cat, should match
+				},
+				{
+					access: &storage.FileAccess{
+						File:      &storage.FileAccess_File{ActualPath: "/etc/passwd"},
+						Operation: storage.FileAccess_OPEN,
+						Process: &storage.ProcessIndicator{
+							Signal: &storage.ProcessSignal{
+								Name:         "cat",
+								ExecFilePath: "/bin/cat",
+							},
+						},
+					},
+					expectAlert: false, // is cat, should not match due to negation
+				},
+			},
+		},
+		{
+			description: "Multiple files and processes",
+			policy: &storage.Policy{
+				Id:            uuid.NewV4().String(),
+				PolicyVersion: "1.1",
+				Name:          "Multiple Files and Processes",
+				Severity:      storage.Severity_HIGH_SEVERITY,
+				Categories:    []string{"File System"},
+				PolicySections: []*storage.PolicySection{
+					{
+						SectionName: "section 1",
+						PolicyGroups: []*storage.PolicyGroup{
+							{
+								FieldName: fieldnames.FilePath,
+								Values: []*storage.PolicyValue{
+									{Value: "/etc/passwd"},
+									{Value: "/etc/shadow"},
+								},
+							},
+							{
+								FieldName: fieldnames.ProcessName,
+								Values: []*storage.PolicyValue{
+									{Value: "cat"},
+									{Value: "vim"},
+								},
+							},
+						},
+					},
+				},
+				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+				EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
+			},
+			events: []eventWrapper{
+				{
+					access: &storage.FileAccess{
+						File:      &storage.FileAccess_File{ActualPath: "/etc/passwd"},
+						Operation: storage.FileAccess_OPEN,
+						Process: &storage.ProcessIndicator{
+							Signal: &storage.ProcessSignal{
+								Name:         "cat",
+								ExecFilePath: "/bin/cat",
+							},
+						},
+					},
+					expectAlert: true,
+				},
+				{
+					access: &storage.FileAccess{
+						File:      &storage.FileAccess_File{ActualPath: "/etc/shadow"},
+						Operation: storage.FileAccess_OPEN,
+						Process: &storage.ProcessIndicator{
+							Signal: &storage.ProcessSignal{
+								Name:         "vim",
+								ExecFilePath: "/usr/bin/vim",
+							},
+						},
+					},
+					expectAlert: true,
+				},
+				{
+					access: &storage.FileAccess{
+						File:      &storage.FileAccess_File{ActualPath: "/etc/passwd"},
+						Operation: storage.FileAccess_OPEN,
+						Process: &storage.ProcessIndicator{
+							Signal: &storage.ProcessSignal{
+								Name:         "bash",
+								ExecFilePath: "/bin/bash",
+							},
+						},
+					},
+					expectAlert: false, // process doesn't match
+				},
+				{
+					access: &storage.FileAccess{
+						File:      &storage.FileAccess_File{ActualPath: "/etc/sudoers"},
+						Operation: storage.FileAccess_OPEN,
+						Process: &storage.ProcessIndicator{
+							Signal: &storage.ProcessSignal{
+								Name:         "cat",
+								ExecFilePath: "/bin/cat",
+							},
+						},
+					},
+					expectAlert: false, // file doesn't match
+				},
+			},
+		},
+	} {
+		testutils.MustUpdateFeature(suite.T(), features.SensitiveFileActivity, true)
+		defer testutils.MustUpdateFeature(suite.T(), features.SensitiveFileActivity, false)
+		ResetFieldMetadataSingleton(suite.T())
+		defer ResetFieldMetadataSingleton(suite.T())
+
+		suite.Run(tc.description, func() {
+			matcher, err := BuildDeploymentWithFileAccessMatcher(tc.policy)
+			suite.Require().NoError(err)
+
+			for _, event := range tc.events {
+				var cache CacheReceptacle
+				enhancedDep := EnhancedDeployment{
+					Deployment:             deployment,
+					Images:                 nil,
+					NetworkPoliciesApplied: nil,
+				}
+				violations, err := matcher.MatchDeploymentWithFileAccess(&cache, enhancedDep, event.access)
+				suite.Require().NoError(err)
+
+				if event.expectAlert {
+					suite.Require().Len(violations.AlertViolations, 1, "expected one file access violation in alert")
+					suite.Require().Equal(storage.Alert_Violation_FILE_ACCESS, violations.AlertViolations[0].GetType(), "expected FILE_ACCESS type")
+
+					fileAccess := violations.AlertViolations[0].GetFileAccess()
+					suite.Require().NotNil(fileAccess, "expected file access info")
+
+					suite.Require().Equal(event.access.GetFile().GetEffectivePath(), fileAccess.GetFile().GetEffectivePath())
+					suite.Require().Equal(event.access.GetFile().GetActualPath(), fileAccess.GetFile().GetActualPath())
+					suite.Require().Equal(event.access.GetOperation(), fileAccess.GetOperation())
+				} else {
+					suite.Require().Empty(violations.AlertViolations, "expected no alerts")
+				}
+			}
+		})
+	}
+}
