@@ -24,10 +24,11 @@ from get_latest_helm_chart_versions import (
 # These are returned only if Helm charts for both versions could be found.
 # After running get_compatibility_test_tuples.py I received the following output:
 # INFO:root:Listing supported versions tuples:
-# INFO:root:Tuple 1: {Central v4.11.x-94-g75a2cb6b34 - Sensor v40009.5.3}
-# INFO:root:Tuple 2: {Central v4.11.x-94-g75a2cb6b34 - Sensor v40008.1.0}
-# INFO:root:Tuple 3: {Central v40009.5.3 - Sensor v4.11.x-94-g75a2cb6b34}
-# INFO:root:Tuple 4: {Central v40008.1.0 - Sensor v4.11.x-94-g75a2cb6b34}
+# INFO:root:Tuple 1: {Central v4.6.x-736-g48077a980e-dirty - Sensor v400.5.3}
+# INFO:root:Tuple 2: {Central v4.6.x-736-g48077a980e-dirty - Sensor v400.4.5}
+# INFO:root:Tuple 3: {Central v400.5.3 - Sensor v4.6.x-736-g48077a980e-dirty}
+# INFO:root:Tuple 4: {Central v400.4.5 - Sensor v4.6.x-736-g48077a980e-dirty}
+# INFO:root:Tuple 5: {Central v4.6.x-736-g48077a980e-dirty - Sensor v74.9.0}
 # If no supported versions with available Helm charts are found, an empty list is returned.
 def main():
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
