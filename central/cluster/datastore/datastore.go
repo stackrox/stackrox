@@ -6,6 +6,7 @@ import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
+	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store"
 	compliancePruning "github.com/stackrox/rox/central/complianceoperator/v2/pruner"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -95,6 +96,7 @@ func New(
 	clusterRanker *ranking.Ranker,
 	networkBaselineMgr networkBaselineManager.Manager,
 	compliancePruner compliancePruning.Pruner,
+	clusterInitStore clusterInitStore.Store,
 ) (DataStore, error) {
 	ds := &datastoreImpl{
 		clusterStorage:            clusterStorage,
@@ -119,6 +121,7 @@ func New(
 		idToNameCache:             simplecache.New(),
 		nameToIDCache:             simplecache.New(),
 		compliancePruner:          compliancePruner,
+		clusterInitStore:          clusterInitStore,
 	}
 
 	if err := ds.buildCache(sac.WithAllAccess(context.Background())); err != nil {

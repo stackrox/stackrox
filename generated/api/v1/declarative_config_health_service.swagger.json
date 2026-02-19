@@ -29,7 +29,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -40,7 +40,21 @@
     }
   },
   "definitions": {
-    "googlerpcStatus": {
+    "DeclarativeConfigHealthResourceType": {
+      "type": "string",
+      "enum": [
+        "CONFIG_MAP",
+        "ACCESS_SCOPE",
+        "PERMISSION_SET",
+        "ROLE",
+        "AUTH_PROVIDER",
+        "GROUP",
+        "NOTIFIER",
+        "AUTH_MACHINE_TO_MACHINE_CONFIG"
+      ],
+      "default": "CONFIG_MAP"
+    },
+    "googleRpcStatus": {
       "type": "object",
       "properties": {
         "code": {
@@ -89,7 +103,7 @@
           "type": "string"
         },
         "resourceType": {
-          "$ref": "#/definitions/storageDeclarativeConfigHealthResourceType"
+          "$ref": "#/definitions/DeclarativeConfigHealthResourceType"
         },
         "lastTimestamp": {
           "type": "string",
@@ -97,20 +111,6 @@
           "description": "Timestamp when the current status was set."
         }
       }
-    },
-    "storageDeclarativeConfigHealthResourceType": {
-      "type": "string",
-      "enum": [
-        "CONFIG_MAP",
-        "ACCESS_SCOPE",
-        "PERMISSION_SET",
-        "ROLE",
-        "AUTH_PROVIDER",
-        "GROUP",
-        "NOTIFIER",
-        "AUTH_MACHINE_TO_MACHINE_CONFIG"
-      ],
-      "default": "CONFIG_MAP"
     },
     "storageDeclarativeConfigHealthStatus": {
       "type": "string",

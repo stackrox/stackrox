@@ -3,6 +3,7 @@
 CHANGELOG.md
 central/alert/datastore/internal/store/postgres/store.go
 central/baseimage/watcher/watcher_impl_test.go
+central/cluster/datastore/datastore_impl_postgres_test.go
 central/cluster/datastore/datastore_impl_test.go
 central/compliance/checks/fixtures/scraped.go
 central/compliance/standards/metadata/pci_dss_3_2.go
@@ -29,7 +30,8 @@ operator/config/crd/bases/*.yaml
 operator/config/manifests/bases/*.yaml
 operator/install/manifest.yaml
 operator/tests/img/*.png
-pkg/booleanpolicy/default_policies_test.go
+pkg/booleanpolicy/default_policies_builtin_test.go
+pkg/booleanpolicy/runtime_criteria_test.go
 pkg/branding/files/red_hat_acs_logo_rgb.png
 pkg/branding/files/stackrox_integration_logo.png
 pkg/continuousprofiling/docs/img/*.png

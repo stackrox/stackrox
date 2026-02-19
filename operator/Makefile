@@ -193,7 +193,7 @@ include $(PROJECT_DIR)/../make/gotools.mk
 $(call go-tool, CONTROLLER_GEN, sigs.k8s.io/controller-tools/cmd/controller-gen, tools/controller-gen)
 $(call go-tool, ENVTEST, sigs.k8s.io/controller-runtime/tools/setup-envtest, tools/envtest)
 $(call go-tool, KUSTOMIZE, sigs.k8s.io/kustomize/kustomize/v5, tools/kustomize)
-$(call go-tool, OLM, github.com/operator-framework/operator-lifecycle-manager/cmd/olm, tools/operator-sdk)
+$(call go-tool, KUBEBUILDER, sigs.k8s.io/kubebuilder/v4, tools/kubebuilder)
 $(call go-tool, KUTTL, github.com/kudobuilder/kuttl/cmd/kubectl-kuttl, tools/kuttl)
 $(call go-tool, YQ, github.com/mikefarah/yq/v4, tools/yq)
 
@@ -205,10 +205,12 @@ $(OPERATOR_SDK): tools/operator-sdk/go.mod tools/operator-sdk/go.sum
 	$(SILENT)cd tools/operator-sdk && GOBIN="$(dir $@)" go install -tags=containers_image_openpgp github.com/operator-framework/operator-sdk/cmd/operator-sdk
 
 OPERATOR_SDK_VERSION = $(shell cd tools/operator-sdk; go list -m -f '{{ .Version }}' github.com/operator-framework/operator-sdk)
-OLM_VERSION = $(shell cd tools/operator-sdk; go list -m -f '{{ .Version }}' github.com/operator-framework/operator-lifecycle-manager)
 
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
+
+.PHONY: kubebuilder
+kubebuilder: $(KUBEBUILDER) ## Download kubebuilder locally if necessary.
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
@@ -230,7 +232,7 @@ yq: $(YQ) ## Download yq.
 
 .PHONY: parent-proto-generate
 parent-proto-generate: ## Make sure ../generated directory has up-to-date content that this operator (transitively) depends upon.
-	$(MAKE) -C .. proto-generated-srcs
+	[[ $${ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS:-false} = true ]] || $(MAKE) -C .. proto-generated-srcs
 
 .PHONY: manifests
 manifests: parent-proto-generate controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
@@ -317,6 +319,14 @@ build-installer: manifests generate kustomize ## Generate a consolidated YAML wi
 	mkdir -p dist
 	$(KUSTOMIZE) build build/dist > dist/install.yaml
 
+.PHONY: chart
+chart: kubebuilder manifests ## Generate a helm chart with all necessary resources.
+# The dependency above makes sure protos are up to date, so we can skip this time-consuming process below
+# by specifying the SKIP env var. Otherwise each target that kubebuilder invokes (and there is a bunch) would regen protos.
+	ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true $(KUBEBUILDER) edit --plugins=helm/v2-alpha --force
+	sed -i'.bak' -e 's,0.1.0,$(VERSION),g' dist/chart/Chart.yaml
+	rm -f dist/chart/Chart.yaml.bak
+
 .PHONY: build
 build: manifests generate fmt vet ## Build operator local binary.
 	../scripts/go-build-file.sh ./cmd/main.go bin/manager
@@ -358,14 +368,6 @@ docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with
 ifndef ignore-not-found
   ignore-not-found = false
 endif
-
-.PHONY: olm-install
-olm-install: operator-sdk ## Install OLM on Kubernetes cluster
-	$(OPERATOR_SDK) olm install --version=$(OLM_VERSION)
-
-.PHONY: olm-uninstall
-olm-uninstall: operator-sdk ## Uninstall OLM previously installed on Kubernetes cluster
-	$(OPERATOR_SDK) olm uninstall
 
 .PHONY: install
 install: check-ci-setup manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.

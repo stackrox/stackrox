@@ -19,6 +19,10 @@ on:
       - 'central/auth/m2m/**'
       - '.github/workflows/emailsender-central-compatibility.yaml'
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   e2e-test-on-kind:
     timeout-minutes: 60
@@ -29,10 +33,6 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - name: Cancel Previous Runs
-        uses: n1hility/cancel-previous-runs@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Login to Quay.io
         uses: docker/login-action@v3
         with:
@@ -57,17 +57,11 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version-file: stackrox/go.mod
-      - name: Cache go module
-        uses: actions/cache@v5
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('stackrox/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+          cache: false  # rarely runs, and repo checkout is in stackrox/ subdir
       - uses: ./stackrox/.github/actions/job-preamble
         with:
           free-disk-space: 40
-      - name: Create Kind cluster"
+      - name: Create Kind cluster
         uses: helm/kind-action@v1
         with:
           cluster_name: kind

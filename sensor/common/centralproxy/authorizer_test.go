@@ -4,11 +4,14 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 
 	"github.com/pkg/errors"
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -482,5 +485,267 @@ func TestK8sAuthorizer_TokenReviewCaching(t *testing.T) {
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "token authentication failed")
 		assert.Equal(t, 2, tokenReviewCallCount, "Second request should perform TokenReview again (failures not cached)")
+	})
+}
+
+func TestK8sAuthorizer_TokenReviewCoalescing(t *testing.T) {
+	t.Run("concurrent TokenReview requests for same token make only one API call", func(t *testing.T) {
+		fakeClient := fake.NewClientset()
+		var callCount atomic.Int32
+		var wg sync.WaitGroup
+
+		// Barrier to keep the TokenReview in-flight while goroutines start.
+		// This ensures deterministic coalescing behavior without relying on timing.
+		barrier := make(chan struct{})
+
+		fakeClient.PrependReactor("create", "tokenreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+			callCount.Add(1)
+			// Block until test signals all goroutines have started
+			<-barrier
+			return true, &authenticationv1.TokenReview{
+				Status: authenticationv1.TokenReviewStatus{
+					Authenticated: true,
+					User: authenticationv1.UserInfo{
+						Username: "test-user",
+						UID:      "test-uid",
+						Groups:   []string{"test-group"},
+					},
+				},
+			}, nil
+		})
+
+		authorizer := newK8sAuthorizer(fakeClient)
+
+		const numGoroutines = 10
+		results := make([]*authenticationv1.UserInfo, numGoroutines)
+		errs := make([]error, numGoroutines)
+
+		// Use a separate WaitGroup to track when all goroutines have started
+		var startWg sync.WaitGroup
+		startWg.Add(numGoroutines)
+
+		// Launch concurrent requests with the same token
+		for i := 0; i < numGoroutines; i++ {
+			wg.Add(1)
+			go func(idx int) {
+				defer wg.Done()
+				startWg.Done() // Signal this goroutine has started
+				req := httptest.NewRequest(http.MethodGet, "/test", nil)
+				req.Header.Set("Authorization", "Bearer same-token")
+				results[idx], errs[idx] = authorizer.authenticate(context.Background(), req)
+			}(i)
+		}
+
+		// Wait for all goroutines to start, then release the barrier
+		startWg.Wait()
+		close(barrier)
+		wg.Wait()
+
+		// Verify only ONE TokenReview API call was made
+		assert.Equal(t, int32(1), callCount.Load(),
+			"expected exactly 1 TokenReview call for %d concurrent requests", numGoroutines)
+
+		// Verify all goroutines got the same result
+		for i := 0; i < numGoroutines; i++ {
+			require.NoError(t, errs[i])
+			assert.Equal(t, "test-user", results[i].Username)
+		}
+	})
+}
+
+func TestK8sAuthorizer_AuthorizationCoalescing(t *testing.T) {
+	t.Run("concurrent authorization requests for same user/namespace make only one set of SAR calls", func(t *testing.T) {
+		fakeClient := fake.NewClientset()
+		var sarCallCount atomic.Int32
+		var wg sync.WaitGroup
+
+		// Barrier to keep the SAR in-flight while goroutines start.
+		// This ensures deterministic coalescing behavior without relying on timing.
+		barrier := make(chan struct{})
+
+		fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+			sarCallCount.Add(1)
+			// Block until test signals all goroutines have started
+			<-barrier
+			return true, &authv1.SubjectAccessReview{
+				Status: authv1.SubjectAccessReviewStatus{
+					Allowed: true,
+				},
+			}, nil
+		})
+
+		// Create authorizer with only one resource to check for simpler test
+		authorizer := newK8sAuthorizer(fakeClient)
+		authorizer.verbsToCheck = []string{"get"}
+		authorizer.resourcesToCheck = []k8sResource{
+			{Resource: "pods", Group: ""},
+		}
+
+		userInfo := &authenticationv1.UserInfo{
+			Username: "test-user",
+			UID:      "test-uid",
+			Groups:   []string{"test-group"},
+		}
+
+		const numGoroutines = 10
+		errs := make([]error, numGoroutines)
+
+		// Use a separate WaitGroup to track when all goroutines have started
+		var startWg sync.WaitGroup
+		startWg.Add(numGoroutines)
+
+		// Launch concurrent authorize requests for the same user/namespace
+		for i := 0; i < numGoroutines; i++ {
+			wg.Add(1)
+			go func(idx int) {
+				defer wg.Done()
+				startWg.Done() // Signal this goroutine has started
+				req := httptest.NewRequest(http.MethodGet, "/test", nil)
+				req.Header.Set(stackroxNamespaceHeader, "test-namespace")
+				errs[idx] = authorizer.authorize(context.Background(), userInfo, req)
+			}(i)
+		}
+
+		// Wait for all goroutines to start, then release the barrier
+		startWg.Wait()
+		close(barrier)
+		wg.Wait()
+
+		// Verify only ONE SubjectAccessReview API call was made (1 resource × 1 verb)
+		// All concurrent requests share the same singleflight execution.
+		assert.Equal(t, int32(1), sarCallCount.Load(),
+			"expected exactly 1 SAR call for %d concurrent requests", numGoroutines)
+
+		// Verify all goroutines got success
+		for i := 0; i < numGoroutines; i++ {
+			assert.NoError(t, errs[i])
+		}
+	})
+
+	t.Run("forbidden responses are cached and coalesced", func(t *testing.T) {
+		fakeClient := fake.NewClientset()
+		var sarCallCount atomic.Int32
+		var wg sync.WaitGroup
+
+		// Barrier to keep the SAR in-flight while goroutines start.
+		barrier := make(chan struct{})
+
+		fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+			sarCallCount.Add(1)
+			<-barrier
+			// Return Forbidden: Allowed=false with no EvaluationError
+			return true, &authv1.SubjectAccessReview{
+				Status: authv1.SubjectAccessReviewStatus{
+					Allowed: false,
+					Denied:  true,
+					Reason:  "forbidden by policy",
+				},
+			}, nil
+		})
+
+		// Create authorizer with only one resource to check for simpler test
+		authorizer := newK8sAuthorizer(fakeClient)
+		authorizer.verbsToCheck = []string{"get"}
+		authorizer.resourcesToCheck = []k8sResource{
+			{Resource: "pods", Group: ""},
+		}
+
+		userInfo := &authenticationv1.UserInfo{
+			Username: "test-user",
+			UID:      "test-uid",
+			Groups:   []string{"test-group"},
+		}
+
+		const numGoroutines = 10
+		errs := make([]error, numGoroutines)
+
+		var startWg sync.WaitGroup
+		startWg.Add(numGoroutines)
+
+		for i := 0; i < numGoroutines; i++ {
+			wg.Add(1)
+			go func(idx int) {
+				defer wg.Done()
+				startWg.Done()
+				req := httptest.NewRequest(http.MethodGet, "/test", nil)
+				req.Header.Set(stackroxNamespaceHeader, "test-namespace")
+				errs[idx] = authorizer.authorize(context.Background(), userInfo, req)
+			}(i)
+		}
+
+		startWg.Wait()
+		close(barrier)
+		wg.Wait()
+
+		// All concurrent callers should have shared a single SAR and observed Forbidden
+		assert.Equal(t, int32(1), sarCallCount.Load(),
+			"expected exactly 1 SAR call for %d concurrent forbidden requests", numGoroutines)
+
+		for i := 0; i < numGoroutines; i++ {
+			require.Errorf(t, errs[i], "expected forbidden error for goroutine %d", i)
+			assert.Contains(t, errs[i].Error(), "lacks")
+		}
+
+		// Call authorize again for the same user/namespace - should use cached forbidden result
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req.Header.Set(stackroxNamespaceHeader, "test-namespace")
+		err := authorizer.authorize(context.Background(), userInfo, req)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "lacks")
+		assert.Equal(t, int32(1), sarCallCount.Load(), "forbidden results should be cached; expected no new SAR calls")
+	})
+
+	t.Run("transient errors are not cached", func(t *testing.T) {
+		fakeClient := fake.NewClientset()
+		var sarCallCount atomic.Int32
+		shouldFail := true
+
+		fakeClient.PrependReactor("create", "subjectaccessreviews", func(action k8sTesting.Action) (bool, runtime.Object, error) {
+			sarCallCount.Add(1)
+			if shouldFail {
+				return true, nil, errors.New("transient authz backend error")
+			}
+			// Success path
+			return true, &authv1.SubjectAccessReview{
+				Status: authv1.SubjectAccessReviewStatus{
+					Allowed: true,
+				},
+			}, nil
+		})
+
+		// Create authorizer with only one resource to check for simpler test
+		authorizer := newK8sAuthorizer(fakeClient)
+		authorizer.verbsToCheck = []string{"get"}
+		authorizer.resourcesToCheck = []k8sResource{
+			{Resource: "pods", Group: ""},
+		}
+
+		userInfo := &authenticationv1.UserInfo{
+			Username: "test-user",
+			UID:      "test-uid",
+			Groups:   []string{"test-group"},
+		}
+
+		// First request fails with transient error
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req.Header.Set(stackroxNamespaceHeader, "test-namespace")
+		err := authorizer.authorize(context.Background(), userInfo, req)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "transient authz backend error")
+
+		firstCallCount := sarCallCount.Load()
+		assert.Equal(t, int32(1), firstCallCount, "first request should make exactly 1 SAR call")
+
+		// Second request - because transient errors should not be cached,
+		// it should trigger another SAR call.
+		shouldFail = false
+
+		req = httptest.NewRequest(http.MethodGet, "/test", nil)
+		req.Header.Set(stackroxNamespaceHeader, "test-namespace")
+		err = authorizer.authorize(context.Background(), userInfo, req)
+		require.NoError(t, err, "expected success after transient error was resolved")
+
+		// We should have observed at least one more SAR call, proving errors were not cached
+		assert.Greater(t, sarCallCount.Load(), firstCallCount, "transient errors must not be cached")
 	})
 }

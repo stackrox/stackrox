@@ -20,6 +20,7 @@ const (
 	baselineResultAugmentKey      = "BaselineResult"
 	envVarAugmentKey              = "EnvironmentVariable"
 	impersonatedEventResultKey    = "ImpersonatedEventResult"
+	fileAccessPathKey             = "FilePath"
 )
 
 // This block enumerates metadata about the augmented objects we use in policies.
@@ -63,7 +64,8 @@ var (
 
 	NetworkPoliciesAppliedMeta = pathutil.NewAugmentedObjMeta((*NetworkPoliciesApplied)(nil))
 
-	FileAccessMeta = pathutil.NewAugmentedObjMeta((*storage.FileAccess)(nil))
+	FileAccessMeta = pathutil.NewAugmentedObjMeta((*storage.FileAccess)(nil)).
+			AddPlainObjectAt([]string{fileAccessPathKey}, (*fileAccessPath)(nil))
 
 	NodeMeta = pathutil.NewAugmentedObjMeta((*NodeDetails)(nil)).
 			AddAugmentedObjectAt([]string{fileAccessKey}, FileAccessMeta)
