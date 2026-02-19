@@ -134,8 +134,15 @@ def get_compatibility_test_tuples():
 
     # Currently there are no support exceptions, the last one expired on 2024-06-30, see:
     # https://issues.redhat.com/browse/ROX-18223
-    # Add new support exceptions here when negotiated
-    support_exceptions = []
+    # however a new support exception is being negotiated, add it here when it's ready
+    support_exceptions = [
+        ChartVersions(
+            central_version=latest_tag,
+            sensor_version=get_latest_helm_chart_version_for_specific_release(
+                "stackrox-secured-cluster-services", Release(major=3, minor=74)
+            ),
+        )
+    ]
 
     test_tuples.extend(
         support_exception
