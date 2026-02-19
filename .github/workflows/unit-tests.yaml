@@ -42,6 +42,8 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        save: false  # ~2,000 MB, test-dominated, no critical path speedup
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
@@ -122,6 +124,8 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        save: false  # ~913 MB, test-dominated, no critical path speedup
 
     - name: Is Postgres ready
       run: pg_isready -h 127.0.0.1
@@ -182,6 +186,8 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        save: false  # ~610 MB, test-dominated, no critical path speedup
 
     - name: Is Postgres ready
       run: pg_isready -h 127.0.0.1
@@ -303,6 +309,8 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        save: false  # ~1,163 MB, test-dominated, no critical path speedup
 
     - uses: ./.github/actions/handle-tagged-build
 
@@ -403,6 +411,8 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        save: false  # ~626 MB, test-dominated, no critical path speedup
 
     - name: Login to Quay.io
       uses: docker/login-action@v3
