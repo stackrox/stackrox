@@ -9,7 +9,10 @@ import sys
 from collections import namedtuple
 from pathlib import Path
 
-from get_latest_helm_chart_versions import get_supported_helm_chart_versions
+from get_latest_helm_chart_versions import (
+    get_supported_helm_chart_versions,
+    get_latest_helm_chart_version_for_specific_release,
+)
 
 
 # We run compatibility tests against supported older versions of Stackrox.
