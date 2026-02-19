@@ -90,6 +90,15 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 		return identityWithExternalUser, nil
 	}
 
+	if token.InternalRole != nil {
+		resolvedRoles := []permissions.ResolvedRole{token.InternalRole}
+		identityWithInternalRole, errWithResolvedRoles := withResolvedRoles(resolvedRoles, token, authProviderSrc)
+		if errWithResolvedRoles != nil {
+			return nil, getExtractorError("failed to resolve internal roles", errWithResolvedRoles)
+		}
+		return identityWithInternalRole, nil
+	}
+
 	return nil, getExtractorError("could not determine token type", nil)
 }
 
@@ -100,18 +109,30 @@ func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, 
 	}
 	// Ensure there are no invalid roles listed in the token.
 	filteredRoles := authn.FilterOutNoneRole(resolvedRoles)
+	return withResolvedRoles(filteredRoles, token, authProvider)
+}
+
+func withResolvedRoles(
+	roles []permissions.ResolvedRole,
+	token *tokens.TokenInfo,
+	authProvider authproviders.Provider,
+) (authn.Identity, error) {
+	roleNames := make([]string, 0, len(roles))
+	for _, role := range roles {
+		roleNames = append(roleNames, role.GetRoleName())
+	}
 	var email string
 	if token.ExternalUser != nil {
 		email = token.ExternalUser.Email
 	}
 
-	attributes := map[string][]string{"role": permissionsUtils.RoleNames(filteredRoles), "name": {token.Name}}
+	attributes := map[string][]string{"role": permissionsUtils.RoleNames(roles), "name": {token.Name}}
 	id := &roleBasedIdentity{
 		uid:           fmt.Sprintf("auth-token:%s", token.ID),
 		username:      email,
 		friendlyName:  token.Subject,
 		fullName:      token.Name,
-		resolvedRoles: filteredRoles,
+		resolvedRoles: roles,
 		expiry:        token.Expiry(),
 		attributes:    attributes,
 		authProvider:  authProvider,
