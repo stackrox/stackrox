@@ -96,12 +96,7 @@ func (a *audit) newAuditMessage(ctx context.Context, req interface{}, grpcFullMe
 				return nil
 			}
 			// For service requests, populate user info from service identity.
-			// Username uses the "service:<type>:<id>" format to clearly distinguish
-			// service identities from human users in audit log queries.
-			msg.User = &storage.UserInfo{
-				Username:     fmt.Sprintf("service:%s:%s", svc.GetType().String(), svc.GetId()),
-				FriendlyName: fmt.Sprintf("Service: %s (ID: %s)", svc.GetType().String(), svc.GetId()),
-			}
+			msg.User = serviceIdentityUserInfo(svc)
 		} else {
 			msg.User = utils.IfThenElse(a.withoutPermissions,
 				stripPermissionsFromUserInfo(identity.User()),
@@ -156,7 +151,7 @@ func (a *audit) newAuditMessage(ctx context.Context, req interface{}, grpcFullMe
 func (a *audit) UnaryServerInterceptor() func(ctx context.Context, req interface{},
 	info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo,
-		handler grpc.UnaryHandler,) (interface{}, error) {
+		handler grpc.UnaryHandler) (interface{}, error) {
 		resp, err := handler(ctx, req)
 		go a.SendAuditMessage(ctx, req, info.FullMethod, interceptor.GetAuthErrorFromContext(ctx), err)
 		return resp, err
@@ -184,6 +179,16 @@ func calculateAuditStatus(authError interceptor.AuthStatus, requestError error) 
 		return v1.Audit_REQUEST_FAILED, requestError.Error()
 	default:
 		return v1.Audit_REQUEST_SUCCEEDED, ""
+	}
+}
+
+// serviceIdentityUserInfo builds a UserInfo from a service identity for audit logging.
+// Username uses the "service:<type>:<id>" format to clearly distinguish
+// service identities from regular users in audit log queries.
+func serviceIdentityUserInfo(svc *storage.ServiceIdentity) *storage.UserInfo {
+	return &storage.UserInfo{
+		Username:     fmt.Sprintf("service:%s:%s", svc.GetType().String(), svc.GetId()),
+		FriendlyName: fmt.Sprintf("Service: %s (ID: %s)", svc.GetType().String(), svc.GetId()),
 	}
 }
 
