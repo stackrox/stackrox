@@ -14,12 +14,28 @@ IFS=',' read -ra architectures <<< "$2"
 [[ -n "$image" ]] || die "No image specified"
 [[ "$image" == *:* ]] || die "Must specify a tagged image reference when using this script"
 
-# Try pushing manifest a few times for the case when quay.io has issues.
-# Each attempt re-pulls and re-fetches arch manifests from the registry to
-# avoid retrying with a stale or inconsistent manifest from a previous attempt.
+# Push a multi-arch manifest index using docker buildx imagetools create, which
+# produces an OCI image index (application/vnd.oci.image.index.v1+json) rather
+# than a Docker manifest list (application/vnd.docker.distribution.manifest.list.v2+json).
+#
+# The Docker manifest list approach was abandoned because quay's
+# DockerSchema2ManifestList validator strictly requires all referenced manifests
+# to use Docker v2 mediaTypes. When amd64 and arm64 builds land on different
+# GitHub Actions runner generations (e.g. ubuntu24/20260201.15 using overlay2
+# vs ubuntu24/20260217.30 using the containerd image store), one arch produces a
+# Docker v2 manifest and the other an OCI manifest. The resulting mixed manifest
+# list is rejected by quay with "manifest invalid" (PROJQUAY-9687).
+#
+# docker buildx imagetools create produces an OCI index which quay validates
+# under a different, more permissive schema that accepts both OCI and Docker v2
+# manifest references regardless of their individual mediaTypes.
+#
+# Each retry re-pulls and re-inspects all arch images from the registry so that
+# any stale or inconsistent manifest served by quay on a prior attempt does not
+# poison subsequent retries.
 pushed=0
 for i in {1..5}; do
-  echo "Pushing manifest for ${image}. Attempt ${i}..."
+  echo "Pushing manifest index for ${image}. Attempt ${i}..."
 
   image_list=()
   for arch in "${architectures[@]}"; do
@@ -31,21 +47,10 @@ for i in {1..5}; do
     image_list+=("$arch_image")
   done
 
-  # Clear any previously cached manifest to force a fresh fetch from the
-  # registry on every attempt. docker manifest create caches each arch manifest
-  # locally after the first fetch and --amend reuses that cache without
-  # re-fetching. If the registry served a stale/inconsistent manifest on a
-  # prior attempt, all subsequent retries would push the same invalid manifest
-  # list without this rm.
-  docker manifest rm "$image" 2>/dev/null || true
-  docker manifest create --amend "$image" "${image_list[@]}"
-
-  echo "=== Manifest list inspect: ${image} ==="
-  docker manifest inspect "$image" || true
-  echo "========================================"
-
-  echo docker manifest push "$image"
-  if docker manifest push "$image"; then
+  if docker buildx imagetools create -t "$image" "${image_list[@]}"; then
+    echo "=== Manifest index inspect: ${image} ==="
+    docker buildx imagetools inspect "$image" || true
+    echo "========================================"
     pushed=1
     break
   fi
