@@ -105,7 +105,15 @@ func (ds *datastoreImpl) SearchAlertPolicyNamesAndSeverities(ctx context.Context
 		search.NewQuerySelect(search.Severity).Proto(),
 	}
 
-	return pgSearch.RunSelectRequestForSchema[alertviews.PolicyNameAndSeverity](ctx, ds.db, schema.AlertsSchema, clonedQuery)
+	var results []*alertviews.PolicyNameAndSeverity
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, clonedQuery, func(r *alertviews.PolicyNameAndSeverity) error {
+		results = append(results, r)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
 }
 
 // SearchAlerts returns search results for the given request. This will exclude resolved alerts by default unless Violation State = Resolved is explicitly specified in the query
