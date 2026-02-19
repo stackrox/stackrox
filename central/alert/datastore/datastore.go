@@ -6,8 +6,8 @@ import (
 
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	pgStore "github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
-	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	alertviews "github.com/stackrox/rox/central/alert/views"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
