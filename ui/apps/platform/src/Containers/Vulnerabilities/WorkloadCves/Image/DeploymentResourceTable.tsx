@@ -58,6 +58,20 @@ export const deploymentResourcesFragment = gql`
     }
 `;
 
+export const deploymentResourcesV2Fragment = gql`
+    fragment DeploymentResourcesV2 on ImageV2 {
+        deploymentCount(query: $query)
+        deployments(query: $query, pagination: $pagination) {
+            id
+            name
+            type
+            clusterName
+            namespace
+            created
+        }
+    }
+`;
+
 export type DeploymentResourceTableProps = {
     data: DeploymentResources;
     getSortParams: UseURLSortResult['getSortParams'];
