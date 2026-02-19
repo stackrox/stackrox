@@ -3,8 +3,4 @@
 set -e
 
 echo "Building with platform linux/${GOARCH}"
-if docker info | grep buildx; then
-    docker buildx build --platform "linux/${GOARCH}" --load --provenance=false "$@"
-else
-    docker build --platform "linux/${GOARCH}" "$@"
-fi
+docker build --platform "linux/${GOARCH}" "$@"
