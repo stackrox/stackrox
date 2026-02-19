@@ -26,11 +26,16 @@ import (
 
 const (
 	// tokenCacheTTL is how long tokens are cached locally before being refreshed.
-	tokenCacheTTL = 3 * time.Minute
+	// These tokens carry narrowly scoped permissions and are not directly exposed
+	// to users. The longer cache window trades minimal revocation latency for
+	// significantly lower load on Central in clusters with many proxied requests.
+	tokenCacheTTL = 55 * time.Minute
 
 	// tokenTTL is the requested token validity duration.
-	// Slightly longer than cache TTL to ensure tokens remain valid during cache lifetime.
-	tokenTTL = tokenCacheTTL + 1*time.Minute
+	// Slightly longer than cache TTL to ensure tokens remain valid during cache lifetime
+	// and to avoid race conditions where a token expires between being served from cache
+	// and being used in a request.
+	tokenTTL = tokenCacheTTL + 5*time.Minute
 
 	// tokenRequestTimeout is the maximum time allowed for a token request RPC.
 	// This ensures that token requests don't hang indefinitely when all callers have cancelled.
