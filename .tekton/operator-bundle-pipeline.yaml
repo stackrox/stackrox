@@ -376,6 +376,9 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.scanner-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
+    # Disabling the git ref check as this image is built in a different repository from a different commit
+    - name: ENABLE_GIT_REF_CHECK
+      value: false
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `scanner-retag.yaml`
     timeout: 40m
