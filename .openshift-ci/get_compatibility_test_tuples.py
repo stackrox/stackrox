@@ -82,6 +82,8 @@ def is_newer_version(current_version: str, helm_version: str):
 
 
 def get_compatibility_test_tuples():
+    Release = namedtuple("Release", ["major", "minor"])
+
     # start logging
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
