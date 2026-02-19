@@ -1,4 +1,4 @@
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.25@sha256:527782f4a0270f786192281f68d0374f4a21b3ab759643eee4bfcafb6f539468 AS builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.25@sha256:aa03597ee8c7594ffecef5cbb6a0f059d362259d2a41225617b27ec912a3d0d3 AS builder
 
 ARG BUILD_TAG
 RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
@@ -17,7 +17,7 @@ WORKDIR /src
 RUN make -C scanner NODEPS=1 CGO_ENABLED=1 image/scanner/bin/scanner copy-scripts
 
 
-FROM registry.access.redhat.com/ubi8-minimal:latest@sha256:fba1e7fb1f50cd7b021c8379f207fb744b00ff55c7f539f15b40709a38cb4cde
+FROM registry.access.redhat.com/ubi8-minimal:latest@sha256:48adecc91f276734fa51987bc2203a31db9ba87a512c436c0a3fcac53135378d
 
 ARG BUILD_TAG
 

@@ -190,7 +190,7 @@ jobs:
     - prepare-environment
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.2
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
@@ -204,6 +204,7 @@ jobs:
     env:
       SCANNER_BUNDLE_VERSION: ${{ matrix.version }}
       ROX_GIT_REF: ${{ matrix.ref }}
+      STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT: "10m"
     steps:
     # Checkout master to get the latest local actions
     - name: Checkout repository
@@ -282,12 +283,14 @@ jobs:
     - prepare-environment
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.2
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
       - /usr:/mnt/usr
       - /opt:/mnt/opt
+    env:
+      STACKROX_RHEL_VEX_COMPRESSED_FILE_TIMEOUT: "10m"
     steps:
     # Checkout master to get the latest local actions
     - name: Checkout repository
