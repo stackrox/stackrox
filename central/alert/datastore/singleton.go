@@ -13,8 +13,9 @@ var (
 )
 
 func initialize() {
-	storage := pgStore.New(globaldb.GetPostgres())
-	soleInstance = New(storage, platformmatcher.Singleton())
+	db := globaldb.GetPostgres()
+	storage := pgStore.New(db)
+	soleInstance = New(db, storage, platformmatcher.Singleton())
 }
 
 // Singleton returns the sole instance of the DataStore service.

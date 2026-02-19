@@ -46,21 +46,20 @@ func NewViolations(searcher getters.AlertSearcher) *ViolationsMultiplier {
 func (v *ViolationsMultiplier) Score(ctx context.Context, deployment *storage.Deployment, _ map[string][]*storage.Risk_Result) *storage.Risk_Result {
 	qb := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String())
 
-	alerts, err := v.searcher.SearchListAlerts(ctx, qb.ProtoQuery(), true)
+	results, err := v.searcher.SearchAlertPolicyNamesAndSeverities(ctx, qb.ProtoQuery(), true)
 	if err != nil {
 		log.Errorf("Couldn't get risk violations for %s: %s", deployment.GetId(), err)
 		return nil
 	}
 
 	var severitySum float32
-	var count int
 	var factors []policyFactor
-	for _, alert := range alerts {
-		count++
-		severitySum += severityImpact(alert.GetPolicy().GetSeverity())
+	for _, result := range results {
+		severity := storage.Severity(result.Severity)
+		severitySum += severityImpact(severity)
 		factors = append(factors, policyFactor{
-			name:     alert.GetPolicy().GetName(),
-			severity: alert.GetPolicy().GetSeverity(),
+			name:     result.PolicyName,
+			severity: severity,
 		})
 	}
 
