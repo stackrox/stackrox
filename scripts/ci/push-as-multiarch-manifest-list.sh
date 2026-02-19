@@ -22,7 +22,7 @@ do
     image_list+=("$arch_image")
 done
 
-docker manifest create "$image" "${image_list[@]}"
+docker manifest create --amend "$image" "${image_list[@]}"
 
 # Try pushing manifest a few times for the case when quay.io has issues
 pushed=0
