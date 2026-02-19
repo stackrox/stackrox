@@ -55,11 +55,10 @@ func (v *ViolationsMultiplier) Score(ctx context.Context, deployment *storage.De
 	var severitySum float32
 	var factors []policyFactor
 	for _, result := range results {
-		severity := storage.Severity(result.Severity)
-		severitySum += severityImpact(severity)
+		severitySum += severityImpact(result.GetSeverity())
 		factors = append(factors, policyFactor{
-			name:     result.PolicyName,
-			severity: severity,
+			name:     result.GetPolicyName(),
+			severity: result.GetSeverity(),
 		})
 	}
 
