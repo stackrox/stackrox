@@ -96,6 +96,12 @@ jobs:
       - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: cli-build
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: operator-chart-RHACS_BRANDING
+#      - uses: ./.github/actions/download-artifact-with-retry
+#        with:
+#          name: operator-chart-STACKROX_BRANDING
       - name: Publish Helm charts to stackrox/release-artifacts
         env:
           STACKROX_TAG: ${{ github.ref_name }}
@@ -109,7 +115,7 @@ jobs:
           mkdir -p "${HOME}/.local/bin"
           mv bin/linux_amd64/roxctl "${HOME}/.local/bin/roxctl"
           scripts/ci/lib.sh \
-            push_helm_charts "${STACKROX_TAG}"
+            push_helm_charts "${STACKROX_TAG}" "$(pwd)/operator-chart-RHACS_BRANDING.tgz" "$(pwd)/operator-chart-STACKROX_BRANDING.tgz"
 
   # Publish `roxagent` and `roxctl`.
   publish-cli:

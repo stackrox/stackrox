@@ -661,6 +661,20 @@ jobs:
         run: |
           ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
 
+      - name: Build operator helm chart
+        if: matrix.arch == 'amd64' && matrix.name != 'STACKROX_BRANDING'
+        run: make -C operator/ chart
+
+      - name: Bundle chart to preserve permissions
+        if: matrix.arch == 'amd64' && matrix.name != 'STACKROX_BRANDING'
+        run: tar -cvzf "$(pwd)/operator-chart.tgz" -C operator/dist/chart .
+
+      - uses: ./.github/actions/upload-artifact-with-retry
+        if: matrix.arch == 'amd64' && matrix.name != 'STACKROX_BRANDING'
+        with:
+          name: operator-chart-{{ matrix.name }}
+          path: operator-chart-{{ matrix.name }}.tgz
+
       - name: Build Operator Bundle image
         if: |
           matrix.name != 'STACKROX_BRANDING'

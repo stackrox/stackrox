@@ -1111,11 +1111,13 @@ publish_openapispec() {
 }
 
 push_helm_charts() {
-    if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: push_helm_charts <tag>"
+    if [[ "$#" -ne 3 ]]; then
+        die "missing arg. usage: push_helm_charts <tag> <operator_rhacs_chart_tarball> <operator_stackrox_chart_tarball>"
     fi
 
     local tag="$1"
+    local operator_rhacs_chart_tarball="$2"
+    #local operator_stackrox_chart_tarball="$3"
 
     echo "Publish Helm charts to github repository stackrox/release-artifacts and create a PR" >> "${GITHUB_STEP_SUMMARY}"
 
@@ -1123,11 +1125,14 @@ push_helm_charts() {
     local secured_cluster_services_chart_dir
     central_services_chart_dir="$(mktemp -d)"
     secured_cluster_services_chart_dir="$(mktemp -d)"
+    operator_chart_dir="$(mktemp -d)"
     roxctl helm output central-services --image-defaults=rhacs --output-dir "${central_services_chart_dir}/rhacs"
     roxctl helm output central-services --image-defaults=opensource --output-dir "${central_services_chart_dir}/opensource"
     roxctl helm output secured-cluster-services --image-defaults=rhacs --output-dir "${secured_cluster_services_chart_dir}/rhacs"
     roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${secured_cluster_services_chart_dir}/opensource"
-    "${SCRIPTS_ROOT}/scripts/ci/publish-helm-charts.sh" "${tag}" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}"
+    tar -zxf "${operator_rhacs_chart_tarball}" -C "${operator_chart_dir}/rhacs"
+    #tar -zxf "${operator_stackrox_chart_tarball}" -C "${operator_chart_dir}/opensource"
+    "${SCRIPTS_ROOT}/scripts/ci/publish-helm-charts.sh" "${tag}" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}" "${operator_chart_dir}"
 }
 
 gitbot() {
