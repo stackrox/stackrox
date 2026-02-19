@@ -40,6 +40,22 @@ runs:
         curl --retry 5 --retry-connrefused --silent --show-error --fail --location --output junit2jira "$LOCATION"
         chmod +x junit2jira
       fi
+  - name: Capture job failure as JUnit if no test failures exist
+    shell: bash
+    if: always()
+    env:
+      STEPS_JSON: ${{ toJSON(steps) }}
+    run: |
+      set -u
+      source scripts/ci/lib.sh
+      export ARTIFACT_DIR="${{ inputs.directory }}"
+
+      capture_job_failure_as_junit \
+        "${{ inputs.directory }}" \
+        "${{ github.job }}" \
+        "${{ job.status }}" \
+        "$STEPS_JSON" \
+        "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   - name: Check files
     id: run
     shell: bash

@@ -25,6 +25,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Deprecated: Marked as deprecated in api/v1/cluster_init_service.proto.
 type InitBundleMeta struct {
 	state            protoimpl.MessageState            `protogen:"open.v1"`
 	Id               string                            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -209,6 +210,7 @@ func (x *CRSMeta) GetRegistrationsCompleted() []string {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in api/v1/cluster_init_service.proto.
 type InitBundleGenResponse struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	Meta             *InitBundleMeta        `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta,omitempty"`
@@ -365,6 +367,7 @@ func (x *GetCAConfigResponse) GetHelmValuesBundle() []byte {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in api/v1/cluster_init_service.proto.
 type InitBundleMetasResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Items         []*InitBundleMeta      `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
@@ -453,6 +456,7 @@ func (x *CRSMetasResponse) GetItems() []*CRSMeta {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in api/v1/cluster_init_service.proto.
 type InitBundleGenRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -610,6 +614,7 @@ func (x *CRSGenRequestExtended) GetMaxRegistrations() uint64 {
 	return 0
 }
 
+// Deprecated: Marked as deprecated in api/v1/cluster_init_service.proto.
 type InitBundleRevokeRequest struct {
 	state                      protoimpl.MessageState `protogen:"open.v1"`
 	Ids                        []string               `protobuf:"bytes,1,rep,name=ids,proto3" json:"ids,omitempty"`
@@ -706,6 +711,7 @@ func (x *CRSRevokeRequest) GetIds() []string {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in api/v1/cluster_init_service.proto.
 type InitBundleRevokeResponse struct {
 	state                      protoimpl.MessageState                                `protogen:"open.v1"`
 	InitBundleRevocationErrors []*InitBundleRevokeResponse_InitBundleRevocationError `protobuf:"bytes,2,rep,name=init_bundle_revocation_errors,json=initBundleRevocationErrors,proto3" json:"init_bundle_revocation_errors,omitempty"`
@@ -978,7 +984,7 @@ var File_api_v1_cluster_init_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_cluster_init_service_proto_rawDesc = "" +
 	"\n" +
-	"!api/v1/cluster_init_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x12storage/user.proto\"\xe0\x02\n" +
+	"!api/v1/cluster_init_service.proto\x12\x02v1\x1a\x12api/v1/empty.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x12storage/user.proto\"\xe4\x02\n" +
 	"\x0eInitBundleMeta\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12O\n" +
@@ -991,7 +997,7 @@ const file_api_v1_cluster_init_service_proto_rawDesc = "" +
 	"expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x1a5\n" +
 	"\x0fImpactedCluster\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x0e\n" +
-	"\x02id\x18\x02 \x01(\tR\x02id\"\xf0\x02\n" +
+	"\x02id\x18\x02 \x01(\tR\x02id:\x02\x18\x01\"\xf0\x02\n" +
 	"\aCRSMeta\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x129\n" +
@@ -1003,22 +1009,22 @@ const file_api_v1_cluster_init_service_proto_rawDesc = "" +
 	"expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12+\n" +
 	"\x11max_registrations\x18\a \x01(\x04R\x10maxRegistrations\x127\n" +
 	"\x17registrations_initiated\x18\b \x03(\tR\x16registrationsInitiated\x127\n" +
-	"\x17registrations_completed\x18\t \x03(\tR\x16registrationsCompleted\"\x94\x01\n" +
+	"\x17registrations_completed\x18\t \x03(\tR\x16registrationsCompleted\"\x98\x01\n" +
 	"\x15InitBundleGenResponse\x12&\n" +
 	"\x04meta\x18\x01 \x01(\v2\x12.v1.InitBundleMetaR\x04meta\x12,\n" +
 	"\x12helm_values_bundle\x18\x02 \x01(\fR\x10helmValuesBundle\x12%\n" +
-	"\x0ekubectl_bundle\x18\x03 \x01(\fR\rkubectlBundle\"C\n" +
+	"\x0ekubectl_bundle\x18\x03 \x01(\fR\rkubectlBundle:\x02\x18\x01\"C\n" +
 	"\x0eCRSGenResponse\x12\x1f\n" +
 	"\x04meta\x18\x01 \x01(\v2\v.v1.CRSMetaR\x04meta\x12\x10\n" +
 	"\x03crs\x18\x02 \x01(\fR\x03crs\"C\n" +
 	"\x13GetCAConfigResponse\x12,\n" +
-	"\x12helm_values_bundle\x18\x01 \x01(\fR\x10helmValuesBundle\"C\n" +
+	"\x12helm_values_bundle\x18\x01 \x01(\fR\x10helmValuesBundle\"G\n" +
 	"\x17InitBundleMetasResponse\x12(\n" +
-	"\x05items\x18\x01 \x03(\v2\x12.v1.InitBundleMetaR\x05items\"5\n" +
+	"\x05items\x18\x01 \x03(\v2\x12.v1.InitBundleMetaR\x05items:\x02\x18\x01\"5\n" +
 	"\x10CRSMetasResponse\x12!\n" +
-	"\x05items\x18\x01 \x03(\v2\v.v1.CRSMetaR\x05items\"*\n" +
+	"\x05items\x18\x01 \x03(\v2\v.v1.CRSMetaR\x05items\".\n" +
 	"\x14InitBundleGenRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"#\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name:\x02\x18\x01\"#\n" +
 	"\rCRSGenRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\"\xcd\x01\n" +
 	"\x15CRSGenRequestExtended\x12\x12\n" +
@@ -1026,33 +1032,33 @@ const file_api_v1_cluster_init_service_proto_rawDesc = "" +
 	"\vvalid_until\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"validUntil\x126\n" +
 	"\tvalid_for\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\bvalidFor\x12+\n" +
-	"\x11max_registrations\x18\x05 \x01(\x04R\x10maxRegistrations\"n\n" +
+	"\x11max_registrations\x18\x05 \x01(\x04R\x10maxRegistrations\"r\n" +
 	"\x17InitBundleRevokeRequest\x12\x10\n" +
 	"\x03ids\x18\x01 \x03(\tR\x03ids\x12A\n" +
-	"\x1dconfirm_impacted_clusters_ids\x18\x02 \x03(\tR\x1aconfirmImpactedClustersIds\"$\n" +
+	"\x1dconfirm_impacted_clusters_ids\x18\x02 \x03(\tR\x1aconfirmImpactedClustersIds:\x02\x18\x01\"$\n" +
 	"\x10CRSRevokeRequest\x12\x10\n" +
-	"\x03ids\x18\x01 \x03(\tR\x03ids\"\xe1\x02\n" +
+	"\x03ids\x18\x01 \x03(\tR\x03ids\"\xe5\x02\n" +
 	"\x18InitBundleRevokeResponse\x12y\n" +
 	"\x1dinit_bundle_revocation_errors\x18\x02 \x03(\v26.v1.InitBundleRevokeResponse.InitBundleRevocationErrorR\x1ainitBundleRevocationErrors\x125\n" +
 	"\x17init_bundle_revoked_ids\x18\x03 \x03(\tR\x14initBundleRevokedIds\x1a\x92\x01\n" +
 	"\x19InitBundleRevocationError\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05error\x18\x02 \x01(\tR\x05error\x12O\n" +
-	"\x11impacted_clusters\x18\x03 \x03(\v2\".v1.InitBundleMeta.ImpactedClusterR\x10impactedClusters\"\xce\x01\n" +
+	"\x11impacted_clusters\x18\x03 \x03(\v2\".v1.InitBundleMeta.ImpactedClusterR\x10impactedClusters:\x02\x18\x01\"\xce\x01\n" +
 	"\x11CRSRevokeResponse\x12\\\n" +
 	"\x15crs_revocation_errors\x18\x02 \x03(\v2(.v1.CRSRevokeResponse.CRSRevocationErrorR\x13crsRevocationErrors\x12\x1f\n" +
 	"\vrevoked_ids\x18\x03 \x03(\tR\n" +
 	"revokedIds\x1a:\n" +
 	"\x12CRSRevocationError\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05error\x18\x02 \x01(\tR\x05error2\xb4\x06\n" +
-	"\x12ClusterInitService\x12~\n" +
-	"\x10RevokeInitBundle\x12\x1b.v1.InitBundleRevokeRequest\x1a\x1c.v1.InitBundleRevokeResponse\"/\x82\xd3\xe4\x93\x02):\x01*2$/v1/cluster-init/init-bundles/revoke\x12`\n" +
+	"\x05error\x18\x02 \x01(\tR\x05error2\xbe\x06\n" +
+	"\x12ClusterInitService\x12\x81\x01\n" +
+	"\x10RevokeInitBundle\x12\x1b.v1.InitBundleRevokeRequest\x1a\x1c.v1.InitBundleRevokeResponse\"2\x82\xd3\xe4\x93\x02):\x01*2$/v1/cluster-init/init-bundles/revoke\x88\x02\x01\x12`\n" +
 	"\tRevokeCRS\x12\x14.v1.CRSRevokeRequest\x1a\x15.v1.CRSRevokeResponse\"&\x82\xd3\xe4\x93\x02 :\x01*2\x1b/v1/cluster-init/crs/revoke\x12U\n" +
-	"\vGetCAConfig\x12\t.v1.Empty\x1a\x17.v1.GetCAConfigResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/v1/cluster-init/ca-config\x12_\n" +
-	"\x0eGetInitBundles\x12\t.v1.Empty\x1a\x1b.v1.InitBundleMetasResponse\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/v1/cluster-init/init-bundles\x12H\n" +
-	"\aGetCRSs\x12\t.v1.Empty\x1a\x14.v1.CRSMetasResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/cluster-init/crs\x12s\n" +
-	"\x12GenerateInitBundle\x12\x18.v1.InitBundleGenRequest\x1a\x19.v1.InitBundleGenResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/v1/cluster-init/init-bundles\x12U\n" +
+	"\vGetCAConfig\x12\t.v1.Empty\x1a\x17.v1.GetCAConfigResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/v1/cluster-init/ca-config\x12b\n" +
+	"\x0eGetInitBundles\x12\t.v1.Empty\x1a\x1b.v1.InitBundleMetasResponse\"(\x82\xd3\xe4\x93\x02\x1f\x12\x1d/v1/cluster-init/init-bundles\x88\x02\x01\x12H\n" +
+	"\aGetCRSs\x12\t.v1.Empty\x1a\x14.v1.CRSMetasResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/cluster-init/crs\x12v\n" +
+	"\x12GenerateInitBundle\x12\x18.v1.InitBundleGenRequest\x1a\x19.v1.InitBundleGenResponse\"+\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/v1/cluster-init/init-bundles\x88\x02\x01\x12U\n" +
 	"\vGenerateCRS\x12\x11.v1.CRSGenRequest\x1a\x12.v1.CRSGenResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/v1/cluster-init/crs\x12n\n" +
 	"\x13GenerateCRSExtended\x12\x19.v1.CRSGenRequestExtended\x1a\x12.v1.CRSGenResponse\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/v1/cluster-init/crs-extendedB'\n" +
 	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x01b\x06proto3"
