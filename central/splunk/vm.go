@@ -6,6 +6,8 @@ import (
 
 	"github.com/stackrox/rox/central/deployment/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -70,10 +72,11 @@ func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.D
 				continue
 			}
 			for _, c := range deployment.GetContainers() {
-				if c.GetImage().GetId() == "" {
+				imgID := containerImageID(c.GetImage())
+				if imgID == "" {
 					continue
 				}
-				imageSet.Add(c.GetImage().GetId())
+				imageSet.Add(imgID)
 
 				err := arrayWriter.WriteObject(&splunkDeploymentEvent{
 					Type:        "deployment",
@@ -82,7 +85,7 @@ func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.D
 					Labels:      deployment.GetLabels(),
 					Annotations: deployment.GetAnnotations(),
 					Deployment:  deployment.GetName(),
-					ImageDigest: c.GetImage().GetId(),
+					ImageDigest: imgID,
 				})
 				if err != nil {
 					httputil.WriteError(w, err)
@@ -138,4 +141,13 @@ func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.D
 			httputil.WriteError(w, err)
 		}
 	}
+}
+
+// containerImageID returns the appropriate image identifier from a container image
+// depending on whether the flattened image data model is enabled.
+func containerImageID(ci *storage.ContainerImage) string {
+	if features.FlattenImageData.Enabled() {
+		return ci.GetIdV2()
+	}
+	return ci.GetId()
 }

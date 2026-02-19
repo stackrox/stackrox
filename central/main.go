@@ -98,9 +98,9 @@ import (
 	"github.com/stackrox/rox/central/grpc/metrics"
 	grpcPreferences "github.com/stackrox/rox/central/grpcpreference/service"
 	"github.com/stackrox/rox/central/helmcharts"
-	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageService "github.com/stackrox/rox/central/image/service"
 	"github.com/stackrox/rox/central/imageintegration"
+	imageMapperDatastore "github.com/stackrox/rox/central/imagev2/datastore/mapper/datastore"
 	iiDatastore "github.com/stackrox/rox/central/imageintegration/datastore"
 	imageintegrationsDS "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
@@ -820,7 +820,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/api/splunk/ta/vulnmgmt",
 			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)),
-			ServerHandler: splunk.NewVulnMgmtHandler(deploymentDatastore.Singleton(), imageDatastore.Singleton()),
+			ServerHandler: splunk.NewVulnMgmtHandler(deploymentDatastore.Singleton(), imageMapperDatastore.Singleton()),
 			Compression:   true,
 		},
 		{
