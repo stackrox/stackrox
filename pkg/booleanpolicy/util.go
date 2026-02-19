@@ -105,15 +105,16 @@ func ContainsDiscreteRuntimeFieldCategorySections(policy *storage.Policy) bool {
 		if SectionContainsFieldOfType(section, KubeEvent) {
 			numRuntimeCategories++
 		}
-		if SectionContainsFieldOfType(section, Process) {
+		hasProcess := SectionContainsFieldOfType(section, Process)
+		hasFileAccess := SectionContainsFieldOfType(section, FileAccess)
+
+		// Process and FileAccess can be combined (file access events contain process information).
+		// Count them as one category when both are present.
+		if hasProcess || hasFileAccess {
 			numRuntimeCategories++
 		}
+
 		if SectionContainsFieldOfType(section, NetworkFlow) {
-			numRuntimeCategories++
-		}
-		// TODO(ROX-30807): update to support a combination of FileAccess and Process
-		// fields.
-		if SectionContainsFieldOfType(section, FileAccess) {
 			numRuntimeCategories++
 		}
 		if numRuntimeCategories > 1 {
