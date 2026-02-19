@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	getters "github.com/stackrox/rox/central/risk/getters"
+	views "github.com/stackrox/rox/central/alert/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
@@ -164,10 +164,10 @@ func (mr *MockDataStoreMockRecorder) Search(ctx, q, excludeResolved any) *gomock
 }
 
 // SearchAlertPolicyNamesAndSeverities mocks base method.
-func (m *MockDataStore) SearchAlertPolicyNamesAndSeverities(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*getters.PolicyNameAndSeverity, error) {
+func (m *MockDataStore) SearchAlertPolicyNamesAndSeverities(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*views.PolicyNameAndSeverity, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SearchAlertPolicyNamesAndSeverities", ctx, q, excludeResolved)
-	ret0, _ := ret[0].([]*getters.PolicyNameAndSeverity)
+	ret0, _ := ret[0].([]*views.PolicyNameAndSeverity)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
