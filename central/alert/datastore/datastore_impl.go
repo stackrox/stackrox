@@ -91,8 +91,7 @@ func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excl
 }
 
 // SearchAlertPolicyNamesAndSeverities returns lightweight policy name and severity pairs
-// for matching alerts. This uses column projection to avoid deserializing full alert
-// protobuf blobs, which is significantly more efficient when only these fields are needed.
+// for matching alerts.
 func (ds *datastoreImpl) SearchAlertPolicyNamesAndSeverities(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*alertviews.PolicyNameAndSeverity, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlertPolicyNamesAndSeverities")
 
