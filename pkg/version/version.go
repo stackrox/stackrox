@@ -61,11 +61,22 @@ type Versions struct {
 	DatabaseServerVersion string `json:"DatabaseServerVersion,omitempty"`
 }
 
+// getGitCommitFromMainVersion extracts the short git SHA from the MainVersion
+// string (e.g. "4.11.x-143-g4982da58fd" → "4982da58fd"). This avoids injecting
+// the SHA via -X ldflags, which would invalidate the Go link cache on every commit.
+func getGitCommitFromMainVersion() string {
+	v := GetMainVersion()
+	if i := strings.LastIndex(v, "-g"); i >= 0 {
+		return v[i+2:]
+	}
+	return ""
+}
+
 // GetAllVersionsDevelopment returns all of the various pieces of version information for development builds of the product.
 func GetAllVersionsDevelopment() Versions {
 	return Versions{
 		CollectorVersion: getCollectorVersion(),
-		GitCommit:        internal.GitShortSha,
+		GitCommit:        getGitCommitFromMainVersion(),
 		GoVersion:        runtime.Version(),
 		MainVersion:      GetMainVersion(),
 		Platform:         runtime.GOOS + "/" + runtime.GOARCH,

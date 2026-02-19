@@ -33,7 +33,6 @@ func SetVersion(t *testing.T, version version.Versions) {
 	internal.MainVersion = version.MainVersion
 	internal.ScannerVersion = version.ScannerVersion
 	internal.CollectorVersion = version.CollectorVersion
-	internal.GitShortSha = version.GitCommit
 	internal.FactVersion = version.FactVersion
 }
 
