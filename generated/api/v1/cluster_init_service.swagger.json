@@ -157,6 +157,7 @@
     },
     "/v1/cluster-init/init-bundles": {
       "get": {
+        "summary": "Init bundles are deprecated in favor of Cluster Registration Tokens (CRS).",
         "operationId": "ClusterInitService_GetInitBundles",
         "responses": {
           "200": {
@@ -177,6 +178,7 @@
         ]
       },
       "post": {
+        "summary": "Init bundles are deprecated in favor of Cluster Registration Tokens (CRS).",
         "operationId": "ClusterInitService_GenerateInitBundle",
         "responses": {
           "200": {
@@ -209,7 +211,7 @@
     },
     "/v1/cluster-init/init-bundles/revoke": {
       "patch": {
-        "summary": "RevokeInitBundle deletes cluster init bundle. If this operation impacts any cluster\nthen its ID should be included in request.\nIf confirm_impacted_clusters_ids does not match with current impacted clusters\nthen request will fail with error that includes all impacted clusters.",
+        "summary": "RevokeInitBundle deletes cluster init bundle. If this operation impacts any cluster\nthen its ID should be included in request.\nIf confirm_impacted_clusters_ids does not match with current impacted clusters\nthen request will fail with error that includes all impacted clusters.\nInit bundles are deprecated in favor of Cluster Registration Tokens (CRS).",
         "operationId": "ClusterInitService_RevokeInitBundle",
         "responses": {
           "200": {

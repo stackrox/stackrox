@@ -35,16 +35,22 @@ const (
 //
 // ClusterInitService manages cluster init bundles and CRSs.
 type ClusterInitServiceClient interface {
+	// Deprecated: Do not use.
 	// RevokeInitBundle deletes cluster init bundle. If this operation impacts any cluster
 	// then its ID should be included in request.
 	// If confirm_impacted_clusters_ids does not match with current impacted clusters
 	// then request will fail with error that includes all impacted clusters.
+	// Init bundles are deprecated in favor of Cluster Registration Tokens (CRS).
 	RevokeInitBundle(ctx context.Context, in *InitBundleRevokeRequest, opts ...grpc.CallOption) (*InitBundleRevokeResponse, error)
 	// RevokeCRSBundle deletes cluster registration secrets.
 	RevokeCRS(ctx context.Context, in *CRSRevokeRequest, opts ...grpc.CallOption) (*CRSRevokeResponse, error)
 	GetCAConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetCAConfigResponse, error)
+	// Deprecated: Do not use.
+	// Init bundles are deprecated in favor of Cluster Registration Tokens (CRS).
 	GetInitBundles(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*InitBundleMetasResponse, error)
 	GetCRSs(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*CRSMetasResponse, error)
+	// Deprecated: Do not use.
+	// Init bundles are deprecated in favor of Cluster Registration Tokens (CRS).
 	GenerateInitBundle(ctx context.Context, in *InitBundleGenRequest, opts ...grpc.CallOption) (*InitBundleGenResponse, error)
 	GenerateCRS(ctx context.Context, in *CRSGenRequest, opts ...grpc.CallOption) (*CRSGenResponse, error)
 	GenerateCRSExtended(ctx context.Context, in *CRSGenRequestExtended, opts ...grpc.CallOption) (*CRSGenResponse, error)
@@ -58,6 +64,7 @@ func NewClusterInitServiceClient(cc grpc.ClientConnInterface) ClusterInitService
 	return &clusterInitServiceClient{cc}
 }
 
+// Deprecated: Do not use.
 func (c *clusterInitServiceClient) RevokeInitBundle(ctx context.Context, in *InitBundleRevokeRequest, opts ...grpc.CallOption) (*InitBundleRevokeResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(InitBundleRevokeResponse)
@@ -88,6 +95,7 @@ func (c *clusterInitServiceClient) GetCAConfig(ctx context.Context, in *Empty, o
 	return out, nil
 }
 
+// Deprecated: Do not use.
 func (c *clusterInitServiceClient) GetInitBundles(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*InitBundleMetasResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(InitBundleMetasResponse)
@@ -108,6 +116,7 @@ func (c *clusterInitServiceClient) GetCRSs(ctx context.Context, in *Empty, opts 
 	return out, nil
 }
 
+// Deprecated: Do not use.
 func (c *clusterInitServiceClient) GenerateInitBundle(ctx context.Context, in *InitBundleGenRequest, opts ...grpc.CallOption) (*InitBundleGenResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(InitBundleGenResponse)
@@ -144,16 +153,22 @@ func (c *clusterInitServiceClient) GenerateCRSExtended(ctx context.Context, in *
 //
 // ClusterInitService manages cluster init bundles and CRSs.
 type ClusterInitServiceServer interface {
+	// Deprecated: Do not use.
 	// RevokeInitBundle deletes cluster init bundle. If this operation impacts any cluster
 	// then its ID should be included in request.
 	// If confirm_impacted_clusters_ids does not match with current impacted clusters
 	// then request will fail with error that includes all impacted clusters.
+	// Init bundles are deprecated in favor of Cluster Registration Tokens (CRS).
 	RevokeInitBundle(context.Context, *InitBundleRevokeRequest) (*InitBundleRevokeResponse, error)
 	// RevokeCRSBundle deletes cluster registration secrets.
 	RevokeCRS(context.Context, *CRSRevokeRequest) (*CRSRevokeResponse, error)
 	GetCAConfig(context.Context, *Empty) (*GetCAConfigResponse, error)
+	// Deprecated: Do not use.
+	// Init bundles are deprecated in favor of Cluster Registration Tokens (CRS).
 	GetInitBundles(context.Context, *Empty) (*InitBundleMetasResponse, error)
 	GetCRSs(context.Context, *Empty) (*CRSMetasResponse, error)
+	// Deprecated: Do not use.
+	// Init bundles are deprecated in favor of Cluster Registration Tokens (CRS).
 	GenerateInitBundle(context.Context, *InitBundleGenRequest) (*InitBundleGenResponse, error)
 	GenerateCRS(context.Context, *CRSGenRequest) (*CRSGenResponse, error)
 	GenerateCRSExtended(context.Context, *CRSGenRequestExtended) (*CRSGenResponse, error)
