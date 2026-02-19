@@ -26,10 +26,10 @@ require (
 	github.com/adhocore/gronx v1.19.6
 	github.com/andygrunwald/go-jira v1.17.0
 	github.com/aws/aws-sdk-go-v2 v1.41.1
-	github.com/aws/aws-sdk-go-v2/config v1.32.8
-	github.com/aws/aws-sdk-go-v2/credentials v1.19.8
+	github.com/aws/aws-sdk-go-v2/config v1.32.9
+	github.com/aws/aws-sdk-go-v2/credentials v1.19.9
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.17
-	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.22.1
+	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.22.2
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.55.2
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.96.0
 	github.com/aws/aws-sdk-go-v2/service/securityhub v1.67.4
@@ -242,7 +242,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.17 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.19.17 // indirect
 	github.com/aws/aws-sdk-go-v2/service/signin v1.0.5 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.30.9 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.30.10 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.14 // indirect
 	github.com/awslabs/amazon-ecr-credential-helper/ecr-login v0.11.0 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
