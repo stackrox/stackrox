@@ -47,7 +47,7 @@ for i in {1..5}; do
     image_list+=("$arch_image")
   done
 
-  if docker buildx imagetools create -t "$image" "${image_list[@]}"; then
+  if docker buildx imagetools create --tag "$image" "${image_list[@]}"; then
     echo "=== Manifest index inspect: ${image} ==="
     docker buildx imagetools inspect "$image" || true
     echo "========================================"
