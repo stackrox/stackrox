@@ -1146,11 +1146,17 @@ push_helm_charts() {
     local secured_cluster_services_chart_dir
     central_services_chart_dir="$(mktemp -d)"
     secured_cluster_services_chart_dir="$(mktemp -d)"
+    operator_chart_dir="$(mktemp -d)"
     roxctl helm output central-services --image-defaults=rhacs --output-dir "${central_services_chart_dir}/rhacs"
     roxctl helm output central-services --image-defaults=opensource --output-dir "${central_services_chart_dir}/opensource"
     roxctl helm output secured-cluster-services --image-defaults=rhacs --output-dir "${secured_cluster_services_chart_dir}/rhacs"
     roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${secured_cluster_services_chart_dir}/opensource"
-    "${SCRIPTS_ROOT}/scripts/ci/publish-helm-charts.sh" "${tag}" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}"
+    ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true ./operator/hack/generate-chart.sh opensource
+    mv operator/dist/chart "${operator_chart_dir}/opensource"
+    # TODO(ROX-33131): Consider moving the downstream chart build/publishing to konflux.
+    ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true ./operator/hack/generate-chart.sh rhacs
+    mv operator/dist/chart "${operator_chart_dir}/rhacs"
+    "${SCRIPTS_ROOT}/scripts/ci/publish-helm-charts.sh" "${tag}" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}" "${operator_chart_dir}"
 }
 
 gitbot() {
