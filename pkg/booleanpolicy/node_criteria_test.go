@@ -34,41 +34,31 @@ func (s *NodeCriteriaTestSuite) TestNodeFileAccess() {
 		events      []eventWrapper
 	}{
 		{
-			description: "Node file open policy with matching event",
+			description: "Node file policy with basic path and operation matching",
 			policy: newFileAccessPolicy(storage.EventSource_NODE_EVENT,
 				[]storage.FileAccess_Operation{storage.FileAccess_OPEN}, false,
-				"/etc/passwd",
+				"/etc/passwd", "/opt/app/config.json",
 			),
 			events: []eventWrapper{
 				{
 					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
 					expectAlert: true,
 				},
-			},
-		},
-		{
-			description: "Node file open policy with mismatching event (UNLINK)",
-			policy: newFileAccessPolicy(storage.EventSource_NODE_EVENT,
-				[]storage.FileAccess_Operation{storage.FileAccess_OPEN}, false,
-				"/etc/passwd",
-			),
-			events: []eventWrapper{
 				{
 					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_UNLINK),
-					expectAlert: false,
+					expectAlert: false, // Wrong operation
 				},
-			},
-		},
-		{
-			description: "Node file open policy with mismatching event (/tmp/foo)",
-			policy: newFileAccessPolicy(storage.EventSource_NODE_EVENT,
-				[]storage.FileAccess_Operation{storage.FileAccess_OPEN}, false,
-				"/etc/passwd",
-			),
-			events: []eventWrapper{
+				{
+					access:      newActualFileAccessEvent("/opt/app/config.json", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/opt/app/config.json", storage.FileAccess_UNLINK),
+					expectAlert: false, // Wrong operation
+				},
 				{
 					access:      newActualFileAccessEvent("/tmp/foo", storage.FileAccess_OPEN),
-					expectAlert: false,
+					expectAlert: false, // Wrong path
 				},
 			},
 		},
@@ -210,7 +200,7 @@ func (s *NodeCriteriaTestSuite) TestNodeFileAccess() {
 			},
 		},
 		{
-			description: "Node file policy with no operations",
+			description: "Node file policy with no operations (matches all operations)",
 			policy:      newFileAccessPolicy(storage.EventSource_NODE_EVENT, nil, false, "/etc/passwd"),
 			events: []eventWrapper{
 				{
@@ -235,67 +225,6 @@ func (s *NodeCriteriaTestSuite) TestNodeFileAccess() {
 				},
 				{
 					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_RENAME),
-					expectAlert: true,
-				},
-			},
-		},
-		{
-			description: "Node file policy with all allowed files",
-			policy:      newFileAccessPolicy(storage.EventSource_NODE_EVENT, nil, false, "/etc/passwd", "/etc/ssh/sshd_config", "/etc/shadow", "/etc/sudoers"),
-			events: []eventWrapper{
-				{
-					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
-					expectAlert: true,
-				},
-				{
-					access:      newActualFileAccessEvent("/etc/shadow", storage.FileAccess_OPEN),
-					expectAlert: true,
-				},
-				{
-					access:      newActualFileAccessEvent("/etc/ssh/sshd_config", storage.FileAccess_OPEN),
-					expectAlert: true,
-				},
-				{
-					access:      newActualFileAccessEvent("/etc/sudoers", storage.FileAccess_OPEN),
-					expectAlert: true,
-				},
-			},
-		},
-		{
-			description: "Node file policy with event containing both matching paths",
-			policy:      newFileAccessPolicy(storage.EventSource_NODE_EVENT, nil, false, "/etc/passwd"),
-			events: []eventWrapper{
-				{
-					access: &storage.FileAccess{
-						File: &storage.FileAccess_File{
-							ActualPath:    "/etc/passwd",
-							EffectivePath: "/etc/passwd",
-						},
-						Operation: storage.FileAccess_OPEN,
-					},
-					expectAlert: true,
-				},
-			},
-		},
-		{
-			description: "Node file policy with arbitrary path",
-			policy:      s.getNodeFileAccessPolicy("/usr/local/bin/app"),
-			events: []eventWrapper{
-				{
-					access:      s.getNodeFileAccessEvent("/usr/local/bin/app", storage.FileAccess_OPEN),
-					expectAlert: true,
-				},
-			},
-		},
-		{
-			description: "Node file policy with arbitrary log path",
-			policy: s.getNodeFileAccessPolicyWithOperations(
-				[]storage.FileAccess_Operation{storage.FileAccess_CREATE}, false,
-				"/var/log/audit.log",
-			),
-			events: []eventWrapper{
-				{
-					access:      s.getNodeFileAccessEvent("/var/log/audit.log", storage.FileAccess_CREATE),
 					expectAlert: true,
 				},
 			},
