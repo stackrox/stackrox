@@ -229,6 +229,50 @@ func (s *NodeCriteriaTestSuite) TestNodeFileAccess() {
 				},
 			},
 		},
+		{
+			description: "Node file policy with wildcards",
+			policy: newFileAccessPolicy(storage.EventSource_NODE_EVENT, nil, false,
+				"/etc/*", "/home/*/.config/**/*.config", "/home/user/file?", "/home/user/.ssh/id_{rsa,dsa}",
+			),
+			events: []eventWrapper{
+				{
+					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/home/user/.config/foo/bar.config", storage.FileAccess_CREATE),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/home/user/.config/foo.config", storage.FileAccess_CREATE),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/home/user/fileA", storage.FileAccess_OWNERSHIP_CHANGE),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/home/user/fileB", storage.FileAccess_OWNERSHIP_CHANGE),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/home/user/file", storage.FileAccess_OWNERSHIP_CHANGE),
+					expectAlert: false,
+				},
+				{
+					access:      newActualFileAccessEvent("/home/user/.ssh/id_rsa", storage.FileAccess_PERMISSION_CHANGE),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/home/user/.ssh/id_dsa", storage.FileAccess_PERMISSION_CHANGE),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/home/user/.ssh/id_ecdsa", storage.FileAccess_PERMISSION_CHANGE),
+					expectAlert: false,
+				},
+			},
+		},
 	} {
 		testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, true)
 		defer testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, false)
