@@ -7,6 +7,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"sync/atomic"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -142,17 +143,26 @@ func checkInternalTokenAPISupport() error {
 
 // ServeHTTP handles incoming HTTP requests and proxies them to Central.
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	start := time.Now()
+	outcome := outcomeSuccess
+	defer func() {
+		observeProxyRequest(outcome, time.Since(start))
+	}()
+
 	if err := checkInternalTokenAPISupport(); err != nil {
+		outcome = outcomeNotImplemented
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 
 	if err := h.validateRequest(request); err != nil {
+		outcome = outcomeValidationError
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 
 	if h.authorizer == nil {
+		outcome = outcomeConfigError
 		log.Error("Authorizer is nil - this indicates a misconfiguration in the central proxy handler")
 		http.Error(writer, "authorizer not configured", http.StatusInternalServerError)
 		return
@@ -160,11 +170,13 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 	userInfo, err := h.authorizer.authenticate(request.Context(), request)
 	if err != nil {
+		outcome = outcomeAuthnError
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 
 	if err := h.authorizer.authorize(request.Context(), userInfo, request); err != nil {
+		outcome = outcomeAuthzError
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
