@@ -18,4 +18,5 @@ var AllowedProxyPaths = set.NewFrozenStringSet(
 	"/v1/featureflags",
 	"/v1/metadata",
 	"/v1/mypermissions",
+	"/v1/telemetry/",
 )
