@@ -5,10 +5,6 @@ on:
   push:
     branches:
       - 'davdhacs/gha-disable-buildvcs'
-    paths:
-      - '.github/workflows/test-go-gitindex.yaml'
-      - 'scripts/go-gitindex.patch'
-      - '.github/actions/cache-go-dependencies/**'
 
 defaults:
   run:
