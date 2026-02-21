@@ -93,6 +93,10 @@ jobs:
           echo "GOCACHE size: $(du -sh "$(go env GOCACHE)" 2>/dev/null | cut -f1 || echo 'empty')"
           echo "Compiler SHA256:"
           sha256sum "$(go env GOROOT)/pkg/tool/$(go env GOOS)_$(go env GOARCH)/compile" 2>/dev/null || true
+          echo ""
+          echo "GOTAGS: ${GOTAGS:-<unset>}"
+          echo "CGO_ENABLED: $(go env CGO_ENABLED)"
+          echo "CC: $(go env CC)"
 
       - name: "Build Go Binaries (stock Go, amd64)"
         continue-on-error: true
@@ -100,6 +104,15 @@ jobs:
           echo "=== Build 1: stock Go, CGO_ENABLED=1 ==="
           time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps GOFLAGS="-v" 2>&1 | tee /tmp/build1.log
           echo "Packages compiled: $(grep -c '^[a-z]' /tmp/build1.log 2>/dev/null || echo 0)"
+
+      - name: "Check what changed after build"
+        continue-on-error: true
+        run: |
+          echo "=== Files modified after build ==="
+          git diff --stat HEAD 2>/dev/null || true
+          echo ""
+          echo "=== Untracked files ==="
+          git ls-files --others --exclude-standard 2>/dev/null | head -20
 
       - name: "Rebuild Go Binaries (stock Go, known-warm)"
         continue-on-error: true
@@ -147,23 +160,43 @@ jobs:
           echo "/tmp/go-patched/bin" >> "$GITHUB_PATH"
           echo "GOROOT=/tmp/go-patched" >> "$GITHUB_ENV"
 
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
+      # Restore GOCACHE: exact match for this run, or prefix match from previous run
+      - name: Restore GOCACHE
+        id: gocache-restore
+        uses: actions/cache/restore@v5
+        with:
+          path: /github/home/.cache/go-build
+          key: patched-gocache-v1-${{ hashFiles('scripts/go-gitindex.patch') }}-${{ github.run_id }}
+          restore-keys: |
+            patched-gocache-v1-${{ hashFiles('scripts/go-gitindex.patch') }}-
+
+      - name: Restore GOMODCACHE
+        uses: actions/cache/restore@v5
+        with:
+          path: /github/home/go/pkg/mod
+          key: go-mod-v1-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-mod-v1-
+
+      - name: Download Go modules
+        run: make deps --always-make
 
       - name: Record environment
         continue-on-error: true
         run: |
           echo "Go: $(go version)"
           echo "GOCACHE: $(go env GOCACHE)"
-          echo "GOCACHE size before build: $(du -sh "$(go env GOCACHE)" 2>/dev/null | cut -f1 || echo 'empty')"
+          echo "GOCACHE restored: ${{ steps.gocache-restore.outputs.cache-hit || 'prefix-match-or-miss' }}"
+          echo "GOCACHE matched key: ${{ steps.gocache-restore.outputs.cache-matched-key || 'none' }}"
+          echo "GOCACHE size: $(du -sh "$(go env GOCACHE)" 2>/dev/null | cut -f1 || echo 'empty')"
           echo "Compiler SHA256:"
           sha256sum "$(go env GOROOT)/pkg/tool/$(go env GOOS)_$(go env GOARCH)/compile" 2>/dev/null || true
 
-      - name: "Build Go Binaries (patched Go, cold GOCACHE)"
+      - name: "Build Go Binaries (patched Go)"
         continue-on-error: true
         run: |
-          echo "=== Cold build: patched Go ==="
-          time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps 2>&1
+          echo "=== Build (patched Go) ==="
+          time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps GOFLAGS="-v" 2>&1 | tee /tmp/build1.log
+          echo "Packages compiled: $(grep -c '^[a-z]' /tmp/build1.log 2>/dev/null || echo 0)"
 
       - name: "Rebuild (known-warm, same job)"
         continue-on-error: true
@@ -173,18 +206,18 @@ jobs:
 
       - name: "GOCACHE after build"
         continue-on-error: true
-        id: gocache-info
         run: |
           GOCACHE="$(go env GOCACHE)"
           echo "GOCACHE size: $(du -sh "$GOCACHE" 2>/dev/null | cut -f1)"
           echo "Total files: $(find "$GOCACHE" -type f 2>/dev/null | wc -l)"
-          echo "GOCACHE_PATH=$GOCACHE" >> "$GITHUB_OUTPUT"
 
-      - name: Save GOCACHE for warm-build job
+      # Save with run-specific key (unique, so save always works)
+      - name: Save GOCACHE
         uses: actions/cache/save@v5
+        continue-on-error: true
         with:
-          path: ${{ steps.gocache-info.outputs.GOCACHE_PATH }}
-          key: patched-gocache-${{ github.run_id }}
+          path: /github/home/.cache/go-build
+          key: patched-gocache-v1-${{ hashFiles('scripts/go-gitindex.patch') }}-${{ github.run_id }}
 
   # ==================================================================
   # PATCHED GO: warm build — restores GOCACHE from cold build
@@ -219,14 +252,22 @@ jobs:
           echo "/tmp/go-patched/bin" >> "$GITHUB_PATH"
           echo "GOROOT=/tmp/go-patched" >> "$GITHUB_ENV"
 
+      # Restore this run's GOCACHE from the cold build job
       - name: Restore GOCACHE from cold build
         uses: actions/cache/restore@v5
         with:
           path: /github/home/.cache/go-build
-          key: patched-gocache-${{ github.run_id }}
+          key: patched-gocache-v1-${{ hashFiles('scripts/go-gitindex.patch') }}-${{ github.run_id }}
 
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
+      - name: Restore GOMODCACHE
+        uses: actions/cache/restore@v5
+        with:
+          path: /github/home/go/pkg/mod
+          key: go-mod-v1-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-mod-v1-
+
+      - name: Download Go modules
+        run: make deps --always-make
 
       - name: Record environment
         continue-on-error: true
