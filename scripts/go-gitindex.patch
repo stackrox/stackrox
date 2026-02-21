@@ -2,14 +2,15 @@ diff --git a/src/cmd/go/internal/load/pkg.go b/src/cmd/go/internal/load/pkg.go
 index 1f791546f9..98c4f3df98 100644
 --- a/src/cmd/go/internal/load/pkg.go
 +++ b/src/cmd/go/internal/load/pkg.go
-@@ -929,13 +929,23 @@ func loadPackageData(ctx context.Context, path, parentPath, parentDir, parentRoo
+@@ -929,13 +929,24 @@ func loadPackageData(ctx context.Context, path, parentPath, parentDir, parentRoo
  					modroot = gorootSrcCmd
  				}
  			}
 +			// When modroot is still empty (e.g., vendor mode), use CWD
 +			// so that the modindex per-directory cache can serve these
 +			// packages on warm builds without re-reading .go files.
-+			if modroot == "" {
++			// Disabled when GONOBITINDEX is set.
++			if modroot == "" && os.Getenv("GONOBITINDEX") == "" {
 +				modroot = base.Cwd()
 +			}
  			if modroot != "" {
@@ -439,16 +440,14 @@ diff --git a/src/cmd/go/internal/work/buildid.go b/src/cmd/go/internal/work/buil
 index c272131c77..1fdc780622 100644
 --- a/src/cmd/go/internal/work/buildid.go
 +++ b/src/cmd/go/internal/work/buildid.go
-@@ -386,6 +386,13 @@ func (b *Builder) buildID(file string) string {
+@@ -386,6 +386,11 @@ func (b *Builder) buildID(file string) string {
  
  // fileHash returns the content hash of the named file.
  func (b *Builder) fileHash(file string) string {
 +	// Check git blob SHA first — avoids reading the file at all
 +	// when the file is tracked in git and unmodified since git add.
-+	if os.Getenv("GONOBITINDEX") == "" {
-+		if blobHex, ok := b.gitBlobHash(file); ok {
-+			return blobHex
-+		}
++	if blobHex, ok := b.gitBlobHash(file); ok {
++		return blobHex
 +	}
  	sum, err := cache.FileHash(fsys.Actual(file))
  	if err != nil {
@@ -458,7 +457,7 @@ new file mode 100644
 index 0000000000..1b204a23cb
 --- /dev/null
 +++ b/src/cmd/go/internal/work/git_blob.go
-@@ -0,0 +1,90 @@
+@@ -0,0 +1,96 @@
 +// Copyright 2024 The Go Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style
 +// license that can be found in the LICENSE file.
@@ -480,7 +479,13 @@ index 0000000000..1b204a23cb
 +// and, if so, parses the git index for later lookup. The parsed index
 +// retains the raw file bytes and an offset table — no per-entry string
 +// or map allocations are performed at init time.
++//
++// All git index optimizations are disabled when GONOBITINDEX=1.
 +func (b *Builder) initGitBlobs() {
++	if os.Getenv("GONOBITINDEX") != "" {
++		return
++	}
++
 +	repoRoot, vcsCmd, err := vcs.FromDir(base.Cwd(), "")
 +	if err != nil {
 +		return

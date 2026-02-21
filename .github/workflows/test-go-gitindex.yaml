@@ -59,15 +59,19 @@ jobs:
           sha256sum "/tmp/go-patched/pkg/tool/linux_amd64/compile" 2>/dev/null || true
 
   # ==================================================================
-  # STOCK GO: baseline build
+  # BASELINE: patched Go binary, all optimizations DISABLED
+  # Same compiler binary + fresh per-run cache = fair comparison
   # ==================================================================
   pre-build-go-binaries:
+    needs: build-patched-go
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.2
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
+    env:
+      GONOBITINDEX: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -78,51 +82,74 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
+      - name: Restore patched Go toolchain
+        uses: actions/cache/restore@v5
+        with:
+          path: /tmp/go-patched
+          key: patched-go-v1-${{ hashFiles('scripts/go-gitindex.patch') }}
+
+      - name: Set patched Go as default
+        run: |
+          echo "/tmp/go-patched/bin" >> "$GITHUB_PATH"
+          echo "GOROOT=/tmp/go-patched" >> "$GITHUB_ENV"
+
+      # Restore GOCACHE with per-run key (fresh cache, not stale weekly)
+      - name: Restore GOCACHE
+        id: baseline-gocache
+        uses: actions/cache/restore@v5
+        with:
+          path: /github/home/.cache/go-build
+          key: baseline-gocache-v1-${{ hashFiles('scripts/go-gitindex.patch') }}-${{ github.run_id }}
+          restore-keys: |
+            baseline-gocache-v1-${{ hashFiles('scripts/go-gitindex.patch') }}-
+
+      - name: Restore GOMODCACHE
+        uses: actions/cache/restore@v5
+        with:
+          path: /github/home/go/pkg/mod
+          key: go-mod-v1-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-mod-v1-
+
+      - name: Download Go modules
+        run: make deps --always-make
 
       - name: Record environment
         continue-on-error: true
         run: |
           echo "Go: $(go version)"
+          echo "GONOBITINDEX: ${GONOBITINDEX}"
           echo "GOCACHE: $(go env GOCACHE)"
+          echo "GOCACHE restored: ${{ steps.baseline-gocache.outputs.cache-hit || 'prefix-match-or-miss' }}"
+          echo "GOCACHE matched key: ${{ steps.baseline-gocache.outputs.cache-matched-key || 'none' }}"
           echo "GOCACHE size: $(du -sh "$(go env GOCACHE)" 2>/dev/null | cut -f1 || echo 'empty')"
           echo "Compiler SHA256:"
           sha256sum "$(go env GOROOT)/pkg/tool/$(go env GOOS)_$(go env GOARCH)/compile" 2>/dev/null || true
-          echo ""
-          echo "GOTAGS: ${GOTAGS:-<unset>}"
-          echo "CGO_ENABLED: $(go env CGO_ENABLED)"
-          echo "CC: $(go env CC)"
 
-      - name: "Build Go Binaries (stock Go, amd64)"
+      - name: "Build Go Binaries (baseline, optimizations DISABLED)"
         continue-on-error: true
         run: |
-          echo "=== Build 1: stock Go, CGO_ENABLED=1 ==="
           time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps GOFLAGS="-v" 2>&1 | tee /tmp/build1.log
           echo "Packages compiled: $(grep -c '^[a-z]' /tmp/build1.log 2>/dev/null || echo 0)"
 
-      - name: "Check what changed after build"
+      - name: "Rebuild (known-warm)"
         continue-on-error: true
         run: |
-          echo "=== Files modified after build ==="
-          git diff --stat HEAD 2>/dev/null || true
-          echo ""
-          echo "=== Untracked files ==="
-          git ls-files --others --exclude-standard 2>/dev/null | head -20
-
-      - name: "Rebuild Go Binaries (stock Go, known-warm)"
-        continue-on-error: true
-        run: |
-          echo "=== Build 2: stock Go — known-warm rebuild ==="
           time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps 2>&1
 
-      - name: "Warm build timing (stock Go, 3 runs)"
+      - name: "Warm build timing (baseline, 3 runs)"
         continue-on-error: true
         run: |
           for i in 1 2 3; do
             echo "--- run $i ---"
             time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps 2>&1
           done
+
+      - name: Save GOCACHE
+        uses: actions/cache/save@v5
+        continue-on-error: true
+        with:
+          path: /github/home/.cache/go-build
+          key: baseline-gocache-v1-${{ hashFiles('scripts/go-gitindex.patch') }}-${{ github.run_id }}
 
   # ==================================================================
   # PATCHED GO: cold build — populates GOCACHE, saves it
