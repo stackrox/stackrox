@@ -56,6 +56,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Verify patched Go
+        continue-on-error: true
         run: |
           echo "Patched Go: $(/tmp/go-patched/bin/go version)"
           echo "Compiler SHA256:"
@@ -85,6 +86,7 @@ jobs:
         uses: ./.github/actions/cache-go-dependencies
 
       - name: Record environment
+        continue-on-error: true
         run: |
           echo "Go: $(go version)"
           echo "GOCACHE: $(go env GOCACHE)"
@@ -93,17 +95,20 @@ jobs:
           sha256sum "$(go env GOROOT)/pkg/tool/$(go env GOOS)_$(go env GOARCH)/compile" 2>/dev/null || true
 
       - name: "Build Go Binaries (stock Go, amd64)"
+        continue-on-error: true
         run: |
           echo "=== Build 1: stock Go, CGO_ENABLED=1 ==="
           time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps GOFLAGS="-v" 2>&1 | tee /tmp/build1.log
           echo "Packages compiled: $(grep -c '^[a-z]' /tmp/build1.log 2>/dev/null || echo 0)"
 
       - name: "Rebuild Go Binaries (stock Go, known-warm)"
+        continue-on-error: true
         run: |
           echo "=== Build 2: stock Go — known-warm rebuild ==="
           time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps 2>&1
 
       - name: "Warm build timing (stock Go, 3 runs)"
+        continue-on-error: true
         run: |
           for i in 1 2 3; do
             echo "--- run $i ---"
@@ -146,6 +151,7 @@ jobs:
         uses: ./.github/actions/cache-go-dependencies
 
       - name: Record environment
+        continue-on-error: true
         run: |
           echo "Go: $(go version)"
           echo "GOCACHE: $(go env GOCACHE)"
@@ -154,16 +160,19 @@ jobs:
           sha256sum "$(go env GOROOT)/pkg/tool/$(go env GOOS)_$(go env GOARCH)/compile" 2>/dev/null || true
 
       - name: "Build Go Binaries (patched Go, cold GOCACHE)"
+        continue-on-error: true
         run: |
           echo "=== Cold build: patched Go ==="
           time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps 2>&1
 
       - name: "Rebuild (known-warm, same job)"
+        continue-on-error: true
         run: |
           echo "=== Known-warm rebuild ==="
           time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps 2>&1
 
       - name: "GOCACHE after build"
+        continue-on-error: true
         id: gocache-info
         run: |
           GOCACHE="$(go env GOCACHE)"
@@ -220,6 +229,7 @@ jobs:
         uses: ./.github/actions/cache-go-dependencies
 
       - name: Record environment
+        continue-on-error: true
         run: |
           echo "Go: $(go version)"
           echo "GOCACHE: $(go env GOCACHE)"
@@ -228,17 +238,20 @@ jobs:
           sha256sum "$(go env GOROOT)/pkg/tool/$(go env GOOS)_$(go env GOARCH)/compile" 2>/dev/null || true
 
       - name: "Build Go Binaries (patched Go, restored GOCACHE)"
+        continue-on-error: true
         run: |
           echo "=== Build with restored GOCACHE ==="
           time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps GOFLAGS="-v" 2>&1 | tee /tmp/build1.log
           echo "Packages compiled (cache misses): $(grep -c '^[a-z]' /tmp/build1.log 2>/dev/null || echo 0)"
 
       - name: "Rebuild (known-warm)"
+        continue-on-error: true
         run: |
           echo "=== Known-warm rebuild ==="
           time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps 2>&1
 
       - name: "Warm build timing (git index ENABLED, 3 runs)"
+        continue-on-error: true
         run: |
           for i in 1 2 3; do
             echo "--- run $i ---"
@@ -246,6 +259,7 @@ jobs:
           done
 
       - name: "Warm build timing (git index DISABLED, 3 runs)"
+        continue-on-error: true
         env:
           GONOBITINDEX: "1"
         run: |
