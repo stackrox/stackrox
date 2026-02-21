@@ -1,0 +1,145 @@
+name: Test Go Git Index Optimization
+
+on:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  benchmark-go-gitindex:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.2
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Record environment
+        run: |
+          echo "Stock Go: $(go version)"
+          echo "GOROOT: $(go env GOROOT)"
+          echo "Runner info:"
+          uname -a
+          nproc
+          cat /proc/cpuinfo 2>/dev/null | grep 'model name' | head -1 || true
+          df -h . || true
+
+      - name: Build patched Go toolchain
+        run: |
+          set -euo pipefail
+          echo "::group::Clone Go 1.25.7"
+          git clone --depth=1 --branch go1.25.7 https://go.googlesource.com/go /tmp/go-patched 2>&1
+          echo "::endgroup::"
+
+          echo "::group::Apply patch"
+          cd /tmp/go-patched
+          git apply "$GITHUB_WORKSPACE/scripts/go-gitindex.patch"
+          echo "Patch applied successfully"
+          echo "::endgroup::"
+
+          echo "::group::Build Go toolchain"
+          cd /tmp/go-patched/src
+          GOROOT_BOOTSTRAP="$(go env GOROOT)" ./make.bash 2>&1 | tail -10
+          echo "Patched Go: $(/tmp/go-patched/bin/go version)"
+          echo "::endgroup::"
+
+      - name: Download Go modules
+        run: go mod download
+
+      # ---- Benchmark: Stock Go ----
+
+      - name: "Benchmark: Stock Go - roxctl"
+        run: |
+          export GOCACHE="/tmp/gocache-stock"
+          mkdir -p "$GOCACHE"
+
+          echo "=== Stock Go: $(go version) ==="
+          echo "GOCACHE: $GOCACHE"
+          echo ""
+
+          echo "--- Cold build (populating cache) ---"
+          { time GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+            go build -trimpath -buildvcs=false -o /tmp/roxctl-stock ./roxctl/ ; } 2>&1
+
+          echo ""
+          echo "--- Warm builds ---"
+          for i in 1 2 3 4 5; do
+            echo -n "run $i: "
+            { time GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+              go build -trimpath -buildvcs=false -o /tmp/roxctl-stock ./roxctl/ ; } 2>&1 | grep real
+          done
+
+      # ---- Benchmark: Patched Go, git index ENABLED ----
+
+      - name: "Benchmark: Patched Go (enabled) - roxctl"
+        run: |
+          export PATH="/tmp/go-patched/bin:$PATH"
+          export GOROOT="/tmp/go-patched"
+          export GOCACHE="/tmp/gocache-enabled"
+          mkdir -p "$GOCACHE"
+
+          echo "=== Patched Go (git index ENABLED): $(go version) ==="
+          echo "GOCACHE: $GOCACHE"
+          echo ""
+
+          echo "--- Cold build (populating cache) ---"
+          { time GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+            go build -trimpath -buildvcs=false -o /tmp/roxctl-enabled ./roxctl/ ; } 2>&1
+
+          echo ""
+          echo "--- Warm builds ---"
+          for i in 1 2 3 4 5; do
+            echo -n "run $i: "
+            { time GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+              go build -trimpath -buildvcs=false -o /tmp/roxctl-enabled ./roxctl/ ; } 2>&1 | grep real
+          done
+
+      # ---- Benchmark: Patched Go, git index DISABLED ----
+
+      - name: "Benchmark: Patched Go (disabled) - roxctl"
+        run: |
+          export PATH="/tmp/go-patched/bin:$PATH"
+          export GOROOT="/tmp/go-patched"
+          export GOCACHE="/tmp/gocache-disabled"
+          export GONOBITINDEX=1
+          mkdir -p "$GOCACHE"
+
+          echo "=== Patched Go (git index DISABLED): $(go version) ==="
+          echo "GOCACHE: $GOCACHE"
+          echo ""
+
+          echo "--- Cold build (populating cache) ---"
+          { time GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+            go build -trimpath -buildvcs=false -o /tmp/roxctl-disabled ./roxctl/ ; } 2>&1
+
+          echo ""
+          echo "--- Warm builds ---"
+          for i in 1 2 3 4 5; do
+            echo -n "run $i: "
+            { time GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+              GONOBITINDEX=1 go build -trimpath -buildvcs=false -o /tmp/roxctl-disabled ./roxctl/ ; } 2>&1 | grep real
+          done
+
+      # ---- Modindex stats ----
+
+      - name: "Diagnostic: modindex stats"
+        run: |
+          export PATH="/tmp/go-patched/bin:$PATH"
+          export GOROOT="/tmp/go-patched"
+          export GOCACHE="/tmp/gocache-enabled"
+          export GODEBUG_MODINDEX=1
+
+          echo "=== Modindex stats (git index enabled, warm cache) ==="
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+            go build -trimpath -buildvcs=false -o /dev/null ./roxctl/ 2>&1 | grep -E "^(=|  )"

@@ -1,0 +1,551 @@
+diff --git a/src/cmd/go/internal/load/pkg.go b/src/cmd/go/internal/load/pkg.go
+index 1f791546f9..98c4f3df98 100644
+--- a/src/cmd/go/internal/load/pkg.go
++++ b/src/cmd/go/internal/load/pkg.go
+@@ -929,13 +929,23 @@ func loadPackageData(ctx context.Context, path, parentPath, parentDir, parentRoo
+ 					modroot = gorootSrcCmd
+ 				}
+ 			}
++			// When modroot is still empty (e.g., vendor mode), use CWD
++			// so that the modindex per-directory cache can serve these
++			// packages on warm builds without re-reading .go files.
++			if modroot == "" {
++				modroot = base.Cwd()
++			}
+ 			if modroot != "" {
+ 				if rp, err := modindex.GetPackage(modroot, r.dir); err == nil {
+ 					data.p, data.err = rp.Import(cfg.BuildContext, buildMode)
+ 					goto Happy
+ 				} else if !errors.Is(err, modindex.ErrNotIndexed) {
+ 					base.Fatal(err)
++				} else if os.Getenv("GODEBUG_MODINDEX") != "" {
++					fmt.Fprintf(os.Stderr, "IMPORTDIR fallback (GetPackage: %v): %s\n", err, r.dir)
+ 				}
++			} else if os.Getenv("GODEBUG_MODINDEX") != "" {
++				fmt.Fprintf(os.Stderr, "IMPORTDIR fallback (no modroot): %s\n", r.dir)
+ 			}
+ 			data.p, data.err = buildContext.ImportDir(r.dir, buildMode)
+ 		Happy:
+diff --git a/src/cmd/go/internal/modindex/build.go b/src/cmd/go/internal/modindex/build.go
+index d7e09fed25..e2e84786d6 100644
+--- a/src/cmd/go/internal/modindex/build.go
++++ b/src/cmd/go/internal/modindex/build.go
+@@ -24,10 +24,15 @@ import (
+ 	"slices"
+ 	"sort"
+ 	"strings"
++	"sync/atomic"
+ 	"unicode"
+ 	"unicode/utf8"
+ )
+ 
++var getFileInfoCount atomic.Int64
++
++func GetFileInfoCount() int64 { return getFileInfoCount.Load() }
++
+ // A Context specifies the supporting context for a build.
+ type Context struct {
+ 	GOARCH string // target architecture
+@@ -417,6 +422,7 @@ var errNonSource = errors.New("non source file")
+ // getFileInfo will return errNonSource if the file is not a source or object
+ // file and shouldn't even be added to IgnoredFiles.
+ func getFileInfo(dir, name string, fset *token.FileSet) (*fileInfo, error) {
++	getFileInfoCount.Add(1)
+ 	if strings.HasPrefix(name, "_") ||
+ 		strings.HasPrefix(name, ".") {
+ 		return nil, nil
+diff --git a/src/cmd/go/internal/modindex/read.go b/src/cmd/go/internal/modindex/read.go
+index d87fb06b57..9091bff3a9 100644
+--- a/src/cmd/go/internal/modindex/read.go
++++ b/src/cmd/go/internal/modindex/read.go
+@@ -10,6 +10,7 @@ import (
+ 	"errors"
+ 	"fmt"
+ 	"go/build"
++	"os"
+ 	"go/build/constraint"
+ 	"go/token"
+ 	"internal/godebug"
+@@ -21,6 +22,7 @@ import (
+ 	"sort"
+ 	"strings"
+ 	"sync"
++	"sync/atomic"
+ 	"time"
+ 	"unsafe"
+ 
+@@ -77,6 +79,18 @@ func moduleHash(modroot string, ismodcache bool) (cache.ActionID, error) {
+ 
+ const modTimeCutoff = 2 * time.Second
+ 
++// GitFileHash, if non-nil, maps an absolute file path to a content hash
++// string (e.g., git blob SHA1 hex). Used by dirHash to avoid per-file
++// lstat calls when the git index can provide content identity.
++var GitFileHash func(absPath string) (hash string, ok bool)
++
++var dirHashGitHit atomic.Int64
++var dirHashGitMiss atomic.Int64
++
++func DirHashGitStats() (hit, miss int64) {
++	return dirHashGitHit.Load(), dirHashGitMiss.Load()
++}
++
+ // dirHash returns an ActionID corresponding to the state of the package
+ // located at filesystem path pkgdir.
+ func dirHash(modroot, pkgdir string) (cache.ActionID, error) {
+@@ -85,6 +99,10 @@ func dirHash(modroot, pkgdir string) (cache.ActionID, error) {
+ 	fmt.Fprintf(h, "package %s %s %v\n", runtime.Version(), indexVersion, pkgdir)
+ 	dirs, err := fsys.ReadDir(pkgdir)
+ 	if err != nil {
++		dirHashReadErr.Add(1)
++		if os.Getenv("GODEBUG_MODINDEX") != "" {
++			fmt.Fprintf(os.Stderr, "dirHash readErr: %s (err: %v)\n", pkgdir, err)
++		}
+ 		// pkgdir might not be a directory. give up on hashing.
+ 		return cache.ActionID{}, ErrNotIndexed
+ 	}
+@@ -95,8 +113,21 @@ func dirHash(modroot, pkgdir string) (cache.ActionID, error) {
+ 		}
+ 
+ 		if !d.Type().IsRegular() {
++			dirHashNonReg.Add(1)
+ 			return cache.ActionID{}, ErrNotIndexed
+ 		}
++
++		// Try git-based content hash first (avoids lstat syscall).
++		if GitFileHash != nil {
++			if gh, ok := GitFileHash(filepath.Join(pkgdir, d.Name())); ok {
++				fmt.Fprintf(h, "file %v %v\n", d.Name(), gh)
++				dirHashGitHit.Add(1)
++				continue
++			}
++			dirHashGitMiss.Add(1)
++		}
++
++		// Fall back to stat-based hash.
+ 		// To avoid problems for very recent files where a new
+ 		// write might not change the mtime due to file system
+ 		// mtime precision, reject caching if a file was read that
+@@ -107,9 +138,11 @@ func dirHash(modroot, pkgdir string) (cache.ActionID, error) {
+ 		// corresponding code.
+ 		info, err := d.Info()
+ 		if err != nil {
++			dirHashInfoErr.Add(1)
+ 			return cache.ActionID{}, ErrNotIndexed
+ 		}
+ 		if info.ModTime().After(cutoff) {
++			dirHashTooNew.Add(1)
+ 			return cache.ActionID{}, ErrNotIndexed
+ 		}
+ 
+@@ -215,15 +248,35 @@ func openIndexModule(modroot string, ismodcache bool) (*Module, error) {
+ 
+ var pcache par.ErrCache[[2]string, *IndexPackage]
+ 
++var (
++	idxPkgCacheHit  atomic.Int64
++	idxPkgCacheMiss atomic.Int64
++	idxPkgDirErr    atomic.Int64
++	dirHashNonReg   atomic.Int64
++	dirHashReadErr  atomic.Int64
++	dirHashTooNew   atomic.Int64
++	dirHashInfoErr  atomic.Int64
++)
++
++func IdxPkgStats() (hit, miss, dirErr int64) {
++	return idxPkgCacheHit.Load(), idxPkgCacheMiss.Load(), idxPkgDirErr.Load()
++}
++
++func DirHashStats() (nonReg, readErr, tooNew, infoErr int64) {
++	return dirHashNonReg.Load(), dirHashReadErr.Load(), dirHashTooNew.Load(), dirHashInfoErr.Load()
++}
++
+ func openIndexPackage(modroot, pkgdir string) (*IndexPackage, error) {
+ 	return pcache.Do([2]string{modroot, pkgdir}, func() (*IndexPackage, error) {
+ 		fsys.Trace("openIndexPackage", pkgdir)
+ 		id, err := dirHash(modroot, pkgdir)
+ 		if err != nil {
++			idxPkgDirErr.Add(1)
+ 			return nil, err
+ 		}
+ 		data, _, opened, err := cache.GetMmap(cache.Default(), id)
+ 		if err != nil {
++			idxPkgCacheMiss.Add(1)
+ 			// Couldn't read from index. Assume we couldn't read from
+ 			// the index because the package hasn't been indexed yet.
+ 			// But double check on Windows that we haven't opened the file yet,
+@@ -235,6 +288,8 @@ func openIndexPackage(modroot, pkgdir string) (*IndexPackage, error) {
+ 					return nil, err
+ 				}
+ 			}
++		} else {
++			idxPkgCacheHit.Add(1)
+ 		}
+ 		pkg, err := packageFromBytes(modroot, data)
+ 		if err != nil {
+diff --git a/src/cmd/go/internal/vcs/git_index.go b/src/cmd/go/internal/vcs/git_index.go
+new file mode 100644
+index 0000000000..713f5fb766
+--- /dev/null
++++ b/src/cmd/go/internal/vcs/git_index.go
+@@ -0,0 +1,215 @@
++// Copyright 2024 The Go Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style
++// license that can be found in the LICENSE file.
++
++package vcs
++
++import (
++	"encoding/binary"
++	"encoding/hex"
++	"fmt"
++	"os"
++	"path/filepath"
++	"strings"
++)
++
++// A GitIndex provides efficient lookup of blob SHA1 by relative path
++// from a parsed .git/index file.
++//
++// The git index stores entries sorted by path. At parse time, path
++// names and SHA1 bytes are copied into compact contiguous buffers and
++// the raw index data is released. Lookups use binary search with
++// allocation-free string-to-bytes comparison; only the returned hex
++// string is allocated.
++type GitIndex struct {
++	names   []byte   // all path names concatenated
++	sha1s   []byte   // all SHA1s concatenated (20 bytes each)
++	nameOff []uint32 // start of each name in names[]
++	nameLen []uint16 // length of each name
++}
++
++const (
++	gitIndexHeaderSize = 12
++	gitIndexEntryFixed = 62 // stat(40) + SHA1(20) + flags(2)
++)
++
++// ReadGitIndex reads and parses the git index file in gitDir.
++func ReadGitIndex(gitDir string) (*GitIndex, error) {
++	data, err := os.ReadFile(filepath.Join(gitDir, "index"))
++	if err != nil {
++		return nil, err
++	}
++	return parseGitIndex(data)
++}
++
++func parseGitIndex(data []byte) (*GitIndex, error) {
++	if len(data) < gitIndexHeaderSize {
++		return nil, fmt.Errorf("git index: truncated header")
++	}
++	if string(data[:4]) != "DIRC" {
++		return nil, fmt.Errorf("git index: bad magic %q", data[:4])
++	}
++
++	version := binary.BigEndian.Uint32(data[4:8])
++	if version != 2 && version != 3 {
++		return nil, fmt.Errorf("git index: unsupported version %d", version)
++	}
++
++	numEntries := binary.BigEndian.Uint32(data[8:12])
++
++	// Pre-allocate based on entry count. Average path ~30 bytes.
++	names := make([]byte, 0, numEntries*30)
++	sha1s := make([]byte, 0, numEntries*20)
++	nameOff := make([]uint32, 0, numEntries)
++	nameLen := make([]uint16, 0, numEntries)
++
++	offset := gitIndexHeaderSize
++	for i := uint32(0); i < numEntries; i++ {
++		if offset+gitIndexEntryFixed > len(data) {
++			return nil, fmt.Errorf("git index: truncated entry %d", i)
++		}
++
++		entryStart := offset
++
++		flags := binary.BigEndian.Uint16(data[offset+60 : offset+62])
++		stage := (flags >> 12) & 0x3
++		nLen := int(flags & 0xFFF)
++
++		offset += gitIndexEntryFixed
++
++		// v3 extended flags
++		if version == 3 && (flags>>14)&0x1 == 1 {
++			if offset+2 > len(data) {
++				return nil, fmt.Errorf("git index: truncated extended flags entry %d", i)
++			}
++			offset += 2
++		}
++
++		nameStart := offset
++
++		// Resolve actual name length for names >= 0xFFF.
++		if nLen >= 0xFFF {
++			end := offset
++			for end < len(data) && data[end] != 0 {
++				end++
++			}
++			if end >= len(data) {
++				return nil, fmt.Errorf("git index: unterminated name entry %d", i)
++			}
++			nLen = end - offset
++		} else if offset+nLen > len(data) {
++			return nil, fmt.Errorf("git index: truncated name entry %d", i)
++		}
++
++		// Advance past name + NUL padding to 8-byte boundary.
++		entryLen := (nameStart - entryStart) + nLen
++		offset = entryStart + (entryLen+8)&^7
++
++		if stage != 0 {
++			continue
++		}
++
++		// Copy name and SHA1 into contiguous buffers.
++		nameOff = append(nameOff, uint32(len(names)))
++		nameLen = append(nameLen, uint16(nLen))
++		names = append(names, data[nameStart:nameStart+nLen]...)
++		sha1s = append(sha1s, data[entryStart+40:entryStart+60]...)
++	}
++
++	return &GitIndex{
++		names:   names,
++		sha1s:   sha1s,
++		nameOff: nameOff,
++		nameLen: nameLen,
++	}, nil
++}
++
++// Len returns the number of stage-0 entries.
++func (idx *GitIndex) Len() int {
++	return len(idx.nameOff)
++}
++
++// Lookup returns the blob SHA1 hex string for the given relative path
++// using binary search. Only the returned hex string is allocated.
++func (idx *GitIndex) Lookup(path string) (string, bool) {
++	lo, hi := 0, len(idx.nameOff)
++	for lo < hi {
++		mid := lo + (hi-lo)/2
++		cmp := compareStringToBytes(path, idx.name(mid))
++		if cmp < 0 {
++			hi = mid
++		} else if cmp > 0 {
++			lo = mid + 1
++		} else {
++			off := mid * 20
++			return hex.EncodeToString(idx.sha1s[off : off+20]), true
++		}
++	}
++	return "", false
++}
++
++// name returns the raw name bytes for the i-th entry. No allocation.
++func (idx *GitIndex) name(i int) []byte {
++	off := idx.nameOff[i]
++	return idx.names[off : off+uint32(idx.nameLen[i])]
++}
++
++// compareStringToBytes compares string s to byte slice b
++// lexicographically without allocating. Returns -1, 0, or 1.
++func compareStringToBytes(s string, b []byte) int {
++	n := len(s)
++	if len(b) < n {
++		n = len(b)
++	}
++	for i := 0; i < n; i++ {
++		if s[i] < b[i] {
++			return -1
++		}
++		if s[i] > b[i] {
++			return 1
++		}
++	}
++	if len(s) < len(b) {
++		return -1
++	}
++	if len(s) > len(b) {
++		return 1
++	}
++	return 0
++}
++
++// ResolveGitDir takes a repo root directory (as returned by FromDir)
++// and returns the path to the .git directory containing the index file.
++// For regular repos this is repoRoot/.git; for worktrees it follows
++// the gitdir pointer. Returns "" if the .git directory cannot be resolved.
++// This mirrors the logic in vcsGitRoot.isRoot.
++func ResolveGitDir(repoRoot string) string {
++	path := filepath.Join(repoRoot, ".git")
++	fi, err := os.Stat(path)
++	if err != nil {
++		return ""
++	}
++	if fi.IsDir() {
++		return path
++	}
++	// Worktree: .git is a file with "gitdir: <path>".
++	if !fi.Mode().IsRegular() || fi.Size() == 0 || fi.Size() > 4096 {
++		return ""
++	}
++	raw, err := os.ReadFile(path)
++	if err != nil {
++		return ""
++	}
++	rest, ok := strings.CutPrefix(string(raw), "gitdir:")
++	if !ok {
++		return ""
++	}
++	gitdir := strings.TrimSpace(rest)
++	if gitdir == "" {
++		return ""
++	}
++	if !filepath.IsAbs(gitdir) {
++		gitdir = filepath.Join(repoRoot, gitdir)
++	}
++	return gitdir
++}
+diff --git a/src/cmd/go/internal/work/action.go b/src/cmd/go/internal/work/action.go
+index ecc3337131..08aa703019 100644
+--- a/src/cmd/go/internal/work/action.go
++++ b/src/cmd/go/internal/work/action.go
+@@ -29,6 +29,7 @@ import (
+ 	"cmd/go/internal/load"
+ 	"cmd/go/internal/str"
+ 	"cmd/go/internal/trace"
++	"cmd/go/internal/vcs"
+ 	"cmd/internal/buildid"
+ 	"cmd/internal/robustio"
+ )
+@@ -61,6 +62,9 @@ type Builder struct {
+ 	toolIDCache    par.Cache[string, string] // tool name -> tool ID
+ 	gccToolIDCache map[string]string         // tool name -> tool ID
+ 	buildIDCache   map[string]string         // file name -> build ID
++
++	gitIndex    *vcs.GitIndex // parsed git index for blob SHA1 lookups
++	gitRepoRoot string        // repo root with trailing slash, for prefix stripping
+ }
+ 
+ // NOTE: Much of Action would not need to be exported if not for test.
+@@ -324,6 +328,8 @@ func NewBuilder(workDir string) *Builder {
+ 		}
+ 	}
+ 
++	b.initGitBlobs()
++
+ 	return b
+ }
+ 
+diff --git a/src/cmd/go/internal/work/buildid.go b/src/cmd/go/internal/work/buildid.go
+index c272131c77..1fdc780622 100644
+--- a/src/cmd/go/internal/work/buildid.go
++++ b/src/cmd/go/internal/work/buildid.go
+@@ -386,6 +386,13 @@ func (b *Builder) buildID(file string) string {
+ 
+ // fileHash returns the content hash of the named file.
+ func (b *Builder) fileHash(file string) string {
++	// Check git blob SHA first — avoids reading the file at all
++	// when the file is tracked in git and unmodified since git add.
++	if os.Getenv("GONOBITINDEX") == "" {
++		if blobHex, ok := b.gitBlobHash(file); ok {
++			return blobHex
++		}
++	}
+ 	sum, err := cache.FileHash(fsys.Actual(file))
+ 	if err != nil {
+ 		return ""
+diff --git a/src/cmd/go/internal/work/git_blob.go b/src/cmd/go/internal/work/git_blob.go
+new file mode 100644
+index 0000000000..1b204a23cb
+--- /dev/null
++++ b/src/cmd/go/internal/work/git_blob.go
+@@ -0,0 +1,90 @@
++// Copyright 2024 The Go Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style
++// license that can be found in the LICENSE file.
++
++package work
++
++import (
++	"fmt"
++	"os"
++	"strings"
++
++	"cmd/go/internal/base"
++	"cmd/go/internal/modindex"
++	"cmd/go/internal/vcs"
++)
++
++// initGitBlobs detects whether the current working directory is inside
++// a git repository (using the same vcs.FromDir detection as buildvcs)
++// and, if so, parses the git index for later lookup. The parsed index
++// retains the raw file bytes and an offset table — no per-entry string
++// or map allocations are performed at init time.
++func (b *Builder) initGitBlobs() {
++	repoRoot, vcsCmd, err := vcs.FromDir(base.Cwd(), "")
++	if err != nil {
++		return
++	}
++	if vcsCmd.Cmd != "git" {
++		return
++	}
++
++	gitDir := vcs.ResolveGitDir(repoRoot)
++	if gitDir == "" {
++		return
++	}
++
++	idx, err := vcs.ReadGitIndex(gitDir)
++	if err != nil {
++		return
++	}
++
++	if idx.Len() > 0 {
++		b.gitIndex = idx
++		b.gitRepoRoot = repoRoot + "/"
++
++		// Set the git file hash function for modindex dirHash optimization.
++		// This allows dirHash to use git blob SHAs instead of per-file lstat.
++		modindex.GitFileHash = func(absPath string) (string, bool) {
++			return b.gitBlobHash(absPath)
++		}
++	}
++
++	// Register stats printer if instrumentation is enabled.
++	if os.Getenv("GODEBUG_MODINDEX") != "" {
++		base.AtExit(func() {
++			hit, miss, dirErr := modindex.IdxPkgStats()
++			nonReg, readErr, tooNew, infoErr := modindex.DirHashStats()
++			gitHit, gitMiss := modindex.DirHashGitStats()
++			fileInfoCalls := modindex.GetFileInfoCount()
++			fmt.Fprintf(os.Stderr, "\n=== modindex stats ===\n")
++			fmt.Fprintf(os.Stderr, "  idxPkg cache hit:  %d\n", hit)
++			fmt.Fprintf(os.Stderr, "  idxPkg cache miss: %d\n", miss)
++			fmt.Fprintf(os.Stderr, "  idxPkg dirErr:     %d\n", dirErr)
++			fmt.Fprintf(os.Stderr, "  dirHash nonReg:    %d\n", nonReg)
++			fmt.Fprintf(os.Stderr, "  dirHash readErr:   %d\n", readErr)
++			fmt.Fprintf(os.Stderr, "  dirHash tooNew:    %d\n", tooNew)
++			fmt.Fprintf(os.Stderr, "  dirHash infoErr:   %d\n", infoErr)
++			fmt.Fprintf(os.Stderr, "  dirHash git hit:   %d\n", gitHit)
++			fmt.Fprintf(os.Stderr, "  dirHash git miss:  %d\n", gitMiss)
++			fmt.Fprintf(os.Stderr, "  getFileInfo calls: %d\n", fileInfoCalls)
++			if b.gitIndex != nil {
++				fmt.Fprintf(os.Stderr, "  git index entries: %d\n", b.gitIndex.Len())
++			}
++			fmt.Fprintf(os.Stderr, "======================\n")
++		})
++	}
++}
++
++// gitBlobHash looks up the file's blob SHA1 in the git index using
++// binary search. The absolute path is converted to a repo-relative
++// path for the lookup. Only the returned hex string is allocated.
++func (b *Builder) gitBlobHash(file string) (string, bool) {
++	if b.gitIndex == nil {
++		return "", false
++	}
++	rel, ok := strings.CutPrefix(file, b.gitRepoRoot)
++	if !ok {
++		return "", false
++	}
++	return b.gitIndex.Lookup(rel)
++}
