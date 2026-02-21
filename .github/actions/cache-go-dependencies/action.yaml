@@ -5,12 +5,6 @@ inputs:
     description: Whether this job saves caches on pushes to the default branch.
     required: false
     default: 'true'
-  cache-job-name:
-    description: >
-      Override the job name used in the GOCACHE cache key. Defaults to github.job.
-      Use this to restore another job's build cache (e.g., for A/B comparisons).
-    required: false
-    default: ''
 runs:
   using: composite
   steps:
@@ -20,8 +14,6 @@ runs:
         echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
         echo "GOMODCACHE=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
         echo "GOARCH=$(go env GOARCH)" >> "$GITHUB_OUTPUT"
-        JOB_NAME="${{ inputs.cache-job-name || github.job }}"
-        echo "JOB_NAME=${JOB_NAME}" >> "$GITHUB_OUTPUT"
         TAG="${{ contains(github.event.pull_request.labels.*.name, 'ci-save-cache') && github.event.pull_request.number || '' }}"
         echo "TAG=${TAG:-$(date +%Yw%U)}" >> "$GITHUB_OUTPUT"
       shell: bash
@@ -49,16 +41,16 @@ runs:
       uses: actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v1-${{ steps.cache-paths.outputs.JOB_NAME }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
-        restore-keys: go-build-v1-${{ steps.cache-paths.outputs.JOB_NAME }}-${{ steps.cache-paths.outputs.GOARCH }}-
+        key: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
+        restore-keys: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
     - name: Cache Go Build (restore)
       if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch || contains(github.event.pull_request.labels.*.name, 'ci-save-cache'))) }}
       uses: actions/cache/restore@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v1-${{ steps.cache-paths.outputs.JOB_NAME }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
-        restore-keys: go-build-v1-${{ steps.cache-paths.outputs.JOB_NAME }}-${{ steps.cache-paths.outputs.GOARCH }}-
+        key: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
+        restore-keys: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
     - name: Download Go modules
       run: make deps --always-make

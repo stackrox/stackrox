@@ -17,9 +17,9 @@ defaults:
 jobs:
 
   # ==================================================================
-  # STOCK GO: pre-build-cli (mirrors build.yaml)
+  # Build patched Go toolchain (cached by patch hash)
   # ==================================================================
-  pre-build-cli:
+  build-patched-go:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.2
@@ -29,68 +29,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Cache patched Go toolchain
+        id: go-cache
+        uses: actions/cache@v5
         with:
-          fetch-depth: 0
-
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
-
-      - name: Record environment
-        run: |
-          echo "Go: $(go version)"
-          echo "GOCACHE: $(go env GOCACHE)"
-          echo "GOCACHE size: $(du -sh "$(go env GOCACHE)" 2>/dev/null | cut -f1 || echo 'empty')"
-
-      - name: "Build CLI (stock Go)"
-        run: |
-          echo "=== Build 1: stock Go ==="
-          time make cli 2>&1
-
-      - name: "Rebuild CLI (stock Go, known-warm cache)"
-        run: |
-          echo "=== Build 2: stock Go — known-warm rebuild ==="
-          time make cli 2>&1
-
-      - name: "Warm build timing (stock Go, 3 runs)"
-        run: |
-          echo "=== Warm build timing ==="
-          for i in 1 2 3; do
-            echo -n "run $i: "
-            time make cli 2>&1 | grep real || true
-          done
-
-  # ==================================================================
-  # PATCHED GO: pre-build-cli (with git index optimization)
-  # ==================================================================
-  pre-build-cli-patched:
-    needs: pre-build-cli
-    runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.2
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      # Restore GOMODCACHE from shared cache, GOCACHE from our own previous run
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
-        with:
-          cache-job-name: pre-build-cli-patched
+          path: /tmp/go-patched
+          key: patched-go-v1-${{ hashFiles('scripts/go-gitindex.patch') }}
 
       - name: Build patched Go toolchain
+        if: steps.go-cache.outputs.cache-hit != 'true'
         run: |
           set -euo pipefail
           echo "::group::Clone Go 1.25.7"
@@ -107,54 +55,14 @@ jobs:
           GOROOT_BOOTSTRAP="$(go env GOROOT)" ./make.bash 2>&1 | tail -5
           echo "::endgroup::"
 
+      - name: Verify patched Go
+        run: |
           echo "Patched Go: $(/tmp/go-patched/bin/go version)"
-
-          # Make patched Go the default for subsequent steps
-          echo "/tmp/go-patched/bin" >> "$GITHUB_PATH"
-          echo "GOROOT=/tmp/go-patched" >> "$GITHUB_ENV"
-
-      - name: Record environment
-        run: |
-          echo "Go: $(go version)"
-          echo "GOCACHE: $(go env GOCACHE)"
-          echo "GOCACHE size: $(du -sh "$(go env GOCACHE)" 2>/dev/null | cut -f1 || echo 'empty')"
-
-      - name: "Build CLI (patched Go, git index enabled)"
-        run: |
-          echo "=== Build 1: patched Go (enabled) ==="
-          time make cli 2>&1
-
-      - name: "Rebuild CLI (patched Go, known-warm cache)"
-        run: |
-          echo "=== Build 2: patched Go (enabled) — known-warm rebuild ==="
-          time make cli 2>&1
-
-      - name: "Warm build timing (patched Go enabled, 3 runs)"
-        run: |
-          echo "=== Warm build timing (git index ENABLED) ==="
-          for i in 1 2 3; do
-            echo -n "run $i: "
-            time make cli 2>&1 | grep real || true
-          done
-
-      - name: "Warm build timing (patched Go disabled, 3 runs)"
-        run: |
-          echo "=== Warm build timing (git index DISABLED via GONOBITINDEX=1) ==="
-          for i in 1 2 3; do
-            echo -n "run $i: "
-            GONOBITINDEX=1 time make cli 2>&1 | grep real || true
-          done
-
-      - name: "Modindex stats (enabled)"
-        run: |
-          export GODEBUG_MODINDEX=1
-          echo "=== Modindex stats (git index enabled, warm) ==="
-          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
-            go build -trimpath -buildvcs=false -o /dev/null ./roxctl/ 2>&1 | \
-            grep -E "^(=|  )" || true
+          echo "Compiler SHA256:"
+          sha256sum "/tmp/go-patched/pkg/tool/linux_amd64/compile" 2>/dev/null || true
 
   # ==================================================================
-  # STOCK GO: pre-build-go-binaries (mirrors build.yaml, amd64 only)
+  # STOCK GO: baseline build
   # ==================================================================
   pre-build-go-binaries:
     runs-on: ubuntu-latest
@@ -181,22 +89,32 @@ jobs:
           echo "Go: $(go version)"
           echo "GOCACHE: $(go env GOCACHE)"
           echo "GOCACHE size: $(du -sh "$(go env GOCACHE)" 2>/dev/null | cut -f1 || echo 'empty')"
+          echo "Compiler SHA256:"
+          sha256sum "$(go env GOROOT)/pkg/tool/$(go env GOOS)_$(go env GOARCH)/compile" 2>/dev/null || true
 
       - name: "Build Go Binaries (stock Go, amd64)"
         run: |
           echo "=== Build 1: stock Go, CGO_ENABLED=1 ==="
-          time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps 2>&1
+          time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps GOFLAGS="-v" 2>&1 | tee /tmp/build1.log
+          echo "Packages compiled: $(grep -c '^[a-z]' /tmp/build1.log 2>/dev/null || echo 0)"
 
       - name: "Rebuild Go Binaries (stock Go, known-warm)"
         run: |
           echo "=== Build 2: stock Go — known-warm rebuild ==="
           time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps 2>&1
 
+      - name: "Warm build timing (stock Go, 3 runs)"
+        run: |
+          for i in 1 2 3; do
+            echo "--- run $i ---"
+            time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps 2>&1
+          done
+
   # ==================================================================
-  # PATCHED GO: pre-build-go-binaries (with git index optimization)
+  # PATCHED GO: cold build — populates GOCACHE, saves it
   # ==================================================================
-  pre-build-go-binaries-patched:
-    needs: pre-build-go-binaries
+  patched-go-cold-build:
+    needs: build-patched-go
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.2
@@ -213,60 +131,125 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
+      - name: Restore patched Go toolchain
+        uses: actions/cache/restore@v5
         with:
-          cache-job-name: pre-build-go-binaries-patched
+          path: /tmp/go-patched
+          key: patched-go-v1-${{ hashFiles('scripts/go-gitindex.patch') }}
 
-      - name: Build patched Go toolchain
+      - name: Set patched Go as default
         run: |
-          set -euo pipefail
-          echo "::group::Clone Go 1.25.7"
-          git clone --depth=1 --branch go1.25.7 https://go.googlesource.com/go /tmp/go-patched 2>&1
-          echo "::endgroup::"
-
-          echo "::group::Apply patch"
-          cd /tmp/go-patched
-          git apply "$GITHUB_WORKSPACE/scripts/go-gitindex.patch"
-          echo "::endgroup::"
-
-          echo "::group::Build Go toolchain"
-          cd /tmp/go-patched/src
-          GOROOT_BOOTSTRAP="$(go env GOROOT)" ./make.bash 2>&1 | tail -5
-          echo "::endgroup::"
-
-          echo "Patched Go: $(/tmp/go-patched/bin/go version)"
           echo "/tmp/go-patched/bin" >> "$GITHUB_PATH"
           echo "GOROOT=/tmp/go-patched" >> "$GITHUB_ENV"
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - name: Record environment
+        run: |
+          echo "Go: $(go version)"
+          echo "GOCACHE: $(go env GOCACHE)"
+          echo "GOCACHE size before build: $(du -sh "$(go env GOCACHE)" 2>/dev/null | cut -f1 || echo 'empty')"
+          echo "Compiler SHA256:"
+          sha256sum "$(go env GOROOT)/pkg/tool/$(go env GOOS)_$(go env GOARCH)/compile" 2>/dev/null || true
+
+      - name: "Build Go Binaries (patched Go, cold GOCACHE)"
+        run: |
+          echo "=== Cold build: patched Go ==="
+          time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps 2>&1
+
+      - name: "Rebuild (known-warm, same job)"
+        run: |
+          echo "=== Known-warm rebuild ==="
+          time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps 2>&1
+
+      - name: "GOCACHE after build"
+        id: gocache-info
+        run: |
+          GOCACHE="$(go env GOCACHE)"
+          echo "GOCACHE size: $(du -sh "$GOCACHE" 2>/dev/null | cut -f1)"
+          echo "Total files: $(find "$GOCACHE" -type f 2>/dev/null | wc -l)"
+          echo "GOCACHE_PATH=$GOCACHE" >> "$GITHUB_OUTPUT"
+
+      - name: Save GOCACHE for warm-build job
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ steps.gocache-info.outputs.GOCACHE_PATH }}
+          key: patched-gocache-${{ github.run_id }}
+
+  # ==================================================================
+  # PATCHED GO: warm build — restores GOCACHE from cold build
+  # Same Go binary + same GOCACHE = should be a cache hit
+  # ==================================================================
+  patched-go-warm-build:
+    needs: patched-go-cold-build
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.2
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Restore patched Go toolchain
+        uses: actions/cache/restore@v5
+        with:
+          path: /tmp/go-patched
+          key: patched-go-v1-${{ hashFiles('scripts/go-gitindex.patch') }}
+
+      - name: Set patched Go as default
+        run: |
+          echo "/tmp/go-patched/bin" >> "$GITHUB_PATH"
+          echo "GOROOT=/tmp/go-patched" >> "$GITHUB_ENV"
+
+      - name: Restore GOCACHE from cold build
+        uses: actions/cache/restore@v5
+        with:
+          path: /github/home/.cache/go-build
+          key: patched-gocache-${{ github.run_id }}
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
 
       - name: Record environment
         run: |
           echo "Go: $(go version)"
           echo "GOCACHE: $(go env GOCACHE)"
           echo "GOCACHE size: $(du -sh "$(go env GOCACHE)" 2>/dev/null | cut -f1 || echo 'empty')"
+          echo "Compiler SHA256:"
+          sha256sum "$(go env GOROOT)/pkg/tool/$(go env GOOS)_$(go env GOARCH)/compile" 2>/dev/null || true
 
-      - name: "Build Go Binaries (patched Go, amd64)"
+      - name: "Build Go Binaries (patched Go, restored GOCACHE)"
         run: |
-          echo "=== Build 1: patched Go (enabled), CGO_ENABLED=1 ==="
+          echo "=== Build with restored GOCACHE ==="
+          time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps GOFLAGS="-v" 2>&1 | tee /tmp/build1.log
+          echo "Packages compiled (cache misses): $(grep -c '^[a-z]' /tmp/build1.log 2>/dev/null || echo 0)"
+
+      - name: "Rebuild (known-warm)"
+        run: |
+          echo "=== Known-warm rebuild ==="
           time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps 2>&1
 
-      - name: "Rebuild Go Binaries (patched Go, known-warm)"
+      - name: "Warm build timing (git index ENABLED, 3 runs)"
         run: |
-          echo "=== Build 2: patched Go (enabled) — known-warm rebuild ==="
-          time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps 2>&1
-
-      - name: "Warm build timing (patched Go enabled, 3 runs)"
-        run: |
-          echo "=== Warm build timing (git index ENABLED) ==="
           for i in 1 2 3; do
             echo "--- run $i ---"
             time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps 2>&1
           done
 
-      - name: "Warm build timing (patched Go disabled, 3 runs)"
+      - name: "Warm build timing (git index DISABLED, 3 runs)"
+        env:
+          GONOBITINDEX: "1"
         run: |
-          echo "=== Warm build timing (git index DISABLED) ==="
           for i in 1 2 3; do
             echo "--- run $i ---"
-            GONOBITINDEX=1 time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps 2>&1
+            time GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps 2>&1
           done
