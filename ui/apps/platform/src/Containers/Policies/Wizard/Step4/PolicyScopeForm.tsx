@@ -33,6 +33,7 @@ import type { ClientPolicy } from 'types/policy.proto';
 import type { ListImage } from 'types/image.proto';
 import { getImages } from 'services/imageService';
 
+import { initialExcludedDeployment, initialScope } from '../../policies.utils';
 import PolicyScopeCardLegacy from './PolicyScopeCardLegacy';
 import InclusionScopeCard from './InclusionScopeCard';
 
@@ -65,7 +66,7 @@ function PolicyScopeForm(): ReactElement {
     const isAllScopingDisabled = hasNodeEventSource;
 
     function addNewInclusionScope() {
-        setFieldValue('scope', [...scope, {}]);
+        setFieldValue('scope', [...scope, initialScope]);
     }
 
     function deleteInclusionScope(index: number) {
@@ -74,7 +75,10 @@ function PolicyScopeForm(): ReactElement {
     }
 
     function addNewExclusionDeploymentScope() {
-        setFieldValue('excludedDeploymentScopes', [...excludedDeploymentScopes, {}]);
+        setFieldValue('excludedDeploymentScopes', [
+            ...excludedDeploymentScopes,
+            initialExcludedDeployment,
+        ]);
     }
 
     function deleteExclusionDeploymentScope(index: number) {
@@ -156,6 +160,10 @@ function PolicyScopeForm(): ReactElement {
                             <GridItem key={index}>
                                 {isFeatureFlagEnabled('ROX_LABEL_BASED_POLICY_SCOPING') ? (
                                     <InclusionScopeCard
+                                        scope={scope[index]}
+                                        onChange={(newScope) =>
+                                            setFieldValue(`scope[${index}]`, newScope)
+                                        }
                                         onDelete={() => deleteInclusionScope(index)}
                                     />
                                 ) : (

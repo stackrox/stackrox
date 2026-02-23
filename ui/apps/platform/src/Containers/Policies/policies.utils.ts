@@ -283,20 +283,20 @@ export type WizardExcludedDeployment = {
  */
 
 export type WizardScope = {
-    cluster?: string;
-    namespace?: string;
+    cluster: string;
+    namespace: string;
     label: WizardScopeLabel | null;
 };
 
 export type WizardScopeLabel = {
-    key?: string;
-    value?: string;
+    key: string;
+    value: string;
 };
 
 export const initialScope: WizardScope = {
     cluster: '',
     namespace: '',
-    label: {},
+    label: null,
 };
 
 export const initialExcludedDeployment: WizardExcludedDeployment = {
