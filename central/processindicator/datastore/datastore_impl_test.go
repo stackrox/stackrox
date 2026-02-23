@@ -414,6 +414,7 @@ func (suite *IndicatorDataStoreTestSuite) TestAllowsAddMany() {
 
 func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByPod() {
 	storeMock := suite.setupDataStoreWithMocks()
+	storeMock.EXPECT().Count(gomock.Any(), gomock.Any()).Return(0, nil)
 	storeMock.EXPECT().DeleteByQuery(gomock.Any(), gomock.Any()).Return(nil)
 
 	err := suite.datastore.RemoveProcessIndicatorsByPod(suite.hasWriteCtx, uuid.NewDummy().String())
