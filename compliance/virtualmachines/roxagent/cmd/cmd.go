@@ -2,18 +2,19 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/common"
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/index"
 	"github.com/stackrox/rox/compliance/virtualmachines/roxagent/vsock"
-	"github.com/stackrox/rox/pkg/logging"
 )
 
-const repoToCPEMappingURL = "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
-
-var log = logging.LoggerForModule()
+const (
+	minDaemonIndexInterval = 10 * time.Minute
+	repoToCPEMappingURL    = "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
+)
 
 func RootCmd(ctx context.Context) *cobra.Command {
 	cmd := cobra.Command{
@@ -27,7 +28,7 @@ func RootCmd(ctx context.Context) *cobra.Command {
 		"Run in daemon mode. Sends index reports continuously.",
 	)
 	cmd.Flags().DurationVar(&cfg.IndexInterval, "index-interval", 240*time.Minute,
-		"Interval duration in which index reports are sent in daemon mode.",
+		fmt.Sprintf("Interval duration in which index reports are sent in daemon mode (minimum: %v).", minDaemonIndexInterval),
 	)
 	cmd.Flags().StringVar(&cfg.IndexHostPath, "host-path", "/",
 		"Path where the indexer starts searching for the RPM and DNF databases.",
@@ -47,7 +48,11 @@ func RootCmd(ctx context.Context) *cobra.Command {
 	cmd.Flags().Uint32Var(&cfg.VsockPort, "port", 818,
 		"VSock port to connect with the virtual machine host.",
 	)
-	cmd.Run = func(cmd *cobra.Command, _ []string) {
+	cmd.RunE = func(cmd *cobra.Command, _ []string) error {
+		if err := validateDaemonConfig(cfg); err != nil {
+			return err
+		}
+
 		client := &vsock.Client{
 			Port:     cfg.VsockPort,
 			HostPath: cfg.IndexHostPath,
@@ -56,13 +61,24 @@ func RootCmd(ctx context.Context) *cobra.Command {
 		}
 		if cfg.DaemonMode {
 			if err := index.RunDaemon(ctx, cfg, client); err != nil {
-				log.Errorf("Running indexer daemon: %v", err)
+				return fmt.Errorf("running indexer daemon: %w", err)
 			}
-			return
+			return nil
 		}
 		if err := index.RunSingle(ctx, cfg, client); err != nil {
-			log.Errorf("Running indexer: %v", err)
+			return fmt.Errorf("running indexer: %w", err)
 		}
+		return nil
 	}
 	return &cmd
+}
+
+func validateDaemonConfig(cfg *common.Config) error {
+	if !cfg.DaemonMode {
+		return nil
+	}
+	if cfg.IndexInterval < minDaemonIndexInterval {
+		return fmt.Errorf("index interval must be at least %s in daemon mode (got %s)", minDaemonIndexInterval, cfg.IndexInterval)
+	}
+	return nil
 }

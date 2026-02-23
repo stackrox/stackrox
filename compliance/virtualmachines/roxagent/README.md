@@ -24,7 +24,7 @@ sudo ./roxagent --daemon --index-interval 10m --host-path /custom/path --port 20
 ## Flags
 
 - `--daemon` - Run continuously (default: false).
-- `--index-interval` - Time between scans in daemon mode (default: 4h).
+- `--index-interval` - Time between scans in daemon mode (default: 4h, minimum: 10m).
 - `--host-path` - Where to look for package databases (default: /).
 - `--max-initial-report-delay` - Max delay before starting to send in daemon mode (default: 20m).
 - `--port` - VSock port (default: 818).
