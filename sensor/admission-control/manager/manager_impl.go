@@ -242,7 +242,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	allRuntimePolicySet := detection.NewPolicySet()
 	runtimePoliciesWithDeployFields, runtimePoliciesWithoutDeployFields := detection.NewPolicySet(), detection.NewPolicySet()
 	for _, policy := range newSettings.GetRuntimePolicies().GetPolicies() {
-		if policyfields.ContainsScanRequiredFields(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
+		if policyfields.ContainsEnrichmentRequiredFields(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
 			log.Warn(errors.ImageScanUnavailableMsg(policy))
 			continue
 		}
@@ -269,7 +269,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	deployTimePolicySet := detection.NewPolicySet()
 	if enforceOnCreates || enforceOnUpdates {
 		for _, policy := range newSettings.GetEnforcedDeployTimePolicies().GetPolicies() {
-			if policyfields.ContainsScanRequiredFields(policy) &&
+			if policyfields.ContainsEnrichmentRequiredFields(policy) &&
 				!newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
 				log.Warn(errors.ImageScanUnavailableMsg(policy))
 				continue
