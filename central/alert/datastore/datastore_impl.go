@@ -115,6 +115,32 @@ func (ds *datastoreImpl) SearchAlertPolicyNamesAndSeverities(ctx context.Context
 	return results, nil
 }
 
+// SearchAlertPolicySeverityCounts returns the count of distinct policies per severity level
+// for matching alerts. Uses a SQL aggregate query to avoid deserializing alert blobs.
+func (ds *datastoreImpl) SearchAlertPolicySeverityCounts(ctx context.Context, q *v1.Query, excludeResolved bool) (*alertviews.PolicySeverityCounts, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlertPolicySeverityCounts")
+
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+	countQuery := alertviews.WithPolicySeverityCountQuery(q)
+
+	var result alertviews.PolicySeverityCounts
+	found := false
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, countQuery, func(r *alertviews.PolicySeverityCounts) error {
+		result = *r
+		found = true
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return &alertviews.PolicySeverityCounts{}, nil
+	}
+	return &result, nil
+}
+
 // SearchAlerts returns search results for the given request. This will exclude resolved alerts by default unless Violation State = Resolved is explicitly specified in the query
 func (ds *datastoreImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlerts")

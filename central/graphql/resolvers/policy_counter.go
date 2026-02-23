@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	alertviews "github.com/stackrox/rox/central/alert/views"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
@@ -84,6 +85,16 @@ func mapListAlertPoliciesToPolicySeverityCount(policies []*storage.ListAlertPoli
 		incPolicyCounter(counter, policy.GetSeverity())
 	}
 	return counter
+}
+
+func policySeverityCountsToResolver(counts *alertviews.PolicySeverityCounts) *PolicyCounterResolver {
+	return &PolicyCounterResolver{
+		total:    int32(counts.LowCount + counts.MediumCount + counts.HighCount + counts.CriticalCount),
+		low:      int32(counts.LowCount),
+		medium:   int32(counts.MediumCount),
+		high:     int32(counts.HighCount),
+		critical: int32(counts.CriticalCount),
+	}
 }
 
 func incPolicyCounter(counter *PolicyCounterResolver, severity storage.Severity) {
