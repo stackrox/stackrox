@@ -59,22 +59,6 @@ func (evr *PolicyCounterResolver) Critical(_ context.Context) int32 {
 // Static helpers.
 //////////////////
 
-func mapListAlertsToPolicySeverityCount(alerts []*storage.ListAlert) *PolicyCounterResolver {
-	counter := &PolicyCounterResolver{}
-	policyIDs := set.NewStringSet()
-	for _, alert := range alerts {
-		if alert.GetState() != storage.ViolationState_ACTIVE {
-			continue
-		}
-		policy := alert.GetPolicy()
-		if !policyIDs.Add(policy.GetId()) {
-			continue
-		}
-		incPolicyCounter(counter, policy.GetSeverity())
-	}
-	return counter
-}
-
 func mapListAlertPoliciesToPolicySeverityCount(policies []*storage.ListAlertPolicy) *PolicyCounterResolver {
 	counter := &PolicyCounterResolver{}
 	policyIDs := set.NewStringSet()
