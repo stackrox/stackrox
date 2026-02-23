@@ -171,7 +171,6 @@ else
         # After this point we know there is enough available disk space.
         OLD_BINARIES="/usr/lib64/pgsql/postgresql-${PG_DATA_VERSION}/bin"
         NEW_BINARIES="/usr/bin"
-        sleep infinity
         # Not sure how it works now, but during the upgrade group permissions
         # are rejected.
         chmod 0700 "${PGDATA}"
