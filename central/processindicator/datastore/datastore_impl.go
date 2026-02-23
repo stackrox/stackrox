@@ -110,7 +110,7 @@ func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(p
 	return ds.storage.WalkByQuery(ctx, q, fn)
 }
 
-func (ds *datastoreImpl) RemoveProcessIndicators(ctx context.Context, ids []string) error {
+func (ds *datastoreImpl) RemoveProcessIndicators(ctx context.Context, ids []string, reason string) error {
 	if len(ids) == 0 {
 		return nil
 	}
@@ -118,14 +118,15 @@ func (ds *datastoreImpl) RemoveProcessIndicators(ctx context.Context, ids []stri
 		return err
 	}
 
+	recordProcessIndicatorsRemoved(len(ids), reason)
 	return nil
 }
 
-func (ds *datastoreImpl) PruneProcessIndicators(ctx context.Context, ids []string) (int, error) {
-	return ds.pruneIndicators(ctx, ids), nil
+func (ds *datastoreImpl) PruneProcessIndicators(ctx context.Context, ids []string, reason string) (int, error) {
+	return ds.pruneIndicators(ctx, ids, reason), nil
 }
 
-func (ds *datastoreImpl) pruneIndicators(ctx context.Context, ids []string) int {
+func (ds *datastoreImpl) pruneIndicators(ctx context.Context, ids []string, reason string) int {
 	// Previously this used removeIndicators and would call "DeleteMany".  The issue
 	// with that is "DeleteMany" wraps the entire delete into a transaction making it an
 	// all or nothing proposition.  For pruning, if a batch fails it shouldn't fail them all.
@@ -166,12 +167,28 @@ func (ds *datastoreImpl) pruneIndicators(ctx context.Context, ids []string) int 
 	}
 
 	log.Infof("successfully pruned %d out of %d indicators", successfullyPruned, initialSize)
+	incrementPrunedProcessesMetric(successfullyPruned, reason)
 	return successfullyPruned
 }
 
 func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id string) error {
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PodUID, id).ProtoQuery()
-	return ds.storage.DeleteByQuery(ctx, q)
+
+	// Count how many we're about to delete for metrics
+	count, err := ds.storage.Count(ctx, q)
+	if err != nil {
+		log.Warnf("failed to count process indicators for pod %s before deletion: %v", id, err)
+		// Continue with deletion even if count fails
+	}
+
+	if err := ds.storage.DeleteByQuery(ctx, q); err != nil {
+		return err
+	}
+
+	if count > 0 {
+		recordProcessIndicatorsRemoved(count, RemovalReasonPodDeletion)
+	}
+	return nil
 }
 
 // IterateOverProcessIndicatorsRiskView iterates over minimal fields from process indicator for risk evaluation
@@ -260,8 +277,7 @@ func (ds *datastoreImpl) prune(ctx context.Context) {
 		idsToRemove := pruner.Prune(args)
 		var successfullyPruned int
 		if len(idsToRemove) > 0 {
-			successfullyPruned = ds.pruneIndicators(ctx, idsToRemove)
-			incrementPrunedProcessesMetric(successfullyPruned)
+			successfullyPruned = ds.pruneIndicators(ctx, idsToRemove, PruneReasonSimilarity)
 		}
 		ds.prunedArgsLengthCache[processInfo] = numArgsReceived - successfullyPruned
 	}

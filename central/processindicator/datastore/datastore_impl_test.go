@@ -265,7 +265,7 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalBatch() {
 	}
 
 	// Try to remove where pod id does not exist in indicators
-	suite.NoError(suite.datastore.RemoveProcessIndicators(suite.hasWriteCtx, ids))
+	suite.NoError(suite.datastore.RemoveProcessIndicators(suite.hasWriteCtx, ids, RemovalReasonProcessFilter))
 	suite.verifyIndicatorsAre(indicators[0])
 }
 
@@ -435,7 +435,7 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorPruneBatch() {
 		ids := suite.buildIDsToPrune(batchSize)
 
 		// Try to remove indicators by id
-		indicatorCount, err := suite.datastore.PruneProcessIndicators(suite.hasWriteCtx, ids)
+		indicatorCount, err := suite.datastore.PruneProcessIndicators(suite.hasWriteCtx, ids, PruneReasonSimilarity)
 		suite.Require().NoError(err)
 		suite.Require().Equal(batchSize, indicatorCount)
 	}
