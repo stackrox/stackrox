@@ -35,7 +35,7 @@ var (
 )
 
 func init() {
-	prometheus.MustRegister(
+	metrics.EmplaceCollector(
 		tokenGenerationTotal,
 		tokenGenerationDuration,
 	)

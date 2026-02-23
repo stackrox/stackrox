@@ -15,6 +15,7 @@ const (
 	outcomeConfigError     = "config_error"
 	outcomeAuthnError      = "authn_error"
 	outcomeAuthzError      = "authz_error"
+	outcomeProxyError      = "proxy_error"
 )
 
 // Result label values for proxyAuthenticationTotal.
@@ -84,7 +85,7 @@ var (
 )
 
 func init() {
-	prometheus.MustRegister(
+	metrics.EmplaceCollector(
 		proxyRequestsTotal,
 		proxyRequestDuration,
 		proxyAuthenticationTotal,

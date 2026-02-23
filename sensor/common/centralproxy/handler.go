@@ -181,5 +181,10 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	h.proxy.ServeHTTP(writer, request)
+	tracker := pkghttputil.NewStatusTrackingWriter(writer)
+	h.proxy.ServeHTTP(tracker, request)
+
+	if statusCode := tracker.GetStatusCode(); statusCode != nil && *statusCode >= http.StatusBadRequest {
+		outcome = outcomeProxyError
+	}
 }
