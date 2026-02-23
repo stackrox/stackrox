@@ -174,19 +174,13 @@ func (ds *datastoreImpl) pruneIndicators(ctx context.Context, ids []string, reas
 func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id string) error {
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PodUID, id).ProtoQuery()
 
-	// Count how many we're about to delete for metrics
-	count, err := ds.storage.Count(ctx, q)
+	deletedIDs, err := ds.storage.DeleteByQueryWithIDs(ctx, q)
 	if err != nil {
-		log.Warnf("failed to count process indicators for pod %s before deletion: %v", id, err)
-		// Continue with deletion even if count fails
-	}
-
-	if err := ds.storage.DeleteByQuery(ctx, q); err != nil {
 		return err
 	}
 
-	if count > 0 {
-		recordProcessIndicatorsRemoved(count, RemovalReasonPodDeletion)
+	if len(deletedIDs) > 0 {
+		recordProcessIndicatorsRemoved(len(deletedIDs), RemovalReasonPodDeletion)
 	}
 	return nil
 }
