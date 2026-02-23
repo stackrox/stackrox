@@ -162,16 +162,16 @@ const validationSchemaStep3: yup.ObjectSchema<PolicyStep3> = yup.object().shape(
     [['value', 'arrayValue']]
 );
 
+const scopeLabelSchema = yup.object().shape({
+    key: yup.string(),
+    value: yup.string(),
+});
+
 const scopeSchema: yup.ObjectSchema<WizardScope> = yup.object().shape({
     cluster: yup.string(),
     namespace: yup.string(),
-    label: yup
-        .object()
-        .shape({
-            key: yup.string(),
-            value: yup.string(),
-        })
-        .nullable(),
+    namespaceLabel: scopeLabelSchema.nullable(),
+    label: scopeLabelSchema.nullable(),
 });
 
 export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.object().shape({
@@ -181,13 +181,15 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
             scopeSchema.test(
                 'scope-has-at-least-one-property',
                 () => 'scope must have at least one property',
-                ({ cluster, namespace, label }) => {
+                ({ cluster, namespace, label, namespaceLabel }) => {
                     // Optional chaining in case unexpected temporary states while editing.
                     return Boolean(
                         cluster?.trim() ||
                             namespace?.trim() ||
                             label?.key?.trim() ||
-                            label?.value?.trim()
+                            label?.value?.trim() ||
+                            namespaceLabel?.key?.trim() ||
+                            namespaceLabel?.value?.trim()
                     );
                 }
             )
