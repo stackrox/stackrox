@@ -291,6 +291,7 @@ export type WizardExcludedScope = {
 export type WizardScope = {
     cluster: string;
     namespace: string;
+    namespaceLabel: WizardScopeLabel | null;
     label: WizardScopeLabel | null;
 };
 
@@ -302,6 +303,7 @@ export type WizardScopeLabel = {
 export const initialScope: WizardScope = {
     cluster: '',
     namespace: '',
+    namespaceLabel: null,
     label: null,
 };
 
