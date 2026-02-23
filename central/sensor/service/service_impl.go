@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store"
 	installationStore "github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/central/metrics/telemetry"
 	"github.com/stackrox/rox/central/securedclustercertgen"
@@ -45,19 +46,27 @@ var (
 type serviceImpl struct {
 	central.UnimplementedSensorServiceServer
 
-	manager      connection.Manager
-	pf           pipeline.Factory
-	clusters     clusterDataStore.DataStore
-	installation installationStore.Store
+	manager          connection.Manager
+	pf               pipeline.Factory
+	clusters         clusterDataStore.DataStore
+	installation     installationStore.Store
+	clusterInitStore clusterInitStore.Store
 }
 
 // New creates a new Service using the given manager.
-func New(manager connection.Manager, pf pipeline.Factory, clusters clusterDataStore.DataStore, installation installationStore.Store) Service {
+func New(
+	manager connection.Manager,
+	pf pipeline.Factory,
+	clusters clusterDataStore.DataStore,
+	installation installationStore.Store,
+	clusterInitStore clusterInitStore.Store,
+) Service {
 	return &serviceImpl{
-		manager:      manager,
-		pf:           pf,
-		clusters:     clusters,
-		installation: installation,
+		manager:          manager,
+		pf:               pf,
+		clusters:         clusters,
+		installation:     installation,
+		clusterInitStore: clusterInitStore,
 	}
 }
 
@@ -169,7 +178,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 			}
 			return nil
 		}); err != nil {
-			log.Errorf("Could not include certificate bundle in sensor hello message: %s", err)
+			log.Errorf("Could not include certificate bundle in sensor hello message: %s.", err)
 		}
 
 		if err := server.Send(&central.MsgToSensor{Msg: &central.MsgToSensor_Hello{Hello: centralHello}}); err != nil {
@@ -179,20 +188,45 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 
 	if svcType == storage.ServiceType_REGISTRANT_SERVICE {
 		// Terminate connection which uses a CRS certificate at this point.
+		log.Infof("Terminating initial CRS flow from cluster %s (%s).", cluster.GetName(), cluster.GetId())
 		return nil
+	}
+
+	// At this point sensor is connecting with non-CRS service certificates. This could mean either init bundle certificates
+	// or freshly issued per-cluster service certificates.
+
+	if cluster.GetHealthStatus().GetLastContact() == nil && cluster.GetInitBundleId() != "" {
+		// The call to MarkClusterRegistrationComplete also updates the revocation state of the CRS used for this
+		// cluster, if needed (no-op in init bundle case).
+		log.Infof("First connection from cluster %s (%s) using a sensor service certificate.", cluster.GetName(), cluster.GetId())
+		if err := s.clusterInitStore.MarkClusterRegistrationComplete(clusterDSSAC, cluster.GetInitBundleId(), cluster.GetName()); err != nil {
+			return errors.Wrapf(err, "updating completed-registrations counter for cluster registration secret %q", cluster.GetInitBundleId())
+		}
+	}
+	if clusterInitArtifactId := cluster.GetInitBundleId(); clusterInitArtifactId != "" && svc.GetInitBundleId() == "" {
+		// Sensor has connected with a non-init certificate.
+		// At this point we can clear the cluster's InitBundleId, irregardless of which init artifact type has been used.
+		// For CRS, this is the point after which we don't need it anymore for any sort of bookkepping.
+		// For init bundles, this was previously done in `LookupOrCreateClusterFromConfig()`, now it is being done here,
+		// slightly later in the flow.
+		cluster.InitBundleId = ""
+		if err := s.clusters.UpdateCluster(clusterDSSAC, cluster); err != nil {
+			return errors.Wrapf(err, "clearing init artifact ID of cluster %s", cluster.GetName())
+		}
+		log.Infof("Cleared init artifact ID (%s) of newly created cluster %s.", clusterInitArtifactId, cluster.GetName())
 	}
 
 	if expiryStatus, err := getCertExpiryStatus(identity); err != nil {
 		notBefore, notAfter := identity.ValidityPeriod()
-		log.Warnf("Failed to convert expiry status of sensor cert (NotBefore: %v, Expiry: %v) from cluster %s to proto: %v",
+		log.Warnf("Failed to convert expiry status of sensor cert (NotBefore: %v, Expiry: %v) from cluster %s to proto: %v.",
 			notBefore, notAfter, cluster.GetId(), err)
 	} else if expiryStatus != nil {
 		if err := s.clusters.UpdateClusterCertExpiryStatus(clusterDSSAC, cluster.GetId(), expiryStatus); err != nil {
-			log.Warnf("Failed to update cluster expiry status for cluster %s: %v", cluster.GetId(), err)
+			log.Warnf("Failed to update cluster expiry status for cluster %s: %v.", cluster.GetId(), err)
 		}
 	}
 
-	log.Infof("Cluster %s (%s) has successfully connected to Central", cluster.GetName(), cluster.GetId())
+	log.Infof("Cluster %s (%s) has successfully connected to Central.", cluster.GetName(), cluster.GetId())
 
 	return s.manager.HandleConnection(server.Context(), sensorHello, cluster, eventPipeline, server)
 }

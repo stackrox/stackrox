@@ -143,6 +143,10 @@ You need to have the following set before running most targets mentioned in this
 $ export ROX_PRODUCT_BRANDING=RHACS_BRANDING
 ```
 
+Also, as of early 2026, upstream OLM does not work on GKE out of the box due to network policy issues
+[(Slack thread)](https://kubernetes.slack.com/archives/CAW0GV7A5/p1763021938129309).
+Use an OpenShift cluster, which comes with OLM pre-installed.
+
 ```bash
 # Refresh bundle metadata. Make sure to check the diff and commit it.
 $ make bundle
@@ -175,10 +179,7 @@ $ make bundle-test-image
 # 0. Get the operator-sdk program.
 $ make operator-sdk
 
-# 1. Install OLM, unless running on OpenShift.
-$ make olm-install
-
-# 2. Create a namespace for testing bundle.
+# 1. Create a namespace for testing bundle.
 $ kubectl create ns bundle-test
 
 # 2. Create image pull secrets.
@@ -192,17 +193,17 @@ $ kubectl -n bundle-test create secret docker-registry my-opm-image-pull-secrets
 # 3. Configure default service account to use these pull secrets.
 $ kubectl -n bundle-test patch serviceaccount default -p '{"imagePullSecrets": [{"name": "my-opm-image-pull-secrets"}]}'
 
-# 3. Build and push operator and bundle images.
+# 4. Build and push operator and bundle images.
 # Use one-liner above.
 
-# 4. Run bundle.
+# 5. Run bundle.
 $ `make which-operator-sdk` run bundle \
   quay.io/rhacs-eng/stackrox-operator-bundle:v$(make --quiet --no-print-directory tag) \
   --pull-secret-name my-opm-image-pull-secrets \
   --service-account default \
   --namespace bundle-test
 
-# 5. Add image pull secrets to operator's ServiceAccount.
+# 6. Add image pull secrets to operator's ServiceAccount.
 # Run it while the previous command executes otherwise it will fail.
 # Note that serviceaccount might not exist for a few moments.
 # Rerun this command until it succeeds.
@@ -211,7 +212,7 @@ $ kubectl -n bundle-test patch serviceaccount rhacs-operator-controller-manager 
 # You may need to bounce operator pods after this if they can't pull images for a while.
 $ kubectl -n bundle-test delete pod -l app=rhacs-operator
 
-# 6. The above operator-sdk run bundle command should complete successfully.
+# 7. The above operator-sdk run bundle command should complete successfully.
 # If it does not, watch pod statuses and check pod logs.
 $ kubectl -n bundle-test get pods
 # ... and dive deep from there into the ones that are not healthy.
@@ -230,7 +231,6 @@ kubectl -n bundle-test delete catalogsources.operators.coreos.com rhacs-operator
 Also, you can tear everything down with
 
 ```bash
-$ make olm-uninstall
 $ kubectl delete ns bundle-test
 ```
 
@@ -244,21 +244,23 @@ Instructions and best practices on how to extend the StackRox CRDs is contained 
 These instructions are for deploying a version of the operator that has been pushed to the `rhacs-eng` Quay organization.
 See above for instructions on how to deploy an OLM bundle and index that was built locally.
 
+Note: as of early 2026, upstream OLM does not work on GKE out of the box due to network policy issues
+[(Slack thread)](https://kubernetes.slack.com/archives/CAW0GV7A5/p1763021938129309).
+Use an OpenShift cluster, which comes with OLM pre-installed.
+
 ### Prerequisites
 
 #### Required Binaries
 
-Both the `kubectl-kuttl` and `operator-sdk` binaries are required for the following make targets to work.
-There are make targets to install both executables:
+The `kubectl-kuttl` binary is required for the following make targets to work.
+There is a make target to install it:
 
 ```bash
-make operator-sdk
 make kuttl
 ```
 
-These make targets will add the executable to your `$GOPATH`.
-If that is not on your `$PATH`, then you can install the Operator SDK from its [release page](https://github.com/operator-framework/operator-sdk/releases)
-and kuttl from its [release page](https://github.com/kudobuilder/kuttl/releases).
+This make target will add the executable to your `$GOPATH`.
+If that is not on your `$PATH`, then you can install kuttl from its [release page](https://github.com/kudobuilder/kuttl/releases).
 
 #### Pull Secret
 
@@ -309,7 +311,6 @@ ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-via-olm TEST_NAMESPACE=my-favori
 You can blow everything away with:
 
 ```bash
-$ make olm-uninstall
 $ kubectl delete ns stackrox-operator-system
 
 # Optionally remove CRDs

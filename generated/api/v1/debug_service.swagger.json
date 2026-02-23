@@ -30,7 +30,7 @@
                   "$ref": "#/definitions/v1AuthorizationTraceResponse"
                 },
                 "error": {
-                  "$ref": "#/definitions/googlerpcStatus"
+                  "$ref": "#/definitions/googleRpcStatus"
                 }
               },
               "title": "Stream result of v1AuthorizationTraceResponse"
@@ -39,7 +39,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -62,7 +62,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -85,7 +85,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -119,7 +119,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -160,25 +160,58 @@
         }
       }
     },
-    "AuthorizationTraceResponseUserRole": {
+    "AuthorizationTraceResponseUser": {
       "type": "object",
       "properties": {
-        "name": {
+        "username": {
           "type": "string"
         },
-        "permissions": {
+        "friendlyName": {
+          "type": "string"
+        },
+        "aggregatedPermissions": {
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/storageAccess"
           }
         },
-        "accessScopeName": {
-          "type": "string"
-        },
-        "accessScope": {
-          "$ref": "#/definitions/SimpleAccessScopeRules"
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/UserRole"
+          }
         }
       }
+    },
+    "SetBasedLabelSelectorOperator": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "IN",
+        "NOT_IN",
+        "EXISTS",
+        "NOT_EXISTS"
+      ],
+      "default": "UNKNOWN"
+    },
+    "SetBasedLabelSelectorRequirement": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "op": {
+          "$ref": "#/definitions/SetBasedLabelSelectorOperator"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "Next available tag: 4"
     },
     "SimpleAccessScopeRules": {
       "type": "object",
@@ -258,7 +291,27 @@
         }
       }
     },
-    "googlerpcStatus": {
+    "UserRole": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "permissions": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/storageAccess"
+          }
+        },
+        "accessScopeName": {
+          "type": "string"
+        },
+        "accessScope": {
+          "$ref": "#/definitions/SimpleAccessScopeRules"
+        }
+      }
+    },
+    "googleRpcStatus": {
       "type": "object",
       "properties": {
         "code": {
@@ -304,40 +357,11 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/storageSetBasedLabelSelectorRequirement"
+            "$ref": "#/definitions/SetBasedLabelSelectorRequirement"
           }
         }
       },
       "description": "SetBasedLabelSelector only allows set-based label requirements.\n\nNext available tag: 3"
-    },
-    "storageSetBasedLabelSelectorOperator": {
-      "type": "string",
-      "enum": [
-        "UNKNOWN",
-        "IN",
-        "NOT_IN",
-        "EXISTS",
-        "NOT_EXISTS"
-      ],
-      "default": "UNKNOWN"
-    },
-    "storageSetBasedLabelSelectorRequirement": {
-      "type": "object",
-      "properties": {
-        "key": {
-          "type": "string"
-        },
-        "op": {
-          "$ref": "#/definitions/storageSetBasedLabelSelectorOperator"
-        },
-        "values": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "title": "Next available tag: 4"
     },
     "v1AuthorizationTraceResponse": {
       "type": "object",
@@ -357,7 +381,7 @@
           "$ref": "#/definitions/v1AuthorizationTraceResponseResponse"
         },
         "user": {
-          "$ref": "#/definitions/v1AuthorizationTraceResponseUser"
+          "$ref": "#/definitions/AuthorizationTraceResponseUser"
         },
         "trace": {
           "$ref": "#/definitions/AuthorizationTraceResponseTrace"
@@ -383,30 +407,6 @@
         },
         "error": {
           "type": "string"
-        }
-      }
-    },
-    "v1AuthorizationTraceResponseUser": {
-      "type": "object",
-      "properties": {
-        "username": {
-          "type": "string"
-        },
-        "friendlyName": {
-          "type": "string"
-        },
-        "aggregatedPermissions": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/storageAccess"
-          }
-        },
-        "roles": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/AuthorizationTraceResponseUserRole"
-          }
         }
       }
     },

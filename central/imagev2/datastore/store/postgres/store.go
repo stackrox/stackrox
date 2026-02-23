@@ -985,7 +985,7 @@ func (s *storeImpl) GetListImagesView(ctx context.Context, q *v1.Query) ([]*view
 	selects := []*v1.QuerySelect{
 		search.NewQuerySelect(search.ImageSHA).Proto(),
 		search.NewQuerySelect(search.ImageName).Proto(),
-		search.NewQuerySelect(search.ComponentCount).Proto(),
+		search.NewQuerySelect(search.ImageComponentCount).Proto(),
 		search.NewQuerySelect(search.ImageCVECount).Proto(),
 		search.NewQuerySelect(search.FixableCVECount).Proto(),
 		search.NewQuerySelect(search.ImageCreatedTime).Proto(),

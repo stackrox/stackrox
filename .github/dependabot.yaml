@@ -259,7 +259,7 @@ updates:
     labels:
     - "dependencies"
     - "area/operator"
-    - "auto-merge-any" # these images do not follow semver
+    - "auto-merge"
     - "auto-retest"
     commit-message:
       include: scope

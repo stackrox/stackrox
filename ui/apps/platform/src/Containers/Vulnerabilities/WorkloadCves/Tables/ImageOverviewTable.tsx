@@ -116,6 +116,7 @@ export const imageListQuery = gql`
                     status
                     verifiedImageReferences
                     verifierId
+                    verifierName
                 }
             }
         }
@@ -166,6 +167,7 @@ export const imageV2ListQuery = gql`
                     status
                     verifiedImageReferences
                     verifierId
+                    verifierName
                 }
             }
         }

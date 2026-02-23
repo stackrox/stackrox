@@ -3,6 +3,7 @@ package scannerv4
 import (
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -130,6 +131,144 @@ func (s *scannerv4) GetSBOM(image *storage.Image) ([]byte, bool, error) {
 	defer cancel()
 	sbom, found, err := s.scannerClient.GetSBOM(ctx, image.GetName().GetFullName(), digest, uri, client.IncludeExternalIndexReports())
 	return sbom, found, err
+}
+
+// ScanSBOM scans an SBOM, the contentType (which would include media type, optionally version, etc.)
+// will be passed to the scanner to assist in parsing.
+func (s *scannerv4) ScanSBOM(ctx context.Context, sbomReader io.Reader, contentType string) (*v1.SBOMScanResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
+	defer cancel()
+
+	var scannerVersion pkgscanner.Version
+	scannerVersion.Matcher = "v7"
+
+	// TODO(ROX-30570): START Remove
+	// Read all data from the SBOM reader and throw it away (testing purposes only)
+	_ = ctx
+	dataB, err := io.ReadAll(sbomReader)
+	if err != nil {
+		return nil, fmt.Errorf("reading sbom data: %w", err)
+	}
+	log.Debugf("Scanned SBOM: %s", dataB)
+	// Create a fake vuln report for testing purposes
+	vr := fakeVulnReport()
+	// TODO(ROX-30570): END Remove
+
+	// TODO(ROX-30570): Replace with actual scanner client call
+	// vr, err := s.scannerClient.ScanSBOM(ctx, sbomReader, contentType, client.Version(&scannerVersion))
+	// if err != nil {
+	// 	return nil, fmt.Errorf("scanning sbom: %w", err)
+	// }
+
+	scannerVersionStr, err := scannerVersion.Encode()
+	if err != nil {
+		log.Warnf("Failed to encode Scanner version: %v", err)
+	}
+
+	return &v1.SBOMScanResponse{
+		Id:   vr.GetHashId(),
+		Scan: sbomScan(vr, scannerVersionStr),
+	}, nil
+}
+
+// fakeVulnReport generates a fake vuln report for testing purposes.
+//
+// TODO(ROX-30570): REMOVE
+func fakeVulnReport() *v4.VulnerabilityReport {
+	return &v4.VulnerabilityReport{
+		HashId: "fake HashId",
+		Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+			"v1": {
+				Name:               "Fake Vuln #1",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
+				CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							Vector: "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:N",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-5678-1234",
+					},
+				},
+			},
+			"v2": {
+				Name:               "Fake Vuln #2",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							Vector: "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:N",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-5678-1234",
+					},
+				},
+			},
+			"v3": {
+				Name:               "Fake Vuln #3",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE,
+
+				CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							BaseScore: 8.2,
+							Vector:    "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+						Url:    "https://access.redhat.com/security/cve/CVE-1234-567",
+					},
+					{
+						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+							BaseScore: 6.4,
+							Vector:    "AV:N/AC:M/Au:M/C:C/I:N/A:P",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+					},
+				},
+			},
+			"v4": {
+				Name:               "Fake Vuln #4",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
+				CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							Vector: "CVSS:3.1/AV:L/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:N",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-5678-1234",
+					},
+				},
+			},
+		},
+		PackageVulnerabilities: map[string]*v4.StringList{
+			"p1": {Values: []string{"v1", "v2", "v3", "v4"}},
+			"p2": {Values: []string{"v3", "v4"}},
+		},
+		Contents: &v4.Contents{
+			Packages: map[string]*v4.Package{
+				"p1": {Name: "Fake Package #1", Version: "v1.0.0"},
+				"p2": {Name: "Fake Package #2", Version: "v2.3.4"},
+			},
+		},
+	}
+}
+
+func sbomScan(vr *v4.VulnerabilityReport, scannerVersionStr string) *v1.SBOMScanResponse_SBOMScan {
+	imageScan := imageScan(nil, vr, scannerVersionStr)
+
+	for _, c := range imageScan.GetComponents() {
+		for _, v := range c.GetVulns() {
+			// With SBOMs we will not always know what the component represents.
+			v.VulnerabilityType = storage.EmbeddedVulnerability_UNKNOWN_VULNERABILITY
+		}
+	}
+
+	return &v1.SBOMScanResponse_SBOMScan{
+		ScannerVersion: imageScan.GetScannerVersion(),
+		ScanTime:       imageScan.GetScanTime(),
+		Components:     imageScan.GetComponents(),
+	}
 }
 
 func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {

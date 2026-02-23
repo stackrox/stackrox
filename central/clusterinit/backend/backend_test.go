@@ -227,11 +227,11 @@ func (s *clusterInitBackendTestSuite) TestCRSNameMustBeUnique() {
 	crsName := "test1"
 
 	// Issue new CRS.
-	_, err := s.backend.IssueCRS(ctx, crsName, time.Time{})
+	_, err := s.backend.IssueCRS(ctx, crsName, time.Time{}, 0)
 	s.Require().NoError(err)
 
 	// Attempt to issue again with same name.
-	_, err = s.backend.IssueCRS(ctx, crsName, time.Time{})
+	_, err = s.backend.IssueCRS(ctx, crsName, time.Time{}, 0)
 	s.Require().Error(err)
 	s.Require().ErrorIs(err, store.ErrInitBundleDuplicateName)
 }
@@ -239,7 +239,7 @@ func (s *clusterInitBackendTestSuite) TestCRSNameMustBeUnique() {
 func (s *clusterInitBackendTestSuite) TestCRSDefaultExpiration() {
 	expectedNotAfter := time.Now().UTC().Add(24 * time.Hour)
 
-	crsWithMeta, err := s.backend.IssueCRS(s.ctx, "crs-default-expiration", time.Time{}.UTC())
+	crsWithMeta, err := s.backend.IssueCRS(s.ctx, "crs-default-expiration", time.Time{}.UTC(), 0)
 	s.Require().NoError(err)
 
 	certPEM := []byte(crsWithMeta.CRS.Cert)
@@ -259,7 +259,7 @@ func (s *clusterInitBackendTestSuite) TestCRSExpirationValidUntil() {
 	validUntil, err := time.Parse(time.RFC3339, "2106-01-02T15:04:05Z")
 	s.Require().NoError(err)
 
-	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, validUntil)
+	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, validUntil, 0)
 	s.Require().NoError(err)
 
 	certPEM := []byte(crsWithMeta.CRS.Cert)
@@ -275,7 +275,7 @@ func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 	crsName := "test1"
 
 	// Issue new CRS.
-	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, time.Time{})
+	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName, time.Time{}, 0)
 	s.Require().NoError(err)
 	id := crsWithMeta.Meta.GetId()
 
@@ -354,14 +354,18 @@ func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 	}
 }
 
+func (s *clusterInitBackendTestSuite) TestCrsIssuingWithTooLargeRegistrationLimit() {
+	crsName := "test-crs-exceeding-limit"
+	_, err := s.backend.IssueCRS(s.ctx, crsName, time.Time{}, 101)
+	s.Require().Error(err, "issuing CRS with maxRegistrations=101 succeeded.")
+}
+
 // Tests if attempt to issue two init bundles with the same name fails as expected.
 func (s *clusterInitBackendTestSuite) TestIssuingWithDuplicateName() {
-	ctx := s.ctx
-
-	_, err := s.backend.Issue(ctx, "test2")
+	_, err := s.backend.Issue(s.ctx, "test2")
 	s.Require().NoError(err)
 
-	_, err = s.backend.Issue(ctx, "test2")
+	_, err = s.backend.Issue(s.ctx, "test2")
 	s.Require().Error(err, "issuing two init bundles with the same name")
 }
 
@@ -382,7 +386,7 @@ func (s *clusterInitBackendTestSuite) TestValidateClientCertificateNotFound() {
 
 	err := s.backend.ValidateClientCertificate(ctx, certs)
 	s.Require().Error(err)
-	s.Equal(fmt.Sprintf("failed checking init bundle status %[1]q: retrieving init bundle %[1]q: init bundle not found", id), err.Error())
+	s.Equal(fmt.Sprintf("failed checking init bundle status %[1]q: retrieving init bundle %[1]q: init bundle or CRS not found", id), err.Error())
 }
 
 func (s *clusterInitBackendTestSuite) TestValidateClientCertificateEphemeralInitBundle() {

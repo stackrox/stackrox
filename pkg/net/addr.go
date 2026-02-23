@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net"
 
+	"github.com/stackrox/rox/pkg/net/internal/ipcheck"
 	"github.com/stackrox/rox/pkg/netutil"
 )
 
@@ -65,13 +66,7 @@ func (d ipv4data) isLoopback() bool {
 }
 
 func (d ipv4data) isPublic() bool {
-	netIP := net.IP(d.bytes())
-	for _, privateIPNet := range netutil.IPv4PrivateNetworks {
-		if privateIPNet.Contains(netIP) {
-			return false
-		}
-	}
-	return true
+	return ipcheck.IsIPv4Public(d)
 }
 
 func (d ipv4data) canonicalize() ipAddrData {
@@ -103,13 +98,7 @@ func (d ipv6data) isLoopback() bool {
 }
 
 func (d ipv6data) isPublic() bool {
-	netIP := net.IP(d.bytes())
-	for _, privateIPNet := range netutil.IPv6PrivateNetworks {
-		if privateIPNet.Contains(netIP) {
-			return false
-		}
-	}
-	return true
+	return ipcheck.IsIPv6Public(d)
 }
 
 var (

@@ -80,6 +80,12 @@ func AddCACertToFileMap(fileMap map[string][]byte, ca mtls.CA) {
 	fileMap[mtls.CACertFileName] = ca.CertPEM()
 }
 
+// AddSecondaryCACertToFileMap adds the public secondary CA certificate to the file map.
+// This is used for service TLS secrets that need to trust both CAs but should not have signing capability.
+func AddSecondaryCACertToFileMap(fileMap map[string][]byte, ca mtls.CA) {
+	fileMap[mtls.SecondaryCACertFileName] = ca.CertPEM()
+}
+
 // VerifyCACertInFileMap verifies that the public CA certificate stored in the given file
 // map is the same as the given one.
 func VerifyCACertInFileMap(fileMap map[string][]byte, ca mtls.CA) error {

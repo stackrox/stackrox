@@ -43,31 +43,16 @@ export const policySectionValidators: PolicySectionValidator[] = [
         },
     },
     {
-        name: 'File operation requires file path (Deploy)',
+        name: 'File operation requires file path',
         appliesTo: (context) =>
             context.lifecycleStages.includes('RUNTIME') &&
-            context.eventSource === 'DEPLOYMENT_EVENT',
+            (context.eventSource === 'NODE_EVENT' || context.eventSource === 'DEPLOYMENT_EVENT'),
         validate: ({ policyGroups }) => {
             const hasFileOperation = policyGroupsHasCriterion(policyGroups, 'File Operation');
-            const hasEffectivePath = policyGroupsHasCriterion(policyGroups, 'Effective Path');
-            const hasActualPath = policyGroupsHasCriterion(policyGroups, 'Actual Path');
+            const hasFilePath = policyGroupsHasCriterion(policyGroups, 'File Path');
 
-            if (hasFileOperation && !hasEffectivePath && !hasActualPath) {
-                return 'Criterion must be present with at least one value when using File operation: Effective Path or Actual Path';
-            }
-            return undefined;
-        },
-    },
-    {
-        name: 'File operation requires file path (Node)',
-        appliesTo: (context) =>
-            context.lifecycleStages.includes('RUNTIME') && context.eventSource === 'NODE_EVENT',
-        validate: ({ policyGroups }) => {
-            const hasFileOperation = policyGroupsHasCriterion(policyGroups, 'File Operation');
-            const hasActualPath = policyGroupsHasCriterion(policyGroups, 'Actual Path');
-
-            if (hasFileOperation && !hasActualPath) {
-                return 'Criterion must be present with at least one value when using File operation: Actual Path';
+            if (hasFileOperation && !hasFilePath) {
+                return 'Criterion must be present with at least one value when using File operation: File Path';
             }
             return undefined;
         },

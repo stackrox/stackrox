@@ -343,7 +343,7 @@ func (x *ListImageV2) GetPriority() int64 {
 type ImageV2_ScanStats struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Caching component count to avoid re-calculating it by joining on the component table.
-	ComponentCount int32 `protobuf:"varint,1,opt,name=component_count,json=componentCount,proto3" json:"component_count,omitempty" search:"Component Count,hidden"` // @gotags: search:"Component Count,hidden"
+	ComponentCount int32 `protobuf:"varint,1,opt,name=component_count,json=componentCount,proto3" json:"component_count,omitempty" search:"Image Component Count,hidden"` // @gotags: search:"Image Component Count,hidden"
 	// Caching cve count to avoid re-calculating it by joining on the cve table.
 	CveCount int32 `protobuf:"varint,2,opt,name=cve_count,json=cveCount,proto3" json:"cve_count,omitempty" search:"Image CVE Count,hidden"` // @gotags: search:"Image CVE Count,hidden"
 	// Caching fixable cve count to avoid re-calculating it by joining on the cve table.

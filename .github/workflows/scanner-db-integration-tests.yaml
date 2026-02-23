@@ -17,7 +17,7 @@ jobs:
   db-integration-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.2
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -35,6 +35,8 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        save: false  # ~62 MB, test-dominated, no critical path speedup
 
     - name: Is Postgres ready
       run: pg_isready -h 127.0.0.1
