@@ -1,9 +1,8 @@
 package configmap
 
 import (
-	"fmt"
-
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/centralsensor"

@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	globstar "github.com/bmatcuk/doublestar/v4"
-
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
