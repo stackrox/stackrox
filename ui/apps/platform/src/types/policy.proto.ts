@@ -98,6 +98,10 @@ export type PolicyScopeLabel = {
     value: string;
 };
 
+export type ScopeLabelField = {
+    [K in keyof PolicyScope]: PolicyScope[K] extends PolicyScopeLabel | null ? K : never;
+}[keyof PolicyScope];
+
 // FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
 // FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.
 // FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
