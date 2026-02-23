@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
 	matcherMocks "github.com/stackrox/rox/central/platform/matcher/mocks"
@@ -17,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -49,7 +51,7 @@ func (s *AlertDatastoreImplSuite) SetupTest() {
 	s.matcher = matcherMocks.NewMockPlatformMatcher(s.mockCtrl)
 
 	store := postgres.New(s.testPostgres.DB)
-	s.datastore = New(store, s.matcher)
+	s.datastore = New(s.testPostgres.DB, store, s.matcher)
 
 	// Initialize alert tracking
 	s.createdAlertIDs = []string{}
@@ -424,6 +426,10 @@ func (s *AlertDatastoreImplSuite) TestSearchListAlerts() {
 	s.NotNil(matchingCreatedAlert, "Should find matching created alert")
 
 	expectedListAlert := convert.AlertToListAlert(matchingCreatedAlert)
+	// PostgreSQL timestamps have microsecond precision, so round both
+	// sides to microseconds before comparing.
+	expectedListAlert.Time = protoutils.RoundTimestamp(expectedListAlert.GetTime(), time.Microsecond)
+	returnedAlert.Time = protoutils.RoundTimestamp(returnedAlert.GetTime(), time.Microsecond)
 	protoassert.Equal(s.T(), expectedListAlert, returnedAlert)
 }
 

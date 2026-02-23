@@ -12,12 +12,12 @@ import "storage/process_indicator.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
-// Next available tag: 26
+// Next available tag: 27
 message Alert {
   message Deployment {
     string id = 1; // @gotags: search:"Deployment ID,hidden" sql:"index,type(uuid)"
     string name = 2; // @gotags: search:"Deployment"
-    string type = 4;
+    string type = 4; // @gotags: search:"Deployment Type"
     string namespace = 5; // This field has to be duplicated in Alert for scope management and search.
     string namespace_id = 16; // This field has to be duplicated in Alert for scope management and search.
     map<string, string> labels = 7; // @gotags: sensorhash:"ignore"
@@ -110,7 +110,7 @@ message Alert {
   }
 
   message Enforcement {
-    storage.EnforcementAction action = 1; // @gotags: search:"Enforcement"
+    storage.EnforcementAction action = 1; // @gotags: search:"Enforcement Action"
     string message = 2;
   }
 
@@ -167,6 +167,11 @@ message Alert {
 
   bool platform_component = 22; // @gotags: search:"Platform Component"
   EntityType entity_type = 23; // @gotags: search:"Entity Type"
+
+  // Cached enforcement count, computed on upsert. For RUNTIME+KILL_POD alerts this is
+  // the number of unique pods killed (from ProcessViolation.Processes). For DEPLOY alerts
+  // with enforcement, this is 1. Avoids deserializing the full alert blob for ListAlert queries.
+  int32 enforcement_count = 25; // @gotags: search:"Enforcement Count"
 }
 
 message ListAlert {

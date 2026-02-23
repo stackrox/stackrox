@@ -311,7 +311,7 @@ func (ListAlert_ResourceType) EnumDescriptor() ([]byte, []int) {
 	return file_storage_alert_proto_rawDescGZIP(), []int{1, 0}
 }
 
-// Next available tag: 26
+// Next available tag: 27
 type Alert struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Alert ID" sensorhash:"ignore" sql:"pk,type(uuid)"`                                                                            // @gotags: search:"Alert ID" sensorhash:"ignore" sql:"pk,type(uuid)"
@@ -339,8 +339,12 @@ type Alert struct {
 	State             ViolationState         `protobuf:"varint,11,opt,name=state,proto3,enum=storage.ViolationState" json:"state,omitempty" search:"Violation State" sql:"index=btree"`                               // @gotags: search:"Violation State" sql:"index=btree"
 	PlatformComponent bool                   `protobuf:"varint,22,opt,name=platform_component,json=platformComponent,proto3" json:"platform_component,omitempty" search:"Platform Component"`          // @gotags: search:"Platform Component"
 	EntityType        Alert_EntityType       `protobuf:"varint,23,opt,name=entity_type,json=entityType,proto3,enum=storage.Alert_EntityType" json:"entity_type,omitempty" search:"Entity Type"` // @gotags: search:"Entity Type"
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Cached enforcement count, computed on upsert. For RUNTIME+KILL_POD alerts this is
+	// the number of unique pods killed (from ProcessViolation.Processes). For DEPLOY alerts
+	// with enforcement, this is 1. Avoids deserializing the full alert blob for ListAlert queries.
+	EnforcementCount int32 `protobuf:"varint,25,opt,name=enforcement_count,json=enforcementCount,proto3" json:"enforcement_count,omitempty" search:"Enforcement Count"` // @gotags: search:"Enforcement Count"
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Alert) Reset() {
@@ -526,6 +530,13 @@ func (x *Alert) GetEntityType() Alert_EntityType {
 		return x.EntityType
 	}
 	return Alert_UNSET
+}
+
+func (x *Alert) GetEnforcementCount() int32 {
+	if x != nil {
+		return x.EnforcementCount
+	}
+	return 0
 }
 
 type isAlert_Entity interface {
@@ -937,9 +948,9 @@ func (x *ListAlertDeployment) GetDeploymentType() string {
 
 type Alert_Deployment struct {
 	state         protoimpl.MessageState        `protogen:"open.v1"`
-	Id            string                        `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Deployment ID,hidden" sql:"index,type(uuid)"`     // @gotags: search:"Deployment ID,hidden" sql:"index,type(uuid)"
-	Name          string                        `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Deployment"` // @gotags: search:"Deployment"
-	Type          string                        `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	Id            string                        `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Deployment ID,hidden" sql:"index,type(uuid)"`                                                                                   // @gotags: search:"Deployment ID,hidden" sql:"index,type(uuid)"
+	Name          string                        `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Deployment"`                                                                               // @gotags: search:"Deployment"
+	Type          string                        `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty" search:"Deployment Type"`                                                                               // @gotags: search:"Deployment Type"
 	Namespace     string                        `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`                                                                     // This field has to be duplicated in Alert for scope management and search.
 	NamespaceId   string                        `protobuf:"bytes,16,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty"`                                             // This field has to be duplicated in Alert for scope management and search.
 	Labels        map[string]string             `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
@@ -1392,7 +1403,7 @@ func (x *Alert_ProcessViolation) GetProcesses() []*ProcessIndicator {
 
 type Alert_Enforcement struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Action        EnforcementAction      `protobuf:"varint,1,opt,name=action,proto3,enum=storage.EnforcementAction" json:"action,omitempty" search:"Enforcement"` // @gotags: search:"Enforcement"
+	Action        EnforcementAction      `protobuf:"varint,1,opt,name=action,proto3,enum=storage.EnforcementAction" json:"action,omitempty" search:"Enforcement Action"` // @gotags: search:"Enforcement Action"
 	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1939,7 +1950,7 @@ var File_storage_alert_proto protoreflect.FileDescriptor
 
 const file_storage_alert_proto_rawDesc = "" +
 	"\n" +
-	"\x13storage/alert.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x19storage/file_access.proto\x1a\x1astorage/network_flow.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\"\xe9\x1b\n" +
+	"\x13storage/alert.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x18storage/deployment.proto\x1a\x19storage/file_access.proto\x1a\x1astorage/network_flow.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\"\x96\x1c\n" +
 	"\x05Alert\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12'\n" +
 	"\x06policy\x18\x02 \x01(\v2\x0f.storage.PolicyR\x06policy\x12@\n" +
@@ -1968,7 +1979,8 @@ const file_storage_alert_proto_rawDesc = "" +
 	"\x05state\x18\v \x01(\x0e2\x17.storage.ViolationStateR\x05state\x12-\n" +
 	"\x12platform_component\x18\x16 \x01(\bR\x11platformComponent\x12:\n" +
 	"\ventity_type\x18\x17 \x01(\x0e2\x19.storage.Alert.EntityTypeR\n" +
-	"entityType\x1a\x80\x05\n" +
+	"entityType\x12+\n" +
+	"\x11enforcement_count\x18\x19 \x01(\x05R\x10enforcementCount\x1a\x80\x05\n" +
 	"\n" +
 	"Deployment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +

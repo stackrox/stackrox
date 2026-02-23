@@ -1064,9 +1064,14 @@
         },
         "entityType": {
           "$ref": "#/definitions/AlertEntityType"
+        },
+        "enforcementCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Cached enforcement count, computed on upsert. For RUNTIME+KILL_POD alerts this is\nthe number of unique pods killed (from ProcessViolation.Processes). For DEPLOY alerts\nwith enforcement, this is 1. Avoids deserializing the full alert blob for ListAlert queries."
         }
       },
-      "title": "Next available tag: 26"
+      "title": "Next available tag: 27"
     },
     "storageAlertDeployment": {
       "type": "object",

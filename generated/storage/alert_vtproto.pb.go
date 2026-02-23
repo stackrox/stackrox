@@ -321,6 +321,7 @@ func (m *Alert) CloneVT() *Alert {
 	r.State = m.State
 	r.PlatformComponent = m.PlatformComponent
 	r.EntityType = m.EntityType
+	r.EnforcementCount = m.EnforcementCount
 	if m.Entity != nil {
 		r.Entity = m.Entity.(interface{ CloneVT() isAlert_Entity }).CloneVT()
 	}
@@ -1076,6 +1077,9 @@ func (this *Alert) EqualVT(that *Alert) bool {
 		return false
 	}
 	if this.EntityType != that.EntityType {
+		return false
+	}
+	if this.EnforcementCount != that.EnforcementCount {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2292,6 +2296,13 @@ func (m *Alert) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 	}
+	if m.EnforcementCount != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.EnforcementCount))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xc8
+	}
 	if m.EntityType != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.EntityType))
 		i--
@@ -3461,6 +3472,9 @@ func (m *Alert) SizeVT() (n int) {
 	}
 	if m.EntityType != 0 {
 		n += 2 + protohelpers.SizeOfVarint(uint64(m.EntityType))
+	}
+	if m.EnforcementCount != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.EnforcementCount))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -6550,6 +6564,25 @@ func (m *Alert) UnmarshalVT(dAtA []byte) error {
 				m.Entity = &Alert_Node_{Node: v}
 			}
 			iNdEx = postIndex
+		case 25:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EnforcementCount", wireType)
+			}
+			m.EnforcementCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.EnforcementCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -10872,6 +10905,25 @@ func (m *Alert) UnmarshalVTUnsafe(dAtA []byte) error {
 				m.Entity = &Alert_Node_{Node: v}
 			}
 			iNdEx = postIndex
+		case 25:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EnforcementCount", wireType)
+			}
+			m.EnforcementCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.EnforcementCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

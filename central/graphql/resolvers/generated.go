@@ -53,6 +53,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"clusterName: String!",
 		"deployment: Alert_Deployment",
 		"enforcement: Alert_Enforcement",
+		"enforcementCount: Int!",
 		"entityType: Alert_EntityType!",
 		"firstOccurred: Time",
 		"id: ID!",
@@ -1994,6 +1995,14 @@ func (resolver *alertResolver) Enforcement(ctx context.Context) (*alert_Enforcem
 	resolver.ensureData(ctx)
 	value := resolver.data.GetEnforcement()
 	return resolver.root.wrapAlert_Enforcement(value, true, nil)
+}
+
+func (resolver *alertResolver) EnforcementCount(ctx context.Context) int32 {
+	value := resolver.data.GetEnforcementCount()
+	if resolver.data == nil {
+		value = resolver.list.GetEnforcementCount()
+	}
+	return value
 }
 
 func (resolver *alertResolver) EntityType(ctx context.Context) string {

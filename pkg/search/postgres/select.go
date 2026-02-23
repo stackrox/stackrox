@@ -245,10 +245,19 @@ func populateSelect(querySoFar *query, schema *walker.Schema, q *v1.Query, query
 
 		isChildField := isChildTableField(dbField, schema)
 
-		// TODO(mandar): Add support for the following.
+		// Parent table array fields are allowed when the destination struct
+		// declares a matching slice field (arrayFields != nil and has a match).
+		// PostgreSQL returns arrays natively and scany scans them into Go slices.
+		// Map fields and unmatched arrays remain unsupported.
 		if !isChildField && (dbField.DataType == postgres.StringArray || dbField.DataType == postgres.IntArray ||
 			dbField.DataType == postgres.EnumArray || dbField.DataType == postgres.Map) {
-			return errors.Errorf("array field %s in parent table is unsupported in select", field)
+			selectField := selectQueryField(field.GetName(), dbField, field.GetDistinct(), aggregatefunc.GetAggrFunc(field.GetAggregateFunc()), "")
+			if arrayFields == nil || dbField.DataType == postgres.Map || !arrayFields[strings.ToLower(selectField.Alias)] {
+				return errors.Errorf("array field %s in parent table is unsupported in select", field)
+			}
+			querySoFar.SelectedFields = append(querySoFar.SelectedFields, selectField)
+			querySoFar.DistinctAppliedToSelects = querySoFar.DistinctAppliedToSelects || field.GetDistinct()
+			continue
 		}
 
 		if qs.GetFilter() == nil {
