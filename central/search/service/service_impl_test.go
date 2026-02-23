@@ -249,6 +249,7 @@ func TestSearchFuncs(t *testing.T) {
 		WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
 		WithDeploymentStore(deploymentMocks.NewMockDataStore(mockCtrl)).
 		WithImageStore(imageMocks.NewMockDataStore(mockCtrl)).
+		WithImageV2Store(imageV2DatastoreMocks.NewMockDataStore(mockCtrl)).
 		WithPolicyStore(policyMocks.NewMockDataStore(mockCtrl)).
 		WithSecretStore(secretMocks.NewMockDataStore(mockCtrl)).
 		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(mockCtrl)).
@@ -347,6 +348,7 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 		WithAlertStore(alertMocks.NewMockDataStore(s.mockCtrl)).
 		WithDeploymentStore(deploymentDS).
 		WithImageStore(imageMocks.NewMockDataStore(s.mockCtrl)).
+		WithImageV2Store(imageV2DatastoreMocks.NewMockDataStore(s.mockCtrl)).
 		WithPolicyStore(policyMocks.NewMockDataStore(s.mockCtrl)).
 		WithSecretStore(secretMocks.NewMockDataStore(s.mockCtrl)).
 		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(s.mockCtrl)).
@@ -451,6 +453,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 		WithAlertStore(alertMocks.NewMockDataStore(s.mockCtrl)).
 		WithDeploymentStore(deploymentMocks.NewMockDataStore(s.mockCtrl)).
 		WithImageStore(imageMocks.NewMockDataStore(s.mockCtrl)).
+		WithImageV2Store(imageV2DatastoreMocks.NewMockDataStore(s.mockCtrl)).
 		WithPolicyStore(ds).
 		WithSecretStore(secretMocks.NewMockDataStore(s.mockCtrl)).
 		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(s.mockCtrl)).
@@ -502,6 +505,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 		WithAlertStore(alertsDS).
 		WithDeploymentStore(deploymentDS).
 		WithImageStore(imageMocks.NewMockDataStore(s.mockCtrl)).
+		WithImageV2Store(imageV2DatastoreMocks.NewMockDataStore(s.mockCtrl)).
 		WithPolicyStore(policyMocks.NewMockDataStore(s.mockCtrl)).
 		WithSecretStore(secretMocks.NewMockDataStore(s.mockCtrl)).
 		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(s.mockCtrl)).
@@ -573,6 +577,7 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 		WithAlertStore(alertsDS).
 		WithDeploymentStore(deploymentDS).
 		WithImageStore(imageMocks.NewMockDataStore(s.mockCtrl)).
+		WithImageV2Store(imageV2DatastoreMocks.NewMockDataStore(s.mockCtrl)).
 		WithPolicyStore(policyMocks.NewMockDataStore(s.mockCtrl)).
 		WithSecretStore(secretMocks.NewMockDataStore(s.mockCtrl)).
 		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(s.mockCtrl)).
