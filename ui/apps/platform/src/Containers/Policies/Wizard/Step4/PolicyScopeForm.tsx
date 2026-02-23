@@ -27,16 +27,20 @@ import {
 import type { MenuToggleElement } from '@patternfly/react-core';
 import { TimesIcon } from '@patternfly/react-icons';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import type { ClientPolicy } from 'types/policy.proto';
 import type { ListImage } from 'types/image.proto';
-import useFetchClustersForPermissions from 'hooks/useFetchClustersForPermissions';
 import { getImages } from 'services/imageService';
-import PolicyScopeCard from './PolicyScopeCard';
+
+import PolicyScopeCardLegacy from './PolicyScopeCardLegacy';
+import InclusionScopeCard from './InclusionScopeCard';
 
 function PolicyScopeForm(): ReactElement {
     const [isExcludeImagesOpen, setIsExcludeImagesOpen] = useState(false);
     const [filterValue, setFilterValue] = useState('');
     const [images, setImages] = useState<ListImage[]>([]);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const { clusters } = useFetchClustersForPermissions(['Deployment']);
     const { values, setFieldValue } = useFormikContext<ClientPolicy>();
     const { scope, excludedDeploymentScopes, excludedImageNames } = values;
@@ -150,13 +154,19 @@ function PolicyScopeForm(): ReactElement {
                         {scope?.map((_, index) => (
                             // eslint-disable-next-line react/no-array-index-key
                             <GridItem key={index}>
-                                <PolicyScopeCard
-                                    type="inclusion"
-                                    name={`scope[${index}]`}
-                                    clusters={clusters}
-                                    onDelete={() => deleteInclusionScope(index)}
-                                    hasAuditLogEventSource={hasAuditLogEventSource}
-                                />
+                                {isFeatureFlagEnabled('ROX_LABEL_BASED_POLICY_SCOPING') ? (
+                                    <InclusionScopeCard
+                                        onDelete={() => deleteInclusionScope(index)}
+                                    />
+                                ) : (
+                                    <PolicyScopeCardLegacy
+                                        type="inclusion"
+                                        name={`scope[${index}]`}
+                                        clusters={clusters}
+                                        onDelete={() => deleteInclusionScope(index)}
+                                        hasAuditLogEventSource={hasAuditLogEventSource}
+                                    />
+                                )}
                             </GridItem>
                         ))}
                     </Grid>
@@ -189,7 +199,7 @@ function PolicyScopeForm(): ReactElement {
                         {excludedDeploymentScopes?.map((_, index) => (
                             // eslint-disable-next-line react/no-array-index-key
                             <GridItem key={index}>
-                                <PolicyScopeCard
+                                <PolicyScopeCardLegacy
                                     type="exclusion"
                                     name={`excludedDeploymentScopes[${index}]`}
                                     clusters={clusters}
