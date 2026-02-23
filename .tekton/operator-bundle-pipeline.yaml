@@ -357,7 +357,7 @@ spec:
       - name: name
         value: wait-for-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:pr-87@sha256:c77a322121f558579a71f6f2e70f1ff3bd4f9c10fcc3fc0104dca8fcf0237afa
+        value: quay.io/rhacs-eng/konflux-tasks:pr-87@sha256:ea0f8879f51d42ba1a486804753d1810531e1df49f82d11efd639b1be6f56612
       - name: kind
         value: task
       resolver: bundles
@@ -376,9 +376,6 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.scanner-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    # Disabling the git ref check as this image is built in a different repository from a different commit
-    - name: ENABLE_GIT_REF_CHECK
-      value: false
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `scanner-retag.yaml`
     timeout: 40m
@@ -387,9 +384,6 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.scanner-db-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    # Disabling the git ref check as this image is built in a different repository from a different commit
-    - name: ENABLE_GIT_REF_CHECK
-      value: false
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `scanner-db-retag.yaml`
     timeout: 40m
@@ -398,9 +392,6 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.scanner-slim-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    # Disabling the git ref check as this image is built in a different repository from a different commit
-    - name: ENABLE_GIT_REF_CHECK
-      value: false
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `scanner-slim-retag.yaml`
     timeout: 40m
@@ -409,9 +400,6 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.scanner-db-slim-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    # Disabling the git ref check as this image is built in a different repository from a different commit
-    - name: ENABLE_GIT_REF_CHECK
-      value: false
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `scanner-db-slim-retag.yaml`
     timeout: 40m
@@ -436,9 +424,6 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.collector-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    # Disabling the git ref check as this image is built in a different repository from a different commit
-    - name: ENABLE_GIT_REF_CHECK
-      value: false
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `collector-retag.yaml`
     timeout: 40m
@@ -447,9 +432,6 @@ spec:
     params:
     - name: IMAGE
       value: "$(params.fact-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
-    # Disabling the git ref check as this image is built in a different repository from a different commit
-    - name: ENABLE_GIT_REF_CHECK
-      value: false
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `retag-fact.yaml`
     timeout: 40m
