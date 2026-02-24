@@ -2,5 +2,16 @@
   "base": {
     "name": "master",
     "hash": "3749e29c22e76f4afe1e2e0de6d041315cf5e52a"
+  },
+  "upstream": {
+    "branch": "master-base/gualvare/fix-compliance-make-tp-extends-optional"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 19158,
+        "gqlID": "PR_kwDOGd6UEM7F7VKC"
+      }
+    }
   }
 }
