@@ -44,21 +44,23 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 		return nil
 	}
 
-	profileObj, err := c.profileLister.ByNamespace(tailoredProfile.GetNamespace()).Get(tailoredProfile.Spec.Extends)
-	if err != nil {
-		log.Errorf("error getting profile %s: %v", tailoredProfile.Spec.Extends, err)
-		return nil
-	}
-	unstructuredObject, ok = profileObj.(*unstructured.Unstructured)
-	if !ok {
-		log.Errorf("Fetched profile not of type 'unstructured': %T", obj)
-		return nil
-	}
+	var baseProfile v1alpha1.Profile
+	if tailoredProfile.Spec.Extends != "" {
+		profileObj, err := c.profileLister.ByNamespace(tailoredProfile.GetNamespace()).Get(tailoredProfile.Spec.Extends)
+		if err != nil {
+			log.Errorf("error getting profile %s: %v", tailoredProfile.Spec.Extends, err)
+			return nil
+		}
+		unstructuredObject, ok = profileObj.(*unstructured.Unstructured)
+		if !ok {
+			log.Errorf("Fetched profile not of type 'unstructured': %T", obj)
+			return nil
+		}
 
-	var complianceProfile v1alpha1.Profile
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObject.Object, &complianceProfile); err != nil {
-		log.Errorf("error converting unstructured to compliance profile: %v", err)
-		return nil
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObject.Object, &baseProfile); err != nil {
+			log.Errorf("error converting unstructured to compliance profile: %v", err)
+			return nil
+		}
 	}
 
 	protoProfile := &storage.ComplianceOperatorProfile{
@@ -66,16 +68,16 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 		ProfileId: tailoredProfile.Status.ID,
 		Name:      tailoredProfile.Name,
 		// We want to use the original compliance profiles labels and annotations as they hold data about the type of profile
-		Labels:      complianceProfile.Labels,
-		Annotations: complianceProfile.Annotations,
-		Description: stringutils.FirstNonEmpty(tailoredProfile.Spec.Description, complianceProfile.Description),
+		Labels:      baseProfile.Labels,
+		Annotations: baseProfile.Annotations,
+		Description: stringutils.FirstNonEmpty(tailoredProfile.Spec.Description, baseProfile.Description),
 	}
 	removedRules := set.NewStringSet()
 	for _, rule := range tailoredProfile.Spec.DisableRules {
 		removedRules.Add(rule.Name)
 	}
 
-	for _, r := range complianceProfile.Rules {
+	for _, r := range baseProfile.Rules {
 		if removedRules.Contains(string(r)) {
 			continue
 		}
@@ -98,5 +100,6 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 			},
 		},
 	}
+
 	return component.NewEvent(events...)
 }
