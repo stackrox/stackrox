@@ -672,8 +672,9 @@ jobs:
       - uses: ./.github/actions/upload-artifact-with-retry
         if: matrix.arch == 'amd64' && matrix.name != 'STACKROX_BRANDING'
         with:
-          name: operator-chart-{{ matrix.name }}
-          path: operator-chart-{{ matrix.name }}.tgz
+          name: operator-chart-${{ matrix.name }}
+          path: operator-chart-${{ matrix.name }}.tgz
+          if-no-files-found: error
 
       - name: Build Operator Bundle image
         if: |
