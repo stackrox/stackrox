@@ -97,22 +97,16 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 		observeTokenGeneration(tokenGenResultInvalidArgs, time.Since(start))
 		return nil, errors.Wrap(err, "getting expiration time")
 	}
-	traits, err := generateTraitsWithExpiry(expiresAt.Add(rbacObjectsGraceExpiration))
-	if err != nil {
-		observeTokenGeneration(tokenGenResultInvalidArgs, time.Since(start))
-		return nil, errBadExpirationValue.CausedBy(err)
-	}
-	// Create the role with the same expiry as the token, so pruning can clean
-	// it up.
-	roleName, err := s.roleManager.createRole(ctx, req, traits)
+	internalRole, err := s.roleManager.createRoleForRoxClaims(ctx, req)
 	if err != nil {
 		observeTokenGeneration(tokenGenResultRoleCreationError, time.Since(start))
-		return nil, errors.Wrap(err, "creating and storing target role")
+		return nil, errors.Wrap(err, "building ephemeral role")
 	}
+	roleName := internalRole.GetRoleName()
 	claimName := fmt.Sprintf(claimNameFormat, roleName, expiresAt.Format(time.RFC3339Nano))
 	roxClaims := tokens.RoxClaims{
-		RoleNames: []string{roleName},
-		Name:      claimName,
+		InternalRoles: []*tokens.InternalRole{internalRole},
+		Name:          claimName,
 	}
 	tokenInfo, err := s.issuer.Issue(ctx, roxClaims, tokens.WithExpiry(expiresAt))
 	if err != nil {
