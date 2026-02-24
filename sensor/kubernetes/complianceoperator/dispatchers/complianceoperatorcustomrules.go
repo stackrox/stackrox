@@ -72,10 +72,7 @@ func (c *CustomRuleDispatcher) ProcessEvent(obj, _ interface{}, action central.R
 					Fixes:        fixes,
 					Warning:      customRule.Spec.Warning,
 					Instructions: customRule.Spec.Instructions,
-					CustomRuleDetails: &central.CustomRuleDetails{
-						Phase:        customRule.Status.Phase,
-						ErrorMessage: customRule.Status.ErrorMessage,
-					},
+					IsCustom:     true,
 				},
 			},
 		},

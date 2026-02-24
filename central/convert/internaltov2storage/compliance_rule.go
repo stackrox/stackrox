@@ -58,32 +58,24 @@ func ComplianceOperatorRule(sensorData *central.ComplianceOperatorRuleV2, cluste
 
 	parentRule := sensorData.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]
 
-	var customRuleDetails *storage.CustomRuleDetails
-	if sensorData.GetCustomRuleDetails() != nil {
-		customRuleDetails = &storage.CustomRuleDetails{
-			Phase:        sensorData.GetCustomRuleDetails().GetPhase(),
-			ErrorMessage: sensorData.GetCustomRuleDetails().GetErrorMessage(),
-		}
-	}
-
 	return &storage.ComplianceOperatorRuleV2{
-		Id:                sensorData.GetId(),
-		RuleId:            sensorData.GetRuleId(),
-		Name:              sensorData.GetName(),
-		RuleType:          sensorData.GetRuleType(),
-		Severity:          severityToV2[sensorData.GetSeverity()],
-		Labels:            sensorData.GetLabels(),
-		Annotations:       sensorData.GetAnnotations(),
-		Title:             sensorData.GetTitle(),
-		Description:       sensorData.GetDescription(),
-		Rationale:         sensorData.GetRationale(),
-		Fixes:             fixes,
-		Warning:           sensorData.GetWarning(),
-		Controls:          controls,
-		ClusterId:         clusterID,
-		RuleRefId:         BuildNameRefID(clusterID, parentRule),
-		Instructions:      sensorData.GetInstructions(),
-		ParentRule:        parentRule,
-		CustomRuleDetails: customRuleDetails,
+		Id:           sensorData.GetId(),
+		RuleId:       sensorData.GetRuleId(),
+		Name:         sensorData.GetName(),
+		RuleType:     sensorData.GetRuleType(),
+		Severity:     severityToV2[sensorData.GetSeverity()],
+		Labels:       sensorData.GetLabels(),
+		Annotations:  sensorData.GetAnnotations(),
+		Title:        sensorData.GetTitle(),
+		Description:  sensorData.GetDescription(),
+		Rationale:    sensorData.GetRationale(),
+		Fixes:        fixes,
+		Warning:      sensorData.GetWarning(),
+		Controls:     controls,
+		ClusterId:    clusterID,
+		RuleRefId:    BuildNameRefID(clusterID, parentRule),
+		Instructions: sensorData.GetInstructions(),
+		ParentRule:   parentRule,
+		IsCustom:     sensorData.GetIsCustom(),
 	}
 }
