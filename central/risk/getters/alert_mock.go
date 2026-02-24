@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	alertviews "github.com/stackrox/rox/central/alert/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -27,6 +28,27 @@ func (m MockAlertsSearcher) SearchListAlerts(_ context.Context, q *v1.Query, _ b
 	for _, a := range m.Alerts {
 		if a.GetState().String() == strings.Trim(state, "\"") {
 			alerts = append(alerts, a)
+		}
+	}
+	return
+}
+
+// SearchAlertPolicyNamesAndSeverities implements the AlertSearcher interface
+func (m MockAlertsSearcher) SearchAlertPolicyNamesAndSeverities(_ context.Context, q *v1.Query, _ bool) (results []*alertviews.PolicyNameAndSeverity, err error) {
+	state := storage.ViolationState_ACTIVE.String()
+	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		mfQ, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if ok && mfQ.MatchFieldQuery.GetField() == search.ViolationState.String() {
+			state = mfQ.MatchFieldQuery.GetValue()
+		}
+	})
+
+	for _, a := range m.Alerts {
+		if a.GetState().String() == strings.Trim(state, "\"") {
+			results = append(results, &alertviews.PolicyNameAndSeverity{
+				PolicyName: a.GetPolicy().GetName(),
+				Severity:   int(a.GetPolicy().GetSeverity()),
+			})
 		}
 	}
 	return

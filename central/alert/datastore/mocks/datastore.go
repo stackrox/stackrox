@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	views "github.com/stackrox/rox/central/alert/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
@@ -160,6 +161,21 @@ func (m *MockDataStore) Search(ctx context.Context, q *v1.Query, excludeResolved
 func (mr *MockDataStoreMockRecorder) Search(ctx, q, excludeResolved any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), ctx, q, excludeResolved)
+}
+
+// SearchAlertPolicyNamesAndSeverities mocks base method.
+func (m *MockDataStore) SearchAlertPolicyNamesAndSeverities(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*views.PolicyNameAndSeverity, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchAlertPolicyNamesAndSeverities", ctx, q, excludeResolved)
+	ret0, _ := ret[0].([]*views.PolicyNameAndSeverity)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchAlertPolicyNamesAndSeverities indicates an expected call of SearchAlertPolicyNamesAndSeverities.
+func (mr *MockDataStoreMockRecorder) SearchAlertPolicyNamesAndSeverities(ctx, q, excludeResolved any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchAlertPolicyNamesAndSeverities", reflect.TypeOf((*MockDataStore)(nil).SearchAlertPolicyNamesAndSeverities), ctx, q, excludeResolved)
 }
 
 // SearchAlerts mocks base method.

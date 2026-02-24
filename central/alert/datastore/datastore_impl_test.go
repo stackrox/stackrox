@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
+	alertviews "github.com/stackrox/rox/central/alert/views"
 	matcherMocks "github.com/stackrox/rox/central/platform/matcher/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -49,7 +50,7 @@ func (s *AlertDatastoreImplSuite) SetupTest() {
 	s.matcher = matcherMocks.NewMockPlatformMatcher(s.mockCtrl)
 
 	store := postgres.New(s.testPostgres.DB)
-	s.datastore = New(store, s.matcher)
+	s.datastore = New(s.testPostgres.DB, store, s.matcher)
 
 	// Initialize alert tracking
 	s.createdAlertIDs = []string{}
@@ -308,6 +309,93 @@ func (s *AlertDatastoreImplSuite) TestSearchRawAlerts() {
 	s.NoError(err)
 	s.Len(rawAlerts, 1)
 	s.Equal(storage.ViolationState_RESOLVED, rawAlerts[0].GetState())
+}
+
+// TestSearchAlertPolicyNamesAndSeverities tests the column-projection search
+func (s *AlertDatastoreImplSuite) TestSearchAlertPolicyNamesAndSeverities() {
+	alert := fixtures.GetAlert()
+	alert.EntityType = storage.Alert_DEPLOYMENT
+	alert.PlatformComponent = false
+
+	// Mock platform matcher to return false for platform component
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+
+	// Upsert the alert
+	s.NoError(s.datastore.UpsertAlert(ctx, alert))
+
+	// Test 1: Search excluding resolved returns the alert's policy name and severity
+	results, err := s.datastore.SearchAlertPolicyNamesAndSeverities(ctx, search.EmptyQuery(), true)
+	s.NoError(err)
+	s.Len(results, 1)
+	s.Equal(alert.GetPolicy().GetName(), results[0].GetPolicyName())
+	s.Equal(alert.GetPolicy().GetSeverity(), results[0].GetSeverity())
+
+	// Test 2: Search with deployment ID filter
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.DeploymentID, alert.GetDeployment().GetId()).
+		ProtoQuery()
+	results, err = s.datastore.SearchAlertPolicyNamesAndSeverities(ctx, q, true)
+	s.NoError(err)
+	s.Len(results, 1)
+	s.Equal(alert.GetPolicy().GetName(), results[0].GetPolicyName())
+	s.Equal(alert.GetPolicy().GetSeverity(), results[0].GetSeverity())
+
+	// Test 3: Mark alert as resolved
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+	resolvedAlerts, err := s.datastore.MarkAlertsResolvedBatch(ctx, alert.GetId())
+	s.NoError(err)
+	s.Len(resolvedAlerts, 1)
+
+	// Test 4: Search excluding resolved should return 0
+	results, err = s.datastore.SearchAlertPolicyNamesAndSeverities(ctx, search.EmptyQuery(), true)
+	s.NoError(err)
+	s.Len(results, 0)
+
+	// Test 5: Search including resolved should return 1
+	results, err = s.datastore.SearchAlertPolicyNamesAndSeverities(ctx, search.EmptyQuery(), false)
+	s.NoError(err)
+	s.Len(results, 1)
+	s.Equal(alert.GetPolicy().GetName(), results[0].GetPolicyName())
+	s.Equal(alert.GetPolicy().GetSeverity(), results[0].GetSeverity())
+}
+
+// TestSearchAlertPolicyNamesAndSeveritiesMultiple tests with multiple alerts of different severities
+func (s *AlertDatastoreImplSuite) TestSearchAlertPolicyNamesAndSeveritiesMultiple() {
+	severities := []storage.Severity{
+		storage.Severity_LOW_SEVERITY,
+		storage.Severity_MEDIUM_SEVERITY,
+		storage.Severity_HIGH_SEVERITY,
+		storage.Severity_CRITICAL_SEVERITY,
+	}
+	alertIDs := []string{fixtureconsts.Alert1, fixtureconsts.Alert2, fixtureconsts.Alert3, fixtureconsts.Alert4}
+
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil).Times(len(alertIDs))
+
+	for i, id := range alertIDs {
+		alert := fixtures.GetAlert()
+		alert.Id = id
+		alert.EntityType = storage.Alert_DEPLOYMENT
+		alert.PlatformComponent = false
+		alert.Policy.Name = fmt.Sprintf("Policy %d", i+1)
+		alert.Policy.Severity = severities[i]
+		s.createAndTrackAlert(alert)
+	}
+
+	results, err := s.datastore.SearchAlertPolicyNamesAndSeverities(ctx, search.EmptyQuery(), true)
+	s.NoError(err)
+	s.Len(results, len(alertIDs))
+
+	// Collect results into a map for order-independent assertions
+	resultMap := make(map[string]*alertviews.PolicyNameAndSeverity)
+	for _, r := range results {
+		resultMap[r.GetPolicyName()] = r
+	}
+
+	for i, sev := range severities {
+		name := fmt.Sprintf("Policy %d", i+1)
+		s.Contains(resultMap, name)
+		s.Equal(sev, resultMap[name].GetSeverity())
+	}
 }
 
 // TestSearchListAlerts tests the SearchListAlerts functionality with pagination
