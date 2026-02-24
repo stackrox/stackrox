@@ -175,7 +175,7 @@ spec:
         - name: name
           value: wait-for-image
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:pr-87@sha256:c77a322121f558579a71f6f2e70f1ff3bd4f9c10fcc3fc0104dca8fcf0237afa
+          value: quay.io/rhacs-eng/konflux-tasks:pr-87@sha256:26020308bc803e6f7850390c3a7666e50a8df6a35c87063d85a3f9a786cc4034
         - name: kind
           value: task
         resolver: bundles
