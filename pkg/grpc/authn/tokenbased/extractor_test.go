@@ -53,11 +53,11 @@ const (
 	mockAuthProviderName = "mock auth provider name"
 	mockAuthProviderType = "mock auth provider type"
 
-	tokenName    = "test-token-name"
-	tokenSubject = "test-token-subject"
-	tokenID      = "test-token-id"
-	roleName1    = "role1"
-	roleName2    = "role2"
+	testName    = "test-token-name"
+	testSubject = "test-token-subject"
+	testID      = "test-token-id"
+	roleName1   = "role1"
+	roleName2   = "role2"
 )
 
 var (
@@ -100,6 +100,10 @@ type testIdentity struct {
 	authProvider authproviders.Provider
 }
 
+func TestExtractorIdentityForRequest(t *testing.T) {
+
+}
+
 func TestExtractorWithRoleNames(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	mockSource := tokenMocks.NewMockSource(mockCtrl)
@@ -124,7 +128,7 @@ func TestExtractorWithRoleNames(t *testing.T) {
 	}{
 		"Error: Role store GetAndResolveRole fails": {
 			testToken: &tokens.TokenInfo{
-				Claims:  buildRoleNamesClaims(tokenName, tokenSubject, tokenID, []string{roleName1}, testExpiresAt),
+				Claims:  buildRoleNamesClaims(testName, testSubject, testID, []string{roleName1}, testExpiresAt),
 				Sources: []tokens.Source{mockSource},
 			},
 			roleNames: []string{roleName1},
@@ -138,7 +142,7 @@ func TestExtractorWithRoleNames(t *testing.T) {
 		},
 		"Error: Role store returns error for first of multiple roles": {
 			testToken: &tokens.TokenInfo{
-				Claims:  buildRoleNamesClaims(tokenName, tokenSubject, tokenID, []string{roleName1, roleName2}, testExpiresAt),
+				Claims:  buildRoleNamesClaims(testName, testSubject, testID, []string{roleName1, roleName2}, testExpiresAt),
 				Sources: []tokens.Source{mockSource},
 			},
 			roleNames: []string{roleName1, roleName2},
@@ -169,9 +173,9 @@ func TestExtractorWithRoleNames(t *testing.T) {
 
 	builtFriendlyName := fmt.Sprintf(
 		"anonymous bearer token %q with roles [%s] (jti: %s, expires: %s)",
-		tokenName,
+		testName,
 		strings.Join([]string{roleName1}, ","),
-		tokenID,
+		testID,
 		jwt.NewNumericDate(testExpiresAt).Time().Format(time.RFC3339),
 	)
 	for name, tc := range map[string]struct {
@@ -189,18 +193,18 @@ func TestExtractorWithRoleNames(t *testing.T) {
 				setupMockAuthProvider(te.authProvider)
 			},
 			token: &tokens.TokenInfo{
-				Claims:  buildRoleNamesClaims(tokenName, tokenSubject, tokenID, []string{roleName1}, testExpiresAt),
+				Claims:  buildRoleNamesClaims(testName, testSubject, testID, []string{roleName1}, testExpiresAt),
 				Sources: []tokens.Source{mockAuthProvider},
 			},
 			roleNames: []string{roleName1},
 			expectedIdentity: &testIdentity{
-				uid:          fmt.Sprintf("auth-token:%s", tokenID),
-				fullName:     tokenName,
-				friendlyName: tokenSubject,
+				uid:          fmt.Sprintf("auth-token:%s", testID),
+				fullName:     testName,
+				friendlyName: testSubject,
 				permissions:  testRole1Permissions,
 				roles:        []permissions.ResolvedRole{testRole1},
-				user:         buildUserInfo(emptyUserName, tokenSubject, []permissions.ResolvedRole{testRole1}),
-				attributes:   map[string][]string{"role": {internalRoleName}, "name": {tokenName}},
+				user:         buildUserInfo(emptyUserName, testSubject, []permissions.ResolvedRole{testRole1}),
+				attributes:   map[string][]string{"role": {internalRoleName}, "name": {testName}},
 				expiry:       testExpiresAt,
 				authProvider: mockAuthProvider,
 			},
@@ -218,18 +222,18 @@ func TestExtractorWithRoleNames(t *testing.T) {
 				setupMockAuthProvider(te.authProvider)
 			},
 			token: &tokens.TokenInfo{
-				Claims:  buildRoleNamesClaimsWithExternalUser(tokenName, tokenSubject, tokenID, externalUserEmail, []string{roleName1, roleName2}, testExpiresAt),
+				Claims:  buildRoleNamesClaimsWithExternalUser(testName, testSubject, testID, externalUserEmail, []string{roleName1, roleName2}, testExpiresAt),
 				Sources: []tokens.Source{mockAuthProvider},
 			},
 			roleNames: []string{roleName1, roleName2},
 			expectedIdentity: &testIdentity{
-				uid:          fmt.Sprintf("auth-token:%s", tokenID),
-				fullName:     tokenName,
-				friendlyName: tokenSubject,
+				uid:          fmt.Sprintf("auth-token:%s", testID),
+				fullName:     testName,
+				friendlyName: testSubject,
 				permissions:  bothTestRolePermissions,
 				roles:        []permissions.ResolvedRole{testRole1, testRole2},
-				user:         buildUserInfo(externalUserEmail, tokenSubject, []permissions.ResolvedRole{testRole1, testRole2}),
-				attributes:   map[string][]string{"role": {internalRoleName, internalRoleName}, "name": {tokenName}},
+				user:         buildUserInfo(externalUserEmail, testSubject, []permissions.ResolvedRole{testRole1, testRole2}),
+				attributes:   map[string][]string{"role": {internalRoleName, internalRoleName}, "name": {testName}},
 				expiry:       testExpiresAt,
 				authProvider: mockAuthProvider,
 			},
@@ -243,18 +247,18 @@ func TestExtractorWithRoleNames(t *testing.T) {
 				setupMockAuthProvider(te.authProvider)
 			},
 			token: &tokens.TokenInfo{
-				Claims:  buildRoleNamesClaims(tokenName, "", tokenID, []string{roleName1}, testExpiresAt),
+				Claims:  buildRoleNamesClaims(testName, "", testID, []string{roleName1}, testExpiresAt),
 				Sources: []tokens.Source{mockAuthProvider},
 			},
 			roleNames: []string{roleName1},
 			expectedIdentity: &testIdentity{
-				uid:          fmt.Sprintf("auth-token:%s", tokenID),
+				uid:          fmt.Sprintf("auth-token:%s", testID),
 				friendlyName: builtFriendlyName,
-				fullName:     tokenName,
+				fullName:     testName,
 				user:         buildUserInfo(emptyUserName, builtFriendlyName, []permissions.ResolvedRole{testRole1}),
 				permissions:  testRole1Permissions,
 				roles:        []permissions.ResolvedRole{testRole1},
-				attributes:   map[string][]string{"role": {internalRoleName}, "name": {tokenName}},
+				attributes:   map[string][]string{"role": {internalRoleName}, "name": {testName}},
 				expiry:       testExpiresAt,
 				authProvider: mockAuthProvider,
 			},

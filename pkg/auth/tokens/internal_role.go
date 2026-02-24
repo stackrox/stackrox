@@ -33,7 +33,12 @@ func (r *InternalRole) GetPermissions() map[string]storage.Access {
 	}
 	permissions := make(map[string]storage.Access)
 	for resource, access := range r.Permissions {
-		permissions[resource] = storage.Access(storage.Access_value[access])
+		accessValue, found := storage.Access_value[access]
+		resourceAccess := storage.Access(accessValue)
+		if !found {
+			resourceAccess = storage.Access_NO_ACCESS
+		}
+		permissions[resource] = resourceAccess
 	}
 	return permissions
 }
@@ -46,6 +51,9 @@ func (r *InternalRole) GetAccessScope() *storage.SimpleAccessScope {
 	includedNamespaces := make([]*storage.SimpleAccessScope_Rules_Namespace, 0)
 	for _, clusterScope := range r.ClusterScopes {
 		if clusterScope == nil {
+			continue
+		}
+		if clusterScope.ClusterName == "" {
 			continue
 		}
 		if clusterScope.ClusterFullAccess {
