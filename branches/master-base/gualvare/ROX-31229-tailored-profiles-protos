@@ -2,5 +2,16 @@
   "base": {
     "name": "master-base/gualvare/fix-compliance-make-tp-extends-optional",
     "hash": "3999da634f86341751261ef66208fa626dc61a47"
+  },
+  "upstream": {
+    "branch": "master-base/gualvare/ROX-31229-tailored-profiles-protos"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 19159,
+        "gqlID": "PR_kwDOGd6UEM7F7sFL"
+      }
+    }
   }
 }
