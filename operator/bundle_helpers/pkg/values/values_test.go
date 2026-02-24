@@ -10,7 +10,7 @@ import (
 
 func TestGetString_Success(t *testing.T) {
 	vals := chartutil.Values{
-		"metadata": map[string]interface{}{
+		"metadata": map[string]any{
 			"name": "test-operator",
 		},
 	}
@@ -22,8 +22,8 @@ func TestGetString_Success(t *testing.T) {
 
 func TestGetString_NestedPath(t *testing.T) {
 	vals := chartutil.Values{
-		"metadata": map[string]interface{}{
-			"annotations": map[string]interface{}{
+		"metadata": map[string]any{
+			"annotations": map[string]any{
 				"createdAt": "2024-01-01T00:00:00Z",
 			},
 		},
@@ -36,7 +36,7 @@ func TestGetString_NestedPath(t *testing.T) {
 
 func TestGetString_MissingPath(t *testing.T) {
 	vals := chartutil.Values{
-		"metadata": map[string]interface{}{},
+		"metadata": map[string]any{},
 	}
 
 	_, err := GetString(vals, "metadata.name")
@@ -46,7 +46,7 @@ func TestGetString_MissingPath(t *testing.T) {
 
 func TestGetString_WrongType(t *testing.T) {
 	vals := chartutil.Values{
-		"metadata": map[string]interface{}{
+		"metadata": map[string]any{
 			"name": 123,
 		},
 	}
