@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { ReactElement, Ref } from 'react';
+import type { MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
 import {
     Badge,
     Button,
@@ -74,9 +74,7 @@ function NamespaceSelector({
 
     const filteredNamespaceSelectOptions = useMemo(() => {
         return namespaces
-            .filter((namespace) =>
-                namespace.name.toLowerCase().includes(input.toString().toLowerCase())
-            )
+            .filter((namespace) => namespace.name.toLowerCase().includes(input.toLowerCase()))
             .map((namespace) => (
                 <SelectOption
                     key={namespace.id}
@@ -94,7 +92,13 @@ function NamespaceSelector({
             ));
     }, [namespaces, input, selectedNamespaces]);
 
-    const onNamespaceSelect = (_, selected) => {
+    const onNamespaceSelect = (
+        _event: ReactMouseEvent<Element, MouseEvent> | undefined,
+        selected: string | number | undefined
+    ) => {
+        if (typeof selected !== 'string') {
+            return;
+        }
         const newSelection = selectedNamespaces.find((nsFilter) => nsFilter === selected)
             ? selectedNamespaces.filter((nsFilter) => nsFilter !== selected)
             : selectedNamespaces.concat(selected);
@@ -139,9 +143,7 @@ function NamespaceSelector({
                     <NamespaceIcon />
                 </FlexItem>
                 <FlexItem spacer={{ default: 'spacerSm' }}>
-                    <span style={{ position: 'relative', top: '1px' }}>
-                        {isEmptyCluster ? 'No namespaces' : 'Namespaces'}
-                    </span>
+                    {isEmptyCluster ? 'No namespaces' : 'Namespaces'}
                 </FlexItem>
                 {selectedNamespaces.length !== 0 && (
                     <FlexItem spacer={{ default: 'spacerSm' }}>

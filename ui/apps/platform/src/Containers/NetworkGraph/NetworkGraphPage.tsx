@@ -417,12 +417,7 @@ function NetworkGraphPageContent() {
                     <Divider component="div" />
                 </>
             )}
-            <PageSection
-                hasBodyWrapper={false}
-                className="network-graph"
-                padding={{ default: 'noPadding' }}
-                isFilled
-            >
+            <PageSection hasBodyWrapper={false} className="network-graph pf-v6-u-p-0" isFilled>
                 {isLoading ? (
                     <Bullseye>
                         <Spinner />

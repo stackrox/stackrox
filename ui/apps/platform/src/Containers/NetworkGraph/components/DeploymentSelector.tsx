@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { ReactElement, Ref } from 'react';
+import type { MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
 import {
     Badge,
     Button,
@@ -45,7 +45,7 @@ function DeploymentSelector({
             .map((namespace) => {
                 const options = namespace.deployments
                     .filter((deployment) =>
-                        deployment.name.toLowerCase().includes(input.toString().toLowerCase())
+                        deployment.name.toLowerCase().includes(input.toLowerCase())
                     )
                     .map((deployment) => (
                         <SelectOption
@@ -66,19 +66,22 @@ function DeploymentSelector({
                     return null;
                 }
                 return (
-                    <SelectGroup
-                        key={namespace.metadata.name}
-                        label={namespace.metadata.name}
-                    >
+                    <SelectGroup key={namespace.metadata.name} label={namespace.metadata.name}>
                         {options}
                     </SelectGroup>
                 );
             })
-            .filter(Boolean);
+            .filter((group): group is JSX.Element => group !== null);
         return groups;
     }, [deploymentsByNamespace, input, selectedDeployments]);
 
-    const onDeploymentSelect = (_, selected) => {
+    const onDeploymentSelect = (
+        _event: ReactMouseEvent<Element, MouseEvent> | undefined,
+        selected: string | number | undefined
+    ) => {
+        if (typeof selected !== 'string') {
+            return;
+        }
         const newSelection = selectedDeployments.find((nsFilter) => nsFilter === selected)
             ? selectedDeployments.filter((nsFilter) => nsFilter !== selected)
             : selectedDeployments.concat(selected);
@@ -111,9 +114,7 @@ function DeploymentSelector({
                 >
                     <DeploymentIcon />
                 </FlexItem>
-                <FlexItem spacer={{ default: 'spacerSm' }}>
-                    <span style={{ position: 'relative', top: '1px' }}>Deployments</span>
-                </FlexItem>
+                <FlexItem spacer={{ default: 'spacerSm' }}>Deployments</FlexItem>
                 {selectedDeployments.length !== 0 && (
                     <FlexItem spacer={{ default: 'spacerSm' }}>
                         <Badge isRead>{selectedDeployments.length}</Badge>
