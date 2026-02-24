@@ -12,6 +12,9 @@ import {
     SelectOption,
     Skeleton,
     Title,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon, ListIcon, SyncAltIcon } from '@patternfly/react-icons';
 import ResourceIcon from 'Components/PatternFly/ResourceIcon';
@@ -176,11 +179,7 @@ function CollectionResults({
         );
     } else {
         content = (
-            <Flex
-                direction={{ default: 'column' }}
-                grow={{ default: 'grow' }}
-                className="pf-v6-u-mt-lg"
-            >
+            <Flex direction={{ default: 'column' }} grow={{ default: 'grow' }}>
                 {isRefreshingResults ? (
                     <>
                         {Array.from(Array(10).keys()).map((index: number) => (
@@ -194,21 +193,19 @@ function CollectionResults({
                                 <DeploymentResult key={deployment.id} deployment={deployment} />
                             ))
                         )}
-                        {!isEndOfResults ? (
-                            <Button
-                                variant="link"
-                                isInline
-                                className="pf-v6-u-text-align-center"
-                                isLoading={isFetchingNextPage}
-                                onClick={() => fetchNextPage(true)}
-                            >
-                                View more
-                            </Button>
-                        ) : (
-                            <span className="pf-v6-u-color-300 pf-v6-u-text-align-center pf-v6-u-font-size-sm">
-                                end of results
-                            </span>
-                        )}
+                        <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                            {!isEndOfResults ? (
+                                <Button
+                                    variant="link"
+                                    isLoading={isFetchingNextPage}
+                                    onClick={() => fetchNextPage(true)}
+                                >
+                                    View more
+                                </Button>
+                            ) : (
+                                <span className="pf-v6-u-color-300">end of results</span>
+                            )}
+                        </FlexItem>
                     </>
                 )}
             </Flex>
@@ -218,55 +215,61 @@ function CollectionResults({
     return (
         <>
             <div className="pf-v6-u-p-lg pf-v6-u-display-flex pf-v6-u-align-items-center">
-                <div className="pf-v6-u-display-flex pf-v6-u-flex-direction-column pf-v6-u-flex-grow-1">
-                    <Title headingLevel="h2">Collection results</Title>
-                    <Content component="p">See a preview of current matches.</Content>
-                </div>
-                <Button
-                    icon={<SyncAltIcon />}
-                    variant="plain"
-                    onClick={refreshResults}
-                    title="Refresh results"
-                    isDisabled={isRefreshingResults}
-                />
-                {headerContent}
+                <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                    <Flex direction={{ default: 'column' }} grow={{ default: 'grow' }}>
+                        <Title headingLevel="h2">Collection results</Title>
+                        <Content component="p">See a preview of current matches.</Content>
+                    </Flex>
+                    <FlexItem>
+                        <Button
+                            icon={<SyncAltIcon />}
+                            variant="plain"
+                            onClick={refreshResults}
+                            title="Refresh results"
+                            isDisabled={isRefreshingResults}
+                        />
+                    </FlexItem>
+                    {headerContent}
+                </Flex>
             </div>
             <Divider />
             <div className="pf-v6-u-h-100 pf-v6-u-p-lg" style={{ overflow: 'auto' }}>
                 <Flex
-                    spaceItems={{ default: 'spaceItemsNone' }}
+                    spaceItems={{ default: 'spaceItemsMd' }}
                     alignItems={{ default: 'alignItemsStretch' }}
                     direction={{ default: 'column' }}
                 >
-                    <Flex spaceItems={{ default: 'spaceItemsNone' }}>
-                        <FlexItem>
-                            <SelectSingle
-                                id="entity-type-select"
-                                toggleAriaLabel="Select an entity type to filter the results by"
-                                value={selected}
-                                handleSelect={onRuleOptionSelect}
-                                isDisabled={false}
-                                isFullWidth={false}
-                            >
-                                <SelectOption value="Deployment">Deployment</SelectOption>
-                                <SelectOption value="Namespace">Namespace</SelectOption>
-                                <SelectOption value="Cluster">Cluster</SelectOption>
-                            </SelectSingle>
-                        </FlexItem>
-                        <div className="pf-v6-u-flex-grow-1 pf-v6-u-flex-basis-0">
-                            <SearchInput
-                                aria-label="Filter by name"
-                                placeholder="Filter by name"
-                                value={filterInput}
-                                onChange={onSearchInputChange}
-                                onSearch={() => setFilterValue(filterInput)}
-                                onClear={() => {
-                                    setFilterInput('');
-                                    setFilterValue('');
-                                }}
-                            />
-                        </div>
-                    </Flex>
+                    <Toolbar>
+                        <ToolbarContent>
+                            <ToolbarItem>
+                                <SelectSingle
+                                    id="entity-type-select"
+                                    toggleAriaLabel="Select an entity type to filter the results by"
+                                    value={selected}
+                                    handleSelect={onRuleOptionSelect}
+                                    isDisabled={false}
+                                    isFullWidth={false}
+                                >
+                                    <SelectOption value="Deployment">Deployment</SelectOption>
+                                    <SelectOption value="Namespace">Namespace</SelectOption>
+                                    <SelectOption value="Cluster">Cluster</SelectOption>
+                                </SelectSingle>
+                            </ToolbarItem>
+                            <ToolbarItem>
+                                <SearchInput
+                                    aria-label="Filter by name"
+                                    placeholder="Filter by name"
+                                    value={filterInput}
+                                    onChange={onSearchInputChange}
+                                    onSearch={() => setFilterValue(filterInput)}
+                                    onClear={() => {
+                                        setFilterInput('');
+                                        setFilterValue('');
+                                    }}
+                                />
+                            </ToolbarItem>
+                        </ToolbarContent>
+                    </Toolbar>
                     {content}
                 </Flex>
             </div>
