@@ -21,7 +21,7 @@ type mockNamespaceLister struct {
 }
 
 func (m *mockNamespaceLister) List(_ labels.Selector) ([]runtime.Object, error) {
-	return nil, nil
+	panic("List should not be called in these tests")
 }
 
 func (m *mockNamespaceLister) Get(name string) (runtime.Object, error) {
@@ -37,11 +37,11 @@ type mockProfileLister struct {
 }
 
 func (m *mockProfileLister) List(_ labels.Selector) ([]runtime.Object, error) {
-	return nil, nil
+	panic("List should not be called in these tests")
 }
 
 func (m *mockProfileLister) Get(_ string) (runtime.Object, error) {
-	return nil, nil
+	panic("Get should not be called in these tests")
 }
 
 func (m *mockProfileLister) ByNamespace(ns string) cache.GenericNamespaceLister {
@@ -73,16 +73,25 @@ func toUnstructured(t *testing.T, tp *v1alpha1.TailoredProfile) *unstructured.Un
 	return &unstructured.Unstructured{Object: unstructuredObj}
 }
 
-// TestProcessEvent_ExtendsProfile tests rule computation when extending a base profile:
-// effective rules = base rules - disabled rules + enabled rules
+// TestProcessEvent_ExtendsProfile tests rule computation and metadata inheritance when extending a base profile:
+// - effective rules = base rules - disabled rules + enabled rules
+// - labels, annotations, description inherited from base profile
 func TestProcessEvent_ExtendsProfile(t *testing.T) {
 	baseProfile := &v1alpha1.Profile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ocp4-cis",
 			Namespace: "openshift-compliance",
+			Labels: map[string]string{
+				"compliance.openshift.io/profile-bundle": "ocp4",
+			},
+			Annotations: map[string]string{
+				v1alpha1.ProductTypeAnnotation: "Platform",
+				v1alpha1.ProductAnnotation:     "ocp4",
+			},
 		},
 		ProfilePayload: v1alpha1.ProfilePayload{
-			ID: "xccdf_org.ssgproject.content_profile_cis",
+			ID:          "xccdf_org.ssgproject.content_profile_cis",
+			Description: "Base profile description from CIS benchmark",
 			Rules: []v1alpha1.ProfileRule{
 				"ocp4-api-server-anonymous-auth",
 				"ocp4-api-server-audit-log-path",
@@ -102,6 +111,7 @@ func TestProcessEvent_ExtendsProfile(t *testing.T) {
 		},
 		Spec: v1alpha1.TailoredProfileSpec{
 			Extends: "ocp4-cis",
+			// Description intentionally empty to test inheritance
 			DisableRules: []v1alpha1.RuleReferenceSpec{
 				{Name: "ocp4-api-server-audit-log-path"},
 			},
@@ -120,6 +130,12 @@ func TestProcessEvent_ExtendsProfile(t *testing.T) {
 
 	require.NotNil(t, event)
 	profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
+
+	// Verify metadata inheritance from base profile
+	assert.Equal(t, "ocp4", profile.GetLabels()["compliance.openshift.io/profile-bundle"])
+	assert.Equal(t, "Platform", profile.GetAnnotations()[v1alpha1.ProductTypeAnnotation])
+	assert.Equal(t, "ocp4", profile.GetAnnotations()[v1alpha1.ProductAnnotation])
+	assert.Equal(t, "Base profile description from CIS benchmark", profile.GetDescription())
 
 	// Verify rule computation: 3 base - 1 disabled + 1 enabled = 3 rules
 	ruleNames := make([]string, len(profile.GetRules()))
@@ -169,7 +185,6 @@ func TestProcessEvent_FromScratch(t *testing.T) {
 	assert.Len(t, profile.GetRules(), 2)
 	assert.Contains(t, ruleNames, "ocp4-api-server-anonymous-auth")
 	assert.Contains(t, ruleNames, "ocp4-api-server-encryption-provider-cipher")
-
 }
 
 // TestProcessEvent_NoStatusID tests that non-ready TPs (no Status.ID) are skipped
