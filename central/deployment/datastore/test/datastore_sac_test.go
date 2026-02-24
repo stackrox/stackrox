@@ -9,10 +9,13 @@ import (
 	dDS "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentTypes "github.com/stackrox/rox/central/deployment/datastore/internal/store/types"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
+	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
 	nsDS "github.com/stackrox/rox/central/namespace/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -48,6 +51,7 @@ type deploymentDatastoreSACSuite struct {
 	datastore      dDS.DataStore
 	namespaceStore nsDS.DataStore
 	imageStore     imageDS.DataStore
+	imageV2Store   imageV2DS.DataStore
 
 	testContexts                    map[string]context.Context
 	testContextsWithImageAccess     map[string]context.Context
@@ -70,6 +74,7 @@ func (s *deploymentDatastoreSACSuite) SetupSuite() {
 	s.namespaceStore, err = nsDS.GetTestPostgresDataStore(s.T(), s.pool)
 	s.Require().NoError(err)
 	s.imageStore = imageDS.GetTestPostgresDataStore(s.T(), s.pool)
+	s.imageV2Store = imageV2DS.GetTestPostgresDataStore(s.T(), s.pool)
 	s.optionsMap = schema.DeploymentsSchema.OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Deployment)
@@ -352,12 +357,20 @@ deployment object, or at the data pushed to the image datastore.
 
 func (s *deploymentDatastoreSACSuite) runGetImagesForDeploymentTest(testContexts map[string]context.Context, expectOnlyDeploymentData bool) {
 	imageToStore := fixtures.LightweightDeploymentImage()
-	imageName := imageToStore.GetName()
-	imageName.Tag = "beta"
-	imageName.FullName = imageName.GetRegistry() + "/" + imageName.GetRemote() + ":" + imageName.GetTag()
-	imageToStore.Name = imageName
-	err := s.imageStore.UpsertImage(sac.WithAllAccess(context.Background()), imageToStore)
-	s.Require().NoError(err)
+
+	// Slightly change the stored image so that it differs from the container image in the deployment
+	// This will help us check if GetImagesForDeployment returns the image from the deployment object,
+	// or the data from the image datastore.
+	imageToStore.IsClusterLocal = true
+
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	if features.FlattenImageData.Enabled() {
+		err := s.imageV2Store.UpsertImage(sac.WithAllAccess(context.Background()), imageUtils.ConvertToV2(imageToStore))
+		s.Require().NoError(err)
+	} else {
+		err := s.imageStore.UpsertImage(sac.WithAllAccess(context.Background()), imageToStore)
+		s.Require().NoError(err)
+	}
 	deployment := s.pushDeploymentToStore(testconsts.Cluster2, testconsts.NamespaceB)
 	imageFromDeployment := fixtures.LightweightDeploymentImage()
 
@@ -371,8 +384,10 @@ func (s *deploymentDatastoreSACSuite) runGetImagesForDeploymentTest(testContexts
 			s.Require().Equal(1, len(images))
 			if (!expectOnlyDeploymentData) && c.ExpectedFound {
 				s.Equal(*imageToStore.GetName(), *images[0].GetName())
+				s.Equal(imageToStore.GetIsClusterLocal(), images[0].GetIsClusterLocal())
 			} else {
 				s.Equal(*imageFromDeployment.GetName(), *images[0].GetName())
+				s.Equal(imageFromDeployment.GetIsClusterLocal(), images[0].GetIsClusterLocal())
 			}
 		})
 	}
