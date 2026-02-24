@@ -58,8 +58,8 @@ func TestGetString_WrongType(t *testing.T) {
 
 func TestGetMap_Success(t *testing.T) {
 	vals := chartutil.Values{
-		"metadata": map[string]any{
-			"labels": map[string]any{
+		"metadata": chartutil.Values{
+			"labels": chartutil.Values{
 				"app": "test",
 			},
 		},
@@ -67,19 +67,19 @@ func TestGetMap_Success(t *testing.T) {
 
 	result, err := GetMap(vals, "metadata.labels")
 	require.NoError(t, err)
-	assert.Equal(t, "test", result["app"])
+	assert.Equal(t, chartutil.Values{"app": "test"}, result)
 }
 
 func TestGetMap_WrongType(t *testing.T) {
 	vals := chartutil.Values{
-		"metadata": map[string]any{
+		"metadata": chartutil.Values{
 			"name": "test",
 		},
 	}
 
 	_, err := GetMap(vals, "metadata.name")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not a table")
+	assert.Contains(t, err.Error(), "not a map")
 }
 
 func TestGetMap_MissingPath(t *testing.T) {
@@ -87,4 +87,5 @@ func TestGetMap_MissingPath(t *testing.T) {
 
 	_, err := GetMap(vals, "metadata.labels")
 	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "metadata.labels")
 }
