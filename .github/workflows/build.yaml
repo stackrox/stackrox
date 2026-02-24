@@ -667,7 +667,7 @@ jobs:
 
       - name: Bundle chart to preserve permissions
         if: matrix.arch == 'amd64' && matrix.name != 'STACKROX_BRANDING'
-        run: tar -cvzf "$(pwd)/operator-chart.tgz" -C operator/dist/chart .
+        run: tar -cvzf "$(pwd)/operator-chart-${{ matrix.name }}.tgz" -C operator/dist/chart .
 
       - uses: ./.github/actions/upload-artifact-with-retry
         if: matrix.arch == 'amd64' && matrix.name != 'STACKROX_BRANDING'
