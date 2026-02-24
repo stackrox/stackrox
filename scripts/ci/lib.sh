@@ -1130,7 +1130,9 @@ push_helm_charts() {
     roxctl helm output central-services --image-defaults=opensource --output-dir "${central_services_chart_dir}/opensource"
     roxctl helm output secured-cluster-services --image-defaults=rhacs --output-dir "${secured_cluster_services_chart_dir}/rhacs"
     roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${secured_cluster_services_chart_dir}/opensource"
+    mkdir "${operator_chart_dir}/rhacs"
     tar -zxf "${operator_rhacs_chart_tarball}" -C "${operator_chart_dir}/rhacs"
+    #mkdir "${operator_chart_dir}/opensource"
     #tar -zxf "${operator_stackrox_chart_tarball}" -C "${operator_chart_dir}/opensource"
     "${SCRIPTS_ROOT}/scripts/ci/publish-helm-charts.sh" "${tag}" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}" "${operator_chart_dir}"
 }
