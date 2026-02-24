@@ -53,7 +53,7 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 		}
 		unstructuredObject, ok = profileObj.(*unstructured.Unstructured)
 		if !ok {
-			log.Errorf("Fetched profile not of type 'unstructured': %T", obj)
+			log.Errorf("Fetched profile not of type 'unstructured': %T", profileObj)
 			return nil
 		}
 
