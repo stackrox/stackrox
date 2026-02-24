@@ -72,6 +72,7 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 		Annotations: baseProfile.Annotations,
 		Description: stringutils.FirstNonEmpty(tailoredProfile.Spec.Description, baseProfile.Description),
 	}
+
 	removedRules := set.NewStringSet()
 	for _, rule := range tailoredProfile.Spec.DisableRules {
 		removedRules.Add(rule.Name)

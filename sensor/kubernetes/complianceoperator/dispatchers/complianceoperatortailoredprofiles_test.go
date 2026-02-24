@@ -129,6 +129,7 @@ func TestProcessEvent_ExtendsProfile(t *testing.T) {
 	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
 
 	require.NotNil(t, event)
+	require.NotEmpty(t, event.ForwardMessages)
 	profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
 
 	// Verify metadata inheritance from base profile
@@ -175,6 +176,7 @@ func TestProcessEvent_FromScratch(t *testing.T) {
 	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
 
 	require.NotNil(t, event)
+	require.NotEmpty(t, event.ForwardMessages)
 	profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
 
 	// Only enabled rules should be present
