@@ -105,9 +105,9 @@ func TestDiscreteRuntimeSections(t *testing.T) {
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			if c.pass {
-				assert.True(t, ContainsDiscreteRuntimeFieldCategorySections(c.policy))
+				assert.True(t, ContainsValidRuntimeFieldCategorySections(c.policy))
 			} else {
-				assert.False(t, ContainsDiscreteRuntimeFieldCategorySections(c.policy))
+				assert.False(t, ContainsValidRuntimeFieldCategorySections(c.policy))
 			}
 		})
 	}
