@@ -42,8 +42,6 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
-      with:
-        save: true
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
@@ -124,8 +122,6 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
-      with:
-        save: true
 
     - name: Is Postgres ready
       run: pg_isready -h 127.0.0.1
@@ -186,8 +182,6 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
-      with:
-        save: true
 
     - name: Is Postgres ready
       run: pg_isready -h 127.0.0.1
@@ -309,8 +303,6 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
-      with:
-        save: true
 
     - uses: ./.github/actions/handle-tagged-build
 
@@ -411,8 +403,6 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
-      with:
-        save: true
 
     - name: Login to Quay.io
       uses: docker/login-action@v3
