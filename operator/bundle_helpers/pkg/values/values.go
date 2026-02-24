@@ -24,3 +24,14 @@ func GetString(vals chartutil.Values, path string) (string, error) {
 
 	return str, nil
 }
+
+// GetMap reads a nested map at the given dot-separated path.
+// Returns error if path doesn't exist or value is not a map.
+func GetMap(vals chartutil.Values, path string) (chartutil.Values, error) {
+	table, err := vals.Table(path)
+	if err != nil {
+		return nil, errors.Wrapf(err, "path %q not found", path)
+	}
+
+	return table, nil
+}
