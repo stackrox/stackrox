@@ -122,3 +122,43 @@ func TestGetArray_MissingPath(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "spec.items")
 }
+
+func TestGetValue_String(t *testing.T) {
+	vals := chartutil.Values{
+		"metadata": map[string]any{
+			"name": "test",
+		},
+	}
+
+	result, err := GetValue(vals, "metadata.name")
+	require.NoError(t, err)
+	assert.Equal(t, "test", result)
+}
+
+func TestGetValue_MissingPath(t *testing.T) {
+	vals := chartutil.Values{}
+
+	_, err := GetValue(vals, "metadata.name")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "metadata.name")
+}
+
+func TestPathExists_True(t *testing.T) {
+	vals := chartutil.Values{
+		"metadata": chartutil.Values{
+			"name": "test",
+		},
+	}
+
+	assert.True(t, PathExists(vals, "metadata.name"))
+	assert.True(t, PathExists(vals, "metadata"))
+}
+
+func TestPathExists_False(t *testing.T) {
+	vals := chartutil.Values{
+		"metadata": map[string]any{},
+	}
+
+	assert.False(t, PathExists(vals, "metadata.name"))
+	assert.False(t, PathExists(vals, "spec"))
+}
