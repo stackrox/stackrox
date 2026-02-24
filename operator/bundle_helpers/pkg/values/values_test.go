@@ -89,3 +89,36 @@ func TestGetMap_MissingPath(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "metadata.labels")
 }
+
+func TestGetArray_Success(t *testing.T) {
+	vals := chartutil.Values{
+		"spec": map[string]any{
+			"items": []any{"a", "b", "c"},
+		},
+	}
+
+	result, err := GetArray(vals, "spec.items")
+	require.NoError(t, err)
+	assert.Len(t, result, 3)
+	assert.Equal(t, "a", result[0])
+}
+
+func TestGetArray_WrongType(t *testing.T) {
+	vals := chartutil.Values{
+		"spec": map[string]any{
+			"version": "1.0",
+		},
+	}
+
+	_, err := GetArray(vals, "spec.version")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not an array")
+}
+
+func TestGetArray_MissingPath(t *testing.T) {
+	vals := chartutil.Values{}
+
+	_, err := GetArray(vals, "spec.items")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "spec.items")
+}
