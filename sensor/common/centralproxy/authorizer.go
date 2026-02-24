@@ -238,15 +238,14 @@ func (a *k8sAuthorizer) authorize(ctx context.Context, userInfo *authenticationv
 		result := a.checkAllPermissions(ctx, userInfo, namespace)
 		// Only cache successful authorizations and permission denials (403 Forbidden).
 		// Transient errors should not be cached so callers can retry.
-		if result.err == nil || pkghttputil.StatusFromError(result.err) == http.StatusForbidden {
+		switch pkghttputil.StatusFromError(result.err) {
+		case http.StatusOK:
 			a.authzCache.Add(cacheKey, result)
-		}
-
-		if result.err == nil {
 			incrementAuthorization(authzResultSuccess)
-		} else if pkghttputil.StatusFromError(result.err) == http.StatusForbidden {
+		case http.StatusForbidden:
+			a.authzCache.Add(cacheKey, result)
 			incrementAuthorization(authzResultDenied)
-		} else {
+		default:
 			incrementAuthorization(authzResultError)
 		}
 
