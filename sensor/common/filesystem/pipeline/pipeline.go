@@ -3,6 +3,7 @@ package pipeline
 import (
 	"context"
 	"fmt"
+	"time"
 
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -15,13 +16,30 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
+	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/processsignal"
 	"github.com/stackrox/rox/sensor/common/pubsub"
+)
+
+const (
+	// Maximum number of file activities to buffer per process
+	maxBufferedActivitiesPerProcess = 100
+	// Maximum total number of buffered file activities across all processes
+	maxTotalBufferedActivities = 10000
+	// How long to keep buffered activities before dropping them
+	bufferedActivityTTL = 5 * time.Minute
+	// How often to run cleanup of expired buffers
+	bufferCleanupInterval = 1 * time.Minute
 )
 
 var (
 	log = logging.LoggerForModule()
 )
+
+type bufferedActivityEntry struct {
+	activities []*sensorAPI.FileActivity
+	timestamp  time.Time
+}
 
 type Pipeline struct {
 	detector detector.Detector
@@ -30,8 +48,9 @@ type Pipeline struct {
 	activityChan    chan *sensorAPI.FileActivity
 	clusterEntities *clusterentities.Store
 
-	bufferedActivity map[string][]*sensorAPI.FileActivity
-	activityMutex    sync.Mutex
+	bufferedActivity      map[string]*bufferedActivityEntry
+	totalBufferedActivity int
+	activityMutex         sync.Mutex
 
 	pubSubDispatcher common.PubSubDispatcher
 
@@ -42,13 +61,14 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 	msgCtx := context.Background()
 
 	p := &Pipeline{
-		detector:         detector,
-		activityChan:     activityChan,
-		clusterEntities:  clusterEntities,
-		pubSubDispatcher: pubSubDispatcher,
-		stopper:          concurrency.NewStopper(),
-		msgCtx:           msgCtx,
-		bufferedActivity: make(map[string][]*sensorAPI.FileActivity),
+		detector:              detector,
+		activityChan:          activityChan,
+		clusterEntities:       clusterEntities,
+		pubSubDispatcher:      pubSubDispatcher,
+		stopper:               concurrency.NewStopper(),
+		msgCtx:                msgCtx,
+		bufferedActivity:      make(map[string]*bufferedActivityEntry),
+		totalBufferedActivity: 0,
 	}
 
 	if features.SensorInternalPubSub.Enabled() && pubSubDispatcher != nil {
@@ -62,12 +82,19 @@ func NewFileSystemPipeline(detector detector.Detector, clusterEntities *clustere
 		); err != nil {
 			log.Errorf("Failed to register consumer for enriched process indicators in file system pipeline: %v", err)
 		}
+
+		go p.cleanupExpiredBuffers()
 	} else {
 		log.Info("File system pipeline using legacy mode (direct enrichment)")
 	}
 
 	go p.run()
 	return p
+}
+
+func (p *Pipeline) Stop() {
+	p.stopper.Client().Stop()
+	<-p.stopper.Client().Stopped().Done()
 }
 
 func (p *Pipeline) translateWithIndicator(fs *sensorAPI.FileActivity, indicator *storage.ProcessIndicator) *storage.FileAccess {
@@ -161,16 +188,48 @@ func (p *Pipeline) bufferActivity(fs *sensorAPI.FileActivity) {
 	p.activityMutex.Lock()
 	defer p.activityMutex.Unlock()
 
-	p.bufferedActivity[key] = append(p.bufferedActivity[key], fs)
+	if p.totalBufferedActivity >= maxTotalBufferedActivities {
+		log.Warnf("File activity buffer is full (%d activities), dropping file activity for process %s",
+			maxTotalBufferedActivities, process.GetId())
+		metrics.IncrementFileActivityBufferDrops()
+		return
+	}
+
+	entry, exists := p.bufferedActivity[key]
+	if !exists {
+		entry = &bufferedActivityEntry{
+			activities: make([]*sensorAPI.FileActivity, 0, 10),
+			timestamp:  time.Now(),
+		}
+		p.bufferedActivity[key] = entry
+	}
+
+	if len(entry.activities) >= maxBufferedActivitiesPerProcess {
+		log.Warnf("Too many buffered activities for process %s (limit: %d), dropping file activity",
+			process.GetId(), maxBufferedActivitiesPerProcess)
+		metrics.IncrementFileActivityBufferDrops()
+		return
+	}
+
+	entry.activities = append(entry.activities, fs)
+	p.totalBufferedActivity++
+	metrics.SetFileActivityBufferSize(p.totalBufferedActivity)
 }
 
 func (p *Pipeline) popBufferedActivity(key string) []*sensorAPI.FileActivity {
 	p.activityMutex.Lock()
 	defer p.activityMutex.Unlock()
 
-	buffered := p.bufferedActivity[key]
+	entry := p.bufferedActivity[key]
+	if entry == nil {
+		return nil
+	}
+
+	activities := entry.activities
+	p.totalBufferedActivity -= len(activities)
 	delete(p.bufferedActivity, key)
-	return buffered
+	metrics.SetFileActivityBufferSize(p.totalBufferedActivity)
+	return activities
 }
 
 func (p *Pipeline) processEnrichedIndicator(event pubsub.Event) error {
@@ -258,9 +317,43 @@ func (p *Pipeline) getIndicator(process *sensorAPI.ProcessSignal) *storage.Proce
 	return pi
 }
 
-func (p *Pipeline) Stop() {
-	p.stopper.Client().Stop()
-	<-p.stopper.Client().Stopped().Done()
+func (p *Pipeline) cleanupExpiredBuffers() {
+	ticker := time.NewTicker(bufferCleanupInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-p.stopper.Flow().StopRequested():
+			return
+		case <-ticker.C:
+			p.pruneExpiredBuffers()
+		}
+	}
+}
+
+func (p *Pipeline) pruneExpiredBuffers() {
+	p.activityMutex.Lock()
+	defer p.activityMutex.Unlock()
+
+	now := time.Now()
+	expiredKeys := make([]string, 0)
+
+	for key, entry := range p.bufferedActivity {
+		if now.Sub(entry.timestamp) > bufferedActivityTTL {
+			expiredKeys = append(expiredKeys, key)
+			p.totalBufferedActivity -= len(entry.activities)
+			metrics.IncrementFileActivityBufferDrops()
+		}
+	}
+
+	for _, key := range expiredKeys {
+		delete(p.bufferedActivity, key)
+	}
+
+	if len(expiredKeys) > 0 {
+		log.Debugf("Pruned %d expired file activity buffers (TTL: %v)", len(expiredKeys), bufferedActivityTTL)
+		metrics.SetFileActivityBufferSize(p.totalBufferedActivity)
+	}
 }
 
 func (p *Pipeline) run() {
