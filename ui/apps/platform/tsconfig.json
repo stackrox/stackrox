@@ -1,12 +1,11 @@
 {
   "compilerOptions": {
-  "target": "es2020",
+    "target": "es2020",
     "lib": [
       "dom",
       "dom.iterable",
       "esnext"
     ],
-    "baseUrl": "src",
     "allowJs": true,
     "checkJs": false,
     "erasableSyntaxOnly": true,
@@ -16,8 +15,31 @@
     "strict": true,
     "noImplicitAny": false,
     "forceConsistentCasingInFileNames": true,
-    "module": "esnext",
-    "moduleResolution": "node",
+    "module": "es2020",
+    "moduleResolution": "bundler",
+    "paths": {
+      "Components/*": ["./src/Components/*"],
+      "ConsolePlugin/*": ["./src/ConsolePlugin/*"],
+      "Containers/*": ["./src/Containers/*"],
+      "constants/*": ["./src/constants/*"],
+      "css/*": ["./src/css/*"],
+      "hooks/*": ["./src/hooks/*"],
+      "images/*": ["./src/images/*"],
+      "init/*": ["./src/init/*"],
+      "messages/*": ["./src/messages/*"],
+      "mockData/*": ["./src/mockData/*"],
+      "providers/*": ["./src/providers/*"],
+      "queries/*": ["./src/queries/*"],
+      "reducers/*": ["./src/reducers/*"],
+      "sagas/*": ["./src/sagas/*"],
+      "services/*": ["./src/services/*"],
+      "sorters/*": ["./src/sorters/*"],
+      "test-utils/*": ["./src/test-utils/*"],
+      "types/*": ["./src/types/*"],
+      "utils/*": ["./src/utils/*"],
+      "*": ["./src/*"]
+    },
+    "rootDir": "./src",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
@@ -25,5 +47,5 @@
     "noFallthroughCasesInSwitch": true,
     "types": ["vitest/globals"]
   },
-  "include": ["src/**/*"]
+  "include": ["./src"]
 }
