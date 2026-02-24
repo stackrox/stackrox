@@ -103,6 +103,7 @@ function CollectionsTable({
                         <SearchInput
                             aria-label="Search by name"
                             placeholder="Search by name"
+                            className="pf-v6-u-w-100"
                             value={searchValue}
                             onChange={onSearchInputChange}
                             onSearch={() => setSearchFilter({ 'Collection Name': searchValue })}
