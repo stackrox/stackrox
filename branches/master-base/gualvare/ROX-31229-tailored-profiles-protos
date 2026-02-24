@@ -1,6 +1,6 @@
 {
   "base": {
-    "name": "master-base/gualvare/ROX-31226-custom-rules-tracking",
-    "hash": "a461cf0f136a9375f703f3b890da7ca098c41879"
+    "name": "master-base/gualvare/fix-compliance-make-tp-extends-optional",
+    "hash": "3999da634f86341751261ef66208fa626dc61a47"
   }
 }
