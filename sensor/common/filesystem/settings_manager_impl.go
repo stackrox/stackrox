@@ -1,8 +1,6 @@
 package filesystem
 
 import (
-	"strings"
-
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
@@ -68,22 +66,8 @@ func (f *factSettingsManager) extractFileActivityPaths(policies []*storage.Polic
 			continue
 		}
 
-		// we need to remove any wildcard information in the path values
-		// and construct a deduplicated list of prefixes which Fact
-		// can use to capture events.
-		//
-		// This is a fairly dumb algorithm, just split the string on the first
-		// occurrence of a wildcard character (*?[]{}), and send the prefix
 		booleanpolicy.ForEachValueWithFieldName(policy, fieldnames.FilePath, func(value string) bool {
-			idx := strings.IndexFunc(value, func(r rune) bool {
-				return strings.ContainsRune("*?[]{}", r)
-			})
-
-			if idx < 0 {
-				paths.Add(value)
-			} else {
-				paths.Add(value[:idx])
-			}
+			paths.Add(value)
 			return true
 		})
 	}
