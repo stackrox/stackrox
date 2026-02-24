@@ -16,10 +16,10 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	tokensMocks "github.com/stackrox/rox/pkg/auth/tokens/mocks"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	authnMocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/protoassert"
-	"github.com/stackrox/rox/pkg/protomock"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -108,20 +108,16 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		"Deployment": v1.Access_READ_ACCESS,
 	}
 	requestSingleNamespace := &v1.ClusterScope{
-		ClusterId:         testSensorClusterID,
+		ClusterId:         fixtureconsts.Cluster1,
 		FullClusterAccess: false,
 		Namespaces:        []string{"namespace A"},
 	}
-	deploymentPS := testPermissionSet(deploymentPermission)
-	singleNSScope := testAccessScope(
-		[]*v1.ClusterScope{requestSingleNamespace},
-	)
-	expectedRole := testRole(
-		deploymentPermission,
-		[]*v1.ClusterScope{requestSingleNamespace},
-	)
+	requestFullCluster := &v1.ClusterScope{
+		ClusterId:         fixtureconsts.Cluster1,
+		FullClusterAccess: true,
+	}
 
-	clusterIDNameMap := map[string]string{testSensorClusterID: testSensorClusterID}
+	clusterIDNameMap := map[string]string{fixtureconsts.Cluster1: testSensorClusterID}
 
 	createService := func(
 		t testing.TB,
@@ -149,6 +145,12 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		// policy      *tokenPolicy
 		expectedErr error
 	}{
+		"nil request": {
+			// The request processing fails at the step where
+			// the token expiration is computed (missing input).
+			input:       nil,
+			expectedErr: errox.InvalidArgs,
+		},
 		"no requested validity": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				Permissions:   deploymentPermission,
@@ -168,11 +170,10 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				Lifetime:      testExpirationDuration,
 			},
 			setup: func(mocks *mockContainer) {
-				mocks.roleStore.EXPECT().
-					UpsertPermissionSet(
-						gomock.Any(),
-						protomock.GoMockMatcherEqualMessage(deploymentPS),
-					).Times(1).Return(errDummy)
+				mocks.clusterStore.EXPECT().
+					GetClusterName(gomock.Any(), fixtureconsts.Cluster1).
+					Times(1).
+					Return("", false, errDummy)
 			},
 			expectedErr: errDummy,
 		},
@@ -188,12 +189,29 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			},
 			setup: func(mocks *mockContainer) {
 				setClusterStoreExpectations(mocks.clusterStore, clusterIDNameMap)
-				setNormalRoleStoreExpectations(deploymentPS, singleNSScope, expectedRole, nil, mocks.roleStore)
 				expectedClaims := tokens.RoxClaims{
-					RoleNames: []string{expectedRole.GetName()},
+					InternalRoles: []*tokens.InternalRole{
+						{
+							Permissions: map[string]string{
+								"Deployment": storage.Access_READ_ACCESS.String(),
+							},
+							ClusterScopes: []*tokens.ClusterScope{
+								{
+									ClusterName: testSensorClusterID,
+									Namespaces:  []string{"namespace A"},
+								},
+							},
+							/*
+								ReadResources: []string{"Deployment"},
+								Clusters: map[string][]string{
+									testSensorClusterID: {"namespace A"},
+								},
+							*/
+						},
+					},
 					Name: fmt.Sprintf(
 						claimNameFormat,
-						expectedRole.GetName(),
+						"internal role",
 						testTokenExpiry.Format(time.RFC3339Nano),
 					),
 				}
@@ -252,7 +270,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				tc.setup(mocks)
 			}
 			svc := createService(it, mocks.issuer, mocks.clusterStore, mocks.roleStore, permissivePolicy)
-			ctx := sensorContext(it, mockCtrl, testSensorClusterID)
+			ctx := sensorContext(it, mockCtrl, fixtureconsts.Cluster1)
 
 			rsp, err := svc.GenerateTokenForPermissionsAndScope(ctx, tc.input)
 			assert.Nil(it, rsp)
@@ -276,12 +294,23 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			policy: permissivePolicy,
 			setup: func(_ *testing.T, mocks *mockContainer) {
 				setClusterStoreExpectations(mocks.clusterStore, clusterIDNameMap)
-				setNormalRoleStoreExpectations(deploymentPS, singleNSScope, expectedRole, nil, mocks.roleStore)
 				expectedClaims := tokens.RoxClaims{
-					RoleNames: []string{expectedRole.GetName()},
+					InternalRoles: []*tokens.InternalRole{
+						{
+							Permissions: map[string]string{
+								"Deployment": storage.Access_READ_ACCESS.String(),
+							},
+							ClusterScopes: []*tokens.ClusterScope{
+								{
+									ClusterName: testSensorClusterID,
+									Namespaces:  []string{"namespace A"},
+								},
+							},
+						},
+					},
 					Name: fmt.Sprintf(
 						"Generated claims for role %s expiring at %s",
-						expectedRole.GetName(),
+						"internal role",
 						testTokenExpiry.Format(time.RFC3339Nano),
 					),
 				}
@@ -304,49 +333,30 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				"Deployment": v1.Access_READ_ACCESS,
 			}),
 			setup: func(st *testing.T, mocks *mockContainer) {
+				setClusterStoreExpectations(mocks.clusterStore, clusterIDNameMap)
 				cappedExpiry := testClock().Add(10 * time.Second)
-				cappedTraits, traitErr := generateTraitsWithExpiry(cappedExpiry.Add(rbacObjectsGraceExpiration))
-				assert.NoError(st, traitErr)
-				cappedPS := &storage.PermissionSet{
-					Id:               computePermissionSetID(deploymentPermission),
-					Name:             fmt.Sprintf(permissionSetNameFormat, computePermissionSetID(deploymentPermission)),
-					Description:      permissionSetDescription,
-					ResourceToAccess: map[string]storage.Access{"Deployment": storage.Access_READ_ACCESS},
-					Traits:           cappedTraits,
-				}
-				cappedScope := computeAccessScopeID([]*v1.ClusterScope{requestSingleNamespace})
-				cappedAS := &storage.SimpleAccessScope{
-					Id:          cappedScope,
-					Name:        fmt.Sprintf(accessScopeNameFormat, cappedScope),
-					Description: accessScopeDescription,
-					Rules: &storage.SimpleAccessScope_Rules{
-						IncludedClusters: make([]string, 0),
-						IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-							{ClusterName: testSensorClusterID, NamespaceName: "namespace A"},
+				expectedClaims := tokens.RoxClaims{
+					InternalRoles: []*tokens.InternalRole{
+						{
+							Permissions: map[string]string{
+								"Deployment": storage.Access_READ_ACCESS.String(),
+							},
+							ClusterScopes: []*tokens.ClusterScope{
+								{
+									ClusterName: testSensorClusterID,
+									Namespaces:  []string{"namespace A"},
+								},
+							},
 						},
 					},
-					Traits: cappedTraits,
-				}
-				cappedRoleName := fmt.Sprintf(roleNameFormat, cappedPS.GetId(), cappedAS.GetId())
-				cappedRole := &storage.Role{
-					Name:            cappedRoleName,
-					Description:     roleDescription,
-					PermissionSetId: cappedPS.GetId(),
-					AccessScopeId:   cappedAS.GetId(),
-					Traits:          cappedTraits,
-				}
-				setClusterStoreExpectations(mocks.clusterStore, clusterIDNameMap)
-				setNormalRoleStoreExpectations(cappedPS, cappedAS, cappedRole, nil, mocks.roleStore)
-				expectedClaims := tokens.RoxClaims{
-					RoleNames: []string{cappedRoleName},
 					Name: fmt.Sprintf(
 						claimNameFormat,
-						cappedRoleName,
+						"internal role",
 						cappedExpiry.Format(time.RFC3339Nano),
 					),
 				}
 				mocks.issuer.EXPECT().
-					Issue(gomock.Any(), expectedClaims, gomock.Any()).
+					Issue(gomock.Any(), expectedClaims, gomock.Any()). // TODO: use some form of validation of the withExpiry parameters
 					Times(1).Return(&tokens.TokenInfo{Token: "capped-token"}, nil)
 			},
 			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{
@@ -363,14 +373,25 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				Requester: "custom requester",
 			},
 			policy: permissivePolicy,
-			setup: func(_ *testing.T, mocks *mockContainer) {
+			setup: func(t *testing.T, mocks *mockContainer) {
 				setClusterStoreExpectations(mocks.clusterStore, clusterIDNameMap)
-				setNormalRoleStoreExpectations(deploymentPS, singleNSScope, expectedRole, nil, mocks.roleStore)
 				expectedClaims := tokens.RoxClaims{
-					RoleNames: []string{expectedRole.GetName()},
+					InternalRoles: []*tokens.InternalRole{
+						{
+							Permissions: map[string]string{
+								"Deployment": storage.Access_READ_ACCESS.String(),
+							},
+							ClusterScopes: []*tokens.ClusterScope{
+								{
+									ClusterName: testSensorClusterID,
+									Namespaces:  []string{"namespace A"},
+								},
+							},
+						},
+					},
 					Name: fmt.Sprintf(
 						"Generated claims for role %s expiring at %s",
-						expectedRole.GetName(),
+						"internal role",
 						testTokenExpiry.Format(time.RFC3339Nano),
 					),
 					Requester: "custom requester",
@@ -381,6 +402,127 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			},
 			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{
 				Token: "the quick brown fox jumps over the lazy dog",
+			},
+		},
+		"success - no requested permissions": {
+			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				// No requested permission results in empty permissions for the user role in the token claims.
+				Permissions:   nil,
+				ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
+				Lifetime:      testExpirationDuration,
+			},
+			policy: permissivePolicy,
+			setup: func(t *testing.T, mocks *mockContainer) {
+				setClusterStoreExpectations(mocks.clusterStore, clusterIDNameMap)
+				expectedClaims := tokens.RoxClaims{
+					InternalRoles: []*tokens.InternalRole{
+						{
+							Permissions: make(map[string]string),
+							ClusterScopes: []*tokens.ClusterScope{
+								{
+									ClusterName: testSensorClusterID,
+									Namespaces:  []string{"namespace A"},
+								},
+							},
+						},
+					},
+					Name: fmt.Sprintf(
+						"Generated claims for role %s expiring at %s",
+						"internal role",
+						testTokenExpiry.Format(time.RFC3339Nano),
+					),
+				}
+				mocks.issuer.EXPECT().
+					Issue(gomock.Any(), expectedClaims, gomock.Any()).
+					Times(1).Return(&tokens.TokenInfo{Token: "In the days when everybody started fair, the Leopard lived in a place called the High Veldt."}, nil)
+			},
+			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{
+				Token: "In the days when everybody started fair, the Leopard lived in a place called the High Veldt.",
+			},
+		},
+		"success - no requested scope": {
+			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				Permissions: deploymentPermission,
+				// No requested scope results in empty scope for the user role in the token claims.
+				ClusterScopes: nil,
+				Lifetime:      testExpirationDuration,
+			},
+			policy: permissivePolicy,
+			setup: func(t *testing.T, mocks *mockContainer) {
+				expectedClaims := tokens.RoxClaims{
+					InternalRoles: []*tokens.InternalRole{
+						{
+							Permissions: map[string]string{
+								"Deployment": storage.Access_READ_ACCESS.String(),
+							},
+							ClusterScopes: nil,
+						},
+					},
+					Name: fmt.Sprintf(
+						"Generated claims for role %s expiring at %s",
+						"internal role",
+						testTokenExpiry.Format(time.RFC3339Nano),
+					),
+				}
+				mocks.issuer.EXPECT().
+					Issue(gomock.Any(), expectedClaims, gomock.Any()).
+					Times(1).Return(&tokens.TokenInfo{Token: "In the high and far-off times the elephant had no trunk."}, nil)
+			},
+			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{
+				Token: "In the high and far-off times the elephant had no trunk.",
+			},
+		},
+		"success - multiple permissions and cluster scopes": {
+			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				Permissions: map[string]v1.Access{
+					"Deployment": v1.Access_READ_ACCESS,
+					"Image":      v1.Access_READ_WRITE_ACCESS,
+				},
+				ClusterScopes: []*v1.ClusterScope{
+					requestSingleNamespace,
+					requestFullCluster,
+				},
+				Lifetime: testExpirationDuration,
+			},
+			policy: newTokenPolicy(300*time.Second, map[string]v1.Access{
+				"Deployment": v1.Access_READ_ACCESS,
+				"Image":      v1.Access_READ_WRITE_ACCESS,
+			}),
+			setup: func(t *testing.T, mocks *mockContainer) {
+				setClusterStoreExpectations(mocks.clusterStore, clusterIDNameMap)
+				setClusterStoreExpectations(mocks.clusterStore, clusterIDNameMap)
+				expectedClaims := tokens.RoxClaims{
+					InternalRoles: []*tokens.InternalRole{
+						{
+							Permissions: map[string]string{
+								"Deployment": storage.Access_READ_ACCESS.String(),
+								"Image":      storage.Access_READ_WRITE_ACCESS.String(),
+							},
+							ClusterScopes: []*tokens.ClusterScope{
+								{
+									ClusterName: testSensorClusterID,
+									Namespaces:  []string{"namespace A"},
+								},
+								{
+									ClusterName:       testSensorClusterID,
+									ClusterFullAccess: true,
+								},
+							},
+						},
+					},
+					Name: fmt.Sprintf(
+						"Generated claims for role %s expiring at %s",
+						"internal role",
+						testTokenExpiry.Format(time.RFC3339Nano),
+					),
+				}
+				mocks.issuer.EXPECT().
+					Issue(gomock.Any(), expectedClaims, gomock.Any()).
+					Times(1).
+					Return(&tokens.TokenInfo{Token: "Hear and attend and listen; for this befell and happened and became and was, when the Tame animals were wild."}, nil)
+			},
+			expectedRsp: &v1.GenerateTokenForPermissionsAndScopeResponse{
+				Token: "Hear and attend and listen; for this befell and happened and became and was, when the Tame animals were wild.",
 			},
 		},
 	} {
@@ -395,7 +537,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			if tc.setup != nil {
 				tc.setup(it, mocks)
 			}
-			ctx := sensorContext(it, mockCtrl, testSensorClusterID)
+			ctx := sensorContext(it, mockCtrl, fixtureconsts.Cluster1)
 
 			rsp, err := svc.GenerateTokenForPermissionsAndScope(ctx, tc.input)
 			assert.NotNil(it, rsp)
