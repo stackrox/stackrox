@@ -243,3 +243,154 @@ func TestFixCSVDescriptorsMap(t *testing.T) {
 		})
 	}
 }
+
+func TestAllowRelativeFieldDependenciesMap(t *testing.T) {
+	tests := []struct {
+		name       string
+		input      []any
+		assertions func(t *testing.T, descriptors []any)
+	}{
+		{
+			name: "converts single relative path",
+			input: []any{
+				map[string]any{
+					"path": "spec.parent.field",
+					"x-descriptors": []any{
+						"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.sibling:value",
+					},
+				},
+			},
+			assertions: func(t *testing.T, descriptors []any) {
+				descriptor := descriptors[0].(map[string]any)
+				xDescs := descriptor["x-descriptors"].([]any)
+				assert.Equal(t, "urn:alm:descriptor:com.tectonic.ui:fieldDependency:spec.parent.sibling:value", xDescs[0])
+			},
+		},
+		{
+			name: "converts multiple relative paths in same descriptor",
+			input: []any{
+				map[string]any{
+					"path": "spec.parent.field",
+					"x-descriptors": []any{
+						"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.sibling1:value1",
+						"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.sibling2:value2",
+					},
+				},
+			},
+			assertions: func(t *testing.T, descriptors []any) {
+				descriptor := descriptors[0].(map[string]any)
+				xDescs := descriptor["x-descriptors"].([]any)
+				assert.Equal(t, "urn:alm:descriptor:com.tectonic.ui:fieldDependency:spec.parent.sibling1:value1", xDescs[0])
+				assert.Equal(t, "urn:alm:descriptor:com.tectonic.ui:fieldDependency:spec.parent.sibling2:value2", xDescs[1])
+			},
+		},
+		{
+			name: "handles nested descriptors",
+			input: []any{
+				map[string]any{
+					"path": "spec.foo.bar.baz",
+					"x-descriptors": []any{
+						"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.other:value",
+					},
+				},
+			},
+			assertions: func(t *testing.T, descriptors []any) {
+				descriptor := descriptors[0].(map[string]any)
+				xDescs := descriptor["x-descriptors"].([]any)
+				assert.Equal(t, "urn:alm:descriptor:com.tectonic.ui:fieldDependency:spec.foo.bar.other:value", xDescs[0])
+			},
+		},
+		{
+			name: "skips absolute paths unchanged",
+			input: []any{
+				map[string]any{
+					"path": "spec.parent.field",
+					"x-descriptors": []any{
+						"urn:alm:descriptor:com.tectonic.ui:fieldDependency:spec.absolute.path:value",
+					},
+				},
+			},
+			assertions: func(t *testing.T, descriptors []any) {
+				descriptor := descriptors[0].(map[string]any)
+				xDescs := descriptor["x-descriptors"].([]any)
+				assert.Equal(t, "urn:alm:descriptor:com.tectonic.ui:fieldDependency:spec.absolute.path:value", xDescs[0])
+			},
+		},
+		{
+			name: "handles top-level descriptors",
+			input: []any{
+				map[string]any{
+					"path": "spec",
+					"x-descriptors": []any{
+						"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.foo:value",
+					},
+				},
+			},
+			assertions: func(t *testing.T, descriptors []any) {
+				descriptor := descriptors[0].(map[string]any)
+				xDescs := descriptor["x-descriptors"].([]any)
+				// When parent path is empty, concatenation results in ".foo"
+				assert.Equal(t, "urn:alm:descriptor:com.tectonic.ui:fieldDependency:.foo:value", xDescs[0])
+			},
+		},
+		{
+			name: "handles descriptors without x-descriptors",
+			input: []any{
+				map[string]any{
+					"path": "spec.field",
+				},
+			},
+			assertions: func(t *testing.T, descriptors []any) {
+				descriptor := descriptors[0].(map[string]any)
+				_, exists := descriptor["x-descriptors"]
+				assert.False(t, exists)
+			},
+		},
+		{
+			name: "handles non-fieldDependency x-descriptors",
+			input: []any{
+				map[string]any{
+					"path": "spec.field",
+					"x-descriptors": []any{
+						"urn:alm:descriptor:com.tectonic.ui:text",
+						"urn:alm:descriptor:com.tectonic.ui:number",
+					},
+				},
+			},
+			assertions: func(t *testing.T, descriptors []any) {
+				descriptor := descriptors[0].(map[string]any)
+				xDescs := descriptor["x-descriptors"].([]any)
+				assert.Equal(t, "urn:alm:descriptor:com.tectonic.ui:text", xDescs[0])
+				assert.Equal(t, "urn:alm:descriptor:com.tectonic.ui:number", xDescs[1])
+			},
+		},
+		{
+			name: "handles malformed fieldDependency format",
+			input: []any{
+				map[string]any{
+					"path": "spec.field",
+					"x-descriptors": []any{
+						"urn:alm:descriptor:com.tectonic.ui:fieldDependency:onlyonepart",
+						"urn:alm:descriptor:com.tectonic.ui:fieldDependency:",
+					},
+				},
+			},
+			assertions: func(t *testing.T, descriptors []any) {
+				descriptor := descriptors[0].(map[string]any)
+				xDescs := descriptor["x-descriptors"].([]any)
+				// Malformed entries should be skipped/unchanged
+				assert.Equal(t, "urn:alm:descriptor:com.tectonic.ui:fieldDependency:onlyonepart", xDescs[0])
+				assert.Equal(t, "urn:alm:descriptor:com.tectonic.ui:fieldDependency:", xDescs[1])
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			allowRelativeFieldDependenciesMap(tt.input)
+			if tt.assertions != nil {
+				tt.assertions(t, tt.input)
+			}
+		})
+	}
+}
