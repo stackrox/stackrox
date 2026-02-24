@@ -7,6 +7,8 @@ import {
     Flex,
     FlexItem,
     MenuFooter,
+    MenuSearch,
+    MenuSearchInput,
     MenuToggle,
     SearchInput,
     Select,
@@ -136,14 +138,16 @@ function DeploymentSelector({
                 direction: 'down',
             }}
         >
-            <div className="pf-v6-u-p-md">
-                <SearchInput
-                    value={input}
-                    aria-label="Filter deployments"
-                    placeholder="Filter deployments..."
-                    onChange={(_event, value) => handleTextInputChange(value)}
-                />
-            </div>
+            <MenuSearch>
+                <MenuSearchInput>
+                    <SearchInput
+                        value={input}
+                        aria-label="Filter deployments"
+                        placeholder="Filter deployments..."
+                        onChange={(_event, value) => handleTextInputChange(value)}
+                    />
+                </MenuSearchInput>
+            </MenuSearch>
             <Divider className="pf-v6-u-m-0" />
             <SelectList className="network-graph-menu-list">
                 {filteredDeploymentSelectOptions.length === 0 && (
