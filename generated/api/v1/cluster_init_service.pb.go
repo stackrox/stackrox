@@ -208,7 +208,6 @@ func (x *CRSMeta) GetRegistrationsCompleted() []string {
 }
 
 // Deprecated: Marked as deprecated in api/v1/cluster_init_service.proto.
->>>>>>> 1e9f883dd7 (ROX-33247: deprecate init bundles APIs (#19106))
 type InitBundleGenResponse struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	Meta             *InitBundleMeta        `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta,omitempty"`
