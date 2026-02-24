@@ -25,21 +25,22 @@ func New[T any]() *Coalescer[T] {
 // If the context is cancelled while waiting, the context error is returned.
 // The underlying function continues executing for other waiters.
 func (c *Coalescer[T]) Coalesce(ctx context.Context, key string, fn func() (T, error)) (T, error) {
-	ch := c.group.DoChan(key, func() (interface{}, error) {
-		return fn()
-	})
-
-	select {
-	case <-ctx.Done():
-		var zero T
-		return zero, ctx.Err()
-	case result := <-ch:
-		if result.Err != nil {
-			var zero T
-			return zero, result.Err
-		}
-		return result.Val.(T), nil
-	}
+	return fn()
+	// ch := c.group.DoChan(key, func() (interface{}, error) {
+	// 	return fn()
+	// })
+	//
+	// select {
+	// case <-ctx.Done():
+	// 	var zero T
+	// 	return zero, ctx.Err()
+	// case result := <-ch:
+	// 	if result.Err != nil {
+	// 		var zero T
+	// 		return zero, result.Err
+	// 	}
+	// 	return result.Val.(T), nil
+	// }
 }
 
 // Forget tells the coalescer to forget about a key, allowing a new call to start.
