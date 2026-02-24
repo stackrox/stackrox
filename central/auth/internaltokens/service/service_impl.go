@@ -24,10 +24,6 @@ import (
 
 const (
 	claimNameFormat = "Generated claims for role %s expiring at %s"
-
-	// rbacObjectsGraceExpiration expands expired RBAC objects lifetime to allow
-	// requests complete even if the token expires during requests handling.
-	rbacObjectsGraceExpiration = 2 * time.Minute
 )
 
 var (
@@ -45,8 +41,6 @@ var (
 			sac.ResourceScopeKeys(resources.Cluster),
 		),
 	)
-
-	errBadExpirationValue = errox.InvalidArgs.New("bad expiration timestamp")
 )
 
 type serviceImpl struct {
