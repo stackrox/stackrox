@@ -120,11 +120,11 @@
         "postinstall": "node scripts/check-optional-dependency-versions.js"
     },
     "devDependencies": {
+        "@eslint-community/eslint-plugin-eslint-comments": "^4.6.0",
         "@eslint/css": "^0.14.1",
         "@eslint/js": "^9.39.3",
         "@eslint/json": "^1.0.1",
         "@eslint/markdown": "^7.5.1",
-        "@eslint-community/eslint-plugin-eslint-comments": "^4.6.0",
         "@openshift-console/dynamic-plugin-sdk-webpack": "4.19.0",
         "@tailwindcss/forms": "^0.2.1",
         "@testing-library/cypress": "^10.1.0",
