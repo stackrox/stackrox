@@ -7,15 +7,15 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
-// Outcome label values for proxyRequestsTotal and proxyRequestDuration.
+// Result label values for proxyRequestsTotal and proxyRequestDuration.
 const (
-	outcomeSuccess         = "success"
-	outcomeNotImplemented  = "not_implemented"
-	outcomeValidationError = "validation_error"
-	outcomeConfigError     = "config_error"
-	outcomeAuthnError      = "authn_error"
-	outcomeAuthzError      = "authz_error"
-	outcomeProxyError      = "proxy_error"
+	requestResultSuccess         = "success"
+	requestResultNotImplemented  = "not_implemented"
+	requestResultValidationError = "validation_error"
+	requestResultConfigError     = "config_error"
+	requestResultAuthnError      = "authn_error"
+	requestResultAuthzError      = "authz_error"
+	requestResultProxyError      = "proxy_error"
 )
 
 // Result label values for proxyAuthenticationTotal.
@@ -42,22 +42,22 @@ const (
 )
 
 var (
-	// proxyRequestsTotal counts proxy requests by outcome.
+	// proxyRequestsTotal counts proxy requests by result.
 	proxyRequestsTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "central_proxy_requests_total",
-		Help:      "Total number of proxy requests to Central by outcome.",
-	}, []string{"outcome"})
+		Help:      "Total number of proxy requests to Central by result.",
+	}, []string{"result"})
 
-	// proxyRequestDuration tracks proxy request latency by outcome.
+	// proxyRequestDuration tracks proxy request latency by result.
 	proxyRequestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "central_proxy_request_duration_seconds",
-		Help:      "Duration of proxy requests to Central in seconds by outcome.",
+		Help:      "Duration of proxy requests to Central in seconds by result.",
 		Buckets:   prometheus.DefBuckets,
-	}, []string{"outcome"})
+	}, []string{"result"})
 
 	// proxyAuthenticationTotal counts authentication attempts by result.
 	proxyAuthenticationTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -95,9 +95,9 @@ func init() {
 }
 
 // observeProxyRequest increments the request counter and observes the request duration.
-func observeProxyRequest(outcome string, duration time.Duration) {
-	proxyRequestsTotal.WithLabelValues(outcome).Inc()
-	proxyRequestDuration.WithLabelValues(outcome).Observe(duration.Seconds())
+func observeProxyRequest(result string, duration time.Duration) {
+	proxyRequestsTotal.WithLabelValues(result).Inc()
+	proxyRequestDuration.WithLabelValues(result).Observe(duration.Seconds())
 }
 
 // incrementAuthentication increments the authentication counter for the given result.

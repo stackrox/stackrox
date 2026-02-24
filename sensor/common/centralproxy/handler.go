@@ -144,25 +144,25 @@ func checkInternalTokenAPISupport() error {
 // ServeHTTP handles incoming HTTP requests and proxies them to Central.
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	start := time.Now()
-	outcome := outcomeSuccess
+	result := requestResultSuccess
 	defer func() {
-		observeProxyRequest(outcome, time.Since(start))
+		observeProxyRequest(result, time.Since(start))
 	}()
 
 	if err := checkInternalTokenAPISupport(); err != nil {
-		outcome = outcomeNotImplemented
+		result = requestResultNotImplemented
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 
 	if err := h.validateRequest(request); err != nil {
-		outcome = outcomeValidationError
+		result = requestResultValidationError
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 
 	if h.authorizer == nil {
-		outcome = outcomeConfigError
+		result = requestResultConfigError
 		log.Error("Authorizer is nil - this indicates a misconfiguration in the central proxy handler")
 		http.Error(writer, "authorizer not configured", http.StatusInternalServerError)
 		return
@@ -170,13 +170,13 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 	userInfo, err := h.authorizer.authenticate(request.Context(), request)
 	if err != nil {
-		outcome = outcomeAuthnError
+		result = requestResultAuthnError
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 
 	if err := h.authorizer.authorize(request.Context(), userInfo, request); err != nil {
-		outcome = outcomeAuthzError
+		result = requestResultAuthzError
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
@@ -185,6 +185,6 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	h.proxy.ServeHTTP(tracker, request)
 
 	if statusCode := tracker.GetStatusCode(); statusCode != nil && *statusCode >= http.StatusBadRequest {
-		outcome = outcomeProxyError
+		result = requestResultProxyError
 	}
 }
