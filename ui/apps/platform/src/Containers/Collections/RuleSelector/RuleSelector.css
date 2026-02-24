@@ -18,10 +18,6 @@
   flex: 1;
 }
 
-.rule-selector .rule-selector-name-value-input  * {
-  width: 100% !important;
-}
-
 .rule-selector-list {
   border-left: solid 1px var(--pf-t--global--border--color--default);
   margin-left: var(--rule-selector-spacer);
