@@ -140,7 +140,7 @@ button[data-testid="related-entity-value"]:hover,
 
 
 /* overriding our tailwind config default of display: block for images, because it breaks the patternfly layout */
-.pf-v5-svg,
+.pf-v6-svg,
 .pf-v6-c-page svg {
     display: inline;
 }

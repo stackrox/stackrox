@@ -70,12 +70,7 @@ function CollectionFormDrawer({
             <Drawer isExpanded={isDrawerOpen} isInline={isInlineDrawer}>
                 <DrawerContent
                     panelContent={
-                        <DrawerPanelContent
-                            style={{
-                                borderLeft: 'var(--pf-t--global--border--color--default)',
-                                maxWidth: isInlineDrawer ? '40%' : 'unset',
-                            }}
-                        >
+                        <DrawerPanelContent style={{ maxWidth: isInlineDrawer ? '40%' : 'unset' }}>
                             <CollectionResults
                                 headerContent={
                                     !isInlineDrawer && (
@@ -93,27 +88,29 @@ function CollectionFormDrawer({
                         </DrawerPanelContent>
                     }
                 >
-                    <DrawerContentBody className="pf-v6-u-background-color-100 pf-v6-u-display-flex pf-v6-u-flex-direction-column">
+                    <DrawerContentBody>
                         {headerContent}
-                        {isCollectionParseError(initialData) ? (
-                            <UnsupportedCollectionState
-                                className="pf-v6-u-pt-xl"
-                                errors={initialData.errors}
-                            />
-                        ) : (
-                            <CollectionForm
-                                hasWriteAccessForCollections={hasWriteAccessForCollections}
-                                action={action}
-                                initialData={initialData}
-                                initialEmbeddedCollections={initialEmbeddedCollections}
-                                onFormChange={updateDryRunConfig}
-                                onSubmit={onSubmit}
-                                onCancel={onCancel}
-                                configError={configError}
-                                setConfigError={setConfigError}
-                                getCollectionTableCells={getCollectionTableCells}
-                            />
-                        )}
+                        <div className="pf-v6-u-p-lg">
+                            {isCollectionParseError(initialData) ? (
+                                <UnsupportedCollectionState
+                                    className="pf-v6-u-pt-xl"
+                                    errors={initialData.errors}
+                                />
+                            ) : (
+                                <CollectionForm
+                                    hasWriteAccessForCollections={hasWriteAccessForCollections}
+                                    action={action}
+                                    initialData={initialData}
+                                    initialEmbeddedCollections={initialEmbeddedCollections}
+                                    onFormChange={updateDryRunConfig}
+                                    onSubmit={onSubmit}
+                                    onCancel={onCancel}
+                                    configError={configError}
+                                    setConfigError={setConfigError}
+                                    getCollectionTableCells={getCollectionTableCells}
+                                />
+                            )}
+                        </div>
                     </DrawerContentBody>
                 </DrawerContent>
             </Drawer>
