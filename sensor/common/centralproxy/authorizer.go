@@ -129,11 +129,13 @@ func formatForbiddenErr(user, verb string, resource k8sResource, namespace strin
 func (a *k8sAuthorizer) authenticate(ctx context.Context, r *http.Request) (*authenticationv1.UserInfo, error) {
 	token, err := extractBearerToken(r)
 	if err != nil {
+		incrementAuthentication(authnResultError)
 		return nil, err
 	}
 
 	// Fast path: check cache first.
 	if userInfo, ok := a.tokenCache.Get(token); ok {
+		incrementAuthentication(authnResultCacheHit)
 		return userInfo, nil
 	}
 
@@ -141,6 +143,7 @@ func (a *k8sAuthorizer) authenticate(ctx context.Context, r *http.Request) (*aut
 	return a.tokenReviewGroup.Coalesce(ctx, token, func() (*authenticationv1.UserInfo, error) { //nolint:wrapcheck
 		// Double-check cache inside coalesce to avoid redundant API calls.
 		if userInfo, ok := a.tokenCache.Get(token); ok {
+			incrementAuthentication(authnResultCacheHit)
 			return userInfo, nil
 		}
 
@@ -150,10 +153,12 @@ func (a *k8sAuthorizer) authenticate(ctx context.Context, r *http.Request) (*aut
 		defer cancel()
 		userInfo, err := a.validateToken(ctx, token)
 		if err != nil {
+			incrementAuthentication(authnResultError)
 			return nil, err
 		}
 
 		a.tokenCache.Add(token, userInfo)
+		incrementAuthentication(authnResultSuccess)
 		return userInfo, nil
 	})
 }
@@ -205,12 +210,14 @@ func (a *k8sAuthorizer) authorize(ctx context.Context, userInfo *authenticationv
 	namespace := r.Header.Get(stackroxNamespaceHeader)
 	// Skip authorization if the namespace header is empty or not set.
 	if namespace == "" {
+		incrementAuthorization(authzResultSkipped)
 		return nil
 	}
 
 	// Fast path: check cache first.
 	cacheKey := a.buildAuthzCacheKey(userInfo, namespace)
 	if cached, ok := a.authzCache.Get(cacheKey); ok {
+		incrementAuthorization(authzResultCacheHit)
 		return cached.err
 	}
 
@@ -218,6 +225,7 @@ func (a *k8sAuthorizer) authorize(ctx context.Context, userInfo *authenticationv
 	cached, err := a.authzGroup.Coalesce(ctx, cacheKey.String(), func() (authzResult, error) {
 		// Double-check cache inside coalesce to avoid redundant API calls.
 		if cached, ok := a.authzCache.Get(cacheKey); ok {
+			incrementAuthorization(authzResultCacheHit)
 			return cached, nil
 		}
 
@@ -230,9 +238,17 @@ func (a *k8sAuthorizer) authorize(ctx context.Context, userInfo *authenticationv
 		result := a.checkAllPermissions(ctx, userInfo, namespace)
 		// Only cache successful authorizations and permission denials (403 Forbidden).
 		// Transient errors should not be cached so callers can retry.
-		if result.err == nil || pkghttputil.StatusFromError(result.err) == http.StatusForbidden {
+		switch pkghttputil.StatusFromError(result.err) {
+		case http.StatusOK:
 			a.authzCache.Add(cacheKey, result)
+			incrementAuthorization(authzResultSuccess)
+		case http.StatusForbidden:
+			a.authzCache.Add(cacheKey, result)
+			incrementAuthorization(authzResultDenied)
+		default:
+			incrementAuthorization(authzResultError)
 		}
+
 		return result, nil
 	})
 	if err != nil {

@@ -208,11 +208,13 @@ func (p *tokenProvider) setClient(conn grpc.ClientConnInterface) {
 func (p *tokenProvider) getTokenForScope(ctx context.Context, namespaceScope string) (string, error) {
 	client := p.client.Load()
 	if client == nil {
+		incrementTokenRequest(tokenResultError)
 		return "", errors.Wrap(errServiceUnavailable, "token provider not initialized: central connection not available")
 	}
 
 	// Fast path: check cache first.
 	if token, ok := p.tokenCache.Get(namespaceScope); ok {
+		incrementTokenRequest(tokenResultCacheHit)
 		return token, nil
 	}
 
@@ -220,6 +222,7 @@ func (p *tokenProvider) getTokenForScope(ctx context.Context, namespaceScope str
 	return p.tokenGroup.Coalesce(ctx, namespaceScope, func() (string, error) { //nolint:wrapcheck
 		// Double-check cache inside coalesce to avoid redundant API calls.
 		if token, ok := p.tokenCache.Get(namespaceScope); ok {
+			incrementTokenRequest(tokenResultCacheHit)
 			return token, nil
 		}
 
@@ -231,10 +234,12 @@ func (p *tokenProvider) getTokenForScope(ctx context.Context, namespaceScope str
 		defer cancel()
 		token, err := p.requestToken(ctx, *client, namespaceScope)
 		if err != nil {
+			incrementTokenRequest(tokenResultError)
 			return "", err
 		}
 
 		p.tokenCache.Add(namespaceScope, token)
+		incrementTokenRequest(tokenResultSuccess)
 		return token, nil
 	})
 }
