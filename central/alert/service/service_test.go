@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	dataStoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	"github.com/stackrox/rox/central/alert/mappings"
+	alertviews "github.com/stackrox/rox/central/alert/views"
 	"github.com/stackrox/rox/central/alerttest"
 	baselineMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -203,36 +204,18 @@ type getAlertsGroupsTests struct {
 }
 
 func (s *getAlertsGroupsTests) TestGetAlertsGroupForOneCategory() {
-	fakeListAlertSlice := []*storage.ListAlert{
+	fakeGroups := []*alertviews.AlertPolicyGroup{
 		{
-			Id: "id1",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance"},
-				Id:         "id1",
-				Name:       "policy1",
-				Severity:   storage.Severity_LOW_SEVERITY,
-			},
-			Time: protocompat.GetProtoTimestampFromSeconds(300),
+			PolicyID:   "id1",
+			PolicyName: "policy1",
+			Severity:   int(storage.Severity_LOW_SEVERITY),
+			NumAlerts:  2,
 		},
 		{
-			Id: "id2",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance"},
-				Id:         "id2",
-				Name:       "policy2",
-				Severity:   storage.Severity_HIGH_SEVERITY,
-			},
-			Time: protocompat.GetProtoTimestampFromSeconds(200),
-		},
-		{
-			Id: "id3",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance"},
-				Id:         "id1",
-				Name:       "policy1",
-				Severity:   storage.Severity_LOW_SEVERITY,
-			},
-			Time: protocompat.GetProtoTimestampFromSeconds(100),
+			PolicyID:   "id2",
+			PolicyName: "policy2",
+			Severity:   int(storage.Severity_HIGH_SEVERITY),
+			NumAlerts:  1,
 		},
 	}
 
@@ -240,69 +223,48 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForOneCategory() {
 		AlertsByPolicies: []*v1.GetAlertsGroupResponse_PolicyGroup{
 			{
 				Policy: &storage.ListAlertPolicy{
-					Categories: []string{"Image Assurance"},
-					Id:         "id1",
-					Name:       "policy1",
-					Severity:   storage.Severity_LOW_SEVERITY,
+					Id:       "id1",
+					Name:     "policy1",
+					Severity: storage.Severity_LOW_SEVERITY,
 				},
 				NumAlerts: 2,
 			},
 			{
 				Policy: &storage.ListAlertPolicy{
-					Categories: []string{"Image Assurance"},
-					Id:         "id2",
-					Name:       "policy2",
-					Severity:   storage.Severity_HIGH_SEVERITY,
+					Id:       "id2",
+					Name:     "policy2",
+					Severity: storage.Severity_HIGH_SEVERITY,
 				},
 				NumAlerts: 1,
 			},
 		},
 	}
 
-	s.testGetAlertsGroupFor(fakeListAlertSlice, expected)
+	s.testGetAlertsGroupFor(fakeGroups, expected)
 }
 
-func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
-	fakeListAlertSlice := []*storage.ListAlert{
+func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultiplePolicies() {
+	fakeGroups := []*alertviews.AlertPolicyGroup{
 		{
-			Id: "id1",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance"},
-				Id:         "id1",
-				Name:       "policy1",
-				Severity:   storage.Severity_LOW_SEVERITY,
-			},
-			Time: protocompat.GetProtoTimestampFromSeconds(300),
+			PolicyID:    "id1",
+			PolicyName:  "policy1",
+			Severity:    int(storage.Severity_LOW_SEVERITY),
+			Description: "low severity policy",
+			NumAlerts:   2,
 		},
 		{
-			Id: "id2",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance", "Privileges Capabilities"},
-				Id:         "id2",
-				Name:       "policy2",
-				Severity:   storage.Severity_HIGH_SEVERITY,
-			},
-			Time: protocompat.GetProtoTimestampFromSeconds(200),
+			PolicyID:    "id2",
+			PolicyName:  "policy2",
+			Severity:    int(storage.Severity_HIGH_SEVERITY),
+			Description: "high severity policy",
+			NumAlerts:   1,
 		},
 		{
-			Id: "id3",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Container Configuration"},
-				Id:         "id30",
-				Name:       "policy30",
-				Severity:   storage.Severity_CRITICAL_SEVERITY,
-			},
-			Time: protocompat.GetProtoTimestampFromSeconds(150),
-		},
-		{
-			Id: "id4",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance"},
-				Id:         "id1",
-				Name:       "policy1",
-				Severity:   storage.Severity_LOW_SEVERITY,
-			},
-			Time: protocompat.GetProtoTimestampFromSeconds(100),
+			PolicyID:    "id30",
+			PolicyName:  "policy30",
+			Severity:    int(storage.Severity_CRITICAL_SEVERITY),
+			Description: "critical policy",
+			NumAlerts:   1,
 		},
 	}
 
@@ -310,44 +272,41 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 		AlertsByPolicies: []*v1.GetAlertsGroupResponse_PolicyGroup{
 			{
 				Policy: &storage.ListAlertPolicy{
-					Categories: []string{"Image Assurance"},
-					Id:         "id1",
-					Name:       "policy1",
-					Severity:   storage.Severity_LOW_SEVERITY,
+					Id:          "id1",
+					Name:        "policy1",
+					Severity:    storage.Severity_LOW_SEVERITY,
+					Description: "low severity policy",
 				},
 				NumAlerts: 2,
 			},
 			{
 				Policy: &storage.ListAlertPolicy{
-					Categories: []string{"Image Assurance", "Privileges Capabilities"},
-					Id:         "id2",
-					Name:       "policy2",
-					Severity:   storage.Severity_HIGH_SEVERITY,
+					Id:          "id2",
+					Name:        "policy2",
+					Severity:    storage.Severity_HIGH_SEVERITY,
+					Description: "high severity policy",
 				},
 				NumAlerts: 1,
 			},
 			{
 				Policy: &storage.ListAlertPolicy{
-					Categories: []string{"Container Configuration"},
-					Id:         "id30",
-					Name:       "policy30",
-					Severity:   storage.Severity_CRITICAL_SEVERITY,
+					Id:          "id30",
+					Name:        "policy30",
+					Severity:    storage.Severity_CRITICAL_SEVERITY,
+					Description: "critical policy",
 				},
 				NumAlerts: 1,
 			},
 		},
 	}
 
-	s.testGetAlertsGroupFor(fakeListAlertSlice, expected)
+	s.testGetAlertsGroupFor(fakeGroups, expected)
 }
 
-func (s *getAlertsGroupsTests) testGetAlertsGroupFor(fakeListAlertSlice []*storage.ListAlert, expected *v1.GetAlertsGroupResponse) {
+func (s *getAlertsGroupsTests) testGetAlertsGroupFor(fakeGroups []*alertviews.AlertPolicyGroup, expected *v1.GetAlertsGroupResponse) {
 	fakeContext := context.Background()
 	protoQuery := search.NewQueryBuilder().ProtoQuery()
-	protoQuery.Pagination = &v1.QueryPagination{
-		Limit: math.MaxInt32,
-	}
-	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(fakeListAlertSlice, nil)
+	s.datastoreMock.EXPECT().SearchAlertPolicyGroups(fakeContext, protoQuery, true).Return(fakeGroups, nil)
 
 	result, err := s.service.GetAlertsGroup(fakeContext, &v1.ListAlertsRequest{
 		Query: "",
@@ -360,10 +319,7 @@ func (s *getAlertsGroupsTests) testGetAlertsGroupFor(fakeListAlertSlice []*stora
 func (s *getAlertsGroupsTests) TestGetAlertsGroupWhenTheDataAccessLayerFails() {
 	fakeContext := context.Background()
 	protoQuery := search.NewQueryBuilder().ProtoQuery()
-	protoQuery.Pagination = &v1.QueryPagination{
-		Limit: math.MaxInt32,
-	}
-	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(nil, errFake)
+	s.datastoreMock.EXPECT().SearchAlertPolicyGroups(fakeContext, protoQuery, true).Return(nil, errFake)
 
 	result, err := s.service.GetAlertsGroup(fakeContext, &v1.ListAlertsRequest{
 		Query: "",

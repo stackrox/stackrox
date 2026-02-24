@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/alert/mappings"
+	alertviews "github.com/stackrox/rox/central/alert/views"
 	baselineDatastore "github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -177,21 +178,26 @@ func ensureAllAlertsAreFetched(req *v1.ListAlertsRequest) *v1.ListAlertsRequest 
 	return req
 }
 
-// GetAlertsGroup returns alerts according to the request, grouped by category and policy.
+// GetAlertsGroup returns alerts according to the request, grouped by policy.
 func (s *serviceImpl) GetAlertsGroup(ctx context.Context, request *v1.ListAlertsRequest) (*v1.GetAlertsGroupResponse, error) {
-	request = ensureAllAlertsAreFetched(request)
-	q, err := listAlertsRequestToQuery(request, false)
-	if err != nil {
-		return nil, err
+	var q *v1.Query
+	if request.GetQuery() == "" {
+		q = search.EmptyQuery()
+	} else {
+		var err error
+		q, err = search.ParseQuery(request.GetQuery())
+		if err != nil {
+			return nil, err
+		}
 	}
-	alerts, err := s.dataStore.SearchListAlerts(ctx, q, true)
+
+	groups, err := s.dataStore.SearchAlertPolicyGroups(ctx, q, true)
 	if err != nil {
 		log.Error(err)
 		return nil, err
 	}
 
-	response := alertsGroupResponseFrom(alerts)
-	return response, nil
+	return alertsGroupResponseFromPolicyGroups(groups), nil
 }
 
 // GetAlertsCounts returns alert counts by severity according to the request.
@@ -460,33 +466,25 @@ func (s *serviceImpl) DeleteAlerts(ctx context.Context, request *v1.DeleteAlerts
 	return response, nil
 }
 
-// alertsGroupResponseFrom returns a slice of storage.ListAlert objects translated into a v1.GetAlertsGroupResponse object.
-func alertsGroupResponseFrom(alerts []*storage.ListAlert) (output *v1.GetAlertsGroupResponse) {
-	policiesMap := make(map[string]*storage.ListAlertPolicy)
-	alertCountsByPolicy := make(map[string]int)
-
-	for _, a := range alerts {
-		if _, ok := policiesMap[a.GetPolicy().GetId()]; !ok {
-			policiesMap[a.GetPolicy().GetId()] = a.GetPolicy()
-		}
-		alertCountsByPolicy[a.GetPolicy().GetId()]++
+// alertsGroupResponseFromPolicyGroups converts aggregate AlertPolicyGroup results
+// into a GetAlertsGroupResponse. Results are already sorted by policy name from
+// the SQL query.
+func alertsGroupResponseFromPolicyGroups(groups []*alertviews.AlertPolicyGroup) *v1.GetAlertsGroupResponse {
+	output := &v1.GetAlertsGroupResponse{
+		AlertsByPolicies: make([]*v1.GetAlertsGroupResponse_PolicyGroup, 0, len(groups)),
 	}
-
-	output = new(v1.GetAlertsGroupResponse)
-	output.AlertsByPolicies = make([]*v1.GetAlertsGroupResponse_PolicyGroup, 0, len(policiesMap))
-
-	for id, p := range policiesMap {
+	for _, g := range groups {
 		output.AlertsByPolicies = append(output.AlertsByPolicies, &v1.GetAlertsGroupResponse_PolicyGroup{
-			Policy:    p,
-			NumAlerts: int64(alertCountsByPolicy[id]),
+			Policy: &storage.ListAlertPolicy{
+				Id:          g.PolicyID,
+				Name:        g.PolicyName,
+				Severity:    g.GetPolicySeverity(),
+				Description: g.Description,
+			},
+			NumAlerts: int64(g.NumAlerts),
 		})
 	}
-
-	sort.Slice(output.GetAlertsByPolicies(), func(i, j int) bool {
-		return output.GetAlertsByPolicies()[i].GetPolicy().GetName() < output.GetAlertsByPolicies()[j].GetPolicy().GetName()
-	})
-
-	return
+	return output
 }
 
 // alertsCountsResponseFrom returns a slice of search.Result objects translated into a v1.GetAlertsCountsResponse
