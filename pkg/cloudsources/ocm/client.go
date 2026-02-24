@@ -2,6 +2,7 @@ package ocm
 
 import (
 	"context"
+	"net/http"
 	"strings"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
 	"github.com/stackrox/rox/pkg/cloudsources/opts"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -40,6 +42,9 @@ func NewClient(ctx context.Context, config *storage.CloudSource, options ...opts
 		Client(config.GetCredentials().GetClientId(), config.GetCredentials().GetClientSecret()).
 		Tokens(config.GetCredentials().GetSecret()).
 		Agent(clientconn.GetUserAgent()).
+		TransportWrapper(func(_ http.RoundTripper) http.RoundTripper {
+			return proxy.RoundTripper()
+		}).
 		BuildContext(ctx)
 	if err != nil {
 		return nil, pkgErrors.Wrap(err, "creating OCM connection")
