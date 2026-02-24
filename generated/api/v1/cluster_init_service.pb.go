@@ -186,8 +186,6 @@ func (x *CRSMeta) GetExpiresAt() *timestamppb.Timestamp {
 	return nil
 }
 
-<<<<<<< HEAD
-=======
 func (x *CRSMeta) GetMaxRegistrations() uint64 {
 	if x != nil {
 		return x.MaxRegistrations
@@ -996,11 +994,7 @@ const file_api_v1_cluster_init_service_proto_rawDesc = "" +
 	"expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x1a5\n" +
 	"\x0fImpactedCluster\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x0e\n" +
-<<<<<<< HEAD
 	"\x02id\x18\x02 \x01(\tR\x02id\"\xd1\x01\n" +
-=======
-	"\x02id\x18\x02 \x01(\tR\x02id:\x02\x18\x01\"\xf0\x02\n" +
->>>>>>> 1e9f883dd7 (ROX-33247: deprecate init bundles APIs (#19106))
 	"\aCRSMeta\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x129\n" +
@@ -1009,14 +1003,10 @@ const file_api_v1_cluster_init_service_proto_rawDesc = "" +
 	"\n" +
 	"created_by\x18\x04 \x01(\v2\r.storage.UserR\tcreatedBy\x129\n" +
 	"\n" +
-<<<<<<< HEAD
-	"expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"\x94\x01\n" +
-=======
 	"expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12+\n" +
 	"\x11max_registrations\x18\a \x01(\x04R\x10maxRegistrations\x127\n" +
 	"\x17registrations_initiated\x18\b \x03(\tR\x16registrationsInitiated\x127\n" +
 	"\x17registrations_completed\x18\t \x03(\tR\x16registrationsCompleted\"\x98\x01\n" +
->>>>>>> 1e9f883dd7 (ROX-33247: deprecate init bundles APIs (#19106))
 	"\x15InitBundleGenResponse\x12&\n" +
 	"\x04meta\x18\x01 \x01(\v2\x12.v1.InitBundleMetaR\x04meta\x12,\n" +
 	"\x12helm_values_bundle\x18\x02 \x01(\fR\x10helmValuesBundle\x12%\n" +
@@ -1039,11 +1029,8 @@ const file_api_v1_cluster_init_service_proto_rawDesc = "" +
 	"\vvalid_until\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"validUntil\x126\n" +
 	"\tvalid_for\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\bvalidFor\x12+\n" +
-<<<<<<< HEAD
 	"\x11max_registrations\x18\x04 \x01(\x05R\x10maxRegistrations\"n\n" +
-=======
 	"\x11max_registrations\x18\x05 \x01(\x04R\x10maxRegistrations\"r\n" +
->>>>>>> 1e9f883dd7 (ROX-33247: deprecate init bundles APIs (#19106))
 	"\x17InitBundleRevokeRequest\x12\x10\n" +
 	"\x03ids\x18\x01 \x03(\tR\x03ids\x12A\n" +
 	"\x1dconfirm_impacted_clusters_ids\x18\x02 \x03(\tR\x1aconfirmImpactedClustersIds:\x02\x18\x01\"$\n" +
