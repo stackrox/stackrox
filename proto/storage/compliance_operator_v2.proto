@@ -39,7 +39,7 @@ message ProfileShim {
   string profile_ref_id = 2; // @gotags: search:"Profile Ref ID,hidden" sql:"fk(ComplianceOperatorProfileV2:profile_ref_id),no-fk-constraint,type(uuid)"
 }
 
-// Next Tag: 15
+// Next Tag: 17
 message ComplianceOperatorProfileV2 {
   // The primary key is name-profile_version as that is guaranteed unique in the operator and how
   // the profile is referenced in scans and settings
@@ -61,6 +61,12 @@ message ComplianceOperatorProfileV2 {
   repeated string values = 13;
   string cluster_id = 14; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
   string profile_ref_id = 15; // @gotags: search:"Profile Ref ID,hidden" sql:"type(uuid)"
+
+  enum ComplianceOperatorProfileKind {
+    PROFILE = 0;
+    TAILORED_PROFILE = 1;
+  }
+  ComplianceOperatorProfileKind compliance_operator_kind = 16; // @gotags: search:"Compliance Profile Kind,hidden"
 }
 
 // Next tag: 19

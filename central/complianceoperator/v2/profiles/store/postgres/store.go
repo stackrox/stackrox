@@ -129,10 +129,11 @@ func insertIntoComplianceOperatorProfileV2(batch *pgx.Batch, obj *storage.Compli
 		obj.GetStandard(),
 		pgutils.NilOrUUID(obj.GetClusterId()),
 		pgutils.NilOrUUID(obj.GetProfileRefId()),
+		obj.GetComplianceOperatorKind(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_profile_v2 (Id, ProfileId, Name, ProfileVersion, ProductType, Standard, ClusterId, ProfileRefId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ProfileId = EXCLUDED.ProfileId, Name = EXCLUDED.Name, ProfileVersion = EXCLUDED.ProfileVersion, ProductType = EXCLUDED.ProductType, Standard = EXCLUDED.Standard, ClusterId = EXCLUDED.ClusterId, ProfileRefId = EXCLUDED.ProfileRefId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_profile_v2 (Id, ProfileId, Name, ProfileVersion, ProductType, Standard, ClusterId, ProfileRefId, ComplianceOperatorKind, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ProfileId = EXCLUDED.ProfileId, Name = EXCLUDED.Name, ProfileVersion = EXCLUDED.ProfileVersion, ProductType = EXCLUDED.ProductType, Standard = EXCLUDED.Standard, ClusterId = EXCLUDED.ClusterId, ProfileRefId = EXCLUDED.ProfileRefId, ComplianceOperatorKind = EXCLUDED.ComplianceOperatorKind, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -172,6 +173,7 @@ var copyColsComplianceOperatorProfileV2 = []string{
 	"standard",
 	"clusterid",
 	"profilerefid",
+	"complianceoperatorkind",
 	"serialized",
 }
 
@@ -214,6 +216,7 @@ func copyFromComplianceOperatorProfileV2(ctx context.Context, s pgSearch.Deleter
 			obj.GetStandard(),
 			pgutils.NilOrUUID(obj.GetClusterId()),
 			pgutils.NilOrUUID(obj.GetProfileRefId()),
+			obj.GetComplianceOperatorKind(),
 			serialized,
 		}, nil
 	})

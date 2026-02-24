@@ -4088,6 +4088,18 @@
             ]
           },
           {
+            "name": "ComplianceOperatorProfileV2.ComplianceOperatorProfileKind",
+            "enum_fields": [
+              {
+                "name": "PROFILE"
+              },
+              {
+                "name": "TAILORED_PROFILE",
+                "integer": 1
+              }
+            ]
+          },
+          {
             "name": "ComplianceOperatorCheckResultV2.CheckStatus",
             "enum_fields": [
               {
@@ -4269,6 +4281,11 @@
                 "id": 15,
                 "name": "profile_ref_id",
                 "type": "string"
+              },
+              {
+                "id": 16,
+                "name": "compliance_operator_kind",
+                "type": "ComplianceOperatorProfileKind"
               }
             ],
             "maps": [

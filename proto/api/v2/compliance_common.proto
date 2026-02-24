@@ -108,7 +108,7 @@ message ComplianceProfileCheckRequest {
   RawQuery query = 3;
 }
 
-// Next Tag: 8
+// Next Tag: 9
 message ComplianceProfileSummary {
   string name = 1;
   string product_type = 2;
@@ -117,4 +117,9 @@ message ComplianceProfileSummary {
   int32 rule_count = 5;
   string profile_version = 6;
   repeated ComplianceBenchmark standards = 7;
+  enum ComplianceOperatorProfileKind {
+    PROFILE = 0;
+    TAILORED_PROFILE = 1;
+  }
+  ComplianceOperatorProfileKind compliance_operator_kind = 8;
 }

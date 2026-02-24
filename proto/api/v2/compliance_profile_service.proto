@@ -10,7 +10,7 @@ import weak "google/api/annotations.proto";
 option go_package = "./api/v2;v2";
 option java_package = "io.stackrox.proto.api.v2";
 
-// Next Tag: 12
+// Next Tag: 13
 message ComplianceProfile {
   string id = 1;
   string name = 2;
@@ -23,6 +23,11 @@ message ComplianceProfile {
   string title = 9;
   repeated string values = 10;
   repeated ComplianceBenchmark standards = 11;
+  enum ComplianceOperatorProfileKind {
+    PROFILE = 0;
+    TAILORED_PROFILE = 1;
+  }
+  ComplianceOperatorProfileKind compliance_operator_kind = 12;
 }
 
 // ListComplianceProfilesResponse provides a list of profiles

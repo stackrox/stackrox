@@ -341,9 +341,20 @@
             "type": "object",
             "$ref": "#/definitions/v2ComplianceBenchmark"
           }
+        },
+        "complianceOperatorKind": {
+          "$ref": "#/definitions/v2ComplianceProfileComplianceOperatorProfileKind"
         }
       },
-      "title": "Next Tag: 12"
+      "title": "Next Tag: 13"
+    },
+    "v2ComplianceProfileComplianceOperatorProfileKind": {
+      "type": "string",
+      "enum": [
+        "PROFILE",
+        "TAILORED_PROFILE"
+      ],
+      "default": "PROFILE"
     },
     "v2ComplianceProfileSummary": {
       "type": "object",
@@ -373,9 +384,20 @@
             "type": "object",
             "$ref": "#/definitions/v2ComplianceBenchmark"
           }
+        },
+        "complianceOperatorKind": {
+          "$ref": "#/definitions/v2ComplianceProfileSummaryComplianceOperatorProfileKind"
         }
       },
-      "title": "Next Tag: 8"
+      "title": "Next Tag: 9"
+    },
+    "v2ComplianceProfileSummaryComplianceOperatorProfileKind": {
+      "type": "string",
+      "enum": [
+        "PROFILE",
+        "TAILORED_PROFILE"
+      ],
+      "default": "PROFILE"
     },
     "v2ComplianceRule": {
       "type": "object",
