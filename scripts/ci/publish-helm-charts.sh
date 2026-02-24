@@ -11,10 +11,10 @@ set -euo pipefail
 remote_repository="https://github.com/stackrox/release-artifacts.git"
 remote_subdirectory="helm-charts"
 
-version="$1:-"
-central_services_chart="$2:-"
-secured_cluster_services_chart="$3:-"
-operator_chart_dir="$4:-"
+version="${1:-}"
+central_services_chart="${2:-}"
+secured_cluster_services_chart="${3:-}"
+operator_chart_dir="${4:-}"
 
 [[ -n "$version" ]] || die "No version specified"
 [[ -n "$central_services_chart" ]] || die "No central services chart path specified!"
