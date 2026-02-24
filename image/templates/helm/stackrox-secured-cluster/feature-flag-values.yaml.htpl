@@ -4,7 +4,7 @@
      here we get rid of deployment warnings such as these:
 
        Warning: spec.template.spec.containers[0].env[25].name: duplicate name "ROX_SCANNER_V4" */>]
-[<- $skipFeatureFlags := list "ROX_SCANNER_V4" "ROX_NETFLOW_BATCHING" "ROX_NETFLOW_CACHE_LIMITING" >]
+[<- $skipFeatureFlags := list "ROX_SCANNER_V4" >]
 envVars:
 [<- $featureFlags := .FeatureFlags >]
 [<- range $flagName := keys $featureFlags | sortAlpha >]
