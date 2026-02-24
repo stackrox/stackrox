@@ -43,3 +43,19 @@ func GetMap(vals chartutil.Values, path string) (chartutil.Values, error) {
 		return nil, fmt.Errorf("value at %q is not a map (got %T)", path, val)
 	}
 }
+
+// GetArray reads an array at the given dot-separated path.
+// Returns error if path doesn't exist or value is not an array.
+func GetArray(vals chartutil.Values, path string) ([]any, error) {
+	val, err := vals.PathValue(path)
+	if err != nil {
+		return nil, errors.Wrapf(err, "path %q not found", path)
+	}
+
+	arr, ok := val.([]any)
+	if !ok {
+		return nil, fmt.Errorf("value at %q is not an array (got %T)", path, val)
+	}
+
+	return arr, nil
+}
