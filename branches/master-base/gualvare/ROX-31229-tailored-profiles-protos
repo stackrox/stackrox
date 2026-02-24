@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "master-base/gualvare/fix-compliance-make-tp-extends-optional",
-    "hash": "3999da634f86341751261ef66208fa626dc61a47"
+    "hash": "c36cdbef25e1dc940d6c1ebde36eb27339009f46"
   },
   "upstream": {
     "branch": "master-base/gualvare/ROX-31229-tailored-profiles-protos"
