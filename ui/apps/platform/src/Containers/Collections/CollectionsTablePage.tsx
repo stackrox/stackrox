@@ -5,7 +5,6 @@ import {
     AlertGroup,
     Button,
     Content,
-    Divider,
     Flex,
     FlexItem,
     PageSection,
@@ -82,14 +81,14 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
     return (
         <>
             <PageTitle title="Collections" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
-                    <FlexItem flex={{ default: 'flex_1' }}>
+                    <Flex direction={{ default: 'column' }}>
                         <Title headingLevel="h1">Collections</Title>
                         <Content component="p">
                             Configure deployment collections to associate with other workflows
                         </Content>
-                    </FlexItem>
+                    </Flex>
                     {hasWriteAccessForCollections && (
                         <FlexItem align={{ default: 'alignRight' }}>
                             <Button
@@ -103,8 +102,7 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
                     )}
                 </Flex>
             </PageSection>
-            <Divider component="div" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <CollectionsTable
                     isLoading={isLoading}
                     error={loadError}
