@@ -1117,7 +1117,7 @@ push_helm_charts() {
 
     local tag="$1"
     local operator_rhacs_chart_tarball="$2"
-    #local operator_stackrox_chart_tarball="$3"
+    local operator_stackrox_chart_tarball="$3"
 
     echo "Publish Helm charts to github repository stackrox/release-artifacts and create a PR" >> "${GITHUB_STEP_SUMMARY}"
 
@@ -1132,8 +1132,8 @@ push_helm_charts() {
     roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${secured_cluster_services_chart_dir}/opensource"
     mkdir "${operator_chart_dir}/rhacs"
     tar -zxf "${operator_rhacs_chart_tarball}" -C "${operator_chart_dir}/rhacs"
-    #mkdir "${operator_chart_dir}/opensource"
-    #tar -zxf "${operator_stackrox_chart_tarball}" -C "${operator_chart_dir}/opensource"
+    mkdir "${operator_chart_dir}/opensource"
+    tar -zxf "${operator_stackrox_chart_tarball}" -C "${operator_chart_dir}/opensource"
     "${SCRIPTS_ROOT}/scripts/ci/publish-helm-charts.sh" "${tag}" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}" "${operator_chart_dir}"
 }
 

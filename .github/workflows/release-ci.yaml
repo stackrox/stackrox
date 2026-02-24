@@ -99,9 +99,9 @@ jobs:
       - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: operator-chart-RHACS_BRANDING
-#      - uses: ./.github/actions/download-artifact-with-retry
-#        with:
-#          name: operator-chart-STACKROX_BRANDING
+      - uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: operator-chart-STACKROX_BRANDING
       - name: Publish Helm charts to stackrox/release-artifacts
         env:
           STACKROX_TAG: ${{ github.ref_name }}

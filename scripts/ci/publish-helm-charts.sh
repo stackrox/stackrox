@@ -48,7 +48,7 @@ mkdir "${tmp_remote_repository}/${remote_subdirectory}/${version}"
 
 cp -a "${central_services_chart}/opensource" "${tmp_remote_repository}/${remote_subdirectory}/${version}/central-services"
 cp -a "${secured_cluster_services_chart}/opensource" "${tmp_remote_repository}/${remote_subdirectory}/${version}/secured-cluster-services"
-#cp -a "${operator_chart_dir}/opensource" "${tmp_remote_repository}/${remote_subdirectory}/${version}/operator"
+cp -a "${operator_chart_dir}/opensource" "${tmp_remote_repository}/${remote_subdirectory}/${version}/operator"
 
 mkdir "${tmp_remote_repository}/${remote_subdirectory}/rhacs/${version}"
 
@@ -62,8 +62,8 @@ echo "Packaging Helm chart for file ${central_services_chart}/opensource/Chart.y
 helm package -d "${tmp_remote_repository}/${remote_subdirectory}/opensource" "${central_services_chart}/opensource"
 echo "Packaging Helm chart for file ${secured_cluster_services_chart}/opensource/Chart.yaml"
 helm package -d "${tmp_remote_repository}/${remote_subdirectory}/opensource" "${secured_cluster_services_chart}/opensource"
-#echo "Packaging Helm chart for file ${operator_chart_dir}/opensource/Chart.yaml"
-#helm package -d "${tmp_remote_repository}/${remote_subdirectory}/opensource" "${operator_chart_dir}/opensource"
+echo "Packaging Helm chart for file ${operator_chart_dir}/opensource/Chart.yaml"
+helm package -d "${tmp_remote_repository}/${remote_subdirectory}/opensource" "${operator_chart_dir}/opensource"
 
 echo "Building OSS helm repo index"
 helm repo index "${tmp_remote_repository}/${remote_subdirectory}/opensource"
