@@ -1,4 +1,3 @@
-/* eslint-disable no-void */
 import { useCallback, useEffect, useState } from 'react';
 
 import { fetchReportConfigurations, fetchReportConfigurationsCount } from 'services/ReportsService';
@@ -76,7 +75,7 @@ function useFetchReports({
     }, [searchFilter, page, perPage, sortOption]);
 
     useEffect(() => {
-        void fetchReports();
+        fetchReports().catch(() => {});
     }, [fetchReports, searchFilter, page, perPage]);
 
     return {
