@@ -19,6 +19,13 @@ type Result struct {
 	FieldValues map[string]string // Selected field values as strings, keyed by field name
 }
 
+// CountByWrapper wraps around the result of a CountBy query.
+// It stores the values of the count by field tuples in ByFields and the related count in Count.
+type CountByWrapper struct {
+	ByFields Result
+	Count    int
+}
+
 // NewResult returns a new search result
 func NewResult() *Result {
 	return &Result{
