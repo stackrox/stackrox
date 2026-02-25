@@ -3,6 +3,7 @@ on:
   push:
     branches:
     - 'release-*'
+    - 'porridge-ROX-33117-tests'
     tags-ignore:
     - '*-nightly-*'
 
@@ -15,17 +16,8 @@ jobs:
           echo "Event: ${{ github.event_name }}" >> "$GITHUB_STEP_SUMMARY"
           echo "Ref: ${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
 
-  build:
-    name: Build
-    uses: ./.github/workflows/build.yaml
-    secrets: inherit
-
-  build-scanner-v4:
-    name: Build Scanner v4
-    uses: ./.github/workflows/scanner-build.yaml
-    secrets: inherit
-
   check-is-release:
+    if: false
     runs-on: ubuntu-latest
     outputs:
       is_release: ${{ steps.is_release_check.outputs.is_release }}
@@ -45,6 +37,7 @@ jobs:
           fi
 
   check-scanner-version:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -58,6 +51,7 @@ jobs:
             check_scanner_version
 
   check-collector-version:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -71,6 +65,7 @@ jobs:
             check_collector_version
 
   check-fact-version:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -84,8 +79,6 @@ jobs:
             check_fact_version
 
   publish-helm-charts:
-    needs: [build, check-scanner-version, check-collector-version, check-fact-version, check-is-release]
-    if: needs.check-is-release.outputs.is_release == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -93,9 +86,6 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
-      - uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: cli-build
       - name: Publish Helm charts to stackrox/release-artifacts
         env:
           STACKROX_TAG: ${{ github.ref_name }}
@@ -105,7 +95,7 @@ jobs:
           SLACK_MAIN_WEBHOOK: ${{ secrets.SLACK_MAIN_WEBHOOK }}
           RELEASE_WORKFLOW_NOTIFY_WEBHOOK: ${{ secrets.RELEASE_WORKFLOW_NOTIFY_WEBHOOK }}
         run: |
-          tar xzf cli-build.tgz
+          make cli_host-arch
           mkdir -p "${HOME}/.local/bin"
           mv bin/linux_amd64/roxctl "${HOME}/.local/bin/roxctl"
           scripts/ci/lib.sh \
@@ -113,8 +103,7 @@ jobs:
 
   # Publish `roxagent` and `roxctl`.
   publish-cli:
-    needs: [build, check-scanner-version, check-collector-version, check-fact-version, check-is-release]
-    if: needs.check-is-release.outputs.is_release == 'true'
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -139,8 +128,8 @@ jobs:
             publish_cli "${STACKROX_TAG}"
 
   publish-openapispec:
-    needs: [build, check-scanner-version, check-collector-version, check-fact-version, check-is-release]
-    if: needs.check-is-release.outputs.is_release == 'true'
+    needs: [check-scanner-version, check-collector-version, check-fact-version, check-is-release]
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
