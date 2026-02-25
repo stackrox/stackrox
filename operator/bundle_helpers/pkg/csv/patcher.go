@@ -78,14 +78,11 @@ func PatchCSV(doc chartutil.Values, opts PatchOptions) error {
 
 	// Add multi-arch labels (label keys contain dots, so access the map directly)
 	if len(opts.ExtraSupportedArchs) > 0 {
-		metadata, err := values.GetMap(doc, "metadata")
-		if err != nil {
-			return fmt.Errorf("failed to get metadata: %w", err)
+		// Ensure metadata.labels exists; SetValue preserves any existing labels.
+		if err := values.SetValue(doc, "metadata.labels", map[string]any{}); err != nil {
+			return fmt.Errorf("failed to initialize metadata.labels: %w", err)
 		}
-		if _, exists := metadata["labels"]; !exists {
-			metadata["labels"] = map[string]any{}
-		}
-		labels, err := values.GetMap(metadata, "labels")
+		labels, err := values.GetMap(doc, "metadata.labels")
 		if err != nil {
 			return fmt.Errorf("failed to get metadata.labels: %w", err)
 		}
