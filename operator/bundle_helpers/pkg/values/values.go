@@ -82,7 +82,7 @@ func PathExists(vals chartutil.Values, path string) bool {
 func SetValue(vals chartutil.Values, path string, value any) error {
 	update, err := helmUtil.ValuesForKVPair(path, value)
 	if err != nil {
-		return fmt.Errorf("failed to build update for path %q: %w", path, err)
+		return errors.Wrapf(err, "failed to build update for path %q", path)
 	}
 
 	// CoalesceTables(dst, src) fills dst with missing values from src,
