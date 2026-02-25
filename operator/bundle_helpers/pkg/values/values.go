@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"helm.sh/helm/v3/pkg/chartutil"
 )
 
@@ -74,4 +75,25 @@ func GetValue(vals chartutil.Values, path string) (any, error) {
 func PathExists(vals chartutil.Values, path string) bool {
 	_, err := vals.PathValue(path)
 	return err == nil
+}
+
+// SetValue sets a value at the given dot-separated path in vals.
+// Creates intermediate maps as needed.
+func SetValue(vals chartutil.Values, path string, value any) error {
+	update, err := helmUtil.ValuesForKVPair(path, value)
+	if err != nil {
+		return fmt.Errorf("failed to build update for path %q: %w", path, err)
+	}
+
+	// CoalesceTables(dst, src) fills dst with missing values from src,
+	// giving priority to dst. By passing update as dst, the new value
+	// takes precedence while existing sibling keys from vals are preserved.
+	merged := chartutil.CoalesceTables(update, vals)
+
+	// CoalesceTables returns its dst; copy results back into the original map.
+	for k, v := range merged {
+		vals[k] = v
+	}
+
+	return nil
 }
