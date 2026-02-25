@@ -10,7 +10,8 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/operator/bundle_helpers/pkg/csv"
-	"gopkg.in/yaml.v3"
+	"github.com/stackrox/rox/operator/bundle_helpers/pkg/values"
+	"helm.sh/helm/v3/pkg/chartutil"
 )
 
 // PatchCSV patches a ClusterServiceVersion YAML file with version and image information.
@@ -67,8 +68,8 @@ func PatchCSV(args []string) error {
 	}
 
 	// Parse YAML
-	var doc map[string]any
-	if err := yaml.Unmarshal(input, &doc); err != nil {
+	doc, err := chartutil.ReadValues(input)
+	if err != nil {
 		return fmt.Errorf("failed to parse YAML: %w", err)
 	}
 
@@ -101,14 +102,10 @@ func PatchCSV(args []string) error {
 	return encodeAndNormalizeYAML(doc, os.Stdout)
 }
 
-func echoReplacedVersion(doc map[string]any, version, firstVersion, unreleased string) error {
-	metadata, ok := doc["metadata"].(map[string]any)
-	if !ok {
-		return errors.New("metadata is not a map")
-	}
-	name, ok := metadata["name"].(string)
-	if !ok {
-		return errors.New("metadata.name is not a string")
+func echoReplacedVersion(doc chartutil.Values, version, firstVersion, unreleased string) error {
+	name, err := values.GetString(doc, "metadata.name")
+	if err != nil {
+		return fmt.Errorf("failed to get metadata.name: %w", err)
 	}
 
 	const expectedSuffix = ".v0.0.1"
@@ -119,9 +116,9 @@ func echoReplacedVersion(doc map[string]any, version, firstVersion, unreleased s
 
 	rawName := strings.TrimSuffix(name, expectedSuffix)
 
-	spec, ok := doc["spec"].(map[string]any)
-	if !ok {
-		return errors.New("spec is not a map")
+	spec, err := values.GetMap(doc, "spec")
+	if err != nil {
+		return fmt.Errorf("failed to get spec: %w", err)
 	}
 
 	_, replacedVersion, err := csv.CalculateReplacedVersionForCSV(
