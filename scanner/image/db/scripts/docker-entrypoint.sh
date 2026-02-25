@@ -364,6 +364,21 @@ _main() {
 		fi
 	fi
 
+	### STACKROX MODIFIED - Apply TLS settings from environment variables.
+	### Command-line -c flags override postgresql.conf, ensuring enforcement
+	### of the TLS settings.
+	###
+	### ROX_TLS_MIN_VERSION: passed to ssl_min_protocol_version (e.g. "TLSv1.2", "TLSv1.3").
+	### ROX_TLS_OPENSSL_CIPHERS: colon-separated OpenSSL cipher names
+	###   (e.g. "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384").
+	###   Only affects TLS 1.2; TLS 1.3 ciphers are not configurable in PostgreSQL 15.
+	if [ -n "${ROX_TLS_MIN_VERSION:-}" ]; then
+		set -- "$@" -c "ssl_min_protocol_version=${ROX_TLS_MIN_VERSION}"
+	fi
+	if [ -n "${ROX_TLS_OPENSSL_CIPHERS:-}" ]; then
+		set -- "$@" -c "ssl_ciphers=${ROX_TLS_OPENSSL_CIPHERS}"
+	fi
+
 	### STACKROX MODIFIED - Start Postgres as a child process and
 	### prevent multiple pods on the same node from using this instance.
 	### Note: this may not be needed with ReadWriteOncePod.
