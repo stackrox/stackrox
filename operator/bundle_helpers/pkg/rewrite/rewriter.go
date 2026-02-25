@@ -1,5 +1,7 @@
 package rewrite
 
+import "helm.sh/helm/v3/pkg/chartutil"
+
 // Strings recursively traverses data structures and replaces all
 // string values matching 'old' with 'new'.
 // Returns true if any replacements were made.
@@ -9,6 +11,17 @@ func Strings(data any, old, new string) bool {
 	switch v := data.(type) {
 
 	case map[string]any:
+		for key, value := range v {
+			if str, ok := value.(string); ok && str == old {
+				v[key] = new
+				modified = true
+			} else if Strings(value, old, new) {
+				modified = true
+			}
+		}
+
+	case chartutil.Values:
+		// chartutil.Values is map[string]interface{}, handle it explicitly
 		for key, value := range v {
 			if str, ok := value.(string); ok && str == old {
 				v[key] = new
