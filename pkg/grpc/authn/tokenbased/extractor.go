@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloudflare/cfssl/log"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -42,6 +43,7 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	if err != nil {
 		return nil, getExtractorError("token validation failed", err)
 	}
+	log.Info("Token internal role: ", token.InternalRole)
 
 	// All tokens should have a source.
 	if len(token.Sources) != 1 {
@@ -52,6 +54,7 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 		return nil, getExtractorError("API tokens must originate from an authentication provider source", nil)
 	}
 	if !authProviderSrc.Enabled() {
+		log.Info("Provider is not enabled")
 		return nil, getExtractorError(fmt.Sprintf("auth provider %q is not enabled", authProviderSrc.Name()), nil)
 	}
 
@@ -72,6 +75,7 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 
 	// Anonymous role-based tokens.
 	if len(roleNames) > 0 {
+		log.Info("with roles")
 		identityWithRoleNames, errWithRoleNames := e.withRoleNames(ctx, token, roleNames, authProviderSrc)
 		if errWithRoleNames != nil {
 			return nil, getExtractorError("failed to resolve user roles", errWithRoleNames)
@@ -82,6 +86,7 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 
 	// External user token
 	if token.ExternalUser != nil {
+		log.Info("with external user")
 		identityWithExternalUser, errWithExternalUser := e.withExternalUser(ctx, token, authProviderSrc)
 		if errWithExternalUser != nil {
 			return nil, getExtractorError("failed to resolve external user", errWithExternalUser)
@@ -91,6 +96,7 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 	}
 
 	if token.InternalRole != nil {
+		log.Info("with internal role")
 		resolvedRoles := []permissions.ResolvedRole{token.InternalRole}
 		identityWithInternalRole, errWithResolvedRoles := withResolvedRoles(resolvedRoles, token, authProviderSrc)
 		if errWithResolvedRoles != nil {
@@ -98,6 +104,7 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 		}
 		return identityWithInternalRole, nil
 	}
+	log.Info("no useable identity source in token")
 
 	return nil, getExtractorError("could not determine token type", nil)
 }
