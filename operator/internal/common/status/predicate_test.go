@@ -3,7 +3,10 @@ package status
 import (
 	"testing"
 
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
@@ -221,6 +224,170 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := pred.Update(event.TypedUpdateEvent[*platform.Central]{
+				ObjectOld: tt.old,
+				ObjectNew: tt.new,
+			})
+
+			if result != tt.shallReconcile {
+				t.Errorf("Expected predicate to return %v, got %v", tt.shallReconcile, result)
+			}
+		})
+	}
+}
+
+func TestDeploymentStatusUpdatePredicate(t *testing.T) {
+	tests := []struct {
+		name           string
+		old            *appsv1.Deployment
+		new            *appsv1.Deployment
+		shallReconcile bool
+	}{
+		{
+			name: "spec.replicas changed should NOT trigger reconciliation",
+			old: &appsv1.Deployment{
+				Spec: appsv1.DeploymentSpec{
+					Replicas: ptr.To(int32(3)),
+				},
+				Status: appsv1.DeploymentStatus{
+					Replicas:          3,
+					ReadyReplicas:     3,
+					AvailableReplicas: 3,
+				},
+			},
+			new: &appsv1.Deployment{
+				Spec: appsv1.DeploymentSpec{
+					Replicas: ptr.To(int32(5)), // Changed by HPA
+				},
+				Status: appsv1.DeploymentStatus{
+					Replicas:          3,
+					ReadyReplicas:     3,
+					AvailableReplicas: 3,
+				},
+			},
+			shallReconcile: false,
+		},
+		{
+			name: "status.replicas changed should trigger reconciliation",
+			old: &appsv1.Deployment{
+				Status: appsv1.DeploymentStatus{
+					Replicas:          3,
+					ReadyReplicas:     3,
+					AvailableReplicas: 3,
+				},
+			},
+			new: &appsv1.Deployment{
+				Status: appsv1.DeploymentStatus{
+					Replicas:          5,
+					ReadyReplicas:     3,
+					AvailableReplicas: 3,
+				},
+			},
+			shallReconcile: true,
+		},
+		{
+			name: "status.readyReplicas changed should trigger reconciliation",
+			old: &appsv1.Deployment{
+				Status: appsv1.DeploymentStatus{
+					Replicas:          3,
+					ReadyReplicas:     2,
+					AvailableReplicas: 2,
+				},
+			},
+			new: &appsv1.Deployment{
+				Status: appsv1.DeploymentStatus{
+					Replicas:          3,
+					ReadyReplicas:     3,
+					AvailableReplicas: 2,
+				},
+			},
+			shallReconcile: true,
+		},
+		{
+			name: "deployment condition changed should trigger reconciliation",
+			old: &appsv1.Deployment{
+				Status: appsv1.DeploymentStatus{
+					Replicas: 3,
+					Conditions: []appsv1.DeploymentCondition{
+						{Type: appsv1.DeploymentAvailable, Status: corev1.ConditionFalse},
+					},
+				},
+			},
+			new: &appsv1.Deployment{
+				Status: appsv1.DeploymentStatus{
+					Replicas: 3,
+					Conditions: []appsv1.DeploymentCondition{
+						{Type: appsv1.DeploymentAvailable, Status: corev1.ConditionTrue},
+					},
+				},
+			},
+			shallReconcile: true,
+		},
+		{
+			name: "no changes should NOT trigger reconciliation",
+			old: &appsv1.Deployment{
+				Status: appsv1.DeploymentStatus{
+					Replicas:          3,
+					ReadyReplicas:     3,
+					AvailableReplicas: 3,
+				},
+			},
+			new: &appsv1.Deployment{
+				Status: appsv1.DeploymentStatus{
+					Replicas:          3,
+					ReadyReplicas:     3,
+					AvailableReplicas: 3,
+				},
+			},
+			shallReconcile: false,
+		},
+		{
+			name: "spec and status both changed should trigger reconciliation",
+			old: &appsv1.Deployment{
+				Spec: appsv1.DeploymentSpec{
+					Replicas: ptr.To(int32(3)),
+				},
+				Status: appsv1.DeploymentStatus{
+					Replicas:          3,
+					ReadyReplicas:     3,
+					AvailableReplicas: 3,
+				},
+			},
+			new: &appsv1.Deployment{
+				Spec: appsv1.DeploymentSpec{
+					Replicas: ptr.To(int32(5)),
+				},
+				Status: appsv1.DeploymentStatus{
+					Replicas:          5,
+					ReadyReplicas:     5,
+					AvailableReplicas: 5,
+				},
+			},
+			shallReconcile: true,
+		},
+		{
+			name:           "old object nil should allow reconciliation",
+			old:            nil,
+			new:            &appsv1.Deployment{},
+			shallReconcile: true,
+		},
+		{
+			name:           "new object nil should allow reconciliation",
+			old:            &appsv1.Deployment{},
+			new:            nil,
+			shallReconcile: true,
+		},
+		{
+			name:           "both objects nil should allow reconciliation",
+			old:            nil,
+			new:            nil,
+			shallReconcile: true,
+		},
+	}
+
+	pred := SkipDeploymentSpecUpdates{}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := pred.Update(event.TypedUpdateEvent[*appsv1.Deployment]{
 				ObjectOld: tt.old,
 				ObjectNew: tt.new,
 			})

@@ -139,6 +139,7 @@ func (r *Reconciler[T]) SetupWithManager(mgr ctrl.Manager) error {
 				emptyCR,
 				handler.OnlyControllerOwner(),
 			),
+			SkipDeploymentSpecUpdates{},
 		),
 	)
 	if err != nil {

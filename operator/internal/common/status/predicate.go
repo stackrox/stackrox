@@ -1,6 +1,9 @@
 package status
 
 import (
+	"reflect"
+
+	appsv1 "k8s.io/api/apps/v1"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -68,4 +71,20 @@ func conditionsChanged[T platform.ObjectForStatusController](oldObj, newObj T, c
 	return old.Status != new.Status ||
 		old.Reason != new.Reason ||
 		old.Message != new.Message
+}
+
+// SkipDeploymentSpecUpdates filters deployment events to only react to status changes.
+// This prevents reconciliation when HPA or other controllers modify deployment.spec.replicas.
+// The status controller only cares about deployment readiness (status), not scaling decisions (spec).
+type SkipDeploymentSpecUpdates struct {
+	predicate.TypedFuncs[*appsv1.Deployment]
+}
+
+// Update returns true only if deployment status changed (not spec).
+// This allows HPA to modify replicas without triggering reconciliation.
+func (p SkipDeploymentSpecUpdates) Update(e event.TypedUpdateEvent[*appsv1.Deployment]) bool {
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		return true
+	}
+	return !reflect.DeepEqual(e.ObjectOld.Status, e.ObjectNew.Status)
 }
