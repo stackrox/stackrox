@@ -277,6 +277,24 @@ func (s *NodeCriteriaTestSuite) TestNodeFileAccess() {
 				},
 			},
 		},
+		{
+			description: "Node file policy with rename event",
+			policy:      newFileAccessPolicy(storage.EventSource_NODE_EVENT, []storage.FileAccess_Operation{storage.FileAccess_RENAME}, false, "/etc/passwd"),
+			events: []eventWrapper{
+				{
+					access:      newRenameFileAccessEvent("/etc/passwd", "/foo/bar"),
+					expectAlert: true,
+				},
+				{
+					access:      newRenameFileAccessEvent("/foo/bar", "/etc/passwd"),
+					expectAlert: true,
+				},
+				{
+					access:      newRenameFileAccessEvent("/foo/bar", "/bar/baz"),
+					expectAlert: false,
+				},
+			},
+		},
 	} {
 		testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, true)
 		defer testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, false)
