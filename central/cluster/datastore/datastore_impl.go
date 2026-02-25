@@ -1194,8 +1194,7 @@ func (ds *datastoreImpl) collectClusters(ctx context.Context) ([]*storage.Cluste
 }
 
 // GetClusterLabels returns the labels for the specified cluster.
-func (ds *datastoreImpl) GetClusterLabels(clusterID string) (map[string]string, error) {
-	ctx := context.Background()
+func (ds *datastoreImpl) GetClusterLabels(ctx context.Context, clusterID string) (map[string]string, error) {
 	cluster, exists, err := ds.GetCluster(ctx, clusterID)
 	if err != nil {
 		return nil, err

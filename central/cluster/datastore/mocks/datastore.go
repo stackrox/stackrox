@@ -123,18 +123,18 @@ func (mr *MockDataStoreMockRecorder) GetCluster(ctx, id any) *gomock.Call {
 }
 
 // GetClusterLabels mocks base method.
-func (m *MockDataStore) GetClusterLabels(clusterID string) (map[string]string, error) {
+func (m *MockDataStore) GetClusterLabels(ctx context.Context, clusterID string) (map[string]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetClusterLabels", clusterID)
+	ret := m.ctrl.Call(m, "GetClusterLabels", ctx, clusterID)
 	ret0, _ := ret[0].(map[string]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetClusterLabels indicates an expected call of GetClusterLabels.
-func (mr *MockDataStoreMockRecorder) GetClusterLabels(clusterID any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) GetClusterLabels(ctx, clusterID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusterLabels", reflect.TypeOf((*MockDataStore)(nil).GetClusterLabels), clusterID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusterLabels", reflect.TypeOf((*MockDataStore)(nil).GetClusterLabels), ctx, clusterID)
 }
 
 // GetClusterName mocks base method.

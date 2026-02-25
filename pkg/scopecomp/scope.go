@@ -1,6 +1,8 @@
 package scopecomp
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -98,7 +100,7 @@ func (c *CompiledScope) MatchesClusterLabels(deployment *storage.Deployment) boo
 		log.Error("Cluster label matcher defined but provider is nil - failing closed")
 		return false
 	}
-	clusterLabels, err := c.clusterLabelProvider.GetClusterLabels(deployment.GetClusterId())
+	clusterLabels, err := c.clusterLabelProvider.GetClusterLabels(context.Background(), deployment.GetClusterId())
 	if err != nil {
 		log.Errorf("Failed to fetch cluster labels for cluster %s: %v", deployment.GetClusterId(), err)
 		return false
@@ -115,7 +117,7 @@ func (c *CompiledScope) MatchesNamespaceLabels(deployment *storage.Deployment) b
 		log.Error("Namespace label matcher defined but provider is nil - failing closed")
 		return false
 	}
-	namespaceLabels, err := c.namespaceLabelProvider.GetNamespaceLabels(deployment.GetNamespaceId())
+	namespaceLabels, err := c.namespaceLabelProvider.GetNamespaceLabels(context.Background(), deployment.GetNamespaceId())
 	if err != nil {
 		log.Errorf("Failed to fetch namespace labels for namespace %s: %v", deployment.GetNamespaceId(), err)
 		return false

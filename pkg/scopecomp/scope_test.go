@@ -5,27 +5,12 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/scopecomp/mocks"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
-
-// Mock providers for testing
-type mockClusterLabelProvider struct {
-	labels map[string]string
-}
-
-func (m *mockClusterLabelProvider) GetClusterLabels(clusterID string) (map[string]string, error) {
-	return m.labels, nil
-}
-
-type mockNamespaceLabelProvider struct {
-	labels map[string]string
-}
-
-func (m *mockNamespaceLabelProvider) GetNamespaceLabels(namespaceID string) (map[string]string, error) {
-	return m.labels, nil
-}
 
 func TestWithinScope(t *testing.T) {
 	subtests := []struct {
@@ -336,14 +321,27 @@ func TestWithinScope(t *testing.T) {
 	for _, test := range subtests {
 		testutils.MustUpdateFeature(t, features.LabelBasedPolicyScoping, test.featureFlagEnabled)
 
-		// Create mock providers that return test data
+		// Create gomock controller and mock providers
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
 		var clusterProvider ClusterLabelProvider
 		var namespaceProvider NamespaceLabelProvider
 		if test.clusterLabels != nil {
-			clusterProvider = &mockClusterLabelProvider{labels: test.clusterLabels}
+			mockCluster := mocks.NewMockClusterLabelProvider(ctrl)
+			mockCluster.EXPECT().
+				GetClusterLabels(gomock.Any(), gomock.Any()).
+				Return(test.clusterLabels, nil).
+				AnyTimes()
+			clusterProvider = mockCluster
 		}
 		if test.namespaceLabels != nil {
-			namespaceProvider = &mockNamespaceLabelProvider{labels: test.namespaceLabels}
+			mockNamespace := mocks.NewMockNamespaceLabelProvider(ctrl)
+			mockNamespace.EXPECT().
+				GetNamespaceLabels(gomock.Any(), gomock.Any()).
+				Return(test.namespaceLabels, nil).
+				AnyTimes()
+			namespaceProvider = mockNamespace
 		}
 
 		cs, err := CompileScope(test.scope, clusterProvider, namespaceProvider)

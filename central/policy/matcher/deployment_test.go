@@ -246,9 +246,9 @@ func TestDeploymentMatcher_WithLabelProviders(t *testing.T) {
 
 	// Configure mock expectations
 	clusterDS.EXPECT().GetCluster(gomock.Any(), "cluster1").Return(testCluster, true, nil).AnyTimes()
-	clusterDS.EXPECT().GetClusterLabels("cluster1").Return(testCluster.GetLabels(), nil).AnyTimes()
+	clusterDS.EXPECT().GetClusterLabels(gomock.Any(), "cluster1").Return(testCluster.GetLabels(), nil).AnyTimes()
 	namespaceDS.EXPECT().GetNamespace(gomock.Any(), "ns1").Return(testNamespace, true, nil).AnyTimes()
-	namespaceDS.EXPECT().GetNamespaceLabels("ns1").Return(testNamespace.GetLabels(), nil).AnyTimes()
+	namespaceDS.EXPECT().GetNamespaceLabels(gomock.Any(), "ns1").Return(testNamespace.GetLabels(), nil).AnyTimes()
 
 	deployment := &storage.Deployment{
 		Name:        "test-deployment",

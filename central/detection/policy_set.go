@@ -13,8 +13,7 @@ type PolicySet interface {
 	RemoveNotifier(notifierID string) error
 }
 
-// NewPolicySet returns a new instance of a PolicySet using the provided label providers.
-
+// NewPolicySet returns a new instance of a PolicySet.
 func NewPolicySet(store policyDatastore.DataStore, clusterProvider scopecomp.ClusterLabelProvider, namespaceProvider scopecomp.NamespaceLabelProvider) PolicySet {
 	return &setImpl{
 		PolicySet:   detection.NewPolicySet(clusterProvider, namespaceProvider),
