@@ -5,10 +5,11 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"helm.sh/helm/v3/pkg/chartutil"
 )
 
 // FixCSVDescriptorsMap processes all CRDs in a CSV and fixes their specDescriptors.
-func FixCSVDescriptorsMap(csvDoc map[string]any) error {
+func FixCSVDescriptorsMap(csvDoc chartutil.Values) error {
 	// Navigate to spec.customresourcedefinitions.owned
 	spec, ok := csvDoc["spec"].(map[string]any)
 	if !ok {

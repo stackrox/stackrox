@@ -11,6 +11,7 @@ import (
 
 	"github.com/stackrox/rox/operator/bundle_helpers/pkg/descriptor"
 	"gopkg.in/yaml.v3"
+	"helm.sh/helm/v3/pkg/chartutil"
 )
 
 // FixSpecDescriptorOrder fixes the ordering of specDescriptors in a CSV file.
@@ -40,8 +41,8 @@ func FixSpecDescriptorOrder(args []string) error {
 
 // fixSpecDescriptorOrderBytes fixes the ordering of specDescriptors in CSV YAML bytes
 func fixSpecDescriptorOrderBytes(in []byte) ([]byte, error) {
-	var csvDoc map[string]any
-	if err := yaml.Unmarshal(in, &csvDoc); err != nil {
+	csvDoc, err := chartutil.ReadValues(in)
+	if err != nil {
 		return nil, fmt.Errorf("failed to parse YAML: %w", err)
 	}
 
