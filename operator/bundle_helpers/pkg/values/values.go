@@ -4,16 +4,33 @@ package values
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"helm.sh/helm/v3/pkg/chartutil"
 )
 
+// pathValue retrieves a value at the given path, handling both top-level
+// keys and nested paths. PathValue from Helm only works for nested paths.
+func pathValue(vals chartutil.Values, path string) (any, error) {
+	// For top-level keys (no dots), access the map directly
+	if !strings.Contains(path, ".") {
+		val, ok := vals[path]
+		if !ok {
+			return nil, fmt.Errorf("%q is not a value", path)
+		}
+		return val, nil
+	}
+
+	// For nested paths, use Helm's PathValue
+	return vals.PathValue(path)
+}
+
 // GetString reads a string value at the given dot-separated path.
 // Returns error if path doesn't exist or value is not a string.
 func GetString(vals chartutil.Values, path string) (string, error) {
-	val, err := vals.PathValue(path)
+	val, err := pathValue(vals, path)
 	if err != nil {
 		return "", errors.Wrapf(err, "path %q not found", path)
 	}
@@ -29,7 +46,7 @@ func GetString(vals chartutil.Values, path string) (string, error) {
 // GetMap reads a nested map at the given dot-separated path.
 // Returns error if path doesn't exist or value is not a map.
 func GetMap(vals chartutil.Values, path string) (chartutil.Values, error) {
-	val, err := vals.PathValue(path)
+	val, err := pathValue(vals, path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "path %q not found", path)
 	}
@@ -48,7 +65,7 @@ func GetMap(vals chartutil.Values, path string) (chartutil.Values, error) {
 // GetArray reads an array at the given dot-separated path.
 // Returns error if path doesn't exist or value is not an array.
 func GetArray(vals chartutil.Values, path string) ([]any, error) {
-	val, err := vals.PathValue(path)
+	val, err := pathValue(vals, path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "path %q not found", path)
 	}
@@ -64,7 +81,7 @@ func GetArray(vals chartutil.Values, path string) ([]any, error) {
 // GetValue reads any value at the given dot-separated path.
 // Useful when the type is dynamic or caller will type-assert.
 func GetValue(vals chartutil.Values, path string) (any, error) {
-	val, err := vals.PathValue(path)
+	val, err := pathValue(vals, path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "path %q not found", path)
 	}
@@ -73,7 +90,7 @@ func GetValue(vals chartutil.Values, path string) (any, error) {
 
 // PathExists reports whether a value exists at the given dot-separated path.
 func PathExists(vals chartutil.Values, path string) bool {
-	_, err := vals.PathValue(path)
+	_, err := pathValue(vals, path)
 	return err == nil
 }
 
