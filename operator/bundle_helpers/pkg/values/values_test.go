@@ -162,3 +162,71 @@ func TestPathExists_False(t *testing.T) {
 	assert.False(t, PathExists(vals, "metadata.name"))
 	assert.False(t, PathExists(vals, "spec"))
 }
+
+func TestSetValue_NewPath(t *testing.T) {
+	vals := chartutil.Values{}
+
+	err := SetValue(vals, "metadata.name", "test-operator")
+	require.NoError(t, err)
+
+	result, err := GetString(vals, "metadata.name")
+	require.NoError(t, err)
+	assert.Equal(t, "test-operator", result)
+}
+
+func TestSetValue_OverwriteExisting(t *testing.T) {
+	vals := chartutil.Values{
+		"metadata": map[string]any{
+			"name": "old-name",
+		},
+	}
+
+	err := SetValue(vals, "metadata.name", "new-name")
+	require.NoError(t, err)
+
+	result, err := GetString(vals, "metadata.name")
+	require.NoError(t, err)
+	assert.Equal(t, "new-name", result)
+}
+
+func TestSetValue_CreateIntermediateMaps(t *testing.T) {
+	vals := chartutil.Values{}
+
+	err := SetValue(vals, "metadata.annotations.createdAt", "2024-01-01")
+	require.NoError(t, err)
+
+	result, err := GetString(vals, "metadata.annotations.createdAt")
+	require.NoError(t, err)
+	assert.Equal(t, "2024-01-01", result)
+}
+
+func TestSetValue_PreservesSiblings(t *testing.T) {
+	vals := chartutil.Values{
+		"metadata": map[string]any{
+			"name":      "old-name",
+			"namespace": "default",
+		},
+	}
+
+	err := SetValue(vals, "metadata.name", "new-name")
+	require.NoError(t, err)
+
+	name, err := GetString(vals, "metadata.name")
+	require.NoError(t, err)
+	assert.Equal(t, "new-name", name)
+
+	ns, err := GetString(vals, "metadata.namespace")
+	require.NoError(t, err)
+	assert.Equal(t, "default", ns)
+}
+
+func TestSetValue_DeepNesting(t *testing.T) {
+	vals := chartutil.Values{}
+
+	err := SetValue(vals, "a.b.c.d.e", "deep-value")
+	require.NoError(t, err)
+
+	result, err := GetString(vals, "a.b.c.d.e")
+	require.NoError(t, err)
+	assert.Equal(t, "deep-value", result)
+}
