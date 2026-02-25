@@ -217,7 +217,8 @@ func (m *manager) kickOffImgScansAndDetect(
 	if fetchImgCtx != nil {
 		// Wait for image scan results to come back, running detection after every update to give a verdict ASAP.
 	resultsLoop:
-		for !hasNonNoScanAlerts(alerts) && err == nil {
+		// The results loop continues while this returns true, waiting for enrichment data to resolve them.
+		for hasOnlyUnenrichedImageAlerts(alerts) && err == nil {
 			select {
 			case nextRes, ok := <-resultChan:
 				if !ok {
@@ -235,7 +236,7 @@ func (m *manager) kickOffImgScansAndDetect(
 			alerts, err = getAlertsFunc(deployment, images)
 		}
 	} else {
-		alerts = filterOutNoScanAlerts(alerts) // no point in alerting on no scans if we're not even trying
+		alerts = filterOutUnenrichedImageAlerts(alerts) // no point in alerting on no scans if we're not even trying
 	}
 	return alerts, err
 }

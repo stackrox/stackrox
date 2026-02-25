@@ -77,23 +77,26 @@ func (m *manager) shouldBypass(s *state, req *admission.AdmissionRequest) bool {
 	return false
 }
 
-// hasNonNoScanAlerts checks if the given alert slice contains any alerts that are NOT
-// due to the absence (or presence) of image scans.
-func hasNonNoScanAlerts(alerts []*storage.Alert) bool {
+// hasOnlyUnenrichedImageAlerts returns true if all alerts in the slice are from
+// policies that fire on the absence of image enrichment data (UnscannedImage,
+// ImageSignatureVerifiedBy). These alerts are transient false positives caused
+// by placeholder images before enrichment completes.
+func hasOnlyUnenrichedImageAlerts(alerts []*storage.Alert) bool {
 	for _, a := range alerts {
-		if !policyfields.ContainsScanRequiredFields(a.GetPolicy()) {
-			return true
+		if !policyfields.ContainsEnrichmentRequiredFields(a.GetPolicy()) {
+			return false
 		}
 	}
-	return false
+	return true
 }
 
-// filterOutNoScanAlerts removes all alerts from the given slice that are due to the absence
-// of image scans. The given slice is modified and should not be used afterwards.
-func filterOutNoScanAlerts(alerts []*storage.Alert) []*storage.Alert {
+// filterOutUnenrichedImageAlerts removes alerts from policies that fire on the
+// absence of image enrichment data to remove false positives. The remaining alerts are genuine violations.
+// The input slice is modified in place and should not be used afterwards.
+func filterOutUnenrichedImageAlerts(alerts []*storage.Alert) []*storage.Alert {
 	filteredAlerts := alerts[:0]
 	for _, a := range alerts {
-		if policyfields.ContainsScanRequiredFields(a.GetPolicy()) {
+		if policyfields.ContainsEnrichmentRequiredFields(a.GetPolicy()) {
 			continue
 		}
 		filteredAlerts = append(filteredAlerts, a)

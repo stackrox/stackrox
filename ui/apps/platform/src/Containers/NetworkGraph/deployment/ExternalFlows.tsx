@@ -188,7 +188,9 @@ function ExternalFlows({ deploymentId }: ExternalFlowsProps) {
         const payload = selectedFlows.map((flow) => ({ ...flow, status: targetStatus }));
 
         await markNetworkBaselineStatuses({ deploymentId, networkBaselines: payload });
-        await Promise.all([anomalous.refetch(), baseline.refetch()]);
+        // Do not await, because not thenable:
+        anomalous.refetch();
+        baseline.refetch();
         setSelectedAnomalous([]);
         setSelectedBaseline([]);
     }

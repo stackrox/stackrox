@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	alertutils "github.com/stackrox/rox/central/alert/utils"
+	alertviews "github.com/stackrox/rox/central/alert/views"
 	"github.com/stackrox/rox/central/metrics"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -18,13 +19,16 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	searchCommon "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -41,7 +45,10 @@ var (
 // datastoreImpl is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert
 // objects.
 type datastoreImpl struct {
-	storage         store.Store
+	storage store.Store
+	// TODO(ROX-31142): No way to call RunSelectRequestForSchemaFn via
+	// the store so we have to allow for access to the DB here.
+	db              postgres.DB
 	keyedMutex      *concurrency.KeyedMutex
 	keyFence        concurrency.KeyFence
 	platformMatcher platformmatcher.PlatformMatcher
@@ -81,6 +88,31 @@ func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excl
 		return nil, err
 	}
 	return listAlerts, nil
+}
+
+// SearchAlertPolicyNamesAndSeverities returns lightweight policy name and severity pairs
+// for matching alerts.
+func (ds *datastoreImpl) SearchAlertPolicyNamesAndSeverities(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*alertviews.PolicyNameAndSeverity, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlertPolicyNamesAndSeverities")
+
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+	clonedQuery := q.CloneVT()
+	clonedQuery.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.PolicyName).Proto(),
+		search.NewQuerySelect(search.Severity).Proto(),
+	}
+
+	var results []*alertviews.PolicyNameAndSeverity
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, clonedQuery, func(r *alertviews.PolicyNameAndSeverity) error {
+		results = append(results, r)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
 }
 
 // SearchAlerts returns search results for the given request. This will exclude resolved alerts by default unless Violation State = Resolved is explicitly specified in the query

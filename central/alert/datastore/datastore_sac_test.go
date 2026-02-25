@@ -779,6 +779,30 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedListAlerts() {
 	}
 }
 
+func (s *alertDatastoreSACTestSuite) runSearchAlertPolicyNamesAndSeveritiesTest(testparams alertSACSearchResult) {
+	ctx := s.testContexts[testparams.scopeKey]
+	results, err := s.datastore.SearchAlertPolicyNamesAndSeverities(ctx, nil, true)
+	s.NoError(err)
+	expectedCount := testutils.AggregateCounts(s.T(), testparams.resultCounts)
+	s.Equal(expectedCount, len(results))
+}
+
+func (s *alertDatastoreSACTestSuite) TestAlertScopedSearchAlertPolicyNamesAndSeverities() {
+	for name, c := range alertScopedSACSearchTestCases {
+		s.Run(name, func() {
+			s.runSearchAlertPolicyNamesAndSeveritiesTest(c)
+		})
+	}
+}
+
+func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearchAlertPolicyNamesAndSeverities() {
+	for name, c := range alertUnrestrictedSACObjectSearchTestCases {
+		s.Run(name, func() {
+			s.runSearchAlertPolicyNamesAndSeveritiesTest(c)
+		})
+	}
+}
+
 func (s *alertDatastoreSACTestSuite) countSearchRawAlertsResultsPerClusterAndNamespace(results []*storage.Alert) map[string]map[string]int {
 	resultDistribution := make(map[string]map[string]int, 0)
 	for _, result := range results {
