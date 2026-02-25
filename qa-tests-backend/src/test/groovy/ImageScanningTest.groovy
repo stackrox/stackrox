@@ -151,6 +151,7 @@ class ImageScanningTest extends BaseSpecification {
         }
 
         orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
+        addStackroxImagePullSecret(orchestrator, TEST_NAMESPACE)
     }
 
     def cleanupSpec() {
