@@ -33,7 +33,20 @@ func migrate(database *types.Databases) error {
 	return nil
 }
 
-func processDeploymentRows(rows pgx.Rows, table string) (ids []string, hashes []uint64, lastID string, err error) {
+func processDeploymentRows(db postgres.DB, ctx context.Context, table string, lastID string) (ids []string, hashes []uint64, newLastID string, err error) {
+	var rows pgx.Rows
+
+	if lastID == "" {
+		// First iteration - no WHERE clause
+		rows, err = db.Query(ctx, "SELECT id, serialized FROM "+table+" ORDER BY id LIMIT $1", batchSize)
+	} else {
+		// Subsequent iterations - use keyset pagination
+		rows, err = db.Query(ctx, "SELECT id, serialized FROM "+table+" WHERE id > $1 ORDER BY id LIMIT $2", lastID, batchSize)
+	}
+
+	if err != nil {
+		return nil, nil, "", errors.Wrap(err, "querying deployments for backfill")
+	}
 	defer rows.Close()
 
 	ids = make([]string, 0, batchSize)
@@ -53,14 +66,38 @@ func processDeploymentRows(rows pgx.Rows, table string) (ids []string, hashes []
 
 		ids = append(ids, id)
 		hashes = append(hashes, deployment.GetHash())
-		lastID = id
+		newLastID = id
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, nil, "", errors.Wrapf(err, "failed to get rows for %s", table)
 	}
 
-	return ids, hashes, lastID, nil
+	return ids, hashes, newLastID, nil
+}
+
+func updateDeploymentHashes(db postgres.DB, ctx context.Context, table string, ids []string, hashes []uint64) error {
+	conn, err := db.Acquire(ctx)
+	if err != nil {
+		return errors.Wrap(err, "acquiring database connection")
+	}
+	defer conn.Release()
+
+	batch := &pgx.Batch{}
+	for i := range ids {
+		batch.Queue("UPDATE "+table+" SET hash = $1 WHERE id = $2", hashes[i], ids[i])
+	}
+
+	results := conn.SendBatch(ctx, batch)
+	defer results.Close()
+
+	for i := 0; i < len(ids); i++ {
+		if _, err := results.Exec(); err != nil {
+			return errors.Wrapf(err, "updating hash for deployment at index %d", i)
+		}
+	}
+
+	return nil
 }
 
 func backfillHash(ctx context.Context, db postgres.DB, table string) error {
@@ -71,22 +108,7 @@ func backfillHash(ctx context.Context, db postgres.DB, table string) error {
 	lastID := ""
 
 	for {
-		var rows pgx.Rows
-		var err error
-
-		if lastID == "" {
-			// First iteration - no WHERE clause
-			rows, err = db.Query(ctx, "SELECT id, serialized FROM "+table+" ORDER BY id LIMIT $1", batchSize)
-		} else {
-			// Subsequent iterations - use keyset pagination
-			rows, err = db.Query(ctx, "SELECT id, serialized FROM "+table+" WHERE id > $1 ORDER BY id LIMIT $2", lastID, batchSize)
-		}
-
-		if err != nil {
-			return errors.Wrap(err, "querying deployments for backfill")
-		}
-
-		ids, hashes, newLastID, err := processDeploymentRows(rows, table)
+		ids, hashes, newLastID, err := processDeploymentRows(db, ctx, table, lastID)
 		if err != nil {
 			return err
 		}
@@ -97,28 +119,9 @@ func backfillHash(ctx context.Context, db postgres.DB, table string) error {
 			break
 		}
 
-		// Acquire a connection to use SendBatch
-		conn, err := db.Acquire(ctx)
-		if err != nil {
-			return errors.Wrap(err, "acquiring database connection")
+		if err := updateDeploymentHashes(db, ctx, table, ids, hashes); err != nil {
+			return err
 		}
-
-		// Bulk update deployments with their hash values using batch
-		batch := &pgx.Batch{}
-		for i := range ids {
-			batch.Queue("UPDATE "+table+" SET hash = $1 WHERE id = $2", hashes[i], ids[i])
-		}
-
-		results := conn.SendBatch(ctx, batch)
-		for i := 0; i < len(ids); i++ {
-			if _, err := results.Exec(); err != nil {
-				_ = results.Close()
-				conn.Release()
-				return errors.Wrapf(err, "updating hash for deployment at index %d", i)
-			}
-		}
-		_ = results.Close()
-		conn.Release()
 
 		totalBackfilled += len(ids)
 		log.WriteToStderrf("Backfilled hash for %d deployments (total: %d)", len(ids), totalBackfilled)
