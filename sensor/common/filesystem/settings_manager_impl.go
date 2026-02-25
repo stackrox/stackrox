@@ -77,7 +77,7 @@ func (f *factSettingsManager) extractFileActivityPaths(policies []*storage.Polic
 func (f *factSettingsManager) settingsToConfigMap(settings *sensor.FactSettings) *v1.ConfigMap {
 	factConfigYaml, err := yaml.Marshal(settings)
 	if err != nil {
-		log.Errorf("failed to unmarshal fact settings: %v", err)
+		log.Errorf("failed to marshal fact settings: %v", err)
 		return nil
 	}
 

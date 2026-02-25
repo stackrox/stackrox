@@ -133,7 +133,7 @@ func (p *settingsManager) FlushCache() {
 
 func (p *settingsManager) pushSettings(newSettings *sensor.AdmissionControlSettings) {
 	p.settingsStream.Push(newSettings)
-	if config, err := p.settingsToConfigMap(newSettings); err != nil {
+	if config, err := settingsToConfigMap(newSettings); err != nil {
 		log.Errorf("failed to create config map: %v", err)
 	} else {
 		p.configStream.Push(config)
@@ -197,7 +197,7 @@ func (p *settingsManager) convertAndPush(event *central.SensorEvent) {
 	p.sensorEventsStream.Push(converted)
 }
 
-func (p *settingsManager) settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigMap, error) {
+func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigMap, error) {
 	clusterConfig := settings.GetClusterConfig()
 	enforcedDeployTimePolicies := settings.GetEnforcedDeployTimePolicies()
 	runtimePolicies := settings.GetRuntimePolicies()

@@ -87,7 +87,7 @@ func (p *configMapPersister) ctx() context.Context {
 func (p *configMapPersister) run() {
 	// Attempt to apply the initial config, if any.
 	if err := p.applyCurrentConfigMap(p.ctx()); err != nil {
-		log.Errorf("Could not apply admission controller config map: %v", err)
+		log.Errorf("Could not apply %s config map: %v", p.name, err)
 	}
 
 	for !p.stopSig.IsDone() {
@@ -99,7 +99,7 @@ func (p *configMapPersister) run() {
 			p.settingsStreamIt = p.settingsStreamIt.TryNext()
 
 			if err := p.applyCurrentConfigMap(p.ctx()); err != nil {
-				log.Errorf("Could not apply admission controller config map: %v", err)
+				log.Errorf("Could not apply %s config map: %v", p.name, err)
 			}
 		}
 	}
