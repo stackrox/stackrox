@@ -3,7 +3,7 @@ import type { ThProps } from '@patternfly/react-table';
 
 const expandButtonWidth = '1em';
 const expandButtonPaddingX = 'var(--pf-t--global--spacer--md)';
-const firstTableCellPadding = 'var(--pf-v5-c-table--cell--PaddingLeft)';
+const firstTableCellPadding = 'var(--pf-v6-c-table--cell--PaddingBlockStart)';
 
 export default function ExpandRowTh(props: ThProps) {
     return (
