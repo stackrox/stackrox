@@ -29,7 +29,8 @@ func RootCmd(ctx context.Context) *cobra.Command {
 	)
 
 	// Shortening this interval results in more frequent scans and therefore more load,
-	// which reduces the number of VMs that Stackrox can handle.
+	// which, assuming the throughput continues to be limited by scanning capacity,
+	// reduces the number of VMs that Stackrox can handle.
 	// A report every 4 h results in Stackrox being able to handle around 4500 VMs,
 	// while a report every hour results in a capacity of around 1100 VMs.
 	// See the documentation for more details.
