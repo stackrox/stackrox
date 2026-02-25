@@ -17,10 +17,16 @@ runs:
         echo "TAG=$(date +%Yw%U)" >> "$GITHUB_OUTPUT"
       shell: bash
 
-    # Save caches only on pushes to the default branch.
-    # All other events (PRs, etc.) restore only.
+    # Save caches on pushes to the default branch, or on PRs with the
+    # ci-save-cache label (for testing cache-affecting changes on branches).
+    # GHA scopes PR caches to the branch, so this cannot pollute master caches.
+    - name: Determine cache save eligibility
+      id: cache-save
+      run: echo "enabled=${{ inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch || contains(github.event.pull_request.labels.*.name, 'ci-save-cache')) }}" >> "$GITHUB_OUTPUT"
+      shell: bash
+
     - name: Cache Go Dependencies (save)
-      if: inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
+      if: steps.cache-save.outputs.enabled == 'true'
       uses: actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOMODCACHE }}
@@ -28,7 +34,7 @@ runs:
         restore-keys: go-mod-v1-
 
     - name: Cache Go Dependencies (restore)
-      if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
+      if: steps.cache-save.outputs.enabled != 'true'
       uses: actions/cache/restore@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOMODCACHE }}
@@ -36,7 +42,7 @@ runs:
         restore-keys: go-mod-v1-
 
     - name: Cache Go Build (save)
-      if: inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
+      if: steps.cache-save.outputs.enabled == 'true'
       uses: actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
@@ -44,7 +50,7 @@ runs:
         restore-keys: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
     - name: Cache Go Build (restore)
-      if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
+      if: steps.cache-save.outputs.enabled != 'true'
       uses: actions/cache/restore@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
