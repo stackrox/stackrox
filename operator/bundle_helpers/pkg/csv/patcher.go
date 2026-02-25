@@ -214,36 +214,21 @@ func addSecurityPolicyCRD(spec chartutil.Values) error {
 		},
 	}
 
-	crdsVal := spec["customresourcedefinitions"]
-	if crdsVal == nil {
+	crds, err := values.GetMap(spec, "customresourcedefinitions")
+	if err != nil {
 		return errors.New("spec.customresourcedefinitions field is missing")
 	}
 
-	var crds map[string]any
-	switch v := crdsVal.(type) {
-	case map[string]any:
-		crds = v
-	case chartutil.Values:
-		crds = v
-	default:
-		return fmt.Errorf("spec.customresourcedefinitions has wrong type: %T", crdsVal)
-	}
-
-	owned, ok := crds["owned"].([]any)
-	if !ok {
+	owned, err := values.GetArray(crds, "owned")
+	if err != nil {
 		return errors.New("spec.customresourcedefinitions.owned field is missing or has wrong type")
 	}
 
 	// Filter out existing SecurityPolicy CRDs to prevent duplicates
 	filteredOwned := make([]any, 0, len(owned))
 	for _, crdEntry := range owned {
-		var crdMap map[string]any
-		switch v := crdEntry.(type) {
-		case map[string]any:
-			crdMap = v
-		case chartutil.Values:
-			crdMap = v
-		default:
+		crdMap, ok := crdEntry.(map[string]any)
+		if !ok {
 			filteredOwned = append(filteredOwned, crdEntry)
 			continue
 		}
