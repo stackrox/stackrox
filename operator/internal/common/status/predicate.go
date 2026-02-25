@@ -1,9 +1,13 @@
 package status
 
 import (
+	"fmt"
 	"reflect"
 
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -20,28 +24,34 @@ import (
 //   - ctrlClient.Object (e.g., SkipStatusControllerUpdates[ctrlClient.Object]{}) for untyped usage as predicate.Predicate in reconciler.go.
 type SkipStatusControllerUpdates[T ctrlClient.Object] struct {
 	predicate.TypedFuncs[T]
+	Logger logr.Logger
 }
 
 // Update implements predicate.TypedPredicate.
 // Returns true to allow the update event to trigger reconciliation, false to skip it.
 func (p SkipStatusControllerUpdates[T]) Update(e event.TypedUpdateEvent[T]) bool {
+	log := p.Logger.WithName("predicate-skip-status-ctrl-update")
+
 	// Check for nil using reflection to handle the interface nil gotcha.
 	if reflectutils.IsNil(e.ObjectOld) || reflectutils.IsNil(e.ObjectNew) {
 		// One of the objects is nil, allow reconciliation.
+		log.Info("One of the objects is nil, allowing reconciliation")
 		return true
 	}
 
-	// Type assert to ObjectForStatusController to access GetCondition method.
-	// This allows the same struct to work with both specific types (for controller.go)
-	// and ctrlClient.Object (for reconciler.go as predicate.Predicate).
-	objOldT, ok := any(e.ObjectOld).(platform.ObjectForStatusController)
-	if !ok {
-		// Not an ObjectForStatusController, allow reconciliation.
+	objOldT, err := toObjectForStatusController(e.ObjectOld, log)
+	if err != nil {
+		log.Info("Failed to convert old object to ObjectForStatusController, allowing reconciliation",
+			"error", err,
+			"objectOldType", fmt.Sprintf("%T", e.ObjectOld))
 		return true
 	}
-	objNewT, ok := any(e.ObjectNew).(platform.ObjectForStatusController)
-	if !ok {
-		// Not an ObjectForStatusController, allow reconciliation.
+
+	objNewT, err := toObjectForStatusController(e.ObjectNew, log)
+	if err != nil {
+		log.Info("Failed to convert new object to ObjectForStatusController, allowing reconciliation",
+			"error", err,
+			"objectNewType", fmt.Sprintf("%T", e.ObjectNew))
 		return true
 	}
 
@@ -49,7 +59,45 @@ func (p SkipStatusControllerUpdates[T]) Update(e event.TypedUpdateEvent[T]) bool
 		conditionsChanged(objOldT, objNewT, platform.ConditionProgressing) ||
 			conditionsChanged(objOldT, objNewT, platform.ConditionAvailable)
 
-	return !statusControllerConditionsChanged
+	if statusControllerConditionsChanged {
+		log.Info("Detected changed status controller condition, skipping reconciliation")
+		return false
+	}
+
+	return true
+}
+
+// toObjectForStatusController converts an interface to ObjectForStatusController,
+// handling typed and unstructured objects.
+func toObjectForStatusController(obj any, log logr.Logger) (platform.ObjectForStatusController, error) {
+	// First try direct type assertion.
+	if typed, ok := obj.(platform.ObjectForStatusController); ok {
+		return typed, nil
+	}
+
+	// Next try unstructured.
+	u, ok := obj.(*unstructured.Unstructured)
+	if !ok {
+		return nil, fmt.Errorf("object is neither ObjectForStatusController nor unstructured.Unstructured: %T", obj)
+	}
+
+	gvk := u.GroupVersionKind()
+	var target platform.ObjectForStatusController
+	switch gvk.Kind {
+	case "Central":
+		target = &platform.Central{}
+	case "SecuredCluster":
+		target = &platform.SecuredCluster{}
+	default:
+		return nil, fmt.Errorf("unsupported kind for conversion: %s", gvk.Kind)
+	}
+
+	// Convert unstructured to typed object.
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, target); err != nil {
+		return nil, fmt.Errorf("failed to convert unstructured to %s: %w", gvk.Kind, err)
+	}
+
+	return target, nil
 }
 
 // conditionsChanged returns true if the conditions are different.
