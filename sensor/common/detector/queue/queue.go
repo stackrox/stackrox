@@ -23,7 +23,7 @@ type Queue[T comparable] struct {
 }
 
 // NewQueue creates a new Queue.
-func NewQueue[T comparable](stopper concurrency.Stopper, name string, size int, counter *prometheus.CounterVec, dropped prometheus.Counter) *Queue[T] {
+func NewQueue[T comparable](stopper concurrency.Stopper, name string, size int, counter *prometheus.CounterVec, dropped prometheus.Counter, gauge prometheus.Gauge) *Queue[T] {
 	var opts []queue.OptionFunc[T]
 	if size > 0 {
 		opts = append(opts, queue.WithMaxSize[T](size))
@@ -36,6 +36,9 @@ func NewQueue[T comparable](stopper concurrency.Stopper, name string, size int, 
 	}
 	if name != "" {
 		opts = append(opts, queue.WithQueueName[T](name))
+	}
+	if gauge != nil {
+		opts = append(opts, queue.WithGaugeMetric[T](gauge))
 	}
 	return &Queue[T]{
 		queue:     queue.NewQueue[T](opts...),

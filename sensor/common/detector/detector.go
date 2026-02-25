@@ -90,6 +90,7 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 		netFlowQueueSize,
 		detectorMetrics.DetectorNetworkFlowQueueOperations,
 		detectorMetrics.DetectorNetworkFlowDroppedCount,
+		nil,
 	)
 	piQueue := queue.NewQueue[*queue.IndicatorQueueItem](
 		detectorStopper,
@@ -97,6 +98,7 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 		piQueueSize,
 		detectorMetrics.DetectorProcessIndicatorQueueOperations,
 		detectorMetrics.DetectorProcessIndicatorDroppedCount,
+		nil,
 	)
 	// We only need the SimpleQueue since the deploymentQueue will not be paused/resumed
 	deploymentQueue := queue.NewSimpleQueue[*queue.DeploymentQueueItem](
@@ -112,6 +114,7 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 		fileAccessQueueSize,
 		detectorMetrics.DetectorFileAccessQueueOperations,
 		detectorMetrics.DetectorFileAccessDroppedCount,
+		detectorMetrics.DetectorFileAccessQueueDepth,
 	)
 
 	return &detectorImpl{
@@ -891,6 +894,7 @@ func (d *detectorImpl) processFileAccess() {
 
 			var alerts []*storage.Alert
 			var source central.AlertResults_Source
+			matchStart := time.Now()
 			if fsUtils.IsNodeFileAccess(item.Access) {
 				alerts = d.unifiedDetector.DetectNodeFileAccess(item.Node, item.Access)
 				source = central.AlertResults_NODE_EVENT
@@ -903,6 +907,7 @@ func (d *detectorImpl) processFileAccess() {
 				}, item.Access)
 				source = central.AlertResults_DEPLOYMENT_EVENT
 			}
+			detectorMetrics.ObserveFileAccessPolicyMatchDuration(matchStart)
 
 			if len(alerts) == 0 {
 				// No need to process runtime alerts that have no violations
