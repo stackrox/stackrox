@@ -78,7 +78,7 @@ func TestGetMap_WrongType(t *testing.T) {
 
 	_, err := GetMap(vals, "metadata.name")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not a map")
+	assert.Contains(t, err.Error(), "not a table")
 }
 
 func TestGetMap_MissingPath(t *testing.T) {
