@@ -192,6 +192,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
+							RoleName: internalRoleName,
 							Permissions: map[string]string{
 								"Deployment": storage.Access_READ_ACCESS.String(),
 							},
@@ -211,7 +212,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					},
 					Name: fmt.Sprintf(
 						claimNameFormat,
-						"internal role",
+						internalRoleName,
 						testTokenExpiry.Format(time.RFC3339Nano),
 					),
 				}
@@ -297,6 +298,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
+							RoleName: internalRoleName,
 							Permissions: map[string]string{
 								"Deployment": storage.Access_READ_ACCESS.String(),
 							},
@@ -310,7 +312,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					},
 					Name: fmt.Sprintf(
 						"Generated claims for role %s expiring at %s",
-						"internal role",
+						internalRoleName,
 						testTokenExpiry.Format(time.RFC3339Nano),
 					),
 				}
@@ -338,6 +340,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
+							RoleName: internalRoleName,
 							Permissions: map[string]string{
 								"Deployment": storage.Access_READ_ACCESS.String(),
 							},
@@ -351,7 +354,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					},
 					Name: fmt.Sprintf(
 						claimNameFormat,
-						"internal role",
+						internalRoleName,
 						cappedExpiry.Format(time.RFC3339Nano),
 					),
 				}
@@ -378,6 +381,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
+							RoleName: internalRoleName,
 							Permissions: map[string]string{
 								"Deployment": storage.Access_READ_ACCESS.String(),
 							},
@@ -391,7 +395,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					},
 					Name: fmt.Sprintf(
 						"Generated claims for role %s expiring at %s",
-						"internal role",
+						internalRoleName,
 						testTokenExpiry.Format(time.RFC3339Nano),
 					),
 					Requester: "custom requester",
@@ -417,6 +421,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
+							RoleName:    internalRoleName,
 							Permissions: make(map[string]string),
 							ClusterScopes: []*tokens.ClusterScope{
 								{
@@ -428,7 +433,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					},
 					Name: fmt.Sprintf(
 						"Generated claims for role %s expiring at %s",
-						"internal role",
+						internalRoleName,
 						testTokenExpiry.Format(time.RFC3339Nano),
 					),
 				}
@@ -452,6 +457,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
+							RoleName: internalRoleName,
 							Permissions: map[string]string{
 								"Deployment": storage.Access_READ_ACCESS.String(),
 							},
@@ -460,7 +466,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					},
 					Name: fmt.Sprintf(
 						"Generated claims for role %s expiring at %s",
-						"internal role",
+						internalRoleName,
 						testTokenExpiry.Format(time.RFC3339Nano),
 					),
 				}
@@ -494,6 +500,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
+							RoleName: internalRoleName,
 							Permissions: map[string]string{
 								"Deployment": storage.Access_READ_ACCESS.String(),
 								"Image":      storage.Access_READ_WRITE_ACCESS.String(),
@@ -512,7 +519,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					},
 					Name: fmt.Sprintf(
 						"Generated claims for role %s expiring at %s",
-						"internal role",
+						internalRoleName,
 						testTokenExpiry.Format(time.RFC3339Nano),
 					),
 				}

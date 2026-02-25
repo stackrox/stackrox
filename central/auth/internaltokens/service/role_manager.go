@@ -10,6 +10,10 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 )
 
+const (
+	internalRoleName = "internal role"
+)
+
 type roleManager struct {
 	clusterStore clusterDatastore.DataStore
 	roleStore    roleDatastore.DataStore
@@ -20,6 +24,7 @@ func (rm *roleManager) createRoleForRoxClaims(
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
 ) (*tokens.InternalRole, error) {
 	role := &tokens.InternalRole{
+		RoleName:    internalRoleName,
 		Permissions: make(map[string]string),
 	}
 	for resource, access := range req.GetPermissions() {

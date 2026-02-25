@@ -9,8 +9,16 @@ import (
 )
 
 func TestInternalRoleGetRoleName(t *testing.T) {
-	var role InternalRole
-	assert.Equal(t, internalRoleName, role.GetRoleName())
+	nilRole := (*InternalRole)(nil)
+	assert.Equal(t, "", nilRole.GetRoleName())
+	emptyRole := &InternalRole{}
+	assert.Equal(t, "", emptyRole.GetRoleName())
+	const roleName1 = "role1"
+	roleWithName1 := &InternalRole{RoleName: roleName1}
+	assert.Equal(t, roleName1, roleWithName1.GetRoleName())
+	const roleName2 = "role2"
+	roleWithName2 := &InternalRole{RoleName: roleName2}
+	assert.Equal(t, roleName2, roleWithName2.GetRoleName())
 }
 
 func TestInternalRoleGetPermissions(t *testing.T) {

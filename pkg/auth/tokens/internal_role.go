@@ -4,10 +4,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-const (
-	internalRoleName = "internal role"
-)
-
 // ClusterScope is the scope of a negotiated internal role on a given cluster.
 // The scope can be cluster-wide (include all namespaces on the cluster),
 // or restricted to a specific set of namespaces.
@@ -28,6 +24,7 @@ type ClusterScopes map[string][]string
 
 // InternalRole represents claims that materialize a negotiated ephemeral role for internal use.
 type InternalRole struct {
+	RoleName      string            `json:"name"`
 	Permissions   map[string]string `json:"permissions"`
 	ClusterScopes []*ClusterScope   `json:"cluster_scopes"`
 	// Target token structure
@@ -37,7 +34,10 @@ type InternalRole struct {
 }
 
 func (r *InternalRole) GetRoleName() string {
-	return internalRoleName
+	if r == nil {
+		return ""
+	}
+	return r.RoleName
 }
 
 func (r *InternalRole) GetPermissions() map[string]storage.Access {
