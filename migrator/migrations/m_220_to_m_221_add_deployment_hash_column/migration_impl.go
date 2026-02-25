@@ -33,6 +33,36 @@ func migrate(database *types.Databases) error {
 	return nil
 }
 
+func processDeploymentRows(rows pgx.Rows, table string) (ids []string, hashes []uint64, lastID string, err error) {
+	defer rows.Close()
+
+	ids = make([]string, 0, batchSize)
+	hashes = make([]uint64, 0, batchSize)
+
+	for rows.Next() {
+		var id string
+		var serialized []byte
+		if err := rows.Scan(&id, &serialized); err != nil {
+			return nil, nil, "", errors.Wrap(err, "scanning deployment row")
+		}
+
+		deployment := &storage.Deployment{}
+		if err := deployment.UnmarshalVT(serialized); err != nil {
+			return nil, nil, "", errors.Wrapf(err, "deserializing deployment %s", id)
+		}
+
+		ids = append(ids, id)
+		hashes = append(hashes, deployment.GetHash())
+		lastID = id
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, nil, "", errors.Wrapf(err, "failed to get rows for %s", table)
+	}
+
+	return ids, hashes, lastID, nil
+}
+
 func backfillHash(ctx context.Context, db postgres.DB, table string) error {
 	ctx, cancel := context.WithTimeout(ctx, types.DefaultMigrationTimeout)
 	defer cancel()
@@ -56,33 +86,12 @@ func backfillHash(ctx context.Context, db postgres.DB, table string) error {
 			return errors.Wrap(err, "querying deployments for backfill")
 		}
 
-		ids := make([]string, 0, batchSize)
-		hashes := make([]uint64, 0, batchSize)
-
-		for rows.Next() {
-			var id string
-			var serialized []byte
-			if err := rows.Scan(&id, &serialized); err != nil {
-				rows.Close()
-				return errors.Wrap(err, "scanning deployment row")
-			}
-
-			deployment := &storage.Deployment{}
-			if err := deployment.UnmarshalVT(serialized); err != nil {
-				rows.Close()
-				return errors.Wrapf(err, "deserializing deployment %s", id)
-			}
-
-			ids = append(ids, id)
-			hashes = append(hashes, deployment.GetHash())
-			lastID = id // Track last ID for next iteration
+		ids, hashes, newLastID, err := processDeploymentRows(rows, table)
+		if err != nil {
+			return err
 		}
 
-		if err := rows.Err(); err != nil {
-			rows.Close()
-			return errors.Wrapf(rows.Err(), "failed to get rows for %s", table)
-		}
-		rows.Close()
+		lastID = newLastID
 
 		if len(ids) == 0 {
 			break

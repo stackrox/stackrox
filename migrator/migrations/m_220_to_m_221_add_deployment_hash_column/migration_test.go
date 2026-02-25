@@ -34,10 +34,6 @@ func TestMigration(t *testing.T) {
 func (s *migrationTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pghelper.ForT(s.T(), false)
-	// Use the below lines to use a large existing database for testing.
-	// This is beneficial to test large batches at once.
-	// s.db = pghelper.ForTExistingDB(s.T(), false, "database_id_here")
-	// s.existingDB = true
 }
 
 func (s *migrationTestSuite) TestMigration() {
