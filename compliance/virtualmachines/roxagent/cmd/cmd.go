@@ -34,7 +34,11 @@ func RootCmd(ctx context.Context) *cobra.Command {
 	// while a report every hour results in a capacity of around 1100 VMs.
 	// See the documentation for more details.
 	cmd.Flags().DurationVar(&cfg.IndexInterval, "index-interval", 240*time.Minute,
-		fmt.Sprintf("Interval duration in which index reports are sent in daemon mode (minimum: %v).", minDaemonIndexInterval),
+		fmt.Sprintf(
+			"Interval at which index reports are sent in daemon mode (minimum: %v). "+
+				"Shorter intervals increase scanning load and reduce the overall number of VMs that can be scanned.",
+			minDaemonIndexInterval,
+		),
 	)
 	cmd.Flags().StringVar(&cfg.IndexHostPath, "host-path", "/",
 		"Path where the indexer starts searching for the RPM and DNF databases.",
