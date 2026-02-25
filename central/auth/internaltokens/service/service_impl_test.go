@@ -180,6 +180,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		expectedClaims := tokens.RoxClaims{
 			InternalRoles: []*tokens.InternalRole{
 				{
+					RoleName:    internalRoleName,
 					Permissions: map[string]string{"Deployment": storage.Access_READ_ACCESS.String()},
 					ClusterScopes: []*tokens.ClusterScope{
 						{
@@ -220,6 +221,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		expectedClaims := tokens.RoxClaims{
 			InternalRoles: []*tokens.InternalRole{
 				{
+					RoleName:    internalRoleName,
 					Permissions: map[string]string{"Deployment": storage.Access_READ_ACCESS.String()},
 					ClusterScopes: []*tokens.ClusterScope{
 						{
@@ -332,6 +334,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			),
 			InternalRoles: []*tokens.InternalRole{
 				{
+					RoleName: internalRoleName,
 					Permissions: map[string]string{
 						"Deployment": storage.Access_READ_ACCESS.String(),
 					},
