@@ -675,7 +675,7 @@ jobs:
           name: operator-chart-${{ matrix.name }}
           path: operator-chart-${{ matrix.name }}.tgz
           if-no-files-found: error
-          
+
       - name: Build Operator Bundle image
         if: |
           matrix.name != 'STACKROX_BRANDING'
