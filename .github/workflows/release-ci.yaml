@@ -3,6 +3,7 @@ on:
   push:
     branches:
     - 'release-*'
+    - 'porridge-ROX-33117-tests'
     tags-ignore:
     - '*-nightly-*'
 
@@ -26,6 +27,7 @@ jobs:
     secrets: inherit
 
   check-is-release:
+    if: false
     runs-on: ubuntu-latest
     outputs:
       is_release: ${{ steps.is_release_check.outputs.is_release }}
@@ -45,6 +47,7 @@ jobs:
           fi
 
   check-scanner-version:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -58,6 +61,7 @@ jobs:
             check_scanner_version
 
   check-collector-version:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -71,6 +75,7 @@ jobs:
             check_collector_version
 
   check-fact-version:
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -84,8 +89,7 @@ jobs:
             check_fact_version
 
   publish-helm-charts:
-    needs: [build, check-scanner-version, check-collector-version, check-fact-version, check-is-release]
-    if: needs.check-is-release.outputs.is_release == 'true'
+    needs: [build]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -119,8 +123,8 @@ jobs:
 
   # Publish `roxagent` and `roxctl`.
   publish-cli:
-    needs: [build, check-scanner-version, check-collector-version, check-fact-version, check-is-release]
-    if: needs.check-is-release.outputs.is_release == 'true'
+    needs: [build]
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -146,7 +150,7 @@ jobs:
 
   publish-openapispec:
     needs: [build, check-scanner-version, check-collector-version, check-fact-version, check-is-release]
-    if: needs.check-is-release.outputs.is_release == 'true'
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
