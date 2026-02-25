@@ -3,9 +3,11 @@ package status
 import (
 	"testing"
 
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
@@ -388,6 +390,171 @@ func TestDeploymentStatusUpdatePredicate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := pred.Update(event.TypedUpdateEvent[*appsv1.Deployment]{
+				ObjectOld: tt.old,
+				ObjectNew: tt.new,
+			})
+
+			if result != tt.shallReconcile {
+				t.Errorf("Expected predicate to return %v, got %v", tt.shallReconcile, result)
+			}
+		})
+	}
+}
+
+// TestUnstructuredStatusControllerUpdatePredicate verifies that the predicate correctly handles
+// unstructured objects (as sent by the helm reconciler) by converting them to typed objects
+func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
+	tests := []struct {
+		name           string
+		old            *unstructured.Unstructured
+		new            *unstructured.Unstructured
+		shallReconcile bool
+	}{
+		{
+			name: "Available condition changed should skip reconciliation",
+			old: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "platform.stackrox.io/v1alpha1",
+					"kind":       "Central",
+					"metadata": map[string]interface{}{
+						"name":      "stackrox-central-services",
+						"namespace": "acs-central",
+					},
+					"status": map[string]interface{}{
+						"conditions": []interface{}{
+							map[string]interface{}{
+								"type":   "Available",
+								"status": "False",
+								"reason": "DeploymentsNotReady",
+							},
+						},
+					},
+				},
+			},
+			new: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "platform.stackrox.io/v1alpha1",
+					"kind":       "Central",
+					"metadata": map[string]interface{}{
+						"name":      "stackrox-central-services",
+						"namespace": "acs-central",
+					},
+					"status": map[string]interface{}{
+						"conditions": []interface{}{
+							map[string]interface{}{
+								"type":   "Available",
+								"status": "True",
+								"reason": "DeploymentsReady",
+							},
+						},
+					},
+				},
+			},
+			shallReconcile: false,
+		},
+		{
+			name: "Deployed condition changed should allow reconciliation",
+			old: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "platform.stackrox.io/v1alpha1",
+					"kind":       "Central",
+					"metadata": map[string]interface{}{
+						"name":      "stackrox-central-services",
+						"namespace": "acs-central",
+					},
+					"status": map[string]interface{}{
+						"conditions": []interface{}{
+							map[string]interface{}{
+								"type":   "Available",
+								"status": "True",
+								"reason": "DeploymentsReady",
+							},
+							map[string]interface{}{
+								"type":   "Deployed",
+								"status": "True",
+								"reason": "InstallSuccessful",
+							},
+						},
+					},
+				},
+			},
+			new: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "platform.stackrox.io/v1alpha1",
+					"kind":       "Central",
+					"metadata": map[string]interface{}{
+						"name":      "stackrox-central-services",
+						"namespace": "acs-central",
+					},
+					"status": map[string]interface{}{
+						"conditions": []interface{}{
+							map[string]interface{}{
+								"type":   "Available",
+								"status": "True",
+								"reason": "DeploymentsReady",
+							},
+							map[string]interface{}{
+								"type":   "Deployed",
+								"status": "True",
+								"reason": "UpgradeSuccessful",
+							},
+						},
+					},
+				},
+			},
+			shallReconcile: true,
+		},
+		{
+			name: "spec change should allow reconciliation",
+			old: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "platform.stackrox.io/v1alpha1",
+					"kind":       "Central",
+					"metadata": map[string]interface{}{
+						"name":      "stackrox-central-services",
+						"namespace": "acs-central",
+					},
+					"spec": map[string]interface{}{
+						"central": map[string]interface{}{
+							"persistence": map[string]interface{}{
+								"persistentVolumeClaim": map[string]interface{}{
+									"size": "100Gi",
+								},
+							},
+						},
+					},
+				},
+			},
+			new: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "platform.stackrox.io/v1alpha1",
+					"kind":       "Central",
+					"metadata": map[string]interface{}{
+						"name":      "stackrox-central-services",
+						"namespace": "acs-central",
+					},
+					"spec": map[string]interface{}{
+						"central": map[string]interface{}{
+							"persistence": map[string]interface{}{
+								"persistentVolumeClaim": map[string]interface{}{
+									"size": "200Gi", // Changed
+								},
+							},
+						},
+					},
+				},
+			},
+			shallReconcile: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pred := SkipStatusControllerUpdates[*unstructured.Unstructured]{
+				Logger: logr.Discard(),
+			}
+
+			result := pred.Update(event.TypedUpdateEvent[*unstructured.Unstructured]{
 				ObjectOld: tt.old,
 				ObjectNew: tt.new,
 			})
