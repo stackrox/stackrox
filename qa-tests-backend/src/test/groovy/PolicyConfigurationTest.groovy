@@ -141,6 +141,7 @@ class PolicyConfigurationTest extends BaseSpecification {
     def setupSpec() {
         NEW_CLUSTER_ROLE.setRules([new K8sPolicyRule(resources: ["nodes"], apiGroups: [""], verbs: ["list"])])
         orchestrator.createServiceAccount(NEW_SA)
+        orchestrator.addServiceAccountImagePullSecret(SERVICE_ACCOUNT_NAME, TEST_IMAGE_PULL_SECRET, Constants.ORCHESTRATOR_NAMESPACE)
         orchestrator.createClusterRole(NEW_CLUSTER_ROLE)
         orchestrator.createClusterRoleBinding(NEW_CLUSTER_ROLE_BINDING)
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
