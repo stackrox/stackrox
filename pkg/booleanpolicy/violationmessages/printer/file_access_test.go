@@ -47,7 +47,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 					},
 				},
 			},
-			expected: "'/etc/passwd' opened writable",
+			expected: "'/etc/passwd' opened (writable)",
 		},
 		{
 			desc: "file CREATE operation",
@@ -103,7 +103,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 					Signal: &storage.ProcessSignal{Name: "test"},
 				},
 			},
-			expected: "'" + UNKNOWN_FILE + "' opened writable",
+			expected: "'" + UNKNOWN_FILE + "' opened (writable)",
 		},
 		{
 			desc: "nil process handling",
@@ -112,7 +112,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 				Operation: storage.FileAccess_OPEN,
 				Process:   nil,
 			},
-			expected: "'/test/file' opened writable",
+			expected: "'/test/file' opened (writable)",
 		},
 		{
 			desc: "nil process signal handling",
@@ -123,7 +123,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 					Signal: nil,
 				},
 			},
-			expected: "'/test/file' opened writable",
+			expected: "'/test/file' opened (writable)",
 		},
 		{
 			desc: "empty file path",
@@ -134,7 +134,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 					Signal: &storage.ProcessSignal{Name: "test"},
 				},
 			},
-			expected: "'" + UNKNOWN_FILE + "' opened writable",
+			expected: "'" + UNKNOWN_FILE + "' opened (writable)",
 		},
 		{
 			desc: "Use EffectivePath if ActualPath is empty",
@@ -145,7 +145,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 					Signal: &storage.ProcessSignal{Name: "test"},
 				},
 			},
-			expected: "'/test/file' opened writable",
+			expected: "'/test/file' opened (writable)",
 		},
 		{
 			desc: "empty process name",
@@ -156,7 +156,7 @@ func TestUpdateFileAccessMessage(t *testing.T) {
 					Signal: &storage.ProcessSignal{Name: ""},
 				},
 			},
-			expected: "'/test/file' opened writable",
+			expected: "'/test/file' opened (writable)",
 		},
 	}
 
