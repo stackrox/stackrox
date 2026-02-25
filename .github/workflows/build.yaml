@@ -676,11 +676,6 @@ jobs:
           path: operator-chart-${{ matrix.name }}.tgz
           if-no-files-found: error
           
-      - name: Wipe operator helm chart build dir
-        # otherwise following image build fails with permissions 
-        if: matrix.arch == 'amd64'
-        run: rm -rf operator/dist
-
       - name: Build Operator Bundle image
         if: |
           matrix.name != 'STACKROX_BRANDING'
