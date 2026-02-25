@@ -76,11 +76,21 @@ func PatchCSV(doc chartutil.Values, opts PatchOptions) error {
 		}
 	}
 
-	// Add multi-arch labels
-	for _, arch := range opts.ExtraSupportedArchs {
-		labelPath := fmt.Sprintf("metadata.labels.operatorframework.io/arch.%s", arch)
-		if err := values.SetValue(doc, labelPath, "supported"); err != nil {
-			return fmt.Errorf("failed to set arch label: %w", err)
+	// Add multi-arch labels (label keys contain dots, so access the map directly)
+	if len(opts.ExtraSupportedArchs) > 0 {
+		metadata, err := values.GetMap(doc, "metadata")
+		if err != nil {
+			return fmt.Errorf("failed to get metadata: %w", err)
+		}
+		if _, exists := metadata["labels"]; !exists {
+			metadata["labels"] = map[string]any{}
+		}
+		labels, err := values.GetMap(metadata, "labels")
+		if err != nil {
+			return fmt.Errorf("failed to get metadata.labels: %w", err)
+		}
+		for _, arch := range opts.ExtraSupportedArchs {
+			labels[fmt.Sprintf("operatorframework.io/arch.%s", arch)] = "supported"
 		}
 	}
 
@@ -96,10 +106,12 @@ func PatchCSV(doc chartutil.Values, opts PatchOptions) error {
 		return err
 	}
 
-	// Set olm.skipRange
-	if err := values.SetValue(doc, "metadata.annotations.olm.skipRange", fmt.Sprintf(">= %s < %s", previousYStream, opts.Version)); err != nil {
-		return fmt.Errorf("failed to set olm.skipRange: %w", err)
+	// Set olm.skipRange (annotation key contains a dot, so access the map directly)
+	annotations, err := values.GetMap(doc, "metadata.annotations")
+	if err != nil {
+		return fmt.Errorf("failed to get metadata.annotations: %w", err)
 	}
+	annotations["olm.skipRange"] = fmt.Sprintf(">= %s < %s", previousYStream, opts.Version)
 
 	// Only set replaces if there is a replacement version
 	if replacedVersion != nil {
