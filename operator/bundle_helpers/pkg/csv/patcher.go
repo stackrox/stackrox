@@ -135,18 +135,9 @@ func injectRelatedImageEnvVars(spec chartutil.Values) error {
 				}
 			}
 		case chartutil.Values:
-			if name, ok := v["name"].(string); ok && strings.HasPrefix(name, "RELATED_IMAGE_") {
-				envValue := os.Getenv(name)
-				if envValue == "" {
-					return fmt.Errorf("required environment variable %s is not set", name)
-				}
-				v["value"] = envValue
-			}
-			for _, value := range v {
-				if err := traverse(value); err != nil {
-					return err
-				}
-			}
+			// chartutil.Values is a named type over map[string]interface{}; convert
+			// and re-traverse so the map[string]any branch handles it uniformly.
+			return traverse(map[string]any(v))
 		case []any:
 			for _, value := range v {
 				if err := traverse(value); err != nil {
