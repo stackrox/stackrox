@@ -305,7 +305,7 @@ function NetworkGraphPageContent() {
                 />
             )}
             <PageTitle title="Network Graph" />
-            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-pb-0">
                 <Toolbar
                     className="network-graph-selector-bar"
                     data-testid="network-graph-selector-bar"
@@ -352,7 +352,7 @@ function NetworkGraphPageContent() {
             <Divider component="div" />
             {hasClusterNamespaceSelected && (
                 <>
-                    <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
+                    <PageSection hasBodyWrapper={false} className="pf-v6-u-pb-0">
                         <Toolbar data-testid="network-graph-toolbar">
                             <ToolbarContent>
                                 <ToolbarGroup variant="filter-group">
@@ -381,7 +381,7 @@ function NetworkGraphPageContent() {
                                             isDisabled={!hasClusterNamespaceSelected}
                                         />
                                     </ToolbarItem>
-                                    <ToolbarItem>
+                                    <ToolbarItem className="pf-v6-u-align-self-center">
                                         <DisplayOptionsSelect
                                             selectedOptions={displayOptions}
                                             setSelectedOptions={setDisplayOptions}
@@ -417,11 +417,7 @@ function NetworkGraphPageContent() {
                     <Divider component="div" />
                 </>
             )}
-            <PageSection
-                hasBodyWrapper={false}
-                className="network-graph"
-                padding={{ default: 'noPadding' }}
-            >
+            <PageSection hasBodyWrapper={false} className="network-graph pf-v6-u-p-0" isFilled>
                 {isLoading ? (
                     <Bullseye>
                         <Spinner />

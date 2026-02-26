@@ -1,28 +1,25 @@
 import { useMemo, useState } from 'react';
-import type { ReactElement, Ref } from 'react';
+import type { MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
 import {
     Badge,
     Button,
     Divider,
     Flex,
     FlexItem,
-    Menu,
-    MenuContent,
     MenuFooter,
-    MenuGroup,
-    MenuItem,
-    MenuList,
     MenuSearch,
     MenuSearchInput,
     MenuToggle,
     SearchInput,
     Select,
+    SelectGroup,
+    SelectList,
+    SelectOption,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import type { NamespaceWithDeployments } from 'hooks/useFetchNamespaceDeployments';
-import { removeNullValues } from 'utils/removeNullValues';
 import { DeploymentIcon } from '../common/NetworkGraphIcons';
 
 type DeploymentSelectorProps = {
@@ -45,45 +42,48 @@ function DeploymentSelector({
         setInput(value);
     };
 
-    const filteredDeploymentSelectMenuItems = useMemo(() => {
-        let deploymentSelectMenuItems = deploymentsByNamespace.map((namespace) => {
-            const menuItems = namespace.deployments
-                .filter((deployment) =>
-                    deployment.name.toLowerCase().includes(input.toString().toLowerCase())
-                )
-                .map((deployment) => (
-                    <MenuItem
-                        key={deployment.id}
-                        hasCheckbox
-                        itemId={deployment.name}
-                        isSelected={selectedDeployments.includes(deployment.name)}
-                    >
-                        <span>
-                            <DeploymentIcon />
-                            <span className="pf-v6-u-mx-xs" data-testid="deployment-name">
-                                {deployment.name}
+    const filteredDeploymentSelectOptions = useMemo(() => {
+        const groups = deploymentsByNamespace
+            .map((namespace) => {
+                const options = namespace.deployments
+                    .filter((deployment) =>
+                        deployment.name.toLowerCase().includes(input.toLowerCase())
+                    )
+                    .map((deployment) => (
+                        <SelectOption
+                            key={deployment.id}
+                            hasCheckbox
+                            value={deployment.name}
+                            isSelected={selectedDeployments.includes(deployment.name)}
+                        >
+                            <span>
+                                <DeploymentIcon />
+                                <span className="pf-v6-u-mx-xs" data-testid="deployment-name">
+                                    {deployment.name}
+                                </span>
                             </span>
-                        </span>
-                    </MenuItem>
-                ));
-            if (menuItems.length === 0) {
-                return null;
-            }
-            return (
-                <MenuGroup
-                    key={namespace.metadata.name}
-                    label={namespace.metadata.name}
-                    labelHeadingLevel="h3"
-                >
-                    <MenuList>{menuItems}</MenuList>
-                </MenuGroup>
-            );
-        });
-        deploymentSelectMenuItems = removeNullValues(deploymentSelectMenuItems);
-        return deploymentSelectMenuItems;
+                        </SelectOption>
+                    ));
+                if (options.length === 0) {
+                    return null;
+                }
+                return (
+                    <SelectGroup key={namespace.metadata.name} label={namespace.metadata.name}>
+                        {options}
+                    </SelectGroup>
+                );
+            })
+            .filter((group): group is JSX.Element => group !== null);
+        return groups;
     }, [deploymentsByNamespace, input, selectedDeployments]);
 
-    const onDeploymentSelect = (_, selected) => {
+    const onDeploymentSelect = (
+        _event: ReactMouseEvent<Element, MouseEvent> | undefined,
+        selected: string | number | undefined
+    ) => {
+        if (typeof selected !== 'string') {
+            return;
+        }
         const newSelection = selectedDeployments.find((nsFilter) => nsFilter === selected)
             ? selectedDeployments.filter((nsFilter) => nsFilter !== selected)
             : selectedDeployments.concat(selected);
@@ -98,44 +98,6 @@ function DeploymentSelector({
         delete modifiedSearchObject.Deployment;
         setSearchFilter(modifiedSearchObject);
     };
-
-    // @TODO: DeploymentSelector and NamespaceSelector have identical menu structures.
-    // Consider refactoring to avoid code duplication.
-    const deploymentSelectMenu = (
-        <Menu onSelect={onDeploymentSelect} selected={selectedDeployments}>
-            <MenuSearch>
-                <MenuSearchInput>
-                    <SearchInput
-                        value={input}
-                        aria-label="Filter deployments"
-                        placeholder="Filter deployments..."
-                        onChange={(_event, value) => handleTextInputChange(value)}
-                    />
-                </MenuSearchInput>
-            </MenuSearch>
-            <Divider className="pf-v6-u-m-0" />
-            <MenuContent>
-                <MenuList className="network-graph-menu-list">
-                    {filteredDeploymentSelectMenuItems.length === 0 && (
-                        <MenuItem isDisabled key="no result">
-                            No deployments found
-                        </MenuItem>
-                    )}
-                    {filteredDeploymentSelectMenuItems}
-                </MenuList>
-            </MenuContent>
-            <MenuFooter>
-                <Button
-                    variant="link"
-                    isInline
-                    onClick={onClearSelections}
-                    isDisabled={selectedDeployments.length === 0}
-                >
-                    Clear selections
-                </Button>
-            </MenuFooter>
-        </Menu>
-    );
 
     const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
@@ -154,9 +116,7 @@ function DeploymentSelector({
                 >
                     <DeploymentIcon />
                 </FlexItem>
-                <FlexItem spacer={{ default: 'spacerSm' }}>
-                    <span style={{ position: 'relative', top: '1px' }}>Deployments</span>
-                </FlexItem>
+                <FlexItem spacer={{ default: 'spacerSm' }}>Deployments</FlexItem>
                 {selectedDeployments.length !== 0 && (
                     <FlexItem spacer={{ default: 'spacerSm' }}>
                         <Badge isRead>{selectedDeployments.length}</Badge>
@@ -170,13 +130,44 @@ function DeploymentSelector({
         <Select
             isOpen={isDeploymentOpen}
             onOpenChange={(nextOpen: boolean) => toggleIsDeploymentOpen(nextOpen)}
+            onSelect={onDeploymentSelect}
+            selected={selectedDeployments}
             toggle={toggle}
             popperProps={{
                 maxWidth: '400px',
                 direction: 'down',
             }}
         >
-            {deploymentSelectMenu}
+            <MenuSearch>
+                <MenuSearchInput>
+                    <SearchInput
+                        value={input}
+                        aria-label="Filter deployments"
+                        placeholder="Filter deployments..."
+                        onChange={(_event, value) => handleTextInputChange(value)}
+                    />
+                </MenuSearchInput>
+            </MenuSearch>
+            <Divider className="pf-v6-u-m-0" />
+            <SelectList className="network-graph-menu-list">
+                {filteredDeploymentSelectOptions.length === 0 && (
+                    <SelectOption isDisabled key="no result">
+                        No deployments found
+                    </SelectOption>
+                )}
+                {filteredDeploymentSelectOptions}
+            </SelectList>
+            <Divider />
+            <MenuFooter>
+                <Button
+                    variant="link"
+                    isInline
+                    onClick={onClearSelections}
+                    isDisabled={selectedDeployments.length === 0}
+                >
+                    Clear selections
+                </Button>
+            </MenuFooter>
         </Select>
     );
 }
