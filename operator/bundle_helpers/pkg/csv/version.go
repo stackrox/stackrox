@@ -121,26 +121,26 @@ func adjustForUnreleased(initialReplace XyzVersion, unreleased string) (XyzVersi
 
 // advancePastSkips advances the replacement version past any skipped versions
 func advancePastSkips(initialReplace, currentXyz XyzVersion, skips []XyzVersion) XyzVersion {
-	current := initialReplace
+	replacement := initialReplace
 	for {
 		// Check safety BEFORE incrementing
-		next := XyzVersion{X: current.X, Y: current.Y, Z: current.Z + 1}
+		next := XyzVersion{X: replacement.X, Y: replacement.Y, Z: replacement.Z + 1}
 		if next.Y != initialReplace.Y || next.Compare(currentXyz) >= 0 {
 			break
 		}
 
-		if !slices.Contains(skips, current) {
+		if !slices.Contains(skips, replacement) {
 			break
 		}
 
-		current = next
+		replacement = next
 	}
 
 	// Exception: if we're releasing immediate patch to broken version, still replace it
-	if current.Compare(currentXyz) >= 0 {
+	if replacement.Compare(currentXyz) >= 0 {
 		return initialReplace
 	}
-	return current
+	return replacement
 }
 
 // CalculateReplacedVersion determines which version this release replaces
