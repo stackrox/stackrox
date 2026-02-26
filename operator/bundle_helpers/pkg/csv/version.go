@@ -123,7 +123,7 @@ func adjustForUnreleased(initialReplace XyzVersion, unreleased string) (XyzVersi
 func advancePastSkips(initialReplace, currentXyz XyzVersion, skips []XyzVersion) XyzVersion {
 	replacement := initialReplace
 	for {
-		// Check safety BEFORE incrementing
+		// Look ahead to next before advancing, to avoid incrementing past currentXyz or leaving the Y-stream.
 		next := XyzVersion{X: replacement.X, Y: replacement.Y, Z: replacement.Z + 1}
 		if next.Y != initialReplace.Y || next.Compare(currentXyz) >= 0 {
 			break
