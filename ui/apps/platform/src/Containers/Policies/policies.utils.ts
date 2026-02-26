@@ -300,6 +300,7 @@ export type WizardScopeLabel = {
 export const initialScope: WizardScope = {
     cluster: '',
     namespace: '',
+    namespaceLabel: null,
     label: null,
 };
 
