@@ -1,21 +1,19 @@
 import { useMemo, useState } from 'react';
-import type { ReactElement, Ref } from 'react';
+import type { MouseEvent as ReactMouseEvent, ReactElement, Ref } from 'react';
 import {
     Badge,
     Button,
     Divider,
     Flex,
     FlexItem,
-    Menu,
-    MenuContent,
     MenuFooter,
-    MenuItem,
-    MenuList,
     MenuSearch,
     MenuSearchInput,
     MenuToggle,
     SearchInput,
     Select,
+    SelectList,
+    SelectOption,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
 
@@ -74,33 +72,33 @@ function NamespaceSelector({
 
     const deploymentLookupMap = getDeploymentLookupMap(deploymentsByNamespace);
 
-    const filteredDeploymentSelectMenuItems = useMemo(() => {
-        const namespaceSelectMenuItems = namespaces
-            .filter((namespace) =>
-                namespace.name.toLowerCase().includes(input.toString().toLowerCase())
-            )
-            .map((namespace) => {
-                return (
-                    <MenuItem
-                        key={namespace.id}
-                        hasCheckbox
-                        itemId={namespace.name}
-                        isSelected={selectedNamespaces.includes(namespace.name)}
-                    >
-                        <span>
-                            <NamespaceIcon />
-                            <span className="pf-v6-u-mx-xs" data-testid="namespace-name">
-                                {namespace.name}
-                            </span>
+    const filteredNamespaceSelectOptions = useMemo(() => {
+        return namespaces
+            .filter((namespace) => namespace.name.toLowerCase().includes(input.toLowerCase()))
+            .map((namespace) => (
+                <SelectOption
+                    key={namespace.id}
+                    hasCheckbox
+                    value={namespace.name}
+                    isSelected={selectedNamespaces.includes(namespace.name)}
+                >
+                    <span>
+                        <NamespaceIcon />
+                        <span className="pf-v6-u-mx-xs" data-testid="namespace-name">
+                            {namespace.name}
                         </span>
-                    </MenuItem>
-                );
-            });
-
-        return namespaceSelectMenuItems;
+                    </span>
+                </SelectOption>
+            ));
     }, [namespaces, input, selectedNamespaces]);
 
-    const onNamespaceSelect = (_, selected) => {
+    const onNamespaceSelect = (
+        _event: ReactMouseEvent<Element, MouseEvent> | undefined,
+        selected: string | number | undefined
+    ) => {
+        if (typeof selected !== 'string') {
+            return;
+        }
         const newSelection = selectedNamespaces.find((nsFilter) => nsFilter === selected)
             ? selectedNamespaces.filter((nsFilter) => nsFilter !== selected)
             : selectedNamespaces.concat(selected);
@@ -127,42 +125,6 @@ function NamespaceSelector({
         setSearchFilter(modifiedSearchObject);
     };
 
-    const namespaceSelectMenu = (
-        <Menu onSelect={onNamespaceSelect} selected={selectedNamespaces}>
-            <MenuSearch>
-                <MenuSearchInput>
-                    <SearchInput
-                        value={input}
-                        aria-label="Filter namespaces"
-                        placeholder="Filter namespaces..."
-                        onChange={(_event, value) => handleTextInputChange(value)}
-                    />
-                </MenuSearchInput>
-            </MenuSearch>
-            <Divider className="pf-v6-u-m-0" />
-            <MenuContent>
-                <MenuList className="network-graph-menu-list">
-                    {filteredDeploymentSelectMenuItems.length === 0 && (
-                        <MenuItem isDisabled key="no result">
-                            No namespaces found
-                        </MenuItem>
-                    )}
-                    {filteredDeploymentSelectMenuItems}
-                </MenuList>
-            </MenuContent>
-            <MenuFooter>
-                <Button
-                    variant="link"
-                    isInline
-                    onClick={onClearSelections}
-                    isDisabled={selectedNamespaces.length === 0}
-                >
-                    Clear selections
-                </Button>
-            </MenuFooter>
-        </Menu>
-    );
-
     const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             ref={toggleRef}
@@ -181,9 +143,7 @@ function NamespaceSelector({
                     <NamespaceIcon />
                 </FlexItem>
                 <FlexItem spacer={{ default: 'spacerSm' }}>
-                    <span style={{ position: 'relative', top: '1px' }}>
-                        {isEmptyCluster ? 'No namespaces' : 'Namespaces'}
-                    </span>
+                    {isEmptyCluster ? 'No namespaces' : 'Namespaces'}
                 </FlexItem>
                 {selectedNamespaces.length !== 0 && (
                     <FlexItem spacer={{ default: 'spacerSm' }}>
@@ -198,13 +158,44 @@ function NamespaceSelector({
         <Select
             isOpen={isNamespaceOpen}
             onOpenChange={(nextOpen: boolean) => toggleIsNamespaceOpen(nextOpen)}
+            onSelect={onNamespaceSelect}
+            selected={selectedNamespaces}
             toggle={toggle}
             popperProps={{
                 maxWidth: '400px',
                 direction: 'down',
             }}
         >
-            {namespaceSelectMenu}
+            <MenuSearch>
+                <MenuSearchInput>
+                    <SearchInput
+                        value={input}
+                        aria-label="Filter namespaces"
+                        placeholder="Filter namespaces..."
+                        onChange={(_event, value) => handleTextInputChange(value)}
+                    />
+                </MenuSearchInput>
+            </MenuSearch>
+            <Divider className="pf-v6-u-m-0" />
+            <SelectList className="network-graph-menu-list">
+                {filteredNamespaceSelectOptions.length === 0 && (
+                    <SelectOption isDisabled key="no result">
+                        No namespaces found
+                    </SelectOption>
+                )}
+                {filteredNamespaceSelectOptions}
+            </SelectList>
+            <Divider />
+            <MenuFooter>
+                <Button
+                    variant="link"
+                    isInline
+                    onClick={onClearSelections}
+                    isDisabled={selectedNamespaces.length === 0}
+                >
+                    Clear selections
+                </Button>
+            </MenuFooter>
         </Select>
     );
 }
