@@ -58,6 +58,6 @@ describe('Base Images', () => {
         );
 
         // Verify the deleted image is no longer in the table
-        cy.get('table').should('not.contain.text', testBaseImage);
+        cy.get(`tr:has(td:contains("${testBaseImage}"))`).should('not.exist');
     });
 });
