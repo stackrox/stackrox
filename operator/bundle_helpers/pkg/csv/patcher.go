@@ -76,19 +76,17 @@ func PatchCSV(doc chartutil.Values, opts PatchOptions) error {
 		}
 	}
 
+	// Ensure metadata.labels is always a map; SetValue preserves any existing labels.
+	if err := values.SetValue(doc, "metadata.labels", map[string]any{}); err != nil {
+		return fmt.Errorf("failed to initialize metadata.labels: %w", err)
+	}
 	// Add multi-arch labels (label keys contain dots, so access the map directly)
-	if len(opts.ExtraSupportedArchs) > 0 {
-		// Ensure metadata.labels exists; SetValue preserves any existing labels.
-		if err := values.SetValue(doc, "metadata.labels", map[string]any{}); err != nil {
-			return fmt.Errorf("failed to initialize metadata.labels: %w", err)
-		}
-		labels, err := values.GetMap(doc, "metadata.labels")
-		if err != nil {
-			return fmt.Errorf("failed to get metadata.labels: %w", err)
-		}
-		for _, arch := range opts.ExtraSupportedArchs {
-			labels[fmt.Sprintf("operatorframework.io/arch.%s", arch)] = "supported"
-		}
+	labels, err := values.GetMap(doc, "metadata.labels")
+	if err != nil {
+		return fmt.Errorf("failed to get metadata.labels: %w", err)
+	}
+	for _, arch := range opts.ExtraSupportedArchs {
+		labels[fmt.Sprintf("operatorframework.io/arch.%s", arch)] = "supported"
 	}
 
 	// Calculate previous Y-stream and replaced version
