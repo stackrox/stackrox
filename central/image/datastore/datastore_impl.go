@@ -81,7 +81,7 @@ func (ds *datastoreImpl) SearchImages(ctx context.Context, q *v1.Query) ([]*v1.S
 	clonedQuery := q.CloneVT()
 	clonedQuery.Selects = append(q.GetSelects(), pkgSearch.NewQuerySelect(pkgSearch.ImageName).Proto())
 
-	results, err := ds.Search(ctx, q)
+	results, err := ds.Search(ctx, clonedQuery)
 	if err != nil {
 		return nil, err
 	}

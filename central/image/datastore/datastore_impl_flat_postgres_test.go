@@ -104,6 +104,7 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	s.NoError(errRes)
 	s.Len(searchRes, 1)
 	s.Equal(imageTypes.NewDigest(image.GetId()).Digest(), searchRes[0].GetId())
+	s.Equal(image.GetName().GetFullName(), searchRes[0].GetName())
 
 	// Sort by impact score
 	q = pkgSearch.EmptyQuery()
