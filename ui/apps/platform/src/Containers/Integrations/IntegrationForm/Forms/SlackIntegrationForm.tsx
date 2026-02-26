@@ -108,7 +108,7 @@ function SlackIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Annotation key for Slack webhook"
-                        labelIcon={<AnnotationKeyLabelIcon />}
+                        labelHelp={<AnnotationKeyLabelIcon />}
                         fieldId="labelKey"
                         touched={touched}
                         errors={errors}
