@@ -8,7 +8,7 @@ import {
     POLICY_DEFINITION_LIFECYCLE_ID,
     POLICY_DEFINITION_RULES_ID,
 } from '../policies.constants';
-import type { WizardPolicyStep4, WizardScope } from '../policies.utils';
+import type { WizardPolicyStep4 } from '../policies.utils';
 import {
     imageSigningCriteriaName,
     mountPropagationCriteriaName,
@@ -162,62 +162,75 @@ const validationSchemaStep3: yup.ObjectSchema<PolicyStep3> = yup.object().shape(
     [['value', 'arrayValue']]
 );
 
-const scopeLabelSchema = yup.object().shape({
-    key: yup.string(),
-    value: yup.string(),
-});
+const labelSchema = yup
+    .object({
+        key: yup.string().ensure(),
+        value: yup.string().ensure(),
+    })
+    .nullable()
+    .test(
+        'label-requires-key-and-value',
+        'A label must have both a key and a value when used',
+        (label) => {
+            if (!label) {
+                return true;
+            }
 
-const scopeSchema: yup.ObjectSchema<WizardScope> = yup.object().shape({
-    cluster: yup.string(),
-    namespace: yup.string(),
-    namespaceLabel: scopeLabelSchema.nullable(),
-    label: scopeLabelSchema.nullable(),
-});
+            const hasKey = Boolean(label.key.trim());
+            const hasValue = Boolean(label.value.trim());
 
-export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.object().shape({
+            return hasKey === hasValue;
+        }
+    );
+
+export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.object({
     scope: yup
         .array()
         .of(
-            scopeSchema.test(
-                'scope-has-at-least-one-property',
-                () => 'scope must have at least one property',
-                ({ cluster, namespace, label, namespaceLabel }) => {
-                    // Optional chaining in case unexpected temporary states while editing.
-                    return Boolean(
-                        cluster?.trim() ||
-                            namespace?.trim() ||
-                            label?.key?.trim() ||
-                            label?.value?.trim() ||
-                            namespaceLabel?.key?.trim() ||
-                            namespaceLabel?.value?.trim()
-                    );
-                }
-            )
+            yup
+                .object({
+                    cluster: yup.string().ensure(),
+                    namespace: yup.string().ensure(),
+                    label: labelSchema,
+                })
+                .test(
+                    'scope-has-at-least-one-property',
+                    'Scope must have at least one property',
+                    (scope) =>
+                        Boolean(
+                            scope?.cluster.trim() ||
+                                scope?.namespace.trim() ||
+                                scope?.label?.key.trim() ||
+                                scope?.label?.value.trim()
+                        )
+                )
         )
         .required(),
     excludedDeploymentScopes: yup
         .array()
         .of(
             yup
-                .object()
-                .shape({
-                    name: yup.string(),
-                    // Backend returns scope as null for name only exclusions.
-                    scope: scopeSchema.nullable(),
+                .object({
+                    name: yup.string().ensure(),
+                    scope: yup
+                        .object({
+                            cluster: yup.string().ensure(),
+                            namespace: yup.string().ensure(),
+                            label: labelSchema,
+                        })
+                        .nullable(),
                 })
                 .test(
-                    'excluded-deployment-has-at-least-one-property',
-                    () => 'excluded deployment must have at least one property',
-                    ({ name, scope }) => {
-                        // Optional chaining in case unexpected temporary states while editing.
-                        return Boolean(
-                            name?.trim() ||
-                                scope?.cluster?.trim() ||
-                                scope?.namespace?.trim() ||
-                                scope?.label?.key?.trim() ||
-                                scope?.label?.value?.trim()
-                        );
-                    }
+                    'excluded-scope-has-at-least-one-property',
+                    'Excluded scope must have at least one property',
+                    (value) =>
+                        Boolean(
+                            value?.name.trim() ||
+                                value?.scope?.cluster.trim() ||
+                                value?.scope?.namespace.trim() ||
+                                value?.scope?.label?.key.trim() ||
+                                value?.scope?.label?.value.trim()
+                        )
                 )
         )
         .required(),

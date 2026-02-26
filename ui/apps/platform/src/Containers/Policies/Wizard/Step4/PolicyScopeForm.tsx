@@ -43,7 +43,7 @@ function PolicyScopeForm(): ReactElement {
     const [images, setImages] = useState<ListImage[]>([]);
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const { clusters } = useFetchClustersForPermissions(['Deployment']);
-    const { values, setFieldValue } = useFormikContext<ClientPolicy>();
+    const { values, handleChange, setFieldValue } = useFormikContext<ClientPolicy>();
     const { scope, excludedDeploymentScopes, excludedImageNames } = values;
 
     const hasAuditLogEventSource = values.eventSource === 'AUDIT_LOG_EVENT';
@@ -154,16 +154,15 @@ function PolicyScopeForm(): ReactElement {
                     </FlexItem>
                 </Flex>
                 <FlexItem>
-                    <Grid hasGutter md={6} xl={4}>
+                    <Grid hasGutter md={6} xl2={4}>
                         {scope?.map((_, index) => (
                             // eslint-disable-next-line react/no-array-index-key
                             <GridItem key={index}>
                                 {isFeatureFlagEnabled('ROX_LABEL_BASED_POLICY_SCOPING') ? (
                                     <InclusionScopeCard
+                                        index={index}
                                         scope={scope[index]}
-                                        onChange={(newScope) =>
-                                            setFieldValue(`scope[${index}]`, newScope)
-                                        }
+                                        handleChange={handleChange}
                                         onDelete={() => deleteInclusionScope(index)}
                                     />
                                 ) : (

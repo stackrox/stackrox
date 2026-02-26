@@ -273,8 +273,14 @@ export type WizardPolicyStep4 = {
 };
 
 export type WizardExcludedDeployment = {
-    name?: string;
-    scope: WizardScope | null;
+    name: string;
+    scope: WizardExcludedScope | null;
+};
+
+export type WizardExcludedScope = {
+    cluster: string;
+    namespace: string;
+    label: WizardScopeLabel | null;
 };
 
 /*
@@ -285,7 +291,6 @@ export type WizardExcludedDeployment = {
 export type WizardScope = {
     cluster: string;
     namespace: string;
-    namespaceLabel: WizardScopeLabel | null;
     label: WizardScopeLabel | null;
 };
 
@@ -297,13 +302,12 @@ export type WizardScopeLabel = {
 export const initialScope: WizardScope = {
     cluster: '',
     namespace: '',
-    namespaceLabel: null,
     label: null,
 };
 
 export const initialExcludedDeployment: WizardExcludedDeployment = {
     name: '',
-    scope: initialScope,
+    scope: null,
 };
 
 // TODO: work with API to update contract for returning number comparison fields
