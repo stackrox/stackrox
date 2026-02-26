@@ -63,14 +63,33 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 		}
 	}
 
+	// Use TP's labels/annotations if present, otherwise fall back to base profile.
+	labels := tailoredProfile.GetLabels()
+	if len(labels) == 0 {
+		labels = baseProfile.GetLabels()
+	}
+	annotations := tailoredProfile.GetAnnotations()
+	if len(annotations) == 0 {
+		annotations = baseProfile.GetAnnotations()
+	}
+
 	protoProfile := &storage.ComplianceOperatorProfile{
-		Id:        string(tailoredProfile.UID),
-		ProfileId: tailoredProfile.Status.ID,
-		Name:      tailoredProfile.Name,
-		// We want to use the original compliance profiles labels and annotations as they hold data about the type of profile
-		Labels:      baseProfile.Labels,
-		Annotations: baseProfile.Annotations,
+		Id:          string(tailoredProfile.UID),
+		ProfileId:   tailoredProfile.Status.ID,
+		Name:        tailoredProfile.Name,
+		Labels:      labels,
+		Annotations: annotations,
 		Description: stringutils.FirstNonEmpty(tailoredProfile.Spec.Description, baseProfile.Description),
+	}
+
+	baseRules := set.NewStringSet()
+	for _, rule := range baseProfile.Rules {
+		baseRules.Add(string(rule))
+	}
+
+	addedRules := set.NewStringSet()
+	for _, rule := range tailoredProfile.Spec.EnableRules {
+		addedRules.Add(rule.Name)
 	}
 
 	removedRules := set.NewStringSet()
@@ -78,17 +97,11 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 		removedRules.Add(rule.Name)
 	}
 
-	for _, r := range baseProfile.Rules {
-		if removedRules.Contains(string(r)) {
-			continue
-		}
+	effectiveRules := baseRules.Union(addedRules).Difference(removedRules)
+
+	for rule := range effectiveRules {
 		protoProfile.Rules = append(protoProfile.Rules, &storage.ComplianceOperatorProfile_Rule{
-			Name: string(r),
-		})
-	}
-	for _, rule := range tailoredProfile.Spec.EnableRules {
-		protoProfile.Rules = append(protoProfile.Rules, &storage.ComplianceOperatorProfile_Rule{
-			Name: rule.Name,
+			Name: rule,
 		})
 	}
 

@@ -2,6 +2,7 @@ package dispatchers
 
 import (
 	"fmt"
+	"slices"
 	"testing"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
@@ -143,11 +144,78 @@ func TestProcessEvent_ExtendsProfile(t *testing.T) {
 	for i, r := range profile.GetRules() {
 		ruleNames[i] = r.GetName()
 	}
-	assert.Len(t, ruleNames, 3)
-	assert.Contains(t, ruleNames, "ocp4-api-server-anonymous-auth")
-	assert.Contains(t, ruleNames, "ocp4-api-server-encryption-provider-cipher")
-	assert.Contains(t, ruleNames, "ocp4-audit-log-forwarding-enabled")
-	assert.NotContains(t, ruleNames, "ocp4-api-server-audit-log-path")
+	slices.Sort(ruleNames)
+	assert.Equal(t, []string{
+		"ocp4-api-server-anonymous-auth",
+		"ocp4-api-server-encryption-provider-cipher",
+		"ocp4-audit-log-forwarding-enabled",
+	}, ruleNames)
+}
+
+// TestProcessEvent_TPMetadataTakesPrecedence tests that TP's own labels/annotations
+// take precedence over base profile's when present
+func TestProcessEvent_TPMetadataTakesPrecedence(t *testing.T) {
+	baseProfile := &v1alpha1.Profile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ocp4-cis",
+			Namespace: "openshift-compliance",
+			Labels: map[string]string{
+				"compliance.openshift.io/profile-bundle": "ocp4",
+				"base-only-label":                        "from-base",
+			},
+			Annotations: map[string]string{
+				v1alpha1.ProductTypeAnnotation: "Platform",
+			},
+		},
+		ProfilePayload: v1alpha1.ProfilePayload{
+			ID:          "xccdf_org.ssgproject.content_profile_cis",
+			Description: "Base profile description",
+			Rules:       []v1alpha1.ProfileRule{"ocp4-rule1"},
+		},
+	}
+
+	lister := newMockProfileLister()
+	lister.addProfile("openshift-compliance", baseProfile)
+
+	tp := &v1alpha1.TailoredProfile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ocp4-cis-custom",
+			Namespace: "openshift-compliance",
+			UID:       "tp-uid",
+			Labels: map[string]string{
+				"custom-label": "custom-value",
+			},
+			Annotations: map[string]string{
+				"custom-annotation": "custom-value",
+			},
+		},
+		Spec: v1alpha1.TailoredProfileSpec{
+			Extends:     "ocp4-cis",
+			Description: "Custom description",
+		},
+		Status: v1alpha1.TailoredProfileStatus{
+			ID:    "xccdf_compliance.openshift.io_profile_ocp4-cis-custom",
+			State: "READY",
+		},
+	}
+
+	dispatcher := NewTailoredProfileDispatcher(lister)
+	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
+
+	require.NotNil(t, event)
+	require.NotEmpty(t, event.ForwardMessages)
+	profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
+
+	// TP's labels should be used, not base profile's
+	assert.Equal(t, "custom-value", profile.GetLabels()["custom-label"])
+	assert.Empty(t, profile.GetLabels()["compliance.openshift.io/profile-bundle"]) // Base profile label not present
+
+	// TP's annotations should be used, not base profile's
+	assert.Equal(t, "custom-value", profile.GetAnnotations()["custom-annotation"])
+	assert.Empty(t, profile.GetAnnotations()[v1alpha1.ProductTypeAnnotation]) // Base profile annotation not present
+
+	// TP's description should be used
+	assert.Equal(t, "Custom description", profile.GetDescription())
 }
 
 // TestProcessEvent_FromScratch tests that TPs without Extends work (only EnableRules)
@@ -184,9 +252,11 @@ func TestProcessEvent_FromScratch(t *testing.T) {
 	for i, r := range profile.GetRules() {
 		ruleNames[i] = r.GetName()
 	}
-	assert.Len(t, profile.GetRules(), 2)
-	assert.Contains(t, ruleNames, "ocp4-api-server-anonymous-auth")
-	assert.Contains(t, ruleNames, "ocp4-api-server-encryption-provider-cipher")
+	slices.Sort(ruleNames)
+	assert.Equal(t, []string{
+		"ocp4-api-server-anonymous-auth",
+		"ocp4-api-server-encryption-provider-cipher",
+	}, ruleNames)
 }
 
 // TestProcessEvent_NoStatusID tests that non-ready TPs (no Status.ID) are skipped
