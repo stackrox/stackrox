@@ -17,19 +17,19 @@ import (
 )
 
 var (
-	// CreateTableVirtualMachineCvesV2Stmt holds the create statement for table `virtual_machine_cves_v2`.
-	CreateTableVirtualMachineCvesV2Stmt = &postgres.CreateStmts{
-		GormModel: (*VirtualMachineCvesV2)(nil),
+	// CreateTableVirtualMachineCvev2Stmt holds the create statement for table `virtual_machine_cvev2`.
+	CreateTableVirtualMachineCvev2Stmt = &postgres.CreateStmts{
+		GormModel: (*VirtualMachineCvev2)(nil),
 		Children:  []*postgres.CreateStmts{},
 	}
 
-	// VirtualMachineCvesV2Schema is the go schema for table `virtual_machine_cves_v2`.
-	VirtualMachineCvesV2Schema = func() *walker.Schema {
-		schema := GetSchemaForTable("virtual_machine_cves_v2")
+	// VirtualMachineCvev2Schema is the go schema for table `virtual_machine_cvev2`.
+	VirtualMachineCvev2Schema = func() *walker.Schema {
+		schema := GetSchemaForTable("virtual_machine_cvev2")
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.VirtualMachineCVEV2)(nil)), "virtual_machine_cves_v2")
+		schema = walker.Walk(reflect.TypeOf((*storage.VirtualMachineCVEV2)(nil)), "virtual_machine_cvev2")
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.VirtualMachineV2":          VirtualMachineV2Schema,
 			"storage.VirtualMachineComponentV2": VirtualMachineComponentV2Schema,
@@ -48,31 +48,31 @@ var (
 			v1.SearchCategory_CLUSTERS,
 		}...)
 		schema.ScopingResource = resources.VirtualMachine
-		RegisterTable(schema, CreateTableVirtualMachineCvesV2Stmt)
+		RegisterTable(schema, CreateTableVirtualMachineCvev2Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_VIRTUAL_MACHINE_VULNERABILITIES_V2, schema)
 		return schema
 	}()
 )
 
 const (
-	// VirtualMachineCvesV2TableName specifies the name of the table in postgres.
-	VirtualMachineCvesV2TableName = "virtual_machine_cves_v2"
+	// VirtualMachineCvev2TableName specifies the name of the table in postgres.
+	VirtualMachineCvev2TableName = "virtual_machine_cvev2"
 )
 
-// VirtualMachineCvesV2 holds the Gorm model for Postgres table `virtual_machine_cves_v2`.
-type VirtualMachineCvesV2 struct {
+// VirtualMachineCvev2 holds the Gorm model for Postgres table `virtual_machine_cvev2`.
+type VirtualMachineCvev2 struct {
 	ID                             string                        `gorm:"column:id;type:uuid;primaryKey"`
-	VmV2ID                         string                        `gorm:"column:vmv2id;type:uuid;index:virtualmachinecvesv2_vmv2id,type:btree"`
-	VmComponentID                  string                        `gorm:"column:vmcomponentid;type:uuid;index:virtualmachinecvesv2_vmcomponentid,type:btree"`
-	CveBaseInfoCve                 string                        `gorm:"column:cvebaseinfo_cve;type:varchar;index:virtualmachinecvesv2_cvebaseinfo_cve,type:btree"`
+	VmV2ID                         string                        `gorm:"column:vmv2id;type:uuid;index:virtualmachinecvev2_vmv2id,type:btree"`
+	VmComponentID                  string                        `gorm:"column:vmcomponentid;type:uuid;index:virtualmachinecvev2_vmcomponentid,type:btree"`
+	CveBaseInfoCve                 string                        `gorm:"column:cvebaseinfo_cve;type:varchar;index:virtualmachinecvev2_cvebaseinfo_cve,type:btree"`
 	CveBaseInfoPublishedOn         *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
 	CveBaseInfoCreatedAt           *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
 	CveBaseInfoEpssEpssProbability float32                       `gorm:"column:cvebaseinfo_epss_epssprobability;type:numeric"`
 	PreferredCvss                  float32                       `gorm:"column:preferredcvss;type:numeric"`
-	Severity                       storage.VulnerabilitySeverity `gorm:"column:severity;type:integer;index:virtualmachinecvesv2_severity,type:btree"`
+	Severity                       storage.VulnerabilitySeverity `gorm:"column:severity;type:integer;index:virtualmachinecvev2_severity,type:btree"`
 	ImpactScore                    float32                       `gorm:"column:impactscore;type:numeric"`
 	Nvdcvss                        float32                       `gorm:"column:nvdcvss;type:numeric"`
-	IsFixable                      bool                          `gorm:"column:isfixable;type:bool;index:virtualmachinecvesv2_isfixable,type:btree"`
+	IsFixable                      bool                          `gorm:"column:isfixable;type:bool;index:virtualmachinecvev2_isfixable,type:btree"`
 	FixedBy                        string                        `gorm:"column:fixedby;type:varchar"`
 	EpssProbability                float32                       `gorm:"column:epssprobability;type:numeric"`
 	AdvisoryName                   string                        `gorm:"column:advisory_name;type:varchar"`

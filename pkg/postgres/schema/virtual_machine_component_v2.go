@@ -16,19 +16,19 @@ import (
 )
 
 var (
-	// CreateTableVirtualMachineComponentsV2Stmt holds the create statement for table `virtual_machine_components_v2`.
-	CreateTableVirtualMachineComponentsV2Stmt = &postgres.CreateStmts{
-		GormModel: (*VirtualMachineComponentsV2)(nil),
+	// CreateTableVirtualMachineComponentV2Stmt holds the create statement for table `virtual_machine_component_v2`.
+	CreateTableVirtualMachineComponentV2Stmt = &postgres.CreateStmts{
+		GormModel: (*VirtualMachineComponentV2)(nil),
 		Children:  []*postgres.CreateStmts{},
 	}
 
-	// VirtualMachineComponentsV2Schema is the go schema for table `virtual_machine_components_v2`.
-	VirtualMachineComponentsV2Schema = func() *walker.Schema {
-		schema := GetSchemaForTable("virtual_machine_components_v2")
+	// VirtualMachineComponentV2Schema is the go schema for table `virtual_machine_component_v2`.
+	VirtualMachineComponentV2Schema = func() *walker.Schema {
+		schema := GetSchemaForTable("virtual_machine_component_v2")
 		if schema != nil {
 			return schema
 		}
-		schema = walker.Walk(reflect.TypeOf((*storage.VirtualMachineComponentV2)(nil)), "virtual_machine_components_v2")
+		schema = walker.Walk(reflect.TypeOf((*storage.VirtualMachineComponentV2)(nil)), "virtual_machine_component_v2")
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.VirtualMachineScanV2": VirtualMachineScanV2Schema,
 		}
@@ -46,26 +46,26 @@ var (
 			v1.SearchCategory_CLUSTERS,
 		}...)
 		schema.ScopingResource = resources.VirtualMachine
-		RegisterTable(schema, CreateTableVirtualMachineComponentsV2Stmt)
+		RegisterTable(schema, CreateTableVirtualMachineComponentV2Stmt)
 		mapping.RegisterCategoryToTable(v1.SearchCategory_VIRTUAL_MACHINE_COMPONENTS_V2, schema)
 		return schema
 	}()
 )
 
 const (
-	// VirtualMachineComponentsV2TableName specifies the name of the table in postgres.
-	VirtualMachineComponentsV2TableName = "virtual_machine_components_v2"
+	// VirtualMachineComponentV2TableName specifies the name of the table in postgres.
+	VirtualMachineComponentV2TableName = "virtual_machine_component_v2"
 )
 
-// VirtualMachineComponentsV2 holds the Gorm model for Postgres table `virtual_machine_components_v2`.
-type VirtualMachineComponentsV2 struct {
+// VirtualMachineComponentV2 holds the Gorm model for Postgres table `virtual_machine_component_v2`.
+type VirtualMachineComponentV2 struct {
 	ID                      string               `gorm:"column:id;type:uuid;primaryKey"`
-	VmScanID                string               `gorm:"column:vmscanid;type:uuid;index:virtualmachinecomponentsv2_vmscanid,type:btree"`
-	Name                    string               `gorm:"column:name;type:varchar;index:virtualmachinecomponentsv2_name,type:btree"`
+	VmScanID                string               `gorm:"column:vmscanid;type:uuid;index:virtualmachinecomponentv2_vmscanid,type:btree"`
+	Name                    string               `gorm:"column:name;type:varchar;index:virtualmachinecomponentv2_name,type:btree"`
 	Version                 string               `gorm:"column:version;type:varchar"`
 	Source                  storage.SourceType   `gorm:"column:source;type:integer"`
-	OperatingSystem         string               `gorm:"column:operatingsystem;type:varchar;index:virtualmachinecomponentsv2_operatingsystem,type:btree"`
-	TopCvss                 float32              `gorm:"column:topcvss;type:numeric;index:virtualmachinecomponentsv2_topcvss,type:btree"`
+	OperatingSystem         string               `gorm:"column:operatingsystem;type:varchar;index:virtualmachinecomponentv2_operatingsystem,type:btree"`
+	TopCvss                 float32              `gorm:"column:topcvss;type:numeric;index:virtualmachinecomponentv2_topcvss,type:btree"`
 	Serialized              []byte               `gorm:"column:serialized;type:bytea"`
 	VirtualMachineScanV2Ref VirtualMachineScanV2 `gorm:"foreignKey:vmscanid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
