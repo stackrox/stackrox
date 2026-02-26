@@ -16,10 +16,12 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	tokenMocks "github.com/stackrox/rox/pkg/auth/tokens/mocks"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/grpc/metadata"
 )
 
 const (
@@ -101,7 +103,307 @@ type testIdentity struct {
 }
 
 func TestExtractorIdentityForRequest(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	mockSource := tokenMocks.NewMockSource(mockCtrl)
+	mockSource.EXPECT().ID().AnyTimes().Return(mockSourceID)
+	mockAuthProvider := createEnabledMockAuthProvider(mockCtrl)
 
+	t.Run("Neither identity nor error for token of type different from Bearer ", func(it *testing.T) {
+		te := getTestExtractor(it)
+		identityExtractor := NewExtractor(te.roleStore, te.tokenValidator)
+		ri := requestinfo.RequestInfo{
+			Metadata: metadata.MD{"authorization": []string{"ServiceCert dummyTokenData"}},
+		}
+		id, err := identityExtractor.IdentityForRequest(it.Context(), ri)
+		assert.Nil(it, err)
+		assert.Nil(it, id)
+	})
+
+	makeRequestInfoWithBearerToken := func(token string) requestinfo.RequestInfo {
+		return requestinfo.RequestInfo{
+			Metadata: metadata.MD{"authorization": []string{"Bearer " + token}},
+		}
+	}
+
+	for name, tc := range map[string]struct {
+		request    requestinfo.RequestInfo
+		setupMocks func(*testExtractor)
+		errMsg     string
+	}{
+		"Error: Token validation error is propagated": {
+			request: makeRequestInfoWithBearerToken("fail-validation"),
+			setupMocks: func(te *testExtractor) {
+				te.tokenValidator.EXPECT().
+					Validate(gomock.Any(), "fail-validation").
+					Times(1).
+					Return(nil, errDummy)
+			},
+			errMsg: "token validation failed",
+		},
+		"Error: Missing source": {
+			request: makeRequestInfoWithBearerToken("missing-source"),
+			setupMocks: func(te *testExtractor) {
+				te.tokenValidator.EXPECT().
+					Validate(gomock.Any(), "missing-source").
+					Times(1).
+					Return(&tokens.TokenInfo{}, nil)
+			},
+			errMsg: "tokens must originate from exactly one source",
+		},
+		"Error: Too many token sources": {
+			request: makeRequestInfoWithBearerToken("too-many-sources"),
+			setupMocks: func(te *testExtractor) {
+				te.tokenValidator.EXPECT().
+					Validate(gomock.Any(), "too-many-sources").
+					Times(1).
+					Return(&tokens.TokenInfo{Sources: []tokens.Source{mockSource, mockSource}}, nil)
+			},
+			errMsg: "tokens must originate from exactly one source",
+		},
+		"Error: Token source not of AuthProvider type": {
+			request: makeRequestInfoWithBearerToken("random-type-source"),
+			setupMocks: func(te *testExtractor) {
+				te.tokenValidator.EXPECT().
+					Validate(gomock.Any(), "random-type-source").
+					Times(1).
+					Return(&tokens.TokenInfo{Sources: []tokens.Source{mockSource}}, nil)
+			},
+			errMsg: "API tokens must originate from an authentication provider source",
+		},
+		"Error: Disabled token source": {
+			request: makeRequestInfoWithBearerToken("disabled-token-source"),
+			setupMocks: func(te *testExtractor) {
+				source := authProviderMocks.NewMockProvider(te.mockCtrl)
+				source.EXPECT().ID().AnyTimes().Return(mockSourceID)
+				source.EXPECT().Name().Times(1).Return(mockAuthProviderName)
+				source.EXPECT().Enabled().Times(1).Return(false)
+				te.tokenValidator.EXPECT().
+					Validate(gomock.Any(), "disabled-token-source").
+					Times(1).
+					Return(&tokens.TokenInfo{Sources: []tokens.Source{source}}, nil)
+			},
+			errMsg: fmt.Sprintf("auth provider %q is not enabled", mockAuthProviderName),
+		},
+		"Error: Token with both RoleName and RoleNames claims": {
+			request: makeRequestInfoWithBearerToken("both-role-name-and-role-names"),
+			setupMocks: func(te *testExtractor) {
+				source := createEnabledMockAuthProvider(te.mockCtrl)
+				tokenInfo := &tokens.TokenInfo{
+					Sources: []tokens.Source{source},
+					Claims: &tokens.Claims{
+						RoxClaims: tokens.RoxClaims{
+							RoleName:  roleName1,
+							RoleNames: []string{roleName1},
+						},
+					},
+				}
+				te.tokenValidator.EXPECT().
+					Validate(gomock.Any(), "both-role-name-and-role-names").
+					Times(1).
+					Return(tokenInfo, nil)
+			},
+			errMsg: "malformed token: uses both 'roles' and deprecated 'role' claims",
+		},
+		"Error: Failed role resolution for role tokens": {
+			request: makeRequestInfoWithBearerToken("failed-role-resolution"),
+			setupMocks: func(te *testExtractor) {
+				source := createEnabledMockAuthProvider(te.mockCtrl)
+				tokenInfo := &tokens.TokenInfo{
+					Sources: []tokens.Source{source},
+					Claims: &tokens.Claims{
+						RoxClaims: tokens.RoxClaims{
+							RoleNames: []string{roleName1},
+						},
+					},
+				}
+				te.tokenValidator.EXPECT().
+					Validate(gomock.Any(), "failed-role-resolution").
+					Times(1).
+					Return(tokenInfo, nil)
+				te.roleStore.EXPECT().GetAndResolveRole(gomock.Any(), roleName1).Times(1).Return(nil, errDummy)
+			},
+			errMsg: "failed to resolve user roles",
+		},
+		"Error: Missing role mapper for external user": {
+			request: makeRequestInfoWithBearerToken("external-user-missing-role-mapper"),
+			setupMocks: func(te *testExtractor) {
+				source := createEnabledMockAuthProvider(te.mockCtrl)
+				source.EXPECT().RoleMapper().Times(1).Return(nil)
+				tokenInfo := &tokens.TokenInfo{
+					Sources: []tokens.Source{source},
+					Claims: &tokens.Claims{
+						RoxClaims: tokens.RoxClaims{
+							ExternalUser: &tokens.ExternalUserClaim{},
+						},
+					},
+				}
+				te.tokenValidator.EXPECT().
+					Validate(gomock.Any(), "external-user-missing-role-mapper").
+					Times(1).
+					Return(tokenInfo, nil)
+			},
+			errMsg: "failed to resolve external user",
+		},
+		"Error: Token with insufficient data": {
+			request: makeRequestInfoWithBearerToken("token-with-insufficient-data"),
+			setupMocks: func(te *testExtractor) {
+				source := createEnabledMockAuthProvider(te.mockCtrl)
+				tokenInfo := &tokens.TokenInfo{
+					Sources: []tokens.Source{source},
+					Claims:  &tokens.Claims{},
+				}
+				te.tokenValidator.EXPECT().
+					Validate(gomock.Any(), "token-with-insufficient-data").
+					Times(1).
+					Return(tokenInfo, nil)
+			},
+			errMsg: "could not determine token type",
+		},
+	} {
+		t.Run(name, func(it *testing.T) {
+			te := getTestExtractor(it)
+			defer te.mockCtrl.Finish()
+			if tc.setupMocks != nil {
+				tc.setupMocks(te)
+			}
+			identityExtractor := NewExtractor(te.roleStore, te.tokenValidator)
+			id, err := identityExtractor.IdentityForRequest(it.Context(), tc.request)
+			assert.Error(it, err)
+			assert.ErrorContains(it, err, tc.errMsg)
+			assert.Nil(it, id)
+		})
+	}
+
+	friendlyName := fmt.Sprintf("%s (%s)", externalUserFullName, externalUserEmail)
+
+	for name, tc := range map[string]struct {
+		request    requestinfo.RequestInfo
+		setupMocks func(*testExtractor)
+		identity   *testIdentity
+	}{
+		"Valid token with role names": {
+			request: makeRequestInfoWithBearerToken("valid-token-with-role-names"),
+			setupMocks: func(te *testExtractor) {
+				te.roleStore.EXPECT().
+					GetAndResolveRole(gomock.Any(), roleName1).
+					Times(1).
+					Return(testRole1, nil)
+				te.roleStore.EXPECT().
+					GetAndResolveRole(gomock.Any(), roleName2).
+					Times(1).
+					Return(testRole2, nil)
+				setupMockAuthProvider(te.authProvider)
+				tokenInfo := &tokens.TokenInfo{
+					Sources: []tokens.Source{te.authProvider},
+					Claims:  buildRoleNamesClaimsWithExternalUser(testName, testSubject, testID, externalUserEmail, []string{roleName1, roleName2}, testExpiresAt),
+				}
+				te.tokenValidator.EXPECT().
+					Validate(gomock.Any(), "valid-token-with-role-names").
+					Times(1).
+					Return(tokenInfo, nil)
+			},
+			identity: &testIdentity{
+				uid:          fmt.Sprintf("auth-token:%s", testID),
+				fullName:     testName,
+				friendlyName: testSubject,
+				permissions:  bothTestRolePermissions,
+				roles:        []permissions.ResolvedRole{testRole1, testRole2},
+				user:         buildUserInfo(externalUserEmail, testSubject, []permissions.ResolvedRole{testRole1, testRole2}),
+				attributes:   map[string][]string{"role": {internalRoleName, internalRoleName}, "name": {testName}},
+				expiry:       testExpiresAt,
+				authProvider: mockAuthProvider,
+			},
+		},
+		"Valid token with role name - backward compatibility": {
+			request: makeRequestInfoWithBearerToken("valid-token-with-role-name-backward-compatibility"),
+			setupMocks: func(te *testExtractor) {
+				te.roleStore.EXPECT().
+					GetAndResolveRole(gomock.Any(), roleName1).
+					Times(1).
+					Return(testRole1, nil)
+				setupMockAuthProvider(te.authProvider)
+				tokenInfo := &tokens.TokenInfo{
+					Sources: []tokens.Source{te.authProvider},
+					Claims: &tokens.Claims{
+						Claims: jwt.Claims{
+							Subject:  testSubject,
+							ID:       testID,
+							IssuedAt: jwt.NewNumericDate(time.Now().Add(-time.Hour)),
+							Expiry:   jwt.NewNumericDate(testExpiresAt),
+						},
+						RoxClaims: tokens.RoxClaims{
+							Name:         testName,
+							RoleName:     roleName1,
+							ExternalUser: &tokens.ExternalUserClaim{Email: externalUserEmail},
+						},
+					},
+				}
+				te.tokenValidator.EXPECT().
+					Validate(gomock.Any(), "valid-token-with-role-name-backward-compatibility").
+					Times(1).
+					Return(tokenInfo, nil)
+			},
+			identity: &testIdentity{
+				uid:          fmt.Sprintf("auth-token:%s", testID),
+				fullName:     testName,
+				friendlyName: testSubject,
+				permissions:  testRole1Permissions,
+				roles:        []permissions.ResolvedRole{testRole1},
+				user:         buildUserInfo(externalUserEmail, testSubject, []permissions.ResolvedRole{testRole1}),
+				attributes:   map[string][]string{"role": {internalRoleName}, "name": {testName}},
+				expiry:       testExpiresAt,
+				authProvider: mockAuthProvider,
+			},
+		},
+		"Valid token with external user": {
+			request: makeRequestInfoWithBearerToken("valid-token-with-external-user"),
+			setupMocks: func(te *testExtractor) {
+				roleMapper := permissionMocks.NewMockRoleMapper(te.mockCtrl)
+				roleMapper.EXPECT().
+					FromUserDescriptor(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return([]permissions.ResolvedRole{testRole1, testRole2}, nil)
+				te.authProvider.EXPECT().RoleMapper().Times(1).Return(roleMapper)
+				te.authProvider.EXPECT().MarkAsActive().Times(1).Return(nil)
+				setupMockAuthProvider(te.authProvider)
+				token := &tokens.TokenInfo{
+					Claims: buildExternalUserClaimsWithExpiry(
+						externalUserEmail,
+						externalUserFullName,
+						externalUserID,
+						testExpiresAt,
+					),
+					Sources: []tokens.Source{te.authProvider},
+				}
+				te.tokenValidator.EXPECT().
+					Validate(gomock.Any(), "valid-token-with-external-user").
+					Times(1).
+					Return(token, nil)
+			},
+			identity: &testIdentity{
+				uid:          fmt.Sprintf("sso:%s:%s", mockAuthProviderID, externalUserID),
+				fullName:     externalUserFullName,
+				friendlyName: friendlyName,
+				permissions:  bothTestRolePermissions,
+				roles:        []permissions.ResolvedRole{testRole1, testRole2},
+				user:         buildUserInfo(externalUserEmail, friendlyName, []permissions.ResolvedRole{testRole1, testRole2}),
+				expiry:       testExpiresAt,
+				authProvider: mockAuthProvider,
+			},
+		},
+	} {
+		t.Run(name, func(it *testing.T) {
+			te := getTestExtractor(it)
+			defer te.mockCtrl.Finish()
+			if tc.setupMocks != nil {
+				tc.setupMocks(te)
+			}
+			identityExtractor := NewExtractor(te.roleStore, te.tokenValidator)
+			id, err := identityExtractor.IdentityForRequest(it.Context(), tc.request)
+			assert.Nil(it, err)
+			validateIdentity(it, tc.identity, id)
+		})
+	}
 }
 
 func TestExtractorWithRoleNames(t *testing.T) {
@@ -289,6 +591,10 @@ func TestExtractorWithExternalUser(t *testing.T) {
 	}{
 		"Error: No token source": {
 			testToken:            &tokens.TokenInfo{},
+			expectedErrorMessage: "external user tokens must originate from exactly one source",
+		},
+		"Error: Too many token sources": {
+			testToken:            &tokens.TokenInfo{Sources: []tokens.Source{mockSource, mockSource}},
 			expectedErrorMessage: "external user tokens must originate from exactly one source",
 		},
 		"Error: No role mapper": {
@@ -594,6 +900,13 @@ func setupMockAuthProvider(provider *authProviderMocks.MockProvider) {
 	provider.EXPECT().Name().AnyTimes().Return(mockAuthProviderName)
 	provider.EXPECT().Type().AnyTimes().Return(mockAuthProviderType)
 	provider.EXPECT().StorageView().AnyTimes().Return(nil)
+	provider.EXPECT().Enabled().AnyTimes().Return(true)
+}
+
+func createEnabledMockAuthProvider(mockCtrl *gomock.Controller) *authProviderMocks.MockProvider {
+	mockProvider := authProviderMocks.NewMockProvider(mockCtrl)
+	setupMockAuthProvider(mockProvider)
+	return mockProvider
 }
 
 func buildExternalUserClaims(
