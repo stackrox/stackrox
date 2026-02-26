@@ -16,6 +16,11 @@
     min-height: 0;
 }
 
+/* Keep the topology control bar from being clipped by the visualization surface overflow */
+.network-graph .pf-topology-control-bar {
+    bottom: var(--pf-t--global--spacer--md);
+}
+
 /* simple solution to prevent user from making sidebar too narrow */
 .pf-v6-c-drawer__panel.pf-m-resizable {
     min-width: 430px !important;
