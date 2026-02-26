@@ -116,7 +116,7 @@ func echoReplacedVersion(doc chartutil.Values, version, firstVersion, unreleased
 
 	rawName := strings.TrimSuffix(name, expectedSuffix)
 
-	spec, err := values.GetMap(doc, "spec")
+	spec, err := doc.Table("spec")
 	if err != nil {
 		return fmt.Errorf("failed to get spec: %w", err)
 	}

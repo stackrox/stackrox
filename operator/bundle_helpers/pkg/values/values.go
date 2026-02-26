@@ -27,17 +27,6 @@ func GetString(vals chartutil.Values, path string) (string, error) {
 	return str, nil
 }
 
-// GetMap reads a nested map at the given dot-separated path.
-// Returns error if path doesn't exist or value is not a map.
-// Uses Table instead of PathValue because PathValue rejects map values.
-func GetMap(vals chartutil.Values, path string) (chartutil.Values, error) {
-	result, err := vals.Table(path)
-	if err != nil {
-		return nil, fmt.Errorf("path %q not found: %w", path, err)
-	}
-	return result, nil
-}
-
 // GetArray reads an array at the given dot-separated path.
 // Returns error if path doesn't exist or value is not an array.
 func GetArray(vals chartutil.Values, path string) ([]any, error) {
