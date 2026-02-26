@@ -187,6 +187,7 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
                 .object({
                     cluster: yup.string().ensure(),
                     namespace: yup.string().ensure(),
+                    namespaceLabel: labelSchema,
                     label: labelSchema,
                 })
                 .test(
@@ -197,7 +198,9 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
                             scope?.cluster.trim() ||
                                 scope?.namespace.trim() ||
                                 scope?.label?.key.trim() ||
-                                scope?.label?.value.trim()
+                                scope?.label?.value.trim() ||
+                                scope?.namespaceLabel?.key.trim() ||
+                                scope?.namespaceLabel?.value.trim()
                         )
                 )
         )

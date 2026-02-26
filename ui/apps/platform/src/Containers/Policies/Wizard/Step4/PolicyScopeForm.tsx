@@ -163,6 +163,7 @@ function PolicyScopeForm(): ReactElement {
                                         index={index}
                                         scope={scope[index]}
                                         handleChange={handleChange}
+                                        setFieldValue={setFieldValue}
                                         onDelete={() => deleteInclusionScope(index)}
                                     />
                                 ) : (
