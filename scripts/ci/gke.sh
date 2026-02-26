@@ -176,6 +176,7 @@ create_cluster() {
             --enable-ip-alias \
             --enable-network-policy \
             --no-enable-autorepair \
+            --system-config-from-file=<(echo '{"kubeletConfig": {"imageMinimumGcAge": "8h"}}') \
             "${VERSION_ARGS[@]}" \
             --image-type "${GCP_IMAGE_TYPE}" \
             --tags="${tags}" \
