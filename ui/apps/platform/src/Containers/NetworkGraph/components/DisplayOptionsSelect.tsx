@@ -8,7 +8,6 @@ import PortLabel from 'images/network-graph/tcp-icon.svg?react';
 import RelatedEntity from 'images/network-graph/related-entity.svg?react';
 import FilteredEntity from 'images/network-graph/filtered-entity.svg?react';
 
-import './DisplayOptionsSelect.css';
 import { CidrBlockIcon, DeploymentIcon, NamespaceIcon } from '../common/NetworkGraphIcons';
 
 export type DisplayOption =
@@ -41,6 +40,8 @@ function DisplayOptionsSelect({
             ariaLabel="Select display options"
             placeholderText="Display options"
             isDisabled={isDisabled}
+            // Keeps the dropdown menu in the DOM tree to prevent it from closing on checkbox click
+            popperProps={{ appendTo: 'inline' }}
         >
             <SelectGroup label="Deployment visuals" key="deployment">
                 <SelectOption key={0} value="policyStatusBadge">
