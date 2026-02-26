@@ -80,7 +80,7 @@ func PatchCSV(doc chartutil.Values, opts PatchOptions) error {
 	if err := values.SetValue(doc, "metadata.labels", map[string]any{}); err != nil {
 		return fmt.Errorf("failed to initialize metadata.labels: %w", err)
 	}
-	// Add multi-arch labels (label keys contain dots, so access the map directly)
+	// Add multi-arch labels
 	labels, err := doc.Table("metadata.labels")
 	if err != nil {
 		return fmt.Errorf("failed to get metadata.labels: %w", err)
@@ -101,7 +101,7 @@ func PatchCSV(doc chartutil.Values, opts PatchOptions) error {
 		return err
 	}
 
-	// Set olm.skipRange (annotation key contains a dot, so access the map directly)
+	// Set olm.skipRange
 	annotations, err := doc.Table("metadata.annotations")
 	if err != nil {
 		return fmt.Errorf("failed to get metadata.annotations: %w", err)
