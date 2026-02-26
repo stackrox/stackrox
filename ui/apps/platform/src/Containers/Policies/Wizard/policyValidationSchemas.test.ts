@@ -134,7 +134,9 @@ describe('Step 4', () => {
                 excludedDeploymentScopes: [],
                 excludedImageNames: [],
             };
-            expect(validationSchemaStep4.validateSync(value)).toEqual(value);
+            expect(() => {
+                validationSchemaStep4.validateSync(value);
+            }).toThrow();
         });
 
         it('throws if value has non-empty string and key has empty string', () => {
@@ -290,7 +292,9 @@ describe('Step 4', () => {
                 ],
                 excludedImageNames: [],
             };
-            expect(validationSchemaStep4.validateSync(value)).toEqual(value);
+            expect(() => {
+                validationSchemaStep4.validateSync(value);
+            }).toThrow();
         });
 
         it('throws if value has non-empty string and key has empty string', () => {
