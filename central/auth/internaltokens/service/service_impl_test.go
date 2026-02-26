@@ -286,7 +286,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		setup       func(*testing.T, *mockContainer)
 		expectedRsp *v1.GenerateTokenForPermissionsAndScopeResponse
 	}{
-		"success": {
+		"success - standard request": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				Permissions:   deploymentPermission,
 				ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
@@ -551,5 +551,17 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			protoassert.Equal(it, tc.expectedRsp, rsp)
 			assert.NoError(it, err)
 		})
+	}
+}
+
+func setClusterStoreExpectations(
+	mockClusterStore *clusterDataStoreMocks.MockDataStore,
+	clusterIDNameMap map[string]string,
+) {
+	for clusterID, clusterName := range clusterIDNameMap {
+		mockClusterStore.EXPECT().
+			GetClusterName(gomock.Any(), clusterID).
+			Times(1).
+			Return(clusterName, true, nil)
 	}
 }
