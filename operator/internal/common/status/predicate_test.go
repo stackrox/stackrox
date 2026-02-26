@@ -126,6 +126,26 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			shallReconcile: true,
 		},
 		{
+			name: "Helm condition changed combined with Available condition changed should allow reconciliation",
+			old: &platform.Central{
+				Status: platform.CentralStatus{
+					Conditions: []platform.StackRoxCondition{
+						{Type: "Available", Status: platform.StatusTrue, Reason: "DeploymentsReady"},
+						{Type: platform.ConditionDeployed, Status: platform.StatusUnknown},
+					},
+				},
+			},
+			new: &platform.Central{
+				Status: platform.CentralStatus{
+					Conditions: []platform.StackRoxCondition{
+						{Type: "Available", Status: platform.StatusFalse, Reason: "DeploymentsNotReady"},             // Changed
+						{Type: platform.ConditionDeployed, Status: platform.StatusTrue, Reason: "InstallSuccessful"}, // Changed
+					},
+				},
+			},
+			shallReconcile: true,
+		},
+		{
 			name: "observedGeneration changed should allow reconciliation",
 			old: &platform.Central{
 				Status: platform.CentralStatus{
