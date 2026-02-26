@@ -7,7 +7,15 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"helm.sh/helm/v3/pkg/chartutil"
 )
+
+func mustReadValues(t *testing.T, s string) chartutil.Values {
+	t.Helper()
+	v, err := chartutil.ReadValues([]byte(s))
+	require.NoError(t, err)
+	return v
+}
 
 func TestPatchCSV(t *testing.T) {
 	// Set up test environment variables
@@ -20,35 +28,31 @@ func TestPatchCSV(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		input      map[string]any
+		input      chartutil.Values
 		opts       PatchOptions
 		wantErr    bool
-		assertions func(t *testing.T, result map[string]any)
+		assertions func(t *testing.T, result chartutil.Values)
 	}{
 		{
 			name: "basic version patching",
-			input: map[string]any{
-				"metadata": map[string]any{
-					"name": "rhacs-operator.v0.0.1",
-					"annotations": map[string]any{
-						"containerImage": "quay.io/stackrox-io/stackrox-operator:0.0.1",
-						"createdAt":      "",
-					},
-				},
-				"spec": map[string]any{
-					"version": "0.0.1",
-					"customresourcedefinitions": map[string]any{
-						"owned": []any{},
-					},
-				},
-			},
+			input: mustReadValues(t, `
+metadata:
+  name: rhacs-operator.v0.0.1
+  annotations:
+    containerImage: quay.io/stackrox-io/stackrox-operator:0.0.1
+    createdAt: ""
+spec:
+  version: "0.0.1"
+  customresourcedefinitions:
+    owned: []
+`),
 			opts: PatchOptions{
 				Version:           "4.0.0",
 				OperatorImage:     "quay.io/stackrox-io/stackrox-operator:4.0.0",
 				FirstVersion:      "3.62.0",
 				RelatedImagesMode: "omit",
 			},
-			assertions: func(t *testing.T, result map[string]any) {
+			assertions: func(t *testing.T, result chartutil.Values) {
 				metadata := result["metadata"].(map[string]any)
 				assert.Equal(t, "rhacs-operator.v4.0.0", metadata["name"])
 
@@ -62,27 +66,23 @@ func TestPatchCSV(t *testing.T) {
 		},
 		{
 			name: "replaces version calculation",
-			input: map[string]any{
-				"metadata": map[string]any{
-					"name": "rhacs-operator.v0.0.1",
-					"annotations": map[string]any{
-						"containerImage": "quay.io/stackrox-io/stackrox-operator:0.0.1",
-					},
-				},
-				"spec": map[string]any{
-					"version": "0.0.1",
-					"customresourcedefinitions": map[string]any{
-						"owned": []any{},
-					},
-				},
-			},
+			input: mustReadValues(t, `
+metadata:
+  name: rhacs-operator.v0.0.1
+  annotations:
+    containerImage: quay.io/stackrox-io/stackrox-operator:0.0.1
+spec:
+  version: "0.0.1"
+  customresourcedefinitions:
+    owned: []
+`),
 			opts: PatchOptions{
 				Version:           "4.0.1",
 				OperatorImage:     "quay.io/stackrox-io/stackrox-operator:4.0.1",
 				FirstVersion:      "4.0.0",
 				RelatedImagesMode: "omit",
 			},
-			assertions: func(t *testing.T, result map[string]any) {
+			assertions: func(t *testing.T, result chartutil.Values) {
 				spec := result["spec"].(map[string]any)
 				assert.Equal(t, "rhacs-operator.v4.0.0", spec["replaces"])
 			},
@@ -111,31 +111,17 @@ func TestInjectRelatedImageEnvVars_SingleEnvVar(t *testing.T) {
 		require.NoError(t, os.Unsetenv("RELATED_IMAGE_MAIN"))
 	}()
 
-	spec := map[string]any{
-		"install": map[string]any{
-			"spec": map[string]any{
-				"deployments": []any{
-					map[string]any{
-						"spec": map[string]any{
-							"template": map[string]any{
-								"spec": map[string]any{
-									"containers": []any{
-										map[string]any{
-											"env": []any{
-												map[string]any{
-													"name": "RELATED_IMAGE_MAIN",
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	spec := mustReadValues(t, `
+install:
+  spec:
+    deployments:
+    - spec:
+        template:
+          spec:
+            containers:
+            - env:
+              - name: RELATED_IMAGE_MAIN
+`)
 
 	err := injectRelatedImageEnvVars(spec)
 	require.NoError(t, err)
@@ -163,37 +149,19 @@ func TestInjectRelatedImageEnvVars_MultipleNested(t *testing.T) {
 		require.NoError(t, os.Unsetenv("RELATED_IMAGE_SCANNER_DB"))
 	}()
 
-	spec := map[string]any{
-		"install": map[string]any{
-			"spec": map[string]any{
-				"deployments": []any{
-					map[string]any{
-						"spec": map[string]any{
-							"template": map[string]any{
-								"spec": map[string]any{
-									"containers": []any{
-										map[string]any{
-											"env": []any{
-												map[string]any{
-													"name": "RELATED_IMAGE_MAIN",
-												},
-												map[string]any{
-													"name": "RELATED_IMAGE_SCANNER",
-												},
-												map[string]any{
-													"name": "RELATED_IMAGE_SCANNER_DB",
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	spec := mustReadValues(t, `
+install:
+  spec:
+    deployments:
+    - spec:
+        template:
+          spec:
+            containers:
+            - env:
+              - name: RELATED_IMAGE_MAIN
+              - name: RELATED_IMAGE_SCANNER
+              - name: RELATED_IMAGE_SCANNER_DB
+`)
 
 	err := injectRelatedImageEnvVars(spec)
 	require.NoError(t, err)
@@ -211,31 +179,17 @@ func TestInjectRelatedImageEnvVars_MultipleNested(t *testing.T) {
 }
 
 func TestInjectRelatedImageEnvVars_MissingEnvVar(t *testing.T) {
-	spec := map[string]any{
-		"install": map[string]any{
-			"spec": map[string]any{
-				"deployments": []any{
-					map[string]any{
-						"spec": map[string]any{
-							"template": map[string]any{
-								"spec": map[string]any{
-									"containers": []any{
-										map[string]any{
-											"env": []any{
-												map[string]any{
-													"name": "RELATED_IMAGE_NONEXISTENT",
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	spec := mustReadValues(t, `
+install:
+  spec:
+    deployments:
+    - spec:
+        template:
+          spec:
+            containers:
+            - env:
+              - name: RELATED_IMAGE_NONEXISTENT
+`)
 
 	err := injectRelatedImageEnvVars(spec)
 	require.Error(t, err)
@@ -244,32 +198,18 @@ func TestInjectRelatedImageEnvVars_MissingEnvVar(t *testing.T) {
 }
 
 func TestInjectRelatedImageEnvVars_NoRelatedImages(t *testing.T) {
-	spec := map[string]any{
-		"install": map[string]any{
-			"spec": map[string]any{
-				"deployments": []any{
-					map[string]any{
-						"spec": map[string]any{
-							"template": map[string]any{
-								"spec": map[string]any{
-									"containers": []any{
-										map[string]any{
-											"env": []any{
-												map[string]any{
-													"name":  "SOME_OTHER_VAR",
-													"value": "some-value",
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	spec := mustReadValues(t, `
+install:
+  spec:
+    deployments:
+    - spec:
+        template:
+          spec:
+            containers:
+            - env:
+              - name: SOME_OTHER_VAR
+                value: some-value
+`)
 
 	err := injectRelatedImageEnvVars(spec)
 	require.NoError(t, err)
