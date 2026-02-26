@@ -26,7 +26,6 @@ export const selectors = {
             colorInput: '[data-testid="footer-config"] .chrome-picker input',
             size: {
                 input: '[data-testid="footer-config"] button.pf-v6-c-menu-toggle[id="publicConfig.footer.size"]',
-                options: '[data-testid="footer-config"] .pf-v6-c-menu .pf-v6-c-menu__list-item',
             },
         },
         banner: '[data-testid="public-config-footer"]',
