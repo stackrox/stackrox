@@ -116,6 +116,10 @@ func init() {
 		&storage.User{}:                                         resources.Access,
 		&storage.Version{}:                                      resources.Version,
 		&storage.VirtualMachine{}:                               resources.VirtualMachine,
+		&storage.VirtualMachineComponentV2{}:                     resources.VirtualMachine,
+		&storage.VirtualMachineCVEV2{}:                           resources.VirtualMachine,
+		&storage.VirtualMachineScanV2{}:                          resources.VirtualMachine,
+		&storage.VirtualMachineV2{}:                              resources.VirtualMachine,
 		&storage.VulnerabilityRequest{}:                         resources.VulnerabilityRequest,
 		&storage.WatchedImage{}:                                 resources.WatchedImage,
 		// Tests
