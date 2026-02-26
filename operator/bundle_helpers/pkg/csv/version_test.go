@@ -229,6 +229,98 @@ func TestGetPreviousYStream(t *testing.T) {
 	}
 }
 
+func TestXyzVersion_IsEqualOrAfter(t *testing.T) {
+	tests := []struct {
+		name     string
+		v1       XyzVersion
+		v2       XyzVersion
+		expected bool
+	}{
+		{
+			name:     "greater major",
+			v1:       XyzVersion{X: 4, Y: 0, Z: 0},
+			v2:       XyzVersion{X: 3, Y: 0, Z: 0},
+			expected: true,
+		},
+		{
+			name:     "greater minor",
+			v1:       XyzVersion{X: 3, Y: 75, Z: 0},
+			v2:       XyzVersion{X: 3, Y: 74, Z: 0},
+			expected: true,
+		},
+		{
+			name:     "greater patch",
+			v1:       XyzVersion{X: 3, Y: 74, Z: 1},
+			v2:       XyzVersion{X: 3, Y: 74, Z: 0},
+			expected: true,
+		},
+		{
+			name:     "equal versions",
+			v1:       XyzVersion{X: 3, Y: 74, Z: 0},
+			v2:       XyzVersion{X: 3, Y: 74, Z: 0},
+			expected: true,
+		},
+		{
+			name:     "lesser version",
+			v1:       XyzVersion{X: 3, Y: 73, Z: 0},
+			v2:       XyzVersion{X: 3, Y: 74, Z: 0},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.v1.IsEqualOrAfter(tt.v2))
+		})
+	}
+}
+
+func TestXyzVersion_IsEqualOrBefore(t *testing.T) {
+	tests := []struct {
+		name     string
+		v1       XyzVersion
+		v2       XyzVersion
+		expected bool
+	}{
+		{
+			name:     "lesser major",
+			v1:       XyzVersion{X: 3, Y: 0, Z: 0},
+			v2:       XyzVersion{X: 4, Y: 0, Z: 0},
+			expected: true,
+		},
+		{
+			name:     "lesser minor",
+			v1:       XyzVersion{X: 3, Y: 73, Z: 0},
+			v2:       XyzVersion{X: 3, Y: 74, Z: 0},
+			expected: true,
+		},
+		{
+			name:     "lesser patch",
+			v1:       XyzVersion{X: 3, Y: 74, Z: 0},
+			v2:       XyzVersion{X: 3, Y: 74, Z: 1},
+			expected: true,
+		},
+		{
+			name:     "equal versions",
+			v1:       XyzVersion{X: 3, Y: 74, Z: 0},
+			v2:       XyzVersion{X: 3, Y: 74, Z: 0},
+			expected: true,
+		},
+		{
+			name:     "greater version",
+			v1:       XyzVersion{X: 3, Y: 75, Z: 0},
+			v2:       XyzVersion{X: 3, Y: 74, Z: 0},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.v1.IsEqualOrBefore(tt.v2))
+		})
+	}
+}
+
 func TestCalculateReplacedVersion(t *testing.T) {
 	tests := []struct {
 		name       string
