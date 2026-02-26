@@ -54,22 +54,6 @@ func GetArray(vals chartutil.Values, path string) ([]any, error) {
 	return arr, nil
 }
 
-// GetValue reads any value at the given dot-separated path.
-// Useful when the type is dynamic or caller will type-assert.
-func GetValue(vals chartutil.Values, path string) (any, error) {
-	val, err := vals.PathValue(path)
-	if err != nil {
-		return nil, errors.Wrapf(err, "path %q not found", path)
-	}
-	return val, nil
-}
-
-// PathExists reports whether a value exists at the given dot-separated path.
-func PathExists(vals chartutil.Values, path string) bool {
-	_, err := vals.PathValue(path)
-	return err == nil
-}
-
 // SetValue sets a value at the given dot-separated path in vals.
 // Creates intermediate maps as needed.
 func SetValue(vals chartutil.Values, path string, value any) error {
