@@ -171,7 +171,7 @@ function CheckDetailsPage() {
                 onSelect={(_e, key) => {
                     setActiveTabKey(key);
                 }}
-                className="pf-v6-u-pl-lg pf-v6-u-background-color-100 pf-v6-u-flex-shrink-0"
+                className="pf-v6-u-pl-lg pf-v6-u-flex-shrink-0"
             >
                 <Tab
                     eventKey={RESULTS_TAB}

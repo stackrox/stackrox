@@ -124,7 +124,6 @@ function CoveragesPage() {
                         <Divider component="div" />
                         <Flex
                             alignItems={{ default: 'alignItemsStretch' }}
-                            className="pf-v6-u-background-color-100"
                             columnGap={{ default: 'columnGapNone' }}
                             direction={{ default: 'column', md: 'row' }}
                             flexWrap={{ default: 'nowrap' }}
