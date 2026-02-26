@@ -63,13 +63,22 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 		}
 	}
 
+	// Use TP's labels/annotations if present, otherwise fall back to base profile.
+	labels := tailoredProfile.GetLabels()
+	if len(labels) == 0 {
+		labels = baseProfile.GetLabels()
+	}
+	annotations := tailoredProfile.GetAnnotations()
+	if len(annotations) == 0 {
+		annotations = baseProfile.GetAnnotations()
+	}
+
 	protoProfile := &storage.ComplianceOperatorProfile{
-		Id:        string(tailoredProfile.UID),
-		ProfileId: tailoredProfile.Status.ID,
-		Name:      tailoredProfile.Name,
-		// We want to use the original compliance profiles labels and annotations as they hold data about the type of profile
-		Labels:      baseProfile.Labels,
-		Annotations: baseProfile.Annotations,
+		Id:          string(tailoredProfile.UID),
+		ProfileId:   tailoredProfile.Status.ID,
+		Name:        tailoredProfile.Name,
+		Labels:      labels,
+		Annotations: annotations,
 		Description: stringutils.FirstNonEmpty(tailoredProfile.Spec.Description, baseProfile.Description),
 	}
 
