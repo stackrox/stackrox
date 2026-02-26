@@ -90,6 +90,7 @@ export type PolicyScope = {
     cluster: string;
     clusterLabel: PolicyScopeLabel | null;
     namespace: string;
+    namespaceLabel: PolicyScopeLabel | null;
     label: PolicyScopeLabel | null;
 };
 

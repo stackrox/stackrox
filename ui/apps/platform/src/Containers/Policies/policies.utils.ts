@@ -302,6 +302,7 @@ export const initialScope: WizardScope = {
     cluster: '',
     clusterLabel: null,
     namespace: '',
+    namespaceLabel: null,
     label: null,
 };
 
