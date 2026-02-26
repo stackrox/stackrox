@@ -89,14 +89,17 @@ func updateDeploymentHashes(db postgres.DB, ctx context.Context, table string, i
 	}
 
 	results := conn.SendBatch(ctx, batch)
-	defer results.Close()
 
 	for i := 0; i < len(ids); i++ {
 		if _, err := results.Exec(); err != nil {
+			_ = results.Close()
 			return errors.Wrapf(err, "updating hash for deployment at index %d", i)
 		}
 	}
 
+	if err := results.Close(); err != nil {
+		return errors.Wrap(err, "closing batch results")
+	}
 	return nil
 }
 
