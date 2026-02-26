@@ -151,12 +151,12 @@ function ViewScanConfigDetail({
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }} className="pf-v6-u-row-gap-0">
                 {!isLoading && !error && scanConfig && (
                     <>
                         <Flex
                             alignItems={{ default: 'alignItemsCenter' }}
-                            className="pf-v6-u-py-lg pf-v6-u-px-lg"
+                            className="pf-v6-u-pt-lg pf-v6-u-pb-md pf-v6-u-px-lg"
                         >
                             <FlexItem flex={{ default: 'flex_1' }}>
                                 <Title headingLevel="h1">{scanConfig.scanName}</Title>
@@ -180,7 +180,7 @@ function ViewScanConfigDetail({
                                 component="p"
                                 variant={alertObj.type}
                                 isInline
-                                className="pf-v6-u-mb-lg pf-v6-u-mx-lg"
+                                className="pf-v6-u-mb-md pf-v6-u-mx-lg"
                                 actionClose={<AlertActionCloseButton onClose={clearAlertObj} />}
                             >
                                 {alertObj.children}

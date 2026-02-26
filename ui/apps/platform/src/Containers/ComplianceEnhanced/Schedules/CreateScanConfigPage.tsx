@@ -27,7 +27,7 @@ function CreateScanConfigPage(): ReactElement {
                 </Title>
             </PageSection>
             <Divider component="div" />
-            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }} isCenterAligned>
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }} isFilled>
                 <ScanConfigWizardForm />
             </PageSection>
         </>

@@ -353,7 +353,7 @@ function ScanConfigsTablePage({
                         </Alert>
                     )}
 
-                    <Toolbar>
+                    <Toolbar className="pf-v6-u-pb-0">
                         <ToolbarContent>
                             <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                                 <Pagination
