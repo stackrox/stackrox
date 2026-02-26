@@ -2,6 +2,7 @@ package dispatchers
 
 import (
 	"fmt"
+	"slices"
 	"testing"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
@@ -143,11 +144,12 @@ func TestProcessEvent_ExtendsProfile(t *testing.T) {
 	for i, r := range profile.GetRules() {
 		ruleNames[i] = r.GetName()
 	}
-	assert.Len(t, ruleNames, 3)
-	assert.Contains(t, ruleNames, "ocp4-api-server-anonymous-auth")
-	assert.Contains(t, ruleNames, "ocp4-api-server-encryption-provider-cipher")
-	assert.Contains(t, ruleNames, "ocp4-audit-log-forwarding-enabled")
-	assert.NotContains(t, ruleNames, "ocp4-api-server-audit-log-path")
+	slices.Sort(ruleNames)
+	assert.Equal(t, []string{
+		"ocp4-api-server-anonymous-auth",
+		"ocp4-api-server-encryption-provider-cipher",
+		"ocp4-audit-log-forwarding-enabled",
+	}, ruleNames)
 }
 
 // TestProcessEvent_FromScratch tests that TPs without Extends work (only EnableRules)
@@ -184,9 +186,11 @@ func TestProcessEvent_FromScratch(t *testing.T) {
 	for i, r := range profile.GetRules() {
 		ruleNames[i] = r.GetName()
 	}
-	assert.Len(t, profile.GetRules(), 2)
-	assert.Contains(t, ruleNames, "ocp4-api-server-anonymous-auth")
-	assert.Contains(t, ruleNames, "ocp4-api-server-encryption-provider-cipher")
+	slices.Sort(ruleNames)
+	assert.Equal(t, []string{
+		"ocp4-api-server-anonymous-auth",
+		"ocp4-api-server-encryption-provider-cipher",
+	}, ruleNames)
 }
 
 // TestProcessEvent_NoStatusID tests that non-ready TPs (no Status.ID) are skipped
