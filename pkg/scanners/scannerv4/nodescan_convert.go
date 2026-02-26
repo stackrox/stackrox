@@ -13,7 +13,12 @@ import (
 )
 
 var (
-	rhcosOSImageRegexp = regexp.MustCompile(`(Red Hat Enterprise Linux) (CoreOS) ([\d])([\d]+)`)
+	// rhcosOSImageRegexp matches old RHCOS version format where the version is
+	// encoded as a single multi-digit number starting with "4" (e.g., "417" → OCP 4.17).
+	rhcosOSImageRegexp = regexp.MustCompile(`(Red Hat Enterprise Linux) (CoreOS) (4)(\d{2,})`)
+	// rhcosNewOSImageRegexp matches new RHCOS version format where the version
+	// uses the RHEL base version with dots (e.g., "9.6" → RHEL 9.6).
+	rhcosNewOSImageRegexp = regexp.MustCompile(`Red Hat Enterprise Linux CoreOS (\d+)\.(\d+)`)
 )
 
 const (
@@ -39,11 +44,17 @@ func toNodeScan(r *v4.VulnerabilityReport, osImageRef string) *storage.NodeScan 
 }
 
 func toOperatingSystem(ref string) string {
+	// Try old RHCOS version format first (e.g., "Red Hat Enterprise Linux CoreOS 417.94.x" → "rhcos:4.17").
 	r := rhcosOSImageRegexp.FindStringSubmatch(ref)
-	if len(r) != 5 {
-		return ""
+	if len(r) == 5 {
+		return fmt.Sprintf("rhcos:%s.%s", r[3], r[4])
 	}
-	return fmt.Sprintf("rhcos:%s.%s", r[3], r[4])
+	// Try new RHCOS version format (e.g., "Red Hat Enterprise Linux CoreOS 9.6.x" → "rhcos:9.6").
+	r = rhcosNewOSImageRegexp.FindStringSubmatch(ref)
+	if len(r) == 3 {
+		return fmt.Sprintf("rhcos:%s.%s", r[1], r[2])
+	}
+	return ""
 }
 
 func toStorageComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedNodeScanComponent {

@@ -437,12 +437,21 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 		irWrapperFunc := noop
 		arch := c.archCache[indexWrap.NodeName]
 		if isRHCOS {
-			if _, ok := c.archCache[indexWrap.NodeName]; !ok {
-				arch = extractArch(indexWrap.IndexReport)
-				c.archCache[indexWrap.NodeName] = arch
+			if isOldRHCOSVersionFormat(version) {
+				if _, ok := c.archCache[indexWrap.NodeName]; !ok {
+					arch = extractArch(indexWrap.IndexReport)
+					c.archCache[indexWrap.NodeName] = arch
+				}
+				log.Debugf("Attaching OCI entry for 'rhcos' to index-report for node %s: version=%s, arch=%s", indexWrap.NodeName, version, arch)
+				irWrapperFunc = attachRPMtoRHCOS
+			} else {
+				// New RHCOS version format (e.g., "9.6.20260204-0") is incompatible
+				// with the old-format FixedInVersion values in the vulnerability
+				// database (e.g., "412.86.x"). Comparing these formats via RPM version
+				// comparison produces false positives (ROX-26593). Skip the synthetic
+				// 'rhcos' package; individual RPM packages are still scanned correctly.
+				log.Infof("RHCOS version %q uses new version format; skipping synthetic 'rhcos' package to avoid false positive vulnerability matches", version)
 			}
-			log.Debugf("Attaching OCI entry for 'rhcos' to index-report for node %s: version=%s, arch=%s", indexWrap.NodeName, version, arch)
-			irWrapperFunc = attachRPMtoRHCOS
 		}
 		toC <- message.New(&central.MsgFromSensor{
 			Msg: &central.MsgFromSensor_Event{
@@ -474,6 +483,20 @@ func normalizeVersion(version string) []int32 {
 
 func noop(_, _ string, rpm *v4.IndexReport) *v4.IndexReport {
 	return rpm
+}
+
+// isOldRHCOSVersionFormat returns true if the RHCOS version uses the old format
+// (e.g., "417.94.202412120651-0") which encodes the OCP version in the first
+// three digits (4XX → OCP 4.XX). Returns false for the new format (e.g.,
+// "9.6.20260204-0") which uses the RHEL base version instead.
+func isOldRHCOSVersionFormat(version string) bool {
+	if len(version) < 4 {
+		return false
+	}
+	return version[0] == '4' &&
+		version[1] >= '0' && version[1] <= '9' &&
+		version[2] >= '0' && version[2] <= '9' &&
+		version[3] == '.'
 }
 
 func idTaken[T any](m map[string]T, id int) bool {

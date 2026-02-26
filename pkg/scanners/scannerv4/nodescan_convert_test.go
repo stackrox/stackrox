@@ -243,13 +243,21 @@ func (s *indexReportConvertSuite) TestToOperatingSystem() {
 		in       string
 		expected string
 	}{
-		"realistic version": {
+		"old format realistic version": {
 			in:       "Red Hat Enterprise Linux CoreOS 417.94.202409121747-0",
 			expected: "rhcos:4.17",
 		},
-		"realistic long version": {
+		"old format long version": {
 			in:       "Red Hat Enterprise Linux CoreOS 41712345.94.2024",
 			expected: "rhcos:4.1712345",
+		},
+		"new format RHEL 9.6": {
+			in:       "Red Hat Enterprise Linux CoreOS 9.6.20260204-0",
+			expected: "rhcos:9.6",
+		},
+		"new format RHEL 10.1": {
+			in:       "Red Hat Enterprise Linux CoreOS 10.1.20260301-0",
+			expected: "rhcos:10.1",
 		},
 		"non-RHCOS": {
 			in:       "Oracle Linux Server release 6.8",

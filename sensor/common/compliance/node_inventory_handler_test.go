@@ -128,6 +128,51 @@ func (s *NodeInventoryHandlerTestSuite) TearDownTest() {
 	goleak.AssertNoGoroutineLeaks(s.T())
 }
 
+func (s *NodeInventoryHandlerTestSuite) TestIsOldRHCOSVersionFormat() {
+	cases := map[string]struct {
+		version  string
+		expected bool
+	}{
+		"old format OCP 4.17": {
+			version:  "417.94.202412120651-0",
+			expected: true,
+		},
+		"old format OCP 4.12": {
+			version:  "412.86.202410010038-0",
+			expected: true,
+		},
+		"old format OCP 4.16": {
+			version:  "416.94.202501071621-0",
+			expected: true,
+		},
+		"new format RHEL 9.6": {
+			version:  "9.6.20260204-0",
+			expected: false,
+		},
+		"new format RHEL 10.1": {
+			version:  "10.1.20260301-0",
+			expected: false,
+		},
+		"empty string": {
+			version:  "",
+			expected: false,
+		},
+		"short string": {
+			version:  "4.1",
+			expected: false,
+		},
+		"single digit": {
+			version:  "9",
+			expected: false,
+		},
+	}
+	for name, tc := range cases {
+		s.Run(name, func() {
+			s.Equal(tc.expected, isOldRHCOSVersionFormat(tc.version))
+		})
+	}
+}
+
 func (s *NodeInventoryHandlerTestSuite) TestExtractArch() {
 	cases := map[string]struct {
 		rpmArch      string
@@ -212,6 +257,88 @@ func (s *NodeInventoryHandlerTestSuite) TestAttachRPMtoRHCOS() {
 	s.Equal(goldenKey, rhcosRepo.GetKey())
 	s.Equal(goldenName, rhcosRepo.GetName())
 	s.Equal(goldenURI, rhcosRepo.GetUri())
+}
+
+func (s *NodeInventoryHandlerTestSuite) TestSendNodeIndexSkipsRHCOSForNewFormat() {
+	// Verify that when a node has a new-format RHCOS version (e.g., "9.6.x"),
+	// the synthetic 'rhcos' package is NOT attached to avoid false positive
+	// vulnerability matches caused by incompatible version format comparison.
+	arch := "x86_64"
+	ir := fakeNodeIndex(arch)
+	reports := make(chan *index.IndexReportWrap, 1)
+	defer close(reports)
+	inventories := make(chan *storage.NodeInventory)
+	defer close(inventories)
+
+	h := NewNodeInventoryHandler(inventories, reports, &mockAlwaysHitNodeIDMatcher{}, &mockNewFormatRHCOSNodeMatcher{})
+	s.NoError(h.Start())
+	h.Notify(common.SensorComponentEventCentralReachable)
+
+	// Send an IndexReport for a node with new-format RHCOS version.
+	reports <- &index.IndexReportWrap{
+		NodeName:    "test-node",
+		NodeID:      "test-node-id",
+		IndexReport: ir,
+	}
+
+	// Consume the message sent to Central.
+	select {
+	case msg := <-h.ResponsesC():
+		sentIR := msg.GetEvent().GetIndexReport()
+		s.Require().NotNil(sentIR, "IndexReport should be sent to Central")
+		// Verify no synthetic 'rhcos' package was attached.
+		for _, p := range sentIR.GetContents().GetPackages() {
+			s.NotEqual("rhcos", p.GetName(), "new-format RHCOS version should not have synthetic 'rhcos' package")
+		}
+	case <-time.After(5 * time.Second):
+		s.Fail("timed out waiting for message to Central")
+	}
+
+	h.Stop()
+	s.NoError(h.Stopped().Wait())
+}
+
+func (s *NodeInventoryHandlerTestSuite) TestSendNodeIndexAttachesRHCOSForOldFormat() {
+	// Verify that when a node has an old-format RHCOS version (e.g., "417.94.x"),
+	// the synthetic 'rhcos' package IS attached for vulnerability matching.
+	arch := "x86_64"
+	ir := fakeNodeIndex(arch)
+	reports := make(chan *index.IndexReportWrap, 1)
+	defer close(reports)
+	inventories := make(chan *storage.NodeInventory)
+	defer close(inventories)
+
+	h := NewNodeInventoryHandler(inventories, reports, &mockAlwaysHitNodeIDMatcher{}, &mockRHCOSNodeMatcher{})
+	s.NoError(h.Start())
+	h.Notify(common.SensorComponentEventCentralReachable)
+
+	// Send an IndexReport for a node with old-format RHCOS version.
+	reports <- &index.IndexReportWrap{
+		NodeName:    "test-node",
+		NodeID:      "test-node-id",
+		IndexReport: ir,
+	}
+
+	// Consume the message sent to Central.
+	select {
+	case msg := <-h.ResponsesC():
+		sentIR := msg.GetEvent().GetIndexReport()
+		s.Require().NotNil(sentIR, "IndexReport should be sent to Central")
+		// Verify the synthetic 'rhcos' package was attached.
+		var found bool
+		for _, p := range sentIR.GetContents().GetPackages() {
+			if p.GetName() == "rhcos" {
+				found = true
+				break
+			}
+		}
+		s.True(found, "old-format RHCOS version should have synthetic 'rhcos' package attached")
+	case <-time.After(5 * time.Second):
+		s.Fail("timed out waiting for message to Central")
+	}
+
+	h.Stop()
+	s.NoError(h.Stopped().Wait())
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestCapabilities() {
@@ -876,10 +1003,18 @@ func (c *mockNeverHitNodeIDMatcher) GetNodeID(_ string) (string, error) {
 	return "", errors.New("cannot find node")
 }
 
-// mockNeverHitNodeIDMatcher simulates inability to find a node when GetNodeResource is called
+// mockRHCOSNodeMatcher simulates a node running RHCOS with old version format.
 type mockRHCOSNodeMatcher struct{}
 
-// GetRHCOSVersion always identifies as RHCOS and provides a valid version
+// GetRHCOSVersion always identifies as RHCOS and provides a valid old-format version.
 func (c *mockRHCOSNodeMatcher) GetRHCOSVersion(_ string) (bool, string, error) {
 	return true, "417.94.202412120651-0", nil
+}
+
+// mockNewFormatRHCOSNodeMatcher simulates a node running RHCOS with new version format.
+type mockNewFormatRHCOSNodeMatcher struct{}
+
+// GetRHCOSVersion identifies as RHCOS with a new-format version (RHEL base version).
+func (c *mockNewFormatRHCOSNodeMatcher) GetRHCOSVersion(_ string) (bool, string, error) {
+	return true, "9.6.20260204-0", nil
 }
