@@ -329,6 +329,23 @@ func TestExtractorIdentityForRequest(t *testing.T) {
 
 	friendlyName := fmt.Sprintf("%s (%s)", externalUserFullName, externalUserEmail)
 
+	internalRole := &tokens.InternalRole{
+		RoleName: "test internal role",
+		Permissions: map[string]string{
+			deploymentResource: storage.Access_READ_ACCESS.String(),
+		},
+		ClusterScopes: []*tokens.ClusterScope{
+			{
+				ClusterName:       cluster1,
+				ClusterFullAccess: true,
+			},
+			{
+				ClusterName: cluster2,
+				Namespaces:  []string{namespaceA},
+			},
+		},
+	}
+
 	// Success paths
 	for name, tc := range map[string]struct {
 		request    requestinfo.RequestInfo
@@ -474,6 +491,31 @@ func TestExtractorIdentityForRequest(t *testing.T) {
 				permissions:  bothTestRolePermissions,
 				roles:        []permissions.ResolvedRole{testRole1, testRole2},
 				user:         buildUserInfo(externalUserEmail, friendlyName, []permissions.ResolvedRole{testRole1, testRole2}),
+				expiry:       testExpiresAt,
+				authProvider: mockAuthProvider,
+			},
+		},
+		"Valid token with internal role": {
+			request: makeRequestInfoWithBearerToken("valid-token-with-internal-role"),
+			setupMocks: func(te *testExtractor) {
+				setupMockAuthProvider(te.authProvider)
+				tokenInfo := &tokens.TokenInfo{
+					Sources: []tokens.Source{te.authProvider},
+					Claims:  buildInternalRoleClaims(testName, testSubject, testID, internalRole, testExpiresAt),
+				}
+				te.tokenValidator.EXPECT().
+					Validate(gomock.Any(), "valid-token-with-internal-role").
+					Times(1).
+					Return(tokenInfo, nil)
+			},
+			identity: &testIdentity{
+				uid:          fmt.Sprintf("auth-token:%s", testID),
+				fullName:     testName,
+				friendlyName: testSubject,
+				permissions:  map[string]storage.Access{deploymentResource: storage.Access_READ_ACCESS},
+				roles:        []permissions.ResolvedRole{internalRole},
+				user:         buildUserInfo(emptyUserName, testSubject, []permissions.ResolvedRole{internalRole}),
+				attributes:   map[string][]string{"role": {"test internal role"}, "name": {testName}},
 				expiry:       testExpiresAt,
 				authProvider: mockAuthProvider,
 			},
@@ -1074,6 +1116,27 @@ func buildRoleNamesClaimsWithExternalUser(
 	claimsWithExternalUser := buildExternalUserClaims(userMail, missingFullName, missingUserID)
 	claimsFromRoles.RoxClaims.ExternalUser = claimsWithExternalUser.ExternalUser
 	return claimsFromRoles
+}
+
+func buildInternalRoleClaims(
+	name string,
+	subject string,
+	id string,
+	role *tokens.InternalRole,
+	expiry time.Time,
+) *tokens.Claims {
+	return &tokens.Claims{
+		Claims: jwt.Claims{
+			Subject:  subject,
+			ID:       id,
+			IssuedAt: jwt.NewNumericDate(time.Now().Add(-time.Hour)),
+			Expiry:   jwt.NewNumericDate(expiry),
+		},
+		RoxClaims: tokens.RoxClaims{
+			Name:         name,
+			InternalRole: role,
+		},
+	}
 }
 
 func buildUserInfo(userName string, friendlyName string, roles []permissions.ResolvedRole) *storage.UserInfo {
