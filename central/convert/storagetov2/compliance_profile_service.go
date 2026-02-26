@@ -36,6 +36,7 @@ func ComplianceV2Profile(incoming *storage.ComplianceOperatorProfileV2, benchmar
 		Product:        incoming.GetProduct(),
 		Title:          incoming.GetTitle(),
 		Values:         incoming.GetValues(),
+		IsTailored:     incoming.GetIsTailored(),
 	}
 }
 
@@ -93,6 +94,7 @@ func ComplianceProfileSummary(incoming []*storage.ComplianceOperatorProfileV2, b
 				RuleCount:      int32(len(summary.GetRules())),
 				ProfileVersion: summary.GetProfileVersion(),
 				Standards:      profileBenchmarkNameMap[summary.GetName()],
+				IsTailored:     summary.GetIsTailored(),
 			}
 			orderedProfiles = append(orderedProfiles, summary.GetName())
 		}
