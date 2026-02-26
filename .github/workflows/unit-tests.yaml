@@ -44,6 +44,7 @@ jobs:
       uses: ./.github/actions/cache-go-dependencies
       with:
         save: true  # TEMPORARY
+        key-suffix: ${{ matrix.gotags }}
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
@@ -134,6 +135,7 @@ jobs:
       uses: ./.github/actions/cache-go-dependencies
       with:
         save: true  # TEMPORARY
+        key-suffix: ${{ matrix.gotags }}-pg${{ matrix.pg }}
 
     - name: Is Postgres ready
       run: pg_isready -h 127.0.0.1
