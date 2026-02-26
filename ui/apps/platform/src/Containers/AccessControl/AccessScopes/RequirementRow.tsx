@@ -176,7 +176,7 @@ function RequirementRow({
                                 <Button
                                     icon={
                                         <Icon>
-                                            <TimesCircleIcon color="var(--pf-v5-global--color--100)" />
+                                            <TimesCircleIcon />
                                         </Icon>
                                     }
                                     aria-label="Cancel"
