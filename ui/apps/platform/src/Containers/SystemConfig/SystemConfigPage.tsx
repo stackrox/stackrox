@@ -114,7 +114,7 @@ const SystemConfigPage = (): ReactElement => {
 
     return (
         <>
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <Flex>
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h1">System Configuration</Title>

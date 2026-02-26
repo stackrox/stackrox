@@ -1,5 +1,6 @@
 import withAuth from '../../helpers/basicAuth';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
+import pf6 from '../../selectors/pf6';
 
 import {
     logOut,
@@ -24,7 +25,7 @@ function editBannerConfig(type) {
     cy.get(selectors[type].config.colorInput).type(text.color);
     cy.get(selectors[type].widget).click();
     cy.get(selectors[type].config.size.input).click();
-    cy.get(selectors[type].config.size.options).first().click();
+    cy.get(pf6.selectItem).first().click();
     cy.get(selectors[type].config.backgroundColorPickerButton).click();
     cy.get(selectors[type].config.colorInput).clear();
     cy.get(selectors[type].config.colorInput).type(text.backgroundColor);
