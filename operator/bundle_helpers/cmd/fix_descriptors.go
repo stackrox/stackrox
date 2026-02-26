@@ -52,4 +52,3 @@ func fixSpecDescriptorOrderBytes(in []byte) ([]byte, error) {
 	}
 	return buf.Bytes(), nil
 }
-
