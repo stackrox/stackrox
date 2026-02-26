@@ -171,7 +171,7 @@ function CheckDetailsPage() {
                 onSelect={(_e, key) => {
                     setActiveTabKey(key);
                 }}
-                className="pf-v6-u-pl-md pf-v6-u-background-color-100 pf-v6-u-flex-shrink-0"
+                className="pf-v6-u-pl-lg pf-v6-u-background-color-100 pf-v6-u-flex-shrink-0"
             >
                 <Tab
                     eventKey={RESULTS_TAB}
@@ -184,7 +184,8 @@ function CheckDetailsPage() {
                     tabContentId={tabContentIdForDetails}
                 />
             </Tabs>
-            <PageSection hasBodyWrapper={false}>
+            {/* Override PF6 default row-gap on PageSection to prevent unwanted spacing between child elements */}
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-row-gap-0">
                 {activeTabKey === RESULTS_TAB && (
                     <CheckDetailsTable
                         checkResultsCount={checkResultsResponse?.totalCount ?? 0}
@@ -200,13 +201,13 @@ function CheckDetailsPage() {
                     />
                 )}
                 {activeTabKey === DETAILS_TAB && (
-                    <PageSection hasBodyWrapper={false} component="div" id={tabContentIdForDetails}>
+                    <div id={tabContentIdForDetails}>
                         <CheckDetailsInfo
                             checkDetails={checkDetailsResponse}
                             isLoading={isLoadingCheckDetails}
                             error={CheckDetailsError}
                         />
-                    </PageSection>
+                    </div>
                 )}
             </PageSection>
         </>

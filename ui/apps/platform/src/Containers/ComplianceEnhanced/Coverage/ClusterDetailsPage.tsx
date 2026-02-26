@@ -187,8 +187,12 @@ function ClusterDetailsPage() {
                     </LabelGroup>
                 </Flex>
             </PageSection>
-            <Divider component="div" />
-            <PageSection hasBodyWrapper={false}>
+            {/* Override PF6 default row-gap on PageSection to prevent unwanted spacing between child elements */}
+            <PageSection
+                hasBodyWrapper={false}
+                padding={{ default: 'noPadding' }}
+                className="pf-v6-u-row-gap-0"
+            >
                 {isLoadingScanConfigProfiles ? (
                     <Bullseye>
                         <Spinner />
@@ -206,20 +210,23 @@ function ClusterDetailsPage() {
                             profileName={profileName}
                             profileDetails={selectedProfileDetails}
                         />
-                        <Divider component="div" />
-                        <ClusterDetailsTable
-                            checkResultsCount={checkResultsResponse?.totalCount ?? 0}
-                            profileName={profileName}
-                            tableState={tableState}
-                            pagination={pagination}
-                            getSortParams={getSortParams}
-                            searchFilter={searchFilter}
-                            onFilterChange={setSearchFilter}
-                            onSearch={onSearch}
-                            onClearFilters={onClearFilters}
-                        />
                     </>
                 )}
+            </PageSection>
+            <Divider component="div" />
+            {/* Override PF6 default row-gap on PageSection to prevent unwanted spacing between child elements */}
+            <PageSection hasBodyWrapper={false} className="pf-v6-u-row-gap-0">
+                <ClusterDetailsTable
+                    checkResultsCount={checkResultsResponse?.totalCount ?? 0}
+                    profileName={profileName}
+                    tableState={tableState}
+                    pagination={pagination}
+                    getSortParams={getSortParams}
+                    searchFilter={searchFilter}
+                    onFilterChange={setSearchFilter}
+                    onSearch={onSearch}
+                    onClearFilters={onClearFilters}
+                />
             </PageSection>
         </>
     );

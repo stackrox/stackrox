@@ -33,7 +33,7 @@ function ProfileDetailsHeader({
     if (isLoading) {
         return (
             <Flex
-                className="pf-v6-u-p-md pf-v6-u-background-color-100"
+                className="pf-v6-u-p-lg pf-v6-u-background-color-100"
                 direction={{ default: 'column' }}
             >
                 <Title headingLevel="h2">{profileName}</Title>
@@ -47,7 +47,7 @@ function ProfileDetailsHeader({
 
         return (
             <Flex
-                className="pf-v6-u-p-md pf-v6-u-background-color-100"
+                className="pf-v6-u-p-lg pf-v6-u-background-color-100"
                 direction={{ default: 'column' }}
             >
                 <Flex
