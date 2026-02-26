@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"crypto/tls"
 	"log"
 	"net/http"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/tlsprofile"
 )
 
 // HTTPServer is a HTTP server to serve functionality available only within the cluster.
@@ -45,6 +47,10 @@ func (s *HTTPServer) RunForever() {
 	httpServer := &http.Server{
 		Addr:    s.Address,
 		Handler: s.mux,
+		TLSConfig: &tls.Config{
+			MinVersion:   tlsprofile.MinVersion(),
+			CipherSuites: tlsprofile.CipherSuites(),
+		},
 	}
 	go runForever(httpServer)
 }

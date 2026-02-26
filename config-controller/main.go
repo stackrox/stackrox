@@ -27,6 +27,7 @@ import (
 	"github.com/stackrox/rox/config-controller/pkg/client"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/tlsprofile"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -90,6 +91,11 @@ func main() {
 		setupLog.Info("disabling http/2")
 		c.NextProtos = []string{"http/1.1"}
 	}
+
+	tlsOpts = append(tlsOpts, func(c *tls.Config) {
+		c.MinVersion = tlsprofile.MinVersion()
+		c.CipherSuites = tlsprofile.CipherSuites()
+	})
 
 	if !enableHTTP2 {
 		tlsOpts = append(tlsOpts, disableHTTP2)
