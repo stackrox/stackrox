@@ -89,7 +89,6 @@ export type PolicyBaseExclusion = {
 export type PolicyScope = {
     cluster: string;
     namespace: string;
-    namespaceLabel: PolicyScopeLabel | null;
     label: PolicyScopeLabel | null;
 };
 
@@ -97,10 +96,6 @@ export type PolicyScopeLabel = {
     key: string;
     value: string;
 };
-
-export type ScopeLabelField = {
-    [K in keyof PolicyScope]: PolicyScope[K] extends PolicyScopeLabel | null ? K : never;
-}[keyof PolicyScope];
 
 // FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
 // FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.
