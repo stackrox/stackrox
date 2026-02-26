@@ -14,7 +14,7 @@ import {
     debounce,
 } from '@patternfly/react-core';
 import type { MenuToggleElement, SelectOptionProps } from '@patternfly/react-core';
-import { ArrowRightIcon, SearchIcon, TimesIcon } from '@patternfly/react-icons';
+import { SearchIcon, TimesIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
 import SEARCH_AUTOCOMPLETE_QUERY from 'queries/searchAutocomplete';
 import type { SearchAutocompleteQueryResponse } from 'queries/searchAutocomplete';

@@ -1,4 +1,4 @@
-import { Flex, FlexItem, Title } from '@patternfly/react-core';
+import { DescriptionList, Flex, FlexItem, Title } from '@patternfly/react-core';
 import {
     BuilderImageIcon,
     ExclamationCircleIcon,
@@ -6,7 +6,6 @@ import {
 } from '@patternfly/react-icons';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
-import DescriptionListCompact from 'Components/DescriptionListCompact';
 
 import BothPolicyRules from 'images/network-graph/both-policy-rules.svg?react';
 import EgressOnly from 'images/network-graph/egress-only.svg?react';
@@ -15,6 +14,8 @@ import NoPolicyRules from 'images/network-graph/no-policy-rules.svg?react';
 import RelatedNSBorder from 'images/network-graph/related-ns-border.svg?react';
 import RelatedEntity from 'images/network-graph/related-entity.svg?react';
 import FilteredEntity from 'images/network-graph/filtered-entity.svg?react';
+
+const defaultTermWidth = '1rem'; // Matches the default icon width set by .pf-v6-svg
 
 function LegendContent() {
     return (
@@ -31,7 +32,12 @@ function LegendContent() {
                     >
                         Node types
                     </Title>
-                    <DescriptionListCompact isHorizontal termWidth="20px" className="pf-v6-u-pl-md">
+                    <DescriptionList
+                        isCompact
+                        isHorizontal
+                        className="pf-v6-u-pl-md"
+                        horizontalTermWidthModifier={{ default: defaultTermWidth }}
+                    >
                         <DescriptionListItem
                             term={<BuilderImageIcon />}
                             desc="Deployment"
@@ -42,7 +48,7 @@ function LegendContent() {
                             desc="External CIDR block"
                             groupClassName="pf-v6-u-align-items-center"
                         />
-                    </DescriptionListCompact>
+                    </DescriptionList>
                 </FlexItem>
                 <FlexItem>
                     <Title
@@ -52,7 +58,12 @@ function LegendContent() {
                     >
                         Namespace types
                     </Title>
-                    <DescriptionListCompact isHorizontal termWidth="20px" className="pf-v6-u-pl-md">
+                    <DescriptionList
+                        isCompact
+                        isHorizontal
+                        className="pf-v6-u-pl-md"
+                        horizontalTermWidthModifier={{ default: defaultTermWidth }}
+                    >
                         <DescriptionListItem
                             term={<FilteredEntity width="20px" height="20px" />}
                             desc="Filtered namespace"
@@ -68,7 +79,7 @@ function LegendContent() {
                             desc="Related namespace grouping"
                             groupClassName="pf-v6-u-align-items-center"
                         />
-                    </DescriptionListCompact>
+                    </DescriptionList>
                 </FlexItem>
                 <FlexItem>
                     <Title
@@ -78,13 +89,18 @@ function LegendContent() {
                     >
                         Deployment types
                     </Title>
-                    <DescriptionListCompact isHorizontal termWidth="24px" className="pf-v6-u-pl-md">
+                    <DescriptionList
+                        isCompact
+                        isHorizontal
+                        className="pf-v6-u-pl-md"
+                        horizontalTermWidthModifier={{ default: defaultTermWidth }}
+                    >
                         <DescriptionListItem
                             term={<FilteredEntity width="20px" height="20px" />}
                             desc="Filtered deployment"
                             groupClassName="pf-v6-u-align-items-center"
                         />
-                    </DescriptionListCompact>
+                    </DescriptionList>
                 </FlexItem>
                 <FlexItem>
                     <Title
@@ -94,7 +110,12 @@ function LegendContent() {
                     >
                         Deployment badges
                     </Title>
-                    <DescriptionListCompact isHorizontal termWidth="20px" className="pf-v6-u-pl-md">
+                    <DescriptionList
+                        isCompact
+                        isHorizontal
+                        className="pf-v6-u-pl-md"
+                        horizontalTermWidthModifier={{ default: defaultTermWidth }}
+                    >
                         <DescriptionListItem
                             term={
                                 <ExclamationCircleIcon className="pf-v6-u-ml-xs pf-v6-u-text-color-status-danger" />
@@ -127,7 +148,7 @@ function LegendContent() {
                             desc="Only has an egress network policy"
                             groupClassName="pf-v6-u-align-items-center"
                         />
-                    </DescriptionListCompact>
+                    </DescriptionList>
                 </FlexItem>
             </Flex>
         </>

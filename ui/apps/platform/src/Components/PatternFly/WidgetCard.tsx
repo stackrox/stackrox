@@ -45,7 +45,7 @@ function WidgetCard({
             </CardHeader>
             <CardBody
                 className="pf-v6-u-min-height"
-                style={{ '--pf-v5-u-min-height--MinHeight': height } as CSSProperties}
+                style={{ '--pf-v6-u-min-height--MinHeight': height } as CSSProperties}
             >
                 {cardContent}
             </CardBody>

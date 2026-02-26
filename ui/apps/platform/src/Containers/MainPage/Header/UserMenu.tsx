@@ -16,7 +16,7 @@ import { userBasePath } from 'routePaths';
 import User from 'utils/User';
 
 const userMenuStyleConstant = {
-    '--pf-v5-u-min-width--MinWidth': '20ch',
+    '--pf-v6-u-min-width--MinWidth': '20ch',
     pointerEvents: 'none',
 } as CSSProperties;
 

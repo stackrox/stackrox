@@ -25,7 +25,6 @@ const styleExpandCollapseButton = {
 } as CSSProperties;
 
 export type EffectiveAccessScopeTableProps = {
-    counterComputing: number;
     clusters: EffectiveAccessScopeCluster[];
     includedClusters: string[];
     includedNamespaces: SimpleAccessScopeNamespace[];
@@ -39,7 +38,6 @@ export type EffectiveAccessScopeTableProps = {
 };
 
 function EffectiveAccessScopeTable({
-    counterComputing,
     clusters,
     includedClusters,
     includedNamespaces,
