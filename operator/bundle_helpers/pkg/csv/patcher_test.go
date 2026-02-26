@@ -1,8 +1,6 @@
 package csv
 
 import (
-	"os"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,13 +16,8 @@ func mustReadValues(t *testing.T, s string) chartutil.Values {
 }
 
 func TestPatchCSV(t *testing.T) {
-	// Set up test environment variables
-	require.NoError(t, os.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.0.0"))
-	require.NoError(t, os.Setenv("RELATED_IMAGE_SCANNER", "quay.io/rhacs-eng/scanner:4.0.0"))
-	defer func() {
-		require.NoError(t, os.Unsetenv("RELATED_IMAGE_MAIN"))
-		require.NoError(t, os.Unsetenv("RELATED_IMAGE_SCANNER"))
-	}()
+	t.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.0.0")
+	t.Setenv("RELATED_IMAGE_SCANNER", "quay.io/rhacs-eng/scanner:4.0.0")
 
 	tests := []struct {
 		name       string
@@ -105,11 +98,7 @@ spec:
 }
 
 func TestInjectRelatedImageEnvVars_SingleEnvVar(t *testing.T) {
-	// Set up environment variable
-	require.NoError(t, os.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.5.0"))
-	defer func() {
-		require.NoError(t, os.Unsetenv("RELATED_IMAGE_MAIN"))
-	}()
+	t.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.5.0")
 
 	spec := mustReadValues(t, `
 install:
@@ -139,15 +128,9 @@ install:
 }
 
 func TestInjectRelatedImageEnvVars_MultipleNested(t *testing.T) {
-	// Set up multiple environment variables
-	require.NoError(t, os.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.5.0"))
-	require.NoError(t, os.Setenv("RELATED_IMAGE_SCANNER", "quay.io/rhacs-eng/scanner:4.5.0"))
-	require.NoError(t, os.Setenv("RELATED_IMAGE_SCANNER_DB", "quay.io/rhacs-eng/scanner-db:4.5.0"))
-	defer func() {
-		require.NoError(t, os.Unsetenv("RELATED_IMAGE_MAIN"))
-		require.NoError(t, os.Unsetenv("RELATED_IMAGE_SCANNER"))
-		require.NoError(t, os.Unsetenv("RELATED_IMAGE_SCANNER_DB"))
-	}()
+	t.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.5.0")
+	t.Setenv("RELATED_IMAGE_SCANNER", "quay.io/rhacs-eng/scanner:4.5.0")
+	t.Setenv("RELATED_IMAGE_SCANNER_DB", "quay.io/rhacs-eng/scanner-db:4.5.0")
 
 	spec := mustReadValues(t, `
 install:
@@ -227,13 +210,8 @@ install:
 }
 
 func TestConstructRelatedImages_MultipleEnvVars(t *testing.T) {
-	// Set up environment variables
-	require.NoError(t, os.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.5.0"))
-	require.NoError(t, os.Setenv("RELATED_IMAGE_SCANNER", "quay.io/rhacs-eng/scanner:4.5.0"))
-	defer func() {
-		require.NoError(t, os.Unsetenv("RELATED_IMAGE_MAIN"))
-		require.NoError(t, os.Unsetenv("RELATED_IMAGE_SCANNER"))
-	}()
+	t.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.5.0")
+	t.Setenv("RELATED_IMAGE_SCANNER", "quay.io/rhacs-eng/scanner:4.5.0")
 
 	spec := map[string]any{}
 	managerImage := "quay.io/rhacs-eng/rhacs-operator:4.5.0"
@@ -261,23 +239,6 @@ func TestConstructRelatedImages_MultipleEnvVars(t *testing.T) {
 }
 
 func TestConstructRelatedImages_NoEnvVars(t *testing.T) {
-	// Ensure no RELATED_IMAGE_* env vars are set
-	// Note: We can't unset all env vars, but we can verify behavior with none matching our pattern
-	originalEnv := os.Environ()
-	var toRestore []struct{ key, value string }
-	for _, envVar := range originalEnv {
-		if len(envVar) > 14 && envVar[:14] == "RELATED_IMAGE_" {
-			parts := strings.SplitN(envVar, "=", 2)
-			require.NoError(t, os.Unsetenv(parts[0]))
-			toRestore = append(toRestore, struct{ key, value string }{parts[0], parts[1]})
-		}
-	}
-	defer func() {
-		for _, env := range toRestore {
-			require.NoError(t, os.Setenv(env.key, env.value))
-		}
-	}()
-
 	spec := map[string]any{}
 	managerImage := "quay.io/rhacs-eng/rhacs-operator:4.5.0"
 
@@ -294,11 +255,7 @@ func TestConstructRelatedImages_NoEnvVars(t *testing.T) {
 }
 
 func TestConstructRelatedImages_NameTransformation(t *testing.T) {
-	// Set up environment variable with underscores
-	require.NoError(t, os.Setenv("RELATED_IMAGE_SCANNER_DB_SLIM", "quay.io/rhacs-eng/scanner-db-slim:4.5.0"))
-	defer func() {
-		require.NoError(t, os.Unsetenv("RELATED_IMAGE_SCANNER_DB_SLIM"))
-	}()
+	t.Setenv("RELATED_IMAGE_SCANNER_DB_SLIM", "quay.io/rhacs-eng/scanner-db-slim:4.5.0")
 
 	spec := map[string]any{}
 	managerImage := "quay.io/rhacs-eng/rhacs-operator:4.5.0"
