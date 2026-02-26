@@ -351,3 +351,120 @@ func TestWithinScope(t *testing.T) {
 		assert.Equalf(t, test.result, cs.MatchesDeployment(test.deployment), "Failed test '%s'", test.name)
 	}
 }
+
+func TestMatchesNode(t *testing.T) {
+	cases := []struct {
+		name   string
+		scope  *storage.Scope
+		node   *storage.Node
+		result bool
+	}{
+		{
+			name:   "nil scope matches everything",
+			node:   &storage.Node{ClusterId: "c1", Name: "node1"},
+			result: true,
+		},
+		{
+			name:   "empty scope matches everything",
+			scope:  &storage.Scope{},
+			node:   &storage.Node{ClusterId: "c1", Name: "node1"},
+			result: true,
+		},
+		{
+			name:   "matching cluster",
+			scope:  &storage.Scope{Cluster: "c1"},
+			node:   &storage.Node{ClusterId: "c1", Name: "node1"},
+			result: true,
+		},
+		{
+			name:   "non-matching cluster",
+			scope:  &storage.Scope{Cluster: "c2"},
+			node:   &storage.Node{ClusterId: "c1", Name: "node1"},
+			result: false,
+		},
+		{
+			name: "matching label",
+			scope: &storage.Scope{
+				Label: &storage.Scope_Label{Key: "env", Value: "prod"},
+			},
+			node: &storage.Node{
+				Labels: map[string]string{"env": "prod", "role": "worker"},
+			},
+			result: true,
+		},
+		{
+			name: "non-matching label value",
+			scope: &storage.Scope{
+				Label: &storage.Scope_Label{Key: "env", Value: "prod"},
+			},
+			node: &storage.Node{
+				Labels: map[string]string{"env": "staging"},
+			},
+			result: false,
+		},
+		{
+			name: "non-matching label key",
+			scope: &storage.Scope{
+				Label: &storage.Scope_Label{Key: "env", Value: "prod"},
+			},
+			node: &storage.Node{
+				Labels: map[string]string{"role": "prod"},
+			},
+			result: false,
+		},
+		{
+			name: "matching cluster and label",
+			scope: &storage.Scope{
+				Cluster: "c1",
+				Label:   &storage.Scope_Label{Key: "env", Value: "prod"},
+			},
+			node: &storage.Node{
+				ClusterId: "c1",
+				Labels:    map[string]string{"env": "prod"},
+			},
+			result: true,
+		},
+		{
+			name: "matching cluster but non-matching label",
+			scope: &storage.Scope{
+				Cluster: "c1",
+				Label:   &storage.Scope_Label{Key: "env", Value: "prod"},
+			},
+			node: &storage.Node{
+				ClusterId: "c1",
+				Labels:    map[string]string{"env": "dev"},
+			},
+			result: false,
+		},
+		{
+			name: "label with no labels on node",
+			scope: &storage.Scope{
+				Label: &storage.Scope_Label{Key: "env", Value: "prod"},
+			},
+			node:   &storage.Node{ClusterId: "c1"},
+			result: false,
+		},
+		{
+			name: "label regex match",
+			scope: &storage.Scope{
+				Label: &storage.Scope_Label{Key: "env", Value: "prod.*"},
+			},
+			node: &storage.Node{
+				Labels: map[string]string{"env": "production"},
+			},
+			result: true,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var cs *CompiledScope
+			if c.scope != nil {
+				var err error
+				cs, err = CompileScope(c.scope, nil, nil)
+				require.NoError(t, err)
+			}
+			assert.Equal(t, c.result, cs.MatchesNode(c.node))
+		})
+	}
+}

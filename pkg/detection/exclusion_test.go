@@ -247,3 +247,147 @@ func TestMatchesImageExclusion(t *testing.T) {
 		})
 	}
 }
+
+func TestMatchesNodeExclusion(t *testing.T) {
+	cases := []struct {
+		name        string
+		node        *storage.Node
+		policy      *storage.Policy
+		shouldMatch bool
+	}{
+		{
+			name:        "No exclusions",
+			node:        &storage.Node{Name: "worker-1", ClusterId: "c1"},
+			policy:      &storage.Policy{},
+			shouldMatch: false,
+		},
+		{
+			name: "Named node exclusion",
+			node: &storage.Node{Name: "worker-1", ClusterId: "c1"},
+			policy: &storage.Policy{
+				Exclusions: []*storage.Exclusion{
+					{Node: &storage.Exclusion_Node{Name: "worker-1"}},
+				},
+			},
+			shouldMatch: true,
+		},
+		{
+			name: "Named node exclusion with matching regex",
+			node: &storage.Node{Name: "worker-1", ClusterId: "c1"},
+			policy: &storage.Policy{
+				Exclusions: []*storage.Exclusion{
+					{Node: &storage.Exclusion_Node{Name: "worker-.*"}},
+				},
+			},
+			shouldMatch: true,
+		},
+		{
+			name: "Named node exclusion with non-matching regex",
+			node: &storage.Node{Name: "worker-1", ClusterId: "c1"},
+			policy: &storage.Policy{
+				Exclusions: []*storage.Exclusion{
+					{Node: &storage.Exclusion_Node{Name: "master-.*"}},
+				},
+			},
+			shouldMatch: false,
+		},
+		{
+			name: "Named node exclusion with invalid regex",
+			node: &storage.Node{Name: "worker-1", ClusterId: "c1"},
+			policy: &storage.Policy{
+				Exclusions: []*storage.Exclusion{
+					{Node: &storage.Exclusion_Node{Name: "worker\\K"}},
+				},
+			},
+			shouldMatch: false,
+		},
+		{
+			name: "Scoped exclusion by cluster",
+			node: &storage.Node{Name: "worker-1", ClusterId: "c1"},
+			policy: &storage.Policy{
+				Exclusions: []*storage.Exclusion{
+					{Node: &storage.Exclusion_Node{Scope: &storage.Scope{Cluster: "c1"}}},
+				},
+			},
+			shouldMatch: true,
+		},
+		{
+			name: "Scoped exclusion by different cluster",
+			node: &storage.Node{Name: "worker-1", ClusterId: "c1"},
+			policy: &storage.Policy{
+				Exclusions: []*storage.Exclusion{
+					{Node: &storage.Exclusion_Node{Scope: &storage.Scope{Cluster: "c2"}}},
+				},
+			},
+			shouldMatch: false,
+		},
+		{
+			name: "Scoped exclusion with matching name",
+			node: &storage.Node{Name: "worker-1", ClusterId: "c1"},
+			policy: &storage.Policy{
+				Exclusions: []*storage.Exclusion{
+					{Node: &storage.Exclusion_Node{Name: "worker-1", Scope: &storage.Scope{Cluster: "c1"}}},
+				},
+			},
+			shouldMatch: true,
+		},
+		{
+			name: "Scoped exclusion with non-matching name",
+			node: &storage.Node{Name: "worker-1", ClusterId: "c1"},
+			policy: &storage.Policy{
+				Exclusions: []*storage.Exclusion{
+					{Node: &storage.Exclusion_Node{Name: "worker-2", Scope: &storage.Scope{Cluster: "c1"}}},
+				},
+			},
+			shouldMatch: false,
+		},
+		{
+			name: "Multiple exclusions, one matches",
+			node: &storage.Node{Name: "worker-1", ClusterId: "c1"},
+			policy: &storage.Policy{
+				Exclusions: []*storage.Exclusion{
+					{Node: &storage.Exclusion_Node{Name: "master-1"}},
+					{Node: &storage.Exclusion_Node{Name: "worker-1"}},
+				},
+			},
+			shouldMatch: true,
+		},
+		{
+			name: "Deployment exclusion ignored for node matching",
+			node: &storage.Node{Name: "worker-1", ClusterId: "c1"},
+			policy: &storage.Policy{
+				Exclusions: []*storage.Exclusion{
+					{Deployment: &storage.Exclusion_Deployment{Name: "worker-1"}},
+				},
+			},
+			shouldMatch: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			compiledExclusions := make([]*compiledExclusion, 0, len(c.policy.GetExclusions()))
+			for _, w := range c.policy.GetExclusions() {
+				cw, err := newCompiledExclusion(w)
+				require.NoError(t, err)
+				compiledExclusions = append(compiledExclusions, cw)
+			}
+
+			got := nodeMatchesExclusions(c.node, compiledExclusions)
+			assert.Equal(t, c.shouldMatch, got)
+			// If it should match, make sure it doesn't match if the exclusions are all expired.
+			if c.shouldMatch {
+				for _, exclusion := range c.policy.GetExclusions() {
+					exclusion.Expiration = protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour))
+				}
+				compiledExclusions = make([]*compiledExclusion, 0, len(c.policy.GetExclusions()))
+				for _, w := range c.policy.GetExclusions() {
+					cw, err := newCompiledExclusion(w)
+					require.NoError(t, err)
+					compiledExclusions = append(compiledExclusions, cw)
+				}
+				assert.False(t, nodeMatchesExclusions(c.node, compiledExclusions))
+			}
+		})
+	}
+}

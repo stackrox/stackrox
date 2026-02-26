@@ -88,8 +88,8 @@ func (d *detectorImpl) DetectForNodeAndFileAccess(node *storage.Node, access *st
 		}
 
 		if access != nil {
-			// Check predicate on file access.
-			if !compiled.AppliesTo(access) {
+			// Check predicate on node.
+			if !compiled.AppliesTo(node) {
 				return nil
 			}
 

@@ -50,6 +50,27 @@ func deploymentMatchesScopes(deployment *storage.Deployment, scopes []*scopecomp
 	return false
 }
 
+func nodeMatchesExclusions(node *storage.Node, exclusions []*compiledExclusion) bool {
+	for _, exclusion := range exclusions {
+		if exclusion.MatchesNode(node) {
+			return true
+		}
+	}
+	return false
+}
+
+func nodeMatchesScopes(node *storage.Node, scopes []*scopecomp.CompiledScope) bool {
+	if len(scopes) == 0 {
+		return true
+	}
+	for _, scope := range scopes {
+		if scope.MatchesNode(node) {
+			return true
+		}
+	}
+	return false
+}
+
 func matchesImageExclusion(image string, policy *storage.Policy) bool {
 	for _, w := range policy.GetExclusions() {
 		if w.GetImage() == nil {

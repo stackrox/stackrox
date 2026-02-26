@@ -67,8 +67,7 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 		// set predicates
 		switch policy.GetEventSource() {
 		case storage.EventSource_NODE_EVENT:
-			// TODO(ROX-31891): support scopes and exclusions for node events
-			compiled.predicates = append(compiled.predicates, &fileAccessPredicate{})
+			compiled.predicates = append(compiled.predicates, &nodePredicate{scopes: scopes, exclusions: exclusions})
 		case storage.EventSource_AUDIT_LOG_EVENT:
 			compiled.predicates = append(compiled.predicates, &auditEventPredicate{scopes: scopes, exclusions: exclusions})
 			fallthrough
@@ -409,6 +408,7 @@ type Predicate interface {
 type compiledExclusion struct {
 	exclusion             *storage.Exclusion
 	deploymentNameMatcher regexutils.StringMatcher
+	nodeNameMatcher       regexutils.StringMatcher
 	cs                    *scopecomp.CompiledScope
 }
 
@@ -444,6 +444,23 @@ func newCompiledExclusion(exclusion *storage.Exclusion) (*compiledExclusion, err
 		cx.cs = cs
 	}
 
+	if name := exclusion.GetNode().GetName(); name != "" {
+		nodeNameMatcher, err := regexutils.CompileWholeStringMatcher(name, regexutils.Flags{CaseInsensitive: true})
+		if err != nil {
+			log.Errorf("Invalid regex for node name exclusion %q: %v", name, err)
+			cx.nodeNameMatcher = &alwaysFalseMatcher{}
+		} else {
+			cx.nodeNameMatcher = nodeNameMatcher
+		}
+	}
+	if scope := exclusion.GetNode().GetScope(); scope != nil {
+		cs, err := scopecomp.CompileScope(exclusion.GetNode().GetScope(), nil, nil)
+		if err != nil {
+			return nil, err
+		}
+		cx.cs = cs
+	}
+
 	return cx, nil
 }
 
@@ -457,6 +474,19 @@ func (cw *compiledExclusion) MatchesDeployment(deployment *storage.Deployment) b
 	}
 
 	return cw.cs.MatchesDeployment(deployment)
+}
+
+func (cw *compiledExclusion) MatchesNode(node *storage.Node) bool {
+	if cw.exclusion.GetNode() == nil {
+		return false
+	}
+	if exclusionIsExpired(cw.exclusion) {
+		return false
+	}
+	if cw.nodeNameMatcher != nil && !cw.nodeNameMatcher.MatchString(node.GetName()) {
+		return false
+	}
+	return cw.cs.MatchesNode(node)
 }
 
 func (cw *compiledExclusion) MatchesAuditEvent(auditEvent *storage.KubernetesEvent) bool {
@@ -512,10 +542,16 @@ func (cp *auditEventPredicate) AppliesTo(input interface{}) bool {
 	return auditEventMatchesScopes(auditEvent, cp.scopes) && !auditEventMatchesExclusions(auditEvent, cp.exclusions)
 }
 
-// Predicate for file access events on nodes.
-type fileAccessPredicate struct{}
+// Predicate for node events.
+type nodePredicate struct {
+	exclusions []*compiledExclusion
+	scopes     []*scopecomp.CompiledScope
+}
 
-func (cp *fileAccessPredicate) AppliesTo(input interface{}) bool {
-	_, isFileAccess := input.(*storage.FileAccess)
-	return isFileAccess
+func (cp *nodePredicate) AppliesTo(input interface{}) bool {
+	node, isNode := input.(*storage.Node)
+	if !isNode {
+		return false
+	}
+	return nodeMatchesScopes(node, cp.scopes) && !nodeMatchesExclusions(node, cp.exclusions)
 }

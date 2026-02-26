@@ -91,6 +91,7 @@ type Exclusion struct {
 	Name       string     `json:"name,omitempty"`
 	Deployment Deployment `json:"deployment,omitempty"`
 	Image      Image      `json:"image,omitempty"`
+	Node       Node       `json:"node,omitempty"`
 	// +optional
 	// +kubebuilder:validation:Format="date-time"
 	Expiration string `json:"expiration,omitempty"`
@@ -103,6 +104,11 @@ type Deployment struct {
 
 type Image struct {
 	Name string `json:"name,omitempty"`
+}
+
+type Node struct {
+	Name  string `json:"name,omitempty"`
+	Scope Scope  `json:"scope,omitempty"`
 }
 
 type Scope struct {
@@ -310,6 +316,34 @@ func (p SecurityPolicySpec) ToProtobuf(caches map[CacheType]map[string]string) (
 				}
 			}
 
+		}
+
+		if exclusion.Node != (Node{}) {
+			protoExclusion.Node = &storage.Exclusion_Node{
+				Name: exclusion.Node.Name,
+			}
+
+			scope := exclusion.Node.Scope
+			if scope != (Scope{}) {
+				protoExclusion.Node.Scope = &storage.Scope{}
+				if scope.Cluster != "" {
+					clusterID, err := getClusterID(scope.Cluster, caches)
+					if err != nil {
+						return nil, errors.New(fmt.Sprintf("Cluster '%s' does not exist", scope.Cluster))
+					}
+					protoExclusion.Node.Scope.Cluster = clusterID
+				}
+			}
+
+			if scope.Label != (Label{}) {
+				if protoExclusion.Node.Scope == nil {
+					protoExclusion.Node.Scope = &storage.Scope{}
+				}
+				protoExclusion.Node.Scope.Label = &storage.Scope_Label{
+					Key:   scope.Label.Key,
+					Value: scope.Label.Value,
+				}
+			}
 		}
 
 		proto.Exclusions = append(proto.Exclusions, &protoExclusion)

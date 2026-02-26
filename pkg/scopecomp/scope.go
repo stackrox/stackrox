@@ -174,6 +174,20 @@ func (c *CompiledScope) MatchesCluster(cluster string) bool {
 	return c.ClusterID == "" || c.ClusterID == cluster
 }
 
+// MatchesNode evaluates a compiled scope against a node
+func (c *CompiledScope) MatchesNode(node *storage.Node) bool {
+	if c == nil {
+		return true
+	}
+	if !c.MatchesCluster(node.GetClusterId()) {
+		return false
+	}
+	if !c.MatchesLabels(c.LabelKey, c.LabelValue, node.GetLabels()) {
+		return false
+	}
+	return true
+}
+
 // MatchesAuditEvent evaluates a compiled scope against a kubernetes event
 func (c *CompiledScope) MatchesAuditEvent(auditEvent *storage.KubernetesEvent) bool {
 	if c == nil {

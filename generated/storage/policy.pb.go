@@ -993,6 +993,7 @@ type Exclusion struct {
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" crYaml:",omitempty"`             // @gotags: crYaml:",omitempty"
 	Deployment    *Exclusion_Deployment  `protobuf:"bytes,5,opt,name=deployment,proto3" json:"deployment,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"
 	Image         *Exclusion_Image       `protobuf:"bytes,7,opt,name=image,proto3" json:"image,omitempty" crYaml:",omitempty"`           // @gotags: crYaml:",omitempty"
+	Node          *Exclusion_Node        `protobuf:"bytes,8,opt,name=node,proto3" json:"node,omitempty" crYaml:",omitempty"`             // @gotags: crYaml:",omitempty"
 	Expiration    *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=expiration,proto3" json:"expiration,omitempty" crYaml:",timestamp,omitempty"` // @gotags: crYaml:",timestamp,omitempty"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1045,6 +1046,13 @@ func (x *Exclusion) GetDeployment() *Exclusion_Deployment {
 func (x *Exclusion) GetImage() *Exclusion_Image {
 	if x != nil {
 		return x.Image
+	}
+	return nil
+}
+
+func (x *Exclusion) GetNode() *Exclusion_Node {
+	if x != nil {
+		return x.Node
 	}
 	return nil
 }
@@ -1294,6 +1302,58 @@ func (x *Exclusion_Image) GetName() string {
 	return ""
 }
 
+type Exclusion_Node struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" crYaml:",omitempty"`   // @gotags: crYaml:",omitempty"
+	Scope         *Scope                 `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Exclusion_Node) Reset() {
+	*x = Exclusion_Node{}
+	mi := &file_storage_policy_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Exclusion_Node) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Exclusion_Node) ProtoMessage() {}
+
+func (x *Exclusion_Node) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_policy_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Exclusion_Node.ProtoReflect.Descriptor instead.
+func (*Exclusion_Node) Descriptor() ([]byte, []int) {
+	return file_storage_policy_proto_rawDescGZIP(), []int{6, 3}
+}
+
+func (x *Exclusion_Node) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Exclusion_Node) GetScope() *Scope {
+	if x != nil {
+		return x.Scope
+	}
+	return nil
+}
+
 var File_storage_policy_proto protoreflect.FileDescriptor
 
 const file_storage_policy_proto_rawDesc = "" +
@@ -1364,13 +1424,14 @@ const file_storage_policy_proto_rawDesc = "" +
 	"\n" +
 	"is_default\x18\n" +
 	" \x01(\bR\tisDefault\x12-\n" +
-	"\x06source\x18\v \x01(\x0e2\x15.storage.PolicySourceR\x06source\"\xf5\x02\n" +
+	"\x06source\x18\v \x01(\x0e2\x15.storage.PolicySourceR\x06source\"\xe4\x03\n" +
 	"\tExclusion\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12=\n" +
 	"\n" +
 	"deployment\x18\x05 \x01(\v2\x1d.storage.Exclusion.DeploymentR\n" +
 	"deployment\x12.\n" +
-	"\x05image\x18\a \x01(\v2\x18.storage.Exclusion.ImageR\x05image\x12:\n" +
+	"\x05image\x18\a \x01(\v2\x18.storage.Exclusion.ImageR\x05image\x12+\n" +
+	"\x04node\x18\b \x01(\v2\x17.storage.Exclusion.NodeR\x04node\x12:\n" +
 	"\n" +
 	"expiration\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"expiration\x1a>\n" +
@@ -1382,7 +1443,10 @@ const file_storage_policy_proto_rawDesc = "" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12$\n" +
 	"\x05scope\x18\x04 \x01(\v2\x0e.storage.ScopeR\x05scope\x1a\x1b\n" +
 	"\x05Image\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04nameJ\x04\b\x02\x10\x03\"E\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x1a@\n" +
+	"\x04Node\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12$\n" +
+	"\x05scope\x18\x02 \x01(\v2\x0e.storage.ScopeR\x05scopeJ\x04\b\x02\x10\x03\"E\n" +
 	"\x16ExportPoliciesResponse\x12+\n" +
 	"\bpolicies\x18\x01 \x03(\v2\x0f.storage.PolicyR\bpolicies*/\n" +
 	"\fPolicySource\x12\x0e\n" +
@@ -1441,7 +1505,7 @@ func file_storage_policy_proto_rawDescGZIP() []byte {
 }
 
 var file_storage_policy_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
-var file_storage_policy_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_storage_policy_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_storage_policy_proto_goTypes = []any{
 	(PolicySource)(0),                 // 0: storage.PolicySource
 	(EventSource)(0),                  // 1: storage.EventSource
@@ -1462,18 +1526,19 @@ var file_storage_policy_proto_goTypes = []any{
 	(*Exclusion_Container)(nil),       // 16: storage.Exclusion.Container
 	(*Exclusion_Deployment)(nil),      // 17: storage.Exclusion.Deployment
 	(*Exclusion_Image)(nil),           // 18: storage.Exclusion.Image
-	(*Scope)(nil),                     // 19: storage.Scope
-	(*timestamppb.Timestamp)(nil),     // 20: google.protobuf.Timestamp
-	(*ImageName)(nil),                 // 21: storage.ImageName
+	(*Exclusion_Node)(nil),            // 19: storage.Exclusion.Node
+	(*Scope)(nil),                     // 20: storage.Scope
+	(*timestamppb.Timestamp)(nil),     // 21: google.protobuf.Timestamp
+	(*ImageName)(nil),                 // 22: storage.ImageName
 }
 var file_storage_policy_proto_depIdxs = []int32{
 	5,  // 0: storage.Policy.lifecycle_stages:type_name -> storage.LifecycleStage
 	1,  // 1: storage.Policy.event_source:type_name -> storage.EventSource
 	13, // 2: storage.Policy.exclusions:type_name -> storage.Exclusion
-	19, // 3: storage.Policy.scope:type_name -> storage.Scope
+	20, // 3: storage.Policy.scope:type_name -> storage.Scope
 	4,  // 4: storage.Policy.severity:type_name -> storage.Severity
 	3,  // 5: storage.Policy.enforcement_actions:type_name -> storage.EnforcementAction
-	20, // 6: storage.Policy.last_updated:type_name -> google.protobuf.Timestamp
+	21, // 6: storage.Policy.last_updated:type_name -> google.protobuf.Timestamp
 	8,  // 7: storage.Policy.policy_sections:type_name -> storage.PolicySection
 	15, // 8: storage.Policy.mitre_attack_vectors:type_name -> storage.Policy.MitreAttackVectors
 	0,  // 9: storage.Policy.source:type_name -> storage.PolicySource
@@ -1483,20 +1548,22 @@ var file_storage_policy_proto_depIdxs = []int32{
 	7,  // 13: storage.PolicyList.policies:type_name -> storage.Policy
 	4,  // 14: storage.ListPolicy.severity:type_name -> storage.Severity
 	5,  // 15: storage.ListPolicy.lifecycle_stages:type_name -> storage.LifecycleStage
-	20, // 16: storage.ListPolicy.last_updated:type_name -> google.protobuf.Timestamp
+	21, // 16: storage.ListPolicy.last_updated:type_name -> google.protobuf.Timestamp
 	1,  // 17: storage.ListPolicy.event_source:type_name -> storage.EventSource
 	0,  // 18: storage.ListPolicy.source:type_name -> storage.PolicySource
 	17, // 19: storage.Exclusion.deployment:type_name -> storage.Exclusion.Deployment
 	18, // 20: storage.Exclusion.image:type_name -> storage.Exclusion.Image
-	20, // 21: storage.Exclusion.expiration:type_name -> google.protobuf.Timestamp
-	7,  // 22: storage.ExportPoliciesResponse.policies:type_name -> storage.Policy
-	21, // 23: storage.Exclusion.Container.image_name:type_name -> storage.ImageName
-	19, // 24: storage.Exclusion.Deployment.scope:type_name -> storage.Scope
-	25, // [25:25] is the sub-list for method output_type
-	25, // [25:25] is the sub-list for method input_type
-	25, // [25:25] is the sub-list for extension type_name
-	25, // [25:25] is the sub-list for extension extendee
-	0,  // [0:25] is the sub-list for field type_name
+	19, // 21: storage.Exclusion.node:type_name -> storage.Exclusion.Node
+	21, // 22: storage.Exclusion.expiration:type_name -> google.protobuf.Timestamp
+	7,  // 23: storage.ExportPoliciesResponse.policies:type_name -> storage.Policy
+	22, // 24: storage.Exclusion.Container.image_name:type_name -> storage.ImageName
+	20, // 25: storage.Exclusion.Deployment.scope:type_name -> storage.Scope
+	20, // 26: storage.Exclusion.Node.scope:type_name -> storage.Scope
+	27, // [27:27] is the sub-list for method output_type
+	27, // [27:27] is the sub-list for method input_type
+	27, // [27:27] is the sub-list for extension type_name
+	27, // [27:27] is the sub-list for extension extendee
+	0,  // [0:27] is the sub-list for field type_name
 }
 
 func init() { file_storage_policy_proto_init() }
@@ -1512,7 +1579,7 @@ func file_storage_policy_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_policy_proto_rawDesc), len(file_storage_policy_proto_rawDesc)),
 			NumEnums:      7,
-			NumMessages:   12,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

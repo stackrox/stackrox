@@ -192,6 +192,12 @@ message Exclusion {
   }
   Image image = 7; // @gotags: crYaml:",omitempty"
 
+  message Node {
+    string name = 1; // @gotags: crYaml:",omitempty"
+    Scope scope = 2; // @gotags: crYaml:",omitempty"
+  }
+  Node node = 8; // @gotags: crYaml:",omitempty"
+
   google.protobuf.Timestamp expiration = 6; // @gotags: crYaml:",timestamp,omitempty"
 }
 

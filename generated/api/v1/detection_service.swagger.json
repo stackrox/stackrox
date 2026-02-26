@@ -150,25 +150,6 @@
       ],
       "default": "UNSET"
     },
-    "AlertNode": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "clusterId": {
-          "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
-        },
-        "clusterName": {
-          "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
-        }
-      }
-    },
     "AlertProcessViolation": {
       "type": "object",
       "properties": {
@@ -592,7 +573,7 @@
           "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
         "node": {
-          "$ref": "#/definitions/AlertNode",
+          "$ref": "#/definitions/storageAlertNode",
           "title": "Represents an alert on a node.\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
         "violations": {
@@ -683,6 +664,25 @@
         },
         "inactive": {
           "type": "boolean"
+        }
+      }
+    },
+    "storageAlertNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "clusterId": {
+          "type": "string",
+          "description": "This field has to be duplicated in Alert for scope management and search."
+        },
+        "clusterName": {
+          "type": "string",
+          "description": "This field has to be duplicated in Alert for scope management and search."
         }
       }
     },
@@ -1009,6 +1009,9 @@
         "image": {
           "$ref": "#/definitions/ExclusionImage"
         },
+        "node": {
+          "$ref": "#/definitions/storageExclusionNode"
+        },
         "expiration": {
           "type": "string",
           "format": "date-time"
@@ -1016,6 +1019,17 @@
       }
     },
     "storageExclusionDeployment": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/definitions/storageScope"
+        }
+      }
+    },
+    "storageExclusionNode": {
       "type": "object",
       "properties": {
         "name": {

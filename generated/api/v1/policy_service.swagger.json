@@ -642,6 +642,17 @@
         }
       }
     },
+    "ExclusionNode": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/definitions/storageScope"
+        }
+      }
+    },
     "PolicyMitreAttackVectors": {
       "type": "object",
       "properties": {
@@ -878,6 +889,9 @@
         },
         "image": {
           "$ref": "#/definitions/ExclusionImage"
+        },
+        "node": {
+          "$ref": "#/definitions/ExclusionNode"
         },
         "expiration": {
           "type": "string",
