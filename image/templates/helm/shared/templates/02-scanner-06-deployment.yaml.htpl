@@ -13,7 +13,9 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "deployment" "scanner") | nindent 4 }}
 spec:
+  {{- if ._rox.scanner.autoscaling.disable }}
   replicas: {{ ._rox.scanner.replicas }}
+  {{- end }}
   minReadySeconds: 15
   selector:
     matchLabels:
