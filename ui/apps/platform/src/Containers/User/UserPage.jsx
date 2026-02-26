@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 import {
+    DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
@@ -17,7 +18,6 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import DescriptionListCompact from 'Components/DescriptionListCompact';
 import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import { selectors } from 'reducers';
 import User from 'utils/User';
@@ -44,7 +44,7 @@ function UserPage({ resourceToAccessByRole, userData }) {
                 <Title headingLevel="h1">User Profile</Title>
             </PageSection>
             <PageSection hasBodyWrapper={false}>
-                <DescriptionListCompact isHorizontal>
+                <DescriptionList isCompact isHorizontal>
                     <DescriptionListGroup>
                         <DescriptionListTerm>User name</DescriptionListTerm>
                         <DescriptionListDescription>{name}</DescriptionListDescription>
@@ -61,7 +61,7 @@ function UserPage({ resourceToAccessByRole, userData }) {
                         </DescriptionListTerm>
                         <DescriptionListDescription>{authProviderName}</DescriptionListDescription>
                     </DescriptionListGroup>
-                </DescriptionListCompact>
+                </DescriptionList>
             </PageSection>
             <PageSection hasBodyWrapper={false} isFilled>
                 <Flex direction={{ default: 'column' }} gap={{ default: 'gapMd' }}>

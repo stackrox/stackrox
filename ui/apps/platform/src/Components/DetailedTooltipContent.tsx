@@ -26,7 +26,7 @@ function DetailedTooltipContent({
 
     const styleConstant = {
         overflow: 'scroll',
-        '--pf-v5-u-max-height--MaxHeight': '75vh',
+        '--pf-v6-u-max-height--MaxHeight': '75vh',
     } as CSSProperties;
 
     return (
