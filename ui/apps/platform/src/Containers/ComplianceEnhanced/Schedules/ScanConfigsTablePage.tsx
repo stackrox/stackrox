@@ -339,7 +339,7 @@ function ScanConfigsTablePage({
                     </Bullseye>
                 </PageSection>
             ) : (
-                <PageSection hasBodyWrapper={false}>
+                <PageSection hasBodyWrapper={false} className="pf-v6-u-row-gap-0">
                     {alertObj !== null && (
                         <Alert
                             title={alertObj.title}
@@ -353,7 +353,7 @@ function ScanConfigsTablePage({
                         </Alert>
                     )}
 
-                    <Toolbar className="pf-v6-u-pb-0">
+                    <Toolbar>
                         <ToolbarContent>
                             <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                                 <Pagination

@@ -184,7 +184,7 @@ function ReportJobs({ scanConfigId }: ReportJobsProps) {
 
     return (
         <>
-            <Toolbar className="pf-v6-u-pb-0">
+            <Toolbar>
                 <ToolbarContent>
                     <ToolbarItem alignItems="center">
                         <ReportJobStatusFilter

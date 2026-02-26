@@ -106,7 +106,11 @@ function NotifierConfigurationForm({
 
     return (
         <>
-            <Flex direction={{ default: 'column' }} gap={{ default: 'gapMd' }}>
+            <Flex
+                direction={{ default: 'column' }}
+                gap={{ default: 'gapMd' }}
+                aria-label="Delivery destinations"
+            >
                 {notifierConfigurations.map((notifierConfiguration, index) => {
                     const { emailConfig, notifierName } = notifierConfiguration;
                     const { customBody, customSubject, mailingLists, notifierId } = emailConfig;

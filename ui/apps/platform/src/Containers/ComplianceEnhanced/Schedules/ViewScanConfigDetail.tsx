@@ -151,6 +151,7 @@ function ViewScanConfigDetail({
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
+            {/* Override PF6 default row-gap on PageSection to prevent unwanted spacing between child elements */}
             <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }} className="pf-v6-u-row-gap-0">
                 {!isLoading && !error && scanConfig && (
                     <>
@@ -227,7 +228,7 @@ function ViewScanConfigDetail({
                 </PageSection>
             )}
             {activeScanConfigTab === 'ALL_REPORT_JOBS' && scanConfig?.id && (
-                <PageSection hasBodyWrapper={false} isCenterAligned id={allReportJobsTabId}>
+                <PageSection hasBodyWrapper={false} isCenterAligned className="pf-v6-u-row-gap-0" id={allReportJobsTabId}>
                     <ReportJobs scanConfigId={scanConfig.id} />
                 </PageSection>
             )}
