@@ -1133,8 +1133,8 @@ func buildInternalRoleClaims(
 			Expiry:   jwt.NewNumericDate(expiry),
 		},
 		RoxClaims: tokens.RoxClaims{
-			Name:         name,
-			InternalRole: role,
+			Name:          name,
+			InternalRoles: []*tokens.InternalRole{role},
 		},
 	}
 }

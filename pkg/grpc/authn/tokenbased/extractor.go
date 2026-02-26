@@ -90,8 +90,11 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 		return identityWithExternalUser, nil
 	}
 
-	if token.InternalRole != nil {
-		resolvedRoles := []permissions.ResolvedRole{token.InternalRole}
+	if len(token.InternalRoles) > 0 {
+		resolvedRoles := make([]permissions.ResolvedRole, 0, len(token.InternalRoles))
+		for _, role := range token.InternalRoles {
+			resolvedRoles = append(resolvedRoles, role)
+		}
 		return withResolvedRoles(resolvedRoles, token, authProviderSrc), nil
 	}
 
