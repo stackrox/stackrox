@@ -1,16 +1,9 @@
-import { useState } from 'react';
 import type { FormEvent, ReactElement } from 'react';
-import { Flex, Form, FormGroup, Radio, TextInput } from '@patternfly/react-core';
+import { Flex, Form, FormGroup, TextInput } from '@patternfly/react-core';
 
-import type { PolicyScope, PolicyScopeLabel, ScopeLabelField } from 'types/policy.proto';
+import type { PolicyScope } from 'types/policy.proto';
 
 import PolicyScopeCardBase from './PolicyScopeCardBase';
-
-type NamespaceMode = 'name' | 'label';
-
-function getInitialNamespaceMode(scope: PolicyScope): NamespaceMode {
-    return scope.namespaceLabel ? 'label' : 'name';
-}
 
 type InclusionScopeCardProps = {
     scope: PolicyScope;
