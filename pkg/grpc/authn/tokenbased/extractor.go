@@ -92,11 +92,7 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 
 	if token.InternalRole != nil {
 		resolvedRoles := []permissions.ResolvedRole{token.InternalRole}
-		identityWithInternalRole, errWithResolvedRoles := withResolvedRoles(resolvedRoles, token, authProviderSrc)
-		if errWithResolvedRoles != nil {
-			return nil, getExtractorError("failed to resolve internal roles", errWithResolvedRoles)
-		}
-		return identityWithInternalRole, nil
+		return withResolvedRoles(resolvedRoles, token, authProviderSrc), nil
 	}
 
 	return nil, getExtractorError("could not determine token type", nil)
@@ -109,14 +105,14 @@ func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, 
 	}
 	// Ensure there are no invalid roles listed in the token.
 	filteredRoles := authn.FilterOutNoneRole(resolvedRoles)
-	return withResolvedRoles(filteredRoles, token, authProvider)
+	return withResolvedRoles(filteredRoles, token, authProvider), nil
 }
 
 func withResolvedRoles(
 	roles []permissions.ResolvedRole,
 	token *tokens.TokenInfo,
 	authProvider authproviders.Provider,
-) (authn.Identity, error) {
+) authn.Identity {
 	roleNames := make([]string, 0, len(roles))
 	for _, role := range roles {
 		roleNames = append(roleNames, role.GetRoleName())
@@ -145,7 +141,7 @@ func withResolvedRoles(
 			token.ID,
 			token.Expiry().Format(time.RFC3339))
 	}
-	return id, nil
+	return id
 }
 
 func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInfo, authProvider authproviders.Provider) (authn.Identity, error) {
