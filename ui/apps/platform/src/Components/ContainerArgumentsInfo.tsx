@@ -7,7 +7,7 @@ type ContainerArgumentsInfoProps = {
 
 const styleConstant = {
     overflow: 'scroll',
-    '--pf-v5-u-max-height--MaxHeight': '12ch',
+    '--pf-v6-u-max-height--MaxHeight': '12ch',
 } as CSSProperties;
 
 function ContainerArgumentsInfo({ args }: ContainerArgumentsInfoProps): ReactElement {

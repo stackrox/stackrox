@@ -92,9 +92,6 @@ function DashboardPage() {
                         {
                             // Ensure the grid has never grows large enough to show 4 columns
                             maxWidth: `calc(calc(${minWidgetWidth}px * 4) + calc(var(--pf-v5-l-gallery--m-gutter--GridGap) * 3) - 1px)`,
-                            // Ensure the grid gap matches that of the outside padding of the containing PageSection
-                            '--pf-v5-l-gallery--m-gutter--GridGap':
-                                'var(--pf-v5-c-page__main-section--PaddingTop)',
                         } as CSSProperties
                     }
                     hasGutter

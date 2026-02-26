@@ -15,8 +15,8 @@ export function getPublicConfigStyle({
     size,
 }: BannerConfig): CSSProperties {
     return {
-        '--pf-v5-c-banner--BackgroundColor': backgroundColor,
-        '--pf-v5-c-banner--Color': color,
-        '--pf-v5-c-banner--FontSize': sizeVarMap[size],
+        '--pf-v6-c-banner--BackgroundColor': backgroundColor,
+        '--pf-v6-c-banner--Color': color,
+        '--pf-v6-c-banner--FontSize': sizeVarMap[size],
     } as CSSProperties;
 }

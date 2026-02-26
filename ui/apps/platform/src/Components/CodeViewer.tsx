@@ -37,11 +37,11 @@ export const useCodeViewerThemeContext = () => {
 type SupportedLanguages = 'yaml';
 
 const defaultStyle = {
-    '--pf-v5-u-max-height--MaxHeight': '300px',
-    '--pf-v5-c-code-block__content--PaddingTop': '0',
-    '--pf-v5-c-code-block__content--PaddingBottom': '0',
-    '--pf-v5-c-code-block__content--PaddingLeft': '0',
-    '--pf-v5-c-code-block__content--PaddingRight': '0',
+    '--pf-v6-u-max-height--MaxHeight': '300px',
+    '--pf-v6-c-code-block__content--PaddingBlockStart': '0',
+    '--pf-v6-c-code-block__content--PaddingBlockEnd': '0',
+    '--pf-v6-c-code-block__content--PaddingInlineStart': '0',
+    '--pf-v6-c-code-block__content--PaddingInlineEnd': '0',
     overflowY: 'auto',
 } as const;
 
@@ -119,7 +119,7 @@ export default function CodeViewer({
                 style={theme === 'light' ? lightTheme : darkTheme}
                 customStyle={{
                     margin: 0,
-                    background: 'var(--pf-v5-c-code-block--BackgroundColor)',
+                    background: 'var(--pf-v6-c-code-block--BackgroundColor)',
                 }}
             >
                 {code}
