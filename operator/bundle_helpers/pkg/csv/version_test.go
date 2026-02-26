@@ -180,43 +180,38 @@ func TestXyzVersion_Compare(t *testing.T) {
 func TestGetPreviousYStream(t *testing.T) {
 	tests := []struct {
 		name    string
-		version string
-		want    string
+		version XyzVersion
+		want    *XyzVersion
 		wantErr bool
 	}{
 		{
 			name:    "minor version decrement",
-			version: "3.74.0",
-			want:    "3.73.0",
+			version: XyzVersion{X: 3, Y: 74, Z: 0},
+			want:    &XyzVersion{X: 3, Y: 73, Z: 0},
 		},
 		{
 			name:    "minor version decrement with patch",
-			version: "3.74.3",
-			want:    "3.73.0",
+			version: XyzVersion{X: 3, Y: 74, Z: 3},
+			want:    &XyzVersion{X: 3, Y: 73, Z: 0},
 		},
 		{
 			name:    "major version 4 to 3.74.0",
-			version: "4.0.0",
-			want:    "3.74.0",
+			version: XyzVersion{X: 4, Y: 0, Z: 0},
+			want:    &XyzVersion{X: 3, Y: 74, Z: 0},
 		},
 		{
 			name:    "major version 4 minor 1",
-			version: "4.1.0",
-			want:    "4.0.0",
+			version: XyzVersion{X: 4, Y: 1, Z: 0},
+			want:    &XyzVersion{X: 4, Y: 0, Z: 0},
 		},
 		{
 			name:    "trunk builds",
-			version: "1.0.0",
-			want:    "0.0.0",
-		},
-		{
-			name:    "with nightly suffix",
-			version: "3.74.x-nightly-20230224",
-			want:    "3.73.0",
+			version: XyzVersion{X: 1, Y: 0, Z: 0},
+			want:    &XyzVersion{X: 0, Y: 0, Z: 0},
 		},
 		{
 			name:    "unknown major version",
-			version: "99.0.0",
+			version: XyzVersion{X: 99, Y: 0, Z: 0},
 			wantErr: true,
 		},
 	}

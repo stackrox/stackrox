@@ -72,29 +72,27 @@ func (v XyzVersion) Compare(other XyzVersion) int {
 	return 0
 }
 
-// GetPreviousYStream returns the previous Y-Stream version
+// GetPreviousYStream returns the previous Y-Stream version.
 // Y-Stream versions have patch number = 0 (e.g., 3.73.0, 3.74.0, 4.0.0)
 // This implements the logic from scripts/get-previous-y-stream.sh
-func GetPreviousYStream(versionStr string) (string, error) {
-	v, err := ParseXyzVersion(versionStr)
-	if err != nil {
-		return "", err
-	}
-
+func GetPreviousYStream(v XyzVersion) (*XyzVersion, error) {
 	if v.Y > 0 {
 		// If minor version > 0, previous Y-Stream is one minor less
-		return fmt.Sprintf("%d.%d.0", v.X, v.Y-1), nil
+		result := XyzVersion{X: v.X, Y: v.Y - 1, Z: 0}
+		return &result, nil
 	}
 
 	// For major version bumps, maintain hardcoded mapping
 	switch v.X {
 	case 4:
-		return "3.74.0", nil
+		result := XyzVersion{X: 3, Y: 74, Z: 0}
+		return &result, nil
 	case 1:
 		// 0.0.0 was never released, but used for trunk builds
-		return "0.0.0", nil
+		result := XyzVersion{X: 0, Y: 0, Z: 0}
+		return &result, nil
 	default:
-		return "", fmt.Errorf("don't know the previous Y-Stream for %d.%d", v.X, v.Y)
+		return nil, fmt.Errorf("don't know the previous Y-Stream for %d.%d", v.X, v.Y)
 	}
 }
 
@@ -114,11 +112,11 @@ func adjustForUnreleased(initialReplace XyzVersion, unreleased string) (XyzVersi
 		return initialReplace, nil
 	}
 
-	prev, err := GetPreviousYStream(initialReplace.String())
+	prev, err := GetPreviousYStream(initialReplace)
 	if err != nil {
 		return XyzVersion{}, err
 	}
-	return ParseXyzVersion(prev)
+	return *prev, nil
 }
 
 // advancePastSkips advances the replacement version past any skipped versions
