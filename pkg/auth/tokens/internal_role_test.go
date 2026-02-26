@@ -158,6 +158,56 @@ func TestInternalRoleGetAccessScope(t *testing.T) {
 				},
 			},
 		},
+		"Nil cluster scopes are ignored": {
+			role: &InternalRole{
+				ClusterScopes: []*ClusterScope{
+					nil,
+					{
+						ClusterName: clusterName1,
+						Namespaces:  []string{namespaceB},
+					},
+				},
+			},
+			expectedScope: &storage.SimpleAccessScope{
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedClusters: make([]string, 0),
+					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+						{
+							ClusterName:   clusterName1,
+							NamespaceName: namespaceB,
+						},
+					},
+				},
+			},
+		},
+		"Cluster scopes without cluster name are ignored": {
+			role: &InternalRole{
+				ClusterScopes: []*ClusterScope{
+					{
+						ClusterFullAccess: true,
+					},
+					{
+						ClusterName: clusterName1,
+						Namespaces:  []string{namespaceB},
+					},
+					{
+						Namespaces: []string{namespaceA},
+					},
+					nil,
+				},
+			},
+			expectedScope: &storage.SimpleAccessScope{
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedClusters: make([]string, 0),
+					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+						{
+							ClusterName:   clusterName1,
+							NamespaceName: namespaceB,
+						},
+					},
+				},
+			},
+		},
 		"Multiple clusters with access level mix": {
 			role: &InternalRole{
 				ClusterScopes: []*ClusterScope{
