@@ -179,6 +179,10 @@ describe('Step 4', () => {
                     {
                         cluster: 'non-empty',
                         namespace: 'non-empty',
+                        namespaceLabel: {
+                            key: 'non-empty',
+                            value: 'non-empty',
+                        },
                         label: {
                             key: 'non-empty',
                             value: 'non-empty',
@@ -197,6 +201,10 @@ describe('Step 4', () => {
                     {
                         cluster: 'non-empty',
                         namespace: 'non-empty',
+                        namespaceLabel: {
+                            key: 'non-empty',
+                            value: 'non-empty',
+                        },
                         label: {
                             key: 'non-empty',
                             value: 'non-empty',
