@@ -339,8 +339,7 @@ function ScanConfigsTablePage({
                     </Bullseye>
                 </PageSection>
             ) : (
-                /* Override PF6 default row-gap on PageSection to prevent unwanted spacing between child elements */
-                <PageSection hasBodyWrapper={false} className="pf-v6-u-row-gap-0">
+                <PageSection>
                     {alertObj !== null && (
                         <Alert
                             title={alertObj.title}

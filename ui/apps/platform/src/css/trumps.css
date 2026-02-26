@@ -180,15 +180,6 @@ select {
     word-break: break-all;
 }
 
-/* PF6 PageSection applies a 24px row gap between direct children, which causes
-   unintended spacing when using hasBodyWrapper={false} with multiple children
-   (e.g. title rows and alerts). This utility class removes that gap.
-   TODO: Consider applying this globally once all pages have consistent layout
-   structures, or create a shared layout component that handles this. */
-.pf-v6-u-row-gap-0 {
-    --pf-v6-c-page__main-section--RowGap: 0;
-}
-
 /* Override none value for list-style in Tailwind stylesheet. */
 .pf-v6-c-modal-box ol,
 .pf-v6-c-page__main-section ol {
