@@ -19,6 +19,7 @@ import {
     GridItem,
     HelperText,
     HelperTextItem,
+    PageSection,
     SelectOption,
     Split,
     SplitItem,
@@ -873,9 +874,11 @@ const SystemConfigForm = ({
                     </Grid>
                 </Form>
             </FlexItem>
-            <FlexItem
+            <PageSection
+                component="div"
+                padding={{ default: 'noPadding' }}
                 style={{ position: 'sticky', bottom: 0, zIndex: 100 }}
-                className="pf-v6-u-w-100 pf-v6-u-background-color-100"
+                className="pf-v6-u-w-100"
             >
                 <Divider component="div" />
                 <Flex
@@ -904,7 +907,7 @@ const SystemConfigForm = ({
                         </Button>
                     </FlexItem>
                 </Flex>
-            </FlexItem>
+            </PageSection>
         </Flex>
     );
 };
