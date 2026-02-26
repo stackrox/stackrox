@@ -35,7 +35,7 @@ type InternalRole struct {
 
 func (r *InternalRole) GetRoleName() string {
 	if r == nil {
-		return ""
+		return "<no role>"
 	}
 	return r.RoleName
 }

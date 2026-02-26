@@ -10,7 +10,7 @@ import (
 
 func TestInternalRoleGetRoleName(t *testing.T) {
 	nilRole := (*InternalRole)(nil)
-	assert.Equal(t, "", nilRole.GetRoleName())
+	assert.Equal(t, "<no role>", nilRole.GetRoleName())
 	emptyRole := &InternalRole{}
 	assert.Equal(t, "", emptyRole.GetRoleName())
 	const roleName1 = "role1"
