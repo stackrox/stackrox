@@ -41,7 +41,7 @@ import {
 } from '../NetworkGraphURLStateContext';
 
 const sidebarHeadingStyleConstant = {
-    '--pf-v5-u-max-width--MaxWidth': '26ch',
+    '--pf-v6-u-max-width--MaxWidth': '26ch',
 } as CSSProperties;
 
 const DEPLOYMENT_TABS = ['BASELINE', 'DETAILS', 'FLOWS', 'NETWORK_POLICIES'] as const;

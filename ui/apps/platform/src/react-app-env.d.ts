@@ -12,7 +12,7 @@ declare global {
         // Extend CSSProperties to allow custom CSS properties
         interface CSSProperties {
             // Adds PatternFly CSS properties
-            [key: `--pf-v5-${string}`]: string | number | undefined;
+            [key: `--pf-v6-${string}`]: string | number | undefined;
         }
     }
 }
