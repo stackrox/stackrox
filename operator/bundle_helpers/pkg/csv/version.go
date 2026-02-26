@@ -72,6 +72,16 @@ func (v XyzVersion) Compare(other XyzVersion) int {
 	return 0
 }
 
+// IsEqualOrAfter returns true if v is greater than or equal to other.
+func (v XyzVersion) IsEqualOrAfter(other XyzVersion) bool {
+	return v.Compare(other) >= 0
+}
+
+// IsEqualOrBefore returns true if v is less than or equal to other.
+func (v XyzVersion) IsEqualOrBefore(other XyzVersion) bool {
+	return v.Compare(other) <= 0
+}
+
 // GetPreviousYStream returns the previous Y-Stream version.
 // Y-Stream versions have patch number = 0 (e.g., 3.73.0, 3.74.0, 4.0.0)
 // This implements the logic from scripts/get-previous-y-stream.sh
@@ -125,7 +135,7 @@ func advancePastSkips(initialReplace, currentXyz XyzVersion, skips []XyzVersion)
 	for {
 		// Look ahead to next before advancing, to avoid incrementing past currentXyz or leaving the Y-stream.
 		next := XyzVersion{X: replacement.X, Y: replacement.Y, Z: replacement.Z + 1}
-		if next.Y != initialReplace.Y || next.Compare(currentXyz) >= 0 {
+		if next.Y != initialReplace.Y || next.IsEqualOrAfter(currentXyz) {
 			break
 		}
 
@@ -137,7 +147,7 @@ func advancePastSkips(initialReplace, currentXyz XyzVersion, skips []XyzVersion)
 	}
 
 	// Exception: if we're releasing immediate patch to broken version, still replace it
-	if replacement.Compare(currentXyz) >= 0 {
+	if replacement.IsEqualOrAfter(currentXyz) {
 		return initialReplace
 	}
 	return replacement
@@ -147,7 +157,7 @@ func advancePastSkips(initialReplace, currentXyz XyzVersion, skips []XyzVersion)
 // Handles Y-Stream vs patch releases, version skips, and unreleased versions.
 func CalculateReplacedVersion(current, first, previousYStream XyzVersion, skips []XyzVersion, unreleased string) (*XyzVersion, error) {
 	// First version or earlier gets no replace
-	if current.Compare(first) <= 0 {
+	if current.IsEqualOrBefore(first) {
 		return nil, nil
 	}
 
