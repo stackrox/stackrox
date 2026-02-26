@@ -24,11 +24,7 @@ function ViolationDetails({
         <Stack hasGutter>
             <Title headingLevel="h2">Violation events</Title>
             {showRuntimeMessages && (
-                <RuntimeMessages
-                    processViolation={processViolation}
-                    fileAccessViolation={fileAccessViolation}
-                    violations={violations}
-                />
+                <RuntimeMessages processViolation={processViolation} violations={violations} />
             )}
             {showDeploytimeMessages && <DeploytimeMessages violations={violations} />}
         </Stack>
