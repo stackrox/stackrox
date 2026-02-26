@@ -55,41 +55,6 @@ func TestGetString_WrongType(t *testing.T) {
 	assert.Contains(t, err.Error(), "not a string")
 }
 
-func TestGetMap_Success(t *testing.T) {
-	vals := chartutil.Values{
-		"metadata": chartutil.Values{
-			"labels": chartutil.Values{
-				"app": "test",
-			},
-		},
-	}
-
-	result, err := GetMap(vals, "metadata.labels")
-	require.NoError(t, err)
-	assert.Equal(t, chartutil.Values{"app": "test"}, result)
-}
-
-func TestGetMap_WrongType(t *testing.T) {
-	vals := chartutil.Values{
-		"metadata": chartutil.Values{
-			"name": "test",
-		},
-	}
-
-	_, err := GetMap(vals, "metadata.name")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not a table")
-}
-
-func TestGetMap_MissingPath(t *testing.T) {
-	vals := chartutil.Values{
-		"metadata": chartutil.Values{},
-	}
-
-	_, err := GetMap(vals, "metadata.spec")
-	assert.Error(t, err)
-}
-
 func TestGetArray_Success(t *testing.T) {
 	vals := chartutil.Values{
 		"items": []any{"a", "b", "c"},

@@ -53,7 +53,7 @@ func PatchCSV(doc chartutil.Values, opts PatchOptions) error {
 	if err := values.SetValue(doc, "spec.version", opts.Version); err != nil {
 		return fmt.Errorf("failed to set spec.version: %w", err)
 	}
-	spec, err := values.GetMap(doc, "spec")
+	spec, err := doc.Table("spec")
 	if err != nil {
 		return fmt.Errorf("failed to get spec: %w", err)
 	}
@@ -81,7 +81,7 @@ func PatchCSV(doc chartutil.Values, opts PatchOptions) error {
 		return fmt.Errorf("failed to initialize metadata.labels: %w", err)
 	}
 	// Add multi-arch labels (label keys contain dots, so access the map directly)
-	labels, err := values.GetMap(doc, "metadata.labels")
+	labels, err := doc.Table("metadata.labels")
 	if err != nil {
 		return fmt.Errorf("failed to get metadata.labels: %w", err)
 	}
@@ -102,7 +102,7 @@ func PatchCSV(doc chartutil.Values, opts PatchOptions) error {
 	}
 
 	// Set olm.skipRange (annotation key contains a dot, so access the map directly)
-	annotations, err := values.GetMap(doc, "metadata.annotations")
+	annotations, err := doc.Table("metadata.annotations")
 	if err != nil {
 		return fmt.Errorf("failed to get metadata.annotations: %w", err)
 	}
@@ -209,7 +209,7 @@ func addSecurityPolicyCRD(spec chartutil.Values) error {
 		},
 	}
 
-	crds, err := values.GetMap(spec, "customresourcedefinitions")
+	crds, err := spec.Table("customresourcedefinitions")
 	if err != nil {
 		return errors.New("spec.customresourcedefinitions field is missing")
 	}
