@@ -293,6 +293,121 @@ func (s *indexReportConvertSuite) TestFixNotes() {
 	}
 }
 
+func (s *indexReportConvertSuite) TestDedupeNodeVulns() {
+	cases := map[string]struct {
+		in       []*storage.EmbeddedVulnerability
+		expected []*storage.EmbeddedVulnerability
+	}{
+		"no duplicates": {
+			in: []*storage.EmbeddedVulnerability{
+				{Cve: "CVE-2024-0001", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.0"}},
+				{Cve: "CVE-2024-0002", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "2.0"}},
+			},
+			expected: []*storage.EmbeddedVulnerability{
+				{Cve: "CVE-2024-0001", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.0"}},
+				{Cve: "CVE-2024-0002", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "2.0"}},
+			},
+		},
+		"duplicate CVE prefers record with FixedBy": {
+			in: []*storage.EmbeddedVulnerability{
+				{Cve: "CVE-2024-2961", Summary: "known_affected record"},
+				{Cve: "CVE-2024-2961", Summary: "fixed record", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "2.34-100.el9_4.2"}},
+			},
+			expected: []*storage.EmbeddedVulnerability{
+				{Cve: "CVE-2024-2961", Summary: "fixed record", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "2.34-100.el9_4.2"}},
+			},
+		},
+		"duplicate CVE with fix first keeps fix": {
+			in: []*storage.EmbeddedVulnerability{
+				{Cve: "CVE-2024-2961", Summary: "fixed record", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "2.34-100.el9_4.2"}},
+				{Cve: "CVE-2024-2961", Summary: "known_affected record"},
+			},
+			expected: []*storage.EmbeddedVulnerability{
+				{Cve: "CVE-2024-2961", Summary: "fixed record", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "2.34-100.el9_4.2"}},
+			},
+		},
+		"duplicate CVE both without fix keeps first": {
+			in: []*storage.EmbeddedVulnerability{
+				{Cve: "CVE-2024-2961", Summary: "first known_affected"},
+				{Cve: "CVE-2024-2961", Summary: "second known_affected"},
+			},
+			expected: []*storage.EmbeddedVulnerability{
+				{Cve: "CVE-2024-2961", Summary: "first known_affected"},
+			},
+		},
+		"mixed duplicates and unique vulns": {
+			in: []*storage.EmbeddedVulnerability{
+				{Cve: "CVE-2024-0001", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.0"}},
+				{Cve: "CVE-2024-2961", Summary: "known_affected record"},
+				{Cve: "CVE-2024-0002"},
+				{Cve: "CVE-2024-2961", Summary: "fixed record", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "2.34-100"}},
+			},
+			expected: []*storage.EmbeddedVulnerability{
+				{Cve: "CVE-2024-0001", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.0"}},
+				{Cve: "CVE-2024-0002"},
+				{Cve: "CVE-2024-2961", Summary: "fixed record", SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "2.34-100"}},
+			},
+		},
+		"single element": {
+			in: []*storage.EmbeddedVulnerability{
+				{Cve: "CVE-2024-0001"},
+			},
+			expected: []*storage.EmbeddedVulnerability{
+				{Cve: "CVE-2024-0001"},
+			},
+		},
+		"empty input": {
+			in:       []*storage.EmbeddedVulnerability{},
+			expected: []*storage.EmbeddedVulnerability{},
+		},
+		"nil input": {
+			in:       nil,
+			expected: nil,
+		},
+	}
+	for name, c := range cases {
+		s.T().Run(name, func(t *testing.T) {
+			actual := dedupeNodeVulns(c.in)
+			protoassert.SlicesEqual(t, c.expected, actual)
+		})
+	}
+}
+
+func (s *indexReportConvertSuite) TestGetPackageVulnsDeduplicatesFalsePositives() {
+	// Simulate a vulnerability report where the same CVE appears twice for a package:
+	// once as a "known_affected" VEX record (no FixedInVersion) and once as a "fixed"
+	// VEX record (with FixedInVersion). This happens due to broad CPE matching on RHCOS
+	// nodes that lack Distribution information (ROX-26593).
+	r := &v4.VulnerabilityReport{
+		PackageVulnerabilities: map[string]*v4.StringList{
+			"pkg1": {Values: []string{"known-affected-id", "fixed-id"}},
+		},
+		Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+			"known-affected-id": {
+				Id:                 "known-affected-id",
+				Name:               "CVE-2024-2961",
+				Description:        "glibc iconv buffer overflow (known_affected stream)",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				// No FixedInVersion — this is a "known_affected" VEX record.
+			},
+			"fixed-id": {
+				Id:                 "fixed-id",
+				Name:               "CVE-2024-2961",
+				Description:        "glibc iconv buffer overflow (fixed stream)",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+				FixedInVersion:     "0:2.34-100.el9_4.2",
+			},
+		},
+	}
+
+	vulns := getPackageVulns("pkg1", r)
+
+	// Only one vulnerability should remain: the one with the fix version.
+	s.Len(vulns, 1)
+	s.Equal("CVE-2024-2961", vulns[0].GetCve())
+	s.Equal("0:2.34-100.el9_4.2", vulns[0].GetFixedBy())
+}
+
 func createVulnerabilityReport() *v4.VulnerabilityReport {
 	return &v4.VulnerabilityReport{
 		HashId: "",

@@ -68,13 +68,13 @@ func getPackageVulns(packageID string, r *v4.VulnerabilityReport) []*storage.Emb
 	vulns := make([]*storage.EmbeddedVulnerability, 0)
 	mapping, ok := r.GetPackageVulnerabilities()[packageID]
 	if !ok {
-		// No vulnerabilities for this package, skip
+		// No vulnerabilities for this package, skip.
 		return vulns
 	}
 	processedVulns := set.NewStringSet()
 	for _, vulnID := range mapping.GetValues() {
 		if !processedVulns.Add(vulnID) {
-			// Already processed this vulnerability, skip it
+			// Already processed this vulnerability, skip it.
 			continue
 		}
 		vulnerability, ok := r.GetVulnerabilities()[vulnID]
@@ -84,7 +84,60 @@ func getPackageVulns(packageID string, r *v4.VulnerabilityReport) []*storage.Emb
 		}
 		vulns = append(vulns, convertVulnerability(vulnerability))
 	}
-	return vulns
+	return dedupeNodeVulns(vulns)
+}
+
+// dedupeNodeVulns deduplicates node vulnerabilities by CVE name.
+// When multiple records share the same CVE name — which can happen when
+// ClairCore matches both "known_affected" (no FixedInVersion) and "fixed"
+// (with FixedInVersion) VEX records due to broad CPE matching on nodes
+// (ROX-26593) — this function prefers records that have a FixedBy version set.
+// This prevents false positives where a patched package is incorrectly reported
+// as vulnerable due to a "known_affected" record from a different CPE stream.
+func dedupeNodeVulns(vulns []*storage.EmbeddedVulnerability) []*storage.EmbeddedVulnerability {
+	if len(vulns) <= 1 {
+		return vulns
+	}
+
+	// Group vulnerabilities by CVE name and track the best record for each.
+	type vulnEntry struct {
+		vuln  *storage.EmbeddedVulnerability
+		index int
+	}
+	bestByCVE := make(map[string]vulnEntry, len(vulns))
+	for i, vuln := range vulns {
+		name := vuln.GetCve()
+		existing, found := bestByCVE[name]
+		if !found {
+			bestByCVE[name] = vulnEntry{vuln: vuln, index: i}
+			continue
+		}
+		// Prefer the record that has a FixedBy version set, as it provides
+		// actionable fix information and indicates an accurate stream match.
+		existingHasFix := existing.vuln.GetFixedBy() != ""
+		newHasFix := vuln.GetFixedBy() != ""
+		if !existingHasFix && newHasFix {
+			bestByCVE[name] = vulnEntry{vuln: vuln, index: i}
+		}
+	}
+
+	// If no duplicates were found, return the original slice unchanged.
+	if len(bestByCVE) == len(vulns) {
+		return vulns
+	}
+
+	// Rebuild the slice preserving the original ordering of surviving entries.
+	kept := set.NewIntSet()
+	for _, entry := range bestByCVE {
+		kept.Add(entry.index)
+	}
+	deduped := make([]*storage.EmbeddedVulnerability, 0, len(bestByCVE))
+	for i, vuln := range vulns {
+		if kept.Contains(i) {
+			deduped = append(deduped, vuln)
+		}
+	}
+	return deduped
 }
 
 func convertVulnerability(v *v4.VulnerabilityReport_Vulnerability) *storage.EmbeddedVulnerability {
