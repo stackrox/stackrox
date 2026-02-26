@@ -311,7 +311,7 @@ Time (UTC): 2021-01-20 22:42:02
 Severity: Low
 
 Violations:
-	 - '/etc/passwd' opened writable
+	 - '/etc/passwd' opened (writable)
 		 - Effective Path: /etc/passwd
 		 - Actual Path: /etc/passwd
 		 - Process Name: cp
@@ -346,7 +346,7 @@ Time (UTC): 2021-01-20 22:42:02
 Severity: Low
 
 Violations:
-	 - '/etc/passwd' opened writable
+	 - '/etc/passwd' opened (writable)
 		 - Effective Path: /etc/passwd
 		 - Process Name: cp
 		 - Process Executable: /bin/cp
@@ -385,7 +385,7 @@ Violations:
 	 - This is a kube event violation
 		 - pod : nginx
 		 - container : nginx
-	 - '/etc/passwd' opened writable
+	 - '/etc/passwd' opened (writable)
 		 - Effective Path: /etc/passwd
 		 - Actual Path: /etc/passwd
 		 - Process Name: cp
