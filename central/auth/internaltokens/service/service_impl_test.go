@@ -221,13 +221,15 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				Lifetime:      testExpirationDuration,
 			},
 			expectedClaims: tokens.RoxClaims{
-				InternalRole: &tokens.InternalRole{
-					RoleName:    internalRoleName,
-					Permissions: map[string]string{"Deployment": storage.Access_READ_ACCESS.String()},
-					ClusterScopes: []*tokens.ClusterScope{
-						{
-							ClusterName: fixtureconsts.Cluster1,
-							Namespaces:  []string{"namespace A"},
+				InternalRoles: []*tokens.InternalRole{
+					{
+						RoleName:    internalRoleName,
+						Permissions: map[string]string{"Deployment": storage.Access_READ_ACCESS.String()},
+						ClusterScopes: []*tokens.ClusterScope{
+							{
+								ClusterName: fixtureconsts.Cluster1,
+								Namespaces:  []string{"namespace A"},
+							},
 						},
 					},
 				},
@@ -245,13 +247,15 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				Lifetime:      testExpirationDuration,
 			},
 			expectedClaims: tokens.RoxClaims{
-				InternalRole: &tokens.InternalRole{
-					RoleName:    internalRoleName,
-					Permissions: make(map[string]string),
-					ClusterScopes: []*tokens.ClusterScope{
-						{
-							ClusterName: fixtureconsts.Cluster1,
-							Namespaces:  []string{"namespace A"},
+				InternalRoles: []*tokens.InternalRole{
+					{
+						RoleName:    internalRoleName,
+						Permissions: make(map[string]string),
+						ClusterScopes: []*tokens.ClusterScope{
+							{
+								ClusterName: fixtureconsts.Cluster1,
+								Namespaces:  []string{"namespace A"},
+							},
 						},
 					},
 				},
@@ -269,9 +273,11 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				Lifetime:    testExpirationDuration,
 			},
 			expectedClaims: tokens.RoxClaims{
-				InternalRole: &tokens.InternalRole{
-					RoleName:    internalRoleName,
-					Permissions: map[string]string{"Deployment": storage.Access_READ_ACCESS.String()},
+				InternalRoles: []*tokens.InternalRole{
+					{
+						RoleName:    internalRoleName,
+						Permissions: map[string]string{"Deployment": storage.Access_READ_ACCESS.String()},
+					},
 				},
 				Name: fmt.Sprintf(
 					"Generated claims for role %s expiring at %s",
@@ -294,20 +300,22 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				Lifetime: testExpirationDuration,
 			},
 			expectedClaims: tokens.RoxClaims{
-				InternalRole: &tokens.InternalRole{
-					RoleName: internalRoleName,
-					Permissions: map[string]string{
-						"Deployment": storage.Access_READ_ACCESS.String(),
-						"Image":      storage.Access_READ_WRITE_ACCESS.String(),
-					},
-					ClusterScopes: []*tokens.ClusterScope{
-						{
-							ClusterName: fixtureconsts.Cluster1,
-							Namespaces:  []string{"namespace A"},
+				InternalRoles: []*tokens.InternalRole{
+					{
+						RoleName: internalRoleName,
+						Permissions: map[string]string{
+							"Deployment": storage.Access_READ_ACCESS.String(),
+							"Image":      storage.Access_READ_WRITE_ACCESS.String(),
 						},
-						{
-							ClusterName:       fixtureconsts.Cluster2,
-							ClusterFullAccess: true,
+						ClusterScopes: []*tokens.ClusterScope{
+							{
+								ClusterName: fixtureconsts.Cluster1,
+								Namespaces:  []string{"namespace A"},
+							},
+							{
+								ClusterName:       fixtureconsts.Cluster2,
+								ClusterFullAccess: true,
+							},
 						},
 					},
 				},

@@ -26,8 +26,6 @@ type RoxClaims struct {
 	RoleNames []string `json:"roles,omitempty"`
 	// ExternalUser represents the claim that this token identifies a user from an external identity provider.
 	ExternalUser *ExternalUserClaim `json:"external_user,omitempty"`
-	// InternalRole represents the claim that this token grants the described roles for internal use.
-	InternalRole *InternalRole `json:"internal_role,omitempty"`
 	// InternalRoles represents the claim that this token grants the described roles for internal use.
 	InternalRoles []*InternalRole `json:"internal_roles,omitempty"`
 	// Name represents the name of the token assigned by the creator.
