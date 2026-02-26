@@ -40,7 +40,7 @@ function CompareYAMLModal({ current, generated, isOpen, onClose }: CompareYAMLMo
                     </Content>
                     <NetworkPoliciesYAML
                         yaml={current}
-                        style={{ '--pf-v5-u-max-height--MaxHeight': '400px' }}
+                        style={{ '--pf-v6-u-max-height--MaxHeight': '400px' }}
                     />
                 </Flex>
                 <Flex direction={{ default: 'column' }} style={{ flex: '1' }}>
@@ -49,7 +49,7 @@ function CompareYAMLModal({ current, generated, isOpen, onClose }: CompareYAMLMo
                     </Content>
                     <NetworkPoliciesYAML
                         yaml={generated}
-                        style={{ '--pf-v5-u-max-height--MaxHeight': '400px' }}
+                        style={{ '--pf-v6-u-max-height--MaxHeight': '400px' }}
                     />
                 </Flex>
             </Flex>

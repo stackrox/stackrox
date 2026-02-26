@@ -68,7 +68,6 @@ export type AccessScopeFormProps = {
 };
 
 function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProps): ReactElement {
-    const [counterComputing, setCounterComputing] = useState(0);
     const [alertCompute, setAlertCompute] = useState<ReactElement | null>(null);
     const [clusters, setClusters] = useState<EffectiveAccessScopeCluster[]>([]);
 
@@ -92,7 +91,6 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
         if (getIsUnrestrictedAccessScopeId(values.id)) {
             return;
         }
-        setCounterComputing((counterPrev) => counterPrev + 1);
         computeEffectiveAccessScopeClusters(
             isValidRules ? values.rules : getTemporarilyValidRules(values.rules)
         )
@@ -111,9 +109,6 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                         {error.message}
                     </Alert>
                 );
-            })
-            .finally(() => {
-                setCounterComputing((counterPrev) => counterPrev - 1);
             });
     }, [isValidRules, values.rules]);
     // values.id
@@ -212,7 +207,6 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                             labelHelp={labelIconEffectiveAccessScope}
                         >
                             <EffectiveAccessScopeTable
-                                counterComputing={counterComputing}
                                 clusters={clusters}
                                 includedClusters={values.rules.includedClusters}
                                 includedNamespaces={values.rules.includedNamespaces}
