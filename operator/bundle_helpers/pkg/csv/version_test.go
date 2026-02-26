@@ -54,6 +54,11 @@ func TestXyzVersion_ParseFrom(t *testing.T) {
 			input:   "invalid",
 			wantErr: true,
 		},
+		{
+			name:    "integer overflow in major version",
+			input:   "99999999999999999999.0.0",
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
