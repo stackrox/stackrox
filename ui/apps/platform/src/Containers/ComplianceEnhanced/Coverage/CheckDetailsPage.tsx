@@ -184,31 +184,32 @@ function CheckDetailsPage() {
                     tabContentId={tabContentIdForDetails}
                 />
             </Tabs>
-            {/* Override PF6 default row-gap on PageSection to prevent unwanted spacing between child elements */}
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-row-gap-0">
-                {activeTabKey === RESULTS_TAB && (
-                    <CheckDetailsTable
-                        checkResultsCount={checkResultsResponse?.totalCount ?? 0}
-                        currentDatetime={currentDatetime}
-                        pagination={pagination}
-                        profileName={profileName}
-                        tableState={tableState}
-                        getSortParams={getSortParams}
-                        searchFilter={searchFilter}
-                        onFilterChange={setSearchFilter}
-                        onSearch={onSearch}
-                        onClearFilters={onClearFilters}
-                    />
-                )}
-                {activeTabKey === DETAILS_TAB && (
-                    <div id={tabContentIdForDetails}>
-                        <CheckDetailsInfo
-                            checkDetails={checkDetailsResponse}
-                            isLoading={isLoadingCheckDetails}
-                            error={CheckDetailsError}
+            <PageSection hasBodyWrapper={false}>
+                <div>
+                    {activeTabKey === RESULTS_TAB && (
+                        <CheckDetailsTable
+                            checkResultsCount={checkResultsResponse?.totalCount ?? 0}
+                            currentDatetime={currentDatetime}
+                            pagination={pagination}
+                            profileName={profileName}
+                            tableState={tableState}
+                            getSortParams={getSortParams}
+                            searchFilter={searchFilter}
+                            onFilterChange={setSearchFilter}
+                            onSearch={onSearch}
+                            onClearFilters={onClearFilters}
                         />
-                    </div>
-                )}
+                    )}
+                    {activeTabKey === DETAILS_TAB && (
+                        <div id={tabContentIdForDetails}>
+                            <CheckDetailsInfo
+                                checkDetails={checkDetailsResponse}
+                                isLoading={isLoadingCheckDetails}
+                                error={CheckDetailsError}
+                            />
+                        </div>
+                    )}
+                </div>
             </PageSection>
         </>
     );

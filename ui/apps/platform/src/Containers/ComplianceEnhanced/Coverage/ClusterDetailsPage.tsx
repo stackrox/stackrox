@@ -187,35 +187,31 @@ function ClusterDetailsPage() {
                     </LabelGroup>
                 </Flex>
             </PageSection>
-            {/* Override PF6 default row-gap on PageSection to prevent unwanted spacing between child elements */}
-            <PageSection
-                hasBodyWrapper={false}
-                padding={{ default: 'noPadding' }}
-                className="pf-v6-u-row-gap-0"
-            >
-                {isLoadingScanConfigProfiles ? (
-                    <Bullseye>
-                        <Spinner />
-                    </Bullseye>
-                ) : (
-                    <>
-                        <ProfilesToggleGroup
-                            profileName={profileName}
-                            profiles={scanConfigProfilesResponse?.profiles ?? []}
-                            handleToggleChange={handleProfilesToggleChange}
-                        />
-                        <Divider component="div" />
-                        <ProfileDetailsHeader
-                            isLoading={isLoadingScanConfigProfiles}
-                            profileName={profileName}
-                            profileDetails={selectedProfileDetails}
-                        />
-                    </>
-                )}
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
+                <div>
+                    {isLoadingScanConfigProfiles ? (
+                        <Bullseye>
+                            <Spinner />
+                        </Bullseye>
+                    ) : (
+                        <>
+                            <ProfilesToggleGroup
+                                profileName={profileName}
+                                profiles={scanConfigProfilesResponse?.profiles ?? []}
+                                handleToggleChange={handleProfilesToggleChange}
+                            />
+                            <Divider component="div" />
+                            <ProfileDetailsHeader
+                                isLoading={isLoadingScanConfigProfiles}
+                                profileName={profileName}
+                                profileDetails={selectedProfileDetails}
+                            />
+                        </>
+                    )}
+                </div>
             </PageSection>
             <Divider component="div" />
-            {/* Override PF6 default row-gap on PageSection to prevent unwanted spacing between child elements */}
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-row-gap-0">
+            <PageSection hasBodyWrapper={false}>
                 <ClusterDetailsTable
                     checkResultsCount={checkResultsResponse?.totalCount ?? 0}
                     profileName={profileName}

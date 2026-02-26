@@ -108,23 +108,19 @@ function CoveragesPage() {
             {!isDisclaimerAccepted && (
                 <ComplianceUsageDisclaimer onAccept={() => setIsDisclaimerAccepted(true)} />
             )}
-            {/* Override PF6 default row-gap on PageSection to prevent unwanted spacing between child elements */}
-            <PageSection
-                hasBodyWrapper={false}
-                padding={{ default: 'noPadding' }}
-                className="pf-v6-u-row-gap-0"
-            >
-                {isLoadingScanConfigProfiles ? (
-                    <Bullseye>
-                        <Spinner />
-                    </Bullseye>
-                ) : (
-                    <>
-                        <ProfilesToggleGroup
-                            profileName={profileName}
-                            profiles={scanConfigProfilesResponse.profiles}
-                            handleToggleChange={handleProfilesToggleChange}
-                        />
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
+                <div>
+                    {isLoadingScanConfigProfiles ? (
+                        <Bullseye>
+                            <Spinner />
+                        </Bullseye>
+                    ) : (
+                        <>
+                            <ProfilesToggleGroup
+                                profileName={profileName}
+                                profiles={scanConfigProfilesResponse.profiles}
+                                handleToggleChange={handleProfilesToggleChange}
+                            />
                         <Divider component="div" />
                         <Flex
                             alignItems={{ default: 'alignItemsStretch' }}
@@ -165,41 +161,43 @@ function CoveragesPage() {
                                 </>
                             )}
                         </Flex>
-                    </>
-                )}
+                        </>
+                    )}
+                </div>
             </PageSection>
             <Divider component="div" />
-            {/* Override PF6 default row-gap on PageSection to prevent unwanted spacing between child elements */}
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-row-gap-0">
-                <Toolbar>
-                    <ToolbarContent>
-                        <CompoundSearchFilter
-                            config={searchFilterConfig}
-                            defaultEntity="Profile check"
-                            searchFilter={searchFilter}
-                            onSearch={onSearch}
-                        />
-                        <SearchFilterSelectInclusive
-                            attribute={attributeForComplianceCheckStatus}
-                            isSeparate
-                            onSearch={onSearch}
-                            searchFilter={searchFilter}
-                        />
-                        <ToolbarGroup className="pf-v6-u-w-100">
-                            <CompoundSearchFilterLabels
-                                attributesSeparateFromConfig={[attributeForComplianceCheckStatus]}
+            <PageSection hasBodyWrapper={false}>
+                <div>
+                    <Toolbar>
+                        <ToolbarContent>
+                            <CompoundSearchFilter
                                 config={searchFilterConfig}
-                                onFilterChange={setSearchFilter}
+                                defaultEntity="Profile check"
+                                searchFilter={searchFilter}
+                                onSearch={onSearch}
+                            />
+                            <SearchFilterSelectInclusive
+                                attribute={attributeForComplianceCheckStatus}
+                                isSeparate
+                                onSearch={onSearch}
                                 searchFilter={searchFilter}
                             />
-                        </ToolbarGroup>
-                    </ToolbarContent>
-                </Toolbar>
-                <Routes>
-                    <Route path="checks" element={<ProfileChecksPage />} />
-                    <Route path="clusters" element={<ProfileClustersPage />} />
-                    <Route path="*" element={<Navigate to="checks" replace />} />
-                </Routes>
+                            <ToolbarGroup className="pf-v6-u-w-100">
+                                <CompoundSearchFilterLabels
+                                    attributesSeparateFromConfig={[attributeForComplianceCheckStatus]}
+                                    config={searchFilterConfig}
+                                    onFilterChange={setSearchFilter}
+                                    searchFilter={searchFilter}
+                                />
+                            </ToolbarGroup>
+                        </ToolbarContent>
+                    </Toolbar>
+                    <Routes>
+                        <Route path="checks" element={<ProfileChecksPage />} />
+                        <Route path="clusters" element={<ProfileClustersPage />} />
+                        <Route path="*" element={<Navigate to="checks" replace />} />
+                    </Routes>
+                </div>
             </PageSection>
         </>
     );
