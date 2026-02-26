@@ -209,12 +209,7 @@ func addSecurityPolicyCRD(spec chartutil.Values) error {
 		},
 	}
 
-	crds, err := spec.Table("customresourcedefinitions")
-	if err != nil {
-		return errors.New("spec.customresourcedefinitions field is missing")
-	}
-
-	owned, err := values.GetArray(crds, "owned")
+	owned, err := values.GetArray(spec, "customresourcedefinitions.owned")
 	if err != nil {
 		return errors.New("spec.customresourcedefinitions.owned field is missing or has wrong type")
 	}
@@ -234,7 +229,9 @@ func addSecurityPolicyCRD(spec chartutil.Values) error {
 	}
 
 	// Add the SecurityPolicy CRD
-	crds["owned"] = append(filteredOwned, crd)
+	if err := values.SetValue(spec, "customresourcedefinitions.owned", append(filteredOwned, crd)); err != nil {
+		return fmt.Errorf("failed to set customresourcedefinitions.owned: %w", err)
+	}
 
 	return nil
 }
