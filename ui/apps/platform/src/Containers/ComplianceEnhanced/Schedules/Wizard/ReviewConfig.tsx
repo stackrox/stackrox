@@ -105,6 +105,7 @@ function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
                     title="Save for new versus existing scan schedule"
                     component="p"
                     isInline
+                    className="pf-v6-u-mb-lg"
                 >
                     Compliance Operator runs a new scan schedule immediately upon creation, but does
                     not run until scheduled time when you save changes to an existing scan schedule.

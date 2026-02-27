@@ -339,7 +339,7 @@ function ScanConfigsTablePage({
                     </Bullseye>
                 </PageSection>
             ) : (
-                <PageSection hasBodyWrapper={false}>
+                <PageSection>
                     {alertObj !== null && (
                         <Alert
                             title={alertObj.title}
