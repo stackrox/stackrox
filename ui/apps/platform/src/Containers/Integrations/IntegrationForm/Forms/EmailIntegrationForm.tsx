@@ -423,7 +423,7 @@ function EmailIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Annotation key for recipient"
-                        labelIcon={<AnnotationKeyLabelIcon />}
+                        labelHelp={<AnnotationKeyLabelIcon />}
                         fieldId="notifier.labelKey"
                         touched={touched}
                         errors={errors}

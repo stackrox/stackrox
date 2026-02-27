@@ -1,6 +1,5 @@
 import type { ReactElement } from 'react';
-import { Popover } from '@patternfly/react-core';
-import { HelpIcon } from '@patternfly/react-icons';
+import { FormGroupLabelHelp, Popover } from '@patternfly/react-core';
 
 import PopoverBodyContent from 'Components/PopoverBodyContent';
 
@@ -23,14 +22,7 @@ function IntegrationHelpIcon({
             bodyContent={<PopoverBodyContent headerContent={helpTitle} bodyContent={helpText} />}
             hasAutoWidth={hasAutoWidth}
         >
-            <button
-                type="button"
-                aria-label={ariaLabel}
-                onClick={(e) => e.preventDefault()}
-                className="pf-v6-c-form__group-label-help"
-            >
-                <HelpIcon />
-            </button>
+            <FormGroupLabelHelp aria-label={ariaLabel} />
         </Popover>
     );
 }

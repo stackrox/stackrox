@@ -305,7 +305,7 @@ function JiraIntegrationForm({
                         </FormLabelGroup>
                         <FormLabelGroup
                             label="Annotation key for project"
-                            labelIcon={<AnnotationKeyLabelIcon />}
+                            labelHelp={<AnnotationKeyLabelIcon />}
                             fieldId="notifier.labelKey"
                             touched={touched}
                             errors={errors}
