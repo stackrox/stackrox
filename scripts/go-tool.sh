@@ -95,7 +95,14 @@ function go_build() (
   mkdir -p "$output"
 
   echo >&2 "Compiling Go source in ${dirs[*]} to ${output}"
-  invoke_go_build -o "$output" "${dirs[@]}"
+  local total
+  total=$(go list -deps "${dirs[@]}" 2>/dev/null | wc -l | tr -d ' ')
+  local compiled_count=/tmp/go-build-compiled-count
+  invoke_go_build -o "$output" "${dirs[@]}" 2> >(tee >(wc -l | tr -d ' ' > "$compiled_count") >&2)
+  wait
+  local compiled
+  compiled=$(cat "$compiled_count" 2>/dev/null | tr -d ' ')
+  echo >&2 "Build cache: $((total - compiled))/$total hits ($compiled compiled)"
 )
 
 function go_build_file() {
@@ -118,6 +125,30 @@ function go_run() (
 
 function go_test() (
   unset GOOS
+  # Count test compilation cache hits via a dry-run compile.
+  # Extract package paths from args (skip flags and flag values).
+  local pkgs=()
+  local skip_next=false
+  for arg in "$@"; do
+    if $skip_next; then skip_next=false; continue; fi
+    case "$arg" in
+      -coverprofile|-covermode|-coverpkg|-outputdir|-o|-timeout|-p|-parallel|-run|-bench|-benchtime|-count|-cpu|-list|-memprofile|-cpuprofile|-blockprofile|-mutexprofile|-trace|-shuffle)
+        skip_next=true ;;
+      -*) ;;
+      *) pkgs+=("$arg") ;;
+    esac
+  done
+  if [[ ${#pkgs[@]} -gt 0 ]]; then
+    local race_flag=""
+    [[ "$RACE" == "true" ]] && race_flag="-race"
+    local compiled
+    compiled=$(go test -c -x -buildvcs=false $race_flag -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" -o /dev/null "${pkgs[@]}" 2>&1 | grep -c '/compile ' || true)
+    if [[ "$compiled" -eq 0 ]]; then
+      echo >&2 "Test build cache: fully cached"
+    else
+      echo >&2 "Test build cache: $compiled packages compiled"
+    fi
+  fi
   invoke_go test -buildvcs=false "$@"
 )
 

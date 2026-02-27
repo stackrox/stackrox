@@ -49,13 +49,13 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
 
-    - name: Count cached test results
+    - name: Cache stats
       if: always()
       run: |
         f="test-output/test.log"
-        cached=$(grep -c '(cached)' "$f" 2>/dev/null || true)
-        total=$(grep -c '^ok ' "$f" 2>/dev/null || true)
-        echo "::notice::Test cache: ${cached:-0} cached / ${total:-0} total"
+        test_cached=$(grep -c '(cached)' "$f" 2>/dev/null || true)
+        test_total=$(grep -c '^ok ' "$f" 2>/dev/null || true)
+        echo "::notice::Test result cache: ${test_cached:-0} cached / ${test_total:-0} total"
 
     - uses: codecov/codecov-action@v3
       with:
@@ -143,13 +143,13 @@ jobs:
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
 
-    - name: Count cached test results
+    - name: Cache stats
       if: always()
       run: |
         f="test-output/test.log"
-        cached=$(grep -c '(cached)' "$f" 2>/dev/null || true)
-        total=$(grep -c '^ok ' "$f" 2>/dev/null || true)
-        echo "::notice::Test cache: ${cached:-0} cached / ${total:-0} total"
+        test_cached=$(grep -c '(cached)' "$f" 2>/dev/null || true)
+        test_total=$(grep -c '^ok ' "$f" 2>/dev/null || true)
+        echo "::notice::Test result cache: ${test_cached:-0} cached / ${test_total:-0} total"
 
     - uses: codecov/codecov-action@v3
       with:
@@ -461,16 +461,19 @@ jobs:
             "$image"
         done < sensor/tests/images-to-prefetch.txt
 
+    - name: GOCACHE entries before
+      run: echo "GOCACHE_BEFORE=$(ls "$(go env GOCACHE)"/??/*-a 2>/dev/null | wc -l | tr -d ' ')" >> "$GITHUB_ENV"
+
     - name: Run sensor integration tests
       run: make sensor-integration-test
 
-    - name: Count cached test results
+    - name: Cache stats
       if: always()
       run: |
         f="test-output/test.log"
-        cached=$(grep -c '(cached)' "$f" 2>/dev/null || true)
-        total=$(grep -c '^ok ' "$f" 2>/dev/null || true)
-        echo "::notice::Test cache: ${cached:-0} cached / ${total:-0} total"
+        test_cached=$(grep -c '(cached)' "$f" 2>/dev/null || true)
+        test_total=$(grep -c '^ok ' "$f" 2>/dev/null || true)
+        echo "::notice::Test result cache: ${test_cached:-0} cached / ${test_total:-0} total"
 
     - name: Generate junit report
       if: always()
