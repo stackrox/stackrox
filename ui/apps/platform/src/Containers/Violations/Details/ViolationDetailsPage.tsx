@@ -4,7 +4,12 @@ import { useParams } from 'react-router-dom-v5-compat';
 import startCase from 'lodash/startCase';
 import {
     Bullseye,
+    Card,
+    CardBody,
+    CardTitle,
     Divider,
+    Flex,
+    FlexItem,
     Label,
     LabelGroup,
     PageSection,
@@ -21,7 +26,7 @@ import { getClientWizardPolicy } from 'Containers/Policies/policies.utils';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import { fetchAlert } from 'services/AlertsService';
-import { isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
+import { isDeploymentAlert, isNodeAlert, isResourceAlert } from 'types/alert.proto';
 import type { Alert } from 'types/alert.proto';
 import { getDateTime } from 'utils/dateUtils';
 import { VIOLATION_STATE_LABELS } from 'constants/violationStates';
@@ -32,6 +37,7 @@ import DeploymentTabWithoutReadAccessForDeployment from './Deployment/Deployment
 import NetworkPolicies from './NetworkPolicies/NetworkPoliciesTab';
 import EnforcementDetails from './EnforcementDetails';
 import ViolationNotFoundPage from '../ViolationNotFoundPage';
+import NodeOverview from './Node/NodeOverview';
 import ViolationDetails from './ViolationDetails';
 import ViolationsBreadcrumbs from '../ViolationsBreadcrumbs';
 
@@ -83,13 +89,19 @@ function ViolationDetailsPage(): ReactElement {
     const { policy, enforcement } = alert;
     const title = policy.name || 'Unknown violation';
 
-    const entityName = isResourceAlert(alert)
-        ? alert.resource.clusterName
-        : isDeploymentAlert(alert)
-          ? alert.deployment.name
-          : '';
+    const entityName = isNodeAlert(alert)
+        ? alert.node.name
+        : isResourceAlert(alert)
+          ? alert.resource.clusterName
+          : isDeploymentAlert(alert)
+            ? alert.deployment.name
+            : '';
 
-    const resourceType = isResourceAlert(alert) ? alert.resource.resourceType : 'deployment';
+    const resourceType = isNodeAlert(alert)
+        ? 'node'
+        : isResourceAlert(alert)
+          ? alert.resource.resourceType
+          : 'deployment';
 
     const displayedResourceType = startCase(resourceType.toLowerCase());
 
@@ -147,6 +159,37 @@ function ViolationDetailsPage(): ReactElement {
                                         alertDeployment={alert.deployment}
                                     />
                                 )}
+                            </PageSection>
+                        </Tab>
+                    )}
+                    {isNodeAlert(alert) && (
+                        <Tab eventKey={2} title={<TabTitleText>Node</TabTitleText>}>
+                            <PageSection variant="default">
+                                <Flex
+                                    direction={{ default: 'column' }}
+                                    flex={{ default: 'flex_1' }}
+                                    aria-label="Node details"
+                                >
+                                    <Flex flex={{ default: 'flex_1' }}>
+                                        <Flex
+                                            direction={{ default: 'column' }}
+                                            flex={{ default: 'flex_1' }}
+                                        >
+                                            <FlexItem>
+                                                <Card isFlat>
+                                                    <CardTitle component="h3">
+                                                        Node overview
+                                                    </CardTitle>
+                                                    <CardBody>
+                                                        <NodeOverview
+                                                            alertNode={alert.node}
+                                                        />
+                                                    </CardBody>
+                                                </Card>
+                                            </FlexItem>
+                                        </Flex>
+                                    </Flex>
+                                </Flex>
                             </PageSection>
                         </Tab>
                     )}
