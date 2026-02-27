@@ -36,12 +36,6 @@ function IntegrationTile({
         <GalleryItem>
             <Card isClickable isCompact data-testid="integration-tile">
                 <CardHeader
-                    actions={{
-                        actions: <>{numIntegrations > 0 && <Badge>{numIntegrations}</Badge>}</>,
-                        // This is needed to reverse the order of the actions, aligning the badge to the right
-                        // and preventing a gap caused by the navigation `selectableAction` (which is invisible, but takes space).
-                        className: 'pf-v6-u-flex-direction-row-reverse',
-                    }}
                     selectableActions={{
                         onClickAction: () => navigate(linkTo),
                         selectableActionAriaLabel: `View ${label} integrations`,
@@ -49,6 +43,11 @@ function IntegrationTile({
                     className="pf-v6-u-mb-lg"
                 >
                     <>
+                        {numIntegrations > 0 && (
+                            <Badge style={{ position: 'absolute', top: '0.5rem', right: '1rem' }}>
+                                {numIntegrations}
+                            </Badge>
+                        )}
                         <img src={image} alt="" style={{ height: '100px' }} />
                     </>
                 </CardHeader>
