@@ -126,7 +126,7 @@ func (s *serviceImpl) getExpiresAt(
 ) (time.Time, error) {
 	duration, err := protocompat.DurationFromProto(req.GetLifetime())
 	if err != nil {
-		return time.Time{}, errox.InvalidArgs.CausedByf("converting requested token validity duration: %v", err)
+		return time.Time{}, errox.InvalidArgs.CausedByf("converting requested token lifetime: %v", err)
 	}
 	return s.now().Add(duration), nil
 }
