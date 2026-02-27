@@ -7,6 +7,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	authnMocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stretchr/testify/assert"
@@ -102,38 +103,38 @@ func TestValidateClusterScope(t *testing.T) {
 	}{
 		"nil scopes": {
 			scopes:          nil,
-			sensorClusterID: "cluster-A",
+			sensorClusterID: fixtureconsts.Cluster1,
 		},
 		"empty scopes": {
 			scopes:          []*v1.ClusterScope{},
-			sensorClusterID: "cluster-A",
+			sensorClusterID: fixtureconsts.Cluster1,
 		},
 		"matching cluster": {
 			scopes: []*v1.ClusterScope{
-				{ClusterId: "cluster-A"},
+				{ClusterId: fixtureconsts.Cluster1},
 			},
-			sensorClusterID: "cluster-A",
+			sensorClusterID: fixtureconsts.Cluster1,
 		},
 		"multiple matching clusters": {
 			scopes: []*v1.ClusterScope{
-				{ClusterId: "cluster-A"},
-				{ClusterId: "cluster-A", Namespaces: []string{"ns1"}},
+				{ClusterId: fixtureconsts.Cluster1},
+				{ClusterId: fixtureconsts.Cluster1, Namespaces: []string{"ns1"}},
 			},
-			sensorClusterID: "cluster-A",
+			sensorClusterID: fixtureconsts.Cluster1,
 		},
 		"mismatched cluster": {
 			scopes: []*v1.ClusterScope{
-				{ClusterId: "cluster-B"},
+				{ClusterId: fixtureconsts.Cluster2},
 			},
-			sensorClusterID: "cluster-A",
+			sensorClusterID: fixtureconsts.Cluster1,
 			expectError:     true,
 		},
 		"one matching, one mismatched": {
 			scopes: []*v1.ClusterScope{
-				{ClusterId: "cluster-A"},
-				{ClusterId: "cluster-B"},
+				{ClusterId: fixtureconsts.Cluster1},
+				{ClusterId: fixtureconsts.Cluster2},
 			},
-			sensorClusterID: "cluster-A",
+			sensorClusterID: fixtureconsts.Cluster1,
 			expectError:     true,
 		},
 	} {
@@ -163,63 +164,63 @@ func TestEnforce(t *testing.T) {
 		"permission validation failure": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				Permissions:   map[string]v1.Access{"NetworkGraph": v1.Access_READ_ACCESS},
-				ClusterScopes: []*v1.ClusterScope{{ClusterId: "cluster-A"}},
+				ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1}},
 				Lifetime:      durationpb.New(5 * time.Minute),
 			},
-			clusterID:   "cluster-A",
+			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,
 		},
 		"cluster scope violation": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				Permissions:   map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
-				ClusterScopes: []*v1.ClusterScope{{ClusterId: "cluster-B"}},
+				ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster2}},
 				Lifetime:      durationpb.New(5 * time.Minute),
 			},
-			clusterID:   "cluster-A",
+			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,
 		},
 		"invalid proto duration": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				Permissions:   map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
-				ClusterScopes: []*v1.ClusterScope{{ClusterId: "cluster-A"}},
+				ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1}},
 				Lifetime:      &durationpb.Duration{Seconds: 60, Nanos: -654321987},
 			},
-			clusterID:   "cluster-A",
+			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,
 		},
 		"zero lifetime": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				Permissions:   map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
-				ClusterScopes: []*v1.ClusterScope{{ClusterId: "cluster-A"}},
+				ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1}},
 				Lifetime:      durationpb.New(0),
 			},
-			clusterID:   "cluster-A",
+			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,
 		},
 		"negative lifetime": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				Permissions:   map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
-				ClusterScopes: []*v1.ClusterScope{{ClusterId: "cluster-A"}},
+				ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1}},
 				Lifetime:      durationpb.New(-5 * time.Minute),
 			},
-			clusterID:   "cluster-A",
+			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,
 		},
 		"lifetime within limit": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				Permissions:   map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
-				ClusterScopes: []*v1.ClusterScope{{ClusterId: "cluster-A"}},
+				ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1}},
 				Lifetime:      durationpb.New(30 * time.Minute),
 			},
-			clusterID: "cluster-A",
+			clusterID: fixtureconsts.Cluster1,
 		},
 		"lifetime exceeds limit": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				Permissions:   map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
-				ClusterScopes: []*v1.ClusterScope{{ClusterId: "cluster-A"}},
+				ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1}},
 				Lifetime:      durationpb.New(2 * time.Hour),
 			},
-			clusterID:    "cluster-A",
+			clusterID:    fixtureconsts.Cluster1,
 			expectCapped: true,
 		},
 	} {
@@ -244,7 +245,7 @@ func TestEnforce(t *testing.T) {
 	t.Run("missing identity rejects request", func(t *testing.T) {
 		req := &v1.GenerateTokenForPermissionsAndScopeRequest{
 			Permissions:   map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
-			ClusterScopes: []*v1.ClusterScope{{ClusterId: "cluster-A"}},
+			ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1}},
 			Lifetime:      durationpb.New(5 * time.Minute),
 		}
 		result, err := policy.enforce(t.Context(), req)
@@ -263,7 +264,7 @@ func TestEnforce(t *testing.T) {
 
 		req := &v1.GenerateTokenForPermissionsAndScopeRequest{
 			Permissions:   map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
-			ClusterScopes: []*v1.ClusterScope{{ClusterId: "cluster-A"}},
+			ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1}},
 			Lifetime:      durationpb.New(5 * time.Minute),
 		}
 		result, err := policy.enforce(ctx, req)
@@ -275,10 +276,10 @@ func TestEnforce(t *testing.T) {
 		p := newTokenPolicy(0, map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS})
 		req := &v1.GenerateTokenForPermissionsAndScopeRequest{
 			Permissions:   map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
-			ClusterScopes: []*v1.ClusterScope{{ClusterId: "cluster-A"}},
+			ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1}},
 			Lifetime:      durationpb.New(2 * time.Hour),
 		}
-		ctx := sensorContext(t, gomock.NewController(t), "cluster-A")
+		ctx := sensorContext(t, gomock.NewController(t), fixtureconsts.Cluster1)
 		result, err := p.enforce(ctx, req)
 		require.NoError(t, err)
 		assert.Equal(t, 2*time.Hour, result.GetLifetime().AsDuration())
@@ -288,10 +289,10 @@ func TestEnforce(t *testing.T) {
 		p := newTokenPolicy(-policyDuration, map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS})
 		req := &v1.GenerateTokenForPermissionsAndScopeRequest{
 			Permissions:   map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
-			ClusterScopes: []*v1.ClusterScope{{ClusterId: "cluster-A"}},
+			ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1}},
 			Lifetime:      durationpb.New(2 * time.Hour),
 		}
-		ctx := sensorContext(t, gomock.NewController(t), "cluster-A")
+		ctx := sensorContext(t, gomock.NewController(t), fixtureconsts.Cluster1)
 		result, err := p.enforce(ctx, req)
 		require.NoError(t, err)
 		assert.Equal(t, 2*time.Hour, result.GetLifetime().AsDuration())
