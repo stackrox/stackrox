@@ -209,7 +209,12 @@ func addSecurityPolicyCRD(spec chartutil.Values) error {
 		},
 	}
 
-	owned, err := values.GetArray(spec, "customresourcedefinitions.owned")
+	crds, err := spec.Table("customresourcedefinitions")
+	if err != nil {
+		return errors.New("spec.customresourcedefinitions field is missing")
+	}
+
+	owned, err := values.GetArray(crds, "owned")
 	if err != nil {
 		return errors.New("spec.customresourcedefinitions.owned field is missing or has wrong type")
 	}
@@ -228,10 +233,9 @@ func addSecurityPolicyCRD(spec chartutil.Values) error {
 		}
 	}
 
-	// Add the SecurityPolicy CRD
-	if err := values.SetValue(spec, "customresourcedefinitions.owned", append(filteredOwned, crd)); err != nil {
-		return fmt.Errorf("failed to set customresourcedefinitions.owned: %w", err)
-	}
+	// Direct map mutation so the update is visible through any reference to this map,
+	// including references held by doc["spec"] even if spec itself is stale.
+	crds["owned"] = append(filteredOwned, crd)
 
 	return nil
 }
