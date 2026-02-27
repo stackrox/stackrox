@@ -2,11 +2,11 @@ import { useState } from 'react';
 import {
     Alert,
     Button,
+    Content,
     Divider,
     Flex,
     FlexItem,
     PageSection,
-    Text,
     Title,
 } from '@patternfly/react-core';
 
@@ -83,17 +83,17 @@ function BaseImagesPage() {
     return (
         <>
             <PageTitle title="Base Images" />
-            <PageSection variant="light">
+            <PageSection>
                 <Flex
                     alignItems={{ default: 'alignItemsCenter' }}
                     spaceItems={{ default: 'spaceItemsLg' }}
                 >
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h1">Base Images</Title>
-                        <Text>
+                        <Content component="p">
                             Manage approved base images for vulnerability tracking and
                             layer-specific filtering
-                        </Text>
+                        </Content>
                     </FlexItem>
                     {hasWriteAccess && (
                         <Button variant="primary" onClick={onOpenAddModal}>

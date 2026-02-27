@@ -7,7 +7,7 @@ import {
     ChartContainer,
     ChartGroup,
 } from '@patternfly/react-charts/victory';
-import type { ChartLabelProps } from '@patternfly/react-charts';
+import type { ChartLabelProps } from '@patternfly/react-charts/victory';
 
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
 import useResizeObserver from 'hooks/useResizeObserver';
