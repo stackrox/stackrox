@@ -184,7 +184,7 @@ func (k *listenerImpl) handleAllEvents() {
 		complianceSuiteInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceSuite.GroupVersionResource()).Informer()
 		complianceRemediationInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceRemediation.GroupVersionResource()).Informer()
 
-		customRulesAvailable, err = complianceoperator.IsResourceAvailable(k.client.Kubernetes(), complianceoperator.CustomRule)
+		customRulesAvailable, err = sensorUtils.HasAPI(k.client.Kubernetes(), complianceoperator.GetGroupVersion().String(), complianceoperator.CustomRule.Kind)
 		if err != nil {
 			log.Errorf("Failed to check the availability of Compliance Operator Custom Rules, they won't be tracked: %v", err)
 		}

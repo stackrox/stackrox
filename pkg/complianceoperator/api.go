@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/pkg/k8sapi"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/kubernetes"
 )
 
 var (
@@ -103,18 +102,4 @@ func registerOptionalAPIResource(resource v1.APIResource) k8sapi.APIResource {
 	r := k8sapi.APIResource{APIResource: resource}
 	OptionalAPIResources = append(OptionalAPIResources, r)
 	return r
-}
-
-// IsResourceAvailable checks if a CRD is available in the cluster
-func IsResourceAvailable(client kubernetes.Interface, resource k8sapi.APIResource) (bool, error) {
-	resourceList, err := client.Discovery().ServerResourcesForGroupVersion(GetGroupVersion().String())
-	if err != nil {
-		return false, err
-	}
-	for _, r := range resourceList.APIResources {
-		if r.Name == resource.Name {
-			return true, nil
-		}
-	}
-	return false, nil
 }
