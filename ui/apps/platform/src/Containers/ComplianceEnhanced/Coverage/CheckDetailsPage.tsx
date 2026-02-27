@@ -171,7 +171,7 @@ function CheckDetailsPage() {
                 onSelect={(_e, key) => {
                     setActiveTabKey(key);
                 }}
-                className="pf-v6-u-pl-md pf-v6-u-background-color-100 pf-v6-u-flex-shrink-0"
+                className="pf-v6-u-pl-lg pf-v6-u-flex-shrink-0"
             >
                 <Tab
                     eventKey={RESULTS_TAB}
@@ -185,29 +185,31 @@ function CheckDetailsPage() {
                 />
             </Tabs>
             <PageSection hasBodyWrapper={false}>
-                {activeTabKey === RESULTS_TAB && (
-                    <CheckDetailsTable
-                        checkResultsCount={checkResultsResponse?.totalCount ?? 0}
-                        currentDatetime={currentDatetime}
-                        pagination={pagination}
-                        profileName={profileName}
-                        tableState={tableState}
-                        getSortParams={getSortParams}
-                        searchFilter={searchFilter}
-                        onFilterChange={setSearchFilter}
-                        onSearch={onSearch}
-                        onClearFilters={onClearFilters}
-                    />
-                )}
-                {activeTabKey === DETAILS_TAB && (
-                    <PageSection hasBodyWrapper={false} component="div" id={tabContentIdForDetails}>
-                        <CheckDetailsInfo
-                            checkDetails={checkDetailsResponse}
-                            isLoading={isLoadingCheckDetails}
-                            error={CheckDetailsError}
+                <div>
+                    {activeTabKey === RESULTS_TAB && (
+                        <CheckDetailsTable
+                            checkResultsCount={checkResultsResponse?.totalCount ?? 0}
+                            currentDatetime={currentDatetime}
+                            pagination={pagination}
+                            profileName={profileName}
+                            tableState={tableState}
+                            getSortParams={getSortParams}
+                            searchFilter={searchFilter}
+                            onFilterChange={setSearchFilter}
+                            onSearch={onSearch}
+                            onClearFilters={onClearFilters}
                         />
-                    </PageSection>
-                )}
+                    )}
+                    {activeTabKey === DETAILS_TAB && (
+                        <div id={tabContentIdForDetails}>
+                            <CheckDetailsInfo
+                                checkDetails={checkDetailsResponse}
+                                isLoading={isLoadingCheckDetails}
+                                error={CheckDetailsError}
+                            />
+                        </div>
+                    )}
+                </div>
             </PageSection>
         </>
     );
