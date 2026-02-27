@@ -63,7 +63,7 @@ function EditScanConfigDetail({
                 )}
             </PageSection>
             <Divider component="div" />
-            <PageSection hasBodyWrapper={false} isCenterAligned>
+            <PageSection hasBodyWrapper={false} isFilled>
                 {isLoading ? (
                     <Bullseye>
                         <Spinner />
@@ -84,7 +84,7 @@ function EditScanConfigDetail({
                     <PageSection
                         hasBodyWrapper={false}
                         padding={{ default: 'noPadding' }}
-                        isCenterAligned
+                        isFilled
                     >
                         <ScanConfigWizardForm initialFormValues={parsedScanConfig} />
                     </PageSection>
