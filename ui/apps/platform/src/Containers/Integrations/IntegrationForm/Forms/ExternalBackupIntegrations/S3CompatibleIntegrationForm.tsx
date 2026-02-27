@@ -338,7 +338,7 @@ function S3CompatibleIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Object prefix"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="Object prefix"
                                 helpText={
@@ -366,7 +366,7 @@ function S3CompatibleIntegrationForm({
                     <FormLabelGroup
                         isRequired
                         label="Endpoint"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="Endpoint"
                                 helpText={
@@ -397,7 +397,7 @@ function S3CompatibleIntegrationForm({
                     <FormLabelGroup
                         isRequired
                         label="Region"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="Region"
                                 helpText={
@@ -425,7 +425,7 @@ function S3CompatibleIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="URL style"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="Virtual hosting of buckets"
                                 helpText={

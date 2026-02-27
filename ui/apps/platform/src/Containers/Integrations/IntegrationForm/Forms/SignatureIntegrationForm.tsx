@@ -438,7 +438,7 @@ function SignatureIntegrationForm({
                                                                     <FormLabelGroup
                                                                         isRequired
                                                                         label="Certificate OIDC issuer"
-                                                                        labelIcon={
+                                                                        labelHelp={
                                                                             <IntegrationHelpIcon
                                                                                 helpTitle="Certificate OIDC issuer"
                                                                                 helpText={
@@ -488,7 +488,7 @@ function SignatureIntegrationForm({
                                                                     <FormLabelGroup
                                                                         isRequired
                                                                         label="Certificate identity"
-                                                                        labelIcon={
+                                                                        labelHelp={
                                                                             <IntegrationHelpIcon
                                                                                 helpTitle="Certificate identity"
                                                                                 helpText={
@@ -550,7 +550,7 @@ function SignatureIntegrationForm({
                                                                 >
                                                                     <FormLabelGroup
                                                                         label="Certificate chain (PEM encoded)"
-                                                                        labelIcon={
+                                                                        labelHelp={
                                                                             <IntegrationHelpIcon
                                                                                 helpTitle="Certificate chain (PEM encoded)"
                                                                                 helpText={
@@ -616,7 +616,7 @@ function SignatureIntegrationForm({
                                                                     </FormLabelGroup>
                                                                     <FormLabelGroup
                                                                         label="Intermediate certificate (PEM encoded)"
-                                                                        labelIcon={
+                                                                        labelHelp={
                                                                             <IntegrationHelpIcon
                                                                                 helpTitle="Intermediate certificate (PEM encoded)"
                                                                                 helpText={

@@ -211,7 +211,7 @@ function AzureIntegrationForm({
                     <FormLabelGroup
                         label="Endpoint"
                         isRequired
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="Endpoint"
                                 helpText={
@@ -240,7 +240,7 @@ function AzureIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Short-lived tokens"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="Use workload identity"
                                 helpText={
@@ -305,7 +305,7 @@ function AzureIntegrationForm({
                     )}
                     <FormLabelGroup
                         label="Username"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="Username"
                                 helpText={
@@ -338,7 +338,7 @@ function AzureIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Password"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="Password"
                                 helpText={
