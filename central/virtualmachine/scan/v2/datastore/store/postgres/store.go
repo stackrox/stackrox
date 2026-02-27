@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -102,11 +103,12 @@ func insertIntoVirtualMachineScanV2(batch *pgx.Batch, obj *storage.VirtualMachin
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		pgutils.NilOrUUID(obj.GetVmV2Id()),
+		protocompat.NilOrTime(obj.GetScanTime()),
 		obj.GetTopCvss(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO virtual_machine_scan_v2 (Id, VmV2Id, TopCvss, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, VmV2Id = EXCLUDED.VmV2Id, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO virtual_machine_scan_v2 (Id, VmV2Id, ScanTime, TopCvss, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, VmV2Id = EXCLUDED.VmV2Id, ScanTime = EXCLUDED.ScanTime, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
