@@ -28,7 +28,7 @@ const (
 	// tokenCacheTTL is how long tokens are cached locally before being refreshed.
 	tokenCacheTTL = 3 * time.Minute
 
-	// tokenTTL is the requested token validity duration.
+	// tokenTTL is the requested token lifetime.
 	// Slightly longer than cache TTL to ensure tokens remain valid during cache lifetime.
 	tokenTTL = tokenCacheTTL + 1*time.Minute
 
