@@ -116,16 +116,13 @@ func withResolvedRoles(
 	token *tokens.TokenInfo,
 	authProvider authproviders.Provider,
 ) authn.Identity {
-	roleNames := make([]string, 0, len(roles))
-	for _, role := range roles {
-		roleNames = append(roleNames, role.GetRoleName())
-	}
+	roleNames := permissionsUtils.RoleNames(roles)
 	var email string
 	if token.ExternalUser != nil {
 		email = token.ExternalUser.Email
 	}
 
-	attributes := map[string][]string{"role": permissionsUtils.RoleNames(roles), "name": {token.Name}}
+	attributes := map[string][]string{"role": roleNames, "name": {token.Name}}
 	id := &roleBasedIdentity{
 		uid:           fmt.Sprintf("auth-token:%s", token.ID),
 		username:      email,
