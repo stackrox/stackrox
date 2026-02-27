@@ -1,6 +1,8 @@
 package csv
 
 import (
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -239,6 +241,15 @@ func TestConstructRelatedImages_MultipleEnvVars(t *testing.T) {
 }
 
 func TestConstructRelatedImages_NoEnvVars(t *testing.T) {
+	// Unset all RELATED_IMAGE_* env vars that may be set in CI environments.
+	for _, env := range os.Environ() {
+		if strings.HasPrefix(env, "RELATED_IMAGE_") {
+			key, val, _ := strings.Cut(env, "=")
+			require.NoError(t, os.Unsetenv(key))
+			t.Cleanup(func() { require.NoError(t, os.Setenv(key, val)) })
+		}
+	}
+
 	spec := map[string]any{}
 	managerImage := "quay.io/rhacs-eng/rhacs-operator:4.5.0"
 
