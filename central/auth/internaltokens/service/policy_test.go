@@ -92,7 +92,7 @@ func TestValidatePermissions(t *testing.T) {
 	}
 }
 
-func TestEnforceClusterScope(t *testing.T) {
+func TestValidateClusterScope(t *testing.T) {
 	policy := newTokenPolicy(0, nil)
 
 	for name, tc := range map[string]struct {
