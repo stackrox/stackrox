@@ -11,7 +11,7 @@ import {
     getInteractiveLegendEvents,
     getInteractiveLegendItemStyles,
 } from '@patternfly/react-charts/victory';
-import type { ChartLabelProps } from '@patternfly/react-charts';
+import type { ChartLabelProps } from '@patternfly/react-charts/victory';
 import sortBy from 'lodash/sortBy';
 
 import { filteredWorkflowViewKey } from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
