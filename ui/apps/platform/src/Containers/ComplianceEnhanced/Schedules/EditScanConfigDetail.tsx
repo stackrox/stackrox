@@ -81,11 +81,7 @@ function EditScanConfigDetail({
                     )
                 )}
                 {!isLoading && scanConfig && (
-                    <PageSection
-                        hasBodyWrapper={false}
-                        padding={{ default: 'noPadding' }}
-                        isFilled
-                    >
+                    <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }} isFilled>
                         <ScanConfigWizardForm initialFormValues={parsedScanConfig} />
                     </PageSection>
                 )}

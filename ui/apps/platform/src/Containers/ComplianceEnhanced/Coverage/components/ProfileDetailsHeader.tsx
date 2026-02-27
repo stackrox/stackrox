@@ -32,10 +32,7 @@ function ProfileDetailsHeader({
 
     if (isLoading) {
         return (
-            <Flex
-                className="pf-v6-u-p-lg"
-                direction={{ default: 'column' }}
-            >
+            <Flex className="pf-v6-u-p-lg" direction={{ default: 'column' }}>
                 <Title headingLevel="h2">{profileName}</Title>
                 <Skeleton screenreaderText="Loading profile details" />
             </Flex>
@@ -46,10 +43,7 @@ function ProfileDetailsHeader({
         const { description, productType, profileVersion, title } = profileDetails;
 
         return (
-            <Flex
-                className="pf-v6-u-p-lg"
-                direction={{ default: 'column' }}
-            >
+            <Flex className="pf-v6-u-p-lg" direction={{ default: 'column' }}>
                 <Flex
                     alignItems={{ default: 'alignItemsFlexStart' }}
                     justifyContent={{ default: 'justifyContentSpaceBetween' }}
