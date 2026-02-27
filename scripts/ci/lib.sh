@@ -804,21 +804,20 @@ _image_prefetcher_system_await() {
 _image_prefetcher_pin_images() {
     local ns="$1"
     local name="$2"
-    local pin_ds="pin-${name}"
 
     info "Pinning prefetched images to prevent kubelet GC..."
 
-    # Create a script that labels each prefetched image as pinned in containerd.
+    # Build a pin script that uses the host's ctr via nsenter.
+    # The script reads the image list and labels each image as pinned.
     local pin_script
     pin_script=$(mktemp)
     cat <<'SCRIPT_EOF' > "$pin_script"
 #!/bin/sh
-socket="/host-containerd/containerd.sock"
 pinned=0
 failed=0
 while IFS= read -r img || [ -n "$img" ]; do
     case "$img" in "#"*|"") continue ;; esac
-    if ctr -a "$socket" -n k8s.io images label "$img" "io.cri-containerd.pinned=pinned" >/dev/null 2>&1; then
+    if nsenter -t 1 -m -- ctr -n k8s.io images label "$img" "io.cri-containerd.pinned=pinned" >/dev/null 2>&1; then
         pinned=$((pinned + 1))
     else
         echo "WARN: could not pin: $img"
@@ -828,14 +827,14 @@ done < /tmp/list/images.txt
 echo "Pinned $pinned images ($failed failed)."
 SCRIPT_EOF
 
-    kubectl create configmap "${pin_ds}-script" -n "$ns" \
+    kubectl create configmap "pin-${name}-script" -n "$ns" \
         --from-file=pin-images.sh="$pin_script" \
         --dry-run=client -o yaml | kubectl apply -f -
     rm -f "$pin_script"
 
-    # DaemonSet runs the pin script as an init container then exits.
-    # Rollout status confirms the init container completed on all nodes.
-    # The DaemonSet is deleted afterward to avoid leaving pods running.
+    # DaemonSet uses a tiny busybox image (already prefetched) with hostPID
+    # and nsenter to run the host's ctr. No need to pull large images.
+    local pin_ds="pin-${name}"
     cat <<EOF | kubectl apply -n "$ns" -f -
 apiVersion: apps/v1
 kind: DaemonSet
@@ -853,14 +852,13 @@ spec:
     spec:
       tolerations:
       - operator: Exists
+      hostPID: true
       restartPolicy: Always
       initContainers:
       - name: pin
-        image: ghcr.io/containerd/containerd:2.0
-        command: ["sh", "-c", "sh /tmp/script/pin-images.sh"]
+        image: quay.io/stackrox-io/image-prefetcher:v0.4.3
+        command: ["sh", "/tmp/script/pin-images.sh"]
         volumeMounts:
-        - name: containerd-socket
-          mountPath: /host-containerd
         - name: image-list
           mountPath: /tmp/list
           readOnly: true
@@ -878,7 +876,7 @@ spec:
             memory: 128Mi
       containers:
       - name: done
-        image: docker.io/library/alpine:3.21
+        image: quay.io/stackrox-io/image-prefetcher:v0.4.3
         command: ["sh", "-c", "echo done"]
         resources:
           requests:
@@ -888,15 +886,12 @@ spec:
             cpu: 1m
             memory: 8Mi
       volumes:
-      - name: containerd-socket
-        hostPath:
-          path: /var/run/containerd
       - name: image-list
         configMap:
           name: ${name}
       - name: pin-script
         configMap:
-          name: ${pin_ds}-script
+          name: pin-${name}-script
 EOF
 
     if kubectl rollout status daemonset "$pin_ds" -n "$ns" --timeout 5m; then
@@ -904,9 +899,8 @@ EOF
     else
         info "WARNING: Image pinning did not complete in time. Tests may experience ErrImageNeverPull."
     fi
-    # Clean up — pinning is done, no need to keep pods around
     kubectl delete daemonset "$pin_ds" -n "$ns" --ignore-not-found >/dev/null 2>&1 || true
-    kubectl delete configmap "${pin_ds}-script" -n "$ns" --ignore-not-found >/dev/null 2>&1 || true
+    kubectl delete configmap "pin-${name}-script" -n "$ns" --ignore-not-found >/dev/null 2>&1 || true
 }
 
 image_prefetcher_await_set() {
