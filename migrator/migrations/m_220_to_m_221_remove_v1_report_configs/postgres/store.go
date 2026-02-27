@@ -4,14 +4,11 @@ package postgres
 
 import (
 	"context"
-	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
-	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -68,8 +65,8 @@ func New(db postgres.DB) Store {
 		pkGetter,
 		insertIntoReportConfigurations,
 		copyFromReportConfigurations,
-		metricsSetAcquireDBConnDuration,
-		metricsSetPostgresOperationDurationTime,
+		nil,
+		nil,
 		targetResource,
 		pgSearch.GetDefaultSort(search.ReportName.String(), false),
 		nil,
@@ -80,14 +77,6 @@ func New(db postgres.DB) Store {
 
 func pkGetter(obj *storeType) string {
 	return obj.GetId()
-}
-
-func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
-	metrics.SetPostgresOperationDurationTime(start, op, storeName)
-}
-
-func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
-	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
 func insertIntoReportConfigurations(batch *pgx.Batch, obj *storage.ReportConfiguration) error {
