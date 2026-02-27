@@ -856,8 +856,8 @@ spec:
       restartPolicy: Always
       initContainers:
       - name: pin
-        image: docker.io/library/alpine:3.21
-        command: ["sh", "-c", "apk add --no-cache -X https://dl-cdn.alpinelinux.org/alpine/v3.21/community containerd-ctr && sh /tmp/script/pin-images.sh"]
+        image: ghcr.io/containerd/containerd:2.0
+        command: ["sh", "-c", "sh /tmp/script/pin-images.sh"]
         volumeMounts:
         - name: containerd-socket
           mountPath: /host-containerd
