@@ -69,6 +69,7 @@ echo ""
 if [ -d "$WORK_DIR/python-build/build" ] || [ -d "$WORK_DIR/go-build/build" ]; then
   echo "=== Pruning createdAt timestamps from build/bundle..."
   find "$WORK_DIR" -name "*.clusterserviceversion.yaml" -exec sed -i.bak '/^    createdAt:/d' {} \;
+  find "$WORK_DIR" -name "*.bak" -delete
 
   echo ""
   echo "=== Comparing build/bundle outputs..."
