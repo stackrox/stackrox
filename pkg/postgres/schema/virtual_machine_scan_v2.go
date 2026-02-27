@@ -5,6 +5,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -61,6 +62,7 @@ const (
 type VirtualMachineScanV2 struct {
 	ID                  string           `gorm:"column:id;type:uuid;primaryKey"`
 	VmV2ID              string           `gorm:"column:vmv2id;type:uuid;index:virtualmachinescanv2_vmv2id,type:btree"`
+	ScanTime            *time.Time       `gorm:"column:scantime;type:timestamp;index:virtualmachinescanv2_scantime,type:btree"`
 	TopCvss             float32          `gorm:"column:topcvss;type:numeric"`
 	Serialized          []byte           `gorm:"column:serialized;type:bytea"`
 	VirtualMachineV2Ref VirtualMachineV2 `gorm:"foreignKey:vmv2id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
