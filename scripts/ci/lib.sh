@@ -146,6 +146,7 @@ setup_deployment_env() {
     fi
 
     ci_export ROX_PRODUCT_BRANDING "RHACS_BRANDING"
+    ci_export ROX_SCANNER_V4 "true"
 }
 
 get_central_debug_dump() {
