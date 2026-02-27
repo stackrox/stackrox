@@ -19,7 +19,7 @@ const (
 
 // defaultAllowedPermissions lists the resource permissions that the default
 // policy allows sensors to request. These must stay in sync with the needs
-// of the OCP console plugin.
+// of the known token consumers (including the OCP console plugin).
 var defaultAllowedPermissions = map[string]v1.Access{
 	"Deployment": v1.Access_READ_ACCESS,
 	"Image":      v1.Access_READ_ACCESS,
