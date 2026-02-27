@@ -20,6 +20,9 @@ scanner:
 
 scannerV4:
   matcher:
+    replicas: 1
+    autoscaling:
+      disable: true
     resources:
       requests:
         memory: "4Gi"
@@ -28,6 +31,9 @@ scannerV4:
         memory: "4Gi"
         cpu: "2000m"
   indexer:
+    replicas: 1
+    autoscaling:
+      disable: true
     resources:
       requests:
         memory: "2Gi"
