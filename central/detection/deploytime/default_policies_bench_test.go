@@ -1,6 +1,7 @@
 package deploytime
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/central/detection"
@@ -31,7 +32,7 @@ func BenchmarkDefaultPolicies(b *testing.B) {
 	images := fixtures.DeploymentImages()
 
 	for b.Loop() {
-		_, err := detection.Detect(deploytime.DetectionContext{}, booleanpolicy.EnhancedDeployment{
+		_, err := detection.Detect(context.Background(), deploytime.DetectionContext{}, booleanpolicy.EnhancedDeployment{
 			Deployment: dep,
 			Images:     images,
 		})

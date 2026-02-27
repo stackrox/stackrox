@@ -1,6 +1,7 @@
 package buildtime
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/central/detection"
@@ -70,7 +71,7 @@ func TestDetector(t *testing.T) {
 	} {
 		t.Run(protocompat.MarshalTextString(testCase.image), func(t *testing.T) {
 			filter, getUnusedCategories := detection.MakeCategoryFilter(testCase.allowedCategories)
-			alerts, err := detector.Detect(testCase.image, filter)
+			alerts, err := detector.Detect(context.Background(), testCase.image, filter)
 			require.NoError(t, err)
 			require.ElementsMatch(t, testCase.expectedUnusedCategories, getUnusedCategories())
 			assert.Len(t, alerts, testCase.expectedAlerts)

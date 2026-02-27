@@ -1,6 +1,7 @@
 package matcher
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -74,7 +75,7 @@ func TestNamespaceMatcher(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		actual := NewNamespaceMatcher(c.namespace).IsPolicyApplicable(c.policy)
+		actual := NewNamespaceMatcher(c.namespace).IsPolicyApplicable(context.Background(), c.policy)
 		assert.Equal(t, c.matches, actual)
 	}
 }
@@ -174,7 +175,7 @@ func TestNamespaceMatcherWithWhitespace(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		actual := NewNamespaceMatcher(c.namespace).IsPolicyApplicable(c.policy)
+		actual := NewNamespaceMatcher(c.namespace).IsPolicyApplicable(context.Background(), c.policy)
 		assert.Equal(t, c.matches, actual)
 	}
 }

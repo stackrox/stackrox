@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -29,7 +30,7 @@ func (s *RuntimeDetectorTestSuite) TestUpdateSecrets() {
 	d := NewDetector(policySet)
 
 	kubeEvent := s.getKubeEvent(storage.KubernetesEvent_Object_SECRETS, storage.KubernetesEvent_UPDATE, "cluster-id", "namespace", "secret-name", false)
-	alerts, err := d.DetectForAuditEvents([]*storage.KubernetesEvent{kubeEvent})
+	alerts, err := d.DetectForAuditEvents(context.Background(), []*storage.KubernetesEvent{kubeEvent})
 
 	s.NoError(err)
 	s.NotNil(alerts)
@@ -47,7 +48,7 @@ func (s *RuntimeDetectorTestSuite) TestCreateConfigMap() {
 	d := NewDetector(policySet)
 
 	kubeEvent := s.getKubeEvent(storage.KubernetesEvent_Object_CONFIGMAPS, storage.KubernetesEvent_CREATE, "cluster-id", "namespace", "secret-name", true)
-	alerts, err := d.DetectForAuditEvents([]*storage.KubernetesEvent{kubeEvent})
+	alerts, err := d.DetectForAuditEvents(context.Background(), []*storage.KubernetesEvent{kubeEvent})
 
 	s.NoError(err)
 	s.NotNil(alerts)
@@ -74,12 +75,12 @@ func (s *RuntimeDetectorTestSuite) TestConfigMapPolicyWithRegex() {
 	d := NewDetector(policySet)
 
 	kubeEvent := s.getKubeEvent(storage.KubernetesEvent_Object_CONFIGMAPS, storage.KubernetesEvent_CREATE, "cluster-id", "namespace", "config-name", true)
-	alerts, err := d.DetectForAuditEvents([]*storage.KubernetesEvent{kubeEvent})
+	alerts, err := d.DetectForAuditEvents(context.Background(), []*storage.KubernetesEvent{kubeEvent})
 	s.NoError(err)
 	s.Len(alerts, 1, "incorrect number of alerts received")
 
 	kubeEvent.Object.Name = "secret-hello"
-	alerts, err = d.DetectForAuditEvents([]*storage.KubernetesEvent{kubeEvent})
+	alerts, err = d.DetectForAuditEvents(context.Background(), []*storage.KubernetesEvent{kubeEvent})
 	s.NoError(err)
 	s.Len(alerts, 0, "incorrect number of alerts received")
 }

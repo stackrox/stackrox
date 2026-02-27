@@ -1,6 +1,7 @@
 package matcher
 
 import (
+	"context"
 	"testing"
 
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
@@ -76,7 +77,7 @@ func TestDeploymentMatcher(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		actual := NewDeploymentMatcher(c.deployment, nil, nil).IsPolicyApplicable(c.policy)
+		actual := NewDeploymentMatcher(c.deployment, nil, nil).IsPolicyApplicable(context.Background(), c.policy)
 		assert.Equal(t, c.matches, actual)
 	}
 }
@@ -211,7 +212,7 @@ func TestDeploymentWithExclusion(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		actual := NewDeploymentMatcher(c.deployment, nil, nil).IsPolicyApplicable(c.policy)
+		actual := NewDeploymentMatcher(c.deployment, nil, nil).IsPolicyApplicable(context.Background(), c.policy)
 		assert.Equal(t, c.matches, actual)
 	}
 }
@@ -341,7 +342,7 @@ func TestDeploymentMatcher_WithLabelProviders(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			matcher := NewDeploymentMatcher(deployment, clusterDS, namespaceDS)
-			actual := matcher.IsPolicyApplicable(c.policy)
+			actual := matcher.IsPolicyApplicable(context.Background(), c.policy)
 			assert.Equal(t, c.matches, actual)
 		})
 	}

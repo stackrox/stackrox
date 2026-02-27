@@ -1,6 +1,7 @@
 package scopecomp
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -346,6 +347,6 @@ func TestWithinScope(t *testing.T) {
 
 		cs, err := CompileScope(test.scope, clusterProvider, namespaceProvider)
 		require.NoError(t, err)
-		assert.Equalf(t, test.result, cs.MatchesDeployment(test.deployment), "Failed test '%s'", test.name)
+		assert.Equalf(t, test.result, cs.MatchesDeployment(context.Background(), test.deployment), "Failed test '%s'", test.name)
 	}
 }

@@ -1,6 +1,8 @@
 package detection
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
@@ -392,9 +394,9 @@ func (cp *compiledPolicy) Policy() *storage.Policy {
 }
 
 // AppliesTo returns if the compiled policy applies to the input object.
-func (cp *compiledPolicy) AppliesTo(input interface{}) bool {
+func (cp *compiledPolicy) AppliesTo(ctx context.Context, input interface{}) bool {
 	for _, predicate := range cp.predicates {
-		if predicate.AppliesTo(input) {
+		if predicate.AppliesTo(ctx, input) {
 			return true
 		}
 	}
@@ -403,7 +405,7 @@ func (cp *compiledPolicy) AppliesTo(input interface{}) bool {
 
 // Predicate says whether or not a compiled policy applies to an object.
 type Predicate interface {
-	AppliesTo(interface{}) bool
+	AppliesTo(ctx context.Context, input interface{}) bool
 }
 
 type compiledExclusion struct {
@@ -447,7 +449,7 @@ func newCompiledExclusion(exclusion *storage.Exclusion) (*compiledExclusion, err
 	return cx, nil
 }
 
-func (cw *compiledExclusion) MatchesDeployment(deployment *storage.Deployment) bool {
+func (cw *compiledExclusion) MatchesDeployment(ctx context.Context, deployment *storage.Deployment) bool {
 	if exclusionIsExpired(cw.exclusion) {
 		return false
 	}
@@ -456,14 +458,14 @@ func (cw *compiledExclusion) MatchesDeployment(deployment *storage.Deployment) b
 		return false
 	}
 
-	return cw.cs.MatchesDeployment(deployment)
+	return cw.cs.MatchesDeployment(ctx, deployment)
 }
 
-func (cw *compiledExclusion) MatchesAuditEvent(auditEvent *storage.KubernetesEvent) bool {
+func (cw *compiledExclusion) MatchesAuditEvent(ctx context.Context, auditEvent *storage.KubernetesEvent) bool {
 	if exclusionIsExpired(cw.exclusion) {
 		return false
 	}
-	if !cw.cs.MatchesAuditEvent(auditEvent) {
+	if !cw.cs.MatchesAuditEvent(ctx, auditEvent) {
 		return false
 	}
 	return true
@@ -475,13 +477,13 @@ type deploymentPredicate struct {
 	scopes     []*scopecomp.CompiledScope
 }
 
-func (cp *deploymentPredicate) AppliesTo(input interface{}) bool {
+func (cp *deploymentPredicate) AppliesTo(ctx context.Context, input interface{}) bool {
 	deployment, isDeployment := input.(*storage.Deployment)
 	if !isDeployment {
 		return false
 	}
 
-	return deploymentMatchesScopes(deployment, cp.scopes) && !deploymentMatchesExclusions(deployment, cp.exclusions)
+	return deploymentMatchesScopes(ctx, deployment, cp.scopes) && !deploymentMatchesExclusions(ctx, deployment, cp.exclusions)
 }
 
 // Predicate for images.
@@ -489,7 +491,7 @@ type imagePredicate struct {
 	policy *storage.Policy
 }
 
-func (cp *imagePredicate) AppliesTo(input interface{}) bool {
+func (cp *imagePredicate) AppliesTo(ctx context.Context, input interface{}) bool {
 	image, isImage := input.(*storage.Image)
 	if !isImage {
 		return false
@@ -503,19 +505,19 @@ type auditEventPredicate struct {
 	scopes     []*scopecomp.CompiledScope
 }
 
-func (cp *auditEventPredicate) AppliesTo(input interface{}) bool {
+func (cp *auditEventPredicate) AppliesTo(ctx context.Context, input interface{}) bool {
 	auditEvent, isAuditEvent := input.(*storage.KubernetesEvent)
 	if !isAuditEvent {
 		return false
 	}
 
-	return auditEventMatchesScopes(auditEvent, cp.scopes) && !auditEventMatchesExclusions(auditEvent, cp.exclusions)
+	return auditEventMatchesScopes(ctx, auditEvent, cp.scopes) && !auditEventMatchesExclusions(ctx, auditEvent, cp.exclusions)
 }
 
 // Predicate for file access events on nodes.
 type fileAccessPredicate struct{}
 
-func (cp *fileAccessPredicate) AppliesTo(input interface{}) bool {
+func (cp *fileAccessPredicate) AppliesTo(ctx context.Context, input interface{}) bool {
 	_, isFileAccess := input.(*storage.FileAccess)
 	return isFileAccess
 }

@@ -162,7 +162,7 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 	}
 
 	getAlertsFunc := func(dep *storage.Deployment, imgs []*storage.Image) ([]*storage.Alert, error) {
-		return s.deploytimeDetector.Detect(detectionCtx, booleanpolicy.EnhancedDeployment{
+		return s.deploytimeDetector.Detect(context.Background(), detectionCtx, booleanpolicy.EnhancedDeployment{
 			Deployment: dep,
 			Images:     imgs,
 		})
