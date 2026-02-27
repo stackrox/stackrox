@@ -108,22 +108,22 @@ function CoveragesPage() {
             {!isDisclaimerAccepted && (
                 <ComplianceUsageDisclaimer onAccept={() => setIsDisclaimerAccepted(true)} />
             )}
-            <PageSection hasBodyWrapper={false}>
-                {isLoadingScanConfigProfiles ? (
-                    <Bullseye>
-                        <Spinner />
-                    </Bullseye>
-                ) : (
-                    <>
-                        <ProfilesToggleGroup
-                            profileName={profileName}
-                            profiles={scanConfigProfilesResponse.profiles}
-                            handleToggleChange={handleProfilesToggleChange}
-                        />
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
+                <div>
+                    {isLoadingScanConfigProfiles ? (
+                        <Bullseye>
+                            <Spinner />
+                        </Bullseye>
+                    ) : (
+                        <>
+                            <ProfilesToggleGroup
+                                profileName={profileName}
+                                profiles={scanConfigProfilesResponse.profiles}
+                                handleToggleChange={handleProfilesToggleChange}
+                            />
                         <Divider component="div" />
                         <Flex
                             alignItems={{ default: 'alignItemsStretch' }}
-                            className="pf-v6-u-background-color-100"
                             columnGap={{ default: 'columnGapNone' }}
                             direction={{ default: 'column', md: 'row' }}
                             flexWrap={{ default: 'nowrap' }}
@@ -160,43 +160,43 @@ function CoveragesPage() {
                                 </>
                             )}
                         </Flex>
-                        <Divider component="div" />
-                        <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0" component="div">
-                            <Toolbar>
-                                <ToolbarContent>
-                                    <CompoundSearchFilter
-                                        config={searchFilterConfig}
-                                        defaultEntity="Profile check"
-                                        searchFilter={searchFilter}
-                                        onSearch={onSearch}
-                                    />
-                                    <SearchFilterSelectInclusive
-                                        attribute={attributeForComplianceCheckStatus}
-                                        isSeparate
-                                        onSearch={onSearch}
-                                        searchFilter={searchFilter}
-                                    />
-                                    <ToolbarGroup className="pf-v6-u-w-100">
-                                        <CompoundSearchFilterLabels
-                                            attributesSeparateFromConfig={[
-                                                attributeForComplianceCheckStatus,
-                                            ]}
-                                            config={searchFilterConfig}
-                                            onFilterChange={setSearchFilter}
-                                            searchFilter={searchFilter}
-                                        />
-                                    </ToolbarGroup>
-                                </ToolbarContent>
-                            </Toolbar>
-                            <Divider />
-                            <Routes>
-                                <Route path="checks" element={<ProfileChecksPage />} />
-                                <Route path="clusters" element={<ProfileClustersPage />} />
-                                <Route path="*" element={<Navigate to="checks" replace />} />
-                            </Routes>
-                        </PageSection>
-                    </>
-                )}
+                        </>
+                    )}
+                </div>
+            </PageSection>
+            <Divider component="div" />
+            <PageSection hasBodyWrapper={false}>
+                <div>
+                    <Toolbar>
+                        <ToolbarContent>
+                            <CompoundSearchFilter
+                                config={searchFilterConfig}
+                                defaultEntity="Profile check"
+                                searchFilter={searchFilter}
+                                onSearch={onSearch}
+                            />
+                            <SearchFilterSelectInclusive
+                                attribute={attributeForComplianceCheckStatus}
+                                isSeparate
+                                onSearch={onSearch}
+                                searchFilter={searchFilter}
+                            />
+                            <ToolbarGroup className="pf-v6-u-w-100">
+                                <CompoundSearchFilterLabels
+                                    attributesSeparateFromConfig={[attributeForComplianceCheckStatus]}
+                                    config={searchFilterConfig}
+                                    onFilterChange={setSearchFilter}
+                                    searchFilter={searchFilter}
+                                />
+                            </ToolbarGroup>
+                        </ToolbarContent>
+                    </Toolbar>
+                    <Routes>
+                        <Route path="checks" element={<ProfileChecksPage />} />
+                        <Route path="clusters" element={<ProfileClustersPage />} />
+                        <Route path="*" element={<Navigate to="checks" replace />} />
+                    </Routes>
+                </div>
             </PageSection>
         </>
     );
