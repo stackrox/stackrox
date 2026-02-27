@@ -116,7 +116,7 @@ function AcscsEmailIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Annotation key for recipient"
-                        labelIcon={<AnnotationKeyLabelIcon />}
+                        labelHelp={<AnnotationKeyLabelIcon />}
                         fieldId="labelKey"
                         touched={touched}
                         errors={errors}

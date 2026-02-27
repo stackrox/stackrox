@@ -294,7 +294,7 @@ function S3IntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Object prefix"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="Object prefix"
                                 helpText={
@@ -321,7 +321,7 @@ function S3IntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Endpoint"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="AWS S3 endpoint"
                                 helpText={
@@ -366,7 +366,7 @@ function S3IntegrationForm({
                     <FormLabelGroup
                         isRequired
                         label="Region"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="AWS S3 region"
                                 helpText={
@@ -405,7 +405,7 @@ function S3IntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Short-lived tokens"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="AWS container IAM role"
                                 helpText={

@@ -1,12 +1,11 @@
 import type { ReactElement } from 'react';
-import { Popover } from '@patternfly/react-core';
-import { HelpIcon } from '@patternfly/react-icons';
+import { FormGroupLabelHelp, Popover } from '@patternfly/react-core';
 
 function AnnotationKeyLabelIcon(): ReactElement {
     return (
         <Popover
+            aria-label="Annotation field help popover"
             showClose={false}
-            aria-label="Information about annotation key"
             bodyContent={
                 <div>
                     Using an annotation key, you can define an audience to notify about policy
@@ -15,15 +14,7 @@ function AnnotationKeyLabelIcon(): ReactElement {
                 </div>
             }
         >
-            <button
-                type="button"
-                aria-label="More info for annotation field"
-                onClick={(e) => e.preventDefault()}
-                aria-describedby="simple-form-name-01"
-                className="pf-v6-c-form__group-label-help"
-            >
-                <HelpIcon />
-            </button>
+            <FormGroupLabelHelp aria-label="Information about annotation field" />
         </Popover>
     );
 }

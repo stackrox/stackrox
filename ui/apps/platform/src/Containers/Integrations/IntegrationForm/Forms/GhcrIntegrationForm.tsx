@@ -145,7 +145,7 @@ function GhcrIntegrationForm({
                     <FormLabelGroup
                         isRequired
                         label="Endpoint"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="GitHub container registry endpoint"
                                 helpText={
@@ -176,7 +176,7 @@ function GhcrIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Username"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="GitHub username"
                                 helpText={
@@ -229,7 +229,7 @@ function GhcrIntegrationForm({
                     )}
                     <FormLabelGroup
                         label="GitHub token"
-                        labelIcon={
+                        labelHelp={
                             <IntegrationHelpIcon
                                 helpTitle="GitHub token"
                                 helpText={
