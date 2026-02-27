@@ -149,7 +149,8 @@ func TestValidateClusterScope(t *testing.T) {
 }
 
 func TestEnforce(t *testing.T) {
-	policy := newTokenPolicy(1*time.Hour, map[string]v1.Access{
+	policyDuration := 1 * time.Hour
+	policy := newTokenPolicy(policyDuration, map[string]v1.Access{
 		"Deployment": v1.Access_READ_ACCESS,
 	})
 
@@ -232,7 +233,7 @@ func TestEnforce(t *testing.T) {
 				require.NoError(t, err)
 				require.NotNil(t, result)
 				if tc.expectCapped {
-					assert.Equal(t, durationpb.New(1*time.Hour), result.GetLifetime())
+					assert.Equal(t, durationpb.New(policyDuration), result.GetLifetime())
 				} else {
 					assert.Equal(t, tc.req.GetLifetime(), result.GetLifetime())
 				}
@@ -284,7 +285,7 @@ func TestEnforce(t *testing.T) {
 	})
 
 	t.Run("negative maxLifetime applies no cap", func(t *testing.T) {
-		p := newTokenPolicy(-1*time.Hour, map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS})
+		p := newTokenPolicy(-policyDuration, map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS})
 		req := &v1.GenerateTokenForPermissionsAndScopeRequest{
 			Permissions:   map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
 			ClusterScopes: []*v1.ClusterScope{{ClusterId: "cluster-A"}},
