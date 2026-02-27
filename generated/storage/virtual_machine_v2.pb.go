@@ -138,11 +138,13 @@ type VirtualMachineV2 struct {
 	// KubeVirt facts about the VM.
 	Facts map[string]string `protobuf:"bytes,6,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Guest OS reported by KubeVirt facts, extracted as a queryable column.
-	GuestOs       string                  `protobuf:"bytes,7,opt,name=guest_os,json=guestOs,proto3" json:"guest_os,omitempty" search:"Guest OS" sql:"index=btree"`                   // @gotags: search:"Guest OS" sql:"index=btree"
-	State         VirtualMachineV2_State  `protobuf:"varint,8,opt,name=state,proto3,enum=storage.VirtualMachineV2_State" json:"state,omitempty" search:"Virtual Machine State"` // @gotags: search:"Virtual Machine State"
-	LastUpdated   *timestamppb.Timestamp  `protobuf:"bytes,9,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden" sql:"index=btree"`       // @gotags: search:"Last Updated,hidden" sql:"index=btree"
-	Notes         []VirtualMachineV2_Note `protobuf:"varint,10,rep,packed,name=notes,proto3,enum=storage.VirtualMachineV2_Note" json:"notes,omitempty"`
-	VsockCid      int32                   `protobuf:"varint,11,opt,name=vsock_cid,json=vsockCid,proto3" json:"vsock_cid,omitempty"`
+	GuestOs     string                  `protobuf:"bytes,7,opt,name=guest_os,json=guestOs,proto3" json:"guest_os,omitempty" search:"Guest OS" sql:"index=btree"`                   // @gotags: search:"Guest OS" sql:"index=btree"
+	State       VirtualMachineV2_State  `protobuf:"varint,8,opt,name=state,proto3,enum=storage.VirtualMachineV2_State" json:"state,omitempty" search:"Virtual Machine State"` // @gotags: search:"Virtual Machine State"
+	LastUpdated *timestamppb.Timestamp  `protobuf:"bytes,9,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden" sql:"index=btree"`       // @gotags: search:"Last Updated,hidden" sql:"index=btree"
+	Notes       []VirtualMachineV2_Note `protobuf:"varint,10,rep,packed,name=notes,proto3,enum=storage.VirtualMachineV2_Note" json:"notes,omitempty"`
+	VsockCid    int32                   `protobuf:"varint,11,opt,name=vsock_cid,json=vsockCid,proto3" json:"vsock_cid,omitempty"`
+	// Hash of VM data fields for change detection (excludes last_updated).
+	Hash          uint64 `protobuf:"varint,12,opt,name=hash,proto3" json:"hash,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -254,11 +256,18 @@ func (x *VirtualMachineV2) GetVsockCid() int32 {
 	return 0
 }
 
+func (x *VirtualMachineV2) GetHash() uint64 {
+	if x != nil {
+		return x.Hash
+	}
+	return 0
+}
+
 var File_storage_virtual_machine_v2_proto protoreflect.FileDescriptor
 
 const file_storage_virtual_machine_v2_proto_rawDesc = "" +
 	"\n" +
-	" storage/virtual_machine_v2.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\x95\x05\n" +
+	" storage/virtual_machine_v2.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa9\x05\n" +
 	"\x10VirtualMachineV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1c\n" +
@@ -272,7 +281,8 @@ const file_storage_virtual_machine_v2_proto_rawDesc = "" +
 	"\flast_updated\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x124\n" +
 	"\x05notes\x18\n" +
 	" \x03(\x0e2\x1e.storage.VirtualMachineV2.NoteR\x05notes\x12\x1b\n" +
-	"\tvsock_cid\x18\v \x01(\x05R\bvsockCid\x1a8\n" +
+	"\tvsock_cid\x18\v \x01(\x05R\bvsockCid\x12\x12\n" +
+	"\x04hash\x18\f \x01(\x04R\x04hash\x1a8\n" +
 	"\n" +
 	"FactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +

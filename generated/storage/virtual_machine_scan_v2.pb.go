@@ -85,10 +85,12 @@ type VirtualMachineScanV2 struct {
 	// OS detected by the scanner during this scan.
 	ScanOs string `protobuf:"bytes,3,opt,name=scan_os,json=scanOs,proto3" json:"scan_os,omitempty"`
 	// When the scan was performed.
-	ScanTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty"`
+	ScanTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Virtual Machine Scan Time" sql:"index=btree"` // @gotags: search:"Virtual Machine Scan Time" sql:"index=btree"
 	// Cached highest CVSS score across all CVEs in this scan.
-	TopCvss       float32                     `protobuf:"fixed32,5,opt,name=top_cvss,json=topCvss,proto3" json:"top_cvss,omitempty" search:"Virtual Machine Top CVSS"` // @gotags: search:"Virtual Machine Top CVSS"
-	Notes         []VirtualMachineScanV2_Note `protobuf:"varint,6,rep,packed,name=notes,proto3,enum=storage.VirtualMachineScanV2_Note" json:"notes,omitempty"`
+	TopCvss float32                     `protobuf:"fixed32,5,opt,name=top_cvss,json=topCvss,proto3" json:"top_cvss,omitempty" search:"Virtual Machine Top CVSS"` // @gotags: search:"Virtual Machine Top CVSS"
+	Notes   []VirtualMachineScanV2_Note `protobuf:"varint,6,rep,packed,name=notes,proto3,enum=storage.VirtualMachineScanV2_Note" json:"notes,omitempty"`
+	// Hash of the scan components and CVEs for change detection.
+	Hash          uint64 `protobuf:"varint,7,opt,name=hash,proto3" json:"hash,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -165,18 +167,26 @@ func (x *VirtualMachineScanV2) GetNotes() []VirtualMachineScanV2_Note {
 	return nil
 }
 
+func (x *VirtualMachineScanV2) GetHash() uint64 {
+	if x != nil {
+		return x.Hash
+	}
+	return 0
+}
+
 var File_storage_virtual_machine_scan_v2_proto protoreflect.FileDescriptor
 
 const file_storage_virtual_machine_scan_v2_proto_rawDesc = "" +
 	"\n" +
-	"%storage/virtual_machine_scan_v2.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\x9e\x02\n" +
+	"%storage/virtual_machine_scan_v2.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb2\x02\n" +
 	"\x14VirtualMachineScanV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x18\n" +
 	"\bvm_v2_id\x18\x02 \x01(\tR\x06vmV2Id\x12\x17\n" +
 	"\ascan_os\x18\x03 \x01(\tR\x06scanOs\x127\n" +
 	"\tscan_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\bscanTime\x12\x19\n" +
 	"\btop_cvss\x18\x05 \x01(\x02R\atopCvss\x128\n" +
-	"\x05notes\x18\x06 \x03(\x0e2\".storage.VirtualMachineScanV2.NoteR\x05notes\"5\n" +
+	"\x05notes\x18\x06 \x03(\x0e2\".storage.VirtualMachineScanV2.NoteR\x05notes\x12\x12\n" +
+	"\x04hash\x18\a \x01(\x04R\x04hash\"5\n" +
 	"\x04Note\x12\t\n" +
 	"\x05UNSET\x10\x00\x12\x0e\n" +
 	"\n" +

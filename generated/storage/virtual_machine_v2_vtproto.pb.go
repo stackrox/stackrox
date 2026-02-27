@@ -36,6 +36,7 @@ func (m *VirtualMachineV2) CloneVT() *VirtualMachineV2 {
 	r.State = m.State
 	r.LastUpdated = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastUpdated).CloneVT())
 	r.VsockCid = m.VsockCid
+	r.Hash = m.Hash
 	if rhs := m.Facts; rhs != nil {
 		tmpContainer := make(map[string]string, len(rhs))
 		for k, v := range rhs {
@@ -113,6 +114,9 @@ func (this *VirtualMachineV2) EqualVT(that *VirtualMachineV2) bool {
 	if this.VsockCid != that.VsockCid {
 		return false
 	}
+	if this.Hash != that.Hash {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -152,6 +156,11 @@ func (m *VirtualMachineV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Hash != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Hash))
+		i--
+		dAtA[i] = 0x60
 	}
 	if m.VsockCid != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.VsockCid))
@@ -312,6 +321,9 @@ func (m *VirtualMachineV2) SizeVT() (n int) {
 	}
 	if m.VsockCid != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.VsockCid))
+	}
+	if m.Hash != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.Hash))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -804,6 +816,25 @@ func (m *VirtualMachineV2) UnmarshalVT(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.VsockCid |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Hash", wireType)
+			}
+			m.Hash = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Hash |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -1349,6 +1380,25 @@ func (m *VirtualMachineV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.VsockCid |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Hash", wireType)
+			}
+			m.Hash = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Hash |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

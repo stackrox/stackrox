@@ -34,6 +34,7 @@ func (m *VirtualMachineScanV2) CloneVT() *VirtualMachineScanV2 {
 	r.ScanOs = m.ScanOs
 	r.ScanTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.ScanTime).CloneVT())
 	r.TopCvss = m.TopCvss
+	r.Hash = m.Hash
 	if rhs := m.Notes; rhs != nil {
 		tmpContainer := make([]VirtualMachineScanV2_Note, len(rhs))
 		copy(tmpContainer, rhs)
@@ -80,6 +81,9 @@ func (this *VirtualMachineScanV2) EqualVT(that *VirtualMachineScanV2) bool {
 			return false
 		}
 	}
+	if this.Hash != that.Hash {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -119,6 +123,11 @@ func (m *VirtualMachineScanV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Hash != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Hash))
+		i--
+		dAtA[i] = 0x38
 	}
 	if len(m.Notes) > 0 {
 		var pksize2 int
@@ -212,6 +221,9 @@ func (m *VirtualMachineScanV2) SizeVT() (n int) {
 			l += protohelpers.SizeOfVarint(uint64(e))
 		}
 		n += 1 + protohelpers.SizeOfVarint(uint64(l)) + l
+	}
+	if m.Hash != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.Hash))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -457,6 +469,25 @@ func (m *VirtualMachineScanV2) UnmarshalVT(dAtA []byte) error {
 				}
 			} else {
 				return fmt.Errorf("proto: wrong wireType = %d for field Notes", wireType)
+			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Hash", wireType)
+			}
+			m.Hash = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Hash |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
 			}
 		default:
 			iNdEx = preIndex
@@ -732,6 +763,25 @@ func (m *VirtualMachineScanV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				return fmt.Errorf("proto: wrong wireType = %d for field Notes", wireType)
+			}
+		case 7:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Hash", wireType)
+			}
+			m.Hash = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Hash |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
 			}
 		default:
 			iNdEx = preIndex

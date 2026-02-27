@@ -43,4 +43,7 @@ message VirtualMachineV2 {
   repeated Note notes = 10;
 
   int32 vsock_cid = 11;
+
+  // Hash of VM data fields for change detection (excludes last_updated).
+  uint64 hash = 12;
 }
