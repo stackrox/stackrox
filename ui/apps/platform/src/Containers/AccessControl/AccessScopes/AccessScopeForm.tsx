@@ -38,9 +38,12 @@ const labelIconEffectiveAccessScope = (
         isContentLeftAligned
         maxWidth="24em"
     >
-        <Button variant="plain" size="sm" aria-label="Effective access scope information">
-            <OutlinedQuestionCircleIcon />
-        </Button>
+        <Button
+            variant="plain"
+            size="sm"
+            aria-label="Effective access scope information"
+            icon={<OutlinedQuestionCircleIcon />}
+        />
     </Tooltip>
 );
 
@@ -55,9 +58,12 @@ const labelIconLabelInclusion = (
         isContentLeftAligned
         maxWidth="24em"
     >
-        <Button variant="plain" size="sm" aria-label="Label inclusion information">
-            <OutlinedQuestionCircleIcon />
-        </Button>
+        <Button
+            variant="plain"
+            size="sm"
+            aria-label="Label inclusion information"
+            icon={<OutlinedQuestionCircleIcon />}
+        />
     </Tooltip>
 );
 
