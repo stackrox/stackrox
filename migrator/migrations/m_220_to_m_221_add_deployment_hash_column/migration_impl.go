@@ -92,6 +92,8 @@ func updateDeploymentHashes(db postgres.DB, ctx context.Context, table string, i
 
 	for i := 0; i < len(ids); i++ {
 		if _, err := results.Exec(); err != nil {
+			// Attempt to close batch results, but ignore close error since we're already
+			// returning the more important Exec error.
 			_ = results.Close()
 			return errors.Wrapf(err, "updating hash for deployment at index %d", i)
 		}
