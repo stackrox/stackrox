@@ -857,7 +857,7 @@ spec:
       initContainers:
       - name: pin
         image: docker.io/library/alpine:3.21
-        command: ["sh", "-c", "apk add --no-cache containerd-ctr >/dev/null 2>&1 && sh /tmp/script/pin-images.sh"]
+        command: ["sh", "-c", "apk add --no-cache -X https://dl-cdn.alpinelinux.org/alpine/v3.21/community containerd-ctr && sh /tmp/script/pin-images.sh"]
         volumeMounts:
         - name: containerd-socket
           mountPath: /host-containerd
