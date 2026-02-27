@@ -23,20 +23,20 @@ runs:
         echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"
       shell: bash
 
-    # TEMPORARY: always save with test-specific keys for cache verification.
+    # TEMPORARY: always save with test-specific keys.
     - name: Cache Go Dependencies (save)
       uses: actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOMODCACHE }}
-        key: go-mod-no-buildvcs-v3-${{ hashFiles('**/go.sum') }}
-        restore-keys: go-mod-no-buildvcs-v3-
+        key: go-mod-no-buildvcs-v4-${{ hashFiles('**/go.sum') }}
+        restore-keys: go-mod-no-buildvcs-v4-
 
     - name: Cache Go Build (save)
       uses: actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-no-buildvcs-v3-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
-        restore-keys: go-build-no-buildvcs-v3-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
+        key: go-build-no-buildvcs-v4-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
+        restore-keys: go-build-no-buildvcs-v4-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
     - name: Download Go modules
       run: make deps --always-make
