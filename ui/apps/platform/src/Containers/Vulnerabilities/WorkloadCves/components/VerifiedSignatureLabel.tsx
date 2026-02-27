@@ -32,7 +32,7 @@ export type VerifiedSignatureLabelProps = {
 
 // Separate list from the title with same margin-top as second list item from the first.
 const styleList = {
-    marginTop: 'var(--pf-v6-c-list--li--MarginTop)',
+    marginTop: 'var(--pf-t--global--spacer--sm)',
 } as CSSProperties;
 
 const clipboardCopyMaxWidthStyle = {

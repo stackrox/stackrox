@@ -58,9 +58,8 @@ function SearchFilterAutocompleteSelect({
                     variant="control"
                     aria-label="Apply autocomplete input to search"
                     onClick={() => handleSearch(value)}
-                >
-                    <ArrowRightIcon />
-                </Button>
+                    icon={<ArrowRightIcon />}
+                />
             </ToolbarItem>
         </>
     );
