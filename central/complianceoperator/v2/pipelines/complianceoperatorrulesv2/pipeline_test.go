@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	v2Mocks "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore/mocks"
 	"github.com/stackrox/rox/central/convert/testutils"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
@@ -11,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -150,4 +152,52 @@ func (s *PipelineTestSuite) TestMatch() {
 	s.Require().False(s.pipeline.Match(v1Msg))
 	s.Require().True(s.pipeline.Match(v2Msg))
 	s.Require().False(s.pipeline.Match(otherMsg))
+}
+
+func (s *PipelineTestSuite) TestRunCreateOOBRuleMissingRuleIDAnnotationFails() {
+	ctx := context.Background()
+
+	rule := protocompat.Clone(testutils.GetRuleV2SensorMsg(s.T())).(*central.ComplianceOperatorRuleV2)
+	delete(rule.GetAnnotations(), v1alpha1.RuleIDAnnotationKey)
+
+	msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     testutils.RuleUID,
+				Action: central.ResourceAction_CREATE_RESOURCE,
+				Resource: &central.SensorEvent_ComplianceOperatorRuleV2{
+					ComplianceOperatorRuleV2: rule,
+				},
+			},
+		},
+	}
+
+	err := s.pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
+	s.Error(err)
+	s.Contains(err.Error(), v1alpha1.RuleIDAnnotationKey)
+}
+
+func (s *PipelineTestSuite) TestRunCreateCustomRuleMissingRuleIDAnnotationSucceeds() {
+	ctx := context.Background()
+
+	rule := protocompat.Clone(testutils.GetRuleV2SensorMsg(s.T())).(*central.ComplianceOperatorRuleV2)
+	rule.IsCustom = true
+	delete(rule.GetAnnotations(), v1alpha1.RuleIDAnnotationKey)
+
+	s.v2DS.EXPECT().UpsertRule(ctx, gomock.Any()).Return(nil).Times(1)
+
+	msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     testutils.RuleUID,
+				Action: central.ResourceAction_CREATE_RESOURCE,
+				Resource: &central.SensorEvent_ComplianceOperatorRuleV2{
+					ComplianceOperatorRuleV2: rule,
+				},
+			},
+		},
+	}
+
+	err := s.pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
+	s.NoError(err)
 }
