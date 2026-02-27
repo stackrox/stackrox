@@ -187,39 +187,42 @@ function ClusterDetailsPage() {
                     </LabelGroup>
                 </Flex>
             </PageSection>
+            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
+                <div>
+                    {isLoadingScanConfigProfiles ? (
+                        <Bullseye>
+                            <Spinner />
+                        </Bullseye>
+                    ) : (
+                        <>
+                            <ProfilesToggleGroup
+                                profileName={profileName}
+                                profiles={scanConfigProfilesResponse?.profiles ?? []}
+                                handleToggleChange={handleProfilesToggleChange}
+                            />
+                            <Divider component="div" />
+                            <ProfileDetailsHeader
+                                isLoading={isLoadingScanConfigProfiles}
+                                profileName={profileName}
+                                profileDetails={selectedProfileDetails}
+                            />
+                        </>
+                    )}
+                </div>
+            </PageSection>
             <Divider component="div" />
             <PageSection hasBodyWrapper={false}>
-                {isLoadingScanConfigProfiles ? (
-                    <Bullseye>
-                        <Spinner />
-                    </Bullseye>
-                ) : (
-                    <>
-                        <ProfilesToggleGroup
-                            profileName={profileName}
-                            profiles={scanConfigProfilesResponse?.profiles ?? []}
-                            handleToggleChange={handleProfilesToggleChange}
-                        />
-                        <Divider component="div" />
-                        <ProfileDetailsHeader
-                            isLoading={isLoadingScanConfigProfiles}
-                            profileName={profileName}
-                            profileDetails={selectedProfileDetails}
-                        />
-                        <Divider component="div" />
-                        <ClusterDetailsTable
-                            checkResultsCount={checkResultsResponse?.totalCount ?? 0}
-                            profileName={profileName}
-                            tableState={tableState}
-                            pagination={pagination}
-                            getSortParams={getSortParams}
-                            searchFilter={searchFilter}
-                            onFilterChange={setSearchFilter}
-                            onSearch={onSearch}
-                            onClearFilters={onClearFilters}
-                        />
-                    </>
-                )}
+                <ClusterDetailsTable
+                    checkResultsCount={checkResultsResponse?.totalCount ?? 0}
+                    profileName={profileName}
+                    tableState={tableState}
+                    pagination={pagination}
+                    getSortParams={getSortParams}
+                    searchFilter={searchFilter}
+                    onFilterChange={setSearchFilter}
+                    onSearch={onSearch}
+                    onClearFilters={onClearFilters}
+                />
             </PageSection>
         </>
     );
