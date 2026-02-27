@@ -7,8 +7,6 @@ import {
     CardTitle,
     Flex,
     FlexItem,
-    List,
-    ListItem,
     Tooltip,
 } from '@patternfly/react-core';
 import { HelpIcon, PencilAltIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
@@ -108,7 +106,11 @@ function NotifierConfigurationForm({
 
     return (
         <>
-            <List isPlain>
+            <Flex
+                direction={{ default: 'column' }}
+                gap={{ default: 'gapMd' }}
+                aria-label="Delivery destinations"
+            >
                 {notifierConfigurations.map((notifierConfiguration, index) => {
                     const { emailConfig, notifierName } = notifierConfiguration;
                     const { customBody, customSubject, mailingLists, notifierId } = emailConfig;
@@ -118,7 +120,7 @@ function NotifierConfigurationForm({
                         customSubject,
                     });
                     return (
-                        <ListItem key={keyFor(index)}>
+                        <FlexItem key={keyFor(index)}>
                             <Card>
                                 <CardTitle>
                                     <Flex
@@ -259,10 +261,10 @@ function NotifierConfigurationForm({
                                     </Flex>
                                 </CardBody>
                             </Card>
-                        </ListItem>
+                        </FlexItem>
                     );
                 })}
-                <ListItem>
+                <FlexItem>
                     <Button
                         variant="link"
                         icon={<PlusCircleIcon />}
@@ -285,8 +287,8 @@ function NotifierConfigurationForm({
                     >
                         Add delivery destination
                     </Button>
-                </ListItem>
-            </List>
+                </FlexItem>
+            </Flex>
             {notifierConfigurationSelected && (
                 <EmailTemplateModal
                     customBodyDefault={customBodyDefault}

@@ -151,13 +151,10 @@ function ViewScanConfigDetail({
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
+            <PageSection>
                 {!isLoading && !error && scanConfig && (
                     <>
-                        <Flex
-                            alignItems={{ default: 'alignItemsCenter' }}
-                            className="pf-v6-u-py-lg pf-v6-u-px-lg"
-                        >
+                        <Flex alignItems={{ default: 'alignItemsCenter' }}>
                             <FlexItem flex={{ default: 'flex_1' }}>
                                 <Title headingLevel="h1">{scanConfig.scanName}</Title>
                             </FlexItem>
@@ -180,7 +177,7 @@ function ViewScanConfigDetail({
                                 component="p"
                                 variant={alertObj.type}
                                 isInline
-                                className="pf-v6-u-mb-lg pf-v6-u-mx-lg"
+                                className="pf-v6-u-mt-lg"
                                 actionClose={<AlertActionCloseButton onClose={clearAlertObj} />}
                             >
                                 {alertObj.children}
@@ -189,7 +186,7 @@ function ViewScanConfigDetail({
                     </>
                 )}
             </PageSection>
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-0">
+            <PageSection type="tabs">
                 <Tabs
                     activeKey={activeScanConfigTab}
                     onSelect={(_e, tab) => {
@@ -199,6 +196,7 @@ function ViewScanConfigDetail({
                         }
                     }}
                     aria-label="Scan schedule details tabs"
+                    usePageInsets
                 >
                     <Tab
                         tabContentId={configDetailsTabId}
@@ -227,7 +225,7 @@ function ViewScanConfigDetail({
                 </PageSection>
             )}
             {activeScanConfigTab === 'ALL_REPORT_JOBS' && scanConfig?.id && (
-                <PageSection hasBodyWrapper={false} isCenterAligned id={allReportJobsTabId}>
+                <PageSection id={allReportJobsTabId}>
                     <ReportJobs scanConfigId={scanConfig.id} />
                 </PageSection>
             )}
