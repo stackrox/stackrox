@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"helm.sh/helm/v3/pkg/chartutil"
+
+	"github.com/stackrox/rox/operator/bundle_helpers/pkg/values"
 )
 
 func mustReadValues(t *testing.T, s string) chartutil.Values {
@@ -288,4 +290,61 @@ func TestConstructRelatedImages_NameTransformation(t *testing.T) {
 		}
 	}
 	assert.True(t, found, "should have scanner_db_slim entry with lowercase name")
+}
+
+func TestPatchCSV_EnrichesSecurityPolicyCRD(t *testing.T) {
+	// Regression test: addSecurityPolicyCRD must persist enriched fields even when
+	// PatchCSV has called values.SetValue(doc, "spec.*", ...) beforehand, which
+	// replaces doc["spec"] with a new map and makes any earlier spec reference stale.
+	doc := mustReadValues(t, `
+metadata:
+  name: rhacs-operator.v0.0.1
+  annotations:
+    containerImage: quay.io/stackrox-io/stackrox-operator:0.0.1
+    createdAt: ""
+spec:
+  version: "0.0.1"
+  customresourcedefinitions:
+    owned:
+    - description: Central is the config template for the central services.
+      displayName: Central
+      kind: Central
+      name: centrals.platform.stackrox.io
+      version: v1alpha1
+    - kind: SecurityPolicy
+      name: securitypolicies.config.stackrox.io
+      version: v1alpha1
+`)
+
+	err := PatchCSV(doc, PatchOptions{
+		Version:           "4.11.0",
+		OperatorImage:     "quay.io/stackrox-io/stackrox-operator:4.11.0",
+		FirstVersion:      "3.62.0",
+		RelatedImagesMode: "omit",
+	})
+	require.NoError(t, err)
+
+	spec, err := doc.Table("spec")
+	require.NoError(t, err)
+	owned, err := values.GetArray(spec, "customresourcedefinitions.owned")
+	require.NoError(t, err)
+	require.Len(t, owned, 2, "should have exactly 2 CRDs (no duplicate SecurityPolicy)")
+
+	// Find the SecurityPolicy entry.
+	var spCRD map[string]any
+	for _, entry := range owned {
+		m, ok := entry.(map[string]any)
+		require.True(t, ok, "owned entry should be a map")
+		if m["kind"] == "SecurityPolicy" {
+			spCRD = m
+		}
+	}
+	require.NotNil(t, spCRD, "SecurityPolicy entry must be present")
+
+	assert.Equal(t, "SecurityPolicy", spCRD["kind"])
+	assert.Equal(t, "securitypolicies.config.stackrox.io", spCRD["name"])
+	assert.Equal(t, "v1alpha1", spCRD["version"])
+	assert.Equal(t, "Security Policy", spCRD["displayName"])
+	assert.Equal(t, "SecurityPolicy is the schema for the policies API.", spCRD["description"])
+	assert.NotNil(t, spCRD["resources"], "resources must be present")
 }
