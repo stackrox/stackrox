@@ -83,6 +83,40 @@ spec:
 ---
 
 {{- /*
+The ServiceMonitor for admission-control is separate from Sensor's because mTLS
+requires a per-service serverName in the tlsConfig.
+*/}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: "admission-control-monitor-{{ .Release.Namespace }}"
+  namespace: openshift-monitoring
+  labels:
+    {{- include "srox.labels" (list . "servicemonitor" (print "admission-control-monitor-" .Release.Namespace)) | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "servicemonitor" (print "admission-control-monitor-" .Release.Namespace)) | nindent 4 }}
+spec:
+  endpoints:
+  - interval: 30s
+    path: metrics
+    port: monitoring-tls
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+      serverName: "admission-control.{{ .Release.Namespace }}.svc"
+  selector:
+    matchLabels:
+      app: admission-control
+  namespaceSelector:
+    matchNames:
+    - "{{ .Release.Namespace }}"
+
+---
+
+{{- /*
 TODO(ROX-22188): Switch to a ClusterRoleBinding to avoid leaking to kube-system namespace.
 */}}
 apiVersion: rbac.authorization.k8s.io/v1
