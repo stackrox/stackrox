@@ -423,7 +423,7 @@ function MicrosoftSentinelIntegrationForm({
                             {selectedAuthMethod === 'use-workload-identity' && (
                                 <FormLabelGroup
                                     label="Short-lived tokens"
-                                    labelIcon={
+                                    labelHelp={
                                         <IntegrationHelpIcon
                                             helpTitle="Use workload identity"
                                             helpText={
