@@ -168,20 +168,16 @@ const labelSchema = yup
         value: yup.string().ensure(),
     })
     .nullable()
-    .test(
-        'label-requires-key-and-value',
-        'A label must have both a key and a value when used',
-        (label) => {
-            if (!label) {
-                return true;
-            }
-
-            const hasKey = Boolean(label.key.trim());
-            const hasValue = Boolean(label.value.trim());
-
-            return hasKey === hasValue;
+    .test('label-value-requires-key', 'A label value requires a key', (label) => {
+        if (!label) {
+            return true;
         }
-    );
+
+        const hasKey = Boolean(label.key.trim());
+        const hasValue = Boolean(label.value.trim());
+
+        return !hasValue || hasKey;
+    });
 
 export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.object({
     scope: yup

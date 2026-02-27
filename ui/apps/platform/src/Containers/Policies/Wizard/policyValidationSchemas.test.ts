@@ -120,7 +120,7 @@ describe('Step 4', () => {
             }).toThrow();
         });
 
-        it('throws if key has non-empty string and value has empty string', () => {
+        it('passes if key has non-empty string and value has empty string', () => {
             const value: WizardPolicyStep4 = {
                 scope: [
                     {
@@ -134,9 +134,7 @@ describe('Step 4', () => {
                 excludedDeploymentScopes: [],
                 excludedImageNames: [],
             };
-            expect(() => {
-                validationSchemaStep4.validateSync(value);
-            }).toThrow();
+            expect(validationSchemaStep4.validateSync(value)).toEqual(value);
         });
 
         it('throws if value has non-empty string and key has empty string', () => {
@@ -275,7 +273,7 @@ describe('Step 4', () => {
             expect(validationSchemaStep4.validateSync(value)).toEqual(value);
         });
 
-        it('throws if key has non-empty string and value has empty string', () => {
+        it('passes if key has non-empty string and value has empty string', () => {
             const value: WizardPolicyStep4 = {
                 scope: [],
                 excludedDeploymentScopes: [
@@ -292,9 +290,7 @@ describe('Step 4', () => {
                 ],
                 excludedImageNames: [],
             };
-            expect(() => {
-                validationSchemaStep4.validateSync(value);
-            }).toThrow();
+            expect(validationSchemaStep4.validateSync(value)).toEqual(value);
         });
 
         it('throws if value has non-empty string and key has empty string', () => {
