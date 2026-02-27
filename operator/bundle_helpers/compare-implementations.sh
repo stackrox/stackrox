@@ -36,7 +36,7 @@ echo "=== Building with Python implementation..."
 USE_GO_BUNDLE_HELPER=false RELATED_IMAGES_MODE="$RELATED_IMAGES_MODE" make bundle bundle-post-process
 mkdir -p "$WORK_DIR/python" "$WORK_DIR/python-build"
 cp -r bundle "$WORK_DIR/python/"
-[ -d build/bundle ] && cp -r build/bundle "$WORK_DIR/python-build/"
+[ -d build/bundle ] && cp -r build/bundle "$WORK_DIR/python-build/build"
 
 # Clean
 echo ""
@@ -52,7 +52,7 @@ echo "=== Building with Go implementation..."
 USE_GO_BUNDLE_HELPER=true RELATED_IMAGES_MODE="$RELATED_IMAGES_MODE" make bundle bundle-post-process
 mkdir -p "$WORK_DIR/go" "$WORK_DIR/go-build"
 cp -r bundle "$WORK_DIR/go/"
-[ -d build/bundle ] && cp -r build/bundle "$WORK_DIR/go-build/"
+[ -d build/bundle ] && cp -r build/bundle "$WORK_DIR/go-build/build"
 
 # Compare
 echo ""
