@@ -179,6 +179,14 @@ func TestEnforce(t *testing.T) {
 			clusterID:   fixtureconsts.Cluster1,
 			expectError: true,
 		},
+		"nil lifetime": {
+			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
+				Permissions:   map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
+				ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1}},
+			},
+			clusterID:   fixtureconsts.Cluster1,
+			expectError: true,
+		},
 		"invalid proto duration": {
 			req: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				Permissions:   map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
@@ -249,6 +257,22 @@ func TestEnforce(t *testing.T) {
 			Lifetime:      durationpb.New(5 * time.Minute),
 		}
 		result, err := policy.enforce(t.Context(), req)
+		assert.ErrorIs(t, err, errox.NotAuthorized)
+		assert.Nil(t, result)
+	})
+
+	t.Run("identity with nil service rejects request", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockIdentity := authnMocks.NewMockIdentity(ctrl)
+		mockIdentity.EXPECT().Service().Return(nil).AnyTimes()
+		ctx := authn.ContextWithIdentity(t.Context(), mockIdentity, t)
+
+		req := &v1.GenerateTokenForPermissionsAndScopeRequest{
+			Permissions:   map[string]v1.Access{"Deployment": v1.Access_READ_ACCESS},
+			ClusterScopes: []*v1.ClusterScope{{ClusterId: fixtureconsts.Cluster1}},
+			Lifetime:      durationpb.New(5 * time.Minute),
+		}
+		result, err := policy.enforce(ctx, req)
 		assert.ErrorIs(t, err, errox.NotAuthorized)
 		assert.Nil(t, result)
 	})

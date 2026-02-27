@@ -17,14 +17,6 @@ const (
 	defaultMaxLifetime = 1 * time.Hour
 )
 
-// defaultAllowedPermissions lists the resource permissions that the default
-// policy allows sensors to request. These must stay in sync with the needs
-// of the known token consumers (including the OCP console plugin).
-var defaultAllowedPermissions = map[string]v1.Access{
-	"Deployment": v1.Access_READ_ACCESS,
-	"Image":      v1.Access_READ_ACCESS,
-}
-
 type tokenPolicy struct {
 	maxLifetime        *durationpb.Duration
 	allowedPermissions map[string]v1.Access
@@ -48,6 +40,13 @@ func newTokenPolicy(maxLifetime time.Duration, allowedPermissions map[string]v1.
 // and Image resources.
 // This policy should be kept in sync with the needs of the ocp console plugin.
 func defaultTokenPolicy() *tokenPolicy {
+	// defaultAllowedPermissions lists the resource permissions that the default
+	// policy allows sensors to request. These must stay in sync with the needs
+	// of the known token consumers (including the OCP console plugin).
+	defaultAllowedPermissions := map[string]v1.Access{
+		"Deployment": v1.Access_READ_ACCESS,
+		"Image":      v1.Access_READ_ACCESS,
+	}
 	return newTokenPolicy(defaultMaxLifetime, defaultAllowedPermissions)
 }
 
@@ -58,12 +57,12 @@ func (p *tokenPolicy) validatePermissions(requested map[string]v1.Access) error 
 		allowedAccess, ok := p.allowedPermissions[resource]
 		if !ok {
 			return errox.InvalidArgs.Newf(
-				"permission %q for resource %q is not allowed", requestedAccess, resource)
+				"permission %q for resource %q is not allowed", requestedAccess.String(), resource)
 		}
 		if requestedAccess > allowedAccess {
 			return errox.InvalidArgs.Newf(
 				"requested permission %q for resource %q exceeds the allowed maximum permission %q",
-				requestedAccess, resource, allowedAccess)
+				requestedAccess.String(), resource, allowedAccess.String())
 		}
 	}
 	return nil
@@ -89,6 +88,9 @@ func (p *tokenPolicy) enforceLifetimeLimit(
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
 ) (*v1.GenerateTokenForPermissionsAndScopeRequest, error) {
 	lifetime := req.GetLifetime()
+	if lifetime == nil {
+		return nil, errox.InvalidArgs.New("token lifetime is required")
+	}
 	if err := lifetime.CheckValid(); err != nil {
 		return nil, errox.InvalidArgs.CausedByf("converting requested token lifetime: %v", err)
 	}
