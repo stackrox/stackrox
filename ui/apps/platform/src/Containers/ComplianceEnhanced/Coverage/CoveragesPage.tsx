@@ -121,45 +121,45 @@ function CoveragesPage() {
                                 profiles={scanConfigProfilesResponse.profiles}
                                 handleToggleChange={handleProfilesToggleChange}
                             />
-                        <Divider component="div" />
-                        <Flex
-                            alignItems={{ default: 'alignItemsStretch' }}
-                            columnGap={{ default: 'columnGapNone' }}
-                            direction={{ default: 'column', md: 'row' }}
-                            flexWrap={{ default: 'nowrap' }}
-                            spaceItems={{ default: 'spaceItemsNone' }}
-                        >
-                            <FlexItem flex={{ default: 'flex_2' }}>
-                                <ProfileDetailsHeader
-                                    isLoading={isLoadingScanConfigProfiles}
-                                    profileName={profileName}
-                                    profileDetails={selectedProfileDetails}
-                                />
-                            </FlexItem>
-                            {(selectedProfileStats ||
-                                isLoadingProfilesStats ||
-                                profilesStatsError) && (
-                                <>
-                                    <Divider
-                                        orientation={{ default: 'horizontal', md: 'vertical' }}
+                            <Divider component="div" />
+                            <Flex
+                                alignItems={{ default: 'alignItemsStretch' }}
+                                columnGap={{ default: 'columnGapNone' }}
+                                direction={{ default: 'column', md: 'row' }}
+                                flexWrap={{ default: 'nowrap' }}
+                                spaceItems={{ default: 'spaceItemsNone' }}
+                            >
+                                <FlexItem flex={{ default: 'flex_2' }}>
+                                    <ProfileDetailsHeader
+                                        isLoading={isLoadingScanConfigProfiles}
+                                        profileName={profileName}
+                                        profileDetails={selectedProfileDetails}
                                     />
-                                    <FlexItem
-                                        alignSelf={{ default: 'alignSelfStretch' }}
-                                        flex={{ default: 'flex_1' }}
-                                        style={{
-                                            minWidth: '400px',
-                                            minHeight: `${defaultChartHeight}px`,
-                                        }}
-                                    >
-                                        <ProfileStatsWidget
-                                            error={profilesStatsError}
-                                            isLoading={isLoadingProfilesStats}
-                                            profileScanStats={selectedProfileStats}
+                                </FlexItem>
+                                {(selectedProfileStats ||
+                                    isLoadingProfilesStats ||
+                                    profilesStatsError) && (
+                                    <>
+                                        <Divider
+                                            orientation={{ default: 'horizontal', md: 'vertical' }}
                                         />
-                                    </FlexItem>
-                                </>
-                            )}
-                        </Flex>
+                                        <FlexItem
+                                            alignSelf={{ default: 'alignSelfStretch' }}
+                                            flex={{ default: 'flex_1' }}
+                                            style={{
+                                                minWidth: '400px',
+                                                minHeight: `${defaultChartHeight}px`,
+                                            }}
+                                        >
+                                            <ProfileStatsWidget
+                                                error={profilesStatsError}
+                                                isLoading={isLoadingProfilesStats}
+                                                profileScanStats={selectedProfileStats}
+                                            />
+                                        </FlexItem>
+                                    </>
+                                )}
+                            </Flex>
                         </>
                     )}
                 </div>
@@ -183,7 +183,9 @@ function CoveragesPage() {
                             />
                             <ToolbarGroup className="pf-v6-u-w-100">
                                 <CompoundSearchFilterLabels
-                                    attributesSeparateFromConfig={[attributeForComplianceCheckStatus]}
+                                    attributesSeparateFromConfig={[
+                                        attributeForComplianceCheckStatus,
+                                    ]}
                                     config={searchFilterConfig}
                                     onFilterChange={setSearchFilter}
                                     searchFilter={searchFilter}
