@@ -61,13 +61,13 @@
     },
     {
         "comment": "Scanner V4 slow to start",
-        "job": "gke-external-pg-17-qa-e2e-tests",
+        "job": ".*",
         "logfile": "indexer-previous",
         "logline": "panic: migrate: failed to connect to"
     },
     {
         "comment": "Scanner V4 slow to start matcher",
-        "job": "gke-external-pg-17-qa-e2e-tests",
+        "job": ".*",
         "logfile": "matcher-previous",
         "logline": "panic: migrate: failed to connect to"
     },
