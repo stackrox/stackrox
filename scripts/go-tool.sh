@@ -150,7 +150,7 @@ function go_test() (
       echo >&2 "Test build cache: $compiled packages compiled"
     fi
   fi
-  GODEBUG="${GODEBUG:+$GODEBUG,}gocachetest=1" invoke_go test -buildvcs=false "$@"
+  invoke_go test -buildvcs=false "$@"
 )
 
 case "$TOOL" in
