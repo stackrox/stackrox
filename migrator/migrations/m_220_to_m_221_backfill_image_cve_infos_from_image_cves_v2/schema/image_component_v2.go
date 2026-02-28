@@ -3,52 +3,27 @@
 package schema
 
 import (
-	"reflect"
-
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
 	// CreateTableImageComponentV2Stmt holds the create statement for table `image_component_v2`.
+	// Only used in tests to create the table for JOIN operations.
 	CreateTableImageComponentV2Stmt = &postgres.CreateStmts{
 		GormModel: (*ImageComponentV2)(nil),
 		Children:  []*postgres.CreateStmts{},
 	}
-
-	// ImageComponentV2Schema is the go schema for table `image_component_v2`.
-	ImageComponentV2Schema = func() *walker.Schema {
-		schema := walker.Walk(reflect.TypeOf((*storage.ImageComponentV2)(nil)), "image_component_v2")
-
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_COMPONENTS_V2, "imagecomponentv2", (*storage.ImageComponentV2)(nil)))
-		schema.ScopingResource = resources.Image
-		return schema
-	}()
-)
-
-const (
-	// ImageComponentV2TableName specifies the name of the table in postgres.
-	ImageComponentV2TableName = "image_component_v2"
 )
 
 // ImageComponentV2 holds the Gorm model for Postgres table `image_component_v2`.
 // Frozen schema with foreign key constraints removed for test isolation.
+// Only contains fields used in tests.
 type ImageComponentV2 struct {
 	ID              string             `gorm:"column:id;type:varchar;primaryKey"`
 	Name            string             `gorm:"column:name;type:varchar"`
 	Version         string             `gorm:"column:version;type:varchar"`
-	Priority        int64              `gorm:"column:priority;type:bigint"`
 	Source          storage.SourceType `gorm:"column:source;type:integer"`
-	RiskScore       float32            `gorm:"column:riskscore;type:numeric"`
-	TopCvss         float32            `gorm:"column:topcvss;type:numeric"`
 	OperatingSystem string             `gorm:"column:operatingsystem;type:varchar"`
-	ImageID         string             `gorm:"column:imageid;type:varchar;index:imagecomponentv2_imageid,type:btree"`
-	Location        string             `gorm:"column:location;type:varchar"`
-	ImageIDV2       string             `gorm:"column:imageidv2;type:varchar;index:imagecomponentv2_imageidv2,type:btree"`
-	LayerType       storage.LayerType  `gorm:"column:layertype;type:integer"`
 	Serialized      []byte             `gorm:"column:serialized;type:bytea"`
 }

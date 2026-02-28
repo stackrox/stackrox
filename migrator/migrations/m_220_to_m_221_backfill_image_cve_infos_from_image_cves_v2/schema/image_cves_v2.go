@@ -3,15 +3,10 @@
 package schema
 
 import (
-	"reflect"
 	"time"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -20,43 +15,15 @@ var (
 		GormModel: (*ImageCvesV2)(nil),
 		Children:  []*postgres.CreateStmts{},
 	}
-
-	// ImageCvesV2Schema is the go schema for table `image_cves_v2`.
-	ImageCvesV2Schema = func() *walker.Schema {
-		schema := walker.Walk(reflect.TypeOf((*storage.ImageCVEV2)(nil)), "image_cves_v2")
-
-		schema.SetOptionsMap(search.Walk(v1.SearchCategory_IMAGE_VULNERABILITIES_V2, "imagecvev2", (*storage.ImageCVEV2)(nil)))
-		schema.ScopingResource = resources.Image
-		return schema
-	}()
-)
-
-const (
-	// ImageCvesV2TableName specifies the name of the table in postgres.
-	ImageCvesV2TableName = "image_cves_v2"
 )
 
 // ImageCvesV2 holds the Gorm model for Postgres table `image_cves_v2`.
-// Frozen schema with foreign key constraints removed for test isolation.
+// Frozen schema with only fields used by migration.
 type ImageCvesV2 struct {
-	ID                             string                        `gorm:"column:id;type:varchar;primaryKey"`
-	ImageID                        string                        `gorm:"column:imageid;type:varchar;index:imagecvesv2_imageid,type:btree"`
-	CveBaseInfoCve                 string                        `gorm:"column:cvebaseinfo_cve;type:varchar;index:imagecvesv2_cvebaseinfo_cve,type:btree"`
-	CveBaseInfoPublishedOn         *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
-	CveBaseInfoCreatedAt           *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
-	CveBaseInfoEpssEpssProbability float32                       `gorm:"column:cvebaseinfo_epss_epssprobability;type:numeric"`
-	Cvss                           float32                       `gorm:"column:cvss;type:numeric"`
-	Severity                       storage.VulnerabilitySeverity `gorm:"column:severity;type:integer;index:imagecvesv2_severity,type:btree"`
-	ImpactScore                    float32                       `gorm:"column:impactscore;type:numeric"`
-	Nvdcvss                        float32                       `gorm:"column:nvdcvss;type:numeric"`
-	FirstImageOccurrence           *time.Time                    `gorm:"column:firstimageoccurrence;type:timestamp"`
-	State                          storage.VulnerabilityState    `gorm:"column:state;type:integer;index:imagecvesv2_state,type:btree"`
-	IsFixable                      bool                          `gorm:"column:isfixable;type:bool"`
-	FixedBy                        string                        `gorm:"column:fixedby;type:varchar"`
-	ComponentID                    string                        `gorm:"column:componentid;type:varchar;index:imagecvesv2_componentid,type:btree"`
-	AdvisoryName                   string                        `gorm:"column:advisory_name;type:varchar"`
-	AdvisoryLink                   string                        `gorm:"column:advisory_link;type:varchar"`
-	ImageIDV2                      string                        `gorm:"column:imageidv2;type:varchar;index:imagecvesv2_imageidv2,type:btree"`
-	FixAvailableTimestamp          *time.Time                    `gorm:"column:fixavailabletimestamp;type:timestamp"`
-	Serialized                     []byte                        `gorm:"column:serialized;type:bytea"`
+	ID                   string                        `gorm:"column:id;type:varchar;primaryKey"`
+	CveBaseInfoCve       string                        `gorm:"column:cvebaseinfo_cve;type:varchar"`
+	CveBaseInfoCreatedAt *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
+	ComponentID          string                        `gorm:"column:componentid;type:varchar"`
+	Severity             storage.VulnerabilitySeverity `gorm:"column:severity;type:integer"`
+	Serialized           []byte                        `gorm:"column:serialized;type:bytea"`
 }
