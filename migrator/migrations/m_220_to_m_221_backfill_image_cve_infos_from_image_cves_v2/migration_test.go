@@ -303,7 +303,6 @@ func (s *migrationTestSuite) createImageCVE(cveName, componentID, datasource str
 			Cve:       cveName,
 			CreatedAt: protocompat.ConvertTimeToTimestampOrNil(createdAt),
 		},
-		Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 	}
 
 	serialized, err := proto.MarshalVT()
@@ -314,7 +313,6 @@ func (s *migrationTestSuite) createImageCVE(cveName, componentID, datasource str
 		CveBaseInfoCve:       cveName,
 		CveBaseInfoCreatedAt: createdAt,
 		ComponentID:          componentID,
-		Severity:             storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
 		Serialized:           serialized,
 	}
 }

@@ -5,7 +5,6 @@ package schema
 import (
 	"time"
 
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 )
 
@@ -20,10 +19,9 @@ var (
 // ImageCvesV2 holds the Gorm model for Postgres table `image_cves_v2`.
 // Frozen schema with only fields used by migration.
 type ImageCvesV2 struct {
-	ID                   string                        `gorm:"column:id;type:varchar;primaryKey"`
-	CveBaseInfoCve       string                        `gorm:"column:cvebaseinfo_cve;type:varchar"`
-	CveBaseInfoCreatedAt *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
-	ComponentID          string                        `gorm:"column:componentid;type:varchar"`
-	Severity             storage.VulnerabilitySeverity `gorm:"column:severity;type:integer"`
-	Serialized           []byte                        `gorm:"column:serialized;type:bytea"`
+	ID                   string     `gorm:"column:id;type:varchar;primaryKey"`
+	CveBaseInfoCve       string     `gorm:"column:cvebaseinfo_cve;type:varchar"`
+	CveBaseInfoCreatedAt *time.Time `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
+	ComponentID          string     `gorm:"column:componentid;type:varchar"`
+	Serialized           []byte     `gorm:"column:serialized;type:bytea"`
 }
