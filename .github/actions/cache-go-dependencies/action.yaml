@@ -41,3 +41,7 @@ runs:
     - name: Download Go modules
       run: make deps --always-make
       shell: bash
+
+    - name: Stabilize file mtimes for Go test cache
+      run: python3 scripts/ci/set-file-mtimes-from-git.py
+      shell: bash
