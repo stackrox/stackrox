@@ -807,29 +807,18 @@ _image_prefetcher_pin_images() {
 
     info "Pinning prefetched images to prevent kubelet GC..."
 
-    # Get the image list from the prefetcher configmap
-    local image_list
-    image_list=$(kubectl get configmap "$name" -n "$ns" -o jsonpath='{.data.images\.txt}')
-
-    # Pin images on each node using kubectl debug, which gives access to
-    # the host filesystem including the host's ctr binary.
+    # Pin ALL images in containerd's k8s.io namespace on each node.
+    # We use `ctr images list -q` to get the actual references containerd
+    # stored (which may differ from the tag names in the prefetch list due
+    # to multi-arch manifest list resolution), then label each one as pinned.
     local nodes
     nodes=$(kubectl get nodes -o jsonpath='{.items[*].metadata.name}')
     for node in $nodes; do
         info "Pinning images on node ${node}..."
-        local pin_cmd=""
-        while IFS= read -r img; do
-            [[ -z "$img" || "$img" == \#* ]] && continue
-            pin_cmd+="chroot /host ctr -n k8s.io images label '${img}' 'io.cri-containerd.pinned=pinned' 2>/dev/null && echo 'OK: ${img}' || echo 'FAIL: ${img}'; "
-        done <<< "$image_list"
-
         local output
         output=$(kubectl debug "node/${node}" -it --image=busybox:1.36 -q -- \
-            sh -c "${pin_cmd} echo DONE" 2>&1) || true
-        local ok_count fail_count
-        ok_count=$(echo "$output" | grep -c "^OK:" || true)
-        fail_count=$(echo "$output" | grep -c "^FAIL:" || true)
-        info "  Node ${node}: pinned=${ok_count} failed=${fail_count}"
+            sh -c 'p=0; f=0; for img in $(chroot /host ctr -n k8s.io images list -q 2>/dev/null); do if chroot /host ctr -n k8s.io images label "$img" "io.cri-containerd.pinned=pinned" >/dev/null 2>&1; then p=$((p+1)); else f=$((f+1)); fi; done; echo "pinned=$p failed=$f"' 2>&1) || true
+        info "  Node ${node}: ${output##*$'\n'}"
     done
     info "Image pinning complete on all nodes."
 }
