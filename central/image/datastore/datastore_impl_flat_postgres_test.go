@@ -7,7 +7,11 @@ import (
 	"fmt"
 	"sort"
 	"testing"
+	"time"
 
+	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
+	imageCVEInfoPostgres "github.com/stackrox/rox/central/cve/image/info/datastore/store/postgres"
+	cveInfoEnricher "github.com/stackrox/rox/central/cve/image/info/enricher"
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/image/datastore/keyfence"
@@ -21,6 +25,7 @@ import (
 	pkgCVE "github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	imageEnricher "github.com/stackrox/rox/pkg/images/enricher"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -35,6 +40,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestImageFlatDataStoreWithPostgres(t *testing.T) {
@@ -51,6 +57,8 @@ type ImageFlatPostgresDataStoreTestSuite struct {
 	mockRisk           *mockRisks.MockDataStore
 	componentDataStore imageComponentDS.DataStore
 	cveDataStore       imageCVEDS.DataStore
+	cveInfoDataStore   imageCVEInfoDS.DataStore
+	cveInfoEnricher    imageEnricher.CVEInfoEnricher
 }
 
 func (s *ImageFlatPostgresDataStoreTestSuite) SetupSuite() {
@@ -70,6 +78,10 @@ func (s *ImageFlatPostgresDataStoreTestSuite) SetupTest() {
 	cveStorage := imageCVEPostgres.New(s.db)
 	cveDataStore := imageCVEDS.New(cveStorage)
 	s.cveDataStore = cveDataStore
+
+	cveInfoStorage := imageCVEInfoPostgres.New(s.db)
+	s.cveInfoDataStore = imageCVEInfoDS.New(cveInfoStorage)
+	s.cveInfoEnricher = cveInfoEnricher.New(s.cveInfoDataStore)
 }
 
 func (s *ImageFlatPostgresDataStoreTestSuite) TearDownTest() {
@@ -548,6 +560,119 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestGetManyImageMetadata() {
 	testImage3.Scan.Components = nil
 	testImage3.Priority = 1
 	protoassert.ElementsMatch(s.T(), []*storage.Image{testImage1, testImage2, testImage3}, storedImages)
+}
+
+func (s *ImageFlatPostgresDataStoreTestSuite) TestCVETimestampPersistence() {
+	s.T().Setenv(features.CVEFixTimestampCriteria.EnvVar(), "true")
+	if !features.CVEFixTimestampCriteria.Enabled() {
+		s.T().Skip("CVEFixTimestampCriteria feature must be enabled for this test")
+	}
+
+	ctx := sac.WithAllAccess(context.Background())
+
+	// Scanner-provided timestamp for when the shared CVE was first discovered
+	cveDiscoverTimestamp := timestamppb.New(time.Now().Add(-24 * time.Hour))
+
+	sharedCVEID := "CVE-2024-1234"
+	datasource := "alpine:v3.18"
+
+	// Two images share a CVE but have their unique CVEs. First image defines the shared component/CVE; second references it.
+	images := []*storage.Image{
+		{
+			Id: "image1-sha",
+			Name: &storage.ImageName{
+				FullName: "registry.io/image1:v1",
+			},
+			Scan: &storage.ImageScan{
+				OperatingSystem: "alpine",
+				ScanTime:        timestamppb.Now(),
+				Components: []*storage.EmbeddedImageScanComponent{
+					{
+						Name:    "shared-component",
+						Version: "1.0.0",
+						Source:  storage.SourceType_OS,
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:                   sharedCVEID,
+								VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+								Datasource:            datasource,
+								Severity:              storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+								FirstSystemOccurrence: cveDiscoverTimestamp,
+							},
+							{
+								Cve:                   "CVE-2024-5678",
+								VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+								Datasource:            datasource,
+								FirstSystemOccurrence: timestamppb.Now(),
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Id: "image2-sha",
+			Name: &storage.ImageName{
+				FullName: "registry.io/image2:v2",
+			},
+			Scan: &storage.ImageScan{
+				OperatingSystem: "alpine",
+				ScanTime:        timestamppb.Now(),
+				Components: []*storage.EmbeddedImageScanComponent{
+					{
+						Name:    "shared-component",
+						Version: "1.0.0",
+						Source:  storage.SourceType_OS,
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:                   sharedCVEID,
+								VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+								Datasource:            datasource,
+								Severity:              storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+								FirstSystemOccurrence: timestamppb.Now(), // Later timestamp from different scanner
+							},
+							{
+								Cve:                   "CVE-2024-9999",
+								VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+								Datasource:            datasource,
+								FirstSystemOccurrence: timestamppb.Now(),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// Process images
+	for _, img := range images {
+		s.NoError(s.cveInfoEnricher.EnrichImageWithCVEInfo(ctx, img))
+		s.NoError(s.datastore.UpsertImage(ctx, img))
+	}
+
+	// Verify ImageCVEInfo persisted the earlier timestamp
+	cveInfoID := pkgCVE.ImageCVEInfoID(sharedCVEID, "shared-component", datasource)
+	cveInfo, found, err := s.cveInfoDataStore.Get(ctx, cveInfoID)
+	s.NoError(err)
+	s.True(found)
+	s.Equal(cveDiscoverTimestamp, cveInfo.GetFirstSystemOccurrence())
+
+	// Verify both images were enriched with the preserved timestamp
+	for _, img := range images {
+		stored, found, err := s.datastore.GetImage(ctx, img.GetId())
+		s.NoError(err)
+		s.True(found)
+		components := stored.GetScan().GetComponents()
+		s.Require().Len(components, 1)
+		s.Require().Len(components[0].GetVulns(), 2)
+		for _, vuln := range components[0].GetVulns() {
+			if vuln.GetCve() == sharedCVEID {
+				s.Equal(cveDiscoverTimestamp, vuln.GetFirstSystemOccurrence())
+			} else {
+				s.NotEqual(cveDiscoverTimestamp, vuln.GetFirstSystemOccurrence())
+			}
+		}
+	}
 }
 
 func (s *ImageFlatPostgresDataStoreTestSuite) truncateTable(name string) {

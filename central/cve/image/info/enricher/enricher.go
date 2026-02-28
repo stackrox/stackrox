@@ -78,11 +78,18 @@ func (e *enricherImpl) upsertImageCVEInfos(ctx context.Context, scan *storage.Im
 				fixAvailableTimestamp = now
 			}
 
+			// Use scanner-provided FirstSystemOccurrence if available, otherwise use current time.
+			// The datastore upsert will preserve the earliest timestamp across scans.
+			firstSystemOccurrenceTimestamp := vuln.GetFirstSystemOccurrence()
+			if firstSystemOccurrenceTimestamp == nil {
+				firstSystemOccurrenceTimestamp = now
+			}
+
 			info := &storage.ImageCVEInfo{
 				Id:                    cve.ImageCVEInfoID(vuln.GetCve(), component.GetName(), vuln.GetDatasource()),
 				Cve:                   vuln.GetCve(),
 				FixAvailableTimestamp: fixAvailableTimestamp,
-				FirstSystemOccurrence: now, // Smart upsert in ImageCVEInfo datastore preserves existing
+				FirstSystemOccurrence: firstSystemOccurrenceTimestamp,
 			}
 			infos = append(infos, info)
 		}
