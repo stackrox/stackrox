@@ -816,9 +816,9 @@ _image_prefetcher_pin_images() {
     for node in $nodes; do
         info "Pinning images on node ${node}..."
         local output
-        output=$(kubectl debug "node/${node}" -it --image=busybox:1.36 -q -- \
-            sh -c 'p=0; f=0; for img in $(chroot /host ctr -n k8s.io images list -q 2>/dev/null); do if chroot /host ctr -n k8s.io images label "$img" "io.cri-containerd.pinned=pinned" >/dev/null 2>&1; then p=$((p+1)); else f=$((f+1)); fi; done; echo "pinned=$p failed=$f"' 2>&1) || true
-        info "  Node ${node}: ${output##*$'\n'}"
+        output=$(kubectl debug "node/${node}" --image=busybox:1.36 -q -- \
+            sh -c 'p=0; f=0; for img in $(chroot /host ctr -n k8s.io images list -q 2>/dev/null); do if chroot /host ctr -n k8s.io images label "$img" "io.cri-containerd.pinned=pinned" >/dev/null 2>&1; then p=$((p+1)); else f=$((f+1)); fi; done; echo "pinned=$p failed=$f"' 2>&1)
+        info "  Node ${node}: ${output}"
     done
     info "Image pinning complete on all nodes."
 }
