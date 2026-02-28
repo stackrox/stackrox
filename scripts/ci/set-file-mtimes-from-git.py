@@ -55,7 +55,8 @@ def main() -> int:
     # Get repo root
     root = subprocess.run(
         ["git", "rev-parse", "--show-toplevel"],
-        capture_output=True, text=True, check=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        universal_newlines=True, check=True,
     ).stdout.strip()
 
     # Read the git index in one shot: blob SHA + path, NUL-separated
@@ -63,7 +64,8 @@ def main() -> int:
     # -z uses NUL as record separator to handle filenames with spaces/newlines
     result = subprocess.run(
         ["git", "ls-files", "-z", "--format=%(objectname) %(path)"],
-        capture_output=True, text=True, check=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        universal_newlines=True, check=True,
         cwd=root,
     )
 
