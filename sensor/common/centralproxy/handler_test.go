@@ -353,7 +353,7 @@ func TestServeHTTP_AuthorizationIntegration(t *testing.T) {
 		f := newProxyTestFixture(t, newDenyingAuthorizer(t))
 		// Set namespace scope header to trigger SAR check.
 		w := f.serveHTTP(t, http.MethodGet, "/v1/alerts", map[string]string{
-			"Authorization":      "Bearer test-token",
+			"Authorization":         "Bearer test-token",
 			stackroxNamespaceHeader: "my-namespace",
 		})
 		assert.False(t, f.proxyCalled, "proxy should not be called when authorization fails")
