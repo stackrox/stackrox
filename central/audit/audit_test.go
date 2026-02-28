@@ -158,6 +158,7 @@ func (suite *AuditLogTestSuite) TestServiceRequestsForInternalTokenEndpointAreAu
 	suite.Equal(tokenServiceV1.TokenService_GenerateTokenForPermissionsAndScope_FullMethodName,
 		msg.GetRequest().GetEndpoint(), "Audit message should contain the correct endpoint")
 	suite.Equal(v1.Audit_UPDATE, msg.GetInteraction(), "gRPC requests should have interaction=UPDATE")
+	suite.Equal(v1.Audit_REQUEST_SUCCEEDED, msg.GetStatus(), "Successful request should have REQUEST_SUCCEEDED status")
 }
 
 func (suite *AuditLogTestSuite) TestServiceRequestsForOtherEndpointsAreNotAudited() {
