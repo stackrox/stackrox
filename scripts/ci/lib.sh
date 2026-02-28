@@ -808,17 +808,41 @@ _image_prefetcher_pin_images() {
     info "Pinning prefetched images to prevent kubelet GC..."
 
     # Pin ALL images in containerd's k8s.io namespace on each node.
-    # We use `ctr images list -q` to get the actual references containerd
-    # stored (which may differ from the tag names in the prefetch list due
-    # to multi-arch manifest list resolution), then label each one as pinned.
+    # Uses nsenter (built into busybox) with hostPID to run the host's
+    # ctr binary directly. Creates one pod per node, waits for completion,
+    # then collects logs.
     local nodes
     nodes=$(kubectl get nodes -o jsonpath='{.items[*].metadata.name}')
+    local pin_cmd='p=0; f=0; for img in $(ctr -n k8s.io images list -q 2>/dev/null); do if ctr -n k8s.io images label "$img" io.cri-containerd.pinned=pinned >/dev/null 2>&1; then p=$((p+1)); else f=$((f+1)); fi; done; echo "pinned=$p failed=$f"'
+
+    # Launch pin pods on all nodes in parallel
     for node in $nodes; do
-        info "Pinning images on node ${node}..."
-        local output
-        output=$(kubectl debug "node/${node}" --image=busybox:1.36 -q -- \
-            sh -c 'p=0; f=0; for img in $(chroot /host ctr -n k8s.io images list -q 2>/dev/null); do if chroot /host ctr -n k8s.io images label "$img" "io.cri-containerd.pinned=pinned" >/dev/null 2>&1; then p=$((p+1)); else f=$((f+1)); fi; done; echo "pinned=$p failed=$f"' 2>&1)
-        info "  Node ${node}: ${output}"
+        local pod_name="pin-images-${node##*-}"
+        kubectl run "$pod_name" -n "$ns" --image=busybox:1.36 --restart=Never \
+            --overrides='{
+                "spec": {
+                    "nodeName": "'"$node"'",
+                    "hostPID": true,
+                    "containers": [{
+                        "name": "pin",
+                        "image": "busybox:1.36",
+                        "command": ["nsenter", "-t", "1", "-m", "-u", "-n", "-p", "--", "sh", "-c", "'"$pin_cmd"'"],
+                        "securityContext": {"privileged": true}
+                    }]
+                }
+            }' >/dev/null 2>&1 || true
+    done
+
+    # Wait for all pin pods to complete and collect results
+    for node in $nodes; do
+        local pod_name="pin-images-${node##*-}"
+        if kubectl wait "pod/$pod_name" -n "$ns" --for=jsonpath='{.status.phase}'=Succeeded --timeout=2m 2>/dev/null; then
+            info "  Node ${node}: $(kubectl logs "$pod_name" -n "$ns" 2>/dev/null)"
+        else
+            info "  Node ${node}: pin pod did not succeed"
+            kubectl logs "$pod_name" -n "$ns" 2>/dev/null || true
+        fi
+        kubectl delete pod "$pod_name" -n "$ns" --ignore-not-found >/dev/null 2>&1 || true
     done
     info "Image pinning complete on all nodes."
 }
