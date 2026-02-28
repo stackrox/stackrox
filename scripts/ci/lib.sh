@@ -807,100 +807,31 @@ _image_prefetcher_pin_images() {
 
     info "Pinning prefetched images to prevent kubelet GC..."
 
-    # Build a pin script that uses the host's ctr via nsenter.
-    # The script reads the image list and labels each image as pinned.
-    local pin_script
-    pin_script=$(mktemp)
-    cat <<'SCRIPT_EOF' > "$pin_script"
-#!/bin/sh
-pinned=0
-failed=0
-while IFS= read -r img || [ -n "$img" ]; do
-    case "$img" in "#"*|"") continue ;; esac
-    if nsenter -t 1 -m -- ctr -n k8s.io images label "$img" "io.cri-containerd.pinned=pinned" >/dev/null 2>&1; then
-        pinned=$((pinned + 1))
-    else
-        echo "WARN: could not pin: $img"
-        failed=$((failed + 1))
-    fi
-done < /tmp/list/images.txt
-echo "Pinned $pinned images ($failed failed)."
-SCRIPT_EOF
+    # Get the image list from the prefetcher configmap
+    local image_list
+    image_list=$(kubectl get configmap "$name" -n "$ns" -o jsonpath='{.data.images\.txt}')
 
-    kubectl create configmap "pin-${name}-script" -n "$ns" \
-        --from-file=pin-images.sh="$pin_script" \
-        --dry-run=client -o yaml | kubectl apply -f -
-    rm -f "$pin_script"
+    # Pin images on each node using kubectl debug, which gives access to
+    # the host filesystem including the host's ctr binary.
+    local nodes
+    nodes=$(kubectl get nodes -o jsonpath='{.items[*].metadata.name}')
+    for node in $nodes; do
+        info "Pinning images on node ${node}..."
+        local pin_cmd=""
+        while IFS= read -r img; do
+            [[ -z "$img" || "$img" == \#* ]] && continue
+            pin_cmd+="chroot /host ctr -n k8s.io images label '${img}' 'io.cri-containerd.pinned=pinned' 2>/dev/null && echo 'OK: ${img}' || echo 'FAIL: ${img}'; "
+        done <<< "$image_list"
 
-    # DaemonSet uses a tiny busybox image (already prefetched) with hostPID
-    # and nsenter to run the host's ctr. No need to pull large images.
-    local pin_ds="pin-${name}"
-    cat <<EOF | kubectl apply -n "$ns" -f -
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: ${pin_ds}
-  namespace: ${ns}
-spec:
-  selector:
-    matchLabels:
-      app: ${pin_ds}
-  template:
-    metadata:
-      labels:
-        app: ${pin_ds}
-    spec:
-      tolerations:
-      - operator: Exists
-      hostPID: true
-      restartPolicy: Always
-      initContainers:
-      - name: pin
-        image: quay.io/stackrox-io/image-prefetcher:v0.4.3
-        command: ["sh", "/tmp/script/pin-images.sh"]
-        volumeMounts:
-        - name: image-list
-          mountPath: /tmp/list
-          readOnly: true
-        - name: pin-script
-          mountPath: /tmp/script
-          readOnly: true
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            cpu: 10m
-            memory: 32Mi
-          limits:
-            cpu: 200m
-            memory: 128Mi
-      containers:
-      - name: done
-        image: quay.io/stackrox-io/image-prefetcher:v0.4.3
-        command: ["sh", "-c", "echo done"]
-        resources:
-          requests:
-            cpu: 1m
-            memory: 8Mi
-          limits:
-            cpu: 1m
-            memory: 8Mi
-      volumes:
-      - name: image-list
-        configMap:
-          name: ${name}
-      - name: pin-script
-        configMap:
-          name: pin-${name}-script
-EOF
-
-    if kubectl rollout status daemonset "$pin_ds" -n "$ns" --timeout 5m; then
-        info "All prefetched images have been pinned against GC."
-    else
-        info "WARNING: Image pinning did not complete in time. Tests may experience ErrImageNeverPull."
-    fi
-    kubectl delete daemonset "$pin_ds" -n "$ns" --ignore-not-found >/dev/null 2>&1 || true
-    kubectl delete configmap "pin-${name}-script" -n "$ns" --ignore-not-found >/dev/null 2>&1 || true
+        local output
+        output=$(kubectl debug "node/${node}" -it --image=busybox:1.36 -q -- \
+            sh -c "${pin_cmd} echo DONE" 2>&1) || true
+        local ok_count fail_count
+        ok_count=$(echo "$output" | grep -c "^OK:" || true)
+        fail_count=$(echo "$output" | grep -c "^FAIL:" || true)
+        info "  Node ${node}: pinned=${ok_count} failed=${fail_count}"
+    done
+    info "Image pinning complete on all nodes."
 }
 
 image_prefetcher_await_set() {
