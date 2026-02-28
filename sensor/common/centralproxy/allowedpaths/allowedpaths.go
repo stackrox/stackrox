@@ -8,20 +8,34 @@ import (
 )
 
 var (
-	mutex        sync.RWMutex
-	allowedPaths set.Set[string]
+	pathsMutex  sync.RWMutex
+	exactPaths  set.Set[string]
+	prefixPaths set.Set[string]
 )
 
 // Set stores the allowed proxy paths received from Central.
-// An empty or nil slice means no path filtering is applied (backward compat).
+// Entries ending with "/" are treated as prefixes; all others require an exact
+// match. An empty or nil slice means no path filtering is applied (backward
+// compat).
 func Set(paths []string) {
-	mutex.Lock()
-	defer mutex.Unlock()
+	pathsMutex.Lock()
+	defer pathsMutex.Unlock()
 	if len(paths) == 0 {
-		allowedPaths = nil
+		exactPaths = nil
+		prefixPaths = nil
 		return
 	}
-	allowedPaths = set.NewSet(paths...)
+	exact := set.NewSet[string]()
+	prefixes := set.NewSet[string]()
+	for _, p := range paths {
+		if strings.HasSuffix(p, "/") {
+			prefixes.Add(p)
+		} else {
+			exact.Add(p)
+		}
+	}
+	exactPaths = exact
+	prefixPaths = prefixes
 }
 
 // IsAllowed returns true if the given path matches any of the allowed paths.
@@ -33,17 +47,16 @@ func Set(paths []string) {
 // The caller must pass a pure path (no query string); IsAllowed does not strip
 // query parameters.
 func IsAllowed(path string) bool {
-	mutex.RLock()
-	defer mutex.RUnlock()
-	if allowedPaths == nil {
+	pathsMutex.RLock()
+	defer pathsMutex.RUnlock()
+	if exactPaths == nil && prefixPaths == nil {
 		return true
 	}
-	for allowed := range allowedPaths {
-		if strings.HasSuffix(allowed, "/") {
-			if strings.HasPrefix(path, allowed) {
-				return true
-			}
-		} else if path == allowed {
+	if exactPaths.Contains(path) {
+		return true
+	}
+	for prefix := range prefixPaths {
+		if strings.HasPrefix(path, prefix) {
 			return true
 		}
 	}
@@ -52,7 +65,8 @@ func IsAllowed(path string) bool {
 
 // Reset clears the stored paths. Intended for testing.
 func Reset() {
-	mutex.Lock()
-	defer mutex.Unlock()
-	allowedPaths = nil
+	pathsMutex.Lock()
+	defer pathsMutex.Unlock()
+	exactPaths = nil
+	prefixPaths = nil
 }
