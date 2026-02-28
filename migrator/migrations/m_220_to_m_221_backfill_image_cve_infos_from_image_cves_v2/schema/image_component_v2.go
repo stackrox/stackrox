@@ -36,13 +36,19 @@ const (
 )
 
 // ImageComponentV2 holds the Gorm model for Postgres table `image_component_v2`.
+// Frozen schema with foreign key constraints removed for test isolation.
 type ImageComponentV2 struct {
 	ID              string             `gorm:"column:id;type:varchar;primaryKey"`
 	Name            string             `gorm:"column:name;type:varchar"`
 	Version         string             `gorm:"column:version;type:varchar"`
+	Priority        int64              `gorm:"column:priority;type:bigint"`
 	Source          storage.SourceType `gorm:"column:source;type:integer"`
+	RiskScore       float32            `gorm:"column:riskscore;type:numeric"`
+	TopCvss         float32            `gorm:"column:topcvss;type:numeric"`
 	OperatingSystem string             `gorm:"column:operatingsystem;type:varchar"`
 	ImageID         string             `gorm:"column:imageid;type:varchar;index:imagecomponentv2_imageid,type:btree"`
+	Location        string             `gorm:"column:location;type:varchar"`
 	ImageIDV2       string             `gorm:"column:imageidv2;type:varchar;index:imagecomponentv2_imageidv2,type:btree"`
+	LayerType       storage.LayerType  `gorm:"column:layertype;type:integer"`
 	Serialized      []byte             `gorm:"column:serialized;type:bytea"`
 }

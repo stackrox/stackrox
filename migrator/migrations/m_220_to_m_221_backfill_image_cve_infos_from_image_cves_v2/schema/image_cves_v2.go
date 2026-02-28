@@ -37,23 +37,26 @@ const (
 )
 
 // ImageCvesV2 holds the Gorm model for Postgres table `image_cves_v2`.
+// Frozen schema with foreign key constraints removed for test isolation.
 type ImageCvesV2 struct {
-	ID                    string                        `gorm:"column:id;type:varchar;primaryKey"`
-	ImageID               string                        `gorm:"column:imageid;type:varchar;index:imagecvesv2_imageid,type:btree"`
-	CveBaseInfoCve        string                        `gorm:"column:cvebaseinfo_cve;type:varchar;index:imagecvesv2_cvebaseinfo_cve,type:btree"`
-	CveBaseInfoCreatedAt  *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
-	Severity              storage.VulnerabilitySeverity `gorm:"column:severity;type:integer;index:imagecvesv2_severity,type:btree"`
-	ComponentID           string                        `gorm:"column:componentid;type:varchar;index:imagecvesv2_componentid,type:btree"`
-	ImageIDV2             string                        `gorm:"column:imageidv2;type:varchar;index:imagecvesv2_imageidv2,type:btree"`
-	FixAvailableTimestamp *time.Time                    `gorm:"column:fixavailabletimestamp;type:timestamp"`
-	Serialized            []byte                        `gorm:"column:serialized;type:bytea"`
-}
-
-// ConvertImageCVEV2ToProto converts Gorm model `ImageCvesV2` to its protobuf type object
-func ConvertImageCVEV2ToProto(m *ImageCvesV2) (*storage.ImageCVEV2, error) {
-	var msg storage.ImageCVEV2
-	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
-		return nil, err
-	}
-	return &msg, nil
+	ID                             string                        `gorm:"column:id;type:varchar;primaryKey"`
+	ImageID                        string                        `gorm:"column:imageid;type:varchar;index:imagecvesv2_imageid,type:btree"`
+	CveBaseInfoCve                 string                        `gorm:"column:cvebaseinfo_cve;type:varchar;index:imagecvesv2_cvebaseinfo_cve,type:btree"`
+	CveBaseInfoPublishedOn         *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
+	CveBaseInfoCreatedAt           *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
+	CveBaseInfoEpssEpssProbability float32                       `gorm:"column:cvebaseinfo_epss_epssprobability;type:numeric"`
+	Cvss                           float32                       `gorm:"column:cvss;type:numeric"`
+	Severity                       storage.VulnerabilitySeverity `gorm:"column:severity;type:integer;index:imagecvesv2_severity,type:btree"`
+	ImpactScore                    float32                       `gorm:"column:impactscore;type:numeric"`
+	Nvdcvss                        float32                       `gorm:"column:nvdcvss;type:numeric"`
+	FirstImageOccurrence           *time.Time                    `gorm:"column:firstimageoccurrence;type:timestamp"`
+	State                          storage.VulnerabilityState    `gorm:"column:state;type:integer;index:imagecvesv2_state,type:btree"`
+	IsFixable                      bool                          `gorm:"column:isfixable;type:bool"`
+	FixedBy                        string                        `gorm:"column:fixedby;type:varchar"`
+	ComponentID                    string                        `gorm:"column:componentid;type:varchar;index:imagecvesv2_componentid,type:btree"`
+	AdvisoryName                   string                        `gorm:"column:advisory_name;type:varchar"`
+	AdvisoryLink                   string                        `gorm:"column:advisory_link;type:varchar"`
+	ImageIDV2                      string                        `gorm:"column:imageidv2;type:varchar;index:imagecvesv2_imageidv2,type:btree"`
+	FixAvailableTimestamp          *time.Time                    `gorm:"column:fixavailabletimestamp;type:timestamp"`
+	Serialized                     []byte                        `gorm:"column:serialized;type:bytea"`
 }

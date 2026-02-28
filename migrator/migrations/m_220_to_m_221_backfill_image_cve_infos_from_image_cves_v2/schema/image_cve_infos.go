@@ -40,28 +40,3 @@ type ImageCveInfos struct {
 	Cve                   string     `gorm:"column:cve;type:varchar;index:imagecveinfos_cve,type:btree"`
 	Serialized            []byte     `gorm:"column:serialized;type:bytea"`
 }
-
-// ConvertImageCVEInfoFromProto converts a `*storage.ImageCVEInfo` to Gorm model
-func ConvertImageCVEInfoFromProto(obj *storage.ImageCVEInfo) (*ImageCveInfos, error) {
-	serialized, err := obj.MarshalVT()
-	if err != nil {
-		return nil, err
-	}
-	model := &ImageCveInfos{
-		ID:                    obj.GetId(),
-		FixAvailableTimestamp: nil, // Migration decision: leave for runtime enrichment
-		FirstSystemOccurrence: nil, // Will be populated by migration
-		Cve:                   obj.GetCve(),
-		Serialized:            serialized,
-	}
-	return model, nil
-}
-
-// ConvertImageCVEInfoToProto converts Gorm model `ImageCveInfos` to its protobuf type object
-func ConvertImageCVEInfoToProto(m *ImageCveInfos) (*storage.ImageCVEInfo, error) {
-	var msg storage.ImageCVEInfo
-	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
-		return nil, err
-	}
-	return &msg, nil
-}
