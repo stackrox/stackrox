@@ -809,28 +809,52 @@ _image_prefetcher_pin_images() {
 
     # Pin ALL images in containerd's k8s.io namespace on each node.
     # Uses nsenter (built into busybox) with hostPID to run the host's
-    # ctr binary directly. Creates one pod per node, waits for completion,
+    # ctr binary directly. Creates one pod per node via a manifest file
+    # (avoids shell quoting issues with --overrides), waits for completion,
     # then collects logs.
     local nodes
     nodes=$(kubectl get nodes -o jsonpath='{.items[*].metadata.name}')
-    local pin_cmd='p=0; f=0; for img in $(ctr -n k8s.io images list -q 2>/dev/null); do if ctr -n k8s.io images label "$img" io.cri-containerd.pinned=pinned >/dev/null 2>&1; then p=$((p+1)); else f=$((f+1)); fi; done; echo "pinned=$p failed=$f"'
 
     # Launch pin pods on all nodes in parallel
     for node in $nodes; do
         local pod_name="pin-images-${node##*-}"
-        kubectl run "$pod_name" -n "$ns" --image=busybox:1.36 --restart=Never \
-            --overrides='{
-                "spec": {
-                    "nodeName": "'"$node"'",
-                    "hostPID": true,
-                    "containers": [{
-                        "name": "pin",
-                        "image": "busybox:1.36",
-                        "command": ["nsenter", "-t", "1", "-m", "-u", "-n", "-p", "--", "sh", "-c", "'"$pin_cmd"'"],
-                        "securityContext": {"privileged": true}
-                    }]
-                }
-            }' >/dev/null 2>&1 || true
+        cat <<PINEOF | kubectl apply -n "$ns" -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ${pod_name}
+  namespace: ${ns}
+spec:
+  nodeName: ${node}
+  hostPID: true
+  restartPolicy: Never
+  containers:
+  - name: pin
+    image: busybox:1.36
+    command:
+    - nsenter
+    - "-t"
+    - "1"
+    - "-m"
+    - "-u"
+    - "-n"
+    - "-p"
+    - "--"
+    - sh
+    - "-c"
+    - |
+      p=0; f=0
+      for img in \$(ctr -n k8s.io images list -q 2>/dev/null); do
+        if ctr -n k8s.io images label "\$img" io.cri-containerd.pinned=pinned >/dev/null 2>&1; then
+          p=\$((p+1))
+        else
+          f=\$((f+1))
+        fi
+      done
+      echo "pinned=\$p failed=\$f"
+    securityContext:
+      privileged: true
+PINEOF
     done
 
     # Wait for all pin pods to complete and collect results
@@ -840,7 +864,7 @@ _image_prefetcher_pin_images() {
             info "  Node ${node}: $(kubectl logs "$pod_name" -n "$ns" 2>/dev/null)"
         else
             info "  Node ${node}: pin pod did not succeed"
-            kubectl logs "$pod_name" -n "$ns" 2>/dev/null || true
+            kubectl describe pod "$pod_name" -n "$ns" 2>/dev/null | tail -5 || true
         fi
         kubectl delete pod "$pod_name" -n "$ns" --ignore-not-found >/dev/null 2>&1 || true
     done
