@@ -52,9 +52,12 @@ func init() {
 	GitShortSha = \"${git_short_sha}\"
 }"
 	if [[ -f "$target" ]] && [[ "$(cat "$target")" == "$new_content" ]]; then
+		# Pin mtime to fixed past date for test cache stability.
+		touch -t 200101010000 "$target"
 		return
 	fi
 	echo "$new_content" > "$target"
+	touch -t 200101010000 "$target"
 }
 generate_version_file
 
