@@ -83,7 +83,7 @@ func (m *manager) shouldBypass(s *state, req *admission.AdmissionRequest) bool {
 // by placeholder images before enrichment completes.
 func hasOnlyUnenrichedImageAlerts(alerts []*storage.Alert) bool {
 	for _, a := range alerts {
-		if !policyfields.ContainsEnrichmentRequiredFields(a.GetPolicy()) {
+		if !policyfields.AlertsOnMissingEnrichment(a.GetPolicy()) {
 			return false
 		}
 	}
@@ -96,7 +96,7 @@ func hasOnlyUnenrichedImageAlerts(alerts []*storage.Alert) bool {
 func filterOutUnenrichedImageAlerts(alerts []*storage.Alert) []*storage.Alert {
 	filteredAlerts := alerts[:0]
 	for _, a := range alerts {
-		if policyfields.ContainsEnrichmentRequiredFields(a.GetPolicy()) {
+		if policyfields.AlertsOnMissingEnrichment(a.GetPolicy()) {
 			continue
 		}
 		filteredAlerts = append(filteredAlerts, a)

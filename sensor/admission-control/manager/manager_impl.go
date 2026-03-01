@@ -245,7 +245,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	allK8sEventPolicySet := detection.NewPolicySet(nil, nil)
 	k8sEventPoliciesWithDeployFields, k8sEventPoliciesWithoutDeployFields := detection.NewPolicySet(nil, nil), detection.NewPolicySet(nil, nil)
 	for _, policy := range newSettings.GetRuntimePolicies().GetPolicies() {
-		if policyfields.ContainsEnrichmentRequiredFields(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
+		if policyfields.AlertsOnMissingEnrichment(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
 			log.Warn(errors.ImageScanUnavailableMsg(policy))
 			continue
 		}
@@ -273,7 +273,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	deployTimePolicySet := detection.NewPolicySet(nil, nil)
 	if enforceOnCreates || enforceOnUpdates {
 		for _, policy := range newSettings.GetEnforcedDeployTimePolicies().GetPolicies() {
-			if policyfields.ContainsEnrichmentRequiredFields(policy) &&
+			if policyfields.AlertsOnMissingEnrichment(policy) &&
 				!newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
 				log.Warn(errors.ImageScanUnavailableMsg(policy))
 				continue

@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/regexutils"
 	"github.com/stackrox/rox/pkg/scopecomp"
@@ -29,13 +30,16 @@ type CompiledPolicy interface {
 	MatchAgainstNodeAndFileAccess(cacheReceptacle *booleanpolicy.CacheReceptacle, node *storage.Node, access *storage.FileAccess) (booleanpolicy.Violations, error)
 	MatchAgainstDeploymentAndFileAccess(cacheReceptacle *booleanpolicy.CacheReceptacle, enhancedDeployment booleanpolicy.EnhancedDeployment, access *storage.FileAccess) (booleanpolicy.Violations, error)
 
+	RequiresImageEnrichment() bool
+
 	Predicate
 }
 
 // newCompiledPolicy creates and returns a compiled policy from the policy and legacySearchBasedMatcher.
 func newCompiledPolicy(policy *storage.Policy, clusterLabelProvider scopecomp.ClusterLabelProvider, namespaceLabelProvider scopecomp.NamespaceLabelProvider) (CompiledPolicy, error) {
 	compiled := &compiledPolicy{
-		policy: policy,
+		policy:                  policy,
+		requiresImageEnrichment: policyfields.ContainsImageEnrichmentRequiredFields(policy),
 	}
 
 	exclusions := make([]*compiledExclusion, 0, len(policy.GetExclusions()))
@@ -292,11 +296,12 @@ type compiledPolicy struct {
 	auditLogEventMatcher             booleanpolicy.AuditLogEventMatcher
 	nodeMatcher                      booleanpolicy.NodeEventMatcher
 
-	hasProcessSection     bool
-	hasKubeEventsSection  bool
-	hasNetworkFlowSection bool
-	hasAuditEventsSection bool
-	hasFileAccessSection  bool
+	hasProcessSection       bool
+	hasKubeEventsSection    bool
+	hasNetworkFlowSection   bool
+	hasAuditEventsSection   bool
+	hasFileAccessSection    bool
+	requiresImageEnrichment bool
 }
 
 func (cp *compiledPolicy) MatchAgainstAuditLogEvent(
@@ -391,6 +396,10 @@ func (cp *compiledPolicy) MatchAgainstDeploymentAndFileAccess(cache *booleanpoli
 // Policy returns the policy that was compiled.
 func (cp *compiledPolicy) Policy() *storage.Policy {
 	return cp.policy
+}
+
+func (cp *compiledPolicy) RequiresImageEnrichment() bool {
+	return cp.requiresImageEnrichment
 }
 
 // AppliesTo returns if the compiled policy applies to the input object.
