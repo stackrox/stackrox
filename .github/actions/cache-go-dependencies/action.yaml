@@ -43,5 +43,5 @@ runs:
       shell: bash
 
     - name: Stabilize file mtimes for Go test cache
-      run: python3 scripts/ci/set-file-mtimes-from-git.py
+      run: git ls-files -z | xargs -0 touch -t 200101010000
       shell: bash
