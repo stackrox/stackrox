@@ -78,7 +78,6 @@ shellcheck-reports
 
 # Generated version data (written by go-tool.sh)
 pkg/version/internal/zversion.go
-/VERSION
 
 # Konflux builds download scanner vuln files to the code repo.
 # These files need to be ignored in order for `make tag` return a clean version string.

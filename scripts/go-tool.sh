@@ -14,10 +14,11 @@ die() {
 RACE="${RACE:-false}"
 REPO_ROOT="${SCRIPT_DIR}/.."
 
-# Read version data directly from committed files and git.
+# Read version data from committed files.
 COLLECTOR_VERSION="$(cat "${REPO_ROOT}/COLLECTOR_VERSION")" || die "Missing COLLECTOR_VERSION"
 SCANNER_VERSION="$(cat "${REPO_ROOT}/SCANNER_VERSION")" || die "Missing SCANNER_VERSION"
 FACT_VERSION="$(cat "${REPO_ROOT}/FACT_VERSION")" || die "Missing FACT_VERSION"
+BASE_VERSION="$(cat "${REPO_ROOT}/VERSION")" || die "Missing VERSION"
 
 # Generate version data file. Tests use only the base tag (stable across
 # commits) to keep ActionIDs stable for test result caching. Builds get
@@ -26,18 +27,16 @@ generate_version_file() {
 	local target="${REPO_ROOT}/pkg/version/internal/zversion.go"
 	local main_version git_short_sha
 
-	local base_tag git_short_sha commit_count
-	base_tag="$(cd "${REPO_ROOT}"; git describe --tags --abbrev=0 --exclude '*-nightly-*' 2>/dev/null || echo "")"
-	git_short_sha="$(cd "${REPO_ROOT}"; git rev-parse --short HEAD 2>/dev/null || echo "")"
-	commit_count="$(cd "${REPO_ROOT}"; git rev-list --count "${base_tag}..HEAD" 2>/dev/null || echo "0")"
-
 	if [[ "$TOOL" == "test" ]]; then
 		# Base tag only (e.g. "4.11.x") — stable across commits.
-		main_version="${base_tag}"
+		main_version="${BASE_VERSION}"
 		git_short_sha=""
 	else
 		# Full format matching git describe (e.g. "4.11.x-193-g7257553280").
-		main_version="${base_tag}-${commit_count}-g${git_short_sha}"
+		local commit_count
+		git_short_sha="$(cd "${REPO_ROOT}"; git rev-parse --short HEAD 2>/dev/null || echo "")"
+		commit_count="$(cd "${REPO_ROOT}"; git rev-list --count "${BASE_VERSION}..HEAD" 2>/dev/null || echo "0")"
+		main_version="${BASE_VERSION}-${commit_count}-g${git_short_sha}"
 	fi
 
 	local new_content

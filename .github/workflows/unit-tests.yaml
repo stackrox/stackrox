@@ -30,11 +30,12 @@ jobs:
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
+      options: --tmpfs /__w:rw,exec,size=4G
     steps:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
+        fetch-depth: 1
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -112,6 +113,7 @@ jobs:
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
+      options: --tmpfs /__w:rw,exec,size=4G
     steps:
     - name: Set Postgres version
       run: |
@@ -120,7 +122,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
+        fetch-depth: 1
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -183,6 +185,7 @@ jobs:
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
+      options: --tmpfs /__w:rw,exec,size=4G
     steps:
     - name: Set Postgres version
       run: |
@@ -191,7 +194,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
+        fetch-depth: 1
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -314,11 +317,12 @@ jobs:
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
+      options: --tmpfs /__w:rw,exec,size=4G
     steps:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
+        fetch-depth: 1
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -361,7 +365,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
+        fetch-depth: 1
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -395,7 +399,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -415,7 +419,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
+        fetch-depth: 1
 
     - name: Set up Go
       uses: actions/setup-go@v6
