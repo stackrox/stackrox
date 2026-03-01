@@ -126,30 +126,6 @@ function go_run() (
 
 function go_test() (
   unset GOOS
-  # Count test compilation cache hits via a dry-run compile.
-  # Extract package paths from args (skip flags and flag values).
-  local pkgs=()
-  local skip_next=false
-  for arg in "$@"; do
-    if $skip_next; then skip_next=false; continue; fi
-    case "$arg" in
-      -coverprofile|-covermode|-coverpkg|-outputdir|-o|-timeout|-p|-parallel|-run|-bench|-benchtime|-count|-cpu|-list|-memprofile|-cpuprofile|-blockprofile|-mutexprofile|-trace|-shuffle)
-        skip_next=true ;;
-      -*) ;;
-      *) pkgs+=("$arg") ;;
-    esac
-  done
-  if [[ ${#pkgs[@]} -gt 0 ]]; then
-    local race_flag=""
-    [[ "$RACE" == "true" ]] && race_flag="-race"
-    local compiled
-    compiled=$(go test -c -x -buildvcs=false $race_flag -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" -o /dev/null "${pkgs[@]}" 2>&1 | grep -c '/compile ' || true)
-    if [[ "$compiled" -eq 0 ]]; then
-      echo >&2 "Test build cache: fully cached"
-    else
-      echo >&2 "Test build cache: $compiled packages compiled"
-    fi
-  fi
   invoke_go test -buildvcs=false "$@"
 )
 
