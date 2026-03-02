@@ -8,6 +8,32 @@ This guide provides instructions for AI agents working on the StackRox UI codeba
 
 ---
 
+## Navigation
+
+### Code Intelligence
+
+Prefer a TypeScript LSP over Grep/Glob/Read for code navigation:
+- `goToDefinition` / `goToImplementation` to jump to source
+- `findReferences` to see all usages across the codebase
+- `workspaceSymbol` to find where something is defined
+- `documentSymbol` to list all symbols in a file
+- `hover` for type info without reading the file
+- `incomingCalls` / `outgoingCalls` for call hierarchy
+
+Before renaming or changing a function signature, use
+`findReferences` to find all call sites first.
+
+Use Grep/Glob only for text/pattern searches (comments,
+strings, config values) where LSP doesn't help.
+
+After writing or editing code, check LSP diagnostics before
+moving on. Fix any type errors or missing imports immediately.
+
+Users can install the TypeScript LSP manually via `npm i -g typescript-language-server typescript`.
+
+
+---
+
 ## Commands
 
 ### Development
@@ -43,6 +69,8 @@ npm run tsc                # TypeScript type checking
 ```
 
 **Important:** Use IDE diagnostics (real-time linting) instead of running full lint commands — they're much faster for development. Use `lint:fast-dev` only if you need to run lint from the command line.
+
+**Important:** If an LSP is available, prefer that instead of `npm run tsc` as the method of type checking.
 
 ---
 
