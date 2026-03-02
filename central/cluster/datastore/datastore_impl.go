@@ -989,11 +989,15 @@ func applyConfigToCluster(cluster *storage.Cluster, config clusterConfigData) *s
 // checkGracePeriodForReconnect checks if reconnection is allowed based on grace period.
 // For Helm/Operator managed clusters, prevents cluster moves within the grace period.
 func checkGracePeriodForReconnect(cluster *storage.Cluster, deploymentID *storage.SensorDeploymentIdentification, manager storage.ManagerType) error {
+	// In a scale test environment, allow Sensors to reconnect in under the time limit.
+	if env.ScaleTestEnabled.BooleanSetting() {
+		return nil
+	}
+
 	lastContact := protoconv.ConvertTimestampToTimeOrDefault(cluster.GetHealthStatus().GetLastContact(), time.Time{})
 	timeLeftInGracePeriod := clusterMoveGracePeriod - time.Since(lastContact)
 
-	// In a scale test environment, allow Sensors to reconnect in under the time limit
-	if timeLeftInGracePeriod > 0 && !env.ScaleTestEnabled.BooleanSetting() {
+	if timeLeftInGracePeriod > 0 {
 		if err := common.CheckConnReplace(deploymentID, cluster.GetMostRecentSensorId()); err != nil {
 			// Fallback value - should be overridden by switch unless ManagerType is extended.
 			// This should never surface to the user.
