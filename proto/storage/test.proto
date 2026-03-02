@@ -179,6 +179,8 @@ message TestStruct {
 
   repeated int32 int32_slice = 18; // @gotags: search:"Test Int32 Slice"
 
+  google.protobuf.Timestamp timestamptz = 19; // @gotags: sql:"type(timestamptz)" search:"Test TimestampTZ"
+
   message Embedded {
     string embedded = 1;
     message Embedded2 {

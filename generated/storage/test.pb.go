@@ -634,10 +634,11 @@ type TestStruct struct {
 	// repeated int64: currently unsupported
 	//
 	// Deprecated: Marked as deprecated in storage/test.proto.
-	IntSliceDeprecated []int64              `protobuf:"varint,17,rep,packed,name=int_slice_deprecated,json=intSliceDeprecated,proto3" json:"int_slice_deprecated,omitempty" sql:"-"` // @gotags: sql:"-"
-	Int32Slice         []int32              `protobuf:"varint,18,rep,packed,name=int32_slice,json=int32Slice,proto3" json:"int32_slice,omitempty" search:"Test Int32 Slice"`                           // @gotags: search:"Test Int32 Slice"
-	Embedded           *TestStruct_Embedded `protobuf:"bytes,12,opt,name=embedded,proto3" json:"embedded,omitempty"`
-	Nested             []*TestStruct_Nested `protobuf:"bytes,13,rep,name=nested,proto3" json:"nested,omitempty"`
+	IntSliceDeprecated []int64                `protobuf:"varint,17,rep,packed,name=int_slice_deprecated,json=intSliceDeprecated,proto3" json:"int_slice_deprecated,omitempty" sql:"-"` // @gotags: sql:"-"
+	Int32Slice         []int32                `protobuf:"varint,18,rep,packed,name=int32_slice,json=int32Slice,proto3" json:"int32_slice,omitempty" search:"Test Int32 Slice"`                           // @gotags: search:"Test Int32 Slice"
+	Timestamptz        *timestamppb.Timestamp `protobuf:"bytes,19,opt,name=timestamptz,proto3" json:"timestamptz,omitempty" sql:"type(timestamptz)" search:"Test TimestampTZ"`                                                   // @gotags: sql:"type(timestamptz)" search:"Test TimestampTZ"
+	Embedded           *TestStruct_Embedded   `protobuf:"bytes,12,opt,name=embedded,proto3" json:"embedded,omitempty"`
+	Nested             []*TestStruct_Nested   `protobuf:"bytes,13,rep,name=nested,proto3" json:"nested,omitempty"`
 	// Types that are valid to be assigned to Oneof:
 	//
 	//	*TestStruct_Oneofstring
@@ -772,6 +773,13 @@ func (x *TestStruct) GetIntSliceDeprecated() []int64 {
 func (x *TestStruct) GetInt32Slice() []int32 {
 	if x != nil {
 		return x.Int32Slice
+	}
+	return nil
+}
+
+func (x *TestStruct) GetTimestamptz() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Timestamptz
 	}
 	return nil
 }
@@ -2754,7 +2762,7 @@ const file_storage_test_proto_rawDesc = "" +
 	"\x05ENUM1\x10\x01\x12\t\n" +
 	"\x05ENUM2\x10\x02B\a\n" +
 	"\x05oneofB\v\n" +
-	"\toneof_two\"\xbc\t\n" +
+	"\toneof_two\"\xfa\t\n" +
 	"\n" +
 	"TestStruct\x12\x12\n" +
 	"\x04key1\x18\x01 \x01(\tR\x04key1\x12\x12\n" +
@@ -2772,7 +2780,8 @@ const file_storage_test_proto_rawDesc = "" +
 	"\x06string\x18\x10 \x01(\tR\x06string\x124\n" +
 	"\x14int_slice_deprecated\x18\x11 \x03(\x03B\x02\x18\x01R\x12intSliceDeprecated\x12\x1f\n" +
 	"\vint32_slice\x18\x12 \x03(\x05R\n" +
-	"int32Slice\x128\n" +
+	"int32Slice\x12<\n" +
+	"\vtimestamptz\x18\x13 \x01(\v2\x1a.google.protobuf.TimestampR\vtimestamptz\x128\n" +
 	"\bembedded\x18\f \x01(\v2\x1c.storage.TestStruct.EmbeddedR\bembedded\x122\n" +
 	"\x06nested\x18\r \x03(\v2\x1a.storage.TestStruct.NestedR\x06nested\x12\"\n" +
 	"\voneofstring\x18\x0e \x01(\tH\x00R\voneofstring\x12C\n" +
@@ -2950,22 +2959,23 @@ var file_storage_test_proto_depIdxs = []int32{
 	43, // 16: storage.TestStruct.timestamp:type_name -> google.protobuf.Timestamp
 	2,  // 17: storage.TestStruct.enum:type_name -> storage.TestStruct.Enum
 	2,  // 18: storage.TestStruct.enums:type_name -> storage.TestStruct.Enum
-	34, // 19: storage.TestStruct.embedded:type_name -> storage.TestStruct.Embedded
-	35, // 20: storage.TestStruct.nested:type_name -> storage.TestStruct.Nested
-	36, // 21: storage.TestStruct.oneofnested:type_name -> storage.TestStruct.OneOfNested
-	40, // 22: storage.TestGrandparent.embedded:type_name -> storage.TestGrandparent.Embedded
-	42, // 23: storage.TestParent1.children:type_name -> storage.TestParent1.Child1Ref
-	24, // 24: storage.TestSingleKeyStruct.Nested.nested2:type_name -> storage.TestSingleKeyStruct.Nested.Nested2
-	25, // 25: storage.TestSingleKeyStruct.OneOfNested.nested2:type_name -> storage.TestSingleKeyStruct.OneOfNested.Nested2
-	31, // 26: storage.TestSingleUUIDKeyStruct.Nested.nested2:type_name -> storage.TestSingleUUIDKeyStruct.Nested.Nested2
-	32, // 27: storage.TestSingleUUIDKeyStruct.OneOfNested.nested2:type_name -> storage.TestSingleUUIDKeyStruct.OneOfNested.Nested2
-	38, // 28: storage.TestStruct.Nested.nested2:type_name -> storage.TestStruct.Nested.Nested2
-	41, // 29: storage.TestGrandparent.Embedded.embedded2:type_name -> storage.TestGrandparent.Embedded.Embedded2
-	30, // [30:30] is the sub-list for method output_type
-	30, // [30:30] is the sub-list for method input_type
-	30, // [30:30] is the sub-list for extension type_name
-	30, // [30:30] is the sub-list for extension extendee
-	0,  // [0:30] is the sub-list for field type_name
+	43, // 19: storage.TestStruct.timestamptz:type_name -> google.protobuf.Timestamp
+	34, // 20: storage.TestStruct.embedded:type_name -> storage.TestStruct.Embedded
+	35, // 21: storage.TestStruct.nested:type_name -> storage.TestStruct.Nested
+	36, // 22: storage.TestStruct.oneofnested:type_name -> storage.TestStruct.OneOfNested
+	40, // 23: storage.TestGrandparent.embedded:type_name -> storage.TestGrandparent.Embedded
+	42, // 24: storage.TestParent1.children:type_name -> storage.TestParent1.Child1Ref
+	24, // 25: storage.TestSingleKeyStruct.Nested.nested2:type_name -> storage.TestSingleKeyStruct.Nested.Nested2
+	25, // 26: storage.TestSingleKeyStruct.OneOfNested.nested2:type_name -> storage.TestSingleKeyStruct.OneOfNested.Nested2
+	31, // 27: storage.TestSingleUUIDKeyStruct.Nested.nested2:type_name -> storage.TestSingleUUIDKeyStruct.Nested.Nested2
+	32, // 28: storage.TestSingleUUIDKeyStruct.OneOfNested.nested2:type_name -> storage.TestSingleUUIDKeyStruct.OneOfNested.Nested2
+	38, // 29: storage.TestStruct.Nested.nested2:type_name -> storage.TestStruct.Nested.Nested2
+	41, // 30: storage.TestGrandparent.Embedded.embedded2:type_name -> storage.TestGrandparent.Embedded.Embedded2
+	31, // [31:31] is the sub-list for method output_type
+	31, // [31:31] is the sub-list for method input_type
+	31, // [31:31] is the sub-list for extension type_name
+	31, // [31:31] is the sub-list for extension extendee
+	0,  // [0:31] is the sub-list for field type_name
 }
 
 func init() { file_storage_test_proto_init() }
