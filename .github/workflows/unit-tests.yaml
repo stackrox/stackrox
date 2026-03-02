@@ -74,6 +74,16 @@ jobs:
         test_total=$(grep -c '^ok ' "$f" 2>/dev/null || true)
         echo "::notice::Test result cache: ${test_cached:-0} cached / ${test_total:-0} total"
 
+    - name: Debug GOCACHE
+      if: always()
+      run: |
+        echo "GOCACHE=$(go env GOCACHE)"
+        echo "HOME=$HOME"
+        gocache="$(go env GOCACHE)"
+        echo "GOCACHE entries: $(find "$gocache" -type f 2>/dev/null | wc -l)"
+        echo "GOCACHE size: $(du -sh "$gocache" 2>/dev/null | cut -f1)"
+        ls -la "$gocache" 2>/dev/null | head -5
+
     - uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
