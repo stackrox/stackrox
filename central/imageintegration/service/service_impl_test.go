@@ -552,6 +552,7 @@ func TestIAMRoleCapabilityValidation(t *testing.T) {
 			storage.ImageIntegrationCategory_REGISTRY,
 		},
 		IntegrationConfig: &storage.ImageIntegration_Ecr{
+			// #nosec G101 -- test data
 			Ecr: &storage.ECRConfig{
 				RegistryId:      "123456789012",
 				Region:          "us-east-1",
