@@ -1038,7 +1038,7 @@ func (ds *datastoreImpl) lookupOrCreateCluster(ctx context.Context, clusterID, c
 
 		// Validate name matches if specified
 		if clusterName != "" && clusterName != cluster.GetName() {
-			return nil, false, errors.Errorf("Name mismatch for cluster %q: expected %q, but %q was specified. Set the cluster.name/clusterName attribute in your Helm config to %q, or remove it",
+			return nil, false, errors.Errorf("name mismatch for cluster %q: expected %q, but %q was specified. Set the cluster.name/clusterName attribute in your Helm config to %q, or remove it",
 				clusterID, cluster.GetName(), clusterName, cluster.GetName())
 		}
 
@@ -1073,13 +1073,11 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		return nil, err
 	}
 
-	// Extract configuration (pure function)
 	config := extractClusterConfig(hello)
 
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	// Lookup or create cluster
 	cluster, isExisting, err := ds.lookupOrCreateCluster(ctx, clusterID, config.clusterName, registrantID, config)
 	if err != nil {
 		return nil, err
@@ -1087,18 +1085,15 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 	// For existing clusters, check if update is needed
 	if isExisting && config.manager != storage.ManagerType_MANAGER_TYPE_MANUAL {
-		// Check grace period
 		if err := checkGracePeriodForReconnect(cluster, config.deploymentIdentification, config.manager); err != nil {
 			return nil, err
 		}
 
-		// Check if update needed
 		if !shouldUpdateCluster(cluster, config, registrantID) {
 			return cluster, nil
 		}
 	}
 
-	// Apply configuration updates
 	updatedCluster := applyConfigToCluster(cluster, config)
 
 	// Persist if changed
