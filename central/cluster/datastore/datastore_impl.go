@@ -1019,6 +1019,10 @@ func checkGracePeriodForReconnect(cluster *storage.Cluster, deploymentID *storag
 // Returns the cluster, a bool indicating whether it was an existing cluster (true) or newly created (false), and an error.
 // The bool is important because existing clusters need grace period checks and update checks, while new clusters skip those.
 func (ds *datastoreImpl) lookupOrCreateCluster(ctx context.Context, clusterID, clusterName, registrantID string, config clusterConfigData) (*storage.Cluster, bool, error) {
+	if clusterID == "" && clusterName == "" {
+		return nil, false, errors.New("neither a cluster ID nor a cluster name was specified")
+	}
+
 	// Try to resolve cluster ID from name if not provided
 	if clusterID == "" && clusterName != "" {
 		if cachedID, ok := ds.nameToIDCache.Get(clusterName); ok {
@@ -1046,22 +1050,17 @@ func (ds *datastoreImpl) lookupOrCreateCluster(ctx context.Context, clusterID, c
 	}
 
 	// Path 2: Create new cluster by name
-	if clusterName != "" {
-		cluster := buildClusterFromConfig(clusterName, registrantID, config)
+	cluster := buildClusterFromConfig(clusterName, registrantID, config)
 
-		if err := ds.clusterInitStore.InitiateClusterRegistration(ctx, registrantID, clusterName); err != nil {
-			return nil, false, errors.Wrapf(err, "initiating registrations of cluster %s using init artifact %s", clusterName, registrantID)
-		}
-
-		if _, err := ds.addClusterNoLock(ctx, cluster); err != nil {
-			return nil, false, errors.Wrapf(err, "failed to dynamically add cluster with name %q", clusterName)
-		}
-
-		return cluster, false, nil
+	if err := ds.clusterInitStore.InitiateClusterRegistration(ctx, registrantID, clusterName); err != nil {
+		return nil, false, errors.Wrapf(err, "initiating registrations of cluster %s using init artifact %s", clusterName, registrantID)
 	}
 
-	// Path 3: Neither ID nor name provided
-	return nil, false, errors.New("neither a cluster ID nor a cluster name was specified")
+	if _, err := ds.addClusterNoLock(ctx, cluster); err != nil {
+		return nil, false, errors.Wrapf(err, "failed to dynamically add cluster with name %q", clusterName)
+	}
+
+	return cluster, false, nil
 }
 
 // registrantID can be one of
