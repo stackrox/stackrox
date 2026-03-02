@@ -162,17 +162,15 @@ ifdef CI
 	@echo 'The environment indicates we are in CI; running linters in check mode.'
 	@echo 'If this fails, run `make style`.'
 	$(GOLANGCILINT_BIN) --version
-	@echo "Running with no tags and no tests..."
-	@# The first run is meant to have limited scope to warmup the cache.
-	@# Adding it as first allowed to shorten the runtime of the following runs to about 5 min each
-	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --tests=false
-	@echo "Running with no tags..."
+	$(eval LINT_NEW_FROM_REV := $(shell git merge-base HEAD origin/$(GITHUB_BASE_REF) 2>/dev/null || echo ""))
+	$(eval LINT_NEW_FLAG := $(if $(LINT_NEW_FROM_REV),--new-from-rev=$(LINT_NEW_FROM_REV),))
+	@echo "Linting changed files since $(or $(LINT_NEW_FROM_REV),<full run>)..."
 	@# We need to enable unused linter here as it will not work without tests or in release tag.
-	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --enable=unused
+	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) $(LINT_NEW_FLAG) --enable=unused
 	@echo "Running with release tags..."
 	@# We use --tests=false because some unit tests don't compile with release tags,
 	@# since they use functions that we don't define in the release build. That's okay.
-	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
+	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) $(LINT_NEW_FLAG) --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false
 else
 	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix --enable=unused
 	$(GOLANGCILINT_BIN) run $(GOLANGCILINT_FLAGS) --fix --build-tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" --tests=false

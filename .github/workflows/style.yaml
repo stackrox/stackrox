@@ -146,17 +146,7 @@ jobs:
       run: make golangci-lint-cache-status
 
     - name: Cache golangci-lint
-      if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
       uses: actions/cache@v5
-      with:
-        path: ${{ env.HOME }}/.cache/golangci-lint
-        key: go-lint-v2-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          go-lint-v2-
-
-    - name: Restore golangci-lint analysis cache
-      if: ${{ !(github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) }}
-      uses: actions/cache/restore@v5
       with:
         path: ${{ env.HOME }}/.cache/golangci-lint
         key: go-lint-v2-${{ hashFiles('**/go.sum') }}
