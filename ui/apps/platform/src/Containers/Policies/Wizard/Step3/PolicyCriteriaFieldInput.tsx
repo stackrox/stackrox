@@ -2,6 +2,9 @@ import type { ReactElement } from 'react';
 import { useField, useFormikContext } from 'formik';
 import {
     FormGroup,
+    FormHelperText,
+    HelperText,
+    HelperTextItem,
     SelectOption,
     TextInput,
     ToggleGroup,
@@ -51,18 +54,35 @@ function PolicyCriteriaFieldInput({
 
     /* eslint-disable default-case */
     switch (descriptor.type) {
-        case 'text':
+        case 'text': {
+            const validationError = descriptor.validate?.(value.value as string);
+            const hasValue = Boolean(value.value);
+            const showError = hasValue && Boolean(validationError);
+
             return (
-                <TextInput
-                    value={value.value}
-                    type="text"
-                    id={name}
-                    isDisabled={readOnly}
-                    onChange={(_event, val) => handleChangeValue(val)}
-                    data-testid="policy-criteria-value-text-input"
-                    placeholder={descriptor.placeholder || ''}
-                />
+                <div className="pf-v5-u-flex-grow-1">
+                    <TextInput
+                        value={value.value}
+                        type="text"
+                        id={name}
+                        isDisabled={readOnly}
+                        onChange={(_event, val) => handleChangeValue(val)}
+                        data-testid="policy-criteria-value-text-input"
+                        placeholder={descriptor.placeholder || ''}
+                        validated={showError ? 'error' : 'default'}
+                    />
+                    {(descriptor.helperText || showError) && (
+                        <FormHelperText>
+                            <HelperText>
+                                <HelperTextItem variant={showError ? 'error' : 'default'}>
+                                    {showError ? validationError : descriptor.helperText}
+                                </HelperTextItem>
+                            </HelperText>
+                        </FormHelperText>
+                    )}
+                </div>
             );
+        }
         case 'radioGroup': {
             const booleanValue = value.value === true || value.value === 'true';
             return (
