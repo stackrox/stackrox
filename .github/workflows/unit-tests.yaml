@@ -491,7 +491,7 @@ jobs:
         done < sensor/tests/images-to-prefetch.txt
 
     - name: GOCACHE entries before
-      run: echo "GOCACHE_BEFORE=$(ls "$(go env GOCACHE)"/??/*-a 2>/dev/null | wc -l | tr -d ' ')" >> "$GITHUB_ENV"
+      run: echo "GOCACHE_BEFORE=$(find "$(go env GOCACHE)" -name '*-a' -path '*/??/*' 2>/dev/null | wc -l | tr -d ' ')" >> "$GITHUB_ENV"
 
     - name: Run sensor integration tests
       run: make sensor-integration-test
