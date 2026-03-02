@@ -541,10 +541,8 @@ func TestBuildNewClusterFromConfig(t *testing.T) {
 
 	t.Run("does not set HelmConfig for manually managed clusters", func(t *testing.T) {
 		config := clusterConfigData{
-			manager: storage.ManagerType_MANAGER_TYPE_MANUAL,
-			helmConfig: &storage.CompleteClusterConfig{
-				StaticConfig: &storage.StaticClusterConfig{},
-			},
+			manager:                  storage.ManagerType_MANAGER_TYPE_MANUAL,
+			helmConfig:               nil,
 			isNotManagedManually:     false,
 			deploymentIdentification: &storage.SensorDeploymentIdentification{},
 			capabilities:             []string{},

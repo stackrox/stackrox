@@ -955,9 +955,8 @@ func buildNewClusterFromConfig(clusterName, registrantID string, config clusterC
 		MostRecentSensorId: config.deploymentIdentification.CloneVT(),
 		SensorCapabilities: sliceutils.CopySliceSorted(config.capabilities),
 	}
-	configureFromHelmConfig(cluster, config.helmConfig)
-
 	if config.isNotManagedManually {
+		configureFromHelmConfig(cluster, config.helmConfig)
 		cluster.HelmConfig = config.helmConfig.CloneVT()
 	}
 
