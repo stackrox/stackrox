@@ -27,10 +27,13 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/postgres"
+	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
 var (
@@ -39,6 +42,7 @@ var (
 
 type datastoreImpl struct {
 	deploymentStore deploymentStore.Store
+	db              postgres.DB
 
 	images                 imageDS.DataStore
 	imagesV2               imageV2DS.DataStore
@@ -58,6 +62,7 @@ type datastoreImpl struct {
 
 func newDatastoreImpl(
 	storage deploymentStore.Store,
+	db postgres.DB,
 	images imageDS.DataStore,
 	imagesV2 imageV2DS.DataStore,
 	baselines pwDS.DataStore,
@@ -71,6 +76,7 @@ func newDatastoreImpl(
 	platformMatcher platformmatcher.PlatformMatcher) *datastoreImpl {
 	return &datastoreImpl{
 		deploymentStore:        storage,
+		db:                     db,
 		images:                 images,
 		imagesV2:               imagesV2,
 		baselines:              baselines,
@@ -157,13 +163,29 @@ func (ds *datastoreImpl) ListDeployment(ctx context.Context, id string) (*storag
 func (ds *datastoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "SearchListDeployments")
 
-	results, err := ds.Search(ctx, q)
-	if err != nil {
-		return nil, err
+	// Clone the query to avoid mutating the original
+	query := q.CloneVT()
+	if query == nil {
+		query = pkgSearch.EmptyQuery()
 	}
 
-	ids := pkgSearch.ResultsToIDs(results)
-	listDeployments, _, err := ds.deploymentStore.GetManyListDeployments(ctx, ids...)
+	// Set selects to only the columns needed for ListDeployment
+	query.Selects = []*v1.QuerySelect{
+		pkgSearch.NewQuerySelect(pkgSearch.DeploymentID).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.DeploymentHash).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.DeploymentName).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.Cluster).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ClusterID).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.Namespace).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.Created).Proto(),
+	}
+
+	var listDeployments []*storage.ListDeployment
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, pkgSchema.DeploymentsSchema, query,
+		func(view *views.ListDeploymentView) error {
+			listDeployments = append(listDeployments, view.ToListDeployment())
+			return nil
+		})
 	if err != nil {
 		return nil, err
 	}

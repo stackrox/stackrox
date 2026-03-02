@@ -52,6 +52,7 @@ type DataStore interface {
 
 func newDataStore(
 	storage store.Store,
+	db postgres.DB,
 	images imageDS.DataStore,
 	imagesV2 imageV2DS.DataStore,
 	baselines pbDS.DataStore,
@@ -63,7 +64,7 @@ func newDataStore(
 	nsRanker *ranking.Ranker,
 	deploymentRanker *ranking.Ranker,
 	platformMatcher platformmatcher.PlatformMatcher) (DataStore, error) {
-	ds := newDatastoreImpl(storage, images, imagesV2, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker, platformMatcher)
+	ds := newDatastoreImpl(storage, db, images, imagesV2, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker, platformMatcher)
 
 	go ds.initializeRanker()
 	return ds, nil
@@ -82,5 +83,5 @@ func New(pool postgres.DB,
 	nsRanker *ranking.Ranker,
 	deploymentRanker *ranking.Ranker,
 	platformMatcher platformmatcher.PlatformMatcher) (DataStore, error) {
-	return newDataStore(pgStore.NewFullStore(pool), images, imagesV2, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker, platformMatcher)
+	return newDataStore(pgStore.NewFullStore(pool), pool, images, imagesV2, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker, platformMatcher)
 }

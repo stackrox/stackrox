@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/deployment/datastore/internal/store"
-	"github.com/stackrox/rox/central/deployment/datastore/internal/store/types"
 	"github.com/stackrox/rox/central/deployment/views"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -46,24 +45,64 @@ type fullStoreImpl struct {
 
 // GetListDeployment returns the list deployment of the passed ID.
 func (f *fullStoreImpl) GetListDeployment(ctx context.Context, id string) (*storage.ListDeployment, bool, error) {
-	dep, exists, err := f.Get(ctx, id)
-	if err != nil || !exists {
+	listDeployments, missingIndices, err := f.GetManyListDeployments(ctx, id)
+	if err != nil || len(missingIndices) > 0 {
 		return nil, false, err
 	}
-	return types.ConvertDeploymentToDeploymentList(dep), true, nil
+	return listDeployments[0], true, nil
 }
 
 // GetManyListDeployments returns the list deployments as specified by the passed IDs.
 func (f *fullStoreImpl) GetManyListDeployments(ctx context.Context, ids ...string) ([]*storage.ListDeployment, []int, error) {
-	deployments, missing, err := f.GetMany(ctx, ids)
+	if len(ids) == 0 {
+		return nil, nil, nil
+	}
+
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
+	defer cancel()
+
+	// Select only the columns needed for ListDeploymentView
+	// Use AS clauses to match search field labels expected by the view struct
+	query := `
+		SELECT id as deployment_id, hash as deployment_hash, name as deployment,
+		       clustername as cluster, clusterid as cluster_id, namespace, created
+		FROM deployments
+		WHERE id = ANY($1)
+	`
+
+	rows, err := f.db.Query(queryCtx, query, ids)
 	if err != nil {
 		return nil, nil, err
 	}
-	listDeployments := make([]*storage.ListDeployment, 0, len(deployments))
-	for _, d := range deployments {
-		listDeployments = append(listDeployments, types.ConvertDeploymentToDeploymentList(d))
+	defer rows.Close()
+
+	// Scan results into view map
+	viewMap := make(map[string]*views.ListDeploymentView)
+	for rows.Next() {
+		var view views.ListDeploymentView
+		err := rows.Scan(&view.ID, &view.Hash, &view.Name, &view.ClusterName, &view.ClusterID, &view.Namespace, &view.Created)
+		if err != nil {
+			return nil, nil, err
+		}
+		viewMap[view.ID] = &view
 	}
-	return listDeployments, missing, nil
+
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
+	}
+
+	// Return results in same order as input IDs, tracking missing indices
+	listDeployments := make([]*storage.ListDeployment, 0, len(ids))
+	var missingIndices []int
+	for i, id := range ids {
+		if view, ok := viewMap[id]; ok {
+			listDeployments = append(listDeployments, view.ToListDeployment())
+		} else {
+			missingIndices = append(missingIndices, i)
+		}
+	}
+
+	return listDeployments, missingIndices, nil
 }
 
 func (f *fullStoreImpl) GetContainerImageViews(ctx context.Context, q *v1.Query) ([]*views.ContainerImageView, error) {
