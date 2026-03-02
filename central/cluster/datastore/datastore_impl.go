@@ -957,7 +957,6 @@ func buildNewClusterFromConfig(clusterName, registrantID string, config clusterC
 	}
 	if config.isNotManagedManually {
 		configureFromHelmConfig(cluster, config.helmConfig)
-		cluster.HelmConfig = config.helmConfig.CloneVT()
 	}
 
 	return cluster
@@ -979,7 +978,6 @@ func applyConfigToCluster(cluster *storage.Cluster, config clusterConfigData) *s
 
 	if config.isNotManagedManually {
 		configureFromHelmConfig(updated, config.helmConfig)
-		updated.HelmConfig = config.helmConfig.CloneVT()
 	} else {
 		updated.HelmConfig = nil
 	}
@@ -1191,6 +1189,8 @@ func configureFromHelmConfig(cluster *storage.Cluster, helmConfig *storage.Compl
 	if features.AdmissionControllerConfig.Enabled() {
 		cluster.AdmissionControllerFailOnError = staticConfig.GetAdmissionControllerFailOnError()
 	}
+	cluster.HelmConfig = helmConfig.CloneVT()
+
 }
 
 func (ds *datastoreImpl) collectClusters(ctx context.Context) ([]*storage.Cluster, error) {
