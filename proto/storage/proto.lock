@@ -19306,6 +19306,20 @@
     {
       "protopath": "virtual_machine_component_v2.proto",
       "def": {
+        "enums": [
+          {
+            "name": "VirtualMachineComponentV2.Note",
+            "enum_fields": [
+              {
+                "name": "UNSPECIFIED"
+              },
+              {
+                "name": "UNSCANNED",
+                "integer": 1
+              }
+            ]
+          }
+        ],
         "messages": [
           {
             "name": "VirtualMachineComponentV2",
@@ -19355,6 +19369,12 @@
                 "id": 9,
                 "name": "cve_count",
                 "type": "int32"
+              },
+              {
+                "id": 10,
+                "name": "notes",
+                "type": "Note",
+                "is_repeated": true
               }
             ]
           }
@@ -19462,9 +19482,6 @@
         ],
         "imports": [
           {
-            "path": "google/protobuf/timestamp.proto"
-          },
-          {
             "path": "storage/cve.proto"
           }
         ],
@@ -19538,6 +19555,11 @@
                 "name": "notes",
                 "type": "Note",
                 "is_repeated": true
+              },
+              {
+                "id": 7,
+                "name": "hash",
+                "type": "uint64"
               }
             ]
           }
@@ -19657,6 +19679,11 @@
                 "id": 11,
                 "name": "vsock_cid",
                 "type": "int32"
+              },
+              {
+                "id": 12,
+                "name": "hash",
+                "type": "uint64"
               }
             ],
             "maps": [

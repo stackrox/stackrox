@@ -12,7 +12,7 @@ option java_package = "io.stackrox.proto.storage";
 // Components and CVEs discovered by the scan are stored in separate tables
 // (VirtualMachineComponentV2, VirtualMachineCVEV2).
 message VirtualMachineScanV2 {
-  // UUIDv7 primary key — time-sortable, encodes creation timestamp.
+  // UUIDv7 primary key -- time-sortable, encodes creation timestamp.
   // Finding the latest scan is ORDER BY id DESC LIMIT 1 without a separate timestamp index.
   string id = 1; // @gotags: sql:"pk,type(uuid)"
 
@@ -20,7 +20,7 @@ message VirtualMachineScanV2 {
   string vm_v2_id = 2; // @gotags: sql:"fk(VirtualMachineV2:id),type(uuid),index=btree"
 
   // OS detected by the scanner during this scan.
-  string scan_os = 3;
+  string scan_os = 3; // @gotags: search:"Virtual Machine Scan OS"
 
   // When the scan was performed.
   google.protobuf.Timestamp scan_time = 4; // @gotags: search:"Virtual Machine Scan Time" sql:"type(timestamptz),index=btree"

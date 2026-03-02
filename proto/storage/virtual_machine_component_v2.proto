@@ -9,7 +9,7 @@ option java_package = "io.stackrox.proto.storage";
 
 // VirtualMachineComponentV2 represents a software component (package)
 // found during a VM scan. Components belong to a scan, not directly to a VM.
-// Next tag: 10
+// Next tag: 11
 message VirtualMachineComponentV2 {
   string id = 1; // @gotags: search:"Component ID,hidden" sql:"pk,type(uuid)"
 
@@ -31,4 +31,10 @@ message VirtualMachineComponentV2 {
 
   // Cached CVE count to avoid joining on the CVE table.
   int32 cve_count = 9;
+
+  enum Note {
+    UNSPECIFIED = 0;
+    UNSCANNED = 1;
+  }
+  repeated Note notes = 10;
 }

@@ -21,9 +21,55 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type VirtualMachineComponentV2_Note int32
+
+const (
+	VirtualMachineComponentV2_UNSPECIFIED VirtualMachineComponentV2_Note = 0
+	VirtualMachineComponentV2_UNSCANNED   VirtualMachineComponentV2_Note = 1
+)
+
+// Enum value maps for VirtualMachineComponentV2_Note.
+var (
+	VirtualMachineComponentV2_Note_name = map[int32]string{
+		0: "UNSPECIFIED",
+		1: "UNSCANNED",
+	}
+	VirtualMachineComponentV2_Note_value = map[string]int32{
+		"UNSPECIFIED": 0,
+		"UNSCANNED":   1,
+	}
+)
+
+func (x VirtualMachineComponentV2_Note) Enum() *VirtualMachineComponentV2_Note {
+	p := new(VirtualMachineComponentV2_Note)
+	*p = x
+	return p
+}
+
+func (x VirtualMachineComponentV2_Note) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (VirtualMachineComponentV2_Note) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_virtual_machine_component_v2_proto_enumTypes[0].Descriptor()
+}
+
+func (VirtualMachineComponentV2_Note) Type() protoreflect.EnumType {
+	return &file_storage_virtual_machine_component_v2_proto_enumTypes[0]
+}
+
+func (x VirtualMachineComponentV2_Note) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use VirtualMachineComponentV2_Note.Descriptor instead.
+func (VirtualMachineComponentV2_Note) EnumDescriptor() ([]byte, []int) {
+	return file_storage_virtual_machine_component_v2_proto_rawDescGZIP(), []int{0, 0}
+}
+
 // VirtualMachineComponentV2 represents a software component (package)
 // found during a VM scan. Components belong to a scan, not directly to a VM.
-// Next tag: 10
+// Next tag: 11
 type VirtualMachineComponentV2 struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,hidden" sql:"pk,type(uuid)"` // @gotags: search:"Component ID,hidden" sql:"pk,type(uuid)"
@@ -42,7 +88,8 @@ type VirtualMachineComponentV2 struct {
 	// Component version that fixes all fixable vulnerabilities in this component.
 	FixedBy string `protobuf:"bytes,8,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty"`
 	// Cached CVE count to avoid joining on the CVE table.
-	CveCount      int32 `protobuf:"varint,9,opt,name=cve_count,json=cveCount,proto3" json:"cve_count,omitempty"`
+	CveCount      int32                            `protobuf:"varint,9,opt,name=cve_count,json=cveCount,proto3" json:"cve_count,omitempty"`
+	Notes         []VirtualMachineComponentV2_Note `protobuf:"varint,10,rep,packed,name=notes,proto3,enum=storage.VirtualMachineComponentV2_Note" json:"notes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -149,6 +196,13 @@ func (x *VirtualMachineComponentV2) GetCveCount() int32 {
 	return 0
 }
 
+func (x *VirtualMachineComponentV2) GetNotes() []VirtualMachineComponentV2_Note {
+	if x != nil {
+		return x.Notes
+	}
+	return nil
+}
+
 type isVirtualMachineComponentV2_SetTopCvss interface {
 	isVirtualMachineComponentV2_SetTopCvss()
 }
@@ -163,7 +217,7 @@ var File_storage_virtual_machine_component_v2_proto protoreflect.FileDescriptor
 
 const file_storage_virtual_machine_component_v2_proto_rawDesc = "" +
 	"\n" +
-	"*storage/virtual_machine_component_v2.proto\x12\astorage\x1a\x13storage/image.proto\"\xb4\x02\n" +
+	"*storage/virtual_machine_component_v2.proto\x12\astorage\x1a\x13storage/image.proto\"\x9b\x03\n" +
 	"\x19VirtualMachineComponentV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
 	"\n" +
@@ -174,7 +228,12 @@ const file_storage_virtual_machine_component_v2_proto_rawDesc = "" +
 	"\x10operating_system\x18\x06 \x01(\tR\x0foperatingSystem\x12\x1b\n" +
 	"\btop_cvss\x18\a \x01(\x02H\x00R\atopCvss\x12\x19\n" +
 	"\bfixed_by\x18\b \x01(\tR\afixedBy\x12\x1b\n" +
-	"\tcve_count\x18\t \x01(\x05R\bcveCountB\x0e\n" +
+	"\tcve_count\x18\t \x01(\x05R\bcveCount\x12=\n" +
+	"\x05notes\x18\n" +
+	" \x03(\x0e2'.storage.VirtualMachineComponentV2.NoteR\x05notes\"&\n" +
+	"\x04Note\x12\x0f\n" +
+	"\vUNSPECIFIED\x10\x00\x12\r\n" +
+	"\tUNSCANNED\x10\x01B\x0e\n" +
 	"\fset_top_cvssB.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
@@ -190,18 +249,21 @@ func file_storage_virtual_machine_component_v2_proto_rawDescGZIP() []byte {
 	return file_storage_virtual_machine_component_v2_proto_rawDescData
 }
 
+var file_storage_virtual_machine_component_v2_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_storage_virtual_machine_component_v2_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_storage_virtual_machine_component_v2_proto_goTypes = []any{
-	(*VirtualMachineComponentV2)(nil), // 0: storage.VirtualMachineComponentV2
-	(SourceType)(0),                   // 1: storage.SourceType
+	(VirtualMachineComponentV2_Note)(0), // 0: storage.VirtualMachineComponentV2.Note
+	(*VirtualMachineComponentV2)(nil),   // 1: storage.VirtualMachineComponentV2
+	(SourceType)(0),                     // 2: storage.SourceType
 }
 var file_storage_virtual_machine_component_v2_proto_depIdxs = []int32{
-	1, // 0: storage.VirtualMachineComponentV2.source:type_name -> storage.SourceType
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	2, // 0: storage.VirtualMachineComponentV2.source:type_name -> storage.SourceType
+	0, // 1: storage.VirtualMachineComponentV2.notes:type_name -> storage.VirtualMachineComponentV2.Note
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_storage_virtual_machine_component_v2_proto_init() }
@@ -218,13 +280,14 @@ func file_storage_virtual_machine_component_v2_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_virtual_machine_component_v2_proto_rawDesc), len(file_storage_virtual_machine_component_v2_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_storage_virtual_machine_component_v2_proto_goTypes,
 		DependencyIndexes: file_storage_virtual_machine_component_v2_proto_depIdxs,
+		EnumInfos:         file_storage_virtual_machine_component_v2_proto_enumTypes,
 		MessageInfos:      file_storage_virtual_machine_component_v2_proto_msgTypes,
 	}.Build()
 	File_storage_virtual_machine_component_v2_proto = out.File

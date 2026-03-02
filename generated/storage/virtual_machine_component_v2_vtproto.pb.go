@@ -40,6 +40,11 @@ func (m *VirtualMachineComponentV2) CloneVT() *VirtualMachineComponentV2 {
 			CloneVT() isVirtualMachineComponentV2_SetTopCvss
 		}).CloneVT()
 	}
+	if rhs := m.Notes; rhs != nil {
+		tmpContainer := make([]VirtualMachineComponentV2_Note, len(rhs))
+		copy(tmpContainer, rhs)
+		r.Notes = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -101,6 +106,15 @@ func (this *VirtualMachineComponentV2) EqualVT(that *VirtualMachineComponentV2) 
 	}
 	if this.CveCount != that.CveCount {
 		return false
+	}
+	if len(this.Notes) != len(that.Notes) {
+		return false
+	}
+	for i, vx := range this.Notes {
+		vy := that.Notes[i]
+		if vx != vy {
+			return false
+		}
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -167,6 +181,27 @@ func (m *VirtualMachineComponentV2) MarshalToSizedBufferVT(dAtA []byte) (int, er
 			return 0, err
 		}
 		i -= size
+	}
+	if len(m.Notes) > 0 {
+		var pksize2 int
+		for _, num := range m.Notes {
+			pksize2 += protohelpers.SizeOfVarint(uint64(num))
+		}
+		i -= pksize2
+		j1 := i
+		for _, num1 := range m.Notes {
+			num := uint64(num1)
+			for num >= 1<<7 {
+				dAtA[j1] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j1++
+			}
+			dAtA[j1] = uint8(num)
+			j1++
+		}
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(pksize2))
+		i--
+		dAtA[i] = 0x52
 	}
 	if m.CveCount != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.CveCount))
@@ -274,6 +309,13 @@ func (m *VirtualMachineComponentV2) SizeVT() (n int) {
 	}
 	if m.CveCount != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.CveCount))
+	}
+	if len(m.Notes) > 0 {
+		l = 0
+		for _, e := range m.Notes {
+			l += protohelpers.SizeOfVarint(uint64(e))
+		}
+		n += 1 + protohelpers.SizeOfVarint(uint64(l)) + l
 	}
 	n += len(m.unknownFields)
 	return n
@@ -557,6 +599,75 @@ func (m *VirtualMachineComponentV2) UnmarshalVT(dAtA []byte) error {
 				if b < 0x80 {
 					break
 				}
+			}
+		case 10:
+			if wireType == 0 {
+				var v VirtualMachineComponentV2_Note
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= VirtualMachineComponentV2_Note(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.Notes = append(m.Notes, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				if elementCount != 0 && len(m.Notes) == 0 {
+					m.Notes = make([]VirtualMachineComponentV2_Note, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v VirtualMachineComponentV2_Note
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return protohelpers.ErrIntOverflow
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= VirtualMachineComponentV2_Note(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.Notes = append(m.Notes, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field Notes", wireType)
 			}
 		default:
 			iNdEx = preIndex
@@ -873,6 +984,75 @@ func (m *VirtualMachineComponentV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				if b < 0x80 {
 					break
 				}
+			}
+		case 10:
+			if wireType == 0 {
+				var v VirtualMachineComponentV2_Note
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= VirtualMachineComponentV2_Note(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				m.Notes = append(m.Notes, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return protohelpers.ErrIntOverflow
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return protohelpers.ErrInvalidLength
+				}
+				if postIndex > l {
+					return io.ErrUnexpectedEOF
+				}
+				var elementCount int
+				if elementCount != 0 && len(m.Notes) == 0 {
+					m.Notes = make([]VirtualMachineComponentV2_Note, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v VirtualMachineComponentV2_Note
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return protohelpers.ErrIntOverflow
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= VirtualMachineComponentV2_Note(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.Notes = append(m.Notes, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field Notes", wireType)
 			}
 		default:
 			iNdEx = preIndex
