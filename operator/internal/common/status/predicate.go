@@ -14,14 +14,16 @@ import (
 
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/pkg/reflectutils"
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 // SkipStatusControllerUpdates filters events triggered by status controller updates to prevent unnecessary reconciliations.
-// It skips reconciliation when status controller owned conditions (Available, Progressing) have changed.
+// It skips reconciliation when there is no delta between the old and the new object except for possible
+// changes in the status controller owned conditions (Available, Progressing).
 //
 // This can be instantiated with either:
-//   - A specific CR type (e.g., SkipStatusControllerUpdates[*Central]{}) for typed usage in controller.go.
-//   - ctrlClient.Object (e.g., SkipStatusControllerUpdates[ctrlClient.Object]{}) for untyped usage as predicate.Predicate in reconciler.go.
+//   - A specific CR type (e.g., SkipStatusControllerUpdates[*Central]) for typed usage in controller.go.
+//   - ctrlClient.Object (e.g., SkipStatusControllerUpdates[ctrlClient.Object]) for untyped usage as predicate.Predicate in reconciler.go.
 type SkipStatusControllerUpdates[T ctrlClient.Object] struct {
 	predicate.TypedFuncs[T]
 	Logger logr.Logger
@@ -39,7 +41,11 @@ func (p SkipStatusControllerUpdates[T]) Update(e event.TypedUpdateEvent[T]) bool
 		return true
 	}
 
-	objOldT, err := toObjectForStatusController(e.ObjectOld, log)
+	// Because our check below involves modifying the objects.
+	objOld := e.ObjectOld.DeepCopyObject().(T)
+	objNew := e.ObjectNew.DeepCopyObject().(T)
+
+	objOldForStatusController, err := toObjectForStatusController(objOld, log)
 	if err != nil {
 		log.Info("Failed to convert old object to ObjectForStatusController, allowing reconciliation",
 			"error", err,
@@ -47,7 +53,7 @@ func (p SkipStatusControllerUpdates[T]) Update(e event.TypedUpdateEvent[T]) bool
 		return true
 	}
 
-	objNewT, err := toObjectForStatusController(e.ObjectNew, log)
+	objNewForStatusController, err := toObjectForStatusController(objNew, log)
 	if err != nil {
 		log.Info("Failed to convert new object to ObjectForStatusController, allowing reconciliation",
 			"error", err,
@@ -55,21 +61,27 @@ func (p SkipStatusControllerUpdates[T]) Update(e event.TypedUpdateEvent[T]) bool
 		return true
 	}
 
-	statusControllerConditionsChanged :=
-		conditionsChanged(objOldT, objNewT, platform.ConditionProgressing) ||
-			conditionsChanged(objOldT, objNewT, platform.ConditionAvailable)
-
-	if statusControllerConditionsChanged {
-		log.Info("Detected changed status controller condition, skipping reconciliation")
+	if reducedObjectsEqual(objOldForStatusController, objNewForStatusController) {
+		log.Info("No noteworthy changes detected in object, skipping reconciliation")
 		return false
 	}
 
 	return true
 }
 
+// reducedObjectsEqual compares two ObjectForStatusController objects for equality, ignoring differences in status controller owned conditions.
+// Important: This function modifies the input objects for the sake of ignoring status controller-owned conditions.
+func reducedObjectsEqual(oldObj, newObj platform.ObjectForStatusController) bool {
+	for _, conditionType := range statusControllerConditionTypes {
+		oldObj.SetCondition(platform.StackRoxCondition{Type: conditionType})
+		newObj.SetCondition(platform.StackRoxCondition{Type: conditionType})
+	}
+	return equality.Semantic.DeepEqual(oldObj, newObj)
+}
+
 // toObjectForStatusController converts an interface to ObjectForStatusController,
 // handling typed and unstructured objects.
-func toObjectForStatusController(obj any, log logr.Logger) (platform.ObjectForStatusController, error) {
+func toObjectForStatusController(obj ctrlClient.Object, log logr.Logger) (platform.ObjectForStatusController, error) {
 	// First try direct type assertion.
 	if typed, ok := obj.(platform.ObjectForStatusController); ok {
 		return typed, nil
@@ -98,27 +110,6 @@ func toObjectForStatusController(obj any, log logr.Logger) (platform.ObjectForSt
 	}
 
 	return target, nil
-}
-
-// conditionsChanged returns true if the conditions are different.
-func conditionsChanged[T platform.ObjectForStatusController](oldObj, newObj T, condType platform.ConditionType) bool {
-	old := oldObj.GetCondition(condType)
-	new := newObj.GetCondition(condType)
-
-	// One exists, one doesn't.
-	if (old == nil) != (new == nil) {
-		return true
-	}
-
-	// Both nil.
-	if old == nil {
-		return false
-	}
-
-	// Check if meaningful fields changed.
-	return old.Status != new.Status ||
-		old.Reason != new.Reason ||
-		old.Message != new.Message
 }
 
 // SkipDeploymentSpecUpdates filters deployment events to only react to status changes.
