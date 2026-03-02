@@ -443,12 +443,12 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 			} else {
 				schema.AddFieldWithType(field, postgres.Integer, opts)
 			}
-		case reflect.Uint32, reflect.Uint64, reflect.Int64:
-			// For Uint64, there may be a need to convert to/from int64 because a
-			// BigInteger may not hold a Uint64.  We could switch this type to a numeric but that comes at a
-			// high performance cost.  As of 3.73 we are not using Uint64 except in test something to be mindful of
-			// if we begin to use this type in the future.
+		case reflect.Uint32, reflect.Int64:
 			schema.AddFieldWithType(field, postgres.BigInteger, opts)
+		case reflect.Uint64:
+			// Use NUMERIC to handle full uint64 range.
+			// PostgreSQL BIGINT is signed and cannot represent all uint64 values.
+			schema.AddFieldWithType(field, postgres.Numeric, opts)
 		case reflect.Float32, reflect.Float64:
 			schema.AddFieldWithType(field, postgres.Numeric, opts)
 		case reflect.Interface:
