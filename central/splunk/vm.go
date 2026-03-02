@@ -6,12 +6,12 @@ import (
 
 	"github.com/stackrox/rox/central/deployment/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"github.com/stackrox/rox/pkg/set"
 )
 
 type splunkDeploymentEvent struct {
@@ -46,8 +46,16 @@ type splunkCVEEvent struct {
 	Source      string    `json:"source"`
 }
 
+// imageFields is satisfied by both *storage.Image and *storage.ImageV2,
+// providing access to the shared fields needed for Splunk events.
+type imageFields interface {
+	GetScan() *storage.ImageScan
+	GetMetadata() *storage.ImageMetadata
+	GetName() *storage.ImageName
+}
+
 // NewVulnMgmtHandler returns an http.HandlerFunc implementation that returns all the required events for the Splunk TA
-func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.DataStore) http.HandlerFunc {
+func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.DataStore, imagesV2 imageV2Datastore.DataStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		arrayWriter := jsonutil.NewJSONArrayWriter(w)
 		if err := arrayWriter.Init(); err != nil {
@@ -61,7 +69,12 @@ func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.D
 			return
 		}
 
-		imageSet := set.NewStringSet()
+		v2Enabled := features.FlattenImageData.Enabled()
+
+		// imageLookup maps image SHA digest to the datastore lookup key.
+		// For V1, the lookup key is the digest itself.
+		// For V2, the lookup key is the UUID (IdV2).
+		imageLookup := make(map[string]string)
 		for _, id := range ids {
 			deployment, exists, err := deployments.GetDeployment(r.Context(), id)
 			if err != nil {
@@ -72,11 +85,20 @@ func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.D
 				continue
 			}
 			for _, c := range deployment.GetContainers() {
-				imgID := containerImageID(c.GetImage())
-				if imgID == "" {
+				digest := c.GetImage().GetId()
+				if digest == "" {
 					continue
 				}
-				imageSet.Add(imgID)
+				if _, seen := imageLookup[digest]; !seen {
+					lookupKey := digest
+					if v2Enabled {
+						lookupKey = c.GetImage().GetIdV2()
+						if lookupKey == "" {
+							continue
+						}
+					}
+					imageLookup[digest] = lookupKey
+				}
 
 				err := arrayWriter.WriteObject(&splunkDeploymentEvent{
 					Type:        "deployment",
@@ -85,7 +107,7 @@ func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.D
 					Labels:      deployment.GetLabels(),
 					Annotations: deployment.GetAnnotations(),
 					Deployment:  deployment.GetName(),
-					ImageDigest: imgID,
+					ImageDigest: digest,
 				})
 				if err != nil {
 					httputil.WriteError(w, err)
@@ -93,61 +115,74 @@ func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.D
 				}
 			}
 		}
-		for id := range imageSet {
-			image, exists, err := images.GetImage(r.Context(), id)
-			if err != nil {
-				httputil.WriteError(w, err)
-				return
-			}
-			if !exists {
-				continue
-			}
 
-			err = arrayWriter.WriteObject(&splunkImageEvent{
-				Type:          "image",
-				ImageDigest:   id,
-				OS:            image.GetScan().GetOperatingSystem(),
-				CreatedTime:   protoconv.ConvertTimestampToTimeOrNow(image.GetMetadata().GetV1().GetCreated()),
-				ImageRegistry: image.GetName().GetRegistry(),
-				ImageRepo:     image.GetName().GetRemote(),
-				ImageTag:      image.GetName().GetTag(),
-			})
-			if err != nil {
-				httputil.WriteError(w, err)
-				return
-			}
-
-			for _, c := range image.GetScan().GetComponents() {
-				for _, v := range c.GetVulns() {
-					err = arrayWriter.WriteObject(&splunkCVEEvent{
-						Type:        "cve",
-						ImageDigest: id,
-						Component:   c.GetName(),
-						Version:     c.GetVersion(),
-						CVE:         v.GetCve(),
-						CVSS:        v.GetCvss(),
-						FixedBy:     v.GetFixedBy(),
-						FirstSeen:   protoconv.ConvertTimestampToTimeOrNow(v.GetFirstImageOccurrence()),
-						Source:      c.GetSource().String(),
-					})
-					if err != nil {
-						httputil.WriteError(w, err)
-						return
-					}
+		for digest, lookupKey := range imageLookup {
+			var img imageFields
+			if v2Enabled {
+				v2, exists, err := imagesV2.GetImage(r.Context(), lookupKey)
+				if err != nil {
+					httputil.WriteError(w, err)
+					return
 				}
+				if !exists {
+					continue
+				}
+				img = v2
+			} else {
+				v1, exists, err := images.GetImage(r.Context(), lookupKey)
+				if err != nil {
+					httputil.WriteError(w, err)
+					return
+				}
+				if !exists {
+					continue
+				}
+				img = v1
+			}
+
+			if err := writeImageEvents(arrayWriter, digest, img); err != nil {
+				httputil.WriteError(w, err)
+				return
 			}
 		}
+
 		if err := arrayWriter.Finish(); err != nil {
 			httputil.WriteError(w, err)
 		}
 	}
 }
 
-// containerImageID returns the appropriate image identifier from a container image
-// depending on whether the flattened image data model is enabled.
-func containerImageID(ci *storage.ContainerImage) string {
-	if features.FlattenImageData.Enabled() {
-		return ci.GetIdV2()
+func writeImageEvents(w *jsonutil.JSONArrayWriter, digest string, img imageFields) error {
+	err := w.WriteObject(&splunkImageEvent{
+		Type:          "image",
+		ImageDigest:   digest,
+		OS:            img.GetScan().GetOperatingSystem(),
+		CreatedTime:   protoconv.ConvertTimestampToTimeOrNow(img.GetMetadata().GetV1().GetCreated()),
+		ImageRegistry: img.GetName().GetRegistry(),
+		ImageRepo:     img.GetName().GetRemote(),
+		ImageTag:      img.GetName().GetTag(),
+	})
+	if err != nil {
+		return err
 	}
-	return ci.GetId()
+
+	for _, c := range img.GetScan().GetComponents() {
+		for _, v := range c.GetVulns() {
+			err = w.WriteObject(&splunkCVEEvent{
+				Type:        "cve",
+				ImageDigest: digest,
+				Component:   c.GetName(),
+				Version:     c.GetVersion(),
+				CVE:         v.GetCve(),
+				CVSS:        v.GetCvss(),
+				FixedBy:     v.GetFixedBy(),
+				FirstSeen:   protoconv.ConvertTimestampToTimeOrNow(v.GetFirstImageOccurrence()),
+				Source:      c.GetSource().String(),
+			})
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
