@@ -4,6 +4,7 @@ import {
     auditLogDescriptor,
     nodeEventDescriptor,
     policyCriteriaDescriptors,
+    validateFilePath,
 } from './policyCriteriaDescriptors';
 
 // Enforce consistency of whicheverName properties in policy criteria descriptors.
@@ -57,6 +58,44 @@ function hasSentenceCase(otherName: string) {
             )
     );
 }
+
+describe('validateFilePath', () => {
+    it('should return undefined for an empty string', () => {
+        expect(validateFilePath('')).toBeUndefined();
+    });
+
+    it('should return undefined for a whitespace-only string', () => {
+        expect(validateFilePath('   ')).toBeUndefined();
+    });
+
+    it('should return an error for a relative path', () => {
+        expect(validateFilePath('home/user')).toBe('File path must be absolute (start with /)');
+    });
+
+    it('should return an error for directory traversal', () => {
+        expect(validateFilePath('/home/../etc/passwd')).toBe(
+            'File path must not contain directory traversal (..)'
+        );
+    });
+
+    it('should return undefined for a valid absolute path', () => {
+        expect(validateFilePath('/home/user/.ssh')).toBeUndefined();
+    });
+
+    it('should return undefined for a valid absolute path with glob', () => {
+        expect(validateFilePath('/home/**/.ssh/id_*')).toBeUndefined();
+    });
+
+    it('should allow paths with double dots in filenames', () => {
+        expect(validateFilePath('/etc/file..bak')).toBeUndefined();
+    });
+
+    it('should reject traversal at the end of a path', () => {
+        expect(validateFilePath('/home/user/..')).toBe(
+            'File path must not contain directory traversal (..)'
+        );
+    });
+});
 
 describe('policyCriteriaDescriptors', () => {
     [...auditLogDescriptor, ...policyCriteriaDescriptors, ...nodeEventDescriptor].forEach(

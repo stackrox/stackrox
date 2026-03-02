@@ -16,7 +16,7 @@ import ImageSigningTableModal from './ImageSigningTableModal';
  * Validates that a file path is absolute and does not contain directory traversal.
  * Glob pattern validation is left to the backend (Go's doublestar library).
  */
-function validateFilePath(value: string): string | undefined {
+export function validateFilePath(value: string): string | undefined {
     const trimmed = value.trim();
     if (trimmed.length === 0) {
         return undefined;
@@ -24,7 +24,7 @@ function validateFilePath(value: string): string | undefined {
     if (!trimmed.startsWith('/')) {
         return 'File path must be absolute (start with /)';
     }
-    if (trimmed.includes('..')) {
+    if (trimmed.split('/').includes('..')) {
         return 'File path must not contain directory traversal (..)';
     }
     return undefined;

@@ -55,9 +55,9 @@ function PolicyCriteriaFieldInput({
     /* eslint-disable default-case */
     switch (descriptor.type) {
         case 'text': {
+            // value.value is always a string for 'text' type descriptors
             const validationError = descriptor.validate?.(value.value as string);
-            const hasValue = Boolean(value.value);
-            const showError = hasValue && Boolean(validationError);
+            const showError = Boolean(validationError);
 
             return (
                 <div className="pf-v5-u-flex-grow-1">
