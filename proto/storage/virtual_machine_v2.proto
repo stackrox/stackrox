@@ -32,7 +32,7 @@ message VirtualMachineV2 {
   }
   State state = 8; // @gotags: search:"Virtual Machine State"
 
-  google.protobuf.Timestamp last_updated = 9; // @gotags: search:"Last Updated,hidden"
+  google.protobuf.Timestamp last_updated = 9; // @gotags: search:"Last Updated,hidden" sql:"type(timestamptz)"
 
   enum Note {
     MISSING_METADATA = 0;

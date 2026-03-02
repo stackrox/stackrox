@@ -23,7 +23,7 @@ message VirtualMachineScanV2 {
   string scan_os = 3;
 
   // When the scan was performed.
-  google.protobuf.Timestamp scan_time = 4; // @gotags: search:"Virtual Machine Scan Time" sql:"index=btree"
+  google.protobuf.Timestamp scan_time = 4; // @gotags: search:"Virtual Machine Scan Time" sql:"type(timestamptz),index=btree"
 
   // Cached highest CVSS score across all CVEs in this scan.
   float top_cvss = 5; // @gotags: search:"Virtual Machine Top CVSS"

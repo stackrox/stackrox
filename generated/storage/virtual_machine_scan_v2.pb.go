@@ -85,7 +85,7 @@ type VirtualMachineScanV2 struct {
 	// OS detected by the scanner during this scan.
 	ScanOs string `protobuf:"bytes,3,opt,name=scan_os,json=scanOs,proto3" json:"scan_os,omitempty"`
 	// When the scan was performed.
-	ScanTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Virtual Machine Scan Time" sql:"index=btree"` // @gotags: search:"Virtual Machine Scan Time" sql:"index=btree"
+	ScanTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Virtual Machine Scan Time" sql:"type(timestamptz),index=btree"` // @gotags: search:"Virtual Machine Scan Time" sql:"type(timestamptz),index=btree"
 	// Cached highest CVSS score across all CVEs in this scan.
 	TopCvss float32                     `protobuf:"fixed32,5,opt,name=top_cvss,json=topCvss,proto3" json:"top_cvss,omitempty" search:"Virtual Machine Top CVSS"` // @gotags: search:"Virtual Machine Top CVSS"
 	Notes   []VirtualMachineScanV2_Note `protobuf:"varint,6,rep,packed,name=notes,proto3,enum=storage.VirtualMachineScanV2_Note" json:"notes,omitempty"`

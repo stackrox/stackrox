@@ -140,11 +140,11 @@ type VirtualMachineV2 struct {
 	// Guest OS reported by KubeVirt facts, extracted as a queryable column.
 	GuestOs     string                  `protobuf:"bytes,7,opt,name=guest_os,json=guestOs,proto3" json:"guest_os,omitempty" search:"Guest OS" sql:"index=btree"`                   // @gotags: search:"Guest OS" sql:"index=btree"
 	State       VirtualMachineV2_State  `protobuf:"varint,8,opt,name=state,proto3,enum=storage.VirtualMachineV2_State" json:"state,omitempty" search:"Virtual Machine State"` // @gotags: search:"Virtual Machine State"
-	LastUpdated *timestamppb.Timestamp  `protobuf:"bytes,9,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden" sql:"index=btree"`       // @gotags: search:"Last Updated,hidden" sql:"index=btree"
+	LastUpdated *timestamppb.Timestamp  `protobuf:"bytes,9,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden" sql:"type(timestamptz)"`       // @gotags: search:"Last Updated,hidden" sql:"type(timestamptz)"
 	Notes       []VirtualMachineV2_Note `protobuf:"varint,10,rep,packed,name=notes,proto3,enum=storage.VirtualMachineV2_Note" json:"notes,omitempty"`
 	VsockCid    int32                   `protobuf:"varint,11,opt,name=vsock_cid,json=vsockCid,proto3" json:"vsock_cid,omitempty"`
 	// Hash of VM data fields for change detection (excludes last_updated).
-	Hash          uint64 `protobuf:"varint,12,opt,name=hash,proto3" json:"hash,omitempty"`
+	Hash          uint64 `protobuf:"varint,12,opt,name=hash,proto3" json:"hash,omitempty" hash:"ignore"` // @gotags: hash:"ignore"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
