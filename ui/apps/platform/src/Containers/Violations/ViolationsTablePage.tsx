@@ -18,9 +18,7 @@ import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
 import { fetchAlertCount, fetchAlerts } from 'services/AlertsService';
 import { CancelledPromiseError } from 'services/cancellationUtils';
-import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
-import { VIOLATION_STATES } from 'constants/violationStates';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
@@ -39,6 +37,7 @@ import ViolationsTablePanel from './ViolationsTablePanel';
 import { getViolationsTableColumnDescriptors } from './violationsTableColumnDescriptors';
 import { violationStateTabs } from './types';
 import type { ViolationStateTab } from './types';
+import useEntitiesByIdsCache from './useEntitiesByIdsCache';
 
 import './ViolationsTablePage.css';
 
@@ -247,8 +246,7 @@ function ViolationsTablePage(): ReactElement {
         currentPageAlerts
             .filter(
                 (alert) =>
-                    alert.lifecycleStage === LIFECYCLE_STAGES.RUNTIME ||
-                    alert.state === VIOLATION_STATES.ATTEMPTED
+                    alert.lifecycleStage === LIFECYCLE_STAGES.RUNTIME || alert.state === 'ATTEMPTED'
             )
             .map((alert) => alert.id as string)
     );
