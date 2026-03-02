@@ -30,6 +30,7 @@ jobs:
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
+      options: --tmpfs /gosrc:rw,exec,size=1500M
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -47,8 +48,23 @@ jobs:
         save: true
         key-suffix: ${{ matrix.gotags }}
 
+    - name: Copy source to tmpfs
+      run: |
+        cp -a . /gosrc/stackrox
+        rm -rf /gosrc/stackrox/.git
+        ln -s "$GITHUB_WORKSPACE/.git" /gosrc/stackrox/.git
+        git config --global --add safe.directory /gosrc/stackrox
+        echo "Tmpfs usage after copy:"
+        df -h /gosrc
+        echo "Source size: $(du -sh /gosrc/stackrox | cut -f1)"
+
     - name: Go Unit Tests
+      working-directory: /gosrc/stackrox
       run: ${{ matrix.gotags }} make go-unit-tests
+
+    - name: Copy results back
+      if: always()
+      run: cp -a /gosrc/stackrox/test-output ./test-output 2>/dev/null || true
 
     - name: Cache stats
       if: always()
@@ -79,7 +95,12 @@ jobs:
 
     - name: Generate junit report
       if: always()
+      working-directory: /gosrc/stackrox
       run: make generate-junit-reports
+
+    - name: Copy junit reports back
+      if: always()
+      run: cp -a /gosrc/stackrox/junit-reports ./junit-reports 2>/dev/null || true
 
     - name: Publish Test Report
       uses: test-summary/action@v2
@@ -88,14 +109,21 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Go Integration Unit Tests
+      working-directory: /gosrc/stackrox
       run: ${{ matrix.gotags }} make integration-unit-tests
 
     - name: Go Operator Integration Tests
+      working-directory: /gosrc/stackrox
       run: ${{ matrix.gotags }} make -C operator/ test-integration
 
     - name: Generate junit report
       if: always()
+      working-directory: /gosrc/stackrox
       run: make generate-junit-reports
+
+    - name: Copy junit reports back
+      if: always()
+      run: cp -a /gosrc/stackrox/junit-reports ./junit-reports 2>/dev/null || true
 
     - name: Publish Test Report
       uses: test-summary/action@v2
