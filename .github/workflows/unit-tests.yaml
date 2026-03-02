@@ -50,6 +50,9 @@ jobs:
     - name: Copy source to tmpfs
       run: |
         cp -a . /gosrc/stackrox
+        # Symlink .git so git ls-files works (used by Makefile to find test packages)
+        rm -rf /gosrc/stackrox/.git
+        ln -s "$GITHUB_WORKSPACE/.git" /gosrc/stackrox/.git
         echo "Tmpfs usage after copy:"
         df -h /gosrc
         echo "Source size: $(du -sh /gosrc/stackrox | cut -f1)"
