@@ -23,7 +23,7 @@ tests:
         .servicemonitors["admission-control-monitor-stackrox"] | [
             assertThat(.metadata.namespace == "openshift-monitoring"),
             assertThat(.spec.endpoints[].port == "monitoring-tls"),
-            assertThat(.spec.selector.matchLabels.app == "admission-control")
+            assertThat(.spec.selector.matchLabels["app.kubernetes.io/component"] == "admission-control")
           ]
 
     - name: "secure metrics endpoint is enabled"
@@ -76,7 +76,7 @@ tests:
         .servicemonitors["admission-control-monitor-stackrox"] | [
             assertThat(.metadata.namespace == "openshift-monitoring"),
             assertThat(.spec.endpoints[].port == "monitoring-tls"),
-            assertThat(.spec.selector.matchLabels.app == "admission-control")
+            assertThat(.spec.selector.matchLabels["app.kubernetes.io/component"] == "admission-control")
           ]
         .rolebindings["rhacs-scanner-v4-auth-reader-stackrox"] | assertThat(. != null)
         .servicemonitors["scanner-v4-monitor-stackrox"] | [
