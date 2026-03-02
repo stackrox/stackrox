@@ -17,6 +17,7 @@ type PlatformMatcher interface {
 	MatchAlert(alert *storage.Alert) (bool, error)
 	// MatchDeployment returns true if the given deployment matches platform rules
 	MatchDeployment(deployment *storage.Deployment) (bool, error)
+	MatchProcessIndicator(process *storage.ProcessIndicator) (bool, error)
 	SetRegexes(regexes []*regexp.Regexp)
 }
 

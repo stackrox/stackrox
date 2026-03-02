@@ -35,6 +35,13 @@ func (p *platformMatcherImpl) MatchDeployment(deployment *storage.Deployment) (b
 	return p.matchNamespace(deployment.GetNamespace()), nil
 }
 
+func (p *platformMatcherImpl) MatchProcessIndicator(process *storage.ProcessIndicator) (bool, error) {
+	if process == nil {
+		return false, errors.New("Error matching process: process must be non nil")
+	}
+	return p.matchNamespace(process.GetNamespace()), nil
+}
+
 func (p *platformMatcherImpl) matchNamespace(namespace string) bool {
 	if features.CustomizablePlatformComponents.Enabled() {
 		for _, rule := range p.regexes {
