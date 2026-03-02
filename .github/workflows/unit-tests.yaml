@@ -116,13 +116,6 @@ jobs:
       with:
         paths: 'junit-reports/report.xml'
 
-    - name: Copy results to host for reporting
-      if: always()
-      run: |
-        for d in test-output junit-reports; do
-          cp -a "$d" "/__w_host/stackrox/stackrox/$d" 2>/dev/null || true
-        done
-
     - name: Report test failures to Jira
       if: (!cancelled())
       id: junit2jira
