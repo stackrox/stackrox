@@ -57,4 +57,27 @@ export const policySectionValidators: PolicySectionValidator[] = [
             return undefined;
         },
     },
+    {
+        name: 'Process criteria require file path',
+        appliesTo: (context) =>
+            context.lifecycleStages.includes('RUNTIME') &&
+            (context.eventSource === 'NODE_EVENT' || context.eventSource === 'DEPLOYMENT_EVENT'),
+        validate: ({ policyGroups }) => {
+            const processCriteria = [
+                'Process Name',
+                'Process Ancestor',
+                'Process Arguments',
+                'Process UID',
+            ];
+            const hasProcessCriterion = processCriteria.some((name) =>
+                policyGroupsHasCriterion(policyGroups, name)
+            );
+            const hasFilePath = policyGroupsHasCriterion(policyGroups, 'File Path');
+
+            if (hasProcessCriterion && !hasFilePath) {
+                return 'Criterion must be present when using process criteria: File Path';
+            }
+            return undefined;
+        },
+    },
 ];

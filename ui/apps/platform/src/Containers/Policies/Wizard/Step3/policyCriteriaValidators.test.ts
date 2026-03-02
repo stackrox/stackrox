@@ -109,6 +109,82 @@ describe('policyCriteriaValidators', () => {
         });
     });
 
+    describe('Process criteria require file path validator', () => {
+        const validator = policySectionValidators.find(
+            (v) => v.name === 'Process criteria require file path'
+        );
+
+        if (!validator) {
+            throw new Error('Process criteria require file path validator not found');
+        }
+
+        const processCriteria = [
+            'Process Name',
+            'Process Ancestor',
+            'Process Arguments',
+            'Process UID',
+        ];
+
+        it('should apply to DEPLOYMENT_EVENT and NODE_EVENT with RUNTIME lifecycle', () => {
+            policyEventSources.forEach((eventSource) => {
+                expect(
+                    validator.appliesTo({
+                        eventSource,
+                        lifecycleStages: ['RUNTIME'],
+                    })
+                ).toBe(eventSource === 'DEPLOYMENT_EVENT' || eventSource === 'NODE_EVENT');
+            });
+        });
+
+        it.each(processCriteria)(
+            'should fail when %s is present without File Path',
+            (criterionName) => {
+                const section: ClientPolicySection = {
+                    sectionName: 'Test Section',
+                    policyGroups: [mockCriterionWithName(criterionName)],
+                };
+                const context: PolicyContext = {
+                    eventSource: 'NODE_EVENT',
+                    lifecycleStages: ['RUNTIME'],
+                };
+                expect(validator.validate(section, context)).toBeDefined();
+            }
+        );
+
+        it.each(processCriteria)(
+            'should pass when %s is present with File Path',
+            (criterionName) => {
+                const section: ClientPolicySection = {
+                    sectionName: 'Test Section',
+                    policyGroups: [
+                        mockCriterionWithName(criterionName),
+                        mockCriterionWithName('File Path', [{ value: '/etc/passwd' }]),
+                    ],
+                };
+                const context: PolicyContext = {
+                    eventSource: 'NODE_EVENT',
+                    lifecycleStages: ['RUNTIME'],
+                };
+                expect(validator.validate(section, context)).toBeUndefined();
+            }
+        );
+
+        it('should pass when only file activity criteria are present (no process criteria)', () => {
+            const section: ClientPolicySection = {
+                sectionName: 'Test Section',
+                policyGroups: [
+                    mockCriterionWithName('File Path', [{ value: '/etc/passwd' }]),
+                    mockCriterionWithName('File Operation', [{ value: 'READ' }]),
+                ],
+            };
+            const context: PolicyContext = {
+                eventSource: 'NODE_EVENT',
+                lifecycleStages: ['RUNTIME'],
+            };
+            expect(validator.validate(section, context)).toBeUndefined();
+        });
+    });
+
     describe('File operation requires file path validator', () => {
         const validator = policySectionValidators.find(
             (v) => v.name === 'File operation requires file path'
