@@ -30,12 +30,24 @@ jobs:
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
-      options: --tmpfs /gosrc:rw,exec,size=1500M
+      # Tmpfs on workspace for fast Go file hashing (~4.5 min speedup).
+      # Dual bind mount: /__w is GHA's default; /__w_host is our second
+      # mount to the same host path so we can copy .github/ for the runner's
+      # local action resolution (which reads from the host filesystem).
+      options: >-
+        --tmpfs /__w/stackrox/stackrox:rw,exec,size=2g
+        -v /home/runner/work:/__w_host
     steps:
     - name: Checkout
       uses: actions/checkout@v6
       with:
         fetch-depth: 1
+
+    - name: Expose local actions to host
+      run: |
+        cp -a .github /__w_host/stackrox/stackrox/.github
+        echo "Workspace on tmpfs:"
+        df -h "$GITHUB_WORKSPACE"
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -48,23 +60,8 @@ jobs:
         save: true
         key-suffix: ${{ matrix.gotags }}
 
-    - name: Copy source to tmpfs
-      run: |
-        cp -a . /gosrc/stackrox
-        rm -rf /gosrc/stackrox/.git
-        ln -s "$GITHUB_WORKSPACE/.git" /gosrc/stackrox/.git
-        git config --global --add safe.directory /gosrc/stackrox
-        echo "Tmpfs usage after copy:"
-        df -h /gosrc
-        echo "Source size: $(du -sh /gosrc/stackrox | cut -f1)"
-
     - name: Go Unit Tests
-      working-directory: /gosrc/stackrox
       run: ${{ matrix.gotags }} make go-unit-tests
-
-    - name: Copy results back
-      if: always()
-      run: cp -a /gosrc/stackrox/test-output ./test-output 2>/dev/null || true
 
     - name: Cache stats
       if: always()
@@ -95,12 +92,7 @@ jobs:
 
     - name: Generate junit report
       if: always()
-      working-directory: /gosrc/stackrox
       run: make generate-junit-reports
-
-    - name: Copy junit reports back
-      if: always()
-      run: cp -a /gosrc/stackrox/junit-reports ./junit-reports 2>/dev/null || true
 
     - name: Publish Test Report
       uses: test-summary/action@v2
@@ -109,27 +101,27 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Go Integration Unit Tests
-      working-directory: /gosrc/stackrox
       run: ${{ matrix.gotags }} make integration-unit-tests
 
     - name: Go Operator Integration Tests
-      working-directory: /gosrc/stackrox
       run: ${{ matrix.gotags }} make -C operator/ test-integration
 
     - name: Generate junit report
       if: always()
-      working-directory: /gosrc/stackrox
       run: make generate-junit-reports
-
-    - name: Copy junit reports back
-      if: always()
-      run: cp -a /gosrc/stackrox/junit-reports ./junit-reports 2>/dev/null || true
 
     - name: Publish Test Report
       uses: test-summary/action@v2
       if: always()
       with:
         paths: 'junit-reports/report.xml'
+
+    - name: Copy results to host for reporting
+      if: always()
+      run: |
+        for d in test-output junit-reports; do
+          cp -a "$d" "/__w_host/stackrox/stackrox/$d" 2>/dev/null || true
+        done
 
     - name: Report test failures to Jira
       if: (!cancelled())
