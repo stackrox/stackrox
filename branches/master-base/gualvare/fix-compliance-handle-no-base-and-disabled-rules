@@ -1,7 +1,7 @@
 {
   "base": {
-    "name": "master-base/gualvare/fix-compliance-make-tp-extends-optional",
-    "hash": "74b4543406d965e1e06e27b9a7ed6d3cb1c6eddb"
+    "name": "master",
+    "hash": "6dd9ac66f2ee03788e9ce9a4c6d3b78a791ffa44"
   },
   "upstream": {
     "branch": "master-base/gualvare/fix-compliance-handle-no-base-and-disabled-rules"
