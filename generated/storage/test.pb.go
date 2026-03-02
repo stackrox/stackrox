@@ -193,6 +193,7 @@ type TestSingleKeyStruct struct {
 	//	*TestSingleKeyStruct_Oneofnested
 	Oneof         isTestSingleKeyStruct_Oneof `protobuf_oneof:"oneof"`
 	Bytess        []byte                      `protobuf:"bytes,16,opt,name=bytess,proto3" json:"bytess,omitempty"`
+	Timestamptz   *timestamppb.Timestamp      `protobuf:"bytes,17,opt,name=timestamptz,proto3" json:"timestamptz,omitempty" sql:"type(timestamptz)" search:"Test TimestampTZ"` // @gotags: sql:"type(timestamptz)" search:"Test TimestampTZ"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -346,6 +347,13 @@ func (x *TestSingleKeyStruct) GetOneofnested() *TestSingleKeyStruct_OneOfNested 
 func (x *TestSingleKeyStruct) GetBytess() []byte {
 	if x != nil {
 		return x.Bytess
+	}
+	return nil
+}
+
+func (x *TestSingleKeyStruct) GetTimestamptz() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Timestamptz
 	}
 	return nil
 }
@@ -2661,7 +2669,7 @@ var File_storage_test_proto protoreflect.FileDescriptor
 
 const file_storage_test_proto_rawDesc = "" +
 	"\n" +
-	"\x12storage/test.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\x92\t\n" +
+	"\x12storage/test.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd0\t\n" +
 	"\x13TestSingleKeyStruct\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12!\n" +
@@ -2679,7 +2687,8 @@ const file_storage_test_proto_rawDesc = "" +
 	"\x06nested\x18\r \x03(\v2#.storage.TestSingleKeyStruct.NestedR\x06nested\x12\"\n" +
 	"\voneofstring\x18\x0e \x01(\tH\x00R\voneofstring\x12L\n" +
 	"\voneofnested\x18\x0f \x01(\v2(.storage.TestSingleKeyStruct.OneOfNestedH\x00R\voneofnested\x12\x16\n" +
-	"\x06bytess\x18\x10 \x01(\fR\x06bytess\x1a9\n" +
+	"\x06bytess\x18\x10 \x01(\fR\x06bytess\x12<\n" +
+	"\vtimestamptz\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\vtimestamptz\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1aO\n" +
@@ -2929,33 +2938,34 @@ var file_storage_test_proto_depIdxs = []int32{
 	20, // 4: storage.TestSingleKeyStruct.embedded:type_name -> storage.TestSingleKeyStruct.Embedded
 	21, // 5: storage.TestSingleKeyStruct.nested:type_name -> storage.TestSingleKeyStruct.Nested
 	22, // 6: storage.TestSingleKeyStruct.oneofnested:type_name -> storage.TestSingleKeyStruct.OneOfNested
-	26, // 7: storage.TestSingleUUIDKeyStruct.labels:type_name -> storage.TestSingleUUIDKeyStruct.LabelsEntry
-	43, // 8: storage.TestSingleUUIDKeyStruct.timestamp:type_name -> google.protobuf.Timestamp
-	1,  // 9: storage.TestSingleUUIDKeyStruct.enum:type_name -> storage.TestSingleUUIDKeyStruct.Enum
-	1,  // 10: storage.TestSingleUUIDKeyStruct.enums:type_name -> storage.TestSingleUUIDKeyStruct.Enum
-	27, // 11: storage.TestSingleUUIDKeyStruct.embedded:type_name -> storage.TestSingleUUIDKeyStruct.Embedded
-	28, // 12: storage.TestSingleUUIDKeyStruct.nested:type_name -> storage.TestSingleUUIDKeyStruct.Nested
-	29, // 13: storage.TestSingleUUIDKeyStruct.oneofnested:type_name -> storage.TestSingleUUIDKeyStruct.OneOfNested
-	33, // 14: storage.TestStruct.labels:type_name -> storage.TestStruct.LabelsEntry
-	43, // 15: storage.TestStruct.timestamp:type_name -> google.protobuf.Timestamp
-	2,  // 16: storage.TestStruct.enum:type_name -> storage.TestStruct.Enum
-	2,  // 17: storage.TestStruct.enums:type_name -> storage.TestStruct.Enum
-	34, // 18: storage.TestStruct.embedded:type_name -> storage.TestStruct.Embedded
-	35, // 19: storage.TestStruct.nested:type_name -> storage.TestStruct.Nested
-	36, // 20: storage.TestStruct.oneofnested:type_name -> storage.TestStruct.OneOfNested
-	40, // 21: storage.TestGrandparent.embedded:type_name -> storage.TestGrandparent.Embedded
-	42, // 22: storage.TestParent1.children:type_name -> storage.TestParent1.Child1Ref
-	24, // 23: storage.TestSingleKeyStruct.Nested.nested2:type_name -> storage.TestSingleKeyStruct.Nested.Nested2
-	25, // 24: storage.TestSingleKeyStruct.OneOfNested.nested2:type_name -> storage.TestSingleKeyStruct.OneOfNested.Nested2
-	31, // 25: storage.TestSingleUUIDKeyStruct.Nested.nested2:type_name -> storage.TestSingleUUIDKeyStruct.Nested.Nested2
-	32, // 26: storage.TestSingleUUIDKeyStruct.OneOfNested.nested2:type_name -> storage.TestSingleUUIDKeyStruct.OneOfNested.Nested2
-	38, // 27: storage.TestStruct.Nested.nested2:type_name -> storage.TestStruct.Nested.Nested2
-	41, // 28: storage.TestGrandparent.Embedded.embedded2:type_name -> storage.TestGrandparent.Embedded.Embedded2
-	29, // [29:29] is the sub-list for method output_type
-	29, // [29:29] is the sub-list for method input_type
-	29, // [29:29] is the sub-list for extension type_name
-	29, // [29:29] is the sub-list for extension extendee
-	0,  // [0:29] is the sub-list for field type_name
+	43, // 7: storage.TestSingleKeyStruct.timestamptz:type_name -> google.protobuf.Timestamp
+	26, // 8: storage.TestSingleUUIDKeyStruct.labels:type_name -> storage.TestSingleUUIDKeyStruct.LabelsEntry
+	43, // 9: storage.TestSingleUUIDKeyStruct.timestamp:type_name -> google.protobuf.Timestamp
+	1,  // 10: storage.TestSingleUUIDKeyStruct.enum:type_name -> storage.TestSingleUUIDKeyStruct.Enum
+	1,  // 11: storage.TestSingleUUIDKeyStruct.enums:type_name -> storage.TestSingleUUIDKeyStruct.Enum
+	27, // 12: storage.TestSingleUUIDKeyStruct.embedded:type_name -> storage.TestSingleUUIDKeyStruct.Embedded
+	28, // 13: storage.TestSingleUUIDKeyStruct.nested:type_name -> storage.TestSingleUUIDKeyStruct.Nested
+	29, // 14: storage.TestSingleUUIDKeyStruct.oneofnested:type_name -> storage.TestSingleUUIDKeyStruct.OneOfNested
+	33, // 15: storage.TestStruct.labels:type_name -> storage.TestStruct.LabelsEntry
+	43, // 16: storage.TestStruct.timestamp:type_name -> google.protobuf.Timestamp
+	2,  // 17: storage.TestStruct.enum:type_name -> storage.TestStruct.Enum
+	2,  // 18: storage.TestStruct.enums:type_name -> storage.TestStruct.Enum
+	34, // 19: storage.TestStruct.embedded:type_name -> storage.TestStruct.Embedded
+	35, // 20: storage.TestStruct.nested:type_name -> storage.TestStruct.Nested
+	36, // 21: storage.TestStruct.oneofnested:type_name -> storage.TestStruct.OneOfNested
+	40, // 22: storage.TestGrandparent.embedded:type_name -> storage.TestGrandparent.Embedded
+	42, // 23: storage.TestParent1.children:type_name -> storage.TestParent1.Child1Ref
+	24, // 24: storage.TestSingleKeyStruct.Nested.nested2:type_name -> storage.TestSingleKeyStruct.Nested.Nested2
+	25, // 25: storage.TestSingleKeyStruct.OneOfNested.nested2:type_name -> storage.TestSingleKeyStruct.OneOfNested.Nested2
+	31, // 26: storage.TestSingleUUIDKeyStruct.Nested.nested2:type_name -> storage.TestSingleUUIDKeyStruct.Nested.Nested2
+	32, // 27: storage.TestSingleUUIDKeyStruct.OneOfNested.nested2:type_name -> storage.TestSingleUUIDKeyStruct.OneOfNested.Nested2
+	38, // 28: storage.TestStruct.Nested.nested2:type_name -> storage.TestStruct.Nested.Nested2
+	41, // 29: storage.TestGrandparent.Embedded.embedded2:type_name -> storage.TestGrandparent.Embedded.Embedded2
+	30, // [30:30] is the sub-list for method output_type
+	30, // [30:30] is the sub-list for method input_type
+	30, // [30:30] is the sub-list for extension type_name
+	30, // [30:30] is the sub-list for extension extendee
+	0,  // [0:30] is the sub-list for field type_name
 }
 
 func init() { file_storage_test_proto_init() }

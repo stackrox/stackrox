@@ -70,6 +70,8 @@ message TestSingleKeyStruct {
   }
 
   bytes bytess = 16;
+
+  google.protobuf.Timestamp timestamptz = 17; // @gotags: sql:"type(timestamptz)" search:"Test TimestampTZ"
 }
 
 message TestSingleUUIDKeyStruct {
