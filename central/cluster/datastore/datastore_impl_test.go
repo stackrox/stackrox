@@ -513,7 +513,7 @@ func TestShouldUpdateCluster(t *testing.T) {
 	})
 }
 
-func TestBuildClusterFromConfig(t *testing.T) {
+func TestBuildNewClusterFromConfig(t *testing.T) {
 	t.Run("builds cluster with all fields", func(t *testing.T) {
 		config := clusterConfigData{
 			manager: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
@@ -530,7 +530,7 @@ func TestBuildClusterFromConfig(t *testing.T) {
 			capabilities: []string{"cap1", "cap2"},
 		}
 
-		cluster := buildClusterFromConfig("test-cluster", "bundle-123", config)
+		cluster := buildNewClusterFromConfig("test-cluster", "bundle-123", config)
 
 		assert.Equal(t, "test-cluster", cluster.GetName())
 		assert.Equal(t, "bundle-123", cluster.GetInitBundleId())
@@ -550,7 +550,7 @@ func TestBuildClusterFromConfig(t *testing.T) {
 			capabilities:             []string{},
 		}
 
-		cluster := buildClusterFromConfig("test-cluster", "bundle-123", config)
+		cluster := buildNewClusterFromConfig("test-cluster", "bundle-123", config)
 
 		assert.Nil(t, cluster.GetHelmConfig())
 	})
@@ -566,7 +566,7 @@ func TestBuildClusterFromConfig(t *testing.T) {
 			capabilities:             []string{"zzz", "aaa", "mmm"},
 		}
 
-		cluster := buildClusterFromConfig("test-cluster", "bundle-123", config)
+		cluster := buildNewClusterFromConfig("test-cluster", "bundle-123", config)
 
 		assert.Equal(t, []string{"aaa", "mmm", "zzz"}, cluster.GetSensorCapabilities())
 	})

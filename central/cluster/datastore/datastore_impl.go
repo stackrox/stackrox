@@ -948,9 +948,7 @@ func shouldUpdateCluster(existing *storage.Cluster, config clusterConfigData, re
 	return false
 }
 
-// buildClusterFromConfig builds a new cluster object from configuration.
-// This does not persist the cluster, just constructs the object.
-func buildClusterFromConfig(clusterName, registrantID string, config clusterConfigData) *storage.Cluster {
+func buildNewClusterFromConfig(clusterName, registrantID string, config clusterConfigData) *storage.Cluster {
 	cluster := &storage.Cluster{
 		Name:               clusterName,
 		InitBundleId:       registrantID,
@@ -1050,7 +1048,7 @@ func (ds *datastoreImpl) lookupOrCreateCluster(ctx context.Context, clusterID, c
 	}
 
 	// Path 2: Create new cluster by name
-	cluster := buildClusterFromConfig(clusterName, registrantID, config)
+	cluster := buildNewClusterFromConfig(clusterName, registrantID, config)
 
 	if err := ds.clusterInitStore.InitiateClusterRegistration(ctx, registrantID, clusterName); err != nil {
 		return nil, false, errors.Wrapf(err, "initiating registrations of cluster %s using init artifact %s", clusterName, registrantID)
