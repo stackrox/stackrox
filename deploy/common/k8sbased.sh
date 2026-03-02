@@ -473,12 +473,6 @@ function launch_central {
 
       helm upgrade --install -n "${central_namespace}" stackrox-central-services "${helm_chart}" \
           "${helm_args[@]}"
-      if [[ -n "$CI" ]]; then
-        ${ORCH_CMD} -n "${central_namespace}" patch hpa scanner-v4-indexer \
-          --patch "$(cat "${common_dir}/scanner-v4-hpa-patch.yaml")" 2>/dev/null || true
-        ${ORCH_CMD} -n "${central_namespace}" patch hpa scanner-v4-matcher \
-          --patch "$(cat "${common_dir}/scanner-v4-hpa-patch.yaml")" 2>/dev/null || true
-      fi
     else
       if [[ "${central_namespace}" != "stackrox" ]]; then
         echo "Deploying manifest bundles to namespaces other than 'stackrox' is not supported." >&2
