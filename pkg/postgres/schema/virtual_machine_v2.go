@@ -59,6 +59,6 @@ type VirtualMachineV2 struct {
 	ClusterName string                         `gorm:"column:clustername;type:varchar"`
 	GuestOs     string                         `gorm:"column:guestos;type:varchar;index:virtualmachinev2_guestos,type:btree"`
 	State       storage.VirtualMachineV2_State `gorm:"column:state;type:integer"`
-	LastUpdated *time.Time                     `gorm:"column:lastupdated;type:timestamp;index:virtualmachinev2_lastupdated,type:btree"`
+	LastUpdated *time.Time                     `gorm:"column:lastupdated;type:timestamptz"`
 	Serialized  []byte                         `gorm:"column:serialized;type:bytea"`
 }
