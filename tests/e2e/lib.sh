@@ -188,6 +188,7 @@ export_test_environment() {
     ci_export ROX_CVE_FIX_TIMESTAMP "${ROX_CVE_FIX_TIMESTAMP:-true}"
     ci_export ROX_BASE_IMAGE_DETECTION "${ROX_BASE_IMAGE_DETECTION:-true}"
     ci_export ROX_LABEL_BASED_POLICY_SCOPING "${ROX_LABEL_BASED_POLICY_SCOPING:-true}"
+    ci_export ROX_BASE_IMAGE_WATCHER_POLL_INTERVAL "${ROX_BASE_IMAGE_WATCHER_POLL_INTERVAL:-10s}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -338,7 +339,9 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_CVE_FIX_TIMESTAMP'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_BASE_IMAGE_DETECTION'
-    customize_envVars+=$'\n        value: "false"'
+    customize_envVars+=$'\n        value: "'"${ROX_BASE_IMAGE_DETECTION:-true}"'"'
+    customize_envVars+=$'\n      - name: ROX_BASE_IMAGE_WATCHER_POLL_INTERVAL'
+    customize_envVars+=$'\n        value: "'"${ROX_BASE_IMAGE_WATCHER_POLL_INTERVAL:-10s}"'"'
 
     local scannerV4ScannerComponent="Default"
     case "${ROX_SCANNER_V4:-}" in
