@@ -30,7 +30,6 @@ jobs:
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
-      options: --tmpfs /gosrc:rw,exec,size=1500M
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -42,29 +41,14 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Cache Go dependencies
+      id: go-cache
       uses: ./.github/actions/cache-go-dependencies
       with:
-        save: true  # TEMPORARY
+        save: true
         key-suffix: ${{ matrix.gotags }}
 
-    - name: Copy source to tmpfs
-      run: |
-        cp -a . /gosrc/stackrox
-        # Symlink .git so git ls-files works (used by Makefile to find test packages)
-        rm -rf /gosrc/stackrox/.git
-        ln -s "$GITHUB_WORKSPACE/.git" /gosrc/stackrox/.git
-        git config --global --add safe.directory /gosrc/stackrox
-        echo "Tmpfs usage after copy:"
-        df -h /gosrc
-        echo "Source size: $(du -sh /gosrc/stackrox | cut -f1)"
-
     - name: Go Unit Tests
-      working-directory: /gosrc/stackrox
       run: ${{ matrix.gotags }} make go-unit-tests
-
-    - name: Copy results back
-      if: always()
-      run: cp -a /gosrc/stackrox/test-output ./test-output 2>/dev/null || true
 
     - name: Cache stats
       if: always()
@@ -74,15 +58,19 @@ jobs:
         test_total=$(grep -c '^ok ' "$f" 2>/dev/null || true)
         echo "::notice::Test result cache: ${test_cached:-0} cached / ${test_total:-0} total"
 
-    - name: Debug GOCACHE
-      if: always()
-      run: |
-        echo "GOCACHE=$(go env GOCACHE)"
-        echo "HOME=$HOME"
-        gocache="$(go env GOCACHE)"
-        echo "GOCACHE entries: $(find "$gocache" -type f 2>/dev/null | wc -l)"
-        echo "GOCACHE size: $(du -sh "$gocache" 2>/dev/null | cut -f1)"
-        ls -la "$gocache" 2>/dev/null | head -5
+    - name: Save Go Build Cache
+      if: always() && steps.go-cache.outputs.build-cache-hit != 'true'
+      uses: actions/cache/save@v5
+      with:
+        path: ${{ steps.go-cache.outputs.gocache }}
+        key: ${{ steps.go-cache.outputs.build-cache-key }}
+
+    - name: Save Go Dependencies
+      if: always() && steps.go-cache.outputs.mod-cache-hit != 'true'
+      uses: actions/cache/save@v5
+      with:
+        path: ${{ steps.go-cache.outputs.gomodcache }}
+        key: ${{ steps.go-cache.outputs.mod-cache-key }}
 
     - uses: codecov/codecov-action@v3
       with:
@@ -91,12 +79,7 @@ jobs:
 
     - name: Generate junit report
       if: always()
-      working-directory: /gosrc/stackrox
       run: make generate-junit-reports
-
-    - name: Copy junit reports back
-      if: always()
-      run: cp -a /gosrc/stackrox/junit-reports ./junit-reports 2>/dev/null || true
 
     - name: Publish Test Report
       uses: test-summary/action@v2
@@ -105,21 +88,14 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Go Integration Unit Tests
-      working-directory: /gosrc/stackrox
       run: ${{ matrix.gotags }} make integration-unit-tests
 
     - name: Go Operator Integration Tests
-      working-directory: /gosrc/stackrox
       run: ${{ matrix.gotags }} make -C operator/ test-integration
 
     - name: Generate junit report
       if: always()
-      working-directory: /gosrc/stackrox
       run: make generate-junit-reports
-
-    - name: Copy junit reports back
-      if: always()
-      run: cp -a /gosrc/stackrox/junit-reports ./junit-reports 2>/dev/null || true
 
     - name: Publish Test Report
       uses: test-summary/action@v2

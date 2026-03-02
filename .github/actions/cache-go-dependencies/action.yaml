@@ -9,6 +9,25 @@ inputs:
     description: Extra suffix for cache keys (use to distinguish matrix jobs).
     required: false
     default: ''
+outputs:
+  gocache:
+    description: GOCACHE path
+    value: ${{ steps.cache-paths.outputs.GOCACHE }}
+  gomodcache:
+    description: GOMODCACHE path
+    value: ${{ steps.cache-paths.outputs.GOMODCACHE }}
+  build-cache-key:
+    description: Build cache key for explicit save
+    value: go-build-no-buildvcs-v7-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
+  mod-cache-key:
+    description: Mod cache key for explicit save
+    value: go-mod-no-buildvcs-v7-${{ hashFiles('**/go.sum') }}
+  build-cache-hit:
+    description: Whether the build cache was an exact hit
+    value: ${{ steps.restore-build.outputs.cache-hit }}
+  mod-cache-hit:
+    description: Whether the mod cache was an exact hit
+    value: ${{ steps.restore-mod.outputs.cache-hit }}
 runs:
   using: composite
   steps:
@@ -23,16 +42,19 @@ runs:
         echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"
       shell: bash
 
-    # TEMPORARY: always save with test-specific keys.
-    - name: Cache Go Dependencies (save)
-      uses: actions/cache@v5
+    # Restore-only: saves are done explicitly in workflows with if: always()
+    # so they run even when tests fail.
+    - name: Restore Go Dependencies
+      id: restore-mod
+      uses: actions/cache/restore@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOMODCACHE }}
         key: go-mod-no-buildvcs-v7-${{ hashFiles('**/go.sum') }}
         restore-keys: go-mod-no-buildvcs-v7-
 
-    - name: Cache Go Build (save)
-      uses: actions/cache@v5
+    - name: Restore Go Build Cache
+      id: restore-build
+      uses: actions/cache/restore@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
         key: go-build-no-buildvcs-v7-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
