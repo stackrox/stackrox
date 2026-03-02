@@ -41,8 +41,6 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
-      with:
-        save: false
 
     - name: Check Generated
       run: scripts/ci/jobs/check-generated.sh
