@@ -86,4 +86,10 @@ const (
 	// InternalTokenAPISupported identifies the capability of Central to issue internal tokens
 	// for authenticated proxy requests.
 	InternalTokenAPISupported CentralCapability = "InternalTokenAPISupported"
+
+	// CentralProxyPathFiltering identifies the capability of Central to provide
+	// an allow-list of proxy paths for Sensor's Central proxy.
+	// Paths that end with a slash must be a prefix match.
+	// Paths that do not end with a slash must be an exact match.
+	CentralProxyPathFiltering CentralCapability = "CentralProxyPathFiltering"
 )

@@ -132,17 +132,10 @@ const APIVerbs: DescriptorOption[] = ['CREATE', 'DELETE', 'GET', 'PATCH', 'UPDAT
 const fileOperationOptions: DescriptorOption[] = [
     ['OPEN', 'Open (Writable)'],
     ['CREATE', 'Create'],
-    ['UNLINK', 'Delete'],
+    ['UNLINK', 'Delete (Unlink)'],
     ['PERMISSION_CHANGE', 'Permission change'],
     ['OWNERSHIP_CHANGE', 'Ownership change'],
 ].map(([value, label]) => ({ value, label }));
-
-const fileActivityPathOptions: DescriptorOption[] = [
-    '/etc/passwd',
-    '/etc/ssh/sshd_config',
-    '/etc/shadow',
-    '/etc/sudoers',
-].map((path) => ({ label: path, value: path }));
 
 const subComponentsForContainerMemory: SubComponent[] = [
     {
@@ -1510,9 +1503,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         name: 'File Path',
         shortName: 'File path',
         category: policyCriteriaCategories.FILE_ACTIVITY,
-        type: 'select',
-        placeholder: 'Select a file path',
-        options: fileActivityPathOptions,
+        type: 'text',
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
         featureFlagDependency: ['ROX_SENSITIVE_FILE_ACTIVITY'],
@@ -1656,9 +1647,7 @@ export const nodeEventDescriptor: Descriptor[] = [
         name: 'File Path',
         shortName: 'File path',
         category: policyCriteriaCategories.FILE_ACTIVITY,
-        type: 'select',
-        placeholder: 'Select a file path',
-        options: fileActivityPathOptions,
+        type: 'text',
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
     },

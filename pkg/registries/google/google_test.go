@@ -93,12 +93,14 @@ func TestGoogleValidate(t *testing.T) {
 		isValid bool
 	}{
 		{
-			name:    "static credentials - success",
+			name: "static credentials - success",
+			// #nosec G101 -- test data
 			config:  &storage.GoogleConfig{Endpoint: "eu.gcr.io", ServiceAccount: `{"type": "service_account"}`},
 			isValid: true,
 		},
 		{
-			name:    "static credentials - no endpoint",
+			name: "static credentials - no endpoint",
+			// #nosec G101 -- test data
 			config:  &storage.GoogleConfig{Endpoint: "", ServiceAccount: `{"type": "service_account"}`},
 			isValid: false,
 		},

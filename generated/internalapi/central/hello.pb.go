@@ -235,15 +235,16 @@ func (x *SensorHello) GetRequestDeduperState() bool {
 }
 
 type CentralHello struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	ClusterId        string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	CertBundle       map[string]string      `protobuf:"bytes,2,rep,name=cert_bundle,json=certBundle,proto3" json:"cert_bundle,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	ManagedCentral   bool                   `protobuf:"varint,3,opt,name=managed_central,json=managedCentral,proto3" json:"managed_central,omitempty"`
-	CentralId        string                 `protobuf:"bytes,4,opt,name=central_id,json=centralId,proto3" json:"central_id,omitempty"`
-	Capabilities     []string               `protobuf:"bytes,5,rep,name=capabilities,proto3" json:"capabilities,omitempty"`
-	SendDeduperState bool                   `protobuf:"varint,6,opt,name=send_deduper_state,json=sendDeduperState,proto3" json:"send_deduper_state,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	ClusterId         string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	CertBundle        map[string]string      `protobuf:"bytes,2,rep,name=cert_bundle,json=certBundle,proto3" json:"cert_bundle,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	ManagedCentral    bool                   `protobuf:"varint,3,opt,name=managed_central,json=managedCentral,proto3" json:"managed_central,omitempty"`
+	CentralId         string                 `protobuf:"bytes,4,opt,name=central_id,json=centralId,proto3" json:"central_id,omitempty"`
+	Capabilities      []string               `protobuf:"bytes,5,rep,name=capabilities,proto3" json:"capabilities,omitempty"`
+	SendDeduperState  bool                   `protobuf:"varint,6,opt,name=send_deduper_state,json=sendDeduperState,proto3" json:"send_deduper_state,omitempty"`
+	AllowedProxyPaths []string               `protobuf:"bytes,7,rep,name=allowed_proxy_paths,json=allowedProxyPaths,proto3" json:"allowed_proxy_paths,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *CentralHello) Reset() {
@@ -318,6 +319,13 @@ func (x *CentralHello) GetSendDeduperState() bool {
 	return false
 }
 
+func (x *CentralHello) GetAllowedProxyPaths() []string {
+	if x != nil {
+		return x.AllowedProxyPaths
+	}
+	return nil
+}
+
 var File_internalapi_central_hello_proto protoreflect.FileDescriptor
 
 const file_internalapi_central_hello_proto_rawDesc = "" +
@@ -341,7 +349,7 @@ const file_internalapi_central_hello_proto_rawDesc = "" +
 	"\vSensorState\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
 	"\aSTARTUP\x10\x01\x12\r\n" +
-	"\tRECONNECT\x10\x02\"\xce\x02\n" +
+	"\tRECONNECT\x10\x02\"\xfe\x02\n" +
 	"\fCentralHello\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12F\n" +
@@ -351,7 +359,8 @@ const file_internalapi_central_hello_proto_rawDesc = "" +
 	"\n" +
 	"central_id\x18\x04 \x01(\tR\tcentralId\x12\"\n" +
 	"\fcapabilities\x18\x05 \x03(\tR\fcapabilities\x12,\n" +
-	"\x12send_deduper_state\x18\x06 \x01(\bR\x10sendDeduperState\x1a=\n" +
+	"\x12send_deduper_state\x18\x06 \x01(\bR\x10sendDeduperState\x12.\n" +
+	"\x13allowed_proxy_paths\x18\a \x03(\tR\x11allowedProxyPaths\x1a=\n" +
 	"\x0fCertBundleEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x1fZ\x1d./internalapi/central;centralb\x06proto3"

@@ -23,6 +23,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import DeploymentResourceTable, {
     deploymentResourcesFragment,
+    deploymentResourcesV2Fragment,
     deploymentResourcesTableId,
     defaultColumns as deploymentResourcesDefaultColumns,
 } from './DeploymentResourceTable';
@@ -48,12 +49,12 @@ const imageResourcesQuery = gql`
 `;
 
 const imageV2ResourcesQuery = gql`
-    ${deploymentResourcesFragment}
+    ${deploymentResourcesV2Fragment}
     query getImageResources($id: ID!, $query: String, $pagination: Pagination) {
         imageV2(id: $id) {
             id
             digest
-            ...DeploymentResources
+            ...DeploymentResourcesV2
         }
     }
 `;

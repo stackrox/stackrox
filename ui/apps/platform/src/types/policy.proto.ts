@@ -87,9 +87,9 @@ export type PolicyBaseExclusion = {
 
 // TODO prefer initial values instead of optional properties while adding a new policy?
 export type PolicyScope = {
-    cluster?: string;
-    namespace?: string;
-    label?: PolicyScopeLabel | null;
+    cluster: string;
+    namespace: string;
+    label: PolicyScopeLabel | null;
 };
 
 export type PolicyScopeLabel = {

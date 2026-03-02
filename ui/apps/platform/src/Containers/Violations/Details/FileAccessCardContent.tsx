@@ -8,7 +8,7 @@ import type { FileAccess, FileOperation } from 'types/fileAccess.proto';
 const fileOperations: Map<FileOperation, string> = new Map([
     ['OPEN', 'Open (Writable)'],
     ['CREATE', 'Create'],
-    ['UNLINK', 'Delete'],
+    ['UNLINK', 'Delete (Unlink)'],
     ['RENAME', 'Rename'],
     ['PERMISSION_CHANGE', 'Permission change'],
     ['OWNERSHIP_CHANGE', 'Ownership change'],

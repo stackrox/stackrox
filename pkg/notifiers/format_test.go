@@ -72,7 +72,7 @@ Deployment:
 	 - Cluster: prod cluster
 	 - ClusterId: ` + fixtureconsts.Cluster1 + `
 	 - Namespace: stackrox
-	 - Images: docker.io/library/nginx:1.10@sha256:SHA1
+	 - Images: docker.io/library/nginx:1.10
 `
 	expectedFormattedDeploymentAlertWithMitre = `Alert ID: ` + fixtureconsts.Alert1 + `
 Alert URL: https://localhost:8080/main/violations/` + fixtureconsts.Alert1 + `
@@ -136,7 +136,7 @@ Deployment:
 	 - Cluster: prod cluster
 	 - ClusterId: ` + fixtureconsts.Cluster1 + `
 	 - Namespace: stackrox
-	 - Images: docker.io/library/nginx:1.10@sha256:SHA1
+	 - Images: docker.io/library/nginx:1.10
 `
 	expectedFormatImageAlert = `Alert ID: ` + fixtureconsts.Alert1 + `
 Alert URL: https://localhost:8080/main/vulnerability-management/image/sha256:SHA2
@@ -222,7 +222,7 @@ Deployment:
 	 - Cluster: remote
 	 - ClusterId: ` + fixtureconsts.Cluster1 + `
 	 - Namespace: stackrox
-	 - Images: docker.io/library/nginx:1.10@sha256:SHA1
+	 - Images: docker.io/library/nginx:1.10
 `
 	expectedFormattedResourceAlert = `Alert ID: ` + fixtureconsts.Alert1 + `
 Alert URL: https://localhost:8080/main/violations/` + fixtureconsts.Alert1 + `
@@ -311,7 +311,7 @@ Time (UTC): 2021-01-20 22:42:02
 Severity: Low
 
 Violations:
-	 - '/etc/passwd' opened writable
+	 - '/etc/passwd' opened (writable)
 		 - Effective Path: /etc/passwd
 		 - Actual Path: /etc/passwd
 		 - Process Name: cp
@@ -346,7 +346,7 @@ Time (UTC): 2021-01-20 22:42:02
 Severity: Low
 
 Violations:
-	 - '/etc/passwd' opened writable
+	 - '/etc/passwd' opened (writable)
 		 - Effective Path: /etc/passwd
 		 - Process Name: cp
 		 - Process Executable: /bin/cp
@@ -385,7 +385,7 @@ Violations:
 	 - This is a kube event violation
 		 - pod : nginx
 		 - container : nginx
-	 - '/etc/passwd' opened writable
+	 - '/etc/passwd' opened (writable)
 		 - Effective Path: /etc/passwd
 		 - Actual Path: /etc/passwd
 		 - Process Name: cp
@@ -434,7 +434,7 @@ Deployment:
 	 - Cluster: prod cluster
 	 - ClusterId: ` + fixtureconsts.Cluster1 + `
 	 - Namespace: stackrox
-	 - Images: docker.io/library/nginx:1.10@sha256:SHA1
+	 - Images: docker.io/library/nginx:1.10
 `
 )
 
