@@ -801,24 +801,58 @@ _image_prefetcher_system_await() {
     esac
 }
 
-_image_prefetcher_pin_images() {
+_image_prefetcher_repull_gc_victims() {
     local ns="$1"
     local name="$2"
 
-    info "Pinning prefetched images to prevent kubelet GC..."
+    info "Re-pulling any GC'd prefetched images..."
 
-    # Pin ALL images in containerd's k8s.io namespace on each node.
-    # Uses nsenter (built into busybox) with hostPID to run the host's
-    # ctr binary directly. Creates one pod per node via a manifest file
-    # (avoids shell quoting issues with --overrides), waits for completion,
-    # then collects logs.
+    # Kubelet image GC can evict images during or after the prefetch,
+    # removing tag references from containerd. Re-pulling via ctr is
+    # near-instant when layers are cached and re-establishes the tag
+    # references. io.cri-containerd.pinned doesn't reliably prevent
+    # GC (containerd#9328, #10270), so re-pull is the only reliable fix.
     local nodes
     nodes=$(kubectl get nodes -o jsonpath='{.items[*].metadata.name}')
 
-    # Launch pin pods on all nodes in parallel
+    # Script body in single quotes to prevent any variable expansion by bash.
+    # This runs inside the container: copies files to host via /proc/1/root,
+    # then nsenter runs the host's ctr to re-pull missing images.
+    local script='cp /etc/prefetch-images/images.txt /proc/1/root/tmp/repull-images.txt
+cp /tmp/pull-secret/.dockerconfigjson /proc/1/root/tmp/repull-docker-config.json
+nsenter -t 1 -m -u -n -p -- sh -c '"'"'
+mkdir -p /root/.docker
+cp /tmp/repull-docker-config.json /root/.docker/config.json
+repulled=0; skipped=0; failed=0
+while IFS= read -r img || [ -n "$img" ]; do
+  case "$img" in "#"*|"") continue ;; esac
+  if ctr -n k8s.io images check "name==$img" 2>/dev/null | grep -q "$img"; then
+    skipped=$((skipped+1))
+  else
+    if ctr -n k8s.io images pull "$img" >/dev/null 2>&1; then
+      repulled=$((repulled+1))
+    else
+      echo "FAIL: $img"
+      failed=$((failed+1))
+    fi
+  fi
+done < /tmp/repull-images.txt
+rm -f /tmp/repull-images.txt /tmp/repull-docker-config.json /root/.docker/config.json
+echo "repulled=$repulled skipped=$skipped failed=$failed"
+'"'"''
+
+    # Write script to a temp file for use in the configmap
+    local script_file
+    script_file=$(mktemp)
+    echo "$script" > "$script_file"
+    kubectl create configmap repull-script -n "$ns" \
+        --from-file=repull.sh="$script_file" \
+        --dry-run=client -o yaml | kubectl apply -f -
+    rm -f "$script_file"
+
     for node in $nodes; do
-        local pod_name="pin-images-${node##*-}"
-        cat <<PINEOF | kubectl apply -n "$ns" -f -
+        local pod_name="repull-${node##*-}"
+        cat <<REPULLEOF | kubectl apply -n "$ns" -f -
 apiVersion: v1
 kind: Pod
 metadata:
@@ -828,47 +862,49 @@ spec:
   nodeName: ${node}
   hostPID: true
   restartPolicy: Never
+  imagePullSecrets:
+  - name: stackrox
   containers:
-  - name: pin
-    image: busybox:1.36
-    command:
-    - nsenter
-    - "-t"
-    - "1"
-    - "-m"
-    - "-u"
-    - "-n"
-    - "-p"
-    - "--"
-    - sh
-    - "-c"
-    - |
-      p=0; f=0
-      for img in \$(ctr -n k8s.io images list -q 2>/dev/null); do
-        if ctr -n k8s.io images label "\$img" io.cri-containerd.pinned=pinned >/dev/null 2>&1; then
-          p=\$((p+1))
-        else
-          f=\$((f+1))
-        fi
-      done
-      echo "pinned=\$p failed=\$f"
+  - name: repull
+    image: quay.io/rhacs-eng/qa-multi-arch-busybox:latest
+    imagePullPolicy: IfNotPresent
+    command: ["sh", "/etc/repull-script/repull.sh"]
     securityContext:
       privileged: true
-PINEOF
+    volumeMounts:
+    - name: image-list
+      mountPath: /etc/prefetch-images
+      readOnly: true
+    - name: pull-secret
+      mountPath: /tmp/pull-secret
+      readOnly: true
+    - name: repull-script
+      mountPath: /etc/repull-script
+      readOnly: true
+  volumes:
+  - name: image-list
+    configMap:
+      name: ${name}
+  - name: pull-secret
+    secret:
+      secretName: stackrox
+  - name: repull-script
+    configMap:
+      name: repull-script
+REPULLEOF
     done
 
-    # Wait for all pin pods to complete and collect results
     for node in $nodes; do
-        local pod_name="pin-images-${node##*-}"
-        if kubectl wait "pod/$pod_name" -n "$ns" --for=jsonpath='{.status.phase}'=Succeeded --timeout=2m 2>/dev/null; then
+        local pod_name="repull-${node##*-}"
+        if kubectl wait "pod/$pod_name" -n "$ns" --for=jsonpath='{.status.phase}'=Succeeded --timeout=5m 2>/dev/null; then
             info "  Node ${node}: $(kubectl logs "$pod_name" -n "$ns" 2>/dev/null)"
         else
-            info "  Node ${node}: pin pod did not succeed"
-            kubectl describe pod "$pod_name" -n "$ns" 2>/dev/null | tail -5 || true
+            info "  Node ${node}: repull pod did not succeed"
+            kubectl logs "$pod_name" -n "$ns" 2>/dev/null | tail -5 || true
         fi
         kubectl delete pod "$pod_name" -n "$ns" --ignore-not-found >/dev/null 2>&1 || true
     done
-    info "Image pinning complete on all nodes."
+    info "Image re-pull complete on all nodes."
 }
 
 image_prefetcher_await_set() {
@@ -879,7 +915,7 @@ image_prefetcher_await_set() {
     info "Waiting for image prefetcher set ${name} to complete..."
     if kubectl rollout status daemonset "$name" -n "$ns" --timeout 15m; then
         info "All images in the set are now pre-fetched."
-        _image_prefetcher_pin_images "$ns" "$name"
+        _image_prefetcher_repull_gc_victims "$ns" "$name"
     else
         info "WARNING: Pre-fetching failed to complete in time."
         info "To investigate closer, go to https://console.cloud.google.com/bigquery and run a query such as:"
