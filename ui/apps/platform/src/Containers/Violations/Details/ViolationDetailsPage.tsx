@@ -181,9 +181,7 @@ function ViolationDetailsPage(): ReactElement {
                                                         Node overview
                                                     </CardTitle>
                                                     <CardBody>
-                                                        <NodeOverview
-                                                            alertNode={alert.node}
-                                                        />
+                                                        <NodeOverview alertNode={alert.node} />
                                                     </CardBody>
                                                 </Card>
                                             </FlexItem>
