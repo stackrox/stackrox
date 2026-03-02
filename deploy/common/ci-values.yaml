@@ -26,7 +26,7 @@ scannerV4:
     resources:
       requests:
         memory: "4Gi"
-        cpu: "800m"
+        cpu: "400m"
       limits:
         memory: "4Gi"
         cpu: "2000m"
@@ -37,7 +37,7 @@ scannerV4:
     resources:
       requests:
         memory: "2Gi"
-        cpu: "800m"
+        cpu: "400m"
       limits:
         memory: "4Gi"
         cpu: "2000m"

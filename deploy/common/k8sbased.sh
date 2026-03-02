@@ -536,6 +536,8 @@ function launch_central {
             ${ORCH_CMD} -n stackrox patch hpa scanner --patch "$(cat "${common_dir}/scanner-hpa-patch.yaml")"
             ${ORCH_CMD} -n stackrox patch hpa scanner-v4-indexer --patch "$(cat "${common_dir}/scanner-v4-hpa-patch.yaml")"
             ${ORCH_CMD} -n stackrox patch hpa scanner-v4-matcher --patch "$(cat "${common_dir}/scanner-v4-hpa-patch.yaml")"
+            ${ORCH_CMD} -n stackrox patch deployment scanner-v4-indexer --patch "$(cat "${common_dir}/scanner-v4-indexer-patch.yaml")"
+            ${ORCH_CMD} -n stackrox patch deployment scanner-v4-matcher --patch "$(cat "${common_dir}/scanner-v4-matcher-patch.yaml")"
           elif [[ "${is_local_dev}" == "true" ]]; then
             ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-local-patch.yaml")"
             ${ORCH_CMD} -n stackrox patch hpa scanner --patch "$(cat "${common_dir}/scanner-hpa-patch.yaml")"
