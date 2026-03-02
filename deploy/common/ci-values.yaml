@@ -23,8 +23,6 @@ scannerV4:
     replicas: 1
     autoscaling:
       disable: true
-      minReplicas: 1
-      maxReplicas: 1
     resources:
       requests:
         memory: "4Gi"
@@ -36,8 +34,6 @@ scannerV4:
     replicas: 1
     autoscaling:
       disable: true
-      minReplicas: 1
-      maxReplicas: 1
     resources:
       requests:
         memory: "2Gi"
