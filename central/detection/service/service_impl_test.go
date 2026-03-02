@@ -834,7 +834,6 @@ func TestDetectDeployTimeFromYAML_NamespaceIDPopulation(t *testing.T) {
 			// Simulate the code path from DetectDeployTimeFromYAML
 			eCtx := enricher.EnrichmentContext{
 				ClusterID: testClusterID,
-				Namespace: "default",
 			}
 
 			deployments := []*storage.Deployment{deployment}
@@ -862,8 +861,8 @@ func TestDetectDeployTimeFromYAML_NamespaceIDPopulation(t *testing.T) {
 			}
 
 			// Verify the deployment has the expected namespace ID
-			assert.Equal(t, tc.expectedNamespaceID, deployment.NamespaceId)
-			assert.Equal(t, testClusterID, deployment.ClusterId)
+			assert.Equal(t, tc.expectedNamespaceID, deployment.GetNamespaceId())
+			assert.Equal(t, testClusterID, deployment.GetClusterId())
 		})
 	}
 }
