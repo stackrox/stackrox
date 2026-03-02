@@ -40,38 +40,21 @@ type PolicySeverityCounts struct {
 func WithPolicySeverityCountQuery(q *v1.Query) *v1.Query {
 	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.PolicyID).
-			Distinct().
-			AggrFunc(aggregatefunc.Count).
-			Filter("low_policy_count",
-				search.NewQueryBuilder().
-					AddExactMatches(search.Severity, storage.Severity_LOW_SEVERITY.String()).
-					ProtoQuery(),
-			).Proto(),
-		search.NewQuerySelect(search.PolicyID).
-			Distinct().
-			AggrFunc(aggregatefunc.Count).
-			Filter("medium_policy_count",
-				search.NewQueryBuilder().
-					AddExactMatches(search.Severity, storage.Severity_MEDIUM_SEVERITY.String()).
-					ProtoQuery(),
-			).Proto(),
-		search.NewQuerySelect(search.PolicyID).
-			Distinct().
-			AggrFunc(aggregatefunc.Count).
-			Filter("high_policy_count",
-				search.NewQueryBuilder().
-					AddExactMatches(search.Severity, storage.Severity_HIGH_SEVERITY.String()).
-					ProtoQuery(),
-			).Proto(),
-		search.NewQuerySelect(search.PolicyID).
-			Distinct().
-			AggrFunc(aggregatefunc.Count).
-			Filter("critical_policy_count",
-				search.NewQueryBuilder().
-					AddExactMatches(search.Severity, storage.Severity_CRITICAL_SEVERITY.String()).
-					ProtoQuery(),
-			).Proto(),
+		buildSelectCountBySeverity("low_policy_count", storage.Severity_LOW_SEVERITY),
+		buildSelectCountBySeverity("medium_policy_count", storage.Severity_MEDIUM_SEVERITY),
+		buildSelectCountBySeverity("high_policy_count", storage.Severity_HIGH_SEVERITY),
+		buildSelectCountBySeverity("critical_policy_count", storage.Severity_CRITICAL_SEVERITY),
 	}
 	return cloned
+}
+
+func buildSelectCountBySeverity(filterName string, severity storage.Severity) *v1.QuerySelect {
+	return search.NewQuerySelect(search.PolicyID).
+		Distinct().
+		AggrFunc(aggregatefunc.Count).
+		Filter(filterName,
+			search.NewQueryBuilder().
+				AddExactMatches(search.Severity, severity.String()).
+				ProtoQuery(),
+		).Proto()
 }

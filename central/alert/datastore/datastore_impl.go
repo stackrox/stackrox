@@ -125,18 +125,12 @@ func (ds *datastoreImpl) SearchAlertPolicySeverityCounts(ctx context.Context, q 
 	}
 	countQuery := alertviews.WithPolicySeverityCountQuery(q)
 
-	var result *alertviews.PolicySeverityCounts
+	result := &alertviews.PolicySeverityCounts{}
 	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, countQuery, func(r *alertviews.PolicySeverityCounts) error {
 		result = r
 		return nil
 	})
-	if err != nil {
-		return nil, err
-	}
-	if result == nil {
-		return &alertviews.PolicySeverityCounts{}, nil
-	}
-	return result, nil
+	return result, err
 }
 
 // SearchAlerts returns search results for the given request. This will exclude resolved alerts by default unless Violation State = Resolved is explicitly specified in the query
