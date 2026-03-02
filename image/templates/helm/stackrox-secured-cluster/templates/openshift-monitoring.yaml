@@ -109,7 +109,7 @@ spec:
       serverName: "admission-control.{{ .Release.Namespace }}.svc"
   selector:
     matchLabels:
-      app: admission-control
+      app.kubernetes.io/component: admission-control
   namespaceSelector:
     matchNames:
     - "{{ .Release.Namespace }}"
