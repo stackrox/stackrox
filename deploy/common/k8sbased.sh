@@ -360,12 +360,6 @@ function launch_central {
         helm_args+=(--set scanner.disable=true)
       fi
 
-      if [[ "${is_local_dev}" == "true" ]]; then
-        helm_args+=(-f "${COMMON_DIR}/local-dev-values.yaml")
-      elif [[ -n "$CI" ]]; then
-        helm_args+=(-f "${COMMON_DIR}/ci-values.yaml")
-      fi
-
       if [[ "${CGO_CHECKS}" == "true" ]]; then
         echo "CGO_CHECKS set to true. Setting GOEXPERIMENT=cgocheck2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
         # Extend mutex watchdog timeout because cgochecks hamper performance
@@ -461,6 +455,13 @@ function launch_central {
           -f "$unzip_dir/values-private.yaml"
           --set-string imagePullSecrets.useExisting="stackrox;stackrox-scanner"
         )
+      fi
+
+      # Specify CI value overrides after the default generated values-public.yaml/values-private.yaml above to ensure they have an effect.
+      if [[ "${is_local_dev}" == "true" ]]; then
+        helm_args+=(-f "${COMMON_DIR}/local-dev-values.yaml")
+      elif [[ -n "$CI" ]]; then
+        helm_args+=(-f "${COMMON_DIR}/ci-values.yaml")
       fi
 
       # Add a custom values file to Helm
