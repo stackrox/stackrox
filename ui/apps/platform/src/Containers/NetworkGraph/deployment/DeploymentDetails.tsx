@@ -1,13 +1,10 @@
-import { useState } from 'react';
 import {
-    Content,
     DescriptionList,
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
     Divider,
     EmptyState,
-    ExpandableSection,
     Flex,
     FlexItem,
     Label,
@@ -35,8 +32,6 @@ import type { CustomEdgeModel, CustomNodeModel, NetworkPolicyState } from '../ty
 
 import AnomalousTraffic from './AnomalousTraffic';
 
-import './DeploymentDetails.css';
-
 type DeploymentDetailsProps = {
     deployment: Deployment;
     deploymentId: string;
@@ -48,25 +43,11 @@ type DeploymentDetailsProps = {
 };
 
 function DetailSection({ title, children }) {
-    const [isExpanded, setIsExpanded] = useState(true);
-
-    const onToggle = (_isExpanded: boolean) => {
-        setIsExpanded(_isExpanded);
-    };
-
-    // TextContent so heading has black instead of blue color.
     return (
-        <ExpandableSection
-            isExpanded={isExpanded}
-            onToggle={(_event, _isExpanded: boolean) => onToggle(_isExpanded)}
-            toggleContent={
-                <Content>
-                    <Title headingLevel="h2">{title}</Title>
-                </Content>
-            }
-        >
+        <Flex direction={{ default: 'column' }} gap={{ default: 'gapMd' }}>
+            <Title headingLevel="h2">{title}</Title>
             <div className="pf-v6-u-px-sm pf-v6-u-pb-md">{children}</div>
-        </ExpandableSection>
+        </Flex>
     );
 }
 
