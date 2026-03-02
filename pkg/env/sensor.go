@@ -139,8 +139,8 @@ var (
 	// NetworkFlowMaxCacheSize is the maximum number of connections and endpoints sensor holds in cache.
 	NetworkFlowMaxCacheSize = RegisterIntegerSetting("ROX_NETFLOW_MAX_CACHE_SIZE", 800000)
 
-	// NetworkFlowBatching enables batching of network flow updates to smooth out data spikes
+	// NetworkFlowBatching enables batching of network flow updates to smooth out data spikes.
 	NetworkFlowBatching = RegisterBooleanSetting("ROX_NETFLOW_BATCHING", false)
-	// NetworkFlowCacheLimiting enables limiting the network flow cache size to prevent memory issues
+	// NetworkFlowCacheLimiting enables limiting the network flow cache size to prevent memory issues.
 	NetworkFlowCacheLimiting = RegisterBooleanSetting("ROX_NETFLOW_CACHE_LIMITING", false)
 )

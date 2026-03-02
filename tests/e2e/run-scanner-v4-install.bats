@@ -1438,7 +1438,7 @@ EOT
         )
     fi
 
-    # Add environment variable overrides if set
+    # Add environment variable overrides if set.
     local extra_helm_args=()
     if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
         extra_helm_args+=(--set "customize.envVars.ROX_NETFLOW_BATCHING=${ROX_NETFLOW_BATCHING}")
