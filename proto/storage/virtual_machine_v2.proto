@@ -32,7 +32,7 @@ message VirtualMachineV2 {
   }
   State state = 8; // @gotags: search:"Virtual Machine State"
 
-  google.protobuf.Timestamp last_updated = 9; // @gotags: search:"Last Updated,hidden" sql:"index=btree"
+  google.protobuf.Timestamp last_updated = 9; // @gotags: search:"Last Updated,hidden"
 
   enum Note {
     MISSING_METADATA = 0;
@@ -45,5 +45,5 @@ message VirtualMachineV2 {
   int32 vsock_cid = 11;
 
   // Hash of VM data fields for change detection (excludes last_updated).
-  uint64 hash = 12;
+  uint64 hash = 12; // @gotags: hash:"ignore"
 }
