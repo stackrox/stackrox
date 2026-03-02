@@ -1015,7 +1015,6 @@ func checkGracePeriodForReconnect(cluster *storage.Cluster, deploymentID *storag
 	return nil
 }
 
-// lookupOrCreateCluster handles the lookup-or-create logic.
 // Returns the cluster, a bool indicating whether it was an existing cluster (true) or newly created (false), and an error.
 // The bool is important because existing clusters need grace period checks and update checks, while new clusters skip those.
 func (ds *datastoreImpl) lookupOrCreateCluster(ctx context.Context, clusterID, clusterName, registrantID string, config clusterConfigData) (*storage.Cluster, bool, error) {
