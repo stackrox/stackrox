@@ -534,6 +534,7 @@ func TestBuildNewClusterFromConfig(t *testing.T) {
 
 		assert.Equal(t, "test-cluster", cluster.GetName())
 		assert.Equal(t, "bundle-123", cluster.GetInitBundleId())
+		assert.Equal(t, storage.ManagerType_MANAGER_TYPE_HELM_CHART, cluster.GetManagedBy())
 		assert.Equal(t, "stackrox", cluster.GetMostRecentSensorId().GetAppNamespace())
 		assert.ElementsMatch(t, []string{"cap1", "cap2"}, cluster.GetSensorCapabilities())
 		assert.NotNil(t, cluster.GetHelmConfig())

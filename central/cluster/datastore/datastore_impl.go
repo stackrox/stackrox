@@ -952,6 +952,7 @@ func buildNewClusterFromConfig(clusterName, registrantID string, config clusterC
 	cluster := &storage.Cluster{
 		Name:               clusterName,
 		InitBundleId:       registrantID,
+		ManagedBy:          config.manager,
 		MostRecentSensorId: config.deploymentIdentification.CloneVT(),
 		SensorCapabilities: sliceutils.CopySliceSorted(config.capabilities),
 	}
@@ -1077,8 +1078,13 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		return nil, err
 	}
 
+	// New clusters are fully built and persisted by lookupOrCreateCluster; no further update needed.
+	if !isExisting {
+		return cluster, nil
+	}
+
 	// For existing clusters, check if update is needed
-	if isExisting && config.manager != storage.ManagerType_MANAGER_TYPE_MANUAL {
+	if config.manager != storage.ManagerType_MANAGER_TYPE_MANUAL {
 		if err := checkGracePeriodForReconnect(cluster, config.deploymentIdentification, config.manager); err != nil {
 			return nil, err
 		}
