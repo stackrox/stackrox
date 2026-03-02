@@ -34,6 +34,8 @@ function InclusionScopeCard({
         scope.namespaceLabel ? 'label' : 'name'
     );
 
+    const clusterName = clusters.find((cluster) => cluster.id === scope.cluster)?.name;
+
     const clusterOptions: TypeaheadSelectOption[] = clusters.map((cluster) => ({
         value: cluster.id,
         label: cluster.name,
@@ -60,7 +62,12 @@ function InclusionScopeCard({
     }
 
     return (
-        <PolicyScopeCardBase title="Inclusion scope" onDelete={onDelete}>
+        <PolicyScopeCardBase
+            title="Inclusion scope"
+            onDelete={onDelete}
+            scope={scope}
+            clusterName={clusterName}
+        >
             <Form>
                 <FormGroup label="Cluster" role="radiogroup">
                     <Flex direction={{ default: 'row' }}>
