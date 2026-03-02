@@ -53,9 +53,9 @@ data:
         relabel_configs:
           - action: labelmap
             regex: __meta_kubernetes_node_label_(.+)
-{{- if .Values.metricRelabelConfigs }}
+{{- if .Values.cadvisorMetricRelabelConfigs }}
         metric_relabel_configs:
-{{ toYaml .Values.metricRelabelConfigs | indent 10 }}
+{{ toYaml .Values.cadvisorMetricRelabelConfigs | indent 10 }}
 {{- end }}
 
       - job_name: stackrox
