@@ -4,6 +4,7 @@ package datastore
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -20,7 +21,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// validTestPublicKey is a valid PEM-encoded public key for testing.
 const validTestPublicKey = `-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAryQICCl6NZ5gDKrnSztO
 3Hy8PEUcuyvg/ikC+VcIo2SFFSf18a3IMYldIugqqqZCs4/4uVW3sbdLs/6PfgdX
@@ -51,138 +51,196 @@ func (s *updaterIntegrationTestSuite) SetupTest() {
 
 	s.db = pgtest.ForT(s.T())
 	s.storage = postgres.New(s.db)
-
-	// Initialize siStore for the updater to use
 	siStore = s.storage
 }
 
-// verifyStoredIntegration checks that the stored integration matches the expected one.
 func (s *updaterIntegrationTestSuite) verifyStoredIntegration(expected *storage.SignatureIntegration) {
 	s.T().Helper()
 	stored, exists, err := s.storage.Get(s.ctx, expected.GetId())
 	s.Require().NoError(err)
-	s.Require().True(exists, "integration should exist in storage")
+	s.Require().True(exists)
 	protoassert.Equal(s.T(), expected, stored)
 }
 
-// verifyStoredKey checks that the stored integration has the expected public key.
-func (s *updaterIntegrationTestSuite) verifyStoredKey(integrationID, expectedKey string) {
+func (s *updaterIntegrationTestSuite) verifyStoredKeys(integrationID string, expectedKeys []*storage.CosignPublicKeyVerification_PublicKey) {
 	s.T().Helper()
 	stored, exists, err := s.storage.Get(s.ctx, integrationID)
 	s.Require().NoError(err)
-	s.Require().True(exists, "integration should exist in storage")
-	s.Equal(expectedKey, stored.GetCosign().GetPublicKeys()[0].GetPublicKeyPemEnc())
+	s.Require().True(exists)
+	actual := stored.GetCosign().GetPublicKeys()
+	s.Require().Len(actual, len(expectedKeys))
+	for i := range expectedKeys {
+		s.Equal(expectedKeys[i].GetName(), actual[i].GetName())
+		s.Equal(expectedKeys[i].GetPublicKeyPemEnc(), actual[i].GetPublicKeyPemEnc())
+	}
+}
+
+func (s *updaterIntegrationTestSuite) newTestUpdater(manifestURL string) *updater {
+	return &updater{
+		client:      &http.Client{Timeout: 5 * time.Second},
+		interval:    time.Second,
+		manifestURL: manifestURL,
+		stopSig:     concurrency.NewSignal(),
+	}
 }
 
 func (s *updaterIntegrationTestSuite) TestStoredIntegrationUnchangedOnFailure() {
-	// Store the default integration
-	originalIntegration := signatures.DefaultRedHatSignatureIntegration
-	err := upsertDefaultRedHatSignatureIntegration(s.storage, originalIntegration)
-	s.Require().NoError(err)
+	original := signatures.DefaultRedHatSignatureIntegration.CloneVT()
+	s.Require().NoError(upsertDefaultRedHatSignatureIntegration(s.storage, original))
+	s.verifyStoredIntegration(original)
 
-	// Verify it's stored correctly
-	s.verifyStoredIntegration(originalIntegration)
-
-	s.Run("integration unchanged when HTTP fetch fails", func() {
-		u := &updater{
-			client: &http.Client{
-				Timeout: 1 * time.Second,
-			},
-			interval:    time.Second,
-			stopSig:     concurrency.NewSignal(),
-			url:         "http://localhost:0", // will fail to connect
-			previousKey: "different-key",      // force update attempt
-		}
-
+	s.Run("manifest fetch fails", func() {
+		u := s.newTestUpdater("http://localhost:0/manifest.json")
 		err := u.update()
 		s.Error(err)
-
-		s.verifyStoredIntegration(originalIntegration)
+		s.verifyStoredIntegration(original)
 	})
 
-	s.Run("integration unchanged when key validation fails", func() {
-		invalidKey := "not-a-valid-pem-key"
-
+	s.Run("all key fetches fail", func() {
+		manifestBody, _ := json.Marshal(publicKeyManifest{
+			Keys: []struct {
+				Name string `json:"name"`
+				URL  string `json:"url"`
+			}{
+				{Name: "K", URL: "/key.pub"},
+			},
+		})
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(invalidKey))
+			if r.URL.Path == "/manifest.json" {
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write(manifestBody)
+			} else {
+				w.WriteHeader(http.StatusNotFound)
+			}
 		}))
 		defer server.Close()
 
-		u := &updater{
-			client: &http.Client{
-				Timeout: 5 * time.Second,
-			},
-			interval:    time.Second,
-			stopSig:     concurrency.NewSignal(),
-			url:         server.URL,
-			previousKey: "different-key", // force update attempt
-		}
-
+		u := s.newTestUpdater(server.URL + "/manifest.json")
 		err := u.update()
 		s.Error(err)
-		s.Contains(err.Error(), "validating public key")
-
-		s.verifyStoredIntegration(originalIntegration)
+		s.Contains(err.Error(), "no valid public keys")
+		s.verifyStoredIntegration(original)
 	})
 
-	s.Run("integration unchanged when server returns non-200", func() {
+	s.Run("key validation fails", func() {
+		manifestBody, _ := json.Marshal(publicKeyManifest{
+			Keys: []struct {
+				Name string `json:"name"`
+				URL  string `json:"url"`
+			}{
+				{Name: "K", URL: "/key.pub"},
+			},
+		})
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusServiceUnavailable)
+			if r.URL.Path == "/manifest.json" {
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write(manifestBody)
+			} else {
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte("invalid-pem"))
+			}
 		}))
 		defer server.Close()
 
-		u := &updater{
-			client: &http.Client{
-				Timeout: 5 * time.Second,
-			},
-			interval:    time.Second,
-			stopSig:     concurrency.NewSignal(),
-			url:         server.URL,
-			previousKey: "different-key",
-		}
-
+		u := s.newTestUpdater(server.URL + "/manifest.json")
 		err := u.update()
 		s.Error(err)
-
-		s.verifyStoredIntegration(originalIntegration)
+		s.Contains(err.Error(), "no valid public keys")
+		s.verifyStoredIntegration(original)
 	})
 }
 
 func (s *updaterIntegrationTestSuite) TestStoredIntegrationUpdatedOnSuccess() {
-	// Store the default integration
-	originalIntegration := signatures.DefaultRedHatSignatureIntegration
-	originalKey := originalIntegration.GetCosign().GetPublicKeys()[0].GetPublicKeyPemEnc()
-	err := upsertDefaultRedHatSignatureIntegration(s.storage, originalIntegration)
-	s.Require().NoError(err)
+	original := signatures.DefaultRedHatSignatureIntegration.CloneVT()
+	s.Require().NoError(upsertDefaultRedHatSignatureIntegration(s.storage, original))
+	s.verifyStoredIntegration(original)
 
-	// Verify initial state
-	s.verifyStoredIntegration(originalIntegration)
+	// One key: success
+	s.Run("single key", func() {
+		manifestBody, _ := json.Marshal(publicKeyManifest{
+			Keys: []struct {
+				Name string `json:"name"`
+				URL  string `json:"url"`
+			}{
+				{Name: "Red Hat Release Key 3", URL: "/key.pub"},
+			},
+		})
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/manifest.json" {
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write(manifestBody)
+			} else {
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(validTestPublicKey))
+			}
+		}))
+		defer server.Close()
 
-	// Serve a valid new key
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(validTestPublicKey))
-	}))
-	defer server.Close()
+		u := s.newTestUpdater(server.URL + "/manifest.json")
+		s.NoError(u.update())
+		s.verifyStoredKeys(original.GetId(), []*storage.CosignPublicKeyVerification_PublicKey{
+			{Name: "Red Hat Release Key 3", PublicKeyPemEnc: validTestPublicKey},
+		})
+	})
 
-	u := &updater{
-		client: &http.Client{
-			Timeout: 5 * time.Second,
-		},
-		interval:    time.Second,
-		stopSig:     concurrency.NewSignal(),
-		url:         server.URL,
-		previousKey: originalKey,
-	}
+	// Two keys: both stored
+	s.Run("multiple keys", func() {
+		manifestBody, _ := json.Marshal(publicKeyManifest{
+			Keys: []struct {
+				Name string `json:"name"`
+				URL  string `json:"url"`
+			}{
+				{Name: "Key A", URL: "/a.pub"},
+				{Name: "Key B", URL: "/b.pub"},
+			},
+		})
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/manifest.json" {
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write(manifestBody)
+			} else {
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(validTestPublicKey))
+			}
+		}))
+		defer server.Close()
 
-	// Update should succeed
-	err = u.update()
-	s.NoError(err)
+		u := s.newTestUpdater(server.URL + "/manifest.json")
+		s.NoError(u.update())
+		s.verifyStoredKeys(original.GetId(), []*storage.CosignPublicKeyVerification_PublicKey{
+			{Name: "Key A", PublicKeyPemEnc: validTestPublicKey},
+			{Name: "Key B", PublicKeyPemEnc: validTestPublicKey},
+		})
+	})
 
-	// previousKey should be updated
-	s.Equal(validTestPublicKey, u.previousKey)
+	// One key 404, one valid: one stored
+	s.Run("partial key failure", func() {
+		manifestBody, _ := json.Marshal(publicKeyManifest{
+			Keys: []struct {
+				Name string `json:"name"`
+				URL  string `json:"url"`
+			}{
+				{Name: "Good", URL: "/good.pub"},
+				{Name: "Bad", URL: "/bad.pub"},
+			},
+		})
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/manifest.json" {
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write(manifestBody)
+			} else if r.URL.Path == "/good.pub" {
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(validTestPublicKey))
+			} else {
+				w.WriteHeader(http.StatusNotFound)
+			}
+		}))
+		defer server.Close()
 
-	// Stored integration should have the new key
-	s.verifyStoredKey(originalIntegration.GetId(), validTestPublicKey)
+		u := s.newTestUpdater(server.URL + "/manifest.json")
+		s.NoError(u.update())
+		s.verifyStoredKeys(original.GetId(), []*storage.CosignPublicKeyVerification_PublicKey{
+			{Name: "Good", PublicKeyPemEnc: validTestPublicKey},
+		})
+	})
 }

@@ -1,12 +1,16 @@
 package datastore
 
 import (
+	"encoding/json"
 	"encoding/pem"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -16,16 +20,28 @@ import (
 )
 
 const (
-	minUpdateInterval = 1 * time.Hour
+	minUpdateInterval  = 1 * time.Hour
+	defaultManifestURL = "https://storage.googleapis.com/rox-public-key-test-20260203/manifest.json"
 )
+
+type publicKey struct {
+	name            string
+	publicKeyPemEnc string
+}
+
+type publicKeyManifest struct {
+	Keys []struct {
+		Name string `json:"name"`
+		URL  string `json:"url"`
+	} `json:"keys"`
+}
 
 type updater struct {
 	client      *http.Client
 	interval    time.Duration
+	manifestURL string
 	once        sync.Once
-	previousKey string
 	stopSig     concurrency.Signal
-	url         string
 }
 
 func newUpdater() *updater {
@@ -41,9 +57,8 @@ func newUpdater() *updater {
 			Timeout:   5 * time.Minute,
 		},
 		interval:    interval,
-		previousKey: signatures.ReleaseKey3PublicKey,
+		manifestURL: defaultManifestURL,
 		stopSig:     concurrency.NewSignal(),
-		url:         env.RedHatSigningKeyBucketURL.Setting(),
 	}
 }
 
@@ -86,60 +101,160 @@ func (u *updater) doUpdate() {
 }
 
 func (u *updater) update() error {
-	key, err := u.fetchPublicKey()
+	publicKeys, err := u.fetchPublicKeysFromManifest(u.manifestURL)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "fetching public keys from manifest (manifest URL: %s)", u.manifestURL)
+	}
+	if len(publicKeys) == 0 {
+		return errors.Errorf("no valid public keys could be fetched (manifest URL: %s)", u.manifestURL)
 	}
 
-	if key == u.previousKey {
-		log.Infof("Skipping update of default Red Hat signature integration because the key has not changed")
-		return nil
+	if err = u.updateKeysInSignatureIntegration(publicKeys); err != nil {
+		return errors.Wrap(err, "updating keys in signature integration")
 	}
 
-	if err = validatePublicKey(key); err != nil {
-		return errors.Wrapf(err, "validating public key from %s", u.url)
-	}
-
-	if err = u.updateKeyInSignatureIntegration(key); err != nil {
-		return err
-	}
-
-	u.previousKey = key
+	log.Debugf("Updated %d public keys in the default Red Hat signature integration", len(publicKeys))
 
 	return nil
 }
 
-func (u *updater) fetchPublicKey() (string, error) {
-	req, err := http.NewRequest(http.MethodGet, u.url, nil)
+func (u *updater) fetchPublicKeysFromManifest(manifestURL string) ([]publicKey, error) {
+	publicKeys := []publicKey{}
+
+	manifest, err := u.fetchManifest(manifestURL)
 	if err != nil {
-		return "", errors.Wrap(err, "constructing request")
+		return publicKeys, err
+	}
+
+	for _, keyRef := range manifest.Keys {
+		keyURL, err := resolveKeyURL(manifestURL, keyRef.URL)
+		if err != nil {
+			log.Warnf("Failed to resolve key URL %q: %v", keyRef.URL, err)
+			continue
+		}
+		key, err := u.fetchPublicKey(keyRef.Name, keyURL)
+		if err != nil {
+			log.Warnf("Failed to fetch public key %s from %s: %v", keyRef.Name, keyURL, err)
+			continue
+		}
+		publicKeys = append(publicKeys, key)
+	}
+
+	log.Debugf("Fetched %d public keys from manifest at %s", len(publicKeys), manifestURL)
+
+	return publicKeys, nil
+
+}
+
+func (u *updater) fetchPublicKey(name, url string) (publicKey, error) {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return publicKey{}, errors.Wrap(err, "constructing request")
 	}
 
 	resp, err := u.client.Do(req)
 	if err != nil {
-		return "", errors.Wrap(err, "executing request")
+		return publicKey{}, errors.Wrap(err, "executing request")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
 	if resp.StatusCode != http.StatusOK {
-		return "", errors.Errorf("HTTP response code was %d", resp.StatusCode)
+		return publicKey{}, errors.Errorf("HTTP response code was %d", resp.StatusCode)
 	}
 
 	keyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", errors.Wrap(err, "reading response body")
+		return publicKey{}, errors.Wrap(err, "reading response body")
 	}
 
-	return string(keyBytes), nil
+	publicKeyPemEnc := string(keyBytes)
+	if err = validatePublicKey(publicKeyPemEnc); err != nil {
+		return publicKey{}, errors.Wrapf(err, "validating public key from %s", url)
+	}
+
+	return publicKey{
+		name:            name,
+		publicKeyPemEnc: publicKeyPemEnc,
+	}, nil
 }
 
-func (u *updater) updateKeyInSignatureIntegration(key string) error {
-	log.Debugf("Updating Red Hat signing key in the default Red Hat signature integration")
+func (u *updater) fetchManifest(manifestURL string) (publicKeyManifest, error) {
+	req, err := http.NewRequest(http.MethodGet, manifestURL, nil)
+	if err != nil {
+		return publicKeyManifest{}, errors.Wrap(err, "constructing request")
+	}
+
+	resp, err := u.client.Do(req)
+	if err != nil {
+		return publicKeyManifest{}, errors.Wrap(err, "executing request")
+	}
+	defer utils.IgnoreError(resp.Body.Close)
+
+	if resp.StatusCode != http.StatusOK {
+		return publicKeyManifest{}, errors.Errorf("HTTP response code was %d", resp.StatusCode)
+	}
+
+	manifestBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return publicKeyManifest{}, errors.Wrap(err, "reading response body")
+	}
+
+	var manifest publicKeyManifest
+	if err = json.Unmarshal(manifestBytes, &manifest); err != nil {
+		return publicKeyManifest{}, errors.Wrap(err, "unmarshalling manifest")
+	}
+
+	log.Debugf("Fetched manifest at %s: %+v", manifestURL, manifest)
+
+	return manifest, nil
+}
+
+func (u *updater) updateKeysInSignatureIntegration(publicKeys []publicKey) error {
+	log.Debugf("Updating Red Hat signing keys in the default Red Hat signature integration")
 
 	integration := signatures.DefaultRedHatSignatureIntegration.CloneVT()
-	integration.Cosign.PublicKeys[0].PublicKeyPemEnc = key
+	integration.Cosign.PublicKeys = make([]*storage.CosignPublicKeyVerification_PublicKey, 0, len(publicKeys))
+	for _, key := range publicKeys {
+		integration.Cosign.PublicKeys = append(integration.Cosign.PublicKeys, &storage.CosignPublicKeyVerification_PublicKey{
+			Name:            key.name,
+			PublicKeyPemEnc: key.publicKeyPemEnc,
+		})
+	}
 
 	return upsertDefaultRedHatSignatureIntegration(siStore, integration)
+}
+
+// resolveKeyURL returns the full URL for a manifest key entry. If entry is already absolute (http(s)://), it is returned as-is; otherwise it is resolved relative to the manifest URL's directory.
+// It returns an error if the resulting URL does not point to a file (e.g. path ends with /).
+func resolveKeyURL(manifestURL, keyURL string) (string, error) {
+	keyURL = strings.TrimSpace(keyURL)
+	var resolved string
+	if strings.HasPrefix(keyURL, "http://") || strings.HasPrefix(keyURL, "https://") {
+		resolved = keyURL
+	} else {
+		base, err := url.Parse(manifestURL)
+		if err != nil {
+			return "", errors.Wrap(err, "parsing manifest URL")
+		}
+		// Strip the last path segment (e.g. manifest.json) to get the directory.
+		base.Path = strings.TrimSuffix(base.Path, "/")
+		if idx := strings.LastIndex(base.Path, "/"); idx >= 0 {
+			base.Path = base.Path[:idx+1]
+		}
+		ref, err := url.Parse(keyURL)
+		if err != nil {
+			return "", errors.Wrap(err, "parsing key entry")
+		}
+		resolved = base.ResolveReference(ref).String()
+	}
+	parsed, err := url.Parse(resolved)
+	if err != nil {
+		return "", errors.Wrap(err, "parsing resolved URL")
+	}
+	if strings.HasSuffix(parsed.Path, "/") || parsed.Path == "" {
+		return "", errors.Errorf("URL must point to a file, not a directory: %s", resolved)
+	}
+	return resolved, nil
 }
 
 func validatePublicKey(key string) error {
