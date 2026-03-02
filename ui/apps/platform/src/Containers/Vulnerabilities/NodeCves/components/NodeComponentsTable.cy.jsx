@@ -31,14 +31,14 @@ describe(Cypress.spec.relative, () => {
             cy.get(componentCell).eq(1).should('have.text', 'kernel');
             cy.get(componentCell).eq(2).should('have.text', 'podman');
 
-            // Click the component header to sort by name ascending
-            cy.get('th:contains("Component")').click();
+            // Click the Component column sort button to sort descending
+            cy.findByRole('columnheader', { name: /component/i }).findByRole('button').click();
             cy.get(componentCell).eq(0).should('have.text', 'podman');
             cy.get(componentCell).eq(1).should('have.text', 'kernel');
             cy.get(componentCell).eq(2).should('have.text', 'cri-o');
 
-            // Click the component header to sort by name descending
-            cy.get('th:contains("Component")').click();
+            // Click again to toggle back to ascending
+            cy.findByRole('columnheader', { name: /component/i }).findByRole('button').click();
             cy.get(componentCell).eq(0).should('have.text', 'cri-o');
             cy.get(componentCell).eq(1).should('have.text', 'kernel');
             cy.get(componentCell).eq(2).should('have.text', 'podman');
@@ -49,15 +49,14 @@ describe(Cypress.spec.relative, () => {
 
             const typeCell = 'td[data-label="Type"]';
 
-            // Since this column is not the default sort, the starting sort will be descending
-            // Click the type header to sort by type descending
-            cy.get('th:contains("Type")').click();
+            // Click the Type column sort button to sort descending (defaultDirection is 'desc')
+            cy.findByRole('columnheader', { name: /type/i }).findByRole('button').click();
             cy.get(typeCell).eq(0).should('have.text', 'KUBELET');
             cy.get(typeCell).eq(1).should('have.text', 'INFRASTRUCTURE');
             cy.get(typeCell).eq(2).should('have.text', 'INFRASTRUCTURE');
 
-            // Click the type header to sort by type ascending
-            cy.get('th:contains("Type")').click();
+            // Click again to toggle to ascending
+            cy.findByRole('columnheader', { name: /type/i }).findByRole('button').click();
             cy.get(typeCell).eq(0).should('have.text', 'INFRASTRUCTURE');
             cy.get(typeCell).eq(1).should('have.text', 'INFRASTRUCTURE');
             cy.get(typeCell).eq(2).should('have.text', 'KUBELET');

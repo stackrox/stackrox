@@ -64,9 +64,9 @@ describe('BaseImagesModal', () => {
                 </TestWrapper>
             );
 
-            cy.get('button').contains('Save').should('be.disabled');
+            cy.findByRole('button', { name: 'Save' }).should('be.disabled');
             cy.get('input#baseImagePath').type('ubuntu:22.04');
-            cy.get('button').contains('Save').should('not.be.disabled');
+            cy.findByRole('button', { name: 'Save' }).should('not.be.disabled');
         });
     });
 
