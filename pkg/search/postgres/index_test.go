@@ -1467,5 +1467,4 @@ func (s *IndexSuite) TestPagination() {
 			s.Equal(testCase.orderedExpectedMatches, actualMatches)
 		})
 	}
-
 }
