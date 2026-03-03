@@ -63,7 +63,7 @@ describe(Cypress.spec.relative, () => {
 
     // Skipped: Victory v37 (PF charts v8) does not fire onLegendClick via getInteractiveLegendEvents.
     // This is a known upstream issue -- legend clicks don't trigger the event handler, so severity
-    // toggling doesn't work in tests or production. See ROX-TBD for tracking.
+    // toggling doesn't work in tests or production. See ROX-33443 for tracking.
     it.skip('should allow toggling of severities for a policy violations by category widget', () => {
         setup();
 
