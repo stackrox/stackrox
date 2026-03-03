@@ -27,8 +27,6 @@ func BenchmarkApply(b *testing.B) {
 			// Create realistic test data
 			updates := generateTestUpdates(bm.numDeployments, bm.endpointsPerDep, bm.targetsPerEp)
 
-			b.ResetTimer()
-			b.ReportAllocs()
 			for b.Loop() {
 				store := newEndpointsStoreWithMemory(100)
 				store.Apply(updates, bm.incremental)
@@ -55,8 +53,6 @@ func BenchmarkApplySingleNoLock(b *testing.B) {
 			data := generateEntityData(bm.numEndpoints, bm.targetsPerEp)
 			store := newEndpointsStoreWithMemory(100)
 
-			b.ResetTimer()
-			b.ReportAllocs()
 			for b.Loop() {
 				store.mutex.Lock()
 				store.applySingleNoLock(bm.deploymentName, *data)
@@ -72,8 +68,6 @@ func BenchmarkApplyRepeated(b *testing.B) {
 	store := newEndpointsStoreWithMemory(100)
 	updates := generateTestUpdates(50, 10, 3)
 
-	b.ResetTimer()
-	b.ReportAllocs()
 	for b.Loop() {
 		store.Apply(updates, true)
 	}

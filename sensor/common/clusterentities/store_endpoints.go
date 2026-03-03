@@ -85,7 +85,9 @@ func (e *endpointsStore) RecordTick() bool {
 			for _, status := range m2 {
 				status.recordTick()
 			}
-			e.reverseHistoricalEndpoints[deploymentID][endpoint].recordTick()
+
+			reverseMap := e.reverseHistoricalEndpoints[deploymentID]
+			reverseMap[endpoint].recordTick()
 			// Remove all historical entries that expired in this tick.
 			removed := e.removeFromHistoryIfExpired(deploymentID, endpoint)
 			removedPublic = removedPublic || removed && endpoint.IPAndPort.Address.IsPublic()
@@ -270,15 +272,19 @@ func (e *endpointsStore) addToHistory(deploymentID string, ep net.NumericEndpoin
 		// Pre-allocate with known size from current endpoint map
 		e.historicalEndpoints[ep][deploymentID] = make(map[EndpointTargetInfo]*entityStatus, len(e.endpointMap[ep][deploymentID]))
 	}
+
+	histMap := e.historicalEndpoints[ep][deploymentID]
 	for info := range e.endpointMap[ep][deploymentID] {
-		e.historicalEndpoints[ep][deploymentID][info] = newHistoricalEntity(e.memorySize)
+		histMap[info] = newHistoricalEntity(e.memorySize)
 	}
 
 	if _, ok := e.reverseHistoricalEndpoints[deploymentID]; !ok {
 		e.reverseHistoricalEndpoints[deploymentID] = make(map[net.NumericEndpoint]*entityStatus, len(e.reverseEndpointMap[deploymentID]))
 	}
+
+	revHistMap := e.reverseHistoricalEndpoints[deploymentID]
 	for numEp := range e.reverseEndpointMap[deploymentID] {
-		e.reverseHistoricalEndpoints[deploymentID][numEp] = newHistoricalEntity(e.memorySize)
+		revHistMap[numEp] = newHistoricalEntity(e.memorySize)
 	}
 }
 
