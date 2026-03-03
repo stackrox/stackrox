@@ -32,6 +32,7 @@ type virtualMachineServiceSuite struct {
 }
 
 func (s *virtualMachineServiceSuite) SetupTest() {
+	s.T().Setenv(features.VirtualMachines.EnvVar(), "true")
 	s.ctrl = gomock.NewController(s.T())
 	s.store = mocks.NewMockVirtualMachineStore(s.ctrl)
 	s.service = &serviceImpl{
