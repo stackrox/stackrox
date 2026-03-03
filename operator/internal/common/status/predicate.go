@@ -22,8 +22,8 @@ import (
 // changes in the status controller owned conditions (Available, Progressing).
 //
 // This can be instantiated with either:
-//   - A specific CR type (e.g., SkipStatusControllerUpdates[*Central]) for typed usage in controller.go.
-//   - ctrlClient.Object (e.g., SkipStatusControllerUpdates[ctrlClient.Object]) for untyped usage as predicate.Predicate in reconciler.go.
+//   - A specific CR type (e.g., SkipStatusControllerUpdates[*Central]) for typed usage in status controller.
+//   - ctrlClient.Object (e.g., SkipStatusControllerUpdates[ctrlClient.Object]) for untyped usage as predicate.Predicate in central/secured-cluster reconciler.
 type SkipStatusControllerUpdates[T ctrlClient.Object] struct {
 	predicate.TypedFuncs[T]
 	Logger logr.Logger
