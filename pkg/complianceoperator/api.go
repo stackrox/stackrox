@@ -15,7 +15,7 @@ var (
 	requiredAPIResources []k8sapi.APIResource
 
 	// List of optional compliance operator CRDs.
-	OptionalAPIResources []k8sapi.APIResource
+	optionalAPIResources []k8sapi.APIResource
 )
 
 // APIResources for compliance operator resources.
@@ -92,6 +92,11 @@ func GetRequiredResources() []k8sapi.APIResource {
 	return requiredAPIResources
 }
 
+// GetOptionalResources returns the compliance operator API resources optionally used by ACS.
+func GetOptionalResources() []k8sapi.APIResource {
+	return optionalAPIResources
+}
+
 func registerAPIResource(resource v1.APIResource) k8sapi.APIResource {
 	r := k8sapi.APIResource{APIResource: resource}
 	requiredAPIResources = append(requiredAPIResources, r)
@@ -100,6 +105,6 @@ func registerAPIResource(resource v1.APIResource) k8sapi.APIResource {
 
 func registerOptionalAPIResource(resource v1.APIResource) k8sapi.APIResource {
 	r := k8sapi.APIResource{APIResource: resource}
-	OptionalAPIResources = append(OptionalAPIResources, r)
+	optionalAPIResources = append(optionalAPIResources, r)
 	return r
 }

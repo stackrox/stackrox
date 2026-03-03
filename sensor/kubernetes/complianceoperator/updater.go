@@ -62,7 +62,7 @@ func (u *updaterImpl) registerDiagnosticComplianceOperatorObjects(info *central.
 		}, k8sintrospect.ObjectConfig{
 			GVK: complianceoperator.Rule.GroupVersionKind(),
 		})
-		for _, resource := range complianceoperator.OptionalAPIResources {
+		for _, resource := range complianceoperator.GetOptionalResources() {
 			isAvailable, err := utils.HasAPI(u.client, complianceoperator.GetGroupVersion().String(), resource.Kind)
 			if err != nil {
 				log.Warnf("Error checking whether CRD %q exists in cluster, skipping adding to diagnostic bundles. Error: %s", resource.Name, err)
