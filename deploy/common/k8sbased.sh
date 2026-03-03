@@ -457,7 +457,7 @@ function launch_central {
         )
       fi
 
-      # Specify CI value overrides after the default generated values-public.yaml/values-private.yaml above to ensure they have an effect.
+      # Specify CI value overrides after the default generated values-public.yaml/values-private.yaml above because Helm will prioritize the last (right-most) file specified.
       if [[ "${is_local_dev}" == "true" ]]; then
         helm_args+=(-f "${COMMON_DIR}/local-dev-values.yaml")
       elif [[ -n "$CI" ]]; then
