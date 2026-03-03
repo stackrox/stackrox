@@ -22,37 +22,35 @@ type bufferedEvent struct {
 	startTime time.Time
 }
 
-func WithBufferedConsumerSize(size int) pubsub.ConsumerOption {
-	return func(consumer pubsub.Consumer) {
-		impl, ok := consumer.(*BufferedConsumer)
-		if !ok {
-			return
-		}
+func WithBufferedConsumerSize(size int) pubsub.ConsumerOption[*BufferedConsumer] {
+	return func(consumer *BufferedConsumer) {
 		if size < 0 {
 			return
 		}
-		impl.size = size
+		consumer.size = size
 	}
 }
 
-func NewBufferedConsumer(laneID pubsub.LaneID, topic pubsub.Topic, consumerID pubsub.ConsumerID, callback pubsub.EventCallback, opts ...pubsub.ConsumerOption) (pubsub.Consumer, error) {
-	if callback == nil {
-		return nil, errors.Wrap(pubsubErrors.UndefinedEventCallbackErr, "")
+func NewBufferedConsumer(opts ...pubsub.ConsumerOption[*BufferedConsumer]) pubsub.NewConsumer {
+	return func(laneID pubsub.LaneID, topic pubsub.Topic, consumerID pubsub.ConsumerID, callback pubsub.EventCallback) (pubsub.Consumer, error) {
+		if callback == nil {
+			return nil, errors.Wrap(pubsubErrors.UndefinedEventCallbackErr, "")
+		}
+		ret := &BufferedConsumer{
+			laneID:     laneID,
+			topic:      topic,
+			consumerID: consumerID,
+			callback:   callback,
+			stopper:    concurrency.NewStopper(),
+			size:       defaultBufferSize,
+		}
+		for _, opt := range opts {
+			opt(ret)
+		}
+		ret.buffer = safe.NewChannel[*bufferedEvent](ret.size, ret.stopper.LowLevel().GetStopRequestSignal())
+		go ret.run()
+		return ret, nil
 	}
-	ret := &BufferedConsumer{
-		laneID:     laneID,
-		topic:      topic,
-		consumerID: consumerID,
-		callback:   callback,
-		stopper:    concurrency.NewStopper(),
-		size:       defaultBufferSize,
-	}
-	for _, opt := range opts {
-		opt(ret)
-	}
-	ret.buffer = safe.NewChannel[*bufferedEvent](ret.size, ret.stopper.LowLevel().GetStopRequestSignal())
-	go ret.run()
-	return ret, nil
 }
 
 type BufferedConsumer struct {

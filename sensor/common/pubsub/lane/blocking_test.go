@@ -64,71 +64,23 @@ func (s *blockingLaneSuite) TestNewLaneOptions() {
 		laneImpl, ok := lane.(*blockingLane)
 		require.True(s.T(), ok)
 		assert.NotNil(s.T(), laneImpl.newConsumerFn)
-		assert.Len(s.T(), laneImpl.consumerOpts, 0)
+
+		// Verify the custom consumer is actually used when registering
+		err := lane.RegisterConsumer(pubsub.DefaultConsumer, pubsub.DefaultTopic, func(e pubsub.Event) error {
+			return nil
+		})
+		require.NoError(s.T(), err)
+
+		// Verify the consumer was created using our custom constructor
+		consumers := laneImpl.consumers[pubsub.DefaultTopic]
+		require.Len(s.T(), consumers, 1)
+		_, ok = consumers[0].(*testCustomConsumer)
+		assert.True(s.T(), ok, "expected consumer to be *testCustomConsumer, proving custom constructor was used")
 	})
-	s.Run("with custom consumer and consumer options", func() {
-		config := NewBlockingLane(pubsub.DefaultLane, WithBlockingLaneConsumer(newTestConsumer, func(_ pubsub.Consumer) {}))
-		assert.Equal(s.T(), pubsub.DefaultLane, config.LaneID())
-		lane := config.NewLane()
-		assert.NotNil(s.T(), lane)
-		defer lane.Stop()
-		laneImpl, ok := lane.(*blockingLane)
-		require.True(s.T(), ok)
-		assert.NotNil(s.T(), laneImpl.newConsumerFn)
-		assert.Len(s.T(), laneImpl.consumerOpts, 1)
-	})
-}
-
-type testLaneConfig struct {
-	opts []pubsub.LaneOption
-}
-
-type testLane struct{}
-
-func (t *testLane) Publish(_ pubsub.Event) error {
-	return nil
-}
-
-func (t *testLane) RegisterConsumer(_ pubsub.ConsumerID, _ pubsub.Topic, _ pubsub.EventCallback) error {
-	return nil
-}
-
-func (t *testLane) Stop() {
-}
-
-func (lc *testLaneConfig) NewLane() pubsub.Lane {
-	ret := &testLane{}
-	for _, opt := range lc.opts {
-		opt(ret)
-	}
-	return ret
-}
-func (lc *testLaneConfig) LaneID() pubsub.LaneID {
-	return pubsub.DefaultLane
 }
 
 func (s *blockingLaneSuite) TestOptionPanic() {
 	defer goleak.AssertNoGoroutineLeaks(s.T())
-	s.Run("panic if WithBlockingLaneSize is used in a different lane", func() {
-		config := &testLaneConfig{
-			opts: []pubsub.LaneOption{
-				WithBlockingLaneSize(10),
-			},
-		}
-		s.Assert().Panics(func() {
-			config.NewLane()
-		})
-	})
-	s.Run("panic if WithBlockingLaneConsumer is used in a different lane", func() {
-		config := &testLaneConfig{
-			opts: []pubsub.LaneOption{
-				WithBlockingLaneConsumer(nil),
-			},
-		}
-		s.Assert().Panics(func() {
-			config.NewLane()
-		})
-	})
 	s.Run("panic if a nil NewConsumer is passed to WithBlockingLaneConsumer", func() {
 		config := NewBlockingLane(pubsub.DefaultLane, WithBlockingLaneConsumer(nil))
 		s.Assert().Panics(func() {
@@ -257,7 +209,7 @@ func (t *testEvent) Lane() pubsub.LaneID {
 	return pubsub.DefaultLane
 }
 
-func newTestConsumer(_ pubsub.LaneID, _ pubsub.Topic, _ pubsub.ConsumerID, _ pubsub.EventCallback, _ ...pubsub.ConsumerOption) (pubsub.Consumer, error) {
+func newTestConsumer(_ pubsub.LaneID, _ pubsub.Topic, _ pubsub.ConsumerID, _ pubsub.EventCallback) (pubsub.Consumer, error) {
 	return &testCustomConsumer{}, nil
 }
 
