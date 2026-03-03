@@ -106,17 +106,8 @@ button[data-testid="related-entity-value"]:hover,
     bottom: 0;
     left: 0;
     content: '';
-    /* replacing vars which are not coming through in pseudo element
-        var(--pf-v5-c-select__toggle--before--BorderTopColor)
-        var(--pf-v5-c-select__toggle--before--BorderRightColor)
-        var(--pf-v5-c-select__toggle--before--BorderBottomColor)
-        var(--pf-v5-c-select__toggle--before--BorderLeftColor);
-    */
     border-color: #f0f0f0 #f0f0f0 #8a8d90 #f0f0f0 !important;
     border-style: solid !important;
-    /* replacing vars which are not coming through in pseudo element
-        var(--pf-v5-c-select__toggle--before--BorderWidth);
-    */
     border-width: 1px !important;
 }
 
@@ -127,8 +118,6 @@ button[data-testid="related-entity-value"]:hover,
 
 /* Un-override the above override when the <Select> component is in an invalid state */
 .pf-m-invalid .pf-v6-c-select__toggle::before {
-    /* Why are these pseudo elements not able to access the vars? */
-    /* border-bottom-color: var(--pf-v5-c-select__toggle--before--BorderBottomColor); */
     border-bottom-color: rgb(201, 25, 11) !important;
     border-bottom-width: 2px !important;
 }
