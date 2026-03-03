@@ -132,7 +132,6 @@ func (e *endpointsStore) purgeNoLock(deploymentID string) {
 func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData) {
 	dSet, deploymentFound := e.reverseEndpointMap[deploymentID]
 	if !deploymentFound || dSet == nil {
-		// Pre-allocate with known capacity
 		dSet = make(set.Set[net.NumericEndpoint], len(data.endpoints))
 		e.reverseEndpointMap[deploymentID] = dSet
 	}
@@ -142,29 +141,33 @@ func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData)
 
 		deploymentsOnThisEp, epFound := e.endpointMap[ep]
 		if !epFound {
-			// Pre-allocate with reasonable capacity
-			e.endpointMap[ep] = make(map[string]set.Set[EndpointTargetInfo], 1)
+			// New endpoint entirely - create maps with initial capacity
+			e.endpointMap[ep] = map[string]set.Set[EndpointTargetInfo]{
+				deploymentID: make(set.Set[EndpointTargetInfo], len(targetInfos)),
+			}
 		} else if !deploymentFound {
-			// New deployment, but the endpoint exists - the new deployment takes over the already existing endpoint
+			// New deployment, but endpoint exists - takeover
 			e.endpointMap[ep][deploymentID] = make(set.Set[EndpointTargetInfo], len(targetInfos))
-			// Mark all other deployments having with this endpoint as historical
+			// Mark all other deployments with this endpoint as historical
 			for otherDeploymentID := range deploymentsOnThisEp {
-				// Currently added deployment is already in the map, so do not mark it historical
 				if otherDeploymentID != deploymentID {
 					e.moveToHistory(otherDeploymentID, ep)
 				}
 			}
+		} else {
+			// Endpoint and deployment both exist - get or create target info set
+			if _, targetFound := e.endpointMap[ep][deploymentID]; !targetFound {
+				e.endpointMap[ep][deploymentID] = make(set.Set[EndpointTargetInfo], len(targetInfos))
+			}
 		}
-		etiSet, targetFound := e.endpointMap[ep][deploymentID]
-		if !targetFound {
-			// Pre-allocate with known capacity
-			etiSet = make(set.Set[EndpointTargetInfo], len(targetInfos))
-			e.endpointMap[ep][deploymentID] = etiSet
-		}
+
+		// Add all target infos to the set
+		etiSet := e.endpointMap[ep][deploymentID]
 		for _, tgtInfo := range targetInfos {
 			etiSet.Add(tgtInfo)
 		}
-		// Endpoints previously marked as historical may need to be restored.
+
+		// Endpoints previously marked as historical may need to be restored
 		e.deleteFromHistory(deploymentID, ep)
 	}
 }
