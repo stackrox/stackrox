@@ -30,6 +30,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -125,12 +126,29 @@ func (ds *datastoreImpl) SearchAlertPolicySeverityCounts(ctx context.Context, q 
 	}
 	countQuery := alertviews.WithPolicySeverityCountQuery(q)
 
-	result := &alertviews.PolicySeverityCounts{}
+	emptyResult := &alertviews.PolicySeverityCounts{}
+	results := make([]*alertviews.PolicySeverityCounts, 0)
+	// TODO(ROX-33425): replace call with one specific for counts that only returns a single row
 	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, countQuery, func(r *alertviews.PolicySeverityCounts) error {
-		result = r
+		results = append(results, r)
 		return nil
 	})
-	return result, err
+
+	// error handling needed to protect ourselves if this is called in
+	// the future with something other than just counts.
+	if err != nil {
+		return emptyResult, err
+	}
+	if len(results) == 0 {
+		return emptyResult, nil
+	}
+	if len(results) > 1 {
+		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
+		utils.Should(err)
+		return emptyResult, err
+	}
+
+	return results[0], err
 }
 
 // SearchAlerts returns search results for the given request. This will exclude resolved alerts by default unless Violation State = Resolved is explicitly specified in the query
