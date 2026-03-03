@@ -243,7 +243,7 @@ function ViolationsByPolicyCategoryChart({
                 ariaTitle="Policy violations by category"
                 domainPadding={{ x: [20, 20] }}
                 events={getInteractiveLegendEvents({
-                    chartNames: [Object.values(severityLabels)] as [string[]],
+                    chartNames: [Object.values(severityLabels)],
                     isHidden: (index) => hiddenSeverities.has(severitiesLowToCritical[index]),
                     legendName: 'legend',
                     onLegendClick,
