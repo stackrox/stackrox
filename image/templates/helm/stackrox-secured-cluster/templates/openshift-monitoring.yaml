@@ -141,6 +141,30 @@ subjects:
 ---
 
 {{- /*
+TODO(ROX-22188): Switch to a ClusterRoleBinding to avoid leaking to kube-system namespace.
+*/}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: "rhacs-admission-control-auth-reader-{{ .Release.Namespace }}"
+  namespace: kube-system
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" (print "rhacs-admission-control-auth-reader-" .Release.Namespace)) | nindent 4 }}
+    auto-upgrade.stackrox.io/component: "sensor"
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" (print "rhacs-admission-control-auth-reader-" .Release.Namespace)) | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: extension-apiserver-authentication-reader
+subjects:
+  - kind: ServiceAccount
+    name: admission-control
+    namespace: "{{ .Release.Namespace }}"
+
+---
+
+{{- /*
 The PrometheusRule is placed into the openshift-monitoring namespace to comply with the
 OpenShift monitoring namespace label requirements. This is an exception to the rule
 that leaking resources into system namespaces should be avoided.

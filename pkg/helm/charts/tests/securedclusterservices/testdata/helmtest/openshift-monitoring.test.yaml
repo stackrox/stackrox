@@ -16,6 +16,7 @@ tests:
         .roles["secured-cluster-prometheus-k8s"] | assertThat(. != null)
         .rolebindings["secured-cluster-prometheus-k8s"] | assertThat(. != null)
         .rolebindings["rhacs-sensor-auth-reader-stackrox"] | assertThat(. != null)
+        .rolebindings["rhacs-admission-control-auth-reader-stackrox"] | assertThat(. != null)
         .servicemonitors["sensor-monitor-stackrox"] | [
             assertThat(.metadata.namespace == "openshift-monitoring"),
             assertThat(.spec.endpoints[].port == "monitoring-tls")
@@ -69,6 +70,7 @@ tests:
         .roles["secured-cluster-prometheus-k8s"] | assertThat(. != null)
         .rolebindings["secured-cluster-prometheus-k8s"] | assertThat(. != null)
         .rolebindings["rhacs-sensor-auth-reader-stackrox"] | assertThat(. != null)
+        .rolebindings["rhacs-admission-control-auth-reader-stackrox"] | assertThat(. != null)
         .servicemonitors["sensor-monitor-stackrox"] | [
             assertThat(.metadata.namespace == "openshift-monitoring"),
             assertThat(.spec.endpoints[].port == "monitoring-tls")
@@ -137,6 +139,7 @@ tests:
         .roles["secured-cluster-prometheus-k8s"] | assertThat(. == null)
         .rolebindings["secured-cluster-prometheus-k8s"] | assertThat(. == null)
         .rolebindings["rhacs-sensor-auth-reader-stackrox"] | assertThat(. == null)
+        .rolebindings["rhacs-admission-control-auth-reader-stackrox"] | assertThat(. == null)
         .servicemonitors["sensor-monitor-stackrox"] | assertThat(. == null)
         .servicemonitors["admission-control-monitor-stackrox"] | assertThat(. == null)
 
