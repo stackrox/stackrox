@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -43,12 +44,13 @@ func (s *updaterTestSuite) TestResolveKeyURL() {
 	}
 	for _, tt := range tests {
 		got, err := resolveKeyURL(tt.manifestURL, tt.keyURL)
+		msg := fmt.Sprintf("manifestURL=%q keyURL=%q", tt.manifestURL, tt.keyURL)
 		if tt.wantErr {
-			s.Require().Error(err, "manifestURL=%q keyURL=%q", tt.manifestURL, tt.keyURL)
+			s.Require().Error(err, msg)
 			continue
 		}
-		s.Require().NoError(err, "manifestURL=%q keyURL=%q", tt.manifestURL, tt.keyURL)
-		s.Equal(tt.want, got, "manifestURL=%q keyURL=%q", tt.manifestURL, tt.keyURL)
+		s.Require().NoError(err, msg)
+		s.Equal(tt.want, got, msg)
 	}
 }
 
