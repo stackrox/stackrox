@@ -686,7 +686,9 @@ image_prefetcher_start_set() {
     local image_prefetcher_deploy_bin
     image_prefetcher_deploy_bin="$(make print-image-prefetcher-deploy-bin)"
     local image_prefetcher_version
-    image_prefetcher_version="$(go -C tools/test list -m -f '{{.Version}}' github.com/stackrox/image-prefetcher/deploy)"
+    # TODO(ROX-33305): Remove override once image-prefetcher with GC prevention is released.
+    # Using branch build that pins images after CRI pull to prevent kubelet GC.
+    image_prefetcher_version="${IMAGE_PREFETCHER_VERSION:-branch-rox-33305-prevent-gc}"
 
     info "Using ${image_prefetcher_deploy_bin} ${image_prefetcher_version} for image prefetch deployment"
 
@@ -915,7 +917,7 @@ image_prefetcher_await_set() {
     info "Waiting for image prefetcher set ${name} to complete..."
     if kubectl rollout status daemonset "$name" -n "$ns" --timeout 15m; then
         info "All images in the set are now pre-fetched."
-        _image_prefetcher_repull_gc_victims "$ns" "$name"
+        # Image pinning is now handled by the image-prefetcher itself (branch-rox-33305-prevent-gc).
     else
         info "WARNING: Pre-fetching failed to complete in time."
         info "To investigate closer, go to https://console.cloud.google.com/bigquery and run a query such as:"
