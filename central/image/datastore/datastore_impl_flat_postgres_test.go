@@ -575,9 +575,43 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestCVETimestampPersistence() {
 
 	sharedCVEID := "CVE-2024-1234"
 	datasource := "alpine:v3.18"
+	image0ID := "image0-sha"
 
-	// Two images share a CVE but have their unique CVEs. First image defines the shared component/CVE; second references it.
+	// Three images share a CVE but each also has unique CVEs.
+	// The shared CVE in the second image has an earlier FirstSystemOccurrence timestamp.
 	images := []*storage.Image{
+		{
+			Id: image0ID,
+			Name: &storage.ImageName{
+				FullName: "registry.io/image0:v0",
+			},
+			Scan: &storage.ImageScan{
+				OperatingSystem: "alpine",
+				ScanTime:        timestamppb.Now(),
+				Components: []*storage.EmbeddedImageScanComponent{
+					{
+						Name:    "shared-component",
+						Version: "1.0.0",
+						Source:  storage.SourceType_OS,
+						Vulns: []*storage.EmbeddedVulnerability{
+							{
+								Cve:                   sharedCVEID,
+								VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+								Datasource:            datasource,
+								Severity:              storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+								FirstSystemOccurrence: timestamppb.Now(),
+							},
+							{
+								Cve:                   "CVE-2024-1111",
+								VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+								Datasource:            datasource,
+								FirstSystemOccurrence: timestamppb.Now(),
+							},
+						},
+					},
+				},
+			},
+		},
 		{
 			Id: "image1-sha",
 			Name: &storage.ImageName{
@@ -597,7 +631,7 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestCVETimestampPersistence() {
 								VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 								Datasource:            datasource,
 								Severity:              storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-								FirstSystemOccurrence: cveDiscoverTimestamp,
+								FirstSystemOccurrence: cveDiscoverTimestamp, // Earlier time stamp
 							},
 							{
 								Cve:                   "CVE-2024-5678",
@@ -629,7 +663,7 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestCVETimestampPersistence() {
 								VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
 								Datasource:            datasource,
 								Severity:              storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-								FirstSystemOccurrence: timestamppb.Now(), // Later timestamp from different scanner
+								FirstSystemOccurrence: timestamppb.Now(),
 							},
 							{
 								Cve:                   "CVE-2024-9999",
@@ -644,32 +678,75 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestCVETimestampPersistence() {
 		},
 	}
 
-	// Process images
+	// First pass: process all images in order.
+	// Images processed after image1 will be enriched with the earlier timestamp from image1.
 	for _, img := range images {
-		s.NoError(s.cveInfoEnricher.EnrichImageWithCVEInfo(ctx, img))
-		s.NoError(s.datastore.UpsertImage(ctx, img))
+		imgClone := img.CloneVT()
+		s.NoError(s.cveInfoEnricher.EnrichImageWithCVEInfo(ctx, imgClone))
+		s.NoError(s.datastore.UpsertImage(ctx, imgClone))
 	}
 
-	// Verify ImageCVEInfo persisted the earlier timestamp
+	// Verify ImageCVEInfo persisted the earliest timestamp
 	cveInfoID := pkgCVE.ImageCVEInfoID(sharedCVEID, "shared-component", datasource)
 	cveInfo, found, err := s.cveInfoDataStore.Get(ctx, cveInfoID)
 	s.NoError(err)
 	s.True(found)
 	s.Equal(cveDiscoverTimestamp, cveInfo.GetFirstSystemOccurrence())
 
-	// Verify both images were enriched with the preserved timestamp
-	for _, img := range images {
+	// Verify first pass results:
+	// - image0: shared CVE should NOT have cveDiscoverTimestamp (processed before image1)
+	// - image1: shared CVE has cveDiscoverTimestamp (source of early timestamp)
+	// - image2: shared CVE should have cveDiscoverTimestamp (processed after image1)
+	// - All unique CVEs should have their own timestamps
+	for i, img := range images {
 		stored, found, err := s.datastore.GetImage(ctx, img.GetId())
 		s.NoError(err)
 		s.True(found)
+
 		components := stored.GetScan().GetComponents()
 		s.Require().Len(components, 1)
 		s.Require().Len(components[0].GetVulns(), 2)
+
+		for _, vuln := range components[0].GetVulns() {
+			if vuln.GetCve() != sharedCVEID {
+				s.NotEqual(cveDiscoverTimestamp, vuln.GetFirstSystemOccurrence(),
+					"Unique CVE should not have the shared timestamp (image %d)", i)
+			} else if img.GetId() == image0ID {
+				s.NotEqual(cveDiscoverTimestamp, vuln.GetFirstSystemOccurrence(),
+					"image0 was processed before image1, should not have the earlier timestamp yet")
+			} else {
+				s.Equal(cveDiscoverTimestamp, vuln.GetFirstSystemOccurrence(),
+					"Shared CVE should have the earlier timestamp from image1 (image %d)", i)
+			}
+		}
+	}
+
+	// Second pass: rescan all images.
+	// All images should now have the preserved earliest timestamp for the shared CVE.
+	for _, img := range images {
+		imgClone := img.CloneVT()
+		imgClone.GetScan().ScanTime = timestamppb.Now()
+		s.NoError(s.cveInfoEnricher.EnrichImageWithCVEInfo(ctx, imgClone))
+		s.NoError(s.datastore.UpsertImage(ctx, imgClone))
+	}
+
+	// Verify all images now have the preserved earliest timestamp
+	for i, img := range images {
+		stored, found, err := s.datastore.GetImage(ctx, img.GetId())
+		s.NoError(err)
+		s.True(found)
+
+		components := stored.GetScan().GetComponents()
+		s.Require().Len(components, 1)
+		s.Require().Len(components[0].GetVulns(), 2)
+
 		for _, vuln := range components[0].GetVulns() {
 			if vuln.GetCve() == sharedCVEID {
-				s.Equal(cveDiscoverTimestamp, vuln.GetFirstSystemOccurrence())
+				s.Equal(cveDiscoverTimestamp, vuln.GetFirstSystemOccurrence(),
+					"After second pass, all images should have the preserved earliest timestamp for shared CVE (image %d)", i)
 			} else {
-				s.NotEqual(cveDiscoverTimestamp, vuln.GetFirstSystemOccurrence())
+				s.NotEqual(cveDiscoverTimestamp, vuln.GetFirstSystemOccurrence(),
+					"Unique CVE should not have the shared timestamp (image %d)", i)
 			}
 		}
 	}
