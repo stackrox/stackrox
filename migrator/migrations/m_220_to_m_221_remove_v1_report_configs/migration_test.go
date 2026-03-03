@@ -8,10 +8,10 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	postgresStore "github.com/stackrox/rox/migrator/migrations/m_220_to_m_221_remove_v1_report_configs/postgres"
+	pkgSchema "github.com/stackrox/rox/migrator/migrations/m_220_to_m_221_remove_v1_report_configs/postgres/schema"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
