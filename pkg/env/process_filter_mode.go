@@ -35,9 +35,9 @@ func GetProcessFilterModeConfig() (*ProcessFilterModeConfig, string) {
 	}
 
 	defaultConfig := &ProcessFilterModeConfig{
-		MaxExactPathMatches: 5,
-		FanOutLevels:        []int{8, 6, 4, 2},
-		MaxProcessPaths:     5000,
+		MaxExactPathMatches: ProcessFilterMaxExactPathMatches.DefaultValue(),
+		FanOutLevels:        ProcessFilterFanOutLevels.DefaultValue(),
+		MaxProcessPaths:     ProcessFilterMaxProcessPaths.DefaultValue(),
 	}
 
 	aggressiveConfig := &ProcessFilterModeConfig{
