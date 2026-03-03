@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type splunkDeploymentEvent struct {
@@ -71,10 +72,7 @@ func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.D
 
 		v2Enabled := features.FlattenImageData.Enabled()
 
-		// imageLookup maps image SHA digest to the datastore lookup key.
-		// For V1, the lookup key is the digest itself.
-		// For V2, the lookup key is the UUID (IdV2).
-		imageLookup := make(map[string]string)
+		imageSet := set.NewStringSet()
 		for _, id := range ids {
 			deployment, exists, err := deployments.GetDeployment(r.Context(), id)
 			if err != nil {
@@ -85,20 +83,11 @@ func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.D
 				continue
 			}
 			for _, c := range deployment.GetContainers() {
-				digest := c.GetImage().GetId()
-				if digest == "" {
+				imgID := containerImageID(c.GetImage(), v2Enabled)
+				if imgID == "" {
 					continue
 				}
-				if _, seen := imageLookup[digest]; !seen {
-					lookupKey := digest
-					if v2Enabled {
-						lookupKey = c.GetImage().GetIdV2()
-						if lookupKey == "" {
-							continue
-						}
-					}
-					imageLookup[digest] = lookupKey
-				}
+				imageSet.Add(imgID)
 
 				err := arrayWriter.WriteObject(&splunkDeploymentEvent{
 					Type:        "deployment",
@@ -107,7 +96,7 @@ func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.D
 					Labels:      deployment.GetLabels(),
 					Annotations: deployment.GetAnnotations(),
 					Deployment:  deployment.GetName(),
-					ImageDigest: digest,
+					ImageDigest: c.GetImage().GetId(),
 				})
 				if err != nil {
 					httputil.WriteError(w, err)
@@ -116,10 +105,11 @@ func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.D
 			}
 		}
 
-		for digest, lookupKey := range imageLookup {
+		for imgID := range imageSet {
 			var img imageFields
+			var digest string
 			if v2Enabled {
-				v2, exists, err := imagesV2.GetImage(r.Context(), lookupKey)
+				v2, exists, err := imagesV2.GetImage(r.Context(), imgID)
 				if err != nil {
 					httputil.WriteError(w, err)
 					return
@@ -128,8 +118,9 @@ func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.D
 					continue
 				}
 				img = v2
+				digest = v2.GetDigest()
 			} else {
-				v1, exists, err := images.GetImage(r.Context(), lookupKey)
+				v1, exists, err := images.GetImage(r.Context(), imgID)
 				if err != nil {
 					httputil.WriteError(w, err)
 					return
@@ -138,6 +129,7 @@ func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.D
 					continue
 				}
 				img = v1
+				digest = imgID
 			}
 
 			if err := writeImageEvents(arrayWriter, digest, img); err != nil {
@@ -185,4 +177,13 @@ func writeImageEvents(w *jsonutil.JSONArrayWriter, digest string, img imageField
 		}
 	}
 	return nil
+}
+
+// containerImageID returns the appropriate image identifier for datastore lookups.
+// V1 uses the SHA digest (Id), V2 uses the UUID (IdV2).
+func containerImageID(ci *storage.ContainerImage, v2Enabled bool) string {
+	if v2Enabled {
+		return ci.GetIdV2()
+	}
+	return ci.GetId()
 }
