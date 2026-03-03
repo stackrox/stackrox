@@ -38,19 +38,22 @@ runs:
         echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"
       shell: bash
 
-    # Restore-only: saves are done explicitly in workflows with if: always()
-    # so they run even when tests fail.
-    - name: Restore Go Dependencies
+    # Uses actions/cache@v5 which restores on setup and saves in a post-step.
+    # The post-step save runs automatically when the job succeeds and the key
+    # is not an exact hit. For jobs where tests may fail (like go unit tests),
+    # add explicit actions/cache/save@v5 steps with if: always() in the
+    # workflow to ensure caches are saved regardless of test outcome.
+    - name: Cache Go Dependencies
       id: restore-mod
-      uses: actions/cache/restore@v5
+      uses: actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOMODCACHE }}
         key: go-mod-v1-${{ hashFiles('**/go.sum') }}
         restore-keys: go-mod-v1-
 
-    - name: Restore Go Build Cache
+    - name: Cache Go Build
       id: restore-build
-      uses: actions/cache/restore@v5
+      uses: actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
         key: go-build-v1-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}

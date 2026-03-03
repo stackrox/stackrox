@@ -73,8 +73,8 @@ jobs:
       if: github.event_name == 'pull_request'
       # Markdown files aren't checked for trailing whitespaces because it's a valid linebreak there.
       run: |
-        git fetch --depth=1 origin "${{ github.event.pull_request.base.sha }}"
-        git diff --check "${{ github.event.pull_request.base.sha }}"...HEAD ':(exclude)*.md'
+        git fetch --depth=1 origin "${{ github.event.pull_request.base.sha }}:refs/remotes/origin/pr-base"
+        git diff --check origin/pr-base...HEAD ':(exclude)*.md'
 
     - name: Check PR fixes
       run: scripts/ci/jobs/check-pr-fixes.sh
