@@ -2,7 +2,7 @@ module github.com/stackrox/rox/operator/tools/kubebuilder
 
 go 1.25.7
 
-require sigs.k8s.io/kubebuilder/v4 v4.12.0
+require sigs.k8s.io/kubebuilder/v4 v4.13.0
 
 require (
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
