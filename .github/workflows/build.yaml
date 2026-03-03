@@ -122,7 +122,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -153,12 +152,17 @@ jobs:
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
+      options: >-
+        --tmpfs /__w/stackrox/stackrox:rw,exec,size=2g
+        -v /home/runner/work:/__w_host
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - name: Expose local actions to host
+        run: cp -a .github /__w_host/stackrox/stackrox/.github
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -194,12 +198,17 @@ jobs:
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
+      options: >-
+        --tmpfs /__w/stackrox/stackrox:rw,exec,size=2g
+        -v /home/runner/work:/__w_host
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - name: Expose local actions to host
+        run: cp -a .github /__w_host/stackrox/stackrox/.github
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -264,12 +273,17 @@ jobs:
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
+      options: >-
+        --tmpfs /__w/stackrox/stackrox:rw,exec,size=2g
+        -v /home/runner/work:/__w_host
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - name: Expose local actions to host
+        run: cp -a .github /__w_host/stackrox/stackrox/.github
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -367,7 +381,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -543,7 +556,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -618,7 +630,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -776,7 +787,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -813,7 +823,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 1
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -875,7 +884,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
