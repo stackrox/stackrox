@@ -63,11 +63,7 @@ func GetProcessFilterModeConfig() (*ProcessFilterModeConfig, error) {
 		return minimalConfig, nil
 	}
 
-	if mode == "" {
-		return defaultConfig, fmt.Errorf("%s set to empty string. Will use the default.", ProcessFilterMode.EnvVar())
-	}
-
-	return defaultConfig, fmt.Errorf("Unrecognized mode for environment variable %s: %s. Will use the default.", ProcessFilterMode.EnvVar(), mode)
+	return defaultConfig, fmt.Errorf("Invalid mode for environment variable %s=%q. Will use the default.", ProcessFilterMode.EnvVar(), mode)
 }
 
 // GetEffectiveProcessFilterConfig returns the effective process filter configuration,
