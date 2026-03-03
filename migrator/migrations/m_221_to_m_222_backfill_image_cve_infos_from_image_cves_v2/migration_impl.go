@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/m_221_to_m_222_backfill_image_cve_infos_from_image_cves_v2/schema"
 	"github.com/stackrox/rox/migrator/types"
-	"github.com/stackrox/rox/pkg/cve"
+	pkgCve "github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -48,7 +48,6 @@ func migrate(database *types.Databases) error {
 		return errors.Wrap(err, "failed to upsert image CVE infos")
 	}
 
-	log.Info("Migration completed successfully")
 	return nil
 }
 
@@ -81,24 +80,16 @@ func buildAggregationMap(ctx context.Context, database *types.Databases) (map[st
 		// Process each CVE in the batch
 		for _, cveWithComp := range batch {
 			// Deserialize to extract datasource
-			proto, err := schema.ConvertImageCVEV2ToProto(&cveWithComp.ImageCvesV2)
+			cve, err := schema.ConvertImageCVEV2ToProto(&cveWithComp.ImageCvesV2)
 			if err != nil {
 				log.Warnf("Failed to deserialize CVE %s: %v (skipping)", cveWithComp.CveBaseInfoCve, err)
 				continue
 			}
 
-			// Handle missing component name (data integrity issue)
-			if cveWithComp.ComponentName == "" {
-				log.Warnf("Missing component name for CVE %s with component ID %s (skipping)",
-					cveWithComp.CveBaseInfoCve, cveWithComp.ComponentID)
-				continue
-			}
-
 			// Build composite ID using ImageCVEInfoID()
-			// datasource can be empty for Red Hat vulnerabilities (per cve.go comments)
-			datasource := proto.GetDatasource()
-			id := cve.ImageCVEInfoID(
-				proto.GetCveBaseInfo().GetCve(),
+			datasource := cve.GetDatasource()
+			id := pkgCve.ImageCVEInfoID(
+				cve.GetCveBaseInfo().GetCve(),
 				cveWithComp.ComponentName,
 				datasource,
 			)
