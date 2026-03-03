@@ -524,6 +524,14 @@ function launch_central {
                 "${unzip_dir}/scanner-v4/scripts/setup.sh"
               fi
               launch_service "${unzip_dir}" scanner-v4
+
+              if [[ -n "$CI" ]]; then
+                ${ORCH_CMD} -n stackrox patch hpa scanner-v4-indexer --patch "$(cat "${common_dir}/scanner-v4-hpa-patch.yaml")"
+                ${ORCH_CMD} -n stackrox patch hpa scanner-v4-matcher --patch "$(cat "${common_dir}/scanner-v4-hpa-patch.yaml")"
+                ${ORCH_CMD} -n stackrox patch deployment scanner-v4-indexer --patch "$(cat "${common_dir}/scanner-v4-indexer-patch.yaml")"
+                ${ORCH_CMD} -n stackrox patch deployment scanner-v4-matcher --patch "$(cat "${common_dir}/scanner-v4-matcher-patch.yaml")"
+                ${ORCH_CMD} -n stackrox patch deployment scanner-v4-db --patch "$(cat "${common_dir}/scanner-v4-db-patch.yaml")"
+              fi
             else
               echo >&2 "WARNING: Deployment bundle does not seem to contain support for Scanner V4."
               echo >&2 "WARNING: Scanner V4 will not be deployed now."
@@ -534,10 +542,6 @@ function launch_central {
           if [[ -n "$CI" ]]; then
             ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-patch.yaml")"
             ${ORCH_CMD} -n stackrox patch hpa scanner --patch "$(cat "${common_dir}/scanner-hpa-patch.yaml")"
-            ${ORCH_CMD} -n stackrox patch hpa scanner-v4-indexer --patch "$(cat "${common_dir}/scanner-v4-hpa-patch.yaml")"
-            ${ORCH_CMD} -n stackrox patch hpa scanner-v4-matcher --patch "$(cat "${common_dir}/scanner-v4-hpa-patch.yaml")"
-            ${ORCH_CMD} -n stackrox patch deployment scanner-v4-indexer --patch "$(cat "${common_dir}/scanner-v4-indexer-patch.yaml")"
-            ${ORCH_CMD} -n stackrox patch deployment scanner-v4-matcher --patch "$(cat "${common_dir}/scanner-v4-matcher-patch.yaml")"
           elif [[ "${is_local_dev}" == "true" ]]; then
             ${ORCH_CMD} -n stackrox patch deployment scanner --patch "$(cat "${common_dir}/scanner-local-patch.yaml")"
             ${ORCH_CMD} -n stackrox patch hpa scanner --patch "$(cat "${common_dir}/scanner-hpa-patch.yaml")"
