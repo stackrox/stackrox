@@ -178,8 +178,10 @@ export function fetchMyResource(id: string): Promise<MyResource> {
 - **E2E tests** (Cypress): Critical user journeys, accessibility testing (cypress-axe)
 - **Component tests** (Cypress): Real DOM rendering, PatternFly integrations
 
-**Before committing:**
+**After making changes:**
 
+- Always check IDE diagnostics on modified files to catch lint/formatting issues
+- If IDE diagnostics are unavailable, run `npm run lint:fast-dev -- <file>` from `apps/platform/` on changed files, or `npm run lint:fast-dev-fix -- <file>` to auto-fix (prettier is integrated via eslint-plugin-prettier)
 - If modifying existing code with tests, run those specific tests to ensure they still pass (don't run the full suite)
 - For new features, ask the developer if they want tests written
 - When writing tests, focus on happy path and critical user flows — avoid over-engineering
