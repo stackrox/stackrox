@@ -449,12 +449,7 @@ function ConfigReportsTab() {
                                 report.resourceScope.collectionScope;
 
                             return (
-                                <Tbody
-                                    key={report.id}
-                                    style={{
-                                        borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
-                                    }}
-                                >
+                                <Tbody key={report.id}>
                                     <Tr>
                                         <Td
                                             key={report.id}

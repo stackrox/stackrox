@@ -139,7 +139,7 @@ function NamespaceSelect({
                     <Divider className="pf-v6-u-mb-0" component="div" />
                 )}
                 {filteredClusters.map(({ name: clusterName, namespaces }) => (
-                    <SelectGroup key={clusterName} label={clusterName}>
+                    <SelectGroup key={clusterName} label={clusterName} labelHeadingLevel="h3">
                         {namespaces.map(({ metadata: { id, name } }) => (
                             <SelectOption
                                 key={id}
