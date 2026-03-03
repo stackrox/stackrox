@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"unicode/utf8"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -36,6 +38,14 @@ var (
 		Buckets:   []float64{0, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536},
 	})
 
+	processArgsCharsHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "process_args_size_chars",
+		Help:      "Distribution of process argument sizes in characters for indicators written to database",
+		Buckets:   []float64{0, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536},
+	})
+
 	processIndicatorsAddedCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -56,7 +66,7 @@ func incrementProcessPruningCacheMissesMetric() {
 	processPruningCacheMisses.Inc()
 }
 
-// getProcessArgsSizeBytes safely calculates the size of process args.
+// getProcessArgsSizeBytes safely calculates the size of process args in bytes.
 // Returns 0 if signal or args are nil/empty.
 func getProcessArgsSizeBytes(indicator *storage.ProcessIndicator) int {
 	if indicator == nil || indicator.GetSignal() == nil {
@@ -65,11 +75,22 @@ func getProcessArgsSizeBytes(indicator *storage.ProcessIndicator) int {
 	return len(indicator.GetSignal().GetArgs())
 }
 
+// getProcessArgsSizeChars safely calculates the size of process args in characters (runes).
+// Returns 0 if signal or args are nil/empty.
+func getProcessArgsSizeChars(indicator *storage.ProcessIndicator) int {
+	if indicator == nil || indicator.GetSignal() == nil {
+		return 0
+	}
+	return utf8.RuneCountInString(indicator.GetSignal().GetArgs())
+}
+
 // recordProcessIndicatorsBatchAdded records metrics for a batch of process indicators successfully written to DB.
 func recordProcessIndicatorsBatchAdded(indicators []*storage.ProcessIndicator) {
 	for _, indicator := range indicators {
-		argsSize := getProcessArgsSizeBytes(indicator)
-		processArgsHistogram.Observe(float64(argsSize))
+		argsSizeBytes := getProcessArgsSizeBytes(indicator)
+		argsSizeChars := getProcessArgsSizeChars(indicator)
+		processArgsHistogram.Observe(float64(argsSizeBytes))
+		processArgsCharsHistogram.Observe(float64(argsSizeChars))
 		processIndicatorsAddedCounter.Inc()
 	}
 }
@@ -80,6 +101,7 @@ func init() {
 		processPruningCacheHits,
 		processPruningCacheMisses,
 		processArgsHistogram,
+		processArgsCharsHistogram,
 		processIndicatorsAddedCounter,
 	)
 }
