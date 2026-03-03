@@ -1,6 +1,7 @@
 package env
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -28,10 +29,10 @@ type ProcessFilterModeConfig struct {
 
 // GetProcessFilterModeConfig returns the configuration for the current filter mode.
 // Returns nil if the mode is not set, and the default if the mode is invalid.
-func GetProcessFilterModeConfig() (*ProcessFilterModeConfig, string) {
+func GetProcessFilterModeConfig() (*ProcessFilterModeConfig, error) {
 	_, ok := os.LookupEnv(ProcessFilterMode.EnvVar())
 	if !ok {
-		return nil, ""
+		return nil, nil
 	}
 
 	defaultConfig := &ProcessFilterModeConfig{
@@ -55,44 +56,36 @@ func GetProcessFilterModeConfig() (*ProcessFilterModeConfig, string) {
 	mode := strings.ToLower(ProcessFilterMode.Setting())
 
 	if mode == "aggressive" {
-		return aggressiveConfig, ""
+		return aggressiveConfig, nil
 	} else if mode == "default" {
-		return defaultConfig, ""
+		return defaultConfig, nil
 	} else if mode == "minimal" {
-		return minimalConfig, ""
+		return minimalConfig, nil
 	}
 
 	if mode == "" {
-		return defaultConfig, fmt.Sprintf("%s set to empty string. Will use the default.", ProcessFilterMode.EnvVar())
+		return defaultConfig, fmt.Errorf("%s set to empty string. Will use the default.", ProcessFilterMode.EnvVar())
 	}
 
-	return defaultConfig, fmt.Sprintf("Unrecognized mode for environment variable %s: %s. Will use the default.", ProcessFilterMode.EnvVar(), mode)
+	return defaultConfig, fmt.Errorf("Unrecognized mode for environment variable %s: %s. Will use the default.", ProcessFilterMode.EnvVar(), mode)
 }
 
 // GetEffectiveProcessFilterConfig returns the effective process filter configuration,
 // respecting both the mode preset and any explicitly set individual environment variables.
 // Individual settings override mode presets when explicitly set.
-func GetEffectiveProcessFilterConfig() (ProcessFilterModeConfig, string) {
+func GetEffectiveProcessFilterConfig() (ProcessFilterModeConfig, error) {
 	config := ProcessFilterModeConfig{
 		MaxExactPathMatches: ProcessFilterMaxExactPathMatches.IntegerSetting(),
 		MaxProcessPaths:     ProcessFilterMaxProcessPaths.IntegerSetting(),
 	}
-	var warnStr string
-	var fanOutWarnStr string
 
-	config.FanOutLevels, fanOutWarnStr = ProcessFilterFanOutLevels.IntegerArraySetting()
-
-	modeConfig, modeWarnStr := GetProcessFilterModeConfig()
-
-	if fanOutWarnStr != "" && modeWarnStr != "" {
-		warnStr = fanOutWarnStr + "\n" + modeWarnStr
-	} else {
-		warnStr = fanOutWarnStr + modeWarnStr
-	}
+	var fanOutErr error
+	config.FanOutLevels, fanOutErr = ProcessFilterFanOutLevels.IntegerArraySetting()
+	modeConfig, modeErr := GetProcessFilterModeConfig()
 
 	if modeConfig == nil {
 		// No valid mode set, return current settings
-		return config, warnStr
+		return config, errors.Join(fanOutErr, modeErr)
 	}
 
 	// Apply mode preset, but only for values that aren't explicitly overridden
@@ -106,5 +99,5 @@ func GetEffectiveProcessFilterConfig() (ProcessFilterModeConfig, string) {
 		config.MaxProcessPaths = modeConfig.MaxProcessPaths
 	}
 
-	return config, warnStr
+	return config, errors.Join(fanOutErr, modeErr)
 }

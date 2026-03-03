@@ -21,10 +21,10 @@ var (
 func Singleton() filter.Filter {
 	singletonInstance.Do(func() {
 		// Get effective configuration respecting both mode presets and individual overrides
-		config, warnStr := env.GetEffectiveProcessFilterConfig()
+		config, err := env.GetEffectiveProcessFilterConfig()
 
-		if warnStr != "" {
-			log.Warn(warnStr)
+		if err != nil {
+			log.Warn(err)
 		}
 
 		modeStr := ""
