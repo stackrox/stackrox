@@ -123,7 +123,7 @@ spec:
   - name: operator-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the operator image is pushed to during the release.
     type: string
-    default: "registry.redhat.io/advanced-cluster-security/rhacs-rhel8-operator"
+    default: "registry.redhat.io/advanced-cluster-security/rhacs-rhel9-operator"
 
   - name: main-image-build-repo
     description: Repository where the (unreleased) main image is pushed by its build pipeline.
@@ -132,7 +132,7 @@ spec:
   - name: main-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the main image is pushed to during the release.
     type: string
-    default: "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8"
+    default: "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel9"
 
   - name: scanner-image-build-repo
     description: Repository where the (unreleased) Scanner V2 image is pushed by its build pipeline.
@@ -141,7 +141,7 @@ spec:
   - name: scanner-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V2 image is pushed to during the release.
     type: string
-    default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8"
+    default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel9"
 
   - name: scanner-db-image-build-repo
     description: Repository where the (unreleased) Scanner V2 DB image is pushed by its build pipeline.
@@ -150,7 +150,7 @@ spec:
   - name: scanner-db-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V2 DB image is pushed to during the release.
     type: string
-    default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8"
+    default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel9"
 
   - name: scanner-slim-image-build-repo
     description: Repository where the (unreleased) Scanner V2 slim image is pushed by its build pipeline.
@@ -159,7 +159,7 @@ spec:
   - name: scanner-slim-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V2 slim image is pushed to during the release.
     type: string
-    default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-slim-rhel8"
+    default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-slim-rhel9"
 
   - name: scanner-db-slim-image-build-repo
     description: Repository where the (unreleased) Scanner V2 DB slim image is pushed by its build pipeline.
@@ -168,7 +168,7 @@ spec:
   - name: scanner-db-slim-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V2 DB slim image is pushed to during the release.
     type: string
-    default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-slim-rhel8"
+    default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-slim-rhel9"
 
   - name: scanner-v4-image-build-repo
     description: Repository where the (unreleased) Scanner V4 image is pushed by its build pipeline.
@@ -177,7 +177,7 @@ spec:
   - name: scanner-v4-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V4 image is pushed to during the release.
     type: string
-    default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-rhel8"
+    default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-rhel9"
 
   - name: scanner-v4-db-image-build-repo
     description: Repository where the (unreleased) Scanner V4 DB image is pushed by its build pipeline.
@@ -186,7 +186,7 @@ spec:
   - name: scanner-v4-db-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V4 DB image is pushed to during the release.
     type: string
-    default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-db-rhel8"
+    default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-db-rhel9"
 
   - name: collector-image-build-repo
     description: Repository where the (unreleased) collector full image is pushed by its build pipeline.
@@ -195,7 +195,7 @@ spec:
   - name: collector-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the collector full image is pushed to during the release.
     type: string
-    default: "registry.redhat.io/advanced-cluster-security/rhacs-collector-rhel8"
+    default: "registry.redhat.io/advanced-cluster-security/rhacs-collector-rhel9"
 
   - name: fact-image-build-repo
     description: Repository where the (unreleased) fact image is pushed by its build pipeline.
@@ -213,7 +213,7 @@ spec:
   - name: roxctl-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the roxctl image is pushed to during the release.
     type: string
-    default: "registry.redhat.io/advanced-cluster-security/rhacs-roxctl-rhel8"
+    default: "registry.redhat.io/advanced-cluster-security/rhacs-roxctl-rhel9"
 
   - name: central-db-image-build-repo
     description: Repository where the (unreleased) Central DB image is pushed by its build pipeline.
@@ -222,7 +222,7 @@ spec:
   - name: central-db-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Central DB image is pushed to during the release.
     type: string
-    default: "registry.redhat.io/advanced-cluster-security/rhacs-central-db-rhel8"
+    default: "registry.redhat.io/advanced-cluster-security/rhacs-central-db-rhel9"
 
   - name: enable-cache-proxy
     default: 'false'
