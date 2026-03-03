@@ -21,15 +21,15 @@ var (
 func Singleton() filter.Filter {
 	singletonInstance.Do(func() {
 		// Get effective configuration respecting both mode presets and individual overrides
-		config, err := env.GetEffectiveProcessFilterConfig()
+		config, mode, err := env.GetEffectiveProcessFilterConfig()
 
 		if err != nil {
 			log.Warn(err)
 		}
 
 		modeStr := ""
-		if modeConfig, _ := env.GetProcessFilterModeConfig(); modeConfig != nil {
-			modeStr = fmt.Sprintf("mode=%s, ", env.ProcessFilterMode.Setting())
+		if mode != "" {
+			modeStr = fmt.Sprintf("mode=%s, ", mode)
 		}
 		log.Infof("Process filter configuration: %smaxExactPathMatches=%d, fanOutLevels=%v, maxProcessPaths=%d",
 			modeStr, config.MaxExactPathMatches, config.FanOutLevels, config.MaxProcessPaths)

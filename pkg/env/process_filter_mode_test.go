@@ -8,86 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetProcessFilterModeConfig(t *testing.T) {
-	tests := []struct {
-		name           string
-		mode           string
-		expectedConfig *ProcessFilterModeConfig
-		expectNil      bool
-	}{
-		{
-			name: "Aggressive mode",
-			mode: "aggressive",
-			expectedConfig: &ProcessFilterModeConfig{
-				MaxExactPathMatches: 1,
-				FanOutLevels:        []int{},
-				MaxProcessPaths:     1000,
-			},
-		},
-		{
-			name: "Default mode",
-			mode: "default",
-			expectedConfig: &ProcessFilterModeConfig{
-				MaxExactPathMatches: 5,
-				FanOutLevels:        []int{8, 6, 4, 2},
-				MaxProcessPaths:     5000,
-			},
-		},
-		{
-			name: "Minimal mode",
-			mode: "minimal",
-			expectedConfig: &ProcessFilterModeConfig{
-				MaxExactPathMatches: 100,
-				FanOutLevels:        []int{20, 15, 10, 5},
-				MaxProcessPaths:     20000,
-			},
-		},
-		{
-			name: "Invalid mode defaults to default config",
-			mode: "invalid",
-			expectedConfig: &ProcessFilterModeConfig{
-				MaxExactPathMatches: 5,
-				FanOutLevels:        []int{8, 6, 4, 2},
-				MaxProcessPaths:     5000,
-			},
-		},
-		{
-			name: "Empty mode defaults to default",
-			mode: "",
-			expectedConfig: &ProcessFilterModeConfig{
-				MaxExactPathMatches: 5,
-				FanOutLevels:        []int{8, 6, 4, 2},
-				MaxProcessPaths:     5000,
-			},
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			// Always set the mode (including empty string)
-			err := os.Setenv("ROX_PROCESS_FILTER_MODE", tc.mode)
-			require.NoError(t, err)
-			defer func() {
-				_ = os.Unsetenv("ROX_PROCESS_FILTER_MODE")
-			}()
-
-			config, _ := GetProcessFilterModeConfig()
-
-			if tc.expectNil {
-				assert.Nil(t, config)
-			} else {
-				require.NotNil(t, config)
-				assert.Equal(t, tc.expectedConfig.MaxExactPathMatches, config.MaxExactPathMatches)
-				assert.Equal(t, tc.expectedConfig.FanOutLevels, config.FanOutLevels)
-				assert.Equal(t, tc.expectedConfig.MaxProcessPaths, config.MaxProcessPaths)
-			}
-		})
-	}
-}
-
 func TestGetEffectiveProcessFilterConfig(t *testing.T) {
 	tests := []struct {
 		name                    string
+		setMode                 bool   // whether to set the mode env var
 		mode                    string
 		maxExactPathMatchesEnv  string
 		fanOutLevelsEnv         string
@@ -95,54 +19,95 @@ func TestGetEffectiveProcessFilterConfig(t *testing.T) {
 		expectedMaxExactMatches int
 		expectedFanOutLevels    []int
 		expectedMaxProcessPaths int
+		expectedMode            string
+		expectError             bool
 	}{
 		{
 			name:                    "Aggressive mode with no overrides",
+			setMode:                 true,
 			mode:                    "aggressive",
 			expectedMaxExactMatches: 1,
 			expectedFanOutLevels:    []int{},
 			expectedMaxProcessPaths: 1000,
+			expectedMode:            "aggressive",
+			expectError:             false,
 		},
 		{
 			name:                    "Default mode with no overrides",
+			setMode:                 true,
 			mode:                    "default",
 			expectedMaxExactMatches: 5,
 			expectedFanOutLevels:    []int{8, 6, 4, 2},
 			expectedMaxProcessPaths: 5000,
+			expectedMode:            "default",
+			expectError:             false,
 		},
 		{
 			name:                    "Minimal mode with no overrides",
+			setMode:                 true,
 			mode:                    "minimal",
 			expectedMaxExactMatches: 100,
 			expectedFanOutLevels:    []int{20, 15, 10, 5},
 			expectedMaxProcessPaths: 20000,
+			expectedMode:            "minimal",
+			expectError:             false,
+		},
+		{
+			name:                    "Invalid mode falls back to default",
+			setMode:                 true,
+			mode:                    "invalid",
+			expectedMaxExactMatches: 5,
+			expectedFanOutLevels:    []int{8, 6, 4, 2},
+			expectedMaxProcessPaths: 5000,
+			expectedMode:            "default",
+			expectError:             true,
+		},
+		{
+			name:                    "Empty mode falls back to default",
+			setMode:                 true,
+			mode:                    "",
+			expectedMaxExactMatches: 5,
+			expectedFanOutLevels:    []int{8, 6, 4, 2},
+			expectedMaxProcessPaths: 5000,
+			expectedMode:            "default",
+			expectError:             true,
 		},
 		{
 			name:                    "Aggressive mode with maxExactPathMatches override",
+			setMode:                 true,
 			mode:                    "aggressive",
 			maxExactPathMatchesEnv:  "10",
 			expectedMaxExactMatches: 10,
 			expectedFanOutLevels:    []int{},
 			expectedMaxProcessPaths: 1000,
+			expectedMode:            "aggressive",
+			expectError:             false,
 		},
 		{
 			name:                    "Aggressive mode with fanOutLevels override",
+			setMode:                 true,
 			mode:                    "aggressive",
 			fanOutLevelsEnv:         "[5,3]",
 			expectedMaxExactMatches: 1,
 			expectedFanOutLevels:    []int{5, 3},
 			expectedMaxProcessPaths: 1000,
+			expectedMode:            "aggressive",
+			expectError:             false,
 		},
 		{
 			name:                    "Aggressive mode with maxProcessPaths override",
+			setMode:                 true,
 			mode:                    "aggressive",
 			maxProcessPathsEnv:      "2000",
 			expectedMaxExactMatches: 1,
 			expectedFanOutLevels:    []int{},
 			expectedMaxProcessPaths: 2000,
+			expectedMode:            "aggressive",
+			expectError:             false,
 		},
 		{
 			name:                    "Aggressive mode with all overrides",
+			setMode:                 true,
 			mode:                    "aggressive",
 			maxExactPathMatchesEnv:  "20",
 			fanOutLevelsEnv:         "[10,8,6]",
@@ -150,13 +115,17 @@ func TestGetEffectiveProcessFilterConfig(t *testing.T) {
 			expectedMaxExactMatches: 20,
 			expectedFanOutLevels:    []int{10, 8, 6},
 			expectedMaxProcessPaths: 3000,
+			expectedMode:            "aggressive",
+			expectError:             false,
 		},
 		{
 			name:                    "No mode set uses defaults from individual settings",
-			mode:                    "",
+			setMode:                 false,
 			expectedMaxExactMatches: 5,
 			expectedFanOutLevels:    []int{8, 6, 4, 2},
 			expectedMaxProcessPaths: 5000,
+			expectedMode:            "",
+			expectError:             false,
 		},
 	}
 
@@ -168,8 +137,8 @@ func TestGetEffectiveProcessFilterConfig(t *testing.T) {
 			_ = os.Unsetenv("ROX_PROCESS_FILTER_FAN_OUT_LEVELS")
 			_ = os.Unsetenv("ROX_PROCESS_FILTER_MAX_PROCESS_PATHS")
 
-			// Set the mode if provided
-			if tc.mode != "" {
+			// Set the mode if requested
+			if tc.setMode {
 				err := os.Setenv("ROX_PROCESS_FILTER_MODE", tc.mode)
 				require.NoError(t, err)
 			}
@@ -188,11 +157,18 @@ func TestGetEffectiveProcessFilterConfig(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			config, _ := GetEffectiveProcessFilterConfig()
+			config, mode, err := GetEffectiveProcessFilterConfig()
 
 			assert.Equal(t, tc.expectedMaxExactMatches, config.MaxExactPathMatches, "MaxExactPathMatches mismatch")
 			assert.Equal(t, tc.expectedFanOutLevels, config.FanOutLevels, "FanOutLevels mismatch")
 			assert.Equal(t, tc.expectedMaxProcessPaths, config.MaxProcessPaths, "MaxProcessPaths mismatch")
+			assert.Equal(t, tc.expectedMode, mode, "Mode mismatch")
+
+			if tc.expectError {
+				assert.Error(t, err, "Expected an error")
+			} else {
+				assert.NoError(t, err, "Expected no error")
+			}
 
 			// Clean up
 			_ = os.Unsetenv("ROX_PROCESS_FILTER_MODE")
