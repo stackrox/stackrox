@@ -93,8 +93,11 @@ func CompileScope(scope *storage.Scope, clusterLabelProvider ClusterLabelProvide
 
 // MatchesClusterLabels evaluates cluster label matchers against a deployment's cluster
 func (c *CompiledScope) MatchesClusterLabels(ctx context.Context, deployment *storage.Deployment) bool {
-	if !features.LabelBasedPolicyScoping.Enabled() || c.ClusterLabelKey == nil {
+	if c.ClusterLabelKey == nil {
 		return true
+	}
+	if !features.LabelBasedPolicyScoping.Enabled() {
+		return false
 	}
 	if c.clusterLabelProvider == nil {
 		log.Error("Cluster label matcher defined but provider is nil - failing closed")
@@ -110,8 +113,11 @@ func (c *CompiledScope) MatchesClusterLabels(ctx context.Context, deployment *st
 
 // MatchesNamespaceLabels evaluates namespace label matchers against a deployment's namespace
 func (c *CompiledScope) MatchesNamespaceLabels(ctx context.Context, deployment *storage.Deployment) bool {
-	if !features.LabelBasedPolicyScoping.Enabled() || c.NamespaceLabelKey == nil {
+	if c.NamespaceLabelKey == nil {
 		return true
+	}
+	if !features.LabelBasedPolicyScoping.Enabled() {
+		return false
 	}
 	if c.namespaceLabelProvider == nil {
 		log.Error("Namespace label matcher defined but provider is nil - failing closed")
