@@ -153,7 +153,7 @@ export function fetchMyResource(id: string): Promise<MyResource> {
 **After making changes:**
 
 - Always check IDE diagnostics on modified files to catch lint/formatting issues
-- If IDE diagnostics are unavailable, run `npx eslint --rule 'import/namespace: off' --rule 'import/no-cycle: off' <file>` from `apps/platform/` on changed files (prettier is integrated via eslint-plugin-prettier)
+- If IDE diagnostics are unavailable, run `npm run lint:fast-dev -- <file>` from `apps/platform/` on changed files (prettier is integrated via eslint-plugin-prettier)
 - If modifying existing code with tests, run those specific tests to ensure they still pass (don't run the full suite)
 - For new features, ask the developer if they want tests written
 - When writing tests, focus on happy path and critical user flows — avoid over-engineering
