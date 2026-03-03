@@ -77,10 +77,19 @@ func GetEffectiveProcessFilterConfig() (ProcessFilterModeConfig, string) {
 		MaxExactPathMatches: ProcessFilterMaxExactPathMatches.IntegerSetting(),
 		MaxProcessPaths:     ProcessFilterMaxProcessPaths.IntegerSetting(),
 	}
+	var warnStr string
 	var fanOutWarnStr string
+
 	config.FanOutLevels, fanOutWarnStr = ProcessFilterFanOutLevels.IntegerArraySetting()
 
-	modeConfig, warnStr := GetProcessFilterModeConfig()
+	modeConfig, modeWarnStr := GetProcessFilterModeConfig()
+
+	if fanOutWarnStr != "" && modeWarnStr != "" {
+		warnStr = fanOutWarnStr + "\n" + modeWarnStr
+	} else {
+		warnStr = fanOutWarnStr + modeWarnStr
+	}
+
 	if modeConfig == nil {
 		// No valid mode set, return current settings
 		return config, warnStr
@@ -95,12 +104,6 @@ func GetEffectiveProcessFilterConfig() (ProcessFilterModeConfig, string) {
 	}
 	if _, ok := os.LookupEnv(ProcessFilterMaxProcessPaths.EnvVar()); !ok {
 		config.MaxProcessPaths = modeConfig.MaxProcessPaths
-	}
-
-	if fanOutWarnStr != "" && warnStr != "" {
-		warnStr = fanOutWarnStr + "\n" + warnStr
-	} else {
-		warnStr = fanOutWarnStr + warnStr
 	}
 
 	return config, warnStr
