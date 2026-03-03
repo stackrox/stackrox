@@ -82,7 +82,7 @@ describe('BaseImagesModal', () => {
             );
 
             cy.get('input#baseImagePath').type('ubuntu:22.04');
-            cy.get('button').contains('Save').click();
+            cy.findByRole('button', { name: 'Save' }).click();
 
             cy.wait('@addBaseImage');
             cy.contains('Base image successfully added').should('be.visible');
@@ -104,7 +104,7 @@ describe('BaseImagesModal', () => {
             );
 
             cy.get('input#baseImagePath').type('ubuntu:22.04');
-            cy.get('button').contains('Save').click();
+            cy.findByRole('button', { name: 'Save' }).click();
 
             cy.wait('@addBaseImageError');
             cy.contains('Error adding base image').should('be.visible');
