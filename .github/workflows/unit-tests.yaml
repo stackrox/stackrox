@@ -42,8 +42,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v6
-      with:
-        fetch-depth: 1
 
     - name: Expose local actions to host
       run: |
@@ -145,6 +143,9 @@ jobs:
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
+      options: >-
+        --tmpfs /__w/stackrox/stackrox:rw,exec,size=2g
+        -v /home/runner/work:/__w_host
     steps:
     - name: Set Postgres version
       run: |
@@ -152,8 +153,9 @@ jobs:
 
     - name: Checkout
       uses: actions/checkout@v6
-      with:
-        fetch-depth: 1
+
+    - name: Expose local actions to host
+      run: cp -a .github /__w_host/stackrox/stackrox/.github
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -219,6 +221,9 @@ jobs:
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
+      options: >-
+        --tmpfs /__w/stackrox/stackrox:rw,exec,size=2g
+        -v /home/runner/work:/__w_host
     steps:
     - name: Set Postgres version
       run: |
@@ -226,8 +231,9 @@ jobs:
 
     - name: Checkout
       uses: actions/checkout@v6
-      with:
-        fetch-depth: 1
+
+    - name: Expose local actions to host
+      run: cp -a .github /__w_host/stackrox/stackrox/.github
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -350,12 +356,17 @@ jobs:
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
+      options: >-
+        --tmpfs /__w/stackrox/stackrox:rw,exec,size=2g
+        -v /home/runner/work:/__w_host
     steps:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 1
         ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Expose local actions to host
+      run: cp -a .github /__w_host/stackrox/stackrox/.github
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -397,7 +408,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 1
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -431,7 +441,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 1
           ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -450,8 +459,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v6
-      with:
-        fetch-depth: 1
 
     - name: Set up Go
       uses: actions/setup-go@v6
