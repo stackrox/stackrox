@@ -150,27 +150,27 @@ func RHACSReleaseImageFlavor() ImageFlavor {
 	v := version.GetAllVersionsUnified()
 	return ImageFlavor{
 		MainRegistry:       "registry.redhat.io/advanced-cluster-security",
-		MainImageName:      "rhacs-main-rhel8",
+		MainImageName:      "rhacs-main-rhel9",
 		MainImageTag:       v.MainVersion,
 		CentralDBImageTag:  v.MainVersion,
-		CentralDBImageName: "rhacs-central-db-rhel8",
+		CentralDBImageName: "rhacs-central-db-rhel9",
 
 		CollectorRegistry:  "registry.redhat.io/advanced-cluster-security",
-		CollectorImageName: "rhacs-collector-rhel8",
+		CollectorImageName: "rhacs-collector-rhel9",
 		CollectorImageTag:  v.CollectorVersion,
 
 		FactRegistry:  "registry.redhat.io/advanced-cluster-security",
-		FactImageName: "rhacs-fact-rhel8",
+		FactImageName: "rhacs-fact-rhel9",
 		FactImageTag:  v.FactVersion,
 
-		ScannerImageName:       "rhacs-scanner-rhel8",
-		ScannerSlimImageName:   "rhacs-scanner-slim-rhel8",
+		ScannerImageName:       "rhacs-scanner-rhel9",
+		ScannerSlimImageName:   "rhacs-scanner-slim-rhel9",
 		ScannerImageTag:        v.ScannerVersion,
-		ScannerDBImageName:     "rhacs-scanner-db-rhel8",
-		ScannerDBSlimImageName: "rhacs-scanner-db-slim-rhel8",
+		ScannerDBImageName:     "rhacs-scanner-db-rhel9",
+		ScannerDBSlimImageName: "rhacs-scanner-db-slim-rhel9",
 
-		ScannerV4ImageName:   "rhacs-scanner-v4-rhel8",
-		ScannerV4DBImageName: "rhacs-scanner-v4-db-rhel8",
+		ScannerV4ImageName:   "rhacs-scanner-v4-rhel9",
+		ScannerV4DBImageName: "rhacs-scanner-v4-db-rhel9",
 		// Scanner v4 is released along with the main image, so the tags are expected to be the same.
 		ScannerV4ImageTag: v.MainVersion,
 
