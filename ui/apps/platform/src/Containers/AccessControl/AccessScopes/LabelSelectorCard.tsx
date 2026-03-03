@@ -172,7 +172,7 @@ function LabelSelectorCard({
                             <>
                                 <Button
                                     variant="danger"
-                                    className="pf-m-smaller"
+                                    size="sm"
                                     isDisabled={activity !== 'ENABLED'}
                                     onClick={handleLabelSelectorDelete}
                                 >
@@ -269,7 +269,7 @@ function LabelSelectorCard({
                                         <ToolbarItem>
                                             <Button
                                                 variant="primary"
-                                                className="pf-m-smaller"
+                                                size="sm"
                                                 onClick={handleLabelSelectorOK}
                                                 isDisabled={
                                                     indexRequirementActive !== -1 ||
@@ -282,7 +282,7 @@ function LabelSelectorCard({
                                         <ToolbarItem>
                                             <Button
                                                 variant="tertiary"
-                                                className="pf-m-smaller"
+                                                size="sm"
                                                 onClick={handleLabelSelectorCancel}
                                             >
                                                 Cancel
@@ -296,7 +296,7 @@ function LabelSelectorCard({
                                         <Button
                                             key="Edit label selector"
                                             variant="primary"
-                                            className="pf-m-smaller"
+                                            size="sm"
                                             isDisabled={activity === 'DISABLED'}
                                             onClick={handleLabelSelectorEdit}
                                         >

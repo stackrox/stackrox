@@ -4,8 +4,6 @@ import { Switch } from '@patternfly/react-core';
 
 import { ORCHESTRATOR_COMPONENTS_KEY } from 'utils/orchestratorComponents';
 
-import './OrchestratorComponentsToggle.css';
-
 const OrchestratorComponentsToggle = (): ReactElement => {
     const [showOrchestratorComponents, setShowOrchestratorComponents] = useState('false');
 

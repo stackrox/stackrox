@@ -141,7 +141,7 @@ function MitreAttackVectorsFormSection(): ReactElement {
                     return (
                         <li
                             key={tacticId}
-                            className="pf-v6-c-tree-view__list-item mitre-tactic-item"
+                            className="pf-v6-c-tree-view__list-item mitre-tactic-item pf-m-expanded"
                         >
                             <TreeViewContent>
                                 <Flex flexWrap={{ default: 'nowrap' }}>
@@ -165,79 +165,77 @@ function MitreAttackVectorsFormSection(): ReactElement {
                                     />
                                 </Flex>
                                 <p className="description">{tacticDescription}</p>
-                                <ul className="pf-v6-c-tree-view__list mitre-techniques-list">
-                                    {techniqueIds.map((techniqueId) => {
-                                        const { description: techniqueDescription } =
-                                            getMitreTechnique(mitreTechniques, techniqueId);
-
-                                        return (
-                                            <li
-                                                key={techniqueId}
-                                                className="pf-v6-c-tree-view__list-item mitre-technique-item"
-                                            >
-                                                <TreeViewContent>
-                                                    <Flex flexWrap={{ default: 'nowrap' }}>
-                                                        <MitreTechniqueSelect
-                                                            className="pf-v6-u-flex-grow-1 pf-v6-u-flex-shrink-1"
-                                                            getIsDisabledOption={
-                                                                getPolicyTacticHasTechnique
-                                                            }
-                                                            handleSelectOption={(
-                                                                techniqueIdNext
-                                                            ) => {
-                                                                handleReplaceTechnique(
-                                                                    tacticId,
-                                                                    techniqueId,
-                                                                    techniqueIdNext
-                                                                );
-                                                            }}
-                                                            label="Replace technique"
-                                                            mitreTechniques={mitreTechniques}
-                                                            techniqueId={techniqueId}
-                                                        />
-                                                        <Button
-                                                            icon={<TrashIcon />}
-                                                            aria-label="Delete technique"
-                                                            className="pf-v6-u-flex-shrink-0"
-                                                            onClick={() => {
-                                                                handleDeleteTechnique(
-                                                                    tacticId,
-                                                                    techniqueId
-                                                                );
-                                                            }}
-                                                            variant="plain"
-                                                        />
-                                                    </Flex>
-                                                    <p className="description">
-                                                        {techniqueDescription}
-                                                    </p>
-                                                </TreeViewContent>
-                                            </li>
-                                        );
-                                    })}
-                                    <li
-                                        key="Add technique"
-                                        className="pf-v6-c-tree-view__list-item mitre-technique-item"
-                                    >
-                                        <TreeViewContent>
-                                            <Flex flexWrap={{ default: 'nowrap' }}>
-                                                <MitreTechniqueSelect
-                                                    className="pf-v6-u-flex-grow-1 pf-v6-u-flex-shrink-1"
-                                                    getIsDisabledOption={
-                                                        getPolicyTacticHasTechnique
-                                                    }
-                                                    handleSelectOption={(techniqueId) => {
-                                                        handleAddTechnique(tacticId, techniqueId);
-                                                    }}
-                                                    label="Add technique"
-                                                    mitreTechniques={mitreTechniques}
-                                                    techniqueId=""
-                                                />
-                                            </Flex>
-                                        </TreeViewContent>
-                                    </li>
-                                </ul>
                             </TreeViewContent>
+                            <ul className="pf-v6-c-tree-view__list mitre-techniques-list">
+                                {techniqueIds.map((techniqueId) => {
+                                    const { description: techniqueDescription } = getMitreTechnique(
+                                        mitreTechniques,
+                                        techniqueId
+                                    );
+
+                                    return (
+                                        <li
+                                            key={techniqueId}
+                                            className="pf-v6-c-tree-view__list-item mitre-technique-item"
+                                        >
+                                            <TreeViewContent>
+                                                <Flex flexWrap={{ default: 'nowrap' }}>
+                                                    <MitreTechniqueSelect
+                                                        className="pf-v6-u-flex-grow-1 pf-v6-u-flex-shrink-1"
+                                                        getIsDisabledOption={
+                                                            getPolicyTacticHasTechnique
+                                                        }
+                                                        handleSelectOption={(techniqueIdNext) => {
+                                                            handleReplaceTechnique(
+                                                                tacticId,
+                                                                techniqueId,
+                                                                techniqueIdNext
+                                                            );
+                                                        }}
+                                                        label="Replace technique"
+                                                        mitreTechniques={mitreTechniques}
+                                                        techniqueId={techniqueId}
+                                                    />
+                                                    <Button
+                                                        icon={<TrashIcon />}
+                                                        aria-label="Delete technique"
+                                                        className="pf-v6-u-flex-shrink-0"
+                                                        onClick={() => {
+                                                            handleDeleteTechnique(
+                                                                tacticId,
+                                                                techniqueId
+                                                            );
+                                                        }}
+                                                        variant="plain"
+                                                    />
+                                                </Flex>
+                                                <p className="description">
+                                                    {techniqueDescription}
+                                                </p>
+                                            </TreeViewContent>
+                                        </li>
+                                    );
+                                })}
+                                <li
+                                    key="Add technique"
+                                    className="pf-v6-c-tree-view__list-item mitre-technique-item"
+                                >
+                                    <TreeViewContent>
+                                        <Flex flexWrap={{ default: 'nowrap' }}>
+                                            <MitreTechniqueSelect
+                                                className="pf-v6-u-flex-grow-1 pf-v6-u-flex-shrink-1"
+                                                getIsDisabledOption={getPolicyTacticHasTechnique}
+                                                handleSelectOption={(techniqueId) => {
+                                                    handleAddTechnique(tacticId, techniqueId);
+                                                }}
+                                                label="Add technique"
+                                                mitreTechniques={mitreTechniques}
+                                                techniqueId=""
+                                            />
+                                        </Flex>
+                                    </TreeViewContent>
+                                </li>
+                            </ul>
                         </li>
                     );
                 })}

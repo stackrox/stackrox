@@ -31,8 +31,6 @@ import type { IntegrationFormProps } from '../integrationFormTypes';
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
 
-import './SyslogIntegrationForm.css';
-
 export const validationSchema = yup.object().shape({
     name: yup.string().required('Integration name is required'),
     syslog: yup.object().shape({
@@ -233,10 +231,6 @@ function SyslogIntegrationForm({
                         >
                             <ToggleGroup id="messageFormat" areAllGroupsDisabled={!isEditable}>
                                 <ToggleGroupItem
-                                    // The HTML ID and custom CSS rule are required to make the shorter option similar in size to the longer option
-                                    // because PatternFly does not allow the inner width of the toggle button to be expanded easily
-                                    // (setting a min-witch on Toggle Item just adds space to the right of the outlined button)
-                                    id="CEF-option"
                                     key="CEF"
                                     text="CEF"
                                     isSelected={values.syslog.messageFormat === 'CEF'}
