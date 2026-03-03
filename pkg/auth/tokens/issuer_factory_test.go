@@ -13,7 +13,6 @@ import (
 
 const defaultTTL = 24 * time.Hour
 
-// testSource is a minimal Source implementation for testing.
 type testSource struct {
 	id string
 }
@@ -22,73 +21,57 @@ func (s *testSource) ID() string { return s.id }
 
 func (s *testSource) Validate(_ context.Context, _ *Claims) error { return nil }
 
-func createIssuerAndValidator(t *testing.T) (error, Validator, Issuer) {
+func TestIssueToken(t *testing.T) {
+	// Create issuer and validator.
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.NoError(t, err)
 
-	factory, validator, err := CreateIssuerFactoryAndValidator("test-issuer-expiry", key, "test-expiry-key-id",
+	factory, validator, err := CreateIssuerFactoryAndValidator("test-issuer", key, "test-key-id",
 		WithDefaultTTL(defaultTTL))
 	require.NoError(t, err)
 
-	src := &testSource{id: "test-source-expiry"}
+	src := &testSource{id: "test-source"}
 	issuer, err := factory.CreateIssuer(src)
 	require.NoError(t, err)
-	return err, validator, issuer
-}
 
-// Explicitly setting expiry affects `exp` claim in role-based (aka API) tokens.
-func TestIssueToken_BasicClaimsAreSet(t *testing.T) {
-	err, validator, issuer := createIssuerAndValidator(t)
+	t.Run("basic claims survive round-trip", func(t *testing.T) {
+		roxClaims := RoxClaims{RoleNames: []string{"test-role"}, Name: "test-token"}
+		info, err := issuer.Issue(context.Background(), roxClaims)
+		require.NoError(t, err)
 
-	roxClaims := RoxClaims{RoleNames: []string{"test-role"}, Name: "token-default-ttl"}
-	info, err := issuer.Issue(context.Background(), roxClaims)
-	require.NoError(t, err)
-	require.NotEmpty(t, info.Token)
+		parsed, err := validator.Validate(context.Background(), info.Token)
+		require.NoError(t, err)
 
-	// Round-trip through the validator to parse and verify the token.
-	parsed, err := validator.Validate(context.Background(), info.Token)
-	require.NoError(t, err)
+		assert.Equal(t, []string{"test-role"}, parsed.RoxClaims.RoleNames)
+		assert.Equal(t, "test-token", parsed.RoxClaims.Name)
+	})
 
-	// Verify role and name claims survived the round-trip.
-	assert.Equal(t, []string{"test-role"}, parsed.RoxClaims.RoleNames)
-	assert.Equal(t, "token-default-ttl", parsed.RoxClaims.Name)
-}
+	t.Run("explicit expiry sets exp claim in role-based (aka API) tokens", func(t *testing.T) {
+		expiry := time.Now().Add(2 * time.Hour).Truncate(time.Second)
 
-// Explicitly setting expiry affects `exp` claim in role-based (aka API) tokens.
-func TestIssueToken_WithExpiry(t *testing.T) {
-	err, validator, issuer := createIssuerAndValidator(t)
+		roxClaims := RoxClaims{RoleNames: []string{"test-role"}, Name: "token-2h-ttl"}
+		info, err := issuer.Issue(context.Background(), roxClaims, WithExpiry(expiry))
+		require.NoError(t, err)
 
-	expiry := time.Now().Add(2 * time.Hour).Truncate(time.Second)
-	roxClaims := RoxClaims{RoleNames: []string{"test-role"}, Name: "token-2h-ttl"}
-	info, err := issuer.Issue(context.Background(), roxClaims, WithExpiry(expiry))
-	require.NoError(t, err)
-	require.NotEmpty(t, info.Token)
+		parsed, err := validator.Validate(context.Background(), info.Token)
+		require.NoError(t, err)
 
-	// Round-trip through the validator to parse and verify the token.
-	parsed, err := validator.Validate(context.Background(), info.Token)
-	require.NoError(t, err)
+		assert.Equal(t, expiry.Unix(), parsed.Expiry().Unix())
+	})
 
-	// Verify that exp matches the requested expiry.
-	assert.Equal(t, expiry.Unix(), parsed.Expiry().Unix(), "exp must match the requested expiry")
-}
+	t.Run("omitted expiry falls back to default TTL", func(t *testing.T) {
+		beforeIssue := time.Now()
 
-// Not setting expiry yields tokens with default TTL.
-func TestIssueToken_WithoutExpiry_DefaultTTL(t *testing.T) {
-	err, validator, issuer := createIssuerAndValidator(t)
+		roxClaims := RoxClaims{RoleNames: []string{"test-role"}, Name: "token-default-ttl"}
+		info, err := issuer.Issue(context.Background(), roxClaims)
+		require.NoError(t, err)
 
-	beforeIssue := time.Now()
+		parsed, err := validator.Validate(context.Background(), info.Token)
+		require.NoError(t, err)
 
-	roxClaims := RoxClaims{RoleNames: []string{"test-role"}, Name: "token-default-ttl"}
-	info, err := issuer.Issue(context.Background(), roxClaims)
-	require.NoError(t, err)
-	require.NotEmpty(t, info.Token)
-
-	// Round-trip through the validator to parse and verify the token.
-	parsed, err := validator.Validate(context.Background(), info.Token)
-	require.NoError(t, err)
-
-	// Verify that exp is approximately now + defaultTTL.
-	expectedMin := beforeIssue.Add(defaultTTL)
-	assert.WithinDuration(t, expectedMin, parsed.Expiry(), 5*time.Second,
-		"exp must be approximately now + default TTL")
+		// Verify that exp is approximately now + defaultTTL.
+		expected := beforeIssue.Add(defaultTTL)
+		assert.WithinDuration(t, expected, parsed.Expiry(), 5*time.Second,
+			"exp must be approximately now + default TTL")
+	})
 }
