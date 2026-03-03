@@ -72,7 +72,7 @@ Deployment:
 	 - Cluster: prod cluster
 	 - ClusterId: ` + fixtureconsts.Cluster1 + `
 	 - Namespace: stackrox
-	 - Images: docker.io/library/nginx:1.10@sha256:SHA1
+	 - Images: docker.io/library/nginx:1.10
 `
 	expectedFormattedDeploymentAlertWithMitre = `Alert ID: ` + fixtureconsts.Alert1 + `
 Alert URL: https://localhost:8080/main/violations/` + fixtureconsts.Alert1 + `
@@ -136,7 +136,7 @@ Deployment:
 	 - Cluster: prod cluster
 	 - ClusterId: ` + fixtureconsts.Cluster1 + `
 	 - Namespace: stackrox
-	 - Images: docker.io/library/nginx:1.10@sha256:SHA1
+	 - Images: docker.io/library/nginx:1.10
 `
 	expectedFormatImageAlert = `Alert ID: ` + fixtureconsts.Alert1 + `
 Alert URL: https://localhost:8080/main/vulnerability-management/image/sha256:SHA2
@@ -222,7 +222,7 @@ Deployment:
 	 - Cluster: remote
 	 - ClusterId: ` + fixtureconsts.Cluster1 + `
 	 - Namespace: stackrox
-	 - Images: docker.io/library/nginx:1.10@sha256:SHA1
+	 - Images: docker.io/library/nginx:1.10
 `
 	expectedFormattedResourceAlert = `Alert ID: ` + fixtureconsts.Alert1 + `
 Alert URL: https://localhost:8080/main/violations/` + fixtureconsts.Alert1 + `
@@ -434,7 +434,7 @@ Deployment:
 	 - Cluster: prod cluster
 	 - ClusterId: ` + fixtureconsts.Cluster1 + `
 	 - Namespace: stackrox
-	 - Images: docker.io/library/nginx:1.10@sha256:SHA1
+	 - Images: docker.io/library/nginx:1.10
 `
 )
 

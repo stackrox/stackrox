@@ -17,7 +17,7 @@ message Deployment {
   string id = 1; // @gotags: search:"Deployment ID,hidden" sql:"pk,type(uuid)"
   string name = 2; // @gotags: search:"Deployment"
   reserved 3;
-  uint64 hash = 26; // @gotags: hash:"ignore" sensorhash:"ignore"
+  uint64 hash = 26; // @gotags: search:"Deployment Hash,hidden" hash:"ignore" sensorhash:"ignore"
   string type = 4; // @gotags: search:"Deployment Type"
   string namespace = 5; // @gotags: search:"Namespace"
   string namespace_id = 23; // @gotags: search:"Namespace ID" sql:"fk(NamespaceMetadata:id),no-fk-constraint,type(uuid)"

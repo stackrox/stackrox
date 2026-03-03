@@ -2,12 +2,20 @@ package centralproxy
 
 import (
 	"fmt"
+	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/centralsensor"
+	pkghttputil "github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/centralproxy/allowedpaths"
+	"github.com/stretchr/testify/require"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -164,3 +172,66 @@ func newUnauthenticatedAuthorizer(t testing.TB) *k8sAuthorizer {
 
 // errTransportError is a sentinel error for transport failures in tests.
 var errTransportError = errors.New("transport error")
+
+// setupCentralCapsForTest sets the Central capabilities required for the proxy to function.
+// It also configures the allowed proxy paths to include the test paths used by existing tests.
+// It registers a cleanup function that clears the capabilities and allowed paths.
+func setupCentralCapsForTest(t *testing.T) {
+	t.Helper()
+	centralcaps.Set([]centralsensor.CentralCapability{
+		centralsensor.InternalTokenAPISupported,
+		centralsensor.CentralProxyPathFiltering,
+	})
+	allowedpaths.Set([]string{"/v1/", "/v2/", "/api/graphql", "/api/v1/"})
+	t.Cleanup(func() {
+		centralcaps.Set(nil)
+		allowedpaths.Reset()
+	})
+}
+
+// proxyTestFixture bundles the boilerplate shared by the majority of handler
+// subtests: central caps, a mock transport that tracks whether it was called,
+// a parsed base URL, a handler wired with the given authorizer and a static
+// token, and centralReachable set to true.
+type proxyTestFixture struct {
+	handler     *Handler
+	proxyCalled bool
+}
+
+// newProxyTestFixture creates a ready-to-use test fixture.
+// It registers a cleanup function that resets central caps and allowed paths.
+func newProxyTestFixture(t *testing.T, authorizer *k8sAuthorizer) *proxyTestFixture {
+	t.Helper()
+	setupCentralCapsForTest(t)
+
+	f := &proxyTestFixture{}
+
+	mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		f.proxyCalled = true
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+			Header:     http.Header{"Content-Type": []string{"application/json"}},
+		}, nil
+	})
+
+	baseURL, err := url.Parse("https://central:443")
+	require.NoError(t, err)
+
+	f.handler = newTestHandler(t, baseURL, mockTransport, authorizer, "test-token")
+	f.handler.centralReachable.Store(true)
+	return f
+}
+
+// serveHTTP creates an HTTP request with the given method, path, and headers,
+// calls ServeHTTP on the fixture's handler, and returns the response recorder.
+func (f *proxyTestFixture) serveHTTP(t *testing.T, method, path string, headers map[string]string) *httptest.ResponseRecorder {
+	t.Helper()
+	req := httptest.NewRequest(method, path, nil)
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	w := httptest.NewRecorder()
+	f.handler.ServeHTTP(w, req)
+	return w
+}

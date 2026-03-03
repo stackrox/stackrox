@@ -127,6 +127,9 @@ var (
 
 	// LabelBasedPolicyScoping enables policy scoping based on cluster and namespace labels
 	LabelBasedPolicyScoping = registerFeature("Enable cluster and namespace label-based policy scoping", "ROX_LABEL_BASED_POLICY_SCOPING")
+
+	// VirtualMachinesEnhancedDataModel enables usage of the enhanced and more flexible data model
+	VirtualMachinesEnhancedDataModel = registerFeature("Enables virtual machine enhanced data model", "ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL")
 )
 
 // The following feature flags are related to Scanner V4.
