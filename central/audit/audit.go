@@ -2,10 +2,12 @@ package audit
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	tokenServiceV1 "github.com/stackrox/rox/generated/internalapi/central/v1"
 	"github.com/stackrox/rox/generated/storage"
 	auditPkg "github.com/stackrox/rox/pkg/audit"
 	"github.com/stackrox/rox/pkg/env"
@@ -17,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 )
@@ -56,13 +59,24 @@ func (a *audit) SendAuditMessage(ctx context.Context, req interface{}, grpcMetho
 	a.notifications.ProcessAuditMessage(ctx, am)
 }
 
-var requestInteractionMap = map[string]v1.Audit_Interaction{
-	http.MethodPost:   v1.Audit_CREATE,
-	http.MethodPut:    v1.Audit_UPDATE,
-	http.MethodPatch:  v1.Audit_UPDATE,
-	http.MethodDelete: v1.Audit_DELETE,
-	defaultGRPCMethod: v1.Audit_UPDATE,
-}
+var (
+	requestInteractionMap = map[string]v1.Audit_Interaction{
+		http.MethodPost:   v1.Audit_CREATE,
+		http.MethodPut:    v1.Audit_UPDATE,
+		http.MethodPatch:  v1.Audit_UPDATE,
+		http.MethodDelete: v1.Audit_DELETE,
+		defaultGRPCMethod: v1.Audit_UPDATE,
+	}
+
+	// auditableServiceEndpoints contains service-to-service endpoints that should be audited.
+	// When adding new security-sensitive internal RPCs, add their full method name constant
+	// here to ensure they appear in audit logs. These use generated gRPC full method name
+	// constants, so any rename or signature change to the RPC will cause a compile-time
+	// error rather than silently breaking auditing.
+	auditableServiceEndpoints = set.NewFrozenSet(
+		tokenServiceV1.TokenService_GenerateTokenForPermissionsAndScope_FullMethodName,
+	)
+)
 
 func (a *audit) newAuditMessage(ctx context.Context, req interface{}, grpcFullMethod string,
 	authError interceptor.AuthStatus, requestError error) *v1.Audit_Message {
@@ -73,15 +87,22 @@ func (a *audit) newAuditMessage(ctx context.Context, req interface{}, grpcFullMe
 	}
 
 	identity := authn.IdentityFromContextOrNil(ctx)
-	// Ignore requests from services
+	isServiceIdentity := false
+	// Selectively audit service-to-service requests for security-sensitive operations.
 	if identity != nil {
-		if identity.Service() != nil {
-			return nil
+		if svc := identity.Service(); svc != nil {
+			isServiceIdentity = true
+			if !auditableServiceEndpoints.Contains(grpcFullMethod) {
+				return nil
+			}
+			// For service requests, populate user info from service identity.
+			msg.User = serviceIdentityUserInfo(svc)
+		} else {
+			msg.User = utils.IfThenElse(a.withoutPermissions,
+				stripPermissionsFromUserInfo(identity.User()),
+				identity.User(),
+			)
 		}
-		msg.User = utils.IfThenElse(a.withoutPermissions,
-			stripPermissionsFromUserInfo(identity.User()),
-			identity.User(),
-		)
 	}
 
 	var method, endpoint string
@@ -96,7 +117,12 @@ func (a *audit) newAuditMessage(ctx context.Context, req interface{}, grpcFullMe
 	} else {
 		method = defaultGRPCMethod
 		endpoint = grpcFullMethod
-		msg.Method = v1.Audit_CLI
+		// Service-to-service gRPC calls should be marked as API, not CLI.
+		if isServiceIdentity {
+			msg.Method = v1.Audit_API
+		} else {
+			msg.Method = v1.Audit_CLI
+		}
 	}
 
 	interaction, ok := requestInteractionMap[method]
@@ -153,6 +179,16 @@ func calculateAuditStatus(authError interceptor.AuthStatus, requestError error) 
 		return v1.Audit_REQUEST_FAILED, requestError.Error()
 	default:
 		return v1.Audit_REQUEST_SUCCEEDED, ""
+	}
+}
+
+// serviceIdentityUserInfo builds a UserInfo from a service identity for audit logging.
+// Username uses the "service:<type>:<id>" format to clearly distinguish
+// service identities from regular users in audit log queries.
+func serviceIdentityUserInfo(svc *storage.ServiceIdentity) *storage.UserInfo {
+	return &storage.UserInfo{
+		Username:     fmt.Sprintf("service:%s:%s", svc.GetType().String(), svc.GetId()),
+		FriendlyName: fmt.Sprintf("Service: %s (ID: %s)", svc.GetType().String(), svc.GetId()),
 	}
 }
 

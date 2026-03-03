@@ -98,6 +98,7 @@ func NewCertificateFetcher(k8s client.Interface, opts ...OptionFunc) *Certificat
 		namespace: DefaultNamespace,
 		certConfigs: []CertConfig{
 			// Primary: current location
+			// #nosec G101
 			{
 				SecretName: "tls-cert-sensor",
 				CertNames: map[string]string{

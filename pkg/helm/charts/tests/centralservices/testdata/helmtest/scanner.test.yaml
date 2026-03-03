@@ -96,7 +96,6 @@ tests:
                   - key: node-role.kubernetes.io/control-plane
                     operator: Exists
   expect: |
-    .deployments["scanner"].spec.replicas | assertThat(. == 5)
     .deployments["scanner"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)
     .horizontalpodautoscalers["scanner"].spec.minReplicas | assertThat(. == 50)
     .horizontalpodautoscalers["scanner"].spec.maxReplicas | assertThat(. == 100)

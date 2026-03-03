@@ -178,6 +178,21 @@ func (mr *MockDataStoreMockRecorder) SearchAlertPolicyNamesAndSeverities(ctx, q,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchAlertPolicyNamesAndSeverities", reflect.TypeOf((*MockDataStore)(nil).SearchAlertPolicyNamesAndSeverities), ctx, q, excludeResolved)
 }
 
+// SearchAlertPolicySeverityCounts mocks base method.
+func (m *MockDataStore) SearchAlertPolicySeverityCounts(ctx context.Context, q *v1.Query, excludeResolved bool) (*views.PolicySeverityCounts, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchAlertPolicySeverityCounts", ctx, q, excludeResolved)
+	ret0, _ := ret[0].(*views.PolicySeverityCounts)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchAlertPolicySeverityCounts indicates an expected call of SearchAlertPolicySeverityCounts.
+func (mr *MockDataStoreMockRecorder) SearchAlertPolicySeverityCounts(ctx, q, excludeResolved any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchAlertPolicySeverityCounts", reflect.TypeOf((*MockDataStore)(nil).SearchAlertPolicySeverityCounts), ctx, q, excludeResolved)
+}
+
 // SearchAlerts mocks base method.
 func (m *MockDataStore) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	m.ctrl.T.Helper()

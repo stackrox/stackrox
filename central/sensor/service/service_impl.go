@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralproxy"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
@@ -152,17 +153,19 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		}
 		if features.OCPConsoleIntegration.Enabled() {
 			capabilities = append(capabilities, centralsensor.InternalTokenAPISupported.String())
+			capabilities = append(capabilities, centralsensor.CentralProxyPathFiltering.String())
 		}
 
 		preferences := s.manager.GetConnectionPreference(clusterID)
 
 		// Let's be polite and respond with a greeting from our side.
 		centralHello := &central.CentralHello{
-			ClusterId:        clusterID,
-			ManagedCentral:   env.ManagedCentral.BooleanSetting(),
-			CentralId:        installInfo.GetId(),
-			Capabilities:     capabilities,
-			SendDeduperState: preferences.SendDeduperState,
+			ClusterId:         clusterID,
+			ManagedCentral:    env.ManagedCentral.BooleanSetting(),
+			CentralId:         installInfo.GetId(),
+			Capabilities:      capabilities,
+			SendDeduperState:  preferences.SendDeduperState,
+			AllowedProxyPaths: centralproxy.AllowedProxyPaths.AsSlice(),
 		}
 
 		if err := safe.RunE(func() error {
