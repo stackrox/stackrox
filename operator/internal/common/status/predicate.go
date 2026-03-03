@@ -119,7 +119,7 @@ type SkipDeploymentSpecUpdates struct {
 	predicate.TypedFuncs[*appsv1.Deployment]
 }
 
-// Update returns true only if deployment status changed (not spec).
+// Update returns true only if Deployment status changed (ignores spec-only changes).
 // This allows HPA to modify replicas without triggering reconciliation.
 func (p SkipDeploymentSpecUpdates) Update(e event.TypedUpdateEvent[*appsv1.Deployment]) bool {
 	if e.ObjectOld == nil || e.ObjectNew == nil {
