@@ -26,13 +26,13 @@ const SecretDataMetadata = ({ metadata }) => {
     if (!metadata) {
         return null;
     }
-    const { startDate, endDate, issuer = {}, sans = [], subject = {} } = metadata;
+    const { startDate, endDate, issuer, sans, subject } = metadata;
     const {
         commonName: issuerCommonName = 'N/A',
         names: issuerNames,
         organizationUnit = 'N/A',
-    } = issuer;
-    const { commonName: subjectCommonName = 'N/A', names: subjectNames } = subject;
+    } = issuer ?? {};
+    const { commonName: subjectCommonName = 'N/A', names: subjectNames } = subject ?? {};
     return (
         <div className="flex flex-row">
             <Widget
@@ -60,7 +60,11 @@ const SecretDataMetadata = ({ metadata }) => {
                 </div>
                 <div>
                     <span className="font-700 mr-4">Name(s):</span>
-                    <span>{issuerNames ? issuerNames.join(', ') : 'None'}</span>
+                    <span>
+                        {Array.isArray(issuerNames) && issuerNames.length !== 0
+                            ? issuerNames.join(', ')
+                            : 'None'}
+                    </span>
                 </div>
                 <div>
                     <span className="font-700 mr-4">Organization Unit:</span>
@@ -78,10 +82,14 @@ const SecretDataMetadata = ({ metadata }) => {
                 </div>
                 <div>
                     <span className="font-700 mr-4">Name(s):</span>
-                    <span>{subjectNames ? subjectNames.join(', ') : 'None'}</span>
+                    <span>
+                        {Array.isArray(subjectNames) && subjectNames.length !== 0
+                            ? subjectNames.join(', ')
+                            : 'None'}
+                    </span>
                 </div>
             </Widget>
-            {!!sans.length && (
+            {Array.isArray(sans) && sans.length !== 0 && (
                 <Widget
                     header="SANS"
                     className="m-4"
