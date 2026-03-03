@@ -91,7 +91,7 @@ function DashboardPage() {
                     style={
                         {
                             // Ensure the grid has never grows large enough to show 4 columns
-                            maxWidth: `calc(calc(${minWidgetWidth}px * 4) + calc(var(--pf-v5-l-gallery--m-gutter--GridGap) * 3) - 1px)`,
+                            maxWidth: `calc(calc(${minWidgetWidth}px * 4) + calc(var(--pf-v6-l-gallery--m-gutter--GridGap) * 3) - 1px)`,
                         } as CSSProperties
                     }
                     hasGutter

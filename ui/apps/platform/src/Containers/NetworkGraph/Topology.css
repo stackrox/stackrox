@@ -16,7 +16,6 @@
 }
 
 .pf-ri__topology-section .pf-v6-c-toolbar {
-    --pf-v5-c-toolbar__expandable-content--lg--PaddingBottom: 0;
     --pf-v6-c-toolbar--PaddingBlockEnd: 0;
 }
 
