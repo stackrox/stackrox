@@ -16,11 +16,8 @@ nav.pf-v6-c-nav.pf-m-horizontal-subnav.acs-pf-horizontal-subnav .pf-v6-c-nav__li
 * Style normalization of the text and colors of a dropdown nav item to match non-dropdown items
 */
 nav.pf-v6-c-nav.pf-m-horizontal-subnav.acs-pf-horizontal-subnav .pf-v6-c-menu-toggle {
-  font-size: var(--pf-v5-c-nav__link--FontSize);
-  font-weight: var(--pf-v5-c-nav__link--FontWeight);
   color: var(--pf-v6-c-nav__link--Color);
   --pf-v6-c-menu-toggle__toggle-icon--Color: var(--pf-v6-c-nav__link--Color);
-  --pf-v6-c-menu-toggle--PaddingInlineStart: var(--pf-v5-c-nav--m-horizontal-subnav__link--PaddingLeft);
 }
 
 nav.pf-v6-c-nav.pf-m-horizontal-subnav.acs-pf-horizontal-subnav .pf-v6-c-menu-toggle:after {

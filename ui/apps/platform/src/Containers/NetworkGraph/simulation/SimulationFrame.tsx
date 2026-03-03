@@ -11,7 +11,10 @@ type SimulationFrameProps = {
 function SimulationFrame({ isSimulating, children }: SimulationFrameProps): ReactElement {
     let style = {};
     if (isSimulating) {
-        style = { position: 'relative', border: '5px solid var(--pf-v5-global--info-color--100' };
+        style = {
+            position: 'relative',
+            border: '5px solid var(--pf-t--global--border--color--status--info--default)',
+        };
     } else {
         style = {};
     }

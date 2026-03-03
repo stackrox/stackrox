@@ -15,13 +15,6 @@
 }
 
 /*
- * Right align non-selected id same as selected id which has check mark at the right.
- */
-#mitre-attack-vectors-form-section .pf-v6-c-select {
-    --pf-v5-c-select__menu-item--PaddingRight: var(--pf-t--global--spacer--2xl); /* instead of md */
-}
-
-/*
  * Left align tactic select and description under the heading.
  * Right align delete button within available width.
  */

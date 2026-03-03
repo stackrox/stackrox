@@ -26,7 +26,6 @@ import {
     filterEnforcementActionsForRemovedLifecycleStage,
     hasEnforcementActionForLifecycleStage,
 } from '../../policies.utils';
-import './PolicyEnforcementForm.css';
 
 function PolicyEnforcementForm() {
     const { setFieldValue, values } = useFormikContext<ClientPolicy>();
