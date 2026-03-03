@@ -20,10 +20,9 @@ func NewCustomRuleDispatcher() *CustomRuleDispatcher {
 }
 
 // ProcessEvent processes a custom rule event.
-// CustomRules are converted to ComplianceOperatorRuleV2 with custom_rule_details populated,
-// following the same pattern as TailoredProfiles using tailored_details on profiles.
+// CustomRules are converted to ComplianceOperatorRuleV2 with IsCustom=true, following the same pattern as TailoredProfiles.
 func (c *CustomRuleDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
-	// CustomRules are only relevant for V2 compliance
+	// CustomRules are only supported by compliance V2
 	if !centralcaps.Has(centralsensor.ComplianceV2Integrations) {
 		return nil
 	}
@@ -41,8 +40,7 @@ func (c *CustomRuleDispatcher) ProcessEvent(obj, _ interface{}, action central.R
 		return nil
 	}
 
-	// For nextgen compliance this ID is used to tell us which clusters have which custom rules.  It is also
-	// useful for the deduping from sensor.
+	// This ID is used to tell us which clusters have which custom rules. It is also useful for the deduping from sensor.
 	id := string(customRule.UID)
 
 	fixes := make([]*central.ComplianceOperatorRuleV2_Fix, 0, len(customRule.Spec.AvailableFixes))
