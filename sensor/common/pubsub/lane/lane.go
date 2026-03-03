@@ -11,13 +11,13 @@ var (
 	log = logging.LoggerForModule()
 )
 
-type Config struct {
+type Config[T pubsub.Lane] struct {
 	id          pubsub.LaneID
-	opts        []pubsub.LaneOption
+	opts        []pubsub.LaneOption[T]
 	newConsumer pubsub.NewConsumer
 }
 
-func (c *Config) LaneID() pubsub.LaneID {
+func (c *Config[T]) LaneID() pubsub.LaneID {
 	return c.id
 }
 
@@ -26,7 +26,6 @@ type Lane struct {
 	newConsumerFn pubsub.NewConsumer
 	consumerLock  sync.RWMutex
 	consumers     map[pubsub.Topic][]pubsub.Consumer
-	consumerOpts  []pubsub.ConsumerOption
 }
 
 func (l *Lane) Stop() {

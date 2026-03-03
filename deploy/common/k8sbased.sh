@@ -848,6 +848,18 @@ function launch_sensor {
         )
       fi
 
+      if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
+        helm_args+=(
+          --set customize.envVars.ROX_NETFLOW_BATCHING="${ROX_NETFLOW_BATCHING}"
+        )
+      fi
+
+      if [[ -n "${ROX_NETFLOW_CACHE_LIMITING:-}" ]]; then
+        helm_args+=(
+          --set customize.envVars.ROX_NETFLOW_CACHE_LIMITING="${ROX_NETFLOW_CACHE_LIMITING}"
+        )
+      fi
+
       # Add a custom values file to Helm
       if [[ -n "$ROX_SENSOR_EXTRA_HELM_VALUES_FILE" ]]; then
         helm_args+=(
@@ -928,6 +940,24 @@ function launch_sensor {
 
       echo "Deploying sensor using manifests..."
       NAMESPACE="${sensor_namespace}" "${k8s_dir}/sensor-deploy/sensor.sh"
+    fi
+
+    # Only apply sensor env vars via kubectl for non-Helm deployments.
+    # Helm deployments already have these set via customize.envVars.
+    if [[ "${SENSOR_HELM_DEPLOY:-}" != "true" ]]; then
+      sensor_env=()
+
+      if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
+        sensor_env+=("ROX_NETFLOW_BATCHING=${ROX_NETFLOW_BATCHING}")
+      fi
+
+      if [[ -n "${ROX_NETFLOW_CACHE_LIMITING:-}" ]]; then
+        sensor_env+=("ROX_NETFLOW_CACHE_LIMITING=${ROX_NETFLOW_CACHE_LIMITING}")
+      fi
+
+      if [[ "${#sensor_env[@]}" -gt 0 ]]; then
+        kubectl -n "${sensor_namespace}" set env deploy/sensor "${sensor_env[@]}"
+      fi
     fi
 
     collector_env=()

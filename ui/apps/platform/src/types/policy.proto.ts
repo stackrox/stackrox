@@ -89,6 +89,7 @@ export type PolicyBaseExclusion = {
 export type PolicyScope = {
     cluster: string;
     namespace: string;
+    namespaceLabel: PolicyScopeLabel | null;
     label: PolicyScopeLabel | null;
 };
 

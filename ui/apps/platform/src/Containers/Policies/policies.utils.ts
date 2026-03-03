@@ -288,10 +288,8 @@ export type WizardExcludedScope = {
  * corresponds to PolicyScope label value null.
  */
 
-export type WizardScope = {
-    cluster: string;
-    namespace: string;
-    label: WizardScopeLabel | null;
+export type WizardScope = WizardExcludedScope & {
+    namespaceLabel: WizardScopeLabel | null;
 };
 
 export type WizardScopeLabel = {
@@ -302,6 +300,7 @@ export type WizardScopeLabel = {
 export const initialScope: WizardScope = {
     cluster: '',
     namespace: '',
+    namespaceLabel: null,
     label: null,
 };
 

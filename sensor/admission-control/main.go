@@ -15,6 +15,7 @@ import (
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
+	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/pods"
@@ -85,6 +86,8 @@ func mainCmd() error {
 
 	mgr := manager.New(sensorConn, namespace)
 	mgr.Start()
+
+	metrics.NewServer(metrics.AdmissionControlSubsystem, metrics.NewTLSConfigurerFromEnv()).RunForever()
 
 	if err := settingswatch.WatchK8sForSettingsUpdatesAsync(mgr.Stopped(), mgr.SettingsUpdateC(), namespace); err != nil {
 		log.Errorf("Could not watch Kubernetes for settings updates: %v. Functionality might be impacted", err)
