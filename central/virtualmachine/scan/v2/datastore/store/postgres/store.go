@@ -103,12 +103,13 @@ func insertIntoVirtualMachineScanV2(batch *pgx.Batch, obj *storage.VirtualMachin
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetId()),
 		pgutils.NilOrUUID(obj.GetVmV2Id()),
+		obj.GetScanOs(),
 		protocompat.NilOrTime(obj.GetScanTime()),
 		obj.GetTopCvss(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO virtual_machine_scan_v2 (Id, VmV2Id, ScanTime, TopCvss, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, VmV2Id = EXCLUDED.VmV2Id, ScanTime = EXCLUDED.ScanTime, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO virtual_machine_scan_v2 (Id, VmV2Id, ScanOs, ScanTime, TopCvss, serialized) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, VmV2Id = EXCLUDED.VmV2Id, ScanOs = EXCLUDED.ScanOs, ScanTime = EXCLUDED.ScanTime, TopCvss = EXCLUDED.TopCvss, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
