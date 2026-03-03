@@ -1023,7 +1023,7 @@ func (ds *datastoreImpl) lookupOrCreateCluster(ctx context.Context, clusterID, c
 	}
 
 	// Try to resolve cluster ID from name if not provided
-	if clusterID == "" && clusterName != "" {
+	if clusterID == "" {
 		if cachedID, ok := ds.nameToIDCache.Get(clusterName); ok {
 			clusterID, _ = cachedID.(string)
 		}
