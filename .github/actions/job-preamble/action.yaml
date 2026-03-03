@@ -139,15 +139,15 @@ runs:
         git config --global --add safe.directory "$(pwd)"
       shell: bash
 
-    - name: Fetch version tag for shallow clones
+    - name: Fetch history to version tag for shallow clones
       run: |
-        # Shallow clones (fetch-depth: 1) don't include tags, so git describe
-        # and git rev-list --count fail. Fetch just the version tag to enable
-        # accurate commit counts in build version strings (e.g. 4.11.x-193-g<sha>).
-        # Adds ~2s per job.
+        # Shallow clones (fetch-depth: 1) lack the history needed for
+        # git rev-list --count (commit counts in version strings like
+        # 4.11.x-193-g<sha>). Fetch all commits between HEAD and the
+        # version tag using --shallow-exclude. Adds ~2s per job.
         if [ -f VERSION ]; then
           tag="$(cat VERSION | tr -d '[:space:]')"
-          git fetch --depth=1 origin "refs/tags/${tag}:refs/tags/${tag}" 2>/dev/null || true
+          git fetch --shallow-exclude="$tag" origin HEAD 2>/dev/null || true
         fi
       shell: bash
 

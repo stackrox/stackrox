@@ -72,9 +72,11 @@ jobs:
     - name: Ensure no trailing whitespaces
       if: github.event_name == 'pull_request'
       # Markdown files aren't checked for trailing whitespaces because it's a valid linebreak there.
+      # Two-dot diff (base..HEAD) shows changes reachable from HEAD but not base.
+      # Three-dot (base...HEAD) requires a merge-base which shallow clones lack.
       run: |
         git fetch --depth=1 origin "${{ github.event.pull_request.base.sha }}:refs/remotes/origin/pr-base"
-        git diff --check origin/pr-base...HEAD ':(exclude)*.md'
+        git diff --check origin/pr-base..HEAD ':(exclude)*.md'
 
     - name: Check PR fixes
       run: scripts/ci/jobs/check-pr-fixes.sh
