@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import { useField, useFormikContext } from 'formik';
 import {
+    Flex,
     FormGroup,
     FormHelperText,
     HelperText,
@@ -56,11 +57,11 @@ function PolicyCriteriaFieldInput({
     switch (descriptor.type) {
         case 'text': {
             // value.value is always a string for 'text' type descriptors
-            const validationError = descriptor.validate?.(value.value as string);
+            const validationError = descriptor.validate?.(String(value.value));
             const showError = Boolean(validationError);
 
             return (
-                <div className="pf-v5-u-flex-grow-1">
+                <Flex grow={{ default: 'grow' }}>
                     <TextInput
                         value={value.value}
                         type="text"
@@ -80,7 +81,7 @@ function PolicyCriteriaFieldInput({
                             </HelperText>
                         </FormHelperText>
                     )}
-                </div>
+                </Flex>
             );
         }
         case 'radioGroup': {
