@@ -267,14 +267,15 @@ func (e *endpointsStore) addToHistory(deploymentID string, ep net.NumericEndpoin
 		e.historicalEndpoints[ep] = make(map[string]map[EndpointTargetInfo]*entityStatus)
 	}
 	if _, ok := e.historicalEndpoints[ep][deploymentID]; !ok {
-		e.historicalEndpoints[ep][deploymentID] = make(map[EndpointTargetInfo]*entityStatus)
+		// Pre-allocate with known size from current endpoint map
+		e.historicalEndpoints[ep][deploymentID] = make(map[EndpointTargetInfo]*entityStatus, len(e.endpointMap[ep][deploymentID]))
 	}
 	for info := range e.endpointMap[ep][deploymentID] {
 		e.historicalEndpoints[ep][deploymentID][info] = newHistoricalEntity(e.memorySize)
 	}
 
 	if _, ok := e.reverseHistoricalEndpoints[deploymentID]; !ok {
-		e.reverseHistoricalEndpoints[deploymentID] = make(map[net.NumericEndpoint]*entityStatus)
+		e.reverseHistoricalEndpoints[deploymentID] = make(map[net.NumericEndpoint]*entityStatus, len(e.reverseEndpointMap[deploymentID]))
 	}
 	for numEp := range e.reverseEndpointMap[deploymentID] {
 		e.reverseHistoricalEndpoints[deploymentID][numEp] = newHistoricalEntity(e.memorySize)
