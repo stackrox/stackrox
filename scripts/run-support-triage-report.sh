@@ -25,7 +25,18 @@ slack_triage_report() {
     local prev
     prev=$(total_issues_in_filter $prev_filter)
 
-    local line="<!subteam^S04SU9AHJ4C> There are ${curr} untriaged issues (not including ${prev} leftovers from previous duty)"
+    if [[ "$curr" -eq 0 && "$prev" -eq 0 ]]; then
+        echo "No issues to report (curr=0, prev=0), skipping message"
+        return
+    fi
+
+    local line
+    if [[ "$prev" -eq 0 ]]; then
+        line="<!subteam^S04SU9AHJ4C> There are ${curr} untriaged issues"
+    else
+        line="<!subteam^S04SU9AHJ4C> There are ${curr} untriaged issues (not including ${prev} leftovers from previous duty)"
+    fi
+
     local body
     # shellcheck disable=SC2016
     body='{
