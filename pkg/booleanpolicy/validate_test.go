@@ -108,12 +108,6 @@ func (s *PolicyValueValidator) TestRegex() {
 			r:       portExposureValueRegex,
 		},
 		{
-			name:    "allowed file path",
-			valid:   []string{"/etc/passwd", "/etc/shadow", "/etc/sudoers", "/etc/ssh/sshd_config"},
-			invalid: []string{"", " ", "bin", "/usr/bin", "/etc/", "/etc/../etc/shadow", "~/home", "C:\\Windows", "relative/path"},
-			r:       allowedFilePathRegex,
-		},
-		{
 			name:    "file operation",
 			valid:   []string{"OPEN", "CREATE", "UNLINK", "OWNERSHIP_CHANGE", "PERMISSION_CHANGE", "open", "create", "unlink", "ownership_change", "permission_change", "Open", "Create"},
 			invalid: []string{"", " ", "READ", "WRITE", "DELETE", "INVALID_OPERATION", "MODIFY", "ACCESS"},
@@ -700,4 +694,58 @@ func (s *PolicyValueValidator) TestValidateFileOperationRequiresFilePath() {
 			},
 		},
 	}))
+}
+
+func (s *PolicyValueValidator) TestValidateFilePath() {
+	for _, tc := range []struct {
+		description string
+		valid       bool
+		path        string
+	}{
+		{
+			description: "valid arbitrary path",
+			valid:       true,
+			path:        "/home/user/app/config.json",
+		},
+		{
+			description: "valid hidden file",
+			valid:       true,
+			path:        "/home/user/app/.config.json",
+		},
+		{
+			description: "invalid relative path",
+			valid:       false,
+			path:        "user/app/config.json",
+		},
+		{
+			description: "invalid path traversal path",
+			valid:       false,
+			path:        "/user/../app/config.json",
+		},
+	} {
+		s.Run(tc.description, func() {
+			policy := &storage.Policy{
+				Name:          tc.description,
+				PolicyVersion: policyversion.CurrentVersion().String(),
+				EventSource:   storage.EventSource_DEPLOYMENT_EVENT,
+				PolicySections: []*storage.PolicySection{
+					{
+						SectionName: "Rule 1",
+						PolicyGroups: []*storage.PolicyGroup{
+							{
+								FieldName: fieldnames.FilePath,
+								Values:    []*storage.PolicyValue{{Value: tc.path}},
+							},
+						},
+					},
+				},
+			}
+
+			if tc.valid {
+				s.NoError(Validate(policy))
+			} else {
+				s.Error(Validate(policy))
+			}
+		})
+	}
 }

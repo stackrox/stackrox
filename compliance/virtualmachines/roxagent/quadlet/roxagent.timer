@@ -3,6 +3,16 @@ Description=Run StackRox VM Agent periodically
 
 [Timer]
 OnBootSec=5min
+
+# Shortening this interval results in more frequent scans and therefore more load,
+# which, assuming the throughput continues to be limited by scanning capacity,
+# reduces the number of VMs that Stackrox can handle.
+#
+# As of February 2026, the measured capacity of a default Stackrox deployment is:
+#   - 4500 VMs if the report interval is 4 hours
+#   - 1100 VMs if the report interval is 1 hour
+#
+# See the documentation for more details.
 OnUnitActiveSec=3h40m
 RandomizedDelaySec=40min
 Persistent=true

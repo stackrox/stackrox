@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/centralid"
+	"github.com/stackrox/rox/sensor/common/centralproxy/allowedpaths"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
@@ -247,6 +248,12 @@ func (s *centralCommunicationImpl) hello(stream central.SensorService_Communicat
 	centralid.Set(centralHello.GetCentralId())
 	centralCaps := centralHello.GetCapabilities()
 	centralcaps.Set(sliceutils.FromStringSlice[centralsensor.CentralCapability](centralCaps...))
+
+	if centralcaps.Has(centralsensor.CentralProxyPathFiltering) {
+		allowedpaths.Set(centralHello.GetAllowedProxyPaths())
+	} else {
+		allowedpaths.Reset()
+	}
 
 	// Sensor should only communicate deduper states if central is able to do so and it has requested it.
 	s.clientReconcile = s.clientReconcile &&

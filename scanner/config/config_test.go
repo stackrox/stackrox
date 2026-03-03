@@ -332,6 +332,7 @@ func Test_Database_validate(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run("when using URL then error", func(t *testing.T) {
+		// #nosec G101 -- test data
 		c := Database{ConnString: "postgres://jack:secret@pg.example.com:5432/mydb?sslmode=verify-ca&pool_max_conns=10"}
 		err := c.validate()
 		assert.ErrorContains(t, err, "URLs are not supported")
