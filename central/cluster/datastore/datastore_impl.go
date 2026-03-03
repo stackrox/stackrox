@@ -924,19 +924,10 @@ func extractClusterConfig(hello *central.SensorHello) clusterConfigData {
 // shouldUpdateCluster determines if an existing cluster needs updating.
 // Returns true if any of: sensor capabilities, config fingerprint, init bundle ID, or manager type has changed.
 func shouldUpdateCluster(existing *storage.Cluster, config clusterConfigData, registrantID string) bool {
-	if !set.NewSet(existing.GetSensorCapabilities()...).Equal(set.NewSet(config.capabilities...)) {
-		return true
-	}
-	if existing.GetInitBundleId() != registrantID {
-		return true
-	}
-	if existing.GetHelmConfig().GetConfigFingerprint() != config.helmConfig.GetConfigFingerprint() {
-		return true
-	}
-	if existing.GetManagedBy() != config.manager {
-		return true
-	}
-	return false
+	return !(set.NewSet(existing.GetSensorCapabilities()...).Equal(set.NewSet(config.capabilities...)) &&
+		existing.GetInitBundleId() == registrantID &&
+		existing.GetHelmConfig().GetConfigFingerprint() == config.helmConfig.GetConfigFingerprint() &&
+		existing.GetManagedBy() == config.manager)
 }
 
 func buildNewClusterFromConfig(clusterName, registrantID string, config clusterConfigData) *storage.Cluster {
