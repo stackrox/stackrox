@@ -252,11 +252,11 @@ func (resolver *clusterResolver) FailingPolicyCounter(ctx context.Context, args 
 		return nil, err
 	}
 
-	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q, true)
+	counts, err := resolver.root.ViolationsDataStore.SearchAlertPolicySeverityCounts(ctx, q, true)
 	if err != nil {
 		return nil, nil
 	}
-	return mapListAlertsToPolicySeverityCount(alerts), nil
+	return policySeverityCountsToResolver(counts), nil
 }
 
 // Deployments returns GraphQL resolvers for all deployments in this cluster
