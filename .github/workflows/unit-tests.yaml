@@ -30,10 +30,12 @@ jobs:
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
-      # Tmpfs on workspace for fast Go file hashing (~4.5 min speedup).
-      # Dual bind mount: /__w is GHA's default; /__w_host is our second
-      # mount to the same host path so we can copy .github/ for the runner's
-      # local action resolution (which reads from the host filesystem).
+      # Tmpfs on workspace for fast Go file hashing (warm run: 34m → 8m).
+      # GHA resolves local actions (uses: ./.github/actions/...) by reading
+      # action.yml from the HOST filesystem (actions/runner ActionManager.cs).
+      # Tmpfs shadows the bind mount, so we add a second bind mount (/__w_host)
+      # to copy .github/ to the host after checkout.
+      # Note: /home/runner/work is the standard GHA-hosted runner work dir.
       options: >-
         --tmpfs /__w/stackrox/stackrox:rw,exec,size=2g
         -v /home/runner/work:/__w_host
@@ -162,7 +164,7 @@ jobs:
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
       with:
-        save: true  # TEMPORARY
+        save: true
         key-suffix: ${{ matrix.gotags }}-pg${{ matrix.pg }}
 
     - name: Is Postgres ready
@@ -233,7 +235,7 @@ jobs:
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
       with:
-        save: true  # TEMPORARY
+        save: true
 
     - name: Is Postgres ready
       run: pg_isready -h 127.0.0.1
@@ -356,7 +358,7 @@ jobs:
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
       with:
-        save: true  # TEMPORARY
+        save: true
 
     - uses: ./.github/actions/handle-tagged-build
 
@@ -458,7 +460,7 @@ jobs:
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
       with:
-        save: true  # TEMPORARY
+        save: true
 
     - name: Login to Quay.io
       uses: docker/login-action@v3
@@ -488,9 +490,6 @@ jobs:
             --platform linux/amd64 \
             "$image"
         done < sensor/tests/images-to-prefetch.txt
-
-    - name: GOCACHE entries before
-      run: echo "GOCACHE_BEFORE=$(find "$(go env GOCACHE)" -name '*-a' -path '*/??/*' 2>/dev/null | wc -l | tr -d ' ')" >> "$GITHUB_ENV"
 
     - name: Run sensor integration tests
       run: make sensor-integration-test

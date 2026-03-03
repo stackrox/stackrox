@@ -98,14 +98,7 @@ function go_build() (
   mkdir -p "$output"
 
   echo >&2 "Compiling Go source in ${dirs[*]} to ${output}"
-  local total
-  total=$(go list -deps "${dirs[@]}" 2>/dev/null | wc -l | tr -d ' ')
-  local compiled_count=/tmp/go-build-compiled-count
-  invoke_go_build -o "$output" "${dirs[@]}" 2> >(tee >(wc -l | tr -d ' ' > "$compiled_count") >&2)
-  wait
-  local compiled
-  compiled=$(cat "$compiled_count" 2>/dev/null | tr -d ' ')
-  echo >&2 "Build cache: $((total - compiled))/$total hits ($compiled compiled)"
+  invoke_go_build -o "$output" "${dirs[@]}"
 )
 
 function go_build_file() {
@@ -119,7 +112,7 @@ function invoke_go_build() {
   if [[ "$DEBUG_BUILD" == "yes" ]]; then
     gcflags+=(-gcflags "all=-N -l")
   fi
-  invoke_go build -v -trimpath -buildvcs=false "${gcflags[@]}" "$@"
+  invoke_go build -trimpath -buildvcs=false "${gcflags[@]}" "$@"
 }
 
 function go_run() (

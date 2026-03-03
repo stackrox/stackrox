@@ -42,7 +42,7 @@ jobs:
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
       with:
-        save: true  # TEMPORARY
+        save: true
 
     - name: Check Generated
       run: scripts/ci/jobs/check-generated.sh
@@ -112,7 +112,7 @@ jobs:
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
         with:
-          save: true  # TEMPORARY
+          save: true
 
       - name: Cache UI dependencies
         uses: ./.github/actions/cache-ui-dependencies

@@ -801,91 +801,6 @@ _image_prefetcher_system_await() {
     esac
 }
 
-_image_prefetcher_repull_gc_victims() {
-    local ns="$1"
-    local name="$2"
-
-    info "Re-pulling prefetched images to restore any GC'd tag references..."
-
-    # The prefetcher pulls images via the CRI API, but kubelet's image GC
-    # can evict images during or shortly after the prefetch. When images are
-    # evicted, the tag-to-image mapping is lost. Re-pulling via ctr (which
-    # uses the containerd native API) is near-instant when layers are still
-    # cached, and re-establishes the tag references that kubelet needs.
-    #
-    # We read the image list from the same configmap the prefetcher uses,
-    # and the pull secret from the stackrox secret in the prefetch namespace.
-    local nodes
-    nodes=$(kubectl get nodes -o jsonpath='{.items[*].metadata.name}')
-
-    for node in $nodes; do
-        local pod_name="repull-${node##*-}"
-        cat <<REPULLEOF | kubectl apply -n "$ns" -f -
-apiVersion: v1
-kind: Pod
-metadata:
-  name: ${pod_name}
-  namespace: ${ns}
-spec:
-  nodeName: ${node}
-  hostPID: true
-  restartPolicy: Never
-  containers:
-  - name: repull
-    image: busybox:1.36
-    command:
-    - nsenter
-    - "-t"
-    - "1"
-    - "-m"
-    - "-u"
-    - "-n"
-    - "-p"
-    - "--"
-    - sh
-    - "-c"
-    - |
-      repulled=0; skipped=0; failed=0
-      while IFS= read -r img || [ -n "\$img" ]; do
-        case "\$img" in "#"*|"") continue ;; esac
-        if ctr -n k8s.io images check "name==\$img" 2>/dev/null | grep -q "\$img"; then
-          skipped=\$((skipped+1))
-        else
-          if ctr -n k8s.io images pull "\$img" >/dev/null 2>&1; then
-            repulled=\$((repulled+1))
-          else
-            failed=\$((failed+1))
-          fi
-        fi
-      done < /etc/prefetch-images/images.txt
-      echo "repulled=\$repulled skipped=\$skipped failed=\$failed"
-    securityContext:
-      privileged: true
-    volumeMounts:
-    - name: image-list
-      mountPath: /etc/prefetch-images
-      readOnly: true
-  volumes:
-  - name: image-list
-    configMap:
-      name: ${name}
-REPULLEOF
-    done
-
-    # Wait for all repull pods to complete and collect results
-    for node in $nodes; do
-        local pod_name="repull-${node##*-}"
-        if kubectl wait "pod/$pod_name" -n "$ns" --for=jsonpath='{.status.phase}'=Succeeded --timeout=5m 2>/dev/null; then
-            info "  Node ${node}: $(kubectl logs "$pod_name" -n "$ns" 2>/dev/null)"
-        else
-            info "  Node ${node}: repull pod did not succeed"
-            kubectl logs "$pod_name" -n "$ns" 2>/dev/null | tail -5 || true
-        fi
-        kubectl delete pod "$pod_name" -n "$ns" --ignore-not-found >/dev/null 2>&1 || true
-    done
-    info "Image re-pull complete on all nodes."
-}
-
 image_prefetcher_await_set() {
     local ns="prefetch-images"
     local name="$1"
@@ -894,7 +809,6 @@ image_prefetcher_await_set() {
     info "Waiting for image prefetcher set ${name} to complete..."
     if kubectl rollout status daemonset "$name" -n "$ns" --timeout 15m; then
         info "All images in the set are now pre-fetched."
-        _image_prefetcher_repull_gc_victims "$ns" "$name"
     else
         info "WARNING: Pre-fetching failed to complete in time."
         info "To investigate closer, go to https://console.cloud.google.com/bigquery and run a query such as:"
