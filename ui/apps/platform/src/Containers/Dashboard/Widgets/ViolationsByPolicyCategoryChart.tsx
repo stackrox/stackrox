@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import type { SyntheticEvent } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     Chart,
@@ -11,7 +12,7 @@ import {
     getInteractiveLegendEvents,
     getInteractiveLegendItemStyles,
 } from '@patternfly/react-charts/victory';
-import type { ChartLabelProps } from '@patternfly/react-charts/victory';
+import type { ChartLabelProps, ChartLegendProps } from '@patternfly/react-charts/victory';
 import sortBy from 'lodash/sortBy';
 
 import { filteredWorkflowViewKey } from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
@@ -195,6 +196,7 @@ function ViolationsByPolicyCategoryChart({
             <ChartBar
                 barWidth={defaultChartBarWidth}
                 key={severity}
+                name={severityLabels[severity]}
                 data={data}
                 labelComponent={<ChartTooltip constrainToVisibleArea />}
                 events={[
@@ -224,7 +226,7 @@ function ViolationsByPolicyCategoryChart({
         return legendData;
     }
 
-    function onLegendClick({ index }: { index: number }) {
+    function onLegendClick(index: number) {
         const newHidden = new Set(hiddenSeverities);
         const targetSeverity = severitiesLowToCritical[index];
         if (newHidden.has(targetSeverity)) {
@@ -236,6 +238,18 @@ function ViolationsByPolicyCategoryChart({
         return setHiddenSeverities(newHidden);
     }
 
+    // Victory v37 broke getInteractiveLegendEvents -- onLegendClick is never called
+    // through Chart's events prop. Apply click events directly to ChartLegend instead.
+    function handleLegendClick(_evt: SyntheticEvent, { index }: { index: number }) {
+        onLegendClick(index).catch(() => {});
+        return [];
+    }
+
+    const legendClickEvents: ChartLegendProps['events'] = [
+        { target: 'data', eventHandlers: { onClick: handleLegendClick } },
+        { target: 'labels', eventHandlers: { onClick: handleLegendClick } },
+    ];
+
     return (
         <div ref={setWidgetContainer}>
             <Chart
@@ -243,13 +257,18 @@ function ViolationsByPolicyCategoryChart({
                 ariaTitle="Policy violations by category"
                 domainPadding={{ x: [20, 20] }}
                 events={getInteractiveLegendEvents({
-                    chartNames: [Object.values(severityLabels)],
+                    // Map in the same order as severitiesLowToCritical to match legend
+                    // item indices. Cast needed because PF's tuple type is too narrow.
+                    chartNames: severitiesLowToCritical.map(
+                        (s) => severityLabels[s]
+                    ) as unknown as [string],
                     isHidden: (index) => hiddenSeverities.has(severitiesLowToCritical[index]),
                     legendName: 'legend',
-                    onLegendClick,
                 })}
                 containerComponent={<ChartContainer role="figure" />}
-                legendComponent={<ChartLegend name="legend" data={getLegendData()} />}
+                legendComponent={
+                    <ChartLegend name="legend" data={getLegendData()} events={legendClickEvents} />
+                }
                 legendPosition="bottom"
                 height={chartHeight}
                 width={widgetContainerResizeEntry?.contentRect.width} // Victory defaults to 450
