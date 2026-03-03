@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	pkgSchema "github.com/stackrox/rox/migrator/migrations/m_220_to_m_221_remove_v1_report_configs/postgres/schema"
+	pkgSchema "github.com/stackrox/rox/migrator/migrations/m_221_to_m_222_remove_v1_report_configs/postgres/schema"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac/resources"

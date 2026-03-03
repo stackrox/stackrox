@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	postgresStore "github.com/stackrox/rox/migrator/migrations/m_220_to_m_221_remove_v1_report_configs/postgres"
-	pkgSchema "github.com/stackrox/rox/migrator/migrations/m_220_to_m_221_remove_v1_report_configs/postgres/schema"
+	postgresStore "github.com/stackrox/rox/migrator/migrations/m_221_to_m_222_remove_v1_report_configs/postgres"
+	pkgSchema "github.com/stackrox/rox/migrator/migrations/m_221_to_m_222_remove_v1_report_configs/postgres/schema"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
