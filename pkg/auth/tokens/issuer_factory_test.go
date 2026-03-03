@@ -51,7 +51,7 @@ func TestIssueToken_BasicClaimsAreSet(t *testing.T) {
 
 	// Verify role and name claims survived the round-trip.
 	assert.Equal(t, []string{"test-role"}, parsed.RoxClaims.RoleNames)
-	assert.Equal(t, "token-2h-lifetime", parsed.RoxClaims.Name)
+	assert.Equal(t, "token-default-ttl", parsed.RoxClaims.Name)
 }
 
 // Explicitly setting expiry affects `exp` claim in role-based (aka API) tokens.
