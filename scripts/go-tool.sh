@@ -98,7 +98,18 @@ function go_build() (
   mkdir -p "$output"
 
   echo >&2 "Compiling Go source in ${dirs[*]} to ${output}"
-  invoke_go_build -o "$output" "${dirs[@]}"
+  local total
+  total=$(go list -deps "${dirs[@]}" 2>/dev/null | wc -l | tr -d ' ')
+  local compiled_count=/tmp/go-build-compiled-count
+  invoke_go_build -o "$output" "${dirs[@]}" 2> >(tee >(wc -l | tr -d ' ' > "$compiled_count") >&2)
+  wait
+  local compiled
+  compiled=$(cat "$compiled_count" 2>/dev/null | tr -d ' ')
+  local cached=$((total - compiled))
+  echo >&2 "Build cache: ${cached}/${total} deps cached ($compiled compiled)"
+  if [[ "$total" -gt 0 ]] && [[ $((cached * 100 / total)) -lt 50 ]]; then
+    echo >&2 "WARNING: Build cache hit rate below 50% (${cached}/${total}). Significant code changes invalidate the cached build — expect slower compilation."
+  fi
 )
 
 function go_build_file() {
@@ -112,7 +123,7 @@ function invoke_go_build() {
   if [[ "$DEBUG_BUILD" == "yes" ]]; then
     gcflags+=(-gcflags "all=-N -l")
   fi
-  invoke_go build -trimpath -buildvcs=false "${gcflags[@]}" "$@"
+  invoke_go build -v -trimpath -buildvcs=false "${gcflags[@]}" "$@"
 }
 
 function go_run() (

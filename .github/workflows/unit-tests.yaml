@@ -72,6 +72,9 @@ jobs:
         test_cached=$(grep -c '(cached)' "$f" 2>/dev/null || true)
         test_total=$(grep -c '^ok ' "$f" 2>/dev/null || true)
         echo "::notice::Test result cache: ${test_cached:-0} cached / ${test_total:-0} total"
+        if [ "${test_total:-0}" -gt 0 ] && [ $((test_cached * 100 / test_total)) -lt 50 ]; then
+          echo "::warning::Test cache hit rate below 50% (${test_cached}/${test_total}). Significant code changes invalidate cached test results — expect slower test runs."
+        fi
 
     - name: Save Go Build Cache
       if: always() && steps.go-cache.outputs.build-cache-hit != 'true'
@@ -180,6 +183,9 @@ jobs:
         test_cached=$(grep -c '(cached)' "$f" 2>/dev/null || true)
         test_total=$(grep -c '^ok ' "$f" 2>/dev/null || true)
         echo "::notice::Test result cache: ${test_cached:-0} cached / ${test_total:-0} total"
+        if [ "${test_total:-0}" -gt 0 ] && [ $((test_cached * 100 / test_total)) -lt 50 ]; then
+          echo "::warning::Test cache hit rate below 50% (${test_cached}/${test_total}). Significant code changes invalidate cached test results — expect slower test runs."
+        fi
 
     - uses: codecov/codecov-action@v3
       with:
@@ -501,6 +507,9 @@ jobs:
         test_cached=$(grep -c '(cached)' "$f" 2>/dev/null || true)
         test_total=$(grep -c '^ok ' "$f" 2>/dev/null || true)
         echo "::notice::Test result cache: ${test_cached:-0} cached / ${test_total:-0} total"
+        if [ "${test_total:-0}" -gt 0 ] && [ $((test_cached * 100 / test_total)) -lt 50 ]; then
+          echo "::warning::Test cache hit rate below 50% (${test_cached}/${test_total}). Significant code changes invalidate cached test results — expect slower test runs."
+        fi
 
     - name: Generate junit report
       if: always()
