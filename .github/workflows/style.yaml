@@ -60,7 +60,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -73,7 +72,9 @@ jobs:
     - name: Ensure no trailing whitespaces
       if: github.event_name == 'pull_request'
       # Markdown files aren't checked for trailing whitespaces because it's a valid linebreak there.
-      run: git diff --check "${{ github.event.pull_request.base.sha }}"...HEAD ':(exclude)*.md'
+      run: |
+        git fetch --depth=1 origin "${{ github.event.pull_request.base.sha }}"
+        git diff --check "${{ github.event.pull_request.base.sha }}"...HEAD ':(exclude)*.md'
 
     - name: Check PR fixes
       run: scripts/ci/jobs/check-pr-fixes.sh
@@ -138,8 +139,10 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
+
+    - name: Fetch base branch for incremental lint
+      if: github.event_name == 'pull_request'
+      run: git fetch --depth=1 origin "${{ github.base_ref }}"
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -255,7 +258,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
