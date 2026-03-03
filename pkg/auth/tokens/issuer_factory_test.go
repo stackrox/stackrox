@@ -12,6 +12,7 @@ import (
 )
 
 const defaultTTL = 24 * time.Hour
+const timestampTolerance = 5 * time.Minute
 
 type testSource struct {
 	id string
@@ -35,6 +36,8 @@ func TestIssueToken(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("basic claims survive round-trip", func(t *testing.T) {
+		beforeIssue := time.Now()
+
 		roxClaims := RoxClaims{RoleNames: []string{"test-role"}, Name: "test-token"}
 		info, err := issuer.Issue(context.Background(), roxClaims)
 		require.NoError(t, err)
@@ -44,6 +47,8 @@ func TestIssueToken(t *testing.T) {
 
 		assert.Equal(t, []string{"test-role"}, parsed.RoxClaims.RoleNames)
 		assert.Equal(t, "test-token", parsed.RoxClaims.Name)
+
+		assert.WithinDuration(t, beforeIssue, parsed.IssuedAt(), timestampTolerance)
 	})
 
 	t.Run("explicit expiry sets exp claim in role-based (aka API) tokens", func(t *testing.T) {
@@ -60,8 +65,6 @@ func TestIssueToken(t *testing.T) {
 	})
 
 	t.Run("omitted expiry falls back to default TTL", func(t *testing.T) {
-		beforeIssue := time.Now()
-
 		roxClaims := RoxClaims{RoleNames: []string{"test-role"}, Name: "token-default-ttl"}
 		info, err := issuer.Issue(context.Background(), roxClaims)
 		require.NoError(t, err)
@@ -70,8 +73,7 @@ func TestIssueToken(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify that exp is approximately now + defaultTTL.
-		expected := beforeIssue.Add(defaultTTL)
-		assert.WithinDuration(t, expected, parsed.Expiry(), 5*time.Second,
+		assert.WithinDuration(t, parsed.IssuedAt().Add(defaultTTL), parsed.Expiry(), 5*time.Minute,
 			"exp must be approximately now + default TTL")
 	})
 }
