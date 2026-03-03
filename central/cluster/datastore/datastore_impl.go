@@ -950,13 +950,6 @@ func buildNewClusterFromConfig(clusterName, registrantID string, config clusterC
 func applyConfigToCluster(cluster *storage.Cluster, config clusterConfigData) *storage.Cluster {
 	updated := cluster.CloneVT()
 	updated.ManagedBy = config.manager
-	// It would be wrong to set cluster.InitBundle to registrantID here.
-	// In the case of cluster creation it was already done above.
-	// And in case the cluster exists already, received registrantID might be empty
-	// and in this case we would delete it from an existing cluster here. This would
-	// e.g., happen on the first real connect after a CRS handshake.
-	// But we actually require the CRS ID to be still associated with the cluster,
-	// to be able to complete the registration later on.
 	updated.SensorCapabilities = sliceutils.CopySliceSorted(config.capabilities)
 
 	if config.isNotManagedManually {
@@ -970,6 +963,7 @@ func applyConfigToCluster(cluster *storage.Cluster, config clusterConfigData) *s
 
 // checkGracePeriodForReconnect checks if reconnection is allowed based on grace period.
 // For Helm/Operator managed clusters, prevents cluster moves within the grace period.
+// (Note: see ROX-32981 for further discussion)
 func checkGracePeriodForReconnect(cluster *storage.Cluster, deploymentID *storage.SensorDeploymentIdentification, manager storage.ManagerType) error {
 	// In a scale test environment, allow Sensors to reconnect in under the time limit.
 	if env.ScaleTestEnabled.BooleanSetting() {
