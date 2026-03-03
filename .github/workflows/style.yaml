@@ -46,8 +46,6 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
-      with:
-        save: true
 
     - name: Check Generated
       run: scripts/ci/jobs/check-generated.sh
@@ -62,6 +60,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
+        fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -120,8 +119,6 @@ jobs:
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
-        with:
-          save: true
 
       - name: Cache UI dependencies
         uses: ./.github/actions/cache-ui-dependencies
@@ -141,6 +138,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -256,6 +255,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble

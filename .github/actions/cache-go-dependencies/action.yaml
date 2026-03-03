@@ -1,10 +1,6 @@
 name: Cache Go Dependencies
 description: Cache Go Dependencies
 inputs:
-  save:
-    description: Whether this job saves caches on pushes to the default branch.
-    required: false
-    default: 'true'
   key-suffix:
     description: Extra suffix for cache keys (use to distinguish matrix jobs).
     required: false
