@@ -466,15 +466,14 @@ function PoliciesTable({
                                         : [exportPolicyAction, saveAsCustomResourceActionItem];
                                     const rowIndex = rowIdToIndex[id];
                                     return (
-                                        <Tbody
-                                            key={id}
-                                            style={{
-                                                borderBottom:
-                                                    '1px solid var(--pf-v5-c-table--BorderColor)',
-                                            }}
-                                            isExpanded={isExpanded}
-                                        >
-                                            <Tr>
+                                        <Tbody key={id} isExpanded={isExpanded}>
+                                            <Tr
+                                                style={
+                                                    isExpanded
+                                                        ? { borderBottom: 'none' }
+                                                        : undefined
+                                                }
+                                            >
                                                 <Td
                                                     expand={{
                                                         rowIndex,

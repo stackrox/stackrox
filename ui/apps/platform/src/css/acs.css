@@ -1,34 +1,3 @@
-/*
- * A button with small font size like `isSmall` and reduced padding:
- * 4px instead of 6px vertical
- * 8px instead of 16px horizontal
- */
-.pf-v6-c-button.pf-m-smaller {
-    --pf-v6-c-button--FontSize: var(--pf-t--global--font--size--sm);
-    --pf-v6-c-button--PaddingBlockStart: var(--pf-t--global--spacer--xs);
-    --pf-v6-c-button--PaddingInlineEnd: var(--pf-t--global--spacer--sm);
-    --pf-v6-c-button--PaddingBlockEnd: var(--pf-t--global--spacer--xs);
-    --pf-v6-c-button--PaddingInlineStart: var(--pf-t--global--spacer--sm);
-}
-
-/*
- * Dropdown has (via className) font size compatible with Button (see above).
- */
-.pf-v6-c-dropdown.pf-m-smaller {
-    --pf-v5-c-dropdown__toggle--FontSize: var(--pf-t--global--font--size--sm);
-    --pf-v5-c-dropdown__toggle--PaddingTop: var(--pf-t--global--spacer--xs);
-    --pf-v5-c-dropdown__toggle--PaddingRight: var(--pf-t--global--spacer--sm);
-    --pf-v5-c-dropdown__toggle--PaddingBottom: var(--pf-t--global--spacer--xs);
-    --pf-v5-c-dropdown__toggle--PaddingLeft: var(--pf-t--global--spacer--sm);
-    --pf-v5-c-dropdown__toggle-icon--MarginLeft: var(--pf-t--global--spacer--sm);
-    --pf-v6-c-dropdown__toggle-icon--MarginRight: 0;
-    --pf-v5-c-dropdown__menu-item--FontSize: var(--pf-t--global--font--size--sm);
-    --pf-v5-c-dropdown__menu-item--PaddingTop: calc(var(--pf-t--global--spacer--sm) / 2);
-    --pf-v5-c-dropdown__menu-item--PaddingRight: var(--pf-t--global--spacer--sm);
-    --pf-v5-c-dropdown__menu-item--PaddingBottom: calc(var(--pf-t--global--spacer--sm) / 2);
-    --pf-v5-c-dropdown__menu-item--PaddingLeft: var(--pf-t--global--spacer--sm);
-}
-
 button.pf-v6-c-toggle-group__button.pf-m-selected:disabled {
     background-color: var(--pf-v6-c-toggle-group__button--m-selected--BackgroundColor);
     color: var(--pf-v6-c-toggle-group__button--m-selected--Color);
