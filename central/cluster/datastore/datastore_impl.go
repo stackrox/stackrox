@@ -930,16 +930,7 @@ func shouldUpdateCluster(existing *storage.Cluster, config clusterConfigData, re
 	if existing.GetInitBundleId() != registrantID {
 		return true
 	}
-	// Check fingerprint - both must be present to compare
-	var existingFingerprint string
-	if existing.GetHelmConfig() != nil {
-		existingFingerprint = existing.GetHelmConfig().GetConfigFingerprint()
-	}
-	var configFingerprint string
-	if config.helmConfig != nil {
-		configFingerprint = config.helmConfig.GetConfigFingerprint()
-	}
-	if existingFingerprint != configFingerprint {
+	if existing.GetHelmConfig().GetConfigFingerprint() != config.helmConfig.GetConfigFingerprint() {
 		return true
 	}
 	if existing.GetManagedBy() != config.manager {
