@@ -2,7 +2,6 @@ name: e2e Sensor Upgrade Test
 
 on:
   workflow_dispatch:
-  push:
   pull_request:
     types:
       - opened
@@ -51,7 +50,8 @@ jobs:
       - name: Create testing cluster
         run: |
           infractl create gke-default "${CLUSTER_NAME}" \
-            --arg nodes=3,machine-type=e2-standard-8 \
+            --arg nodes=3 \
+            --arg machine-type=e2-standard-8 \
             --lifespan 4h \
             --no-slack \
             --wait \
