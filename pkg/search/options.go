@@ -490,8 +490,12 @@ var (
 	AuthProviderName = newFieldLabel("AuthProvider Name")
 
 	// Virtual Machine fields.
-	VirtualMachineID   = newFieldLabel("Virtual Machine ID")
-	VirtualMachineName = newFieldLabel("Virtual Machine Name")
+	VirtualMachineID       = newFieldLabel("Virtual Machine ID")
+	VirtualMachineName     = newFieldLabel("Virtual Machine Name")
+	GuestOS                = newFieldLabel("Guest OS")
+	VirtualMachineState    = newFieldLabel("Virtual Machine State")
+	VirtualMachineScanTime = newFieldLabel("Virtual Machine Scan Time")
+	VirtualMachineTopCVSS  = newFieldLabel("Virtual Machine Top CVSS")
 
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
