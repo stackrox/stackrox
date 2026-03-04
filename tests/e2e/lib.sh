@@ -1145,6 +1145,38 @@ wait_for_ready_deployment() {
     info "Deployment ${deployment_name} is ready in namespace ${namespace}."
 }
 
+# wait_for_scanner_v4_vuln_load waits until the Scanner V4 matcher has completed
+# its initial vulnerability load, verified via Central's integration health API.
+# This is distinct from wait_for_scanner_V4, which only waits for pod readiness
+# (i.e. database connectivity). Call this separately in jobs that verify scan
+# results, after deploy_stackrox has returned.
+# Requires: API_ENDPOINT, ROX_ADMIN_PASSWORD (both set by wait_for_api).
+wait_for_scanner_v4_vuln_load() {
+    local max_seconds="${SCANNER_V4_VULN_LOAD_TIMEOUT:-1200}"
+    info "Waiting for Scanner V4 to finish loading vulnerabilities..."
+
+    require_environment "API_ENDPOINT"
+    require_environment "ROX_ADMIN_PASSWORD"
+
+    local start_time elapsed
+    start_time="$(date '+%s')"
+    while true; do
+        if roxcurl "/v1/integrationhealth/vulndefinitions?component=SCANNER_V4" 2>/dev/null \
+                | jq -e '.lastUpdatedTimestamp != null' >/dev/null 2>&1; then
+            info "Scanner V4 vulnerability loading complete."
+            return
+        fi
+
+        elapsed=$(( $(date '+%s') - start_time ))
+        if (( elapsed > max_seconds )); then
+            die "wait_for_scanner_v4_vuln_load() timed out after ${max_seconds}s."
+        fi
+
+        info "Still waiting for Scanner V4 vulnerabilities (${elapsed}s/${max_seconds}s)..."
+        sleep 15
+    done
+}
+
 # shellcheck disable=SC2120
 wait_for_scanner_V4() {
     local namespace="$1"
