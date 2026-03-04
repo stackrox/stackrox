@@ -48,9 +48,24 @@ def main():
 def is_newer_version(current_version: str, helm_version: str):
     helm_version_split = helm_version.split(sep='.')
     current_version_split = current_version.split(sep='.')
-    # Remove the trailing 0s
-    # Helm chart versions have two trailing 0s in the major version number
-    helm_version_split[0] = helm_version_split[0][:-2]
+
+    # Parse helm version format using numeric encoding:
+    # - New format: X00MM where X=major digit, 00=padding, MM=minor (zero-padded)
+    #   Example: 40009 → major=4, minor=09 (version 4.9)
+    #   Example: 40011 → major=4, minor=11 (version 4.11)
+    #   Formula: major = n // 10000, minor = n % 100
+    # - Old format: X00 where X=major digit, 00=padding (version 4.0.x)
+    #   Formula: major = n // 100
+    helm_major_num = int(helm_version_split[0])
+    if helm_major_num >= 10000:
+        # New format: extract major (first digit) and minor (last 2 digits)
+        helm_major = helm_major_num // 10000
+        helm_minor = helm_major_num % 100
+        helm_version_split = [str(helm_major), str(helm_minor)] + helm_version_split[1:]
+    else:
+        # Old format: extract major by removing padding
+        helm_version_split[0] = str(helm_major_num // 100)
+
     # Remove commit hash from the current version
     current_version_split = current_version_split[:-1]
     # If we are in a release branch, we will have patch version with '-rc'
@@ -59,9 +74,9 @@ def is_newer_version(current_version: str, helm_version: str):
         current_version_split[2] = str(current_version_split[2]).rstrip("-rc")
 
     for (current, helm) in zip(current_version_split, helm_version_split):
-        if current > helm:
+        if int(current) > int(helm):
             break
-        if current < helm:
+        if int(current) < int(helm):
             return True
 
     return False
