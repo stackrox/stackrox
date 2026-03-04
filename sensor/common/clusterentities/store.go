@@ -388,7 +388,9 @@ func (e *Store) RegisterContainerMetadataCallbackChannel(callbackChan chan<- Con
 type LookupResult struct {
 	Entity         networkgraph.Entity
 	ContainerPorts []uint16
-	PortNames      []string
+	// Deprecated: PortNames is no longer populated and will be removed in a future version.
+	// This field is kept for backward compatibility but is always nil.
+	PortNames []string
 }
 
 // LookupByEndpoint returns possible target deployments by endpoint (if any).

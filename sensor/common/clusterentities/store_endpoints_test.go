@@ -323,7 +323,7 @@ func buildExpectation(ip, deplID, portName string, location whereThingIsStored, 
 		wantLookupResult: LookupResult{
 			Entity:         typeFunc(deplID),
 			ContainerPorts: []uint16{uint16(port)},
-			PortNames:      []string{portName},
+			PortNames:      nil, // PortNames field is no longer populated
 		},
 	}
 }

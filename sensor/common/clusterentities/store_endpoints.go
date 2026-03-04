@@ -14,16 +14,16 @@ import (
 
 type endpointsStore struct {
 	mutex sync.RWMutex
-	// endpointMap maps endpoints to a (deployment id -> endpoint target info) mapping.
-	endpointMap map[net.NumericEndpoint]map[string]set.Set[EndpointTargetInfo]
+	// endpointMap maps endpoints to a (deployment id -> container ports) mapping.
+	endpointMap map[net.NumericEndpoint]map[string]set.Set[uint16]
 	// reverseEndpointMap maps deployment ids to sets of endpoints associated with this deployment.
 	reverseEndpointMap map[string]set.Set[net.NumericEndpoint]
 
 	// memorySize defines how many ticks old endpoint data should be remembered after removal request
 	// Set to 0 to disable memory
 	memorySize uint16
-	// historicalEndpoints is mimicking endpointMap: endpoints -> deployment id -> endpoint target info -> historyStatus
-	historicalEndpoints map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]*entityStatus
+	// historicalEndpoints is mimicking endpointMap: endpoints -> deployment id -> container port -> historyStatus
+	historicalEndpoints map[net.NumericEndpoint]map[string]map[uint16]*entityStatus
 	// reverseHistoricalEndpoints is mimicking reverseEndpointMap: deploymentID -> endpointInfo -> historyStatus
 	reverseHistoricalEndpoints map[string]map[net.NumericEndpoint]*entityStatus
 }
@@ -37,11 +37,11 @@ func newEndpointsStoreWithMemory(numTicks uint16) *endpointsStore {
 }
 
 func (e *endpointsStore) initMapsNoLock() {
-	e.endpointMap = make(map[net.NumericEndpoint]map[string]set.Set[EndpointTargetInfo])
+	e.endpointMap = make(map[net.NumericEndpoint]map[string]set.Set[uint16])
 	e.reverseEndpointMap = make(map[string]set.Set[net.NumericEndpoint])
 
 	e.reverseHistoricalEndpoints = make(map[string]map[net.NumericEndpoint]*entityStatus)
-	e.historicalEndpoints = make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]*entityStatus)
+	e.historicalEndpoints = make(map[net.NumericEndpoint]map[string]map[uint16]*entityStatus)
 }
 
 func (e *endpointsStore) resetMaps() {
@@ -61,7 +61,7 @@ func (e *endpointsStore) resetMaps() {
 		}
 	}
 
-	e.endpointMap = make(map[net.NumericEndpoint]map[string]set.Set[EndpointTargetInfo])
+	e.endpointMap = make(map[net.NumericEndpoint]map[string]set.Set[uint16])
 	e.reverseEndpointMap = make(map[string]set.Set[net.NumericEndpoint])
 	e.updateMetricsNoLock()
 }
@@ -144,12 +144,12 @@ func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData)
 		deploymentsOnThisEp, epFound := e.endpointMap[ep]
 		if !epFound {
 			// New endpoint entirely - create maps with initial capacity
-			e.endpointMap[ep] = map[string]set.Set[EndpointTargetInfo]{
-				deploymentID: make(set.Set[EndpointTargetInfo], len(targetInfos)),
+			e.endpointMap[ep] = map[string]set.Set[uint16]{
+				deploymentID: make(set.Set[uint16], len(targetInfos)),
 			}
 		} else if !deploymentFound {
 			// New deployment, but endpoint exists - takeover
-			e.endpointMap[ep][deploymentID] = make(set.Set[EndpointTargetInfo], len(targetInfos))
+			e.endpointMap[ep][deploymentID] = make(set.Set[uint16], len(targetInfos))
 			// Mark all other deployments with this endpoint as historical
 			for otherDeploymentID := range deploymentsOnThisEp {
 				if otherDeploymentID != deploymentID {
@@ -157,16 +157,16 @@ func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData)
 				}
 			}
 		} else {
-			// Endpoint and deployment both exist - get or create target info set
+			// Endpoint and deployment both exist - get or create port set
 			if _, targetFound := e.endpointMap[ep][deploymentID]; !targetFound {
-				e.endpointMap[ep][deploymentID] = make(set.Set[EndpointTargetInfo], len(targetInfos))
+				e.endpointMap[ep][deploymentID] = make(set.Set[uint16], len(targetInfos))
 			}
 		}
 
-		// Add all target infos to the set
-		etiSet := e.endpointMap[ep][deploymentID]
+		// Add all container ports to the set
+		portSet := e.endpointMap[ep][deploymentID]
 		for _, tgtInfo := range targetInfos {
-			etiSet.Add(tgtInfo)
+			portSet.Add(tgtInfo.ContainerPort)
 		}
 
 		// Endpoints previously marked as historical may need to be restored
@@ -194,20 +194,18 @@ func (e *endpointsStore) lookupEndpoint(endpoint net.NumericEndpoint, netLookup 
 }
 
 type Map[T any] interface {
-	~map[EndpointTargetInfo]T
+	~map[uint16]T
 }
 
 func doLookupEndpoint[M Map[T], T any](ep net.NumericEndpoint, src map[net.NumericEndpoint]map[string]M) (results []LookupResult) {
-	for deploymentID, targetInfoSet := range src[ep] {
+	for deploymentID, portSet := range src[ep] {
 		result := LookupResult{
 			Entity:         networkgraph.EntityForDeployment(deploymentID),
-			ContainerPorts: make([]uint16, 0),
+			ContainerPorts: make([]uint16, 0, len(portSet)),
+			PortNames:      nil, // PortNames field is never used in production code
 		}
-		for tgtInfo := range targetInfoSet {
-			result.ContainerPorts = append(result.ContainerPorts, tgtInfo.ContainerPort)
-			if tgtInfo.PortName != "" {
-				result.PortNames = append(result.PortNames, tgtInfo.PortName)
-			}
+		for port := range portSet {
+			result.ContainerPorts = append(result.ContainerPorts, port)
 		}
 		results = append(results, result)
 	}
@@ -266,16 +264,16 @@ func (e *endpointsStore) deleteFromCurrent(deploymentID string, ep net.NumericEn
 func (e *endpointsStore) addToHistory(deploymentID string, ep net.NumericEndpoint) {
 	// Prepare maps if empty
 	if _, ok := e.historicalEndpoints[ep]; !ok {
-		e.historicalEndpoints[ep] = make(map[string]map[EndpointTargetInfo]*entityStatus)
+		e.historicalEndpoints[ep] = make(map[string]map[uint16]*entityStatus)
 	}
 	if _, ok := e.historicalEndpoints[ep][deploymentID]; !ok {
 		// Pre-allocate with known size from current endpoint map
-		e.historicalEndpoints[ep][deploymentID] = make(map[EndpointTargetInfo]*entityStatus, len(e.endpointMap[ep][deploymentID]))
+		e.historicalEndpoints[ep][deploymentID] = make(map[uint16]*entityStatus, len(e.endpointMap[ep][deploymentID]))
 	}
 
 	histMap := e.historicalEndpoints[ep][deploymentID]
-	for info := range e.endpointMap[ep][deploymentID] {
-		histMap[info] = newHistoricalEntity(e.memorySize)
+	for port := range e.endpointMap[ep][deploymentID] {
+		histMap[port] = newHistoricalEntity(e.memorySize)
 	}
 
 	if _, ok := e.reverseHistoricalEndpoints[deploymentID]; !ok {

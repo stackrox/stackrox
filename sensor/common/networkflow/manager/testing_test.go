@@ -54,7 +54,7 @@ func expectationsEndpointPurger(mockEntityStore *mocksManager.MockEntityStore, i
 				return []clusterentities.LookupResult{{
 					Entity:         networkgraph.Entity{},
 					ContainerPorts: []uint16{80},
-					PortNames:      []string{"http"},
+					PortNames:      nil, // Deprecated field, no longer populated
 				}}
 			}
 			return []clusterentities.LookupResult{}
