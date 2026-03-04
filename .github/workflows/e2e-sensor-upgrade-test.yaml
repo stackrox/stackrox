@@ -37,6 +37,16 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      #- uses: stackrox/actions/infra/install-infractl@v1
+
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v3"
+        with:
+          install_components: "gke-gcloud-auth-plugin"
+
+      - name: Fix path for infractl
+        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
       - name: Create testing cluster
         uses: stackrox/actions/infra/create-cluster@v1
         with:
@@ -47,14 +57,6 @@ jobs:
           args: nodes=3,machine-type=e2-standard-8
           wait: true
 
-      - uses: stackrox/actions/infra/install-infractl@v1
-
-      - name: "Set up Cloud SDK"
-        uses: "google-github-actions/setup-gcloud@v3"
-        with:
-          install_components: "gke-gcloud-auth-plugin"
-
-      # Verify cluster is ready
       - name: Test cluster readiness
         run: |
           STATUS=$(infractl get "${CLUSTER_NAME}" --json | jq -r .Status)
@@ -63,20 +65,17 @@ jobs:
             exit 1
           fi
 
-      # Fetch kubeconfig and other artifacts
       - name: Fetch infra artifacts
         run: |
           mkdir -p artifacts
           infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts
           echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
 
-      # Verify cluster access
       - name: Verify kubectl access
         run: |
           kubectl cluster-info
           kubectl get nodes
 
-      # Docker login to Quay for image pulling
       - name: Docker login to Quay.io
         env:
           REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
@@ -84,8 +83,7 @@ jobs:
         run: |
           docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
-      # Cleanup - always run to avoid orphaned clusters
       - name: Delete cluster
         if: always()
         run: |
-          infractl delete "${CLUSTER_NAME}" --force || true
+          infractl delete "${CLUSTER_NAME}" --force
