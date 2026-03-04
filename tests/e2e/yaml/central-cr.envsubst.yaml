@@ -70,7 +70,7 @@ $centralAdditionalCAIndented
           memory: "500Mi"
         limits:
           cpu: "1000m"
-          memory: "1000Mi"
+          memory: "2000Mi"
 ---
 apiVersion: v1
 kind: Secret
