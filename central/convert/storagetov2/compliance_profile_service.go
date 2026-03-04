@@ -26,17 +26,17 @@ func ComplianceV2Profile(incoming *storage.ComplianceOperatorProfileV2, benchmar
 	}
 
 	return &v2.ComplianceProfile{
-		Id:             incoming.GetId(),
-		Name:           incoming.GetName(),
-		ProfileVersion: incoming.GetProfileVersion(),
-		ProductType:    incoming.GetProductType(),
-		Standards:      convertedBenchmarks,
-		Description:    incoming.GetDescription(),
-		Rules:          rules,
-		Product:        incoming.GetProduct(),
-		Title:          incoming.GetTitle(),
-		Values:         incoming.GetValues(),
-		IsTailored:     incoming.GetIsTailored(),
+		Id:                     incoming.GetId(),
+		Name:                   incoming.GetName(),
+		ProfileVersion:         incoming.GetProfileVersion(),
+		ProductType:            incoming.GetProductType(),
+		Standards:              convertedBenchmarks,
+		Description:            incoming.GetDescription(),
+		Rules:                  rules,
+		Product:                incoming.GetProduct(),
+		Title:                  incoming.GetTitle(),
+		Values:                 incoming.GetValues(),
+		ComplianceOperatorKind: v2.ComplianceProfile_ComplianceOperatorProfileKind(incoming.GetComplianceOperatorKind()),
 	}
 }
 
@@ -87,14 +87,14 @@ func ComplianceProfileSummary(incoming []*storage.ComplianceOperatorProfileV2, b
 		}
 		if _, found := profileSummaryMap[summary.GetName()]; !found {
 			profileSummaryMap[summary.GetName()] = &v2.ComplianceProfileSummary{
-				Name:           summary.GetName(),
-				ProductType:    summary.GetProductType(),
-				Description:    summary.GetDescription(),
-				Title:          summary.GetTitle(),
-				RuleCount:      int32(len(summary.GetRules())),
-				ProfileVersion: summary.GetProfileVersion(),
-				Standards:      profileBenchmarkNameMap[summary.GetName()],
-				IsTailored:     summary.GetIsTailored(),
+				Name:                   summary.GetName(),
+				ProductType:            summary.GetProductType(),
+				Description:            summary.GetDescription(),
+				Title:                  summary.GetTitle(),
+				RuleCount:              int32(len(summary.GetRules())),
+				ProfileVersion:         summary.GetProfileVersion(),
+				Standards:              profileBenchmarkNameMap[summary.GetName()],
+				ComplianceOperatorKind: v2.ComplianceProfileSummary_ComplianceOperatorProfileKind(summary.GetComplianceOperatorKind()),
 			}
 			orderedProfiles = append(orderedProfiles, summary.GetName())
 		}
