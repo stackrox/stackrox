@@ -87,7 +87,11 @@ message ComplianceOperatorRuleV2 {
   string parent_rule = 16;
   string instructions = 17;
 
-  bool is_custom = 18;
+  enum ComplianceOperatorRuleKind {
+    RULE = 0;
+    CUSTOM_RULE = 1;
+  }
+  ComplianceOperatorRuleKind compliance_operator_kind = 18;
 }
 
 // Next Tag: 4

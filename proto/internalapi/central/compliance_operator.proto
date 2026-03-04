@@ -217,7 +217,11 @@ message ComplianceOperatorRuleV2 {
   string warning = 12;
   string instructions = 13;
 
-  bool is_custom = 14;
+  enum ComplianceOperatorRuleKind {
+    RULE = 0;
+    CUSTOM_RULE = 1;
+  }
+  ComplianceOperatorRuleKind compliance_operator_kind = 14;
 }
 
 message ComplianceOperatorScanV2 {
