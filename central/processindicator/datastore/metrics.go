@@ -66,13 +66,6 @@ var (
 		Name:      "process_indicators_removed_total",
 		Help:      "Total number of process indicators removed from the database across all reasons",
 	})
-
-	processIndicatorsNet = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "process_indicators_net",
-		Help:      "Net count of process indicators (additions minus removals)",
-	})
 )
 
 func incrementPrunedProcessesMetric(num int, reason string) {
@@ -82,7 +75,6 @@ func incrementPrunedProcessesMetric(num int, reason string) {
 func recordProcessIndicatorsRemoved(num int, reason string) {
 	processIndicatorsRemoved.WithLabelValues(reason).Add(float64(num))
 	processIndicatorsRemovedTotal.Add(float64(num))
-	processIndicatorsNet.Sub(float64(num))
 }
 
 func incrementProcessPruningCacheHitsMetrics() {
