@@ -1,5 +1,6 @@
 import withAuth from '../../helpers/basicAuth';
 import { hasFeatureFlag } from '../../helpers/features';
+import { interactAndWaitForResponses } from '../../helpers/request';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
 
 import { addBaseImage, visitBaseImages, visitBaseImagesFromLeftNav } from './baseImages.helpers';
@@ -43,19 +44,20 @@ describe('Base Images', () => {
         visitBaseImages();
         addBaseImage(testBaseImage);
 
-        // Set up DELETE intercept
-        cy.intercept('DELETE', '/v2/baseimages/*').as('deleteBaseImage');
+        // Delete the base image and wait for both the DELETE and the subsequent list refetch
+        cy.get(`tr:has(td:contains("${testBaseImage}")) button[aria-label="Kebab toggle"]`).click();
+        interactAndWaitForResponses(
+            () => {
+                cy.get('button:contains("Delete base image")').click();
+                cy.get('[role="dialog"] button:contains("Delete")').click();
+            },
+            {
+                deleteBaseImage: { method: 'DELETE', url: '/v2/baseimages/*' },
+                baseImages: { method: 'GET', url: '/v2/baseimages' },
+            }
+        );
 
-        // Delete the base image
-        cy.get('table tbody tr').contains('td', testBaseImage).parents('tr').as('targetRow');
-        cy.get('@targetRow').find('button[aria-label="Kebab toggle"]').click();
-        cy.get('button:contains("Delete base image")').click();
-        cy.get('[role="dialog"] button:contains("Delete")').click();
-
-        // Wait for delete to complete
-        cy.wait('@deleteBaseImage');
-
-        // Verify it's gone
-        cy.get('table tbody tr').should('not.contain', testBaseImage);
+        // Verify the deleted image is no longer in the table
+        cy.get(`tr:has(td:contains("${testBaseImage}"))`).should('not.exist');
     });
 });

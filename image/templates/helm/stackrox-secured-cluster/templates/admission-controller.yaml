@@ -68,6 +68,14 @@ spec:
           ports:
             - containerPort: 8443
               name: webhook
+            {{- if ._rox.admissionControl.exposeMonitoring }}
+            - containerPort: 9090
+              name: monitoring
+            {{- end }}
+            {{- if ._rox.monitoring.openshift.enabled }}
+            - containerPort: 9091
+              name: monitoring-tls
+            {{- end }}
           command:
             - admission-control
           resources:
@@ -95,6 +103,10 @@ spec:
                 fieldPath: metadata.name
           - name: ROX_SENSOR_ENDPOINT
             value: {{ ._rox.sensor.endpoint }}
+          {{- if ._rox.monitoring.openshift.enabled }}
+          - name: ROX_ENABLE_SECURE_METRICS
+            value: "true"
+          {{- end }}
           {{- include "srox.envVars" (list . "deployment" "admission-controller" "admission-controller") | nindent 10 }}
           volumeMounts:
             - name: config
@@ -116,6 +128,11 @@ spec:
               mountPath: /usr/local/share/ca-certificates/
               readOnly: true
             {{- include "srox.injectedCABundleVolumeMount" . | nindent 12 }}
+            {{- if ._rox.monitoring.openshift.enabled }}
+            - name: monitoring-tls
+              mountPath: /run/secrets/stackrox.io/monitoring-tls
+              readOnly: true
+            {{- end }}
       volumes:
         {{- if ._rox._securedClusterCertRefresh }}
         - name: certs
@@ -153,6 +170,11 @@ spec:
             secretName: additional-ca-sensor
             optional: true
         {{- include "srox.injectedCABundleVolume" . | nindent 8 }}
+        {{- if ._rox.monitoring.openshift.enabled }}
+        - name: monitoring-tls
+          secret:
+            secretName: admission-control-monitoring-tls
+        {{- end }}
 ---
 
 apiVersion: v1
@@ -165,12 +187,27 @@ metadata:
     auto-upgrade.stackrox.io/component: "sensor"
   annotations:
     {{- include "srox.annotations" (list . "service" "admission-control") | nindent 4 }}
+    {{- if ._rox.monitoring.openshift.enabled }}
+    service.beta.openshift.io/serving-cert-secret-name: admission-control-monitoring-tls
+    {{- end }}
 spec:
   ports:
     - name: https
       port: 443
       targetPort: webhook
       protocol: TCP
+    {{- if ._rox.admissionControl.exposeMonitoring }}
+    - name: monitoring
+      port: 9090
+      targetPort: monitoring
+      protocol: TCP
+    {{- end }}
+    {{- if ._rox.monitoring.openshift.enabled }}
+    - name: monitoring-tls
+      port: 9091
+      targetPort: monitoring-tls
+      protocol: TCP
+    {{- end }}
   selector:
     app: admission-control
   type: ClusterIP

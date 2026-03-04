@@ -8,6 +8,32 @@ This guide provides instructions for AI agents working on the StackRox UI codeba
 
 ---
 
+## Navigation
+
+### Code Intelligence
+
+Prefer a TypeScript LSP over Grep/Glob/Read for code navigation:
+- `goToDefinition` / `goToImplementation` to jump to source
+- `findReferences` to see all usages across the codebase
+- `workspaceSymbol` to find where something is defined
+- `documentSymbol` to list all symbols in a file
+- `hover` for type info without reading the file
+- `incomingCalls` / `outgoingCalls` for call hierarchy
+
+Before renaming or changing a function signature, use
+`findReferences` to find all call sites first.
+
+Use Grep/Glob only for text/pattern searches (comments,
+strings, config values) where LSP doesn't help.
+
+After writing or editing code, check LSP diagnostics before
+moving on. Fix any type errors or missing imports immediately.
+
+Users can install the TypeScript LSP manually via `npm i -g typescript-language-server typescript`.
+
+
+---
+
 ## Commands
 
 ### Development
@@ -43,6 +69,8 @@ npm run tsc                # TypeScript type checking
 ```
 
 **Important:** Use IDE diagnostics (real-time linting) instead of running full lint commands — they're much faster for development. Use `lint:fast-dev` only if you need to run lint from the command line.
+
+**Important:** If an LSP is available, prefer that instead of `npm run tsc` as the method of type checking.
 
 ---
 
@@ -150,8 +178,10 @@ export function fetchMyResource(id: string): Promise<MyResource> {
 - **E2E tests** (Cypress): Critical user journeys, accessibility testing (cypress-axe)
 - **Component tests** (Cypress): Real DOM rendering, PatternFly integrations
 
-**Before committing:**
+**After making changes:**
 
+- Always check IDE diagnostics on modified files to catch lint/formatting issues
+- If IDE diagnostics are unavailable, run `npm run lint:fast-dev -- <file>` from `apps/platform/` on changed files, or `npm run lint:fast-dev-fix -- <file>` to auto-fix (prettier is integrated via eslint-plugin-prettier)
 - If modifying existing code with tests, run those specific tests to ensure they still pass (don't run the full suite)
 - For new features, ask the developer if they want tests written
 - When writing tests, focus on happy path and critical user flows — avoid over-engineering

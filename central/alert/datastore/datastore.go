@@ -31,6 +31,7 @@ type DataStore interface {
 	SearchRawAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.Alert, error)
 	SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error)
 	SearchAlertPolicyNamesAndSeverities(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*alertviews.PolicyNameAndSeverity, error)
+	SearchAlertPolicySeverityCounts(ctx context.Context, q *v1.Query, excludeResolved bool) (*alertviews.PolicySeverityCounts, error)
 
 	WalkByQuery(ctx context.Context, q *v1.Query, db func(d *storage.Alert) error) error
 	WalkAll(ctx context.Context, fn func(alert *storage.ListAlert) error) error

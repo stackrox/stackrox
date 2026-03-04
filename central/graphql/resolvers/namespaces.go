@@ -396,11 +396,11 @@ func (resolver *namespaceResolver) FailingPolicyCounter(ctx context.Context, arg
 		return nil, err
 	}
 
-	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q, true)
+	counts, err := resolver.root.ViolationsDataStore.SearchAlertPolicySeverityCounts(ctx, q, true)
 	if err != nil {
 		return nil, nil
 	}
-	return mapListAlertsToPolicySeverityCount(alerts), nil
+	return policySeverityCountsToResolver(counts), nil
 }
 
 // PolicyStatus returns true if there is no policy violation for this namespace

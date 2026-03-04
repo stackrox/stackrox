@@ -45,4 +45,5 @@ message CentralHello {
   string central_id = 4;
   repeated string capabilities = 5;
   bool send_deduper_state = 6;
+  repeated string allowed_proxy_paths = 7;
 }
