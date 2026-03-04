@@ -138,21 +138,11 @@ func (e *endpointsStore) debug() interface{} {
 			epKey := fmt.Sprintf("0x%x", epHash)
 			dbg["historicalEndpoints"][epKey] = make(map[string]interface{})
 			for deplID, targetInfoSetMap := range submap {
-				for targetInfo, status := range targetInfoSetMap {
+				for targetInfo, ticksLeft := range targetInfoSetMap {
 					dbg["historicalEndpoints"][epKey][deplID] = map[string]interface{}{
 						"targetInfo": targetInfo,
-						"ticksLeft":  status.ticksLeft,
+						"ticksLeft":  ticksLeft,
 					}
-				}
-			}
-		}
-		dbg["reverseHistoricalEndpoints"] = make(map[string]map[string]interface{})
-		for deplID, submap := range e.reverseHistoricalEndpoints {
-			dbg["reverseHistoricalEndpoints"][deplID] = make(map[string]interface{})
-			for epHash, status := range submap {
-				dbg["reverseHistoricalEndpoints"][deplID] = map[string]interface{}{
-					"endpoint":  fmt.Sprintf("0x%x", epHash),
-					"ticksLeft": status.ticksLeft,
 				}
 			}
 		}

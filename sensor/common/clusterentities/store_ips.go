@@ -174,7 +174,7 @@ func (e *podIPsStore) addToHistory(deploymentID string) {
 		if _, ok := e.historicalIPs[ip]; !ok {
 			e.historicalIPs[ip] = make(map[string]*entityStatus)
 		}
-		e.historicalIPs[ip][deploymentID] = newHistoricalEntity(e.memorySize)
+		e.historicalIPs[ip][deploymentID] = newHistoricalEntityPtr(e.memorySize)
 	}
 }
 

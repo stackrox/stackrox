@@ -83,7 +83,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryWhenGoingOffline() {
 			s.Len(entityStore.containerIDsStore.containerIDMap, tc.wantMapSizeOnline)
 
 			s.Len(entityStore.podIPsStore.historicalIPs, tc.wantHistorySizeOnline)
-			s.Len(entityStore.endpointsStore.reverseHistoricalEndpoints, tc.wantHistorySizeOnline)
+			s.Len(entityStore.endpointsStore.historicalEndpoints, tc.wantHistorySizeOnline)
 			s.Len(entityStore.containerIDsStore.historicalContainerIDs, tc.wantHistorySizeOnline)
 
 			s.T().Logf("%s", string(entityStore.Debug()))

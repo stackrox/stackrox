@@ -437,7 +437,21 @@ func (e *Store) notifyPublicIPsListenersNoLock(notifyFunc func(PublicIPsListener
 	}
 }
 
-func prettyPrintHistoricalData[M ~map[K1]map[K2]*entityStatus, K1 comparable, K2 comparable](data M) string {
+func prettyPrintHistoricalData[M ~map[K1]map[K2]uint16, K1 comparable, K2 comparable](data M) string {
+	if len(data) == 0 {
+		return "history is empty"
+	}
+	fragments := make([]string, 0, len(data))
+	for ID, m := range data {
+		for _, ticksLeft := range m {
+			fragments = append(fragments,
+				fmt.Sprintf("[ID=%v, ticksLeft=%d]", ID, ticksLeft))
+		}
+	}
+	return strings.Join(fragments, "\n")
+}
+
+func prettyPrintHistoricalDataPtr[M ~map[K1]map[K2]*entityStatus, K1 comparable, K2 comparable](data M) string {
 	if len(data) == 0 {
 		return "history is empty"
 	}

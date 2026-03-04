@@ -153,7 +153,7 @@ func (e *containerIDsStore) addToHistory(contID string, meta ContainerMetadata) 
 	if _, ok := e.historicalContainerIDs[contID]; !ok {
 		e.historicalContainerIDs[contID] = make(map[ContainerMetadata]*entityStatus)
 	}
-	e.historicalContainerIDs[contID][meta] = newHistoricalEntity(e.memorySize)
+	e.historicalContainerIDs[contID][meta] = newHistoricalEntityPtr(e.memorySize)
 }
 
 // deleteFromHistory deletes containerID from history
@@ -176,5 +176,5 @@ func (e *containerIDsStore) String() string {
 	defer e.mutex.RUnlock()
 	return fmt.Sprintf("Current: %s\n Historical: %s",
 		slices.Collect(maps.Keys(e.containerIDMap)),
-		prettyPrintHistoricalData(e.historicalContainerIDs))
+		prettyPrintHistoricalDataPtr(e.historicalContainerIDs))
 }

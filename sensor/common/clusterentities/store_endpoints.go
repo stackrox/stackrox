@@ -24,10 +24,8 @@ type endpointsStore struct {
 	// memorySize defines how many ticks old endpoint data should be remembered after removal request
 	// Set to 0 to disable memory
 	memorySize uint16
-	// historicalEndpoints is mimicking endpointMap: endpoint hashes -> deployment id -> container port -> historyStatus
-	historicalEndpoints map[net.BinaryHash]map[string]map[uint16]*entityStatus
-	// reverseHistoricalEndpoints is mimicking reverseEndpointMap: deploymentID -> endpoint hash -> historyStatus
-	reverseHistoricalEndpoints map[string]map[net.BinaryHash]*entityStatus
+	// historicalEndpoints is mimicking endpointMap: endpoint hashes -> deployment id -> container port -> ticks remaining
+	historicalEndpoints map[net.BinaryHash]map[string]map[uint16]uint16
 
 	// h is the xxhash instance used for hashing endpoints
 	h hash.Hash64
@@ -49,9 +47,7 @@ func newEndpointsStoreWithMemory(numTicks uint16) *endpointsStore {
 func (e *endpointsStore) initMapsNoLock() {
 	e.endpointMap = make(map[net.BinaryHash]map[string]set.Set[uint16])
 	e.reverseEndpointMap = make(map[string]set.Set[net.BinaryHash])
-
-	e.reverseHistoricalEndpoints = make(map[string]map[net.BinaryHash]*entityStatus)
-	e.historicalEndpoints = make(map[net.BinaryHash]map[string]map[uint16]*entityStatus)
+	e.historicalEndpoints = make(map[net.BinaryHash]map[string]map[uint16]uint16)
 }
 
 func (e *endpointsStore) resetMaps() {
@@ -92,11 +88,14 @@ func (e *endpointsStore) RecordTick() bool {
 	defer e.mutex.Unlock()
 	for epHash, m1 := range e.historicalEndpoints {
 		for deploymentID, m2 := range m1 {
-			for _, status := range m2 {
-				status.recordTick()
+			// Decrement ticks for all ports
+			for port, ticksLeft := range m2 {
+				if ticksLeft > 0 {
+					m2[port] = ticksLeft - 1
+				}
 			}
 
-			e.reverseHistoricalEndpoints[deploymentID][epHash].recordTick()
+			// Check if any port has expired
 			e.removeFromHistoryIfExpired(deploymentID, epHash)
 		}
 	}
@@ -223,8 +222,16 @@ func doLookupEndpoint[M Map[T], T any](epHash net.BinaryHash, src map[net.Binary
 
 // removeFromHistoryIfExpired deletes historical entries that have expired.
 func (e *endpointsStore) removeFromHistoryIfExpired(deploymentID string, epHash net.BinaryHash) bool {
-	if status, ok := e.reverseHistoricalEndpoints[deploymentID][epHash]; ok && status.IsExpired() {
-		return e.deleteFromHistory(deploymentID, epHash)
+	m2, ok := e.historicalEndpoints[epHash][deploymentID]
+	if !ok {
+		return false
+	}
+
+	// Check if any port has expired (ticksLeft == 0)
+	for _, ticksLeft := range m2 {
+		if ticksLeft == 0 {
+			return e.deleteFromHistory(deploymentID, epHash)
+		}
 	}
 	return false
 }
@@ -237,18 +244,13 @@ func (e *endpointsStore) moveToHistory(deploymentID string, epHash net.BinaryHas
 
 // deleteFromHistory removes an endpoint from the historical map.
 func (e *endpointsStore) deleteFromHistory(deploymentID string, epHash net.BinaryHash) bool {
-	_, foundDepl := e.reverseHistoricalEndpoints[deploymentID][epHash]
 	_, foundEp := e.historicalEndpoints[epHash][deploymentID]
 
-	delete(e.reverseHistoricalEndpoints[deploymentID], epHash)
-	if len(e.reverseHistoricalEndpoints[deploymentID]) == 0 {
-		delete(e.reverseHistoricalEndpoints, deploymentID)
-	}
 	delete(e.historicalEndpoints[epHash], deploymentID)
 	if len(e.historicalEndpoints[epHash]) == 0 {
 		delete(e.historicalEndpoints, epHash)
 	}
-	return foundDepl || foundEp
+	return foundEp
 }
 
 // deleteFromCurrent removes data from the current map without affecting history.
@@ -270,25 +272,16 @@ func (e *endpointsStore) deleteFromCurrent(deploymentID string, epHash net.Binar
 // addToHistory adds endpoint data to history without removing it from the current map.
 func (e *endpointsStore) addToHistory(deploymentID string, epHash net.BinaryHash) {
 	if _, ok := e.historicalEndpoints[epHash]; !ok {
-		e.historicalEndpoints[epHash] = make(map[string]map[uint16]*entityStatus)
+		e.historicalEndpoints[epHash] = make(map[string]map[uint16]uint16)
 	}
 	if _, ok := e.historicalEndpoints[epHash][deploymentID]; !ok {
 		capacity := len(e.endpointMap[epHash][deploymentID])
-		e.historicalEndpoints[epHash][deploymentID] = make(map[uint16]*entityStatus, capacity)
+		e.historicalEndpoints[epHash][deploymentID] = make(map[uint16]uint16, capacity)
 	}
 
 	histMap := e.historicalEndpoints[epHash][deploymentID]
 	for port := range e.endpointMap[epHash][deploymentID] {
-		histMap[port] = newHistoricalEntity(e.memorySize)
-	}
-
-	if _, ok := e.reverseHistoricalEndpoints[deploymentID]; !ok {
-		e.reverseHistoricalEndpoints[deploymentID] = make(map[net.BinaryHash]*entityStatus, len(e.reverseEndpointMap[deploymentID]))
-	}
-
-	revHistMap := e.reverseHistoricalEndpoints[deploymentID]
-	for epHash := range e.reverseEndpointMap[deploymentID] {
-		revHistMap[epHash] = newHistoricalEntity(e.memorySize)
+		histMap[port] = e.memorySize
 	}
 }
 
