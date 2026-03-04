@@ -44,7 +44,7 @@ class BaseSpecification extends Specification {
 
     static final Logger LOG = LoggerFactory.getLogger("test." + BaseSpecification.getSimpleName())
 
-    static final String TEST_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.12"
+    static final String TEST_IMAGE = "quay.io/rhacs-eng/qa-multi-arch:nginx-1.12@$TEST_IMAGE_SHA"
     static final String TEST_IMAGE_NAME_WITH_SHA = TEST_IMAGE
     static final String TEST_IMAGE_SHA = "sha256:72daaf46f11cc753c4eab981cbf869919bd1fee3d2170a2adeac12400f494728"
 
