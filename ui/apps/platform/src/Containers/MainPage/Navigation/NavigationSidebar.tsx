@@ -229,6 +229,12 @@ function getNavDescriptions(
                 },
                 {
                     type: 'link',
+                    content: 'Base Images',
+                    path: baseImagesPath,
+                    routeKey: 'base-images',
+                },
+                {
+                    type: 'link',
                     content: 'Integrations',
                     path: integrationsPath,
                     routeKey: 'integrations',
@@ -262,12 +268,6 @@ function getNavDescriptions(
                     content: 'System Health',
                     path: systemHealthPath,
                     routeKey: 'system-health',
-                },
-                {
-                    type: 'link',
-                    content: 'Base Images',
-                    path: baseImagesPath,
-                    routeKey: 'base-images',
                 },
             ],
         },
