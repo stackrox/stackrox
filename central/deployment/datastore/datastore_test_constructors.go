@@ -48,7 +48,6 @@ func NewTestDataStore(
 	mockCtrl := gomock.NewController(t)
 	ds := newDatastoreImpl(
 		deploymentStore,
-		testDB.DB,
 		storeParams.ImagesDataStore,
 		storeParams.ImagesV2DataStore,
 		storeParams.ProcessBaselinesDataStore,
@@ -84,7 +83,6 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 	mockCtrl := gomock.NewController(t)
 	return newDatastoreImpl(
 		dbStore,
-		pool,
 		imageStore,
 		imageV2Store,
 		processBaselineStore,

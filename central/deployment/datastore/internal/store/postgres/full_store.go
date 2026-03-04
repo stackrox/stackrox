@@ -67,15 +67,7 @@ func (f *fullStoreImpl) GetManyListDeployments(ctx context.Context, ids ...strin
 		ProtoQuery()
 
 	// Set selects to only the columns needed for ListDeployment
-	query.Selects = []*v1.QuerySelect{
-		pkgSearch.NewQuerySelect(pkgSearch.DeploymentID).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.DeploymentHash).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.DeploymentName).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.Cluster).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.ClusterID).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.Namespace).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.Created).Proto(),
-	}
+	query.Selects = views.ListDeploymentViewSelects()
 
 	// Fetch results using the search framework
 	viewMap := make(map[string]*views.ListDeploymentView)
@@ -88,7 +80,8 @@ func (f *fullStoreImpl) GetManyListDeployments(ctx context.Context, ids ...strin
 		return nil, nil, err
 	}
 
-	// Return results in same order as input IDs, tracking missing indices
+	// It is important that the results are populated in the same order as the input IDs
+	// slice, since some calling code relies on that to maintain order.
 	listDeployments := make([]*storage.ListDeployment, 0, len(ids))
 	var missingIndices []int
 	for i, id := range ids {
@@ -114,15 +107,7 @@ func (f *fullStoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query) 
 	}
 
 	// Set selects to only the columns needed for ListDeployment
-	query.Selects = []*v1.QuerySelect{
-		pkgSearch.NewQuerySelect(pkgSearch.DeploymentID).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.DeploymentHash).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.DeploymentName).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.Cluster).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.ClusterID).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.Namespace).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.Created).Proto(),
-	}
+	query.Selects = views.ListDeploymentViewSelects()
 
 	var listDeployments []*storage.ListDeployment
 	err := pgSearch.RunSelectRequestForSchemaFn(queryCtx, f.db, pkgSchema.DeploymentsSchema, query,

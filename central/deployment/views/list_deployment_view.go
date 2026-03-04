@@ -3,8 +3,10 @@ package views
 import (
 	"time"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // ListDeploymentView represents deployment data for list responses.
@@ -32,5 +34,18 @@ func (v *ListDeploymentView) ToListDeployment() *storage.ListDeployment {
 		Namespace: v.Namespace,
 		Created:   protocompat.ConvertTimeToTimestampOrNil(v.Created),
 		// Priority is set by updateListDeploymentPriority in the datastore layer
+	}
+}
+
+// ListDeploymentViewSelects returns the query selects needed for ListDeploymentView.
+func ListDeploymentViewSelects() []*v1.QuerySelect {
+	return []*v1.QuerySelect{
+		search.NewQuerySelect(search.DeploymentID).Proto(),
+		search.NewQuerySelect(search.DeploymentHash).Proto(),
+		search.NewQuerySelect(search.DeploymentName).Proto(),
+		search.NewQuerySelect(search.Cluster).Proto(),
+		search.NewQuerySelect(search.ClusterID).Proto(),
+		search.NewQuerySelect(search.Namespace).Proto(),
+		search.NewQuerySelect(search.Created).Proto(),
 	}
 }

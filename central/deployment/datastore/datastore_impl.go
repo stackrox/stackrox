@@ -27,7 +27,6 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -40,7 +39,6 @@ var (
 
 type datastoreImpl struct {
 	deploymentStore deploymentStore.Store
-	db              postgres.DB
 
 	images                 imageDS.DataStore
 	imagesV2               imageV2DS.DataStore
@@ -60,7 +58,6 @@ type datastoreImpl struct {
 
 func newDatastoreImpl(
 	storage deploymentStore.Store,
-	db postgres.DB,
 	images imageDS.DataStore,
 	imagesV2 imageV2DS.DataStore,
 	baselines pwDS.DataStore,
@@ -74,7 +71,6 @@ func newDatastoreImpl(
 	platformMatcher platformmatcher.PlatformMatcher) *datastoreImpl {
 	return &datastoreImpl{
 		deploymentStore:        storage,
-		db:                     db,
 		images:                 images,
 		imagesV2:               imagesV2,
 		baselines:              baselines,
