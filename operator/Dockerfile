@@ -48,6 +48,11 @@ COPY COLLECTOR_VERSION SCANNER_VERSION FACT_VERSION VERSION ./
 # We've been historically building operator without CGO both upstream and downstream.
 ENV CGO_ENABLED=0
 
+# BUILD_TAG is set by the smuggled-status-sh mechanism or Konflux pipeline.
+# go-tool.sh uses it for the version string when .git is unavailable.
+ARG BUILD_TAG
+ENV BUILD_TAG=${BUILD_TAG}
+
 # Build the operator binary.
 RUN GOOS=linux GOARCH=${TARGET_ARCH} scripts/go-build-file.sh operator/cmd/main.go stackrox-operator
 

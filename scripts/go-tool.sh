@@ -31,6 +31,11 @@ generate_version_file() {
 		# Base tag only (e.g. "4.11.x") — stable across commits.
 		main_version="${BASE_VERSION}"
 		git_short_sha=""
+	elif [[ -n "${BUILD_TAG:-}" ]]; then
+		# Konflux/release builds set BUILD_TAG to the full version string.
+		# Use it directly (the Docker build context has no .git directory).
+		main_version="${BUILD_TAG}"
+		git_short_sha="$(echo "$BUILD_TAG" | grep -oP 'g\K[0-9a-f]+$' || echo "")"
 	else
 		# Full format matching git describe (e.g. "4.11.x-193-g7257553280").
 		local commit_count
