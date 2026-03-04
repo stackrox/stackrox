@@ -106,14 +106,14 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 
 	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
 		protoProfileV2 := &central.ComplianceOperatorProfileV2{
-			Id:          string(tailoredProfile.GetUID()),
-			ProfileId:   tailoredProfile.Status.ID,
-			Name:        tailoredProfile.GetName(),
-			Labels:      labels,
-			Annotations: annotations,
-			Description: stringutils.FirstNonEmpty(tailoredProfile.Spec.Description, baseProfile.Description),
-			Title:       tailoredProfile.Spec.Title,
-			IsTailored:  true,
+			Id:                     string(tailoredProfile.GetUID()),
+			ProfileId:              tailoredProfile.Status.ID,
+			Name:                   tailoredProfile.GetName(),
+			Labels:                 baseProfile.Labels,
+			Annotations:            baseProfile.Annotations,
+			Description:            stringutils.FirstNonEmpty(tailoredProfile.Spec.Description, baseProfile.Description),
+			Title:                  tailoredProfile.Spec.Title,
+			ComplianceOperatorKind: central.ComplianceOperatorProfileV2_TAILORED_PROFILE,
 		}
 
 		for _, rule := range protoProfile.GetRules() {
