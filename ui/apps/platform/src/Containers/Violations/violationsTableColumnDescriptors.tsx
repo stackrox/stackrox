@@ -27,13 +27,14 @@ type EntityTableCellProps = {
             clusterName: string;
         };
         resource?: { name: string };
-        deployment: { name: string };
+        deployment?: { name: string };
+        node?: { name: string };
     };
 };
 
 function EntityTableCell({ original }: EntityTableCellProps): ReactElement {
-    const { commonEntityInfo, resource, deployment } = original;
-    const { name } = resource || deployment;
+    const { commonEntityInfo, resource, deployment, node } = original;
+    const { name } = resource ?? deployment ?? node ?? { name: '' };
     const { namespace, clusterName } = commonEntityInfo;
 
     const entityPath = namespace ? `${clusterName}/${namespace}` : clusterName;
