@@ -82,7 +82,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	if val := rule.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]; val == "" {
 		// RuleIDAnnotationKey is not required for custom rules
-		if !rule.GetIsCustom() {
+		if rule.GetComplianceOperatorKind() != central.ComplianceOperatorRuleV2_CUSTOM_RULE {
 			return errors.Errorf("Rule %s is missing the annotation %s", rule.GetName(), v1alpha1.RuleIDAnnotationKey)
 		}
 	}

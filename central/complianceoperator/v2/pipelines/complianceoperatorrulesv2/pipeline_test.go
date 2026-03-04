@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -157,7 +156,7 @@ func (s *PipelineTestSuite) TestMatch() {
 func (s *PipelineTestSuite) TestRunCreateOOBRuleMissingRuleIDAnnotationFails() {
 	ctx := context.Background()
 
-	rule := protocompat.Clone(testutils.GetRuleV2SensorMsg(s.T())).(*central.ComplianceOperatorRuleV2)
+	rule := testutils.GetRuleV2SensorMsg(s.T()).CloneVT()
 	delete(rule.GetAnnotations(), v1alpha1.RuleIDAnnotationKey)
 
 	msg := &central.MsgFromSensor{
@@ -180,8 +179,8 @@ func (s *PipelineTestSuite) TestRunCreateOOBRuleMissingRuleIDAnnotationFails() {
 func (s *PipelineTestSuite) TestRunCreateCustomRuleMissingRuleIDAnnotationSucceeds() {
 	ctx := context.Background()
 
-	rule := protocompat.Clone(testutils.GetRuleV2SensorMsg(s.T())).(*central.ComplianceOperatorRuleV2)
-	rule.IsCustom = true
+	rule := testutils.GetRuleV2SensorMsg(s.T()).CloneVT()
+	rule.ComplianceOperatorKind = central.ComplianceOperatorRuleV2_CUSTOM_RULE
 	delete(rule.GetAnnotations(), v1alpha1.RuleIDAnnotationKey)
 
 	s.v2DS.EXPECT().UpsertRule(ctx, gomock.Any()).Return(nil).Times(1)
