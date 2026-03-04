@@ -26,6 +26,7 @@ func ConvertTestSingleKeyStructFromProto(obj *storage.TestSingleKeyStruct) (*Tes
 		Timestamp:   protocompat.NilOrTime(obj.GetTimestamp()),
 		Enum:        obj.GetEnum(),
 		Enums:       pq.Array(pgutils.ConvertEnumSliceToIntArray(obj.GetEnums())).(*pq.Int32Array),
+		Timestamptz: protocompat.NilOrTime(obj.GetTimestamptz()),
 		Serialized:  serialized,
 	}
 	return model, nil
