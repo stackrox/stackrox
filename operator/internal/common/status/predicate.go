@@ -69,13 +69,27 @@ func (p SkipStatusControllerUpdates[T]) Update(e event.TypedUpdateEvent[T]) bool
 	return true
 }
 
-// reducedObjectsEqual compares two ObjectForStatusController objects for equality, ignoring differences in status controller owned conditions.
-// Important: This function modifies the input objects for the sake of ignoring status controller-owned conditions.
+// reducedObjectsEqual compares two ObjectForStatusController objects for equality, while making sure that
+// certain differences are ignored, which would only trigger unnecessary reconciliations.
+//
+// This includes:
+//   - Ignoring differences in conditions owned by the status controller.
+//   - Ignoring differences in managed fields (volatile Kubernetes bookkeeping).
+//   - Ignoring differences in resource version (the resource version is also bumped on status-only updates).
+//
+// Important: This function modifies the input objects!
 func reducedObjectsEqual(oldObj, newObj platform.ObjectForStatusController) bool {
 	for _, conditionType := range statusControllerConditionTypes {
 		oldObj.SetCondition(platform.StackRoxCondition{Type: conditionType})
 		newObj.SetCondition(platform.StackRoxCondition{Type: conditionType})
 	}
+
+	oldObj.SetManagedFields(nil)
+	newObj.SetManagedFields(nil)
+
+	oldObj.SetResourceVersion("")
+	newObj.SetResourceVersion("")
+
 	return equality.Semantic.DeepEqual(oldObj, newObj)
 }
 
