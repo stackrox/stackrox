@@ -66,6 +66,20 @@ var (
 		Name:      "process_indicators_removed_total",
 		Help:      "Total number of process indicators removed from the database across all reasons",
 	})
+
+	processIndicatorsAddedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "process_indicators_added_total",
+		Help:      "Total number of process indicators written to the database",
+	})
+
+	processIndicatorsNet = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "process_indicators_net",
+		Help:      "Net count of process indicators (additions minus removals)",
+	})
 )
 
 func incrementPrunedProcessesMetric(num int, reason string) {
@@ -75,6 +89,7 @@ func incrementPrunedProcessesMetric(num int, reason string) {
 func recordProcessIndicatorsRemoved(num int, reason string) {
 	processIndicatorsRemoved.WithLabelValues(reason).Add(float64(num))
 	processIndicatorsRemovedTotal.Add(float64(num))
+	processIndicatorsNet.Sub(float64(num))
 }
 
 func incrementProcessPruningCacheHitsMetrics() {
@@ -110,6 +125,8 @@ func recordProcessIndicatorsBatchAdded(indicators []*storage.ProcessIndicator) {
 		argsSizeChars := getProcessArgsSizeChars(indicator)
 		processArgsHistogram.Observe(float64(argsSizeBytes))
 		processArgsCharsHistogram.Observe(float64(argsSizeChars))
+		processIndicatorsAddedCounter.Inc()
+		processIndicatorsNet.Inc()
 	}
 }
 
@@ -121,5 +138,7 @@ func init() {
 		processArgsCharsHistogram,
 		processIndicatorsRemoved,
 		processIndicatorsRemovedTotal,
+		processIndicatorsAddedCounter,
+		processIndicatorsNet,
 	)
 }
