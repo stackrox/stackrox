@@ -117,27 +117,29 @@ func (e *endpointsStore) debug() interface{} {
 	dbg["reverseHistoricalEndpoints"] = make(map[string]map[string]interface{})
 
 	concurrency.WithRLock(&e.mutex, func() {
-		for ep, submap := range e.endpointMap {
-			dbg["endpointMap"][ep.String()] = make(map[string]interface{})
+		for epHash, submap := range e.endpointMap {
+			epKey := fmt.Sprintf("0x%x", epHash)
+			dbg["endpointMap"][epKey] = make(map[string]interface{})
 			for deplID, targetInfoSet := range submap {
-				dbg["endpointMap"][ep.String()][deplID] = targetInfoSet.AsSlice()
+				dbg["endpointMap"][epKey][deplID] = targetInfoSet.AsSlice()
 			}
 		}
 		dbg["reverseEndpointMap"]["deployments"] = make(map[string]interface{})
-		for deplID, setOfEp := range e.reverseEndpointMap {
-			// setOfEp.AsSlice() does not print well
-			arr := make([]string, 0, setOfEp.Cardinality())
-			for _, ep := range setOfEp.AsSlice() {
-				arr = append(arr, ep.String())
+		for deplID, setOfEpHash := range e.reverseEndpointMap {
+			// setOfEpHash.AsSlice() does not print well
+			arr := make([]string, 0, setOfEpHash.Cardinality())
+			for _, epHash := range setOfEpHash.AsSlice() {
+				arr = append(arr, fmt.Sprintf("0x%x", epHash))
 			}
 			// we need dummy entry "deployments" to fit into the dbg declaration
 			dbg["reverseEndpointMap"]["deployments"][deplID] = arr
 		}
-		for ep, submap := range e.historicalEndpoints {
-			dbg["historicalEndpoints"][ep.String()] = make(map[string]interface{})
+		for epHash, submap := range e.historicalEndpoints {
+			epKey := fmt.Sprintf("0x%x", epHash)
+			dbg["historicalEndpoints"][epKey] = make(map[string]interface{})
 			for deplID, targetInfoSetMap := range submap {
 				for targetInfo, status := range targetInfoSetMap {
-					dbg["historicalEndpoints"][ep.String()][deplID] = map[string]interface{}{
+					dbg["historicalEndpoints"][epKey][deplID] = map[string]interface{}{
 						"targetInfo": targetInfo,
 						"ticksLeft":  status.ticksLeft,
 					}
@@ -147,9 +149,9 @@ func (e *endpointsStore) debug() interface{} {
 		dbg["reverseHistoricalEndpoints"] = make(map[string]map[string]interface{})
 		for deplID, submap := range e.reverseHistoricalEndpoints {
 			dbg["reverseHistoricalEndpoints"][deplID] = make(map[string]interface{})
-			for ep, status := range submap {
+			for epHash, status := range submap {
 				dbg["reverseHistoricalEndpoints"][deplID] = map[string]interface{}{
-					"endpoint":  ep.String(),
+					"endpoint":  fmt.Sprintf("0x%x", epHash),
 					"ticksLeft": status.ticksLeft,
 				}
 			}

@@ -2,6 +2,7 @@ package net
 
 import (
 	"fmt"
+	"hash"
 
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -108,4 +109,39 @@ func NumericEndpointCompare(a, b NumericEndpoint) int {
 		return portCompare
 	}
 	return int(a.L4Proto) - int(b.L4Proto)
+}
+
+// BinaryHash is a uint64 hash for memory-efficient map storage.
+// Using hash keys instead of full NumericEndpoint structs (56 bytes) reduces
+// map storage overhead and enables faster lookups via runtime.mapassign_fast64.
+type BinaryHash uint64
+
+var hashDelimiter = []byte{0}
+
+// BinaryKey produces a binary hash for this endpoint using the provided hash function.
+// The hash function instance is reused to avoid allocations - caller should Reset() before calling.
+// Uses xxhash for fast, non-cryptographic hashing with low collision probability.
+func (e NumericEndpoint) BinaryKey(h hash.Hash64) BinaryHash {
+	h.Reset()
+
+	// Hash IP address bytes
+	if e.IPAndPort.Address.IsValid() {
+		_, _ = h.Write(e.IPAndPort.Address.data.bytes())
+	}
+	_, _ = h.Write(hashDelimiter)
+
+	// Hash port (2 bytes, big-endian)
+	portBuf := [2]byte{byte(e.IPAndPort.Port >> 8), byte(e.IPAndPort.Port)}
+	_, _ = h.Write(portBuf[:])
+
+	// Hash protocol (8 bytes, big-endian)
+	protoBuf := [8]byte{
+		byte(e.L4Proto >> 56), byte(e.L4Proto >> 48),
+		byte(e.L4Proto >> 40), byte(e.L4Proto >> 32),
+		byte(e.L4Proto >> 24), byte(e.L4Proto >> 16),
+		byte(e.L4Proto >> 8), byte(e.L4Proto),
+	}
+	_, _ = h.Write(protoBuf[:])
+
+	return BinaryHash(h.Sum64())
 }

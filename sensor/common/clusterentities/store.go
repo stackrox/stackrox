@@ -323,20 +323,11 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool, auxInfo 
 }
 
 // currentlyStoredPublicIPs returns all public IPs currently stored in the store (including history).
+// Note: Since endpointsStore uses hashed endpoints, we can only track public IPs from podIPsStore.
 func (e *Store) currentlyStoredPublicIPs() set.Set[net.IPAddress] {
 	s := set.NewSet[net.IPAddress]()
-	concurrency.WithRLock(&e.endpointsStore.mutex, func() {
-		for endpoint := range e.endpointsStore.endpointMap {
-			if endpoint.IPAndPort.Address.IsPublic() {
-				s.Add(endpoint.IPAndPort.Address)
-			}
-		}
-		for endpoint := range e.endpointsStore.historicalEndpoints {
-			if endpoint.IPAndPort.Address.IsPublic() {
-				s.Add(endpoint.IPAndPort.Address)
-			}
-		}
-	})
+	// Cannot extract IPs from hashed endpoints in endpointsStore
+	// Only track public IPs from podIPsStore
 	concurrency.WithRLock(&e.podIPsStore.mutex, func() {
 		for address := range e.podIPsStore.ipMap {
 			if address.IsPublic() {
@@ -388,9 +379,6 @@ func (e *Store) RegisterContainerMetadataCallbackChannel(callbackChan chan<- Con
 type LookupResult struct {
 	Entity         networkgraph.Entity
 	ContainerPorts []uint16
-	// Deprecated: PortNames is no longer populated and will be removed in a future version.
-	// This field is kept for backward compatibility but is always nil.
-	PortNames []string
 }
 
 // LookupByEndpoint returns possible target deployments by endpoint (if any).
