@@ -21,6 +21,7 @@ func TestWithinScope(t *testing.T) {
 		clusterLabels      map[string]string
 		namespaceLabels    map[string]string
 		featureFlagEnabled bool
+		expectError        bool
 		result             bool
 	}{
 		{
@@ -211,7 +212,7 @@ func TestWithinScope(t *testing.T) {
 		},
 		// Test cases verifying feature flag behavior
 		{
-			name: "cluster_label mismatch with flag OFF is ignored",
+			name: "cluster_label with flag OFF fails to compile",
 			scope: &storage.Scope{
 				ClusterLabel: &storage.Scope_Label{
 					Key:   "env",
@@ -223,7 +224,7 @@ func TestWithinScope(t *testing.T) {
 			},
 			clusterLabels:      map[string]string{"env": "dev"},
 			featureFlagEnabled: false,
-			result:             true,
+			expectError:        true,
 		},
 		{
 			name: "cluster_label mismatch with flag ON fails",
@@ -241,7 +242,7 @@ func TestWithinScope(t *testing.T) {
 			result:             false,
 		},
 		{
-			name: "namespace_label mismatch with flag OFF is ignored",
+			name: "namespace_label with flag OFF fails to compile",
 			scope: &storage.Scope{
 				NamespaceLabel: &storage.Scope_Label{
 					Key:   "team",
@@ -253,7 +254,7 @@ func TestWithinScope(t *testing.T) {
 			},
 			namespaceLabels:    map[string]string{"team": "frontend"},
 			featureFlagEnabled: false,
-			result:             true,
+			expectError:        true,
 		},
 		{
 			name: "namespace_label mismatch with flag ON fails",
@@ -346,6 +347,10 @@ func TestWithinScope(t *testing.T) {
 		}
 
 		cs, err := CompileScope(test.scope, clusterProvider, namespaceProvider)
+		if test.expectError {
+			require.Error(t, err, "Expected error for test '%s'", test.name)
+			return
+		}
 		require.NoError(t, err)
 		assert.Equalf(t, test.result, cs.MatchesDeployment(context.Background(), test.deployment), "Failed test '%s'", test.name)
 	}
