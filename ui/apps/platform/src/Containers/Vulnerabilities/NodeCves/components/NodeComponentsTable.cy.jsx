@@ -32,13 +32,17 @@ describe(Cypress.spec.relative, () => {
             cy.get(componentCell).eq(2).should('have.text', 'podman');
 
             // Click the Component column sort button to sort descending
-            cy.findByRole('columnheader', { name: /component/i }).findByRole('button').click();
+            cy.findByRole('columnheader', { name: /component/i })
+                .findByRole('button')
+                .click();
             cy.get(componentCell).eq(0).should('have.text', 'podman');
             cy.get(componentCell).eq(1).should('have.text', 'kernel');
             cy.get(componentCell).eq(2).should('have.text', 'cri-o');
 
             // Click again to toggle back to ascending
-            cy.findByRole('columnheader', { name: /component/i }).findByRole('button').click();
+            cy.findByRole('columnheader', { name: /component/i })
+                .findByRole('button')
+                .click();
             cy.get(componentCell).eq(0).should('have.text', 'cri-o');
             cy.get(componentCell).eq(1).should('have.text', 'kernel');
             cy.get(componentCell).eq(2).should('have.text', 'podman');
