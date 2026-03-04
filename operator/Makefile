@@ -412,6 +412,17 @@ deploy-previous-via-olm: kuttl bundle-post-process ## Deploy replaced version of
 .PHONY: deploy-via-installer
 deploy-via-installer: ## Deploy current version of operator via distribution manifest file.
 	./hack/retry-kubectl.sh </dev/null apply -f dist/install.yaml
+	$(MAKE) babysit-deployment
+
+.PHONY: deploy-via-chart
+deploy-via-chart: ## Deploy current version of operator via helm chart produced by the chart target.
+	helm install --create-namespace --namespace $(TEST_NAMESPACE) rhacs-operator ./dist/chart
+# It would be nice to be able to just use `--wait --set manager.env.NO_PROXY=127.1.2.3/8' rather than the below,
+# but https://github.com/kubernetes-sigs/kubebuilder/issues/5485#issuecomment-3919321648 prevents that at the moment.
+	$(MAKE) babysit-deployment
+
+.PHONY: babysit-deployment
+babysit-deployment: ## Patch operator controller deployment as needed for the tests to pass, and wait until it's healthy.
 # A hack for the NO_PROXY assertions in the e2e tests.
 	./hack/retry-kubectl.sh </dev/null set env -n $(TEST_NAMESPACE) deployment/rhacs-operator-controller-manager NO_PROXY=127.1.2.3/8
 # Need to hardcode the deployment name here and above, since kubectl barfs on the CRDs in the manifest when working on deployment:
