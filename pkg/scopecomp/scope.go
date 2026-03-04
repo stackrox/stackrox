@@ -72,7 +72,11 @@ func CompileScope(scope *storage.Scope, clusterLabelProvider ClusterLabelProvide
 		namespaceLabelProvider: namespaceLabelProvider,
 	}
 
-	if features.LabelBasedPolicyScoping.Enabled() {
+	if !features.LabelBasedPolicyScoping.Enabled() {
+		if scope.GetClusterLabel() != nil || scope.GetNamespaceLabel() != nil {
+			return nil, errors.New("cluster_label and namespace_label scopes require ROX_LABEL_BASED_POLICY_SCOPING feature flag to be enabled")
+		}
+	} else {
 		cs.ClusterLabelKey, cs.ClusterLabelValue, err = compileLabelMatchers(scope.GetClusterLabel(), clusterLabelType)
 		if err != nil {
 			return nil, err
@@ -96,9 +100,6 @@ func (c *CompiledScope) MatchesClusterLabels(ctx context.Context, deployment *st
 	if c.ClusterLabelKey == nil {
 		return true
 	}
-	if !features.LabelBasedPolicyScoping.Enabled() {
-		return false
-	}
 	if c.clusterLabelProvider == nil {
 		log.Error("Cluster label matcher defined but provider is nil - failing closed")
 		return false
@@ -115,9 +116,6 @@ func (c *CompiledScope) MatchesClusterLabels(ctx context.Context, deployment *st
 func (c *CompiledScope) MatchesNamespaceLabels(ctx context.Context, deployment *storage.Deployment) bool {
 	if c.NamespaceLabelKey == nil {
 		return true
-	}
-	if !features.LabelBasedPolicyScoping.Enabled() {
-		return false
 	}
 	if c.namespaceLabelProvider == nil {
 		log.Error("Namespace label matcher defined but provider is nil - failing closed")
