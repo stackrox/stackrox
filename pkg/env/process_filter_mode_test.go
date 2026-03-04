@@ -162,29 +162,3 @@ func TestGetEffectiveProcessFilterConfig(t *testing.T) {
 		})
 	}
 }
-
-func TestIsEnvVarExplicitlySet(t *testing.T) {
-	testVar := "TEST_ENV_VAR_FOR_TESTING"
-
-	// Clean up before and after
-	_ = os.Unsetenv(testVar)
-	defer func() {
-		_ = os.Unsetenv(testVar)
-	}()
-
-	// Test when not set
-	_, ok := os.LookupEnv(testVar)
-	assert.False(t, ok)
-
-	// Test when set to non-empty value
-	err := os.Setenv(testVar, "value")
-	require.NoError(t, err)
-	_, ok = os.LookupEnv(testVar)
-	assert.True(t, ok)
-
-	// Test when set to empty value (should still be considered "set")
-	err = os.Setenv(testVar, "")
-	require.NoError(t, err)
-	_, ok = os.LookupEnv(testVar)
-	assert.True(t, ok)
-}
