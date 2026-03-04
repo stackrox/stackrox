@@ -330,6 +330,7 @@ chart: kubebuilder manifests ## Generate a helm chart with all necessary resourc
 	VERSION=$(VERSION) ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true $(KUBEBUILDER) edit --plugins=helm/v2-alpha --force
 	if [[ "$(ROX_IMAGE_FLAVOR)" = opensource ]]; then mv PROJECT.bak PROJECT; fi
 	sed -i'.bak' -e 's,0.1.0,$(VERSION),g' dist/chart/Chart.yaml
+	sed -i'.bak' -E -e 's,^version: ([0-9]+[.][0-9]+[.][0-9]+).*,version: \1,g' dist/chart/Chart.yaml
 	rm -f dist/chart/Chart.yaml.bak
 
 .PHONY: build

@@ -88,7 +88,7 @@ jobs:
           ref: ${{ github.ref_name }}
       - name: Publish Helm charts to stackrox/release-artifacts
         env:
-          STACKROX_TAG: ${{ github.ref_name }}
+          STACKROX_TAG: 4.11.97
           GITHUB_USERNAME: ${{ secrets.RHACS_BOT_GITHUB_USERNAME }}
           GITHUB_EMAIL: ${{ secrets.RHACS_BOT_GITHUB_EMAIL }}
           GITHUB_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
