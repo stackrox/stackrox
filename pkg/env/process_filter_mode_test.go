@@ -131,30 +131,20 @@ func TestGetEffectiveProcessFilterConfig(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			// Clean up any existing env vars
-			_ = os.Unsetenv("ROX_PROCESS_FILTER_MODE")
-			_ = os.Unsetenv("ROX_PROCESS_FILTER_MAX_EXACT_PATH_MATCHES")
-			_ = os.Unsetenv("ROX_PROCESS_FILTER_FAN_OUT_LEVELS")
-			_ = os.Unsetenv("ROX_PROCESS_FILTER_MAX_PROCESS_PATHS")
-
 			// Set the mode if requested
 			if tc.setMode {
-				err := os.Setenv("ROX_PROCESS_FILTER_MODE", tc.mode)
-				require.NoError(t, err)
+				t.Setenv("ROX_PROCESS_FILTER_MODE", tc.mode)
 			}
 
 			// Set individual overrides if provided
 			if tc.maxExactPathMatchesEnv != "" {
-				err := os.Setenv("ROX_PROCESS_FILTER_MAX_EXACT_PATH_MATCHES", tc.maxExactPathMatchesEnv)
-				require.NoError(t, err)
+				t.Setenv("ROX_PROCESS_FILTER_MAX_EXACT_PATH_MATCHES", tc.maxExactPathMatchesEnv)
 			}
 			if tc.fanOutLevelsEnv != "" {
-				err := os.Setenv("ROX_PROCESS_FILTER_FAN_OUT_LEVELS", tc.fanOutLevelsEnv)
-				require.NoError(t, err)
+				t.Setenv("ROX_PROCESS_FILTER_FAN_OUT_LEVELS", tc.fanOutLevelsEnv)
 			}
 			if tc.maxProcessPathsEnv != "" {
-				err := os.Setenv("ROX_PROCESS_FILTER_MAX_PROCESS_PATHS", tc.maxProcessPathsEnv)
-				require.NoError(t, err)
+				t.Setenv("ROX_PROCESS_FILTER_MAX_PROCESS_PATHS", tc.maxProcessPathsEnv)
 			}
 
 			config, mode, err := GetEffectiveProcessFilterConfig()
@@ -169,12 +159,6 @@ func TestGetEffectiveProcessFilterConfig(t *testing.T) {
 			} else {
 				assert.NoError(t, err, "Expected no error")
 			}
-
-			// Clean up
-			_ = os.Unsetenv("ROX_PROCESS_FILTER_MODE")
-			_ = os.Unsetenv("ROX_PROCESS_FILTER_MAX_EXACT_PATH_MATCHES")
-			_ = os.Unsetenv("ROX_PROCESS_FILTER_FAN_OUT_LEVELS")
-			_ = os.Unsetenv("ROX_PROCESS_FILTER_MAX_PROCESS_PATHS")
 		})
 	}
 }
