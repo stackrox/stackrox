@@ -14,7 +14,7 @@ runs:
         echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
         echo "GOMODCACHE=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
         echo "GOARCH=$(go env GOARCH)" >> "$GITHUB_OUTPUT"
-        echo "TAG=$(date +%Yw%U)" >> "$GITHUB_OUTPUT"
+        echo "TAG=${{ github.sha }}" >> "$GITHUB_OUTPUT"
       shell: bash
 
     # Temporarily saving on all events to test cache save behavior.

@@ -360,12 +360,6 @@ function launch_central {
         helm_args+=(--set scanner.disable=true)
       fi
 
-      if [[ "${is_local_dev}" == "true" ]]; then
-        helm_args+=(-f "${COMMON_DIR}/local-dev-values.yaml")
-      elif [[ -n "$CI" ]]; then
-        helm_args+=(-f "${COMMON_DIR}/ci-values.yaml")
-      fi
-
       if [[ "${CGO_CHECKS}" == "true" ]]; then
         echo "CGO_CHECKS set to true. Setting GOEXPERIMENT=cgocheck2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
         # Extend mutex watchdog timeout because cgochecks hamper performance
@@ -461,6 +455,13 @@ function launch_central {
           -f "$unzip_dir/values-private.yaml"
           --set-string imagePullSecrets.useExisting="stackrox;stackrox-scanner"
         )
+      fi
+
+      # Specify CI value overrides after the default generated values-public.yaml/values-private.yaml above because Helm will prioritize the last (right-most) file specified.
+      if [[ "${is_local_dev}" == "true" ]]; then
+        helm_args+=(-f "${COMMON_DIR}/local-dev-values.yaml")
+      elif [[ -n "$CI" ]]; then
+        helm_args+=(-f "${COMMON_DIR}/ci-values.yaml")
       fi
 
       # Add a custom values file to Helm
@@ -848,6 +849,18 @@ function launch_sensor {
         )
       fi
 
+      if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
+        helm_args+=(
+          --set customize.envVars.ROX_NETFLOW_BATCHING="${ROX_NETFLOW_BATCHING}"
+        )
+      fi
+
+      if [[ -n "${ROX_NETFLOW_CACHE_LIMITING:-}" ]]; then
+        helm_args+=(
+          --set customize.envVars.ROX_NETFLOW_CACHE_LIMITING="${ROX_NETFLOW_CACHE_LIMITING}"
+        )
+      fi
+
       # Add a custom values file to Helm
       if [[ -n "$ROX_SENSOR_EXTRA_HELM_VALUES_FILE" ]]; then
         helm_args+=(
@@ -928,6 +941,24 @@ function launch_sensor {
 
       echo "Deploying sensor using manifests..."
       NAMESPACE="${sensor_namespace}" "${k8s_dir}/sensor-deploy/sensor.sh"
+    fi
+
+    # Only apply sensor env vars via kubectl for non-Helm deployments.
+    # Helm deployments already have these set via customize.envVars.
+    if [[ "${SENSOR_HELM_DEPLOY:-}" != "true" ]]; then
+      sensor_env=()
+
+      if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
+        sensor_env+=("ROX_NETFLOW_BATCHING=${ROX_NETFLOW_BATCHING}")
+      fi
+
+      if [[ -n "${ROX_NETFLOW_CACHE_LIMITING:-}" ]]; then
+        sensor_env+=("ROX_NETFLOW_CACHE_LIMITING=${ROX_NETFLOW_CACHE_LIMITING}")
+      fi
+
+      if [[ "${#sensor_env[@]}" -gt 0 ]]; then
+        kubectl -n "${sensor_namespace}" set env deploy/sensor "${sensor_env[@]}"
+      fi
     fi
 
     collector_env=()

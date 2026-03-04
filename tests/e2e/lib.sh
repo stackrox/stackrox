@@ -188,6 +188,8 @@ export_test_environment() {
     ci_export ROX_CVE_FIX_TIMESTAMP "${ROX_CVE_FIX_TIMESTAMP:-true}"
     ci_export ROX_BASE_IMAGE_DETECTION "${ROX_BASE_IMAGE_DETECTION:-true}"
     ci_export ROX_LABEL_BASED_POLICY_SCOPING "${ROX_LABEL_BASED_POLICY_SCOPING:-true}"
+    ci_export ROX_NETFLOW_BATCHING "${ROX_NETFLOW_BATCHING:-true}"
+    ci_export ROX_NETFLOW_CACHE_LIMITING "${ROX_NETFLOW_CACHE_LIMITING:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -446,10 +448,21 @@ deploy_sensor_via_operator() {
        fam_mode_setting="Enabled"
     fi
 
+    customize_envVars=""
+    if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
+        customize_envVars+=$'\n    - name: ROX_NETFLOW_BATCHING'
+        customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_BATCHING}"'"'
+    fi
+    if [[ -n "${ROX_NETFLOW_CACHE_LIMITING:-}" ]]; then
+        customize_envVars+=$'\n    - name: ROX_NETFLOW_CACHE_LIMITING'
+        customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_CACHE_LIMITING}"'"'
+    fi
+
     env - \
       scanner_component_setting="$scanner_component_setting" \
       fam_mode_setting="$fam_mode_setting" \
       central_endpoint="$central_endpoint" \
+      customize_envVars="$customize_envVars" \
     "${envsubst}" \
       < "${secured_cluster_yaml_path}" | kubectl apply -n "${sensor_namespace}" --validate="${validate}" -f -
 

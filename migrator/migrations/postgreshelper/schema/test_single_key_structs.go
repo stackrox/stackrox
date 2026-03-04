@@ -49,5 +49,6 @@ type TestSingleKeyStructs struct {
 	Timestamp   *time.Time                       `gorm:"column:timestamp;type:timestamp"`
 	Enum        storage.TestSingleKeyStruct_Enum `gorm:"column:enum;type:integer"`
 	Enums       *pq.Int32Array                   `gorm:"column:enums;type:int[]"`
+	Timestamptz *time.Time                       `gorm:"column:timestamptz;type:timestamptz"`
 	Serialized  []byte                           `gorm:"column:serialized;type:bytea"`
 }
