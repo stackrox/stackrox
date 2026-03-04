@@ -118,37 +118,31 @@ type BinaryHash uint64
 
 var hashDelimiter = []byte{0}
 
-// BinaryKey produces a binary hash for this endpoint using the provided hash function.
-// The hash function instance is reused to avoid allocations - caller should Reset() before calling.
+// BinaryKey produces a binary hash for this endpoint.
 // Uses xxhash for fast, non-cryptographic hashing with low collision probability.
 // The buf parameter must be at least [16]byte to avoid allocations for IPv6 addresses.
 func (e NumericEndpoint) BinaryKey(h hash.Hash64, buf *[16]byte) BinaryHash {
 	h.Reset()
 
-	// Hash IP address bytes without allocation by copying to buffer
+	// Hash IP address bytes by copying to buffer to avoid allocation
 	if e.IPAndPort.Address.IsValid() {
 		switch data := e.IPAndPort.Address.data.(type) {
 		case ipv4data:
-			// IPv4: copy 4 bytes to buffer
-			buf[0] = data[0]
-			buf[1] = data[1]
-			buf[2] = data[2]
-			buf[3] = data[3]
+			copy(buf[:4], data[:])
 			_, _ = h.Write(buf[:4])
 		case ipv6data:
-			// IPv6: copy 16 bytes to buffer
 			copy(buf[:16], data[:])
 			_, _ = h.Write(buf[:16])
 		}
 	}
 	_, _ = h.Write(hashDelimiter)
 
-	// Hash port (2 bytes, big-endian) using provided buffer
+	// Hash port (big-endian)
 	buf[0] = byte(e.IPAndPort.Port >> 8)
 	buf[1] = byte(e.IPAndPort.Port)
 	_, _ = h.Write(buf[:2])
 
-	// Hash protocol (8 bytes, big-endian) using same buffer
+	// Hash protocol (big-endian)
 	buf[0] = byte(e.L4Proto >> 56)
 	buf[1] = byte(e.L4Proto >> 48)
 	buf[2] = byte(e.L4Proto >> 40)
