@@ -4072,6 +4072,18 @@
             ]
           },
           {
+            "name": "ComplianceOperatorRuleV2.ComplianceOperatorRuleKind",
+            "enum_fields": [
+              {
+                "name": "RULE"
+              },
+              {
+                "name": "CUSTOM_RULE",
+                "integer": 1
+              }
+            ]
+          },
+          {
             "name": "ComplianceOperatorCheckResultV2.CheckStatus",
             "enum_fields": [
               {
@@ -4368,8 +4380,8 @@
               },
               {
                 "id": 18,
-                "name": "is_custom",
-                "type": "bool"
+                "name": "compliance_operator_kind",
+                "type": "ComplianceOperatorRuleKind"
               }
             ],
             "maps": [
