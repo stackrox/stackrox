@@ -8,81 +8,66 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. && pwd)"
 cd "$ROOT"
 
-# Find all go.mod files in the repository
-mapfile -t gomod_files < <(find . -name "go.mod" -type f | sed 's|^\./||' | sort)
+# Check prerequisites
+if [[ ! -f .github/dependabot.yaml ]]; then
+    echo "ERROR: .github/dependabot.yaml not found" >&2
+    exit 1
+fi
 
-# Extract all gomod directories from dependabot.yaml
-mapfile -t dependabot_dirs < <(yq e '.updates[] | select(.package-ecosystem=="gomod") | .directory' .github/dependabot.yaml | sort)
+if ! command -v yq &> /dev/null; then
+    echo "ERROR: yq command not found. Please install yq." >&2
+    exit 1
+fi
 
-# Convert go.mod file paths to directory paths for comparison
-declare -a gomod_dirs
-for gomod_file in "${gomod_files[@]}"; do
-    dir=$(dirname "$gomod_file")
-    if [[ "$dir" == "." ]]; then
-        gomod_dirs+=("/")
-    else
-        gomod_dirs+=("/$dir")
-    fi
-done
+# Create temporary files for comparison
+gomod_dirs_file=$(mktemp)
+dependabot_dirs_file=$(mktemp)
+trap 'rm -f "$gomod_dirs_file" "$dependabot_dirs_file"' EXIT
 
-# Sort the gomod directories
-IFS=$'\n' gomod_dirs=($(sort <<<"${gomod_dirs[*]}"))
-unset IFS
+# Find all go.mod files and convert to directory paths
+find . -name "go.mod" -type f | while read -r gomod_file; do
+    dir=$(dirname "$gomod_file" | sed 's|^\./||; s|^\.$|/|; s|^|/|')
+    # Normalize: remove trailing slash except for root
+    echo "${dir%/}" | sed 's|^$|/|'
+done | sort -u > "$gomod_dirs_file"
 
-# Check for go.mod files without dependabot configuration
+# Extract all gomod directories from dependabot.yaml and normalize
+yq e '.updates[] | select(.package-ecosystem=="gomod") | .directory' .github/dependabot.yaml | \
+    sed 's|/$||' | sed 's|^$|/|' | sort -u > "$dependabot_dirs_file"
+
+# Use comm to find differences
+# comm -23: lines only in file 1 (missing from dependabot)
+# comm -13: lines only in file 2 (orphaned in dependabot)
+missing_configs=$(comm -23 "$gomod_dirs_file" "$dependabot_dirs_file")
+orphaned_configs=$(comm -13 "$gomod_dirs_file" "$dependabot_dirs_file")
+
 exit_code=0
-missing_configs=()
-for dir in "${gomod_dirs[@]}"; do
-    found=false
-    for dep_dir in "${dependabot_dirs[@]}"; do
-        # Normalize paths for comparison (remove trailing slash)
-        normalized_dir="${dir%/}"
-        normalized_dep="${dep_dir%/}"
-        [[ "$normalized_dir" == "$normalized_dep" ]] && { found=true; break; }
-    done
-    if [[ "$found" == false ]]; then
-        missing_configs+=("$dir")
-    fi
-done
 
-if [[ ${#missing_configs[@]} -gt 0 ]]; then
+# Report missing configurations
+if [[ -n "$missing_configs" ]]; then
     echo "ERROR: The following go.mod files do not have dependabot configurations:" >&2
-    for dir in "${missing_configs[@]}"; do
+    while IFS= read -r dir; do
         if [[ "$dir" == "/" ]]; then
             echo "  - ./go.mod (directory: /)" >&2
         else
             echo "  - .${dir}/go.mod (directory: ${dir})" >&2
         fi
-    done
+    done <<< "$missing_configs"
     echo "" >&2
     echo "Please add a gomod update entry in .github/dependabot.yaml for each missing directory." >&2
     exit_code=1
 fi
 
-# Check for orphaned dependabot configurations
-orphaned_configs=()
-for dep_dir in "${dependabot_dirs[@]}"; do
-    found=false
-    for dir in "${gomod_dirs[@]}"; do
-        # Normalize paths for comparison (remove trailing slash)
-        normalized_dir="${dir%/}"
-        normalized_dep="${dep_dir%/}"
-        [[ "$normalized_dir" == "$normalized_dep" ]] && { found=true; break; }
-    done
-    if [[ "$found" == false ]]; then
-        orphaned_configs+=("$dep_dir")
-    fi
-done
-
-if [[ ${#orphaned_configs[@]} -gt 0 ]]; then
+# Report orphaned configurations
+if [[ -n "$orphaned_configs" ]]; then
     echo "ERROR: The following dependabot configurations refer to non-existent go.mod files:" >&2
-    for dir in "${orphaned_configs[@]}"; do
+    while IFS= read -r dir; do
         if [[ "$dir" == "/" ]]; then
             echo "  - directory: ${dir} (expected: ./go.mod)" >&2
         else
             echo "  - directory: ${dir} (expected: .${dir}/go.mod)" >&2
         fi
-    done
+    done <<< "$orphaned_configs"
     echo "" >&2
     echo "Please remove these stale entries from .github/dependabot.yaml." >&2
     exit_code=1
