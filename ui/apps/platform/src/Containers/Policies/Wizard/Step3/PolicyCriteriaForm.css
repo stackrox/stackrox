@@ -11,6 +11,10 @@
     white-space: initial;
 }
 
+#policy-sections .pf-v5-c-form__helper-text {
+    white-space: normal;
+}
+
 #policy-sections-container {
     overflow: auto;
 }
