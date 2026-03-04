@@ -27,23 +27,25 @@ type ProcessFilterModeConfig struct {
 	MaxProcessPaths     int
 }
 
-var processFilterModePresets = map[string]*ProcessFilterModeConfig{
-	"aggressive": {
-		MaxExactPathMatches: 1,
-		FanOutLevels:        []int{},
-		MaxProcessPaths:     1000,
-	},
-	"default": {
-		MaxExactPathMatches: 5,
-		FanOutLevels:        []int{8, 6, 4, 2},
-		MaxProcessPaths:     5000,
-	},
-	"minimal": {
-		MaxExactPathMatches: 100,
-		FanOutLevels:        []int{20, 15, 10, 5},
-		MaxProcessPaths:     20000,
-	},
-}
+var (
+	processFilterModePresets = map[string]*ProcessFilterModeConfig{
+		"aggressive": {
+			MaxExactPathMatches: 1,
+			FanOutLevels:        []int{},
+			MaxProcessPaths:     1000,
+		},
+		"default": {
+			MaxExactPathMatches: ProcessFilterMaxExactPathMatches.DefaultValue(),
+			FanOutLevels:        ProcessFilterFanOutLevels.DefaultValue(),
+			MaxProcessPaths:     ProcessFilterMaxProcessPaths.DefaultValue(),
+		},
+		"minimal": {
+			MaxExactPathMatches: 100,
+			FanOutLevels:        []int{20, 15, 10, 5},
+			MaxProcessPaths:     20000,
+		},
+	}
+)
 
 // getProcessFilterModeConfig returns the configuration for the current filter mode.
 // Returns nil if the mode is not set, and the default if the mode is invalid.

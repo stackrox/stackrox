@@ -11,7 +11,7 @@ import (
 func TestGetEffectiveProcessFilterConfig(t *testing.T) {
 	tests := []struct {
 		name                    string
-		setMode                 bool   // whether to set the mode env var
+		setMode                 bool // whether to set the mode env var
 		mode                    string
 		maxExactPathMatchesEnv  string
 		fanOutLevelsEnv         string
