@@ -18,7 +18,7 @@ import (
 // When set, this overrides individual settings (ROX_PROCESS_FILTER_MAX_EXACT_PATH_MATCHES,
 // ROX_PROCESS_FILTER_FAN_OUT_LEVELS, ROX_PROCESS_FILTER_MAX_PROCESS_PATHS).
 // Individual settings can still be used to override specific values within a mode.
-var ProcessFilterMode = RegisterSetting("ROX_PROCESS_FILTER_MODE", WithDefault("default"))
+var ProcessFilterMode = RegisterSetting("ROX_PROCESS_FILTER_MODE")
 
 // ProcessFilterModeConfig holds the configuration values for a specific filter mode
 type ProcessFilterModeConfig struct {
@@ -63,7 +63,7 @@ func getProcessFilterModeConfig() (*ProcessFilterModeConfig, string, error) {
 	}
 
 	// Invalid mode - return default configuration with error
-	return processFilterModePresets["default"], "default", fmt.Errorf("Invalid mode for environment variable %s=%q. Will use the default.", ProcessFilterMode.EnvVar(), mode)
+	return processFilterModePresets["default"], "default", fmt.Errorf("invalid mode for environment variable %s=%q. Will use the default.", ProcessFilterMode.EnvVar(), mode)
 }
 
 // GetEffectiveProcessFilterConfig returns the effective process filter configuration,
