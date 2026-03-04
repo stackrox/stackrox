@@ -37,7 +37,6 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      #- uses: stackrox/actions/infra/install-infractl@v1
 
       - name: "Set up Cloud SDK"
         uses: "google-github-actions/setup-gcloud@v3"
@@ -47,15 +46,27 @@ jobs:
       - name: Fix path for infractl
         run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
+      - uses: stackrox/actions/infra/install-infractl@v1
+
       - name: Create testing cluster
-        uses: stackrox/actions/infra/create-cluster@v1
-        with:
-          token: ${{ secrets.INFRA_TOKEN }}
-          flavor: gke-default
-          name: ${{ env.CLUSTER_NAME }}
-          lifespan: '4h'
-          args: nodes=3,machine-type=e2-standard-8
-          wait: true
+        run: |
+          infractl create gke-default "${CLUSTER_NAME}" \
+            --arg nodes=3,machine-type=e2-standard-8 \
+            --lifespan 4h \
+            --no-slack \
+            --wait \
+            --download-dir artifacts
+
+          echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
+
+        # uses: stackrox/actions/infra/create-cluster@v1
+        # with:
+        #   token: ${{ secrets.INFRA_TOKEN }}
+        #   flavor: gke-default
+        #   name: ${{ env.CLUSTER_NAME }}
+        #   lifespan: '4h'
+        #   args: nodes=3,machine-type=e2-standard-8
+        #   wait: true
 
       - name: Test cluster readiness
         run: |
@@ -65,11 +76,11 @@ jobs:
             exit 1
           fi
 
-      - name: Fetch infra artifacts
-        run: |
-          mkdir -p artifacts
-          infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts
-          echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
+      # - name: Fetch infra artifacts
+      #   run: |
+      #     mkdir -p artifacts
+      #     infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts
+      #     echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
 
       - name: Verify kubectl access
         run: |
@@ -86,4 +97,4 @@ jobs:
       - name: Delete cluster
         if: always()
         run: |
-          infractl delete "${CLUSTER_NAME}" --force
+          infractl delete "${CLUSTER_NAME}"
