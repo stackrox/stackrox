@@ -46,7 +46,7 @@ type fullStoreImpl struct {
 // GetListDeployment returns the list deployment of the passed ID.
 func (f *fullStoreImpl) GetListDeployment(ctx context.Context, id string) (*storage.ListDeployment, bool, error) {
 	listDeployments, missingIndices, err := f.GetManyListDeployments(ctx, id)
-	if err != nil || len(missingIndices) > 0 {
+	if err != nil || len(missingIndices) > 0 || len(listDeployments) == 0 {
 		return nil, false, err
 	}
 	return listDeployments[0], true, nil
@@ -61,33 +61,30 @@ func (f *fullStoreImpl) GetManyListDeployments(ctx context.Context, ids ...strin
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	// Select only the columns needed for ListDeploymentView
-	// Use AS clauses to match search field labels expected by the view struct
-	query := `
-		SELECT id as deployment_id, hash as deployment_hash, name as deployment,
-		       clustername as cluster, clusterid as cluster_id, namespace, created
-		FROM deployments
-		WHERE id = ANY($1)
-	`
+	// Build query filtering by deployment IDs
+	query := pkgSearch.NewQueryBuilder().
+		AddExactMatches(pkgSearch.DeploymentID, ids...).
+		ProtoQuery()
 
-	rows, err := f.db.Query(queryCtx, query, ids)
-	if err != nil {
-		return nil, nil, err
+	// Set selects to only the columns needed for ListDeployment
+	query.Selects = []*v1.QuerySelect{
+		pkgSearch.NewQuerySelect(pkgSearch.DeploymentID).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.DeploymentHash).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.DeploymentName).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.Cluster).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ClusterID).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.Namespace).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.Created).Proto(),
 	}
-	defer rows.Close()
 
-	// Scan results into view map
+	// Fetch results using the search framework
 	viewMap := make(map[string]*views.ListDeploymentView)
-	for rows.Next() {
-		var view views.ListDeploymentView
-		err := rows.Scan(&view.ID, &view.Hash, &view.Name, &view.ClusterName, &view.ClusterID, &view.Namespace, &view.Created)
-		if err != nil {
-			return nil, nil, err
-		}
-		viewMap[view.ID] = &view
-	}
-
-	if err := rows.Err(); err != nil {
+	err := pgSearch.RunSelectRequestForSchemaFn(queryCtx, f.db, pkgSchema.DeploymentsSchema, query,
+		func(view *views.ListDeploymentView) error {
+			viewMap[view.ID] = view
+			return nil
+		})
+	if err != nil {
 		return nil, nil, err
 	}
 
@@ -103,6 +100,41 @@ func (f *fullStoreImpl) GetManyListDeployments(ctx context.Context, ids ...strin
 	}
 
 	return listDeployments, missingIndices, nil
+}
+
+// SearchListDeployments returns list deployments matching the provided query.
+func (f *fullStoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error) {
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
+	defer cancel()
+
+	// Clone the query to avoid mutating the original
+	query := q.CloneVT()
+	if query == nil {
+		query = pkgSearch.EmptyQuery()
+	}
+
+	// Set selects to only the columns needed for ListDeployment
+	query.Selects = []*v1.QuerySelect{
+		pkgSearch.NewQuerySelect(pkgSearch.DeploymentID).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.DeploymentHash).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.DeploymentName).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.Cluster).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ClusterID).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.Namespace).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.Created).Proto(),
+	}
+
+	var listDeployments []*storage.ListDeployment
+	err := pgSearch.RunSelectRequestForSchemaFn(queryCtx, f.db, pkgSchema.DeploymentsSchema, query,
+		func(view *views.ListDeploymentView) error {
+			listDeployments = append(listDeployments, view.ToListDeployment())
+			return nil
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	return listDeployments, nil
 }
 
 func (f *fullStoreImpl) GetContainerImageViews(ctx context.Context, q *v1.Query) ([]*views.ContainerImageView, error) {
