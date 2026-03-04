@@ -495,6 +495,7 @@ var (
 	GuestOS                = newFieldLabel("Guest OS")
 	VirtualMachineState    = newFieldLabel("Virtual Machine State")
 	VirtualMachineScanTime = newFieldLabel("Virtual Machine Scan Time")
+	VirtualMachineScanOS   = newFieldLabel("Virtual Machine Scan OS")
 	VirtualMachineTopCVSS  = newFieldLabel("Virtual Machine Top CVSS")
 
 	// Test Search Fields
