@@ -14,10 +14,10 @@ outputs:
     value: ${{ steps.cache-paths.outputs.GOMODCACHE }}
   build-cache-key:
     description: Build cache key for explicit save
-    value: go-build-v1-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
+    value: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
   mod-cache-key:
     description: Mod cache key for explicit save
-    value: go-mod-v1-${{ hashFiles('**/go.sum') }}
+    value: go-mod-v2-${{ hashFiles('**/go.sum') }}
   build-cache-hit:
     description: Whether the build cache was an exact hit
     value: ${{ steps.restore-build.outputs.cache-hit }}
@@ -48,16 +48,16 @@ runs:
       uses: actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOMODCACHE }}
-        key: go-mod-v1-${{ hashFiles('**/go.sum') }}
-        restore-keys: go-mod-v1-
+        key: go-mod-v2-${{ hashFiles('**/go.sum') }}
+        restore-keys: go-mod-v2-
 
     - name: Cache Go Build
       id: restore-build
       uses: actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v1-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
-        restore-keys: go-build-v1-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
+        key: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
+        restore-keys: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
     - name: Download Go modules
       run: make deps --always-make
