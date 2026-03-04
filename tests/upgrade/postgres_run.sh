@@ -10,11 +10,7 @@ TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 EARLIER_TAG="4.6.2"
 EARLIER_SHA="ecff2a443c8b9a2dc7bf606162da89da81dd8e9e"
 CURRENT_TAG="$(make --quiet --no-print-directory tag)"
-<<<<<<< Updated upstream
-PREVIOUS_RELEASES=("4.6.10" "4.7.9" "4.8.8" "4.9.3")
-=======
-PREVIOUS_RELEASES=("4.6.10" "4.7.9" "4.8.7" "4.9.2" "4.10.0")
->>>>>>> Stashed changes
+PREVIOUS_RELEASES=("4.6.10" "4.7.9" "4.8.8" "4.9.3" "4.10.0")
 
 # shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
