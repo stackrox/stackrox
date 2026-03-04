@@ -25,6 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      options: --shm-size=2g
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -53,6 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      options: --shm-size=2g
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -97,6 +99,7 @@ jobs:
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
+      options: --shm-size=2g
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -253,6 +256,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      options: --shm-size=2g
     steps:
       - name: Checkout
         uses: actions/checkout@v6

@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.5.3
+      options: --shm-size=2g
     steps:
     - name: Checkout
       uses: actions/checkout@v6

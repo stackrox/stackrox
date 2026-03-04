@@ -139,6 +139,54 @@ runs:
         git config --global --add safe.directory "$(pwd)"
       shell: bash
 
+    - name: Move workspace to tmpfs
+      run: |
+        set -eo pipefail
+
+        # Move the checked-out source to /dev/shm (tmpfs) for RAM-speed file
+        # I/O. This speeds up Go's SHA256 file hashing for cache keys and
+        # reduces build/test times by avoiding disk reads.
+        #
+        # In container jobs, .github/ must stay as a real directory on the
+        # bind mount because GHA resolves local actions from the HOST
+        # filesystem (actions/runner ActionManager.cs), and the container's
+        # /dev/shm is not visible to the host.
+        #
+        # In host (non-container) jobs, /dev/shm is shared so symlinks work
+        # for everything including .github/.
+        #
+        # Go's go:embed follows symlinks transparently (tested).
+        # Assumes one job per runner (GHA-hosted runners are ephemeral).
+        shm="/dev/shm/stackrox"
+        ws="$GITHUB_WORKSPACE"
+        in_container=false
+        [ -f /.dockerenv ] && in_container=true
+
+        shm_avail_mb=$(df -BM --output=avail /dev/shm 2>/dev/null | tail -1 | tr -d ' M')
+        src_mb=$(du -sm "$ws" 2>/dev/null | cut -f1 || echo 0)
+        if [ "${shm_avail_mb:-0}" -gt "$((src_mb + 200))" ]; then
+          cp -a "$ws/." "$shm/"
+          if [ "$in_container" = true ]; then
+            # Container: keep .github/ real (host needs it for action resolution)
+            find "$ws" -maxdepth 1 -mindepth 1 ! -name .github -exec rm -rf {} +
+          else
+            # Host: symlink everything (runner follows symlinks on same filesystem)
+            find "$ws" -maxdepth 1 -mindepth 1 -exec rm -rf {} +
+          fi
+          for item in "$shm"/* "$shm"/.*; do
+            name="$(basename "$item")"
+            case "$name" in .|..) continue ;; esac
+            [ "$in_container" = true ] && [ "$name" = ".github" ] && continue
+            ln -s "$item" "$ws/$name"
+          done
+          # Ensure git trusts the symlinked .git directory
+          git config --global --add safe.directory "$shm"
+          echo "::notice::Workspace moved to tmpfs (${src_mb}MB, ${shm_avail_mb}MB avail, container=${in_container})"
+        else
+          echo "::notice::/dev/shm too small (${shm_avail_mb}MB avail, need ${src_mb}MB + 200MB) — using disk"
+        fi
+      shell: bash
+
     - name: Record job info
       uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
       id: record_job_info

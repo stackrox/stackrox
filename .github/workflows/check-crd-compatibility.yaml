@@ -21,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      options: --shm-size=2g
     outputs:
       released_version: ${{ steps.get_previous_released_version.outputs.released_version }}
     steps:
