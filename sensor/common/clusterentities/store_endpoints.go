@@ -31,6 +31,10 @@ type endpointsStore struct {
 
 	// h is the xxhash instance used for hashing endpoints
 	h hash.Hash64
+	// hashBuf is a reusable buffer for encoding IP addresses and integers during hashing
+	// Must be at least 16 bytes to fit IPv6 addresses
+	// Protected by mutex since h is also protected
+	hashBuf [16]byte
 }
 
 func newEndpointsStoreWithMemory(numTicks uint16) *endpointsStore {
@@ -149,7 +153,7 @@ func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData)
 	}
 
 	for ep, targetInfos := range data.endpoints {
-		epHash := ep.BinaryKey(e.h)
+		epHash := ep.BinaryKey(e.h, &e.hashBuf)
 		dSet.Add(epHash)
 
 		deploymentsOnThisEp, epFound := e.endpointMap[epHash]
@@ -193,7 +197,7 @@ func (e *endpointsStore) lookupEndpoint(endpoint net.NumericEndpoint, netLookup 
 	e.mutex.RLock()
 	defer e.mutex.RUnlock()
 	// Hash the endpoint before lookup
-	epHash := endpoint.BinaryKey(e.h)
+	epHash := endpoint.BinaryKey(e.h, &e.hashBuf)
 	// Phase 1: Search in the current map
 	current = doLookupEndpoint(epHash, e.endpointMap)
 	// Phase 2: Search in the historical map

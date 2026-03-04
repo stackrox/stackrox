@@ -45,6 +45,7 @@ func TestNumericEndpointCompare(t *testing.T) {
 
 func TestNumericEndpointBinaryKey(t *testing.T) {
 	h := xxhash.New()
+	var buf [16]byte
 
 	tests := map[string]struct {
 		ep1       NumericEndpoint
@@ -92,8 +93,8 @@ func TestNumericEndpointBinaryKey(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			hash1 := tt.ep1.BinaryKey(h)
-			hash2 := tt.ep2.BinaryKey(h)
+			hash1 := tt.ep1.BinaryKey(h, &buf)
+			hash2 := tt.ep2.BinaryKey(h, &buf)
 
 			if tt.shouldEq {
 				assert.Equal(t, hash1, hash2, tt.assertion)
@@ -112,11 +113,12 @@ func TestNumericEndpointBinaryKey(t *testing.T) {
 func TestBinaryKeyIsStable(t *testing.T) {
 	// Verify that hashing the same endpoint multiple times produces the same hash
 	h := xxhash.New()
+	var buf [16]byte
 	ep := MakeNumericEndpoint(ParseIP("10.0.0.1"), 8080, TCP)
 
-	hash1 := ep.BinaryKey(h)
-	hash2 := ep.BinaryKey(h)
-	hash3 := ep.BinaryKey(h)
+	hash1 := ep.BinaryKey(h, &buf)
+	hash2 := ep.BinaryKey(h, &buf)
+	hash3 := ep.BinaryKey(h, &buf)
 
 	assert.Equal(t, hash1, hash2, "hash should be stable across calls")
 	assert.Equal(t, hash2, hash3, "hash should be stable across calls")

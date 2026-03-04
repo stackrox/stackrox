@@ -121,27 +121,43 @@ var hashDelimiter = []byte{0}
 // BinaryKey produces a binary hash for this endpoint using the provided hash function.
 // The hash function instance is reused to avoid allocations - caller should Reset() before calling.
 // Uses xxhash for fast, non-cryptographic hashing with low collision probability.
-func (e NumericEndpoint) BinaryKey(h hash.Hash64) BinaryHash {
+// The buf parameter must be at least [16]byte to avoid allocations for IPv6 addresses.
+func (e NumericEndpoint) BinaryKey(h hash.Hash64, buf *[16]byte) BinaryHash {
 	h.Reset()
 
-	// Hash IP address bytes
+	// Hash IP address bytes without allocation by copying to buffer
 	if e.IPAndPort.Address.IsValid() {
-		_, _ = h.Write(e.IPAndPort.Address.data.bytes())
+		switch data := e.IPAndPort.Address.data.(type) {
+		case ipv4data:
+			// IPv4: copy 4 bytes to buffer
+			buf[0] = data[0]
+			buf[1] = data[1]
+			buf[2] = data[2]
+			buf[3] = data[3]
+			_, _ = h.Write(buf[:4])
+		case ipv6data:
+			// IPv6: copy 16 bytes to buffer
+			copy(buf[:16], data[:])
+			_, _ = h.Write(buf[:16])
+		}
 	}
 	_, _ = h.Write(hashDelimiter)
 
-	// Hash port (2 bytes, big-endian)
-	portBuf := [2]byte{byte(e.IPAndPort.Port >> 8), byte(e.IPAndPort.Port)}
-	_, _ = h.Write(portBuf[:])
+	// Hash port (2 bytes, big-endian) using provided buffer
+	buf[0] = byte(e.IPAndPort.Port >> 8)
+	buf[1] = byte(e.IPAndPort.Port)
+	_, _ = h.Write(buf[:2])
 
-	// Hash protocol (8 bytes, big-endian)
-	protoBuf := [8]byte{
-		byte(e.L4Proto >> 56), byte(e.L4Proto >> 48),
-		byte(e.L4Proto >> 40), byte(e.L4Proto >> 32),
-		byte(e.L4Proto >> 24), byte(e.L4Proto >> 16),
-		byte(e.L4Proto >> 8), byte(e.L4Proto),
-	}
-	_, _ = h.Write(protoBuf[:])
+	// Hash protocol (8 bytes, big-endian) using same buffer
+	buf[0] = byte(e.L4Proto >> 56)
+	buf[1] = byte(e.L4Proto >> 48)
+	buf[2] = byte(e.L4Proto >> 40)
+	buf[3] = byte(e.L4Proto >> 32)
+	buf[4] = byte(e.L4Proto >> 24)
+	buf[5] = byte(e.L4Proto >> 16)
+	buf[6] = byte(e.L4Proto >> 8)
+	buf[7] = byte(e.L4Proto)
+	_, _ = h.Write(buf[:8])
 
 	return BinaryHash(h.Sum64())
 }
