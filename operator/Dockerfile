@@ -46,6 +46,9 @@ COPY generated/ generated/
 COPY scripts/ scripts/
 COPY COLLECTOR_VERSION SCANNER_VERSION FACT_VERSION VERSION ./
 
+# Ensure go-tool.sh can write the generated zversion.go file.
+RUN chmod a+w pkg/version/internal/
+
 # We've been historically building operator without CGO both upstream and downstream.
 ENV CGO_ENABLED=0
 
