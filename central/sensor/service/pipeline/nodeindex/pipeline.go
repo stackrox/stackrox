@@ -156,4 +156,6 @@ func sendComplianceAck(ctx context.Context, node *storage.Node, injector common.
 	}); err != nil {
 		log.Warnf("Failed injecting legacy NodeInventoryACK for node index report (node=%s): %v", node.GetName(), err)
 	}
+
+	log.Debugf("Sent node-indexing ACKs for node %s in cluster %s", node.GetName(), node.GetClusterId())
 }

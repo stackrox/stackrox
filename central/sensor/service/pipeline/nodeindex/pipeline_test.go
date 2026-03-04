@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -145,11 +146,14 @@ func createMsg(ir *v4.IndexReport) *central.MsgFromSensor {
 }
 
 type recordingInjector struct {
+	lock   sync.Mutex
 	legacy []*central.NodeInventoryACK
 	sensor []*central.SensorACK
 }
 
 func (r *recordingInjector) InjectMessage(_ concurrency.Waitable, msg *central.MsgToSensor) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	if ack := msg.GetNodeInventoryAck(); ack != nil {
 		r.legacy = append(r.legacy, ack.CloneVT())
 	}
@@ -162,6 +166,8 @@ func (r *recordingInjector) InjectMessage(_ concurrency.Waitable, msg *central.M
 func (r *recordingInjector) InjectMessageIntoQueue(_ *central.MsgFromSensor) {}
 
 func (r *recordingInjector) getSentACKs() []*central.NodeInventoryACK {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	out := make([]*central.NodeInventoryACK, 0, len(r.legacy))
 	for _, ack := range r.legacy {
 		if ack != nil {
@@ -172,6 +178,8 @@ func (r *recordingInjector) getSentACKs() []*central.NodeInventoryACK {
 }
 
 func (r *recordingInjector) getSentSensorACKs() []*central.SensorACK {
+	r.lock.Lock()
+	defer r.lock.Unlock()
 	out := make([]*central.SensorACK, 0, len(r.sensor))
 	for _, ack := range r.sensor {
 		if ack != nil {

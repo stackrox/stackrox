@@ -94,7 +94,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 
 	if shouldDiscardMsg(node) {
 		// To prevent resending the inventory, still acknowledge receipt of it
-		sendComplianceAck(ctx, node, ninv, injector)
+		replyCompliance(ctx, node.GetClusterId(), ninv.GetNodeName(), central.NodeInventoryACK_ACK, injector)
 		log.Debug("Discarding v2 NodeScan in favor of v4 NodeScan")
 		return nil
 	}
@@ -115,7 +115,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		return err
 	}
 
-	sendComplianceAck(ctx, node, ninv, injector)
+	replyCompliance(ctx, node.GetClusterId(), ninv.GetNodeName(), central.NodeInventoryACK_ACK, injector)
 	return nil
 }
 
@@ -138,13 +138,7 @@ func shouldDiscardMsg(node *storage.Node) bool {
 	return false
 }
 
-func sendComplianceAck(ctx context.Context, node *storage.Node, ninv *storage.NodeInventory, injector common.MessageInjector) {
-	if injector == nil {
-		return
-	}
-	replyCompliance(ctx, node.GetClusterId(), ninv.GetNodeName(), central.NodeInventoryACK_ACK, injector)
-}
-
+// replyCompliance uses injector to send a SensorACK and NodeInventoryACK to Compliance.
 func replyCompliance(ctx context.Context, clusterID, nodeName string, t central.NodeInventoryACK_Action, injector common.MessageInjector) {
 	if injector == nil {
 		return
@@ -176,6 +170,8 @@ func replyCompliance(ctx context.Context, clusterID, nodeName string, t central.
 	}); err != nil {
 		log.Warnf("Failed injecting legacy NodeInventoryACK for node inventory (clusterID=%s, nodeName=%s): %v", clusterID, nodeName, err)
 	}
+
+	log.Debugf("Sent node-inventory ACKs for node %s in cluster %s", nodeName, clusterID)
 }
 
 func (p *pipelineImpl) OnFinish(_ string) {}
