@@ -238,8 +238,10 @@ function ViolationsByPolicyCategoryChart({
         return setHiddenSeverities(newHidden);
     }
 
-    // Victory v37 broke getInteractiveLegendEvents -- onLegendClick is never called
-    // through Chart's events prop. Apply click events directly to ChartLegend instead.
+    // getInteractiveLegendEvents' onLegendClick is not called when ChartBar
+    // is wrapped in ChartStack/ChartGroup alongside ChartAxis.
+    // https://github.com/patternfly/patternfly-react/issues/12263
+    // Apply click events directly to ChartLegend as a workaround.
     function handleLegendClick(_evt: SyntheticEvent, { index }: { index: number }) {
         onLegendClick(index).catch(() => {});
         return [];
