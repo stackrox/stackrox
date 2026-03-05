@@ -20,6 +20,11 @@ jobs:
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
       # The action limits cluster name to 26 characters for maybe a valid reason.
       CLUSTER_NAME: e2e-sens-${{ github.run_id }}-${{ github.run_attempt }}
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
