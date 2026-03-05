@@ -152,7 +152,7 @@ func (e *podIPsStore) applySingleNoLock(deploymentID string, data EntityData) {
 		deplSet.Add(deploymentID)
 		// This IP has more than one deployment! Interesting, let's record it.
 		if deplSet.Cardinality() > 1 {
-			metrics.ObserveManyDeploymentsSharingSingleIP(ip.AsNetIP().String(), deplSet.AsSlice())
+			metrics.ObserveManyDeploymentsSharingSingleIP(ip.AsNetIP().String())
 		}
 		e.ipMap[ip] = deplSet
 		// If the IP being currently added was already in history,
