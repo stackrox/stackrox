@@ -262,7 +262,8 @@ function ViolationsByPolicyCategoryChart({
                 domainPadding={{ x: [20, 20] }}
                 events={getInteractiveLegendEvents({
                     // Map in the same order as severitiesLowToCritical to match legend
-                    // item indices. Cast needed because PF's tuple type is too narrow.
+                    // item indices. Cast required: PF declares chartNames as a single-element
+                    // tuple [string | string[]] but iterates it as a plain array at runtime.
                     chartNames: severitiesLowToCritical.map(
                         (s) => severityLabels[s]
                     ) as unknown as [string],
