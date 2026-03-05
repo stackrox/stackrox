@@ -86,8 +86,6 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
-      - name: Cache Go dependencies
-        uses: ./.github/actions/cache-go-dependencies
       - name: Publish Helm charts to stackrox/release-artifacts
         env:
           STACKROX_TAG: 4.11.97
