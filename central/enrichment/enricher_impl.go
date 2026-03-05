@@ -78,7 +78,7 @@ func (e *enricherImpl) EnrichDeploymentV2(ctx context.Context, enrichCtx enriche
 		var imgToProcess *storage.ImageV2
 		if (enrichCtx.FetchOnlyIfMetadataEmpty() || enrichCtx.FetchOnlyIfScanEmpty()) && c.GetImage().GetIdV2() != "" {
 			var img *storage.ImageV2
-			img, _, err = e.imagesV2.GetImage(getImageContext, c.GetImage().GetId())
+			img, _, err = e.imagesV2.GetImage(getImageContext, c.GetImage().GetIdV2())
 			if err != nil {
 				return
 			}
