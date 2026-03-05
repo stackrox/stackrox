@@ -1197,7 +1197,11 @@ wait_for_scanner_v4_vuln_load() {
         elapsed=$(( $(date '+%s') - start_time ))
 
         if [[ "${http_code}" != "200" ]]; then
-            info "Scanner V4 vuln load check: HTTP ${http_code} (${elapsed}s/${max_seconds}s): ${body}"
+            # Try to extract the message field from a JSON error body; fall back to
+            # the raw body if it's not JSON or the field is absent.
+            local err_detail
+            err_detail=$(jq -r '.message // empty' <<< "${body}" 2>/dev/null)
+            info "Scanner V4 vuln load check: HTTP ${http_code} (${elapsed}s/${max_seconds}s): ${err_detail:-${body}}"
         elif echo "${body}" | jq -e '.lastUpdatedTimestamp != null' >/dev/null 2>&1; then
             info "Scanner V4 vulnerability loading complete (${elapsed}s elapsed)."
             return
