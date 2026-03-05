@@ -144,7 +144,7 @@ runs:
         # Shallow clones lack git history for git describe / make tag.
         # Find the nearest version tag via ls-remote, fetch just enough
         # history to count commits, and set BUILD_TAG (which make/env.mk
-        # checks before git describe). Takes ~3s total.
+        # checks before git describe). Takes ~3s.
         if [ "$(git rev-parse --is-shallow-repository)" != "true" ]; then
           exit 0
         fi
