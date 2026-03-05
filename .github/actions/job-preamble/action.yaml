@@ -151,8 +151,7 @@ runs:
         current_sha=$(git rev-parse HEAD)
         sha_short=$(git rev-parse --short=10 HEAD)
         all_tags=$(git ls-remote --tags origin \
-          | grep -oP 'refs/tags/\K[0-9]+\.[0-9]+\.[0-9a-z].*' \
-          | grep -v 'nightly\|\^' \
+          | grep -oP 'refs/tags/\K[0-9]+\.[0-9]+\.x$' \
           | sort -rV)
         # On master the latest tag is always correct. On release branches
         # (e.g. release-4.10) the latest tag may be from a newer version
