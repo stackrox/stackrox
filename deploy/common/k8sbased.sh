@@ -231,7 +231,7 @@ function launch_central {
     { command -v oc >/dev/null && pkill -f oc'.*port-forward.*'; } || true    # terminate stale port forwarding from earlier runs
     { command -v oc >/dev/null && pkill -9 -f oc'.*port-forward.*'; } || true
 
-    if [[ "${STORAGE_CLASS}" == "faster" ]]; then
+    if [[ "${STORAGE_CLASS}" == "faster" || "${SCANNER_V4_DB_STORAGE_CLASS}" == "faster" ]]; then
         kubectl apply -f "${common_dir}/ssd-storageclass.yaml"
     fi
 
@@ -464,6 +464,10 @@ function launch_central {
         helm_args+=(-f "${COMMON_DIR}/ci-values.yaml")
       fi
 
+      if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS}" ]]; then
+        helm_args+=(--set "scannerV4.db.persistence.persistentVolumeClaim.storageClass=${SCANNER_V4_DB_STORAGE_CLASS}")
+      fi
+
       # Add a custom values file to Helm
       if [[ -n "$ROX_CENTRAL_EXTRA_HELM_VALUES_FILE" ]]; then
         helm_args+=(
@@ -522,6 +526,12 @@ function launch_central {
               echo "Deploying ScannerV4..."
               if [[ -x "${unzip_dir}/scanner-v4/scripts/setup.sh" ]]; then
                 "${unzip_dir}/scanner-v4/scripts/setup.sh"
+              fi
+              if [[ -n "${SCANNER_V4_DB_STORAGE_CLASS}" ]]; then
+                pvc_file="${unzip_dir}/scanner-v4/02-scanner-v4-06-db-pvc.yaml"
+                if [[ -f "${pvc_file}" ]]; then
+                  sed -i "s|^spec:$|spec:\n  storageClassName: ${SCANNER_V4_DB_STORAGE_CLASS}|" "${pvc_file}"
+                fi
               fi
               launch_service "${unzip_dir}" scanner-v4
 

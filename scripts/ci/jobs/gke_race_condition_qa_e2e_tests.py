@@ -10,6 +10,7 @@ from clusters import GKECluster
 # set test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
 os.environ["GCP_IMAGE_TYPE"] = "cos_containerd"
+os.environ["SCANNER_V4_DB_STORAGE_CLASS"] = "faster"
 
 # use -rcd image for stackrox/main
 os.environ["MAIN_IMAGE_TAG"] = os.environ["STACKROX_BUILD_TAG"] + "-rcd"

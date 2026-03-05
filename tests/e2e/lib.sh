@@ -259,6 +259,18 @@ deploy_central() {
     fi
 }
 
+# _scanner_v4_db_persistence_yaml prints the YAML snippet for the scannerV4.db
+# persistence block, indented for use inside an operator CR template. Prints
+# nothing when SCANNER_V4_DB_STORAGE_CLASS is unset.
+_scanner_v4_db_persistence_yaml() {
+    [[ -n "${SCANNER_V4_DB_STORAGE_CLASS:-}" ]] || return 0
+    cat <<EOF
+      persistence:
+        persistentVolumeClaim:
+          storageClassName: "${SCANNER_V4_DB_STORAGE_CLASS}"
+EOF
+}
+
 # shellcheck disable=SC2120
 deploy_central_via_operator() {
     local central_namespace=${1:-stackrox}
@@ -349,6 +361,9 @@ deploy_central_via_operator() {
         false) scannerV4ScannerComponent="Disabled" ;;
     esac
 
+    local scannerV4DbPersistenceYaml
+    scannerV4DbPersistenceYaml="$(_scanner_v4_db_persistence_yaml)"
+
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images
     if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
@@ -364,6 +379,7 @@ deploy_central_via_operator() {
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
       scannerV4ScannerComponent="$scannerV4ScannerComponent" \
+      scannerV4DbPersistenceYaml="$scannerV4DbPersistenceYaml" \
     "${envsubst}" \
       < "${CENTRAL_YAML_PATH}" | kubectl apply -n "${central_namespace}" -f -
 
@@ -459,11 +475,15 @@ deploy_sensor_via_operator() {
         customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_CACHE_LIMITING}"'"'
     fi
 
+    local scannerV4DbPersistenceYaml
+    scannerV4DbPersistenceYaml="$(_scanner_v4_db_persistence_yaml)"
+
     env - \
       scanner_component_setting="$scanner_component_setting" \
       fam_mode_setting="$fam_mode_setting" \
       central_endpoint="$central_endpoint" \
       customize_envVars="$customize_envVars" \
+      scannerV4DbPersistenceYaml="$scannerV4DbPersistenceYaml" \
     "${envsubst}" \
       < "${secured_cluster_yaml_path}" | kubectl apply -n "${sensor_namespace}" --validate="${validate}" -f -
 
