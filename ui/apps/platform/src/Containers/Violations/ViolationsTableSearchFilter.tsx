@@ -38,6 +38,11 @@ import {
     Name as DeploymentName,
 } from 'Components/CompoundSearchFilter/attributes/deployment';
 import { Name as ResourceName } from 'Components/CompoundSearchFilter/attributes/resource';
+import {
+    Annotation as NodeAnnotation,
+    Label as NodeLabel,
+    Name as NodeName,
+} from 'Components/CompoundSearchFilter/attributes/node';
 
 const searchFilterConfig: CompoundSearchFilterConfig = [
     {
@@ -70,6 +75,11 @@ const searchFilterConfig: CompoundSearchFilterConfig = [
         displayName: 'Policy violation',
         searchCategory: 'ALERTS',
         attributes: [AlertViolationTime, AlertEntityType], // non-alphabetical because no Name
+    },
+    {
+        displayName: 'Node',
+        searchCategory: 'ALERTS',
+        attributes: [NodeAnnotation, NodeLabel, NodeName],
     },
     {
         displayName: 'Resource',

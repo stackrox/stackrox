@@ -68,10 +68,12 @@ class CertRotationTest extends BaseSpecification {
 
     def testMatchingSecretFoundWithExpectedProperties(
         List<Object> regeneratedSecrets, Secret currentSecret, String certFileName, String keyFileName,
-        String principalShouldContain, Long timestampBeforeGeneration
+        String principalShouldContain, Long timestampBeforeGeneration,
+        String regeneratedSecretName = null
     ){
+        def searchName = regeneratedSecretName ?: currentSecret.metadata.name
         def regeneratedSecretObj = regeneratedSecrets.
-            find { it["metadata"]["name"] == currentSecret.metadata.name }
+            find { it["metadata"]["name"] == searchName }
         assert regeneratedSecretObj
         Map<String, String> regeneratedSecretData =
                 (Map<String, String>) regeneratedSecretObj["data"] ?:
@@ -79,8 +81,16 @@ class CertRotationTest extends BaseSpecification {
             [(key): Base64.encoder.encodeToString(value.getBytes(Charset.defaultCharset()))]
         }
         assert regeneratedSecretData
-        assertSameKeysAndSameValuesExcept(currentSecret.data, regeneratedSecretData,
-            [certFileName, keyFileName] as Set<String>)
+        if (currentSecret.data.keySet() == regeneratedSecretData.keySet()) {
+            assertSameKeysAndSameValuesExcept(currentSecret.data, regeneratedSecretData,
+                [certFileName, keyFileName] as Set<String>)
+        } else {
+            // CRS-issued secrets use different key names (cert.pem, key.pem) than
+            // certgen output (sensor-cert.pem, sensor-key.pem). Compare only ca.pem.
+            assert currentSecret.data.containsKey("ca.pem")
+            assert regeneratedSecretData.containsKey("ca.pem")
+            assert currentSecret.data["ca.pem"] == ((String)regeneratedSecretData["ca.pem"]).trim()
+        }
         verifyCertProperties((String)regeneratedSecretData[certFileName], principalShouldContain,
             timestampBeforeGeneration)
     }
@@ -119,12 +129,16 @@ class CertRotationTest extends BaseSpecification {
     def "Test sensor cert rotation"() {
         when:
         "Fetch the current sensor-tls, collector-tls and admission-control-tls secrets, and regenerate certs"
-        def sensorTLSSecret = orchestrator.getSecret("sensor-tls", "stackrox")
+        // With CRS-based cluster registration, TLS secrets use new naming (tls-cert-sensor, etc.).
+        // The certgen API always produces secrets with legacy naming (sensor-tls, etc.).
+        def sensorTLSSecret = orchestrator.getSecret("sensor-tls", "stackrox") ?:
+            orchestrator.getSecret("tls-cert-sensor", "stackrox")
         assert sensorTLSSecret
-        def collectorTLSSecret = orchestrator.getSecret("collector-tls", "stackrox")
+        def collectorTLSSecret = orchestrator.getSecret("collector-tls", "stackrox") ?:
+            orchestrator.getSecret("tls-cert-collector", "stackrox")
         assert collectorTLSSecret
-        def admissionControlTLSSecret = orchestrator.getSecret("admission-control-tls", "stackrox")
-        // Admission control secret may or may not be present, depending on how the cluster was deployed.
+        def admissionControlTLSSecret = orchestrator.getSecret("admission-control-tls", "stackrox") ?:
+            orchestrator.getSecret("tls-cert-admission-control", "stackrox")
         def admissionControlSecretPresent = (admissionControlTLSSecret != null)
         log.info "Admission control secret present: ${admissionControlSecretPresent}"
         def cluster = ClusterService.getCluster()
@@ -139,13 +153,16 @@ class CertRotationTest extends BaseSpecification {
         then:
         assert cluster.getAdmissionController() == admissionControlSecretPresent
         testMatchingSecretFoundWithExpectedProperties(regeneratedSecrets, sensorTLSSecret,
-            "sensor-cert.pem", "sensor-key.pem", "SENSOR_SERVICE: ${cluster.getId()}", start)
+            "sensor-cert.pem", "sensor-key.pem", "SENSOR_SERVICE: ${cluster.getId()}", start,
+            "sensor-tls")
         testMatchingSecretFoundWithExpectedProperties(regeneratedSecrets, collectorTLSSecret,
-            "collector-cert.pem", "collector-key.pem", "COLLECTOR_SERVICE: ${cluster.getId()}", start)
+            "collector-cert.pem", "collector-key.pem", "COLLECTOR_SERVICE: ${cluster.getId()}", start,
+            "collector-tls")
         if (admissionControlSecretPresent) {
             testMatchingSecretFoundWithExpectedProperties(regeneratedSecrets, admissionControlTLSSecret,
                 "admission-control-cert.pem", "admission-control-key.pem",
-                "ADMISSION_CONTROL_SERVICE: ${cluster.getId()}", start)
+                "ADMISSION_CONTROL_SERVICE: ${cluster.getId()}", start,
+                "admission-control-tls")
         }
     }
 
