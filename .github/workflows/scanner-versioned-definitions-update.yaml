@@ -46,8 +46,6 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
     - name: Parse VULNERABILITY_BUNDLE_VERSION
       id: set-versions
       env:
@@ -105,8 +103,6 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
 
     - name: Download NVD PR
       if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd')
@@ -217,8 +213,6 @@ jobs:
     # Checkout master to get the latest local actions
     - name: Checkout repository
       uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -228,7 +222,6 @@ jobs:
     - name: Checkout specific reference
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ env.ROX_GIT_REF }}
 
     - name: Download NVD
@@ -282,8 +275,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v6
       if: always()
-      with:
-        fetch-depth: 0
 
   build-upload-pr-vulnerabilities:
     if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
@@ -303,8 +294,6 @@ jobs:
     # Checkout master to get the latest local actions
     - name: Checkout repository
       uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -314,7 +303,6 @@ jobs:
     - name: Checkout specific reference
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Authenticate with test GCS bucket
@@ -372,8 +360,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v6
       if: always()
-      with:
-        fetch-depth: 0
 
   upload-definitions:
     needs:
@@ -383,8 +369,6 @@ jobs:
     steps:
     # Checkout to run ./.github/actions/download-artifact-with-retry
     - uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
 
     - uses: actions/download-artifact@v7
       with:

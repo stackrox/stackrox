@@ -94,7 +94,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -213,7 +212,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -288,7 +286,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
+        fetch-depth: 0  # no job-preamble to deepen shallow clone
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - name: Ignore dubious repository ownership
@@ -344,7 +342,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
