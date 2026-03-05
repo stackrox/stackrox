@@ -35,6 +35,7 @@ message GenerateTokenForPermissionsAndScopeRequest {
   map<string, Access> permissions = 1;
   repeated ClusterScope cluster_scopes = 2;
   google.protobuf.Duration lifetime = 3;
+  string target_audience = 4;
 }
 
 // ClusterScope represents the access scope of a role within a cluster.
