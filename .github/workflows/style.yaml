@@ -23,8 +23,6 @@ jobs:
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -35,6 +33,16 @@ jobs:
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    - name: Install yq
+      run: |
+        sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/v4.44.6/yq_linux_amd64"
+        sudo chmod +x /usr/local/bin/yq
 
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
@@ -51,8 +59,6 @@ jobs:
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -63,6 +69,16 @@ jobs:
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    - name: Install yq
+      run: |
+        sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/v4.44.6/yq_linux_amd64"
+        sudo chmod +x /usr/local/bin/yq
 
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
@@ -95,11 +111,6 @@ jobs:
 
   style-check:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -111,6 +122,49 @@ jobs:
         with:
           free-disk-space: '30'
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install tools
+        run: |
+          log_dir="$(mktemp -d)"
+
+          (
+            sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/v4.44.6/yq_linux_amd64"
+            sudo chmod +x /usr/local/bin/yq
+          ) >"${log_dir}/yq.log" 2>&1 &
+
+          (
+            sudo apt-get update -qq && sudo apt-get install -y -qq xmlstarlet
+          ) >"${log_dir}/xmlstarlet.log" 2>&1 &
+
+          (
+            pip install -r .openshift-ci/dev-requirements.txt
+          ) >"${log_dir}/pip.log" 2>&1 &
+
+          failed=0
+          for pid in $(jobs -p); do
+            wait "$pid" || failed=1
+          done
+          for log in "${log_dir}"/*.log; do
+            echo "::group::$(basename "${log%.log}")"
+            cat "$log"
+            echo "::endgroup::"
+          done
+          exit $failed
+
+      - name: Verify tools
+        run: |
+          yq --version
+          xmlstarlet --version
+          pycodestyle --version
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -254,8 +308,6 @@ jobs:
 
   openshift-ci-lint:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -266,6 +318,9 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Install Python linters
+        run: pip install -r .openshift-ci/dev-requirements.txt
 
       - name: pycodestyle
         run: make -C .openshift-ci style
