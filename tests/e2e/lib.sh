@@ -1182,18 +1182,34 @@ wait_for_scanner_v4_vuln_load() {
     local start_time elapsed
     start_time="$(date '+%s')"
     while true; do
-        if roxcurl "/v1/integrationhealth/vulndefinitions?component=SCANNER_V4" 2>/dev/null \
-                | jq -e '.lastUpdatedTimestamp != null' >/dev/null 2>&1; then
-            info "Scanner V4 vulnerability loading complete."
-            return
-        fi
+        # -w '\n%{http_code}' appends a newline and the HTTP status code after the
+        # response body, letting us capture both in a single variable without a
+        # temp file. ##*$'\n' strips up to and including the last newline (leaving
+        # just the 3-digit code); %$'\n'* strips the trailing newline+code (leaving
+        # just the body).
+        local response http_code body
+        response=$(curl -sk \
+            --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") \
+            -w '\n%{http_code}' \
+            "https://${API_ENDPOINT}/v1/integrationhealth/vulndefinitions?component=SCANNER_V4")
+        http_code="${response##*$'\n'}"
+        body="${response%$'\n'*}"
 
         elapsed=$(( $(date '+%s') - start_time ))
+
+        if [[ "${http_code}" != "200" ]]; then
+            info "Scanner V4 vuln load check: HTTP ${http_code} (${elapsed}s/${max_seconds}s): ${body}"
+        elif echo "${body}" | jq -e '.lastUpdatedTimestamp != null' >/dev/null 2>&1; then
+            info "Scanner V4 vulnerability loading complete (${elapsed}s elapsed)."
+            return
+        else
+            info "Scanner V4 vuln load check: HTTP 200, lastUpdatedTimestamp not set yet (${elapsed}s/${max_seconds}s)"
+        fi
+
         if (( elapsed > max_seconds )); then
             die "wait_for_scanner_v4_vuln_load() timed out after ${max_seconds}s."
         fi
 
-        info "Still waiting for Scanner V4 vulnerabilities (${elapsed}s/${max_seconds}s)..."
         sleep 15
     done
 }
