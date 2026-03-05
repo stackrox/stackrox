@@ -36,9 +36,6 @@ const (
 	deploymentResource = "Deployment"
 	imageResource      = "Image"
 
-	readAccess      = "READ_ACCESS"
-	readWriteAccess = "READ_WRITE_ACCESS"
-
 	internalRoleName = "internal role"
 
 	externalUserID       = "external user ID"
@@ -65,17 +62,11 @@ const (
 var (
 	errDummy = errors.New("dummy test error")
 
-	testRole1 = &tokens.InternalRole{
-		Permissions:   map[string]string{deploymentResource: readAccess},
-		ClusterScopes: []*tokens.ClusterScope{{ClusterName: cluster1, ClusterFullAccess: true}},
-	}
-	testRole2 = &tokens.InternalRole{
-		Permissions:   map[string]string{imageResource: readWriteAccess},
-		ClusterScopes: []*tokens.ClusterScope{{ClusterName: cluster2, Namespaces: []string{namespaceA}}},
-	}
-
 	testRole1Permissions = map[string]storage.Access{
 		deploymentResource: storage.Access_READ_ACCESS,
+	}
+	testRole2Permissions = map[string]storage.Access{
+		imageResource: storage.Access_READ_WRITE_ACCESS,
 	}
 	bothTestRolePermissions = map[string]storage.Access{
 		deploymentResource: storage.Access_READ_ACCESS,
@@ -89,6 +80,37 @@ var (
 
 	testExpiresAt = time.Date(1981, time.October, 9, 14, 01, 02, 0, time.UTC)
 )
+
+func getTestRole1(mockCtrl *gomock.Controller) permissions.ResolvedRole {
+	mockTestRole := permissionMocks.NewMockResolvedRole(mockCtrl)
+	mockTestRole.EXPECT().GetRoleName().AnyTimes().Return(roleName1)
+	mockTestRole.EXPECT().GetPermissions().AnyTimes().Return(testRole1Permissions)
+	accessScope := &storage.SimpleAccessScope{
+		Rules: &storage.SimpleAccessScope_Rules{
+			IncludedClusters: []string{cluster1},
+		},
+	}
+	mockTestRole.EXPECT().GetAccessScope().AnyTimes().Return(accessScope)
+	return mockTestRole
+}
+
+func getTestRole2(mockCtrl *gomock.Controller) permissions.ResolvedRole {
+	mockTestRole := permissionMocks.NewMockResolvedRole(mockCtrl)
+	mockTestRole.EXPECT().GetRoleName().AnyTimes().Return(roleName2)
+	mockTestRole.EXPECT().GetPermissions().AnyTimes().Return(testRole2Permissions)
+	accessScope := &storage.SimpleAccessScope{
+		Rules: &storage.SimpleAccessScope_Rules{
+			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+				{
+					ClusterName:   cluster2,
+					NamespaceName: namespaceA,
+				},
+			},
+		},
+	}
+	mockTestRole.EXPECT().GetAccessScope().AnyTimes().Return(accessScope)
+	return mockTestRole
+}
 
 type testIdentity struct {
 	uid          string
@@ -107,6 +129,9 @@ func TestExtractorIdentityForRequest(t *testing.T) {
 	mockSource := tokenMocks.NewMockSource(mockCtrl)
 	mockSource.EXPECT().ID().AnyTimes().Return(mockSourceID)
 	mockAuthProvider := createEnabledMockAuthProvider(mockCtrl)
+
+	testRole1 := getTestRole1(mockCtrl)
+	testRole2 := getTestRole2(mockCtrl)
 
 	t.Run("Neither identity nor error for token of type different from Bearer ", func(it *testing.T) {
 		te := getTestExtractor(it)
@@ -309,7 +334,7 @@ func TestExtractorIdentityForRequest(t *testing.T) {
 				permissions:  bothTestRolePermissions,
 				roles:        []permissions.ResolvedRole{testRole1, testRole2},
 				user:         buildUserInfo(externalUserEmail, testSubject, []permissions.ResolvedRole{testRole1, testRole2}),
-				attributes:   map[string][]string{"role": {internalRoleName, internalRoleName}, "name": {testName}},
+				attributes:   map[string][]string{"role": {roleName1, roleName2}, "name": {testName}},
 				expiry:       testExpiresAt,
 				authProvider: mockAuthProvider,
 			},
@@ -350,7 +375,7 @@ func TestExtractorIdentityForRequest(t *testing.T) {
 				permissions:  testRole1Permissions,
 				roles:        []permissions.ResolvedRole{testRole1},
 				user:         buildUserInfo(externalUserEmail, testSubject, []permissions.ResolvedRole{testRole1}),
-				attributes:   map[string][]string{"role": {internalRoleName}, "name": {testName}},
+				attributes:   map[string][]string{"role": {roleName1}, "name": {testName}},
 				expiry:       testExpiresAt,
 				authProvider: mockAuthProvider,
 			},
@@ -410,6 +435,9 @@ func TestExtractorWithRoleNames(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	mockSource := tokenMocks.NewMockSource(mockCtrl)
 	mockSource.EXPECT().ID().AnyTimes().Return(mockSourceID)
+
+	testRole1 := getTestRole1(mockCtrl)
+	testRole2 := getTestRole2(mockCtrl)
 
 	mockAuthProvider := authProviderMocks.NewMockProvider(mockCtrl)
 	setupMockAuthProvider(mockAuthProvider)
@@ -584,6 +612,9 @@ func TestExtractorWithExternalUser(t *testing.T) {
 	mockSource := tokenMocks.NewMockSource(mockCtrl)
 	mockSource.EXPECT().ID().AnyTimes().Return(mockSourceID)
 
+	testRole1 := getTestRole1(mockCtrl)
+	testRole2 := getTestRole2(mockCtrl)
+
 	for name, tc := range map[string]struct {
 		testToken            *tokens.TokenInfo
 		setupMocks           func(*testExtractor)
@@ -694,6 +725,9 @@ func TestCreateRoleBasedIdentity(t *testing.T) {
 	mockSource.EXPECT().ID().AnyTimes().Return(mockSourceID)
 	mockSource2 := tokenMocks.NewMockSource(mockCtrl)
 	mockSource2.EXPECT().ID().AnyTimes().Return(mockSourceID2)
+
+	testRole1 := getTestRole1(mockCtrl)
+	testRole2 := getTestRole2(mockCtrl)
 
 	mockAuthProvider := authProviderMocks.NewMockProvider(mockCtrl)
 	setupMockAuthProvider(mockAuthProvider)
