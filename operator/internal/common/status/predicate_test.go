@@ -406,7 +406,7 @@ func TestDeploymentStatusUpdatePredicate(t *testing.T) {
 		},
 	}
 
-	pred := SkipDeploymentSpecUpdates{}
+	pred := PassThroughUpdatedStatusPredicate{logger: logr.Discard()}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := pred.Update(event.TypedUpdateEvent[*appsv1.Deployment]{

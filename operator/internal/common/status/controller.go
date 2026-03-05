@@ -139,7 +139,7 @@ func (r *Reconciler[T]) SetupWithManager(mgr ctrl.Manager) error {
 				emptyCR,
 				handler.OnlyControllerOwner(),
 			),
-			SkipDeploymentSpecUpdates{},
+			NewPassThroughUpdatedStatusPredicate(mgr.GetLogger().WithName(r.name)),
 		),
 	)
 	if err != nil {

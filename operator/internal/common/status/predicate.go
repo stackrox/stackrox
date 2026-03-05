@@ -2,7 +2,6 @@ package status
 
 import (
 	"fmt"
-	"reflect"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -126,18 +125,40 @@ func toObjectForStatusController(obj ctrlClient.Object, log logr.Logger) (platfo
 	return target, nil
 }
 
-// SkipDeploymentSpecUpdates filters deployment events to only react to status changes.
+// PassThroughDeploymentStatusChanged filters deployment events to only react to status changes.
 // This prevents reconciliation when HPA or other controllers modify deployment.spec.replicas.
-// The status controller only cares about deployment readiness (status), not scaling decisions (spec).
-type SkipDeploymentSpecUpdates struct {
+// For example, the status controller only cares about deployment readiness (status), not scaling decisions (spec).
+type PassThroughUpdatedStatusPredicate struct {
 	predicate.TypedFuncs[*appsv1.Deployment]
+	logger logr.Logger
+}
+
+func NewPassThroughUpdatedStatusPredicate(logger logr.Logger) PassThroughUpdatedStatusPredicate {
+	return PassThroughUpdatedStatusPredicate{
+		logger: logger.WithName("passthrough-updated-status-predicate"),
+	}
 }
 
 // Update returns true only if Deployment status changed (ignores spec-only changes).
 // This allows HPA to modify replicas without triggering reconciliation.
-func (p SkipDeploymentSpecUpdates) Update(e event.TypedUpdateEvent[*appsv1.Deployment]) bool {
+func (p PassThroughUpdatedStatusPredicate) Update(e event.TypedUpdateEvent[*appsv1.Deployment]) bool {
 	if e.ObjectOld == nil || e.ObjectNew == nil {
 		return true
 	}
-	return !reflect.DeepEqual(e.ObjectOld.Status, e.ObjectNew.Status)
+	objectStatusOld := reduceDeploymentStatus(&e.ObjectOld.Status)
+	objectStatusNew := reduceDeploymentStatus(&e.ObjectNew.Status)
+
+	if equality.Semantic.DeepEqual(objectStatusOld, objectStatusNew) {
+		p.logger.Info("Deployment status unchanged, skipping reconciliation")
+		return false
+	}
+
+	return true
+}
+
+// reduceDeploymentStatus
+func reduceDeploymentStatus(status *appsv1.DeploymentStatus) *appsv1.DeploymentStatus {
+	statusCopy := status.DeepCopy()
+	statusCopy.ObservedGeneration = 0
+	return statusCopy
 }
