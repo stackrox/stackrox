@@ -38,11 +38,12 @@ type PolicySeverityCounts struct {
 // AlertPolicyGroup holds the result of a GROUP BY query that counts alerts per policy.
 // Used by GetAlertsGroup to avoid deserializing full alert protobuf blobs.
 type AlertPolicyGroup struct {
-	PolicyID    string `db:"policy_id"`
-	PolicyName  string `db:"policy"`
-	Severity    int    `db:"severity"`
-	Description string `db:"description"`
-	NumAlerts   int    `db:"alert_id_count"`
+	PolicyID    string   `db:"policy_id"`
+	PolicyName  string   `db:"policy"`
+	Severity    int      `db:"severity"`
+	Description string   `db:"description"`
+	Categories  []string `db:"category"`
+	NumAlerts   int      `db:"alert_id_count"`
 }
 
 // GetPolicySeverity returns the severity as a storage.Severity enum value.
@@ -60,6 +61,7 @@ func WithAlertPolicyGroupQuery(q *v1.Query) *v1.Query {
 		search.NewQuerySelect(search.PolicyName).Proto(),
 		search.NewQuerySelect(search.Severity).Proto(),
 		search.NewQuerySelect(search.Description).Proto(),
+		search.NewQuerySelect(search.Category).Proto(),
 		search.NewQuerySelect(search.AlertID).AggrFunc(aggregatefunc.Count).Proto(),
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
@@ -68,6 +70,7 @@ func WithAlertPolicyGroupQuery(q *v1.Query) *v1.Query {
 			search.PolicyName.String(),
 			search.Severity.String(),
 			search.Description.String(),
+			search.Category.String(),
 		},
 	}
 	cloned.Pagination = &v1.QueryPagination{

@@ -480,6 +480,7 @@ func alertsGroupResponseFromPolicyGroups(groups []*alertviews.AlertPolicyGroup) 
 				Name:        g.PolicyName,
 				Severity:    g.GetPolicySeverity(),
 				Description: g.Description,
+				Categories:  g.Categories,
 			},
 			NumAlerts: int64(g.NumAlerts),
 		})

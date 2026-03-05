@@ -245,10 +245,8 @@ func populateSelect(querySoFar *query, schema *walker.Schema, q *v1.Query, query
 
 		isChildField := isChildTableField(dbField, schema)
 
-		// TODO(mandar): Add support for the following.
-		if !isChildField && (dbField.DataType == postgres.StringArray || dbField.DataType == postgres.IntArray ||
-			dbField.DataType == postgres.EnumArray || dbField.DataType == postgres.Map) {
-			return errors.Errorf("array field %s in parent table is unsupported in select", field)
+		if !isChildField && dbField.DataType == postgres.Map {
+			return errors.Errorf("map field %s in parent table is unsupported in select", field)
 		}
 
 		if qs.GetFilter() == nil {
