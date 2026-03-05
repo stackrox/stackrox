@@ -123,7 +123,7 @@ func toObjectForStatusController(obj ctrlClient.Object, log logr.Logger) (platfo
 	return target, nil
 }
 
-// PassThroughDeploymentStatusChanged filters deployment events to only react to status changes.
+// PassThroughUpdatedStatusPredicate filters deployment events to only react to status changes.
 // This prevents reconciliation when HPA or other controllers modify deployment.spec.replicas.
 // For example, the status controller only cares about deployment readiness (status), not scaling decisions (spec).
 type PassThroughUpdatedStatusPredicate struct {
