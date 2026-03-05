@@ -61,7 +61,7 @@ func (p SkipStatusControllerUpdates[T]) Update(e event.TypedUpdateEvent[T]) bool
 	}
 
 	if reducedObjectsEqual(objOldForStatusController, objNewForStatusController) {
-		log.Info("No noteworthy changes detected in object, skipping reconciliation")
+		log.V(1).Info("No noteworthy changes detected in object, skipping reconciliation")
 		return false
 	}
 
@@ -149,7 +149,7 @@ func (p PassThroughUpdatedStatusPredicate) Update(e event.TypedUpdateEvent[*apps
 	objectStatusNew := reduceDeploymentStatus(&e.ObjectNew.Status)
 
 	if equality.Semantic.DeepEqual(objectStatusOld, objectStatusNew) {
-		p.logger.Info("Deployment status unchanged, skipping reconciliation")
+		p.logger.V(1).Info("Deployment status unchanged, skipping reconciliation")
 		return false
 	}
 
