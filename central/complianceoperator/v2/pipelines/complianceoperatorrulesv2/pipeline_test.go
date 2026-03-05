@@ -153,7 +153,7 @@ func (s *PipelineTestSuite) TestMatch() {
 	s.Require().False(s.pipeline.Match(otherMsg))
 }
 
-func (s *PipelineTestSuite) TestRunCreateOOBRuleMissingRuleIDAnnotationFails() {
+func (s *PipelineTestSuite) TestRunCreateRuleMissingRuleIDAnnotationFails() {
 	ctx := context.Background()
 
 	rule := testutils.GetRuleV2SensorMsg(s.T()).CloneVT()
