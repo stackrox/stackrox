@@ -1213,7 +1213,7 @@ wait_for_scanner_v4_vuln_load() {
             die "wait_for_scanner_v4_vuln_load() timed out after ${max_seconds}s."
         fi
 
-        sleep 15
+        sleep 30
     done
 }
 
