@@ -162,6 +162,7 @@ function PolicyScopeForm(): ReactElement {
                                     <InclusionScopeCard
                                         index={index}
                                         scope={scope[index]}
+                                        clusters={clusters}
                                         handleChange={handleChange}
                                         setFieldValue={setFieldValue}
                                         onDelete={() => deleteInclusionScope(index)}

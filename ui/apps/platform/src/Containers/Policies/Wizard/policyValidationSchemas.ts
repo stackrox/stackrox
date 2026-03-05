@@ -162,6 +162,10 @@ const validationSchemaStep3: yup.ObjectSchema<PolicyStep3> = yup.object().shape(
     [['value', 'arrayValue']]
 );
 
+// Formik normalizes values for Yup validation by converting '' to undefined (see `prepareDataForValidation`).
+// Even though `.defined()` seems more correct per Yup docs for “present but possibly empty”, Formik’s
+// normalization makes it behave unexpectedly for optional text inputs. We use `.ensure()` to cast
+// undefined/null back to '' and keep our custom `.test()` logic working with strings.
 const labelSchema = yup
     .object({
         key: yup.string().ensure(),
@@ -186,6 +190,7 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
             yup
                 .object({
                     cluster: yup.string().ensure(),
+                    clusterLabel: labelSchema,
                     namespace: yup.string().ensure(),
                     namespaceLabel: labelSchema,
                     label: labelSchema,
@@ -196,6 +201,8 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
                     (scope) =>
                         Boolean(
                             scope?.cluster.trim() ||
+                                scope?.clusterLabel?.key.trim() ||
+                                scope?.clusterLabel?.value.trim() ||
                                 scope?.namespace.trim() ||
                                 scope?.label?.key.trim() ||
                                 scope?.label?.value.trim() ||
