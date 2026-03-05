@@ -294,6 +294,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
+        fetch-depth: 0  # bats tests use git describe for version comparison
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble

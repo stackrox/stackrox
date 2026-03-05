@@ -27,6 +27,7 @@ jobs:
     - name: Checkout stackrox/stackrox
       uses: actions/checkout@v6
       with:
+        fetch-depth: 0  # needs history to checkout previous released version
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
