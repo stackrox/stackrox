@@ -39,6 +39,10 @@ jobs:
         go-version-file: go.mod
         cache: false
 
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'  # operator/bundle_helpers venv requires Python <3.12
+
     - name: Install yq
       run: |
         # Override GOTOOLCHAIN=local set by setup-go.
