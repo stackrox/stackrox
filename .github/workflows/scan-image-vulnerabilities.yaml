@@ -83,7 +83,7 @@ jobs:
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
 
       - name: Scan image vulnerabilities
-        uses: stackrox/actions/release/scan-image-vulnerabilities@v1
+        uses: stackrox/actions/release/scan-image-vulnerabilities@f39f2443ec32959715724f36f94c37d306fd36f4
         id: scan-image
         with:
           image: rhacs-eng/${{ matrix.image }}
@@ -141,7 +141,7 @@ jobs:
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
 
       - name: Scan image vulnerabilities
-        uses: stackrox/actions/release/scan-image-vulnerabilities@v1
+        uses: stackrox/actions/release/scan-image-vulnerabilities@f39f2443ec32959715724f36f94c37d306fd36f4
         id: scan-image
         with:
           image: rhacs-eng/${{ matrix.image }}

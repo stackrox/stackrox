@@ -30,7 +30,7 @@ jobs:
         run: |
           echo "tag=$(make tag)" >> "$GITHUB_ENV"
       - name: Wait for image ${{ matrix.image }}
-        uses: stackrox/actions/release/wait-for-image@v1
+        uses: stackrox/actions/release/wait-for-image@f39f2443ec32959715724f36f94c37d306fd36f4
         with:
           token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
           image: rhacs-eng/${{ matrix.image }}:${{ env.tag }}

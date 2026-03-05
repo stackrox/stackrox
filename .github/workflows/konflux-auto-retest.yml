@@ -8,7 +8,7 @@ on:
 
 jobs:
   retest-failed-builds:
-    uses: stackrox/actions/.github/workflows/retest-konflux-builds.yml@v1
+    uses: stackrox/actions/.github/workflows/retest-konflux-builds.yml@f39f2443ec32959715724f36f94c37d306fd36f4
     permissions:
       pull-requests: write
       issues: write
