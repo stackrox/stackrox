@@ -185,8 +185,12 @@ func (cp *compiledPolicy) setAuditLogEventMatcher(policy *storage.Policy) error 
 }
 
 func (cp *compiledPolicy) setProcessEventMatcher(policy *storage.Policy) error {
+	// Only create a process matcher for sections that have Process fields but NOT FileAccess fields.
+	// If a section has both, the FileAccess matcher will handle it (since file access events contain process info).
 	filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
-		return booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.Process)
+		hasProcess := booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.Process)
+		hasFileAccess := booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.FileAccess)
+		return hasProcess && !hasFileAccess
 	})
 	if len(filtered.GetPolicySections()) > 0 {
 		cp.hasProcessSection = true
@@ -260,16 +264,15 @@ func (cp *compiledPolicy) setNodeEventMatcher(policy *storage.Policy) error {
 
 func (cp *compiledPolicy) exactlyOneRuntimeMatcherDefined() bool {
 	var numMatchers int
-	if cp.deploymentWithProcessMatcher != nil {
-		numMatchers++
-	}
 	if cp.kubeEventsMatcher != nil {
 		numMatchers++
 	}
-	if cp.deploymentWithNetworkFlowMatcher != nil {
+	// Process and FileAccess can be combined (file access events contain process information).
+	// Count them as one category when both are present.
+	if cp.deploymentWithProcessMatcher != nil || cp.deploymentWithFileAccessMatcher != nil {
 		numMatchers++
 	}
-	if cp.deploymentWithFileAccessMatcher != nil {
+	if cp.deploymentWithNetworkFlowMatcher != nil {
 		numMatchers++
 	}
 	if cp.auditLogEventMatcher != nil {

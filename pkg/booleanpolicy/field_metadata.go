@@ -658,7 +658,7 @@ func initializeFieldMetadata() FieldMetadata {
 			return stringValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT},
-		[]RuntimeFieldType{Process})
+		[]RuntimeFieldType{Process, FileAccess})
 
 	f.registerFieldMetadataRegex(fieldnames.ProcessArguments,
 		querybuilders.ForFieldLabelContainsRegex(search.ProcessArguments),
@@ -667,7 +667,7 @@ func initializeFieldMetadata() FieldMetadata {
 			return stringValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT},
-		[]RuntimeFieldType{Process})
+		[]RuntimeFieldType{Process, FileAccess})
 
 	f.registerFieldMetadataRegex(fieldnames.ProcessName,
 		querybuilders.ForFieldLabelRegex(search.ProcessName),
@@ -676,7 +676,7 @@ func initializeFieldMetadata() FieldMetadata {
 			return stringValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT},
-		[]RuntimeFieldType{Process})
+		[]RuntimeFieldType{Process, FileAccess})
 
 	f.registerFieldMetadataRegex(fieldnames.ProcessUID,
 		querybuilders.ForFieldLabel(search.ProcessUID),
@@ -685,7 +685,7 @@ func initializeFieldMetadata() FieldMetadata {
 			return stringValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT},
-		[]RuntimeFieldType{Process})
+		[]RuntimeFieldType{Process, FileAccess})
 
 	f.registerFieldMetadataRegex(fieldnames.ExposedPortProtocol,
 		querybuilders.ForFieldLabelUpper(search.PortProtocol),
