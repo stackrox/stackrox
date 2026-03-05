@@ -25,23 +25,30 @@ class ClustersTest extends BaseSpecification {
         )
         assert expiryFromCluster
 
-        def expiryFromCert = getCertExpiryFromSecret("sensor-tls", "sensor-cert.pem")
-        assert expiryFromCert
+        // With CRS-based cluster registration, the legacy sensor-tls secret does not exist.
+        // Try the legacy secret first, then fall back to the CRS-issued secret.
+        def expiryFromCert = null
+        try {
+            expiryFromCert = getCertExpiryFromSecret("sensor-tls", "sensor-cert.pem")
+        } catch (Exception e) {
+            log.debug("sensor-tls secret not found: ${e.message}")
+        }
 
         def expiryFromNewCert = null
         try {
-            // tls-cert-sensor is a new secret that may exist in the cluster due to certificate rotation.
             expiryFromNewCert = getCertExpiryFromSecret("tls-cert-sensor", "cert.pem")
         } catch (Exception e) {
             log.debug(
-                "tls-cert-sensor secret not found or could not be loaded " +
-                "(this is expected if cert rotation has not occurred yet): ${e.message}"
+                "tls-cert-sensor secret not found or could not be loaded: ${e.message}"
             )
         }
 
         then:
-        "Verify the cluster has sensor cert expiry information, and that is matches what's in the secret"
-        assert expiryFromCluster == expiryFromCert || (expiryFromNewCert && expiryFromCluster == expiryFromNewCert)
+        "Verify the cluster has sensor cert expiry information, and that it matches what's in the secret"
+        assert expiryFromCert || expiryFromNewCert :
+            "Neither sensor-tls nor tls-cert-sensor secret was found"
+        assert (expiryFromCert && expiryFromCluster == expiryFromCert) ||
+            (expiryFromNewCert && expiryFromCluster == expiryFromNewCert)
     }
 
     def "Test cluster health status is healthy"() {

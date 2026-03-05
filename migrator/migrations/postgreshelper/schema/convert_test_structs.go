@@ -28,6 +28,7 @@ func ConvertTestStructFromProto(obj *storage.TestStruct) (*TestStructs, error) {
 		Enums:             pq.Array(pgutils.ConvertEnumSliceToIntArray(obj.GetEnums())).(*pq.Int32Array),
 		String:            obj.GetString_(),
 		Int32Slice:        pq.Array(obj.GetInt32Slice()).(*pq.Int32Array),
+		Timestamptz:       protocompat.NilOrTime(obj.GetTimestamptz()),
 		OneofnestedNested: obj.GetOneofnested().GetNested(),
 		Serialized:        serialized,
 	}

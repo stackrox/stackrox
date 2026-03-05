@@ -90,6 +90,9 @@ jobs:
     - name: Check dependabot knows about pinned prefetched images
       run: scripts/ci/jobs/check-dependabot-pinned-image.sh
 
+    - name: Check dependabot gomod configurations match go.mod files
+      run: scripts/ci/jobs/check-dependabot-gomod.sh
+
   style-check:
     runs-on: ubuntu-latest
     container:

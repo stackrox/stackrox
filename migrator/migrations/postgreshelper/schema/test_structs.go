@@ -58,6 +58,7 @@ type TestStructs struct {
 	Enums             *pq.Int32Array          `gorm:"column:enums;type:int[]"`
 	String            string                  `gorm:"column:string_;type:varchar"`
 	Int32Slice        *pq.Int32Array          `gorm:"column:int32slice;type:int[]"`
+	Timestamptz       *time.Time              `gorm:"column:timestamptz;type:timestamptz"`
 	OneofnestedNested string                  `gorm:"column:oneofnested_nested;type:varchar"`
 	Serialized        []byte                  `gorm:"column:serialized;type:bytea"`
 }
