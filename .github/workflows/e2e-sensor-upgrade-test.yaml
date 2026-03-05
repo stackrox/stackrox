@@ -51,10 +51,10 @@ jobs:
       - name: Fix path for infractl
         run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - uses: stackrox/actions/infra/install-infractl@v1
+      - uses: stackrox/actions/infra/install-infractl@f39f2443ec32959715724f36f94c37d306fd36f4
 
       - name: Create test cluster
-        uses: stackrox/actions/infra/create-cluster@v1
+        uses: stackrox/actions/infra/create-cluster@f39f2443ec32959715724f36f94c37d306fd36f4
         with:
           token: ${{ secrets.INFRA_TOKEN }}
           flavor: gke-default
