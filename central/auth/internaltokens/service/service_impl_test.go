@@ -25,7 +25,13 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
-const testSensorClusterID = "cluster 1"
+const (
+	testSensorClusterID = "cluster 1"
+
+	deploymentResource   = "Deployment"
+	imageResource        = "Image"
+	networkGraphResource = "NetworkGraph"
+)
 
 var (
 	errDummy = errors.New("test error")
@@ -107,7 +113,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		Namespaces:        []string{"namespace A"},
 	}
 	requestFullCluster := &v1.ClusterScope{
-		ClusterId:         fixtureconsts.Cluster2,
+		ClusterId:         fixtureconsts.Cluster1,
 		FullClusterAccess: true,
 	}
 
@@ -184,8 +190,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		expectedClaims := tokens.RoxClaims{
 			InternalRoles: []*tokens.InternalRole{
 				{
-					RoleName:    internalRoleName,
-					Permissions: map[string]string{"Deployment": storage.Access_READ_ACCESS.String()},
+					RoleName:      internalRoleName,
+					ReadResources: []string{deploymentResource},
 					ClusterScopes: []*tokens.ClusterScope{
 						{
 							ClusterName: fixtureconsts.Cluster1,
@@ -223,8 +229,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			expectedClaims: tokens.RoxClaims{
 				InternalRoles: []*tokens.InternalRole{
 					{
-						RoleName:    internalRoleName,
-						Permissions: map[string]string{"Deployment": storage.Access_READ_ACCESS.String()},
+						RoleName:      internalRoleName,
+						ReadResources: []string{deploymentResource},
 						ClusterScopes: []*tokens.ClusterScope{
 							{
 								ClusterName: fixtureconsts.Cluster1,
@@ -249,8 +255,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			expectedClaims: tokens.RoxClaims{
 				InternalRoles: []*tokens.InternalRole{
 					{
-						RoleName:    internalRoleName,
-						Permissions: make(map[string]string),
+						RoleName: internalRoleName,
 						ClusterScopes: []*tokens.ClusterScope{
 							{
 								ClusterName: fixtureconsts.Cluster1,
@@ -275,8 +280,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			expectedClaims: tokens.RoxClaims{
 				InternalRoles: []*tokens.InternalRole{
 					{
-						RoleName:    internalRoleName,
-						Permissions: map[string]string{"Deployment": storage.Access_READ_ACCESS.String()},
+						RoleName:      internalRoleName,
+						ReadResources: []string{deploymentResource},
 					},
 				},
 				Name: fmt.Sprintf(
@@ -302,18 +307,16 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			expectedClaims: tokens.RoxClaims{
 				InternalRoles: []*tokens.InternalRole{
 					{
-						RoleName: internalRoleName,
-						Permissions: map[string]string{
-							"Deployment": storage.Access_READ_ACCESS.String(),
-							"Image":      storage.Access_READ_WRITE_ACCESS.String(),
-						},
+						RoleName:       internalRoleName,
+						ReadResources:  []string{deploymentResource},
+						WriteResources: []string{imageResource},
 						ClusterScopes: []*tokens.ClusterScope{
 							{
 								ClusterName: fixtureconsts.Cluster1,
 								Namespaces:  []string{"namespace A"},
 							},
 							{
-								ClusterName:       fixtureconsts.Cluster2,
+								ClusterName:       fixtureconsts.Cluster1,
 								ClusterFullAccess: true,
 							},
 						},
@@ -333,14 +336,19 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
 			mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
 			mockIssuer := tokensMocks.NewMockIssuer(mockCtrl)
-			svc := createService(mockIssuer, mockClusterStore, mockRoleStore)
+			policy := newTokenPolicy(time.Hour, map[string]v1.Access{
+				deploymentResource: v1.Access_READ_ACCESS,
+				imageResource:      v1.Access_READ_WRITE_ACCESS,
+			})
+			svc := createService(it, mockIssuer, mockClusterStore, mockRoleStore, policy)
 			setClusterStoreExpectations(tc.input, mockClusterStore)
+			ctx := sensorContext(it, mockCtrl, fixtureconsts.Cluster1)
 
 			mockIssuer.EXPECT().
 				Issue(gomock.Any(), tc.expectedClaims, gomock.Any()).
 				Times(1).Return(&tokens.TokenInfo{Token: tc.tokenString}, nil)
 
-			rsp, err := svc.GenerateTokenForPermissionsAndScope(t.Context(), tc.input)
+			rsp, err := svc.GenerateTokenForPermissionsAndScope(ctx, tc.input)
 			assert.NotNil(it, rsp)
 			protoassert.Equal(
 				it,
@@ -350,58 +358,11 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			assert.NoError(it, err)
 		})
 	}
-	t.Run("success - standard request", func(it *testing.T) {
-		input := &v1.GenerateTokenForPermissionsAndScopeRequest{
-			Permissions:   deploymentPermission,
-			ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
-			Lifetime:      testExpirationDuration,
-		}
 
-		mockCtrl := gomock.NewController(it)
-		mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
-		mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
-		mockIssuer := tokensMocks.NewMockIssuer(mockCtrl)
-		svc := createService(it, mockIssuer, mockClusterStore, mockRoleStore, permissivePolicy)
-		setClusterStoreExpectations(input, mockClusterStore)
-		expectedClaims := tokens.RoxClaims{
-			InternalRoles: []*tokens.InternalRole{
-				{
-					RoleName:    internalRoleName,
-					Permissions: map[string]string{"Deployment": storage.Access_READ_ACCESS.String()},
-					ClusterScopes: []*tokens.ClusterScope{
-						{
-							ClusterName: fixtureconsts.Cluster1,
-							Namespaces:  []string{"namespace A"},
-						},
-					},
-				},
-			},
-			Name: fmt.Sprintf(
-				"Generated claims for role %s expiring at %s",
-				"internal role",
-				testTokenExpiry.Format(time.RFC3339Nano),
-			),
-		}
-		mockIssuer.EXPECT().
-			Issue(gomock.Any(), expectedClaims, gomock.Any()).
-			Times(1).Return(&tokens.TokenInfo{Token: "the quick brown fox jumps over the lazy dog"}, nil)
-		ctx := sensorContext(it, mockCtrl, fixtureconsts.Cluster1)
-
-		rsp, err := svc.GenerateTokenForPermissionsAndScope(ctx, input)
-		assert.NotNil(it, rsp)
-		protoassert.Equal(
-			it,
-			&v1.GenerateTokenForPermissionsAndScopeResponse{
-				Token: "the quick brown fox jumps over the lazy dog",
-			},
-			rsp,
-		)
-		assert.NoError(it, err)
-	})
 	t.Run("permission not in allowlist rejects request", func(it *testing.T) {
 		input := &v1.GenerateTokenForPermissionsAndScopeRequest{
 			Permissions: map[string]v1.Access{
-				"NetworkGraph": v1.Access_READ_ACCESS,
+				networkGraphResource: v1.Access_READ_ACCESS,
 			},
 			ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
 			Lifetime:      testExpirationDuration,
@@ -419,7 +380,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 	t.Run("access level exceeds allowlist rejects request", func(it *testing.T) {
 		input := &v1.GenerateTokenForPermissionsAndScopeRequest{
 			Permissions: map[string]v1.Access{
-				"Deployment": v1.Access_READ_WRITE_ACCESS,
+				deploymentResource: v1.Access_READ_WRITE_ACCESS,
 			},
 			ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
 			Lifetime:      testExpirationDuration,
@@ -454,7 +415,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 	})
 	t.Run("lifetime capping", func(it *testing.T) {
 		shortMaxPolicy := newTokenPolicy(10*time.Second, map[string]v1.Access{
-			"Deployment": v1.Access_READ_ACCESS,
+			deploymentResource: v1.Access_READ_ACCESS,
 		})
 		input := &v1.GenerateTokenForPermissionsAndScopeRequest{
 			Permissions:   deploymentPermission,
@@ -479,10 +440,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			),
 			InternalRoles: []*tokens.InternalRole{
 				{
-					RoleName: internalRoleName,
-					Permissions: map[string]string{
-						"Deployment": storage.Access_READ_ACCESS.String(),
-					},
+					RoleName:      internalRoleName,
+					ReadResources: []string{deploymentResource},
 					ClusterScopes: []*tokens.ClusterScope{
 						{
 							ClusterName: fixtureconsts.Cluster1,

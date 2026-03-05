@@ -330,10 +330,8 @@ func TestExtractorIdentityForRequest(t *testing.T) {
 	friendlyName := fmt.Sprintf("%s (%s)", externalUserFullName, externalUserEmail)
 
 	internalRole := &tokens.InternalRole{
-		RoleName: "test internal role",
-		Permissions: map[string]string{
-			deploymentResource: storage.Access_READ_ACCESS.String(),
-		},
+		RoleName:      "test internal role",
+		ReadResources: []string{deploymentResource},
 		ClusterScopes: []*tokens.ClusterScope{
 			{
 				ClusterName:       cluster1,
