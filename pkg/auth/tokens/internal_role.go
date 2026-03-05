@@ -2,6 +2,7 @@ package tokens
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
 // ClusterScope is the scope of a negotiated internal role on a given cluster.
@@ -22,6 +23,8 @@ type ClusterScope struct {
 // then all namespaces within that cluster should be accessible.
 type ClusterScopes map[string][]string
 
+var _ permissions.ResolvedRole = (*InternalRole)(nil)
+
 // InternalRole represents claims that materialize a negotiated ephemeral role for internal use.
 type InternalRole struct {
 	RoleName      string            `json:"name"`
@@ -35,7 +38,7 @@ type InternalRole struct {
 
 func (r *InternalRole) GetRoleName() string {
 	if r == nil {
-		return "<no role>"
+		return ""
 	}
 	return r.RoleName
 }
@@ -44,16 +47,14 @@ func (r *InternalRole) GetPermissions() map[string]storage.Access {
 	if r == nil {
 		return nil
 	}
-	permissions := make(map[string]storage.Access)
-	for resource, access := range r.Permissions {
-		accessValue, found := storage.Access_value[access]
-		resourceAccess := storage.Access(accessValue)
-		if !found {
-			resourceAccess = storage.Access_NO_ACCESS
-		}
-		permissions[resource] = resourceAccess
+	rolePermissions := make(map[string]storage.Access)
+	for _, resource := range r.ReadResources {
+		rolePermissions[resource] = storage.Access_READ_ACCESS
 	}
-	return permissions
+	for _, resource := range r.WriteResources {
+		rolePermissions[resource] = storage.Access_READ_WRITE_ACCESS
+	}
+	return rolePermissions
 }
 
 func (r *InternalRole) GetAccessScope() *storage.SimpleAccessScope {

@@ -25,7 +25,13 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
-const testSensorClusterID = "cluster 1"
+const (
+	testSensorClusterID = "cluster 1"
+
+	deploymentResource   = "Deployment"
+	imageResource        = "Image"
+	networkGraphResource = "NetworkGraph"
+)
 
 var (
 	errDummy = errors.New("test error")
@@ -192,10 +198,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
-							RoleName: internalRoleName,
-							Permissions: map[string]string{
-								"Deployment": storage.Access_READ_ACCESS.String(),
-							},
+							RoleName:      internalRoleName,
+							ReadResources: []string{"Deployment"},
 							ClusterScopes: []*tokens.ClusterScope{
 								{
 									ClusterName: testSensorClusterID,
@@ -203,7 +207,6 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 								},
 							},
 							/*
-								ReadResources: []string{"Deployment"},
 								Clusters: map[string][]string{
 									testSensorClusterID: {"namespace A"},
 								},
@@ -298,10 +301,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
-							RoleName: internalRoleName,
-							Permissions: map[string]string{
-								"Deployment": storage.Access_READ_ACCESS.String(),
-							},
+							RoleName:      internalRoleName,
+							ReadResources: []string{deploymentResource},
 							ClusterScopes: []*tokens.ClusterScope{
 								{
 									ClusterName: testSensorClusterID,
@@ -340,10 +341,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
-							RoleName: internalRoleName,
-							Permissions: map[string]string{
-								"Deployment": storage.Access_READ_ACCESS.String(),
-							},
+							RoleName:      internalRoleName,
+							ReadResources: []string{deploymentResource},
 							ClusterScopes: []*tokens.ClusterScope{
 								{
 									ClusterName: testSensorClusterID,
@@ -381,10 +380,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
-							RoleName: internalRoleName,
-							Permissions: map[string]string{
-								"Deployment": storage.Access_READ_ACCESS.String(),
-							},
+							RoleName:      internalRoleName,
+							ReadResources: []string{deploymentResource},
 							ClusterScopes: []*tokens.ClusterScope{
 								{
 									ClusterName: testSensorClusterID,
@@ -421,8 +418,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
-							RoleName:    internalRoleName,
-							Permissions: make(map[string]string),
+							RoleName: internalRoleName,
 							ClusterScopes: []*tokens.ClusterScope{
 								{
 									ClusterName: testSensorClusterID,
@@ -457,10 +453,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
-							RoleName: internalRoleName,
-							Permissions: map[string]string{
-								"Deployment": storage.Access_READ_ACCESS.String(),
-							},
+							RoleName:      internalRoleName,
+							ReadResources: []string{deploymentResource},
 							ClusterScopes: nil,
 						},
 					},
@@ -500,11 +494,9 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
-							RoleName: internalRoleName,
-							Permissions: map[string]string{
-								"Deployment": storage.Access_READ_ACCESS.String(),
-								"Image":      storage.Access_READ_WRITE_ACCESS.String(),
-							},
+							RoleName:       internalRoleName,
+							ReadResources:  []string{deploymentResource},
+							WriteResources: []string{imageResource},
 							ClusterScopes: []*tokens.ClusterScope{
 								{
 									ClusterName: testSensorClusterID,

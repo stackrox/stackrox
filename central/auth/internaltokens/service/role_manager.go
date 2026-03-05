@@ -24,11 +24,15 @@ func (rm *roleManager) createRoleForRoxClaims(
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
 ) (*tokens.InternalRole, error) {
 	role := &tokens.InternalRole{
-		RoleName:    internalRoleName,
-		Permissions: make(map[string]string),
+		RoleName: internalRoleName,
 	}
 	for resource, access := range req.GetPermissions() {
-		role.Permissions[resource] = access.String()
+		switch access {
+		case v1.Access_READ_ACCESS:
+			role.ReadResources = append(role.ReadResources, resource)
+		case v1.Access_READ_WRITE_ACCESS:
+			role.WriteResources = append(role.WriteResources, resource)
+		}
 	}
 	for _, requestedScope := range req.GetClusterScopes() {
 		clusterName, found, err := rm.clusterStore.GetClusterName(ctx, requestedScope.GetClusterId())

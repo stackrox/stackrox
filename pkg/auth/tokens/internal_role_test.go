@@ -4,13 +4,14 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestInternalRoleGetRoleName(t *testing.T) {
 	nilRole := (*InternalRole)(nil)
-	assert.Equal(t, "<no role>", nilRole.GetRoleName())
+	assert.Equal(t, "", nilRole.GetRoleName())
 	emptyRole := &InternalRole{}
 	assert.Equal(t, "", emptyRole.GetRoleName())
 	const roleName1 = "role1"
@@ -24,8 +25,6 @@ func TestInternalRoleGetRoleName(t *testing.T) {
 func TestInternalRoleGetPermissions(t *testing.T) {
 	const deploymentResource = "Deployment"
 	const imageResource = "Image"
-	const readAccess = "READ_ACCESS"
-	const invalidAccess = "RANDOM_VALUE_ACCESS"
 	for name, tc := range map[string]struct {
 		role                *InternalRole
 		expectedPermissions map[string]storage.Access
@@ -38,42 +37,50 @@ func TestInternalRoleGetPermissions(t *testing.T) {
 			role:                &InternalRole{},
 			expectedPermissions: make(map[string]storage.Access),
 		},
-		"Input with empty permissions": {
+		"Input with empty read permissions": {
 			role: &InternalRole{
-				Permissions: make(map[string]string),
+				ReadResources: make([]string, 0),
+			},
+			expectedPermissions: make(map[string]storage.Access),
+		},
+		"Input with empty write permissions": {
+			role: &InternalRole{
+				WriteResources: make([]string, 0),
+			},
+			expectedPermissions: make(map[string]storage.Access),
+		},
+		"Input with empty read and write permissions": {
+			role: &InternalRole{
+				ReadResources:  make([]string, 0),
+				WriteResources: make([]string, 0),
 			},
 			expectedPermissions: make(map[string]storage.Access),
 		},
 		"Single permission": {
 			role: &InternalRole{
-				Permissions: map[string]string{
-					deploymentResource: readAccess,
-				},
+				ReadResources: []string{deploymentResource},
 			},
 			expectedPermissions: map[string]storage.Access{
 				deploymentResource: storage.Access_READ_ACCESS,
 			},
 		},
-		"Multiple permissions": {
+		"Multiple permissions - read only": {
 			role: &InternalRole{
-				Permissions: map[string]string{
-					deploymentResource: readAccess,
-					imageResource:      readAccess,
-				},
+				ReadResources: []string{deploymentResource, imageResource},
 			},
 			expectedPermissions: map[string]storage.Access{
 				deploymentResource: storage.Access_READ_ACCESS,
 				imageResource:      storage.Access_READ_ACCESS,
 			},
 		},
-		"Unknown access value defaults to no access": {
+		"Multiple permissions - read and write": {
 			role: &InternalRole{
-				Permissions: map[string]string{
-					deploymentResource: invalidAccess,
-				},
+				ReadResources:  []string{deploymentResource},
+				WriteResources: []string{imageResource},
 			},
 			expectedPermissions: map[string]storage.Access{
-				deploymentResource: storage.Access_NO_ACCESS,
+				deploymentResource: storage.Access_READ_ACCESS,
+				imageResource:      storage.Access_READ_WRITE_ACCESS,
 			},
 		},
 	} {
@@ -117,6 +124,9 @@ func TestInternalRoleGetAccessScope(t *testing.T) {
 				ClusterScopes: []*ClusterScope{
 					{ClusterName: clusterName1},
 				},
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: []string{},
+				},
 			},
 			expectedScope: emptyScope,
 		},
@@ -125,6 +135,10 @@ func TestInternalRoleGetAccessScope(t *testing.T) {
 				ClusterScopes: []*ClusterScope{
 					{ClusterName: clusterName1},
 					{ClusterName: clusterName2},
+				},
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: []string{},
+					fixtureconsts.Cluster2: nil,
 				},
 			},
 			expectedScope: emptyScope,
@@ -136,6 +150,9 @@ func TestInternalRoleGetAccessScope(t *testing.T) {
 						ClusterName:       clusterName1,
 						ClusterFullAccess: true,
 					},
+				},
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: []string{"*"},
 				},
 			},
 			expectedScope: &storage.SimpleAccessScope{
@@ -152,6 +169,9 @@ func TestInternalRoleGetAccessScope(t *testing.T) {
 						ClusterName: clusterName1,
 						Namespaces:  []string{namespaceB},
 					},
+				},
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: []string{namespaceB},
 				},
 			},
 			expectedScope: &storage.SimpleAccessScope{
@@ -174,6 +194,9 @@ func TestInternalRoleGetAccessScope(t *testing.T) {
 						ClusterName: clusterName1,
 						Namespaces:  []string{namespaceB},
 					},
+				},
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: []string{namespaceB},
 				},
 			},
 			expectedScope: &storage.SimpleAccessScope{
@@ -203,6 +226,9 @@ func TestInternalRoleGetAccessScope(t *testing.T) {
 					},
 					nil,
 				},
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: []string{namespaceB},
+				},
 			},
 			expectedScope: &storage.SimpleAccessScope{
 				Rules: &storage.SimpleAccessScope_Rules{
@@ -227,6 +253,10 @@ func TestInternalRoleGetAccessScope(t *testing.T) {
 						ClusterName:       clusterName2,
 						ClusterFullAccess: true,
 					},
+				},
+				Clusters: ClusterScopes{
+					fixtureconsts.Cluster1: []string{namespaceA, namespaceB},
+					fixtureconsts.Cluster2: []string{"*"},
 				},
 			},
 			expectedScope: &storage.SimpleAccessScope{
