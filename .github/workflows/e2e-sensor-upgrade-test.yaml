@@ -18,7 +18,8 @@ jobs:
     env:
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
-      CLUSTER_NAME: sensor-upgrade-test-${{ github.run_id }}-${{ github.run_attempt }}
+      # The action limits cluster name to 26 characters for maybe a valid reason.
+      CLUSTER_NAME: e2e-sens-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
