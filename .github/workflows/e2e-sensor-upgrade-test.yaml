@@ -13,8 +13,7 @@ concurrency: upgrade-sensor-${{ github.ref }}
 
 jobs:
   # Job 2: Run the upgrade test
-  upgrade-test:
-    name: Run Postgres Sensor Upgrade Test
+  sensor-upgrade-test:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
@@ -24,7 +23,7 @@ jobs:
     env:
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
-      CLUSTER_NAME: upgrade-sensor-${{ github.run_id }}-${{ github.run_attempt }}
+      CLUSTER_NAME: sensor-upgrade-test-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
@@ -36,6 +35,12 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - name: Docker login to Quay.io
+        env:
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+        run: |
+          docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
       - name: "Set up Cloud SDK"
         uses: "google-github-actions/setup-gcloud@v3"
@@ -47,52 +52,28 @@ jobs:
 
       - uses: stackrox/actions/infra/install-infractl@v1
 
-      - name: Create testing cluster
+      - name: Create test cluster
         run: |
           infractl create gke-default "${CLUSTER_NAME}" \
             --arg nodes=3 \
             --arg machine-type=e2-standard-8 \
             --lifespan 4h \
             --no-slack \
-            --wait \
-            --download-dir artifacts
+            --wait
 
-          echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
-
-        # uses: stackrox/actions/infra/create-cluster@v1
-        # with:
-        #   token: ${{ secrets.INFRA_TOKEN }}
-        #   flavor: gke-default
-        #   name: ${{ env.CLUSTER_NAME }}
-        #   lifespan: '4h'
-        #   args: nodes=3,machine-type=e2-standard-8
-        #   wait: true
-
-      - name: Test cluster readiness
-        run: |
-          STATUS=$(infractl get "${CLUSTER_NAME}" --json | jq -r .Status)
-          if [ "$STATUS" != "READY" ]; then
-            echo "Cluster not ready, status: $STATUS"
+          STATUS="$(infractl get "${CLUSTER_NAME}" --json | jq -r .Status)"
+          if [[ "$STATUS" != "READY" ]]; then
+            >&2 echo "Cluster does not seem ready, status: $STATUS"
             exit 1
           fi
 
-      # - name: Fetch infra artifacts
-      #   run: |
-      #     mkdir -p artifacts
-      #     infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts
-      #     echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
+          infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
+          echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
 
       - name: Verify kubectl access
         run: |
           kubectl cluster-info
           kubectl get nodes
-
-      - name: Docker login to Quay.io
-        env:
-          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        run: |
-          docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
       - name: Delete cluster
         if: always()
