@@ -20,7 +20,7 @@ func NewCustomRuleDispatcher() *CustomRuleDispatcher {
 }
 
 // ProcessEvent processes a custom rule event.
-// CustomRules are converted to ComplianceOperatorRuleV2 with IsCustom=true, following the same pattern as TailoredProfiles.
+// CustomRules are converted to ComplianceOperatorRuleV2 with ComplianceOperatorKind=CUSTOM_RULE, following the same pattern as TailoredProfiles.
 func (c *CustomRuleDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	// CustomRules are only supported by compliance V2
 	if !centralcaps.Has(centralsensor.ComplianceV2Integrations) {
