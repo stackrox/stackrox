@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package storage;
+
+import "storage/cve.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// VirtualMachineCVEV2 represents a CVE affecting a component found in a VM scan.
+// Retains a direct FK to VirtualMachineV2 for query optimization, enabling
+// "all VMs with this CVE" queries without joining through scans and components.
+message VirtualMachineCVEV2 {
+  string id = 1; // @gotags: search:"CVE ID,hidden" sql:"pk,type(uuid)"
+
+  // Direct FK to VirtualMachineV2.id for query optimization. CASCADE DELETE.
+  string vm_v2_id = 2; // @gotags: sql:"fk(VirtualMachineV2:id),type(uuid),index=btree"
+
+  // FK to VirtualMachineComponentV2.id. CASCADE DELETE.
+  string vm_component_id = 3; // @gotags: sql:"fk(VirtualMachineComponentV2:id),type(uuid),index=btree"
+
+  // CVE base information (cve identifier, summary, published date, etc.).
+  CVEInfo cve_base_info = 4;
+
+  // ACS preferred CVSS score, denormalized for query performance.
+  float preferred_cvss = 5; // @gotags: search:"CVSS"
+
+  // CvssScoreVersion enum for the preferred score (stored as integer in PostgreSQL).
+  // Extensible for CVSS v5+ without DB migration.
+  CvssScoreVersion preferred_cvss_version = 6;
+
+  VulnerabilitySeverity severity = 7; // @gotags: search:"Severity" sql:"index=btree"
+  float impact_score = 8; // @gotags: search:"Impact Score"
+
+  // NVD-specific CVSS score.
+  float nvdcvss = 9; // @gotags: search:"NVD CVSS"
+  CvssScoreVersion nvd_score_version = 10;
+
+  bool is_fixable = 11; // @gotags: search:"Fixable" sql:"index=btree"
+
+  // Version that fixes this CVE for the affected component.
+  oneof has_fixed_by {
+    string fixed_by = 12; // @gotags: search:"Fixed By,hidden"
+  }
+
+  // EPSS exploit probability, denormalized for direct query access.
+  float epss_probability = 13; // @gotags: search:"EPSS Probability"
+
+  // Advisory identifier (e.g., RHSA-2024:1234).
+  Advisory advisory = 14;
+}
