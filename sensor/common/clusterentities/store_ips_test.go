@@ -419,6 +419,202 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastIPs() {
 	}
 }
 
+// totalDeploymentsInIPMap returns the total number of deployment IDs referenced
+// across all entries in ipMap (counts duplicates across different IPs).
+func totalDeploymentsInIPMap(store *podIPsStore) int {
+	count := 0
+	for _, deplSet := range store.ipMap {
+		count += deplSet.Cardinality()
+	}
+	return count
+}
+
+// totalIPsInReverseIPMap returns the total number of IP addresses referenced
+// across all entries in reverseIPMap.
+func totalIPsInReverseIPMap(store *podIPsStore) int {
+	count := 0
+	for _, ipSet := range store.reverseIPMap {
+		count += ipSet.Cardinality()
+	}
+	return count
+}
+
+// TestIPMapConsistencyAfterIPRecyclingViaApply simulates the IP recycling scenario that occurs when Sensor processes
+// events out of order (new pod's IP update arrives before old pod's removal)
+// It reproduces the same issue as in TestDeleteDeploymentFromCurrentRemovesStaleEntries,
+// but uses different API (Store.Apply instead of deleteDeploymentFromCurrent).
+//
+// The order of event arrival is crucial for reproducing this issue: the bug
+// only triggers when the new deployment's update is processed while the old
+// deployment's stale IP is still in ipMap (cardinality >= 2). When events
+// arrive in order (old deployment cleaned up first), cardinality is 1 at
+// deletion time and cleanup works correctly.
+//
+// This out-of-order pattern has been observed in production on clusters with
+// high pod churn, where Kubernetes informer events for different deployments
+// are delivered asynchronously and the recycled-IP event arrives before the
+// old pod's termination is fully processed.
+func (s *ClusterEntitiesStoreTestSuite) TestIPMapConsistencyAfterIPRecyclingViaApply() {
+	s.Run("IP recycled between two deployments leaves no leftovers after deletion", func() {
+		store := NewStore(0, nil, true)
+
+		ip := net.ParseIP("10.0.0.1")
+
+		// deplA gets pod with IP 10.0.0.1.
+		store.Apply(map[string]*EntityData{
+			"deplA": entityUpdate("10.0.0.1", "containerA", 80),
+		}, false)
+
+		s.T().Logf("After deplA appears with IP 10.0.0.1:\n%s", store.podIPsStore.String())
+		s.Equal(1, len(store.podIPsStore.ipMap), "ipMap should have 1 IP")
+		s.Equal(1, len(store.podIPsStore.reverseIPMap), "reverseIPMap should have 1 deployment")
+
+		// K8s recycles IP 10.0.0.1 to deplB.
+		// Sensor processes deplB's update BEFORE processing deplA's removal.
+		store.Apply(map[string]*EntityData{
+			"deplB": entityUpdate("10.0.0.1", "containerB", 80),
+		}, false)
+
+		s.T().Logf("After deplB is added and recycles IP 10.0.0.1 (deplA not yet cleaned up):\n%s", store.podIPsStore.String())
+		s.Equal(2, store.podIPsStore.ipMap[ip].Cardinality(),
+			"ipMap should have 2 deployments for the recycled IP")
+
+		// deplA is updated — its old pod is gone, new pod has IP 10.0.0.2.
+		store.Apply(map[string]*EntityData{
+			"deplA": entityUpdate("10.0.0.2", "containerA2", 80),
+		}, false)
+
+		s.T().Logf("After deplA moves to 10.0.0.2 (should release IP 10.0.0.1):\n%s", store.podIPsStore.String())
+		s.False(store.podIPsStore.ipMap[ip].Contains("deplA"),
+			"deplA should be absent from ipMap[10.0.0.1] after moving to a new IP")
+
+		// Both deployments are deleted from K8s.
+		store.Apply(map[string]*EntityData{"deplA": {}}, false)
+		store.Apply(map[string]*EntityData{"deplB": {}}, false)
+
+		s.T().Logf("After both deplA and deplB are deleted:\n%s", store.podIPsStore.String())
+		s.Empty(store.podIPsStore.ipMap,
+			"ipMap should be empty after all deployments are deleted")
+		s.Empty(store.podIPsStore.reverseIPMap,
+			"reverseIPMap should be empty after all deployments are deleted")
+	})
+
+	s.Run("repeated IP recycling accumulates stale entries in ipMap", func() {
+		store := NewStore(0, nil, true)
+
+		// Simulate 5 successive deployments each getting IP 10.0.0.1.
+		// Each new deployment arrives before the previous one is cleaned up,
+		// mimicking rapid IP recycling in a busy cluster.
+		deployments := []string{"deplA", "deplB", "deplC", "deplD", "deplE"}
+		for i, deplID := range deployments {
+			store.Apply(map[string]*EntityData{
+				deplID: entityUpdate("10.0.0.1", "container-"+deplID, 80),
+			}, false)
+			s.T().Logf("After %s gets 10.0.0.1 (%d/%d): ipMap cardinality=%d, reverseIPMap entries=%d",
+				deplID, i+1, len(deployments),
+				store.podIPsStore.ipMap[net.ParseIP("10.0.0.1")].Cardinality(),
+				len(store.podIPsStore.reverseIPMap))
+		}
+
+		s.T().Logf("State after all 5 deployments added:\n%s", store.podIPsStore.String())
+
+		// Delete all deployments from K8s.
+		for _, deplID := range deployments {
+			store.Apply(map[string]*EntityData{deplID: {}}, false)
+			s.T().Logf("After deleting %s: ipMap deployment refs=%d, reverseIPMap entries=%d",
+				deplID,
+				totalDeploymentsInIPMap(store.podIPsStore),
+				len(store.podIPsStore.reverseIPMap))
+		}
+
+		s.T().Logf("Final state:\n%s", store.podIPsStore.String())
+
+		// The `ipMap` and `reverseIPMap` must agree: both should be empty.
+		s.Equal(0, totalIPsInReverseIPMap(store.podIPsStore),
+			"reverseIPMap should have 0 IP references after all deployments are deleted")
+		s.Equal(0, totalDeploymentsInIPMap(store.podIPsStore),
+			"ipMap should have 0 deployment references after all deployments are deleted (stale entries indicate a bug)")
+		s.Empty(store.podIPsStore.ipMap,
+			"ipMap should be empty after all deployments are deleted")
+	})
+}
+
+func ptr[T any](v T) *T { return &v }
+
+// This is a different version of `TestIPMapConsistencyAfterIPRecyclingViaApply`
+// that uses direct calls to `deleteDeploymentFromCurrent` instead of `Store.Apply`.
+//
+// When a deployment is deleted from `ipMap` while sharing an IP with another
+// deployment, its entry must be removed from `ipMap` to keep `ipMap` and
+// `reverseIPMap` consistent.
+func (s *ClusterEntitiesStoreTestSuite) TestDeleteDeploymentFromCurrentRemovesStaleEntries() {
+	ip := net.ParseIP("10.0.0.1")
+	makeData := func(ipStr string) EntityData {
+		ed := EntityData{}
+		ed.AddIP(net.ParseIP(ipStr))
+		return ed
+	}
+
+	s.Run("deleting one of two deployments sharing an IP cleans ipMap", func() {
+		store := newPodIPsStoreWithMemory(0)
+
+		store.applyNoLock(map[string]*EntityData{"deplA": ptr(makeData("10.0.0.1"))}, true)
+		store.applyNoLock(map[string]*EntityData{"deplB": ptr(makeData("10.0.0.1"))}, true)
+
+		// Precondition: both deployments share the IP.
+		s.Require().Equal(2, store.ipMap[ip].Cardinality())
+		s.Require().True(store.ipMap[ip].Contains("deplA"))
+		s.Require().True(store.ipMap[ip].Contains("deplB"))
+
+		store.deleteDeploymentFromCurrent("deplA")
+
+		s.False(store.ipMap[ip].Contains("deplA"),
+			"deplA should be absent from ipMap after deleteDeploymentFromCurrent")
+		s.True(store.ipMap[ip].Contains("deplB"),
+			"deplB should still be in ipMap after deleteDeploymentFromCurrent")
+		s.Equal(1, store.ipMap[ip].Cardinality(),
+			"ipMap entry should have exactly 1 deployment left")
+		s.Empty(store.reverseIPMap["deplA"],
+			"reverseIPMap should not reference the deleted deployment")
+	})
+
+	s.Run("deleting all deployments that shared an IP leaves maps empty", func() {
+		store := newPodIPsStoreWithMemory(0)
+
+		store.applyNoLock(map[string]*EntityData{"deplA": ptr(makeData("10.0.0.1"))}, true)
+		store.applyNoLock(map[string]*EntityData{"deplB": ptr(makeData("10.0.0.1"))}, true)
+
+		store.deleteDeploymentFromCurrent("deplA")
+		store.deleteDeploymentFromCurrent("deplB")
+
+		s.Empty(store.ipMap,
+			"ipMap should be empty after all deployments sharing the IP are deleted")
+		s.Empty(store.reverseIPMap,
+			"reverseIPMap should be empty after all deployments are deleted")
+	})
+
+	s.Run("ipMap grows with stale entries on repeated IP recycling", func() {
+		store := newPodIPsStoreWithMemory(0)
+
+		// Simulate IP recycling: deplA gets the IP, then deplB, then deplC.
+		store.applyNoLock(map[string]*EntityData{"deplA": ptr(makeData("10.0.0.1"))}, true)
+		store.applyNoLock(map[string]*EntityData{"deplB": ptr(makeData("10.0.0.1"))}, true)
+		store.deleteDeploymentFromCurrent("deplA")
+
+		store.applyNoLock(map[string]*EntityData{"deplC": ptr(makeData("10.0.0.1"))}, true)
+		store.deleteDeploymentFromCurrent("deplB")
+
+		store.deleteDeploymentFromCurrent("deplC")
+
+		s.Equal(0, totalDeploymentsInIPMap(store),
+			"ipMap should have 0 deployment references after all deployments are deleted")
+		s.Equal(0, totalIPsInReverseIPMap(store),
+			"reverseIPMap should have 0 IP references after all deployments are deleted")
+		s.Empty(store.ipMap,
+			"ipMap should be empty after all deployments are deleted")
+	})
+}
+
 func (s *ClusterEntitiesStoreTestSuite) TestChangingIPsAndExternalEntities() {
 	entityStore := NewStore(0, nil, false)
 	type expectation struct {
