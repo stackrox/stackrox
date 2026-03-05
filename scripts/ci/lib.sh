@@ -1128,10 +1128,10 @@ push_helm_charts() {
     roxctl helm output central-services --image-defaults=opensource --output-dir "${central_services_chart_dir}/opensource"
     roxctl helm output secured-cluster-services --image-defaults=rhacs --output-dir "${secured_cluster_services_chart_dir}/rhacs"
     roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${secured_cluster_services_chart_dir}/opensource"
-    make -C operator chart ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true ROX_PRODUCT_BRANDING=STACKROX_BRANDING
+    ROX_PRODUCT_BRANDING=STACKROX_BRANDING make -C operator chart ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true
     mv operator/dist/chart "${operator_chart_dir}/opensource"
     # TODO(ROX-33131): Consider moving the downstream chart build/publishing to konflux.
-    make -C operator chart ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true ROX_PRODUCT_BRANDING=RHACS_BRANDING IMAGE_TAG_BASE=registry.redhat.io/advanced-cluster-security/rhacs-rhel8-operator
+    ROX_PRODUCT_BRANDING=RHACS_BRANDING make -C operator chart ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true IMAGE_TAG_BASE=registry.redhat.io/advanced-cluster-security/rhacs-rhel8-operator
     mv operator/dist/chart "${operator_chart_dir}/rhacs"
     "${SCRIPTS_ROOT}/scripts/ci/publish-helm-charts.sh" "${tag}" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}" "${operator_chart_dir}"
 }
