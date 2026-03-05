@@ -178,6 +178,10 @@ describe('Step 4', () => {
                 scope: [
                     {
                         cluster: 'non-empty',
+                        clusterLabel: {
+                            key: 'non-empty',
+                            value: 'non-empty',
+                        },
                         namespace: 'non-empty',
                         namespaceLabel: {
                             key: 'non-empty',
@@ -200,6 +204,10 @@ describe('Step 4', () => {
                 scope: [
                     {
                         cluster: 'non-empty',
+                        clusterLabel: {
+                            key: 'non-empty',
+                            value: 'non-empty',
+                        },
                         namespace: 'non-empty',
                         namespaceLabel: {
                             key: 'non-empty',

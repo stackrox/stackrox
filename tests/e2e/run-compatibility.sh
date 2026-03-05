@@ -54,6 +54,7 @@ _run_compatibility_tests() {
 
     test_preamble
     setup_deployment_env false false
+
     remove_existing_stackrox_resources
     setup_default_TLS_certs
     info "Creating mocked compliance operator data for compliance v1 tests"

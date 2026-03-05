@@ -11,7 +11,7 @@ import {
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import SelectSingle from 'Components/SelectSingle';
 import useMetadata from 'hooks/useMetadata';
-import type { Cluster } from 'types/cluster.proto';
+import type { Cluster, CompleteClusterConfig, DynamicClusterConfig } from 'types/cluster.proto';
 import { getVersionedDocs } from 'utils/versioning';
 
 import { clusterTypeOptions, runtimeOptions } from './cluster.helpers';
@@ -19,14 +19,20 @@ import HelmValueWarning from './Components/HelmValueWarning';
 
 export type StaticConfigurationFormProps = {
     selectedCluster: Cluster;
+    dynamicConfig: DynamicClusterConfig;
+    helmConfig: CompleteClusterConfig | null;
     isManagerTypeNonConfigurable: boolean;
     handleChange: (path: string, value: boolean | string) => void;
+    handleChangeAdmissionControllerEnforcementBehavior: (value: boolean) => void;
 };
 
 function StaticConfigurationForm({
     selectedCluster,
+    dynamicConfig,
+    helmConfig,
     isManagerTypeNonConfigurable,
     handleChange,
+    handleChangeAdmissionControllerEnforcementBehavior,
 }: StaticConfigurationFormProps) {
     const { version } = useMetadata();
 
@@ -147,6 +153,59 @@ function StaticConfigurationForm({
                     currentValue={selectedCluster.collectorImage}
                     helmValue={selectedCluster?.helmConfig?.staticConfig?.collectorImage}
                 />
+            </FormGroup>
+            <FormGroup label="Admission controller enforcement behavior">
+                <SelectSingle
+                    id="dynamicConfig.admissionControllerConfig.enabled"
+                    value={
+                        dynamicConfig.admissionControllerConfig.enabled ||
+                        dynamicConfig.admissionControllerConfig.enforceOnUpdates
+                            ? 'enabled'
+                            : 'disabled'
+                    }
+                    handleSelect={(id, value) =>
+                        handleChangeAdmissionControllerEnforcementBehavior(value === 'enabled')
+                    }
+                    isDisabled={isManagerTypeNonConfigurable}
+                    isFullWidth={false}
+                >
+                    <SelectOption value="enabled">Enforce policies</SelectOption>
+                    <SelectOption value="disabled">No enforcement</SelectOption>
+                </SelectSingle>
+                <HelmValueWarning
+                    currentValue={
+                        dynamicConfig.admissionControllerConfig.enabled ||
+                        dynamicConfig.admissionControllerConfig.enforceOnUpdates
+                    }
+                    helmValue={
+                        helmConfig?.dynamicConfig?.admissionControllerConfig?.enabled ||
+                        helmConfig?.dynamicConfig?.admissionControllerConfig?.enforceOnUpdates
+                    }
+                />
+                <FormHelperText>
+                    <HelperText>
+                        <HelperTextItem>
+                            Controls the policy enforcement configuration of the admission
+                            controller. It determines whether the admission controller actively
+                            blocks workloads and operations if they violate policies.
+                        </HelperTextItem>
+                        <HelperTextItem>
+                            For more information, see{' '}
+                            <ExternalLink>
+                                <a
+                                    href={getVersionedDocs(
+                                        version,
+                                        'operating/use-admission-controller-enforcement'
+                                    )}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    RHACS documentation
+                                </a>
+                            </ExternalLink>
+                        </HelperTextItem>
+                    </HelperText>
+                </FormHelperText>
             </FormGroup>
             <FormGroup label="Admission controller failure policy" isRequired>
                 <SelectSingle
