@@ -690,6 +690,11 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentFileAccess() {
 	deployment := &storage.Deployment{
 		Name: "test-deployment",
 		Id:   "test-deployment-id",
+		Containers: []*storage.Container{
+			{
+				Name: "test-container",
+			},
+		},
 	}
 
 	type eventWrapper struct {
@@ -965,8 +970,15 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentFileAccess() {
 			for _, event := range tc.events {
 				var cache CacheReceptacle
 				enhancedDep := EnhancedDeployment{
-					Deployment:             deployment,
-					Images:                 nil,
+					Deployment: deployment,
+					Images: []*storage.Image{
+						{
+							Id: "test-image-id",
+							Name: &storage.ImageName{
+								FullName: "test-image:latest",
+							},
+						},
+					},
 					NetworkPoliciesApplied: nil,
 				}
 				violations, err := matcher.MatchDeploymentWithFileAccess(&cache, enhancedDep, event.access)
@@ -994,6 +1006,11 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentEffectiveFileAccess() {
 	deployment := &storage.Deployment{
 		Name: "test-deployment",
 		Id:   "test-deployment-id",
+		Containers: []*storage.Container{
+			{
+				Name: "test-container",
+			},
+		},
 	}
 
 	type eventWrapper struct {
@@ -1269,8 +1286,15 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentEffectiveFileAccess() {
 			for _, event := range tc.events {
 				var cache CacheReceptacle
 				enhancedDep := EnhancedDeployment{
-					Deployment:             deployment,
-					Images:                 nil,
+					Deployment: deployment,
+					Images: []*storage.Image{
+						{
+							Id: "test-image-id",
+							Name: &storage.ImageName{
+								FullName: "test-image:latest",
+							},
+						},
+					},
 					NetworkPoliciesApplied: nil,
 				}
 				violations, err := matcher.MatchDeploymentWithFileAccess(&cache, enhancedDep, event.access)
@@ -1298,6 +1322,11 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentDualPathMatching() {
 	deployment := &storage.Deployment{
 		Name: "test-deployment",
 		Id:   "test-deployment-id",
+		Containers: []*storage.Container{
+			{
+				Name: "test-container",
+			},
+		},
 	}
 
 	type eventWrapper struct {
@@ -1648,8 +1677,15 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentDualPathMatching() {
 			for _, event := range tc.events {
 				var cache CacheReceptacle
 				enhancedDep := EnhancedDeployment{
-					Deployment:             deployment,
-					Images:                 nil,
+					Deployment: deployment,
+					Images: []*storage.Image{
+						{
+							Id: "test-image-id",
+							Name: &storage.ImageName{
+								FullName: "test-image:latest",
+							},
+						},
+					},
 					NetworkPoliciesApplied: nil,
 				}
 				violations, err := matcher.MatchDeploymentWithFileAccess(&cache, enhancedDep, event.access)
@@ -2116,8 +2152,15 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentFileAccessWithProcessCriter
 			for _, event := range tc.events {
 				var cache CacheReceptacle
 				enhancedDep := EnhancedDeployment{
-					Deployment:             deployment,
-					Images:                 nil,
+					Deployment: deployment,
+					Images: []*storage.Image{
+						{
+							Id: "test-image-id",
+							Name: &storage.ImageName{
+								FullName: "test-image:latest",
+							},
+						},
+					},
 					NetworkPoliciesApplied: nil,
 				}
 				violations, err := matcher.MatchDeploymentWithFileAccess(&cache, enhancedDep, event.access)
