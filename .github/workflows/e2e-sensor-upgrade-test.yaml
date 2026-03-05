@@ -15,11 +15,6 @@ jobs:
   # Job 2: Run the upgrade test
   sensor-upgrade-test:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     env:
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
@@ -53,14 +48,17 @@ jobs:
       - uses: stackrox/actions/infra/install-infractl@v1
 
       - name: Create test cluster
-        run: |
-          infractl create gke-default "${CLUSTER_NAME}" \
-            --arg nodes=3 \
-            --arg machine-type=e2-standard-8 \
-            --lifespan 4h \
-            --no-slack \
-            --wait
+        uses: stackrox/actions/infra/create-cluster@v1
+        with:
+          token: ${{ secrets.INFRA_TOKEN }}
+          flavor: gke-default
+          name: ${{ env.CLUSTER_NAME }}
+          lifespan: 4h
+          args: nodes=3,machine-type=e2-standard-8
+          wait: true
 
+      - name: Check and grab artifacts
+        run: |
           STATUS="$(infractl get "${CLUSTER_NAME}" --json | jq -r .Status)"
           if [[ "$STATUS" != "READY" ]]; then
             >&2 echo "Cluster does not seem ready, status: $STATUS"
