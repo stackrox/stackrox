@@ -6,10 +6,7 @@ import (
 	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/jwt"
 	roleStore "github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/pkg/auth/authproviders/tokenbased"
-	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -17,6 +14,8 @@ const (
 	internalTokenId = "https://stackrox.io/jwt-sources#internal-rox-tokens"
 	//#nosec G101 -- This constant is only there as a source type name, not as a credential.
 	internalToken = "internal-token"
+
+	defaultSourcePurgeInterval = 5 * time.Minute
 )
 
 var (
@@ -27,8 +26,10 @@ var (
 // Singleton returns a new auth service instance.
 func Singleton() Service {
 	once.Do(func() {
+		issuerMgr := newIssuerManager(jwt.IssuerFactorySingleton(), defaultSourcePurgeInterval)
+		issuerMgr.Start()
 		s = &serviceImpl{
-			issuer: getTokenIssuer(jwt.IssuerFactorySingleton()),
+			issuerManager: issuerMgr,
 			roleManager: &roleManager{
 				clusterStore: clusterStore.Singleton(),
 				roleStore:    roleStore.Singleton(),
@@ -38,19 +39,4 @@ func Singleton() Service {
 		}
 	})
 	return s
-}
-
-func getTokenSource() tokens.Source {
-	return tokenbased.NewTokenAuthProvider(
-		internalTokenId,
-		internalToken,
-		internalToken,
-		tokenbased.WithRevocationLayer(tokens.NewRevocationLayer()),
-	)
-}
-
-func getTokenIssuer(issuerFactory tokens.IssuerFactory) tokens.Issuer {
-	issuer, err := issuerFactory.CreateIssuer(getTokenSource())
-	utils.Must(err)
-	return issuer
 }
