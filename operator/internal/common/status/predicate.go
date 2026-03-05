@@ -46,16 +46,14 @@ func (p SkipStatusControllerUpdates[T]) Update(e event.TypedUpdateEvent[T]) bool
 
 	objOldForStatusController, err := toObjectForStatusController(objOld, log)
 	if err != nil {
-		log.Info("Failed to convert old object to ObjectForStatusController, allowing reconciliation",
-			"error", err,
+		log.Error(err, "Failed to convert old object to ObjectForStatusController, allowing reconciliation",
 			"objectOldType", fmt.Sprintf("%T", e.ObjectOld))
 		return true
 	}
 
 	objNewForStatusController, err := toObjectForStatusController(objNew, log)
 	if err != nil {
-		log.Info("Failed to convert new object to ObjectForStatusController, allowing reconciliation",
-			"error", err,
+		log.Error(err, "Failed to convert new object to ObjectForStatusController, allowing reconciliation",
 			"objectNewType", fmt.Sprintf("%T", e.ObjectNew))
 		return true
 	}
