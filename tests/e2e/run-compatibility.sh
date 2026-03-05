@@ -54,6 +54,15 @@ _run_compatibility_tests() {
 
     test_preamble
     setup_deployment_env false false
+
+    # Prefetch images for OSCI (DaemonSet-based prefetcher)
+    # For Kind (GitHub Actions), images are loaded directly via kind load
+    if [[ "${IMAGE_PREFETCH_DISABLED:-false}" != "true" ]]; then
+        info "Starting image prefetching for compatibility tests"
+        image_prefetcher_prebuilt_start
+        image_prefetcher_prebuilt_await
+    fi
+
     remove_existing_stackrox_resources
     setup_default_TLS_certs
     info "Creating mocked compliance operator data for compliance v1 tests"
