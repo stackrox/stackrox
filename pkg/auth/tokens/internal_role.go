@@ -17,10 +17,23 @@ type ClusterScope struct {
 	Namespaces        []string `json:"namespaces"`
 }
 
+// ClusterScopes is a representation of an access scope tree.
+// The tree root is the map itself.
+// Each cluster in the access scope is identified by its cluster ID
+// The accessible namespaces within a cluster are represented
+// by the map entry for the cluster ID. The map entry is a list
+// of namespace names. If the list contains the wildcard value ("*"),
+// then all namespaces within that cluster should be accessible.
+type ClusterScopes map[string][]string
+
 // InternalRole represents claims that materialize a negotiated ephemeral role for internal use.
 type InternalRole struct {
 	Permissions   map[string]string `json:"permissions"`
 	ClusterScopes []*ClusterScope   `json:"cluster_scopes"`
+	// Target token structure
+	ReadResources  []string      `json:"reads,omitempty"`
+	WriteResources []string      `json:"writes,omitempty"`
+	Clusters       ClusterScopes `json:"clusters,omitempty"`
 }
 
 func (r *InternalRole) GetRoleName() string {
