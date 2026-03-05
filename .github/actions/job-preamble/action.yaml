@@ -140,11 +140,11 @@ runs:
       shell: bash
 
     - name: Resolve version tag for shallow clones
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
       run: |
         # Shallow clones lack git history for git describe / make tag.
-        # Find the nearest version tag via ls-remote, fetch just enough
-        # history to count commits, and set BUILD_TAG (which make/env.mk
-        # checks before git describe). Takes ~3s.
+        # Set BUILD_TAG so make/env.mk skips git describe.
         if [ "$(git rev-parse --is-shallow-repository)" != "true" ]; then
           exit 0
         fi
@@ -153,19 +153,36 @@ runs:
         all_tags=$(git ls-remote --tags origin \
           | grep -oP 'refs/tags/\K[0-9]+\.[0-9]+\.x$' \
           | sort -rV)
-        # On master the latest tag is always correct. On release branches
-        # (e.g. release-4.10) the latest tag may be from a newer version
-        # (4.11.x) that isn't an ancestor. The loop tries each tag until
-        # --shallow-exclude succeeds, which means it found an ancestor.
+
+        # Method 1: GitHub GraphQL API — check tag ancestry and get the
+        # commit count in one lightweight call (~200 bytes) without
+        # modifying the shallow clone. On master the first tag matches;
+        # on release branches the loop skips newer non-ancestor tags.
+        owner="${GITHUB_REPOSITORY%/*}"
+        repo="${GITHUB_REPOSITORY#*/}"
+        for tag in $all_tags; do
+          response=$(curl -sfL --max-time 5 \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"{ repository(owner:\"'"$owner"'\",name:\"'"$repo"'\"){ ref(qualifiedName:\"refs/tags/'"$tag"'\"){ compare(headRef:\"'"$current_sha"'\"){ aheadBy behindBy } } } }"}' \
+            https://api.github.com/graphql 2>/dev/null) || continue
+          behind=$(echo "$response" | grep -oP '"behindBy":\K[0-9]+')
+          ahead=$(echo "$response" | grep -oP '"aheadBy":\K[0-9]+')
+          if [ "${behind:-1}" = "0" ] && [ -n "$ahead" ]; then
+            echo "BUILD_TAG=${tag}-${ahead}-g${sha_short}" >> "$GITHUB_ENV"
+            echo "::notice::Resolved version (API): ${tag}-${ahead}-g${sha_short}"
+            exit 0
+          fi
+        done
+
+        # Method 2: git fallback — fetch just enough history to count
+        # commits above the tag boundary. Used when the API is unavailable
+        # (no token, network issues, rate limits).
         for tag in $all_tags; do
           if git fetch --shallow-exclude="$tag" origin "$current_sha" 2>/dev/null; then
-            # Fetch history to the tag solely to get the commit count.
-            # Without this, BUILD_TAG would be ${tag}-0-g${sha_short}.
-            # The count is cosmetic (nothing parses it) but useful for
-            # comparing builds. Remove this block to save ~2s per job.
             count=$(( $(git rev-list --count HEAD 2>/dev/null || echo 0) + 1 ))
             echo "BUILD_TAG=${tag}-${count}-g${sha_short}" >> "$GITHUB_ENV"
-            echo "::notice::Resolved version: ${tag}-${count}-g${sha_short}"
+            echo "::notice::Resolved version (git): ${tag}-${count}-g${sha_short}"
             exit 0
           fi
         done
