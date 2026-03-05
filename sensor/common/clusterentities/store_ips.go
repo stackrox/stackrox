@@ -183,10 +183,9 @@ func (e *podIPsStore) deleteDeploymentFromCurrent(deploymentID string) {
 	ips := e.reverseIPMap[deploymentID]
 	for _, address := range ips.AsSlice() {
 		deploymentsHavingIP := e.ipMap[address]
-		if deploymentsHavingIP.Cardinality() < 2 {
+		deploymentsHavingIP.Remove(deploymentID)
+		if deploymentsHavingIP.Cardinality() == 0 {
 			delete(e.ipMap, address)
-		} else {
-			log.Debugf("The same pod IP %s belongs to 2 or more deployments:%v !", address, deploymentsHavingIP.AsSlice())
 		}
 	}
 	delete(e.reverseIPMap, deploymentID)
