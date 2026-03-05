@@ -115,7 +115,12 @@ function ClusterLabelsConfigurationStatusSummary({
                 <StaticConfigurationForm
                     isManagerTypeNonConfigurable={isManagerTypeNonConfigurable}
                     handleChange={handleChange}
+                    handleChangeAdmissionControllerEnforcementBehavior={
+                        handleChangeAdmissionControllerEnforcementBehavior
+                    }
                     selectedCluster={selectedCluster}
+                    dynamicConfig={selectedCluster.dynamicConfig}
+                    helmConfig={selectedCluster.helmConfig}
                 />
             </Flex>
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
@@ -124,9 +129,6 @@ function ClusterLabelsConfigurationStatusSummary({
                     clusterType={selectedCluster.type}
                     dynamicConfig={selectedCluster.dynamicConfig}
                     handleChange={handleChange}
-                    handleChangeAdmissionControllerEnforcementBehavior={
-                        handleChangeAdmissionControllerEnforcementBehavior
-                    }
                     helmConfig={selectedCluster.helmConfig}
                     isManagerTypeNonConfigurable={isManagerTypeNonConfigurable}
                 />

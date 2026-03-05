@@ -1,5 +1,10 @@
 tests:
 - name: "Defaults for OpenShift3"
+  values:
+    admissionControl:
+      dynamic:
+        enforceOnCreates: true
+        enforceOnUpdates: false
   set:
     env.openshift: 3
   expect: |
@@ -8,14 +13,24 @@ tests:
    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.scanInline == true)
    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.timeoutSeconds == 10)
 - name: "Defaults for OpenShift4"
-  set:
-    env.openshift: 4
+  values:
+    admissionControl:
+      dynamic:
+        enforceOnCreates: true
+        enforceOnUpdates: false
+    set:
+      env.openshift: 4
   expect: |
    .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0] | assertThat(.operations == ["CREATE", "UPDATE"])
    [.validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io")] | assertThat(length == 1)
    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.scanInline == true)
    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.timeoutSeconds == 10)
 - name: "Defaults for vanilla K8s"
+  values:
+    admissionControl:
+      dynamic:
+        enforceOnCreates: true
+        enforceOnUpdates: false
   set:
     env.openshift: false
   expect: |
@@ -24,10 +39,12 @@ tests:
    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.scanInline == true)
    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.timeoutSeconds == 10)
 - name: "disabling listenOn* is ignored"
-  set:
-    admissionControl.listenOnCreates: false
-    admissionControl.listenOnUpdates: false
-    admissionControl.listenOnEvents: false
+  values:
+    admissionControl:
+      dynamic:
+        enforceOnCreates: true
+        enforceOnUpdates: false
+      listenOnEvents: false
   expect: |
    .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0].operations | assertThat(contains(["CREATE"]))
    .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0].operations | assertThat(contains(["UPDATE"]))
@@ -63,6 +80,89 @@ tests:
   expect: |
     .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.enabled == false)
     .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.enforceOnUpdates == false)
+- name: "policyeval webhook deployment depends on enforce setting"
+  tests:
+  - name: "policyeval webhook is deployed when enforce is true"
+    release:
+      isInstall: true
+      isUpgrade: false
+    values:
+      admissionControl:
+        dynamic:
+          enforceOnCreates: true
+          enforceOnUpdates: true
+    expect: |
+      [.validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io")] | assertThat(length == 1)
+  - name: "policyeval webhook is NOT deployed when enforce is false"
+    release:
+      isInstall: true
+      isUpgrade: false
+    set:
+      admissionControl.enforce: false
+    expect: |
+      [.validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io")] | assertThat(length == 0)
+  - name: "k8sevents webhook is always deployed regardless of enforce setting"
+    release:
+      isInstall: true
+      isUpgrade: false
+    set:
+      admissionControl.enforce: false
+    expect: |
+      [.validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io")] | assertThat(length == 1)
+- name: "policyeval webhook deployment during upgrade from pre-4.9"
+  release:
+    isUpgrade: true
+    isInstall: false
+  server:
+    objects:
+    - apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: stackrox-secured-cluster-helm
+        namespace: stackrox
+      data:
+        installXYVersion: "4.8"
+  tests:
+  - name: "policyeval webhook is NOT deployed when enforceOn* was disabled"
+    values:
+      admissionControl:
+        dynamic:
+          enforceOnCreates: false
+          enforceOnUpdates: false
+    expect: |
+      [.validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io")] | assertThat(length == 0)
+  - name: "policyeval webhook is deployed when enforceOnCreates was enabled"
+    values:
+      admissionControl:
+        dynamic:
+          enforceOnCreates: true
+          enforceOnUpdates: false
+    expect: |
+      [.validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io")] | assertThat(length == 1)
+  - name: "policyeval webhook is deployed when enforceOnUpdates was enabled"
+    values:
+      admissionControl:
+        dynamic:
+          enforceOnCreates: false
+          enforceOnUpdates: true
+    expect: |
+      [.validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io")] | assertThat(length == 1)
+  - name: "policyeval webhook is deployed when both enforceOn* were enabled"
+    values:
+      admissionControl:
+        dynamic:
+          enforceOnCreates: true
+          enforceOnUpdates: true
+    expect: |
+      [.validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io")] | assertThat(length == 1)
+  - name: "k8sevents webhook is always deployed regardless of enforce settings"
+    values:
+      admissionControl:
+        dynamic:
+          enforceOnCreates: false
+          enforceOnUpdates: false
+    expect: |
+      [.validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io")] | assertThat(length == 1)
 - name: "Enforcement during upgrade from pre-4.9"
   release:
     isUpgrade: true
