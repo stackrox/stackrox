@@ -141,30 +141,32 @@ runs:
 
     - name: Resolve version tag for shallow clones
       run: |
-        # Shallow clones (fetch-depth: 1) lack git history for git describe
-        # and make tag. This step restores version info in ~3s by:
-        #   1. Finding the nearest X.Y.x tag via ls-remote (~0.4s)
-        #   2. Fetching commit history to that tag via --shallow-exclude (~2s)
-        #   3. Creating a local tag at the boundary for git describe
-        #   4. Setting BUILD_TAG for make/env.mk as a fallback
-        #
-        # Tries tags in reverse version order to handle both master (latest
-        # tag) and release branches (e.g. release-4.10 uses 4.10.x).
-        # Commit count is off by 1 (--shallow-exclude stops above the tag
-        # commit) which is acceptable for version strings.
+        # Shallow clones lack git history for git describe / make tag.
+        # Find the nearest version tag via ls-remote, fetch just enough
+        # history to count commits, and set BUILD_TAG (which make/env.mk
+        # checks before git describe). Takes ~3s total.
         if [ "$(git rev-parse --is-shallow-repository)" != "true" ]; then
           exit 0
         fi
         current_sha=$(git rev-parse HEAD)
         sha_short=$(git rev-parse --short=10 HEAD)
-        tags=$(git ls-remote --tags origin | grep -oP 'refs/tags/\K[0-9]+\.[0-9]+\.x$' | sort -rV)
-        for tag in $tags; do
+        all_tags=$(git ls-remote --tags origin \
+          | grep -oP 'refs/tags/\K[0-9]+\.[0-9]+\.[0-9a-z].*' \
+          | grep -v 'nightly\|\^' \
+          | sort -rV)
+        # On master the latest tag is always correct. On release branches
+        # (e.g. release-4.10) the latest tag may be from a newer version
+        # (4.11.x) that isn't an ancestor. The loop tries each tag until
+        # --shallow-exclude succeeds, which means it found an ancestor.
+        for tag in $all_tags; do
           if git fetch --shallow-exclude="$tag" origin "$current_sha" 2>/dev/null; then
-            boundary=$(git rev-list HEAD | tail -1)
-            if [ -n "$boundary" ]; then git tag "$tag" "$boundary" 2>/dev/null || true; fi
-            count=$(git rev-list --count "${tag}..HEAD" 2>/dev/null || echo 0)
+            # Fetch history to the tag solely to get the commit count.
+            # Without this, BUILD_TAG would be ${tag}-0-g${sha_short}.
+            # The count is cosmetic (nothing parses it) but useful for
+            # comparing builds. Remove this block to save ~2s per job.
+            count=$(( $(git rev-list --count HEAD 2>/dev/null || echo 0) + 1 ))
             echo "BUILD_TAG=${tag}-${count}-g${sha_short}" >> "$GITHUB_ENV"
-            echo "::notice::Resolved version tag $tag ($count commits)"
+            echo "::notice::Resolved version: ${tag}-${count}-g${sha_short}"
             exit 0
           fi
         done
@@ -197,3 +199,4 @@ runs:
             du -k / 2>/dev/null | sort -V | tail -100 || true; \
             printf "Low free disk space post-job: ${free}" | tee -a "$GITHUB_STEP_SUMMARY";\
           fi;
+
