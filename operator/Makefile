@@ -324,6 +324,7 @@ chart: kubebuilder manifests ## Generate a helm chart with all necessary resourc
 # The dependency above makes sure protos are up to date, so we can skip this time-consuming process below
 # by specifying the SKIP env var. Otherwise each target that kubebuilder invokes (and there is a bunch) would regen protos.
 	if [ "$(ROX_IMAGE_FLAVOR)" = opensource ]; then sed -i'.bak' -e 's,^projectName: rhacs-operator,projectName: stackrox-operator,' PROJECT; fi
+	rm -rf dist/chart
 	ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true $(KUBEBUILDER) edit --plugins=helm/v2-alpha --force
 	if [ "$(ROX_IMAGE_FLAVOR)" = opensource ]; then mv PROJECT.bak PROJECT; fi
 	sed -i'.bak' -e 's,0.1.0,$(VERSION),g' dist/chart/Chart.yaml
