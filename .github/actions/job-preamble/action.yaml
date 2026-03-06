@@ -146,8 +146,9 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
       run: |
         # Shallow clones lack git history for git describe / make tag.
-        # A single GraphQL call checks all M.N.x version tags for
-        # ancestry and commit count (~2 KB response, ~2s on GHA).
+        # Two lightweight GraphQL calls (~1.4s total):
+        #   1. latestRelease to discover the current version
+        #   2. refs() + compare() for nearby .x tags (±3 minor versions)
         # Sets BUILD_TAG which make/env.mk checks before git describe.
         if [ "$(git rev-parse --is-shallow-repository)" != "true" ]; then
           echo "resolved=skip" >> "$GITHUB_OUTPUT"
@@ -157,29 +158,41 @@ runs:
         sha_short=$(git rev-parse --short=10 HEAD)
         owner="${GITHUB_REPOSITORY%/*}"
         repo="${GITHUB_REPOSITORY#*/}"
-        # Build a GraphQL query with aliased refs() lookups for each
-        # candidate M.N.x tag. refs(query:"M.N.x",first:1) returns the
-        # exact tag (alphabetically before any -nightly suffix), and
-        # inline compare() checks ancestry + commit count. Non-existent
-        # tags return empty nodes. Covers 4.x, 5.x, 6.x (safe for years).
+        gql() {
+          payload='{"query":"'
+          payload+=$(printf '%s' "$1" | sed 's/"/\\"/g')
+          payload+='"}'
+          curl -sfL --max-time 10 \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$payload" \
+            https://api.github.com/graphql 2>/dev/null
+        }
+        # Pass 1: discover current version from latest GitHub release.
+        latest=$(gql "{ repository(owner:\"$owner\",name:\"$repo\"){ latestRelease{ tagName } } }" \
+          | grep -oP '"tagName":"\K[0-9]+\.[0-9]+' | head -1)
+        if [ -z "$latest" ]; then
+          echo "resolved=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        major=${latest%%.*}
+        minor=${latest#*.}
+        # Pass 2: check .x tags ±3 minor versions across ±1 major.
+        # refs(query:"M.N.x",first:1) returns the exact M.N.x tag
+        # (alphabetically before -nightly suffixes); inline compare()
+        # checks ancestry and commit count. Empty nodes = tag missing.
         query='{ repository(owner:"'"$owner"'",name:"'"$repo"'") {'
-        for major in 4 5 6; do
-          for minor in $(seq 0 30); do
-            query+=" v${major}_${minor}:refs(refPrefix:\"refs/tags/\",query:\"${major}.${minor}.x\",first:1,orderBy:{field:ALPHABETICAL,direction:ASC}){nodes{name compare(headRef:\"${sha}\"){aheadBy behindBy}}}"
+        for m in $((major - 1)) $major $((major + 1)); do
+          [ "$m" -lt 1 ] && continue
+          lo=$((minor - 3)); [ "$lo" -lt 0 ] && lo=0
+          for n in $(seq $lo $((minor + 3))); do
+            query+=" v${m}_${n}:refs(refPrefix:\"refs/tags/\",query:\"${m}.${n}.x\",first:1,orderBy:{field:ALPHABETICAL,direction:ASC}){nodes{name compare(headRef:\"${sha}\"){aheadBy behindBy}}}"
           done
         done
         query+=' } }'
-        # JSON-encode the query (escape inner quotes) and POST.
-        payload='{"query":"'
-        payload+=$(printf '%s' "$query" | sed 's/"/\\"/g')
-        payload+='"}'
-        response=$(curl -sfL --max-time 10 \
-          -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-          -H "Content-Type: application/json" \
-          -d "$payload" \
-          https://api.github.com/graphql 2>/dev/null) || {
-            echo "resolved=false" >> "$GITHUB_OUTPUT"; exit 0
-          }
+        response=$(gql "$query") || {
+          echo "resolved=false" >> "$GITHUB_OUTPUT"; exit 0
+        }
         # Parse: find entries with behindBy:0, pick smallest aheadBy.
         best=$(echo "$response" \
           | grep -oP '"v\d+_\d+":\{"nodes":\[\{"name":"[^"]+","compare":\{"aheadBy":\d+,"behindBy":0\}\}\]' \
