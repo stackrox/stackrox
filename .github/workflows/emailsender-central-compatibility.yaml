@@ -45,12 +45,14 @@ jobs:
           repository: stackrox/acs-fleet-manager
           path: acs-fleet-manager
           ref: main
+          fetch-depth: 0  # external repo, needs full history
       - name: Checkout stackrox/stackrox repository
         uses: actions/checkout@v6
         with:
           repository: stackrox/stackrox
           ref: ${{ github.event.pull_request.head.sha }}
           path: stackrox
+          fetch-depth: 0  # kind cluster tests need git history
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
