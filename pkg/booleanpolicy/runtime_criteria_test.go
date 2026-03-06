@@ -1860,31 +1860,22 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentFileAccessWithProcessCriter
 		},
 		{
 			description: "Negated process name with file access",
-			policy: &storage.Policy{
-				Id:            uuid.NewV4().String(),
-				PolicyVersion: "1.1",
-				Name:          "Negated Process Name",
-				Severity:      storage.Severity_HIGH_SEVERITY,
-				Categories:    []string{"File System"},
-				PolicySections: []*storage.PolicySection{
-					{
-						SectionName: "section 1",
-						PolicyGroups: []*storage.PolicyGroup{
-							{
-								FieldName: fieldnames.FilePath,
-								Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
-							},
-							{
-								FieldName: fieldnames.ProcessName,
-								Values:    []*storage.PolicyValue{{Value: "cat"}},
-								Negate:    true,
-							},
+			policy: newMultiSectionPolicy(storage.EventSource_DEPLOYMENT_EVENT, []*storage.PolicySection{
+				{
+					SectionName: "section 1",
+					PolicyGroups: []*storage.PolicyGroup{
+						{
+							FieldName: fieldnames.FilePath,
+							Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
+						},
+						{
+							FieldName: fieldnames.ProcessName,
+							Values:    []*storage.PolicyValue{{Value: "cat"}},
+							Negate:    true,
 						},
 					},
 				},
-				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
-				EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
-			},
+			}),
 			events: []eventWrapper{
 				{
 					access: &storage.FileAccess{
@@ -1916,36 +1907,27 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentFileAccessWithProcessCriter
 		},
 		{
 			description: "Multiple files and processes",
-			policy: &storage.Policy{
-				Id:            uuid.NewV4().String(),
-				PolicyVersion: "1.1",
-				Name:          "Multiple Files and Processes",
-				Severity:      storage.Severity_HIGH_SEVERITY,
-				Categories:    []string{"File System"},
-				PolicySections: []*storage.PolicySection{
-					{
-						SectionName: "section 1",
-						PolicyGroups: []*storage.PolicyGroup{
-							{
-								FieldName: fieldnames.FilePath,
-								Values: []*storage.PolicyValue{
-									{Value: "/etc/passwd"},
-									{Value: "/etc/shadow"},
-								},
+			policy: newMultiSectionPolicy(storage.EventSource_DEPLOYMENT_EVENT, []*storage.PolicySection{
+				{
+					SectionName: "section 1",
+					PolicyGroups: []*storage.PolicyGroup{
+						{
+							FieldName: fieldnames.FilePath,
+							Values: []*storage.PolicyValue{
+								{Value: "/etc/passwd"},
+								{Value: "/etc/shadow"},
 							},
-							{
-								FieldName: fieldnames.ProcessName,
-								Values: []*storage.PolicyValue{
-									{Value: "cat"},
-									{Value: "vim"},
-								},
+						},
+						{
+							FieldName: fieldnames.ProcessName,
+							Values: []*storage.PolicyValue{
+								{Value: "cat"},
+								{Value: "vim"},
 							},
 						},
 					},
 				},
-				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
-				EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
-			},
+			}),
 			events: []eventWrapper{
 				{
 					access: &storage.FileAccess{
