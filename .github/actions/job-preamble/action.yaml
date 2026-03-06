@@ -146,8 +146,8 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
       run: |
         # Shallow clones lack git history for git describe / make tag.
-        # Use a single GitHub GraphQL call to check all .x version tags
-        # for ancestry and commit count (~1.4 KB response, ~1s on GHA).
+        # A single GraphQL call checks all M.N.x version tags for
+        # ancestry and commit count (~2 KB response, ~2s on GHA).
         # Sets BUILD_TAG which make/env.mk checks before git describe.
         if [ "$(git rev-parse --is-shallow-repository)" != "true" ]; then
           echo "resolved=skip" >> "$GITHUB_OUTPUT"
@@ -155,47 +155,42 @@ runs:
         fi
         sha=$(git rev-parse HEAD)
         sha_short=$(git rev-parse --short=10 HEAD)
-        result=$(python3 -c "
-        import json, os, re, sys, urllib.request
-        sha = '$sha'
-        owner = os.environ['GITHUB_REPOSITORY'].split('/')[0]
-        repo = os.environ['GITHUB_REPOSITORY'].split('/')[1]
-        token = os.environ['GITHUB_TOKEN']
-        # Check .x tags for versions 3.60-3.80 and 4.0-4.30.
-        # Non-existent tags return null; the nearest ancestor has
-        # behindBy=0 with the smallest aheadBy.
-        aliases = []
-        for major in [4, 3]:
-            start, end = (30, -1) if major == 4 else (80, 59)
-            for minor in range(start, end, -1):
-                aliases.append(
-                    f'v{major}_{minor}:ref(qualifiedName:\"refs/tags/{major}.{minor}.x\")'
-                    f'{{compare(headRef:\"{sha}\"){{aheadBy behindBy}}}}'
-                )
-        query = '{ repository(owner: \"%s\", name: \"%s\") { %s } }' % (
-            owner, repo, ' '.join(aliases))
-        req = urllib.request.Request('https://api.github.com/graphql',
-            data=json.dumps({'query': query}).encode(),
-            headers={'Authorization': f'Bearer {token}',
-                     'Content-Type': 'application/json'})
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read())['data']['repository']
-        matches = []
-        for key, val in data.items():
-            if not val or 'compare' not in val:
-                continue
-            if val['compare']['behindBy'] == 0:
-                m = re.match(r'v(\d+)_(\d+)', key)
-                if m:
-                    matches.append((val['compare']['aheadBy'],
-                                    f'{m.group(1)}.{m.group(2)}.x'))
-        if not matches:
-            sys.exit(1)
-        matches.sort()
-        print(f'{matches[0][1]} {matches[0][0]}')
-        " 2>/dev/null) || { echo "resolved=false" >> "$GITHUB_OUTPUT"; exit 0; }
-        tag=$(echo "$result" | cut -d' ' -f1)
-        ahead=$(echo "$result" | cut -d' ' -f2)
+        owner="${GITHUB_REPOSITORY%/*}"
+        repo="${GITHUB_REPOSITORY#*/}"
+        # Build a GraphQL query with aliased refs() lookups for each
+        # candidate M.N.x tag. refs(query:"M.N.x",first:1) returns the
+        # exact tag (alphabetically before any -nightly suffix), and
+        # inline compare() checks ancestry + commit count. Non-existent
+        # tags return empty nodes. Covers 4.x, 5.x, 6.x (safe for years).
+        query='{ repository(owner:"'"$owner"'",name:"'"$repo"'") {'
+        for major in 4 5 6; do
+          for minor in $(seq 0 30); do
+            query+=" v${major}_${minor}:refs(refPrefix:\"refs/tags/\",query:\"${major}.${minor}.x\",first:1,orderBy:{field:ALPHABETICAL,direction:ASC}){nodes{name compare(headRef:\"${sha}\"){aheadBy behindBy}}}"
+          done
+        done
+        query+=' } }'
+        # JSON-encode the query (escape inner quotes) and POST.
+        payload='{"query":"'
+        payload+=$(printf '%s' "$query" | sed 's/"/\\"/g')
+        payload+='"}'
+        response=$(curl -sfL --max-time 10 \
+          -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+          -H "Content-Type: application/json" \
+          -d "$payload" \
+          https://api.github.com/graphql 2>/dev/null) || {
+            echo "resolved=false" >> "$GITHUB_OUTPUT"; exit 0
+          }
+        # Parse: find entries with behindBy:0, pick smallest aheadBy.
+        best=$(echo "$response" \
+          | grep -oP '"v\d+_\d+":\{"nodes":\[\{"name":"[^"]+","compare":\{"aheadBy":\d+,"behindBy":0\}\}\]' \
+          | sed 's/.*"name":"\([^"]*\)".*"aheadBy":\([0-9]*\).*/\2 \1/' \
+          | sort -n | head -1)
+        if [ -z "$best" ]; then
+          echo "resolved=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        tag=$(echo "$best" | cut -d' ' -f2)
+        ahead=$(echo "$best" | cut -d' ' -f1)
         echo "BUILD_TAG=${tag}-${ahead}-g${sha_short}" >> "$GITHUB_ENV"
         echo "::notice::Resolved version (API): ${tag}-${ahead}-g${sha_short}"
         echo "resolved=true" >> "$GITHUB_OUTPUT"
