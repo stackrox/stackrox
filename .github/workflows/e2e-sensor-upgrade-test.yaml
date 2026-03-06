@@ -24,6 +24,7 @@ jobs:
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
+    timeout-minutes: 240
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
@@ -61,6 +62,7 @@ jobs:
           install_components: "gke-gcloud-auth-plugin"
 
       - name: Wait for the cluster and grab artifacts
+        timeout-minutes: 25
         run: |
           infractl wait "${CLUSTER_NAME}"
           infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
@@ -70,6 +72,19 @@ jobs:
         run: |
           kubectl cluster-info
           kubectl get nodes
+
+      - name: Run postgres sensor upgrade test
+        env:
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+          STORAGE: pvc
+          CLUSTER_TYPE_FOR_TEST: K8S
+          LOAD_BALANCER: lb
+          CI_JOB_NAME: gha-upgrade-postgres-sensor-test
+        run: |
+          tests/upgrade/postgres_sensor_run.sh /tmp/postgres-sensor-upgrade-test-logs
 
       - name: Delete cluster
         if: always()
