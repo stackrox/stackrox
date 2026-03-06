@@ -131,6 +131,7 @@ jobs:
       - id: discover
         run: |
           # Parse the style-slim prerequisite list from the Makefile.
+          # shellcheck disable=SC1003
           targets=$(sed -n '/^style-slim:/,/^$/p' Makefile \
             | tr '\\' ' ' | xargs \
             | sed 's/^style-slim: //')
