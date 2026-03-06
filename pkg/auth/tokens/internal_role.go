@@ -27,9 +27,8 @@ var _ permissions.ResolvedRole = (*InternalRole)(nil)
 
 // InternalRole represents claims that materialize a negotiated ephemeral role for internal use.
 type InternalRole struct {
-	RoleName      string            `json:"name"`
-	Permissions   map[string]string `json:"permissions"`
-	ClusterScopes []*ClusterScope   `json:"cluster_scopes"`
+	RoleName      string          `json:"name"`
+	ClusterScopes []*ClusterScope `json:"cluster_scopes"`
 	// Target token structure
 	ReadResources  []string      `json:"reads,omitempty"`
 	WriteResources []string      `json:"writes,omitempty"`
