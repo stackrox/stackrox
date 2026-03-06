@@ -63,7 +63,7 @@ export const selectors = {
             event: eventSelectors,
         },
         getUidFieldIconSelector: (type) =>
-            `.pf-v6-c-tooltip__content svg[color="var(--pf-v5-global--${type}-color--100)"]`,
+            `.pf-v6-c-tooltip__content svg[color="var(--pf-v6-global--${type}-color--100)"]`,
         bodyContent: scopeSelectors(tooltipSelectors.body, {
             eventDetails: 'ul > li',
         }),
