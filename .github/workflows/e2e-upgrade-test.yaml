@@ -24,7 +24,7 @@ jobs:
       # The cluster name must be no longer than 26 characters.
       CLUSTER_NAME: e2e-sens-${{ github.run_id }}-${{ github.run_attempt }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.2
+      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.3
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
