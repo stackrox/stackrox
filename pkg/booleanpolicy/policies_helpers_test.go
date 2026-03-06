@@ -421,3 +421,43 @@ func newMultiSectionPolicy(eventSource storage.EventSource, sections []*storage.
 		EventSource:     eventSource,
 	}
 }
+
+func newFileAccessWithProcessPolicy(processFieldName, processValue string, filePath string, operations []storage.FileAccess_Operation) *storage.Policy {
+	policyGroups := []*storage.PolicyGroup{
+		{
+			FieldName: processFieldName,
+			Values:    []*storage.PolicyValue{{Value: processValue}},
+		},
+		{
+			FieldName: fieldnames.FilePath,
+			Values:    []*storage.PolicyValue{{Value: filePath}},
+		},
+	}
+
+	if len(operations) > 0 {
+		var operationValues []*storage.PolicyValue
+		for _, op := range operations {
+			operationValues = append(operationValues, &storage.PolicyValue{Value: op.String()})
+		}
+		policyGroups = append(policyGroups, &storage.PolicyGroup{
+			FieldName: fieldnames.FileOperation,
+			Values:    operationValues,
+		})
+	}
+
+	return &storage.Policy{
+		Id:            uuid.NewV4().String(),
+		PolicyVersion: "1.1",
+		Name:          "File Access with Process",
+		Severity:      storage.Severity_HIGH_SEVERITY,
+		Categories:    []string{"File System"},
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName:  "section 1",
+				PolicyGroups: policyGroups,
+			},
+		},
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+		EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
+	}
+}

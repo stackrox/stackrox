@@ -1701,34 +1701,7 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentFileAccessWithProcessCriter
 	}{
 		{
 			description: "File access with specific process name",
-			policy: &storage.Policy{
-				Id:            uuid.NewV4().String(),
-				PolicyVersion: "1.1",
-				Name:          "File Access with Process",
-				Severity:      storage.Severity_HIGH_SEVERITY,
-				Categories:    []string{"File System"},
-				PolicySections: []*storage.PolicySection{
-					{
-						SectionName: "section 1",
-						PolicyGroups: []*storage.PolicyGroup{
-							{
-								FieldName: fieldnames.FilePath,
-								Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
-							},
-							{
-								FieldName: fieldnames.FileOperation,
-								Values:    []*storage.PolicyValue{{Value: storage.FileAccess_OPEN.String()}},
-							},
-							{
-								FieldName: fieldnames.ProcessName,
-								Values:    []*storage.PolicyValue{{Value: "cat"}},
-							},
-						},
-					},
-				},
-				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
-				EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
-			},
+			policy:      newFileAccessWithProcessPolicy(fieldnames.ProcessName, "cat", "/etc/passwd", []storage.FileAccess_Operation{storage.FileAccess_OPEN}),
 			events: []eventWrapper{
 				{
 					access: &storage.FileAccess{
@@ -1773,30 +1746,7 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentFileAccessWithProcessCriter
 		},
 		{
 			description: "File access with process UID",
-			policy: &storage.Policy{
-				Id:            uuid.NewV4().String(),
-				PolicyVersion: "1.1",
-				Name:          "File Access with Process UID",
-				Severity:      storage.Severity_HIGH_SEVERITY,
-				Categories:    []string{"File System"},
-				PolicySections: []*storage.PolicySection{
-					{
-						SectionName: "section 1",
-						PolicyGroups: []*storage.PolicyGroup{
-							{
-								FieldName: fieldnames.FilePath,
-								Values:    []*storage.PolicyValue{{Value: "/etc/shadow"}},
-							},
-							{
-								FieldName: fieldnames.ProcessUID,
-								Values:    []*storage.PolicyValue{{Value: "0"}},
-							},
-						},
-					},
-				},
-				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
-				EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
-			},
+			policy:      newFileAccessWithProcessPolicy(fieldnames.ProcessUID, "0", "/etc/shadow", nil),
 			events: []eventWrapper{
 				{
 					access: &storage.FileAccess{
@@ -1830,30 +1780,7 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentFileAccessWithProcessCriter
 		},
 		{
 			description: "File access with process arguments",
-			policy: &storage.Policy{
-				Id:            uuid.NewV4().String(),
-				PolicyVersion: "1.1",
-				Name:          "File Access with Process Args",
-				Severity:      storage.Severity_HIGH_SEVERITY,
-				Categories:    []string{"File System"},
-				PolicySections: []*storage.PolicySection{
-					{
-						SectionName: "section 1",
-						PolicyGroups: []*storage.PolicyGroup{
-							{
-								FieldName: fieldnames.FilePath,
-								Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
-							},
-							{
-								FieldName: fieldnames.ProcessArguments,
-								Values:    []*storage.PolicyValue{{Value: "-l"}},
-							},
-						},
-					},
-				},
-				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
-				EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
-			},
+			policy:      newFileAccessWithProcessPolicy(fieldnames.ProcessArguments, "-l", "/etc/passwd", nil),
 			events: []eventWrapper{
 				{
 					access: &storage.FileAccess{
@@ -1887,37 +1814,8 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentFileAccessWithProcessCriter
 		},
 		{
 			description: "Multiple operations with process criteria",
-			policy: &storage.Policy{
-				Id:            uuid.NewV4().String(),
-				PolicyVersion: "1.1",
-				Name:          "Multiple Operations with Process",
-				Severity:      storage.Severity_HIGH_SEVERITY,
-				Categories:    []string{"File System"},
-				PolicySections: []*storage.PolicySection{
-					{
-						SectionName: "section 1",
-						PolicyGroups: []*storage.PolicyGroup{
-							{
-								FieldName: fieldnames.FilePath,
-								Values:    []*storage.PolicyValue{{Value: "/etc/passwd"}},
-							},
-							{
-								FieldName: fieldnames.FileOperation,
-								Values: []*storage.PolicyValue{
-									{Value: storage.FileAccess_OPEN.String()},
-									{Value: storage.FileAccess_CREATE.String()},
-								},
-							},
-							{
-								FieldName: fieldnames.ProcessName,
-								Values:    []*storage.PolicyValue{{Value: "bash"}},
-							},
-						},
-					},
-				},
-				LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
-				EventSource:     storage.EventSource_DEPLOYMENT_EVENT,
-			},
+			policy: newFileAccessWithProcessPolicy(fieldnames.ProcessName, "bash", "/etc/passwd",
+				[]storage.FileAccess_Operation{storage.FileAccess_OPEN, storage.FileAccess_CREATE}),
 			events: []eventWrapper{
 				{
 					access: &storage.FileAccess{
