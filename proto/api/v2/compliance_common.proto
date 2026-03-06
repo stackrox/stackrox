@@ -117,9 +117,10 @@ message ComplianceProfileSummary {
   int32 rule_count = 5;
   string profile_version = 6;
   repeated ComplianceBenchmark standards = 7;
-  enum ComplianceOperatorProfileKind {
-    PROFILE = 0;
-    TAILORED_PROFILE = 1;
+  enum OperatorKind {
+    OPERATOR_KIND_UNSPECIFIED = 0;
+    OPERATOR_KIND_PROFILE = 1;
+    OPERATOR_KIND_TAILORED_PROFILE = 2;
   }
-  ComplianceOperatorProfileKind compliance_operator_kind = 8;
+  OperatorKind operator_kind = 8;
 }

@@ -62,11 +62,12 @@ message ComplianceOperatorProfileV2 {
   string cluster_id = 14; // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
   string profile_ref_id = 15; // @gotags: search:"Profile Ref ID,hidden" sql:"type(uuid)"
 
-  enum ComplianceOperatorProfileKind {
-    PROFILE = 0;
-    TAILORED_PROFILE = 1;
+  enum OperatorKind {
+    OPERATOR_KIND_UNSPECIFIED = 0;
+    OPERATOR_KIND_PROFILE = 1;
+    OPERATOR_KIND_TAILORED_PROFILE = 2;
   }
-  ComplianceOperatorProfileKind compliance_operator_kind = 16; // @gotags: search:"Compliance Profile Kind,hidden"
+  OperatorKind operator_kind = 16; // @gotags: search:"Compliance Profile Kind,hidden"
 }
 
 // Next tag: 19

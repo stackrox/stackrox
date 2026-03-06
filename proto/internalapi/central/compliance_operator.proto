@@ -195,11 +195,12 @@ message ComplianceOperatorProfileV2 {
   string title = 9;
   repeated string values = 10;
 
-  enum ComplianceOperatorProfileKind {
-    PROFILE = 0;
-    TAILORED_PROFILE = 1;
+  enum OperatorKind {
+    OPERATOR_KIND_UNSPECIFIED = 0;
+    OPERATOR_KIND_PROFILE = 1;
+    OPERATOR_KIND_TAILORED_PROFILE = 2;
   }
-  ComplianceOperatorProfileKind compliance_operator_kind = 11;
+  OperatorKind operator_kind = 11;
 }
 
 // ComplianceOperatorRuleV2 is a message from Sensor (to Central) representing a compliance check rule.

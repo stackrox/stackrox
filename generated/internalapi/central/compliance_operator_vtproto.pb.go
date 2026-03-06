@@ -670,7 +670,7 @@ func (m *ComplianceOperatorProfileV2) CloneVT() *ComplianceOperatorProfileV2 {
 	r.ProfileVersion = m.ProfileVersion
 	r.Description = m.Description
 	r.Title = m.Title
-	r.ComplianceOperatorKind = m.ComplianceOperatorKind
+	r.OperatorKind = m.OperatorKind
 	if rhs := m.Labels; rhs != nil {
 		tmpContainer := make(map[string]string, len(rhs))
 		for k, v := range rhs {
@@ -2120,7 +2120,7 @@ func (this *ComplianceOperatorProfileV2) EqualVT(that *ComplianceOperatorProfile
 			return false
 		}
 	}
-	if this.ComplianceOperatorKind != that.ComplianceOperatorKind {
+	if this.OperatorKind != that.OperatorKind {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -4131,8 +4131,8 @@ func (m *ComplianceOperatorProfileV2) MarshalToSizedBufferVT(dAtA []byte) (int, 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.ComplianceOperatorKind != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ComplianceOperatorKind))
+	if m.OperatorKind != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.OperatorKind))
 		i--
 		dAtA[i] = 0x58
 	}
@@ -5785,8 +5785,8 @@ func (m *ComplianceOperatorProfileV2) SizeVT() (n int) {
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
-	if m.ComplianceOperatorKind != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.ComplianceOperatorKind))
+	if m.OperatorKind != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.OperatorKind))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -10089,9 +10089,9 @@ func (m *ComplianceOperatorProfileV2) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 11:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ComplianceOperatorKind", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field OperatorKind", wireType)
 			}
-			m.ComplianceOperatorKind = 0
+			m.OperatorKind = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -10101,7 +10101,7 @@ func (m *ComplianceOperatorProfileV2) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ComplianceOperatorKind |= ComplianceOperatorProfileV2_ComplianceOperatorProfileKind(b&0x7F) << shift
+				m.OperatorKind |= ComplianceOperatorProfileV2_OperatorKind(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -17135,9 +17135,9 @@ func (m *ComplianceOperatorProfileV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 11:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ComplianceOperatorKind", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field OperatorKind", wireType)
 			}
-			m.ComplianceOperatorKind = 0
+			m.OperatorKind = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -17147,7 +17147,7 @@ func (m *ComplianceOperatorProfileV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ComplianceOperatorKind |= ComplianceOperatorProfileV2_ComplianceOperatorProfileKind(b&0x7F) << shift
+				m.OperatorKind |= ComplianceOperatorProfileV2_OperatorKind(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

@@ -342,19 +342,20 @@
             "$ref": "#/definitions/v2ComplianceBenchmark"
           }
         },
-        "complianceOperatorKind": {
-          "$ref": "#/definitions/v2ComplianceProfileComplianceOperatorProfileKind"
+        "operatorKind": {
+          "$ref": "#/definitions/v2ComplianceProfileOperatorKind"
         }
       },
       "title": "Next Tag: 13"
     },
-    "v2ComplianceProfileComplianceOperatorProfileKind": {
+    "v2ComplianceProfileOperatorKind": {
       "type": "string",
       "enum": [
-        "PROFILE",
-        "TAILORED_PROFILE"
+        "OPERATOR_KIND_UNSPECIFIED",
+        "OPERATOR_KIND_PROFILE",
+        "OPERATOR_KIND_TAILORED_PROFILE"
       ],
-      "default": "PROFILE"
+      "default": "OPERATOR_KIND_UNSPECIFIED"
     },
     "v2ComplianceProfileSummary": {
       "type": "object",
@@ -385,19 +386,20 @@
             "$ref": "#/definitions/v2ComplianceBenchmark"
           }
         },
-        "complianceOperatorKind": {
-          "$ref": "#/definitions/v2ComplianceProfileSummaryComplianceOperatorProfileKind"
+        "operatorKind": {
+          "$ref": "#/definitions/v2ComplianceProfileSummaryOperatorKind"
         }
       },
       "title": "Next Tag: 9"
     },
-    "v2ComplianceProfileSummaryComplianceOperatorProfileKind": {
+    "v2ComplianceProfileSummaryOperatorKind": {
       "type": "string",
       "enum": [
-        "PROFILE",
-        "TAILORED_PROFILE"
+        "OPERATOR_KIND_UNSPECIFIED",
+        "OPERATOR_KIND_PROFILE",
+        "OPERATOR_KIND_TAILORED_PROFILE"
       ],
-      "default": "PROFILE"
+      "default": "OPERATOR_KIND_UNSPECIFIED"
     },
     "v2ComplianceRule": {
       "type": "object",

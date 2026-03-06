@@ -4088,14 +4088,18 @@
             ]
           },
           {
-            "name": "ComplianceOperatorProfileV2.ComplianceOperatorProfileKind",
+            "name": "ComplianceOperatorProfileV2.OperatorKind",
             "enum_fields": [
               {
-                "name": "PROFILE"
+                "name": "OPERATOR_KIND_UNSPECIFIED"
               },
               {
-                "name": "TAILORED_PROFILE",
+                "name": "OPERATOR_KIND_PROFILE",
                 "integer": 1
+              },
+              {
+                "name": "OPERATOR_KIND_TAILORED_PROFILE",
+                "integer": 2
               }
             ]
           },
@@ -4284,8 +4288,8 @@
               },
               {
                 "id": 16,
-                "name": "compliance_operator_kind",
-                "type": "ComplianceOperatorProfileKind"
+                "name": "operator_kind",
+                "type": "OperatorKind"
               }
             ],
             "maps": [

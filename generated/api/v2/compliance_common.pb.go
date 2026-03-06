@@ -86,49 +86,52 @@ func (ComplianceCheckStatus) EnumDescriptor() ([]byte, []int) {
 	return file_api_v2_compliance_common_proto_rawDescGZIP(), []int{0}
 }
 
-type ComplianceProfileSummary_ComplianceOperatorProfileKind int32
+type ComplianceProfileSummary_OperatorKind int32
 
 const (
-	ComplianceProfileSummary_PROFILE          ComplianceProfileSummary_ComplianceOperatorProfileKind = 0
-	ComplianceProfileSummary_TAILORED_PROFILE ComplianceProfileSummary_ComplianceOperatorProfileKind = 1
+	ComplianceProfileSummary_OPERATOR_KIND_UNSPECIFIED      ComplianceProfileSummary_OperatorKind = 0
+	ComplianceProfileSummary_OPERATOR_KIND_PROFILE          ComplianceProfileSummary_OperatorKind = 1
+	ComplianceProfileSummary_OPERATOR_KIND_TAILORED_PROFILE ComplianceProfileSummary_OperatorKind = 2
 )
 
-// Enum value maps for ComplianceProfileSummary_ComplianceOperatorProfileKind.
+// Enum value maps for ComplianceProfileSummary_OperatorKind.
 var (
-	ComplianceProfileSummary_ComplianceOperatorProfileKind_name = map[int32]string{
-		0: "PROFILE",
-		1: "TAILORED_PROFILE",
+	ComplianceProfileSummary_OperatorKind_name = map[int32]string{
+		0: "OPERATOR_KIND_UNSPECIFIED",
+		1: "OPERATOR_KIND_PROFILE",
+		2: "OPERATOR_KIND_TAILORED_PROFILE",
 	}
-	ComplianceProfileSummary_ComplianceOperatorProfileKind_value = map[string]int32{
-		"PROFILE":          0,
-		"TAILORED_PROFILE": 1,
+	ComplianceProfileSummary_OperatorKind_value = map[string]int32{
+		"OPERATOR_KIND_UNSPECIFIED":      0,
+		"OPERATOR_KIND_PROFILE":          1,
+		"OPERATOR_KIND_TAILORED_PROFILE": 2,
 	}
 )
 
-func (x ComplianceProfileSummary_ComplianceOperatorProfileKind) Enum() *ComplianceProfileSummary_ComplianceOperatorProfileKind {
-	p := new(ComplianceProfileSummary_ComplianceOperatorProfileKind)
+func (x ComplianceProfileSummary_OperatorKind) Enum() *ComplianceProfileSummary_OperatorKind {
+	p := new(ComplianceProfileSummary_OperatorKind)
 	*p = x
 	return p
 }
 
-func (x ComplianceProfileSummary_ComplianceOperatorProfileKind) String() string {
+func (x ComplianceProfileSummary_OperatorKind) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (ComplianceProfileSummary_ComplianceOperatorProfileKind) Descriptor() protoreflect.EnumDescriptor {
+func (ComplianceProfileSummary_OperatorKind) Descriptor() protoreflect.EnumDescriptor {
 	return file_api_v2_compliance_common_proto_enumTypes[1].Descriptor()
 }
 
-func (ComplianceProfileSummary_ComplianceOperatorProfileKind) Type() protoreflect.EnumType {
+func (ComplianceProfileSummary_OperatorKind) Type() protoreflect.EnumType {
 	return &file_api_v2_compliance_common_proto_enumTypes[1]
 }
 
-func (x ComplianceProfileSummary_ComplianceOperatorProfileKind) Number() protoreflect.EnumNumber {
+func (x ComplianceProfileSummary_OperatorKind) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use ComplianceProfileSummary_ComplianceOperatorProfileKind.Descriptor instead.
-func (ComplianceProfileSummary_ComplianceOperatorProfileKind) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use ComplianceProfileSummary_OperatorKind.Descriptor instead.
+func (ComplianceProfileSummary_OperatorKind) EnumDescriptor() ([]byte, []int) {
 	return file_api_v2_compliance_common_proto_rawDescGZIP(), []int{11, 0}
 }
 
@@ -889,17 +892,17 @@ func (x *ComplianceProfileCheckRequest) GetQuery() *RawQuery {
 
 // Next Tag: 9
 type ComplianceProfileSummary struct {
-	state                  protoimpl.MessageState                                 `protogen:"open.v1"`
-	Name                   string                                                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	ProductType            string                                                 `protobuf:"bytes,2,opt,name=product_type,json=productType,proto3" json:"product_type,omitempty"`
-	Description            string                                                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	Title                  string                                                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
-	RuleCount              int32                                                  `protobuf:"varint,5,opt,name=rule_count,json=ruleCount,proto3" json:"rule_count,omitempty"`
-	ProfileVersion         string                                                 `protobuf:"bytes,6,opt,name=profile_version,json=profileVersion,proto3" json:"profile_version,omitempty"`
-	Standards              []*ComplianceBenchmark                                 `protobuf:"bytes,7,rep,name=standards,proto3" json:"standards,omitempty"`
-	ComplianceOperatorKind ComplianceProfileSummary_ComplianceOperatorProfileKind `protobuf:"varint,8,opt,name=compliance_operator_kind,json=complianceOperatorKind,proto3,enum=v2.ComplianceProfileSummary_ComplianceOperatorProfileKind" json:"compliance_operator_kind,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state          protoimpl.MessageState                `protogen:"open.v1"`
+	Name           string                                `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	ProductType    string                                `protobuf:"bytes,2,opt,name=product_type,json=productType,proto3" json:"product_type,omitempty"`
+	Description    string                                `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Title          string                                `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
+	RuleCount      int32                                 `protobuf:"varint,5,opt,name=rule_count,json=ruleCount,proto3" json:"rule_count,omitempty"`
+	ProfileVersion string                                `protobuf:"bytes,6,opt,name=profile_version,json=profileVersion,proto3" json:"profile_version,omitempty"`
+	Standards      []*ComplianceBenchmark                `protobuf:"bytes,7,rep,name=standards,proto3" json:"standards,omitempty"`
+	OperatorKind   ComplianceProfileSummary_OperatorKind `protobuf:"varint,8,opt,name=operator_kind,json=operatorKind,proto3,enum=v2.ComplianceProfileSummary_OperatorKind" json:"operator_kind,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ComplianceProfileSummary) Reset() {
@@ -981,11 +984,11 @@ func (x *ComplianceProfileSummary) GetStandards() []*ComplianceBenchmark {
 	return nil
 }
 
-func (x *ComplianceProfileSummary) GetComplianceOperatorKind() ComplianceProfileSummary_ComplianceOperatorProfileKind {
+func (x *ComplianceProfileSummary) GetOperatorKind() ComplianceProfileSummary_OperatorKind {
 	if x != nil {
-		return x.ComplianceOperatorKind
+		return x.OperatorKind
 	}
-	return ComplianceProfileSummary_PROFILE
+	return ComplianceProfileSummary_OPERATOR_KIND_UNSPECIFIED
 }
 
 type ComplianceRule_Fix struct {
@@ -1115,7 +1118,7 @@ const file_api_v2_compliance_common_proto_rawDesc = "" +
 	"\fprofile_name\x18\x01 \x01(\tR\vprofileName\x12\x1d\n" +
 	"\n" +
 	"check_name\x18\x02 \x01(\tR\tcheckName\x12\"\n" +
-	"\x05query\x18\x03 \x01(\v2\f.v2.RawQueryR\x05query\"\xc2\x03\n" +
+	"\x05query\x18\x03 \x01(\v2\f.v2.RawQueryR\x05query\"\xc6\x03\n" +
 	"\x18ComplianceProfileSummary\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12!\n" +
 	"\fproduct_type\x18\x02 \x01(\tR\vproductType\x12 \n" +
@@ -1124,11 +1127,12 @@ const file_api_v2_compliance_common_proto_rawDesc = "" +
 	"\n" +
 	"rule_count\x18\x05 \x01(\x05R\truleCount\x12'\n" +
 	"\x0fprofile_version\x18\x06 \x01(\tR\x0eprofileVersion\x125\n" +
-	"\tstandards\x18\a \x03(\v2\x17.v2.ComplianceBenchmarkR\tstandards\x12t\n" +
-	"\x18compliance_operator_kind\x18\b \x01(\x0e2:.v2.ComplianceProfileSummary.ComplianceOperatorProfileKindR\x16complianceOperatorKind\"B\n" +
-	"\x1dComplianceOperatorProfileKind\x12\v\n" +
-	"\aPROFILE\x10\x00\x12\x14\n" +
-	"\x10TAILORED_PROFILE\x10\x01*\x8a\x01\n" +
+	"\tstandards\x18\a \x03(\v2\x17.v2.ComplianceBenchmarkR\tstandards\x12N\n" +
+	"\roperator_kind\x18\b \x01(\x0e2).v2.ComplianceProfileSummary.OperatorKindR\foperatorKind\"l\n" +
+	"\fOperatorKind\x12\x1d\n" +
+	"\x19OPERATOR_KIND_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15OPERATOR_KIND_PROFILE\x10\x01\x12\"\n" +
+	"\x1eOPERATOR_KIND_TAILORED_PROFILE\x10\x02*\x8a\x01\n" +
 	"\x15ComplianceCheckStatus\x12\x16\n" +
 	"\x12UNSET_CHECK_STATUS\x10\x00\x12\b\n" +
 	"\x04PASS\x10\x01\x12\b\n" +
@@ -1156,23 +1160,23 @@ func file_api_v2_compliance_common_proto_rawDescGZIP() []byte {
 var file_api_v2_compliance_common_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_api_v2_compliance_common_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_api_v2_compliance_common_proto_goTypes = []any{
-	(ComplianceCheckStatus)(0),                                  // 0: v2.ComplianceCheckStatus
-	(ComplianceProfileSummary_ComplianceOperatorProfileKind)(0), // 1: v2.ComplianceProfileSummary.ComplianceOperatorProfileKind
-	(*ComplianceRule)(nil),                                      // 2: v2.ComplianceRule
-	(*ComplianceScanCluster)(nil),                               // 3: v2.ComplianceScanCluster
-	(*ComplianceCheckStatusCount)(nil),                          // 4: v2.ComplianceCheckStatusCount
-	(*ComplianceCheckResultStatusCount)(nil),                    // 5: v2.ComplianceCheckResultStatusCount
-	(*ComplianceControl)(nil),                                   // 6: v2.ComplianceControl
-	(*ComplianceBenchmark)(nil),                                 // 7: v2.ComplianceBenchmark
-	(*ListComplianceProfileResults)(nil),                        // 8: v2.ListComplianceProfileResults
-	(*ComplianceClusterOverallStats)(nil),                       // 9: v2.ComplianceClusterOverallStats
-	(*ListComplianceClusterOverallStatsResponse)(nil),           // 10: v2.ListComplianceClusterOverallStatsResponse
-	(*ComplianceProfileResultsRequest)(nil),                     // 11: v2.ComplianceProfileResultsRequest
-	(*ComplianceProfileCheckRequest)(nil),                       // 12: v2.ComplianceProfileCheckRequest
-	(*ComplianceProfileSummary)(nil),                            // 13: v2.ComplianceProfileSummary
-	(*ComplianceRule_Fix)(nil),                                  // 14: v2.ComplianceRule.Fix
-	(*timestamppb.Timestamp)(nil),                               // 15: google.protobuf.Timestamp
-	(*RawQuery)(nil),                                            // 16: v2.RawQuery
+	(ComplianceCheckStatus)(0),                        // 0: v2.ComplianceCheckStatus
+	(ComplianceProfileSummary_OperatorKind)(0),        // 1: v2.ComplianceProfileSummary.OperatorKind
+	(*ComplianceRule)(nil),                            // 2: v2.ComplianceRule
+	(*ComplianceScanCluster)(nil),                     // 3: v2.ComplianceScanCluster
+	(*ComplianceCheckStatusCount)(nil),                // 4: v2.ComplianceCheckStatusCount
+	(*ComplianceCheckResultStatusCount)(nil),          // 5: v2.ComplianceCheckResultStatusCount
+	(*ComplianceControl)(nil),                         // 6: v2.ComplianceControl
+	(*ComplianceBenchmark)(nil),                       // 7: v2.ComplianceBenchmark
+	(*ListComplianceProfileResults)(nil),              // 8: v2.ListComplianceProfileResults
+	(*ComplianceClusterOverallStats)(nil),             // 9: v2.ComplianceClusterOverallStats
+	(*ListComplianceClusterOverallStatsResponse)(nil), // 10: v2.ListComplianceClusterOverallStatsResponse
+	(*ComplianceProfileResultsRequest)(nil),           // 11: v2.ComplianceProfileResultsRequest
+	(*ComplianceProfileCheckRequest)(nil),             // 12: v2.ComplianceProfileCheckRequest
+	(*ComplianceProfileSummary)(nil),                  // 13: v2.ComplianceProfileSummary
+	(*ComplianceRule_Fix)(nil),                        // 14: v2.ComplianceRule.Fix
+	(*timestamppb.Timestamp)(nil),                     // 15: google.protobuf.Timestamp
+	(*RawQuery)(nil),                                  // 16: v2.RawQuery
 }
 var file_api_v2_compliance_common_proto_depIdxs = []int32{
 	14, // 0: v2.ComplianceRule.fixes:type_name -> v2.ComplianceRule.Fix
@@ -1187,7 +1191,7 @@ var file_api_v2_compliance_common_proto_depIdxs = []int32{
 	16, // 9: v2.ComplianceProfileResultsRequest.query:type_name -> v2.RawQuery
 	16, // 10: v2.ComplianceProfileCheckRequest.query:type_name -> v2.RawQuery
 	7,  // 11: v2.ComplianceProfileSummary.standards:type_name -> v2.ComplianceBenchmark
-	1,  // 12: v2.ComplianceProfileSummary.compliance_operator_kind:type_name -> v2.ComplianceProfileSummary.ComplianceOperatorProfileKind
+	1,  // 12: v2.ComplianceProfileSummary.operator_kind:type_name -> v2.ComplianceProfileSummary.OperatorKind
 	13, // [13:13] is the sub-list for method output_type
 	13, // [13:13] is the sub-list for method input_type
 	13, // [13:13] is the sub-list for extension type_name
