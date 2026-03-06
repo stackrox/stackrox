@@ -12,13 +12,12 @@ on:
 concurrency: upgrade-sensor-${{ github.ref }}
 
 jobs:
-  # Job 2: Run the upgrade test
   sensor-upgrade-test:
     runs-on: ubuntu-latest
     env:
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
-      # The action limits cluster name to 26 characters for maybe a valid reason.
+      # The cluster name must be no longer than 26 characters.
       CLUSTER_NAME: e2e-sens-${{ github.run_id }}-${{ github.run_attempt }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
@@ -36,6 +35,19 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - name: Fix $PATH for infractl
+        run: echo "$HOME/.local/bin" >s> "$GITHUB_PATH"
+
+      - name: Create test cluster
+        uses: stackrox/actions/infra/create-cluster@v1
+        with:
+          token: ${{ secrets.INFRA_TOKEN }}
+          flavor: gke-default
+          name: ${{ env.CLUSTER_NAME }}
+          lifespan: 4h
+          args: nodes=3,machine-type=e2-standard-8
+          wait: false
+
       - name: Docker login to Quay.io
         env:
           REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
@@ -48,29 +60,9 @@ jobs:
         with:
           install_components: "gke-gcloud-auth-plugin"
 
-      - name: Fix path for infractl
-        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - uses: stackrox/actions/infra/install-infractl@f39f2443ec32959715724f36f94c37d306fd36f4
-
-      - name: Create test cluster
-        uses: stackrox/actions/infra/create-cluster@f39f2443ec32959715724f36f94c37d306fd36f4
-        with:
-          token: ${{ secrets.INFRA_TOKEN }}
-          flavor: gke-default
-          name: ${{ env.CLUSTER_NAME }}
-          lifespan: 4h
-          args: nodes=3,machine-type=e2-standard-8
-          wait: true
-
-      - name: Check and grab artifacts
+      - name: Wait for the cluster and grab artifacts
         run: |
-          STATUS="$(infractl get "${CLUSTER_NAME}" --json | jq -r .Status)"
-          if [[ "$STATUS" != "READY" ]]; then
-            >&2 echo "Cluster does not seem ready, status: $STATUS"
-            exit 1
-          fi
-
+          infractl wait "${CLUSTER_NAME}"
           infractl artifacts "${CLUSTER_NAME}" --download-dir artifacts > /dev/null
           echo "KUBECONFIG=$(pwd)/artifacts/kubeconfig" >> "$GITHUB_ENV"
 
