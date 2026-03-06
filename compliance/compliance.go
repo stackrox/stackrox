@@ -406,7 +406,8 @@ func (c *Compliance) handleComplianceACK(ack *sensor.MsgToCompliance_ComplianceA
 	case sensor.MsgToCompliance_ComplianceACK_NODE_INDEX_REPORT:
 		c.handleNodeIndexACK(ack.GetAction(), ack.GetReason())
 	case sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT:
-		// TODO(ROX-32316): Forward to VM relay UMH once VM relay ACK flow is implemented.
+		// TODO: Forward to VM relay UMH once VM relay ACK flow is implemented.
+		// Target: ROX-32316.
 		log.Debugf("Received VM_INDEX_REPORT ComplianceACK for resource %s (action=%s, reason=%s)",
 			ack.GetResourceId(), ack.GetAction(), ack.GetReason())
 	default:
