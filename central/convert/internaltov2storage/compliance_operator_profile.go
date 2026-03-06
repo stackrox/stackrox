@@ -32,6 +32,6 @@ func ComplianceOperatorProfileV2(internalMsg *central.ComplianceOperatorProfileV
 		Values:                 internalMsg.GetValues(),
 		ClusterId:              clusterID,
 		ProfileRefId:           BuildProfileRefID(clusterID, internalMsg.GetProfileId(), productType),
-		ComplianceOperatorKind: storage.ComplianceOperatorProfileV2_ComplianceOperatorProfileKind(internalMsg.GetComplianceOperatorKind()),
+		OperatorKind: storage.ComplianceOperatorProfileV2_OperatorKind(internalMsg.GetOperatorKind()),
 	}
 }

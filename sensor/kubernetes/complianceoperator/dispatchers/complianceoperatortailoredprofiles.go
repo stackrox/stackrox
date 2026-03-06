@@ -113,7 +113,7 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 			Annotations:            baseProfile.Annotations,
 			Description:            stringutils.FirstNonEmpty(tailoredProfile.Spec.Description, baseProfile.Description),
 			Title:                  tailoredProfile.Spec.Title,
-			ComplianceOperatorKind: central.ComplianceOperatorProfileV2_TAILORED_PROFILE,
+			OperatorKind: central.ComplianceOperatorProfileV2_OPERATOR_KIND_TAILORED_PROFILE,
 		}
 
 		for _, rule := range protoProfile.GetRules() {
