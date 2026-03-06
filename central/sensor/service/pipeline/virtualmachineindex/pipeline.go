@@ -109,5 +109,36 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	log.Debugf("Successfully enriched and stored VM %s with %d components",
 		vm.GetId(), len(vm.GetScan().GetComponents()))
 
+	SendSensorACK(ctx, central.SensorACK_ACK, index.GetId(), "", injector)
 	return nil
+}
+
+type capabilityChecker interface {
+	HasCapability(centralsensor.SensorCapability) bool
+}
+
+// SendSensorACK sends an ACK or NACK for a VM index report back to Sensor,
+// but only if Sensor advertises SensorACKSupport capability.
+// Exported so the rate limiter in the connection layer can call it for NACKs.
+func SendSensorACK(ctx context.Context, action central.SensorACK_Action, vmID, reason string, injector common.MessageInjector) {
+	if injector == nil {
+		return
+	}
+	if checker, ok := injector.(capabilityChecker); ok {
+		if !checker.HasCapability(centralsensor.SensorACKSupport) {
+			return
+		}
+	}
+	if err := injector.InjectMessage(ctx, &central.MsgToSensor{
+		Msg: &central.MsgToSensor_SensorAck{
+			SensorAck: &central.SensorACK{
+				Action:      action,
+				MessageType: central.SensorACK_VM_INDEX_REPORT,
+				ResourceId:  vmID,
+				Reason:      reason,
+			},
+		},
+	}); err != nil {
+		log.Warnf("Failed injecting SensorACK (%s) for VM index report (vm_id=%s): %v", action, vmID, err)
+	}
 }
