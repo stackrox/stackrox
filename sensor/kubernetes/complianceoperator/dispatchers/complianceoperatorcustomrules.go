@@ -27,14 +27,13 @@ func (c *CustomRuleDispatcher) ProcessEvent(obj, _ interface{}, action central.R
 		return nil
 	}
 
-	customRule := &v1alpha1.CustomRule{}
-
 	unstructuredObject, ok := obj.(*unstructured.Unstructured)
 	if !ok {
 		log.Errorf("Not of type 'unstructured': %T", obj)
 		return nil
 	}
 
+	customRule := &v1alpha1.CustomRule{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObject.Object, customRule); err != nil {
 		log.Errorf("error converting unstructured to compliance custom rule: %v", err)
 		return nil
