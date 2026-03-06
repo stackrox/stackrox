@@ -139,17 +139,16 @@ runs:
         git config --global --add safe.directory "$(pwd)"
       shell: bash
 
-    # --- COMPARISON: three version resolution approaches (TEMPORARY) ---
-    # All three run on every job for timing comparison. Only the first
-    # one (branch-aware API) sets BUILD_TAG. The other two log results
-    # via ::notice:: for side-by-side review. Remove after evaluation.
-
-    - name: "Version: branch-aware API (2 GraphQL calls)"
+    - name: Resolve version tag for shallow clones
       id: version-api
       if: github.event_name != 'schedule'
       env:
         GITHUB_TOKEN: ${{ github.token }}
       run: |
+        # Shallow clones lack git history for git describe / make tag.
+        # Derive the .x version tag from the branch name (release) or
+        # the highest release branch (master), then use GraphQL compare
+        # to get the commit count. Sets BUILD_TAG for make/env.mk.
         if [ "$(git rev-parse --is-shallow-repository)" != "true" ]; then
           echo "resolved=skip" >> "$GITHUB_OUTPUT"
           exit 0
@@ -168,96 +167,89 @@ runs:
             -d "$payload" \
             https://api.github.com/graphql 2>/dev/null
         }
-        releases=$(gql "{ repository(owner:\"$owner\",name:\"$repo\"){ releases(last:20,orderBy:{field:CREATED_AT,direction:ASC}){ nodes{ tagName } } } }" \
-          | grep -oP '"tagName":"\K[0-9]+\.[0-9]+\.[0-9]+(?=")') || {
-            echo "resolved=false" >> "$GITHUB_OUTPUT"; exit 0
-          }
         target="${GITHUB_BASE_REF:-$GITHUB_REF_NAME}"
         if [[ "$target" =~ ^release-([0-9]+\.[0-9]+)$ ]]; then
-          version_tag=$(echo "$releases" | grep "^${BASH_REMATCH[1]}\." | sort -rV | head -1)
+          # Release branch: version from branch name (release-4.10 → 4.10.x).
+          version_tag="${BASH_REMATCH[1]}.x"
         else
-          highest=$(echo "$releases" | sort -rV | head -1)
-          major=${highest%%.*}; rest=${highest#*.}; minor=${rest%%.*}
+          # Master / PRs to master: one minor above the highest release
+          # branch (release-4.10 → 4.11.x). Uses GraphQL branch listing.
+          highest=$(gql "{ repository(owner:\"$owner\",name:\"$repo\"){ refs(refPrefix:\"refs/heads/\",query:\"release-\",first:20,orderBy:{field:ALPHABETICAL,direction:ASC}){ nodes{ name } } } }" \
+            | grep -oP '"name":"release-\K[0-9]+\.[0-9]+(?=")' \
+            | sort -rV | head -1)
+          if [ -z "$highest" ]; then
+            echo "resolved=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          major=${highest%%.*}; minor=${highest#*.}
           version_tag="${major}.$((minor + 1)).x"
         fi
-        if [ -z "$version_tag" ]; then
+        # GraphQL compare: check tag ancestry and get commit count.
+        response=$(gql "{ repository(owner:\"$owner\",name:\"$repo\"){ ref(qualifiedName:\"refs/tags/$version_tag\"){ compare(headRef:\"$sha\"){ aheadBy behindBy } } } }") || {
           echo "resolved=false" >> "$GITHUB_OUTPUT"; exit 0
-        fi
-        response=$(gql "{ repository(owner:\"$owner\",name:\"$repo\"){ ref(qualifiedName:\"refs/tags/$version_tag\"){ compare(headRef:\"$sha\"){ aheadBy behindBy } } } }")
+        }
         ahead=$(echo "$response" | grep -oP '"aheadBy":\K[0-9]+')
         behind=$(echo "$response" | grep -oP '"behindBy":\K[0-9]+')
         if [ "${behind:-1}" != "0" ] || [ -z "$ahead" ]; then
           echo "resolved=false" >> "$GITHUB_OUTPUT"; exit 0
         fi
         echo "BUILD_TAG=${version_tag}-${ahead}-g${sha_short}" >> "$GITHUB_ENV"
-        echo "::notice::branch-aware: ${version_tag}-${ahead}-g${sha_short}"
+        echo "::notice::Resolved version: ${version_tag}-${ahead}-g${sha_short}"
         echo "resolved=true" >> "$GITHUB_OUTPUT"
-      shell: bash
-
-    - name: "Version: curl-loop API (ls-remote + per-tag GraphQL)"
-      if: github.event_name != 'schedule'
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-      run: |
-        if [ "$(git rev-parse --is-shallow-repository)" != "true" ]; then exit 0; fi
-        sha=$(git rev-parse HEAD)
-        sha_short=$(git rev-parse --short=10 HEAD)
-        owner="${GITHUB_REPOSITORY%/*}"
-        repo="${GITHUB_REPOSITORY#*/}"
-        all_tags=$(git ls-remote --tags origin \
-          | grep -oP 'refs/tags/\K[0-9]+\.[0-9]+\.x$' \
-          | sort -rV)
-        for tag in $all_tags; do
-          response=$(curl -sfL --max-time 5 \
-            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-            -H "Content-Type: application/json" \
-            -d '{"query":"{ repository(owner:\"'"$owner"'\",name:\"'"$repo"'\"){ ref(qualifiedName:\"refs/tags/'"$tag"'\"){ compare(headRef:\"'"$sha"'\"){ aheadBy behindBy } } } }"}' \
-            https://api.github.com/graphql 2>/dev/null) || continue
-          behind=$(echo "$response" | grep -oP '"behindBy":\K[0-9]+')
-          ahead=$(echo "$response" | grep -oP '"aheadBy":\K[0-9]+')
-          if [ "${behind:-1}" = "0" ] && [ -n "$ahead" ]; then
-            echo "::notice::curl-loop: ${tag}-${ahead}-g${sha_short}"
-            exit 0
-          fi
-        done
-      shell: bash
-
-    - name: "Version: git-only (ls-remote + shallow-exclude)"
-      run: |
-        if [ "$(git rev-parse --is-shallow-repository)" != "true" ]; then exit 0; fi
-        current_sha=$(git rev-parse HEAD)
-        sha_short=$(git rev-parse --short=10 HEAD)
-        all_tags=$(git ls-remote --tags origin \
-          | grep -oP 'refs/tags/\K[0-9]+\.[0-9]+\.x$' \
-          | sort -rV)
-        for tag in $all_tags; do
-          if git fetch --shallow-exclude="$tag" origin "$current_sha" 2>/dev/null; then
-            count=$(( $(git rev-list --count HEAD 2>/dev/null || echo 0) + 1 ))
-            echo "::notice::git-only: ${tag}-${count}-g${sha_short}"
-            exit 0
-          fi
-        done
+        # Start git-based verification in background. A later step
+        # checks the result and warns on mismatch.
+        {
+          all_tags=$(git ls-remote --tags origin \
+            | grep -oP 'refs/tags/\K[0-9]+\.[0-9]+\.x$' \
+            | sort -rV)
+          for tag in $all_tags; do
+            if git fetch --shallow-exclude="$tag" origin "$sha" 2>/dev/null; then
+              count=$(( $(git rev-list --count HEAD 2>/dev/null || echo 0) + 1 ))
+              echo "${tag}-${count}-g${sha_short}" > /tmp/.version-git-verify
+              break
+            fi
+          done
+        } &
       shell: bash
 
     - name: Resolve version tag for shallow clones (git fallback)
       if: steps.version-api.outputs.resolved == 'false'
       run: |
-        # Fallback when all API methods fail. Uses git ls-remote +
-        # shallow-exclude to find the nearest ancestor .x tag.
-        current_sha=$(git rev-parse HEAD)
+        # Fallback when the API is unavailable (no token, network
+        # issues, rate limits). Uses git to find the nearest .x tag.
+        sha=$(git rev-parse HEAD)
         sha_short=$(git rev-parse --short=10 HEAD)
         all_tags=$(git ls-remote --tags origin \
           | grep -oP 'refs/tags/\K[0-9]+\.[0-9]+\.x$' \
           | sort -rV)
         for tag in $all_tags; do
-          if git fetch --shallow-exclude="$tag" origin "$current_sha" 2>/dev/null; then
+          if git fetch --shallow-exclude="$tag" origin "$sha" 2>/dev/null; then
             count=$(( $(git rev-list --count HEAD 2>/dev/null || echo 0) + 1 ))
             echo "BUILD_TAG=${tag}-${count}-g${sha_short}" >> "$GITHUB_ENV"
-            echo "::notice::Resolved version (git fallback): ${tag}-${count}-g${sha_short}"
+            echo "::notice::Resolved version (git): ${tag}-${count}-g${sha_short}"
             exit 0
           fi
         done
         echo "::warning::No reachable version tag found"
+      shell: bash
+
+    - name: Verify version tag (background git check)
+      if: steps.version-api.outputs.resolved == 'true'
+      run: |
+        # Wait for the background git verification started in the API step.
+        for i in $(seq 1 30); do
+          [ -f /tmp/.version-git-verify ] && break
+          sleep 0.5
+        done
+        if [ ! -f /tmp/.version-git-verify ]; then
+          echo "::warning::Git verification timed out (15s)"
+          exit 0
+        fi
+        git_version=$(cat /tmp/.version-git-verify)
+        if [ "$git_version" != "$BUILD_TAG" ]; then
+          echo "::error::Version mismatch: API=${BUILD_TAG} git=${git_version}"
+          exit 1
+        fi
+        echo "::notice::Version verified: ${BUILD_TAG}"
       shell: bash
 
     - name: Record job info
