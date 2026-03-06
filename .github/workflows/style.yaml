@@ -136,7 +136,7 @@ jobs:
             | tr '\\' ' ' | xargs \
             | sed 's/^style-slim: //')
           # Shard roxvet across top-level package directories for parallelism.
-          targets=$(echo "$targets" | sed 's/roxvet/roxvet:central roxvet:pkg roxvet:other/')
+          targets=${targets/roxvet/roxvet:central roxvet:pkg roxvet:other}
           json=$(echo "$targets" | jq -Rc 'split(" ")')
           echo "targets=$json" >> "$GITHUB_OUTPUT"
           echo "Discovered targets: $targets"
