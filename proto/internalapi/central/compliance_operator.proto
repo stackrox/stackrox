@@ -217,11 +217,12 @@ message ComplianceOperatorRuleV2 {
   string warning = 12;
   string instructions = 13;
 
-  enum ComplianceOperatorRuleKind {
-    RULE = 0;
-    CUSTOM_RULE = 1;
+  enum OperatorKind {
+    OPERATOR_KIND_UNSPECIFIED = 0;
+    OPERATOR_KIND_RULE = 1;
+    OPERATOR_KIND_CUSTOM_RULE = 2;
   }
-  ComplianceOperatorRuleKind compliance_operator_kind = 14;
+  OperatorKind operator_kind = 14;
 }
 
 message ComplianceOperatorScanV2 {

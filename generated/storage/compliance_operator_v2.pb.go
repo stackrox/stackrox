@@ -181,49 +181,52 @@ func (RuleSeverity) EnumDescriptor() ([]byte, []int) {
 	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{2}
 }
 
-type ComplianceOperatorRuleV2_ComplianceOperatorRuleKind int32
+type ComplianceOperatorRuleV2_OperatorKind int32
 
 const (
-	ComplianceOperatorRuleV2_RULE        ComplianceOperatorRuleV2_ComplianceOperatorRuleKind = 0
-	ComplianceOperatorRuleV2_CUSTOM_RULE ComplianceOperatorRuleV2_ComplianceOperatorRuleKind = 1
+	ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED ComplianceOperatorRuleV2_OperatorKind = 0
+	ComplianceOperatorRuleV2_OPERATOR_KIND_RULE        ComplianceOperatorRuleV2_OperatorKind = 1
+	ComplianceOperatorRuleV2_OPERATOR_KIND_CUSTOM_RULE ComplianceOperatorRuleV2_OperatorKind = 2
 )
 
-// Enum value maps for ComplianceOperatorRuleV2_ComplianceOperatorRuleKind.
+// Enum value maps for ComplianceOperatorRuleV2_OperatorKind.
 var (
-	ComplianceOperatorRuleV2_ComplianceOperatorRuleKind_name = map[int32]string{
-		0: "RULE",
-		1: "CUSTOM_RULE",
+	ComplianceOperatorRuleV2_OperatorKind_name = map[int32]string{
+		0: "OPERATOR_KIND_UNSPECIFIED",
+		1: "OPERATOR_KIND_RULE",
+		2: "OPERATOR_KIND_CUSTOM_RULE",
 	}
-	ComplianceOperatorRuleV2_ComplianceOperatorRuleKind_value = map[string]int32{
-		"RULE":        0,
-		"CUSTOM_RULE": 1,
+	ComplianceOperatorRuleV2_OperatorKind_value = map[string]int32{
+		"OPERATOR_KIND_UNSPECIFIED": 0,
+		"OPERATOR_KIND_RULE":        1,
+		"OPERATOR_KIND_CUSTOM_RULE": 2,
 	}
 )
 
-func (x ComplianceOperatorRuleV2_ComplianceOperatorRuleKind) Enum() *ComplianceOperatorRuleV2_ComplianceOperatorRuleKind {
-	p := new(ComplianceOperatorRuleV2_ComplianceOperatorRuleKind)
+func (x ComplianceOperatorRuleV2_OperatorKind) Enum() *ComplianceOperatorRuleV2_OperatorKind {
+	p := new(ComplianceOperatorRuleV2_OperatorKind)
 	*p = x
 	return p
 }
 
-func (x ComplianceOperatorRuleV2_ComplianceOperatorRuleKind) String() string {
+func (x ComplianceOperatorRuleV2_OperatorKind) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (ComplianceOperatorRuleV2_ComplianceOperatorRuleKind) Descriptor() protoreflect.EnumDescriptor {
+func (ComplianceOperatorRuleV2_OperatorKind) Descriptor() protoreflect.EnumDescriptor {
 	return file_storage_compliance_operator_v2_proto_enumTypes[3].Descriptor()
 }
 
-func (ComplianceOperatorRuleV2_ComplianceOperatorRuleKind) Type() protoreflect.EnumType {
+func (ComplianceOperatorRuleV2_OperatorKind) Type() protoreflect.EnumType {
 	return &file_storage_compliance_operator_v2_proto_enumTypes[3]
 }
 
-func (x ComplianceOperatorRuleV2_ComplianceOperatorRuleKind) Number() protoreflect.EnumNumber {
+func (x ComplianceOperatorRuleV2_OperatorKind) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use ComplianceOperatorRuleV2_ComplianceOperatorRuleKind.Descriptor instead.
-func (ComplianceOperatorRuleV2_ComplianceOperatorRuleKind) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use ComplianceOperatorRuleV2_OperatorKind.Descriptor instead.
+func (ComplianceOperatorRuleV2_OperatorKind) EnumDescriptor() ([]byte, []int) {
 	return file_storage_compliance_operator_v2_proto_rawDescGZIP(), []int{2, 0}
 }
 
@@ -660,27 +663,27 @@ func (x *ComplianceOperatorProfileV2) GetProfileRefId() string {
 
 // Next tag: 19
 type ComplianceOperatorRuleV2 struct {
-	state                  protoimpl.MessageState                              `protogen:"open.v1"`
-	Id                     string                                              `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	RuleId                 string                                              `protobuf:"bytes,2,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
-	Name                   string                                              `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Rule Name,hidden"`                                    // @gotags: search:"Compliance Rule Name,hidden"
-	RuleType               string                                              `protobuf:"bytes,4,opt,name=rule_type,json=ruleType,proto3" json:"rule_type,omitempty" search:"Compliance Rule Type,hidden"`            // @gotags: search:"Compliance Rule Type,hidden"
-	Severity               RuleSeverity                                        `protobuf:"varint,5,opt,name=severity,proto3,enum=storage.RuleSeverity" json:"severity,omitempty" search:"Compliance Rule Severity,hidden"` // @gotags: search:"Compliance Rule Severity,hidden"
-	Labels                 map[string]string                                   `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Annotations            map[string]string                                   `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Title                  string                                              `protobuf:"bytes,8,opt,name=title,proto3" json:"title,omitempty"`
-	Description            string                                              `protobuf:"bytes,9,opt,name=description,proto3" json:"description,omitempty"`
-	Rationale              string                                              `protobuf:"bytes,10,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	Fixes                  []*ComplianceOperatorRuleV2_Fix                     `protobuf:"bytes,11,rep,name=fixes,proto3" json:"fixes,omitempty"`
-	Warning                string                                              `protobuf:"bytes,12,opt,name=warning,proto3" json:"warning,omitempty"`
-	Controls               []*RuleControls                                     `protobuf:"bytes,13,rep,name=controls,proto3" json:"controls,omitempty"`
-	ClusterId              string                                              `protobuf:"bytes,14,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"`   // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
-	RuleRefId              string                                              `protobuf:"bytes,15,opt,name=rule_ref_id,json=ruleRefId,proto3" json:"rule_ref_id,omitempty" search:"Rule Ref ID,hidden" sql:"type(uuid)"` // @gotags: search:"Rule Ref ID,hidden" sql:"type(uuid)"
-	ParentRule             string                                              `protobuf:"bytes,16,opt,name=parent_rule,json=parentRule,proto3" json:"parent_rule,omitempty"`
-	Instructions           string                                              `protobuf:"bytes,17,opt,name=instructions,proto3" json:"instructions,omitempty"`
-	ComplianceOperatorKind ComplianceOperatorRuleV2_ComplianceOperatorRuleKind `protobuf:"varint,18,opt,name=compliance_operator_kind,json=complianceOperatorKind,proto3,enum=storage.ComplianceOperatorRuleV2_ComplianceOperatorRuleKind" json:"compliance_operator_kind,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState                `protogen:"open.v1"`
+	Id            string                                `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	RuleId        string                                `protobuf:"bytes,2,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
+	Name          string                                `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Compliance Rule Name,hidden"`                                    // @gotags: search:"Compliance Rule Name,hidden"
+	RuleType      string                                `protobuf:"bytes,4,opt,name=rule_type,json=ruleType,proto3" json:"rule_type,omitempty" search:"Compliance Rule Type,hidden"`            // @gotags: search:"Compliance Rule Type,hidden"
+	Severity      RuleSeverity                          `protobuf:"varint,5,opt,name=severity,proto3,enum=storage.RuleSeverity" json:"severity,omitempty" search:"Compliance Rule Severity,hidden"` // @gotags: search:"Compliance Rule Severity,hidden"
+	Labels        map[string]string                     `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Annotations   map[string]string                     `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Title         string                                `protobuf:"bytes,8,opt,name=title,proto3" json:"title,omitempty"`
+	Description   string                                `protobuf:"bytes,9,opt,name=description,proto3" json:"description,omitempty"`
+	Rationale     string                                `protobuf:"bytes,10,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	Fixes         []*ComplianceOperatorRuleV2_Fix       `protobuf:"bytes,11,rep,name=fixes,proto3" json:"fixes,omitempty"`
+	Warning       string                                `protobuf:"bytes,12,opt,name=warning,proto3" json:"warning,omitempty"`
+	Controls      []*RuleControls                       `protobuf:"bytes,13,rep,name=controls,proto3" json:"controls,omitempty"`
+	ClusterId     string                                `protobuf:"bytes,14,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"`   // @gotags: search:"Cluster ID,hidden" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+	RuleRefId     string                                `protobuf:"bytes,15,opt,name=rule_ref_id,json=ruleRefId,proto3" json:"rule_ref_id,omitempty" search:"Rule Ref ID,hidden" sql:"type(uuid)"` // @gotags: search:"Rule Ref ID,hidden" sql:"type(uuid)"
+	ParentRule    string                                `protobuf:"bytes,16,opt,name=parent_rule,json=parentRule,proto3" json:"parent_rule,omitempty"`
+	Instructions  string                                `protobuf:"bytes,17,opt,name=instructions,proto3" json:"instructions,omitempty"`
+	OperatorKind  ComplianceOperatorRuleV2_OperatorKind `protobuf:"varint,18,opt,name=operator_kind,json=operatorKind,proto3,enum=storage.ComplianceOperatorRuleV2_OperatorKind" json:"operator_kind,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorRuleV2) Reset() {
@@ -832,11 +835,11 @@ func (x *ComplianceOperatorRuleV2) GetInstructions() string {
 	return ""
 }
 
-func (x *ComplianceOperatorRuleV2) GetComplianceOperatorKind() ComplianceOperatorRuleV2_ComplianceOperatorRuleKind {
+func (x *ComplianceOperatorRuleV2) GetOperatorKind() ComplianceOperatorRuleV2_OperatorKind {
 	if x != nil {
-		return x.ComplianceOperatorKind
+		return x.OperatorKind
 	}
-	return ComplianceOperatorRuleV2_RULE
+	return ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED
 }
 
 // Next Tag: 4
@@ -2917,7 +2920,7 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a#\n" +
 	"\x04Rule\x12\x1b\n" +
-	"\trule_name\x18\x01 \x01(\tR\bruleName\"\x97\b\n" +
+	"\trule_name\x18\x01 \x01(\tR\bruleName\"\xa1\b\n" +
 	"\x18ComplianceOperatorRuleV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\arule_id\x18\x02 \x01(\tR\x06ruleId\x12\x12\n" +
@@ -2938,8 +2941,8 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\vrule_ref_id\x18\x0f \x01(\tR\truleRefId\x12\x1f\n" +
 	"\vparent_rule\x18\x10 \x01(\tR\n" +
 	"parentRule\x12\"\n" +
-	"\finstructions\x18\x11 \x01(\tR\finstructions\x12v\n" +
-	"\x18compliance_operator_kind\x18\x12 \x01(\x0e2<.storage.ComplianceOperatorRuleV2.ComplianceOperatorRuleKindR\x16complianceOperatorKind\x1a9\n" +
+	"\finstructions\x18\x11 \x01(\tR\finstructions\x12S\n" +
+	"\roperator_kind\x18\x12 \x01(\x0e2..storage.ComplianceOperatorRuleV2.OperatorKindR\foperatorKind\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
@@ -2950,10 +2953,11 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\bplatform\x18\x01 \x01(\tR\bplatform\x12\x1e\n" +
 	"\n" +
 	"disruption\x18\x02 \x01(\tR\n" +
-	"disruption\"7\n" +
-	"\x1aComplianceOperatorRuleKind\x12\b\n" +
-	"\x04RULE\x10\x00\x12\x0f\n" +
-	"\vCUSTOM_RULE\x10\x01\"d\n" +
+	"disruption\"d\n" +
+	"\fOperatorKind\x12\x1d\n" +
+	"\x19OPERATOR_KIND_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12OPERATOR_KIND_RULE\x10\x01\x12\x1d\n" +
+	"\x19OPERATOR_KIND_CUSTOM_RULE\x10\x02\"d\n" +
 	"\fRuleControls\x12\x1a\n" +
 	"\bstandard\x18\x01 \x01(\tR\bstandard\x12\x1e\n" +
 	"\bcontrols\x18\x02 \x03(\tB\x02\x18\x01R\bcontrols\x12\x18\n" +
@@ -3224,37 +3228,37 @@ var file_storage_compliance_operator_v2_proto_goTypes = []any{
 	(NodeRole)(0),     // 0: storage.NodeRole
 	(ScanType)(0),     // 1: storage.ScanType
 	(RuleSeverity)(0), // 2: storage.RuleSeverity
-	(ComplianceOperatorRuleV2_ComplianceOperatorRuleKind)(0), // 3: storage.ComplianceOperatorRuleV2.ComplianceOperatorRuleKind
-	(ComplianceOperatorCheckResultV2_CheckStatus)(0),         // 4: storage.ComplianceOperatorCheckResultV2.CheckStatus
-	(ComplianceOperatorReportStatus_RunState)(0),             // 5: storage.ComplianceOperatorReportStatus.RunState
-	(ComplianceOperatorReportStatus_NotificationMethod)(0),   // 6: storage.ComplianceOperatorReportStatus.NotificationMethod
-	(ComplianceOperatorReportStatus_RunMethod)(0),            // 7: storage.ComplianceOperatorReportStatus.RunMethod
-	(*ProfileShim)(nil),                               // 8: storage.ProfileShim
-	(*ComplianceOperatorProfileV2)(nil),               // 9: storage.ComplianceOperatorProfileV2
-	(*ComplianceOperatorRuleV2)(nil),                  // 10: storage.ComplianceOperatorRuleV2
-	(*RuleControls)(nil),                              // 11: storage.RuleControls
-	(*ComplianceOperatorScanConfigurationV2)(nil),     // 12: storage.ComplianceOperatorScanConfigurationV2
-	(*ComplianceOperatorClusterScanConfigStatus)(nil), // 13: storage.ComplianceOperatorClusterScanConfigStatus
-	(*ComplianceOperatorBenchmarkV2)(nil),             // 14: storage.ComplianceOperatorBenchmarkV2
-	(*ComplianceOperatorCheckResultV2)(nil),           // 15: storage.ComplianceOperatorCheckResultV2
-	(*ScanStatus)(nil),                                // 16: storage.ScanStatus
-	(*ComplianceOperatorScanV2)(nil),                  // 17: storage.ComplianceOperatorScanV2
-	(*ComplianceOperatorScanSettingBindingV2)(nil),    // 18: storage.ComplianceOperatorScanSettingBindingV2
-	(*ComplianceOperatorCondition)(nil),               // 19: storage.ComplianceOperatorCondition
-	(*ComplianceOperatorStatus)(nil),                  // 20: storage.ComplianceOperatorStatus
-	(*ComplianceOperatorSuiteV2)(nil),                 // 21: storage.ComplianceOperatorSuiteV2
-	(*ComplianceOperatorRemediationV2)(nil),           // 22: storage.ComplianceOperatorRemediationV2
-	(*ComplianceOperatorReportSnapshotV2)(nil),        // 23: storage.ComplianceOperatorReportSnapshotV2
-	(*ComplianceOperatorReportData)(nil),              // 24: storage.ComplianceOperatorReportData
-	(*ComplianceOperatorReportStatus)(nil),            // 25: storage.ComplianceOperatorReportStatus
-	nil,                                               // 26: storage.ComplianceOperatorProfileV2.LabelsEntry
-	nil,                                               // 27: storage.ComplianceOperatorProfileV2.AnnotationsEntry
-	(*ComplianceOperatorProfileV2_Rule)(nil),          // 28: storage.ComplianceOperatorProfileV2.Rule
-	nil,                                               // 29: storage.ComplianceOperatorRuleV2.LabelsEntry
-	nil,                                               // 30: storage.ComplianceOperatorRuleV2.AnnotationsEntry
-	(*ComplianceOperatorRuleV2_Fix)(nil),              // 31: storage.ComplianceOperatorRuleV2.Fix
-	nil,                                               // 32: storage.ComplianceOperatorScanConfigurationV2.LabelsEntry
-	nil,                                               // 33: storage.ComplianceOperatorScanConfigurationV2.AnnotationsEntry
+	(ComplianceOperatorRuleV2_OperatorKind)(0),             // 3: storage.ComplianceOperatorRuleV2.OperatorKind
+	(ComplianceOperatorCheckResultV2_CheckStatus)(0),       // 4: storage.ComplianceOperatorCheckResultV2.CheckStatus
+	(ComplianceOperatorReportStatus_RunState)(0),           // 5: storage.ComplianceOperatorReportStatus.RunState
+	(ComplianceOperatorReportStatus_NotificationMethod)(0), // 6: storage.ComplianceOperatorReportStatus.NotificationMethod
+	(ComplianceOperatorReportStatus_RunMethod)(0),          // 7: storage.ComplianceOperatorReportStatus.RunMethod
+	(*ProfileShim)(nil),                                    // 8: storage.ProfileShim
+	(*ComplianceOperatorProfileV2)(nil),                    // 9: storage.ComplianceOperatorProfileV2
+	(*ComplianceOperatorRuleV2)(nil),                       // 10: storage.ComplianceOperatorRuleV2
+	(*RuleControls)(nil),                                   // 11: storage.RuleControls
+	(*ComplianceOperatorScanConfigurationV2)(nil),          // 12: storage.ComplianceOperatorScanConfigurationV2
+	(*ComplianceOperatorClusterScanConfigStatus)(nil),      // 13: storage.ComplianceOperatorClusterScanConfigStatus
+	(*ComplianceOperatorBenchmarkV2)(nil),                  // 14: storage.ComplianceOperatorBenchmarkV2
+	(*ComplianceOperatorCheckResultV2)(nil),                // 15: storage.ComplianceOperatorCheckResultV2
+	(*ScanStatus)(nil),                                     // 16: storage.ScanStatus
+	(*ComplianceOperatorScanV2)(nil),                       // 17: storage.ComplianceOperatorScanV2
+	(*ComplianceOperatorScanSettingBindingV2)(nil),         // 18: storage.ComplianceOperatorScanSettingBindingV2
+	(*ComplianceOperatorCondition)(nil),                    // 19: storage.ComplianceOperatorCondition
+	(*ComplianceOperatorStatus)(nil),                       // 20: storage.ComplianceOperatorStatus
+	(*ComplianceOperatorSuiteV2)(nil),                      // 21: storage.ComplianceOperatorSuiteV2
+	(*ComplianceOperatorRemediationV2)(nil),                // 22: storage.ComplianceOperatorRemediationV2
+	(*ComplianceOperatorReportSnapshotV2)(nil),             // 23: storage.ComplianceOperatorReportSnapshotV2
+	(*ComplianceOperatorReportData)(nil),                   // 24: storage.ComplianceOperatorReportData
+	(*ComplianceOperatorReportStatus)(nil),                 // 25: storage.ComplianceOperatorReportStatus
+	nil,                                                    // 26: storage.ComplianceOperatorProfileV2.LabelsEntry
+	nil,                                                    // 27: storage.ComplianceOperatorProfileV2.AnnotationsEntry
+	(*ComplianceOperatorProfileV2_Rule)(nil),               // 28: storage.ComplianceOperatorProfileV2.Rule
+	nil,                                                    // 29: storage.ComplianceOperatorRuleV2.LabelsEntry
+	nil,                                                    // 30: storage.ComplianceOperatorRuleV2.AnnotationsEntry
+	(*ComplianceOperatorRuleV2_Fix)(nil),                   // 31: storage.ComplianceOperatorRuleV2.Fix
+	nil,                                                    // 32: storage.ComplianceOperatorScanConfigurationV2.LabelsEntry
+	nil,                                                    // 33: storage.ComplianceOperatorScanConfigurationV2.AnnotationsEntry
 	(*ComplianceOperatorScanConfigurationV2_ProfileName)(nil), // 34: storage.ComplianceOperatorScanConfigurationV2.ProfileName
 	(*ComplianceOperatorScanConfigurationV2_Cluster)(nil),     // 35: storage.ComplianceOperatorScanConfigurationV2.Cluster
 	(*ComplianceOperatorBenchmarkV2_Profile)(nil),             // 36: storage.ComplianceOperatorBenchmarkV2.Profile
@@ -3282,7 +3286,7 @@ var file_storage_compliance_operator_v2_proto_depIdxs = []int32{
 	30, // 5: storage.ComplianceOperatorRuleV2.annotations:type_name -> storage.ComplianceOperatorRuleV2.AnnotationsEntry
 	31, // 6: storage.ComplianceOperatorRuleV2.fixes:type_name -> storage.ComplianceOperatorRuleV2.Fix
 	11, // 7: storage.ComplianceOperatorRuleV2.controls:type_name -> storage.RuleControls
-	3,  // 8: storage.ComplianceOperatorRuleV2.compliance_operator_kind:type_name -> storage.ComplianceOperatorRuleV2.ComplianceOperatorRuleKind
+	3,  // 8: storage.ComplianceOperatorRuleV2.operator_kind:type_name -> storage.ComplianceOperatorRuleV2.OperatorKind
 	32, // 9: storage.ComplianceOperatorScanConfigurationV2.labels:type_name -> storage.ComplianceOperatorScanConfigurationV2.LabelsEntry
 	33, // 10: storage.ComplianceOperatorScanConfigurationV2.annotations:type_name -> storage.ComplianceOperatorScanConfigurationV2.AnnotationsEntry
 	34, // 11: storage.ComplianceOperatorScanConfigurationV2.profiles:type_name -> storage.ComplianceOperatorScanConfigurationV2.ProfileName

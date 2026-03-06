@@ -145,49 +145,52 @@ func (ComplianceOperatorCheckResultV2_CheckStatus) EnumDescriptor() ([]byte, []i
 	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{8, 0}
 }
 
-type ComplianceOperatorRuleV2_ComplianceOperatorRuleKind int32
+type ComplianceOperatorRuleV2_OperatorKind int32
 
 const (
-	ComplianceOperatorRuleV2_RULE        ComplianceOperatorRuleV2_ComplianceOperatorRuleKind = 0
-	ComplianceOperatorRuleV2_CUSTOM_RULE ComplianceOperatorRuleV2_ComplianceOperatorRuleKind = 1
+	ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED ComplianceOperatorRuleV2_OperatorKind = 0
+	ComplianceOperatorRuleV2_OPERATOR_KIND_RULE        ComplianceOperatorRuleV2_OperatorKind = 1
+	ComplianceOperatorRuleV2_OPERATOR_KIND_CUSTOM_RULE ComplianceOperatorRuleV2_OperatorKind = 2
 )
 
-// Enum value maps for ComplianceOperatorRuleV2_ComplianceOperatorRuleKind.
+// Enum value maps for ComplianceOperatorRuleV2_OperatorKind.
 var (
-	ComplianceOperatorRuleV2_ComplianceOperatorRuleKind_name = map[int32]string{
-		0: "RULE",
-		1: "CUSTOM_RULE",
+	ComplianceOperatorRuleV2_OperatorKind_name = map[int32]string{
+		0: "OPERATOR_KIND_UNSPECIFIED",
+		1: "OPERATOR_KIND_RULE",
+		2: "OPERATOR_KIND_CUSTOM_RULE",
 	}
-	ComplianceOperatorRuleV2_ComplianceOperatorRuleKind_value = map[string]int32{
-		"RULE":        0,
-		"CUSTOM_RULE": 1,
+	ComplianceOperatorRuleV2_OperatorKind_value = map[string]int32{
+		"OPERATOR_KIND_UNSPECIFIED": 0,
+		"OPERATOR_KIND_RULE":        1,
+		"OPERATOR_KIND_CUSTOM_RULE": 2,
 	}
 )
 
-func (x ComplianceOperatorRuleV2_ComplianceOperatorRuleKind) Enum() *ComplianceOperatorRuleV2_ComplianceOperatorRuleKind {
-	p := new(ComplianceOperatorRuleV2_ComplianceOperatorRuleKind)
+func (x ComplianceOperatorRuleV2_OperatorKind) Enum() *ComplianceOperatorRuleV2_OperatorKind {
+	p := new(ComplianceOperatorRuleV2_OperatorKind)
 	*p = x
 	return p
 }
 
-func (x ComplianceOperatorRuleV2_ComplianceOperatorRuleKind) String() string {
+func (x ComplianceOperatorRuleV2_OperatorKind) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (ComplianceOperatorRuleV2_ComplianceOperatorRuleKind) Descriptor() protoreflect.EnumDescriptor {
+func (ComplianceOperatorRuleV2_OperatorKind) Descriptor() protoreflect.EnumDescriptor {
 	return file_internalapi_central_compliance_operator_proto_enumTypes[2].Descriptor()
 }
 
-func (ComplianceOperatorRuleV2_ComplianceOperatorRuleKind) Type() protoreflect.EnumType {
+func (ComplianceOperatorRuleV2_OperatorKind) Type() protoreflect.EnumType {
 	return &file_internalapi_central_compliance_operator_proto_enumTypes[2]
 }
 
-func (x ComplianceOperatorRuleV2_ComplianceOperatorRuleKind) Number() protoreflect.EnumNumber {
+func (x ComplianceOperatorRuleV2_OperatorKind) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use ComplianceOperatorRuleV2_ComplianceOperatorRuleKind.Descriptor instead.
-func (ComplianceOperatorRuleV2_ComplianceOperatorRuleKind) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use ComplianceOperatorRuleV2_OperatorKind.Descriptor instead.
+func (ComplianceOperatorRuleV2_OperatorKind) EnumDescriptor() ([]byte, []int) {
 	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{10, 0}
 }
 
@@ -1186,23 +1189,23 @@ func (x *ComplianceOperatorProfileV2) GetValues() []string {
 // ComplianceOperatorRuleV2 is a message from Sensor (to Central) representing a compliance check rule.
 // Next tag: 15
 type ComplianceOperatorRuleV2 struct {
-	state                  protoimpl.MessageState                              `protogen:"open.v1"`
-	RuleId                 string                                              `protobuf:"bytes,1,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
-	Id                     string                                              `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
-	Name                   string                                              `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	RuleType               string                                              `protobuf:"bytes,4,opt,name=rule_type,json=ruleType,proto3" json:"rule_type,omitempty"`
-	Severity               ComplianceOperatorRuleSeverity                      `protobuf:"varint,5,opt,name=severity,proto3,enum=central.ComplianceOperatorRuleSeverity" json:"severity,omitempty"`
-	Labels                 map[string]string                                   `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Annotations            map[string]string                                   `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Title                  string                                              `protobuf:"bytes,8,opt,name=title,proto3" json:"title,omitempty"`
-	Description            string                                              `protobuf:"bytes,9,opt,name=description,proto3" json:"description,omitempty"`
-	Rationale              string                                              `protobuf:"bytes,10,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	Fixes                  []*ComplianceOperatorRuleV2_Fix                     `protobuf:"bytes,11,rep,name=fixes,proto3" json:"fixes,omitempty"`
-	Warning                string                                              `protobuf:"bytes,12,opt,name=warning,proto3" json:"warning,omitempty"`
-	Instructions           string                                              `protobuf:"bytes,13,opt,name=instructions,proto3" json:"instructions,omitempty"`
-	ComplianceOperatorKind ComplianceOperatorRuleV2_ComplianceOperatorRuleKind `protobuf:"varint,14,opt,name=compliance_operator_kind,json=complianceOperatorKind,proto3,enum=central.ComplianceOperatorRuleV2_ComplianceOperatorRuleKind" json:"compliance_operator_kind,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state         protoimpl.MessageState                `protogen:"open.v1"`
+	RuleId        string                                `protobuf:"bytes,1,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
+	Id            string                                `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                                `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	RuleType      string                                `protobuf:"bytes,4,opt,name=rule_type,json=ruleType,proto3" json:"rule_type,omitempty"`
+	Severity      ComplianceOperatorRuleSeverity        `protobuf:"varint,5,opt,name=severity,proto3,enum=central.ComplianceOperatorRuleSeverity" json:"severity,omitempty"`
+	Labels        map[string]string                     `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Annotations   map[string]string                     `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Title         string                                `protobuf:"bytes,8,opt,name=title,proto3" json:"title,omitempty"`
+	Description   string                                `protobuf:"bytes,9,opt,name=description,proto3" json:"description,omitempty"`
+	Rationale     string                                `protobuf:"bytes,10,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	Fixes         []*ComplianceOperatorRuleV2_Fix       `protobuf:"bytes,11,rep,name=fixes,proto3" json:"fixes,omitempty"`
+	Warning       string                                `protobuf:"bytes,12,opt,name=warning,proto3" json:"warning,omitempty"`
+	Instructions  string                                `protobuf:"bytes,13,opt,name=instructions,proto3" json:"instructions,omitempty"`
+	OperatorKind  ComplianceOperatorRuleV2_OperatorKind `protobuf:"varint,14,opt,name=operator_kind,json=operatorKind,proto3,enum=central.ComplianceOperatorRuleV2_OperatorKind" json:"operator_kind,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorRuleV2) Reset() {
@@ -1326,11 +1329,11 @@ func (x *ComplianceOperatorRuleV2) GetInstructions() string {
 	return ""
 }
 
-func (x *ComplianceOperatorRuleV2) GetComplianceOperatorKind() ComplianceOperatorRuleV2_ComplianceOperatorRuleKind {
+func (x *ComplianceOperatorRuleV2) GetOperatorKind() ComplianceOperatorRuleV2_OperatorKind {
 	if x != nil {
-		return x.ComplianceOperatorKind
+		return x.OperatorKind
 	}
-	return ComplianceOperatorRuleV2_RULE
+	return ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED
 }
 
 type ComplianceOperatorScanV2 struct {
@@ -2843,7 +2846,7 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a#\n" +
 	"\x04Rule\x12\x1b\n" +
-	"\trule_name\x18\x01 \x01(\tR\bruleName\"\x96\a\n" +
+	"\trule_name\x18\x01 \x01(\tR\bruleName\"\xa0\a\n" +
 	"\x18ComplianceOperatorRuleV2\x12\x17\n" +
 	"\arule_id\x18\x01 \x01(\tR\x06ruleId\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12\x12\n" +
@@ -2858,8 +2861,8 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	" \x01(\tR\trationale\x12;\n" +
 	"\x05fixes\x18\v \x03(\v2%.central.ComplianceOperatorRuleV2.FixR\x05fixes\x12\x18\n" +
 	"\awarning\x18\f \x01(\tR\awarning\x12\"\n" +
-	"\finstructions\x18\r \x01(\tR\finstructions\x12v\n" +
-	"\x18compliance_operator_kind\x18\x0e \x01(\x0e2<.central.ComplianceOperatorRuleV2.ComplianceOperatorRuleKindR\x16complianceOperatorKind\x1a9\n" +
+	"\finstructions\x18\r \x01(\tR\finstructions\x12S\n" +
+	"\roperator_kind\x18\x0e \x01(\x0e2..central.ComplianceOperatorRuleV2.OperatorKindR\foperatorKind\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
@@ -2870,10 +2873,11 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\bplatform\x18\x01 \x01(\tR\bplatform\x12\x1e\n" +
 	"\n" +
 	"disruption\x18\x02 \x01(\tR\n" +
-	"disruption\"7\n" +
-	"\x1aComplianceOperatorRuleKind\x12\b\n" +
-	"\x04RULE\x10\x00\x12\x0f\n" +
-	"\vCUSTOM_RULE\x10\x01\"\xd3\x03\n" +
+	"disruption\"d\n" +
+	"\fOperatorKind\x12\x1d\n" +
+	"\x19OPERATOR_KIND_UNSPECIFIED\x10\x00\x12\x16\n" +
+	"\x12OPERATOR_KIND_RULE\x10\x01\x12\x1d\n" +
+	"\x19OPERATOR_KIND_CUSTOM_RULE\x10\x02\"\xd3\x03\n" +
 	"\x18ComplianceOperatorScanV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
@@ -2964,7 +2968,7 @@ var file_internalapi_central_compliance_operator_proto_msgTypes = make([]protoim
 var file_internalapi_central_compliance_operator_proto_goTypes = []any{
 	(ComplianceOperatorRuleSeverity)(0),                           // 0: central.ComplianceOperatorRuleSeverity
 	(ComplianceOperatorCheckResultV2_CheckStatus)(0),              // 1: central.ComplianceOperatorCheckResultV2.CheckStatus
-	(ComplianceOperatorRuleV2_ComplianceOperatorRuleKind)(0),      // 2: central.ComplianceOperatorRuleV2.ComplianceOperatorRuleKind
+	(ComplianceOperatorRuleV2_OperatorKind)(0),                    // 2: central.ComplianceOperatorRuleV2.OperatorKind
 	(*ComplianceOperatorInfo)(nil),                                // 3: central.ComplianceOperatorInfo
 	(*EnableComplianceRequest)(nil),                               // 4: central.EnableComplianceRequest
 	(*DisableComplianceRequest)(nil),                              // 5: central.DisableComplianceRequest
@@ -3036,7 +3040,7 @@ var file_internalapi_central_compliance_operator_proto_depIdxs = []int32{
 	37, // 24: central.ComplianceOperatorRuleV2.labels:type_name -> central.ComplianceOperatorRuleV2.LabelsEntry
 	38, // 25: central.ComplianceOperatorRuleV2.annotations:type_name -> central.ComplianceOperatorRuleV2.AnnotationsEntry
 	39, // 26: central.ComplianceOperatorRuleV2.fixes:type_name -> central.ComplianceOperatorRuleV2.Fix
-	2,  // 27: central.ComplianceOperatorRuleV2.compliance_operator_kind:type_name -> central.ComplianceOperatorRuleV2.ComplianceOperatorRuleKind
+	2,  // 27: central.ComplianceOperatorRuleV2.operator_kind:type_name -> central.ComplianceOperatorRuleV2.OperatorKind
 	40, // 28: central.ComplianceOperatorScanV2.labels:type_name -> central.ComplianceOperatorScanV2.LabelsEntry
 	41, // 29: central.ComplianceOperatorScanV2.annotations:type_name -> central.ComplianceOperatorScanV2.AnnotationsEntry
 	15, // 30: central.ComplianceOperatorScanV2.status:type_name -> central.ComplianceOperatorScanStatusV2
