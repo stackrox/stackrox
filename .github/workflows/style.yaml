@@ -118,8 +118,33 @@ jobs:
     - name: Check dependabot gomod configurations match go.mod files
       run: if [ -s scripts/ci/jobs/check-dependabot-gomod.sh ]; then scripts/ci/jobs/check-dependabot-gomod.sh; fi
 
-  style-check:
+  style-targets:
+    # Discover style-slim sub-targets from the Makefile so the matrix
+    # stays in sync without hardcoding target names in the workflow.
     runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.discover.outputs.targets }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout: Makefile
+      - id: discover
+        run: |
+          # Parse the style-slim prerequisite list from the Makefile.
+          targets=$(sed -n '/^style-slim:/,/^$/p' Makefile \
+            | tr '\\' ' ' | xargs \
+            | sed 's/^style-slim: //')
+          json=$(echo "$targets" | jq -Rc 'split(" ")')
+          echo "targets=$json" >> "$GITHUB_OUTPUT"
+          echo "Discovered targets: $targets"
+
+  style-check:
+    needs: style-targets
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(needs.style-targets.outputs.targets) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -129,7 +154,6 @@ jobs:
 
       - uses: ./.github/actions/job-preamble
         with:
-          free-disk-space: '30'
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - uses: actions/setup-go@v6
@@ -137,62 +161,41 @@ jobs:
           go-version-file: go.mod
           cache: false
 
+      - name: Override GOTOOLCHAIN
+        run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
       - uses: actions/setup-node@v4
+        if: matrix.target == 'ui-lint'
         with:
           node-version: '22'
 
-      - name: Install tools
-        run: |
-          # Override GOTOOLCHAIN=local set by setup-go.
-          echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
-          log_dir="$(mktemp -d)"
+      - name: Install xmlstarlet
+        if: matrix.target == 'shell-style'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq xmlstarlet
 
-          (
-            sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/v4.44.6/yq_linux_amd64"
-            sudo chmod +x /usr/local/bin/yq
-          ) >"${log_dir}/yq.log" 2>&1 &
-
-          (
-            sudo apt-get update -qq && sudo apt-get install -y -qq xmlstarlet
-          ) >"${log_dir}/xmlstarlet.log" 2>&1 &
-
-          (
-            python3 -m pip install -r .openshift-ci/dev-requirements.txt
-          ) >"${log_dir}/pip.log" 2>&1 &
-
-          failed=0
-          for pid in $(jobs -p); do
-            wait "$pid" || failed=1
-          done
-          for log in "${log_dir}"/*.log; do
-            echo "::group::$(basename "${log%.log}")"
-            cat "$log"
-            echo "::endgroup::"
-          done
-          exit $failed
-
-      - name: Verify tools
-        run: |
-          yq --version
-          xmlstarlet --version
-          pycodestyle --version
+      - name: Install Python linters
+        if: matrix.target == 'openshift-ci-style'
+        run: python3 -m pip install -r .openshift-ci/dev-requirements.txt
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
         with:
-          save: false  # ~2,183 MB, style-dominated, no critical path speedup
+          save: false
 
       - name: Cache UI dependencies
+        if: matrix.target == 'ui-lint'
         uses: ./.github/actions/cache-ui-dependencies
 
       - name: Cache QA Test dependencies
+        if: matrix.target == 'qa-tests-style'
         uses: ./.github/actions/cache-gradle-dependencies
 
       - name: Fetch UI deps
+        if: matrix.target == 'ui-lint'
         run: make -C ui deps
 
-      - name: make style-slim
-        run: make style-slim
+      - name: make ${{ matrix.target }}
+        run: make ${{ matrix.target }}
 
   golangci-lint:
     timeout-minutes: 240
