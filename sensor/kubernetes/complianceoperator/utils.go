@@ -24,8 +24,8 @@ var (
 // convertFunction signature of the convert functions
 type convertFunction func(string, *central.ApplyComplianceScanConfigRequest_BaseScanSettings, string) runtime.Object
 
-// profileKindToString maps a ComplianceOperatorProfileKind proto enum to the compliance operator Kind string.
-func profileKindToString(kind central.ComplianceOperatorProfileV2_ComplianceOperatorProfileKind) string {
+// profileKindToString maps an OperatorKind proto enum to the compliance operator Kind string.
+func profileKindToString(kind central.ComplianceOperatorProfileV2_OperatorKind) string {
 	if kind == central.ComplianceOperatorProfileV2_TAILORED_PROFILE {
 		return complianceoperator.TailoredProfile.Kind
 	}
