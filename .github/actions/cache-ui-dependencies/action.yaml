@@ -5,26 +5,45 @@ inputs:
     description: Where the package lock is written
     required: true
     default: "ui/apps/platform/package-lock.json"
+  save:
+    description: Whether to save the cache (default only on pushes to default branch)
+    required: false
+    default: ''
 runs:
   using: composite
   steps:
-    - name: Cache UI Dependencies
-      if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
+    - name: Cache UI Dependencies (save)
+      if: inputs.save == 'true' || (inputs.save == '' && github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
       uses: actions/cache@v5
       with:
         path: |
-          /github/home/.npm
-          /github/home/.cache/Cypress
+          ~/.npm
+          ~/.cache/Cypress
           /usr/local/share/.cache
         key: npm-v2-${{ hashFiles(inputs.lockFile) }}
 
-    - name: Restore UI Dependencies
-      if: ${{ !(github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) }}
+    - name: Cache UI Dependencies (restore)
+      if: ${{ !(inputs.save == 'true' || (inputs.save == '' && github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
       uses: actions/cache/restore@v5
       with:
         path: |
-          /github/home/.npm
-          /github/home/.cache/Cypress
+          ~/.npm
+          ~/.cache/Cypress
           /usr/local/share/.cache
         key: npm-v2-${{ hashFiles(inputs.lockFile) }}
         restore-keys: npm-v2-
+
+    - name: Verify UI cache
+      shell: bash
+      run: |
+        echo "::group::UI cache status"
+        for d in ~/.npm ~/.cache/Cypress /usr/local/share/.cache; do
+          if [ -d "$d" ]; then
+            size=$(du -sh "$d" 2>/dev/null | cut -f1)
+            count=$(find "$d" -type f 2>/dev/null | wc -l)
+            echo "$d: ${size} (${count} files)"
+          else
+            echo "$d: not found"
+          fi
+        done
+        echo "::endgroup::"
