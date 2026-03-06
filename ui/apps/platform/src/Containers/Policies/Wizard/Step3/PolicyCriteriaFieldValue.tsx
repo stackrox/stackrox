@@ -34,7 +34,7 @@ function PolicyCriteriaFieldValue({
                         onClick={handleRemoveValue}
                         variant="tertiary"
                         title="Delete value of policy field"
-                    ></Button>
+                    />
                 )}
             </Flex>
         </div>
