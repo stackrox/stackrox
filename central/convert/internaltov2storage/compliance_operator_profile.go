@@ -18,20 +18,34 @@ func ComplianceOperatorProfileV2(internalMsg *central.ComplianceOperatorProfileV
 	productType := internalMsg.GetAnnotations()[v1alpha1.ProductTypeAnnotation]
 
 	return &storage.ComplianceOperatorProfileV2{
-		Id:                     internalMsg.GetId(),
-		ProfileId:              internalMsg.GetProfileId(),
-		Name:                   internalMsg.GetName(),
-		ProfileVersion:         internalMsg.GetProfileVersion(),
-		ProductType:            productType,
-		Labels:                 internalMsg.GetLabels(),
-		Annotations:            internalMsg.GetAnnotations(),
-		Description:            internalMsg.GetDescription(),
-		Rules:                  rules,
-		Product:                internalMsg.GetAnnotations()[v1alpha1.ProductAnnotation],
-		Title:                  internalMsg.GetTitle(),
-		Values:                 internalMsg.GetValues(),
-		ClusterId:              clusterID,
-		ProfileRefId:           BuildProfileRefID(clusterID, internalMsg.GetProfileId(), productType),
-		OperatorKind: storage.ComplianceOperatorProfileV2_OperatorKind(internalMsg.GetOperatorKind()),
+		Id:             internalMsg.GetId(),
+		ProfileId:      internalMsg.GetProfileId(),
+		Name:           internalMsg.GetName(),
+		ProfileVersion: internalMsg.GetProfileVersion(),
+		ProductType:    productType,
+		Labels:         internalMsg.GetLabels(),
+		Annotations:    internalMsg.GetAnnotations(),
+		Description:    internalMsg.GetDescription(),
+		Rules:          rules,
+		Product:        internalMsg.GetAnnotations()[v1alpha1.ProductAnnotation],
+		Title:          internalMsg.GetTitle(),
+		Values:         internalMsg.GetValues(),
+		ClusterId:      clusterID,
+		ProfileRefId:   BuildProfileRefID(clusterID, internalMsg.GetProfileId(), productType),
+		OperatorKind:   centralToStorageProfileKind(internalMsg.GetOperatorKind()),
+	}
+}
+
+func centralToStorageProfileKind(kind central.ComplianceOperatorProfileV2_OperatorKind) storage.ComplianceOperatorProfileV2_OperatorKind {
+	switch kind {
+	case central.ComplianceOperatorProfileV2_OPERATOR_KIND_PROFILE:
+		return storage.ComplianceOperatorProfileV2_OPERATOR_KIND_PROFILE
+	case central.ComplianceOperatorProfileV2_OPERATOR_KIND_TAILORED_PROFILE:
+		return storage.ComplianceOperatorProfileV2_OPERATOR_KIND_TAILORED_PROFILE
+	case central.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
+		return storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED
+	default:
+		log.Errorf("Unexpected profile operator kind %v", kind)
+		return storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED
 	}
 }
