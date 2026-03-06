@@ -146,10 +146,8 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
       run: |
         # Shallow clones lack git history for git describe / make tag.
-        # Two lightweight GraphQL calls (~1.4s total):
-        #   1. latestRelease to discover the current version
-        #   2. refs() + compare() for nearby .x tags (±3 minor versions)
-        # Sets BUILD_TAG which make/env.mk checks before git describe.
+        # Derive the M.N.x version tag, then use GitHub GraphQL to get
+        # the commit count. Sets BUILD_TAG for make/env.mk.
         if [ "$(git rev-parse --is-shallow-repository)" != "true" ]; then
           echo "resolved=skip" >> "$GITHUB_OUTPUT"
           exit 0
@@ -159,7 +157,7 @@ runs:
         owner="${GITHUB_REPOSITORY%/*}"
         repo="${GITHUB_REPOSITORY#*/}"
         gql() {
-          payload='{"query":"'
+          local payload='{"query":"'
           payload+=$(printf '%s' "$1" | sed 's/"/\\"/g')
           payload+='"}'
           curl -sfL --max-time 10 \
@@ -168,44 +166,37 @@ runs:
             -d "$payload" \
             https://api.github.com/graphql 2>/dev/null
         }
-        # Pass 1: discover current version from latest GitHub release.
-        latest=$(gql "{ repository(owner:\"$owner\",name:\"$repo\"){ latestRelease{ tagName } } }" \
-          | grep -oP '"tagName":"\K[0-9]+\.[0-9]+' | head -1)
-        if [ -z "$latest" ]; then
-          echo "resolved=false" >> "$GITHUB_OUTPUT"
-          exit 0
+        # Determine the version tag from the target branch.
+        target="${GITHUB_BASE_REF:-$GITHUB_REF_NAME}"
+        if [[ "$target" =~ ^release-([0-9]+\.[0-9]+)$ ]]; then
+          # Release branch: tag is branch version (release-4.10 → 4.10.x).
+          version_tag="${BASH_REMATCH[1]}.x"
+        else
+          # Master / PRs to master: tag is one minor version above the
+          # highest released version (4.10.0 → 4.11.x).
+          highest=$(gql "{ repository(owner:\"$owner\",name:\"$repo\"){ releases(last:20,orderBy:{field:CREATED_AT,direction:ASC}){ nodes{ tagName } } } }" \
+            | grep -oP '"tagName":"\K[0-9]+\.[0-9]+\.[0-9]+(?=")' \
+            | sort -rV | head -1)
+          if [ -z "$highest" ]; then
+            echo "resolved=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          major=${highest%%.*}
+          rest=${highest#*.}; minor=${rest%%.*}
+          version_tag="${major}.$((minor + 1)).x"
         fi
-        major=${latest%%.*}
-        minor=${latest#*.}
-        # Pass 2: check .x tags ±3 minor versions across ±1 major.
-        # refs(query:"M.N.x",first:1) returns the exact M.N.x tag
-        # (alphabetically before -nightly suffixes); inline compare()
-        # checks ancestry and commit count. Empty nodes = tag missing.
-        query='{ repository(owner:"'"$owner"'",name:"'"$repo"'") {'
-        for m in $((major - 1)) $major $((major + 1)); do
-          [ "$m" -lt 1 ] && continue
-          lo=$((minor - 3)); [ "$lo" -lt 0 ] && lo=0
-          for n in $(seq $lo $((minor + 3))); do
-            query+=" v${m}_${n}:refs(refPrefix:\"refs/tags/\",query:\"${m}.${n}.x\",first:1,orderBy:{field:ALPHABETICAL,direction:ASC}){nodes{name compare(headRef:\"${sha}\"){aheadBy behindBy}}}"
-          done
-        done
-        query+=' } }'
-        response=$(gql "$query") || {
+        # Single GraphQL call: check the tag exists and count commits.
+        response=$(gql "{ repository(owner:\"$owner\",name:\"$repo\"){ ref(qualifiedName:\"refs/tags/$version_tag\"){ compare(headRef:\"$sha\"){ aheadBy behindBy } } } }") || {
           echo "resolved=false" >> "$GITHUB_OUTPUT"; exit 0
         }
-        # Parse: find entries with behindBy:0, pick smallest aheadBy.
-        best=$(echo "$response" \
-          | grep -oP '"v\d+_\d+":\{"nodes":\[\{"name":"[^"]+","compare":\{"aheadBy":\d+,"behindBy":0\}\}\]' \
-          | sed 's/.*"name":"\([^"]*\)".*"aheadBy":\([0-9]*\).*/\2 \1/' \
-          | sort -n | head -1)
-        if [ -z "$best" ]; then
+        ahead=$(echo "$response" | grep -oP '"aheadBy":\K[0-9]+')
+        behind=$(echo "$response" | grep -oP '"behindBy":\K[0-9]+')
+        if [ "${behind:-1}" != "0" ] || [ -z "$ahead" ]; then
           echo "resolved=false" >> "$GITHUB_OUTPUT"
           exit 0
         fi
-        tag=$(echo "$best" | cut -d' ' -f2)
-        ahead=$(echo "$best" | cut -d' ' -f1)
-        echo "BUILD_TAG=${tag}-${ahead}-g${sha_short}" >> "$GITHUB_ENV"
-        echo "::notice::Resolved version (API): ${tag}-${ahead}-g${sha_short}"
+        echo "BUILD_TAG=${version_tag}-${ahead}-g${sha_short}" >> "$GITHUB_ENV"
+        echo "::notice::Resolved version (API): ${version_tag}-${ahead}-g${sha_short}"
         echo "resolved=true" >> "$GITHUB_OUTPUT"
       shell: bash
 
