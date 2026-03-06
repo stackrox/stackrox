@@ -40,10 +40,7 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Fix $PATH for infractl
-        run: echo "$HOME/.local/bin" >s> "$GITHUB_PATH"
-
-      - name: Spin up test cluster
+      - name: Trigger test cluster creation
         uses: stackrox/actions/infra/create-cluster@v1
         with:
           token: ${{ secrets.INFRA_TOKEN }}
@@ -60,8 +57,8 @@ jobs:
         run: |
           docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
-      - name: "Set up Cloud SDK"
-        uses: "google-github-actions/setup-gcloud@v3"
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
         with:
           install_components: "gke-gcloud-auth-plugin"
 
