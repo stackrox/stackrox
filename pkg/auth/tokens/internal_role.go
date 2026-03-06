@@ -8,15 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-// ClusterScope is the scope of a negotiated internal role on a given cluster.
-// The scope can be cluster-wide (include all namespaces on the cluster),
-// or restricted to a specific set of namespaces.
-type ClusterScope struct {
-	ClusterName       string   `json:"cluster_name"`
-	ClusterFullAccess bool     `json:"cluster_full_access"`
-	Namespaces        []string `json:"namespaces"`
-}
-
 // ClusterScopes is a representation of an access scope tree.
 // The tree root is the map itself.
 // Each cluster in the access scope is identified by its cluster ID
@@ -50,7 +41,7 @@ func (r *InternalRole) GetPermissions() map[string]storage.Access {
 	if r == nil {
 		return nil
 	}
-	rolePermissions := make(map[string]storage.Access)
+	rolePermissions := make(map[string]storage.Access, len(r.ReadResources)+len(r.WriteResources))
 	for _, resource := range r.ReadResources {
 		rolePermissions[resource] = storage.Access_READ_ACCESS
 	}
