@@ -241,7 +241,7 @@ function ViolationsByPolicyCategoryChart({
         } else if (hiddenSeverities.size < 3) {
             newHidden.add(targetSeverity);
         }
-        setHiddenSeverities(newHidden);
+        setHiddenSeverities(newHidden).catch(() => {});
         return [];
     }
 
