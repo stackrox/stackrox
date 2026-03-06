@@ -1,4 +1,4 @@
-name: e2e-gke-upgrade-test
+name: e2e-gke-upgrade-tests
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ on:
       - labeled
       - synchronize
 
-concurrency: e2e-gke-upgrade-test-${{ github.ref }}
+concurrency: e2e-gke-upgrade-tests-${{ github.ref }}
 
 defaults:
   run:
