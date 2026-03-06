@@ -35,6 +35,12 @@ import (
 
 var log = logging.LoggerForModule()
 
+const (
+	// nodeResourceID is the resource ID used for node scanning UMH.
+	// Compliance handles exactly one node, so a single constant suffices.
+	nodeResourceID = "this-node"
+)
+
 // Compliance represents the Compliance app
 type Compliance struct {
 	nodeNameProvider node.NodeNameProvider
@@ -179,12 +185,16 @@ func (c *Compliance) manageNodeInventoryScanLoop(ctx context.Context) <-chan *se
 			select {
 			case <-ctx.Done():
 				return
-			case _, ok := <-c.umhNodeInventory.RetryCommand():
+			case resourceID, ok := <-c.umhNodeInventory.RetryCommand():
+				if !ok {
+					log.Info("UMH retry channel for node inventory closed; stopping scan loop")
+					return
+				}
 				if c.cache == nil {
-					log.Debug("Requested to retry but cache is empty. Resetting scan timer.")
+					log.Debugf("Requested to retry %s but cache is empty. Resetting scan timer.", resourceID)
 					cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheMiss, cmetrics.ScannerVersionV2)
 					t.Reset(time.Second)
-				} else if ok {
+				} else {
 					nodeInventoriesC <- c.cache
 					cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheHit, cmetrics.ScannerVersionV2)
 				}
@@ -215,12 +225,16 @@ func (c *Compliance) manageNodeIndexScanLoop(ctx context.Context) <-chan *sensor
 			select {
 			case <-ctx.Done():
 				return
-			case _, ok := <-c.umhNodeIndex.RetryCommand():
+			case resourceID, ok := <-c.umhNodeIndex.RetryCommand():
+				if !ok {
+					log.Info("UMH retry channel for node index closed; stopping scan loop")
+					return
+				}
 				if c.cache == nil {
-					log.Debug("Requested to retry but cache is empty. Resetting scan timer.")
+					log.Debugf("Requested to retry %s but cache is empty. Resetting scan timer.", resourceID)
 					cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheMiss, cmetrics.ScannerVersionV4)
 					t.Reset(time.Second)
-				} else if ok {
+				} else {
 					nodeIndexesC <- c.cache
 					cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheHit, cmetrics.ScannerVersionV4)
 				}
@@ -249,7 +263,7 @@ func (c *Compliance) runNodeInventoryScan(ctx context.Context) *sensor.MsgFromCo
 	}
 	cmetrics.ObserveNodeInventoryScan(msg.GetNodeInventory())
 	cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionScan, cmetrics.ScannerVersionV2)
-	c.umhNodeInventory.ObserveSending()
+	c.umhNodeInventory.ObserveSending(nodeResourceID)
 	c.cache = msg.CloneVT()
 	return msg
 }
@@ -266,7 +280,7 @@ func (c *Compliance) runNodeIndex(ctx context.Context) *sensor.MsgFromCompliance
 		log.Errorf("Error creating node index: %v", err)
 		return nil
 	}
-	c.umhNodeIndex.ObserveSending()
+	c.umhNodeIndex.ObserveSending(nodeResourceID)
 	cmetrics.ObserveNodeIndexReport(report, nodeName)
 	msg := c.createIndexMsg(report, nodeName)
 	cmetrics.ObserveReportProtobufMessage(msg, cmetrics.ScannerVersionV4)
@@ -343,43 +357,66 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 				}
 			}
 		case *sensor.MsgToCompliance_ComplianceAck:
-			complianceAck := t.ComplianceAck
-			log.Debugf("Received ComplianceACK: type=%s, action=%s, resource_id=%s, reason=%s",
-				complianceAck.GetMessageType(),
-				complianceAck.GetAction(),
-				complianceAck.GetResourceId(),
-				complianceAck.GetReason(),
-			)
-			c.handleNodeScanningComplianceAck(complianceAck)
+			// New ComplianceACK from Sensor 4.10+
+			c.handleComplianceACK(t.ComplianceAck)
 		default:
 			utils.Should(errors.Errorf("Unhandled msg type: %T", t))
 		}
 	}
 }
 
-func (c *Compliance) handleNodeScanningComplianceAck(complianceAck *sensor.MsgToCompliance_ComplianceACK) {
-	if complianceAck == nil {
+// handleComplianceACK handles the new ComplianceACK message from Sensor 4.10+.
+// This is the generic ACK/NACK message that replaces the legacy NodeInventoryACK.
+func (c *Compliance) handleComplianceACK(ack *sensor.MsgToCompliance_ComplianceACK) {
+	if ack == nil {
+		log.Error("Received nil ComplianceACK")
 		return
 	}
 
-	var handler node.UnconfirmedMessageHandler
-	switch complianceAck.GetMessageType() {
+	log.Debugf("Received ComplianceACK: type=%s, action=%s, resource_id=%s, reason=%s",
+		ack.GetMessageType(), ack.GetAction(), ack.GetResourceId(), ack.GetReason())
+
+	switch ack.GetMessageType() {
 	case sensor.MsgToCompliance_ComplianceACK_NODE_INVENTORY:
-		handler = c.umhNodeInventory
+		c.handleNodeInventoryACK(ack.GetAction(), ack.GetReason())
 	case sensor.MsgToCompliance_ComplianceACK_NODE_INDEX_REPORT:
-		handler = c.umhNodeIndex
+		c.handleNodeIndexACK(ack.GetAction(), ack.GetReason())
+	case sensor.MsgToCompliance_ComplianceACK_VM_INDEX_REPORT:
+		// TODO(ROX-32316): Forward to VM relay UMH once VM relay ACK flow is implemented.
+		log.Debugf("Received VM_INDEX_REPORT ComplianceACK for resource %s (action=%s, reason=%s)",
+			ack.GetResourceId(), ack.GetAction(), ack.GetReason())
 	default:
-		log.Debugf("Ignoring ComplianceACK with unsupported message type: %s", complianceAck.GetMessageType())
-		return
+		log.Errorf("Unknown ComplianceACK message type: %s", ack.GetMessageType())
 	}
+}
 
-	switch complianceAck.GetAction() {
+// handleNodeInventoryACK handles ACK/NACK for node inventory messages.
+func (c *Compliance) handleNodeInventoryACK(action sensor.MsgToCompliance_ComplianceACK_Action, reason string) {
+	switch action {
 	case sensor.MsgToCompliance_ComplianceACK_ACK:
-		handler.HandleACK()
+		c.umhNodeInventory.HandleACK(nodeResourceID)
 	case sensor.MsgToCompliance_ComplianceACK_NACK:
-		handler.HandleNACK()
+		if reason != "" {
+			log.Infof("Node inventory NACK received: %s", reason)
+		}
+		c.umhNodeInventory.HandleNACK(nodeResourceID)
 	default:
-		log.Errorf("Unknown ComplianceACK action: %s", complianceAck.GetAction())
+		log.Errorf("Unknown ComplianceACK action for node inventory: %s", action)
+	}
+}
+
+// handleNodeIndexACK handles ACK/NACK for node index report messages.
+func (c *Compliance) handleNodeIndexACK(action sensor.MsgToCompliance_ComplianceACK_Action, reason string) {
+	switch action {
+	case sensor.MsgToCompliance_ComplianceACK_ACK:
+		c.umhNodeIndex.HandleACK(nodeResourceID)
+	case sensor.MsgToCompliance_ComplianceACK_NACK:
+		if reason != "" {
+			log.Infof("Node index NACK received: %s", reason)
+		}
+		c.umhNodeIndex.HandleNACK(nodeResourceID)
+	default:
+		log.Errorf("Unknown ComplianceACK action for node index: %s", action)
 	}
 }
 
