@@ -25,7 +25,8 @@ type InternalRole struct {
 	ReadResources  []string `json:"reads,omitempty"`
 	WriteResources []string `json:"writes,omitempty"`
 	// The key for this cluster scope map is the cluster ID.
-	Clusters ClusterScopes `json:"clusters,omitempty"`
+	// TODO: Uncomment when access scope selection rules allow Cluster ID.
+	// Clusters ClusterScopes `json:"clusters,omitempty"`
 	// The key for this cluster scope map is the cluster Name.
 	ClustersByName ClusterScopes `json:"named_clusters,omitempty"`
 }

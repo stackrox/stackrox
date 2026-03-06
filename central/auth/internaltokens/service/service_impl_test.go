@@ -136,6 +136,19 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		}
 	}
 
+	t.Run("nil request", func(it *testing.T) {
+		var nilInput *v1.GenerateTokenForPermissionsAndScopeRequest
+
+		mockCtrl := gomock.NewController(it)
+		mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
+		mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
+		svc := createService(it, nil, mockClusterStore, mockRoleStore, permissivePolicy)
+		ctx := sensorContext(it, mockCtrl, testSensorClusterID)
+
+		rsp, err := svc.GenerateTokenForPermissionsAndScope(ctx, nilInput)
+		assert.Nil(it, rsp)
+		assert.Error(it, err)
+	})
 	t.Run("no requested validity", func(it *testing.T) {
 		input := &v1.GenerateTokenForPermissionsAndScopeRequest{
 			Permissions:   deploymentPermission,
@@ -211,6 +224,57 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		rsp, err := svc.GenerateTokenForPermissionsAndScope(ctx, input)
 		assert.Nil(it, rsp)
 		assert.Error(it, err)
+	})
+	t.Run("success - cluster name lookup miss leads to empty scope", func(it *testing.T) {
+		mockCtrl := gomock.NewController(it)
+		mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
+		mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
+		mockIssuer := tokensMocks.NewMockIssuer(mockCtrl)
+		policy := newTokenPolicy(time.Hour, map[string]v1.Access{
+			deploymentResource: v1.Access_READ_ACCESS,
+			imageResource:      v1.Access_READ_WRITE_ACCESS,
+		})
+		svc := createService(it, mockIssuer, mockClusterStore, mockRoleStore, policy)
+		mockClusterStore.EXPECT().
+			GetClusterName(gomock.Any(), fixtureconsts.Cluster1).
+			Times(1).Return("", false, nil)
+		ctx := sensorContext(it, mockCtrl, fixtureconsts.Cluster1)
+
+		input := &v1.GenerateTokenForPermissionsAndScopeRequest{
+			Permissions:   deploymentPermission,
+			Lifetime:      testExpirationDuration,
+			ClusterScopes: []*v1.ClusterScope{requestFullCluster},
+		}
+
+		expectedClaims := tokens.RoxClaims{
+			InternalRoles: []*tokens.InternalRole{
+				{
+					RoleName:       internalRoleName,
+					ReadResources:  []string{deploymentResource},
+					ClustersByName: make(tokens.ClusterScopes),
+				},
+			},
+			Name: fmt.Sprintf(
+				"Generated claims for role %s expiring at %s",
+				"internal role",
+				testTokenExpiry.Format(time.RFC3339Nano),
+			),
+		}
+
+		tokenString := "It was seven o'clock of a very warm evening in the Seeonee Hills when Father Wolf woke up from his day's rest"
+
+		mockIssuer.EXPECT().
+			Issue(gomock.Any(), expectedClaims, gomock.Any()).
+			Times(1).Return(&tokens.TokenInfo{Token: tokenString}, nil)
+
+		rsp, err := svc.GenerateTokenForPermissionsAndScope(ctx, input)
+		assert.NotNil(it, rsp)
+		protoassert.Equal(
+			it,
+			&v1.GenerateTokenForPermissionsAndScopeResponse{Token: tokenString},
+			rsp,
+		)
+		assert.NoError(it, err)
 	})
 	for name, tc := range map[string]struct {
 		input          *v1.GenerateTokenForPermissionsAndScopeRequest
