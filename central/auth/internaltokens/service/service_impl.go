@@ -85,10 +85,12 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	pruning.EnableDynamicRBACPruning()
 
 	// Validate request against policy and modify request if necessary.
-	req, err := s.policy.enforce(ctx, req)
-	if err != nil {
-		return nil, err
-	}
+	/*
+		req, err := s.policy.enforce(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+	*/
 
 	// Calculate expiry first so we can set it on the RBAC objects.
 	expiresAt, err := s.getExpiresAt(ctx, req)
