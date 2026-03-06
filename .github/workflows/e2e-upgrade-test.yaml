@@ -1,4 +1,4 @@
-name: e2e Sensor Upgrade Test
+name: e2e-upgrade-test
 
 on:
   workflow_dispatch:
