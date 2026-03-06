@@ -146,8 +146,9 @@ runs:
         GITHUB_TOKEN: ${{ github.token }}
       run: |
         # Shallow clones lack git history for git describe / make tag.
-        # Derive the M.N.x version tag, then use GitHub GraphQL to get
-        # the commit count. Sets BUILD_TAG for make/env.mk.
+        # Derive the version tag from the branch and recent releases,
+        # then use GraphQL compare to get the commit count.
+        # Sets BUILD_TAG which make/env.mk checks before git describe.
         if [ "$(git rev-parse --is-shallow-repository)" != "true" ]; then
           echo "resolved=skip" >> "$GITHUB_OUTPUT"
           exit 0
@@ -166,24 +167,28 @@ runs:
             -d "$payload" \
             https://api.github.com/graphql 2>/dev/null
         }
-        # Determine the version tag from the target branch.
+        # Fetch recent releases (used by both branch paths below).
+        releases=$(gql "{ repository(owner:\"$owner\",name:\"$repo\"){ releases(last:20,orderBy:{field:CREATED_AT,direction:ASC}){ nodes{ tagName } } } }" \
+          | grep -oP '"tagName":"\K[0-9]+\.[0-9]+\.[0-9]+(?=")') || {
+            echo "resolved=false" >> "$GITHUB_OUTPUT"; exit 0
+          }
         target="${GITHUB_BASE_REF:-$GITHUB_REF_NAME}"
         if [[ "$target" =~ ^release-([0-9]+\.[0-9]+)$ ]]; then
-          # Release branch: tag is branch version (release-4.10 → 4.10.x).
-          version_tag="${BASH_REMATCH[1]}.x"
+          # Release branch: use the latest M.N.Z tag for this branch.
+          # git describe picks e.g. 4.9.3 (nearest release), not 4.9.x.
+          branch_ver="${BASH_REMATCH[1]}"
+          version_tag=$(echo "$releases" | grep "^${branch_ver}\." | sort -rV | head -1)
         else
-          # Master / PRs to master: tag is one minor version above the
-          # highest released version (4.10.0 → 4.11.x).
-          highest=$(gql "{ repository(owner:\"$owner\",name:\"$repo\"){ releases(last:20,orderBy:{field:CREATED_AT,direction:ASC}){ nodes{ tagName } } } }" \
-            | grep -oP '"tagName":"\K[0-9]+\.[0-9]+\.[0-9]+(?=")' \
-            | sort -rV | head -1)
-          if [ -z "$highest" ]; then
-            echo "resolved=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
+          # Master / PRs to master: one minor above the highest release.
+          # e.g. highest=4.10.0 → version_tag=4.11.x
+          highest=$(echo "$releases" | sort -rV | head -1)
           major=${highest%%.*}
           rest=${highest#*.}; minor=${rest%%.*}
           version_tag="${major}.$((minor + 1)).x"
+        fi
+        if [ -z "$version_tag" ]; then
+          echo "resolved=false" >> "$GITHUB_OUTPUT"
+          exit 0
         fi
         # Single GraphQL call: check the tag exists and count commits.
         response=$(gql "{ repository(owner:\"$owner\",name:\"$repo\"){ ref(qualifiedName:\"refs/tags/$version_tag\"){ compare(headRef:\"$sha\"){ aheadBy behindBy } } } }") || {
