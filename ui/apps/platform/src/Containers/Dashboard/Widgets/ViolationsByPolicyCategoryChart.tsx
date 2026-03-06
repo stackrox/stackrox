@@ -226,7 +226,13 @@ function ViolationsByPolicyCategoryChart({
         return legendData;
     }
 
-    function onLegendClick(index: number) {
+    /*
+     * getInteractiveLegendEvents' onLegendClick is not called when ChartBar
+     * is wrapped in ChartStack/ChartGroup alongside ChartAxis.
+     * https://github.com/patternfly/patternfly-react/issues/12263
+     * Apply click events directly to ChartLegend as a workaround.
+     */
+    function handleLegendClick(_evt: SyntheticEvent, { index }: { index: number }) {
         const newHidden = new Set(hiddenSeverities);
         const targetSeverity = severitiesLowToCritical[index];
         if (newHidden.has(targetSeverity)) {
@@ -235,17 +241,7 @@ function ViolationsByPolicyCategoryChart({
         } else if (hiddenSeverities.size < 3) {
             newHidden.add(targetSeverity);
         }
-        return setHiddenSeverities(newHidden);
-    }
-
-    /*
-     * getInteractiveLegendEvents' onLegendClick is not called when ChartBar
-     * is wrapped in ChartStack/ChartGroup alongside ChartAxis.
-     * https://github.com/patternfly/patternfly-react/issues/12263
-     * Apply click events directly to ChartLegend as a workaround.
-     */
-    function handleLegendClick(_evt: SyntheticEvent, { index }: { index: number }) {
-        onLegendClick(index).catch(() => {});
+        setHiddenSeverities(newHidden);
         return [];
     }
 
@@ -261,12 +257,7 @@ function ViolationsByPolicyCategoryChart({
                 ariaTitle="Policy violations by category"
                 domainPadding={{ x: [20, 20] }}
                 events={getInteractiveLegendEvents({
-                    // Map in the same order as severitiesLowToCritical to match legend
-                    // item indices. Cast required: PF declares chartNames as a single-element
-                    // tuple [string | string[]] but iterates it as a plain array at runtime.
-                    chartNames: severitiesLowToCritical.map(
-                        (s) => severityLabels[s]
-                    ) as unknown as [string],
+                    chartNames: [Object.values(severityLabels)],
                     isHidden: (index) => hiddenSeverities.has(severitiesLowToCritical[index]),
                     legendName: 'legend',
                 })}
