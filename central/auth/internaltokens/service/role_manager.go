@@ -45,7 +45,7 @@ func (rm *roleManager) createRoleForRoxClaims(
 		if !found {
 			continue
 		}
-		if requestedScope.FullClusterAccess {
+		if requestedScope.GetFullClusterAccess() {
 			role.ClustersByName[clusterName] = []string{"*"}
 			continue
 		}
