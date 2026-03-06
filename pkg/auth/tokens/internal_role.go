@@ -1,10 +1,11 @@
 package tokens
 
 import (
+	"slices"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/set"
-	"slices"
 )
 
 // ClusterScope is the scope of a negotiated internal role on a given cluster.
