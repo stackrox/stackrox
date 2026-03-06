@@ -34,6 +34,9 @@ func (rm *roleManager) createRoleForRoxClaims(
 			role.WriteResources = append(role.WriteResources, resource)
 		}
 	}
+	if len(req.GetClusterScopes()) > 0 {
+		role.ClustersByName = make(tokens.ClusterScopes)
+	}
 	for _, requestedScope := range req.GetClusterScopes() {
 		clusterName, found, err := rm.clusterStore.GetClusterName(ctx, requestedScope.GetClusterId())
 		if err != nil {
@@ -42,12 +45,11 @@ func (rm *roleManager) createRoleForRoxClaims(
 		if !found {
 			continue
 		}
-		clusterScope := &tokens.ClusterScope{
-			ClusterName:       clusterName,
-			ClusterFullAccess: requestedScope.GetFullClusterAccess(),
-			Namespaces:        requestedScope.GetNamespaces(),
+		if requestedScope.FullClusterAccess {
+			role.ClustersByName[clusterName] = []string{"*"}
+			continue
 		}
-		role.ClusterScopes = append(role.ClusterScopes, clusterScope)
+		role.ClustersByName[clusterName] = append(role.ClustersByName[clusterName], requestedScope.GetNamespaces()...)
 	}
 	return role, nil
 }

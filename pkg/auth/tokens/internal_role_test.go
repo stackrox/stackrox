@@ -115,44 +115,38 @@ func TestInternalRoleGetAccessScope(t *testing.T) {
 		},
 		"Input with empty scope": {
 			role: &InternalRole{
-				ClusterScopes: make([]*ClusterScope, 0),
+				ClustersByName: make(ClusterScopes),
 			},
 			expectedScope: emptyScope,
 		},
 		"Input with one cluster but no access": {
 			role: &InternalRole{
-				ClusterScopes: []*ClusterScope{
-					{ClusterName: clusterName1},
-				},
-				Clusters: ClusterScopes{
-					fixtureconsts.Cluster1: []string{},
+				ClustersByName: ClusterScopes{
+					clusterName1: []string{},
 				},
 			},
 			expectedScope: emptyScope,
 		},
 		"Input with multiple clusters but no access": {
 			role: &InternalRole{
-				ClusterScopes: []*ClusterScope{
-					{ClusterName: clusterName1},
-					{ClusterName: clusterName2},
-				},
 				Clusters: ClusterScopes{
 					fixtureconsts.Cluster1: []string{},
 					fixtureconsts.Cluster2: nil,
+				},
+				ClustersByName: ClusterScopes{
+					clusterName1: []string{},
+					clusterName2: nil,
 				},
 			},
 			expectedScope: emptyScope,
 		},
 		"Input with one cluster and full access": {
 			role: &InternalRole{
-				ClusterScopes: []*ClusterScope{
-					{
-						ClusterName:       clusterName1,
-						ClusterFullAccess: true,
-					},
-				},
 				Clusters: ClusterScopes{
 					fixtureconsts.Cluster1: []string{"*"},
+				},
+				ClustersByName: ClusterScopes{
+					clusterName1: []string{"*"},
 				},
 			},
 			expectedScope: &storage.SimpleAccessScope{
@@ -164,70 +158,11 @@ func TestInternalRoleGetAccessScope(t *testing.T) {
 		},
 		"Input with single namespace access": {
 			role: &InternalRole{
-				ClusterScopes: []*ClusterScope{
-					{
-						ClusterName: clusterName1,
-						Namespaces:  []string{namespaceB},
-					},
-				},
 				Clusters: ClusterScopes{
 					fixtureconsts.Cluster1: []string{namespaceB},
 				},
-			},
-			expectedScope: &storage.SimpleAccessScope{
-				Rules: &storage.SimpleAccessScope_Rules{
-					IncludedClusters: make([]string, 0),
-					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-						{
-							ClusterName:   clusterName1,
-							NamespaceName: namespaceB,
-						},
-					},
-				},
-			},
-		},
-		"Nil cluster scopes are ignored": {
-			role: &InternalRole{
-				ClusterScopes: []*ClusterScope{
-					nil,
-					{
-						ClusterName: clusterName1,
-						Namespaces:  []string{namespaceB},
-					},
-				},
-				Clusters: ClusterScopes{
-					fixtureconsts.Cluster1: []string{namespaceB},
-				},
-			},
-			expectedScope: &storage.SimpleAccessScope{
-				Rules: &storage.SimpleAccessScope_Rules{
-					IncludedClusters: make([]string, 0),
-					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-						{
-							ClusterName:   clusterName1,
-							NamespaceName: namespaceB,
-						},
-					},
-				},
-			},
-		},
-		"Cluster scopes without cluster name are ignored": {
-			role: &InternalRole{
-				ClusterScopes: []*ClusterScope{
-					{
-						ClusterFullAccess: true,
-					},
-					{
-						ClusterName: clusterName1,
-						Namespaces:  []string{namespaceB},
-					},
-					{
-						Namespaces: []string{namespaceA},
-					},
-					nil,
-				},
-				Clusters: ClusterScopes{
-					fixtureconsts.Cluster1: []string{namespaceB},
+				ClustersByName: ClusterScopes{
+					clusterName1: []string{namespaceB},
 				},
 			},
 			expectedScope: &storage.SimpleAccessScope{
@@ -244,19 +179,13 @@ func TestInternalRoleGetAccessScope(t *testing.T) {
 		},
 		"Multiple clusters with access level mix": {
 			role: &InternalRole{
-				ClusterScopes: []*ClusterScope{
-					{
-						ClusterName: clusterName1,
-						Namespaces:  []string{namespaceA, namespaceB},
-					},
-					{
-						ClusterName:       clusterName2,
-						ClusterFullAccess: true,
-					},
-				},
 				Clusters: ClusterScopes{
 					fixtureconsts.Cluster1: []string{namespaceA, namespaceB},
 					fixtureconsts.Cluster2: []string{"*"},
+				},
+				ClustersByName: ClusterScopes{
+					clusterName1: []string{namespaceB, namespaceA},
+					clusterName2: []string{"*"},
 				},
 			},
 			expectedScope: &storage.SimpleAccessScope{

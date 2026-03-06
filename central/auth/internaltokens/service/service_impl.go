@@ -91,15 +91,15 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 		observeTokenGeneration(tokenGenResultInvalidArgs, time.Since(start))
 		return nil, errors.Wrap(err, "getting expiration time")
 	}
-	internalRole, err := s.roleManager.createRoleForRoxClaims(ctx, req)
+	tokenRole, err := s.roleManager.createRoleForRoxClaims(ctx, req)
 	if err != nil {
 		observeTokenGeneration(tokenGenResultRoleCreationError, time.Since(start))
 		return nil, errors.Wrap(err, "building ephemeral role")
 	}
-	roleName := internalRole.GetRoleName()
+	roleName := tokenRole.GetRoleName()
 	claimName := fmt.Sprintf(claimNameFormat, roleName, expiresAt.Format(time.RFC3339Nano))
 	roxClaims := tokens.RoxClaims{
-		InternalRoles: []*tokens.InternalRole{internalRole},
+		InternalRoles: []*tokens.InternalRole{tokenRole},
 		Name:          claimName,
 	}
 	tokenInfo, err := s.issuer.Issue(ctx, roxClaims, tokens.WithExpiry(expiresAt))

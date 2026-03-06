@@ -192,11 +192,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				{
 					RoleName:      internalRoleName,
 					ReadResources: []string{deploymentResource},
-					ClusterScopes: []*tokens.ClusterScope{
-						{
-							ClusterName: fixtureconsts.Cluster1,
-							Namespaces:  []string{"namespace A"},
-						},
+					ClustersByName: tokens.ClusterScopes{
+						fixtureconsts.Cluster1: []string{"namespace A"},
 					},
 				},
 			},
@@ -231,11 +228,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					{
 						RoleName:      internalRoleName,
 						ReadResources: []string{deploymentResource},
-						ClusterScopes: []*tokens.ClusterScope{
-							{
-								ClusterName: fixtureconsts.Cluster1,
-								Namespaces:  []string{"namespace A"},
-							},
+						ClustersByName: tokens.ClusterScopes{
+							fixtureconsts.Cluster1: []string{"namespace A"},
 						},
 					},
 				},
@@ -256,11 +250,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				InternalRoles: []*tokens.InternalRole{
 					{
 						RoleName: internalRoleName,
-						ClusterScopes: []*tokens.ClusterScope{
-							{
-								ClusterName: fixtureconsts.Cluster1,
-								Namespaces:  []string{"namespace A"},
-							},
+						ClustersByName: tokens.ClusterScopes{
+							fixtureconsts.Cluster1: []string{"namespace A"},
 						},
 					},
 				},
@@ -310,15 +301,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 						RoleName:       internalRoleName,
 						ReadResources:  []string{deploymentResource},
 						WriteResources: []string{imageResource},
-						ClusterScopes: []*tokens.ClusterScope{
-							{
-								ClusterName: fixtureconsts.Cluster1,
-								Namespaces:  []string{"namespace A"},
-							},
-							{
-								ClusterName:       fixtureconsts.Cluster1,
-								ClusterFullAccess: true,
-							},
+						ClustersByName: tokens.ClusterScopes{
+							fixtureconsts.Cluster1: []string{"*"},
 						},
 					},
 				},
@@ -442,11 +426,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				{
 					RoleName:      internalRoleName,
 					ReadResources: []string{deploymentResource},
-					ClusterScopes: []*tokens.ClusterScope{
-						{
-							ClusterName: fixtureconsts.Cluster1,
-							Namespaces:  []string{"namespace A"},
-						},
+					ClustersByName: tokens.ClusterScopes{
+						fixtureconsts.Cluster1: []string{"namespace A"},
 					},
 				},
 			},
