@@ -36,8 +36,6 @@ const (
 	deploymentResource = "Deployment"
 	imageResource      = "Image"
 
-	internalRoleName = "internal role"
-
 	externalUserID       = "external user ID"
 	externalUserFullName = "external user full name"
 	externalUserEmail    = "external.user@mail.provider"
