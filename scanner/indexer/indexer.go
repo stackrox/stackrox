@@ -189,6 +189,12 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 	if err != nil {
 		return nil, fmt.Errorf("initializing postgres indexer store: %w", err)
 	}
+	// Reset the pool to force re-registration of custom PostgreSQL types (e.g.
+	// VersionRange) created by the migration above. Resetting ensures
+	// all subsequent connections see the fully-migrated schema.
+	// TODO: Remove after claircore updated to v1.5.50+.
+	pool.Reset()
+
 	defer func() {
 		if !success {
 			_ = store.Close(ctx)
