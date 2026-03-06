@@ -24,7 +24,7 @@ jobs:
       # The cluster name must be no longer than 26 characters.
       CLUSTER_NAME: e2e-sens-${{ github.run_id }}-${{ github.run_attempt }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.2
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -67,8 +67,7 @@ jobs:
 
       - name: Build roxctl and upgrader
         run: |
-          make roxctl_linux-amd64
-          make upgrader
+          make roxctl_linux-amd64 upgrader
 
       - name: Wait for the cluster and grab artifacts
         timeout-minutes: 25
