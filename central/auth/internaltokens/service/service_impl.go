@@ -50,8 +50,6 @@ var (
 )
 
 type serviceImpl struct {
-	issuer tokens.Issuer
-
 	roleManager   *roleManager
 	issuerManager *issuerManager
 

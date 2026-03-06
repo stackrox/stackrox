@@ -27,7 +27,6 @@ type issuerManager struct {
 
 	purgeInterval time.Duration
 
-	ticker  *time.Ticker
 	stopper concurrency.Stopper
 
 	cacheMutex sync.Mutex
@@ -44,22 +43,21 @@ func newIssuerManager(factory tokens.IssuerFactory, purgeInterval time.Duration)
 }
 
 func (m *issuerManager) Start() {
-	m.ticker = time.NewTicker(m.purgeInterval)
-	go m.purge()
+	ticker := time.NewTicker(m.purgeInterval)
+	go m.purge(ticker)
 }
 
-func (m *issuerManager) purge() {
+func (m *issuerManager) purge(ticker *time.Ticker) {
 	defer m.stopper.Flow().ReportStopped()
-	if m.ticker == nil {
+	if ticker == nil {
 		return
 	}
+	defer ticker.Stop()
 	for {
 		select {
-		case now := <-m.ticker.C:
+		case now := <-ticker.C:
 			m.purgeExpired(now)
 		case <-m.stopper.Flow().StopRequested():
-			m.ticker.Stop()
-			m.ticker = nil
 			return
 		}
 	}
@@ -71,27 +69,6 @@ func (m *issuerManager) Stop() {
 }
 
 func (m *issuerManager) getIssuer(audience string, expiresAt time.Time) (tokens.Issuer, error) {
-	issuer, found := m.getIssuerFromCache(audience, expiresAt)
-	if found {
-		return issuer, nil
-	}
-	return m.addIssuerToCache(audience, expiresAt)
-}
-
-func (m *issuerManager) getIssuerFromCache(audience string, expiresAt time.Time) (tokens.Issuer, bool) {
-	m.cacheMutex.Lock()
-	defer m.cacheMutex.Unlock()
-	iw, found := m.cache[audience]
-	if !found {
-		return nil, false
-	}
-	if expiresAt.After(iw.expiresAt) {
-		iw.expiresAt = expiresAt
-	}
-	return iw.issuer, true
-}
-
-func (m *issuerManager) addIssuerToCache(audience string, expiresAt time.Time) (tokens.Issuer, error) {
 	m.cacheMutex.Lock()
 	defer m.cacheMutex.Unlock()
 	// first check the entry was not created in cache between initial cache lookup
@@ -127,15 +104,12 @@ func (m *issuerManager) addIssuerToCache(audience string, expiresAt time.Time) (
 func (m *issuerManager) purgeExpired(now time.Time) {
 	m.cacheMutex.Lock()
 	defer m.cacheMutex.Unlock()
-	audiencesToRemove := make([]string, 0, len(m.cache))
 	for audience, wrapper := range m.cache {
-		if wrapper.expiresAt.Before(now) {
-			audiencesToRemove = append(audiencesToRemove, audience)
+		if wrapper == nil {
+			delete(m.cache, audience)
+			continue
 		}
-	}
-	for _, audience := range audiencesToRemove {
-		wrapper := m.cache[audience]
-		if wrapper != nil {
+		if wrapper.expiresAt.Before(now) {
 			err := m.factory.UnregisterSource(wrapper.source)
 			if err != nil {
 				log.Errorf("Failed to unregister source for audience %s: %v", audience, err)
