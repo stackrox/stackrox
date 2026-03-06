@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
@@ -129,10 +128,6 @@ func TestInternalRoleGetAccessScope(t *testing.T) {
 		},
 		"Input with multiple clusters but no access": {
 			role: &InternalRole{
-				Clusters: ClusterScopes{
-					fixtureconsts.Cluster1: []string{},
-					fixtureconsts.Cluster2: nil,
-				},
 				ClustersByName: ClusterScopes{
 					clusterName1: []string{},
 					clusterName2: nil,
@@ -142,9 +137,6 @@ func TestInternalRoleGetAccessScope(t *testing.T) {
 		},
 		"Input with one cluster and full access": {
 			role: &InternalRole{
-				Clusters: ClusterScopes{
-					fixtureconsts.Cluster1: []string{"*"},
-				},
 				ClustersByName: ClusterScopes{
 					clusterName1: []string{"*"},
 				},
@@ -158,9 +150,6 @@ func TestInternalRoleGetAccessScope(t *testing.T) {
 		},
 		"Input with single namespace access": {
 			role: &InternalRole{
-				Clusters: ClusterScopes{
-					fixtureconsts.Cluster1: []string{namespaceB},
-				},
 				ClustersByName: ClusterScopes{
 					clusterName1: []string{namespaceB},
 				},
@@ -179,10 +168,6 @@ func TestInternalRoleGetAccessScope(t *testing.T) {
 		},
 		"Multiple clusters with access level mix": {
 			role: &InternalRole{
-				Clusters: ClusterScopes{
-					fixtureconsts.Cluster1: []string{namespaceA, namespaceB},
-					fixtureconsts.Cluster2: []string{"*"},
-				},
 				ClustersByName: ClusterScopes{
 					clusterName1: []string{namespaceB, namespaceA},
 					clusterName2: []string{"*"},
