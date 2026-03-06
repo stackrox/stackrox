@@ -135,6 +135,8 @@ jobs:
           targets=$(sed -n '/^style-slim:/,/^$/p' Makefile \
             | tr '\\' ' ' | xargs \
             | sed 's/^style-slim: //')
+          # Shard roxvet across top-level package directories for parallelism.
+          targets=$(echo "$targets" | sed 's/roxvet/roxvet:central roxvet:pkg roxvet:other/')
           json=$(echo "$targets" | jq -Rc 'split(" ")')
           echo "targets=$json" >> "$GITHUB_OUTPUT"
           echo "Discovered targets: $targets"
@@ -196,7 +198,19 @@ jobs:
         run: make -C ui deps
 
       - name: make ${{ matrix.target }}
-        run: make ${{ matrix.target }}
+        run: |
+          target="${{ matrix.target }}"
+          if [[ "$target" == roxvet:* ]]; then
+            shard="${target#roxvet:}"
+            case "$shard" in
+              central) scope="./central/..." ;;
+              pkg)     scope="./pkg/..." ;;
+              other)   scope="./sensor/... ./roxctl/... ./migrator/... ./compliance/... ./scanner/... ./tools/... ./generated/... ./operator/... ./config-controller/... ./tests/... ./scale/... ./image/... ./webhookserver/..." ;;
+            esac
+            make roxvet ROXVET_SCOPE="$scope"
+          else
+            make "$target"
+          fi
 
   golangci-lint:
     timeout-minutes: 240
