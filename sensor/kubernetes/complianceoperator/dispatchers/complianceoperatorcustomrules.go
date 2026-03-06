@@ -20,7 +20,7 @@ func NewCustomRuleDispatcher() *CustomRuleDispatcher {
 }
 
 // ProcessEvent processes a custom rule event.
-// CustomRules are converted to ComplianceOperatorRuleV2 with ComplianceOperatorKind=CUSTOM_RULE, following the same pattern as TailoredProfiles.
+// CustomRules are converted to ComplianceOperatorRuleV2 with OperatorKind=OPERATOR_KIND_CUSTOM_RULE, following the same pattern as TailoredProfiles.
 func (c *CustomRuleDispatcher) ProcessEvent(obj, _ interface{}, action central.ResourceAction) *component.ResourceEvent {
 	// CustomRules are only supported by compliance V2
 	if !centralcaps.Has(centralsensor.ComplianceV2Integrations) {
@@ -57,20 +57,20 @@ func (c *CustomRuleDispatcher) ProcessEvent(obj, _ interface{}, action central.R
 			Action: action,
 			Resource: &central.SensorEvent_ComplianceOperatorRuleV2{
 				ComplianceOperatorRuleV2: &central.ComplianceOperatorRuleV2{
-					RuleId:                 customRule.Spec.ID,
-					Id:                     id,
-					Name:                   customRule.Name,
-					RuleType:               customRule.Spec.CheckType,
-					Severity:               ruleSeverityToV2Severity(customRule.Spec.Severity),
-					Labels:                 customRule.Labels,
-					Annotations:            customRule.Annotations,
-					Title:                  customRule.Spec.Title,
-					Description:            customRule.Spec.Description,
-					Rationale:              customRule.Spec.Rationale,
-					Fixes:                  fixes,
-					Warning:                customRule.Spec.Warning,
-					Instructions:           customRule.Spec.Instructions,
-					ComplianceOperatorKind: central.ComplianceOperatorRuleV2_CUSTOM_RULE,
+					RuleId:       customRule.Spec.ID,
+					Id:           id,
+					Name:         customRule.Name,
+					RuleType:     customRule.Spec.CheckType,
+					Severity:     ruleSeverityToV2Severity(customRule.Spec.Severity),
+					Labels:       customRule.Labels,
+					Annotations:  customRule.Annotations,
+					Title:        customRule.Spec.Title,
+					Description:  customRule.Spec.Description,
+					Rationale:    customRule.Spec.Rationale,
+					Fixes:        fixes,
+					Warning:      customRule.Spec.Warning,
+					Instructions: customRule.Spec.Instructions,
+					OperatorKind: central.ComplianceOperatorRuleV2_OPERATOR_KIND_CUSTOM_RULE,
 				},
 			},
 		},

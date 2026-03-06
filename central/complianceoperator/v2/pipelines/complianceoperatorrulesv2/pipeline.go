@@ -14,12 +14,14 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
-	_ pipeline.Fragment = (*pipelineImpl)(nil)
+	_   pipeline.Fragment = (*pipelineImpl)(nil)
+	log                   = logging.LoggerForModule()
 )
 
 // GetPipeline returns an instantiation of this particular pipeline
@@ -80,11 +82,17 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	event := msg.GetEvent()
 	rule := event.GetComplianceOperatorRuleV2()
 
-	if val := rule.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]; val == "" {
-		// RuleIDAnnotationKey is not required for custom rules
-		if rule.GetComplianceOperatorKind() != central.ComplianceOperatorRuleV2_CUSTOM_RULE {
+	switch rule.GetOperatorKind() {
+	case central.ComplianceOperatorRuleV2_OPERATOR_KIND_RULE,
+		central.ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED:
+		if rule.GetAnnotations()[v1alpha1.RuleIDAnnotationKey] == "" {
 			return errors.Errorf("Rule %s is missing the annotation %s", rule.GetName(), v1alpha1.RuleIDAnnotationKey)
 		}
+	case central.ComplianceOperatorRuleV2_OPERATOR_KIND_CUSTOM_RULE:
+		// RuleIDAnnotationKey is not required for custom rules
+	default:
+		log.Errorf("Unexpected operator kind %v for rule %s", rule.GetOperatorKind(), rule.GetName())
+		return errors.Errorf("unexpected operator kind %v for rule %s", rule.GetOperatorKind(), rule.GetName())
 	}
 
 	switch event.GetAction() {
