@@ -11,6 +11,10 @@ on:
 
 concurrency: upgrade-sensor-${{ github.ref }}
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   sensor-upgrade-test:
     runs-on: ubuntu-latest
@@ -24,7 +28,7 @@ jobs:
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
-    timeout-minutes: 240
+    timeout-minutes: 240 # Keep in sync with cluster's lifespan
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
@@ -39,13 +43,13 @@ jobs:
       - name: Fix $PATH for infractl
         run: echo "$HOME/.local/bin" >s> "$GITHUB_PATH"
 
-      - name: Create test cluster
+      - name: Spin up test cluster
         uses: stackrox/actions/infra/create-cluster@v1
         with:
           token: ${{ secrets.INFRA_TOKEN }}
           flavor: gke-default
           name: ${{ env.CLUSTER_NAME }}
-          lifespan: 4h
+          lifespan: 4h # Keep in sync with job's timeout-minutes
           args: nodes=3,machine-type=e2-standard-8
           wait: false
 
@@ -60,6 +64,11 @@ jobs:
         uses: "google-github-actions/setup-gcloud@v3"
         with:
           install_components: "gke-gcloud-auth-plugin"
+
+      - name: Build roxctl and upgrader
+        run: |
+          make roxctl_linux-amd64
+          make upgrader
 
       - name: Wait for the cluster and grab artifacts
         timeout-minutes: 25
@@ -77,12 +86,11 @@ jobs:
         env:
           # TODO: remove the image tag override
           MAIN_IMAGE_TAG: 4.11.x-244-g092168e534
+          LONGTERM_LICENSE: todo - remove me
           QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
           REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-          STORAGE: pvc
-          CLUSTER_TYPE_FOR_TEST: K8S
           LOAD_BALANCER: lb
           CI_JOB_NAME: gha-upgrade-postgres-sensor-test
         run: |
