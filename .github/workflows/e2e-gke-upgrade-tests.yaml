@@ -25,6 +25,8 @@ jobs:
       CLUSTER_NAME: e2e-sens-${{ github.run_id }}-${{ github.run_attempt }}
       CI_JOB_NAME: sensor-gke-upgrade-tests
       ARTIFACT_DIR: ${{ github.workspace }}/logs/artifacts
+      # TODO: remove the image tag override
+      MAIN_IMAGE_TAG: 4.11.x-244-g092168e534
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.3
       volumes:
@@ -85,9 +87,6 @@ jobs:
 
       - name: Run pre-test
         shell: python
-        env:
-          # TODO: remove the image tag override
-          MAIN_IMAGE_TAG: 4.11.x-244-g092168e534
         run: |
           import sys
           sys.path.append('.openshift-ci')
@@ -96,8 +95,6 @@ jobs:
 
       - name: Run postgres sensor upgrade test
         env:
-          # TODO: remove the image tag override
-          MAIN_IMAGE_TAG: 4.11.x-244-g092168e534
           LONGTERM_LICENSE: todo - remove me
           QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -109,9 +106,6 @@ jobs:
           tests/upgrade/postgres_sensor_run.sh /tmp/postgres-sensor-upgrade-test-logs
 
       - name: Run post-test
-        env:
-          # TODO: remove the image tag override
-          MAIN_IMAGE_TAG: 4.11.x-244-g092168e534
         shell: python
         run: |
           import sys
@@ -120,9 +114,6 @@ jobs:
           PostClusterTest().run()
 
       - name: Run final-post
-        env:
-          # TODO: remove the image tag override
-          MAIN_IMAGE_TAG: 4.11.x-244-g092168e534
         shell: python
         run: |
           import sys
