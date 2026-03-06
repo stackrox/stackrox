@@ -155,7 +155,7 @@ runs:
           | sort -rV)
         for tag in $all_tags; do
           if git fetch --shallow-exclude="$tag" origin "$sha" 2>/dev/null; then
-            count=$(( $(git rev-list --count HEAD 2>/dev/null || echo 0) + 1 ))
+            count=$(git rev-list --count HEAD 2>/dev/null || echo 0)
             echo "BUILD_TAG=${tag}-${count}-g${sha_short}" >> "$GITHUB_ENV"
             echo "::notice::Resolved version: ${tag}-${count}-g${sha_short}"
             exit 0
