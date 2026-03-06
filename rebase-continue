@@ -1,3 +1,11 @@
 {
-  "continuations": null
+  "continuations": [
+    {
+      "command": [
+        "branch",
+        "restack"
+      ],
+      "branch": "master-base/gualvare/ROX-31229-tailored-profiles-protos"
+    }
+  ]
 }
