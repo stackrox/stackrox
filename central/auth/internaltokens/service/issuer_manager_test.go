@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	tokenMocks "github.com/stackrox/rox/pkg/auth/tokens/mocks"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -18,35 +17,7 @@ const (
 	fakeAudience = "fake audience"
 )
 
-func TestSomething(t *testing.T) {
-	assert.True(t, true)
-}
-
-func TestGetIssuerFromCache(t *testing.T) {
-	t.Run("cache miss", func(it *testing.T) {
-		mockCtrl := gomock.NewController(it)
-		mockIssuerFactory := tokenMocks.NewMockIssuerFactory(mockCtrl)
-		mgr := newIssuerManager(mockIssuerFactory, testPurgeDelay)
-		issuer, found := mgr.getIssuerFromCache(testAudience, testTokenExpiry)
-		assert.False(it, found)
-		assert.Nil(it, issuer)
-	})
-	t.Run("cache hit updates cache expiry time", func(it *testing.T) {
-		mockCtrl := gomock.NewController(it)
-		mockIssuerFactory := tokenMocks.NewMockIssuerFactory(mockCtrl)
-		mockIssuer := tokenMocks.NewMockIssuer(mockCtrl)
-		mockSrc := tokenMocks.NewMockSource(mockCtrl)
-		mgr := newIssuerManager(mockIssuerFactory, testPurgeDelay)
-		addIssuerToManager(mgr, fakeAudience, mockSrc, mockIssuer, testClockTime)
-
-		issuer, found := mgr.getIssuerFromCache(fakeAudience, testTokenExpiry)
-		assert.True(it, found)
-		assert.Equal(it, mockIssuer, issuer)
-		validateCacheEntry(it, mgr, fakeAudience, true, mockIssuer, testTokenExpiry)
-	})
-}
-
-func TestAddIssuerToCache(t *testing.T) {
+func TestGetIssuer(t *testing.T) {
 	t.Run("error from issuer factory is propagated", func(it *testing.T) {
 		mockCtrl := gomock.NewController(it)
 		mockIssuerFactory := tokenMocks.NewMockIssuerFactory(mockCtrl)
@@ -55,48 +26,23 @@ func TestAddIssuerToCache(t *testing.T) {
 			CreateIssuer(gomock.Any(), gomock.Any()).
 			Times(1).
 			Return(nil, errDummy)
-		issuer, err := mgr.addIssuerToCache(testAudience, testTokenExpiry)
+		issuer, err := mgr.getIssuer(testAudience, testTokenExpiry)
 		assert.Nil(it, issuer)
 		assert.ErrorIs(it, err, errDummy)
+		assert.Empty(it, mgr.cache)
 	})
-	t.Run("cache miss creates a new issuer and stores it in cache", func(it *testing.T) {
-		mockCtrl := gomock.NewController(it)
-		mockIssuerFactory := tokenMocks.NewMockIssuerFactory(mockCtrl)
-		mgr := newIssuerManager(mockIssuerFactory, testPurgeDelay)
-		mockIssuer := setExpectIssue(mockCtrl, mockIssuerFactory)
-
-		issuer, err := mgr.addIssuerToCache(testAudience, testTokenExpiry)
-		assert.NoError(it, err)
-		assert.Equal(it, mockIssuer, issuer)
-		validateCacheEntry(it, mgr, testAudience, true, mockIssuer, testTokenExpiry)
-	})
-	t.Run("cache hit does not create a new issuer and updates the expiry time", func(it *testing.T) {
-		mockCtrl := gomock.NewController(it)
-		mockIssuerFactory := tokenMocks.NewMockIssuerFactory(mockCtrl)
-		mockIssuer := tokenMocks.NewMockIssuer(mockCtrl)
-		mgr := newIssuerManager(mockIssuerFactory, testPurgeDelay)
-		addIssuerToManager(mgr, testAudience, nil, mockIssuer, testClockTime)
-
-		issuer, err := mgr.addIssuerToCache(testAudience, testTokenExpiry)
-		assert.NoError(it, err)
-		assert.Equal(it, mockIssuer, issuer)
-		validateCacheEntry(it, mgr, testAudience, true, mockIssuer, testTokenExpiry)
-	})
-}
-
-func TestGetIssuer(t *testing.T) {
 	t.Run("factory provides the issuer if none is in cache", func(it *testing.T) {
 		mockCtrl := gomock.NewController(it)
 		mockIssuerFactory := tokenMocks.NewMockIssuerFactory(mockCtrl)
 		mgr := newIssuerManager(mockIssuerFactory, testPurgeDelay)
-		mockIssuer := setExpectIssue(mockCtrl, mockIssuerFactory)
+		mockIssuer := setExpectCreateIssuer(mockCtrl, mockIssuerFactory)
 
 		issuer, err := mgr.getIssuer(testAudience, testTokenExpiry)
 		assert.NoError(it, err)
 		assert.Equal(it, mockIssuer, issuer)
 		validateCacheEntry(it, mgr, testAudience, true, mockIssuer, testTokenExpiry)
 	})
-	t.Run("cache serves the issuer if already in cache", func(it *testing.T) {
+	t.Run("the issuer is served from cache when available, expiry is updated when later", func(it *testing.T) {
 		mockCtrl := gomock.NewController(it)
 		mockIssuerFactory := tokenMocks.NewMockIssuerFactory(mockCtrl)
 		mockIssuer := tokenMocks.NewMockIssuer(mockCtrl)
@@ -104,6 +50,18 @@ func TestGetIssuer(t *testing.T) {
 		addIssuerToManager(mgr, testAudience, nil, mockIssuer, testClockTime)
 
 		issuer, err := mgr.getIssuer(testAudience, testTokenExpiry)
+		assert.NoError(it, err)
+		assert.Equal(it, mockIssuer, issuer)
+		validateCacheEntry(it, mgr, testAudience, true, mockIssuer, testTokenExpiry)
+	})
+	t.Run("the issuer is served from cache when available, expiry is NOT updated when earlier", func(it *testing.T) {
+		mockCtrl := gomock.NewController(it)
+		mockIssuerFactory := tokenMocks.NewMockIssuerFactory(mockCtrl)
+		mockIssuer := tokenMocks.NewMockIssuer(mockCtrl)
+		mgr := newIssuerManager(mockIssuerFactory, testPurgeDelay)
+		addIssuerToManager(mgr, testAudience, nil, mockIssuer, testTokenExpiry)
+
+		issuer, err := mgr.getIssuer(testAudience, testTokenExpiry.Add(-5*time.Minute))
 		assert.NoError(it, err)
 		assert.Equal(it, mockIssuer, issuer)
 		validateCacheEntry(it, mgr, testAudience, true, mockIssuer, testTokenExpiry)
@@ -112,7 +70,7 @@ func TestGetIssuer(t *testing.T) {
 		mockCtrl := gomock.NewController(it)
 		mockIssuerFactory := tokenMocks.NewMockIssuerFactory(mockCtrl)
 		mgr := newIssuerManager(mockIssuerFactory, testPurgeDelay)
-		mockIssuer := setExpectIssue(mockCtrl, mockIssuerFactory)
+		mockIssuer := setExpectCreateIssuer(mockCtrl, mockIssuerFactory)
 
 		// First call: generate and cache
 		issuer, err := mgr.getIssuer(testAudience, testClockTime)
@@ -167,6 +125,19 @@ func TestPurgeExpired(t *testing.T) {
 		mgr.purgeExpired(testClockTime)
 		assert.Empty(it, mgr.cache)
 	})
+	t.Run("Purge on a cache with expired item removes the expired item on unregister failure too", func(it *testing.T) {
+		mockCtrl := gomock.NewController(it)
+		mockIssuerFactory := tokenMocks.NewMockIssuerFactory(mockCtrl)
+		mockIssuer := tokenMocks.NewMockIssuer(mockCtrl)
+		mgr := newIssuerManager(mockIssuerFactory, testPurgeDelay)
+		addIssuerToManager(mgr, testAudience, nil, mockIssuer, testClockTime.Add(-1*time.Minute))
+		assert.Len(it, mgr.cache, 1)
+		validateCacheEntry(it, mgr, testAudience, true, mockIssuer, testClockTime.Add(-1*time.Minute))
+		mockIssuerFactory.EXPECT().UnregisterSource(gomock.Any()).Times(1).Return(errDummy)
+
+		mgr.purgeExpired(testClockTime)
+		assert.Empty(it, mgr.cache)
+	})
 	t.Run("Purge on a cache with one item expired and one not only removes the expired item", func(it *testing.T) {
 		mockCtrl := gomock.NewController(it)
 		mockIssuerFactory := tokenMocks.NewMockIssuerFactory(mockCtrl)
@@ -213,26 +184,22 @@ func TestPurgeWorkflow(t *testing.T) {
 	mgr := newIssuerManager(mockIssuerFactory, 10*time.Millisecond)
 
 	// blank purge run (timer not set)
-	mgr.purge()
+	mgr.purge(nil)
 
 	// reset
 	mgr = newIssuerManager(mockIssuerFactory, 10*time.Millisecond)
 
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	addIssuerToManager(mgr, testAudience, mockSource, mockIssuer, testClock())
+	addIssuerToManager(mgr, testAudience, mockSource, mockIssuer, time.Now().Add(-1*time.Minute))
 	mockIssuerFactory.EXPECT().UnregisterSource(mockSource).Times(1).DoAndReturn(
 		func(_ tokens.Source) error {
-			wg.Done()
+			mgr.stopper.Client().Stop()
 			return nil
 		},
 	)
 
-	mgr.Start()
-	wg.Wait()
-	assert.Empty(t, mgr.cache)
+	mgr.purge(time.NewTicker(time.Millisecond))
 
-	mgr.Stop()
+	assert.Empty(t, mgr.cache)
 }
 
 func addIssuerToManager(
@@ -249,7 +216,7 @@ func addIssuerToManager(
 	}
 }
 
-func setExpectIssue(mockCtrl *gomock.Controller, factory *tokenMocks.MockIssuerFactory) tokens.Issuer {
+func setExpectCreateIssuer(mockCtrl *gomock.Controller, factory *tokenMocks.MockIssuerFactory) tokens.Issuer {
 	issuer := tokenMocks.NewMockIssuer(mockCtrl)
 	factory.EXPECT().
 		CreateIssuer(gomock.Any(), gomock.Any()).
