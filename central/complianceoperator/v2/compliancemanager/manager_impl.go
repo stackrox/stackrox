@@ -291,7 +291,7 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 	for _, p := range returnedProfiles {
 		profileRefs = append(profileRefs, &central.ApplyComplianceScanConfigRequest_ProfileReference{
 			Name: p.GetName(),
-			Kind: central.ComplianceOperatorProfileV2_ComplianceOperatorProfileKind(p.GetComplianceOperatorKind()),
+			Kind: storageToInternalProfileKind(p.GetOperatorKind()),
 		})
 	}
 
@@ -559,4 +559,18 @@ func convertSchedule(scanRequest *storage.ComplianceOperatorScanConfigurationV2)
 	}
 
 	return cron, nil
+}
+
+func storageToInternalProfileKind(kind storage.ComplianceOperatorProfileV2_OperatorKind) central.ComplianceOperatorProfileV2_OperatorKind {
+	switch kind {
+	case storage.ComplianceOperatorProfileV2_PROFILE:
+		return central.ComplianceOperatorProfileV2_PROFILE
+	case storage.ComplianceOperatorProfileV2_TAILORED_PROFILE:
+		return central.ComplianceOperatorProfileV2_TAILORED_PROFILE
+	case storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
+		return central.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED
+	default:
+		log.Errorf("Unexpected profile operator kind %v", kind)
+		return central.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED
+	}
 }
