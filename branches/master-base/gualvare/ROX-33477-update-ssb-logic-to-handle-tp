@@ -2,5 +2,16 @@
   "base": {
     "name": "master-base/gualvare/ROX-31229-tailored-profiles-tracking",
     "hash": "7475a09a8cf3c4ee9822a515c4b8ff591785f1fa"
+  },
+  "upstream": {
+    "branch": "master-base/gualvare/ROX-33477-update-ssb-logic-to-handle-tp"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 19316,
+        "gqlID": "PR_kwDOGd6UEM7Ib6mZ"
+      }
+    }
   }
 }
