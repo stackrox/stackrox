@@ -285,6 +285,16 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		return nil, errors.Errorf("Unable to find all profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
+	// Build profile refs from the already-fetched profiles so Sensor can use the correct CO kind
+	// (Profile vs TailoredProfile) without needing to probe the k8s API.
+	profileRefs := make([]*central.ApplyComplianceScanConfigRequest_ProfileReference, 0, len(returnedProfiles))
+	for _, p := range returnedProfiles {
+		profileRefs = append(profileRefs, &central.ApplyComplianceScanConfigRequest_ProfileReference{
+			Name: p.GetName(),
+			Kind: central.ComplianceOperatorProfileV2_ComplianceOperatorProfileKind(p.GetComplianceOperatorKind()),
+		})
+	}
+
 	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
 	if err != nil {
 		log.Error(err)
@@ -295,7 +305,7 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		// id for the request message to sensor
 		sensorRequestID := uuid.NewV4().String()
 
-		sensorMessage := buildScanConfigSensorMsg(sensorRequestID, cron, profiles, scanRequest.GetScanConfigName(), createScanRequest)
+		sensorMessage := buildScanConfigSensorMsg(sensorRequestID, cron, profiles, profileRefs, scanRequest.GetScanConfigName(), createScanRequest)
 		err := m.sensorConnMgr.SendMessage(clusterID, sensorMessage)
 		var status string
 		if err != nil {
