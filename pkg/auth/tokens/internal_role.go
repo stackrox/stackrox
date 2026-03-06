@@ -3,6 +3,8 @@ package tokens
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/set"
+	"slices"
 )
 
 // ClusterScope is the scope of a negotiated internal role on a given cluster.
@@ -27,12 +29,13 @@ var _ permissions.ResolvedRole = (*InternalRole)(nil)
 
 // InternalRole represents claims that materialize a negotiated ephemeral role for internal use.
 type InternalRole struct {
-	RoleName      string          `json:"name"`
-	ClusterScopes []*ClusterScope `json:"cluster_scopes"`
-	// Target token structure
-	ReadResources  []string      `json:"reads,omitempty"`
-	WriteResources []string      `json:"writes,omitempty"`
-	Clusters       ClusterScopes `json:"clusters,omitempty"`
+	RoleName       string   `json:"name"`
+	ReadResources  []string `json:"reads,omitempty"`
+	WriteResources []string `json:"writes,omitempty"`
+	// The key for this cluster scope map is the cluster ID.
+	Clusters ClusterScopes `json:"clusters,omitempty"`
+	// The key for this cluster scope map is the cluster Name.
+	ClustersByName ClusterScopes `json:"named_clusters,omitempty"`
 }
 
 func (r *InternalRole) GetRoleName() string {
@@ -60,30 +63,43 @@ func (r *InternalRole) GetAccessScope() *storage.SimpleAccessScope {
 	if r == nil {
 		return nil
 	}
-	includedClusters := make([]string, 0)
-	includedNamespaces := make([]*storage.SimpleAccessScope_Rules_Namespace, 0)
-	for _, clusterScope := range r.ClusterScopes {
-		if clusterScope == nil {
-			continue
-		}
-		if clusterScope.ClusterName == "" {
-			continue
-		}
-		if clusterScope.ClusterFullAccess {
-			includedClusters = append(includedClusters, clusterScope.ClusterName)
-		} else {
-			for _, namespace := range clusterScope.Namespaces {
-				scopeNamespace := &storage.SimpleAccessScope_Rules_Namespace{
-					ClusterName:   clusterScope.ClusterName,
-					NamespaceName: namespace,
-				}
-				includedNamespaces = append(includedNamespaces, scopeNamespace)
+	includedClusterNames := set.NewStringSet()
+	includedNamespacesByClusterNames := make(map[string]set.StringSet)
+	for clusterName, namespaces := range r.ClustersByName {
+		fullAccess := false
+		for _, ns := range namespaces {
+			if ns == "*" {
+				fullAccess = true
+				break
 			}
 		}
+		if fullAccess {
+			includedClusterNames.Add(clusterName)
+			continue
+		}
+		clusterNamespaces := set.NewStringSet(namespaces...)
+		includedNamespacesByClusterNames[clusterName] = clusterNamespaces
 	}
+
+	includedNamespaces := make([]*storage.SimpleAccessScope_Rules_Namespace, 0, len(includedNamespacesByClusterNames))
+	sortedPartialClusterNames := make([]string, 0, len(includedNamespacesByClusterNames))
+	for clusterName := range includedNamespacesByClusterNames {
+		sortedPartialClusterNames = append(sortedPartialClusterNames, clusterName)
+	}
+	slices.Sort(sortedPartialClusterNames)
+	stringSort := func(i, j string) bool { return i < j }
+	for _, clusterName := range sortedPartialClusterNames {
+		for _, ns := range includedNamespacesByClusterNames[clusterName].AsSortedSlice(stringSort) {
+			includedNamespaces = append(includedNamespaces, &storage.SimpleAccessScope_Rules_Namespace{
+				ClusterName:   clusterName,
+				NamespaceName: ns,
+			})
+		}
+	}
+
 	return &storage.SimpleAccessScope{
 		Rules: &storage.SimpleAccessScope_Rules{
-			IncludedClusters:   includedClusters,
+			IncludedClusters:   includedClusterNames.AsSortedSlice(stringSort),
 			IncludedNamespaces: includedNamespaces,
 		},
 	}
