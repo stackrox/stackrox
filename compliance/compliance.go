@@ -185,19 +185,19 @@ func (c *Compliance) manageNodeInventoryScanLoop(ctx context.Context) <-chan *se
 			select {
 			case <-ctx.Done():
 				return
-		case resourceID, ok := <-c.umhNodeInventory.RetryCommand():
-			if !ok {
-				log.Info("UMH retry channel for node inventory closed; stopping scan loop")
-				return
-			}
-			if c.cache == nil {
-				log.Debugf("Requested to retry %s but cache is empty. Resetting scan timer.", resourceID)
-				cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheMiss, cmetrics.ScannerVersionV2)
-				t.Reset(time.Second)
-			} else {
-				nodeInventoriesC <- c.cache
-				cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheHit, cmetrics.ScannerVersionV2)
-			}
+			case resourceID, ok := <-c.umhNodeInventory.RetryCommand():
+				if !ok {
+					log.Info("UMH retry channel for node inventory closed; stopping scan loop")
+					return
+				}
+				if c.cache == nil {
+					log.Debugf("Requested to retry %s but cache is empty. Resetting scan timer.", resourceID)
+					cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheMiss, cmetrics.ScannerVersionV2)
+					t.Reset(time.Second)
+				} else {
+					nodeInventoriesC <- c.cache
+					cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheHit, cmetrics.ScannerVersionV2)
+				}
 			case <-t.C:
 				if c.nodeScanner.IsActive() {
 					inventory := c.runNodeInventoryScan(ctx)
@@ -225,19 +225,19 @@ func (c *Compliance) manageNodeIndexScanLoop(ctx context.Context) <-chan *sensor
 			select {
 			case <-ctx.Done():
 				return
-		case resourceID, ok := <-c.umhNodeIndex.RetryCommand():
-			if !ok {
-				log.Info("UMH retry channel for node index closed; stopping scan loop")
-				return
-			}
-			if c.cache == nil {
-				log.Debugf("Requested to retry %s but cache is empty. Resetting scan timer.", resourceID)
-				cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheMiss, cmetrics.ScannerVersionV4)
-				t.Reset(time.Second)
-			} else {
-				nodeIndexesC <- c.cache
-				cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheHit, cmetrics.ScannerVersionV4)
-			}
+			case resourceID, ok := <-c.umhNodeIndex.RetryCommand():
+				if !ok {
+					log.Info("UMH retry channel for node index closed; stopping scan loop")
+					return
+				}
+				if c.cache == nil {
+					log.Debugf("Requested to retry %s but cache is empty. Resetting scan timer.", resourceID)
+					cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheMiss, cmetrics.ScannerVersionV4)
+					t.Reset(time.Second)
+				} else {
+					nodeIndexesC <- c.cache
+					cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheHit, cmetrics.ScannerVersionV4)
+				}
 			case <-t.C:
 				if features.NodeIndexEnabled.Enabled() {
 					index := c.runNodeIndex(ctx)
@@ -356,33 +356,33 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 					log.Warn("Attempting to stop an un-started audit log reader - this is a no-op")
 				}
 			}
-	case *sensor.MsgToCompliance_Ack:
-		// Legacy NodeInventoryACK from Sensor 4.9 and earlier
-		switch t.Ack.GetAction() {
-		case sensor.MsgToCompliance_NodeInventoryACK_ACK:
-			switch t.Ack.GetMessageType() {
-			case sensor.MsgToCompliance_NodeInventoryACK_NodeInventory:
-				c.umhNodeInventory.HandleACK(nodeResourceID)
-			case sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer:
-				c.umhNodeIndex.HandleACK(nodeResourceID)
+		case *sensor.MsgToCompliance_Ack:
+			// Legacy NodeInventoryACK from Sensor 4.9 and earlier
+			switch t.Ack.GetAction() {
+			case sensor.MsgToCompliance_NodeInventoryACK_ACK:
+				switch t.Ack.GetMessageType() {
+				case sensor.MsgToCompliance_NodeInventoryACK_NodeInventory:
+					c.umhNodeInventory.HandleACK(nodeResourceID)
+				case sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer:
+					c.umhNodeIndex.HandleACK(nodeResourceID)
+				default:
+					log.Errorf("Unknown ACK Type: %s", t.Ack.GetMessageType())
+				}
+			case sensor.MsgToCompliance_NodeInventoryACK_NACK:
+				switch t.Ack.GetMessageType() {
+				case sensor.MsgToCompliance_NodeInventoryACK_NodeInventory:
+					c.umhNodeInventory.HandleNACK(nodeResourceID)
+				case sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer:
+					c.umhNodeIndex.HandleNACK(nodeResourceID)
+				default:
+					log.Errorf("Unknown ACK Type: %s", t.Ack.GetMessageType())
+				}
 			default:
-				log.Errorf("Unknown ACK Type: %s", t.Ack.GetMessageType())
+				log.Errorf("Unknown ACK Action: %s", t.Ack.GetAction())
 			}
-		case sensor.MsgToCompliance_NodeInventoryACK_NACK:
-			switch t.Ack.GetMessageType() {
-			case sensor.MsgToCompliance_NodeInventoryACK_NodeInventory:
-				c.umhNodeInventory.HandleNACK(nodeResourceID)
-			case sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer:
-				c.umhNodeIndex.HandleNACK(nodeResourceID)
-			default:
-				log.Errorf("Unknown ACK Type: %s", t.Ack.GetMessageType())
-			}
-		default:
-			log.Errorf("Unknown ACK Action: %s", t.Ack.GetAction())
-		}
-	case *sensor.MsgToCompliance_ComplianceAck:
-		// New ComplianceACK from Sensor 4.10+
-		c.handleComplianceACK(t.ComplianceAck)
+		case *sensor.MsgToCompliance_ComplianceAck:
+			// New ComplianceACK from Sensor 4.10+
+			c.handleComplianceACK(t.ComplianceAck)
 		default:
 			utils.Should(errors.Errorf("Unhandled msg type: %T", t))
 		}
