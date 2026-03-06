@@ -86,6 +86,8 @@ jobs:
           kubectl get nodes
 
       - name: Run pre-test
+        env:
+          QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
         shell: python
         run: |
           import sys
