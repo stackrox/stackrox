@@ -245,11 +245,16 @@ runs:
           exit 0
         fi
         git_version=$(cat /tmp/.version-git-verify)
-        if [ "$git_version" != "$BUILD_TAG" ]; then
+        # Compare version prefix only (e.g. 4.11.x). The commit count
+        # differs by 1 between API (aheadBy) and git (rev-list --count +1)
+        # because --shallow-exclude excludes the tag commit itself.
+        api_prefix=${BUILD_TAG%%-*}
+        git_prefix=${git_version%%-*}
+        if [ "$api_prefix" != "$git_prefix" ]; then
           echo "::error::Version mismatch: API=${BUILD_TAG} git=${git_version}"
           exit 1
         fi
-        echo "::notice::Version verified: ${BUILD_TAG}"
+        echo "::notice::Version verified: API=${BUILD_TAG} git=${git_version}"
       shell: bash
 
     - name: Record job info
