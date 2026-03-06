@@ -28,7 +28,7 @@ jobs:
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
-    timeout-minutes: 240 # Keep in sync with cluster's lifespan
+    timeout-minutes: 180 # Keep in sync with cluster's lifespan
     steps:
       - name: Checkout repo
         uses: actions/checkout@v6
@@ -46,7 +46,7 @@ jobs:
           token: ${{ secrets.INFRA_TOKEN }}
           flavor: gke-default
           name: ${{ env.CLUSTER_NAME }}
-          lifespan: 4h # Keep in sync with job's timeout-minutes
+          lifespan: 3h # Keep in sync with job's timeout-minutes
           args: nodes=3,machine-type=e2-standard-8
           wait: false
 
@@ -78,6 +78,17 @@ jobs:
           kubectl cluster-info
           kubectl get nodes
 
+      - name: Run pre-test
+        shell: python
+        env:
+          # TODO: remove the image tag override
+          MAIN_IMAGE_TAG: 4.11.x-244-g092168e534
+        run: |
+          import sys
+          sys.path.append('.openshift-ci')
+          from pre_tests import PreSystemTests
+          PreSystemTests().run()
+
       - name: Run postgres sensor upgrade test
         env:
           # TODO: remove the image tag override
@@ -91,6 +102,28 @@ jobs:
           CI_JOB_NAME: gha-upgrade-postgres-sensor-test
         run: |
           tests/upgrade/postgres_sensor_run.sh /tmp/postgres-sensor-upgrade-test-logs
+
+      - name: Run post-test
+        env:
+          # TODO: remove the image tag override
+          MAIN_IMAGE_TAG: 4.11.x-244-g092168e534
+        shell: python
+        run: |
+          import sys
+          sys.path.append('.openshift-ci')
+          from post_tests import PostClusterTest
+          PostClusterTest().run()
+
+      - name: Run final-post
+        env:
+          # TODO: remove the image tag override
+          MAIN_IMAGE_TAG: 4.11.x-244-g092168e534
+        shell: python
+        run: |
+          import sys
+          sys.path.append('.openshift-ci')
+          from post_tests import FinalPost
+          FinalPost(store_qa_tests_data=True).run()
 
       - name: Delete cluster
         if: always()
