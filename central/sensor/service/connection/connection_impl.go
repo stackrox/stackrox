@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/connection/messagestream"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	vmindexpipeline "github.com/stackrox/rox/central/sensor/service/pipeline/virtualmachineindex"
 	"github.com/stackrox/rox/central/sensor/telemetry"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -185,6 +186,9 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 			reason,
 		)
 		c.emitRateLimitedAdminEvent(c.clusterID, reason)
+		if vmReport := msg.GetEvent().GetVirtualMachineIndexReport(); vmReport != nil {
+			vmindexpipeline.SendSensorACK(ctx, central.SensorACK_NACK, vmReport.GetId(), "rate limited: "+reason, c)
+		}
 		return
 	}
 
