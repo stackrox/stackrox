@@ -67,7 +67,7 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPro
     }
 
     function onScheduledDaysChange(id, selection) {
-        formik.setFieldValue(id, selection);
+        formik.setFieldValue(id, selection, true);
     }
 
     const cvesDiscoveredSinceError =
