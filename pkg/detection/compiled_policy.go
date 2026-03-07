@@ -59,10 +59,9 @@ func newCompiledPolicy(policy *storage.Policy) (CompiledPolicy, error) {
 		if err := compiled.setRuntimeMatchers(policy); err != nil {
 			return nil, err
 		}
-		// There should be exactly one defined
-		if !compiled.exactlyOneRuntimeMatcherDefined() {
-			return nil, errors.Errorf("incorrect sections for a runtime policy %q. Section must have exactly "+
-				"one runtime constraint from either process, or kubernetes event category, or network baseline.", policy.GetName())
+		if !compiled.hasAllowedRuntimeMatchers() {
+			return nil, errors.Errorf("incorrect sections for a runtime policy %q. Section must have "+
+				"compatible runtime constraints.", policy.GetName())
 		}
 
 		// set predicates
@@ -260,27 +259,26 @@ func (cp *compiledPolicy) setNodeEventMatcher(policy *storage.Policy) error {
 	return nil
 }
 
-func (cp *compiledPolicy) exactlyOneRuntimeMatcherDefined() bool {
-	var numMatchers int
+func (cp *compiledPolicy) hasAllowedRuntimeMatchers() bool {
+	var count int
 	if cp.kubeEventsMatcher != nil {
-		numMatchers++
+		count++
 	}
 	// Process and FileAccess can be combined (file access events contain process information).
-	// Count them as one category when both are present.
 	if cp.deploymentWithProcessMatcher != nil || cp.deploymentWithFileAccessMatcher != nil {
-		numMatchers++
+		count++
 	}
 	if cp.deploymentWithNetworkFlowMatcher != nil {
-		numMatchers++
+		count++
 	}
 	if cp.auditLogEventMatcher != nil {
-		numMatchers++
+		count++
 	}
 	if cp.nodeMatcher != nil {
-		numMatchers++
+		count++
 	}
 
-	return numMatchers == 1
+	return count == 1
 }
 
 // Top level compiled Policy.
