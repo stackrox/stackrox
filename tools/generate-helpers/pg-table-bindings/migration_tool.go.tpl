@@ -1,6 +1,6 @@
 {{- define "convertField" }}
     {{- $field := . }}
-    {{- if eq $field.DataType "datetime" -}}
+    {{- if or (eq $field.DataType "datetime") (eq $field.DataType "datetimetz") -}}
     protocompat.NilOrTime({{$field.Getter "obj"}}),
     {{- else -}}{{if eq $field.DataType "stringarray" -}}
     pq.Array({{$field.Getter "obj"}}).(*pq.StringArray),

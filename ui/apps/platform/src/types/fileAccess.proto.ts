@@ -6,6 +6,7 @@ export type FileAccess = {
     moved: File | null; // specific to RENAME activity, the new location / metadata of the file
     timestamp: string; // ISO 8601 date string
     process: ProcessIndicator;
+    hostname: string; // The hostname/name of the node where the file activity occurred
 };
 
 export type File = {

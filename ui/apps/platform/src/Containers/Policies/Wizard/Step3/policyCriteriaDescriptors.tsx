@@ -12,6 +12,24 @@ import type { LifecycleStage } from 'types/policy.proto';
 
 import ImageSigningTableModal from './ImageSigningTableModal';
 
+/**
+ * Validates that a file path is absolute and does not contain directory traversal.
+ * Glob pattern validation is left to the backend (Go's doublestar library).
+ */
+export function validateFilePath(value: string): string | undefined {
+    const trimmed = value.trim();
+    if (trimmed.length === 0) {
+        return undefined;
+    }
+    if (!trimmed.startsWith('/')) {
+        return 'File path must be absolute (start with /)';
+    }
+    if (trimmed.split('/').includes('..')) {
+        return 'File path must not contain directory traversal (..)';
+    }
+    return undefined;
+}
+
 const equalityOptions: DescriptorOption[] = [
     { label: 'Is greater than', value: '>' },
     {
@@ -321,6 +339,8 @@ export type SelectDescriptor = {
 export type TextDescriptor = {
     type: 'text';
     placeholder?: string;
+    helperText?: string;
+    validate?: (value: string) => string | undefined;
 } & BaseDescriptor &
     DescriptorCanBoolean &
     DescriptorCanNegate;
@@ -1504,6 +1524,9 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         shortName: 'File path',
         category: policyCriteriaCategories.FILE_ACTIVITY,
         type: 'text',
+        placeholder: '/home/**/.ssh/id_*',
+        helperText: 'Enter an absolute file path. Supports glob patterns.',
+        validate: validateFilePath,
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
         featureFlagDependency: ['ROX_SENSITIVE_FILE_ACTIVITY'],
@@ -1648,6 +1671,9 @@ export const nodeEventDescriptor: Descriptor[] = [
         shortName: 'File path',
         category: policyCriteriaCategories.FILE_ACTIVITY,
         type: 'text',
+        placeholder: '/home/**/.ssh/id_*',
+        helperText: 'Enter an absolute file path. Supports glob patterns.',
+        validate: validateFilePath,
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
     },

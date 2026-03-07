@@ -506,6 +506,7 @@ var (
 	TestFloat             = newFieldLabel("Test Float")
 	TestLabels            = newFieldLabel("Test Labels")
 	TestTimestamp         = newFieldLabel("Test Timestamp")
+	TestTimestampTZ       = newFieldLabel("Test TimestampTZ")
 	TestEnum              = newFieldLabel("Test Enum")
 	TestEnumSlice         = newFieldLabel("Test Enum Slice")
 	TestNestedString      = newFieldLabel("Test Nested String")

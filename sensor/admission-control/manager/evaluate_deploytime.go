@@ -105,17 +105,27 @@ func filterOutUnenrichedImageAlerts(alerts []*storage.Alert) []*storage.Alert {
 }
 
 func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionRequest) (*admission.AdmissionResponse, error) {
-	log.Debugf("Evaluating request %+v", req)
+	log.Debugf(
+		"Evaluating admission request (uid=%s, ns=%s, name=%s, op=%s, kind=%s)",
+		req.UID,
+		req.Namespace,
+		req.Name,
+		string(req.Operation),
+		req.Kind.String(),
+	)
 
 	if m.shouldBypass(s, req) {
+		observeAdmissionReview(reviewResultBypassed, 0)
 		return pass(req.UID), nil
 	}
 
+	start := time.Now()
 	log.Debugf("Not bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
 
 	var deployment *storage.Deployment
 	if req.SubResource != "" && req.SubResource == ScaleSubResource {
 		if deployment = m.deployments.GetByName(req.Namespace, req.Name); deployment == nil {
+			observeAdmissionReview(reviewResultError, time.Since(start))
 			return nil, errors.Errorf(
 				"could not find deployment with name: %q in namespace %q for this admission review request",
 				req.Name, req.Namespace)
@@ -123,16 +133,19 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 	} else {
 		k8sObj, err := unmarshalK8sObject(req.Kind, req.Object.Raw)
 		if err != nil {
+			observeAdmissionReview(reviewResultError, time.Since(start))
 			return nil, errors.Wrap(err, "could not unmarshal object from request")
 		}
 
 		deployment, err = resources.NewDeploymentFromStaticResource(k8sObj, req.Kind.Kind, s.clusterID(), s.GetClusterConfig().GetRegistryOverride())
 		if err != nil {
+			observeAdmissionReview(reviewResultError, time.Since(start))
 			return nil, errors.Wrap(err, "could not convert Kubernetes object into StackRox deployment")
 		}
 
 		if deployment == nil {
 			log.Debugf("Non-top-level object, bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
+			observeAdmissionReview(reviewResultBypassed, 0)
 			return pass(req.UID), nil // we only enforce on top-level objects
 		}
 	}
@@ -143,6 +156,7 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 		if !enforcers.ShouldEnforce(deployment.GetAnnotations()) {
 			log.Warnf("deployment %s/%s of type %v was deployed without being checked due to matching bypass annotation %q",
 				deployment.GetNamespace(), deployment.GetName(), req.Kind, enforcers.EnforcementBypassAnnotationKey)
+			observeAdmissionReview(reviewResultBypassed, 0)
 			return pass(req.UID), nil
 		}
 	}
@@ -163,11 +177,13 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 
 	alerts, err := m.kickOffImgScansAndDetect(fetchImgCtx, s, getAlertsFunc, deployment)
 	if err != nil {
+		observeAdmissionReview(reviewResultError, time.Since(start))
 		return nil, errors.Wrap(err, "running StackRox detection")
 	}
 
 	if len(alerts) == 0 {
 		log.Debugf("No policies violated, allowing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
+		observeAdmissionReview(reviewResultAllowed, time.Since(start))
 		return pass(req.UID), nil
 	}
 
@@ -176,5 +192,6 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 	}
 
 	log.Debugf("Violated policies: %d, rejecting %s request on %s/%s [%s]", len(alerts), req.Operation, req.Namespace, req.Name, req.Kind)
+	observeAdmissionReview(reviewResultDenied, time.Since(start))
 	return fail(req.UID, message(alerts, !s.GetClusterConfig().GetAdmissionControllerConfig().GetDisableBypass())), nil
 }

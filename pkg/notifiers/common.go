@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/option"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retry"
@@ -49,7 +50,13 @@ func AlertLink(endpoint string, alert *storage.Alert) string {
 	case *storage.Alert_Deployment_, *storage.Alert_Resource_, *storage.Alert_Node_:
 		alertPath = fmt.Sprintf(alertLinkPath, alert.GetId())
 	case *storage.Alert_Image:
-		alertPath = fmt.Sprintf(imageLinkPath, entity.Image.GetId())
+		var imgID string
+		if features.FlattenImageData.Enabled() {
+			imgID = entity.Image.GetIdV2()
+		} else {
+			imgID = entity.Image.GetId()
+		}
+		alertPath = fmt.Sprintf(imageLinkPath, imgID)
 	}
 	u, err := url.Parse(alertPath)
 	if err != nil {

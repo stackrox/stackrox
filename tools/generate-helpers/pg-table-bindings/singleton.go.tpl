@@ -75,7 +75,7 @@ func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx *postgr
     values := []interface{} {
         // parent primary keys start
         {{- range $field := $schema.DBColumnFields -}}
-        {{- if eq $field.DataType "datetime" }}
+        {{- if or (eq $field.DataType "datetime") (eq $field.DataType "datetimetz") }}
         protocompat.NilOrTime({{$field.Getter "obj"}}),
         {{- else if eq $field.SQLType "uuid" }}
         pgutils.NilOrUUID({{$field.Getter "obj"}}),
