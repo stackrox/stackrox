@@ -10,6 +10,7 @@ import (
 	imageEnricher "github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type enricherImpl struct {
@@ -104,40 +105,54 @@ func (e *enricherImpl) upsertImageCVEInfos(ctx context.Context, scan *storage.Im
 
 // enrichCVEsFromImageCVEInfo enriches the image's CVEs with accurate timestamps from the lookup table.
 func (e *enricherImpl) enrichCVEsFromImageCVEInfo(ctx context.Context, scan *storage.ImageScan) error {
-	// Collect all IDs
-	ids := make([]string, 0)
+	cveNames := set.NewStringSet()
 	for _, component := range scan.GetComponents() {
 		for _, vuln := range component.GetVulns() {
-			ids = append(ids, cve.ImageCVEInfoID(vuln.GetCve(), component.GetName(), vuln.GetDatasource()))
+			cveNames.Add(vuln.GetCve())
 		}
 	}
 
-	if len(ids) == 0 {
+	if cveNames.Cardinality() == 0 {
 		return nil
 	}
 
-	// Batch fetch
-	infos, err := e.imageCVEInfoDS.GetBatch(sac.WithAllAccess(ctx), ids)
+	// Collect timestamps and aggregate the min timestamp from CVE infos with the same CVE name.
+	// Build two maps from the same result set:
+	// - CVE names -> Min timestamp -> FirstSystemOccurrence
+	// - CVE info IDs (in this scan)-> ImageCVEInfo -> FixAvailableTimestamp
+	allInfos, err := e.imageCVEInfoDS.GetByCVENames(sac.WithAllAccess(ctx), cveNames.AsSlice())
 	if err != nil {
 		return err
 	}
 
-	// Build lookup map
+	cveMinTimestamps := make(map[string]*protocompat.Timestamp)
 	infoMap := make(map[string]*storage.ImageCVEInfo)
-	for _, info := range infos {
+
+	for _, info := range allInfos {
+		// Track MIN FirstSystemOccurrence per CVE name
+		cveName := info.GetCve()
+		timestamp := info.GetFirstSystemOccurrence()
+		if timestamp != nil {
+			if existing, ok := cveMinTimestamps[cveName]; !ok || protocompat.CompareTimestamps(timestamp, existing) < 0 {
+				cveMinTimestamps[cveName] = timestamp
+			}
+		}
 		infoMap[info.GetId()] = info
 	}
 
 	// Enrich CVEs
 	for _, component := range scan.GetComponents() {
 		for _, vuln := range component.GetVulns() {
+			if minTimestamp, ok := cveMinTimestamps[vuln.GetCve()]; ok {
+				vuln.FirstSystemOccurrence = minTimestamp
+			}
+
 			id := cve.ImageCVEInfoID(vuln.GetCve(), component.GetName(), vuln.GetDatasource())
 			if info, ok := infoMap[id]; ok {
 				if vuln.GetFixAvailableTimestamp() == nil && vuln.GetFixedBy() != "" {
 					// Set the fix timestamp if it was not provided by the scanner
 					vuln.FixAvailableTimestamp = info.GetFixAvailableTimestamp()
 				}
-				vuln.FirstSystemOccurrence = info.GetFirstSystemOccurrence()
 			}
 		}
 	}

@@ -679,14 +679,15 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestCVETimestampPersistence() {
 	}
 
 	// First pass: process all images in order.
-	// Images processed after image1 will be enriched with the earlier timestamp from image1.
+	// With the new CVE-name-based aggregation, images processed after image1 will be enriched
+	// with the earliest timestamp across ALL records for that CVE name.
 	for _, img := range images {
 		imgClone := img.CloneVT()
 		s.NoError(s.cveInfoEnricher.EnrichImageWithCVEInfo(ctx, imgClone))
 		s.NoError(s.datastore.UpsertImage(ctx, imgClone))
 	}
 
-	// Verify ImageCVEInfo persisted the earliest timestamp
+	// Verify ImageCVEInfo persisted the earliest timestamp for the specific composite ID
 	cveInfoID := pkgCVE.ImageCVEInfoID(sharedCVEID, "shared-component", datasource)
 	cveInfo, found, err := s.cveInfoDataStore.Get(ctx, cveInfoID)
 	s.NoError(err)
@@ -694,9 +695,10 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestCVETimestampPersistence() {
 	s.Equal(cveDiscoverTimestamp, cveInfo.GetFirstSystemOccurrence())
 
 	// Verify first pass results:
+	// With CVE-name-based aggregation:
 	// - image0: shared CVE should NOT have cveDiscoverTimestamp (processed before image1)
 	// - image1: shared CVE has cveDiscoverTimestamp (source of early timestamp)
-	// - image2: shared CVE should have cveDiscoverTimestamp (processed after image1)
+	// - image2: shared CVE should have cveDiscoverTimestamp (enriched from MIN across all CVE-2024-1234 records)
 	// - All unique CVEs should have their own timestamps
 	for i, img := range images {
 		stored, found, err := s.datastore.GetImage(ctx, img.GetId())
@@ -722,7 +724,8 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestCVETimestampPersistence() {
 	}
 
 	// Second pass: rescan all images.
-	// All images should now have the preserved earliest timestamp for the shared CVE.
+	// All images should now have the preserved earliest timestamp for the shared CVE,
+	// since the enricher queries by CVE name and returns the MIN across all records.
 	for _, img := range images {
 		imgClone := img.CloneVT()
 		imgClone.GetScan().ScanTime = timestamppb.Now()
@@ -731,6 +734,7 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestCVETimestampPersistence() {
 	}
 
 	// Verify all images now have the preserved earliest timestamp
+	// The CVE-name-based aggregation ensures all images get the MIN timestamp for CVE-2024-1234
 	for i, img := range images {
 		stored, found, err := s.datastore.GetImage(ctx, img.GetId())
 		s.NoError(err)
@@ -750,6 +754,131 @@ func (s *ImageFlatPostgresDataStoreTestSuite) TestCVETimestampPersistence() {
 			}
 		}
 	}
+}
+
+func (s *ImageFlatPostgresDataStoreTestSuite) TestCVETimestampAggregation() {
+	s.T().Setenv(features.CVEFixTimestampCriteria.EnvVar(), "true")
+	if !features.CVEFixTimestampCriteria.Enabled() {
+		s.T().Skip("CVEFixTimestampCriteria feature must be enabled for this test")
+	}
+
+	ctx := sac.WithAllAccess(context.Background())
+
+	// Two images with the same CVE name but different components and operating systems
+	sharedCVEName := "CVE-2024-SHARED"
+	earlierTimestamp := timestamppb.New(time.Now().Add(-48 * time.Hour))
+	laterTimestamp := timestamppb.New(time.Now().Add(-24 * time.Hour))
+
+	// Image 1: Ubuntu with package-a, has the earlier timestamp
+	image1 := &storage.Image{
+		Id: "image1-sha",
+		Name: &storage.ImageName{
+			FullName: "registry.io/ubuntu-app:v1",
+		},
+		Scan: &storage.ImageScan{
+			OperatingSystem: "ubuntu",
+			ScanTime:        timestamppb.Now(),
+			Components: []*storage.EmbeddedImageScanComponent{
+				{
+					Name:    "package-a",
+					Version: "1.0.0",
+					Source:  storage.SourceType_OS,
+					Vulns: []*storage.EmbeddedVulnerability{
+						{
+							Cve:                   sharedCVEName,
+							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							Datasource:            "ubuntu-updater::ubuntu:20.04",
+							Severity:              storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+							FirstSystemOccurrence: earlierTimestamp,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// Image 2: Alpine with package-b (different component and OS), has the later timestamp
+	image2 := &storage.Image{
+		Id: "image2-sha",
+		Name: &storage.ImageName{
+			FullName: "registry.io/alpine-app:v1",
+		},
+		Scan: &storage.ImageScan{
+			OperatingSystem: "alpine",
+			ScanTime:        timestamppb.Now(),
+			Components: []*storage.EmbeddedImageScanComponent{
+				{
+					Name:    "package-b",
+					Version: "2.0.0",
+					Source:  storage.SourceType_OS,
+					Vulns: []*storage.EmbeddedVulnerability{
+						{
+							Cve:                   sharedCVEName,
+							VulnerabilityType:     storage.EmbeddedVulnerability_IMAGE_VULNERABILITY,
+							Datasource:            "alpine-updater::alpine:3.18",
+							Severity:              storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+							FirstSystemOccurrence: laterTimestamp,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	// Process image1 first (has earlier timestamp)
+	img1Clone := image1.CloneVT()
+	s.NoError(s.cveInfoEnricher.EnrichImageWithCVEInfo(ctx, img1Clone))
+	s.NoError(s.datastore.UpsertImage(ctx, img1Clone))
+
+	// Process image2 (has later timestamp)
+	img2Clone := image2.CloneVT()
+	s.NoError(s.cveInfoEnricher.EnrichImageWithCVEInfo(ctx, img2Clone))
+	s.NoError(s.datastore.UpsertImage(ctx, img2Clone))
+
+	// Verify that two separate ImageCVEInfo records exist (different composite IDs)
+	cveInfo1ID := pkgCVE.ImageCVEInfoID(sharedCVEName, "package-a", "ubuntu-updater::ubuntu:20.04")
+	cveInfo2ID := pkgCVE.ImageCVEInfoID(sharedCVEName, "package-b", "alpine-updater::alpine:3.18")
+
+	cveInfo1, found, err := s.cveInfoDataStore.Get(ctx, cveInfo1ID)
+	s.NoError(err)
+	s.True(found, "Should have ImageCVEInfo for image1's composite ID")
+	s.Equal(earlierTimestamp, cveInfo1.GetFirstSystemOccurrence())
+
+	cveInfo2, found, err := s.cveInfoDataStore.Get(ctx, cveInfo2ID)
+	s.NoError(err)
+	s.True(found, "Should have ImageCVEInfo for image2's composite ID")
+	s.Equal(laterTimestamp, cveInfo2.GetFirstSystemOccurrence())
+
+	// Verify both images have the MIN timestamp (from image1) after enrichment
+	storedImage1, found, err := s.datastore.GetImage(ctx, "image1-sha")
+	s.NoError(err)
+	s.True(found)
+	s.Require().Len(storedImage1.GetScan().GetComponents(), 1)
+	s.Require().Len(storedImage1.GetScan().GetComponents()[0].GetVulns(), 1)
+	s.Equal(earlierTimestamp, storedImage1.GetScan().GetComponents()[0].GetVulns()[0].GetFirstSystemOccurrence(),
+		"Image1 should have the earlier timestamp")
+
+	storedImage2, found, err := s.datastore.GetImage(ctx, "image2-sha")
+	s.NoError(err)
+	s.True(found)
+	s.Require().Len(storedImage2.GetScan().GetComponents(), 1)
+	s.Require().Len(storedImage2.GetScan().GetComponents()[0].GetVulns(), 1)
+	s.Equal(earlierTimestamp, storedImage2.GetScan().GetComponents()[0].GetVulns()[0].GetFirstSystemOccurrence(),
+		"Image2 should also have the earlier timestamp from MIN aggregation across all CVE records")
+
+	// Rescan image1 to verify the MIN timestamp is still preserved
+	img1Rescan := image1.CloneVT()
+	img1Rescan.GetScan().ScanTime = timestamppb.Now()
+	s.NoError(s.cveInfoEnricher.EnrichImageWithCVEInfo(ctx, img1Rescan))
+	s.NoError(s.datastore.UpsertImage(ctx, img1Rescan))
+
+	storedImage1After, found, err := s.datastore.GetImage(ctx, "image1-sha")
+	s.NoError(err)
+	s.True(found)
+	s.Require().Len(storedImage1After.GetScan().GetComponents(), 1)
+	s.Require().Len(storedImage1After.GetScan().GetComponents()[0].GetVulns(), 1)
+	s.Equal(earlierTimestamp, storedImage1After.GetScan().GetComponents()[0].GetVulns()[0].GetFirstSystemOccurrence(),
+		"After rescan, image1 should still have the MIN timestamp")
 }
 
 func (s *ImageFlatPostgresDataStoreTestSuite) truncateTable(name string) {
