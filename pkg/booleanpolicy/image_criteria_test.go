@@ -520,3 +520,86 @@ func (suite *ImageCriteriaTestSuite) TestImageVerified_WithDeployment() {
 		})
 	}
 }
+
+func (suite *ImageCriteriaTestSuite) TestBaseImageLayerType() {
+	testCases := []struct {
+		desc            string
+		value           string
+		negate          bool
+		expectBuildErr  bool
+		expectMatchErr  bool
+	}{
+		{
+			desc:   "APPLICATION value",
+			value:  "APPLICATION",
+			negate: false,
+		},
+		{
+			desc:   "BASE_IMAGE value",
+			value:  "BASE_IMAGE",
+			negate: false,
+		},
+		{
+			desc:   "BASE shorthand value",
+			value:  "BASE",
+			negate: false,
+		},
+		{
+			desc:   "lowercase application",
+			value:  "application",
+			negate: false,
+		},
+		{
+			desc:   "mixed case BASE_Image",
+			value:  "BASE_Image",
+			negate: false,
+		},
+		{
+			desc:   "negated APPLICATION",
+			value:  "APPLICATION",
+			negate: true,
+		},
+		{
+			desc:           "invalid value",
+			value:          "INVALID_LAYER",
+			expectBuildErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		suite.T().Run(tc.desc, func(t *testing.T) {
+			policyGroup := &storage.PolicyGroup{
+				FieldName: fieldnames.BaseImageLayerType,
+				Values: []*storage.PolicyValue{
+					{Value: tc.value},
+				},
+				Negate: tc.negate,
+			}
+
+			policy := policyWithGroups(storage.EventSource_NOT_APPLICABLE, policyGroup)
+
+			// Test DeploymentMatcher can be built
+			depMatcher, err := BuildDeploymentMatcher(policy)
+			if tc.expectBuildErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+			assert.NotNil(t, depMatcher)
+
+			// Test ImageMatcher can be built
+			imgMatcher, err := BuildImageMatcher(policy)
+			if tc.expectBuildErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+			assert.NotNil(t, imgMatcher)
+
+			// Note: Full functional testing with actual component matching would require
+			// ImageComponentV2 data in the database, which is beyond the scope of unit tests.
+			// The field metadata and query builder registration ensure the policy field
+			// will work correctly with the search system at runtime.
+		})
+	}
+}

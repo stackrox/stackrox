@@ -21,52 +21,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type LayerType int32
-
-const (
-	LayerType_APPLICATION LayerType = 0
-	LayerType_BASE_IMAGE  LayerType = 1
-)
-
-// Enum value maps for LayerType.
-var (
-	LayerType_name = map[int32]string{
-		0: "APPLICATION",
-		1: "BASE_IMAGE",
-	}
-	LayerType_value = map[string]int32{
-		"APPLICATION": 0,
-		"BASE_IMAGE":  1,
-	}
-)
-
-func (x LayerType) Enum() *LayerType {
-	p := new(LayerType)
-	*p = x
-	return p
-}
-
-func (x LayerType) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (LayerType) Descriptor() protoreflect.EnumDescriptor {
-	return file_storage_image_component_proto_enumTypes[0].Descriptor()
-}
-
-func (LayerType) Type() protoreflect.EnumType {
-	return &file_storage_image_component_proto_enumTypes[0]
-}
-
-func (x LayerType) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use LayerType.Descriptor instead.
-func (LayerType) EnumDescriptor() ([]byte, []int) {
-	return file_storage_image_component_proto_rawDescGZIP(), []int{0}
-}
-
 // This proto is deprecated and replaced by ImageComponentV2
 //
 // Deprecated: Marked as deprecated in storage/image_component.proto.
@@ -468,11 +422,7 @@ const file_storage_image_component_proto_rawDesc = "" +
 	"\n" +
 	"layer_type\x18\x10 \x01(\x0e2\x12.storage.LayerTypeR\tlayerTypeB\x0e\n" +
 	"\fset_top_cvssB\x11\n" +
-	"\x0fhas_layer_index*,\n" +
-	"\tLayerType\x12\x0f\n" +
-	"\vAPPLICATION\x10\x00\x12\x0e\n" +
-	"\n" +
-	"BASE_IMAGE\x10\x01B.\n" +
+	"\x0fhas_layer_indexB.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
@@ -487,20 +437,19 @@ func file_storage_image_component_proto_rawDescGZIP() []byte {
 	return file_storage_image_component_proto_rawDescData
 }
 
-var file_storage_image_component_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_storage_image_component_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_storage_image_component_proto_goTypes = []any{
-	(LayerType)(0),           // 0: storage.LayerType
-	(*ImageComponent)(nil),   // 1: storage.ImageComponent
-	(*ImageComponentV2)(nil), // 2: storage.ImageComponentV2
-	(*License)(nil),          // 3: storage.License
-	(SourceType)(0),          // 4: storage.SourceType
+	(*ImageComponent)(nil),   // 0: storage.ImageComponent
+	(*ImageComponentV2)(nil), // 1: storage.ImageComponentV2
+	(*License)(nil),          // 2: storage.License
+	(SourceType)(0),          // 3: storage.SourceType
+	(LayerType)(0),           // 4: storage.LayerType
 }
 var file_storage_image_component_proto_depIdxs = []int32{
-	3, // 0: storage.ImageComponent.license:type_name -> storage.License
-	4, // 1: storage.ImageComponent.source:type_name -> storage.SourceType
-	4, // 2: storage.ImageComponentV2.source:type_name -> storage.SourceType
-	0, // 3: storage.ImageComponentV2.layer_type:type_name -> storage.LayerType
+	2, // 0: storage.ImageComponent.license:type_name -> storage.License
+	3, // 1: storage.ImageComponent.source:type_name -> storage.SourceType
+	3, // 2: storage.ImageComponentV2.source:type_name -> storage.SourceType
+	4, // 3: storage.ImageComponentV2.layer_type:type_name -> storage.LayerType
 	4, // [4:4] is the sub-list for method output_type
 	4, // [4:4] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name
@@ -526,14 +475,13 @@ func file_storage_image_component_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_image_component_proto_rawDesc), len(file_storage_image_component_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_storage_image_component_proto_goTypes,
 		DependencyIndexes: file_storage_image_component_proto_depIdxs,
-		EnumInfos:         file_storage_image_component_proto_enumTypes,
 		MessageInfos:      file_storage_image_component_proto_msgTypes,
 	}.Build()
 	File_storage_image_component_proto = out.File

@@ -675,6 +675,20 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
+        label: 'Base image layer type',
+        name: 'Base Image Layer Type',
+        shortName: 'Base image layer type',
+        category: policyCriteriaCategories.IMAGE_CONTENTS,
+        type: 'radioGroup',
+        radioButtons: [
+            { text: 'Application', value: 'APPLICATION' },
+            { text: 'Base Image', value: 'BASE_IMAGE' },
+        ],
+        defaultValue: 'APPLICATION',
+        canBooleanLogic: false,
+        lifecycleStages: ['BUILD', 'DEPLOY'],
+    },
+    {
         label: 'Image OS',
         name: 'Image OS',
         shortName: 'Image OS',
