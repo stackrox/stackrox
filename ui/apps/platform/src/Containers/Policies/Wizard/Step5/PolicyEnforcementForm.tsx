@@ -61,10 +61,12 @@ function PolicyEnforcementForm() {
         : 'Inform will always include violations for this policy in the violations list.';
 
     if (hasAuditLog) {
-        responseMethodHelperText = 'Enforcement is not available for audit log event sources.';
+        responseMethodHelperText =
+            'Enforcement is not supported for policies which inspect Kubernetes audit log.';
     }
     if (hasNodeEvent) {
-        responseMethodHelperText = 'Enforcement is not available for node event sources.';
+        responseMethodHelperText =
+            'Enforcement is not supported for policies which inspect node activity.';
     }
 
     const isEnforcementDisabled = hasAuditLog || hasNodeEvent;

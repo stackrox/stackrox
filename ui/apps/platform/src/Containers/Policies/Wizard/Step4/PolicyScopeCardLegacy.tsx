@@ -10,9 +10,10 @@ import {
     FlexItem,
     Form,
     FormGroup,
+    Popover,
     TextInput,
 } from '@patternfly/react-core';
-import { TrashIcon } from '@patternfly/react-icons';
+import { HelpIcon, TrashIcon } from '@patternfly/react-icons';
 import { useField } from 'formik';
 
 import AutocompleteSelect from 'Components/CompoundSearchFilter/components/AutocompleteSelect';
@@ -27,6 +28,8 @@ type PolicyScopeCardLegacyProps = {
     clusters: ClusterScopeObject[];
     onDelete: () => void;
     hasAuditLogEventSource: boolean;
+    cardTitle?: string;
+    showTooltips?: boolean;
 };
 
 function PolicyScopeCardLegacy({
@@ -35,6 +38,8 @@ function PolicyScopeCardLegacy({
     clusters,
     onDelete,
     hasAuditLogEventSource = false,
+    cardTitle,
+    showTooltips = false,
 }: PolicyScopeCardLegacyProps): ReactElement {
     const [field, , helper] = useField(name);
     const { value } = field;
@@ -110,7 +115,7 @@ function PolicyScopeCardLegacy({
                                 variant="plain"
                                 className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
                                 onClick={onDelete}
-                                title={`Delete ${type} scope`}
+                                title={`Delete ${cardTitle ?? `${type} scope`}`}
                             >
                                 <TrashIcon />
                             </Button>
@@ -121,7 +126,7 @@ function PolicyScopeCardLegacy({
                 }}
                 className="pf-v5-u-p-0"
             >
-                <CardTitle className="pf-v5-u-pl-lg">{type} scope</CardTitle>
+                <CardTitle className="pf-v5-u-pl-lg">{cardTitle ?? `${type} scope`}</CardTitle>
             </CardHeader>
             <Divider component="div" />
             <CardBody>
@@ -141,7 +146,27 @@ function PolicyScopeCardLegacy({
                             </FormGroup>
                         </FlexItem>
                         <FlexItem>
-                            <FormGroup label="Namespace" fieldId={`${name}-namespace`}>
+                            <FormGroup
+                                label="Namespace"
+                                fieldId={`${name}-namespace`}
+                                labelIcon={
+                                    showTooltips ? (
+                                        <Popover
+                                            aria-label="Namespace help"
+                                            bodyContent="Use literals or regular expressions in RE2 syntax."
+                                        >
+                                            <button
+                                                type="button"
+                                                aria-label="More info for namespace field"
+                                                onClick={(e) => e.preventDefault()}
+                                                className="pf-v5-c-form__group-label-help"
+                                            >
+                                                <HelpIcon />
+                                            </button>
+                                        </Popover>
+                                    ) : undefined
+                                }
+                            >
                                 <TextInput
                                     value={value.namespace || scope?.namespace}
                                     type="text"
@@ -170,7 +195,27 @@ function PolicyScopeCardLegacy({
                             </FlexItem>
                         )}
                         <FlexItem>
-                            <FormGroup label="Deployment label" fieldId={`${name}-label`}>
+                            <FormGroup
+                                label="Deployment label"
+                                fieldId={`${name}-label`}
+                                labelIcon={
+                                    showTooltips ? (
+                                        <Popover
+                                            aria-label="Deployment label help"
+                                            bodyContent="Use literals or regular expressions in RE2 syntax."
+                                        >
+                                            <button
+                                                type="button"
+                                                aria-label="More info for deployment label field"
+                                                onClick={(e) => e.preventDefault()}
+                                                className="pf-v5-c-form__group-label-help"
+                                            >
+                                                <HelpIcon />
+                                            </button>
+                                        </Popover>
+                                    ) : undefined
+                                }
+                            >
                                 <Flex
                                     direction={{ default: 'row' }}
                                     flexWrap={{ default: 'nowrap' }}

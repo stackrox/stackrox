@@ -10,11 +10,8 @@ import {
     Flex,
     FlexItem,
     FormGroup,
-    FormHelperText,
     Grid,
     GridItem,
-    HelperText,
-    HelperTextItem,
     MenuToggle,
     Select,
     SelectList,
@@ -33,7 +30,7 @@ import type { ClientPolicy } from 'types/policy.proto';
 import type { ListImage } from 'types/image.proto';
 import { getImages } from 'services/imageService';
 
-import { initialExcludedDeployment, initialScope } from '../../policies.utils';
+import { initialExcludedDeployment } from '../../policies.utils';
 import PolicyScopeCardLegacy from './PolicyScopeCardLegacy';
 import InclusionScopeCard from './InclusionScopeCard';
 
@@ -49,10 +46,7 @@ function PolicyScopeForm(): ReactElement {
     const hasAuditLogEventSource = values.eventSource === 'AUDIT_LOG_EVENT';
     const hasNodeEventSource = values.eventSource === 'NODE_EVENT';
     const hasBuildLifecycle = values.lifecycleStages.includes('BUILD');
-    const hasDeployOrRuntimeLifecycle =
-        values.lifecycleStages.includes('DEPLOY') || values.lifecycleStages.includes('RUNTIME');
-
-    // Filter images based on the current filter value
+    const hasOnlyBuildLifecycle = values.lifecycleStages.length === 1 && hasBuildLifecycle;
     const filteredImages = filterValue
         ? images.filter((image) => image.name.toLowerCase().includes(filterValue.toLowerCase()))
         : images;
@@ -60,16 +54,16 @@ function PolicyScopeForm(): ReactElement {
     const shouldShowCreateOption =
         filterValue && !filteredImages?.some((image) => image.name === filterValue);
 
-    // Check if we have any content to show
     const hasResults = filteredImages?.length > 0 || shouldShowCreateOption;
 
     const isAllScopingDisabled = hasNodeEventSource;
+    const isNewScopingEnabled = isFeatureFlagEnabled('ROX_LABEL_BASED_POLICY_SCOPING');
 
-    function addNewInclusionScope() {
-        setFieldValue('scope', [...scope, initialScope]);
+    function addNewScope() {
+        setFieldValue('scope', [...scope, {}]);
     }
 
-    function deleteInclusionScope(index: number) {
+    function deleteScope(index: number) {
         const newScope = scope.filter((_, i) => i !== index);
         setFieldValue('scope', newScope);
     }
@@ -81,7 +75,7 @@ function PolicyScopeForm(): ReactElement {
         ]);
     }
 
-    function deleteExclusionDeploymentScope(index: number) {
+    function deleteExclusion(index: number) {
         const newScope = excludedDeploymentScopes.filter((_, i) => i !== index);
         setFieldValue('excludedDeploymentScopes', newScope);
     }
@@ -113,14 +107,33 @@ function PolicyScopeForm(): ReactElement {
             });
     }, []);
 
+    useEffect(() => {
+        if (isNewScopingEnabled) {
+            const nonEmptyScopes = scope.filter(
+                (s) => s.cluster || s.namespace || s.label || s.clusterLabel || s.namespaceLabel
+            );
+            if (nonEmptyScopes.length !== scope.length) {
+                setFieldValue('scope', nonEmptyScopes);
+            }
+
+            const nonEmptyExclusions = excludedDeploymentScopes.filter((e) => e.name || e.scope);
+            if (nonEmptyExclusions.length !== excludedDeploymentScopes.length) {
+                setFieldValue('excludedDeploymentScopes', nonEmptyExclusions);
+            }
+        }
+        // Only run on mount
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     // @TODO: Consider using a custom component for the multi-select typeahead dropdown. PolicyCategoriesSelectField.tsx is a good example too.
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
             <FlexItem flex={{ default: 'flex_1' }} className="pf-v5-u-p-lg">
-                <Title headingLevel="h2">Scope</Title>
+                <Title headingLevel="h2">
+                    {isNewScopingEnabled ? 'Coverage' : 'Scopes and Exclusions'}
+                </Title>
                 <div className="pf-v5-u-mt-sm">
-                    Create scopes to restrict or exclude your policy from entities within your
-                    environment.
+                    Configure the resources to be applied to, or excluded from this policy.
                 </div>
             </FlexItem>
             <Divider component="div" />
@@ -129,218 +142,256 @@ function PolicyScopeForm(): ReactElement {
                     className="pf-v5-u-mt-lg pf-v5-u-mx-lg"
                     isInline
                     variant="info"
-                    title="The selected event source does not support scoping."
+                    title="Scopes and exclusions are not supported for policies which inspect node activity."
                     component="p"
                 />
             )}
-            <Flex direction={{ default: 'column' }} className="pf-v5-u-p-lg">
-                <Flex>
-                    <FlexItem flex={{ default: 'flex_1' }}>
-                        <Title headingLevel="h3">Restrict by scope</Title>
-                        <div className="pf-v5-u-mt-sm">
-                            Use Restrict by scope to enable this policy only for a specific cluster,
-                            namespace, or deployment label. You can add multiple scopes and also use
-                            regular expressions (RE2 syntax) for namespaces and deployment labels.
-                        </div>
-                    </FlexItem>
-                    <FlexItem className="pf-v5-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
-                        <Button
-                            variant="secondary"
-                            onClick={addNewInclusionScope}
-                            isDisabled={isAllScopingDisabled}
-                        >
-                            Add inclusion scope
-                        </Button>
-                    </FlexItem>
-                </Flex>
-                <FlexItem>
-                    <Grid hasGutter md={6} xl2={4}>
-                        {scope?.map((_, index) => (
-                            // eslint-disable-next-line react/no-array-index-key
-                            <GridItem key={index}>
-                                {isFeatureFlagEnabled('ROX_LABEL_BASED_POLICY_SCOPING') ? (
-                                    <InclusionScopeCard
-                                        index={index}
-                                        scope={scope[index]}
-                                        clusters={clusters}
-                                        handleChange={handleChange}
-                                        setFieldValue={setFieldValue}
-                                        onDelete={() => deleteInclusionScope(index)}
-                                    />
-                                ) : (
-                                    <PolicyScopeCardLegacy
-                                        type="inclusion"
-                                        name={`scope[${index}]`}
-                                        clusters={clusters}
-                                        onDelete={() => deleteInclusionScope(index)}
-                                        hasAuditLogEventSource={hasAuditLogEventSource}
-                                    />
-                                )}
-                            </GridItem>
-                        ))}
-                    </Grid>
-                </FlexItem>
-            </Flex>
-            <Divider component="div" />
-            <Flex direction={{ default: 'column' }} className="pf-v5-u-p-lg">
-                <Flex>
-                    <FlexItem flex={{ default: 'flex_1' }}>
-                        <Title headingLevel="h3">Exclude by scope</Title>
-                        <div className="pf-v5-u-mt-sm">
-                            Use Exclude by scope to exclude entities from your policy. This function
-                            is only available for Deploy and Runtime lifecycle stages. You can add
-                            multiple scopes and also use regular expressions (RE2 syntax) for
-                            namespaces and deployment labels.
-                        </div>
-                    </FlexItem>
-                    <FlexItem className="pf-v5-u-pr-md" alignSelf={{ default: 'alignSelfCenter' }}>
-                        <Button
-                            variant="secondary"
-                            isDisabled={!hasDeployOrRuntimeLifecycle || isAllScopingDisabled}
-                            onClick={addNewExclusionDeploymentScope}
-                        >
-                            Add exclusion scope
-                        </Button>
-                    </FlexItem>
-                </Flex>
-                <FlexItem>
-                    <Grid hasGutter md={6} xl={4}>
-                        {excludedDeploymentScopes?.map((_, index) => (
-                            // eslint-disable-next-line react/no-array-index-key
-                            <GridItem key={index}>
-                                <PolicyScopeCardLegacy
-                                    type="exclusion"
-                                    name={`excludedDeploymentScopes[${index}]`}
-                                    clusters={clusters}
-                                    onDelete={() => deleteExclusionDeploymentScope(index)}
-                                    hasAuditLogEventSource={hasAuditLogEventSource}
-                                />
-                            </GridItem>
-                        ))}
-                    </Grid>
-                </FlexItem>
-            </Flex>
-            <Divider component="div" />
-            <Flex direction={{ default: 'column' }} className="pf-v5-u-p-lg">
-                <FlexItem flex={{ default: 'flex_1' }}>
-                    <Title headingLevel="h3">Exclude images</Title>
-                    <div className="pf-v5-u-mt-sm">
-                        The exclude images setting only applies when you check images in a
-                        continuous integration system (the Build lifecycle stage). It won&apos;t
-                        have any effect if you use this policy to check running deployments (the
-                        Deploy lifecycle stage) or runtime activities (the Run lifecycle stage).
-                    </div>
-                </FlexItem>
-                <FlexItem>
-                    <FormGroup
-                        label="Exclude images (Build lifecycle only)"
-                        fieldId="exclude-images"
-                    >
-                        <Select
-                            isOpen={isExcludeImagesOpen}
-                            selected={excludedImageNames}
-                            onSelect={handleChangeMultiSelect}
-                            onOpenChange={(nextOpen: boolean) => setIsExcludeImagesOpen(nextOpen)}
-                            toggle={(toggleRef: Ref<MenuToggleElement>) => (
-                                <MenuToggle
-                                    variant="typeahead"
-                                    aria-label="Typeahead menu toggle"
-                                    onClick={() => setIsExcludeImagesOpen((prev) => !prev)}
-                                    innerRef={toggleRef}
-                                    isExpanded={isExcludeImagesOpen}
-                                    isDisabled={
-                                        hasAuditLogEventSource ||
-                                        !hasBuildLifecycle ||
-                                        isAllScopingDisabled
-                                    }
-                                    className="pf-v5-u-w-100"
+            {!isAllScopingDisabled && hasOnlyBuildLifecycle && (
+                <Alert
+                    className="pf-v5-u-mt-lg pf-v5-u-mx-lg"
+                    isInline
+                    variant="info"
+                    title="Scopes are not supported for Build lifecycle stage."
+                    component="p"
+                />
+            )}
+            {!isAllScopingDisabled && !hasOnlyBuildLifecycle && (
+                <>
+                    <Flex direction={{ default: 'column' }} className="pf-v5-u-p-lg">
+                        <Flex>
+                            <FlexItem flex={{ default: 'flex_1' }}>
+                                <Title headingLevel="h3">
+                                    {isNewScopingEnabled ? 'Scope' : 'Restrict by scope'}
+                                </Title>
+                                <div className="pf-v5-u-mt-sm">
+                                    {isNewScopingEnabled
+                                        ? 'Apply this policy to one or more clusters, namespaces or deployments (if applicable). If no scopes are added, the policy will apply to all resources in your environment, except those excluded.'
+                                        : 'Use Restrict by scope to enable this policy only for a specific cluster, namespace, or deployment label. You can add multiple scopes and also use regular expressions (RE2 syntax) for namespaces and deployment labels.'}
+                                </div>
+                            </FlexItem>
+                            <FlexItem
+                                className="pf-v5-u-pr-md"
+                                alignSelf={{ default: 'alignSelfCenter' }}
+                            >
+                                <Button
+                                    variant="secondary"
+                                    onClick={addNewScope}
+                                    isDisabled={isAllScopingDisabled}
                                 >
-                                    <TextInputGroup isPlain>
-                                        <TextInputGroupMain
-                                            value={filterValue}
+                                    {isNewScopingEnabled ? 'Add Scope' : 'Add inclusion scope'}
+                                </Button>
+                            </FlexItem>
+                        </Flex>
+                        <FlexItem>
+                            <Grid hasGutter md={6} xl2={4}>
+                                {scope?.map((_, index) => (
+                                    // eslint-disable-next-line react/no-array-index-key
+                                    <GridItem key={index}>
+                                        {isNewScopingEnabled ? (
+                                            <InclusionScopeCard
+                                                index={index}
+                                                scope={scope[index]}
+                                                clusters={clusters}
+                                                handleChange={handleChange}
+                                                setFieldValue={setFieldValue}
+                                                onDelete={() => deleteScope(index)}
+                                                hasAuditLogEventSource={hasAuditLogEventSource}
+                                            />
+                                        ) : (
+                                            <PolicyScopeCardLegacy
+                                                type="inclusion"
+                                                name={`scope[${index}]`}
+                                                clusters={clusters}
+                                                onDelete={() => deleteScope(index)}
+                                                hasAuditLogEventSource={hasAuditLogEventSource}
+                                            />
+                                        )}
+                                    </GridItem>
+                                ))}
+                            </Grid>
+                        </FlexItem>
+                    </Flex>
+                    <Divider component="div" />
+                    <Flex direction={{ default: 'column' }} className="pf-v5-u-p-lg">
+                        <Flex>
+                            <FlexItem flex={{ default: 'flex_1' }}>
+                                <Title headingLevel="h3">
+                                    {isNewScopingEnabled ? 'Exclusions' : 'Exclude by scope'}
+                                </Title>
+                                <div className="pf-v5-u-mt-sm">
+                                    {isNewScopingEnabled
+                                        ? 'Exclude one or more clusters, namespaces, or deployments (if applicable) when this policy is applied to workloads.'
+                                        : 'Use Exclude by scope to exclude entities from your policy. This function is only available for Deploy and Runtime lifecycle stages. You can add multiple scopes and also use regular expressions (RE2 syntax) for namespaces and deployment labels.'}
+                                </div>
+                            </FlexItem>
+                            <FlexItem
+                                className="pf-v5-u-pr-md"
+                                alignSelf={{ default: 'alignSelfCenter' }}
+                            >
+                                <Button
+                                    variant="secondary"
+                                    isDisabled={isAllScopingDisabled}
+                                    onClick={addNewExclusionDeploymentScope}
+                                >
+                                    {isNewScopingEnabled ? 'Add Exclusion' : 'Add exclusion scope'}
+                                </Button>
+                            </FlexItem>
+                        </Flex>
+                        <FlexItem>
+                            <Grid hasGutter md={6} xl={4}>
+                                {excludedDeploymentScopes?.map((_, index) => (
+                                    // eslint-disable-next-line react/no-array-index-key
+                                    <GridItem key={index}>
+                                        <PolicyScopeCardLegacy
+                                            type="exclusion"
+                                            name={`excludedDeploymentScopes[${index}]`}
+                                            clusters={clusters}
+                                            onDelete={() => deleteExclusion(index)}
+                                            hasAuditLogEventSource={hasAuditLogEventSource}
+                                            cardTitle={
+                                                isNewScopingEnabled ? 'Exclusion' : undefined
+                                            }
+                                            showTooltips={isNewScopingEnabled}
+                                        />
+                                    </GridItem>
+                                ))}
+                            </Grid>
+                        </FlexItem>
+                    </Flex>
+                </>
+            )}
+            {hasBuildLifecycle && (
+                <>
+                    <Divider component="div" />
+                    <Flex direction={{ default: 'column' }} className="pf-v5-u-p-lg">
+                        <FlexItem flex={{ default: 'flex_1' }}>
+                            <Title headingLevel="h3">Exclude images</Title>
+                            <div className="pf-v5-u-mt-sm">
+                                {isNewScopingEnabled
+                                    ? 'Exclude one or more images in a continuous integration system.'
+                                    : "The exclude images setting only applies when you check images in a continuous integration system (the Build lifecycle stage). It won't have any effect if you use this policy to check running deployments (the Deploy lifecycle stage) or runtime activities (the Run lifecycle stage)."}
+                            </div>
+                        </FlexItem>
+                        <FlexItem>
+                            <FormGroup
+                                label={
+                                    isNewScopingEnabled
+                                        ? 'Exclude images'
+                                        : 'Exclude images (Build lifecycle only)'
+                                }
+                                fieldId="exclude-images"
+                            >
+                                <Select
+                                    isOpen={isExcludeImagesOpen}
+                                    selected={excludedImageNames}
+                                    onSelect={handleChangeMultiSelect}
+                                    onOpenChange={(nextOpen: boolean) =>
+                                        setIsExcludeImagesOpen(nextOpen)
+                                    }
+                                    toggle={(toggleRef: Ref<MenuToggleElement>) => (
+                                        <MenuToggle
+                                            variant="typeahead"
+                                            aria-label="Typeahead menu toggle"
                                             onClick={() => setIsExcludeImagesOpen((prev) => !prev)}
-                                            onChange={(_event, value) => setFilterValue(value)}
-                                            autoComplete="off"
-                                            placeholder="Select images to exclude"
+                                            innerRef={toggleRef}
+                                            isExpanded={isExcludeImagesOpen}
+                                            isDisabled={
+                                                hasAuditLogEventSource || isAllScopingDisabled
+                                            }
+                                            className="pf-v5-u-w-100"
                                         >
-                                            {excludedImageNames.length > 0 && (
-                                                <ChipGroup>
-                                                    {excludedImageNames.map((image) => (
-                                                        <Chip
-                                                            key={image}
+                                            <TextInputGroup isPlain>
+                                                <TextInputGroupMain
+                                                    value={filterValue}
+                                                    onClick={() =>
+                                                        setIsExcludeImagesOpen((prev) => !prev)
+                                                    }
+                                                    onChange={(_event, value) =>
+                                                        setFilterValue(value)
+                                                    }
+                                                    autoComplete="off"
+                                                    placeholder="Select images to exclude"
+                                                >
+                                                    {excludedImageNames.length > 0 && (
+                                                        <ChipGroup>
+                                                            {excludedImageNames.map((image) => (
+                                                                <Chip
+                                                                    key={image}
+                                                                    onClick={(event) => {
+                                                                        event.stopPropagation();
+                                                                        handleChangeMultiSelect(
+                                                                            event,
+                                                                            image
+                                                                        );
+                                                                    }}
+                                                                >
+                                                                    {image}
+                                                                </Chip>
+                                                            ))}
+                                                        </ChipGroup>
+                                                    )}
+                                                </TextInputGroupMain>
+                                                <TextInputGroupUtilities>
+                                                    {excludedImageNames.length > 0 && (
+                                                        <Button
+                                                            variant="plain"
                                                             onClick={(event) => {
                                                                 event.stopPropagation();
-                                                                handleChangeMultiSelect(
-                                                                    event,
-                                                                    image
+                                                                setFieldValue(
+                                                                    'excludedImageNames',
+                                                                    []
                                                                 );
+                                                                setFilterValue('');
                                                             }}
+                                                            aria-label="Clear input value"
                                                         >
-                                                            {image}
-                                                        </Chip>
-                                                    ))}
-                                                </ChipGroup>
-                                            )}
-                                        </TextInputGroupMain>
-                                        <TextInputGroupUtilities>
-                                            {excludedImageNames.length > 0 && (
-                                                <Button
-                                                    variant="plain"
-                                                    onClick={(event) => {
-                                                        event.stopPropagation();
-                                                        setFieldValue('excludedImageNames', []);
-                                                        setFilterValue('');
-                                                    }}
-                                                    aria-label="Clear input value"
-                                                >
-                                                    <TimesIcon />
-                                                </Button>
-                                            )}
-                                        </TextInputGroupUtilities>
-                                    </TextInputGroup>
-                                </MenuToggle>
-                            )}
-                        >
-                            <SelectList>
-                                {hasResults ? (
-                                    <>
-                                        {filteredImages?.map((image) => (
-                                            <SelectOption
-                                                key={image.name}
-                                                value={image.name}
-                                                isSelected={excludedImageNames.includes(image.name)}
-                                            >
-                                                {image.name}
-                                            </SelectOption>
-                                        ))}
-                                        {shouldShowCreateOption && (
-                                            <SelectOption
-                                                key={`create-${filterValue}`}
-                                                value={filterValue}
-                                            >
-                                                Create exclusion for images starting with &quot;
-                                                {filterValue}&quot;
+                                                            <TimesIcon />
+                                                        </Button>
+                                                    )}
+                                                </TextInputGroupUtilities>
+                                            </TextInputGroup>
+                                        </MenuToggle>
+                                    )}
+                                >
+                                    <SelectList>
+                                        {hasResults ? (
+                                            <>
+                                                {filteredImages?.map((image) => (
+                                                    <SelectOption
+                                                        key={image.name}
+                                                        value={image.name}
+                                                        isSelected={excludedImageNames.includes(
+                                                            image.name
+                                                        )}
+                                                    >
+                                                        {image.name}
+                                                    </SelectOption>
+                                                ))}
+                                                {shouldShowCreateOption && (
+                                                    <SelectOption
+                                                        key={`create-${filterValue}`}
+                                                        value={filterValue}
+                                                    >
+                                                        Create exclusion for images starting with
+                                                        &quot;
+                                                        {filterValue}&quot;
+                                                    </SelectOption>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <SelectOption isDisabled>
+                                                {filterValue
+                                                    ? 'No images found'
+                                                    : 'No images available'}
                                             </SelectOption>
                                         )}
-                                    </>
-                                ) : (
-                                    <SelectOption isDisabled>
-                                        {filterValue ? 'No images found' : 'No images available'}
-                                    </SelectOption>
-                                )}
-                            </SelectList>
-                        </Select>
-                        <FormHelperText>
-                            <HelperText>
-                                <HelperTextItem>
-                                    Select all images from the list for which you don&apos;t want to
-                                    trigger a violation for the policy.
-                                </HelperTextItem>
-                            </HelperText>
-                        </FormHelperText>
-                    </FormGroup>
-                </FlexItem>
-            </Flex>
+                                    </SelectList>
+                                </Select>
+                            </FormGroup>
+                        </FlexItem>
+                    </Flex>
+                </>
+            )}
         </Flex>
     );
 }
