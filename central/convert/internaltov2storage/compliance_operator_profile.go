@@ -38,14 +38,14 @@ func ComplianceOperatorProfileV2(internalMsg *central.ComplianceOperatorProfileV
 
 func centralToStorageProfileKind(kind central.ComplianceOperatorProfileV2_OperatorKind) storage.ComplianceOperatorProfileV2_OperatorKind {
 	switch kind {
-	case central.ComplianceOperatorProfileV2_OPERATOR_KIND_PROFILE:
-		return storage.ComplianceOperatorProfileV2_OPERATOR_KIND_PROFILE
-	case central.ComplianceOperatorProfileV2_OPERATOR_KIND_TAILORED_PROFILE:
-		return storage.ComplianceOperatorProfileV2_OPERATOR_KIND_TAILORED_PROFILE
+	case central.ComplianceOperatorProfileV2_PROFILE:
+		return storage.ComplianceOperatorProfileV2_PROFILE
+	case central.ComplianceOperatorProfileV2_TAILORED_PROFILE:
+		return storage.ComplianceOperatorProfileV2_TAILORED_PROFILE
 	case central.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
 		return storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED
 	default:
-		log.Errorf("Unexpected profile operator kind %v", kind)
+		log.Warnf("Unexpected profile operator kind %v", kind)
 		return storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED
 	}
 }
