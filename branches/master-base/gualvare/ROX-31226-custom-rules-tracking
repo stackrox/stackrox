@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "master-base/gualvare/ROX-31226-custom-rules-protos",
-    "hash": "bdaa47cd100361c9e0bc53ffcb0c94b6a4f42ec7"
+    "hash": "336e7654be17090c61b7084f6d8084db71b8155d"
   },
   "upstream": {
     "branch": "master-base/gualvare/ROX-31226-custom-rules-tracking"
