@@ -105,6 +105,10 @@ set_gs_path_vars() {
         WORKFLOW_SUBDIR="${repo}/${workflow_id}"
         JOB_SUBDIR="${BUILD_ID}-${JOB_NAME}"
         GS_JOB_URL="${GS_URL}/${WORKFLOW_SUBDIR}/${JOB_SUBDIR}"
+    elif is_GITHUB_ACTIONS; then
+        WORKFLOW_SUBDIR="${GITHUB_REPOSITORY}/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+        JOB_SUBDIR="${GITHUB_JOB}"
+        GS_JOB_URL="${GS_URL}/${WORKFLOW_SUBDIR}/${JOB_SUBDIR}"
     else
         die "Support is missing for this CI environment"
     fi
