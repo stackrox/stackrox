@@ -30,13 +30,13 @@ var (
 		Help:      "Number of times we miss the cache, and have to evaluate, when trying to prune processes",
 	})
 
-	processUpsertedArgsSizeHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+	processUpsertedArgsSizeHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "process_upserted_args_size",
 		Help:      "Distribution of process argument sizes in characters for upserted indicators",
 		Buckets:   []float64{0, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536},
-	})
+	}, []string{"cluster"})
 )
 
 func incrementPrunedProcessesMetric(num int) {
@@ -64,7 +64,8 @@ func getProcessArgsSizeChars(indicator *storage.ProcessIndicator) int {
 func recordProcessIndicatorsBatchAdded(indicators []*storage.ProcessIndicator) {
 	for _, indicator := range indicators {
 		argsSizeChars := getProcessArgsSizeChars(indicator)
-		processUpsertedArgsSizeHistogram.Observe(float64(argsSizeChars))
+		clusterID := indicator.GetClusterId()
+		processUpsertedArgsSizeHistogram.WithLabelValues(clusterID).Observe(float64(argsSizeChars))
 	}
 }
 
