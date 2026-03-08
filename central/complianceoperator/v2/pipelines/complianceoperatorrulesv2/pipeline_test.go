@@ -180,7 +180,7 @@ func (s *PipelineTestSuite) TestRunCreateCustomRuleMissingRuleIDAnnotationSuccee
 	ctx := context.Background()
 
 	rule := testutils.GetRuleV2SensorMsg(s.T()).CloneVT()
-	rule.OperatorKind = central.ComplianceOperatorRuleV2_OPERATOR_KIND_CUSTOM_RULE
+	rule.OperatorKind = central.ComplianceOperatorRuleV2_CUSTOM_RULE
 	delete(rule.GetAnnotations(), v1alpha1.RuleIDAnnotationKey)
 
 	s.v2DS.EXPECT().UpsertRule(ctx, gomock.Any()).Return(nil).Times(1)

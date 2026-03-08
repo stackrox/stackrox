@@ -83,12 +83,12 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	rule := event.GetComplianceOperatorRuleV2()
 
 	switch rule.GetOperatorKind() {
-	case central.ComplianceOperatorRuleV2_OPERATOR_KIND_RULE,
+	case central.ComplianceOperatorRuleV2_RULE,
 		central.ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED:
 		if rule.GetAnnotations()[v1alpha1.RuleIDAnnotationKey] == "" {
 			return errors.Errorf("Rule %s is missing the annotation %s", rule.GetName(), v1alpha1.RuleIDAnnotationKey)
 		}
-	case central.ComplianceOperatorRuleV2_OPERATOR_KIND_CUSTOM_RULE:
+	case central.ComplianceOperatorRuleV2_CUSTOM_RULE:
 		// RuleIDAnnotationKey is not required for custom rules
 	default:
 		log.Errorf("Unexpected operator kind %v for rule %s", rule.GetOperatorKind(), rule.GetName())
