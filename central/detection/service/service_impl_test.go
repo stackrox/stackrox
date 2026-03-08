@@ -737,3 +737,56 @@ func TestGetPolicyNamesAsSlice(t *testing.T) {
 		})
 	}
 }
+
+func TestConvertK8sResource_ClusterID(t *testing.T) {
+	testDeploymentYAML := `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      containers:
+      - name: test-container
+        image: nginx:latest
+`
+
+	cases := map[string]struct {
+		clusterID         string
+		expectedClusterID string
+	}{
+		"empty cluster ID": {
+			clusterID:         "",
+			expectedClusterID: "",
+		},
+		"non-empty cluster ID": {
+			clusterID:         "test-cluster-id",
+			expectedClusterID: "test-cluster-id",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			objects, _, err := getObjectsFromYAML(testDeploymentYAML)
+			require.NoError(t, err)
+			require.Len(t, objects, 1)
+
+			deployment, err := convertK8sResource(objects[0], tc.clusterID)
+			require.NoError(t, err)
+			require.NotNil(t, deployment)
+
+			assert.Equal(t, tc.expectedClusterID, deployment.GetClusterId())
+			assert.Equal(t, "test-deployment", deployment.GetName())
+			assert.Equal(t, "default", deployment.GetNamespace())
+		})
+	}
+}
