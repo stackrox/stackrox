@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/images/utils"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -301,8 +302,14 @@ func (ds *datastoreImpl) mergeCronJobs(ctx context.Context, deployment *storage.
 		return nil
 	}
 	for i, container := range deployment.GetContainers() {
-		if container.GetImage().GetId() != "" {
-			continue
+		if features.FlattenImageData.Enabled() {
+			if container.GetImage().GetId() != "" && container.GetImage().GetIdV2() != "" {
+				continue
+			}
+		} else {
+			if container.GetImage().GetId() != "" {
+				continue
+			}
 		}
 		oldContainer := oldDeployment.GetContainers()[i]
 		if oldContainer.GetImage().GetId() == "" {
@@ -311,7 +318,10 @@ func (ds *datastoreImpl) mergeCronJobs(ctx context.Context, deployment *storage.
 		if container.GetImage().GetName().GetFullName() != oldContainer.GetImage().GetName().GetFullName() {
 			continue
 		}
-		container.Image.Id = oldContainer.GetImage().GetId()
+		container.GetImage().Id = oldContainer.GetImage().GetId()
+		if features.FlattenImageData.Enabled() {
+			container.GetImage().IdV2 = utils.NewImageV2ID(container.GetImage().GetName(), container.GetImage().GetId())
+		}
 	}
 	return nil
 }

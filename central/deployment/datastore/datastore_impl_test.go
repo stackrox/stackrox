@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -170,6 +171,9 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 	expectedDep.Containers[1].Image.Id = "xyz"
 	suite.storage.EXPECT().Get(ctx, "id").Return(returnedDep, true, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
+	if features.FlattenImageData.Enabled() {
+		expectedDep.Containers[1].Image.IdV2 = utils.NewImageV2ID(expectedDep.Containers[1].Image.GetName(), expectedDep.Containers[1].Image.GetId())
+	}
 	protoassert.Equal(suite.T(), expectedDep, dep)
 }
 
