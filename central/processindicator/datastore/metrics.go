@@ -30,14 +30,6 @@ var (
 		Help:      "Number of times we miss the cache, and have to evaluate, when trying to prune processes",
 	})
 
-	processArgsHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "process_args_size_bytes",
-		Help:      "Distribution of process argument sizes in bytes for indicators written to database",
-		Buckets:   []float64{0, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536},
-	})
-
 	processArgsCharsHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -59,15 +51,6 @@ func incrementProcessPruningCacheMissesMetric() {
 	processPruningCacheMisses.Inc()
 }
 
-// getProcessArgsSizeBytes safely calculates the size of process args in bytes.
-// Returns 0 if signal or args are nil/empty.
-func getProcessArgsSizeBytes(indicator *storage.ProcessIndicator) int {
-	if indicator == nil || indicator.GetSignal() == nil {
-		return 0
-	}
-	return len(indicator.GetSignal().GetArgs())
-}
-
 // getProcessArgsSizeChars safely calculates the size of process args in characters (runes).
 // Returns 0 if signal or args are nil/empty.
 func getProcessArgsSizeChars(indicator *storage.ProcessIndicator) int {
@@ -80,9 +63,7 @@ func getProcessArgsSizeChars(indicator *storage.ProcessIndicator) int {
 // recordProcessIndicatorsBatchAdded records metrics for a batch of process indicators successfully written to DB.
 func recordProcessIndicatorsBatchAdded(indicators []*storage.ProcessIndicator) {
 	for _, indicator := range indicators {
-		argsSizeBytes := getProcessArgsSizeBytes(indicator)
 		argsSizeChars := getProcessArgsSizeChars(indicator)
-		processArgsHistogram.Observe(float64(argsSizeBytes))
 		processArgsCharsHistogram.Observe(float64(argsSizeChars))
 	}
 }
@@ -92,7 +73,6 @@ func init() {
 		prunedProcesses,
 		processPruningCacheHits,
 		processPruningCacheMisses,
-		processArgsHistogram,
 		processArgsCharsHistogram,
 	)
 }
