@@ -834,8 +834,8 @@
       "type": "string",
       "enum": [
         "OPERATOR_KIND_UNSPECIFIED",
-        "OPERATOR_KIND_PROFILE",
-        "OPERATOR_KIND_TAILORED_PROFILE"
+        "PROFILE",
+        "TAILORED_PROFILE"
       ],
       "default": "OPERATOR_KIND_UNSPECIFIED"
     },

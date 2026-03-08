@@ -197,8 +197,8 @@ message ComplianceOperatorProfileV2 {
 
   enum OperatorKind {
     OPERATOR_KIND_UNSPECIFIED = 0;
-    OPERATOR_KIND_PROFILE = 1;
-    OPERATOR_KIND_TAILORED_PROFILE = 2;
+    PROFILE = 1;
+    TAILORED_PROFILE = 2;
   }
   OperatorKind operator_kind = 11;
 }

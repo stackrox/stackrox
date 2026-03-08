@@ -25,22 +25,22 @@ const (
 type ComplianceProfile_OperatorKind int32
 
 const (
-	ComplianceProfile_OPERATOR_KIND_UNSPECIFIED      ComplianceProfile_OperatorKind = 0
-	ComplianceProfile_OPERATOR_KIND_PROFILE          ComplianceProfile_OperatorKind = 1
-	ComplianceProfile_OPERATOR_KIND_TAILORED_PROFILE ComplianceProfile_OperatorKind = 2
+	ComplianceProfile_OPERATOR_KIND_UNSPECIFIED ComplianceProfile_OperatorKind = 0
+	ComplianceProfile_PROFILE                   ComplianceProfile_OperatorKind = 1
+	ComplianceProfile_TAILORED_PROFILE          ComplianceProfile_OperatorKind = 2
 )
 
 // Enum value maps for ComplianceProfile_OperatorKind.
 var (
 	ComplianceProfile_OperatorKind_name = map[int32]string{
 		0: "OPERATOR_KIND_UNSPECIFIED",
-		1: "OPERATOR_KIND_PROFILE",
-		2: "OPERATOR_KIND_TAILORED_PROFILE",
+		1: "PROFILE",
+		2: "TAILORED_PROFILE",
 	}
 	ComplianceProfile_OperatorKind_value = map[string]int32{
-		"OPERATOR_KIND_UNSPECIFIED":      0,
-		"OPERATOR_KIND_PROFILE":          1,
-		"OPERATOR_KIND_TAILORED_PROFILE": 2,
+		"OPERATOR_KIND_UNSPECIFIED": 0,
+		"PROFILE":                   1,
+		"TAILORED_PROFILE":          2,
 	}
 )
 
@@ -410,7 +410,7 @@ var File_api_v2_compliance_profile_service_proto protoreflect.FileDescriptor
 
 const file_api_v2_compliance_profile_service_proto_rawDesc = "" +
 	"\n" +
-	"'api/v2/compliance_profile_service.proto\x12\x02v2\x1a\x13api/v2/common.proto\x1a\x1eapi/v2/compliance_common.proto\x1a\x19api/v2/search_query.proto\x1a\x1cgoogle/api/annotations.proto\"\x8b\x04\n" +
+	"'api/v2/compliance_profile_service.proto\x12\x02v2\x1a\x13api/v2/common.proto\x1a\x1eapi/v2/compliance_common.proto\x1a\x19api/v2/search_query.proto\x1a\x1cgoogle/api/annotations.proto\"\xef\x03\n" +
 	"\x11ComplianceProfile\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12'\n" +
@@ -423,11 +423,11 @@ const file_api_v2_compliance_profile_service_proto_rawDesc = "" +
 	"\x06values\x18\n" +
 	" \x03(\tR\x06values\x125\n" +
 	"\tstandards\x18\v \x03(\v2\x17.v2.ComplianceBenchmarkR\tstandards\x12G\n" +
-	"\roperator_kind\x18\f \x01(\x0e2\".v2.ComplianceProfile.OperatorKindR\foperatorKind\"l\n" +
+	"\roperator_kind\x18\f \x01(\x0e2\".v2.ComplianceProfile.OperatorKindR\foperatorKind\"P\n" +
 	"\fOperatorKind\x12\x1d\n" +
-	"\x19OPERATOR_KIND_UNSPECIFIED\x10\x00\x12\x19\n" +
-	"\x15OPERATOR_KIND_PROFILE\x10\x01\x12\"\n" +
-	"\x1eOPERATOR_KIND_TAILORED_PROFILE\x10\x02J\x04\b\x05\x10\x06\"t\n" +
+	"\x19OPERATOR_KIND_UNSPECIFIED\x10\x00\x12\v\n" +
+	"\aPROFILE\x10\x01\x12\x14\n" +
+	"\x10TAILORED_PROFILE\x10\x02J\x04\b\x05\x10\x06\"t\n" +
 	"\x1eListComplianceProfilesResponse\x121\n" +
 	"\bprofiles\x18\x01 \x03(\v2\x15.v2.ComplianceProfileR\bprofiles\x12\x1f\n" +
 	"\vtotal_count\x18\x03 \x01(\x05R\n" +

@@ -4094,11 +4094,11 @@
                 "name": "OPERATOR_KIND_UNSPECIFIED"
               },
               {
-                "name": "OPERATOR_KIND_PROFILE",
+                "name": "PROFILE",
                 "integer": 1
               },
               {
-                "name": "OPERATOR_KIND_TAILORED_PROFILE",
+                "name": "TAILORED_PROFILE",
                 "integer": 2
               }
             ]
