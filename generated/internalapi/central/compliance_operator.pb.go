@@ -149,21 +149,21 @@ type ComplianceOperatorRuleV2_OperatorKind int32
 
 const (
 	ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED ComplianceOperatorRuleV2_OperatorKind = 0
-	ComplianceOperatorRuleV2_OPERATOR_KIND_RULE        ComplianceOperatorRuleV2_OperatorKind = 1
-	ComplianceOperatorRuleV2_OPERATOR_KIND_CUSTOM_RULE ComplianceOperatorRuleV2_OperatorKind = 2
+	ComplianceOperatorRuleV2_RULE                      ComplianceOperatorRuleV2_OperatorKind = 1
+	ComplianceOperatorRuleV2_CUSTOM_RULE               ComplianceOperatorRuleV2_OperatorKind = 2
 )
 
 // Enum value maps for ComplianceOperatorRuleV2_OperatorKind.
 var (
 	ComplianceOperatorRuleV2_OperatorKind_name = map[int32]string{
 		0: "OPERATOR_KIND_UNSPECIFIED",
-		1: "OPERATOR_KIND_RULE",
-		2: "OPERATOR_KIND_CUSTOM_RULE",
+		1: "RULE",
+		2: "CUSTOM_RULE",
 	}
 	ComplianceOperatorRuleV2_OperatorKind_value = map[string]int32{
 		"OPERATOR_KIND_UNSPECIFIED": 0,
-		"OPERATOR_KIND_RULE":        1,
-		"OPERATOR_KIND_CUSTOM_RULE": 2,
+		"RULE":                      1,
+		"CUSTOM_RULE":               2,
 	}
 )
 
@@ -2846,7 +2846,7 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a#\n" +
 	"\x04Rule\x12\x1b\n" +
-	"\trule_name\x18\x01 \x01(\tR\bruleName\"\xa0\a\n" +
+	"\trule_name\x18\x01 \x01(\tR\bruleName\"\x84\a\n" +
 	"\x18ComplianceOperatorRuleV2\x12\x17\n" +
 	"\arule_id\x18\x01 \x01(\tR\x06ruleId\x12\x0e\n" +
 	"\x02id\x18\x02 \x01(\tR\x02id\x12\x12\n" +
@@ -2873,11 +2873,11 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\bplatform\x18\x01 \x01(\tR\bplatform\x12\x1e\n" +
 	"\n" +
 	"disruption\x18\x02 \x01(\tR\n" +
-	"disruption\"d\n" +
+	"disruption\"H\n" +
 	"\fOperatorKind\x12\x1d\n" +
-	"\x19OPERATOR_KIND_UNSPECIFIED\x10\x00\x12\x16\n" +
-	"\x12OPERATOR_KIND_RULE\x10\x01\x12\x1d\n" +
-	"\x19OPERATOR_KIND_CUSTOM_RULE\x10\x02\"\xd3\x03\n" +
+	"\x19OPERATOR_KIND_UNSPECIFIED\x10\x00\x12\b\n" +
+	"\x04RULE\x10\x01\x12\x0f\n" +
+	"\vCUSTOM_RULE\x10\x02\"\xd3\x03\n" +
 	"\x18ComplianceOperatorScanV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +

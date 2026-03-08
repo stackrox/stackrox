@@ -4078,11 +4078,11 @@
                 "name": "OPERATOR_KIND_UNSPECIFIED"
               },
               {
-                "name": "OPERATOR_KIND_RULE",
+                "name": "RULE",
                 "integer": 1
               },
               {
-                "name": "OPERATOR_KIND_CUSTOM_RULE",
+                "name": "CUSTOM_RULE",
                 "integer": 2
               }
             ]

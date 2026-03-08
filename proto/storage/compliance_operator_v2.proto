@@ -89,8 +89,8 @@ message ComplianceOperatorRuleV2 {
 
   enum OperatorKind {
     OPERATOR_KIND_UNSPECIFIED = 0;
-    OPERATOR_KIND_RULE = 1;
-    OPERATOR_KIND_CUSTOM_RULE = 2;
+    RULE = 1;
+    CUSTOM_RULE = 2;
   }
   OperatorKind operator_kind = 18;
 }
