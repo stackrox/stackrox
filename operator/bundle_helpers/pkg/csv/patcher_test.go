@@ -293,9 +293,6 @@ func TestConstructRelatedImages_NameTransformation(t *testing.T) {
 }
 
 func TestPatchCSV_EnrichesSecurityPolicyCRD(t *testing.T) {
-	// Regression test: addSecurityPolicyCRD must persist enriched fields even when
-	// PatchCSV has called values.SetValue(doc, "spec.*", ...) beforehand, which
-	// replaces doc["spec"] with a new map and makes any earlier spec reference stale.
 	doc := mustReadValues(t, `
 metadata:
   name: rhacs-operator.v0.0.1
