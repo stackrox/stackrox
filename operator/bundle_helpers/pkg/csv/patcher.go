@@ -294,7 +294,6 @@ func CalculateReplacedVersionForCSV(
 		return nil, nil, err
 	}
 
-	// Calculate replaced version with parsed XyzVersion values
 	replacedVersion, err = CalculateReplacedVersion(
 		versionXyz,
 		firstXyz,
