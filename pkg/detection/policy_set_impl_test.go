@@ -150,6 +150,9 @@ var badPolicy = &storage.Policy{
 }
 
 func (suite *PolicyTestSuite) TestPolicySetWithMockProviders() {
+	// Enable the feature flag for label-based policy scoping
+	suite.T().Setenv("ROX_LABEL_BASED_POLICY_SCOPING", "true")
+
 	// Test that PolicySet correctly threads providers through to policy compilation
 	mockClusterProvider := mocks.NewMockClusterLabelProvider(suite.mockController)
 	mockNamespaceProvider := mocks.NewMockNamespaceLabelProvider(suite.mockController)

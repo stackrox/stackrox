@@ -348,7 +348,7 @@ func TestWithinScope(t *testing.T) {
 
 		cs, err := CompileScope(test.scope, clusterProvider, namespaceProvider)
 		if test.expectError {
-			require.Error(t, err, "Expected error for test '%s'", test.name)
+			require.Errorf(t, err, "Expected error for test '%s'", test.name)
 			return
 		}
 		require.NoError(t, err)
