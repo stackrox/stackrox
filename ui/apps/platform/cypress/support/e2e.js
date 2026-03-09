@@ -6,10 +6,13 @@ import './commands';
 //        and the solution, later in that thread
 //        https://github.com/cypress-io/cypress/issues/871#issuecomment-509392310
 Cypress.on('scrolled', ($el) => {
-    $el.get(0).scrollIntoView({
-        block: 'center',
-        inline: 'center',
-    });
+    const el = $el.get(0);
+    if (el && typeof el.scrollIntoView === 'function') {
+        el.scrollIntoView({
+            block: 'center',
+            inline: 'center',
+        });
+    }
 });
 
 // Fixes another long standing problem in Cypress where a Chrome specific error
