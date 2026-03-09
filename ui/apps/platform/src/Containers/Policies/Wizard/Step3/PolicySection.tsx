@@ -68,7 +68,6 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                                     <Button
                                         icon={isEditingName ? <CheckIcon /> : <PencilAltIcon />}
                                         variant="plain"
-                                        className="pf-v6-u-px-sm"
                                         onClick={() => setIsEditingName((prev) => !prev)}
                                         title={
                                             isEditingName
@@ -83,14 +82,14 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                                     <Button
                                         icon={<TrashIcon />}
                                         variant="plain"
-                                        className="pf-v6-u-mr-xs pf-v6-u-px-sm pf-v6-u-py-md"
+                                        className="pf-v6-u-mr-md"
                                         title="Delete policy section"
                                         onClick={onDeleteSection}
                                     />
                                 </>
                             ),
                             hasNoOffset: true,
-                            className: undefined,
+                            className: 'pf-v6-u-py-sm',
                         },
                     })}
                     className="policy-section-card-header pf-v6-u-p-0"

@@ -202,7 +202,7 @@ function NamespaceViewPage() {
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>
-                <Table borders={false}>
+                <Table>
                     <Thead noWrap>
                         <Tr>
                             <Th sort={getSortParams('Namespace')} width={30}>

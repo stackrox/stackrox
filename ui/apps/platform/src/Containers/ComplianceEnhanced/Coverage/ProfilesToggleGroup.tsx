@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Tab, Tabs, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
+import { PageSection, Tab, Tabs, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 
 import type { ComplianceProfileSummary } from 'services/ComplianceCommon';
 
@@ -93,37 +93,37 @@ function ProfilesToggleGroup({
 
     return (
         <>
-            <Tabs
-                activeKey={selectedStandard}
-                onSelect={(_e, key) => {
-                    handleStandardSelection(key);
-                }}
-                isBox
-            >
-                {Array.from(uniqueStandards).map((standardShortName) => (
-                    <Tab
-                        key={standardShortName}
-                        eventKey={standardShortName}
-                        title={standardShortName}
-                        tabContentId={tabContentId}
-                    />
-                ))}
-            </Tabs>
-            <ToggleGroup
-                id={tabContentId}
-                aria-label="Toggle for selected profile view"
-                className="pf-v6-u-p-lg"
-            >
-                {filteredProfiles.map(({ name }) => (
-                    <ToggleGroupItem
-                        key={name}
-                        text={name}
-                        buttonId="compliance-profiles-toggle-group"
-                        isSelected={profileName === name}
-                        onChange={() => handleToggleChange(name)}
-                    />
-                ))}
-            </ToggleGroup>
+            <PageSection type="tabs">
+                <Tabs
+                    activeKey={selectedStandard}
+                    onSelect={(_e, key) => {
+                        handleStandardSelection(key);
+                    }}
+                    isBox
+                >
+                    {Array.from(uniqueStandards).map((standardShortName) => (
+                        <Tab
+                            key={standardShortName}
+                            eventKey={standardShortName}
+                            title={standardShortName}
+                            tabContentId={tabContentId}
+                        />
+                    ))}
+                </Tabs>
+            </PageSection>
+            <PageSection>
+                <ToggleGroup id={tabContentId} aria-label="Toggle for selected profile view">
+                    {filteredProfiles.map(({ name }) => (
+                        <ToggleGroupItem
+                            key={name}
+                            text={name}
+                            buttonId="compliance-profiles-toggle-group"
+                            isSelected={profileName === name}
+                            onChange={() => handleToggleChange(name)}
+                        />
+                    ))}
+                </ToggleGroup>
+            </PageSection>
         </>
     );
 }

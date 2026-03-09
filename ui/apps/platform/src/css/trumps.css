@@ -26,7 +26,7 @@ body {
 /* PatternFly style for links in classic related entity, cluster page, side panel, widget headerComponents, widget body, and React Table cell plus PatternFly table in classic page. */
 /* Also PatternFly Popover element. */
 
-a:not(.pf-v6-c-nav__link,.pf-v6-c-button),
+a:not(.pf-v6-c-nav__link,.pf-v6-c-button,[role="menuitem"]),
 button[data-testid="related-entity-list-count-value"],
 button[data-testid="related-entity-value"],
 [data-testid="cluster-page"] a,
@@ -45,7 +45,7 @@ button[data-testid="related-entity-list-count-value"]:hover {
     /* but no underline */
 }
 
-a:not(.pf-v6-c-nav__link,.pf-v6-c-button):hover,
+a:not(.pf-v6-c-nav__link,.pf-v6-c-button,[role="menuitem"]):hover,
 [data-testid="cluster-page"] a:hover,
 [data-testid="panel"] a:hover,
 [data-testid="side-panel"] > div:first-child a:hover,

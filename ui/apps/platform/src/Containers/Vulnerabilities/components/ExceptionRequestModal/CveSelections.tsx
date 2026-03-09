@@ -40,10 +40,7 @@ function CveSelections({ cves, selectedCVEIds, onAdd, onRemove }: CveSelectionsP
                 {cves.map(({ cve, summary }) => {
                     const isSelected = selectedCVEIds.includes(cve);
                     return (
-                        <ListItem
-                            key={cve}
-                            className={!isSelected ? 'pf-v6-u-background-color-200' : ''}
-                        >
+                        <ListItem key={cve}>
                             <Flex direction={{ default: 'column' }}>
                                 <Flex direction={{ default: 'row' }}>
                                     <ExternalLink>

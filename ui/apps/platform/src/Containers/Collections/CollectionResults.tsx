@@ -8,6 +8,7 @@ import {
     EmptyStateFooter,
     Flex,
     FlexItem,
+    PageSection,
     SearchInput,
     SelectOption,
     Skeleton,
@@ -214,7 +215,7 @@ function CollectionResults({
 
     return (
         <>
-            <div className="pf-v6-u-p-lg pf-v6-u-display-flex pf-v6-u-align-items-center">
+            <PageSection>
                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
                     <Flex direction={{ default: 'column' }} grow={{ default: 'grow' }}>
                         <Title headingLevel="h2">Collection results</Title>
@@ -231,16 +232,16 @@ function CollectionResults({
                     </FlexItem>
                     {headerContent}
                 </Flex>
-            </div>
+            </PageSection>
             <Divider />
-            <div className="pf-v6-u-h-100 pf-v6-u-p-lg" style={{ overflow: 'auto' }}>
+            <PageSection style={{ overflow: 'auto' }}>
                 <Flex
                     spaceItems={{ default: 'spaceItemsMd' }}
                     alignItems={{ default: 'alignItemsStretch' }}
                     direction={{ default: 'column' }}
                 >
                     <Toolbar>
-                        <ToolbarContent>
+                        <ToolbarContent rowWrap={{ default: 'nowrap' }}>
                             <ToolbarItem>
                                 <SelectSingle
                                     id="entity-type-select"
@@ -272,7 +273,7 @@ function CollectionResults({
                     </Toolbar>
                     {content}
                 </Flex>
-            </div>
+            </PageSection>
         </>
     );
 }
