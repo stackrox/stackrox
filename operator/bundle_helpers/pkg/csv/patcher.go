@@ -274,7 +274,6 @@ func CalculateReplacedVersionForCSV(
 	operatorNamePrefix string,
 	spec chartutil.Values,
 ) (previousYStream *XyzVersion, replacedVersion *XyzVersion, err error) {
-	// Parse version strings early
 	versionXyz, err := ParseXyzVersion(version)
 	if err != nil {
 		return nil, nil, err
