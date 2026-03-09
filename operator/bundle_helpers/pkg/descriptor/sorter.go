@@ -11,19 +11,14 @@ import (
 // FixCSVDescriptorsMap processes all CRDs in a CSV and fixes their specDescriptors.
 func FixCSVDescriptorsMap(csvDoc chartutil.Values) error {
 	// Navigate to spec.customresourcedefinitions.owned
-	spec, ok := csvDoc["spec"].(map[string]any)
-	if !ok {
-		return errors.New("spec not found or not a map")
+	ownedRaw, err := csvDoc.PathValue("spec.customresourcedefinitions.owned")
+	if err != nil {
+		return errors.Wrap(err, "spec.customresourcedefinitions.owned")
 	}
 
-	crds, ok := spec["customresourcedefinitions"].(map[string]any)
+	owned, ok := ownedRaw.([]any)
 	if !ok {
-		return errors.New("customresourcedefinitions not found or not a map")
-	}
-
-	owned, ok := crds["owned"].([]any)
-	if !ok {
-		return errors.New("owned not found or not a list")
+		return errors.New("spec.customresourcedefinitions.owned is not a list")
 	}
 
 	// Process each CRD
