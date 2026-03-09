@@ -262,7 +262,7 @@ function ViolationsTablePage(): ReactElement {
 
     return (
         <>
-            <PageSection hasBodyWrapper={false} id="violations-table">
+            <PageSection id="violations-table">
                 <Flex
                     direction={{ default: 'row' }}
                     alignItems={{ default: 'alignItemsCenter' }}
@@ -282,7 +282,7 @@ function ViolationsTablePage(): ReactElement {
                     </Popover>
                 </Flex>
             </PageSection>
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-0">
+            <PageSection type="tabs">
                 <Tabs
                     activeKey={selectedViolationStateTab}
                     onSelect={(_e, tab) => {
@@ -292,6 +292,7 @@ function ViolationsTablePage(): ReactElement {
                         setSelectedViolationStateTab(tab);
                     }}
                     aria-label="Violation state tabs"
+                    usePageInsets
                 >
                     <Tab
                         eventKey="ACTIVE"
@@ -310,20 +311,20 @@ function ViolationsTablePage(): ReactElement {
                     />
                 </Tabs>
             </PageSection>
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <Content component="p">
                     {getDescriptionForSelectedViolationState(selectedViolationStateTab)}
                 </Content>
             </PageSection>
             {isLoadingAlerts && (
-                <PageSection variant="default" id={tabContentId} hasBodyWrapper={false}>
+                <PageSection id={tabContentId}>
                     <Bullseye>
                         <Spinner size="xl" />
                     </Bullseye>
                 </PageSection>
             )}
             {!isLoadingAlerts && currentPageAlertsErrorMessage && (
-                <PageSection variant="default" id={tabContentId} hasBodyWrapper={false}>
+                <PageSection id={tabContentId}>
                     <Bullseye>
                         <Alert
                             variant="danger"

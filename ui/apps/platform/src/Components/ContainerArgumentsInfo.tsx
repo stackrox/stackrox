@@ -15,7 +15,7 @@ function ContainerArgumentsInfo({ args }: ContainerArgumentsInfoProps): ReactEle
         <Card>
             <CardTitle>Arguments</CardTitle>
             {args.length > 0 ? (
-                <CardBody className="pf-v6-u-background-color-200 pf-v6-u-pt-lg pf-v6-u-mx-lg pf-v6-u-mb-lg">
+                <CardBody className="pf-v6-u-pt-lg pf-v6-u-mx-lg pf-v6-u-mb-lg">
                     <List isPlain className="pf-v6-u-max-height" style={styleConstant}>
                         {args.map((arg) => (
                             <ListItem>--{arg}</ListItem>

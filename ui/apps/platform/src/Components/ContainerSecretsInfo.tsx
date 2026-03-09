@@ -44,10 +44,7 @@ function ContainerSecretsInfo({ secrets }: ContainerSecretsInfoProps) {
                                     isExpanded={secretToggles[index]}
                                     className="pf-expandable-not-large"
                                 >
-                                    <DescriptionList
-                                        isCompact
-                                        className="pf-v6-u-background-color-200 pf-v6-u-p-md"
-                                    >
+                                    <DescriptionList isCompact className="pf-v6-u-p-md">
                                         <DescriptionListGroup>
                                             <DescriptionListTerm>Source</DescriptionListTerm>
                                             <DescriptionListDescription>
