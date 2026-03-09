@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OPERATOR_DIR="$(dirname "$SCRIPT_DIR")"
 
 RELATED_IMAGES_MODE="${RELATED_IMAGES_MODE:-omit}"
-WORK_DIR="${WORK_DIR:-/tmp/bundle-compare-$$}"
+WORK_DIR="${WORK_DIR:-$(mktemp -d)}"
 
 echo "=== Comparing bundle implementations ==="
 echo "Related images mode: $RELATED_IMAGES_MODE"
