@@ -1,10 +1,17 @@
 export function getInputByLabel(label) {
-    return cy
-        .contains('label', label)
-        .invoke('attr', 'for')
-        .then((id) => {
-            cy.get(`#${CSS.escape(id)}`).scrollIntoView();
-        });
+    // Scope to an open modal if one exists, otherwise search the full page.
+    // This prevents matching labels in background content when a modal is open
+    // (e.g. PF6 Checkbox labels that now use <label> instead of <span>).
+    return cy.document().then((doc) => {
+        const modal = doc.querySelector('[role="dialog"]:not([aria-hidden="true"])');
+        const root = modal ? cy.wrap(modal) : cy;
+        return root
+            .contains('label', label)
+            .invoke('attr', 'for')
+            .then((id) => {
+                cy.get(`#${CSS.escape(id)}`).scrollIntoView();
+            });
+    });
 }
 
 export function getSelectButtonByLabel(label) {
