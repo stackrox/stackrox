@@ -2,6 +2,7 @@ package csv
 
 import (
 	"fmt"
+	"log/slog"
 	"regexp"
 	"slices"
 	"strconv"
@@ -143,11 +144,14 @@ func advancePastSkips(initialReplace, currentXyz XyzVersion, skips []XyzVersion)
 			break
 		}
 
+		slog.Info("Looks like replace version is in skips list, trying next patch.", "replace", replacement)
 		replacement = next
 	}
 
 	// Exception: if we're releasing immediate patch to broken version, still replace it
 	if replacement.IsEqualOrAfter(currentXyz) {
+		slog.Warn("Cannot identify safe patch version among skips that would be less than current. Falling back to original.",
+			"skips", skips, "current", currentXyz, "fallback", initialReplace)
 		return initialReplace
 	}
 	return replacement
