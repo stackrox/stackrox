@@ -266,9 +266,8 @@ func ProcessSkips(prefix string, spec chartutil.Values) ([]XyzVersion, error) {
 	return skips, nil
 }
 
-// CalculateReplacedVersionForCSV encapsulates the common logic for calculating
-// the replaced version from a CSV document. It returns both the previous
-// Y-stream version (used for skipRange) and the calculated replaced version.
+// CalculateReplacedVersionForCSV returns the previous
+// Y-stream version (used for skipRange) and the replaced version for a CSV document.
 func CalculateReplacedVersionForCSV(
 	version, firstVersion, unreleased string,
 	operatorNamePrefix string,
