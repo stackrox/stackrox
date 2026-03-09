@@ -13,7 +13,6 @@ import (
 	"k8s.io/utils/ptr"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 )
 
@@ -245,7 +244,7 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 		},
 	}
 
-	pred := SkipStatusControllerUpdates{}
+	pred := NewSkipStatusControllerUpdates(logr.Discard(), "Central")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := pred.Update(event.UpdateEvent{
@@ -502,7 +501,6 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 			old: &unstructured.Unstructured{
 				Object: map[string]interface{}{
 					"apiVersion": "platform.stackrox.io/v1alpha1",
-					"kind":       "Central",
 					"metadata": map[string]interface{}{
 						"name":      "stackrox-central-services",
 						"namespace": "acs-central",
@@ -595,9 +593,7 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pred := SkipStatusControllerUpdates{
-				Logger: logr.Discard(),
-			}
+			pred := NewSkipStatusControllerUpdates(logr.Discard(), "Central")
 
 			result := pred.Update(event.UpdateEvent{
 				ObjectOld: tt.old,

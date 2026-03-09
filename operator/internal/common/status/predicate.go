@@ -4,16 +4,15 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/pkg/reflectutils"
 	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/pkg/reflectutils"
-	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 // SkipStatusControllerUpdates filters events triggered by status controller updates to prevent unnecessary reconciliations.
@@ -21,37 +20,41 @@ import (
 // changes in the status controller owned conditions (Available, Progressing).
 type SkipStatusControllerUpdates struct {
 	predicate.Funcs
-	Logger logr.Logger
+	log logr.Logger
+}
+
+func NewSkipStatusControllerUpdates(logger logr.Logger, kind string) SkipStatusControllerUpdates {
+	return SkipStatusControllerUpdates{
+		log: logger.WithName("predicate-skip-status-ctrl-update").WithName(kind),
+	}
 }
 
 // Update implements predicate.TypedPredicate.
 // Returns true to allow the update event to trigger reconciliation, false to skip it.
 func (p SkipStatusControllerUpdates) Update(e event.UpdateEvent) bool {
-	log := p.Logger.WithName("predicate-skip-status-ctrl-update")
-
 	// Check for nil using reflection to handle the interface nil gotcha.
 	if reflectutils.IsNil(e.ObjectOld) || reflectutils.IsNil(e.ObjectNew) {
 		// One of the objects is nil, allow reconciliation.
-		log.Info("One of the objects is nil, allowing reconciliation")
+		p.log.Info("One of the objects is nil, allowing reconciliation")
 		return true
 	}
 
-	objOldForStatusController, err := toObjectForStatusController(e.ObjectOld, log)
+	objOldForStatusController, err := toObjectForStatusController(e.ObjectOld)
 	if err != nil {
-		log.Error(err, "Failed to convert old object to ObjectForStatusController, allowing reconciliation",
+		p.log.Error(err, "Failed to convert old object to ObjectForStatusController, allowing reconciliation",
 			"objectOldType", fmt.Sprintf("%T", e.ObjectOld))
 		return true
 	}
 
-	objNewForStatusController, err := toObjectForStatusController(e.ObjectNew, log)
+	objNewForStatusController, err := toObjectForStatusController(e.ObjectNew)
 	if err != nil {
-		log.Error(err, "Failed to convert new object to ObjectForStatusController, allowing reconciliation",
+		p.log.Error(err, "Failed to convert new object to ObjectForStatusController, allowing reconciliation",
 			"objectNewType", fmt.Sprintf("%T", e.ObjectNew))
 		return true
 	}
 
 	if reducedObjectsEqual(objOldForStatusController, objNewForStatusController) {
-		log.V(1).Info("No noteworthy changes detected in object, skipping reconciliation")
+		p.log.V(1).Info("No noteworthy changes detected in object, skipping reconciliation")
 		return false
 	}
 
@@ -84,7 +87,7 @@ func reducedObjectsEqual(oldObj, newObj platform.ObjectForStatusController) bool
 
 // toObjectForStatusController converts an interface to ObjectForStatusController,
 // handling typed and unstructured objects.
-func toObjectForStatusController(obj ctrlClient.Object, log logr.Logger) (platform.ObjectForStatusController, error) {
+func toObjectForStatusController(obj ctrlClient.Object) (platform.ObjectForStatusController, error) {
 	// We copy the passed objects because our checks involve modifying the object.
 	objCopy := obj.DeepCopyObject().(ctrlClient.Object)
 	u, ok := objCopy.(*unstructured.Unstructured)
