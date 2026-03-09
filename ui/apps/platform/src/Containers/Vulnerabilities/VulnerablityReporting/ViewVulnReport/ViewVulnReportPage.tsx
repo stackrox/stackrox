@@ -157,7 +157,7 @@ function ViewVulnReportPage() {
             </AlertGroup>
             {runError && <Alert variant="danger" isInline title={runError} component="p" />}
             <PageTitle title="View vulnerability report" />
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={vulnerabilityConfigurationReportsPath}>
                         Vulnerability reporting
@@ -165,9 +165,8 @@ function ViewVulnReportPage() {
                     <BreadcrumbItem isActive>{reportConfiguration.name}</BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
-            <Divider component="div" />
-            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
-                <Flex direction={{ default: 'row' }} className="pf-v6-u-py-lg pf-v6-u-px-lg">
+            <PageSection>
+                <Flex direction={{ default: 'row' }}>
                     <FlexItem flex={{ default: 'flex_1' }}>
                         <Title headingLevel="h1">{reportConfiguration.name}</Title>
                     </FlexItem>
@@ -236,13 +235,14 @@ function ViewVulnReportPage() {
                     )}
                 </Flex>
             </PageSection>
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-0">
+            <PageSection type="tabs">
                 <Tabs
                     activeKey={selectedTab}
                     onSelect={(_e, tab) => {
                         setSelectedTab(ensureJobContextTab(tab));
                     }}
                     aria-label="Report details tabs"
+                    usePageInsets
                 >
                     <Tab
                         tabContentId={configDetailsTabId}
