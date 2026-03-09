@@ -113,7 +113,8 @@ jobs:
           import sys
           sys.path.append('.openshift-ci')
           from post_tests import PostClusterTest
-          PostClusterTest().run()
+          # The particular test removes StackRox resources, therefore not collecting their artifacts.
+          PostClusterTest(collect_central_artifacts=False).run()
 
       - name: Run final-post
         shell: python
