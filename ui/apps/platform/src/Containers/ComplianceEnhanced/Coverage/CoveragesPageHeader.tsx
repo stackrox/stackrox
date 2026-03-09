@@ -2,7 +2,7 @@ import { Content, Flex, PageSection, Title } from '@patternfly/react-core';
 
 function CoveragesPageHeader() {
     return (
-        <PageSection hasBodyWrapper={false} component="div">
+        <PageSection component="div">
             <Flex direction={{ default: 'column' }}>
                 <Title headingLevel="h1">Coverage</Title>
                 <Content component="p">

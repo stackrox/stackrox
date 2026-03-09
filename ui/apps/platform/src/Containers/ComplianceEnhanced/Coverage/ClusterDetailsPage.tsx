@@ -150,18 +150,19 @@ function ClusterDetailsPage() {
                     </BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
+            <PageSection>
+                <ScanConfigurationSelect
+                    isLoading={scanConfigurationsQuery.isLoading}
+                    scanConfigs={scanConfigurationsQuery.response.configurations}
+                    selectedScanConfigName={selectedScanConfigName}
+                    isScanConfigDisabled={(config) =>
+                        isScanConfigurationDisabled(config, { clusterId })
+                    }
+                    setSelectedScanConfigName={setSelectedScanConfigName}
+                />
+            </PageSection>
             <Divider component="div" />
-            <ScanConfigurationSelect
-                isLoading={scanConfigurationsQuery.isLoading}
-                scanConfigs={scanConfigurationsQuery.response.configurations}
-                selectedScanConfigName={selectedScanConfigName}
-                isScanConfigDisabled={(config) =>
-                    isScanConfigurationDisabled(config, { clusterId })
-                }
-                setSelectedScanConfigName={setSelectedScanConfigName}
-            />
-            <Divider component="div" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <Flex
                     direction={{ default: 'column' }}
                     alignItems={{ default: 'alignItemsFlexStart' }}
@@ -187,31 +188,29 @@ function ClusterDetailsPage() {
                     </LabelGroup>
                 </Flex>
             </PageSection>
-            <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
-                <div>
-                    {isLoadingScanConfigProfiles ? (
-                        <Bullseye>
-                            <Spinner />
-                        </Bullseye>
-                    ) : (
-                        <>
-                            <ProfilesToggleGroup
-                                profileName={profileName}
-                                profiles={scanConfigProfilesResponse?.profiles ?? []}
-                                handleToggleChange={handleProfilesToggleChange}
-                            />
-                            <Divider component="div" />
-                            <ProfileDetailsHeader
-                                isLoading={isLoadingScanConfigProfiles}
-                                profileName={profileName}
-                                profileDetails={selectedProfileDetails}
-                            />
-                        </>
-                    )}
-                </div>
+            <PageSection padding={{ default: 'noPadding' }}>
+                {isLoadingScanConfigProfiles ? (
+                    <Bullseye>
+                        <Spinner />
+                    </Bullseye>
+                ) : (
+                    <>
+                        <ProfilesToggleGroup
+                            profileName={profileName}
+                            profiles={scanConfigProfilesResponse?.profiles ?? []}
+                            handleToggleChange={handleProfilesToggleChange}
+                        />
+                        <Divider component="div" />
+                        <ProfileDetailsHeader
+                            isLoading={isLoadingScanConfigProfiles}
+                            profileName={profileName}
+                            profileDetails={selectedProfileDetails}
+                        />
+                    </>
+                )}
             </PageSection>
             <Divider component="div" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <ClusterDetailsTable
                     checkResultsCount={checkResultsResponse?.totalCount ?? 0}
                     profileName={profileName}

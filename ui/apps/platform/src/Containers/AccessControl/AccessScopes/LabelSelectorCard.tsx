@@ -208,13 +208,7 @@ function LabelSelectorCard({
                                     {isLabelSelectorActive && <Th modifier="fitContent">Action</Th>}
                                 </Tr>
                             </Thead>
-                            <Tbody
-                                className={
-                                    labelSelectorsKey === 'namespaceLabelSelectors'
-                                        ? 'pf-v6-u-background-color-200'
-                                        : ''
-                                }
-                            >
+                            <Tbody>
                                 {requirements.map((requirement, indexRequirement) => (
                                     <RequirementRow
                                         key={`${requirement.key} ${requirement.op}`}

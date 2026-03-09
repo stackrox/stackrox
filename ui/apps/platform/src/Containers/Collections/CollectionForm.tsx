@@ -503,7 +503,7 @@ function CollectionForm({
                 </ExpandableSection>
             </Flex>
             {action.type !== 'view' && (
-                <div className="pf-v6-u-background-color-100 pf-v6-u-p-lg pf-v6-u-py-md">
+                <div className="pf-v6-u-p-lg pf-v6-u-py-md">
                     <Button
                         className="pf-v6-u-mr-md"
                         onClick={submitForm}

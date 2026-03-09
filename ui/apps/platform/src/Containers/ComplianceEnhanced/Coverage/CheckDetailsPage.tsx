@@ -134,7 +134,7 @@ function CheckDetailsPage() {
     return (
         <>
             <PageTitle title="Compliance coverage - Check" />
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink
                         to={generatePathWithScanConfig(coverageProfileChecksPath, {
@@ -146,18 +146,19 @@ function CheckDetailsPage() {
                     <BreadcrumbItem isActive>{checkName}</BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
+            <PageSection>
+                <ScanConfigurationSelect
+                    isLoading={scanConfigurationsQuery.isLoading}
+                    scanConfigs={scanConfigurationsQuery.response.configurations}
+                    selectedScanConfigName={selectedScanConfigName}
+                    isScanConfigDisabled={(config) =>
+                        isScanConfigurationDisabled(config, { profileName })
+                    }
+                    setSelectedScanConfigName={setSelectedScanConfigName}
+                />
+            </PageSection>
             <Divider component="div" />
-            <ScanConfigurationSelect
-                isLoading={scanConfigurationsQuery.isLoading}
-                scanConfigs={scanConfigurationsQuery.response.configurations}
-                selectedScanConfigName={selectedScanConfigName}
-                isScanConfigDisabled={(config) =>
-                    isScanConfigurationDisabled(config, { profileName })
-                }
-                setSelectedScanConfigName={setSelectedScanConfigName}
-            />
-            <Divider component="div" />
-            <PageSection hasBodyWrapper={false}>
+            <PageSection>
                 <CheckDetailsHeader
                     checkName={checkName}
                     checkStatsResponse={checkStatsResponse}
@@ -165,13 +166,13 @@ function CheckDetailsPage() {
                     error={checkStatsError}
                 />
             </PageSection>
-            <Divider component="div" />
             <Tabs
                 activeKey={activeTabKey}
                 onSelect={(_e, key) => {
                     setActiveTabKey(key);
                 }}
-                className="pf-v6-u-pl-lg pf-v6-u-flex-shrink-0"
+                className="pf-v6-u-flex-shrink-0"
+                usePageInsets
             >
                 <Tab
                     eventKey={RESULTS_TAB}

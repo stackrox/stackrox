@@ -10,7 +10,6 @@ import {
     Bullseye,
     Button,
     Content,
-    Divider,
     Flex,
     FlexItem,
     List,
@@ -315,7 +314,7 @@ function ScanConfigsTablePage({
     return (
         <>
             <PageTitle title="Compliance - Schedules" />
-            <PageSection hasBodyWrapper={false} component="div">
+            <PageSection>
                 <Flex direction={{ default: 'row' }} alignItems={{ default: 'alignItemsCenter' }}>
                     <Flex direction={{ default: 'column' }}>
                         <Title headingLevel="h1">Schedules</Title>
@@ -331,9 +330,8 @@ function ScanConfigsTablePage({
                     )}
                 </Flex>
             </PageSection>
-            <Divider component="div" />
             {error ? (
-                <PageSection hasBodyWrapper={false} isFilled id="policies-table-error">
+                <PageSection isFilled id="policies-table-error">
                     <Bullseye>
                         <Alert variant="danger" title={getAxiosErrorMessage(error)} component="p" />
                     </Bullseye>

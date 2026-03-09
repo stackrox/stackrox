@@ -57,10 +57,7 @@ function ScanConfigurationSelect({
     };
 
     return (
-        <Flex
-            className="pf-v6-u-px-lg pf-v6-u-py-md"
-            justifyContent={{ default: 'justifyContentSpaceBetween' }}
-        >
+        <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
             <Select
                 id="scan-schedules-filter-id"
                 isOpen={isOpen}

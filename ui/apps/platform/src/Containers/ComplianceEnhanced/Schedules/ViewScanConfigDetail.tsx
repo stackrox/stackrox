@@ -7,7 +7,6 @@ import {
     BreadcrumbItem,
     Card,
     CardBody,
-    Divider,
     Flex,
     FlexItem,
     PageSection,
@@ -140,7 +139,7 @@ function ViewScanConfigDetail({
     return (
         <>
             <PageTitle title="Compliance Scan Schedule Details" />
-            <PageSection hasBodyWrapper={false} className="pf-v6-u-py-md">
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={complianceEnhancedSchedulesPath}>
                         Scan schedules
@@ -150,7 +149,6 @@ function ViewScanConfigDetail({
                     )}
                 </Breadcrumb>
             </PageSection>
-            <Divider component="div" />
             <PageSection>
                 {!isLoading && !error && scanConfig && (
                     <>

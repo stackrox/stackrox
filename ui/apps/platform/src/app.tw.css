@@ -701,6 +701,10 @@ h6 {
     @apply h-full !important;
 }
 
+.redoc-wrap div:has(a[href*="redocly.com"]) {
+    position: static;
+}
+
 .redoc-wrap .api-content {
     @apply overflow-auto !important;
 }
