@@ -54,40 +54,49 @@ describe('Workload CVE Image Single page', () => {
     it('should display consistent data between the cards and the table test', () => {
         visitFirstImage();
 
-        // Check that the CVEs by severity totals in the card match the number in the "results found" text
-        const cardSelector = vulnSelectors.summaryCard('CVEs by severity');
+        const severityCardSelector = vulnSelectors.summaryCard('CVEs by severity');
+        const statusCardSelector = vulnSelectors.summaryCard('CVEs by status');
+
+        // Verify the severity card renders all five severity levels with numeric counts
         cy.get(
             [
-                `${cardSelector} span.pf-v6-c-icon:contains("Critical") ~ p`,
-                `${cardSelector} span.pf-v6-c-icon:contains("Important") ~ p`,
-                `${cardSelector} span.pf-v6-c-icon:contains("Moderate") ~ p`,
-                `${cardSelector} span.pf-v6-c-icon:contains("Low") ~ p`,
+                `${severityCardSelector} span.pf-v6-c-icon:contains("Critical") ~ p`,
+                `${severityCardSelector} span.pf-v6-c-icon:contains("Important") ~ p`,
+                `${severityCardSelector} span.pf-v6-c-icon:contains("Moderate") ~ p`,
+                `${severityCardSelector} span.pf-v6-c-icon:contains("Low") ~ p`,
+                `${severityCardSelector} span.pf-v6-c-icon:contains("Unknown") ~ p`,
             ].join(',')
         ).then(($severityTotals) => {
+            // All five severity levels should be rendered
+            expect($severityTotals).to.have.length(5);
+
             const severityTotal = $severityTotals.toArray().reduce((acc, $el) => {
                 const count = acc + parseInt($el.innerText.replace(/\D/g, ''), 10);
                 return Number.isNaN(count) ? acc : count;
             }, 0);
-            const plural = severityTotal === 1 ? '' : 's';
-            cy.get(`*:contains(${severityTotal} result${plural} found)`);
+
+            // Verify that the status card totals (fixable + unfixable) match the severity
+            // card totals, since both are derived from the same imageCVECountBySeverity data.
+            // Note: These sums may differ from "results found" because a single CVE can be
+            // counted under multiple severity levels when different sources assign different
+            // severities, while imageVulnerabilityCount is a deduplicated count.
+            cy.get(
+                [
+                    `${statusCardSelector} p:contains('with available fixes')`,
+                    `${statusCardSelector} p:contains("without fixes")`,
+                ].join(',')
+            ).then(($statusTotals) => {
+                const statusTotal = $statusTotals.toArray().reduce((acc, $el) => {
+                    const count = acc + parseInt($el.innerText.replace(/\D/g, ''), 10);
+                    return Number.isNaN(count) ? 0 : count;
+                }, 0);
+
+                expect(statusTotal).to.equal(severityTotal);
+            });
         });
 
-        // Check that the CVEs by status totals in the card match the number in the "results found" text
-        const fixStatusCardSelector = vulnSelectors.summaryCard('CVEs by status');
-        cy.get(
-            [
-                `${fixStatusCardSelector} p:contains('with available fixes')`,
-                `${fixStatusCardSelector} p:contains("without fixes")`,
-            ].join(',')
-        ).then(($statusTotals) => {
-            const statusTotal = $statusTotals.toArray().reduce((acc, $el) => {
-                const count = acc + parseInt($el.innerText.replace(/\D/g, ''), 10);
-                return Number.isNaN(count) ? 0 : count;
-            }, 0);
-
-            const plural = statusTotal === 1 ? '' : 's';
-            cy.get(`*:contains(${statusTotal} result${plural} found)`);
-        });
+        // Verify the "results found" text renders with a positive count
+        cy.get('h2').contains(/\d+ results? found/);
     });
 
     it('should correctly apply a severity filter', () => {
