@@ -16,11 +16,7 @@ function ClusterRegistrationSecretDescription({
     clusterRegistrationSecret,
 }: ClusterRegistrationSecretDescriptionProps): ReactElement {
     return (
-        <DescriptionList
-            isCompact
-            isHorizontal
-            className="pf-v6-u-background-color-100 pf-v6-u-p-lg"
-        >
+        <DescriptionList isCompact isHorizontal className="pf-v6-u-p-lg">
             <DescriptionListGroup>
                 <DescriptionListTerm>Name</DescriptionListTerm>
                 <DescriptionListDescription>

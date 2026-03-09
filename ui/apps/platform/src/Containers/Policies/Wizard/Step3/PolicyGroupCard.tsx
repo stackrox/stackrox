@@ -109,7 +109,7 @@ function PolicyGroupCard({
                                         <Button
                                             icon={<TrashIcon />}
                                             variant="plain"
-                                            className="pf-v6-u-mr-xs pf-v6-u-px-sm pf-v6-u-py-md"
+                                            className="pf-v6-u-mr-md"
                                             onClick={onDeleteGroup}
                                             title="Delete policy field"
                                         />

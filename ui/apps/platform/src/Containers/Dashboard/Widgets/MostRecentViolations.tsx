@@ -16,10 +16,8 @@ export type MostRecentViolationsProps = {
 
 function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
     return (
-        <>
-            <Title headingLevel="h3" className="pf-v6-u-mb-sm">
-                Most recent violations with critical severity
-            </Title>
+        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
+            <Title headingLevel="h3">Most recent violations with critical severity</Title>
             {alerts.length > 0 ? (
                 <Table variant="compact" borders={false}>
                     <Tbody>
@@ -84,7 +82,7 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
             ) : (
                 <NoDataEmptyState />
             )}
-        </>
+        </Flex>
     );
 }
 

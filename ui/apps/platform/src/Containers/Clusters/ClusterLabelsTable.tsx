@@ -131,7 +131,7 @@ function ClusterLabelsTable({
                                 </p>
                             )}
                             {validatedKey === ValidatedOptions.warning && (
-                                <p className="pf-v6-u-font-size-sm pf-v6-u-warning-color-100">
+                                <p className="pf-v6-u-font-size-sm pf-v6-u-text-color-status-warning">
                                     You will replace an existing label which has the same key
                                 </p>
                             )}

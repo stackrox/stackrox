@@ -17,6 +17,12 @@ import FilteredEntity from 'images/network-graph/filtered-entity.svg?react';
 
 const defaultTermWidth = '1rem'; // Matches the default icon width set by .pf-v6-svg
 
+// Needed to restore styles to the spacing we had in PatternFly 5, as the upgrade to PatternFly 6 removed the spacing.
+// We may want to evaluate an alternative component as a future follow-up.
+const xsRowGapStyle = {
+    '--pf-v6-c-description-list--m-compact--RowGap': 'var(--pf-t--global--spacer--xs)',
+};
+
 function LegendContent() {
     return (
         <>
@@ -37,6 +43,7 @@ function LegendContent() {
                         isHorizontal
                         className="pf-v6-u-pl-md"
                         horizontalTermWidthModifier={{ default: defaultTermWidth }}
+                        style={xsRowGapStyle}
                     >
                         <DescriptionListItem
                             term={<BuilderImageIcon />}
@@ -63,6 +70,7 @@ function LegendContent() {
                         isHorizontal
                         className="pf-v6-u-pl-md"
                         horizontalTermWidthModifier={{ default: defaultTermWidth }}
+                        style={xsRowGapStyle}
                     >
                         <DescriptionListItem
                             term={<FilteredEntity width="20px" height="20px" />}
@@ -94,6 +102,7 @@ function LegendContent() {
                         isHorizontal
                         className="pf-v6-u-pl-md"
                         horizontalTermWidthModifier={{ default: defaultTermWidth }}
+                        style={xsRowGapStyle}
                     >
                         <DescriptionListItem
                             term={<FilteredEntity width="20px" height="20px" />}
@@ -115,6 +124,7 @@ function LegendContent() {
                         isHorizontal
                         className="pf-v6-u-pl-md"
                         horizontalTermWidthModifier={{ default: defaultTermWidth }}
+                        style={xsRowGapStyle}
                     >
                         <DescriptionListItem
                             term={

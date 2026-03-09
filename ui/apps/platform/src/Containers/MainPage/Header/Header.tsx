@@ -10,8 +10,6 @@ import {
 } from '@patternfly/react-core';
 
 import BrandLogo from 'Components/PatternFly/BrandLogo';
-import Banners from '../Banners/Banners';
-import PublicConfigHeader from '../PublicConfig/PublicConfigHeader';
 import MastheadToolbar from './MastheadToolbar';
 import Notifications from './Notifications';
 
@@ -24,8 +22,6 @@ function Header(): ReactElement {
     return (
         <Masthead className="ignore-react-onclickoutside" inset={{ default: 'insetNone' }}>
             <Notifications />
-            <PublicConfigHeader />
-            <Banners />
 
             <MastheadMain>
                 <MastheadToggle className="pf-v6-u-pl-lg">
