@@ -152,7 +152,7 @@ func (e *podIPsStore) applySingleNoLock(deploymentID string, data EntityData) {
 		deplSet.Add(deploymentID)
 		// This IP has more than one deployment! Interesting, let's record it.
 		if deplSet.Cardinality() > 1 {
-			metrics.ObserveManyDeploymentsSharingSingleIP(ip.AsNetIP().String(), deplSet.AsSlice())
+			metrics.ObserveManyDeploymentsSharingSingleIP(ip.AsNetIP().String())
 		}
 		e.ipMap[ip] = deplSet
 		// If the IP being currently added was already in history,
@@ -183,10 +183,9 @@ func (e *podIPsStore) deleteDeploymentFromCurrent(deploymentID string) {
 	ips := e.reverseIPMap[deploymentID]
 	for _, address := range ips.AsSlice() {
 		deploymentsHavingIP := e.ipMap[address]
-		if deploymentsHavingIP.Cardinality() < 2 {
+		deploymentsHavingIP.Remove(deploymentID)
+		if deploymentsHavingIP.Cardinality() == 0 {
 			delete(e.ipMap, address)
-		} else {
-			log.Debugf("The same pod IP %s belongs to 2 or more deployments:%v !", address, deploymentsHavingIP.AsSlice())
 		}
 	}
 	delete(e.reverseIPMap, deploymentID)

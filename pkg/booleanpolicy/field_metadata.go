@@ -686,7 +686,7 @@ func initializeFieldMetadata() FieldMetadata {
 	)
 
 	f.registerFieldMetadataRegex(fieldnames.RequiredAnnotation,
-		querybuilders.ForFieldLabelMap(search.DeploymentAnnotation, query.MapShouldNotContain),
+		querybuilders.ForFieldLabelMapRequired(search.DeploymentAnnotation),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
 			return keyValueValueRegex
@@ -695,7 +695,7 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{}, negationForbidden)
 
 	f.registerFieldMetadataRegex(fieldnames.RequiredImageLabel,
-		querybuilders.ForFieldLabelMap(search.ImageLabel, query.MapShouldNotContain),
+		querybuilders.ForFieldLabelMapRequired(search.ImageLabel),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
 			return keyValueValueRegex
@@ -704,7 +704,7 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{}, negationForbidden)
 
 	f.registerFieldMetadataRegex(fieldnames.RequiredLabel,
-		querybuilders.ForFieldLabelMap(search.DeploymentLabel, query.MapShouldNotContain),
+		querybuilders.ForFieldLabelMapRequired(search.DeploymentLabel),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
 			return keyValueValueRegex
