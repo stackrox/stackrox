@@ -88,6 +88,8 @@ class StoreArtifacts(PostTestsConstants, RunWithBestEffortMixin):
         if test_outputs is not None:
             self.data_to_store = test_outputs + self.data_to_store
 
+        print(f"*** in store_artifacts, data to store is {self.data_to_store} ***")
+
         for source in self.data_to_store:
             args = ["scripts/ci/store-artifacts.sh", "store_artifacts", source]
             if self.artifact_destination_prefix:
