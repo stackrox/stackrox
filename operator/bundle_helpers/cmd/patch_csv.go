@@ -26,7 +26,6 @@ func PatchCSV(args []string) error {
 	echoReplacedVersionOnly := flags.Bool("echo-replaced-version-only", false, "Only compute and print replaced version")
 	unreleased := flags.String("unreleased", "", "Not yet released version, if any")
 
-	// Custom usage function
 	flags.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage: bundle-helper patch-csv [options] < input.yaml > output.yaml")
 		fmt.Fprintln(os.Stderr, "")
