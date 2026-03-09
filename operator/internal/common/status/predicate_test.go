@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
+	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,7 +14,6 @@ import (
 	"k8s.io/utils/ptr"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 )
 
 func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
@@ -449,20 +449,23 @@ func TestDeploymentStatusUpdatePredicate(t *testing.T) {
 // unstructured objects (as sent by the helm reconciler) by converting them to typed objects
 func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 	tests := []struct {
-		name           string
-		old            *unstructured.Unstructured
-		new            *unstructured.Unstructured
-		shallReconcile bool
+		name string
+		// If testWithFixedKind is false, the test case will be executed for both kinds (Central and SecuredCluster)
+		// by setting the kind in the unstructured objects accordingly.
+		// If it is true, the test case is expected to be kind-specific.
+		testWithFixedKind bool
+		old               *unstructured.Unstructured
+		new               *unstructured.Unstructured
+		shallReconcile    bool
 	}{
 		{
 			name: "Available condition changed should skip reconciliation",
 			old: &unstructured.Unstructured{
 				Object: map[string]interface{}{
 					"apiVersion": "platform.stackrox.io/v1alpha1",
-					"kind":       "Central",
 					"metadata": map[string]interface{}{
-						"name":      "stackrox-central-services",
-						"namespace": "acs-central",
+						"name":      "stackrox",
+						"namespace": "stackrox",
 					},
 					"status": map[string]interface{}{
 						"conditions": []interface{}{
@@ -478,10 +481,9 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 			new: &unstructured.Unstructured{
 				Object: map[string]interface{}{
 					"apiVersion": "platform.stackrox.io/v1alpha1",
-					"kind":       "Central",
 					"metadata": map[string]interface{}{
-						"name":      "stackrox-central-services",
-						"namespace": "acs-central",
+						"name":      "stackrox",
+						"namespace": "stackrox",
 					},
 					"status": map[string]interface{}{
 						"conditions": []interface{}{
@@ -502,8 +504,8 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 				Object: map[string]interface{}{
 					"apiVersion": "platform.stackrox.io/v1alpha1",
 					"metadata": map[string]interface{}{
-						"name":      "stackrox-central-services",
-						"namespace": "acs-central",
+						"name":      "stackrox",
+						"namespace": "stackrox",
 					},
 					"status": map[string]interface{}{
 						"conditions": []interface{}{
@@ -524,10 +526,9 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 			new: &unstructured.Unstructured{
 				Object: map[string]interface{}{
 					"apiVersion": "platform.stackrox.io/v1alpha1",
-					"kind":       "Central",
 					"metadata": map[string]interface{}{
-						"name":      "stackrox-central-services",
-						"namespace": "acs-central",
+						"name":      "stackrox",
+						"namespace": "stackrox",
 					},
 					"status": map[string]interface{}{
 						"conditions": []interface{}{
@@ -548,7 +549,8 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 			shallReconcile: true,
 		},
 		{
-			name: "spec change should allow reconciliation",
+			name:              "Central spec change should allow reconciliation",
+			testWithFixedKind: true,
 			old: &unstructured.Unstructured{
 				Object: map[string]interface{}{
 					"apiVersion": "platform.stackrox.io/v1alpha1",
@@ -589,19 +591,78 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 			},
 			shallReconcile: true,
 		},
+		{
+			name:              "SecuredCluster spec change should allow reconciliation",
+			testWithFixedKind: true,
+			old: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "platform.stackrox.io/v1alpha1",
+					"kind":       "SecuredCluster",
+					"metadata": map[string]interface{}{
+						"name":      "stackrox-secured-cluster-services",
+						"namespace": "stackrox",
+					},
+					"spec": map[string]interface{}{
+						"clusterName": "cluster1",
+					},
+				},
+			},
+			new: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "platform.stackrox.io/v1alpha1",
+					"kind":       "SecuredCluster",
+					"metadata": map[string]interface{}{
+						"name":      "stackrox-secured-cluster-services",
+						"namespace": "stackrox",
+					},
+					"spec": map[string]interface{}{
+						"clusterName": "cluster2",
+					},
+				},
+			},
+			shallReconcile: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pred := NewSkipStatusControllerUpdates(logr.Discard(), "Central")
+			runWithFixedKind := func(old, new *unstructured.Unstructured, shallReconcile bool) {
+				pred := NewSkipStatusControllerUpdates(logr.Discard(), old.GetKind())
+				result := pred.Update(event.UpdateEvent{
+					ObjectOld: old,
+					ObjectNew: new,
+				})
+				if result != shallReconcile {
+					t.Errorf("Expected predicate to return %v, got %v", tt.shallReconcile, result)
+				}
+			}
 
-			result := pred.Update(event.UpdateEvent{
-				ObjectOld: tt.old,
-				ObjectNew: tt.new,
-			})
+			// We use this loop for "instantiating" all the test cases with the correct kind
+			// without duplicating the test cases themselves for Central & SecuredCluster:
+			//
+			// The kind == "" case corresponds to the test cases which have a fixed kind set in
+			// the unstructured object already.
+			//
+			// The kind == "Central" and kind == "SecuredCluster" are only executed for the
+			// test cases which do not have a fixed kind set -- in those cases we set the kind
+			// in the unstructured objects correspondingly.
+			for _, kind := range []string{"", "Central", "SecuredCluster"} {
+				old := tt.old.DeepCopy()
+				new := tt.new.DeepCopy()
 
-			if result != tt.shallReconcile {
-				t.Errorf("Expected predicate to return %v, got %v", tt.shallReconcile, result)
+				if kind == "" {
+					if !tt.testWithFixedKind {
+						continue
+					}
+				} else {
+					if tt.testWithFixedKind {
+						continue
+					}
+					old.SetKind(kind)
+					new.SetKind(kind)
+				}
+
+				runWithFixedKind(old, new, tt.shallReconcile)
 			}
 		})
 	}
