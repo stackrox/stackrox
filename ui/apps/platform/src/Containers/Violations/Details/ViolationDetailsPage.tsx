@@ -125,7 +125,7 @@ function ViolationDetailsPage(): ReactElement {
                     mountOnEnter
                     activeKey={activeTabKey}
                     onSelect={handleTabClick}
-                    className="pf-v6-u-background-color-100 pf-v6-u-pl-lg"
+                    className="pf-v6-u-pl-lg"
                 >
                     <Tab eventKey={0} title={<TabTitleText>Violation</TabTitleText>}>
                         <PageSection hasBodyWrapper={false} variant="default">

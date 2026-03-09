@@ -127,7 +127,7 @@ function VirtualMachinePage() {
                     onSelect={(_, key) => {
                         onTabChange(key);
                     }}
-                    className="pf-v6-u-pl-md pf-v6-u-background-color-100"
+                    className="pf-v6-u-pl-md"
                 >
                     <Tab
                         eventKey={vulnTabKey}

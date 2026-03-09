@@ -192,7 +192,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                 </Bullseye>
             )}
             {isLoading && !reportSnapshots && (
-                <Bullseye className="pf-v6-u-background-color-100 pf-v6-u-p-lg">
+                <Bullseye className="pf-v6-u-p-lg">
                     <Spinner aria-label="Loading report jobs" />
                 </Bullseye>
             )}
