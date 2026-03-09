@@ -21,7 +21,7 @@ func Strings(data any, old, new string) bool {
 		}
 
 	case chartutil.Values:
-		// chartutil.Values is a named type over map[string]interface{}; convert
+		// chartutil.Values is a named type over map[string]any; convert
 		// and re-dispatch so the map[string]any branch handles it uniformly.
 		modified = Strings(map[string]any(v), old, new)
 
