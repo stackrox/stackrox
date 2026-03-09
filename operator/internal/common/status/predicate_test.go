@@ -8,7 +8,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/utils/ptr"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
@@ -242,12 +245,12 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 		},
 	}
 
-	pred := SkipStatusControllerUpdates[*platform.Central]{}
+	pred := SkipStatusControllerUpdates{}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := pred.Update(event.TypedUpdateEvent[*platform.Central]{
-				ObjectOld: tt.old,
-				ObjectNew: tt.new,
+			result := pred.Update(event.UpdateEvent{
+				ObjectOld: toUnstructuredCentral(t, tt.old),
+				ObjectNew: toUnstructuredCentral(t, tt.new),
 			})
 
 			if result != tt.shallReconcile {
@@ -255,6 +258,28 @@ func TestCentralStatusControllerUpdatePredicate(t *testing.T) {
 			}
 		})
 	}
+}
+
+// toUnstructuredCentral converts a typed Central object to an unstructured object.
+// Returns nil if the input is nil.
+func toUnstructuredCentral(t *testing.T, central *platform.Central) ctrlClient.Object {
+	if central == nil {
+		return nil
+	}
+
+	objMap, err := runtime.DefaultUnstructuredConverter.ToUnstructured(central)
+	if err != nil {
+		t.Fatalf("Failed to convert Central to unstructured: %v", err)
+	}
+
+	u := &unstructured.Unstructured{Object: objMap}
+	u.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "platform.stackrox.io",
+		Version: "v1alpha1",
+		Kind:    "Central",
+	})
+
+	return u
 }
 
 func TestDeploymentStatusUpdatePredicate(t *testing.T) {
@@ -570,11 +595,11 @@ func TestUnstructuredStatusControllerUpdatePredicate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pred := SkipStatusControllerUpdates[*unstructured.Unstructured]{
+			pred := SkipStatusControllerUpdates{
 				Logger: logr.Discard(),
 			}
 
-			result := pred.Update(event.TypedUpdateEvent[*unstructured.Unstructured]{
+			result := pred.Update(event.UpdateEvent{
 				ObjectOld: tt.old,
 				ObjectNew: tt.new,
 			})
