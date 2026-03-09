@@ -2,6 +2,12 @@ name: e2e-gke-upgrade-tests
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+    - '*'
+    branches:
+    - master
+    - release-*
   pull_request:
     types:
     - opened
