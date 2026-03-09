@@ -16,7 +16,6 @@ import (
 
 // PatchCSV patches a ClusterServiceVersion YAML file with version and image information.
 func PatchCSV(args []string) error {
-	// Create flag set for patch-csv command
 	flags := flag.NewFlagSet("patch-csv", flag.ExitOnError)
 
 	version := flags.String("use-version", "", "SemVer version of the operator (required)")
