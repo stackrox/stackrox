@@ -54,10 +54,7 @@ func processSpecDescriptorsMap(crd map[string]any) error {
 		return errors.New("specDescriptors is not a list")
 	}
 
-	// Fix descriptor order
 	fixDescriptorOrderMap(descriptors)
-
-	// Allow relative field dependencies
 	allowRelativeFieldDependenciesMap(descriptors)
 
 	return nil
