@@ -1,0 +1,233 @@
+name: Page Cache Experiment
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Non-container jobs: Go binary build on bare runner
+  # ---------------------------------------------------------------------------
+  go-build-host:
+    strategy:
+      fail-fast: false
+      matrix:
+        cache-mode: [none, fadvise, vmtouch-touch, vmtouch-lock, copy-tmpfs]
+    runs-on: ubuntu-latest
+    name: "host-build (${{ matrix.cache-mode }})"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - name: Warm page cache
+        uses: ./.github/actions/page-cache-warm
+        with:
+          mode: ${{ matrix.cache-mode }}
+
+      - name: Build Go binaries (timed)
+        run: |
+          echo "::group::Build"
+          start=$(date +%s%N)
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps
+          end=$(date +%s%N)
+          elapsed_ms=$(( (end - start) / 1000000 ))
+          echo "::endgroup::"
+          echo "### Build timing" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Cache mode | \`${{ matrix.cache-mode }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Build time | \`${elapsed_ms}ms\` |" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report cache residency after build
+        if: always()
+        run: |
+          if command -v vmtouch &>/dev/null; then
+            echo "### Post-build cache residency" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            vmtouch "$GITHUB_WORKSPACE" 2>/dev/null | tee -a "$GITHUB_STEP_SUMMARY" || true
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Container jobs: Go binary build inside CI container
+  # ---------------------------------------------------------------------------
+  go-build-container:
+    strategy:
+      fail-fast: false
+      matrix:
+        cache-mode: [none, fadvise, vmtouch-touch, vmtouch-lock, copy-tmpfs]
+    runs-on: ubuntu-latest
+    name: "container-build (${{ matrix.cache-mode }})"
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
+      options: --cap-add IPC_LOCK --ulimit memlock=-1:-1 --shm-size=2g
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - name: Warm page cache
+        uses: ./.github/actions/page-cache-warm
+        with:
+          mode: ${{ matrix.cache-mode }}
+
+      - name: Build Go binaries (timed)
+        run: |
+          echo "::group::Build"
+          start=$(date +%s%N)
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps
+          end=$(date +%s%N)
+          elapsed_ms=$(( (end - start) / 1000000 ))
+          echo "::endgroup::"
+          echo "### Build timing" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Cache mode | \`${{ matrix.cache-mode }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Build time | \`${elapsed_ms}ms\` |" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report cache residency after build
+        if: always()
+        run: |
+          if command -v vmtouch &>/dev/null; then
+            echo "### Post-build cache residency" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            vmtouch "$GITHUB_WORKSPACE" 2>/dev/null | tee -a "$GITHUB_STEP_SUMMARY" || true
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Container jobs WITHOUT cap-add: test fallback behavior
+  # ---------------------------------------------------------------------------
+  go-build-container-no-cap:
+    strategy:
+      fail-fast: false
+      matrix:
+        cache-mode: [none, vmtouch-touch, vmtouch-lock]
+    runs-on: ubuntu-latest
+    name: "container-no-cap (${{ matrix.cache-mode }})"
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
+      # No --cap-add IPC_LOCK: tests that vmtouch-lock gracefully falls back
+      options: --shm-size=2g
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - name: Warm page cache
+        uses: ./.github/actions/page-cache-warm
+        with:
+          mode: ${{ matrix.cache-mode }}
+
+      - name: Build Go binaries (timed)
+        run: |
+          echo "::group::Build"
+          start=$(date +%s%N)
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps
+          end=$(date +%s%N)
+          elapsed_ms=$(( (end - start) / 1000000 ))
+          echo "::endgroup::"
+          echo "### Build timing" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Cache mode | \`${{ matrix.cache-mode }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Build time | \`${elapsed_ms}ms\` |" >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------
+  # Go unit tests: measure impact on test runtime (not just compilation)
+  # ---------------------------------------------------------------------------
+  go-test-container:
+    strategy:
+      fail-fast: false
+      matrix:
+        cache-mode: [none, vmtouch-touch, vmtouch-lock]
+    runs-on: ubuntu-latest
+    name: "container-test (${{ matrix.cache-mode }})"
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
+      options: --cap-add IPC_LOCK --ulimit memlock=-1:-1 --shm-size=2g
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+        with:
+          save: false
+
+      - name: Warm page cache
+        uses: ./.github/actions/page-cache-warm
+        with:
+          mode: ${{ matrix.cache-mode }}
+
+      - name: Go unit tests (timed)
+        run: |
+          echo "::group::Tests"
+          start=$(date +%s%N)
+          make go-unit-tests
+          end=$(date +%s%N)
+          elapsed_ms=$(( (end - start) / 1000000 ))
+          echo "::endgroup::"
+          echo "### Test timing" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Cache mode | \`${{ matrix.cache-mode }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Test time | \`${elapsed_ms}ms\` |" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report cache residency after tests
+        if: always()
+        run: |
+          if command -v vmtouch &>/dev/null; then
+            echo "### Post-test cache residency" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            vmtouch "$GITHUB_WORKSPACE" 2>/dev/null | tee -a "$GITHUB_STEP_SUMMARY" || true
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
