@@ -50,7 +50,19 @@ type DataStore interface {
 	GetContainerImageViews(ctx context.Context, q *v1.Query) ([]*views.ContainerImageView, error)
 }
 
-func newDataStore(storage store.Store, images imageDS.DataStore, imagesV2 imageV2DS.DataStore, baselines pbDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache cache.DeletedDeployments, processFilter filter.Filter, clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker, platformMatcher platformmatcher.PlatformMatcher) (DataStore, error) {
+func newDataStore(
+	storage store.Store,
+	images imageDS.DataStore,
+	imagesV2 imageV2DS.DataStore,
+	baselines pbDS.DataStore,
+	networkFlows nfDS.ClusterDataStore,
+	risks riskDS.DataStore,
+	deletedDeploymentCache cache.DeletedDeployments,
+	processFilter filter.Filter,
+	clusterRanker *ranking.Ranker,
+	nsRanker *ranking.Ranker,
+	deploymentRanker *ranking.Ranker,
+	platformMatcher platformmatcher.PlatformMatcher) (DataStore, error) {
 	ds := newDatastoreImpl(storage, images, imagesV2, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker, platformMatcher)
 
 	go ds.initializeRanker()
