@@ -224,7 +224,7 @@ function InviteUsersModal(): ReactElement | null {
                             You must have at least one auth provider in order to invite users.
                         </Content>
                         <Content component="p">
-                            To add an auth provider, visit:
+                            To add an auth provider, visit:{' '}
                             <Link onClick={onClose} to={`${accessControlBasePath}/auth-providers`}>
                                 Access Control
                             </Link>{' '}
