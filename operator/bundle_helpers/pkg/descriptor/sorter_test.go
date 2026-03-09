@@ -184,7 +184,7 @@ func TestFixCSVDescriptorsMap(t *testing.T) {
 				"spec": "invalid",
 			},
 			wantErr:    true,
-			errMessage: "spec not found or not a map",
+			errMessage: "spec.customresourcedefinitions.owned",
 		},
 		{
 			name: "errors on invalid customresourcedefinitions type",
@@ -194,7 +194,7 @@ func TestFixCSVDescriptorsMap(t *testing.T) {
 				},
 			},
 			wantErr:    true,
-			errMessage: "customresourcedefinitions not found or not a map",
+			errMessage: "spec.customresourcedefinitions.owned",
 		},
 		{
 			name: "errors on invalid owned type",
@@ -208,7 +208,7 @@ func TestFixCSVDescriptorsMap(t *testing.T) {
 				},
 			},
 			wantErr:    true,
-			errMessage: "owned not found or not a list",
+			errMessage: "spec.customresourcedefinitions.owned",
 		},
 		{
 			name: "errors on invalid specDescriptors type",
