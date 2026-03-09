@@ -43,13 +43,10 @@ jobs:
       with:
         python-version: '3.9'  # operator/bundle_helpers venv requires Python <3.12
 
-    - name: Install yq
-      run: |
-        # Override GOTOOLCHAIN=local set by setup-go.
-        echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
-        sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/v4.44.6/yq_linux_amd64"
-        echo "0c2b24e645b57d8e7c0566d18643a6d4f5580feeea3878127354a46f2a1e4598  /usr/local/bin/yq" | sha256sum -c
-        sudo chmod +x /usr/local/bin/yq
+    # setup-go@v6 sets GOTOOLCHAIN=local; override so sub-module tools
+    # with newer go directives (e.g. tools/proto) can auto-download.
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
@@ -82,12 +79,8 @@ jobs:
         go-version-file: go.mod
         cache: false
 
-    - name: Install yq
-      run: |
-        echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
-        sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/v4.44.6/yq_linux_amd64"
-        echo "0c2b24e645b57d8e7c0566d18643a6d4f5580feeea3878127354a46f2a1e4598  /usr/local/bin/yq" | sha256sum -c
-        sudo chmod +x /usr/local/bin/yq
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
