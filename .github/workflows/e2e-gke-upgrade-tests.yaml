@@ -54,7 +54,9 @@ jobs:
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
       # The cluster name must be no longer than 26 characters.
       CLUSTER_NAME: e2e-sens-${{ github.run_id }}-${{ github.run_attempt }}
-      CI_JOB_NAME: sensor-gke-upgrade-tests
+      # Not making CI_JOB_NAME match *gke-upgrade-tests because JUnit reporting will be broken since this is only a
+      # part of the entire former gke-upgrade-tests.
+      CI_JOB_NAME: gke-upgrade-tests-sensor
       ARTIFACT_DIR: ${{ github.workspace }}/junit-reports/
       # TODO: remove the image tag override
       MAIN_IMAGE_TAG: 4.11.x-244-g092168e534
@@ -134,7 +136,6 @@ jobs:
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         LOAD_BALANCER: lb
-        CI_JOB_NAME: gha-upgrade-postgres-sensor-test
       run: |
         tests/upgrade/postgres_sensor_run.sh /tmp/postgres-sensor-upgrade-test-logs
 
