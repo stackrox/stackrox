@@ -82,7 +82,7 @@ func PatchCSV(doc chartutil.Values, opts PatchOptions) error {
 	case "omit":
 		delete(spec, "relatedImages")
 	case "konflux":
-		if err := constructRelatedImages(spec, opts.OperatorImage); err != nil {
+		if err := setRelatedImages(spec, opts.OperatorImage); err != nil {
 			return err
 		}
 	}
@@ -164,7 +164,7 @@ func injectRelatedImageEnvVars(tree any) error {
 	return nil
 }
 
-func constructRelatedImages(spec chartutil.Values, managerImage string) error {
+func setRelatedImages(spec chartutil.Values, managerImage string) error {
 	if managerImage == "" {
 		return errors.New("managerImage cannot be empty")
 	}

@@ -220,7 +220,7 @@ func TestConstructRelatedImages_MultipleEnvVars(t *testing.T) {
 	spec := map[string]any{}
 	managerImage := "quay.io/rhacs-eng/rhacs-operator:4.5.0"
 
-	err := constructRelatedImages(spec, managerImage)
+	err := setRelatedImages(spec, managerImage)
 	require.NoError(t, err)
 
 	// Verify relatedImages was created
@@ -255,7 +255,7 @@ func TestConstructRelatedImages_NoEnvVars(t *testing.T) {
 	spec := map[string]any{}
 	managerImage := "quay.io/rhacs-eng/rhacs-operator:4.5.0"
 
-	err := constructRelatedImages(spec, managerImage)
+	err := setRelatedImages(spec, managerImage)
 	require.NoError(t, err)
 
 	// Verify only manager entry exists
@@ -273,7 +273,7 @@ func TestConstructRelatedImages_NameTransformation(t *testing.T) {
 	spec := map[string]any{}
 	managerImage := "quay.io/rhacs-eng/rhacs-operator:4.5.0"
 
-	err := constructRelatedImages(spec, managerImage)
+	err := setRelatedImages(spec, managerImage)
 	require.NoError(t, err)
 
 	// Verify name transformation to lowercase
