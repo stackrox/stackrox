@@ -35,7 +35,7 @@ function fetchMatchingDeployments(
     filterText: string,
     entity: SelectorEntityType
 ) {
-    const pageSize = 10;
+    const pageSize = 20;
     const query = { [entity]: filterText };
     const sortOption = {
         field: 'Deployment',
@@ -110,7 +110,7 @@ function CollectionResults({
         isEndOfResults,
         isFetchingNextPage,
         isRefreshingResults,
-    } = usePaginatedQuery(queryFn, 10, {
+    } = usePaginatedQuery(queryFn, 20, {
         debounceRate: 800,
         manualFetch: true,
         dedupKeyFn: ({ id }) => id,
