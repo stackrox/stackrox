@@ -79,37 +79,7 @@ spec:
 	assert.Equal(t, "rhacs-operator.v4.0.0", spec["replaces"])
 }
 
-func TestInjectRelatedImageEnvVars_SingleEnvVar(t *testing.T) {
-	t.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.5.0")
-
-	spec := mustReadValues(t, `
-install:
-  spec:
-    deployments:
-    - spec:
-        template:
-          spec:
-            containers:
-            - env:
-              - name: RELATED_IMAGE_MAIN
-`)
-
-	err := injectRelatedImageEnvVars(spec)
-	require.NoError(t, err)
-
-	// Verify the value was injected
-	deployments := spec["install"].(map[string]any)["spec"].(map[string]any)["deployments"].([]any)
-	deployment := deployments[0].(map[string]any)
-	containers := deployment["spec"].(map[string]any)["template"].(map[string]any)["spec"].(map[string]any)["containers"].([]any)
-	container := containers[0].(map[string]any)
-	env := container["env"].([]any)
-	envVar := env[0].(map[string]any)
-
-	assert.Equal(t, "RELATED_IMAGE_MAIN", envVar["name"])
-	assert.Equal(t, "quay.io/rhacs-eng/main:4.5.0", envVar["value"])
-}
-
-func TestInjectRelatedImageEnvVars_MultipleNested(t *testing.T) {
+func TestInjectRelatedImageEnvVars(t *testing.T) {
 	t.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.5.0")
 	t.Setenv("RELATED_IMAGE_SCANNER", "quay.io/rhacs-eng/scanner:4.5.0")
 	t.Setenv("RELATED_IMAGE_SCANNER_DB", "quay.io/rhacs-eng/scanner-db:4.5.0")
