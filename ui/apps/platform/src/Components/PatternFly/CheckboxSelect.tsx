@@ -1,12 +1,5 @@
-import { Children, cloneElement, isValidElement, useMemo, useRef, useState } from 'react';
-import type {
-    FocusEvent,
-    FocusEventHandler,
-    MouseEvent as ReactMouseEvent,
-    ReactElement,
-    ReactNode,
-    Ref,
-} from 'react';
+import { Children, cloneElement, isValidElement, useMemo, useState } from 'react';
+import type { MouseEvent as ReactMouseEvent, ReactElement, ReactNode, Ref } from 'react';
 import {
     Badge,
     Flex,
@@ -53,11 +46,10 @@ function enhanceSelectOptions(children: ReactNode, selectionsSet: Set<string>): 
     });
 }
 
-type CheckboxSelectBaseProps = {
+type CheckboxSelectProps = {
     id?: string;
     className?: string;
     selections: string[];
-    onBlur?: FocusEventHandler<HTMLDivElement>;
     ariaLabel: string;
     children: ReactElement<SelectOptionProps>[];
     placeholderText?: string;
@@ -66,27 +58,14 @@ type CheckboxSelectBaseProps = {
     toggleAriaLabel?: string;
     isDisabled?: boolean;
     popperProps?: SelectPopperProps;
-};
-
-type CheckboxSelectWithArrayCallback = CheckboxSelectBaseProps & {
     onChange: (selections: string[]) => void;
-    onItemSelect?: never;
 };
-
-type CheckboxSelectWithItemCallback = CheckboxSelectBaseProps & {
-    onChange?: never;
-    onItemSelect: (selection: string, checked: boolean) => void;
-};
-
-export type CheckboxSelectProps = CheckboxSelectWithArrayCallback | CheckboxSelectWithItemCallback;
 
 function CheckboxSelect({
     id,
     className,
     selections,
     onChange,
-    onItemSelect,
-    onBlur,
     ariaLabel,
     children,
     placeholderText = 'Filter by value',
@@ -97,37 +76,9 @@ function CheckboxSelect({
     popperProps,
 }: CheckboxSelectProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
-    const selectRef = useRef<HTMLDivElement>(null);
 
     function onToggle() {
         setIsOpen((prev) => !prev);
-    }
-
-    function handleBlur(event: FocusEvent<HTMLDivElement>) {
-        const { currentTarget, relatedTarget } = event;
-
-        // Wait for focus to settle, then check if it moved outside the component
-        setTimeout(() => {
-            let focusMovedOutside =
-                !relatedTarget || !currentTarget.contains(relatedTarget as Node);
-
-            // If popperProps.appendTo is used, also check if focus is within the appended menu container
-            if (focusMovedOutside && popperProps?.appendTo && relatedTarget) {
-                const { appendTo } = popperProps;
-                if (typeof appendTo === 'function') {
-                    const appendedContainer = appendTo();
-                    focusMovedOutside = !appendedContainer.contains(relatedTarget as Node);
-                } else if (appendTo instanceof HTMLElement) {
-                    focusMovedOutside = !appendTo.contains(relatedTarget as Node);
-                }
-                // If appendTo is "inline", we don't need to check anything additional
-            }
-
-            if (focusMovedOutside) {
-                onBlur?.(event);
-                setIsOpen(false);
-            }
-        }, 0);
     }
 
     function onSelect(
@@ -138,11 +89,7 @@ function CheckboxSelect({
             return;
         }
 
-        if (onItemSelect) {
-            onItemSelect(selection, !selections.includes(selection));
-        } else if (onChange) {
-            onChange(toggleItemInArray(selections, selection));
-        }
+        onChange(toggleItemInArray(selections, selection));
     }
 
     const toggle = (toggleRef: Ref<MenuToggleElement>) => (
@@ -176,23 +123,23 @@ function CheckboxSelect({
     }, [children, selectionsSet]);
 
     return (
-        <div ref={selectRef} onBlur={handleBlur} className={className}>
-            <Select
-                id={id}
-                aria-label={ariaLabel}
-                isOpen={isOpen}
-                selected={selections}
-                onSelect={onSelect}
-                onOpenChange={(nextOpen: boolean) => {
-                    setIsOpen(nextOpen);
-                }}
-                toggle={toggle}
-                shouldFocusToggleOnSelect
-                popperProps={popperProps}
-            >
-                <SelectList>{enhancedChildren}</SelectList>
-            </Select>
-        </div>
+        <Select
+            id={id}
+            role="menu"
+            className={className}
+            aria-label={ariaLabel}
+            isOpen={isOpen}
+            selected={selections}
+            onSelect={onSelect}
+            onOpenChange={(nextOpen: boolean) => {
+                setIsOpen(nextOpen);
+            }}
+            toggle={toggle}
+            shouldFocusToggleOnSelect
+            popperProps={popperProps}
+        >
+            <SelectList>{enhancedChildren}</SelectList>
+        </Select>
     );
 }
 
