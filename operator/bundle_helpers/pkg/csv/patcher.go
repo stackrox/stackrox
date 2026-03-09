@@ -289,7 +289,6 @@ func CalculateReplacedVersionForCSV(
 		return nil, nil, err
 	}
 
-	// Calculate previous Y-Stream
 	previousYStream, err = GetPreviousYStream(versionXyz)
 	if err != nil {
 		return nil, nil, err
