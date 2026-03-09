@@ -142,22 +142,23 @@ runs:
     - name: Resolve version tag for shallow clones
       run: |
         # Shallow clones lack git history for git describe / make tag.
-        # Find the nearest .x version tag via ls-remote, fetch just
-        # enough history to count commits, and set BUILD_TAG (which
-        # make/env.mk checks before git describe).
+        # Find the nearest .x version tag, deepen history to include it,
+        # and fetch the tag ref so git describe works natively.
+        # We avoid BUILD_TAG because it triggers GOTAGS=release in
+        # env.mk, making CI builds release builds (wrong feature flags).
         if [ "$(git rev-parse --is-shallow-repository)" != "true" ]; then
           exit 0
         fi
         sha=$(git rev-parse HEAD)
-        sha_short=$(git rev-parse --short=10 HEAD)
         all_tags=$(git ls-remote --tags origin \
           | grep -oP 'refs/tags/\K[0-9]+\.[0-9]+\.x$' \
           | sort -rV)
         for tag in $all_tags; do
           if git fetch --shallow-exclude="$tag" origin "$sha" 2>/dev/null; then
-            count=$(git rev-list --count HEAD 2>/dev/null || echo 0)
-            echo "BUILD_TAG=${tag}-${count}-g${sha_short}" >> "$GITHUB_ENV"
-            echo "::notice::Resolved version: ${tag}-${count}-g${sha_short}"
+            git fetch --deepen=1 origin 2>/dev/null
+            git fetch --depth=1 origin "refs/tags/${tag}:refs/tags/${tag}" 2>/dev/null
+            version=$(git describe --tags --abbrev=10 --long --exclude '*-nightly-*' 2>/dev/null)
+            echo "::notice::Resolved version: ${version}"
             exit 0
           fi
         done
