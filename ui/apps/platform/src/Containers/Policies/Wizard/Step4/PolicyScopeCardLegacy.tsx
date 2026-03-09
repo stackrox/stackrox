@@ -109,14 +109,14 @@ function PolicyScopeCardLegacy({
                             <Button
                                 icon={<TrashIcon />}
                                 variant="plain"
-                                className="pf-v6-u-mr-xs pf-v6-u-px-sm pf-v6-u-py-md"
+                                className="pf-v6-u-mr-md"
                                 onClick={onDelete}
                                 title={`Delete ${type} scope`}
                             />
                         </>
                     ),
                     hasNoOffset: true,
-                    className: undefined,
+                    className: 'pf-v6-u-py-sm',
                 }}
                 className="pf-v6-u-p-0"
             >
