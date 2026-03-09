@@ -66,23 +66,18 @@ else
 fi
 
 echo ""
-if [ -d "$WORK_DIR/python-build/build" ] || [ -d "$WORK_DIR/go-build/build" ]; then
-  echo "=== Pruning createdAt timestamps from build/bundle..."
-  find "$WORK_DIR" -name "*.clusterserviceversion.yaml" -exec sed -i.bak '/^    createdAt:/d' {} \;
-  find "$WORK_DIR" -name "*.bak" -delete
+echo "=== Pruning createdAt timestamps from build/bundle..."
+find "$WORK_DIR" -name "*.clusterserviceversion.yaml" -exec sed -i.bak '/^    createdAt:/d' {} \;
+find "$WORK_DIR" -name "*.bak" -delete
 
-  echo ""
-  echo "=== Comparing build/bundle outputs..."
-  if diff -ruN "$WORK_DIR/python-build/build" "$WORK_DIR/go-build/build"; then
-    echo "✓ build/bundle outputs are identical"
-    BUILD_MATCH=true
-  else
-    echo "✗ build/bundle outputs differ"
-    BUILD_MATCH=false
-  fi
-else
-  echo "=== Skipping build/bundle comparison (neither implementation generated it)..."
+echo ""
+echo "=== Comparing build/bundle outputs..."
+if diff -ruN "$WORK_DIR/python-build/build" "$WORK_DIR/go-build/build"; then
+  echo "✓ build/bundle outputs are identical"
   BUILD_MATCH=true
+else
+  echo "✗ build/bundle outputs differ"
+  BUILD_MATCH=false
 fi
 
 # Cleanup
