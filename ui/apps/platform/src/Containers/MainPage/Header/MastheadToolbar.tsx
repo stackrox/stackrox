@@ -1,7 +1,9 @@
 import type { ReactElement } from 'react';
 import { useLocation } from 'react-router-dom-v5-compat';
-import { Flex, FlexItem } from '@patternfly/react-core';
+import { Button, Flex, FlexItem } from '@patternfly/react-core';
+import { SearchIcon } from '@patternfly/react-icons';
 
+import LinkShim from 'Components/PatternFly/LinkShim';
 import useCases from 'constants/useCaseTypes';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import parseURL from 'utils/URLParser';
@@ -9,7 +11,6 @@ import { searchPath } from 'routePaths';
 
 import CLIDownloadMenu from './CLIDownloadMenu';
 import ClusterStatusProblems from './ClusterStatusProblems';
-import GlobalSearchButton from './GlobalSearchButton';
 import HelpMenu from './HelpMenu';
 import OrchestratorComponentsToggle from './OrchestratorComponentsToggle';
 import UserMenu from './UserMenu';
@@ -35,7 +36,14 @@ function MastheadToolbar(): ReactElement {
             )}
             {isRouteEnabledForSearch && (
                 <FlexItem>
-                    <GlobalSearchButton />
+                    <Button
+                        variant="plain"
+                        component={LinkShim}
+                        href={searchPath}
+                        icon={<SearchIcon />}
+                    >
+                        Search
+                    </Button>
                 </FlexItem>
             )}
             <FlexItem>
