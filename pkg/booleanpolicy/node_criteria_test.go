@@ -230,6 +230,24 @@ func (s *NodeCriteriaTestSuite) TestNodeFileAccess() {
 			},
 		},
 		{
+			description: "Node file policy with rename event",
+			policy:      newFileAccessPolicy(storage.EventSource_NODE_EVENT, []storage.FileAccess_Operation{storage.FileAccess_RENAME}, false, "/etc/passwd"),
+			events: []eventWrapper{
+				{
+					access:      newRenameFileAccessEvent("/etc/passwd", "/foo/bar"),
+					expectAlert: true,
+				},
+				{
+					access:      newRenameFileAccessEvent("/foo/bar", "/etc/passwd"),
+					expectAlert: true,
+				},
+				{
+					access:      newRenameFileAccessEvent("/foo/bar", "/bar/baz"),
+					expectAlert: false,
+				},
+			},
+		},
+		{
 			description: "Node file policy with wildcards",
 			policy: newFileAccessPolicy(storage.EventSource_NODE_EVENT, nil, false,
 				"/etc/*", "/home/*/.config/**/*.config", "/home/user/file?", "/home/user/.ssh/id_{rsa,dsa}",
