@@ -92,7 +92,7 @@ function ReportParametersForm({ title, formik }: ReportParametersFormProps): Rea
         };
 
     const handleCheckboxSelectChange = (fieldName: string) => (selection: string[]) => {
-        formik.setFieldValue(fieldName, selection);
+        formik.setFieldValue(fieldName, selection, true);
     };
 
     const handleDateSelection = (fieldName: string) => (_event: FormEvent, selection: string) => {
@@ -163,7 +163,6 @@ function ReportParametersForm({ title, formik }: ReportParametersFormProps): Rea
                         ariaLabel="CVE severity checkbox select"
                         selections={formik.values.reportParameters.cveSeverities}
                         onChange={handleCheckboxSelectChange('reportParameters.cveSeverities')}
-                        onBlur={formik.handleBlur}
                         placeholderText="CVE severity"
                         popperProps={{ appendTo: () => document.body }}
                     >
@@ -225,7 +224,6 @@ function ReportParametersForm({ title, formik }: ReportParametersFormProps): Rea
                         ariaLabel="CVE status checkbox select"
                         selections={formik.values.reportParameters.cveStatus}
                         onChange={handleCheckboxSelectChange('reportParameters.cveStatus')}
-                        onBlur={formik.handleBlur}
                         placeholderText="CVE status"
                         popperProps={{ appendTo: () => document.body }}
                     >
@@ -246,7 +244,6 @@ function ReportParametersForm({ title, formik }: ReportParametersFormProps): Rea
                         ariaLabel="Image type checkbox select"
                         selections={formik.values.reportParameters.imageType}
                         onChange={handleCheckboxSelectChange('reportParameters.imageType')}
-                        onBlur={formik.handleBlur}
                         placeholderText="Image type"
                         popperProps={{ appendTo: () => document.body }}
                     >
