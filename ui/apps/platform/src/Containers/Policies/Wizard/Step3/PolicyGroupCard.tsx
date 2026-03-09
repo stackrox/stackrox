@@ -198,9 +198,7 @@ function PolicyGroupCard({
                                             ? 'All options for this field have been selected'
                                             : 'Add value of policy field'
                                     }
-                                >
-                                    <PlusIcon />
-                                </Button>
+                                />
                             </Flex>
                         )}
                 </CardBody>
