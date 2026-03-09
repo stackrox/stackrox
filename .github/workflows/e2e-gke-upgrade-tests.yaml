@@ -55,7 +55,7 @@ jobs:
       # The cluster name must be no longer than 26 characters.
       CLUSTER_NAME: e2e-sens-${{ github.run_id }}-${{ github.run_attempt }}
       CI_JOB_NAME: sensor-gke-upgrade-tests
-      ARTIFACT_DIR: ${{ github.workspace }}/logs/artifacts
+      ARTIFACT_DIR: ${{ github.workspace }}/junit-reports/
       # TODO: remove the image tag override
       MAIN_IMAGE_TAG: 4.11.x-244-g092168e534
     container:
@@ -170,4 +170,4 @@ jobs:
         create-jiras: ${{ github.event_name == 'push' }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-        directory: 'junit-reports'
+        directory: ${{ env.ARTIFACT_DIR }}
