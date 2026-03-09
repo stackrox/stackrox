@@ -19,20 +19,11 @@ func mustReadValues(t *testing.T, s string) chartutil.Values {
 	return v
 }
 
-func TestPatchCSV(t *testing.T) {
+func TestPatchCSV_BasicVersionPatching(t *testing.T) {
 	t.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.0.0")
 	t.Setenv("RELATED_IMAGE_SCANNER", "quay.io/rhacs-eng/scanner:4.0.0")
 
-	tests := []struct {
-		name       string
-		input      chartutil.Values
-		opts       PatchOptions
-		wantErr    bool
-		assertions func(t *testing.T, result chartutil.Values)
-	}{
-		{
-			name: "basic version patching",
-			input: mustReadValues(t, `
+	input := mustReadValues(t, `
 metadata:
   name: rhacs-operator.v0.0.1
   annotations:
@@ -42,28 +33,31 @@ spec:
   version: "0.0.1"
   customresourcedefinitions:
     owned: []
-`),
-			opts: PatchOptions{
-				Version:           "4.0.0",
-				OperatorImage:     "quay.io/stackrox-io/stackrox-operator:4.0.0",
-				FirstVersion:      "3.62.0",
-				RelatedImagesMode: "omit",
-			},
-			assertions: func(t *testing.T, result chartutil.Values) {
-				metadata := result["metadata"].(map[string]any)
-				assert.Equal(t, "rhacs-operator.v4.0.0", metadata["name"])
+`)
+	err := PatchCSV(input, PatchOptions{
+		Version:           "4.0.0",
+		OperatorImage:     "quay.io/stackrox-io/stackrox-operator:4.0.0",
+		FirstVersion:      "3.62.0",
+		RelatedImagesMode: "omit",
+	})
+	require.NoError(t, err)
 
-				annotations := metadata["annotations"].(map[string]any)
-				assert.Equal(t, "quay.io/stackrox-io/stackrox-operator:4.0.0", annotations["containerImage"])
-				assert.NotEmpty(t, annotations["createdAt"])
+	metadata := input["metadata"].(map[string]any)
+	assert.Equal(t, "rhacs-operator.v4.0.0", metadata["name"])
 
-				spec := result["spec"].(map[string]any)
-				assert.Equal(t, "4.0.0", spec["version"])
-			},
-		},
-		{
-			name: "replaces version calculation",
-			input: mustReadValues(t, `
+	annotations := metadata["annotations"].(map[string]any)
+	assert.Equal(t, "quay.io/stackrox-io/stackrox-operator:4.0.0", annotations["containerImage"])
+	assert.NotEmpty(t, annotations["createdAt"])
+
+	spec := input["spec"].(map[string]any)
+	assert.Equal(t, "4.0.0", spec["version"])
+}
+
+func TestPatchCSV_ReplacesVersionCalculation(t *testing.T) {
+	t.Setenv("RELATED_IMAGE_MAIN", "quay.io/rhacs-eng/main:4.0.0")
+	t.Setenv("RELATED_IMAGE_SCANNER", "quay.io/rhacs-eng/scanner:4.0.0")
+
+	input := mustReadValues(t, `
 metadata:
   name: rhacs-operator.v0.0.1
   annotations:
@@ -72,33 +66,17 @@ spec:
   version: "0.0.1"
   customresourcedefinitions:
     owned: []
-`),
-			opts: PatchOptions{
-				Version:           "4.0.1",
-				OperatorImage:     "quay.io/stackrox-io/stackrox-operator:4.0.1",
-				FirstVersion:      "4.0.0",
-				RelatedImagesMode: "omit",
-			},
-			assertions: func(t *testing.T, result chartutil.Values) {
-				spec := result["spec"].(map[string]any)
-				assert.Equal(t, "rhacs-operator.v4.0.0", spec["replaces"])
-			},
-		},
-	}
+`)
+	err := PatchCSV(input, PatchOptions{
+		Version:           "4.0.1",
+		OperatorImage:     "quay.io/stackrox-io/stackrox-operator:4.0.1",
+		FirstVersion:      "4.0.0",
+		RelatedImagesMode: "omit",
+	})
+	require.NoError(t, err)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := PatchCSV(tt.input, tt.opts)
-			if tt.wantErr {
-				require.Error(t, err)
-				return
-			}
-			require.NoError(t, err)
-			if tt.assertions != nil {
-				tt.assertions(t, tt.input)
-			}
-		})
-	}
+	spec := input["spec"].(map[string]any)
+	assert.Equal(t, "rhacs-operator.v4.0.0", spec["replaces"])
 }
 
 func TestInjectRelatedImageEnvVars_SingleEnvVar(t *testing.T) {
