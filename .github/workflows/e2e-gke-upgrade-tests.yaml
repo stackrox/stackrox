@@ -45,7 +45,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Fix $PATH for infractl
-        run: echo "$HOME/.local/bin" >s> "$GITHUB_PATH"
+        run: echo "$HOME/.local/bin" | tee -a "$GITHUB_PATH"
 
       - name: Trigger test cluster creation
         uses: stackrox/actions/infra/create-cluster@v1
