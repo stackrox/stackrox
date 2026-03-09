@@ -22,6 +22,21 @@ type PatchOptions struct {
 	Unreleased          string
 }
 
+const rawNameSuffix = ".v0.0.1"
+
+// GetRawName returns the operator name prefix from metadata.name,
+// which is expected to end with ".v0.0.1" (the placeholder version).
+func GetRawName(doc chartutil.Values) (string, error) {
+	name, err := values.GetString(doc, "metadata.name")
+	if err != nil {
+		return "", fmt.Errorf("failed to get metadata.name: %w", err)
+	}
+	if !strings.HasSuffix(name, rawNameSuffix) {
+		return "", fmt.Errorf("metadata.name does not end with %s: %s", rawNameSuffix, name)
+	}
+	return strings.TrimSuffix(name, rawNameSuffix), nil
+}
+
 // PatchCSV modifies the CSV document in-place according to options
 func PatchCSV(doc chartutil.Values, opts PatchOptions) error {
 	// Update createdAt timestamp
@@ -37,13 +52,9 @@ func PatchCSV(doc chartutil.Values, opts PatchOptions) error {
 	rewrite.Strings(doc, placeholderImage, opts.OperatorImage)
 
 	// Update metadata name with version
-	metadataName, err := values.GetString(doc, "metadata.name")
+	rawName, err := GetRawName(doc)
 	if err != nil {
-		return fmt.Errorf("failed to get metadata.name: %w", err)
-	}
-	rawName := strings.TrimSuffix(metadataName, ".v0.0.1")
-	if !strings.HasSuffix(metadataName, ".v0.0.1") {
-		return fmt.Errorf("metadata.name does not end with .v0.0.1: %s", metadataName)
+		return err
 	}
 	if err := values.SetValue(doc, "metadata.name", fmt.Sprintf("%s.v%s", rawName, opts.Version)); err != nil {
 		return fmt.Errorf("failed to set metadata.name: %w", err)
