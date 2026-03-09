@@ -188,40 +188,45 @@ make_artifacts_help() {
             </html>
 EOH
     elif is_GITHUB_ACTIONS; then
-        echo '
-            # Additional StackRox e2e artifacts
+        (
+            export GS_URL
+            export gs_job_url
+            export gs_workflow_url
+            export browser_job_url
+            echo '
+# Additional StackRox e2e artifacts
 
-            Additional StackRox e2e artifacts are stored in a GCS bucket (`$GS_URL`) by the
-            `store_artifacts` bash function.
+Additional StackRox e2e artifacts are stored in a GCS bucket (`$GS_URL`) by the
+`store_artifacts` bash function.
 
-            There are at least two options for access:
+There are at least two options for access:
 
-            ## Option 1: gcloud storage cp
+## Option 1: gcloud storage cp
 
-            Copy all artifacts for the build/job:
-            ```bash
-            gcloud storage cp -r $gs_job_url .
-            ```
+Copy all artifacts for the build/job:
+```bash
+gcloud storage cp -r $gs_job_url .
+```
 
-            or copy all artifacts for the entire workflow:
-            ```bash
-            gcloud storage cp -r $gs_workflow_url .
-            ```
+or copy all artifacts for the entire workflow:
+```bash
+gcloud storage cp -r $gs_workflow_url .
+```
 
-            Then browse files locally.
+Then browse files locally.
 
-            ## Option 2: Browse using the Google cloud UI
+## Option 2: Browse using the Google cloud UI
 
-            Make sure to use the URL where `authuser` corresponds to your @redhat.com account.
+Make sure to use the URL where `authuser` corresponds to your @redhat.com account.
 
-            You can check this by clicking on the user avatar in the top right corner of Google Cloud Console page
-            after following the link.
+You can check this by clicking on the user avatar in the top right corner of Google Cloud Console page
+after following the link.
 
-            * [authuser=0](${browser_job_url}?authuser=0")
-            * [authuser=1](${browser_job_url}?authuser=1")
-            * [authuser=2](${browser_job_url}?authuser=2")
-
-        ' | envsubst | tee -a "${GITHUB_STEP_SUMMARY}"
+* [authuser=0](${browser_job_url}?authuser=0")
+* [authuser=1](${browser_job_url}?authuser=1")
+* [authuser=2](${browser_job_url}?authuser=2")
+            ' | envsubst | tee -a "${GITHUB_STEP_SUMMARY}"
+        )
     else
         die "This is an unsupported environment"
     fi
