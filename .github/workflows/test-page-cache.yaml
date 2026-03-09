@@ -229,3 +229,122 @@ jobs:
             vmtouch "$GITHUB_WORKSPACE" 2>/dev/null | tee -a "$GITHUB_STEP_SUMMARY" || true
             echo '```' >> "$GITHUB_STEP_SUMMARY"
           fi
+
+  # ---------------------------------------------------------------------------
+  # Docker --tmpfs overlay: tmpfs is mounted directly on the workspace path
+  # at container creation time. Checkout writes directly to tmpfs — no copy
+  # needed. This is the approach from the stashed build.yaml experiments.
+  #
+  # The --tmpfs flag mounts a fresh tmpfs on /__w/stackrox/stackrox OVER the
+  # bind mount. Checkout then writes into tmpfs natively. We must copy
+  # .github/ back to the host bind mount so the GHA runner can resolve local
+  # actions (it reads from the host filesystem, not the container's).
+  # ---------------------------------------------------------------------------
+  pre-build-go-docker-tmpfs:
+    runs-on: ubuntu-latest
+    name: "pre-build-go (docker-tmpfs)"
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
+        # Expose host workspace so we can copy .github/ back for action resolution
+        - /home/runner/work:/__w_host
+      options: >-
+        --cap-add IPC_LOCK --ulimit memlock=-1:-1
+        --tmpfs /__w/stackrox/stackrox:rw,exec,size=2g
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      # Copy .github/ to the host bind mount so GHA can resolve local actions
+      - name: Expose local actions to host
+        run: cp -a .github /__w_host/stackrox/stackrox/.github
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - uses: ./.github/actions/handle-tagged-build
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - name: Report filesystem type
+        run: |
+          echo "### Filesystem info" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          df -Th "$GITHUB_WORKSPACE" | tee -a "$GITHUB_STEP_SUMMARY"
+          mount | grep -E '(stackrox|tmpfs)' | tee -a "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build Go Binaries (timed)
+        run: |
+          start=$(date +%s%N)
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps
+          end=$(date +%s%N)
+          elapsed_ms=$(( (end - start) / 1000000 ))
+          elapsed_s=$(( elapsed_ms / 1000 ))
+          echo "### pre-build-go (docker-tmpfs) timing" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Cache mode | \`docker-tmpfs\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Build time | \`${elapsed_s}s\` (\`${elapsed_ms}ms\`) |" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Bundle the build to preserve permissions
+        run: tar -cvzf go-binaries-build.tgz bin/linux_amd64
+
+  go-test-docker-tmpfs:
+    runs-on: ubuntu-latest
+    name: "go-test (docker-tmpfs)"
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
+        - /home/runner/work:/__w_host
+      options: >-
+        --cap-add IPC_LOCK --ulimit memlock=-1:-1
+        --tmpfs /__w/stackrox/stackrox:rw,exec,size=2g
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Expose local actions to host
+        run: cp -a .github /__w_host/stackrox/stackrox/.github
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - uses: ./.github/actions/handle-tagged-build
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+        with:
+          save: false
+
+      - name: Report filesystem type
+        run: |
+          echo "### Filesystem info" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          df -Th "$GITHUB_WORKSPACE" | tee -a "$GITHUB_STEP_SUMMARY"
+          mount | grep -E '(stackrox|tmpfs)' | tee -a "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Go unit tests (timed)
+        run: |
+          start=$(date +%s%N)
+          make go-unit-tests
+          end=$(date +%s%N)
+          elapsed_ms=$(( (end - start) / 1000000 ))
+          elapsed_s=$(( elapsed_ms / 1000 ))
+          echo "### go-test (docker-tmpfs) timing" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Cache mode | \`docker-tmpfs\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Test time | \`${elapsed_s}s\` (\`${elapsed_ms}ms\`) |" >> "$GITHUB_STEP_SUMMARY"
