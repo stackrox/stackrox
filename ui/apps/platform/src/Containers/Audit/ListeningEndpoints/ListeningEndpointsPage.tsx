@@ -3,7 +3,7 @@ import {
     Bullseye,
     Button,
     Content,
-    Divider,
+    Flex,
     PageSection,
     Pagination,
     Spinner,
@@ -65,18 +65,15 @@ function ListeningEndpointsPage() {
     return (
         <>
             <PageTitle title="Listening Endpoints" />
-            <PageSection hasBodyWrapper={false} variant="default">
-                <Title headingLevel="h1">Listening endpoints</Title>
-                <Content component="p">
-                    Audit listening endpoints of deployments in your clusters
-                </Content>
+            <PageSection>
+                <Flex direction={{ default: 'column' }}>
+                    <Title headingLevel="h1">Listening endpoints</Title>
+                    <Content component="p">
+                        Audit listening endpoints of deployments in your clusters
+                    </Content>
+                </Flex>
             </PageSection>
-            <Divider component="div" />
-            <PageSection
-                hasBodyWrapper={false}
-                isFilled
-                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column"
-            >
+            <PageSection isFilled className="pf-v6-u-display-flex pf-v6-u-flex-direction-column">
                 <Toolbar>
                     <ToolbarContent>
                         <CompoundSearchFilter
