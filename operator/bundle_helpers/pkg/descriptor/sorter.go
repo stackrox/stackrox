@@ -60,10 +60,8 @@ func processSpecDescriptorsMap(crd map[string]any) error {
 // Mimics Python: descriptors.sort(key=lambda d: f'.{d["path"]}'.rsplit('.', 1)[0])
 func fixDescriptorOrderMap(descriptors []any) {
 	sort.SliceStable(descriptors, func(i, j int) bool {
-		pathI := getDescriptorPathMap(descriptors[i])
-		pathJ := getDescriptorPathMap(descriptors[j])
-		parentI := getParentPath(pathI)
-		parentJ := getParentPath(pathJ)
+		parentI := getDescriptorParentPath(descriptors[i])
+		parentJ := getDescriptorParentPath(descriptors[j])
 		return parentI < parentJ
 	})
 }
@@ -78,8 +76,8 @@ func getParentPath(path string) string {
 	return path[:lastDot]
 }
 
-// getDescriptorPathMap extracts the 'path' field from a descriptor map.
-func getDescriptorPathMap(desc any) string {
+// getDescriptorParentPath extracts the 'path' field from a descriptor map.
+func getDescriptorParentPath(desc any) string {
 	descMap, ok := desc.(map[string]any)
 	if !ok {
 		return ""
@@ -90,7 +88,7 @@ func getDescriptorPathMap(desc any) string {
 		return ""
 	}
 
-	return path
+	return getParentPath(path)
 }
 
 // allowRelativeFieldDependenciesMap converts relative field dependency paths to absolute.
