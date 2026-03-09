@@ -294,7 +294,7 @@ function ViewVulnReportPage() {
                 </PageSection>
             )}
             {selectedTab === 'ALL_REPORT_JOBS' && (
-                <PageSection hasBodyWrapper={false} isCenterAligned id={allReportJobsTabId}>
+                <PageSection id={allReportJobsTabId}>
                     <ReportJobs reportId={reportId} />
                 </PageSection>
             )}

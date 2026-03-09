@@ -123,7 +123,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
     return (
         <>
             <Toolbar>
-                <ToolbarContent>
+                <ToolbarContent alignItems="center">
                     <ToolbarItem>
                         <CheckboxSelect
                             ariaLabel="Report status filter"
@@ -179,9 +179,8 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
-            <Divider component="div" />
             {error && (
-                <Bullseye className="pf-v6-u-background-color-100">
+                <Bullseye>
                     <EmptyStateTemplate
                         title="Error loading report jobs"
                         headingLevel="h2"
