@@ -121,6 +121,7 @@ function NotifierMailingLists({
                             value={notifierId}
                             handleSelect={onSelectNotifier}
                             placeholderText="Select a notifier"
+                            menuAppendTo="inline"
                             footer={
                                 hasWriteAccessForIntegration && (
                                     <Button
