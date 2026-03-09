@@ -22,8 +22,23 @@ defaults:
     shell: bash
 
 jobs:
+  get-image-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.get-tag.outputs.tag }}
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+    - name: Get image tag
+      id: get-tag
+      run: |
+        echo "tag=$(make tag)" | tee -a "$GITHUB_OUTPUT"
+
   wait-for-images:
-    name: Wait for images
+    needs: [ get-image-tag ]
     runs-on: ubuntu-latest
     strategy:
       matrix:
