@@ -7,7 +7,7 @@ import type { FileAccess } from './fileAccess.proto';
 // Alert is for violation page.
 
 // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
-export type Alert = DeploymentAlert | ImageAlert | ResourceAlert;
+export type Alert = DeploymentAlert | ImageAlert | ResourceAlert | NodeAlert;
 
 export type DeploymentAlert = {
     deployment: AlertDeployment;
@@ -38,6 +38,17 @@ export type ResourceAlert = {
     resource: AlertResource;
 } & BaseAlert;
 
+export type NodeAlert = {
+    node: AlertNode;
+} & BaseAlert;
+
+export type AlertNode = {
+    id: string;
+    name: string;
+    clusterId: string;
+    clusterName: string;
+};
+
 export type AlertResource = {
     resourceType: AlertResourceType;
     name: string;
@@ -67,6 +78,10 @@ export function isImageAlert(alert: Alert): alert is ImageAlert {
 
 export function isResourceAlert(alert: Alert): alert is ResourceAlert {
     return 'resource' in alert && Boolean(alert.resource);
+}
+
+export function isNodeAlert(alert: Alert): alert is NodeAlert {
+    return 'node' in alert && Boolean(alert.node);
 }
 
 export type BaseAlert = {
@@ -158,7 +173,7 @@ export type ViolationState = 'ACTIVE' | 'SNOOZED' | 'RESOLVED' | 'ATTEMPTED';
 
 // ListAlert is for violations list.
 
-export type ListAlert = DeploymentListAlert | ResourceListAlert;
+export type ListAlert = DeploymentListAlert | ResourceListAlert | NodeListAlert;
 
 export type DeploymentListAlert = {
     commonEntityInfo: CommonEntityInfo & {
@@ -191,6 +206,15 @@ export type ResourceListAlert = {
     };
 } & BaseListAlert;
 
+export type NodeListAlert = {
+    commonEntityInfo: CommonEntityInfo & {
+        resourceType: 'NODE';
+    };
+    node: {
+        name: string;
+    };
+} & BaseListAlert;
+
 export type CommonEntityInfo = {
     clusterName: string;
     namespace: string;
@@ -206,6 +230,7 @@ export type CommonEntityInfo = {
  */
 export type ListAlertResourceType =
     | 'DEPLOYMENT'
+    | 'NODE'
     | 'SECRETS'
     | 'CONFIGMAPS'
     | 'CLUSTER_ROLES'

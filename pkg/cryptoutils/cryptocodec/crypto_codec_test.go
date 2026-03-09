@@ -23,6 +23,7 @@ func TestGCMEncryptionDecryption(t *testing.T) {
 	assert.Equal(t, originalText, decryptedText)
 
 	// Test struct encryption/decryption
+	// #nosec G101 -- test data
 	originalCreds := &storage.AWSSecurityHub_Credentials{
 		AccessKeyId:     "key-id",
 		SecretAccessKey: "lorem ipsum dolor sit amet",

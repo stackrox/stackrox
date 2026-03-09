@@ -72,16 +72,19 @@ func TestScopedTokenTransport_RoundTrip(t *testing.T) {
 		namespaceScope string
 		expectedToken  string
 	}{
+		// #nosec G101 -- test data
 		{
 			name:           "empty scope",
 			namespaceScope: "",
 			expectedToken:  "token-for-empty-scope",
 		},
+		// #nosec G101 -- test data
 		{
 			name:           "specific namespace",
 			namespaceScope: "my-namespace",
 			expectedToken:  "token-for-namespace",
 		},
+		// #nosec G101 -- test data
 		{
 			name:           "cluster-wide access",
 			namespaceScope: FullClusterAccessScope,

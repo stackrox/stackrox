@@ -12,8 +12,8 @@ const (
 
 var (
 	operationToPretty = map[storage.FileAccess_Operation]string{
-		storage.FileAccess_OPEN:              "opened writable",
-		storage.FileAccess_UNLINK:            "deleted",
+		storage.FileAccess_OPEN:              "opened (writable)",
+		storage.FileAccess_UNLINK:            "deleted (unlinked)",
 		storage.FileAccess_CREATE:            "created",
 		storage.FileAccess_OWNERSHIP_CHANGE:  "ownership changed",
 		storage.FileAccess_PERMISSION_CHANGE: "permission changed",

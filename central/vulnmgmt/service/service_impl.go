@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -103,7 +104,12 @@ func (s *serviceImpl) VulnMgmtExportWorkloads(req *v1.VulnMgmtExportWorkloadsReq
 		images := make([]*storage.Image, 0, len(containers))
 		imageIDs := set.NewStringSet()
 		for _, container := range containers {
-			imgID := container.GetImage().GetId()
+			var imgID string
+			if features.FlattenImageData.Enabled() {
+				imgID = container.GetImage().GetIdV2()
+			} else {
+				imgID = container.GetImage().GetId()
+			}
 			// Deduplicate images by their ID.
 			if imageIDs.Contains(imgID) {
 				continue

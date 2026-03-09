@@ -69,7 +69,7 @@ main() {
     set +e
 
     for object in daemonsets deployments services pods secrets serviceaccounts validatingwebhookconfigurations \
-      catalogsources subscriptions clusterserviceversions central securedclusters nodes; do
+      catalogsources subscriptions clusterserviceversions central securedclusters nodes persistentvolumeclaims; do
         # A feel good command before pulling logs
         info ">>> Collecting ${object} from namespace ${namespace} <<<"
         out="$(mktemp)"

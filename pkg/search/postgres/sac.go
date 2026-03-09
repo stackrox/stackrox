@@ -18,8 +18,8 @@ import (
 // filtered according to the requested access scope.
 func enrichQueryWithSACFilter(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType) (*v1.Query, error) {
 	switch queryType {
-	// DELETE is expected to be the only Write use case for the query generator
-	case DELETE:
+	// DELETE and DELETERETURNINGIDS are the Write use cases for the query generator
+	case DELETE, DELETERETURNINGIDS:
 		sacFilter, err := GetReadWriteSACQuery(ctx, schema.ScopingResource)
 		if err != nil {
 			return nil, err

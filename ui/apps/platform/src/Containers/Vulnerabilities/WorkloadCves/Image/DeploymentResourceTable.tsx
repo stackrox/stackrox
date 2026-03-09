@@ -58,6 +58,24 @@ export const deploymentResourcesFragment = gql`
     }
 `;
 
+/**
+ * Same fields as DeploymentResources but on ImageV2; when ROX_FLATTEN_IMAGE_DATA is enabled,
+ * we call ImageV2 resolver which returns ImageV2 type.
+ */
+export const deploymentResourcesV2Fragment = gql`
+    fragment DeploymentResourcesV2 on ImageV2 {
+        deploymentCount(query: $query)
+        deployments(query: $query, pagination: $pagination) {
+            id
+            name
+            type
+            clusterName
+            namespace
+            created
+        }
+    }
+`;
+
 export type DeploymentResourceTableProps = {
     data: DeploymentResources;
     getSortParams: UseURLSortResult['getSortParams'];

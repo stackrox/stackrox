@@ -1,6 +1,7 @@
 {
     "extends": "../tsconfig.json",
     "compilerOptions": {
+        "rootDir": "..",
         // be explicit about types included
         // to avoid clashing with Jest types
         "types": ["cypress"]

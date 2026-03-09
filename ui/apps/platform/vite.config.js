@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import * as fs from 'fs';
 import * as path from 'path';
 import { defineConfig } from 'vite';
@@ -10,6 +9,7 @@ import svgr from 'vite-plugin-svgr';
 
 import { viteProxy } from './src/setupProxy';
 
+/* eslint-disable no-console */
 function getSslOptions() {
     // When component testing, do not use SSL at all or the test executor will hang
     if (process.env.CYPRESS_COMPONENT_TEST) {
@@ -44,6 +44,7 @@ function getSslOptions() {
 
     return undefined;
 }
+/* eslint-enable no-console */
 
 /*
  * Alias all top level directories and files under `/src/` so that we can import them in our code

@@ -56,7 +56,7 @@ type TestStructs struct {
 	Key2              string                  `gorm:"column:key2;type:varchar"`
 	StringSlice       *pq.StringArray         `gorm:"column:stringslice;type:text[]"`
 	Bool              bool                    `gorm:"column:bool;type:bool"`
-	Uint64            uint64                  `gorm:"column:uint64;type:bigint"`
+	Uint64            uint64                  `gorm:"column:uint64;type:numeric"`
 	Int64             int64                   `gorm:"column:int64;type:bigint"`
 	Float             float32                 `gorm:"column:float;type:numeric"`
 	Labels            map[string]string       `gorm:"column:labels;type:jsonb"`
@@ -65,6 +65,7 @@ type TestStructs struct {
 	Enums             *pq.Int32Array          `gorm:"column:enums;type:int[]"`
 	String            string                  `gorm:"column:string_;type:varchar"`
 	Int32Slice        *pq.Int32Array          `gorm:"column:int32slice;type:int[]"`
+	Timestamptz       *time.Time              `gorm:"column:timestamptz;type:timestamptz"`
 	OneofnestedNested string                  `gorm:"column:oneofnested_nested;type:varchar"`
 	Serialized        []byte                  `gorm:"column:serialized;type:bytea"`
 }

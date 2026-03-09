@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -175,13 +174,13 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 		c.cachedUpdatesConn = slices.Grow(c.cachedUpdatesConn, len(updates))
 		c.cachedUpdatesConn = append(c.cachedUpdatesConn, updates...)
 		// Limit cache size, prioritizing closed connections over open ones
-		if features.NetworkFlowCacheLimiting.Enabled() {
+		if env.NetworkFlowCacheLimiting.BooleanSetting() {
 			NetworkFlowMaxCacheSize := env.NetworkFlowMaxCacheSize.IntegerSetting()
 			c.cachedUpdatesConn = limitCacheSizeWithMetrics(c.cachedUpdatesConn, NetworkFlowMaxCacheSize, isConnClosed, ConnectionEnrichedEntity)
 		}
 	}
 
-	if features.NetworkFlowBatching.Enabled() {
+	if env.NetworkFlowBatching.BooleanSetting() {
 		NetworkFlowMaxUpdateSize := env.NetworkFlowMaxUpdateSize.IntegerSetting()
 		if len(c.cachedUpdatesConn) > NetworkFlowMaxUpdateSize {
 			update := c.cachedUpdatesConn[:NetworkFlowMaxUpdateSize]
@@ -400,7 +399,7 @@ func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(
 			c.cachedUpdatesProc = append(c.cachedUpdatesProc, procUpdates...)
 		}
 		// Limit cache size, prioritizing closed endpoints over open ones
-		if features.NetworkFlowCacheLimiting.Enabled() {
+		if env.NetworkFlowCacheLimiting.BooleanSetting() {
 			NetworkFlowMaxCacheSize := env.NetworkFlowMaxCacheSize.IntegerSetting()
 			c.cachedUpdatesEp = limitCacheSizeWithMetrics(c.cachedUpdatesEp, NetworkFlowMaxCacheSize, isEndpointClosed, EndpointEnrichedEntity)
 			if plopEnabled {
@@ -409,7 +408,7 @@ func (c *TransitionBased) ComputeUpdatedEndpointsAndProcesses(
 		}
 	}
 
-	if features.NetworkFlowBatching.Enabled() {
+	if env.NetworkFlowBatching.BooleanSetting() {
 		NetworkFlowMaxUpdateSize := env.NetworkFlowMaxUpdateSize.IntegerSetting()
 		var epUpdate []*storage.NetworkEndpoint
 		var procUpdate []*storage.ProcessListeningOnPortFromSensor
@@ -484,7 +483,7 @@ func (c *TransitionBased) deduperHasEndpointAndProcess(epKey, procKey indicator.
 }
 
 func (c *TransitionBased) OnSuccessfulSendConnections(conns map[indicator.NetworkConn]timestamp.MicroTS) {
-	if !features.NetworkFlowBatching.Enabled() && conns != nil {
+	if !env.NetworkFlowBatching.BooleanSetting() && conns != nil {
 		c.cachedUpdatesConn = make([]*storage.NetworkFlow, 0)
 	}
 }
@@ -493,32 +492,32 @@ func (c *TransitionBased) OnSuccessfulSendConnections(conns map[indicator.Networ
 // Providing nil will skip updates for respective map.
 // Providing empty map will reset the state for given state.
 func (c *TransitionBased) OnSuccessfulSendEndpoints(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
-	if !features.NetworkFlowBatching.Enabled() && enrichedEndpointsProcesses != nil {
+	if !env.NetworkFlowBatching.BooleanSetting() && enrichedEndpointsProcesses != nil {
 		c.cachedUpdatesEp = make([]*storage.NetworkEndpoint, 0)
 	}
 }
 
 // OnSuccessfulSendProcesses contains actions that should be executed after successful sending of processesListening updates to Central.
 func (c *TransitionBased) OnSuccessfulSendProcesses(enrichedEndpointsProcesses map[indicator.ContainerEndpoint]*indicator.ProcessListeningWithTimestamp) {
-	if !features.NetworkFlowBatching.Enabled() && enrichedEndpointsProcesses != nil {
+	if !env.NetworkFlowBatching.BooleanSetting() && enrichedEndpointsProcesses != nil {
 		c.cachedUpdatesProc = make([]*storage.ProcessListeningOnPortFromSensor, 0)
 	}
 }
 
 func (c *TransitionBased) OnSendConnectionsFailure(unsentConns []*storage.NetworkFlow) {
-	if features.NetworkFlowBatching.Enabled() {
+	if env.NetworkFlowBatching.BooleanSetting() {
 		c.cachedUpdatesConn = append(unsentConns, c.cachedUpdatesConn...)
 	}
 }
 
 func (c *TransitionBased) OnSendEndpointsFailure(unsentEps []*storage.NetworkEndpoint) {
-	if features.NetworkFlowBatching.Enabled() {
+	if env.NetworkFlowBatching.BooleanSetting() {
 		c.cachedUpdatesEp = append(unsentEps, c.cachedUpdatesEp...)
 	}
 }
 
 func (c *TransitionBased) OnSendProcessesFailure(unsentProcs []*storage.ProcessListeningOnPortFromSensor) {
-	if features.NetworkFlowBatching.Enabled() {
+	if env.NetworkFlowBatching.BooleanSetting() {
 		c.cachedUpdatesProc = append(unsentProcs, c.cachedUpdatesProc...)
 	}
 }

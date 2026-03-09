@@ -599,7 +599,7 @@ func TestBackend(t *testing.T) {
 					ClientSecret: "testsecret",
 					Endpoint: oauth2.Endpoint{
 						AuthURL:  "fake-auth-url",
-						TokenURL: "fake-token-url",
+						TokenURL: "fake-token-url", // #nosec G101 -- Test data
 					},
 					Scopes: []string{"openid", "profile", "email", "offline_access", "groups", "roles"},
 				},
@@ -756,6 +756,7 @@ func TestBackend(t *testing.T) {
 				baseOauthConfig: &oauth2.Config{
 					ClientID:     "testclientid",
 					ClientSecret: "testsecret",
+					// #nosec G101 -- test data
 					Endpoint: oauth2.Endpoint{
 						AuthURL:  "fake-auth-url",
 						TokenURL: "fake-token-url",
@@ -812,6 +813,7 @@ func TestBackend(t *testing.T) {
 				baseOauthConfig: &oauth2.Config{
 					ClientID:     "testclientid",
 					ClientSecret: "testsecret",
+					// #nosec G101 -- test data
 					Endpoint: oauth2.Endpoint{
 						AuthURL:  "fake-auth-url",
 						TokenURL: "fake-token-url",
@@ -1033,6 +1035,7 @@ func (m *mockOIDCProvider) Claims(v *extraDiscoveryInfo) error {
 }
 
 func (m *mockOIDCProvider) Endpoint() oauth2.Endpoint {
+	// #nosec G101 -- test data
 	return oauth2.Endpoint{
 		AuthURL:  "fake-auth-url",
 		TokenURL: "fake-token-url",

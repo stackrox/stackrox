@@ -117,7 +117,7 @@ service ClusterInitService {
   // then its ID should be included in request.
   // If confirm_impacted_clusters_ids does not match with current impacted clusters
   // then request will fail with error that includes all impacted clusters.
-  // Init bundles are deprecated in favor of Cluster Registration Tokens (CRS).
+  // Init bundles are deprecated in favor of Cluster Registration Secrets (CRS).
   rpc RevokeInitBundle(InitBundleRevokeRequest) returns (InitBundleRevokeResponse) {
     option deprecated = true;
     option (google.api.http) = {
@@ -138,7 +138,7 @@ service ClusterInitService {
     option (google.api.http) = {get: "/v1/cluster-init/ca-config"};
   }
 
-  // Init bundles are deprecated in favor of Cluster Registration Tokens (CRS).
+  // Init bundles are deprecated in favor of Cluster Registration Secrets (CRS).
   rpc GetInitBundles(Empty) returns (InitBundleMetasResponse) {
     option deprecated = true;
     option (google.api.http) = {get: "/v1/cluster-init/init-bundles"};
@@ -148,7 +148,7 @@ service ClusterInitService {
     option (google.api.http) = {get: "/v1/cluster-init/crs"};
   }
 
-  // Init bundles are deprecated in favor of Cluster Registration Tokens (CRS).
+  // Init bundles are deprecated in favor of Cluster Registration Secrets (CRS).
   rpc GenerateInitBundle(InitBundleGenRequest) returns (InitBundleGenResponse) {
     option deprecated = true;
     option (google.api.http) = {

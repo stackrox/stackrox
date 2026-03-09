@@ -21,6 +21,7 @@ const (
 	BigInteger  DataType = "biginteger"
 	UUID        DataType = "uuid"
 	CIDR        DataType = "cidr"
+	DateTimeTZ  DataType = "datetimetz"
 )
 
 var (
@@ -41,6 +42,8 @@ func DataTypeToSQLType(dataType DataType) string {
 		sqlType = "varchar"
 	case DateTime:
 		sqlType = "timestamp"
+	case DateTimeTZ:
+		sqlType = "timestamptz"
 	case Map:
 		sqlType = "jsonb"
 	case Enum, Integer:
@@ -65,7 +68,7 @@ func DataTypeToSQLType(dataType DataType) string {
 func GetToGormModelType(typ string, dataType DataType) string {
 	var modelType string
 	switch dataType {
-	case DateTime:
+	case DateTime, DateTimeTZ:
 		modelType = "*time.Time"
 	case StringArray:
 		modelType = "*pq.StringArray"

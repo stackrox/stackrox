@@ -27,8 +27,22 @@ func RootCmd(ctx context.Context) *cobra.Command {
 	cmd.Flags().BoolVar(&cfg.DaemonMode, "daemon", false,
 		"Run in daemon mode. Sends index reports continuously.",
 	)
+
+	// Shortening this interval results in more frequent scans and therefore more load,
+	// which, assuming the throughput continues to be limited by scanning capacity,
+	// reduces the number of VMs that Stackrox can handle.
+	//
+	// As of February 2026, the measured capacity of a default Stackrox deployment is:
+	//   - 4500 VMs if the report interval is 4 hours
+	//   - 1100 VMs if the report interval is 1 hour
+	//
+	// See the documentation for more details.
 	cmd.Flags().DurationVar(&cfg.IndexInterval, "index-interval", 240*time.Minute,
-		fmt.Sprintf("Interval duration in which index reports are sent in daemon mode (minimum: %v).", minDaemonIndexInterval),
+		fmt.Sprintf(
+			"Interval at which index reports are sent in daemon mode (minimum: %v). "+
+				"Shorter intervals increase scanning load and reduce the overall number of VMs that can be scanned.",
+			minDaemonIndexInterval,
+		),
 	)
 	cmd.Flags().StringVar(&cfg.IndexHostPath, "host-path", "/",
 		"Path where the indexer starts searching for the RPM and DNF databases.",

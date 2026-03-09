@@ -8,7 +8,7 @@ import type { FileAccess, FileOperation } from 'types/fileAccess.proto';
 const fileOperations: Map<FileOperation, string> = new Map([
     ['OPEN', 'Open (Writable)'],
     ['CREATE', 'Create'],
-    ['UNLINK', 'Delete'],
+    ['UNLINK', 'Delete (Unlink)'],
     ['RENAME', 'Rename'],
     ['PERMISSION_CHANGE', 'Permission change'],
     ['OWNERSHIP_CHANGE', 'Ownership change'],
@@ -58,7 +58,7 @@ type FileAccessCardContentProps = {
 };
 
 function FileAccessCardContent({ event }: FileAccessCardContentProps): ReactElement {
-    const { file, operation, moved, timestamp, process } = event;
+    const { file, operation, moved, timestamp, process, hostname } = event;
 
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
@@ -69,6 +69,7 @@ function FileAccessCardContent({ event }: FileAccessCardContentProps): ReactElem
             <DescriptionList columnModifier={{ default: '2Col' }}>
                 <DescriptionListItem term="File operation" desc={formatOperation(operation)} />
                 <DescriptionListItem term="Time" desc={getDateTime(timestamp)} />
+                {hostname && <DescriptionListItem term="Hostname" desc={hostname} />}
                 {file.actualPath && (
                     <DescriptionListItem term="Actual path" desc={file.actualPath} />
                 )}
