@@ -8,10 +8,10 @@ inputs:
   mode:
     description: |
       Page cache strategy to use:
-        vmtouch-lock  - mmap + mlock via vmtouch (needs CAP_IPC_LOCK)
-        vmtouch-touch - mmap via vmtouch, no lock (works everywhere)
-        fadvise       - posix_fadvise WILLNEED via readahead on .go files
-        copy-tmpfs    - copy workspace to /dev/shm, symlink back
+        vmtouch-lock  - touch + mlock via vmtouch (needs CAP_IPC_LOCK)
+        vmtouch-touch - touch via vmtouch, no lock (works everywhere)
+        fadvise       - sequential read of source files into page cache
+        copy-tmpfs    - copy workspace to a tmpfs mount, symlink back
         none          - no-op baseline (only reports cache stats)
     required: false
     default: 'vmtouch-touch'
@@ -21,10 +21,6 @@ inputs:
       Default is the entire workspace.
     required: false
     default: '.'
-  install-vmtouch:
-    description: 'Whether to build vmtouch from source (fast, ~1s)'
-    required: false
-    default: 'true'
 
 outputs:
   mode-used:
@@ -41,29 +37,24 @@ runs:
   using: composite
   steps:
     - name: Install vmtouch
-      if: inputs.install-vmtouch == 'true' && inputs.mode != 'none' && inputs.mode != 'copy-tmpfs' && inputs.mode != 'fadvise'
+      if: inputs.mode != 'none' && inputs.mode != 'copy-tmpfs' && inputs.mode != 'fadvise'
       shell: bash
       run: |
         if command -v vmtouch &>/dev/null; then
-          echo "vmtouch already installed: $(vmtouch --version 2>&1 || true)"
+          echo "vmtouch already available"
           exit 0
         fi
-
         # Build from source — single C file, <1s compile
-        VMTOUCH_DIR="$(mktemp -d)"
-        cd "$VMTOUCH_DIR"
-        curl -sSfL https://raw.githubusercontent.com/hoytech/vmtouch/master/vmtouch.c -o vmtouch.c
-        curl -sSfL https://raw.githubusercontent.com/hoytech/vmtouch/master/vmtouch.pod -o vmtouch.pod
-        gcc -O2 -o vmtouch vmtouch.c
-
-        # Install to a location on PATH
+        tmp="$(mktemp -d)"
+        curl -sSfL https://raw.githubusercontent.com/hoytech/vmtouch/master/vmtouch.c -o "$tmp/vmtouch.c"
+        gcc -O2 -o "$tmp/vmtouch" "$tmp/vmtouch.c"
         if [ -w /usr/local/bin ]; then
-          cp vmtouch /usr/local/bin/
+          cp "$tmp/vmtouch" /usr/local/bin/
         else
-          sudo cp vmtouch /usr/local/bin/
+          sudo cp "$tmp/vmtouch" /usr/local/bin/
         fi
-        rm -rf "$VMTOUCH_DIR"
-        echo "vmtouch installed: $(vmtouch 2>&1 | head -1 || true)"
+        rm -rf "$tmp"
+        echo "vmtouch installed"
 
     - name: Warm page cache
       id: warm
@@ -73,16 +64,11 @@ runs:
 
         MODE="${{ inputs.mode }}"
         WS="$GITHUB_WORKSPACE"
-        PATHS="${{ inputs.paths }}"
 
-        # Resolve paths relative to workspace
+        # Resolve target paths
         TARGET_DIRS=()
-        for p in $PATHS; do
-          if [[ "$p" = /* ]]; then
-            TARGET_DIRS+=("$p")
-          else
-            TARGET_DIRS+=("$WS/$p")
-          fi
+        for p in ${{ inputs.paths }}; do
+          [[ "$p" = /* ]] && TARGET_DIRS+=("$p") || TARGET_DIRS+=("$WS/$p")
         done
 
         in_container=false
@@ -91,68 +77,47 @@ runs:
         echo "::group::Page cache experiment"
         echo "Mode:         $MODE"
         echo "Workspace:    $WS"
-        echo "Target paths: ${TARGET_DIRS[*]}"
         echo "In container: $in_container"
-        echo ""
-
-        # --- Helper: report cache stats ---
-        report_cache_stats() {
-          local label="$1"
-          shift
-          if command -v vmtouch &>/dev/null; then
-            echo "=== Cache stats ($label) ==="
-            vmtouch -v "$@" 2>/dev/null | tail -5
-            local resident
-            resident=$(vmtouch "$@" 2>/dev/null | grep 'Resident Pages' | awk '{print $NF}')
-            echo "$resident"
-          elif command -v fincore &>/dev/null; then
-            echo "=== Cache stats via fincore ($label) ==="
-            find "$@" -type f -name '*.go' 2>/dev/null | head -20 | xargs fincore 2>/dev/null | head -25
-          else
-            echo "=== No cache stat tool available ($label) ==="
-          fi
-        }
 
         # --- Measure "before" ---
         pages_before="unknown"
         if command -v vmtouch &>/dev/null; then
-          before_output=$(vmtouch "${TARGET_DIRS[@]}" 2>/dev/null || true)
-          pages_before=$(echo "$before_output" | grep -o '[0-9]*/[0-9]*' | head -1 || echo "unknown")
+          before_out=$(vmtouch "${TARGET_DIRS[@]}" 2>/dev/null || true)
+          pages_before=$(echo "$before_out" | grep -o '[0-9]*/[0-9]*' | head -1 || echo "unknown")
+          echo ""
+          echo "$before_out" | tail -5
           echo "Pages resident before: $pages_before"
-          echo "$before_output" | tail -5
         fi
         echo ""
 
         # --- Apply strategy ---
         mode_used="$MODE"
-        start_time=$(date +%s%N)
+        start_ns=$(date +%s%N)
 
         case "$MODE" in
           vmtouch-lock)
-            echo "Strategy: vmtouch mmap + mlock (daemon mode)"
-            if vmtouch -ld "${TARGET_DIRS[@]}" 2>/dev/null; then
-              echo "vmtouch lock succeeded (daemon running)"
+            echo "Strategy: vmtouch touch + mlock (daemon mode)"
+            # -t touches all pages into cache, -l locks them, -d daemonizes
+            if vmtouch -tld "${TARGET_DIRS[@]}" 2>/dev/null; then
+              echo "vmtouch touch+lock succeeded (daemon running)"
             else
-              echo "::warning::vmtouch -l failed (likely missing CAP_IPC_LOCK), falling back to touch-only"
+              echo "::warning::vmtouch -tl failed (likely missing CAP_IPC_LOCK), falling back to touch-only"
               vmtouch -t "${TARGET_DIRS[@]}" 2>/dev/null || true
-              mode_used="vmtouch-touch (fallback)"
+              mode_used="vmtouch-touch (fallback from lock)"
             fi
             ;;
 
           vmtouch-touch)
-            echo "Strategy: vmtouch mmap touch (no lock)"
+            echo "Strategy: vmtouch touch (no lock)"
             vmtouch -t "${TARGET_DIRS[@]}" 2>/dev/null || {
               echo "::warning::vmtouch -t failed, falling back to fadvise"
-              find "${TARGET_DIRS[@]}" -type f \( -name '*.go' -o -name '*.sum' -o -name '*.mod' -o -name '*.s' \) \
-                -exec cat {} + > /dev/null 2>&1 || true
+              find "${TARGET_DIRS[@]}" -type f -exec cat {} + > /dev/null 2>&1 || true
               mode_used="fadvise (fallback)"
             }
             ;;
 
           fadvise)
-            echo "Strategy: read all source files to trigger page faults (fadvise/readahead)"
-            # Reading files faults them into page cache. This uses sequential
-            # readahead which is efficient but pages are not locked.
+            echo "Strategy: read all source files to populate page cache"
             find "${TARGET_DIRS[@]}" -type f \( \
               -name '*.go' -o -name '*.sum' -o -name '*.mod' -o \
               -name '*.s' -o -name '*.c' -o -name '*.h' \
@@ -160,36 +125,48 @@ runs:
             ;;
 
           copy-tmpfs)
-            echo "Strategy: copy workspace to /dev/shm + symlink back"
-            shm="/dev/shm/stackrox"
-            shm_avail_mb=$(df -BM --output=avail /dev/shm 2>/dev/null | tail -1 | tr -d ' M')
-            src_mb=$(du -sm "$WS" 2>/dev/null | cut -f1 || echo 0)
-            echo "Workspace size: ${src_mb}MB, /dev/shm available: ${shm_avail_mb}MB"
+            echo "Strategy: copy workspace to tmpfs mount + symlink back"
+            # Use a dedicated tmpfs mount (not /dev/shm which may have noexec)
+            TMPFS_DIR="/tmp/tmpfs-workspace"
+            if [ "$in_container" = true ]; then
+              # In containers, may not have mount privileges — fall back to /dev/shm
+              # but remount with exec if possible
+              TMPFS_DIR="/dev/shm/stackrox"
+              mount -o remount,exec /dev/shm 2>/dev/null || true
+            else
+              sudo mkdir -p "$TMPFS_DIR"
+              sudo mount -t tmpfs -o size=4G,exec tmpfs "$TMPFS_DIR"
+              sudo chown "$(id -u):$(id -g)" "$TMPFS_DIR"
+            fi
 
-            if [ "${shm_avail_mb:-0}" -gt "$((src_mb + 200))" ]; then
-              cp -a "$WS/." "$shm/"
+            src_mb=$(du -sm "$WS" 2>/dev/null | cut -f1 || echo 0)
+            avail_mb=$(df -BM --output=avail "$TMPFS_DIR" 2>/dev/null | tail -1 | tr -d ' M')
+            echo "Workspace: ${src_mb}MB, tmpfs available: ${avail_mb}MB"
+
+            if [ "${avail_mb:-0}" -gt "$((src_mb + 200))" ]; then
+              cp -a "$WS/." "$TMPFS_DIR/"
               if [ "$in_container" = true ]; then
                 # Container: keep .github/ real (host needs it for action resolution)
                 find "$WS" -maxdepth 1 -mindepth 1 ! -name .github -exec rm -rf {} +
               else
                 find "$WS" -maxdepth 1 -mindepth 1 -exec rm -rf {} +
               fi
-              for item in "$shm"/* "$shm"/.*; do
+              for item in "$TMPFS_DIR"/* "$TMPFS_DIR"/.*; do
                 name="$(basename "$item")"
                 case "$name" in .|..) continue ;; esac
                 [ "$in_container" = true ] && [ "$name" = ".github" ] && continue
                 ln -s "$item" "$WS/$name"
               done
-              git config --global --add safe.directory "$shm"
+              git config --global --add safe.directory "$TMPFS_DIR"
               echo "Workspace moved to tmpfs (${src_mb}MB)"
             else
-              echo "::warning::/dev/shm too small (${shm_avail_mb}MB avail, need $((src_mb + 200))MB) - skipping"
-              mode_used="copy-tmpfs (skipped - insufficient shm)"
+              echo "::warning::tmpfs too small (${avail_mb}MB avail, need $((src_mb + 200))MB)"
+              mode_used="copy-tmpfs (skipped - insufficient space)"
             fi
             ;;
 
           none)
-            echo "Strategy: none (baseline - no cache warming)"
+            echo "Strategy: none (baseline)"
             ;;
 
           *)
@@ -198,23 +175,23 @@ runs:
             ;;
         esac
 
-        end_time=$(date +%s%N)
-        elapsed_ms=$(( (end_time - start_time) / 1000000 ))
+        end_ns=$(date +%s%N)
+        elapsed_ms=$(( (end_ns - start_ns) / 1000000 ))
         echo ""
         echo "Cache warming took ${elapsed_ms}ms"
 
         # --- Measure "after" ---
         pages_after="unknown"
         if command -v vmtouch &>/dev/null; then
-          after_output=$(vmtouch "${TARGET_DIRS[@]}" 2>/dev/null || true)
-          pages_after=$(echo "$after_output" | grep -o '[0-9]*/[0-9]*' | head -1 || echo "unknown")
+          after_out=$(vmtouch "${TARGET_DIRS[@]}" 2>/dev/null || true)
+          pages_after=$(echo "$after_out" | grep -o '[0-9]*/[0-9]*' | head -1 || echo "unknown")
+          echo "$after_out" | tail -5
           echo "Pages resident after: $pages_after"
-          echo "$after_output" | tail -5
         fi
 
         echo "::endgroup::"
 
-        # --- Summary ---
+        # --- Step Summary ---
         {
           echo "### Page Cache Warm Results"
           echo "| Key | Value |"
