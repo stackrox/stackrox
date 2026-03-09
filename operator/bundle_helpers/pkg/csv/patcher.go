@@ -285,7 +285,6 @@ func CalculateReplacedVersionForCSV(
 		return nil, nil, err
 	}
 
-	// Parse skips
 	skips, err := ProcessSkips(operatorNamePrefix, spec)
 	if err != nil {
 		return nil, nil, err
