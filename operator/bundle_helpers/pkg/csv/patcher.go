@@ -233,8 +233,6 @@ func addSecurityPolicyCRD(spec chartutil.Values) error {
 		}
 	}
 
-	// Direct map mutation so the update is visible through any reference to this map,
-	// including references held by doc["spec"] even if spec itself is stale.
 	crds["owned"] = append(filteredOwned, crd)
 
 	return nil
