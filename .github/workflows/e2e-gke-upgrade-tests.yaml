@@ -236,6 +236,10 @@ jobs:
       with:
         install_components: "gke-gcloud-auth-plugin"
 
+    - name: Build roxctl
+      run: |
+        make roxctl_linux-amd64
+
     - name: Wait for the cluster and grab artifacts
       timeout-minutes: 25
       run: |
