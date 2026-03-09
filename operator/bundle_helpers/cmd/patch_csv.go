@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/operator/bundle_helpers/pkg/csv"
-	"github.com/stackrox/rox/operator/bundle_helpers/pkg/values"
 	"helm.sh/helm/v3/pkg/chartutil"
 )
 
@@ -101,18 +100,10 @@ func PatchCSV(args []string) error {
 }
 
 func echoReplacedVersion(doc chartutil.Values, version, firstVersion, unreleased string) error {
-	name, err := values.GetString(doc, "metadata.name")
+	rawName, err := csv.GetRawName(doc)
 	if err != nil {
-		return fmt.Errorf("failed to get metadata.name: %w", err)
+		return err
 	}
-
-	const expectedSuffix = ".v0.0.1"
-
-	if !strings.HasSuffix(name, expectedSuffix) {
-		return fmt.Errorf("metadata.name does not have suffix %s: %s", expectedSuffix, name)
-	}
-
-	rawName := strings.TrimSuffix(name, expectedSuffix)
 
 	spec, err := doc.Table("spec")
 	if err != nil {
