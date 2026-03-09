@@ -52,7 +52,7 @@ echo "=== Building with Go implementation..."
 USE_GO_BUNDLE_HELPER=true RELATED_IMAGES_MODE="$RELATED_IMAGES_MODE" make bundle bundle-post-process
 mkdir -p "$WORK_DIR/go" "$WORK_DIR/go-build"
 cp -r bundle "$WORK_DIR/go/"
-[ -d build/bundle ] && cp -r build/bundle "$WORK_DIR/go-build/build"
+cp -r build/bundle "$WORK_DIR/go-build/build"
 
 # Compare
 echo ""
