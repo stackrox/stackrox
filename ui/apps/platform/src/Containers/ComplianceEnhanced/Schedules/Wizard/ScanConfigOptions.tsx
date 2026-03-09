@@ -42,7 +42,7 @@ function ScanConfigOptions(): ReactElement {
     }
 
     function onScheduledDaysChange(id: string, selection: string[]) {
-        formik.setFieldValue(id, selection);
+        formik.setFieldValue(id, selection, true);
     }
 
     return (
@@ -186,7 +186,6 @@ function ScanConfigOptions(): ReactElement {
                                                             ? 'parameters.daysOfWeek'
                                                             : 'parameters.daysOfMonth'
                                                     }
-                                                    onBlur={formik.handleBlur}
                                                 />
                                             </FormLabelGroup>
                                         </FlexItem>
