@@ -27,6 +27,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -36,6 +38,8 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+
+      - uses: ./.github/actions/handle-tagged-build
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -70,7 +74,7 @@ jobs:
           fi
 
   # ---------------------------------------------------------------------------
-  # Container jobs: Go binary build inside CI container
+  # Container jobs: Go binary build inside CI container (matches build.yaml)
   # ---------------------------------------------------------------------------
   go-build-container:
     strategy:
@@ -88,10 +92,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - uses: ./.github/actions/handle-tagged-build
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -145,10 +153,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - uses: ./.github/actions/handle-tagged-build
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -198,6 +210,8 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - uses: ./.github/actions/handle-tagged-build
+
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
         with:
@@ -227,6 +241,132 @@ jobs:
         run: |
           if command -v vmtouch &>/dev/null; then
             echo "### Post-test cache residency" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            vmtouch "$GITHUB_WORKSPACE" 2>/dev/null | tee -a "$GITHUB_STEP_SUMMARY" || true
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Real build.yaml pre-build-go-binaries jobs: apples-to-apples comparison
+  # Mirrors the actual pre-build-go-binaries job from build.yaml exactly,
+  # only adding the page-cache-warm step to measure real-world impact.
+  # ---------------------------------------------------------------------------
+  pre-build-go-binaries:
+    strategy:
+      fail-fast: false
+      matrix:
+        cache-mode: [none, vmtouch-touch, vmtouch-lock]
+    runs-on: ubuntu-latest
+    name: "pre-build-go (${{ matrix.cache-mode }})"
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
+      options: --cap-add IPC_LOCK --ulimit memlock=-1:-1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - uses: ./.github/actions/handle-tagged-build
+
+      - name: Warm page cache
+        uses: ./.github/actions/page-cache-warm
+        with:
+          mode: ${{ matrix.cache-mode }}
+
+      - name: Build Go Binaries (timed)
+        run: |
+          start=$(date +%s%N)
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps
+          end=$(date +%s%N)
+          elapsed_ms=$(( (end - start) / 1000000 ))
+          elapsed_s=$(( elapsed_ms / 1000 ))
+          echo "### pre-build-go-binaries timing" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Cache mode | \`${{ matrix.cache-mode }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Build time | \`${elapsed_s}s\` (\`${elapsed_ms}ms\`) |" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Bundle the build to preserve permissions
+        run: tar -cvzf go-binaries-build.tgz bin/linux_amd64
+
+      - name: Report cache residency after build
+        if: always()
+        run: |
+          if command -v vmtouch &>/dev/null; then
+            echo "### Post-build cache residency" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            vmtouch "$GITHUB_WORKSPACE" 2>/dev/null | tee -a "$GITHUB_STEP_SUMMARY" || true
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # ---------------------------------------------------------------------------
+  # Real build.yaml pre-build-go-binaries on bare runner (no container)
+  # Tests whether removing the container overhead + page cache warming helps.
+  # ---------------------------------------------------------------------------
+  pre-build-go-binaries-host:
+    strategy:
+      fail-fast: false
+      matrix:
+        cache-mode: [none, vmtouch-touch, vmtouch-lock]
+    runs-on: ubuntu-latest
+    name: "pre-build-go-host (${{ matrix.cache-mode }})"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: ./.github/actions/handle-tagged-build
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - name: Warm page cache
+        uses: ./.github/actions/page-cache-warm
+        with:
+          mode: ${{ matrix.cache-mode }}
+
+      - name: Build Go Binaries (timed)
+        run: |
+          start=$(date +%s%N)
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps
+          end=$(date +%s%N)
+          elapsed_ms=$(( (end - start) / 1000000 ))
+          elapsed_s=$(( elapsed_ms / 1000 ))
+          echo "### pre-build-go-binaries-host timing" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Cache mode | \`${{ matrix.cache-mode }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Build time | \`${elapsed_s}s\` (\`${elapsed_ms}ms\`) |" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Bundle the build to preserve permissions
+        run: tar -cvzf go-binaries-build.tgz bin/linux_amd64
+
+      - name: Report cache residency after build
+        if: always()
+        run: |
+          if command -v vmtouch &>/dev/null; then
+            echo "### Post-build cache residency" >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> "$GITHUB_STEP_SUMMARY"
             vmtouch "$GITHUB_WORKSPACE" 2>/dev/null | tee -a "$GITHUB_STEP_SUMMARY" || true
             echo '```' >> "$GITHUB_STEP_SUMMARY"
