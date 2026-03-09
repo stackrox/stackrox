@@ -244,10 +244,10 @@ func addSecurityPolicyCRD(spec chartutil.Values) error {
 	return nil
 }
 
-// ProcessSkips extracts and parses skip versions from the spec.
+// ParseSkips extracts and parses skip versions from the spec.
 // It filters out the placeholder "0.0.1" version and returns parsed XyzVersion entries.
 // The prefix parameter should be the operator name prefix (e.g., "rhacs-operator").
-func ProcessSkips(prefix string, spec chartutil.Values) ([]XyzVersion, error) {
+func ParseSkips(prefix string, spec chartutil.Values) ([]XyzVersion, error) {
 	skips := make([]XyzVersion, 0)
 	if rawSkips, ok := spec["skips"].([]any); ok {
 		for _, s := range rawSkips {
@@ -289,7 +289,7 @@ func CalculateReplacedVersionForCSV(
 		return nil, nil, err
 	}
 
-	skips, err := ProcessSkips(operatorNamePrefix, spec)
+	skips, err := ParseSkips(operatorNamePrefix, spec)
 	if err != nil {
 		return nil, nil, err
 	}
