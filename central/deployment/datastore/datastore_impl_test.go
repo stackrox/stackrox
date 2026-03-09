@@ -172,7 +172,7 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 	suite.storage.EXPECT().Get(ctx, "id").Return(returnedDep, true, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	if features.FlattenImageData.Enabled() {
-		expectedDep.Containers[1].Image.IdV2 = utils.NewImageV2ID(expectedDep.Containers[1].Image.GetName(), expectedDep.Containers[1].Image.GetId())
+		expectedDep.Containers[1].Image.IdV2 = utils.NewImageV2ID(expectedDep.Containers[1].GetImage().GetName(), expectedDep.Containers[1].GetImage().GetId())
 	}
 	protoassert.Equal(suite.T(), expectedDep, dep)
 }
