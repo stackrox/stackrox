@@ -173,4 +173,7 @@ var (
 
 	// SBOMScanning enables matching vulnerabilities to components found in Red Hat produced SBOMs.
 	SBOMScanning = registerFeature("Enables matching vulnerabilities to components found in Red Hat produced SBOMs", "ROX_SBOM_SCANNING")
+
+	// SensorInformerWatchdog enables periodic logging of sensor informers that are stuck or have not synced.
+	SensorInformerWatchdog = registerFeature("Sensor informer watchdog logging", "ROX_SENSOR_INFORMER_WATCHDOG", enabled)
 )

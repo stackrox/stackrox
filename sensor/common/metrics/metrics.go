@@ -302,6 +302,44 @@ var (
 		Name:      "component_process_message_errors_total",
 		Help:      "Number of errors encountered while processing messages from Central in each sensor component",
 	}, []string{ComponentName})
+
+	// InformersRegisteredCurrent is the total number of Kubernetes informers registered by Sensor
+	// during startup. Each informer watches a specific resource type (e.g., Deployments, Pods,
+	// NetworkPolicies). This number is set during initialization and remains constant for the
+	// lifetime of the listener.
+	InformersRegisteredCurrent = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "informers_registered_current",
+		Help: "Total number of Kubernetes informers registered by Sensor during startup. " +
+			"Each informer watches a specific resource type (e.g., Deployments, Pods, NetworkPolicies). " +
+			"Their number may vary depending on the features enabled and the type of the cluster. " +
+			"This number is set during initialization and remains constant for the lifetime of the listener.",
+	})
+
+	// InformersPendingCurrent is the number of Kubernetes informers that have not yet completed
+	// their initial sync. During normal startup this drops from the total to zero as each informer
+	// finishes loading existing resources from the API server. A value that stays non-zero for an
+	// extended period indicates a stuck informer.
+	InformersPendingCurrent = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "informers_pending_current",
+		Help: "Number of Kubernetes informers that have not yet completed their initial sync. " +
+			"During normal startup this drops from the total number of informers registered to zero as " +
+			"each informer finishes loading existing resources from the API server. " +
+			"A value that stays non-zero for an extended period indicates a stuck informer.",
+	})
+
+	// informerSyncDurationMs tracks the time each informer has spent syncing. While the informer
+	// is still pending, this value is updated periodically and keeps increasing. Once the informer
+	// completes its initial sync, the value is set to the final sync duration and stops changing.
+	informerSyncDurationMs = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "informer_sync_duration_ms",
+		Help:      "Time in milliseconds each informer has spent syncing. While the informer is still pending, this value is updated periodically and keeps increasing. Once the informer completes its initial sync, the value is set to the final sync duration and stops changing. Labeled by informer name (e.g., Deployments, Pods). A value that keeps growing indicates a stuck informer.",
+	}, []string{"informer"})
 )
 
 // IncrementEntityNotFound increments an instance of entity not found
@@ -490,4 +528,11 @@ func IncrementCentralReceiverProcessMessageErrors(componentName string) {
 	componentProcessMessageErrorsCount.With(prometheus.Labels{
 		ComponentName: componentName,
 	}).Inc()
+}
+
+// ObserveInformerSyncDuration sets the sync duration metric for an informer.
+// Called periodically for pending informers (with the elapsed time so far)
+// and once for completed informers (with the final sync duration).
+func ObserveInformerSyncDuration(informerName string, duration time.Duration) {
+	informerSyncDurationMs.WithLabelValues(informerName).Set(float64(duration.Milliseconds()))
 }
