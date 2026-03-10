@@ -2,6 +2,7 @@ package booleanpolicy
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // ContainsOneOf returns whether the policy contains at least one group with a field of specified type.
@@ -93,31 +94,39 @@ func ContainsValueWithFieldName(policy *storage.Policy, fieldName string) bool {
 
 }
 
-// ContainsValidRuntimeFieldCategorySections checks that there are no disallowed
-// combination policy groups.
+// ContainsValidRuntimeFieldCategorySections checks that policy sections only contain
+// compatible runtime field types (as defined by runtimeFieldTypeGroups).
 func ContainsValidRuntimeFieldCategorySections(policy *storage.Policy) bool {
 	if len(policy.GetPolicySections()) == 0 {
 		return false
 	}
 
+	var runtimeFieldTypeMap = map[RuntimeFieldType]RuntimeFieldType{
+		Process:     Process,
+		FileAccess:  Process, // FileAccess events contain process information
+		NetworkFlow: NetworkFlow,
+		KubeEvent:   KubeEvent,
+	}
+
 	for _, section := range policy.GetPolicySections() {
-		count := 0
-		if SectionContainsFieldOfType(section, KubeEvent) {
-			count++
-		}
-		hasProcess := SectionContainsFieldOfType(section, Process)
-		hasFileAccess := SectionContainsFieldOfType(section, FileAccess)
+		groupsSeen := set.NewStringSet()
 
-		// Process and FileAccess can be combined (file access events contain process information).
-		// Count them as one category when both are present.
-		if hasProcess || hasFileAccess {
-			count++
+		for _, group := range section.GetPolicyGroups() {
+			fieldName := group.GetFieldName()
+			metadata := FieldMetadataSingleton().fieldsToQB[fieldName]
+			if metadata == nil {
+				continue
+			}
+			for _, fieldType := range metadata.fieldTypes {
+				if fieldTypeGroup, ok := runtimeFieldTypeMap[fieldType]; ok {
+					groupsSeen.Add(string(fieldTypeGroup))
+				}
+			}
+
 		}
 
-		if SectionContainsFieldOfType(section, NetworkFlow) {
-			count++
-		}
-		if count > 1 {
+		// A section can only contain fields from one compatibility group
+		if groupsSeen.Cardinality() > 1 {
 			return false
 		}
 	}
