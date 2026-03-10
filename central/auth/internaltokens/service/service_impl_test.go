@@ -261,6 +261,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			),
 		}
 
+		// #nosec G101 -- test data
 		tokenString := "It was seven o'clock of a very warm evening in the Seeonee Hills when Father Wolf woke up from his day's rest"
 
 		mockIssuer.EXPECT().
