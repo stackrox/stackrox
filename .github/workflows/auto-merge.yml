@@ -24,6 +24,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run auto-merge action
-        uses: stackrox/actions/automerge@v1
+        uses: stackrox/actions/automerge@8fcfacbfc4629361cca5573aba147be2155ba7e9
         with:
           github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
