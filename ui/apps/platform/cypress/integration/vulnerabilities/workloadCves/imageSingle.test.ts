@@ -88,7 +88,7 @@ describe('Workload CVE Image Single page', () => {
             ).then(($statusTotals) => {
                 const statusTotal = $statusTotals.toArray().reduce((acc, $el) => {
                     const count = acc + parseInt($el.innerText.replace(/\D/g, ''), 10);
-                    return Number.isNaN(count) ? 0 : count;
+                    return Number.isNaN(count) ? acc : count;
                 }, 0);
 
                 expect(statusTotal).to.equal(severityTotal);

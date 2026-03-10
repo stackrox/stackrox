@@ -29,13 +29,15 @@ import { parseConfigError } from './errorUtils';
 import type { CollectionConfigError } from './errorUtils';
 import type { SelectorEntityType } from './types';
 
+const COLLECTION_RESULTS_PAGE_SIZE = 20;
+
 function fetchMatchingDeployments(
     dryRunConfig: CollectionRequest,
     page: number,
     filterText: string,
     entity: SelectorEntityType
 ) {
-    const pageSize = 20;
+    const pageSize = COLLECTION_RESULTS_PAGE_SIZE;
     const query = { [entity]: filterText };
     const sortOption = {
         field: 'Deployment',
@@ -110,7 +112,7 @@ function CollectionResults({
         isEndOfResults,
         isFetchingNextPage,
         isRefreshingResults,
-    } = usePaginatedQuery(queryFn, 20, {
+    } = usePaginatedQuery(queryFn, COLLECTION_RESULTS_PAGE_SIZE, {
         debounceRate: 800,
         manualFetch: true,
         dedupKeyFn: ({ id }) => id,
