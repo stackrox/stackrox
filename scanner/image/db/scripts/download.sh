@@ -4,7 +4,7 @@ set -euo pipefail
 
 # If this is updated, be sure to update PG_MAJOR in the Dockerfile and the signature file.
 postgres_major=15
-pg_rhel_major=8
+pg_rhel_major=9
 
 arch="$(uname -m)"
 dnf_list_args=()
