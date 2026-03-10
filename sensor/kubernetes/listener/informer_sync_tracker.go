@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	sensorMetrics "github.com/stackrox/rox/sensor/common/metrics"
 )
@@ -73,20 +74,18 @@ type informerSyncTracker struct {
 	mu           sync.Mutex
 	informers    map[string]*informerState
 	warnInterval time.Duration
-	stopC        <-chan struct{}
-	wg           sync.WaitGroup
+	stopper      concurrency.Stopper
 }
 
 // newInformerSyncTracker creates a tracker and starts a background goroutine that
 // periodically reports on informers that have not synced.
-func newInformerSyncTracker(warnInterval time.Duration, stopC <-chan struct{}) *informerSyncTracker {
+func newInformerSyncTracker(warnInterval time.Duration) *informerSyncTracker {
 	t := &informerSyncTracker{
 		informers:    make(map[string]*informerState),
 		warnInterval: warnInterval,
-		stopC:        stopC,
+		stopper:      concurrency.NewStopper(),
 	}
 
-	t.wg.Add(1)
 	go t.run()
 
 	return t
@@ -144,17 +143,18 @@ type syncState struct {
 	pending []pendingInformer
 }
 
-// stop stops the background goroutine and waits for it to exit.
+// stop requests the background goroutine to shut down and waits for it to exit.
 func (t *informerSyncTracker) stop() {
 	if t == nil {
 		return
 	}
-	t.wg.Wait()
+	t.stopper.Client().Stop()
+	<-t.stopper.Client().Stopped().Done()
 	log.Info("Informer sync tracker stopped")
 }
 
 func (t *informerSyncTracker) run() {
-	defer t.wg.Done()
+	defer t.stopper.Flow().ReportStopped()
 
 	pendingInformerTicker := time.NewTicker(t.warnInterval)
 	defer pendingInformerTicker.Stop()
@@ -164,7 +164,7 @@ func (t *informerSyncTracker) run() {
 
 	for {
 		select {
-		case <-t.stopC:
+		case <-t.stopper.Flow().StopRequested():
 			return
 		// If no informers are registered after the timeout, exit the sync tracker, but let Sensor continue operation.
 		case <-noRegistrations.C:

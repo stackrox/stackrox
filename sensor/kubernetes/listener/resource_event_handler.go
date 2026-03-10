@@ -122,7 +122,7 @@ func (k *listenerImpl) handleAllEvents() {
 		// This is meant to spam the logs if informers are stuck, as there were many cases
 		// where informers were stuck for hours without any indication to the user.
 		loggingPeriod := 30 * time.Second
-		informerTracker = newInformerSyncTracker(loggingPeriod, k.stopSig.Done())
+		informerTracker = newInformerSyncTracker(loggingPeriod)
 		defer informerTracker.stop()
 	}
 

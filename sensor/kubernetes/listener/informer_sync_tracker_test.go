@@ -11,14 +11,10 @@ import (
 
 // newTestTracker creates a tracker with a very long interval so the background goroutine
 // never fires during tests. Tests call getState() directly to verify behavior.
-// Cleanups run in LIFO order: stop() runs after close(stopC).
 func newTestTracker(t *testing.T) *informerSyncTracker {
 	t.Helper()
-	stopC := make(chan struct{})
-
-	tracker := newInformerSyncTracker(24*time.Hour, stopC)
+	tracker := newInformerSyncTracker(24 * time.Hour)
 	t.Cleanup(func() { tracker.stop() })
-	t.Cleanup(func() { close(stopC) })
 	return tracker
 }
 
@@ -115,13 +111,9 @@ func TestInformerSyncTracker_MarkSyncedIdempotent(t *testing.T) {
 
 func TestInformerSyncTracker_StopSignal(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		stopC := make(chan struct{})
-		tracker := newInformerSyncTracker(10*time.Second, stopC)
+		tracker := newInformerSyncTracker(10 * time.Second)
 
 		tracker.register(informerNamespaces)
-
-		close(stopC)
-		synctest.Wait()
 
 		done := make(chan struct{})
 		go func() {
@@ -200,8 +192,7 @@ func TestSyncState_Log_Empty(t *testing.T) {
 
 func TestInformerSyncTracker_RunExitsWhenAllSynced(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		stopC := make(chan struct{})
-		tracker := newInformerSyncTracker(30*time.Second, stopC)
+		tracker := newInformerSyncTracker(30 * time.Second)
 
 		tracker.register(informerNamespaces)
 		tracker.register(informerSecrets)
@@ -246,8 +237,7 @@ func TestInformerSyncTracker_RunExitsWhenAllSynced(t *testing.T) {
 
 func TestInformerSyncTracker_RunReportsOnEachTick(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		stopC := make(chan struct{})
-		tracker := newInformerSyncTracker(10*time.Second, stopC)
+		tracker := newInformerSyncTracker(10 * time.Second)
 
 		tracker.register(informerNetworkPolicies)
 
@@ -268,22 +258,15 @@ func TestInformerSyncTracker_RunReportsOnEachTick(t *testing.T) {
 		assert.Len(t, state.pending, 1)
 		assert.Equal(t, 20*time.Second, state.pending[0].pending)
 
-		// Cleanup
-		close(stopC)
-		synctest.Wait()
 		tracker.stop()
 	})
 }
 
-func TestInformerSyncTracker_RunStopsOnStopC(t *testing.T) {
+func TestInformerSyncTracker_RunStopsOnStop(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		stopC := make(chan struct{})
-		tracker := newInformerSyncTracker(30*time.Second, stopC)
+		tracker := newInformerSyncTracker(30 * time.Second)
 
 		tracker.register(informerNamespaces)
-
-		close(stopC)
-		synctest.Wait()
 
 		done := make(chan struct{})
 		go func() {
@@ -295,15 +278,14 @@ func TestInformerSyncTracker_RunStopsOnStopC(t *testing.T) {
 		select {
 		case <-done:
 		default:
-			t.Fatal("run() goroutine did not exit after stopC closed")
+			t.Fatal("run() goroutine did not exit after stop() called")
 		}
 	})
 }
 
 func TestInformerSyncTracker_RunExitsOnNoRegistrationsTimeout(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		stopC := make(chan struct{})
-		tracker := newInformerSyncTracker(30*time.Second, stopC)
+		tracker := newInformerSyncTracker(30 * time.Second)
 
 		// Don't register any informers. After noRegistrationsTimeout (60s)
 		// the tracker should exit on its own.
@@ -327,8 +309,7 @@ func TestInformerSyncTracker_RunExitsOnNoRegistrationsTimeout(t *testing.T) {
 
 func TestInformerSyncTracker_RunIgnoresNoRegistrationsTimeoutAfterRegister(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		stopC := make(chan struct{})
-		tracker := newInformerSyncTracker(30*time.Second, stopC)
+		tracker := newInformerSyncTracker(30 * time.Second)
 
 		tracker.register(informerNamespaces)
 
