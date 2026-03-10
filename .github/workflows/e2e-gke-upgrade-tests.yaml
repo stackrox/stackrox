@@ -288,6 +288,8 @@ jobs:
     - name: Run final-post
       if: always()
       shell: python
+      env:
+        QA_TEST_DEBUG_LOGS: /tmp/qa-tests-backend-logs
       run: |
         import sys
         sys.path.append('.openshift-ci')
