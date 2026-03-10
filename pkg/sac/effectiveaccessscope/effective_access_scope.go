@@ -72,6 +72,50 @@ type selectors struct {
 	namespacesByLabel       []labels.Selector
 }
 
+func (s *selectors) matchCluster(cluster Cluster) scopeState {
+	if s == nil {
+		return Excluded
+	}
+
+	clusterID := cluster.GetId()
+	if s.clustersByID != nil && s.clustersByID[clusterID] {
+		return Included
+	}
+
+	clusterName := cluster.GetName()
+	if s.clustersByName != nil && s.clustersByName[clusterName] {
+		return Included
+	}
+
+	// Augment cluster labels with cluster's name.
+	augmentedClusterLabels := augmentLabels(cluster.GetLabels(), clusterNameLabel, clusterName)
+	return matchLabels(s.clustersByLabel, augmentedClusterLabels)
+}
+
+func (s *selectors) matchNamespace(namespace Namespace) scopeState {
+	if s == nil {
+		return Excluded
+	}
+
+	namespaceName := namespace.GetName()
+
+	clusterID := namespace.GetClusterId()
+	if clusterID != "" && matchNamespaceByClusterKey(s.namespacesByClusterID, clusterID, namespaceName) {
+		return Included
+	}
+
+	clusterName := namespace.GetClusterName()
+	if clusterName != "" && matchNamespaceByClusterKey(s.namespacesByClusterName, clusterName, namespaceName) {
+		return Included
+	}
+
+	// Augment namespace labels with namespace's FQSN.
+	namespaceFQSN := getNamespaceFQSN(clusterName, namespaceName)
+	namespaceLabels := augmentLabels(namespace.GetLabels(), namespaceNameLabel, namespaceFQSN)
+
+	return matchLabels(s.namespacesByLabel, namespaceLabels)
+}
+
 // Cluster is the interface for clusters in the access scope computation
 type Cluster interface {
 	GetId() string
@@ -266,31 +310,20 @@ func (root *ScopeTree) populateStateForCluster(
 ) {
 	clusterName := cluster.GetName()
 	clusterID := cluster.GetId()
-	clusterState := Excluded
 
 	// There is no need to check if root is Included as we start with Excluded root.
 	// If root is eventually Included then we can include the cluster and short-circuit:
 	// no need to match if parent is included.
 
-	// Set the cluster state to the pre-existing state
-	if clusterSubTree := root.Clusters[clusterName]; clusterSubTree != nil {
-		clusterState = clusterSubTree.State
-	}
-
-	// Augment cluster labels with cluster's name.
-	augmentedClusterLabels := augmentLabels(cluster.GetLabels(), clusterNameLabel, clusterName)
-
 	// Match the cluster
-	if ruleSelectors.clustersByID[clusterID] {
-		clusterState = Included
+	clusterState := ruleSelectors.matchCluster(cluster)
+
+	// Set the cluster state to the pre-existing state
+	if clusterSubTree := root.Clusters[clusterName]; clusterSubTree != nil && clusterSubTree.State < clusterState {
+		clusterSubTree.State = clusterState
+		return
 	}
-	if ruleSelectors.clustersByName[clusterName] {
-		clusterState = Included
-	}
-	matchState := matchLabels(ruleSelectors.clustersByLabel, augmentedClusterLabels)
-	if matchState > clusterState {
-		clusterState = matchState
-	}
+
 	// Update the tree
 	root.Clusters[clusterName] = newClusterScopeSubTree(clusterState, nodeAttributesForCluster(cluster, detail))
 	root.clusterIDToName[clusterID] = clusterName
@@ -406,10 +439,7 @@ func (cluster *clustersScopeSubTree) populateStateForNamespace(
 	ruleSelectors *selectors,
 	detail v1.ComputeEffectiveAccessScopeRequest_Detail,
 ) {
-	clusterID := namespace.GetClusterId()
-	clusterName := namespace.GetClusterName()
 	namespaceName := namespace.GetName()
-	namespaceFQSN := getNamespaceFQSN(clusterName, namespaceName)
 
 	// If parent is Included, include the namespace and short-circuit:
 	// no need to match if parent is included.
@@ -418,21 +448,13 @@ func (cluster *clustersScopeSubTree) populateStateForNamespace(
 		return
 	}
 
-	// Augment namespace labels with namespace's FQSN.
-	namespaceLabels := augmentLabels(namespace.GetLabels(), namespaceNameLabel, namespaceFQSN)
+	namespaceState := ruleSelectors.matchNamespace(namespace)
 
-	// Match namespace
-	namespaceState := Excluded
-	if matchNamespaceByClusterKey(ruleSelectors.namespacesByClusterID, clusterID, namespaceName) {
-		namespaceState = Included
+	if nsSubTree := cluster.Namespaces[namespaceName]; nsSubTree != nil && namespaceState > nsSubTree.State {
+		nsSubTree.State = namespaceState
+		return
 	}
-	if matchNamespaceByClusterKey(ruleSelectors.namespacesByClusterName, clusterName, namespaceName) {
-		namespaceState = Included
-	}
-	matched := matchLabels(ruleSelectors.namespacesByLabel, namespaceLabels)
-	if matched > namespaceState {
-		namespaceState = matched
-	}
+
 	// Update the tree
 	cluster.Namespaces[namespaceName] = newNamespacesScopeSubTree(namespaceState, nodeAttributesForNamespace(namespace, detail))
 }
