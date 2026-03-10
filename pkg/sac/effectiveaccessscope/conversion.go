@@ -133,6 +133,9 @@ func convertRulesToSelectors(scopeRules *storage.SimpleAccessScope_Rules) (*sele
 		clusterID := namespace.GetClusterId()
 		clusterName := namespace.GetClusterName()
 		namespaceName := namespace.GetNamespaceName()
+		if clusterID == "" && clusterName == "" {
+			continue
+		}
 		if clusterID != "" {
 			addToNamespaceMap(output.namespacesByClusterID, clusterID, namespaceName)
 			continue
@@ -148,47 +151,6 @@ func addToNamespaceMap(targetMap map[string]map[string]bool, clusterKey string, 
 		targetMap[clusterKey] = make(map[string]bool)
 	}
 	targetMap[clusterKey][namespaceKey] = true
-}
-
-// convertRulesToLabelSelectors:
-//   - converts included_clusters rules to a single cluster label selector,
-//   - converts included_namespaces rules to a single namespace label selector,
-//   - converts all label selectors to standard ones with matching support.
-func convertRulesToLabelSelectors(scopeRules *storage.SimpleAccessScope_Rules) (clusterSelectors, namespaceSelectors []labels.Selector, err error) {
-	// Convert each selector to labels.Selector.
-	clusterSelectors, err = convertEachSetBasedLabelSelectorToK8sLabelSelector(scopeRules.GetClusterLabelSelectors())
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "bad cluster label selector")
-	}
-
-	// Add included cluster names as a special label.
-	if clusterNames := scopeRules.GetIncludedClusters(); len(clusterNames) != 0 {
-		selector := labels.NewSelector()
-		req, err := labels.NewRequirement(clusterNameLabel, selection.In, clusterNames)
-		if err != nil {
-			return nil, nil, errors.Wrapf(err, "label selector from cluster names %v", clusterNames)
-		}
-		clusterSelectors = append(clusterSelectors, selector.Add(*req))
-	}
-
-	// Convert each selector to labels.Selector.
-	namespaceSelectors, err = convertEachSetBasedLabelSelectorToK8sLabelSelector(scopeRules.GetNamespaceLabelSelectors())
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "bad namespace label selector")
-	}
-
-	// Add included namespace names as a special label. Note how validation of
-	// label keys and values is bypassed when creating labels.Requirement.
-	if namespaceNames := scopeRules.GetIncludedNamespaces(); len(namespaceNames) != 0 {
-		selector := labels.NewSelector()
-		req, err := newUnvalidatedRequirement(namespaceNameLabel, selection.In, convertEachRulesNamespaceToFQSN(namespaceNames))
-		if err != nil {
-			return nil, nil, errors.Wrapf(err, "label selector from namespace names %v", namespaceNames)
-		}
-		namespaceSelectors = append(namespaceSelectors, selector.Add(*req))
-	}
-
-	return clusterSelectors, namespaceSelectors, nil
 }
 
 func convertEachSetBasedLabelSelectorToK8sLabelSelector(selectors []*storage.SetBasedLabelSelector) ([]labels.Selector, error) {
@@ -221,16 +183,6 @@ func convertSetBasedLabelSelectorToK8sLabelSelector(selector *storage.SetBasedLa
 	}
 
 	return compiled, nil
-}
-
-// convertEachRulesNamespaceToFQSN (fully qualified scope name) converts
-// Namespace{cluster_name: "foo", namespace_name: "bar"} to "foo::bar".
-func convertEachRulesNamespaceToFQSN(namespaces []*storage.SimpleAccessScope_Rules_Namespace) []string {
-	result := make([]string, 0, len(namespaces))
-	for _, elem := range namespaces {
-		result = append(result, getNamespaceFQSN(elem.GetClusterName(), elem.GetNamespaceName()))
-	}
-	return result
 }
 
 // newUnvalidatedRequirement is like labels.NewRequirement() but without label
