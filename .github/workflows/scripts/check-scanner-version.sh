@@ -11,6 +11,8 @@ TAG="$1"
 check_not_empty TAG
 VERSION="${TAG/-rc.[0-9]*/}"
 SCANNER_VERSION_PATH="scanner/updater/version/RELEASE_VERSION"
+BUNDLE_URL="https://install.stackrox.io/scanner/${VERSION}/scanner-vulns-${VERSION}.zip"
+OUTPUT_FILE="scanner-vuln-updates-$VERSION.zip"
 
 # Fetch the file content from the master branch (raw).
 SCANNER_VERSION=$(gh api -H "Accept: application/vnd.github.v3.raw+json" \
@@ -25,4 +27,20 @@ if ! grep -q "^${VERSION}$" <<<"$SCANNER_VERSION"; then
     gh_summary "➡️  There should be $VERSION in the \`RELEASE_VERSION\` file in master."
     exit 1
 fi
-gh_summary "✅ Version ${VERSION} present in $SCANNER_VERSION_PATH."
+
+# run curl to get scanner bundle with flag
+# -Ss quiet mode but still shows error
+# after the request finishes, print the final HTTP status code to status
+status="$(curl -sS -o /dev/null -w '%{http_code}' "$BUNDLE_URL")"
+case "$status" in
+  200|206)
+    echo "PASS: HTTP $status $BUNDLE_URL"
+    ;;
+  *)
+     gh_log error "Scanner bundle not reachable or not a ZIP at $BUNDLE_URL"
+     gh_summary "❌ Scanner bundle missing/invalid for *${VERSION}*"
+     exit 1
+    ;;
+esac
+
+gh_summary "✅ Version ${VERSION} present in $SCANNER_VERSION_PATH. Verified bundle is healthy."
