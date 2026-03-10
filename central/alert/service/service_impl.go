@@ -115,10 +115,8 @@ func (s *serviceImpl) GetAlert(ctx context.Context, request *v1.ResourceByID) (*
 
 // listAlertsRequestToQuery converts a v1.ListAlertsRequest to a search query
 func listAlertsRequestToQuery(request *v1.ListAlertsRequest, sort bool) (*v1.Query, error) {
-	var q *v1.Query
-	if request.GetQuery() == "" {
-		q = search.EmptyQuery()
-	} else {
+	q := search.EmptyQuery()
+	if request.GetQuery() != "" {
 		var err error
 		q, err = search.ParseQuery(request.GetQuery())
 		if err != nil {
@@ -180,10 +178,8 @@ func ensureAllAlertsAreFetched(req *v1.ListAlertsRequest) *v1.ListAlertsRequest 
 
 // GetAlertsGroup returns alerts according to the request, grouped by policy.
 func (s *serviceImpl) GetAlertsGroup(ctx context.Context, request *v1.ListAlertsRequest) (*v1.GetAlertsGroupResponse, error) {
-	var q *v1.Query
-	if request.GetQuery() == "" {
-		q = search.EmptyQuery()
-	} else {
+	q := search.EmptyQuery()
+	if request.GetQuery() != "" {
 		var err error
 		q, err = search.ParseQuery(request.GetQuery())
 		if err != nil {
