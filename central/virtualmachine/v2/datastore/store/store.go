@@ -33,9 +33,6 @@ type Store interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	// Search returns search results matching the query.
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
-	// Exists returns whether a VM with the given ID exists.
-	Exists(ctx context.Context, id string) (bool, error)
-
 	// Get returns the VM with the given ID.
 	Get(ctx context.Context, id string) (*storage.VirtualMachineV2, bool, error)
 	// GetMany returns the VMs with the given IDs.

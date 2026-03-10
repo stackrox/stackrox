@@ -43,7 +43,6 @@ func (s *VMStoreTestSuite) SetupTest() {
 	s.store = New(s.testDB.DB, concurrency.NewKeyFence()).(*storeImpl)
 }
 
-
 func (s *VMStoreTestSuite) newVM() *storage.VirtualMachineV2 {
 	return &storage.VirtualMachineV2{
 		Id:          uuid.NewV4().String(),
@@ -202,13 +201,13 @@ func (s *VMStoreTestSuite) TestUpsertScan_Unchanged() {
 	// Upsert with same components and CVEs (new scan ID but same content).
 	parts2 := s.newScanParts(vm.GetId())
 	// Use different scan/component/CVE IDs but same content.
-	parts2.Components[0].Name = parts.Components[0].Name
-	parts2.Components[0].Version = parts.Components[0].Version
-	parts2.CVEs[0].CveBaseInfo = parts.CVEs[0].CveBaseInfo.CloneVT()
-	parts2.CVEs[0].PreferredCvss = parts.CVEs[0].PreferredCvss
-	parts2.CVEs[0].Severity = parts.CVEs[0].Severity
-	parts2.CVEs[0].IsFixable = parts.CVEs[0].IsFixable
-	parts2.CVEs[0].HasFixedBy = parts.CVEs[0].HasFixedBy
+	parts2.Components[0].Name = parts.Components[0].GetName()
+	parts2.Components[0].Version = parts.Components[0].GetVersion()
+	parts2.CVEs[0].CveBaseInfo = parts.CVEs[0].GetCveBaseInfo().CloneVT()
+	parts2.CVEs[0].PreferredCvss = parts.CVEs[0].GetPreferredCvss()
+	parts2.CVEs[0].Severity = parts.CVEs[0].GetSeverity()
+	parts2.CVEs[0].IsFixable = parts.CVEs[0].GetIsFixable()
+	parts2.CVEs[0].HasFixedBy = parts.CVEs[0].GetHasFixedBy()
 
 	s.NoError(s.store.UpsertScan(s.ctx, vm.GetId(), parts2))
 
@@ -381,19 +380,6 @@ func (s *VMStoreTestSuite) TestSearch() {
 	results, err := s.store.Search(s.ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Len(results, 1)
-}
-
-func (s *VMStoreTestSuite) TestExists() {
-	vm := s.newVM()
-	s.NoError(s.store.UpsertVM(s.ctx, vm))
-
-	exists, err := s.store.Exists(s.ctx, vm.GetId())
-	s.NoError(err)
-	s.True(exists)
-
-	exists, err = s.store.Exists(s.ctx, uuid.NewV4().String())
-	s.NoError(err)
-	s.False(exists)
 }
 
 func (s *VMStoreTestSuite) TestGetMany() {

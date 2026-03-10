@@ -13,7 +13,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -35,7 +34,6 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
 	schema = pkgSchema.VirtualMachineV2Schema
 )
 
@@ -413,11 +411,10 @@ func buildCVETimeMap(cves []*storage.VirtualMachineCVEV2, iTime time.Time) map[s
 	for _, cve := range cves {
 		cveName := cve.GetCveBaseInfo().GetCve()
 		createdAt := cve.GetCveBaseInfo().GetCreatedAt()
-		if createdAt == nil {
-			cve.GetCveBaseInfo().CreatedAt = timestamppb.New(iTime)
-			createdAt = cve.GetCveBaseInfo().GetCreatedAt()
+		t := iTime
+		if createdAt != nil {
+			t = createdAt.AsTime()
 		}
-		t := createdAt.AsTime()
 		if existing, ok := cveTimeMap[cveName]; ok {
 			if t.Before(existing) {
 				cveTimeMap[cveName] = t
@@ -623,12 +620,14 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "VirtualMachineV2")
 
-	for _, id := range ids {
-		if err := s.Delete(ctx, id); err != nil {
-			return err
-		}
+	if len(ids) == 0 {
+		return nil
 	}
-	return nil
+
+	return pgutils.Retry(ctx, func() error {
+		q := search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery()
+		return pgSearch.RunDeleteRequestForSchema(ctx, schema, q, s.db)
+	})
 }
 
 // endregion Delete
@@ -648,19 +647,6 @@ func (s *storeImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, e
 
 	return pgutils.Retry2(ctx, func() ([]search.Result, error) {
 		return pgSearch.RunSearchRequestForSchema(ctx, schema, q, s.db)
-	})
-}
-
-func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "VirtualMachineV2")
-
-	return pgutils.Retry2(ctx, func() (bool, error) {
-		q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
-		count, err := pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
-		if err != nil {
-			return false, err
-		}
-		return count == 1, nil
 	})
 }
 
@@ -692,26 +678,28 @@ func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Virtu
 		if len(ids) == 0 {
 			return nil, nil, nil
 		}
-		tx, ctx, err := s.begin(ctx)
+
+		q := search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery()
+		resultsByID := make(map[string]*storage.VirtualMachineV2, len(ids))
+		err := pgSearch.RunQueryForSchemaFn[storage.VirtualMachineV2](ctx, schema, q, s.db, func(vm *storage.VirtualMachineV2) error {
+			resultsByID[vm.GetId()] = vm
+			return nil
+		})
 		if err != nil {
 			return nil, nil, err
 		}
-		defer postgres.FinishReadOnlyTransaction(tx)
 
-		var result []*storage.VirtualMachineV2
-		var missing []int
+		// Preserve input order and track missing indices.
+		elems := make([]*storage.VirtualMachineV2, 0, len(resultsByID))
+		missingIndices := make([]int, 0, len(ids)-len(resultsByID))
 		for i, id := range ids {
-			vm, err := s.getVMSerialized(ctx, tx, id)
-			if err != nil {
-				return nil, nil, err
+			if vm, ok := resultsByID[id]; ok {
+				elems = append(elems, vm)
+			} else {
+				missingIndices = append(missingIndices, i)
 			}
-			if vm == nil {
-				missing = append(missing, i)
-				continue
-			}
-			result = append(result, vm)
 		}
-		return result, missing, nil
+		return elems, missingIndices, nil
 	})
 }
 
