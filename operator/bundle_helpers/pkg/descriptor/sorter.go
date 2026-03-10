@@ -25,7 +25,7 @@ func FixCSVDescriptorsMap(csvDoc chartutil.Values) error {
 	for _, crdItem := range owned {
 		crd, ok := crdItem.(map[string]any)
 		if !ok {
-			continue
+			return errors.Errorf("item in owned CRD list is not a map: %T", crdItem)
 		}
 
 		if err := processSpecDescriptorsMap(crd); err != nil {
@@ -50,7 +50,9 @@ func processSpecDescriptorsMap(crd map[string]any) error {
 	}
 
 	fixDescriptorOrderMap(descriptors)
-	allowRelativeFieldDependenciesMap(descriptors)
+	if err := allowRelativeFieldDependenciesMap(descriptors); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -82,21 +84,19 @@ func getDescriptorParentPath(desc any) string {
 	if !ok {
 		return ""
 	}
-
 	path, ok := descMap["path"].(string)
 	if !ok {
 		return ""
 	}
-
 	return getParentPath(path)
 }
 
 // allowRelativeFieldDependenciesMap converts relative field dependency paths to absolute.
-func allowRelativeFieldDependenciesMap(descriptors []any) {
+func allowRelativeFieldDependenciesMap(descriptors []any) error {
 	for _, desc := range descriptors {
 		descMap, ok := desc.(map[string]any)
 		if !ok {
-			continue
+			return errors.Errorf("descriptor is not a map: %T", desc)
 		}
 
 		path, _ := descMap["path"].(string)
@@ -107,14 +107,14 @@ func allowRelativeFieldDependenciesMap(descriptors []any) {
 
 		xDescs, ok := xDescsRaw.([]any)
 		if !ok {
-			continue
+			return errors.Errorf("x-descriptors is not a list: %T", xDescsRaw)
 		}
 
 		// Process each x-descriptor
 		for i, xDescRaw := range xDescs {
 			xDesc, ok := xDescRaw.(string)
 			if !ok {
-				continue
+				return errors.Errorf("x-descriptor entry is not a string: %T", xDescRaw)
 			}
 
 			if !strings.HasPrefix(xDesc, "urn:alm:descriptor:com.tectonic.ui:fieldDependency:") {
@@ -145,4 +145,5 @@ func allowRelativeFieldDependenciesMap(descriptors []any) {
 			xDescs[i] = prefix + absoluteField + ":" + val
 		}
 	}
+	return nil
 }
