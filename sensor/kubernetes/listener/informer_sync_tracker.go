@@ -79,7 +79,19 @@ type informerSyncTracker struct {
 
 // newInformerSyncTracker creates a tracker and starts a background goroutine that
 // periodically reports on informers that have not synced.
+//
+// The tracker uses shared global Prometheus metrics (InformersRegisteredCurrent,
+// InformersPendingCurrent, informerSyncDurationMs) which are reset on creation.
+// Only one tracker instance should exist at a time. If multiple concurrent
+// trackers are ever needed, the metrics must be refactored to be per-instance.
 func newInformerSyncTracker(warnInterval time.Duration) *informerSyncTracker {
+	// Do not reset in `stop`, as it may be called shortly after sensor startup.
+	// Reseting here ensures that the metrics are current for the most recent informer sync
+	// (e.g., after offline->online transition).
+	sensorMetrics.InformersRegisteredCurrent.Set(0)
+	sensorMetrics.InformersPendingCurrent.Set(0)
+	sensorMetrics.ResetInformerSyncDuration()
+
 	t := &informerSyncTracker{
 		informers:    make(map[string]*informerState),
 		warnInterval: warnInterval,

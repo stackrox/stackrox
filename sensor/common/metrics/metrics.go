@@ -536,3 +536,9 @@ func IncrementCentralReceiverProcessMessageErrors(componentName string) {
 func ObserveInformerSyncDuration(informerName string, duration time.Duration) {
 	informerSyncDurationMs.WithLabelValues(informerName).Set(float64(duration.Milliseconds()))
 }
+
+// ResetInformerSyncDuration removes all label values from the sync duration gauge,
+// clearing stale per-informer entries from a previous tracker lifecycle.
+func ResetInformerSyncDuration() {
+	informerSyncDurationMs.Reset()
+}
