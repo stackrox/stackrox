@@ -117,6 +117,12 @@ func (p *configMapPersister) applyCurrentConfigMap(ctx context.Context) error {
 			return errors.Wrap(err, "telling Kubernetes to create config map")
 		}
 
+		existing, err := p.client.Get(ctx, configMap.Name, metav1.GetOptions{})
+		if err != nil {
+			return errors.Wrap(err, "getting existing config map")
+		}
+		configMap.ResourceVersion = existing.ResourceVersion
+
 		if _, err := p.client.Update(ctx, configMap, metav1.UpdateOptions{}); err != nil {
 			return errors.Wrap(err, "telling Kubernetes to update existing config map")
 		}

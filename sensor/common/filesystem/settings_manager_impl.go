@@ -16,9 +16,7 @@ import (
 )
 
 const (
-	configMapName     = "fact-config"
-	configMapPathsKey = "paths"
-
+	configMapName  = "fact-config"
 	factConfigFile = "fact.yml"
 )
 
@@ -44,9 +42,6 @@ func (f *factSettingsManager) ConfigMapStream() concurrency.ReadOnlyValueStream[
 
 func (f *factSettingsManager) UpdateFactSettings(policies []*storage.Policy) {
 	paths := f.extractFileActivityPaths(policies)
-	if len(paths) == 0 {
-		return
-	}
 
 	newSettings := &sensor.FactSettings{
 		Paths: paths,
