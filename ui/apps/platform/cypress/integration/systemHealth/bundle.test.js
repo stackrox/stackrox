@@ -74,7 +74,9 @@ describe('Download Diagnostic Data', () => {
 
             const clusterName = 'remote';
 
-            cy.get(`.pf-v6-c-label-group__list-item:contains("${clusterName}")`).should('not.exist');
+            cy.get(`.pf-v6-c-label-group__list-item:contains("${clusterName}")`).should(
+                'not.exist'
+            );
 
             // TODO factor out as helper function
             cy.get('[placeholder="Type a cluster name"]').click();

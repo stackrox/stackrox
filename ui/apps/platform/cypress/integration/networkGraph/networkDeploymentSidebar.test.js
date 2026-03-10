@@ -57,9 +57,7 @@ describe('Network Graph deployment sidebar', () => {
         cy.get('h2:contains("Container configurations")');
 
         // check list of containers in Container Config section
-        cy.get('[data-testid="deployment-container-config"]')
-            .contains('collector')
-            .should('exist');
+        cy.get('[data-testid="deployment-container-config"]').contains('collector').should('exist');
         cy.get('[data-testid="deployment-container-config"]')
             .contains('compliance')
             .should('exist');
