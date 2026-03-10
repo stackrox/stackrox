@@ -563,10 +563,10 @@ func convertSchedule(scanRequest *storage.ComplianceOperatorScanConfigurationV2)
 
 func storageToInternalProfileKind(kind storage.ComplianceOperatorProfileV2_OperatorKind) central.ComplianceOperatorProfileV2_OperatorKind {
 	switch kind {
-	case storage.ComplianceOperatorProfileV2_OPERATOR_KIND_PROFILE:
-		return central.ComplianceOperatorProfileV2_OPERATOR_KIND_PROFILE
-	case storage.ComplianceOperatorProfileV2_OPERATOR_KIND_TAILORED_PROFILE:
-		return central.ComplianceOperatorProfileV2_OPERATOR_KIND_TAILORED_PROFILE
+	case storage.ComplianceOperatorProfileV2_PROFILE:
+		return central.ComplianceOperatorProfileV2_PROFILE
+	case storage.ComplianceOperatorProfileV2_TAILORED_PROFILE:
+		return central.ComplianceOperatorProfileV2_TAILORED_PROFILE
 	case storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
 		return central.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED
 	default:
