@@ -1992,8 +1992,8 @@ func (x *ComplianceOperatorRemediationV2) GetEnforcementType() string {
 // ProfileReference identifies a compliance profile by name and its kind (Profile or TailoredProfile).
 // New Central populates profile_refs in BaseScanSettings; Sensor prefers it over the legacy profiles field.
 type ApplyComplianceScanConfigRequest_ProfileReference struct {
-	state         protoimpl.MessageState                                    `protogen:"open.v1"`
-	Name          string                                                    `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	state         protoimpl.MessageState                   `protogen:"open.v1"`
+	Name          string                                   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Kind          ComplianceOperatorProfileV2_OperatorKind `protobuf:"varint,2,opt,name=kind,proto3,enum=central.ComplianceOperatorProfileV2_OperatorKind" json:"kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2843,7 +2843,7 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\x18DisableComplianceRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"o\n" +
 	"\x1fSyncComplianceScanConfigRequest\x12L\n" +
-	"\fscan_configs\x18\x01 \x03(\v2).central.ApplyComplianceScanConfigRequestR\vscanConfigs\"\xed\f\n" +
+	"\fscan_configs\x18\x01 \x03(\v2).central.ApplyComplianceScanConfigRequestR\vscanConfigs\"\xdc\f\n" +
 	" ApplyComplianceScanConfigRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12`\n" +
 	"\x0escheduled_scan\x18\x03 \x01(\v27.central.ApplyComplianceScanConfigRequest.ScheduledScanH\x00R\rscheduledScan\x12]\n" +
@@ -2853,10 +2853,10 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\vresume_scan\x18\x06 \x01(\v2=.central.ApplyComplianceScanConfigRequest.ResumeScheduledScanH\x00R\n" +
 	"resumeScan\x12`\n" +
 	"\vupdate_scan\x18\a \x01(\v2=.central.ApplyComplianceScanConfigRequest.UpdateScheduledScanH\x00R\n" +
-	"updateScan\x1a~\n" +
+	"updateScan\x1am\n" +
 	"\x10ProfileReference\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12V\n" +
-	"\x04kind\x18\x02 \x01(\x0e2B.central.ComplianceOperatorProfileV2.ComplianceOperatorProfileKindR\x04kind\x1a\x98\x03\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12E\n" +
+	"\x04kind\x18\x02 \x01(\x0e21.central.ComplianceOperatorProfileV2.OperatorKindR\x04kind\x1a\x98\x03\n" +
 	"\x10BaseScanSettings\x12 \n" +
 	"\fdb_record_id\x18\x01 \x01(\tR\n" +
 	"dbRecordId\x12\x1b\n" +
@@ -3097,7 +3097,7 @@ func file_internalapi_central_compliance_operator_proto_rawDescGZIP() []byte {
 }
 
 var file_internalapi_central_compliance_operator_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_internalapi_central_compliance_operator_proto_msgTypes = make([]protoimpl.MessageInfo, 43)
+var file_internalapi_central_compliance_operator_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
 var file_internalapi_central_compliance_operator_proto_goTypes = []any{
 	(ComplianceOperatorRuleSeverity)(0),                           // 0: central.ComplianceOperatorRuleSeverity
 	(ComplianceOperatorCheckResultV2_CheckStatus)(0),              // 1: central.ComplianceOperatorCheckResultV2.CheckStatus

@@ -26,7 +26,7 @@ type convertFunction func(string, *central.ApplyComplianceScanConfigRequest_Base
 
 // profileKindToString maps an OperatorKind proto enum to the compliance operator Kind string.
 func profileKindToString(kind central.ComplianceOperatorProfileV2_OperatorKind) string {
-	if kind == central.ComplianceOperatorProfileV2_OPERATOR_KIND_TAILORED_PROFILE {
+	if kind == central.ComplianceOperatorProfileV2_TAILORED_PROFILE {
 		return complianceoperator.TailoredProfile.Kind
 	}
 	return complianceoperator.Profile.Kind
