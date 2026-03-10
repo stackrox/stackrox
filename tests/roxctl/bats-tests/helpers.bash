@@ -259,7 +259,7 @@ image_reference_regex() {
       echo "quay\.io/stackrox-io/$component:$version"
       ;;
     registry.redhat.io)
-      echo "registry\.redhat\.io/advanced-cluster-security/rhacs-$component-rhel8:$version"
+      echo "registry\.redhat\.io/advanced-cluster-security/rhacs-$component-rhel9:$version"
       ;;
     example.com)
       echo "example\.com/$component:$version"
