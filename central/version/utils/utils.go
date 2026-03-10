@@ -1,15 +1,11 @@
 package utils
 
 import (
-	"github.com/pkg/errors"
 	vStore "github.com/stackrox/rox/central/version/store"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/postgres"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/version"
 )
 
 // ReadVersionPostgres - reads the version from the postgres database.
@@ -28,27 +24,4 @@ func ReadVersionPostgres(pool postgres.DB) (*migrations.MigrationVersion, error)
 		LastPersisted: timestamp.FromProtobuf(ver.GetLastPersisted()).GoTime(),
 		MinimumSeqNum: int(ver.GetMinSeqNum()),
 	}, nil
-}
-
-// SetCurrentVersionPostgres - sets the current version in the postgres database
-func SetCurrentVersionPostgres(pool postgres.DB) {
-	if curr, err := ReadVersionPostgres(pool); err != nil ||
-		curr.MainVersion != version.GetMainVersion() ||
-		curr.SeqNum != migrations.CurrentDBVersionSeqNum() ||
-		curr.MinimumSeqNum != migrations.MinimumSupportedDBVersionSeqNum() {
-		newVersion := &storage.Version{
-			SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
-			Version:       version.GetMainVersion(),
-			MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
-			LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
-		}
-		setVersionPostgres(pool, newVersion)
-	}
-}
-
-func setVersionPostgres(pool postgres.DB, updatedVersion *storage.Version) {
-	store := vStore.NewPostgres(pool)
-
-	err := store.UpdateVersion(updatedVersion)
-	utils.CrashOnError(errors.Wrapf(err, "failed to write migration version to %s", pool.Config().ConnConfig.Database))
 }
