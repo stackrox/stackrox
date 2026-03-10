@@ -63,12 +63,15 @@ message SimpleAccessScope {
   // `x` is in the access scope.
   message Rules {
     message Namespace {
-      // Both fields must be set.
+      // The namespace field and at least one cluster field must be set.
+      // The cluster ID takes precedence over the cluster name when a cluster with that ID exists.
+      string cluster_id = 3;
       string cluster_name = 1;
       string namespace_name = 2;
     }
 
     repeated string included_clusters = 1;
+    repeated string included_cluster_ids = 5;
     repeated Namespace included_namespaces = 2;
 
     repeated SetBasedLabelSelector cluster_label_selectors = 3;

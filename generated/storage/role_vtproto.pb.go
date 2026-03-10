@@ -81,6 +81,7 @@ func (m *SimpleAccessScope_Rules_Namespace) CloneVT() *SimpleAccessScope_Rules_N
 		return (*SimpleAccessScope_Rules_Namespace)(nil)
 	}
 	r := new(SimpleAccessScope_Rules_Namespace)
+	r.ClusterId = m.ClusterId
 	r.ClusterName = m.ClusterName
 	r.NamespaceName = m.NamespaceName
 	if len(m.unknownFields) > 0 {
@@ -103,6 +104,11 @@ func (m *SimpleAccessScope_Rules) CloneVT() *SimpleAccessScope_Rules {
 		tmpContainer := make([]string, len(rhs))
 		copy(tmpContainer, rhs)
 		r.IncludedClusters = tmpContainer
+	}
+	if rhs := m.IncludedClusterIds; rhs != nil {
+		tmpContainer := make([]string, len(rhs))
+		copy(tmpContainer, rhs)
+		r.IncludedClusterIds = tmpContainer
 	}
 	if rhs := m.IncludedNamespaces; rhs != nil {
 		tmpContainer := make([]*SimpleAccessScope_Rules_Namespace, len(rhs))
@@ -337,6 +343,9 @@ func (this *SimpleAccessScope_Rules_Namespace) EqualVT(that *SimpleAccessScope_R
 	if this.NamespaceName != that.NamespaceName {
 		return false
 	}
+	if this.ClusterId != that.ClusterId {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -411,6 +420,15 @@ func (this *SimpleAccessScope_Rules) EqualVT(that *SimpleAccessScope_Rules) bool
 			if !p.EqualVT(q) {
 				return false
 			}
+		}
+	}
+	if len(this.IncludedClusterIds) != len(that.IncludedClusterIds) {
+		return false
+	}
+	for i, vx := range this.IncludedClusterIds {
+		vy := that.IncludedClusterIds[i]
+		if vx != vy {
+			return false
 		}
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -782,6 +800,13 @@ func (m *SimpleAccessScope_Rules_Namespace) MarshalToSizedBufferVT(dAtA []byte) 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.ClusterId) > 0 {
+		i -= len(m.ClusterId)
+		copy(dAtA[i:], m.ClusterId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ClusterId)))
+		i--
+		dAtA[i] = 0x1a
+	}
 	if len(m.NamespaceName) > 0 {
 		i -= len(m.NamespaceName)
 		copy(dAtA[i:], m.NamespaceName)
@@ -828,6 +853,15 @@ func (m *SimpleAccessScope_Rules) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.IncludedClusterIds) > 0 {
+		for iNdEx := len(m.IncludedClusterIds) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.IncludedClusterIds[iNdEx])
+			copy(dAtA[i:], m.IncludedClusterIds[iNdEx])
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.IncludedClusterIds[iNdEx])))
+			i--
+			dAtA[i] = 0x2a
+		}
 	}
 	if len(m.NamespaceLabelSelectors) > 0 {
 		for iNdEx := len(m.NamespaceLabelSelectors) - 1; iNdEx >= 0; iNdEx-- {
@@ -1239,6 +1273,10 @@ func (m *SimpleAccessScope_Rules_Namespace) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
+	l = len(m.ClusterId)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -1270,6 +1308,12 @@ func (m *SimpleAccessScope_Rules) SizeVT() (n int) {
 	if len(m.NamespaceLabelSelectors) > 0 {
 		for _, e := range m.NamespaceLabelSelectors {
 			l = e.SizeVT()
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
+	}
+	if len(m.IncludedClusterIds) > 0 {
+		for _, s := range m.IncludedClusterIds {
+			l = len(s)
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
@@ -2123,6 +2167,38 @@ func (m *SimpleAccessScope_Rules_Namespace) UnmarshalVT(dAtA []byte) error {
 			}
 			m.NamespaceName = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ClusterId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2307,6 +2383,38 @@ func (m *SimpleAccessScope_Rules) UnmarshalVT(dAtA []byte) error {
 			if err := m.NamespaceLabelSelectors[len(m.NamespaceLabelSelectors)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IncludedClusterIds", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.IncludedClusterIds = append(m.IncludedClusterIds, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -3970,6 +4078,42 @@ func (m *SimpleAccessScope_Rules_Namespace) UnmarshalVTUnsafe(dAtA []byte) error
 			}
 			m.NamespaceName = stringValue
 			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.ClusterId = stringValue
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -4158,6 +4302,42 @@ func (m *SimpleAccessScope_Rules) UnmarshalVTUnsafe(dAtA []byte) error {
 			if err := m.NamespaceLabelSelectors[len(m.NamespaceLabelSelectors)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IncludedClusterIds", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.IncludedClusterIds = append(m.IncludedClusterIds, stringValue)
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

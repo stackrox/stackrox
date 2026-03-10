@@ -93,6 +93,63 @@ func sortScopesInEffectiveAccessScope(msg *storage.EffectiveAccessScope) {
 	}
 }
 
+// convertRulesToSelectors:
+//   - converts included_clusters rules to a single cluster label selector,
+//   - converts included_namespaces rules to a single namespace label selector,
+//   - converts all label selectors to standard ones with matching support.
+func convertRulesToSelectors(scopeRules *storage.SimpleAccessScope_Rules) (*selectors, error) {
+	output := &selectors{}
+
+	// Convert each selector to labels.Selector.
+	clusterSelectors, clusterSelectorErr := convertEachSetBasedLabelSelectorToK8sLabelSelector(scopeRules.GetClusterLabelSelectors())
+	if clusterSelectorErr != nil {
+		return nil, errors.Wrap(clusterSelectorErr, "bad cluster label selector")
+	}
+	output.clustersByLabel = clusterSelectors
+
+	includedClusterNames := scopeRules.GetIncludedClusters()
+	output.clustersByName = make(map[string]bool, len(includedClusterNames))
+	for _, clusterName := range includedClusterNames {
+		output.clustersByName[clusterName] = true
+	}
+
+	includedClusterIDs := scopeRules.GetIncludedClusterIds()
+	output.clustersByID = make(map[string]bool, len(includedClusterIDs))
+	for _, clusterID := range includedClusterIDs {
+		output.clustersByID[clusterID] = true
+	}
+
+	// Convert each selector to labels.Selector.
+	namespaceSelectors, namespaceSelectorErr := convertEachSetBasedLabelSelectorToK8sLabelSelector(scopeRules.GetNamespaceLabelSelectors())
+	if namespaceSelectorErr != nil {
+		return nil, errors.Wrap(namespaceSelectorErr, "bad namespace label selector")
+	}
+	output.namespacesByLabel = namespaceSelectors
+
+	includedNamespaces := scopeRules.GetIncludedNamespaces()
+	output.namespacesByClusterID = make(map[string]map[string]bool)
+	output.namespacesByClusterName = make(map[string]map[string]bool)
+	for _, namespace := range includedNamespaces {
+		clusterID := namespace.GetClusterId()
+		clusterName := namespace.GetClusterName()
+		namespaceName := namespace.GetNamespaceName()
+		if clusterID != "" {
+			addToNamespaceMap(output.namespacesByClusterID, clusterID, namespaceName)
+			continue
+		}
+		addToNamespaceMap(output.namespacesByClusterName, clusterName, namespaceName)
+	}
+
+	return output, nil
+}
+
+func addToNamespaceMap(targetMap map[string]map[string]bool, clusterKey string, namespaceKey string) {
+	if _, exists := targetMap[clusterKey]; !exists {
+		targetMap[clusterKey] = make(map[string]bool)
+	}
+	targetMap[clusterKey][namespaceKey] = true
+}
+
 // convertRulesToLabelSelectors:
 //   - converts included_clusters rules to a single cluster label selector,
 //   - converts included_namespaces rules to a single namespace label selector,

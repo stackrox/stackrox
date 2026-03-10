@@ -446,6 +446,7 @@ func (x *EffectiveAccessScope) GetClusters() []*EffectiveAccessScope_Cluster {
 type SimpleAccessScope_Rules struct {
 	state                   protoimpl.MessageState               `protogen:"open.v1"`
 	IncludedClusters        []string                             `protobuf:"bytes,1,rep,name=included_clusters,json=includedClusters,proto3" json:"included_clusters,omitempty"`
+	IncludedClusterIds      []string                             `protobuf:"bytes,5,rep,name=included_cluster_ids,json=includedClusterIds,proto3" json:"included_cluster_ids,omitempty"`
 	IncludedNamespaces      []*SimpleAccessScope_Rules_Namespace `protobuf:"bytes,2,rep,name=included_namespaces,json=includedNamespaces,proto3" json:"included_namespaces,omitempty"`
 	ClusterLabelSelectors   []*SetBasedLabelSelector             `protobuf:"bytes,3,rep,name=cluster_label_selectors,json=clusterLabelSelectors,proto3" json:"cluster_label_selectors,omitempty"`
 	NamespaceLabelSelectors []*SetBasedLabelSelector             `protobuf:"bytes,4,rep,name=namespace_label_selectors,json=namespaceLabelSelectors,proto3" json:"namespace_label_selectors,omitempty"`
@@ -490,6 +491,13 @@ func (x *SimpleAccessScope_Rules) GetIncludedClusters() []string {
 	return nil
 }
 
+func (x *SimpleAccessScope_Rules) GetIncludedClusterIds() []string {
+	if x != nil {
+		return x.IncludedClusterIds
+	}
+	return nil
+}
+
 func (x *SimpleAccessScope_Rules) GetIncludedNamespaces() []*SimpleAccessScope_Rules_Namespace {
 	if x != nil {
 		return x.IncludedNamespaces
@@ -513,7 +521,9 @@ func (x *SimpleAccessScope_Rules) GetNamespaceLabelSelectors() []*SetBasedLabelS
 
 type SimpleAccessScope_Rules_Namespace struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Both fields must be set.
+	// The namespace field and at least one cluster field must be set.
+	// The cluster ID takes precedence over the cluster name when a cluster with that ID exists.
+	ClusterId     string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	ClusterName   string `protobuf:"bytes,1,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
 	NamespaceName string `protobuf:"bytes,2,opt,name=namespace_name,json=namespaceName,proto3" json:"namespace_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -548,6 +558,13 @@ func (x *SimpleAccessScope_Rules_Namespace) ProtoReflect() protoreflect.Message 
 // Deprecated: Use SimpleAccessScope_Rules_Namespace.ProtoReflect.Descriptor instead.
 func (*SimpleAccessScope_Rules_Namespace) Descriptor() ([]byte, []int) {
 	return file_storage_role_proto_rawDescGZIP(), []int{2, 0, 0}
+}
+
+func (x *SimpleAccessScope_Rules_Namespace) GetClusterId() string {
+	if x != nil {
+		return x.ClusterId
+	}
+	return ""
 }
 
 func (x *SimpleAccessScope_Rules_Namespace) GetClusterName() string {
@@ -732,19 +749,22 @@ const file_storage_role_proto_rawDesc = "" +
 	"\x06traits\x18\x05 \x01(\v2\x0f.storage.TraitsR\x06traits\x1aT\n" +
 	"\x15ResourceToAccessEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12%\n" +
-	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01\"\xd9\x04\n" +
+	"\x05value\x18\x02 \x01(\x0e2\x0f.storage.AccessR\x05value:\x028\x01\"\xaa\x05\n" +
 	"\x11SimpleAccessScope\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x126\n" +
 	"\x05rules\x18\x04 \x01(\v2 .storage.SimpleAccessScope.RulesR\x05rules\x12'\n" +
-	"\x06traits\x18\x05 \x01(\v2\x0f.storage.TraitsR\x06traits\x1a\x9c\x03\n" +
+	"\x06traits\x18\x05 \x01(\v2\x0f.storage.TraitsR\x06traits\x1a\xed\x03\n" +
 	"\x05Rules\x12+\n" +
-	"\x11included_clusters\x18\x01 \x03(\tR\x10includedClusters\x12[\n" +
+	"\x11included_clusters\x18\x01 \x03(\tR\x10includedClusters\x120\n" +
+	"\x14included_cluster_ids\x18\x05 \x03(\tR\x12includedClusterIds\x12[\n" +
 	"\x13included_namespaces\x18\x02 \x03(\v2*.storage.SimpleAccessScope.Rules.NamespaceR\x12includedNamespaces\x12V\n" +
 	"\x17cluster_label_selectors\x18\x03 \x03(\v2\x1e.storage.SetBasedLabelSelectorR\x15clusterLabelSelectors\x12Z\n" +
-	"\x19namespace_label_selectors\x18\x04 \x03(\v2\x1e.storage.SetBasedLabelSelectorR\x17namespaceLabelSelectors\x1aU\n" +
-	"\tNamespace\x12!\n" +
+	"\x19namespace_label_selectors\x18\x04 \x03(\v2\x1e.storage.SetBasedLabelSelectorR\x17namespaceLabelSelectors\x1at\n" +
+	"\tNamespace\x12\x1d\n" +
+	"\n" +
+	"cluster_id\x18\x03 \x01(\tR\tclusterId\x12!\n" +
 	"\fcluster_name\x18\x01 \x01(\tR\vclusterName\x12%\n" +
 	"\x0enamespace_name\x18\x02 \x01(\tR\rnamespaceName\"\xc7\x05\n" +
 	"\x14EffectiveAccessScope\x12A\n" +

@@ -839,6 +839,12 @@
             "type": "string"
           }
         },
+        "includedClusterIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "includedNamespaces": {
           "type": "array",
           "items": {
@@ -866,9 +872,12 @@
     "SimpleAccessScopeRulesNamespace": {
       "type": "object",
       "properties": {
-        "clusterName": {
+        "clusterId": {
           "type": "string",
-          "description": "Both fields must be set."
+          "description": "The namespace field and at least one cluster field must be set.\nThe cluster ID takes precedence over the cluster name when a cluster with that ID exists."
+        },
+        "clusterName": {
+          "type": "string"
         },
         "namespaceName": {
           "type": "string"
