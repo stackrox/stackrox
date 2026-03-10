@@ -21,7 +21,7 @@ export const selectors = {
     fixabilityMenuItems: `${pf6.select}[aria-label="CVE status select menu"] ul`,
     fixabilityMenuItem: (fixability) =>
         `${selectors.fixabilityMenuItems} label:contains("${fixability}")`,
-    filterChipGroup: `${filterChipSection} .pf-v6-c-chip-group`,
+    filterChipGroup: `${filterChipSection} .pf-v6-c-label-group`,
     filterChipGroupForCategory: (category) =>
         `${selectors.filterChipGroup} *:contains("${category}")`,
     filterChipGroupRemove: (category) =>

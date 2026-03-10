@@ -54,7 +54,7 @@ describe('Credential expiry', () => {
 
             visitSystemConfigurationWithCentralCredentialExpiryBanner(expiry);
 
-            cy.get(centralCredentialExpiryBanner).should('have.class', 'pf-m-gold');
+            cy.get(centralCredentialExpiryBanner).should('have.class', 'pf-m-yellow');
         });
 
         it('should show a danger banner if the expiry date is less than or equal to 3 days', () => {
@@ -115,7 +115,7 @@ describe('Credential expiry', () => {
 
             visitSystemConfigurationWithScannerCredentialExpiryBanner(expiry);
 
-            cy.get(scannerCredentialExpiryBanner).should('have.class', 'pf-m-gold');
+            cy.get(scannerCredentialExpiryBanner).should('have.class', 'pf-m-yellow');
         });
 
         it('should show a danger banner if the expiry date is greater than 14 days', () => {
