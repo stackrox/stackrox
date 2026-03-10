@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/gziputil"
 )
@@ -28,4 +29,21 @@ func decompressAndUnmarshalPolicies(data []byte) (*storage.PolicyList, error) {
 		return nil, errors.Wrap(err, "unmarshaling decompressed policies data")
 	}
 	return &policyList, nil
+}
+
+func decompressAndUnmarshalClusterLabels(data []byte) (map[string]string, error) {
+	if len(data) == 0 {
+		return nil, nil
+	}
+
+	clusterLabelsData, err := gziputil.Decompress(data)
+	if err != nil {
+		return nil, errors.Wrap(err, "decompressing cluster labels")
+	}
+
+	var clusterLabels sensor.ClusterLabels
+	if err := clusterLabels.UnmarshalVTUnsafe(clusterLabelsData); err != nil {
+		return nil, errors.Wrap(err, "unmarshaling decompressed cluster labels data")
+	}
+	return clusterLabels.GetLabels(), nil
 }

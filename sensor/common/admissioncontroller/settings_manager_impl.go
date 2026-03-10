@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/clusterlabels"
 	"github.com/stackrox/rox/sensor/common/store"
 )
 
@@ -25,7 +26,8 @@ type settingsManager struct {
 	hasClusterConfig, hasPolicies bool
 	centralEndpoint               string
 
-	clusterID clusterIDWaiter
+	clusterID     clusterIDWaiter
+	clusterLabels *clusterlabels.Store
 
 	deployments store.DeploymentStore
 	pods        store.PodStore
@@ -36,13 +38,14 @@ type clusterIDWaiter interface {
 }
 
 // NewSettingsManager creates a new settings manager for admission control settings.
-func NewSettingsManager(clusterID clusterIDWaiter, deployments store.DeploymentStore, pods store.PodStore) SettingsManager {
+func NewSettingsManager(clusterID clusterIDWaiter, clusterLabels *clusterlabels.Store, deployments store.DeploymentStore, pods store.PodStore) SettingsManager {
 	return &settingsManager{
 		settingsStream:     concurrency.NewValueStream[*sensor.AdmissionControlSettings](nil),
 		sensorEventsStream: concurrency.NewValueStream[*sensor.AdmCtrlUpdateResourceRequest](nil),
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 
-		clusterID: clusterID,
+		clusterID:     clusterID,
+		clusterLabels: clusterLabels,
 
 		deployments: deployments,
 		pods:        pods,
@@ -59,6 +62,9 @@ func (p *settingsManager) newSettingsNoLock() *sensor.AdmissionControlSettings {
 	settings.Timestamp = protocompat.TimestampNow()
 	if centralcaps.Has(centralsensor.FlattenImageData) {
 		settings.FlattenImageData = true
+	}
+	if p.clusterLabels != nil {
+		settings.ClusterLabels = p.clusterLabels.Get()
 	}
 	return settings
 }

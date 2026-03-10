@@ -34,6 +34,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/installmethod"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
+	"github.com/stackrox/rox/sensor/common/labelproviders"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/networkflow/service"
@@ -89,7 +90,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	hm := heritage.NewHeritageManager(pods.GetPodNamespace(), cfg.k8sClient.Kubernetes().CoreV1(), time.Now())
 	storeProvider := resources.InitializeStore(hm)
-	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(clusterID, storeProvider.Deployments(), storeProvider.Pods())
+	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(clusterID, storeProvider.ClusterLabels(), storeProvider.Deployments(), storeProvider.Pods())
 
 	helmManagedConfig, err := helm.GetHelmManagedConfig(storage.ServiceType_SENSOR_SERVICE)
 	if err != nil {
@@ -140,7 +141,11 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	pubSub := internalmessage.NewMessageSubscriber()
 
-	policyDetector := detector.New(clusterID, enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan, storeProvider.Nodes())
+	// Create label providers for policy scope matching
+	clusterLabelProvider := labelproviders.NewClusterLabelProviderAdapter(storeProvider.ClusterLabels())
+	namespaceLabelProvider := labelproviders.NewNamespaceLabelProviderAdapter(storeProvider.Namespaces().LookupNamespaceLabelsByID)
+
+	policyDetector := detector.New(clusterID, enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan, storeProvider.Nodes(), clusterLabelProvider, namespaceLabelProvider)
 	reprocessorHandler := reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache)
 	pipeline, err := eventpipeline.New(clusterID, cfg.k8sClient, configHandler, policyDetector, reprocessorHandler, k8sNodeName.Setting(), cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize, pubSub, internalMessageDispatcher)
 	if err != nil {

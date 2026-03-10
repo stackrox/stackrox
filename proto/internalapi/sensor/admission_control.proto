@@ -22,6 +22,12 @@ message AdmissionControlSettings {
   string cluster_id = 6;
   storage.PolicyList runtime_policies = 7;
   bool flatten_image_data = 8;
+  map<string, string> cluster_labels = 9;
+}
+
+// ClusterLabels is a simple wrapper for cluster labels map to enable serialization.
+message ClusterLabels {
+  map<string, string> labels = 1;
 }
 
 message AdmissionControlAlerts {
