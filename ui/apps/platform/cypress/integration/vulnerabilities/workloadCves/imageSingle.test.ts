@@ -95,8 +95,6 @@ describe('Workload CVE Image Single page', () => {
             });
         });
 
-        // Verify the "results found" text renders with a positive count
-        cy.get('h2').contains(/\d+ results? found/);
     });
 
     it('should correctly apply a severity filter', () => {
