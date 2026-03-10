@@ -99,7 +99,10 @@ func allowRelativeFieldDependenciesMap(descriptors []any) error {
 			return errors.Errorf("descriptor is not a map: %T", desc)
 		}
 
-		path, _ := descMap["path"].(string)
+		path, ok := descMap["path"].(string)
+		if !ok {
+			return errors.Errorf("descriptor path is not a string: %T", descMap["path"])
+		}
 		xDescsRaw, ok := descMap["x-descriptors"]
 		if !ok {
 			continue
