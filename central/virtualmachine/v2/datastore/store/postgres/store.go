@@ -85,7 +85,7 @@ func (s *storeImpl) upsertVM(ctx context.Context, vm *storage.VirtualMachineV2) 
 			return err
 		}
 
-		if existingVM != nil && existingVM.Hash == hash {
+		if existingVM != nil && existingVM.GetHash() == hash {
 			// Unchanged: timestamp-only update. Preserve the existing hash.
 			vm.Hash = hash
 			if err := s.updateVMTimestamp(ctx, tx, vm); err != nil {
@@ -216,16 +216,16 @@ type componentHashable struct {
 // cveHashable contains only the content-meaningful fields of a CVE,
 // excluding generated IDs and timestamps that change every scan.
 type cveHashable struct {
-	Cve               string
-	PreferredCvss     float32
-	Severity          storage.VulnerabilitySeverity
-	ImpactScore       float32
-	Nvdcvss           float32
-	IsFixable         bool
-	FixedBy           string
-	EpssProbability   float32
-	AdvisoryName      string
-	AdvisoryLink      string
+	Cve             string
+	PreferredCvss   float32
+	Severity        storage.VulnerabilitySeverity
+	ImpactScore     float32
+	Nvdcvss         float32
+	IsFixable       bool
+	FixedBy         string
+	EpssProbability float32
+	AdvisoryName    string
+	AdvisoryLink    string
 }
 
 type scanHashWrapper struct {
@@ -300,7 +300,7 @@ func (s *storeImpl) upsertScan(ctx context.Context, vmID string, parts common.VM
 		scanTime := protocompat.ConvertTimeToTimestampOrNil(&iTime)
 		parts.Scan.ScanTime = scanTime
 
-		if existingScan != nil && existingScan.Hash == hash {
+		if existingScan != nil && existingScan.GetHash() == hash {
 			// Unchanged: scan_time-only update using existing scan's identity.
 			existingScan.ScanTime = scanTime
 			if err := s.updateScanTime(ctx, tx, existingScan.GetId(), existingScan, iTime); err != nil {
