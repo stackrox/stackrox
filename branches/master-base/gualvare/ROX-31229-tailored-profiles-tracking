@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "master-base/gualvare/ROX-31229-tailored-profiles-protos",
-    "hash": "2a4ca521c81e93fa42ed14fe29ab3d3e3fbcc1d5"
+    "hash": "d66719acbcdcd12a14716988512990ee5d9e407f"
   },
   "upstream": {
     "branch": "master-base/gualvare/ROX-31229-tailored-profiles-tracking"
