@@ -175,7 +175,7 @@ function ViolationDetailsPage(): ReactElement {
                     {isNodeAlert(alert) && (
                         <Tab eventKey={3} title={<TabTitleText>Node</TabTitleText>}>
                             <PageSection>
-                                <Card isFlat>
+                                <Card>
                                     <CardTitle component="h3">Node overview</CardTitle>
                                     <CardBody>
                                         <NodeOverview alertNode={alert.node} />

@@ -44,7 +44,6 @@ const selectSelectors = {
 } as const;
 
 const tabsSelectors = {
-    tab: '[data-ouia-component-type="PF6/Tab"]',
     tabButton: '[data-ouia-component-type="PF6/TabButton"]',
 } as const;
 
