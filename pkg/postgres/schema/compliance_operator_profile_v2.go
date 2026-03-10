@@ -59,16 +59,15 @@ const (
 
 // ComplianceOperatorProfileV2 holds the Gorm model for Postgres table `compliance_operator_profile_v2`.
 type ComplianceOperatorProfileV2 struct {
-	ID             string                                           `gorm:"column:id;type:varchar;primaryKey"`
-	ProfileID      string                                           `gorm:"column:profileid;type:varchar"`
-	Name           string                                           `gorm:"column:name;type:varchar"`
-	ProfileVersion string                                           `gorm:"column:profileversion;type:varchar"`
-	ProductType    string                                           `gorm:"column:producttype;type:varchar"`
-	Standard       string                                           `gorm:"column:standard;type:varchar"`
-	ClusterID      string                                           `gorm:"column:clusterid;type:uuid;index:complianceoperatorprofilev2_sac_filter,type:hash"`
-	ProfileRefID   string                                           `gorm:"column:profilerefid;type:uuid"`
-	OperatorKind   storage.ComplianceOperatorProfileV2_OperatorKind `gorm:"column:operatorkind;type:integer"`
-	Serialized     []byte                                           `gorm:"column:serialized;type:bytea"`
+	ID             string `gorm:"column:id;type:varchar;primaryKey"`
+	ProfileID      string `gorm:"column:profileid;type:varchar"`
+	Name           string `gorm:"column:name;type:varchar"`
+	ProfileVersion string `gorm:"column:profileversion;type:varchar"`
+	ProductType    string `gorm:"column:producttype;type:varchar"`
+	Standard       string `gorm:"column:standard;type:varchar"`
+	ClusterID      string `gorm:"column:clusterid;type:uuid;index:complianceoperatorprofilev2_sac_filter,type:hash"`
+	ProfileRefID   string `gorm:"column:profilerefid;type:uuid"`
+	Serialized     []byte `gorm:"column:serialized;type:bytea"`
 }
 
 // ComplianceOperatorProfileV2Rules holds the Gorm model for Postgres table `compliance_operator_profile_v2_rules`.

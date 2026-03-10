@@ -67,7 +67,7 @@ message ComplianceOperatorProfileV2 {
     PROFILE = 1;
     TAILORED_PROFILE = 2;
   }
-  OperatorKind operator_kind = 16; // @gotags: search:"Compliance Profile Operator Kind,hidden"
+  OperatorKind operator_kind = 16;
 }
 
 // Next tag: 19
