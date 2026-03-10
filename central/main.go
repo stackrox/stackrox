@@ -176,7 +176,6 @@ import (
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
-	versionUtils "github.com/stackrox/rox/central/version/utils"
 	virtualMachineDS "github.com/stackrox/rox/central/virtualmachine/datastore"
 	virtualmachineService "github.com/stackrox/rox/central/virtualmachine/service"
 	vulnMgmtService "github.com/stackrox/rox/central/vulnmgmt/service"
@@ -319,7 +318,6 @@ func main() {
 			log.Errorf("Failed to remove backup DB: %v", err)
 		}
 	}
-	versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
 
 	features.LogFeatureFlags()
 
