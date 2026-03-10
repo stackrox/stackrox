@@ -9,6 +9,7 @@ set -euo pipefail
 # kubernetes secret volume mount process.
 copy_existing () {
     src=$1
+    echo "Looking for certificates in '$src'"
     if [ -d "$src" ] && [ "$(ls -A -I "..*" "$src")" ]; then
         cp -v -L "$src"/* /etc/pki/ca-trust/source/anchors
     else
@@ -16,9 +17,17 @@ copy_existing () {
     fi
 }
 
+echo "Setting up CA trust store in container"
+
 copy_existing /usr/local/share/ca-certificates
 
 # Copy the custom trusted CA bundles injected by the Openshift Network Operator.
 copy_existing /etc/pki/injected-ca-trust
 
-update-ca-trust extract
+echo "Updating CA trust"
+# Though /etc/pki/ca-trust/extracted is the default output, update-ca-trust
+# will create the necessary directories if the `--output` flag is used.
+update-ca-trust extract --output /etc/pki/ca-trust/extracted
+
+echo "Done setting up CA trust store in container"
+echo
