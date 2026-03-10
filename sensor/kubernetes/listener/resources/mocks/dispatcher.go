@@ -95,6 +95,20 @@ func (mr *MockDispatcherRegistryMockRecorder) ForClusterOperators() *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForClusterOperators", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForClusterOperators))
 }
 
+// ForComplianceOperatorCustomRules mocks base method.
+func (m *MockDispatcherRegistry) ForComplianceOperatorCustomRules() resources.Dispatcher {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ForComplianceOperatorCustomRules")
+	ret0, _ := ret[0].(resources.Dispatcher)
+	return ret0
+}
+
+// ForComplianceOperatorCustomRules indicates an expected call of ForComplianceOperatorCustomRules.
+func (mr *MockDispatcherRegistryMockRecorder) ForComplianceOperatorCustomRules() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForComplianceOperatorCustomRules", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForComplianceOperatorCustomRules))
+}
+
 // ForComplianceOperatorProfiles mocks base method.
 func (m *MockDispatcherRegistry) ForComplianceOperatorProfiles() resources.Dispatcher {
 	m.ctrl.T.Helper()

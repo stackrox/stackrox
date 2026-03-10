@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	v2Mocks "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore/mocks"
 	"github.com/stackrox/rox/central/convert/testutils"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
@@ -150,4 +151,63 @@ func (s *PipelineTestSuite) TestMatch() {
 	s.Require().False(s.pipeline.Match(v1Msg))
 	s.Require().True(s.pipeline.Match(v2Msg))
 	s.Require().False(s.pipeline.Match(otherMsg))
+}
+
+// TestRunCreateRuleMissingAnnotationFails tests that rules missing the RuleID annotation are rejected.
+// OPERATOR_KIND_UNSPECIFIED covers the legacy sensor compatibility path where older sensors don't set OperatorKind.
+func (s *PipelineTestSuite) TestRunCreateRuleMissingAnnotationFails() {
+	cases := []central.ComplianceOperatorRuleV2_OperatorKind{
+		central.ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED,
+		central.ComplianceOperatorRuleV2_RULE,
+	}
+	for _, kind := range cases {
+		s.Run(kind.String(), func() {
+			ctx := context.Background()
+
+			rule := testutils.GetRuleV2SensorMsg(s.T()).CloneVT()
+			rule.OperatorKind = kind
+			delete(rule.GetAnnotations(), v1alpha1.RuleIDAnnotationKey)
+
+			msg := &central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_Event{
+					Event: &central.SensorEvent{
+						Id:     testutils.RuleUID,
+						Action: central.ResourceAction_CREATE_RESOURCE,
+						Resource: &central.SensorEvent_ComplianceOperatorRuleV2{
+							ComplianceOperatorRuleV2: rule,
+						},
+					},
+				},
+			}
+
+			err := s.pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
+			s.Error(err)
+			s.Contains(err.Error(), v1alpha1.RuleIDAnnotationKey)
+		})
+	}
+}
+
+func (s *PipelineTestSuite) TestRunCreateCustomRuleMissingRuleIDAnnotationSucceeds() {
+	ctx := context.Background()
+
+	rule := testutils.GetRuleV2SensorMsg(s.T()).CloneVT()
+	rule.OperatorKind = central.ComplianceOperatorRuleV2_CUSTOM_RULE
+	delete(rule.GetAnnotations(), v1alpha1.RuleIDAnnotationKey)
+
+	s.v2DS.EXPECT().UpsertRule(ctx, gomock.Any()).Return(nil).Times(1)
+
+	msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     testutils.RuleUID,
+				Action: central.ResourceAction_CREATE_RESOURCE,
+				Resource: &central.SensorEvent_ComplianceOperatorRuleV2{
+					ComplianceOperatorRuleV2: rule,
+				},
+			},
+		},
+	}
+
+	err := s.pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
+	s.NoError(err)
 }

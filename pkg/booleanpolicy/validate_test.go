@@ -109,7 +109,7 @@ func (s *PolicyValueValidator) TestRegex() {
 		},
 		{
 			name:    "file operation",
-			valid:   []string{"OPEN", "CREATE", "UNLINK", "OWNERSHIP_CHANGE", "PERMISSION_CHANGE", "open", "create", "unlink", "ownership_change", "permission_change", "Open", "Create"},
+			valid:   []string{"OPEN", "CREATE", "UNLINK", "OWNERSHIP_CHANGE", "PERMISSION_CHANGE", "open", "create", "unlink", "ownership_change", "permission_change", "Open", "Create", "rename", "RENAME"},
 			invalid: []string{"", " ", "READ", "WRITE", "DELETE", "INVALID_OPERATION", "MODIFY", "ACCESS"},
 			r:       fileOperationRegex,
 		},
@@ -717,6 +717,16 @@ func (s *PolicyValueValidator) TestValidateFilePath() {
 			description: "valid hidden file",
 			valid:       true,
 			path:        "/home/user/app/.config.json",
+		},
+		{
+			description: "valid wildcard path",
+			valid:       true,
+			path:        "/home/*/.config/**/*",
+		},
+		{
+			description: "valid wildcard path with question mark",
+			valid:       true,
+			path:        "/home/*/.confi?/**/*",
 		},
 		{
 			description: "invalid relative path",

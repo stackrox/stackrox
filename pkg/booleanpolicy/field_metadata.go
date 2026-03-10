@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	globstar "github.com/bmatcuk/doublestar/v4"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
@@ -695,7 +697,7 @@ func initializeFieldMetadata() FieldMetadata {
 	)
 
 	f.registerFieldMetadataRegex(fieldnames.RequiredAnnotation,
-		querybuilders.ForFieldLabelMap(search.DeploymentAnnotation, query.MapShouldNotContain),
+		querybuilders.ForFieldLabelMapRequired(search.DeploymentAnnotation),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
 			return keyValueValueRegex
@@ -704,7 +706,7 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{}, negationForbidden)
 
 	f.registerFieldMetadataRegex(fieldnames.RequiredImageLabel,
-		querybuilders.ForFieldLabelMap(search.ImageLabel, query.MapShouldNotContain),
+		querybuilders.ForFieldLabelMapRequired(search.ImageLabel),
 		violationmessages.ImageContextFields,
 		func(*validateConfiguration) *regexp.Regexp {
 			return keyValueValueRegex
@@ -713,7 +715,7 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{}, negationForbidden)
 
 	f.registerFieldMetadataRegex(fieldnames.RequiredLabel,
-		querybuilders.ForFieldLabelMap(search.DeploymentLabel, query.MapShouldNotContain),
+		querybuilders.ForFieldLabelMapRequired(search.DeploymentLabel),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
 			return keyValueValueRegex
@@ -963,7 +965,7 @@ func initializeFieldMetadata() FieldMetadata {
 
 	if features.SensitiveFileActivity.Enabled() {
 		f.registerFieldMetadata(fieldnames.FilePath,
-			querybuilders.ForFieldLabelExact(augmentedobjs.FileAccessPathCustomTag), nil,
+			querybuilders.ForFieldLabelFilePath(augmentedobjs.FileAccessPathCustomTag), nil,
 			func(config *validateConfiguration, value string) (bool, error) {
 				if !filepath.IsAbs(value) {
 					return false, errors.New("path must be absolute")
@@ -972,6 +974,11 @@ func initializeFieldMetadata() FieldMetadata {
 				if slices.Contains(strings.Split(value, string(filepath.Separator)), "..") {
 					return false, errors.New("path must not contain traversal '..'")
 				}
+
+				if !globstar.ValidatePattern(value) {
+					return false, errors.New("path contains invalid wildcard pattern")
+				}
+
 				return true, nil
 			},
 			[]storage.EventSource{storage.EventSource_NODE_EVENT, storage.EventSource_DEPLOYMENT_EVENT},

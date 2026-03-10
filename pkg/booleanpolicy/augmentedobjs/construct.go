@@ -176,6 +176,8 @@ func ConstructFileAccess(fileAccess *storage.FileAccess) *pathutil.AugmentedObj 
 		Path: []string{
 			fileAccess.GetFile().GetActualPath(),
 			fileAccess.GetFile().GetEffectivePath(),
+			fileAccess.GetMoved().GetActualPath(),
+			fileAccess.GetMoved().GetEffectivePath(),
 		},
 	}
 

@@ -157,13 +157,7 @@ func (ds *datastoreImpl) ListDeployment(ctx context.Context, id string) (*storag
 func (ds *datastoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "SearchListDeployments")
 
-	results, err := ds.Search(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	ids := pkgSearch.ResultsToIDs(results)
-	listDeployments, _, err := ds.deploymentStore.GetManyListDeployments(ctx, ids...)
+	listDeployments, err := ds.deploymentStore.SearchListDeployments(ctx, q)
 	if err != nil {
 		return nil, err
 	}
