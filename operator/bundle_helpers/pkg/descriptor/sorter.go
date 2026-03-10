@@ -117,18 +117,18 @@ func allowRelativeFieldDependenciesMap(descriptors []any) error {
 				return errors.Errorf("x-descriptor entry is not a string: %T", xDescRaw)
 			}
 
-			if !strings.HasPrefix(xDesc, "urn:alm:descriptor:com.tectonic.ui:fieldDependency:") {
+			const fieldDepPrefix = "urn:alm:descriptor:com.tectonic.ui:fieldDependency:"
+			if !strings.HasPrefix(xDesc, fieldDepPrefix) {
 				continue
 			}
 
-			// Split by ':' and get the last two parts (field and value)
-			parts := strings.Split(xDesc, ":")
-			if len(parts) < 2 {
+			// Strip prefix and split into field and value
+			fieldVal := strings.SplitN(xDesc[len(fieldDepPrefix):], ":", 2)
+			if len(fieldVal) != 2 {
 				continue
 			}
 
-			field := parts[len(parts)-2]
-			val := parts[len(parts)-1]
+			field, val := fieldVal[0], fieldVal[1]
 
 			// Check if field starts with '.' (relative path)
 			if !strings.HasPrefix(field, ".") {
@@ -136,13 +136,11 @@ func allowRelativeFieldDependenciesMap(descriptors []any) error {
 			}
 
 			// Convert relative to absolute
-			// Get parent path and concatenate with relative field
 			parentPath := getParentPath(path)
 			absoluteField := parentPath + field
 
 			// Reconstruct the x-descriptor
-			prefix := "urn:alm:descriptor:com.tectonic.ui:fieldDependency:"
-			xDescs[i] = prefix + absoluteField + ":" + val
+			xDescs[i] = fieldDepPrefix + absoluteField + ":" + val
 		}
 	}
 	return nil
