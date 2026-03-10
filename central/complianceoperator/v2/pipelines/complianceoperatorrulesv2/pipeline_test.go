@@ -153,7 +153,33 @@ func (s *PipelineTestSuite) TestMatch() {
 	s.Require().False(s.pipeline.Match(otherMsg))
 }
 
-func (s *PipelineTestSuite) TestRunCreateRuleMissingRuleIDAnnotationFails() {
+// TestRunCreateLegacySensorRuleMissingAnnotationFails tests the compatibility path where older sensors
+// don't set OperatorKind (defaults to UNSPECIFIED), which is treated as RULE.
+func (s *PipelineTestSuite) TestRunCreateLegacySensorRuleMissingAnnotationFails() {
+	ctx := context.Background()
+
+	rule := testutils.GetRuleV2SensorMsg(s.T()).CloneVT()
+	rule.OperatorKind = central.ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED
+	delete(rule.GetAnnotations(), v1alpha1.RuleIDAnnotationKey)
+
+	msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     testutils.RuleUID,
+				Action: central.ResourceAction_CREATE_RESOURCE,
+				Resource: &central.SensorEvent_ComplianceOperatorRuleV2{
+					ComplianceOperatorRuleV2: rule,
+				},
+			},
+		},
+	}
+
+	err := s.pipeline.Run(ctx, fixtureconsts.Cluster1, msg, nil)
+	s.Error(err)
+	s.Contains(err.Error(), v1alpha1.RuleIDAnnotationKey)
+}
+
+func (s *PipelineTestSuite) TestRunCreateRuleMissingAnnotationFails() {
 	ctx := context.Background()
 
 	rule := testutils.GetRuleV2SensorMsg(s.T()).CloneVT()
