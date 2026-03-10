@@ -325,7 +325,7 @@ func (resolver *namespaceResolver) getApplicablePolicies(ctx context.Context, q 
 		return nil, err
 	}
 
-	applicable, _ := matcher.NewNamespaceMatcher(resolver.data.GetMetadata()).FilterApplicablePolicies(policies)
+	applicable, _ := matcher.NewNamespaceMatcher(resolver.data.GetMetadata()).FilterApplicablePolicies(ctx, policies)
 	return applicable, nil
 }
 

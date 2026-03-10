@@ -122,6 +122,9 @@ var (
 	// LabelBasedPolicyScoping enables policy scoping based on cluster and namespace labels
 	LabelBasedPolicyScoping = registerFeature("Enable cluster and namespace label-based policy scoping", "ROX_LABEL_BASED_POLICY_SCOPING")
 
+	// VulnerabilityReportsEnhancedFiltering enables filtering similar to view-based reports in scheduled vulnerability reports
+	VulnerabilityReportsEnhancedFiltering = registerFeature("Enables filtering similar to view-based reports in scheduled vulnerability reports", "ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING")
+
 	// VirtualMachinesEnhancedDataModel enables usage of the enhanced and more flexible data model
 	VirtualMachinesEnhancedDataModel = registerFeature("Enables virtual machine enhanced data model", "ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL")
 )

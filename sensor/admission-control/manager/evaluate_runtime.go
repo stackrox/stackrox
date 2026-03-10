@@ -116,7 +116,7 @@ func (m *manager) evaluatePodEvent(s *state, req *admission.AdmissionRequest, ev
 				Deployment: dep,
 				Images:     imgs,
 			}
-			return s.allRuntimePoliciesDetector.DetectForDeploymentAndKubeEvent(enhancedDeployment, event)
+			return s.allRuntimePoliciesDetector.DetectForDeploymentAndKubeEvent(context.Background(), enhancedDeployment, event)
 		}
 
 		alerts, err := m.kickOffImgScansAndDetect(fetchImgCtx, s, getAlertsFunc, deployment)
@@ -136,7 +136,7 @@ func (m *manager) evaluatePodEvent(s *state, req *admission.AdmissionRequest, ev
 		go m.waitForDeploymentAndDetect(s, event)
 	}
 
-	alerts, err := s.runtimeDetectorForPoliciesWithoutDeployFields.DetectForDeploymentAndKubeEvent(booleanpolicy.EnhancedDeployment{}, event)
+	alerts, err := s.runtimeDetectorForPoliciesWithoutDeployFields.DetectForDeploymentAndKubeEvent(context.Background(), booleanpolicy.EnhancedDeployment{}, event)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "runtime detection without deployment enrichment")
 	}
@@ -179,7 +179,7 @@ func (m *manager) waitForDeploymentAndDetect(s *state, event *storage.Kubernetes
 				Deployment: dep,
 				Images:     imgs,
 			}
-			return s.runtimeDetectorForPoliciesWithDeployFields.DetectForDeploymentAndKubeEvent(enhancedDeployment, event)
+			return s.runtimeDetectorForPoliciesWithDeployFields.DetectForDeploymentAndKubeEvent(context.Background(), enhancedDeployment, event)
 		}
 
 		alerts, err := m.kickOffImgScansAndDetect(fetchImgCtx, s, getAlertsFunc, deployment)

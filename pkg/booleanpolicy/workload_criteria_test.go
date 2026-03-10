@@ -94,6 +94,74 @@ func (suite *WorkloadCriteriaTestSuite) TestMapPolicyMatchOne() {
 	}
 }
 
+func (suite *WorkloadCriteriaTestSuite) TestRequiredLabelORAndRegexParity() {
+	noLabels := &storage.Deployment{Id: "noLabels"}
+	suite.addDepAndImages(noLabels)
+
+	hasMatchingLabel := &storage.Deployment{
+		Id:     "hasMatchingLabel",
+		Labels: map[string]string{"app": "my-app", "env": "prod"},
+	}
+	suite.addDepAndImages(hasMatchingLabel)
+
+	hasNonMatchingLabel := &storage.Deployment{
+		Id:     "hasNonMatchingLabel",
+		Labels: map[string]string{"app": "my-app", "env": "foobar"},
+	}
+	suite.addDepAndImages(hasNonMatchingLabel)
+
+	hasAnotherMatchingLabel := &storage.Deployment{
+		Id:     "hasAnotherMatchingLabel",
+		Labels: map[string]string{"env": "dev"},
+	}
+	suite.addDepAndImages(hasAnotherMatchingLabel)
+
+	orPolicy := policyWithSingleFieldAndValues(
+		fieldnames.RequiredLabel,
+		[]string{"env=prod", "env=dev", "env=preprod"},
+		false,
+		storage.BooleanOperator_OR,
+	)
+	orPolicy.LifecycleStages = []storage.LifecycleStage{storage.LifecycleStage_DEPLOY}
+
+	regexPolicy := policyWithSingleKeyValue(fieldnames.RequiredLabel, "env=dev|prod|preprod", false)
+	regexPolicy.LifecycleStages = []storage.LifecycleStage{storage.LifecycleStage_DEPLOY}
+
+	orMatcher, err := BuildDeploymentMatcher(orPolicy)
+	suite.NoError(err)
+	regexMatcher, err := BuildDeploymentMatcher(regexPolicy)
+	suite.NoError(err)
+
+	for _, testCase := range []struct {
+		dep            *storage.Deployment
+		shouldViolate  bool
+		violationSubst string
+	}{
+		{noLabels, true, "<empty>"},
+		{hasMatchingLabel, false, ""},
+		{hasNonMatchingLabel, true, "env=foobar"},
+		{hasAnotherMatchingLabel, false, ""},
+	} {
+		c := testCase
+		suite.Run(c.dep.GetId(), func() {
+			orResult, err := orMatcher.MatchDeployment(nil, enhancedDeployment(c.dep, nil))
+			suite.NoError(err)
+			regexResult, err := regexMatcher.MatchDeployment(nil, enhancedDeployment(c.dep, nil))
+			suite.NoError(err)
+
+			if c.shouldViolate {
+				suite.NotEmpty(orResult.AlertViolations, "OR policy: expected violation for deployment %s", c.dep.GetId())
+				suite.NotEmpty(regexResult.AlertViolations, "Regex policy: expected violation for deployment %s", c.dep.GetId())
+				suite.Contains(orResult.AlertViolations[0].GetMessage(), c.violationSubst)
+				suite.Contains(regexResult.AlertViolations[0].GetMessage(), c.violationSubst)
+			} else {
+				suite.Empty(orResult.AlertViolations, "OR policy: expected no violation for deployment %s", c.dep.GetId())
+				suite.Empty(regexResult.AlertViolations, "Regex policy: expected no violation for deployment %s", c.dep.GetId())
+			}
+		})
+	}
+}
+
 func (suite *WorkloadCriteriaTestSuite) TestK8sRBACField() {
 	deployments := make(map[string]*storage.Deployment)
 	for permissionLevelStr, permissionLevel := range storage.PermissionLevel_value {

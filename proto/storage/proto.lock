@@ -4072,6 +4072,22 @@
             ]
           },
           {
+            "name": "ComplianceOperatorRuleV2.OperatorKind",
+            "enum_fields": [
+              {
+                "name": "OPERATOR_KIND_UNSPECIFIED"
+              },
+              {
+                "name": "RULE",
+                "integer": 1
+              },
+              {
+                "name": "CUSTOM_RULE",
+                "integer": 2
+              }
+            ]
+          },
+          {
             "name": "ComplianceOperatorCheckResultV2.CheckStatus",
             "enum_fields": [
               {
@@ -4365,6 +4381,11 @@
                 "id": 17,
                 "name": "instructions",
                 "type": "string"
+              },
+              {
+                "id": 18,
+                "name": "operator_kind",
+                "type": "OperatorKind"
               }
             ],
             "maps": [

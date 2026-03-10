@@ -6,6 +6,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/datastore"
@@ -31,6 +32,7 @@ type Service interface {
 // New returns a new Service instance using the given DataStore.
 func New(policies datastore.DataStore,
 	clusters clusterDataStore.DataStore,
+	namespaces namespaceDataStore.DataStore,
 	deployments deploymentDataStore.DataStore,
 	networkPolicies networkPolicyDS.DataStore,
 	notifiers notifierDataStore.DataStore,
@@ -45,6 +47,7 @@ func New(policies datastore.DataStore,
 	return &serviceImpl{
 		policies:          policies,
 		clusters:          clusters,
+		namespaces:        namespaces,
 		deployments:       deployments,
 		reprocessor:       reprocessor,
 		notifiers:         notifiers,
