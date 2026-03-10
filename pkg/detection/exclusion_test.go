@@ -1,6 +1,7 @@
 package detection
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -147,19 +148,19 @@ func TestMatchesDeploymentExclusion(t *testing.T) {
 				compiledExclusions = append(compiledExclusions, cw)
 			}
 
-			got := deploymentMatchesExclusions(c.deployment, compiledExclusions)
+			got := deploymentMatchesExclusions(context.Background(), c.deployment, compiledExclusions)
 			assert.Equal(t, c.shouldMatch, got)
 			// If it should match, make sure it doesn't match if the exclusions are all expired.
 			if c.shouldMatch {
 				for _, exclusion := range c.policy.GetExclusions() {
 					exclusion.Expiration = protoconv.MustConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour))
 				}
-				assert.False(t, deploymentMatchesExclusions(c.deployment, compiledExclusions))
+				assert.False(t, deploymentMatchesExclusions(context.Background(), c.deployment, compiledExclusions))
 
 				for _, exclusion := range c.policy.GetExclusions() {
 					exclusion.Expiration = protoconv.MustConvertTimeToTimestamp(time.Now().Add(time.Hour))
 				}
-				assert.True(t, deploymentMatchesExclusions(c.deployment, compiledExclusions))
+				assert.True(t, deploymentMatchesExclusions(context.Background(), c.deployment, compiledExclusions))
 			}
 			c.policy.Exclusions = append(c.policy.Exclusions, &storage.Exclusion{Image: &storage.Exclusion_Image{Name: "BLAH"}})
 			assert.Equal(t, c.shouldMatch, got)
