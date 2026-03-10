@@ -72,11 +72,11 @@ func CompileScope(scope *storage.Scope, clusterLabelProvider ClusterLabelProvide
 		namespaceLabelProvider: namespaceLabelProvider,
 	}
 
-	if !features.LabelBasedPolicyScoping.Enabled() {
-		if scope.GetClusterLabel() != nil || scope.GetNamespaceLabel() != nil {
-			return nil, errors.New("cluster_label and namespace_label scopes require ROX_LABEL_BASED_POLICY_SCOPING feature flag to be enabled")
-		}
-	} else {
+	if !features.LabelBasedPolicyScoping.Enabled() && (scope.GetClusterLabel() != nil || scope.GetNamespaceLabel() != nil) {
+		return nil, errors.New("cluster_label and namespace_label scopes require ROX_LABEL_BASED_POLICY_SCOPING feature flag to be enabled")
+	}
+
+	if features.LabelBasedPolicyScoping.Enabled() {
 		cs.ClusterLabelKey, cs.ClusterLabelValue, err = compileLabelMatchers(scope.GetClusterLabel(), clusterLabelType)
 		if err != nil {
 			return nil, err
