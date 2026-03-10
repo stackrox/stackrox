@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	namespaceDatastore "github.com/stackrox/rox/central/namespace/datastore"
 	networkpolicyDatastore "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/risk/manager"
@@ -26,6 +27,7 @@ func initialize() {
 
 	as = New(
 		clusterDS,
+		namespaceDatastore.Singleton(),
 		enrichment.ImageEnricherSingleton(),
 		enrichment.ImageEnricherV2Singleton(),
 		imageDatastore.Singleton(),

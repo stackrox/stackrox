@@ -187,6 +187,21 @@ func (mr *MockStoreMockRecorder) Search(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockStore)(nil).Search), ctx, q)
 }
 
+// SearchListDeployments mocks base method.
+func (m *MockStore) SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchListDeployments", ctx, q)
+	ret0, _ := ret[0].([]*storage.ListDeployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchListDeployments indicates an expected call of SearchListDeployments.
+func (mr *MockStoreMockRecorder) SearchListDeployments(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchListDeployments", reflect.TypeOf((*MockStore)(nil).SearchListDeployments), ctx, q)
+}
+
 // Upsert mocks base method.
 func (m *MockStore) Upsert(ctx context.Context, deployment *storage.Deployment) error {
 	m.ctrl.T.Helper()

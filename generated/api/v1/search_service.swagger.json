@@ -123,7 +123,11 @@
                 "IMAGES_V2",
                 "VIRTUAL_MACHINES",
                 "BASE_IMAGES",
-                "BASE_IMAGE_LAYERS"
+                "BASE_IMAGE_LAYERS",
+                "VIRTUAL_MACHINES_V2",
+                "VIRTUAL_MACHINE_SCANS_V2",
+                "VIRTUAL_MACHINE_COMPONENTS_V2",
+                "VIRTUAL_MACHINE_VULNERABILITIES_V2"
               ]
             },
             "collectionFormat": "multi"
@@ -241,7 +245,11 @@
                 "IMAGES_V2",
                 "VIRTUAL_MACHINES",
                 "BASE_IMAGES",
-                "BASE_IMAGE_LAYERS"
+                "BASE_IMAGE_LAYERS",
+                "VIRTUAL_MACHINES_V2",
+                "VIRTUAL_MACHINE_SCANS_V2",
+                "VIRTUAL_MACHINE_COMPONENTS_V2",
+                "VIRTUAL_MACHINE_VULNERABILITIES_V2"
               ]
             },
             "collectionFormat": "multi"
@@ -353,7 +361,11 @@
                 "IMAGES_V2",
                 "VIRTUAL_MACHINES",
                 "BASE_IMAGES",
-                "BASE_IMAGE_LAYERS"
+                "BASE_IMAGE_LAYERS",
+                "VIRTUAL_MACHINES_V2",
+                "VIRTUAL_MACHINE_SCANS_V2",
+                "VIRTUAL_MACHINE_COMPONENTS_V2",
+                "VIRTUAL_MACHINE_VULNERABILITIES_V2"
               ]
             },
             "collectionFormat": "multi"
@@ -508,10 +520,14 @@
         "IMAGES_V2",
         "VIRTUAL_MACHINES",
         "BASE_IMAGES",
-        "BASE_IMAGE_LAYERS"
+        "BASE_IMAGE_LAYERS",
+        "VIRTUAL_MACHINES_V2",
+        "VIRTUAL_MACHINE_SCANS_V2",
+        "VIRTUAL_MACHINE_COMPONENTS_V2",
+        "VIRTUAL_MACHINE_VULNERABILITIES_V2"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 80"
+      "title": "Next available tag: 84"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

@@ -451,6 +451,112 @@ func TestSelectQueryOnDeployments(t *testing.T) {
 	assert.ElementsMatch(t, expected, results)
 }
 
+func TestSearchListDeployments(t *testing.T) {
+	ctx := sac.WithAllAccess(context.Background())
+	testDB := pgtest.ForT(t)
+
+	deploymentDS, err := GetTestPostgresDataStore(t, testDB.DB)
+	require.NoError(t, err)
+
+	// Create test deployments
+	cluster1 := testconsts.Cluster1
+	cluster2 := testconsts.Cluster2
+
+	dep1 := &storage.Deployment{
+		Id:          uuid.NewV4().String(),
+		Hash:        1234567890,
+		Name:        "deployment-1",
+		ClusterId:   cluster1,
+		ClusterName: "cluster-1-name",
+		Namespace:   "namespace-1",
+		NamespaceId: cluster1 + "namespace-1",
+	}
+	dep2 := &storage.Deployment{
+		Id:          uuid.NewV4().String(),
+		Hash:        9876543210,
+		Name:        "deployment-2",
+		ClusterId:   cluster1,
+		ClusterName: "cluster-1-name",
+		Namespace:   "namespace-2",
+		NamespaceId: cluster1 + "namespace-2",
+	}
+	dep3 := &storage.Deployment{
+		Id:          uuid.NewV4().String(),
+		Hash:        5555555555,
+		Name:        "deployment-3",
+		ClusterId:   cluster2,
+		ClusterName: "cluster-2-name",
+		Namespace:   "namespace-1",
+		NamespaceId: cluster2 + "namespace-1",
+	}
+
+	require.NoError(t, deploymentDS.UpsertDeployment(ctx, dep1))
+	require.NoError(t, deploymentDS.UpsertDeployment(ctx, dep2))
+	require.NoError(t, deploymentDS.UpsertDeployment(ctx, dep3))
+
+	testCases := []struct {
+		name        string
+		query       *v1.Query
+		expectedIDs []string
+	}{
+		{
+			name:        "Empty query returns all deployments",
+			query:       pkgSearch.EmptyQuery(),
+			expectedIDs: []string{dep1.GetId(), dep2.GetId(), dep3.GetId()},
+		},
+		{
+			name:        "Filter by deployment ID",
+			query:       pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, dep1.GetId()).ProtoQuery(),
+			expectedIDs: []string{dep1.GetId()},
+		},
+		{
+			name:        "Filter by namespace",
+			query:       pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Namespace, "namespace-1").ProtoQuery(),
+			expectedIDs: []string{dep1.GetId(), dep3.GetId()},
+		},
+		{
+			name:        "Filter by cluster",
+			query:       pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, cluster2).ProtoQuery(),
+			expectedIDs: []string{dep3.GetId()},
+		},
+		{
+			name:        "Filter by deployment name",
+			query:       pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentName, "deployment-2").ProtoQuery(),
+			expectedIDs: []string{dep2.GetId()},
+		},
+		{
+			name:        "Non-matching query returns empty",
+			query:       pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentName, "nonexistent").ProtoQuery(),
+			expectedIDs: []string{},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			results, err := deploymentDS.SearchListDeployments(ctx, tc.query)
+			require.NoError(t, err)
+			require.Len(t, results, len(tc.expectedIDs))
+
+			actualIDs := make([]string, 0, len(results))
+			for _, result := range results {
+				actualIDs = append(actualIDs, result.GetId())
+
+				// Verify ListDeployment fields are populated
+				assert.NotEmpty(t, result.GetId(), "ID should be populated")
+				assert.NotEmpty(t, result.GetName(), "Name should be populated")
+				assert.NotEmpty(t, result.GetCluster(), "Cluster should be populated")
+				assert.NotEmpty(t, result.GetClusterId(), "ClusterID should be populated")
+				assert.NotEmpty(t, result.GetNamespace(), "Namespace should be populated")
+
+				// Verify priority is set (business logic from datastore layer)
+				assert.GreaterOrEqual(t, result.GetPriority(), int64(0), "Priority should be set")
+			}
+
+			assert.ElementsMatch(t, tc.expectedIDs, actualIDs)
+		})
+	}
+}
+
 func TestContainerImagesView(t *testing.T) {
 	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
 	ctx := sac.WithAllAccess(context.Background())

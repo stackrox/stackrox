@@ -1,6 +1,7 @@
 package detection
 
 import (
+	"context"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -8,42 +9,42 @@ import (
 	"github.com/stackrox/rox/pkg/scopecomp"
 )
 
-func auditEventMatchesExclusions(auditEvent *storage.KubernetesEvent, exclusions []*compiledExclusion) bool {
+func auditEventMatchesExclusions(ctx context.Context, auditEvent *storage.KubernetesEvent, exclusions []*compiledExclusion) bool {
 	for _, exclusion := range exclusions {
-		if exclusion.MatchesAuditEvent(auditEvent) {
+		if exclusion.MatchesAuditEvent(ctx, auditEvent) {
 			return true
 		}
 	}
 	return false
 }
 
-func auditEventMatchesScopes(auditEvent *storage.KubernetesEvent, scopes []*scopecomp.CompiledScope) bool {
+func auditEventMatchesScopes(ctx context.Context, auditEvent *storage.KubernetesEvent, scopes []*scopecomp.CompiledScope) bool {
 	if len(scopes) == 0 {
 		return true
 	}
 	for _, scope := range scopes {
-		if scope.MatchesAuditEvent(auditEvent) {
+		if scope.MatchesAuditEvent(ctx, auditEvent) {
 			return true
 		}
 	}
 	return false
 }
 
-func deploymentMatchesExclusions(deployment *storage.Deployment, exclusions []*compiledExclusion) bool {
+func deploymentMatchesExclusions(ctx context.Context, deployment *storage.Deployment, exclusions []*compiledExclusion) bool {
 	for _, exclusion := range exclusions {
-		if exclusion.MatchesDeployment(deployment) {
+		if exclusion.MatchesDeployment(ctx, deployment) {
 			return true
 		}
 	}
 	return false
 }
 
-func deploymentMatchesScopes(deployment *storage.Deployment, scopes []*scopecomp.CompiledScope) bool {
+func deploymentMatchesScopes(ctx context.Context, deployment *storage.Deployment, scopes []*scopecomp.CompiledScope) bool {
 	if len(scopes) == 0 {
 		return true
 	}
 	for _, scope := range scopes {
-		if scope.MatchesDeployment(deployment) {
+		if scope.MatchesDeployment(ctx, deployment) {
 			return true
 		}
 	}

@@ -9,7 +9,7 @@ import { searchValueAsArray } from 'utils/searchUtils';
 import { severityToQuerySeverityKeys } from '../components/BySeveritySummaryCard';
 import type { ResourceCountByCveSeverityAndStatus } from '../components/CvesByStatusSummaryCard';
 import { isVulnerabilitySeverityLabel } from '../types';
-import type { FixableStatus, ScannableStatus } from '../types';
+import type { FixableStatus, ScanStatus } from '../types';
 import { severityLabelToSeverity } from '../utils/searchUtils';
 import {
     COMPONENT_SORT_FIELD,
@@ -257,7 +257,7 @@ export function applyVirtualMachineCveTableSort(
 export type ComponentTableRow = {
     name: ScanComponent['name'];
     version: string;
-    isScannable: boolean;
+    isScanned: boolean;
 };
 
 export function getVirtualMachineComponentsTableData(
@@ -273,7 +273,7 @@ export function getVirtualMachineComponentsTableData(
         componentsTableData.push({
             name: component.name,
             version: component.version,
-            isScannable: !component.notes.includes('UNSCANNED'),
+            isScanned: !component.notes.includes('UNSCANNED'),
         });
     });
 
@@ -295,7 +295,7 @@ export function applyVirtualMachineComponentsTableFilters(
         (version) => version.toLowerCase()
     );
 
-    const scannableFilters = searchValueAsArray(searchFilter.SCANNABLE);
+    const scanStatusFilters = searchValueAsArray(searchFilter['Scan Status']);
 
     return componentsTableData.filter((componentTableRow) => {
         // "Component" filter, case insensitive and substring
@@ -318,12 +318,12 @@ export function applyVirtualMachineComponentsTableFilters(
             }
         }
 
-        // "SCANNABLE" filter, exact
-        if (scannableFilters.length > 0) {
-            const rowScannable: ScannableStatus = componentTableRow.isScannable
+        // 'Scan Status' filter, exact
+        if (scanStatusFilters.length > 0) {
+            const rowScanStatus: ScanStatus = componentTableRow.isScanned
                 ? 'Scanned'
                 : 'Not scanned';
-            if (!scannableFilters.includes(rowScannable)) {
+            if (!scanStatusFilters.includes(rowScanStatus)) {
                 return false;
             }
         }
