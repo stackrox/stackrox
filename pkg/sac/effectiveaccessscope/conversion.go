@@ -94,8 +94,9 @@ func sortScopesInEffectiveAccessScope(msg *storage.EffectiveAccessScope) {
 }
 
 // convertRulesToSelectors:
-//   - converts included_clusters rules to a single cluster label selector,
-//   - converts included_namespaces rules to a single namespace label selector,
+//   - converts included_cluster_ids rules to a cluster ID matching map,
+//   - converts included_clusters rules to a cluster name matching map,
+//   - converts included_namespaces rules to namespace matching maps (parent cluster is identified by either name or ID),
 //   - converts all label selectors to standard ones with matching support.
 func convertRulesToSelectors(scopeRules *storage.SimpleAccessScope_Rules) (*selectors, error) {
 	output := &selectors{}

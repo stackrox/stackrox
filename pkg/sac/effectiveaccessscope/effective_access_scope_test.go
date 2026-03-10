@@ -8,6 +8,7 @@ import (
 	labelUtils "github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 )
@@ -1362,6 +1363,365 @@ func TestNewUnvalidatedRequirement(t *testing.T) {
 	for _, tc := range testCasesBad {
 		t.Run(tc.String(), func(t *testing.T) {
 			assert.Falsef(t, selector.Matches(tc), "%q should not match %q", selector.String(), tc.String())
+		})
+	}
+}
+
+func TestSelectorsMatchCluster(t *testing.T) {
+	focusOnMelangeRequirement, err := labels.NewRequirement("focus", selection.Equals, []string{"melange"})
+	require.NoError(t, err)
+	require.NotNil(t, focusOnMelangeRequirement)
+
+	for name, tc := range map[string]struct {
+		ruleSelector *selectors
+		cluster      *storage.Cluster
+		expected     scopeState
+	}{
+		"nil selector always excludes cluster": {
+			ruleSelector: nil,
+			cluster:      clusterEarth,
+			expected:     Excluded,
+		},
+		"cluster matched by ID is included": {
+			ruleSelector: &selectors{
+				clustersByID: map[string]bool{
+					clusterEarth.GetId(): true,
+				},
+			},
+			cluster:  clusterEarth,
+			expected: Included,
+		},
+		"cluster matched by name (matching k8s syntax) is included": {
+			ruleSelector: &selectors{
+				clustersByName: map[string]bool{
+					clusterEarth.GetName(): true,
+				},
+			},
+			cluster:  clusterEarth,
+			expected: Included,
+		},
+		"cluster matched by name (NOT matching k8s syntax) is included": {
+			ruleSelector: &selectors{
+				clustersByName: map[string]bool{
+					clusterGiediPrime.GetName(): true,
+				},
+			},
+			cluster:  clusterGiediPrime,
+			expected: Included,
+		},
+		"cluster matched by label is included": {
+			ruleSelector: &selectors{
+				clustersByLabel: []labels.Selector{
+					labels.NewSelector().Add(*focusOnMelangeRequirement),
+				},
+			},
+			cluster:  clusterArrakis,
+			expected: Included,
+		},
+		"cluster NOT matched by label is excluded": {
+			ruleSelector: &selectors{
+				clustersByLabel: []labels.Selector{
+					labels.NewSelector().Add(*focusOnMelangeRequirement),
+				},
+			},
+			cluster:  clusterEarth,
+			expected: Excluded,
+		},
+	} {
+		t.Run(name, func(it *testing.T) {
+			result := tc.ruleSelector.matchCluster(tc.cluster)
+			assert.Equal(it, tc.expected, result)
+		})
+	}
+}
+
+func TestSelectorsMatchNamespace(t *testing.T) {
+	focusOnMelangeRequirement, err := labels.NewRequirement("focus", selection.Equals, []string{"melange"})
+	require.NoError(t, err)
+	require.NotNil(t, focusOnMelangeRequirement)
+
+	for name, tc := range map[string]struct {
+		ruleSelectors *selectors
+		namespace     *storage.NamespaceMetadata
+		expected      scopeState
+	}{
+		"nil selector always exclude namespaces": {
+			ruleSelectors: nil,
+			namespace:     nsSkunkWorks,
+			expected:      Excluded,
+		},
+		"namespace matched by cluster ID is included": {
+			ruleSelectors: &selectors{
+				namespacesByClusterID: map[string]map[string]bool{
+					nsSkunkWorks.GetClusterId(): {
+						nsSkunkWorks.GetName(): true,
+					},
+				},
+			},
+			namespace: nsSkunkWorks,
+			expected:  Included,
+		},
+		"namespace matched by cluster name is included": {
+			ruleSelectors: &selectors{
+				namespacesByClusterName: map[string]map[string]bool{
+					nsSkunkWorks.GetClusterName(): {
+						nsSkunkWorks.GetName(): true,
+					},
+				},
+			},
+			namespace: nsSkunkWorks,
+			expected:  Included,
+		},
+		"namespace matched by label is included": {
+			ruleSelectors: &selectors{
+				namespacesByLabel: []labels.Selector{
+					labels.NewSelector().Add(*focusOnMelangeRequirement),
+				},
+			},
+			namespace: nsAtreides,
+			expected:  Included,
+		},
+		"namespace NOT matched by label is included": {
+			ruleSelectors: &selectors{
+				namespacesByLabel: []labels.Selector{
+					labels.NewSelector().Add(*focusOnMelangeRequirement),
+				},
+			},
+			namespace: nsSkunkWorks,
+			expected:  Excluded,
+		},
+	} {
+		t.Run(name, func(it *testing.T) {
+			result := tc.ruleSelectors.matchNamespace(tc.namespace)
+			assert.Equal(it, tc.expected, result)
+		})
+	}
+}
+
+func TestScopeTreePopulateStateForCluster(t *testing.T) {
+	for name, tc := range map[string]struct {
+		root          *ScopeTree
+		ruleSelectors *selectors
+		cluster       Cluster
+		detail        v1.ComputeEffectiveAccessScopeRequest_Detail
+		expected      *ScopeTree
+	}{
+		"matching cluster is added to the scope tree if not existing": {
+			root:          newEffectiveAccessScopeTree(Excluded),
+			ruleSelectors: &selectors{clustersByName: map[string]bool{clusterEarth.GetName(): true}},
+			cluster:       clusterEarth,
+			detail:        v1.ComputeEffectiveAccessScopeRequest_HIGH,
+			expected: &ScopeTree{
+				State: Excluded,
+				Clusters: map[string]*clustersScopeSubTree{
+					clusterEarth.GetName(): {
+						State:      Included,
+						Namespaces: make(map[string]*namespacesScopeSubTree),
+						Attributes: treeNodeAttributes{
+							ID:     clusterEarth.GetId(),
+							Name:   clusterEarth.GetName(),
+							Labels: clusterEarth.GetLabels(),
+						},
+					},
+				},
+				clusterIDToName: map[string]string{
+					clusterEarth.GetId(): clusterEarth.GetName(),
+				},
+			},
+		},
+		"matching cluster state is updated if previously computed state is lower": {
+			root: &ScopeTree{
+				State: Excluded,
+				Clusters: map[string]*clustersScopeSubTree{
+					clusterEarth.GetName(): {
+						State:      Excluded,
+						Namespaces: make(map[string]*namespacesScopeSubTree),
+						Attributes: treeNodeAttributes{},
+					},
+				},
+				clusterIDToName: map[string]string{
+					clusterEarth.GetId(): clusterEarth.GetName(),
+				},
+			},
+			ruleSelectors: &selectors{clustersByName: map[string]bool{clusterEarth.GetName(): true}},
+			cluster:       clusterEarth,
+			detail:        v1.ComputeEffectiveAccessScopeRequest_MINIMAL,
+			expected: &ScopeTree{
+				State: Excluded,
+				Clusters: map[string]*clustersScopeSubTree{
+					clusterEarth.GetName(): {
+						State:      Included,
+						Namespaces: make(map[string]*namespacesScopeSubTree),
+						Attributes: treeNodeAttributes{
+							ID: clusterEarth.GetId(),
+						},
+					},
+				},
+				clusterIDToName: map[string]string{
+					clusterEarth.GetId(): clusterEarth.GetName(),
+				},
+			},
+		},
+		"cluster state is NOT updated if previously computed state is greater": {
+			root: &ScopeTree{
+				State: Excluded,
+				Clusters: map[string]*clustersScopeSubTree{
+					clusterEarth.GetName(): {
+						State:      Included,
+						Namespaces: make(map[string]*namespacesScopeSubTree),
+						Attributes: treeNodeAttributes{},
+					},
+				},
+				clusterIDToName: map[string]string{
+					clusterEarth.GetId(): clusterEarth.GetName(),
+				},
+			},
+			ruleSelectors: nil, // Selection rules exclude the cluster.
+			cluster:       clusterEarth,
+			detail:        v1.ComputeEffectiveAccessScopeRequest_MINIMAL,
+			expected: &ScopeTree{
+				State: Excluded,
+				Clusters: map[string]*clustersScopeSubTree{
+					clusterEarth.GetName(): {
+						State:      Included,
+						Namespaces: make(map[string]*namespacesScopeSubTree),
+						Attributes: treeNodeAttributes{},
+					},
+				},
+				clusterIDToName: map[string]string{
+					clusterEarth.GetId(): clusterEarth.GetName(),
+				},
+			},
+		},
+	} {
+		t.Run(name, func(it *testing.T) {
+			tc.root.populateStateForCluster(tc.cluster, tc.ruleSelectors, tc.detail)
+			assert.Equal(it, tc.expected, tc.root)
+		})
+	}
+}
+
+func TestClusterScopeSubTreePopulateStateForNamespace(t *testing.T) {
+	for name, tc := range map[string]struct {
+		clusterSubTree *clustersScopeSubTree
+		ruleSelectors  *selectors
+		namespace      Namespace
+		detail         v1.ComputeEffectiveAccessScopeRequest_Detail
+		expected       *clustersScopeSubTree
+	}{
+		"Namespace from included cluster is added as included regardless of the selection rules": {
+			clusterSubTree: &clustersScopeSubTree{
+				State:      Included,
+				Namespaces: make(map[string]*namespacesScopeSubTree),
+			},
+			ruleSelectors: nil, // nil selector excluded the namespace
+			namespace:     nsJPL,
+			detail:        v1.ComputeEffectiveAccessScopeRequest_HIGH,
+			expected: &clustersScopeSubTree{
+				State: Included,
+				Namespaces: map[string]*namespacesScopeSubTree{
+					nsJPL.GetName(): {
+						State:      Included,
+						Attributes: nodeAttributesForNamespace(nsJPL, v1.ComputeEffectiveAccessScopeRequest_HIGH),
+					},
+				},
+			},
+		},
+		"State of already added namespace is updated if higher": {
+			clusterSubTree: &clustersScopeSubTree{
+				State: Excluded,
+				Namespaces: map[string]*namespacesScopeSubTree{
+					nsJPL.GetName(): {
+						State:      Excluded,
+						Attributes: nodeAttributesForNamespace(nsJPL, v1.ComputeEffectiveAccessScopeRequest_HIGH),
+					},
+				},
+			},
+			ruleSelectors: &selectors{
+				namespacesByClusterName: map[string]map[string]bool{
+					nsJPL.GetClusterName(): {nsJPL.GetName(): true},
+				},
+			},
+			namespace: nsJPL,
+			detail:    v1.ComputeEffectiveAccessScopeRequest_MINIMAL,
+			expected: &clustersScopeSubTree{
+				State: Excluded,
+				Namespaces: map[string]*namespacesScopeSubTree{
+					nsJPL.GetName(): {
+						State:      Included,
+						Attributes: nodeAttributesForNamespace(nsJPL, v1.ComputeEffectiveAccessScopeRequest_HIGH),
+					},
+				},
+			},
+		},
+		"State of already added namespace is NOT updated if lower": {
+			clusterSubTree: &clustersScopeSubTree{
+				State: Excluded,
+				Namespaces: map[string]*namespacesScopeSubTree{
+					nsJPL.GetName(): {
+						State:      Included,
+						Attributes: nodeAttributesForNamespace(nsJPL, v1.ComputeEffectiveAccessScopeRequest_HIGH),
+					},
+				},
+			},
+			ruleSelectors: nil, // recomputed namespace state is Excluded
+			namespace:     nsJPL,
+			detail:        v1.ComputeEffectiveAccessScopeRequest_MINIMAL,
+			expected: &clustersScopeSubTree{
+				State: Excluded,
+				Namespaces: map[string]*namespacesScopeSubTree{
+					nsJPL.GetName(): {
+						State:      Included,
+						Attributes: nodeAttributesForNamespace(nsJPL, v1.ComputeEffectiveAccessScopeRequest_HIGH),
+					},
+				},
+			},
+		},
+		"New namespace is added with computed state (Excluded)": {
+			clusterSubTree: &clustersScopeSubTree{
+				State:      Excluded,
+				Namespaces: make(map[string]*namespacesScopeSubTree),
+			},
+			ruleSelectors: nil, // nil selector excluded the namespace
+			namespace:     nsJPL,
+			detail:        v1.ComputeEffectiveAccessScopeRequest_HIGH,
+			expected: &clustersScopeSubTree{
+				State: Excluded,
+				Namespaces: map[string]*namespacesScopeSubTree{
+					nsJPL.GetName(): {
+						State:      Excluded,
+						Attributes: nodeAttributesForNamespace(nsJPL, v1.ComputeEffectiveAccessScopeRequest_HIGH),
+					},
+				},
+			},
+		},
+		"New namespace is added with computed state (Included)": {
+
+			clusterSubTree: &clustersScopeSubTree{
+				State:      Excluded,
+				Namespaces: make(map[string]*namespacesScopeSubTree),
+			},
+			ruleSelectors: &selectors{
+				namespacesByClusterName: map[string]map[string]bool{
+					nsJPL.GetClusterName(): {nsJPL.GetName(): true},
+				},
+			},
+			namespace: nsJPL,
+			detail:    v1.ComputeEffectiveAccessScopeRequest_STANDARD,
+			expected: &clustersScopeSubTree{
+				State: Excluded,
+				Namespaces: map[string]*namespacesScopeSubTree{
+					nsJPL.GetName(): {
+						State:      Included,
+						Attributes: nodeAttributesForNamespace(nsJPL, v1.ComputeEffectiveAccessScopeRequest_STANDARD),
+					},
+				},
+			},
+		},
+	} {
+		t.Run(name, func(it *testing.T) {
+			tc.clusterSubTree.populateStateForNamespace(tc.namespace, tc.ruleSelectors, tc.detail)
+			assert.Equal(it, tc.expected, tc.clusterSubTree)
 		})
 	}
 }
