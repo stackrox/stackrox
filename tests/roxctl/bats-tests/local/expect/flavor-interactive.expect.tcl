@@ -102,7 +102,7 @@ expect "Istio version when deploying into an Istio-enabled cluster*:" { send "\n
 
 # The scanner-db image to use (default: "docker.io/stackrox/scanner-db:2.21.0-15-g448f2dc8fa"):
 # The scanner-db image to use (default: "quay.io/stackrox-io/scanner-db:3.67.x-296-g56df6a892d"):
-# The scanner-db image to use (default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8:3.68.x-30-g516b4e7a6c-dirty"):
+# The scanner-db image to use (default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel9:3.68.x-30-g516b4e7a6c-dirty"):
 expect {
   default {
     send_user "\nFATAL: No question about scanner-db image\n"
@@ -118,7 +118,7 @@ expect {
     send "\n"
   }
   # Special case for RHACS to avoid writing a regexp in TCL
-  "The scanner-db * (default: \"$registry/rhacs-scanner-db-rhel8:*\"):" {
+  "The scanner-db * (default: \"$registry/rhacs-scanner-db-rhel9:*\"):" {
     send_user "roxctl suggests correct registry for scanner-db"
     send "\n"
   }
@@ -142,7 +142,7 @@ expect {
     send "\n"
   }
   # Special case for RHACS to avoid writing a regexp in TCL
-  "The scanner * (default: \"$registry/rhacs-scanner-rhel8:*\"):" {
+  "The scanner * (default: \"$registry/rhacs-scanner-rhel9:*\"):" {
     send_user "roxctl suggests correct registry for scanner"
     send "\n"
   }
