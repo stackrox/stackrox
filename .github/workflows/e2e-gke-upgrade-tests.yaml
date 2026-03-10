@@ -37,7 +37,7 @@ jobs:
     - name: Get image tag
       id: get-tag
       run: |
-        echo "tag=${MAIN_IMAGE_TAG:-$(make tag)}" | tee -a "$GITHUB_ENV"
+        echo "tag=${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory tag)}" | tee -a "$GITHUB_ENV"
     - name: Wait for ${{ matrix.image }}
       uses: stackrox/actions/release/wait-for-image@v1
       with:
