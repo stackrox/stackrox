@@ -10,12 +10,12 @@ export const selectors = {
     details: {
         title: pf6.pageHeaderTitle,
         subtitle: pf6.pageHeaderSubtitle,
-        tabs: pf6.tab,
-        violationTab: `${pf6.tab}:contains("Violation")`,
-        enforcementTab: `${pf6.tab}:contains("Enforcement")`,
-        deploymentTab: `${pf6.tab}:contains("Deployment")`,
-        policyTab: `${pf6.tab}:contains("Policy")`,
-        networkPoliciesTab: `${pf6.tab}:contains("Network policies")`,
+        tabs: pf6.tabButton,
+        violationTab: `${pf6.tabButton}:contains("Violation")`,
+        enforcementTab: `${pf6.tabButton}:contains("Enforcement")`,
+        deploymentTab: `${pf6.tabButton}:contains("Deployment")`,
+        policyTab: `${pf6.tabButton}:contains("Policy")`,
+        networkPoliciesTab: `${pf6.tabButton}:contains("Network policies")`,
     },
     enforcement: {
         detailMessage: '[aria-label="Enforcement detail message"]',
