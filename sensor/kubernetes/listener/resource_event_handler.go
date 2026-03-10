@@ -118,7 +118,10 @@ func (k *listenerImpl) handleAllEvents() {
 
 	var informerTracker *informerSyncTracker
 	if features.SensorInformerWatchdog.Enabled() {
-		loggingPeriod := 3 * time.Second // FIXME: Increase to 30s after testing!
+		// One log message every 30 seconds if any informers are still pending.
+		// This is meant to spam the logs if informers are stuck, as there were many cases
+		// where informers were stuck for hours without any indication to the user.
+		loggingPeriod := 30 * time.Second
 		informerTracker = newInformerSyncTracker(loggingPeriod, k.stopSig.Done())
 		defer informerTracker.stop()
 	}

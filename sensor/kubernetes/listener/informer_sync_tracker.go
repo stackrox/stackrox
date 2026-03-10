@@ -48,7 +48,9 @@ const (
 	informerPods                          = "Pods"
 )
 
-// noRegistrationsTimeout is the duration to wait for informers to be registered before logging a warning.
+// noRegistrationsTimeout is the duration to wait for any informer to be registered before logging a warning.
+// In normal operation, Sensor should have multiple informers registered shortly after connecting to the API server.
+// If no informers are registered after 1m, it is likely that Sensor is running without connection to k8s API server.
 const noRegistrationsTimeout = 60 * time.Second
 
 type syncStatus int
@@ -90,8 +92,9 @@ func newInformerSyncTracker(warnInterval time.Duration, stopC <-chan struct{}) *
 	return t
 }
 
-// register adds an informer to the tracker as pending. It is called when an informer
-// handler is set up, before the informer starts syncing.
+// register adds an informer to the tracker as pending.
+// The informer is expected to be synced shortly after connection to the API server.
+// It is called when an informer handler is set up, before the informer starts syncing.
 func (t *informerSyncTracker) register(name string) {
 	if t == nil {
 		return
@@ -167,7 +170,9 @@ func (t *informerSyncTracker) run() {
 		case <-noRegistrations.C:
 			state := t.getState()
 			if len(state.synced) == 0 && len(state.pending) == 0 {
-				log.Warnf("No informers registered after %s, exiting sync tracker. Sensor continues regular operation.", noRegistrationsTimeout.String())
+				log.Warnf("No informers registered after %s, exiting sync tracker. "+
+					"Sensor will continue operation in this state, "+
+					"but the data from this secured cluster are not being processed. ", noRegistrationsTimeout.String())
 				return
 			}
 		case <-pendingInformerTicker.C:
@@ -186,11 +191,11 @@ func (t *informerSyncTracker) run() {
 func (s syncState) log() {
 	total := len(s.synced) + len(s.pending)
 	if total == 0 {
-		log.Infof("No informers registered")
+		log.Infof("No informers registered yet")
 		return
 	}
 	if len(s.pending) == 0 {
-		log.Infof("No pending informers. %d informers synced.", total)
+		log.Infof("All %d informers have synced successfully.", total)
 		return
 	}
 	var sb strings.Builder
