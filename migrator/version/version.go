@@ -53,10 +53,11 @@ func ReadVersionGormDB(ctx context.Context, db *gorm.DB) (*migrations.MigrationV
 	ver.SeqNum = int(protoVersion.GetSeqNum())
 	ver.MinimumSeqNum = int(protoVersion.GetMinSeqNum())
 	ver.LastPersisted = timestamp.FromProtobuf(protoVersion.GetLastPersisted()).GoTime()
+	ver.RollbackSeqNum = int(protoVersion.GetRollbackSeqNum())
 	return &ver, nil
 }
 
-// UpdateVersionPostgres - updates the version allowing for outer transaction
+// UpdateVersionPostgres - updates the version allowing for outer transaction.
 func UpdateVersionPostgres(ctx context.Context, db postgres.DB, updatedVersion *storage.Version) {
 	err := pgutils.Retry(ctx, func() error {
 		_, err := db.Exec(ctx, "DELETE FROM versions")
@@ -64,7 +65,9 @@ func UpdateVersionPostgres(ctx context.Context, db postgres.DB, updatedVersion *
 			return err
 		}
 
-		_, err = db.Exec(ctx, "INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)", updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(), protocompat.NilOrTime(updatedVersion.GetLastPersisted()))
+		_, err = db.Exec(ctx, "INSERT INTO versions (seqnum, version, minseqnum, lastpersisted, rollbackseqnum) VALUES($1, $2, $3, $4, $5)",
+			updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(),
+			protocompat.NilOrTime(updatedVersion.GetLastPersisted()), updatedVersion.GetRollbackSeqNum())
 		return err
 	})
 	utils.Must(errors.Wrap(err, "failed to write migration version"))
@@ -94,7 +97,9 @@ func SetVersionGormDB(ctx context.Context, db *gorm.DB, updatedVersion *storage.
 				return err
 			}
 
-			result = tx.Exec("INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)", updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(), protocompat.NilOrTime(updatedVersion.GetLastPersisted()))
+			result = tx.Exec("INSERT INTO versions (seqnum, version, minseqnum, lastpersisted, rollbackseqnum) VALUES($1, $2, $3, $4, $5)",
+				updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(),
+				protocompat.NilOrTime(updatedVersion.GetLastPersisted()), updatedVersion.GetRollbackSeqNum())
 			return result.Error
 		})
 	})
@@ -103,13 +108,13 @@ func SetVersionGormDB(ctx context.Context, db *gorm.DB, updatedVersion *storage.
 	}
 }
 
-// SetCurrentVersionPostgres - sets the current version in the postgres database
-func SetCurrentVersionPostgres(ctx context.Context) {
+// SetCurrentVersionGormDB - sets the current version via gormDB database
+func SetCurrentVersionGormDB(ctx context.Context, gormDB *gorm.DB) {
 	newVersion := &storage.Version{
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
 		Version:       version.GetMainVersion(),
 		MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
 		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
 	}
-	SetVersionPostgres(ctx, migrations.GetCurrentClone(), newVersion)
+	SetVersionGormDB(ctx, gormDB, newVersion, false)
 }
