@@ -60,8 +60,7 @@ export const policySectionValidators: PolicySectionValidator[] = [
     {
         name: 'Process criteria require file path',
         appliesTo: (context) =>
-            context.lifecycleStages.includes('RUNTIME') &&
-            (context.eventSource === 'NODE_EVENT' || context.eventSource === 'DEPLOYMENT_EVENT'),
+            context.lifecycleStages.includes('RUNTIME') && context.eventSource === 'NODE_EVENT',
         validate: ({ policyGroups }) => {
             const processCriteria = [
                 'Process Name',

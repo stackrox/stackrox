@@ -125,14 +125,14 @@ describe('policyCriteriaValidators', () => {
             'Process UID',
         ];
 
-        it('should apply to DEPLOYMENT_EVENT and NODE_EVENT with RUNTIME lifecycle', () => {
+        it('should only apply to NODE_EVENT with RUNTIME lifecycle', () => {
             policyEventSources.forEach((eventSource) => {
                 expect(
                     validator.appliesTo({
                         eventSource,
                         lifecycleStages: ['RUNTIME'],
                     })
-                ).toBe(eventSource === 'DEPLOYMENT_EVENT' || eventSource === 'NODE_EVENT');
+                ).toBe(eventSource === 'NODE_EVENT');
             });
         });
 
