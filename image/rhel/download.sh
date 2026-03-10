@@ -47,6 +47,8 @@ else
   postgres_minor="$postgres_minor.$arch"
 
   postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_major}-${arch}"
+  echo "Fetching ${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"
   curl --retry 3 -sS --fail -o "${output_dir}/rpms/postgres.rpm" "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"
+  echo "Fetching ${postgres_url}/postgresql${postgres_major}-libs-${postgres_minor}.rpm"
   curl --retry 3 -sS --fail -o "${output_dir}/rpms/postgres-libs.rpm" "${postgres_url}/postgresql${postgres_major}-libs-${postgres_minor}.rpm"
 fi
