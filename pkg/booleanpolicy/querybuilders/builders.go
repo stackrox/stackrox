@@ -20,6 +20,13 @@ var (
 	}
 )
 
+func valueToPathGlob(value string) string {
+	if strings.HasPrefix(value, search.GlobPrefix) {
+		return value
+	}
+	return search.GlobPrefix + value
+}
+
 func valueToStringExact(value string) string {
 	return search.ExactMatchString(value)
 }
@@ -79,6 +86,10 @@ type fieldLabelQueryBuilder struct {
 
 func (f *fieldLabelQueryBuilder) FieldQueriesForGroup(group *storage.PolicyGroup) []*query.FieldQuery {
 	return []*query.FieldQuery{fieldQueryFromGroup(group, f.fieldLabel, f.valueMapFunc)}
+}
+
+func ForFieldLabelFilePath(label search.FieldLabel) QueryBuilder {
+	return &fieldLabelQueryBuilder{fieldLabel: label, valueMapFunc: valueToPathGlob}
 }
 
 // ForFieldLabelExact returns a query builder that simply queries for the exact field value with the given search field label.
