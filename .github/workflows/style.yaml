@@ -194,9 +194,11 @@ jobs:
 
       - name: Get image tags from COLLECTOR|FACT|SCANNER_VERSION file
         run: |
-          echo "collector_tag=$(make --quiet --no-print-directory collector-tag)" >> "$GITHUB_ENV"
-          echo "fact_tag=$(make --quiet --no-print-directory fact-tag)" >> "$GITHUB_ENV"
-          echo "scanner_tag=$(make --quiet --no-print-directory scanner-tag)" >> "$GITHUB_ENV"
+          {
+            echo "collector_tag=$(make --quiet --no-print-directory collector-tag)"
+            echo "fact_tag=$(make --quiet --no-print-directory fact-tag)"
+            echo "scanner_tag=$(make --quiet --no-print-directory scanner-tag)"
+          } >> "$GITHUB_ENV"
 
       - name: Check GHA-built image exists
         uses: stackrox/actions/release/wait-for-image@d4305535936c6ee67919bf2727e0082d34c45de7
