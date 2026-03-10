@@ -319,8 +319,11 @@ func (root *ScopeTree) populateStateForCluster(
 	clusterState := ruleSelectors.matchCluster(cluster)
 
 	// Set the cluster state to the pre-existing state
-	if clusterSubTree := root.Clusters[clusterName]; clusterSubTree != nil && clusterSubTree.State < clusterState {
-		clusterSubTree.State = clusterState
+	if clusterSubTree := root.Clusters[clusterName]; clusterSubTree != nil {
+		if clusterSubTree.State < clusterState {
+			clusterSubTree.State = clusterState
+			clusterSubTree.Attributes = nodeAttributesForCluster(cluster, detail)
+		}
 		return
 	}
 
@@ -450,8 +453,10 @@ func (cluster *clustersScopeSubTree) populateStateForNamespace(
 
 	namespaceState := ruleSelectors.matchNamespace(namespace)
 
-	if nsSubTree := cluster.Namespaces[namespaceName]; nsSubTree != nil && namespaceState > nsSubTree.State {
-		nsSubTree.State = namespaceState
+	if nsSubTree := cluster.Namespaces[namespaceName]; nsSubTree != nil {
+		if nsSubTree.State < namespaceState {
+			nsSubTree.State = namespaceState
+		}
 		return
 	}
 
