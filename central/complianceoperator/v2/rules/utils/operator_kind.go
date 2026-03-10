@@ -25,5 +25,6 @@ func CustomRuleEffectiveOperatorKind[T central.ComplianceOperatorRuleV2_Operator
 		return T(storage.ComplianceOperatorRuleV2_RULE)
 	}
 
+	// The switch covers all possible types in the type parameter constraint
 	panic(fmt.Sprintf("unreachable: unexpected type %T", operatorKind))
 }
