@@ -177,6 +177,7 @@ func (t *informerSyncTracker) run() {
 	for {
 		select {
 		case <-t.stopper.Flow().StopRequested():
+			t.getState().log()
 			return
 		// If no informers are registered after the timeout, exit the sync tracker, but let Sensor continue operation.
 		case <-noRegistrations.C:
@@ -207,7 +208,7 @@ func (s syncState) log() {
 		return
 	}
 	if len(s.pending) == 0 {
-		log.Infof("All %d informers have synced successfully.", total)
+		log.Infof("All %d informers have synced successfully", total)
 		return
 	}
 	var sb strings.Builder
