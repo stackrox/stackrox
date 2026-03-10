@@ -94,7 +94,6 @@ describe('Workload CVE Image Single page', () => {
                 expect(statusTotal).to.equal(severityTotal);
             });
         });
-
     });
 
     it('should correctly apply a severity filter', () => {
