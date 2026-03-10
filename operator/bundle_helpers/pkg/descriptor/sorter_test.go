@@ -226,6 +226,20 @@ func TestFixCSVDescriptorsMap(t *testing.T) {
 			wantErr:    true,
 			errMessage: "specDescriptors is not a list",
 		},
+		{
+			name: "errors on non-map item in owned CRD list",
+			input: map[string]any{
+				"spec": map[string]any{
+					"customresourcedefinitions": map[string]any{
+						"owned": []any{
+							"not-a-map",
+						},
+					},
+				},
+			},
+			wantErr:    true,
+			errMessage: "item in owned CRD list is not a map",
+		},
 	}
 
 	for _, tt := range tests {
@@ -248,6 +262,8 @@ func TestAllowRelativeFieldDependenciesMap(t *testing.T) {
 	tests := []struct {
 		name       string
 		input      []any
+		wantErr    bool
+		errMessage string
 		assertions func(t *testing.T, descriptors []any)
 	}{
 		{
@@ -383,11 +399,45 @@ func TestAllowRelativeFieldDependenciesMap(t *testing.T) {
 				assert.Equal(t, "urn:alm:descriptor:com.tectonic.ui:fieldDependency:", xDescs[1])
 			},
 		},
+		{
+			name:       "errors on non-map descriptor",
+			input:      []any{"not-a-map"},
+			wantErr:    true,
+			errMessage: "descriptor is not a map",
+		},
+		{
+			name: "errors on non-list x-descriptors",
+			input: []any{
+				map[string]any{
+					"path":          "spec.field",
+					"x-descriptors": "not-a-list",
+				},
+			},
+			wantErr:    true,
+			errMessage: "x-descriptors is not a list",
+		},
+		{
+			name: "errors on non-string x-descriptor entry",
+			input: []any{
+				map[string]any{
+					"path":          "spec.field",
+					"x-descriptors": []any{42},
+				},
+			},
+			wantErr:    true,
+			errMessage: "x-descriptor entry is not a string",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			allowRelativeFieldDependenciesMap(tt.input)
+			err := allowRelativeFieldDependenciesMap(tt.input)
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errMessage)
+				return
+			}
+			require.NoError(t, err)
 			if tt.assertions != nil {
 				tt.assertions(t, tt.input)
 			}
