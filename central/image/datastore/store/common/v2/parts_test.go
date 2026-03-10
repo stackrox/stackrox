@@ -557,7 +557,8 @@ func dedupedImage() *storage.Image {
 					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
 						LayerIndex: 1,
 					},
-					Vulns: []*storage.EmbeddedVulnerability{},
+					LayerType: storage.LayerType_BASE_IMAGE,
+					Vulns:     []*storage.EmbeddedVulnerability{},
 				},
 				{
 					Name:    "comp1",
@@ -565,6 +566,7 @@ func dedupedImage() *storage.Image {
 					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
 						LayerIndex: 3,
 					},
+					LayerType: storage.LayerType_BASE_IMAGE,
 					Vulns: []*storage.EmbeddedVulnerability{
 						{
 							Cve:                   "cve1",
@@ -601,6 +603,7 @@ func dedupedImage() *storage.Image {
 					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
 						LayerIndex: 2,
 					},
+					LayerType: storage.LayerType_BASE_IMAGE,
 					Vulns: []*storage.EmbeddedVulnerability{
 						{
 							Cve:                "cve1",
@@ -627,6 +630,7 @@ func dedupedImage() *storage.Image {
 					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
 						LayerIndex: 2,
 					},
+					LayerType: storage.LayerType_BASE_IMAGE,
 					Vulns: []*storage.EmbeddedVulnerability{
 						{
 							Cve:                "cve1",
