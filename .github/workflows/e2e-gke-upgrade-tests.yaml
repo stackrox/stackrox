@@ -163,7 +163,7 @@ jobs:
         import sys
         sys.path.append('.openshift-ci')
         from post_tests import FinalPost
-        FinalPost().run()
+        FinalPost(store_qa_tests_data=False).run()
 
     - name: Delete cluster
       if: always()
@@ -290,7 +290,7 @@ jobs:
         import sys
         sys.path.append('.openshift-ci')
         from post_tests import FinalPost
-        FinalPost().run()
+        FinalPost(store_qa_tests_data=True).run()
 
     - name: Delete cluster
       if: always()
