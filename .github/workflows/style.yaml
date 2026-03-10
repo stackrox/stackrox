@@ -208,7 +208,7 @@ jobs:
           echo "image-tag=$(make --quiet --no-print-directory "${makefile_target}")" >> "${GITHUB_OUTPUT}"
 
       - name: Check GHA-built image exists
-        uses: stackrox/actions/release/wait-for-image@v1
+        uses: stackrox/actions/release/wait-for-image@d4305535936c6ee67919bf2727e0082d34c45de7
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
@@ -218,7 +218,7 @@ jobs:
           limit: 300
 
       - name: Check Konflux-built image exists
-        uses: stackrox/actions/release/wait-for-image@v1
+        uses: stackrox/actions/release/wait-for-image@d4305535936c6ee67919bf2727e0082d34c45de7
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
