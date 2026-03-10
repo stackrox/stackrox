@@ -17,4 +17,8 @@ message Version {
   // The minimum sequence number supported by this iteration of the database.  Rollbacks
   // to versions prior to this sequence number are not supported.
   int32 min_seq_num = 4; // @gotags: search:"Minimum Sequence Number"
+  // Deferred rollback marker. During rolling upgrades, the old pod writes its
+  // sequence number here so the lock holder can reset if the upgrade fails.
+  // A value of 0 means no rollback marker is set.
+  int32 rollback_seq_num = 5;
 }

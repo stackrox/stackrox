@@ -32,9 +32,13 @@ type Version struct {
 	LastPersisted *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_persisted,json=lastPersisted,proto3" json:"last_persisted,omitempty" search:"Last Persisted"` // @gotags: search:"Last Persisted"
 	// The minimum sequence number supported by this iteration of the database.  Rollbacks
 	// to versions prior to this sequence number are not supported.
-	MinSeqNum     int32 `protobuf:"varint,4,opt,name=min_seq_num,json=minSeqNum,proto3" json:"min_seq_num,omitempty" search:"Minimum Sequence Number"` // @gotags: search:"Minimum Sequence Number"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	MinSeqNum int32 `protobuf:"varint,4,opt,name=min_seq_num,json=minSeqNum,proto3" json:"min_seq_num,omitempty" search:"Minimum Sequence Number"` // @gotags: search:"Minimum Sequence Number"
+	// Deferred rollback marker. During rolling upgrades, the old pod writes its
+	// sequence number here so the lock holder can reset if the upgrade fails.
+	// A value of 0 means no rollback marker is set.
+	RollbackSeqNum int32 `protobuf:"varint,5,opt,name=rollback_seq_num,json=rollbackSeqNum,proto3" json:"rollback_seq_num,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Version) Reset() {
@@ -95,16 +99,24 @@ func (x *Version) GetMinSeqNum() int32 {
 	return 0
 }
 
+func (x *Version) GetRollbackSeqNum() int32 {
+	if x != nil {
+		return x.RollbackSeqNum
+	}
+	return 0
+}
+
 var File_storage_version_proto protoreflect.FileDescriptor
 
 const file_storage_version_proto_rawDesc = "" +
 	"\n" +
-	"\x15storage/version.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\x9f\x01\n" +
+	"\x15storage/version.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc9\x01\n" +
 	"\aVersion\x12\x17\n" +
 	"\aseq_num\x18\x01 \x01(\x05R\x06seqNum\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12A\n" +
 	"\x0elast_persisted\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\rlastPersisted\x12\x1e\n" +
-	"\vmin_seq_num\x18\x04 \x01(\x05R\tminSeqNumB.\n" +
+	"\vmin_seq_num\x18\x04 \x01(\x05R\tminSeqNum\x12(\n" +
+	"\x10rollback_seq_num\x18\x05 \x01(\x05R\x0erollbackSeqNumB.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (

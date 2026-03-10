@@ -37,7 +37,8 @@ func init() {
 	}
 }
 
-// Run runs the migrator.
+// Run runs the migrator. It reads the current DB version and runs all
+// necessary migrations to bring the DB up to the current binary version.
 func Run(databases *types.Databases) error {
 	log.WriteToStderrf("In runner.Run")
 
@@ -67,14 +68,19 @@ func Run(databases *types.Databases) error {
 	}
 
 	// Make sure version is up to date after migrations to ensure latest version schema is used in the event
-	// there are no migrations executed.
+	// there are no migrations executed. This also resets the rollback marker in case there is one.
+	return UpdateToCurrentVersion(databases)
+}
+
+// UpdateToCurrentVersion updates the stored version to the current binary
+// version without running any migrations.
+func UpdateToCurrentVersion(databases *types.Databases) error {
 	currentVersion := &versionStorage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNum())}
 	ctx := sac.WithAllAccess(context.Background())
-	err = updateVersion(ctx, databases, currentVersion)
+	err := updateVersion(ctx, databases, currentVersion)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update version after migrations %d", currentVersion.GetSeqNum())
 	}
-
 	return nil
 }
 
