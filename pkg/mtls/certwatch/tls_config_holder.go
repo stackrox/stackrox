@@ -13,8 +13,7 @@ import (
 var (
 	errNoTLSConfig = errors.New("no TLS config is available")
 
-	// sessionTicketKeyRotator is the function used to rotate session ticket keys.
-	// This can be replaced in tests to verify it's being called.
+	// sessionTicketKeyRotator is the function used to rotate session ticket keys. Used for testing.
 	sessionTicketKeyRotator = rotateSessionTicketKeys
 )
 
