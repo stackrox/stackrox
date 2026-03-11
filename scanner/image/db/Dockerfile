@@ -1,6 +1,3 @@
-# Migration to ubi8-micro base image
-# Scanner DB needs PostgreSQL server and many runtime dependencies
-
 ARG RPMS_REGISTRY=registry.access.redhat.com
 ARG RPMS_BASE_IMAGE=ubi8
 ARG RPMS_BASE_TAG=latest
@@ -9,24 +6,17 @@ ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-micro
 ARG BASE_TAG=latest
 
-# ============================================================================
-# Stage 1: postgres_rpms - Download PostgreSQL RPMs
-# ============================================================================
+# Download PostgreSQL RPMs from upstream
 FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS postgres_rpms
 
 COPY scripts/download.sh /download.sh
 RUN /download.sh
 
-# ============================================================================
-# Stage 2: dependency_builder - Install all runtime dependencies
-# PostgreSQL DB needs many packages for runtime operation
-# ============================================================================
+# Install all runtime dependencies for PostgreSQL to /out/
 FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS dependency_builder
 
-# If this is updated, be sure to update postgres_major in download.sh and the signature file.
 ENV PG_MAJOR=15
 
-# Install all required runtime dependencies to /out/
 RUN dnf install \
     --installroot=/out/ \
     --releasever=8 \
@@ -56,18 +46,15 @@ RUN dnf install \
     dnf --installroot=/out/ clean all && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
-# Copy PostgreSQL RPMs from postgres_rpms stage
 COPY --from=postgres_rpms /rpms/postgres.rpm /rpms/postgres-libs.rpm /rpms/postgres-server.rpm /rpms/postgres-contrib.rpm /tmp/
 
-# Import PostgreSQL GPG key and install RPMs to /out/
+# Import GPG key and install PostgreSQL to /out/
 COPY signatures/PGDG-RPM-GPG-KEY-RHEL /tmp/
 RUN rpm --root=/out/ --import /tmp/PGDG-RPM-GPG-KEY-RHEL && \
     rpm --root=/out/ -ivh --nodeps /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
     rm -rf /tmp/*.rpm /tmp/PGDG-RPM-GPG-KEY-RHEL
 
-# Create postgres user and group in /out/ with UID/GID 70
-# Note: PostgreSQL RPMs may create these during installation, but we need specific UID/GID
-# If they exist with wrong IDs, modify them; otherwise create them
+# Create postgres user/group with UID/GID 70 and setup locale
 RUN chroot /out /bin/sh -c " \
     if getent group postgres >/dev/null; then \
         current_gid=\$(getent group postgres | cut -d: -f3); \
@@ -84,21 +71,15 @@ RUN chroot /out /bin/sh -c " \
         fi; \
     else \
         useradd postgres -u 70 -g 70 -d /var/lib/postgresql -s /bin/sh; \
-    fi \
+    fi && \
+    localedef -f UTF-8 -i en_US en_US.UTF-8 \
     "
 
-# Setup locale in /out/
-RUN chroot /out /bin/sh -c "localedef -f UTF-8 -i en_US en_US.UTF-8"
-
-# Create required directories in /out/
+# Create required directories with correct permissions
 RUN mkdir -p /out/docker-entrypoint-initdb.d \
              /out/var/run/postgresql && \
     chroot /out /bin/sh -c "chown postgres:postgres /var/run/postgresql && chmod 03775 /var/run/postgresql"
 
-# ============================================================================
-# Stage 3: FINAL - ubi8-micro runtime image
-# NO package manager operations allowed in this stage!
-# ============================================================================
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
 ARG LABEL_VERSION
@@ -114,16 +95,12 @@ LABEL name="scanner-v4-db" \
       release="${LABEL_RELEASE}" \
       quay.expires-after="${QUAY_TAG_EXPIRATION}"
 
-# If this is updated, be sure to update postgres_major in download.sh and the signature file.
 ENV PG_MAJOR=15
 ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/"
 ENV LANG=en_US.utf8
 
-# Copy all dependencies and PostgreSQL from builder
 COPY --from=dependency_builder /out/ /
 
-# Copy application files
-# This will be ignored if empty in the init script.
 COPY init-bundles/db-init.dump.zst /db-init.dump.zst
 COPY scripts/docker-entrypoint.sh scripts/init-entrypoint.sh /usr/local/bin/
 
