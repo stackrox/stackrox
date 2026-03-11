@@ -1,3 +1,12 @@
 {
-  "continuations": null
+  "continuations": [
+    {
+      "command": [
+        "branch",
+        "onto",
+        "master-base/gualvare/fix-compliance-use-tp-metadata-always"
+      ],
+      "branch": "master-base/gualvare/ROX-33477-update-ssb-logic-to-handle-tp"
+    }
+  ]
 }
