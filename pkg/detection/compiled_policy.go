@@ -5,10 +5,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
-	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/regexutils"
 	"github.com/stackrox/rox/pkg/scopecomp"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // CompiledPolicy is a compiled policy, which means it can match a policy, as well as check whether a policy is applicable.
@@ -253,25 +253,50 @@ func (cp *compiledPolicy) setNodeEventMatcher(policy *storage.Policy) error {
 }
 
 func (cp *compiledPolicy) hasAllowedRuntimeMatchers() bool {
-	var count int
-	if cp.kubeEventsMatcher != nil {
-		count++
-	}
-	// Process and FileAccess can be combined (file access events contain process information).
-	if cp.deploymentWithProcessMatcher != nil || cp.deploymentWithFileAccessMatcher != nil {
-		count++
-	}
-	if cp.deploymentWithNetworkFlowMatcher != nil {
-		count++
-	}
-	if cp.auditLogEventMatcher != nil {
-		count++
-	}
-	if cp.nodeMatcher != nil {
-		count++
+	// matcherGroupMap defines which matchers belong to which compatibility group.
+	// Process and FileAccess belong to the same group since file access events
+	// contain process information.
+	type matcherIdentifier int
+	const (
+		kubeEventMatcherID matcherIdentifier = iota
+		processMatcherID
+		fileAccessMatcherID
+		networkFlowMatcherID
+		auditLogMatcherID
+		nodeMatcherID
+	)
+
+	var matcherGroupMap = map[matcherIdentifier]string{
+		kubeEventMatcherID:   "KubeEvent",
+		processMatcherID:     "Process",
+		fileAccessMatcherID:  "Process", // FileAccess events contain process information
+		networkFlowMatcherID: "NetworkFlow",
+		auditLogMatcherID:    "AuditLog",
+		nodeMatcherID:        "Node",
 	}
 
-	return count == 1
+	groupsSeen := set.NewStringSet()
+
+	if cp.kubeEventsMatcher != nil {
+		groupsSeen.Add(matcherGroupMap[kubeEventMatcherID])
+	}
+	if cp.deploymentWithProcessMatcher != nil {
+		groupsSeen.Add(matcherGroupMap[processMatcherID])
+	}
+	if cp.deploymentWithFileAccessMatcher != nil {
+		groupsSeen.Add(matcherGroupMap[fileAccessMatcherID])
+	}
+	if cp.deploymentWithNetworkFlowMatcher != nil {
+		groupsSeen.Add(matcherGroupMap[networkFlowMatcherID])
+	}
+	if cp.auditLogEventMatcher != nil {
+		groupsSeen.Add(matcherGroupMap[auditLogMatcherID])
+	}
+	if cp.nodeMatcher != nil {
+		groupsSeen.Add(matcherGroupMap[nodeMatcherID])
+	}
+
+	return groupsSeen.Cardinality() == 1
 }
 
 // Top level compiled Policy.
