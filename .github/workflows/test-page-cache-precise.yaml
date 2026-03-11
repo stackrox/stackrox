@@ -14,13 +14,10 @@ defaults:
     shell: bash
 
 # Single-runner precision benchmark: all strategies run sequentially on ONE
-# runner to eliminate runner-to-runner variance. Sub-second timing via
-# date +%s%N. /usr/bin/time for I/O stats. Multiple iterations per strategy.
+# runner to eliminate runner-to-runner variance. Sub-millisecond timing via
+# date +%s%N. /proc/stat for I/O stats. Multiple iterations per strategy.
 
 jobs:
-  # ---------------------------------------------------------------------------
-  # Precise build benchmark: all strategies on one runner
-  # ---------------------------------------------------------------------------
   precise-build:
     runs-on: ubuntu-latest
     name: "precise-build"
@@ -45,169 +42,153 @@ jobs:
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
-      - name: Install vmtouch
-        uses: ./.github/actions/page-cache-warm
-        with:
-          mode: vmtouch-touch
+      - name: Install tools
+        run: |
+          # Install vmtouch
+          tmp="$(mktemp -d)"
+          curl -sSfL https://raw.githubusercontent.com/hoytech/vmtouch/master/vmtouch.c -o "$tmp/vmtouch.c"
+          gcc -O2 -o /usr/local/bin/vmtouch "$tmp/vmtouch.c"
+          rm -rf "$tmp"
+          # Install time (GNU time, not bash builtin)
+          apt-get update -qq && apt-get install -y -qq time > /dev/null 2>&1 || true
 
       - name: System info
         run: |
           echo "### System Info" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-          echo "CPU: $(grep 'model name' /proc/cpuinfo | head -1 | cut -d: -f2 | xargs)" >> "$GITHUB_STEP_SUMMARY"
-          echo "Cores: $(nproc)" >> "$GITHUB_STEP_SUMMARY"
-          echo "RAM: $(free -h | awk '/Mem:/ {print $2}')" >> "$GITHUB_STEP_SUMMARY"
-          echo "Filesystem: $(df -Th . | tail -1 | awk '{print $1, $2}')" >> "$GITHUB_STEP_SUMMARY"
-          echo "Kernel: $(uname -r)" >> "$GITHUB_STEP_SUMMARY"
+          echo "CPU: $(grep 'model name' /proc/cpuinfo | head -1 | cut -d: -f2 | xargs)" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "Cores: $(nproc)" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "RAM: $(free -h | awk '/Mem:/ {print $2}')" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "Workspace FS: $(df -Th . | tail -1 | awk '{print $1, $2}')" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "GOCACHE: $(go env GOCACHE)" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "Kernel: $(uname -r)" | tee -a "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Warm build once (seed in-process state)
+      - name: Seed build (warm GOCACHE)
+        run: GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps 2>&1 | tail -3
+
+      - name: Benchmark helper
         run: |
-          GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps 2>&1 | tail -5
+          # Helper script for all benchmark iterations
+          cat > /tmp/bench.sh << 'BENCH'
+          #!/bin/bash
+          set -eo pipefail
+          label="$1"; shift
+          iters="${1:-5}"; shift
 
-      - name: Precise benchmark — disk baseline
-        run: |
-          echo "### Disk Baseline (5 iterations)" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-
-          # Drop page cache to get true disk baseline
-          sync && echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
-
-          for i in 1 2 3 4 5; do
-            # Clean build outputs to force re-link
+          for i in $(seq 1 "$iters"); do
             rm -rf bin/
 
+            # Capture I/O counters before
+            io_before=$(awk '/^rchar:/{r=$2} /^syscr:/{sr=$2} /^read_bytes:/{rb=$2} END{print r, sr, rb}' /proc/self/io 2>/dev/null || echo "0 0 0")
+
             start_ns=$(date +%s%N)
-            /usr/bin/time -v bash -c 'GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps' \
-              2>/tmp/time_output_$i.txt 1>/dev/null
+            GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps > /dev/null 2>&1
             end_ns=$(date +%s%N)
             elapsed_ms=$(( (end_ns - start_ns) / 1000000 ))
 
-            # Extract I/O stats
-            major_faults=$(grep 'Major.*page faults' /tmp/time_output_$i.txt | awk '{print $NF}')
-            minor_faults=$(grep 'Minor.*page faults' /tmp/time_output_$i.txt | awk '{print $NF}')
-            fs_inputs=$(grep 'File system inputs' /tmp/time_output_$i.txt | awk '{print $NF}')
-            fs_outputs=$(grep 'File system outputs' /tmp/time_output_$i.txt | awk '{print $NF}')
-            wall=$(grep 'wall clock' /tmp/time_output_$i.txt | awk '{print $NF}')
-            user=$(grep 'User time' /tmp/time_output_$i.txt | awk '{print $NF}')
-            sys=$(grep 'System time' /tmp/time_output_$i.txt | awk '{print $NF}')
-            involuntary=$(grep 'Involuntary' /tmp/time_output_$i.txt | awk '{print $NF}')
+            # Capture I/O counters after
+            io_after=$(awk '/^rchar:/{r=$2} /^syscr:/{sr=$2} /^read_bytes:/{rb=$2} END{print r, sr, rb}' /proc/self/io 2>/dev/null || echo "0 0 0")
 
-            echo "disk #$i: ${elapsed_ms}ms wall=${wall} user=${user} sys=${sys} major=${major_faults} minor=${minor_faults} fsin=${fs_inputs} fsout=${fs_outputs} involctx=${involuntary}"
-          done | tee -a "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "${label} #${i}: ${elapsed_ms}ms"
+          done
+          BENCH
+          chmod +x /tmp/bench.sh
 
-      - name: Precise benchmark — vmtouch-lock (page cache pinned)
+      - name: "Benchmark: disk (page cache warm)"
         run: |
-          echo "### vmtouch-lock (5 iterations)" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Disk — page cache warm (5 iterations)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          # Ensure page cache is warm by reading everything once
+          find . -type f -exec cat {} + > /dev/null 2>&1 || true
+          vmtouch . 2>/dev/null | grep Resident || true
+          /tmp/bench.sh "disk-warm" 5 | tee -a "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
-          # Pin all source files in page cache
-          vmtouch -tl "$GITHUB_WORKSPACE" &
+      - name: "Benchmark: disk (cold page cache)"
+        run: |
+          echo "### Disk — cold page cache (3 iterations)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          for i in 1 2 3; do
+            # Drop page cache
+            sync && echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
+            rm -rf bin/
+            start_ns=$(date +%s%N)
+            GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps > /dev/null 2>&1
+            end_ns=$(date +%s%N)
+            echo "disk-cold #${i}: $(( (end_ns - start_ns) / 1000000 ))ms" | tee -a "$GITHUB_STEP_SUMMARY"
+          done
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: "Benchmark: vmtouch-lock (page cache pinned)"
+        run: |
+          echo "### vmtouch-lock — page cache pinned (5 iterations)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          vmtouch -tl . &
           VMTOUCH_PID=$!
           sleep 1
-          vmtouch "$GITHUB_WORKSPACE" | tail -3
-
-          for i in 1 2 3 4 5; do
-            rm -rf bin/
-            start_ns=$(date +%s%N)
-            /usr/bin/time -v bash -c 'GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps' \
-              2>/tmp/time_output_$i.txt 1>/dev/null
-            end_ns=$(date +%s%N)
-            elapsed_ms=$(( (end_ns - start_ns) / 1000000 ))
-
-            major_faults=$(grep 'Major.*page faults' /tmp/time_output_$i.txt | awk '{print $NF}')
-            minor_faults=$(grep 'Minor.*page faults' /tmp/time_output_$i.txt | awk '{print $NF}')
-            fs_inputs=$(grep 'File system inputs' /tmp/time_output_$i.txt | awk '{print $NF}')
-            fs_outputs=$(grep 'File system outputs' /tmp/time_output_$i.txt | awk '{print $NF}')
-            wall=$(grep 'wall clock' /tmp/time_output_$i.txt | awk '{print $NF}')
-            user=$(grep 'User time' /tmp/time_output_$i.txt | awk '{print $NF}')
-            sys=$(grep 'System time' /tmp/time_output_$i.txt | awk '{print $NF}')
-            involuntary=$(grep 'Involuntary' /tmp/time_output_$i.txt | awk '{print $NF}')
-
-            echo "vmtouch #$i: ${elapsed_ms}ms wall=${wall} user=${user} sys=${sys} major=${major_faults} minor=${minor_faults} fsin=${fs_inputs} fsout=${fs_outputs} involctx=${involuntary}"
-          done | tee -a "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-
+          vmtouch . 2>/dev/null | grep Resident | tee -a "$GITHUB_STEP_SUMMARY" || true
+          /tmp/bench.sh "vmtouch-lock" 5 | tee -a "$GITHUB_STEP_SUMMARY"
           kill $VMTOUCH_PID 2>/dev/null || true
-
-      - name: Precise benchmark — tmpfs copy
-        run: |
-          echo "### tmpfs copy (5 iterations)" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
-          # Mount tmpfs, copy workspace there
+      - name: "Benchmark: tmpfs (workspace copied to RAM)"
+        run: |
+          echo "### tmpfs — workspace on RAM (5 iterations)" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
           TMPFS_DIR="/tmp/tmpfs-bench"
           mkdir -p "$TMPFS_DIR"
           mount -t tmpfs -o size=4G,exec tmpfs "$TMPFS_DIR"
           cp -a "$GITHUB_WORKSPACE/." "$TMPFS_DIR/"
+          # Copy GOCACHE too so ActionIDs match (same paths in cache)
+          GOCACHE_DIR=$(go env GOCACHE)
+          cp -a "$GOCACHE_DIR" "${TMPFS_DIR}/.gocache" 2>/dev/null || true
+
           cd "$TMPFS_DIR"
           git config --global --add safe.directory "$TMPFS_DIR"
-
-          echo "Filesystem: $(df -Th . | tail -1 | awk '{print $1, $2}')"
+          echo "Filesystem: $(df -Th . | tail -1 | awk '{print $1, $2}')" | tee -a "$GITHUB_STEP_SUMMARY"
 
           for i in 1 2 3 4 5; do
             rm -rf bin/
             start_ns=$(date +%s%N)
-            /usr/bin/time -v bash -c 'GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps' \
-              2>/tmp/time_output_$i.txt 1>/dev/null
+            GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps > /dev/null 2>&1
             end_ns=$(date +%s%N)
-            elapsed_ms=$(( (end_ns - start_ns) / 1000000 ))
-
-            major_faults=$(grep 'Major.*page faults' /tmp/time_output_$i.txt | awk '{print $NF}')
-            minor_faults=$(grep 'Minor.*page faults' /tmp/time_output_$i.txt | awk '{print $NF}')
-            fs_inputs=$(grep 'File system inputs' /tmp/time_output_$i.txt | awk '{print $NF}')
-            fs_outputs=$(grep 'File system outputs' /tmp/time_output_$i.txt | awk '{print $NF}')
-            wall=$(grep 'wall clock' /tmp/time_output_$i.txt | awk '{print $NF}')
-            user=$(grep 'User time' /tmp/time_output_$i.txt | awk '{print $NF}')
-            sys=$(grep 'System time' /tmp/time_output_$i.txt | awk '{print $NF}')
-            involuntary=$(grep 'Involuntary' /tmp/time_output_$i.txt | awk '{print $NF}')
-
-            echo "tmpfs #$i: ${elapsed_ms}ms wall=${wall} user=${user} sys=${sys} major=${major_faults} minor=${minor_faults} fsin=${fs_inputs} fsout=${fs_outputs} involctx=${involuntary}"
-          done | tee -a "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "tmpfs #${i}: $(( (end_ns - start_ns) / 1000000 ))ms" | tee -a "$GITHUB_STEP_SUMMARY"
+          done
 
           cd "$GITHUB_WORKSPACE"
           umount "$TMPFS_DIR" 2>/dev/null || true
-
-      - name: SHA256 hash micro-benchmark (sub-second)
-        run: |
-          echo "### SHA256 hash micro-benchmark (3x each)" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
-          # Build the file list once
+      - name: "SHA256 hash micro-benchmark"
+        run: |
+          echo "### SHA256 micro-benchmark" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
           find "$GITHUB_WORKSPACE" -type f \( -name '*.go' -o -name '*.s' -o -name '*.c' -o -name '*.h' \) > /tmp/filelist.txt
           file_count=$(wc -l < /tmp/filelist.txt)
-          echo "Files: $file_count"
+          total_mb=$(du -shc $(cat /tmp/filelist.txt) 2>/dev/null | tail -1 | cut -f1)
+          echo "Source files: $file_count ($total_mb)" | tee -a "$GITHUB_STEP_SUMMARY"
 
-          # Disk baseline (after drop_caches)
+          # Bulk hash: disk cold
           sync && echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
           for i in 1 2 3; do
             start_ns=$(date +%s%N)
-            cat $(cat /tmp/filelist.txt) | sha256sum > /dev/null 2>&1
+            xargs -a /tmp/filelist.txt cat 2>/dev/null | sha256sum > /dev/null
             end_ns=$(date +%s%N)
-            echo "hash-disk-cold #$i: $(( (end_ns - start_ns) / 1000000 ))ms ($file_count files)"
+            echo "bulk-disk-cold #$i: $(( (end_ns - start_ns) / 1000000 ))ms" | tee -a "$GITHUB_STEP_SUMMARY"
           done
 
-          # Disk with warm page cache
-          cat $(cat /tmp/filelist.txt) > /dev/null 2>&1  # warm
+          # Bulk hash: disk warm
+          xargs -a /tmp/filelist.txt cat > /dev/null 2>&1
           for i in 1 2 3; do
             start_ns=$(date +%s%N)
-            cat $(cat /tmp/filelist.txt) | sha256sum > /dev/null 2>&1
+            xargs -a /tmp/filelist.txt cat 2>/dev/null | sha256sum > /dev/null
             end_ns=$(date +%s%N)
-            echo "hash-disk-warm #$i: $(( (end_ns - start_ns) / 1000000 ))ms ($file_count files)"
+            echo "bulk-disk-warm #$i: $(( (end_ns - start_ns) / 1000000 ))ms" | tee -a "$GITHUB_STEP_SUMMARY"
           done
 
-          # vmtouch locked
-          vmtouch -t "$GITHUB_WORKSPACE" > /dev/null 2>&1
-          for i in 1 2 3; do
-            start_ns=$(date +%s%N)
-            cat $(cat /tmp/filelist.txt) | sha256sum > /dev/null 2>&1
-            end_ns=$(date +%s%N)
-            echo "hash-vmtouch #$i: $(( (end_ns - start_ns) / 1000000 ))ms ($file_count files)"
-          done
-
-          # tmpfs
+          # Bulk hash: tmpfs
           TMPFS_DIR="/tmp/tmpfs-hash"
           mkdir -p "$TMPFS_DIR"
           mount -t tmpfs -o size=4G tmpfs "$TMPFS_DIR"
@@ -215,59 +196,39 @@ jobs:
           find "$TMPFS_DIR" -type f \( -name '*.go' -o -name '*.s' -o -name '*.c' -o -name '*.h' \) > /tmp/filelist_tmpfs.txt
           for i in 1 2 3; do
             start_ns=$(date +%s%N)
-            cat $(cat /tmp/filelist_tmpfs.txt) | sha256sum > /dev/null 2>&1
+            xargs -a /tmp/filelist_tmpfs.txt cat 2>/dev/null | sha256sum > /dev/null
             end_ns=$(date +%s%N)
-            echo "hash-tmpfs #$i: $(( (end_ns - start_ns) / 1000000 ))ms ($file_count files)"
+            echo "bulk-tmpfs #$i: $(( (end_ns - start_ns) / 1000000 ))ms" | tee -a "$GITHUB_STEP_SUMMARY"
           done
           umount "$TMPFS_DIR" 2>/dev/null || true
 
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-        # Use tee to capture output in summary
-        # Note: the above echo lines go to stdout, need to capture
+          # Per-file hash (Go's actual pattern): 1000 files
+          find "$GITHUB_WORKSPACE" -type f -name '*.go' | head -1000 > /tmp/sample.txt
+          n=$(wc -l < /tmp/sample.txt)
 
-      - name: SHA256 per-file benchmark (measure per-file overhead)
-        run: |
-          echo "### Per-file SHA256 benchmark" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-
-          # Measure per-file SHA256 with Go's actual pattern (individual open/read/hash/close)
-          # Use a representative set of 1000 .go files
-          find "$GITHUB_WORKSPACE" -type f -name '*.go' | head -1000 > /tmp/sample_files.txt
-          sample_count=$(wc -l < /tmp/sample_files.txt)
-
-          # Disk warm
-          cat $(cat /tmp/sample_files.txt) > /dev/null 2>&1
+          # disk warm
+          xargs -a /tmp/sample.txt cat > /dev/null 2>&1
           start_ns=$(date +%s%N)
-          while IFS= read -r f; do
-            sha256sum "$f" > /dev/null 2>&1
-          done < /tmp/sample_files.txt
+          while IFS= read -r f; do sha256sum "$f" > /dev/null 2>&1; done < /tmp/sample.txt
           end_ns=$(date +%s%N)
-          elapsed_ms=$(( (end_ns - start_ns) / 1000000 ))
-          per_file_us=$(( (end_ns - start_ns) / sample_count / 1000 ))
-          echo "disk-warm: ${elapsed_ms}ms total, ${per_file_us}us/file ($sample_count files)"
+          elapsed_us=$(( (end_ns - start_ns) / 1000 ))
+          echo "per-file-disk: $(( elapsed_us / 1000 ))ms total, $(( elapsed_us / n ))us/file ($n files)" | tee -a "$GITHUB_STEP_SUMMARY"
 
           # tmpfs
           TMPFS_DIR="/tmp/tmpfs-perfile"
           mkdir -p "$TMPFS_DIR"
           mount -t tmpfs -o size=4G tmpfs "$TMPFS_DIR"
           cp -a "$GITHUB_WORKSPACE/." "$TMPFS_DIR/"
-          find "$TMPFS_DIR" -type f -name '*.go' | head -1000 > /tmp/sample_files_tmpfs.txt
+          find "$TMPFS_DIR" -type f -name '*.go' | head -1000 > /tmp/sample_tmpfs.txt
           start_ns=$(date +%s%N)
-          while IFS= read -r f; do
-            sha256sum "$f" > /dev/null 2>&1
-          done < /tmp/sample_files_tmpfs.txt
+          while IFS= read -r f; do sha256sum "$f" > /dev/null 2>&1; done < /tmp/sample_tmpfs.txt
           end_ns=$(date +%s%N)
-          elapsed_ms=$(( (end_ns - start_ns) / 1000000 ))
-          per_file_us=$(( (end_ns - start_ns) / sample_count / 1000 ))
-          echo "tmpfs: ${elapsed_ms}ms total, ${per_file_us}us/file ($sample_count files)"
-
+          elapsed_us=$(( (end_ns - start_ns) / 1000 ))
+          echo "per-file-tmpfs: $(( elapsed_us / 1000 ))ms total, $(( elapsed_us / n ))us/file ($n files)" | tee -a "$GITHUB_STEP_SUMMARY"
           umount "$TMPFS_DIR" 2>/dev/null || true
+
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
-  # ---------------------------------------------------------------------------
-  # Precise test benchmark: sequential on one runner
-  # Runs go-unit-tests from disk vs tmpfs on same runner
-  # ---------------------------------------------------------------------------
   precise-test:
     runs-on: ubuntu-latest
     name: "precise-test"
@@ -292,19 +253,14 @@ jobs:
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
-      - name: Test from disk (baseline)
+      - name: "Test: disk baseline"
         run: |
           echo "### Test from disk" >> "$GITHUB_STEP_SUMMARY"
           start_ns=$(date +%s%N)
-          /usr/bin/time -v make go-unit-tests 2>/tmp/time_test_disk.txt
+          make go-unit-tests 2>&1 | tail -5
           end_ns=$(date +%s%N)
           elapsed_ms=$(( (end_ns - start_ns) / 1000000 ))
-
-          wall=$(grep 'wall clock' /tmp/time_test_disk.txt | awk '{print $NF}')
-          user=$(grep 'User time' /tmp/time_test_disk.txt | awk '{print $NF}')
-          sys=$(grep 'System time' /tmp/time_test_disk.txt | awk '{print $NF}')
-          major_faults=$(grep 'Major.*page faults' /tmp/time_test_disk.txt | awk '{print $NF}')
-          fs_inputs=$(grep 'File system inputs' /tmp/time_test_disk.txt | awk '{print $NF}')
+          elapsed_s=$(( elapsed_ms / 1000 ))
 
           cached=$(grep -c '(cached)' test-output/test.log 2>/dev/null || true)
           total=$(grep -c '^ok ' test-output/test.log 2>/dev/null || true)
@@ -313,20 +269,13 @@ jobs:
             echo "| Metric | Value |"
             echo "|--------|-------|"
             echo "| Mode | \`disk\` |"
-            echo "| Total | \`${elapsed_ms}ms\` |"
-            echo "| Wall | \`${wall}\` |"
-            echo "| User | \`${user}\` |"
-            echo "| Sys | \`${sys}\` |"
-            echo "| Major faults | \`${major_faults}\` |"
-            echo "| FS inputs | \`${fs_inputs}\` |"
+            echo "| Time | \`${elapsed_s}s\` (\`${elapsed_ms}ms\`) |"
             echo "| Test cache | \`${cached}/${total}\` |"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Test from tmpfs
+      - name: "Test: tmpfs"
         run: |
           echo "### Test from tmpfs" >> "$GITHUB_STEP_SUMMARY"
-
-          # Mount tmpfs and copy workspace
           TMPFS_DIR="/tmp/tmpfs-test"
           mkdir -p "$TMPFS_DIR"
           mount -t tmpfs -o size=4G,exec tmpfs "$TMPFS_DIR"
@@ -334,19 +283,12 @@ jobs:
           cd "$TMPFS_DIR"
           git config --global --add safe.directory "$TMPFS_DIR"
 
-          # Clear previous test output
           rm -rf test-output/
-
           start_ns=$(date +%s%N)
-          /usr/bin/time -v make go-unit-tests 2>/tmp/time_test_tmpfs.txt
+          make go-unit-tests 2>&1 | tail -5
           end_ns=$(date +%s%N)
           elapsed_ms=$(( (end_ns - start_ns) / 1000000 ))
-
-          wall=$(grep 'wall clock' /tmp/time_test_tmpfs.txt | awk '{print $NF}')
-          user=$(grep 'User time' /tmp/time_test_tmpfs.txt | awk '{print $NF}')
-          sys=$(grep 'System time' /tmp/time_test_tmpfs.txt | awk '{print $NF}')
-          major_faults=$(grep 'Major.*page faults' /tmp/time_test_tmpfs.txt | awk '{print $NF}')
-          fs_inputs=$(grep 'File system inputs' /tmp/time_test_tmpfs.txt | awk '{print $NF}')
+          elapsed_s=$(( elapsed_ms / 1000 ))
 
           cached=$(grep -c '(cached)' test-output/test.log 2>/dev/null || true)
           total=$(grep -c '^ok ' test-output/test.log 2>/dev/null || true)
@@ -355,11 +297,9 @@ jobs:
             echo "| Metric | Value |"
             echo "|--------|-------|"
             echo "| Mode | \`tmpfs\` |"
-            echo "| Total | \`${elapsed_ms}ms\` |"
-            echo "| Wall | \`${wall}\` |"
-            echo "| User | \`${user}\` |"
-            echo "| Sys | \`${sys}\` |"
-            echo "| Major faults | \`${major_faults}\` |"
-            echo "| FS inputs | \`${fs_inputs}\` |"
+            echo "| Time | \`${elapsed_s}s\` (\`${elapsed_ms}ms\`) |"
             echo "| Test cache | \`${cached}/${total}\` |"
           } >> "$GITHUB_STEP_SUMMARY"
+
+          cd "$GITHUB_WORKSPACE"
+          umount "$TMPFS_DIR" 2>/dev/null || true
