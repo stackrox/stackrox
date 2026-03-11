@@ -21,6 +21,7 @@
 			"name": "nginx110container",
 			"image": {
 				"id": "sha256:SHA1",
+                "idV2":"04c935ba-f0f5-55b9-a819-1f856ee23282",
 				"name": {
 					"registry": "docker.io",
 					"remote": "library/nginx",

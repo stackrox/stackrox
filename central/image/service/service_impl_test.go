@@ -409,6 +409,7 @@ func TestResetClusterLocal(t *testing.T) {
 // populated from the existing image in Central DB when the image
 // requires re-enrichment. (ie: when scan has expired)
 func TestEnrichLocalImageInternal_ImageNames(t *testing.T) {
+	pkgTestUtils.MustUpdateFeature(t, features.FlattenImageData, false)
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 

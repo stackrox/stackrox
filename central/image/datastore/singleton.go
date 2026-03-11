@@ -23,7 +23,7 @@ func initialize() {
 
 // Singleton provides the interface for non-service external interaction.
 func Singleton() DataStore {
-	if !features.FlattenImageData.Enabled() {
+	if features.FlattenImageData.Enabled() {
 		return nil
 	}
 	once.Do(initialize)
