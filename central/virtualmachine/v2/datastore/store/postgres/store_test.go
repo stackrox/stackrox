@@ -297,7 +297,7 @@ func (s *VMStoreTestSuite) TestUpsertScan_CVECreatedAtPreservation() {
 
 	// Second scan with same CVE but newer created_at.
 	parts2 := s.newScanParts(vm.GetId())
-	parts2.CVEs[0].CveBaseInfo.Cve = "CVE-2024-0001" // Same CVE
+	parts2.CVEs[0].CveBaseInfo.Cve = "CVE-2024-0001"         // Same CVE
 	parts2.CVEs[0].CveBaseInfo.CreatedAt = timestamppb.Now() // Newer timestamp
 	s.NoError(s.store.UpsertScan(s.ctx, vm.GetId(), parts2))
 
