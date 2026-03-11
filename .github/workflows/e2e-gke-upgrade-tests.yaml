@@ -25,9 +25,6 @@ jobs:
     env:
       # TODO: remove the image tag override
       MAIN_IMAGE_TAG: 4.11.x-244-g092168e534
-    strategy:
-      matrix:
-        image: [ main, central-db, roxctl, scanner-v4, scanner-v4-db, collector ]
     steps:
     - name: Checkout repo
       uses: actions/checkout@v6
@@ -38,11 +35,17 @@ jobs:
       id: get-tag
       run: |
         echo "tag=${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory tag)}" | tee -a "$GITHUB_ENV"
-    - name: Wait for ${{ matrix.image }}
+    - name: Wait for images
       uses: stackrox/actions/release/wait-for-image@v1
       with:
         token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-        image: rhacs-eng/${{ matrix.image }}:${{ env.tag }}
+        image: |
+          rhacs-eng/main:${{ env.tag }}
+          rhacs-eng/central-db:${{ env.tag }}
+          rhacs-eng/roxctl:${{ env.tag }}
+          rhacs-eng/scanner-v4:${{ env.tag }}
+          rhacs-eng/scanner-v4-db:${{ env.tag }}
+          rhacs-eng/collector:${{ env.tag }}
 
   gke-upgrade-tests-sensor:
     needs: [ wait-for-images ]
