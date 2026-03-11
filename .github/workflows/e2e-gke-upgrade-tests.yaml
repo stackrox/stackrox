@@ -47,6 +47,7 @@ jobs:
           rhacs-eng/scanner-v4-db:${{ env.tag }}
           rhacs-eng/collector:${{ env.tag }}
 
+  # Verifies Sensor/Secured Cluster `upgrader` (applicable to manifest installations only).
   gke-upgrade-tests-sensor:
     needs: [ wait-for-images ]
     runs-on: ubuntu-latest
@@ -179,6 +180,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: ${{ env.ARTIFACT_DIR }}
 
+  # Verifies Central DB upgrades/rollbacks.
   gke-upgrade-tests-central:
     needs: [ wait-for-images ]
     runs-on: ubuntu-latest
@@ -314,6 +316,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: ${{ env.ARTIFACT_DIR }}
 
+  # Verifies we can do Postgres major version upgrade.
   gke-upgrade-tests-postgres:
     needs: [ wait-for-images ]
     runs-on: ubuntu-latest
