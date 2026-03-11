@@ -74,9 +74,9 @@ func toUnstructured(t *testing.T, tp *v1alpha1.TailoredProfile) *unstructured.Un
 	return &unstructured.Unstructured{Object: unstructuredObj}
 }
 
-// TestProcessEvent_ExtendsProfile tests rule computation and metadata inheritance when extending a base profile:
+// TestProcessEvent_ExtendsProfile tests rule computation and metadata handling when extending a base profile:
 // - effective rules = base rules - disabled rules + enabled rules
-// - labels, annotations, description inherited from base profile
+// - labels, annotations, description parsed from tailored profile
 func TestProcessEvent_ExtendsProfile(t *testing.T) {
 	baseProfile := &v1alpha1.Profile{
 		ObjectMeta: metav1.ObjectMeta{
@@ -109,9 +109,16 @@ func TestProcessEvent_ExtendsProfile(t *testing.T) {
 			Name:      "ocp4-cis-tailored",
 			Namespace: "openshift-compliance",
 			UID:       "tp-uid",
+			Annotations: map[string]string{
+				v1alpha1.ProductTypeAnnotation: "Platform",
+			},
+			Labels: map[string]string{
+				"compliance.openshift.io/profile-bundle": "ocp4-tailored",
+			},
 		},
 		Spec: v1alpha1.TailoredProfileSpec{
-			Extends: "ocp4-cis",
+			Description: "Tailored profile description",
+			Extends:     "ocp4-cis",
 			// Description intentionally empty to test inheritance
 			DisableRules: []v1alpha1.RuleReferenceSpec{
 				{Name: "ocp4-api-server-audit-log-path"},
@@ -133,11 +140,11 @@ func TestProcessEvent_ExtendsProfile(t *testing.T) {
 	require.NotEmpty(t, event.ForwardMessages)
 	profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
 
-	// Verify metadata inheritance from base profile
-	assert.Equal(t, "ocp4", profile.GetLabels()["compliance.openshift.io/profile-bundle"])
+	// Metadata comes from the tailored profile itself, not the base profile.
+	assert.Equal(t, "ocp4-tailored", profile.GetLabels()["compliance.openshift.io/profile-bundle"])
 	assert.Equal(t, "Platform", profile.GetAnnotations()[v1alpha1.ProductTypeAnnotation])
-	assert.Equal(t, "ocp4", profile.GetAnnotations()[v1alpha1.ProductAnnotation])
-	assert.Equal(t, "Base profile description from CIS benchmark", profile.GetDescription())
+	assert.Empty(t, profile.GetAnnotations()[v1alpha1.ProductAnnotation])
+	assert.Equal(t, "Tailored profile description", profile.GetDescription())
 
 	// Verify rule computation: 3 base - 1 disabled + 1 enabled = 3 rules
 	ruleNames := make([]string, len(profile.GetRules()))
@@ -152,13 +159,22 @@ func TestProcessEvent_ExtendsProfile(t *testing.T) {
 	}, ruleNames)
 }
 
-// TestProcessEvent_FromScratch tests that TPs without Extends work (only EnableRules)
+// TestProcessEvent_FromScratch tests that TPs without Extends work (only EnableRules) and
+// that the tailored profile's own annotations (including product-type) are used as fallback.
+// This is important: without the fallback, productType would be empty, causing BuildProfileRefID
+// to produce a different hash than the one computed from the scan's scanType, breaking the JOIN.
 func TestProcessEvent_FromScratch(t *testing.T) {
 	tp := &v1alpha1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "tp-from-scratch",
 			Namespace: "openshift-compliance",
 			UID:       "tp-uid",
+			Annotations: map[string]string{
+				v1alpha1.ProductTypeAnnotation: "Platform",
+			},
+			Labels: map[string]string{
+				"some-label": "some-value",
+			},
 		},
 		Spec: v1alpha1.TailoredProfileSpec{
 			// No Extends
@@ -180,6 +196,10 @@ func TestProcessEvent_FromScratch(t *testing.T) {
 	require.NotNil(t, event)
 	require.NotEmpty(t, event.ForwardMessages)
 	profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
+
+	// Annotations from the tailored profile itself must be present.
+	assert.Equal(t, "Platform", profile.GetAnnotations()[v1alpha1.ProductTypeAnnotation])
+	assert.Equal(t, "some-value", profile.GetLabels()["some-label"])
 
 	// Only enabled rules should be present
 	ruleNames := make([]string, len(profile.GetRules()))
