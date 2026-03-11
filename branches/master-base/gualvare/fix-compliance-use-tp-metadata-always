@@ -9,12 +9,8 @@
   "change": {
     "github": {
       "pr": {
-        "number": 19374,
-        "gqlID": "PR_kwDOGd6UEM7Joows"
-      },
-      "comment": {
-        "gqlID": "IC_kwDOGd6UEM7wpy5e",
-        "url": "https://github.com/stackrox/stackrox/pull/19374#issuecomment-4037488222"
+        "number": 19375,
+        "gqlID": "PR_kwDOGd6UEM7Jos4l"
       }
     }
   }
