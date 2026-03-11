@@ -63,7 +63,7 @@ jobs:
       volumes:
       - /usr:/mnt/usr
       - /opt:/mnt/opt
-    timeout-minutes: 180 # Keep in sync with cluster's lifespan
+    timeout-minutes: 60 # Keep in sync with cluster's lifespan
     steps:
     - name: Checkout repo
       uses: actions/checkout@v6
@@ -84,7 +84,7 @@ jobs:
         token: ${{ secrets.INFRA_TOKEN }}
         flavor: gke-default
         name: ${{ env.CLUSTER_NAME }}
-        lifespan: 3h # Keep in sync with job's timeout-minutes
+        lifespan: 1h # Keep in sync with job's timeout-minutes
         args: nodes=3,machine-type=e2-standard-8
         wait: false
 
