@@ -131,16 +131,45 @@ func TestExtractorIdentityForRequest(t *testing.T) {
 	testRole1 := getTestRole1(mockCtrl)
 	testRole2 := getTestRole2(mockCtrl)
 
-	t.Run("Neither identity nor error for token of type different from Bearer ", func(it *testing.T) {
-		te := getTestExtractor(it)
-		identityExtractor := NewExtractor(te.roleStore, te.tokenValidator)
-		ri := requestinfo.RequestInfo{
-			Metadata: metadata.MD{"authorization": []string{"ServiceCert dummyTokenData"}},
-		}
-		id, err := identityExtractor.IdentityForRequest(it.Context(), ri)
-		assert.Nil(it, err)
-		assert.Nil(it, id)
-	})
+	// Requests that yield neither identity nor error
+	for name, tc := range map[string]struct {
+		requestInfo requestinfo.RequestInfo
+	}{
+		"NoIdentity-NoError - no authorization metadata": {
+			requestInfo: requestinfo.RequestInfo{
+				Metadata: metadata.MD{},
+			},
+		},
+		"NoIdentity-NoError - empty (nil array) authorization metadata": {
+			requestInfo: requestinfo.RequestInfo{
+				Metadata: metadata.MD{"authorization": nil},
+			},
+		},
+		"NoIdentity-NoError - empty (empty string) authorization metadata": {
+			requestInfo: requestinfo.RequestInfo{
+				Metadata: metadata.MD{"authorization": []string{""}},
+			},
+		},
+		"NoIdentity-NoError - non-bearer authorization metadata": {
+			requestInfo: requestinfo.RequestInfo{
+				Metadata: metadata.MD{"authorization": []string{"ServiceCert dummyTokenData"}},
+			},
+		},
+		"NoIdentity-NoError - empty bearer authorization metadata": {
+			requestInfo: requestinfo.RequestInfo{
+				Metadata: metadata.MD{"authorization": []string{"Bearer"}},
+			},
+		},
+	} {
+		t.Run(name, func(it *testing.T) {
+			te := getTestExtractor(it)
+			identityExtractor := NewExtractor(te.roleStore, te.tokenValidator)
+
+			id, err := identityExtractor.IdentityForRequest(it.Context(), tc.requestInfo)
+			assert.Nil(it, err)
+			assert.Nil(it, id)
+		})
+	}
 
 	makeRequestInfoWithBearerToken := func(token string) requestinfo.RequestInfo {
 		return requestinfo.RequestInfo{
@@ -148,6 +177,7 @@ func TestExtractorIdentityForRequest(t *testing.T) {
 		}
 	}
 
+	// Error paths
 	for name, tc := range map[string]struct {
 		request    requestinfo.RequestInfo
 		setupMocks func(*testExtractor)
@@ -299,6 +329,7 @@ func TestExtractorIdentityForRequest(t *testing.T) {
 
 	friendlyName := fmt.Sprintf("%s (%s)", externalUserFullName, externalUserEmail)
 
+	// Success paths
 	for name, tc := range map[string]struct {
 		request    requestinfo.RequestInfo
 		setupMocks func(*testExtractor)
@@ -332,6 +363,39 @@ func TestExtractorIdentityForRequest(t *testing.T) {
 				permissions:  bothTestRolePermissions,
 				roles:        []permissions.ResolvedRole{testRole1, testRole2},
 				user:         buildUserInfo(externalUserEmail, testSubject, []permissions.ResolvedRole{testRole1, testRole2}),
+				attributes:   map[string][]string{"role": {roleName1, roleName2}, "name": {testName}},
+				expiry:       testExpiresAt,
+				authProvider: mockAuthProvider,
+			},
+		},
+		"Valid token with role names and no external user data": {
+			request: makeRequestInfoWithBearerToken("valid-token-with-role-names"),
+			setupMocks: func(te *testExtractor) {
+				te.roleStore.EXPECT().
+					GetAndResolveRole(gomock.Any(), roleName1).
+					Times(1).
+					Return(testRole1, nil)
+				te.roleStore.EXPECT().
+					GetAndResolveRole(gomock.Any(), roleName2).
+					Times(1).
+					Return(testRole2, nil)
+				setupMockAuthProvider(te.authProvider)
+				tokenInfo := &tokens.TokenInfo{
+					Sources: []tokens.Source{te.authProvider},
+					Claims:  buildRoleNamesClaims(testName, testSubject, testID, []string{roleName1, roleName2}, testExpiresAt),
+				}
+				te.tokenValidator.EXPECT().
+					Validate(gomock.Any(), "valid-token-with-role-names").
+					Times(1).
+					Return(tokenInfo, nil)
+			},
+			identity: &testIdentity{
+				uid:          fmt.Sprintf("auth-token:%s", testID),
+				fullName:     testName,
+				friendlyName: testSubject,
+				permissions:  bothTestRolePermissions,
+				roles:        []permissions.ResolvedRole{testRole1, testRole2},
+				user:         buildUserInfo("", testSubject, []permissions.ResolvedRole{testRole1, testRole2}),
 				attributes:   map[string][]string{"role": {roleName1, roleName2}, "name": {testName}},
 				expiry:       testExpiresAt,
 				authProvider: mockAuthProvider,
@@ -1037,6 +1101,7 @@ func buildUserInfo(userName string, friendlyName string, roles []permissions.Res
 }
 
 func validateIdentity(t testing.TB, expected *testIdentity, actual authn.Identity) {
+	t.Helper()
 	assert.Equal(t, expected.uid, actual.UID())
 	assert.Equal(t, expected.friendlyName, actual.FriendlyName())
 	assert.Equal(t, expected.fullName, actual.FullName())
@@ -1059,12 +1124,11 @@ func validateIdentity(t testing.TB, expected *testIdentity, actual authn.Identit
 }
 
 func validateRoles(t testing.TB, expected []permissions.ResolvedRole, actual []permissions.ResolvedRole) {
-	assert.Equal(t, len(expected), len(actual))
-	if len(expected) != len(actual) {
+	t.Helper()
+	if !assert.Equal(t, len(expected), len(actual)) {
 		return
 	}
-	for i := range expected {
-		expectedRole := expected[i]
+	for i, expectedRole := range expected {
 		actualRole := actual[i]
 		assert.Equal(t, expectedRole.GetRoleName(), actualRole.GetRoleName())
 		assert.Equal(t, expectedRole.GetPermissions(), actualRole.GetPermissions())
