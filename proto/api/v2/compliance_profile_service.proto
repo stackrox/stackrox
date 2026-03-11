@@ -28,6 +28,9 @@ message ComplianceProfile {
     PROFILE = 1;
     TAILORED_PROFILE = 2;
   }
+
+  // OperatorKind represents the kind of the object that this ComplianceOperatorProfileV2 tracks on the Compliance
+  // Operator side (kind: Profile or kind: TailoredProfile)
   OperatorKind operator_kind = 12;
 }
 
