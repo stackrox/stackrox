@@ -235,4 +235,59 @@ Page cache residency after build: 82.9% (301K/363K) — compiler evicted ~17%.
 
 **Not a fair comparison** — disk ran first (cold GOCACHE), tmpfs ran second
 (inherited warm GOCACHE from disk). The 195s difference is mostly from
-GOCACHE being warm, not tmpfs. A warm run with both having GOCACHE is pending.
+GOCACHE being warm, not tmpfs.
+
+### Test results — warm GOCACHE, fair comparison (run 22970785332)
+
+Same runner, sequential. Both have warm GOCACHE (exact cache hit confirmed).
+
+| Strategy | Duration | Notes |
+|----------|----------|-------|
+| disk | **483s** (8.1 min) | Ran first |
+| tmpfs | **473s** (7.9 min) | Ran second |
+| **Difference** | **10s (2.1%)** | tmpfs faster |
+
+Note: tmpfs ran second, so it benefits from the disk run having warmed
+CPU caches and page cache. The 10s difference is plausible but could be
+from run order rather than filesystem speed.
+
+### Build precision run 3 (22970785332)
+
+| Strategy | #1 | #2 | #3 | #4 | #5 | Mean |
+|----------|------|------|------|------|------|------|
+| disk-warm | 19837 | 18502 | 18377 | 18223 | 18126 | **18613ms** |
+| disk-cold | 25869 | 26120 | 25790 | — | — | **25926ms** |
+| vmtouch-lock | 18290 | 18264 | 18184 | 17846 | 18086 | **18134ms** |
+| tmpfs | 19046 | 18229 | 17783 | 18038 | 17784 | **18176ms** |
+
+SHA256 per-file: disk=1504us/file, tmpfs=1516us/file (identical, 1000 files)
+
+## Final Summary (all precision runs combined)
+
+### Build (`make build-prep main-build-nodeps`, warm GOCACHE, 15 samples each)
+
+| Strategy | Mean | vs disk-warm |
+|----------|------|-------------|
+| disk-cold | **25,457ms** | +7,104ms (+39%) |
+| disk-warm | **18,353ms** | baseline |
+| vmtouch-lock | **18,076ms** | **-277ms (-1.5%)** |
+| tmpfs | **18,165ms** | **-188ms (-1.0%)** |
+
+### Tests (`make go-unit-tests`, warm GOCACHE, single same-runner comparison)
+
+| Strategy | Duration | vs disk |
+|----------|----------|---------|
+| disk | 483s | baseline |
+| tmpfs | 473s | **-10s (-2.1%)** |
+
+### Key conclusions
+
+1. **Cold page cache costs +7.1s (+39%)** on warm builds. Ensuring pages are
+   resident is the most impactful optimization.
+2. **vmtouch-lock saves ~277ms** vs disk-warm by preventing the ~17% page
+   eviction caused by Go compiler memory pressure.
+3. **tmpfs saves ~188ms** on builds, ~10s on tests — small but real.
+4. **SHA256 per-file speed is identical** (1504-1533 us/file) between disk-warm
+   and tmpfs. The benefit is from preventing eviction, not faster reads.
+5. **The Helm test split (~6 min savings)** dwarfs all filesystem optimizations
+   combined and should be prioritized.
