@@ -200,8 +200,39 @@ After build (disk-warm): 81.6% (296K/363K pages) — compiler evicted ~18% of pa
 
 This eviction is what costs the extra ~250ms. tmpfs and vmtouch-lock both prevent it.
 
-### Test results (pending)
+### Build precision run 2 (22967722214) — confirms run 1
 
-Disk test completed in 2166s (36 min, cold test cache — first run with this
-job name). tmpfs test was skipped due to flaky test failure. Re-running with
-`|| true` to capture both disk and tmpfs timings.
+| Strategy | #1 | #2 | #3 | #4 | #5 | Mean |
+|----------|------|------|------|------|------|------|
+| disk-warm | 19452 | 18216 | 18229 | 18188 | 18224 | **18462ms** |
+| disk-cold | 25430 | 25109 | 25218 | — | — | **25252ms** |
+| vmtouch-lock | 18420 | 18134 | 18454 | 18372 | 18499 | **18376ms** |
+| tmpfs | 19418 | 18332 | 18085 | 18409 | 17984 | **18446ms** |
+
+SHA256 per-file: disk-warm = 1533us/file, tmpfs = 1533us/file (identical, 1000 files)
+
+Page cache residency after build: 82.9% (301K/363K) — compiler evicted ~17%.
+
+### Combined build results (both precision runs)
+
+| Strategy | Samples | Mean | Range |
+|----------|---------|------|-------|
+| disk-warm | 10 | **18274ms** | 17807-19452 |
+| disk-cold | 6 | **25192ms** | 24940-25430 |
+| vmtouch-lock | 10 | **18097ms** | 17652-18499 |
+| tmpfs | 10 | **18159ms** | 17535-19418 |
+
+**disk-cold penalty: +6.9s** (38% slower than warm)
+**vmtouch-lock vs disk-warm: -177ms** (1.0% faster)
+**tmpfs vs disk-warm: -115ms** (0.6% faster)
+
+### Test results (cold, sequential on same runner, run 22967722214)
+
+| Strategy | Duration | Notes |
+|----------|----------|-------|
+| disk | 2044s | Cold GOCACHE + cold test cache (ran first) |
+| tmpfs | 1849s | Warm GOCACHE (from disk run) + cold test cache |
+
+**Not a fair comparison** — disk ran first (cold GOCACHE), tmpfs ran second
+(inherited warm GOCACHE from disk). The 195s difference is mostly from
+GOCACHE being warm, not tmpfs. A warm run with both having GOCACHE is pending.
