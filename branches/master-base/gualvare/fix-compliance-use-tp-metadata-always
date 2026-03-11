@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "master-base/gualvare/ROX-31229-tailored-profiles-tracking",
-    "hash": "6084289d62e8cf98d31daf65655803b3fc5cc355"
+    "hash": "6152cad6d2428d013633cf00ef1f82a8c96c3721"
   },
   "upstream": {
     "branch": "master-base/gualvare/fix-compliance-use-tp-metadata-always"
