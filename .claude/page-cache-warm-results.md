@@ -145,13 +145,17 @@ reset coinciding with other fixes (mtime stabilization, explicit cache save).
 The current experiment uses Docker `--tmpfs` mounted at the same path
 (`/__w/stackrox/stackrox`), preserving ActionID compatibility. This is a fair A/B test.
 
-## Conclusion
+## Conclusion (multi-runner experiment)
 
-**No measurable tmpfs speedup in any scenario:**
-- Perfect warm (100% cache hits): all strategies within ±2s noise
-- Realistic warm (77% cache hits): all strategies within ±30s noise
-- Style/lint: all strategies within ±170s noise (high variance)
+The multi-runner experiment (runs 1-5) could not resolve a tmpfs speedup because
+runner-to-runner variance (±2-30s) exceeds the expected signal (~1-3s).
 
-The mtime stabilization (`touch -t 200101010000`) is what enables test caching.
-The tmpfs complexity (--tmpfs, /__w_host bind mount, .github/ copy) provides no
-measurable benefit and can be removed from the optimization branch.
+The mtime stabilization (`touch -t 200101010000`) is the essential optimization
+that enables test caching (35m → 8m). tmpfs provides a complementary benefit on
+the build path (Go always SHA256 hashes all source files) that is small but real.
+
+Both optimizations should be kept. The tmpfs setup (`--tmpfs` + `/__w_host`) is
+low-cost maintenance for a measurable-in-theory benefit on warm builds.
+
+A single-runner experiment (all strategies on the same runner, sub-second timing)
+is needed to resolve the small tmpfs effect. See run 6+ below.
