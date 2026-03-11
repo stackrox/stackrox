@@ -189,8 +189,6 @@ jobs:
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
-        with:
-          save: false
 
       - name: Go unit tests (timed)
         run: |
@@ -246,8 +244,6 @@ jobs:
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
-        with:
-          save: false
 
       - name: Go unit tests (timed)
         run: |
