@@ -155,7 +155,7 @@ jobs:
         import sys
         sys.path.append('.openshift-ci')
         from post_tests import PostClusterTest
-        PostClusterTest(collect_central_artifacts=True).run(['/tmp/postgres-upgrade-test-logs'])
+        PostClusterTest(collect_central_artifacts=True).run(['/tmp/postgres-upgrade-test-logs', '${{ env.ARTIFACT_DIR }}'])
 
     - name: Run final-post
       if: always()
@@ -296,7 +296,7 @@ jobs:
         sys.path.append('.openshift-ci')
         from post_tests import PostClusterTest
         # The particular test removes StackRox resources, therefore not collecting their artifacts.
-        PostClusterTest(collect_central_artifacts=True).run(['/tmp/postgres-version-upgrade-test-logs'])
+        PostClusterTest(collect_central_artifacts=True).run(['/tmp/postgres-version-upgrade-test-logs', '${{ env.ARTIFACT_DIR }}'])
 
     - name: Run final-post
       if: always()
@@ -434,7 +434,7 @@ jobs:
         sys.path.append('.openshift-ci')
         from post_tests import PostClusterTest
         # The particular test removes StackRox resources, therefore not collecting their artifacts.
-        PostClusterTest(collect_central_artifacts=False).run(['/tmp/postgres-sensor-upgrade-test-logs'])
+        PostClusterTest(collect_central_artifacts=False).run(['/tmp/postgres-sensor-upgrade-test-logs', '${{ env.ARTIFACT_DIR }}'])
 
     - name: Run final-post
       if: always()
