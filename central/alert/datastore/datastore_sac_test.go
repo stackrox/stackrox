@@ -803,6 +803,39 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearchAlertPolicyNames
 	}
 }
 
+func (s *alertDatastoreSACTestSuite) runSearchAlertPolicyGroupsTest(testparams alertSACSearchResult) {
+	ctx := s.testContexts[testparams.scopeKey]
+	results, err := s.datastore.SearchAlertPolicyGroups(ctx, nil, true)
+	s.NoError(err)
+	totalCount := 0
+	for _, r := range results {
+		totalCount += r.NumAlerts
+	}
+	expectedCount := testutils.AggregateCounts(s.T(), testparams.resultCounts)
+	s.Equal(expectedCount, totalCount)
+
+	// Verify categories are populated for all groups
+	for _, r := range results {
+		s.NotEmpty(r.Categories, "categories should be populated for policy %s", r.PolicyName)
+	}
+}
+
+func (s *alertDatastoreSACTestSuite) TestAlertScopedSearchAlertPolicyGroups() {
+	for name, c := range alertScopedSACSearchTestCases {
+		s.Run(name, func() {
+			s.runSearchAlertPolicyGroupsTest(c)
+		})
+	}
+}
+
+func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearchAlertPolicyGroups() {
+	for name, c := range alertUnrestrictedSACObjectSearchTestCases {
+		s.Run(name, func() {
+			s.runSearchAlertPolicyGroupsTest(c)
+		})
+	}
+}
+
 func (s *alertDatastoreSACTestSuite) countSearchRawAlertsResultsPerClusterAndNamespace(results []*storage.Alert) map[string]map[string]int {
 	resultDistribution := make(map[string]map[string]int, 0)
 	for _, result := range results {

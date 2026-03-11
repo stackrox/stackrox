@@ -151,6 +151,27 @@ func (ds *datastoreImpl) SearchAlertPolicySeverityCounts(ctx context.Context, q 
 	return results[0], err
 }
 
+// SearchAlertPolicyGroups returns alerts grouped by policy with a count per group.
+// Uses a SQL aggregate query to avoid deserializing alert blobs.
+func (ds *datastoreImpl) SearchAlertPolicyGroups(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*alertviews.AlertPolicyGroup, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlertPolicyGroups")
+
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+	groupQuery := alertviews.WithAlertPolicyGroupQuery(q)
+
+	var results []*alertviews.AlertPolicyGroup
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, groupQuery, func(r *alertviews.AlertPolicyGroup) error {
+		results = append(results, r)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
 // SearchAlerts returns search results for the given request. This will exclude resolved alerts by default unless Violation State = Resolved is explicitly specified in the query
 func (ds *datastoreImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlerts")
