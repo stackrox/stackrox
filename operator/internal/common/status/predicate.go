@@ -23,6 +23,8 @@ type SkipStatusControllerUpdates struct {
 	log logr.Logger
 }
 
+// NewSkipStatusControllerUpdates creates a new instance of the SkipStatusControllerUpdates predicate
+// with the provided logger and kind for logging context.
 func NewSkipStatusControllerUpdates(logger logr.Logger, kind string) SkipStatusControllerUpdates {
 	return SkipStatusControllerUpdates{
 		log: logger.WithName("predicate-skip-status-ctrl-update").WithName(kind),
