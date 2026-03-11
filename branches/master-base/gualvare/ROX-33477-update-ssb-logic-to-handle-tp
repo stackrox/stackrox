@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "master-base/gualvare/ROX-31229-tailored-profiles-tracking",
-    "hash": "7475a09a8cf3c4ee9822a515c4b8ff591785f1fa"
+    "hash": "51b32ec1a8465c60ffa3a5640b8a4eeff9b268c9"
   },
   "upstream": {
     "branch": "master-base/gualvare/ROX-33477-update-ssb-logic-to-handle-tp"
