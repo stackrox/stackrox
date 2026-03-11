@@ -27,8 +27,9 @@ func BenchmarkApply(b *testing.B) {
 			// Create realistic test data
 			updates := generateTestUpdates(bm.numDeployments, bm.endpointsPerDep, bm.targetsPerEp)
 
+			b.ReportAllocs()
 			for b.Loop() {
-				store := newEndpointsStoreWithMemory(100)
+				store := newEndpointsStoreWithMemory(5)
 				store.Apply(updates, bm.incremental)
 			}
 		})
@@ -51,8 +52,9 @@ func BenchmarkApplySingleNoLock(b *testing.B) {
 	for _, bm := range benchmarks {
 		b.Run(bm.name, func(b *testing.B) {
 			data := generateEntityData(bm.numEndpoints, bm.targetsPerEp)
-			store := newEndpointsStoreWithMemory(100)
+			store := newEndpointsStoreWithMemory(5)
 
+			b.ReportAllocs()
 			for b.Loop() {
 				store.mutex.Lock()
 				store.applySingleNoLock(bm.deploymentName, *data)
@@ -65,9 +67,10 @@ func BenchmarkApplySingleNoLock(b *testing.B) {
 // BenchmarkApplyRepeated measures the performance of repeated Apply calls on the same store
 // This simulates real-world usage where the store is updated over time
 func BenchmarkApplyRepeated(b *testing.B) {
-	store := newEndpointsStoreWithMemory(100)
+	store := newEndpointsStoreWithMemory(5)
 	updates := generateTestUpdates(50, 10, 3)
 
+	b.ReportAllocs()
 	for b.Loop() {
 		store.Apply(updates, true)
 	}
