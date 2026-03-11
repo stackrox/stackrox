@@ -186,6 +186,14 @@ function ScanConfigOptions(): ReactElement {
                                                             ? 'parameters.daysOfWeek'
                                                             : 'parameters.daysOfMonth'
                                                     }
+                                                    onBlur={() => {
+                                                        const fieldId =
+                                                            formik.values.parameters
+                                                                .intervalType === 'WEEKLY'
+                                                                ? 'parameters.daysOfWeek'
+                                                                : 'parameters.daysOfMonth';
+                                                        formik.setFieldTouched(fieldId, true);
+                                                    }}
                                                 />
                                             </FormLabelGroup>
                                         </FlexItem>

@@ -11,6 +11,7 @@ export type DayPickerDropdownProps = {
     isEditable?: boolean;
     intervalType: IntervalType | null;
     toggleId?: string;
+    onBlur?: () => void;
 };
 
 export const daysOfWeek = ['0', '1', '2', '3', '4', '5', '6'] as const;
@@ -41,6 +42,7 @@ function DayPickerDropdown({
     isEditable = true,
     intervalType,
     toggleId,
+    onBlur,
 }: DayPickerDropdownProps): ReactElement {
     const selectSafeValue = value.map((item) => item.toString());
 
@@ -95,6 +97,7 @@ function DayPickerDropdown({
             placeholderText={value.length ? 'Selected days' : 'Select days'}
             toggleId={toggleId}
             isDisabled={!isEditable}
+            onBlur={onBlur}
         >
             {selectOptions}
         </CheckboxSelect>
