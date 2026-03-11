@@ -33,9 +33,6 @@ type DataStore interface {
 	// DeleteVirtualMachines removes VMs and all associated data (FK cascade).
 	DeleteVirtualMachines(ctx context.Context, ids ...string) error
 
-	// Exists returns whether a VM with the given ID exists.
-	Exists(ctx context.Context, id string) (bool, error)
-
 	// Search returns search results matching the query.
 	Search(ctx context.Context, query *v1.Query) ([]search.Result, error)
 
