@@ -126,9 +126,10 @@ func upsertImageCVEInfos(ctx context.Context, database *types.Databases, aggrega
 		// Create protobuf object
 		proto := &storage.ImageCVEInfo{
 			Id:                    id,
-			Cve:                   cveName, // Populate indexed cve column
+			Cve:                   cveName,
 			FirstSystemOccurrence: protocompat.ConvertTimeToTimestampOrNil(timestamp),
-			// FixAvailableTimestamp intentionally left nil (user decision: leave for runtime enrichment)
+			// FixAvailableTimestamp intentionally left nil. It is as if the CVE is not fixable.
+			// It will be populated in enrichment process once the fix timestamp is available.
 		}
 
 		// Convert to GORM model
@@ -136,10 +137,6 @@ func upsertImageCVEInfos(ctx context.Context, database *types.Databases, aggrega
 		if err != nil {
 			return errors.Wrapf(err, "failed to convert proto for ID %s", id)
 		}
-
-		// Override timestamps from aggregation (since ConvertImageCVEInfoFromProto sets them to nil)
-		model.FirstSystemOccurrence = timestamp
-		// model.FixAvailableTimestamp remains nil
 
 		infos = append(infos, model)
 	}
@@ -152,42 +149,6 @@ func upsertImageCVEInfos(ctx context.Context, database *types.Databases, aggrega
 			end = len(infos)
 		}
 		batch := infos[i:end]
-
-		// Fetch existing records to perform smart timestamp merging
-		ids := make([]string, len(batch))
-		for j, info := range batch {
-			ids[j] = info.ID
-		}
-
-		var existing []schema.ImageCveInfos
-		if err := db.Table("image_cve_infos").Where("id IN ?", ids).Find(&existing).Error; err != nil {
-			return errors.Wrapf(err, "failed to fetch existing records for batch %d-%d", i, end)
-		}
-
-		// Create map of existing records
-		existingMap := make(map[string]*schema.ImageCveInfos)
-		for idx := range existing {
-			existingMap[existing[idx].ID] = &existing[idx]
-		}
-
-		// Perform smart timestamp merging: preserve earlier timestamps
-		for _, newInfo := range batch {
-			if oldInfo, exists := existingMap[newInfo.ID]; exists {
-				// Merge timestamps: use earlier values
-				if newInfo.FirstSystemOccurrence == nil {
-					newInfo.FirstSystemOccurrence = oldInfo.FirstSystemOccurrence
-				} else if oldInfo.FirstSystemOccurrence != nil && oldInfo.FirstSystemOccurrence.Before(*newInfo.FirstSystemOccurrence) {
-					newInfo.FirstSystemOccurrence = oldInfo.FirstSystemOccurrence
-				}
-
-				// FixAvailableTimestamp: preserve old if new is nil
-				if newInfo.FixAvailableTimestamp == nil {
-					newInfo.FixAvailableTimestamp = oldInfo.FixAvailableTimestamp
-				} else if oldInfo.FixAvailableTimestamp != nil && oldInfo.FixAvailableTimestamp.Before(*newInfo.FixAvailableTimestamp) {
-					newInfo.FixAvailableTimestamp = oldInfo.FixAvailableTimestamp
-				}
-			}
-		}
 
 		// Upsert batch using ON CONFLICT DO UPDATE
 		if err := db.Table("image_cve_infos").Save(batch).Error; err != nil {

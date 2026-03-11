@@ -91,41 +91,6 @@ func (s *migrationTestSuite) TestMigration_BackfillsImageCVEInfos() {
 	s.Assert().Nil(info.FixAvailableTimestamp, "fix_available_timestamp should be nil per user decision")
 }
 
-// TestMigration_PreservesEarlierTimestamps tests that upsert preserves earlier timestamps
-func (s *migrationTestSuite) TestMigration_PreservesEarlierTimestamps() {
-	dbs := s.getDatabases()
-
-	// Create existing image_cve_infos record with earlier timestamp
-	earlierTime := time.Date(2021, 11, 1, 10, 0, 0, 0, time.UTC)
-	laterTime := time.Date(2021, 12, 1, 10, 0, 0, 0, time.UTC)
-
-	componentID := uuid.NewV4().String()
-	component := s.createComponent(componentID, "log4j", "2.14.1")
-
-	expectedID := cve.ImageCVEInfoID("CVE-2021-44228", "log4j", "debian-updater::debian:11")
-	existingInfo := &schema.ImageCveInfos{
-		ID:                    expectedID,
-		Cve:                   "CVE-2021-44228",
-		FirstSystemOccurrence: &earlierTime,
-		Serialized:            []byte{},
-	}
-	s.Require().NoError(dbs.GormDB.Table("image_cve_infos").Create(existingInfo).Error)
-
-	// Create image_cves_v2 record with later timestamp
-	cveRecord := s.createImageCVE("CVE-2021-44228", componentID, "debian-updater::debian:11", &laterTime)
-	s.Require().NoError(dbs.GormDB.Create(&component).Error)
-	s.Require().NoError(dbs.GormDB.Create(&cveRecord).Error)
-
-	// Run migration
-	s.Require().NoError(migration.Run(dbs))
-
-	// Verify earlier timestamp is preserved
-	var info schema.ImageCveInfos
-	s.Require().NoError(dbs.GormDB.Table("image_cve_infos").Where("id = ?", expectedID).First(&info).Error)
-	s.Assert().NotNil(info.FirstSystemOccurrence)
-	s.Assert().Equal(earlierTime.Unix(), info.FirstSystemOccurrence.Unix(), "should preserve earlier timestamp")
-}
-
 // TestMigration_AggregatesMultipleCVEs tests MIN aggregation for same CVE across multiple images
 func (s *migrationTestSuite) TestMigration_AggregatesMultipleCVEs() {
 	dbs := s.getDatabases()
