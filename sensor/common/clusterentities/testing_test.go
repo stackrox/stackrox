@@ -36,23 +36,34 @@ func entityUpdate(ip, contID string, port uint16) *EntityData {
 
 func entityUpdateWithPortName(ip, contID string, port uint16, portName string) *EntityData {
 	ed := &EntityData{}
-	ep := buildEndpoint(ip, port)
-	ed.AddEndpoint(ep, EndpointTargetInfo{
-		ContainerPort: port,
-		PortName:      portName,
-	})
-	ed.AddIP(ep.IPAndPort.Address)
-	ed.AddContainerID(contID, ContainerMetadata{
-		DeploymentID:  "",
-		DeploymentTS:  0,
-		PodID:         "",
-		PodUID:        "",
-		ContainerName: "name-of-" + contID,
-		ContainerID:   contID,
-		Namespace:     "",
-		StartTime:     nil,
-		ImageID:       "",
-	})
+
+	// Only add endpoint if port is non-zero (port=0 means add IP/containerID but no endpoint)
+	if port != 0 {
+		ep := buildEndpoint(ip, port)
+		ed.AddEndpoint(ep, EndpointTargetInfo{
+			ContainerPort: port,
+			PortName:      portName,
+		})
+	}
+
+	// Always add IP and container ID if provided
+	if ip != "" {
+		peer := net.ParseIPPortPair(ip)
+		ed.AddIP(peer.Address)
+	}
+	if contID != "" {
+		ed.AddContainerID(contID, ContainerMetadata{
+			DeploymentID:  "",
+			DeploymentTS:  0,
+			PodID:         "",
+			PodUID:        "",
+			ContainerName: "name-of-" + contID,
+			ContainerID:   contID,
+			Namespace:     "",
+			StartTime:     nil,
+			ImageID:       "",
+		})
+	}
 	return ed
 }
 
