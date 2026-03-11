@@ -16,6 +16,11 @@ var (
 	}
 )
 
+const (
+	// ImageComponentV2TableName specifies the name of the table in postgres.
+	ImageComponentV2TableName = "image_component_v2"
+)
+
 // ImageComponentV2 holds the Gorm model for Postgres table `image_component_v2`.
 // Frozen schema with foreign key constraints removed for test isolation.
 // Only contains fields used in tests.

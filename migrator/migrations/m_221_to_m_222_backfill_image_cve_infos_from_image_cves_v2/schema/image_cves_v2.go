@@ -16,6 +16,11 @@ var (
 	}
 )
 
+const (
+	// ImageCvesV2TableName specifies the name of the table in postgres.
+	ImageCvesV2TableName = "image_cves_v2"
+)
+
 // ImageCvesV2 holds the Gorm model for Postgres table `image_cves_v2`.
 // Frozen schema with only fields used by migration.
 type ImageCvesV2 struct {

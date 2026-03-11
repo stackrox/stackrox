@@ -119,8 +119,12 @@ func upsertImageCVEInfos(ctx context.Context, database *types.Databases, aggrega
 	infos := make([]*schema.ImageCveInfos, 0, len(aggregationMap))
 
 	for id, timestamp := range aggregationMap {
-		// Extract CVE from composite ID (first part)
+		// Extract CVE from composite ID to save some memory.
 		parts := pgSearch.IDToParts(id)
+		if len(parts) == 0 {
+			log.Warnf("Skipping image CVE infos because it has no ID: %s", id)
+			continue
+		}
 		cveName := parts[0]
 
 		// Create protobuf object
@@ -141,7 +145,7 @@ func upsertImageCVEInfos(ctx context.Context, database *types.Databases, aggrega
 		infos = append(infos, model)
 	}
 
-	// Upsert in batches using smart timestamp merging
+	// Upsert in batches
 	totalUpserted := 0
 	for i := 0; i < len(infos); i += upsertBatchSize {
 		end := i + upsertBatchSize
@@ -150,7 +154,7 @@ func upsertImageCVEInfos(ctx context.Context, database *types.Databases, aggrega
 		}
 		batch := infos[i:end]
 
-		// Upsert batch using ON CONFLICT DO UPDATE
+		// Upsert batch
 		if err := db.Table("image_cve_infos").Save(batch).Error; err != nil {
 			return errors.Wrapf(err, "failed to upsert batch %d-%d", i, end)
 		}
