@@ -1,4 +1,4 @@
-import CodeViewer, { CodeViewerThemeProvider } from './CodeViewer';
+import CodeViewer from './CodeViewer';
 
 const sampleYaml = `apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -36,47 +36,5 @@ describe(Cypress.spec.relative, () => {
                 expect(text).to.eq(sampleYaml);
             });
         });
-    });
-
-    it('should toggle light and dark editor themes', () => {
-        cy.mount(<CodeViewer code={sampleYaml} />);
-
-        // Default to light mode
-        cy.get('[data-component-theme="light"]').should('exist');
-        cy.get('[data-component-theme="dark"]').should('not.exist');
-
-        cy.get('button[aria-label="Set dark theme"]').click();
-        cy.get('[data-component-theme="light"]').should('not.exist');
-        cy.get('[data-component-theme="dark"]').should('exist');
-
-        cy.get('button[aria-label="Set light theme"]').click();
-        cy.get('[data-component-theme="light"]').should('exist');
-        cy.get('[data-component-theme="dark"]').should('not.exist');
-    });
-
-    it('should share theme state across multiple instances', () => {
-        cy.mount(
-            <CodeViewerThemeProvider>
-                <CodeViewer code={sampleYaml} />
-                <CodeViewer code={sampleYaml} />
-            </CodeViewerThemeProvider>
-        );
-
-        cy.get('[data-component-theme="light"]').should('have.length', 2);
-        cy.get('[data-component-theme="dark"]').should('have.length', 0);
-
-        cy.get('button[aria-label="Set dark theme"]').eq(0);
-        cy.get('button[aria-label="Set dark theme"]').eq(1);
-        cy.get('button[aria-label="Set dark theme"]').eq(0).click();
-
-        cy.get('[data-component-theme="light"]').should('have.length', 0);
-        cy.get('[data-component-theme="dark"]').should('have.length', 2);
-
-        cy.get('button[aria-label="Set light theme"]').eq(0);
-        cy.get('button[aria-label="Set light theme"]').eq(1);
-        cy.get('button[aria-label="Set light theme"]').eq(1).click();
-
-        cy.get('[data-component-theme="light"]').should('have.length', 2);
-        cy.get('[data-component-theme="dark"]').should('have.length', 0);
     });
 });

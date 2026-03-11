@@ -10,7 +10,7 @@ body {
 }
 
 .ReactModal__Content,
-#main-page-container > div > :not(.pf-v6-c-page__main-section):not(.pf-c-tab-content) {
+#main-page-container > div > :not(.pf-v6-c-page__main-section):not(.pf-c-tab-content):not(.pf-v6-c-banner) {
   font-size: 0.875rem;
   color: var(--base-600);
 }

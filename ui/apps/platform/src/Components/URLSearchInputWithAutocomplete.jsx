@@ -13,14 +13,8 @@ import searchContext from 'Containers/searchContext';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { newWorkflowCases } from 'constants/useCaseTypes';
 
-const backgroundClass = 'bg-base-100';
-const borderClass = 'border border-base-300';
-const colorClass = 'pf-v6-u-color-100'; // override color from React select style rules
-const categoryOptionStyles = {
-    backgroundColor: 'var(--pf-t--global--color--nonstatus--blue--default)',
-};
-const categoryOptionClass = `pf-v6-u-font-weight-bold ${borderClass} ${colorClass}`;
-const valueOptionClass = `${backgroundClass} ${borderClass} ${colorClass}`;
+const categoryClass = `pf-v6-u-font-weight-bold text-base-800 bg-primary-400 border border-base-300`;
+const valueClass = `text-base-800 bg-base-100 border border-base-300`;
 
 // Render readonly input with placeholder instead of span to prevent insufficient color contrast.
 export const placeholderCreator = (placeholderText) =>
@@ -28,7 +22,7 @@ export const placeholderCreator = (placeholderText) =>
         return (
             <span className="flex h-full items-center pointer-events-none">
                 <input
-                    className={`${backgroundClass} ${colorClass} absolute pf-v6-u-w-100`}
+                    className={`bg-base-100 absolute pf-v6-u-w-100`}
                     placeholder={placeholderText}
                     readOnly
                 />
@@ -43,8 +37,7 @@ export const Option = ({ children, ...rest }) => {
         <components.Option {...rest}>
             <div className="flex">
                 <span
-                    style={isCategoryChip(children) ? categoryOptionStyles : {}}
-                    className={`${isCategoryChip(children) ? categoryOptionClass : valueOptionClass} rounded-sm p-1 px-2 text-sm`}
+                    className={`${isCategoryChip(children) ? categoryClass : valueClass} rounded-sm p-1 px-2 text-sm`}
                 >
                     {children}
                 </span>
@@ -66,7 +59,7 @@ export const MultiValue = (props) => (
     <components.MultiValue
         {...props}
         className={`${
-            props.data.type === 'categoryOption' ? categoryOptionClass : valueOptionClass
+            props.data.type === 'categoryOption' ? categoryClass : valueClass
         } ${props.data.ignore ? 'hidden' : ''}`}
     />
 );

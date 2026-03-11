@@ -23,7 +23,6 @@
 
 .pf-search-shim > div > span,
 .pf-search-shim > div .react-select__value-container * {
-  color: var(--pf-t--global--text--color--regular) !important;
   font-weight: var(--pf-t--global--font--weight--body--default) !important;
 }
 
@@ -31,9 +30,6 @@
   font-size: var(--pf-t--global--font--size--md) !important;
 }
 
-.pf-search-shim svg {
-  fill: var(--pf-t--global--text--color--regular);
-}
 
 .pf-search-shim > .react-select__control {
   border-radius: 0 !important;
@@ -47,6 +43,5 @@
 }
 
 .pf-search-shim .react-select__multi-value__label {
-  color: var(--pf-t--global--text--color--regular) !important;
   font-size: var(--pf-t--global--font--size--xs) !important;
 }
