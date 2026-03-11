@@ -309,6 +309,63 @@ func (s *VMStoreTestSuite) TestUpsertScan_CVECreatedAtPreservation() {
 		"created_at should be preserved from the first scan")
 }
 
+func (s *VMStoreTestSuite) TestUpsertScan_CVENilCveBaseInfo() {
+	vm := s.newVM()
+	s.NoError(s.store.UpsertVM(s.ctx, vm))
+
+	parts := s.newScanParts(vm.GetId())
+	// Add a CVE with nil CveBaseInfo — should not panic.
+	parts.CVEs = append(parts.CVEs, &storage.VirtualMachineCVEV2{
+		Id:            uuid.NewV4().String(),
+		VmV2Id:        vm.GetId(),
+		VmComponentId: parts.Components[0].GetId(),
+		CveBaseInfo:   nil,
+		PreferredCvss: 3.0,
+		Severity:      storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+	})
+
+	s.NoError(s.store.UpsertScan(s.ctx, vm.GetId(), parts))
+
+	cves, err := s.getCVEsForVM(vm.GetId())
+	s.NoError(err)
+	s.Len(cves, 2)
+}
+
+func (s *VMStoreTestSuite) TestUpsertScan_ScanOsChangeTriggersFullReplace() {
+	vm := s.newVM()
+	s.NoError(s.store.UpsertVM(s.ctx, vm))
+
+	parts := s.newScanParts(vm.GetId())
+	parts.Scan.ScanOs = "rhel9"
+	s.NoError(s.store.UpsertScan(s.ctx, vm.GetId(), parts))
+
+	firstScan, err := s.getScanForVM(vm.GetId())
+	s.NoError(err)
+
+	time.Sleep(10 * time.Millisecond)
+
+	// Upsert again with same components/CVEs but different ScanOs.
+	parts2 := s.newScanParts(vm.GetId())
+	parts2.Scan.ScanOs = "ubuntu22"
+	// Keep same component/CVE content.
+	parts2.Components[0].Name = parts.Components[0].GetName()
+	parts2.Components[0].Version = parts.Components[0].GetVersion()
+	parts2.CVEs[0].CveBaseInfo = parts.CVEs[0].GetCveBaseInfo().CloneVT()
+	parts2.CVEs[0].PreferredCvss = parts.CVEs[0].GetPreferredCvss()
+	parts2.CVEs[0].Severity = parts.CVEs[0].GetSeverity()
+	parts2.CVEs[0].IsFixable = parts.CVEs[0].GetIsFixable()
+	parts2.CVEs[0].HasFixedBy = parts.CVEs[0].GetHasFixedBy()
+
+	s.NoError(s.store.UpsertScan(s.ctx, vm.GetId(), parts2))
+
+	secondScan, err := s.getScanForVM(vm.GetId())
+	s.NoError(err)
+	// ScanOs change should trigger full replace — new scan ID.
+	s.NotEqual(firstScan.GetId(), secondScan.GetId(), "ScanOs change should trigger full scan replace")
+	s.NotEqual(firstScan.GetHash(), secondScan.GetHash(), "hash should differ when ScanOs changes")
+	s.Equal("ubuntu22", secondScan.GetScanOs())
+}
+
 // endregion CVE created_at preservation tests
 
 // region Delete tests

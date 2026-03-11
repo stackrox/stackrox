@@ -16,12 +16,14 @@ import (
 type Store interface {
 	// UpsertVM upserts a VM. Hash-comparison determines whether a full write
 	// or timestamp-only update is performed.
+	// NOTE: Mutates vm in-place (LastUpdated, Hash).
 	UpsertVM(ctx context.Context, vm *storage.VirtualMachineV2) error
 
 	// UpsertScan upserts scan data (scan, components, CVEs) for a VM.
 	// Hash-comparison determines whether a full replace or scan_time-only
 	// update is performed. CVE created_at timestamps are preserved across
 	// delete/re-insert cycles.
+	// NOTE: Mutates parts in-place (Scan.ScanTime, Scan.Hash, CVE CreatedAt).
 	UpsertScan(ctx context.Context, vmID string, parts common.VMScanParts) error
 
 	// Delete removes a VM and all associated data (FK cascade).

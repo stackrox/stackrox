@@ -227,8 +227,11 @@ type cveHashable struct {
 }
 
 type scanHashWrapper struct {
+	ScanOs     string
 	Components []componentHashable `hash:"set"`
 	CVEs       []cveHashable       `hash:"set"`
+	// TopCvss is intentionally excluded: it is derived from CVE CVSS values
+	// and will change whenever CVEs change.
 }
 
 func buildScanHash(parts common.VMScanParts) (uint64, error) {
@@ -259,6 +262,7 @@ func buildScanHash(parts common.VMScanParts) (uint64, error) {
 		})
 	}
 	return hashstructure.Hash(scanHashWrapper{
+		ScanOs:     parts.Scan.GetScanOs(),
 		Components: comps,
 		CVEs:       cves,
 	}, &hashstructure.HashOptions{ZeroNil: true})
@@ -383,7 +387,10 @@ func (s *storeImpl) fullScanReplace(ctx context.Context, tx *postgres.Tx, vmID s
 	for _, cve := range parts.CVEs {
 		cveName := cve.GetCveBaseInfo().GetCve()
 		if t, ok := cveTimeMap[cveName]; ok {
-			cve.GetCveBaseInfo().CreatedAt = timestamppb.New(t)
+			if cve.CveBaseInfo == nil {
+				cve.CveBaseInfo = &storage.CVEInfo{}
+			}
+			cve.CveBaseInfo.CreatedAt = timestamppb.New(t)
 		}
 	}
 
@@ -617,6 +624,10 @@ func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	})
 }
 
+// DeleteMany removes multiple VMs and all associated data.
+// NOTE: This does not acquire per-ID keyFence locks for performance reasons,
+// matching the pattern used by other stores (e.g., image store). Callers
+// should avoid concurrent upserts on the same IDs during batch deletes.
 func (s *storeImpl) DeleteMany(ctx context.Context, ids []string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "VirtualMachineV2")
 
