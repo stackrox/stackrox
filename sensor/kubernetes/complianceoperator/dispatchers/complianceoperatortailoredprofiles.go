@@ -64,9 +64,19 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 		}
 	}
 
+	// The compliance operator sets ComplianceScan.Spec.Profile to the tailored profile's
+	// k8s name (not its XCCDF Status.ID) when the tailored profile contains custom rules
+	// (annotation compliance.openshift.io/tailored-profile-contains-custom-rules=true).
+	// We must use the same value as ProfileId so that BuildProfileRefID produces matching
+	// UUIDs on both the profile and the scan sides.
+	profileID := tailoredProfile.Status.ID
+	if tailoredProfile.GetAnnotations()[v1alpha1.CustomRuleProfileAnnotation] == "true" {
+		profileID = tailoredProfile.GetName()
+	}
+
 	protoProfile := &storage.ComplianceOperatorProfile{
 		Id:          string(tailoredProfile.GetUID()),
-		ProfileId:   tailoredProfile.Status.ID,
+		ProfileId:   profileID,
 		Name:        tailoredProfile.GetName(),
 		Labels:      tailoredProfile.GetLabels(),
 		Annotations: tailoredProfile.GetAnnotations(),
