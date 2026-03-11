@@ -145,8 +145,9 @@
 {{/* Attempt to retrieve stackrox-secured-cluster-helm ConfigMap. Must be done before the defaulting logic is applied. */}}
 {{ include "srox.retrieveStackroxSecuredClusterHelmConfigMap" (list $) }}
 
-[<- if not .KubectlOutput >]
 {{ $_ := include "srox.admissionControllerDefaulting" (list $ .Release $._rox.admissionControl $.stackroxHelm) }}
+
+[<- if not .KubectlOutput >]
 {{ $_ := include "srox.scannerV4Defaulting" (list $ .Release $._rox.scannerV4 $.stackroxHelm) }}
 {{ include "srox.scannerDefaulting" (list . .Release $._rox.scanner $.stackroxHelm) }}
 {{ if ne $._rox.scanner.mode "slim" }}

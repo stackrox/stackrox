@@ -62,6 +62,18 @@ var (
 				return []string{readable.Time(ts.Time)}
 			},
 		},
+		postgres.DateTimeTZ: {
+			alloc: func() interface{} {
+				return &pgtype.Timestamptz{}
+			},
+			printer: func(val interface{}) []string {
+				ts, _ := val.(*pgtype.Timestamptz)
+				if ts == nil {
+					return nil
+				}
+				return []string{readable.Time(ts.Time)}
+			},
+		},
 		postgres.Enum: {
 			alloc: func() interface{} {
 				return pointers.Int(0)

@@ -1,8 +1,10 @@
 package runtime
 
 import (
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -27,6 +29,6 @@ func SingletonPolicySet() detection.PolicySet {
 }
 
 func initialize() {
-	policySet = detection.NewPolicySet(policyDataStore.Singleton())
+	policySet = detection.NewPolicySet(policyDataStore.Singleton(), clusterDataStore.Singleton(), namespaceDataStore.Singleton())
 	detector = NewDetector(policySet, datastore.Singleton())
 }

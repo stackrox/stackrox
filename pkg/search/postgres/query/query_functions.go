@@ -61,6 +61,7 @@ var datatypeToQueryFunc = map[postgres.DataType]queryFunction{
 	postgres.Bool:        newBoolQuery,
 	postgres.StringArray: queryOnArray(newStringQuery, getStringArrayPostTransformFunc),
 	postgres.DateTime:    newTimeQuery,
+	postgres.DateTimeTZ:  newTimeQuery,
 	postgres.Enum:        newEnumQuery,
 	postgres.Integer:     newNumericQuery,
 	postgres.BigInteger:  newNumericQuery,

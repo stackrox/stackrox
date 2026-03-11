@@ -28,6 +28,7 @@ describe(Cypress.spec.relative, () => {
         // Verify that the violations subnav items are rendered
         cy.contains('User Workloads').should('exist');
         cy.contains('Platform').should('exist');
+        cy.contains('Nodes').should('exist');
         cy.contains('All Violations').should('exist');
     });
 
@@ -47,6 +48,7 @@ describe(Cypress.spec.relative, () => {
 
             // Verify other links are not active
             cy.findByRole('link', { name: 'Platform' }).should('not.have.class', 'pf-m-current');
+            cy.findByRole('link', { name: 'Nodes' }).should('not.have.class', 'pf-m-current');
             cy.findByRole('link', { name: 'All Violations' }).should(
                 'not.have.class',
                 'pf-m-current'
@@ -68,6 +70,7 @@ describe(Cypress.spec.relative, () => {
             // Initially User Workloads should be active by default
             cy.findByRole('link', { name: 'User Workloads' }).should('have.class', 'pf-m-current');
             cy.findByRole('link', { name: 'Platform' }).should('not.have.class', 'pf-m-current');
+            cy.findByRole('link', { name: 'Nodes' }).should('not.have.class', 'pf-m-current');
             cy.findByRole('link', { name: 'All Violations' }).should(
                 'not.have.class',
                 'pf-m-current'
@@ -80,6 +83,20 @@ describe(Cypress.spec.relative, () => {
                 'not.have.class',
                 'pf-m-current'
             );
+            cy.findByRole('link', { name: 'Nodes' }).should('not.have.class', 'pf-m-current');
+            cy.findByRole('link', { name: 'All Violations' }).should(
+                'not.have.class',
+                'pf-m-current'
+            );
+
+            // Click on Nodes and verify it becomes active
+            cy.findByRole('link', { name: 'Nodes' }).click();
+            cy.findByRole('link', { name: 'Nodes' }).should('have.class', 'pf-m-current');
+            cy.findByRole('link', { name: 'User Workloads' }).should(
+                'not.have.class',
+                'pf-m-current'
+            );
+            cy.findByRole('link', { name: 'Platform' }).should('not.have.class', 'pf-m-current');
             cy.findByRole('link', { name: 'All Violations' }).should(
                 'not.have.class',
                 'pf-m-current'
@@ -93,11 +110,13 @@ describe(Cypress.spec.relative, () => {
                 'pf-m-current'
             );
             cy.findByRole('link', { name: 'Platform' }).should('not.have.class', 'pf-m-current');
+            cy.findByRole('link', { name: 'Nodes' }).should('not.have.class', 'pf-m-current');
 
             // Click back on User Workloads (first item) and verify it becomes active again
             cy.findByRole('link', { name: 'User Workloads' }).click();
             cy.findByRole('link', { name: 'User Workloads' }).should('have.class', 'pf-m-current');
             cy.findByRole('link', { name: 'Platform' }).should('not.have.class', 'pf-m-current');
+            cy.findByRole('link', { name: 'Nodes' }).should('not.have.class', 'pf-m-current');
             cy.findByRole('link', { name: 'All Violations' }).should(
                 'not.have.class',
                 'pf-m-current'

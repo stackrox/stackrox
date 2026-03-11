@@ -744,3 +744,85 @@ func TestCheckGracePeriodForReconnect(t *testing.T) {
 		assert.Contains(t, err.Error(), "please wait")
 	})
 }
+
+func (s *clusterDataStoreTestSuite) TestGetClusterLabels() {
+	ctx := sac.WithAllAccess(s.T().Context())
+	clusterID := fixtureconsts.Cluster1
+
+	testCases := []struct {
+		name           string
+		clusterLabels  map[string]string
+		clusterExists  bool
+		getClusterErr  error
+		expectedLabels map[string]string
+		expectedErr    bool
+	}{
+		{
+			name:           "cluster exists with labels",
+			clusterLabels:  map[string]string{"env": "prod", "team": "platform"},
+			clusterExists:  true,
+			getClusterErr:  nil,
+			expectedLabels: map[string]string{"env": "prod", "team": "platform"},
+			expectedErr:    false,
+		},
+		{
+			name:           "cluster exists with no labels",
+			clusterLabels:  map[string]string{},
+			clusterExists:  true,
+			getClusterErr:  nil,
+			expectedLabels: map[string]string{},
+			expectedErr:    false,
+		},
+		{
+			name:           "cluster does not exist",
+			clusterExists:  false,
+			getClusterErr:  nil,
+			expectedLabels: nil,
+			expectedErr:    false,
+		},
+		{
+			name:          "error fetching cluster",
+			clusterExists: false,
+			getClusterErr: errors.New("database error"),
+			expectedErr:   true,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			// Setup mock expectations
+			if tc.getClusterErr != nil {
+				s.clusterStore.EXPECT().
+					Get(gomock.Any(), clusterID).
+					Return(nil, false, tc.getClusterErr)
+			} else if tc.clusterExists {
+				cluster := &storage.Cluster{
+					Id:     clusterID,
+					Labels: tc.clusterLabels,
+				}
+				s.clusterStore.EXPECT().
+					Get(gomock.Any(), clusterID).
+					Return(cluster, true, nil)
+				s.clusterHealthStore.EXPECT().
+					GetMany(gomock.Any(), gomock.Any()).
+					Return(nil, nil, nil).
+					AnyTimes()
+			} else {
+				s.clusterStore.EXPECT().
+					Get(gomock.Any(), clusterID).
+					Return(nil, false, nil)
+			}
+
+			// Call GetClusterLabels
+			labels, err := s.datastore.GetClusterLabels(ctx, clusterID)
+
+			// Verify results
+			if tc.expectedErr {
+				s.Error(err)
+			} else {
+				s.NoError(err)
+				s.Equal(tc.expectedLabels, labels)
+			}
+		})
+	}
+}

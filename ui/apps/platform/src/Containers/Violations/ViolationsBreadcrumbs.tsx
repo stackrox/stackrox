@@ -6,6 +6,7 @@ import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelect
 
 import {
     violationsFullViewPath,
+    violationsNodeViewPath,
     violationsPlatformViewPath,
     violationsUserWorkloadsViewPath,
 } from 'routePaths';
@@ -22,6 +23,11 @@ function getTopLevelBreadcrumb(filteredWorkflowView: FilteredWorkflowView) {
             return {
                 title: 'Platform violations',
                 url: violationsPlatformViewPath,
+            };
+        case 'Node view':
+            return {
+                title: 'Node violations',
+                url: violationsNodeViewPath,
             };
         case 'Full view':
             return {

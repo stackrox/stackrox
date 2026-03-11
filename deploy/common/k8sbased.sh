@@ -360,12 +360,6 @@ function launch_central {
         helm_args+=(--set scanner.disable=true)
       fi
 
-      if [[ "${is_local_dev}" == "true" ]]; then
-        helm_args+=(-f "${COMMON_DIR}/local-dev-values.yaml")
-      elif [[ -n "$CI" ]]; then
-        helm_args+=(-f "${COMMON_DIR}/ci-values.yaml")
-      fi
-
       if [[ "${CGO_CHECKS}" == "true" ]]; then
         echo "CGO_CHECKS set to true. Setting GOEXPERIMENT=cgocheck2 and MUTEX_WATCHDOG_TIMEOUT_SECS=15"
         # Extend mutex watchdog timeout because cgochecks hamper performance
@@ -461,6 +455,13 @@ function launch_central {
           -f "$unzip_dir/values-private.yaml"
           --set-string imagePullSecrets.useExisting="stackrox;stackrox-scanner"
         )
+      fi
+
+      # Specify CI value overrides after the default generated values-public.yaml/values-private.yaml above because Helm will prioritize the last (right-most) file specified.
+      if [[ "${is_local_dev}" == "true" ]]; then
+        helm_args+=(-f "${COMMON_DIR}/local-dev-values.yaml")
+      elif [[ -n "$CI" ]]; then
+        helm_args+=(-f "${COMMON_DIR}/ci-values.yaml")
       fi
 
       # Add a custom values file to Helm
@@ -654,12 +655,24 @@ function launch_sensor {
     	extra_json_config+=", \"admissionControllerEvents\": ${bool_val}"
     	extra_helm_config+=(--set "admissionControl.listenOnEvents=${bool_val}")
     fi
+    # Default to true if not set
+    local enforce_val="${ADMISSION_CONTROLLER_ENFORCE:-true}"
+    enforce_val="$(echo "$enforce_val" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$enforce_val" != "false" ]]; then
+      enforce_val="true"
+    fi
+    extra_helm_config+=(--set "admissionControl.enforce=${enforce_val}")
 
     if [[ "${SECURED_CLUSTER_AUTO_LOCK_PROCESS_BASELINES:-}" == "true" ]]; then
         extra_config+=("--auto-lock-process-baselines=true")
         extra_json_dynamic_config+='"autoLockProcessBaselinesConfig": {"enabled": true}'
         extra_helm_config+=(--set "autoLockProcessBaselines.enabled=true")
     fi
+
+    if [[ -n "$extra_json_dynamic_config" ]]; then
+        extra_json_dynamic_config+=", "
+    fi
+    extra_json_dynamic_config+='"admissionControllerConfig": {"enabled": '"${enforce_val}"', "enforceOnUpdates": '"${enforce_val}"'}'
 
     if [[ -n "$ROXCTL_TIMEOUT" ]]; then
       echo "Extending roxctl timeout to $ROXCTL_TIMEOUT"

@@ -4,6 +4,9 @@ import { useParams } from 'react-router-dom-v5-compat';
 import startCase from 'lodash/startCase';
 import {
     Bullseye,
+    Card,
+    CardBody,
+    CardTitle,
     Divider,
     Label,
     LabelGroup,
@@ -21,7 +24,7 @@ import { getClientWizardPolicy } from 'Containers/Policies/policies.utils';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import { fetchAlert } from 'services/AlertsService';
-import { isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
+import { isDeploymentAlert, isNodeAlert, isResourceAlert } from 'types/alert.proto';
 import type { Alert } from 'types/alert.proto';
 import { getDateTime } from 'utils/dateUtils';
 import { VIOLATION_STATE_LABELS } from 'constants/violationStates';
@@ -32,8 +35,28 @@ import DeploymentTabWithoutReadAccessForDeployment from './Deployment/Deployment
 import NetworkPolicies from './NetworkPolicies/NetworkPoliciesTab';
 import EnforcementDetails from './EnforcementDetails';
 import ViolationNotFoundPage from '../ViolationNotFoundPage';
+import NodeOverview from './Node/NodeOverview';
 import ViolationDetails from './ViolationDetails';
 import ViolationsBreadcrumbs from '../ViolationsBreadcrumbs';
+
+/**
+ * Returns the display name and resource type label for the alert's entity.
+ */
+function getAlertEntityInfo(alert: Alert): { entityName: string; displayedResourceType: string } {
+    if (isNodeAlert(alert)) {
+        return { entityName: alert.node.name, displayedResourceType: 'Node' };
+    }
+    if (isResourceAlert(alert)) {
+        return {
+            entityName: alert.resource.clusterName,
+            displayedResourceType: startCase(alert.resource.resourceType.toLowerCase()),
+        };
+    }
+    if (isDeploymentAlert(alert)) {
+        return { entityName: alert.deployment.name, displayedResourceType: 'Deployment' };
+    }
+    return { entityName: '', displayedResourceType: '' };
+}
 
 function ViolationDetailsPage(): ReactElement {
     const isRouteEnabled = useIsRouteEnabled();
@@ -82,16 +105,7 @@ function ViolationDetailsPage(): ReactElement {
 
     const { policy, enforcement } = alert;
     const title = policy.name || 'Unknown violation';
-
-    const entityName = isResourceAlert(alert)
-        ? alert.resource.clusterName
-        : isDeploymentAlert(alert)
-          ? alert.deployment.name
-          : '';
-
-    const resourceType = isResourceAlert(alert) ? alert.resource.resourceType : 'deployment';
-
-    const displayedResourceType = startCase(resourceType.toLowerCase());
+    const { entityName, displayedResourceType } = getAlertEntityInfo(alert);
 
     return (
         <>
@@ -150,8 +164,20 @@ function ViolationDetailsPage(): ReactElement {
                             </PageSection>
                         </Tab>
                     )}
+                    {isNodeAlert(alert) && (
+                        <Tab eventKey={3} title={<TabTitleText>Node</TabTitleText>}>
+                            <PageSection>
+                                <Card isFlat>
+                                    <CardTitle component="h3">Node overview</CardTitle>
+                                    <CardBody>
+                                        <NodeOverview alertNode={alert.node} />
+                                    </CardBody>
+                                </Card>
+                            </PageSection>
+                        </Tab>
+                    )}
                     {isRouteEnabledForPolicy && (
-                        <Tab eventKey={3} title={<TabTitleText>Policy</TabTitleText>}>
+                        <Tab eventKey={4} title={<TabTitleText>Policy</TabTitleText>}>
                             <PageSection variant="default">
                                 <Title headingLevel="h2" className="pf-v5-u-mb-md">
                                     Policy overview
@@ -162,7 +188,7 @@ function ViolationDetailsPage(): ReactElement {
                         </Tab>
                     )}
                     {isDeploymentAlert(alert) && hasReadAccessForNetworkPolicy && (
-                        <Tab eventKey={4} title={<TabTitleText>Network policies</TabTitleText>}>
+                        <Tab eventKey={5} title={<TabTitleText>Network policies</TabTitleText>}>
                             <PageSection variant="default">
                                 <NetworkPolicies
                                     clusterId={alert.deployment.clusterId}

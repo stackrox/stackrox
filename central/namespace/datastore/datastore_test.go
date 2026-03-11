@@ -612,3 +612,66 @@ func (s *namespaceDatastoreComprehensiveSuite) TestGetNamespacesForSACEdgeCases(
 		})
 	}
 }
+
+// TestGetNamespaceLabels tests the GetNamespaceLabels method
+func (s *namespaceDatastoreComprehensiveSuite) TestGetNamespaceLabels() {
+	testCases := []struct {
+		name            string
+		namespaceLabels map[string]string
+		namespaceExists bool
+		expectedLabels  map[string]string
+		expectError     bool
+	}{
+		{
+			name:            "namespace exists with labels",
+			namespaceLabels: map[string]string{"env": "staging", "owner": "team-a"},
+			namespaceExists: true,
+			expectedLabels:  map[string]string{"env": "staging", "owner": "team-a"},
+			expectError:     false,
+		},
+		{
+			name:            "namespace exists with no labels",
+			namespaceLabels: map[string]string{},
+			namespaceExists: true,
+			expectedLabels:  map[string]string{},
+			expectError:     false,
+		},
+		{
+			name:            "namespace does not exist",
+			namespaceExists: false,
+			expectedLabels:  nil,
+			expectError:     false,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			var nsID string
+			ctx := s.testContexts[testutils.UnrestrictedReadWriteCtx]
+
+			if tc.namespaceExists {
+				// Create a namespace with the specified labels
+				ns := fixtures.GetScopedNamespace(uuid.NewV4().String(), testconsts.Cluster1, testconsts.NamespaceA)
+				ns.Labels = tc.namespaceLabels
+				err := s.datastore.AddNamespace(ctx, ns)
+				s.Require().NoError(err)
+				nsID = ns.GetId()
+				s.testNamespaceIDs = append(s.testNamespaceIDs, nsID)
+			} else {
+				// Use a non-existent ID
+				nsID = uuid.NewV4().String()
+			}
+
+			// Call GetNamespaceLabels
+			labels, err := s.datastore.GetNamespaceLabels(ctx, nsID)
+
+			// Verify results
+			if tc.expectError {
+				s.Error(err)
+			} else {
+				s.NoError(err)
+				s.Equal(tc.expectedLabels, labels)
+			}
+		})
+	}
+}

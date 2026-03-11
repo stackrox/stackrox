@@ -14,10 +14,12 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	imageV2DataStore "github.com/stackrox/rox/central/imagev2/datastore"
+	imageMapperDatastore "github.com/stackrox/rox/central/imagev2/datastore/mapper/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -70,7 +72,11 @@ func (h *ExportServicePostgresTestHelper) SetupTest(tb testing.TB) error {
 	}
 	h.Deployments = deploymentStore
 	h.DeploymentView = deploymentsView.NewDeploymentView(h.pool)
-	h.Images = imageDataStore.GetTestPostgresDataStore(tb, h.pool)
+	if features.FlattenImageData.Enabled() {
+		h.Images = imageMapperDatastore.GetTestPostgresDataStore(tb, h.pool)
+	} else {
+		h.Images = imageDataStore.GetTestPostgresDataStore(tb, h.pool)
+	}
 	h.ImagesV2 = imageV2DataStore.GetTestPostgresDataStore(tb, h.pool)
 	h.ImageView = imagesView.NewImageView(h.pool)
 	h.Pods = podDatastore.GetTestPostgresDataStore(tb, h.pool)

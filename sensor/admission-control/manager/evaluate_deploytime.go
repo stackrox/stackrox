@@ -105,7 +105,14 @@ func filterOutUnenrichedImageAlerts(alerts []*storage.Alert) []*storage.Alert {
 }
 
 func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionRequest) (*admission.AdmissionResponse, error) {
-	log.Debugf("Evaluating request %+v", req)
+	log.Debugf(
+		"Evaluating admission request (uid=%s, ns=%s, name=%s, op=%s, kind=%s)",
+		req.UID,
+		req.Namespace,
+		req.Name,
+		string(req.Operation),
+		req.Kind.String(),
+	)
 
 	if m.shouldBypass(s, req) {
 		observeAdmissionReview(reviewResultBypassed, 0)
@@ -162,7 +169,7 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 	}
 
 	getAlertsFunc := func(dep *storage.Deployment, imgs []*storage.Image) ([]*storage.Alert, error) {
-		return s.deploytimeDetector.Detect(detectionCtx, booleanpolicy.EnhancedDeployment{
+		return s.deploytimeDetector.Detect(context.Background(), detectionCtx, booleanpolicy.EnhancedDeployment{
 			Deployment: dep,
 			Images:     imgs,
 		})
