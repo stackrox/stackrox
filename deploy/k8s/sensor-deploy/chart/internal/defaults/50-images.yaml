@@ -1,0 +1,115 @@
+# This file contains the default image (registry + name + tag) settings) for all StackRox Secured Cluster
+# Services.
+
+# Initialize default meta values
+image:
+  registry: registry.redhat.io/advanced-cluster-security
+  main:
+    name: rhacs-main-rhel9
+    pullPolicy: IfNotPresent
+  collector:
+    name: rhacs-collector-rhel9
+  fact:
+    name: rhacs-fact-rhel9
+    tag: 0.2.x-5-gcf5e7419fa
+  scanner:
+    name: rhacs-scanner-slim-rhel9
+    tag: 4.11.0-7-g448ded18ab-fast
+  scannerDb:
+    name: rhacs-scanner-db-slim-rhel9
+    tag: 4.11.0-7-g448ded18ab-fast
+  scannerV4:
+    name: rhacs-scanner-v4-rhel9
+    tag: 4.11.0-7-g448ded18ab-fast
+  scannerV4DB:
+    name: rhacs-scanner-v4-db-rhel9
+    tag: 4.11.0-7-g448ded18ab-fast
+---
+# Add registry defaults
+image:
+  main:
+    registry: {{ ._rox.image.registry }}
+  collector:
+    registry: {{ if or (eq ._rox.image.registry "stackrox.io") (eq ._rox.image.registry "registry.connect.redhat.com") }}collector.stackrox.io{{ else }}{{ ._rox.image.registry }}{{ end }}
+  fact:
+    registry: {{ ._rox.image.registry }}
+  scanner:
+    registry: {{ ._rox.image.registry }}
+  scannerDb:
+    registry: {{ ._rox.image.registry }}
+  scannerV4:
+    registry: {{ ._rox.image.registry }}
+  scannerV4DB:
+    registry: {{ ._rox.image.registry }}
+---
+# Configure repository (registry + name)
+image:
+  main:
+    repository: {{ list ._rox.image.main.registry ._rox.image.main.name | compact | join "/" }}
+  collector:
+    repository: {{ list ._rox.image.collector.registry ._rox.image.collector.name | compact | join "/" }}
+  fact:
+    repository: {{ list ._rox.image.fact.registry ._rox.image.fact.name | compact | join "/" }}
+  scanner:
+    repository: {{ list ._rox.image.scanner.registry ._rox.image.scanner.name | compact | join "/" }}
+  scannerDb:
+    repository: {{ list ._rox.image.scannerDb.registry ._rox.image.scannerDb.name | compact | join "/" }}
+  scannerV4:
+    repository: {{ list ._rox.image.scannerV4.registry ._rox.image.scannerV4.name | compact | join "/" }}
+  scannerV4DB:
+    repository: {{ list ._rox.image.scannerV4DB.registry ._rox.image.scannerV4DB.name | compact | join "/" }}
+---
+# Apply fullRef and configurations to images
+image:
+  main:
+    {{- if or ._rox.image.main.tag ._rox.image.main.fullRef }}
+      {{- include "srox.warn" (list . "You have specified an explicit main image (tag). This will prevent the main image from being updated correctly when upgrading to a newer version of this chart.") }}
+    {{- else }}
+    _abbrevImageRef: {{ ._rox.image.main.repository }}
+    {{- end }}
+    tag: 4.11.0-7-g448ded18ab-fast
+  collector:
+    {{- if or ._rox.image.collector.tag ._rox.image.collector.fullRef }}
+      {{- include "srox.warn" (list . "You have specified an explicit collector image tag. This will prevent the collector image from being updated correctly when upgrading to a newer version of this chart.") }}
+    {{- else }}
+    _abbrevImageRef: {{ ._rox.image.collector.repository }}
+    {{- end }}
+---
+# Configure tags and pull policies
+image:
+  collector:
+    tag: "4.11.0-7-g448ded18ab-fast"
+    pullPolicy: IfNotPresent
+---
+# Configure pull policy
+image:
+  fact:
+    pullPolicy: IfNotPresent
+
+---
+# Add fullRef references to images
+# TODO(ROX-9261): Add support for image pull policy to scanner slim
+image:
+  main:
+    fullRef: "{{ printf "%s:%s" ._rox.image.main.repository ._rox.image.main.tag }}"
+  collector:
+    fullRef: "{{ printf "%s:%s" ._rox.image.collector.repository ._rox.image.collector.tag }}"
+  fact:
+    fullRef: "{{ printf "%s:%s" ._rox.image.fact.repository ._rox.image.fact.tag }}"
+  scanner:
+    fullRef: "{{ printf "%s:%s" ._rox.image.scanner.repository ._rox.image.scanner.tag }}"
+  scannerDb:
+    fullRef: "{{ printf "%s:%s" ._rox.image.scannerDb.repository ._rox.image.scannerDb.tag }}"
+  scannerV4:
+    fullRef: "{{ printf "%s:%s" ._rox.image.scannerV4.repository ._rox.image.scannerV4.tag }}"
+  scannerV4DB:
+    fullRef: "{{ printf "%s:%s" ._rox.image.scannerV4DB.repository ._rox.image.scannerV4DB.tag }}"
+collector:
+  imagePullPolicy: {{ ._rox.image.collector.pullPolicy }}
+  complianceImagePullPolicy: {{ ._rox.image.main.pullPolicy }}
+fact:
+  imagePullPolicy: {{ ._rox.image.fact.pullPolicy }}
+sensor:
+  imagePullPolicy: {{ ._rox.image.main.pullPolicy }}
+admissionControl:
+  imagePullPolicy: {{ ._rox.image.main.pullPolicy }}
