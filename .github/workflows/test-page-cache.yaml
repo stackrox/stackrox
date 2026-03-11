@@ -13,25 +13,29 @@ defaults:
   run:
     shell: bash
 
+# This experiment measures whether tmpfs provides a measurable speedup over
+# page-cache-resident ext4 reads for Go's SHA256 file hashing.
+#
+# Go's BUILD cache always reads + SHA256 hashes every source file (no mtime
+# shortcut). Go's TEST cache uses stat (size, mode, mtime) only — never reads
+# file contents. So tmpfs could help builds but not tests.
+#
+# Each strategy runs 3x (matrix.run) on different runners to measure variance.
+# Each job also includes a micro-benchmark that isolates the SHA256 hashing
+# time from compilation/linking overhead.
+
 jobs:
   # ---------------------------------------------------------------------------
-  # Go binary build: warm GOCACHE comparison
-  #
-  # This branch has zversion.go + -buildvcs=false + mtime stabilization,
-  # so GOCACHE hits are high on warm runs. The question is whether
-  # docker-tmpfs speeds up the cache-key hashing (SHA256 of source files)
-  # compared to page-cache-resident disk reads.
-  #
-  # docker-tmpfs: checkout writes directly to tmpfs (this branch's default)
-  # vmtouch-lock: pin checkout pages in page cache, use disk filesystem
-  # vmtouch-touch: warm pages without locking, use disk filesystem
-  # none: baseline disk reads (no warming, no tmpfs)
+  # Go binary build (3x per strategy for statistical significance)
   # ---------------------------------------------------------------------------
 
-  # --- docker-tmpfs: the approach already on this branch ---
   build-docker-tmpfs:
+    strategy:
+      fail-fast: false
+      matrix:
+        run: [1, 2, 3]
     runs-on: ubuntu-latest
-    name: "build (docker-tmpfs)"
+    name: "build (docker-tmpfs) #${{ matrix.run }}"
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -58,12 +62,20 @@ jobs:
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
-      - name: Report filesystem type
+      - name: SHA256 micro-benchmark
         run: |
-          echo "### Filesystem info" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          df -Th "$GITHUB_WORKSPACE" | tee -a "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          # Isolate file read + SHA256 time from compilation
+          start=$(date +%s%N)
+          find . -type f \( -name '*.go' -o -name '*.s' -o -name '*.c' -o -name '*.h' \) \
+            -exec cat {} + | sha256sum > /dev/null
+          end=$(date +%s%N)
+          hash_ms=$(( (end - start) / 1000000 ))
+          echo "### SHA256 micro-benchmark" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Mode | \`docker-tmpfs\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Hash time | \`${hash_ms}ms\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Filesystem | \`$(df -Th . | tail -1 | awk '{print $2}')\` |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build Go Binaries (timed)
         run: |
@@ -71,21 +83,21 @@ jobs:
           GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps
           end=$(date +%s%N)
           elapsed_ms=$(( (end - start) / 1000000 ))
-          elapsed_s=$(( elapsed_ms / 1000 ))
           echo "### Build timing" >> "$GITHUB_STEP_SUMMARY"
           echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
           echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
           echo "| Mode | \`docker-tmpfs\` |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Build time | \`${elapsed_s}s\` (\`${elapsed_ms}ms\`) |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Run | \`${{ matrix.run }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Build time | \`${elapsed_ms}ms\` |" >> "$GITHUB_STEP_SUMMARY"
 
-  # --- vmtouch / none: regular disk filesystem ---
   build-page-cache:
     strategy:
       fail-fast: false
       matrix:
-        cache-mode: [none, vmtouch-touch, vmtouch-lock]
+        cache-mode: [none, vmtouch-lock]
+        run: [1, 2, 3]
     runs-on: ubuntu-latest
-    name: "build (${{ matrix.cache-mode }})"
+    name: "build (${{ matrix.cache-mode }}) #${{ matrix.run }}"
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -98,7 +110,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Warm IMMEDIATELY after checkout
       - name: Warm page cache
         uses: ./.github/actions/page-cache-warm
         with:
@@ -113,14 +124,19 @@ jobs:
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
-      - name: Report cache residency before build
+      - name: SHA256 micro-benchmark
         run: |
-          if command -v vmtouch &>/dev/null; then
-            echo "### Pre-build cache residency (after deps restore)" >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-            vmtouch "$GITHUB_WORKSPACE" 2>/dev/null | tee -a "$GITHUB_STEP_SUMMARY" || true
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-          fi
+          start=$(date +%s%N)
+          find . -type f \( -name '*.go' -o -name '*.s' -o -name '*.c' -o -name '*.h' \) \
+            -exec cat {} + | sha256sum > /dev/null
+          end=$(date +%s%N)
+          hash_ms=$(( (end - start) / 1000000 ))
+          echo "### SHA256 micro-benchmark" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Mode | \`${{ matrix.cache-mode }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Hash time | \`${hash_ms}ms\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Filesystem | \`$(df -Th . | tail -1 | awk '{print $2}')\` |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build Go Binaries (timed)
         run: |
@@ -128,32 +144,26 @@ jobs:
           GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps
           end=$(date +%s%N)
           elapsed_ms=$(( (end - start) / 1000000 ))
-          elapsed_s=$(( elapsed_ms / 1000 ))
           echo "### Build timing" >> "$GITHUB_STEP_SUMMARY"
           echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
           echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
           echo "| Mode | \`${{ matrix.cache-mode }}\` |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Build time | \`${elapsed_s}s\` (\`${elapsed_ms}ms\`) |" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Report cache residency after build
-        if: always()
-        run: |
-          if command -v vmtouch &>/dev/null; then
-            echo "### Post-build cache residency" >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-            vmtouch "$GITHUB_WORKSPACE" 2>/dev/null | tee -a "$GITHUB_STEP_SUMMARY" || true
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-          fi
+          echo "| Run | \`${{ matrix.run }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Build time | \`${elapsed_ms}ms\` |" >> "$GITHUB_STEP_SUMMARY"
 
   # ---------------------------------------------------------------------------
-  # Unit tests: this is where tmpfs made the biggest difference (35m → 8m)
-  # because Go SHA256-hashes every source file for test cache key validation.
+  # Go unit tests (3x per strategy)
+  # Test cache uses mtime-based stat, not SHA256 content hashing.
+  # Expecting no tmpfs benefit here.
   # ---------------------------------------------------------------------------
 
-  # --- docker-tmpfs ---
   test-docker-tmpfs:
+    strategy:
+      fail-fast: false
+      matrix:
+        run: [1, 2, 3]
     runs-on: ubuntu-latest
-    name: "test (docker-tmpfs)"
+    name: "test (docker-tmpfs) #${{ matrix.run }}"
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -182,46 +192,35 @@ jobs:
         with:
           save: false
 
-      - name: Report filesystem type
-        run: |
-          echo "### Filesystem info" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          df -Th "$GITHUB_WORKSPACE" | tee -a "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-
       - name: Go unit tests (timed)
         run: |
           start=$(date +%s%N)
           make go-unit-tests
           end=$(date +%s%N)
           elapsed_ms=$(( (end - start) / 1000000 ))
-          elapsed_s=$(( elapsed_ms / 1000 ))
           echo "### Test timing" >> "$GITHUB_STEP_SUMMARY"
           echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
           echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
           echo "| Mode | \`docker-tmpfs\` |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Test time | \`${elapsed_s}s\` (\`${elapsed_ms}ms\`) |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Run | \`${{ matrix.run }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Test time | \`${elapsed_ms}ms\` |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Cache stats
         if: always()
         run: |
           f="test-output/test.log"
-          test_cached=$(grep -c '(cached)' "$f" 2>/dev/null || true)
-          test_total=$(grep -c '^ok ' "$f" 2>/dev/null || true)
-          echo "### Test cache stats" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Cached | \`${test_cached:-0}\` |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Total | \`${test_total:-0}\` |" >> "$GITHUB_STEP_SUMMARY"
+          cached=$(grep -c '(cached)' "$f" 2>/dev/null || true)
+          total=$(grep -c '^ok ' "$f" 2>/dev/null || true)
+          echo "| Cached | \`${cached:-0}/${total:-0}\` |" >> "$GITHUB_STEP_SUMMARY"
 
-  # --- vmtouch / none ---
   test-page-cache:
     strategy:
       fail-fast: false
       matrix:
-        cache-mode: [none, vmtouch-touch, vmtouch-lock]
+        cache-mode: [none, vmtouch-lock]
+        run: [1, 2, 3]
     runs-on: ubuntu-latest
-    name: "test (${{ matrix.cache-mode }})"
+    name: "test (${{ matrix.cache-mode }}) #${{ matrix.run }}"
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -234,7 +233,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Warm IMMEDIATELY after checkout
       - name: Warm page cache
         uses: ./.github/actions/page-cache-warm
         with:
@@ -251,46 +249,113 @@ jobs:
         with:
           save: false
 
-      - name: Report cache residency before tests
-        run: |
-          if command -v vmtouch &>/dev/null; then
-            echo "### Pre-test cache residency (after deps restore)" >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-            vmtouch "$GITHUB_WORKSPACE" 2>/dev/null | tee -a "$GITHUB_STEP_SUMMARY" || true
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-          fi
-
       - name: Go unit tests (timed)
         run: |
           start=$(date +%s%N)
           make go-unit-tests
           end=$(date +%s%N)
           elapsed_ms=$(( (end - start) / 1000000 ))
-          elapsed_s=$(( elapsed_ms / 1000 ))
           echo "### Test timing" >> "$GITHUB_STEP_SUMMARY"
           echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
           echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
           echo "| Mode | \`${{ matrix.cache-mode }}\` |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Test time | \`${elapsed_s}s\` (\`${elapsed_ms}ms\`) |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Run | \`${{ matrix.run }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Test time | \`${elapsed_ms}ms\` |" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Cache stats
         if: always()
         run: |
           f="test-output/test.log"
-          test_cached=$(grep -c '(cached)' "$f" 2>/dev/null || true)
-          test_total=$(grep -c '^ok ' "$f" 2>/dev/null || true)
-          echo "### Test cache stats" >> "$GITHUB_STEP_SUMMARY"
+          cached=$(grep -c '(cached)' "$f" 2>/dev/null || true)
+          total=$(grep -c '^ok ' "$f" 2>/dev/null || true)
+          echo "| Cached | \`${cached:-0}/${total:-0}\` |" >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------
+  # Style (golangci-lint): heavy Go analysis, reads all source files
+  # ---------------------------------------------------------------------------
+
+  style-docker-tmpfs:
+    runs-on: ubuntu-latest
+    name: "style (docker-tmpfs)"
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
+        - /home/runner/work:/__w_host
+      options: >-
+        --tmpfs /__w/stackrox/stackrox:rw,exec,size=2g
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Expose local actions to host
+        run: cp -a .github /__w_host/stackrox/stackrox/.github
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - uses: ./.github/actions/handle-tagged-build
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - name: golangci-lint (timed)
+        run: |
+          start=$(date +%s%N)
+          make golangci-lint
+          end=$(date +%s%N)
+          elapsed_ms=$(( (end - start) / 1000000 ))
+          echo "### Style timing" >> "$GITHUB_STEP_SUMMARY"
           echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
           echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Cached | \`${test_cached:-0}\` |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Total | \`${test_total:-0}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Mode | \`docker-tmpfs\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Lint time | \`${elapsed_ms}ms\` |" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Report cache residency after tests
-        if: always()
+  style-page-cache:
+    strategy:
+      fail-fast: false
+      matrix:
+        cache-mode: [none, vmtouch-lock]
+    runs-on: ubuntu-latest
+    name: "style (${{ matrix.cache-mode }})"
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
+      options: --cap-add IPC_LOCK --ulimit memlock=-1:-1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Warm page cache
+        uses: ./.github/actions/page-cache-warm
+        with:
+          mode: ${{ matrix.cache-mode }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - uses: ./.github/actions/handle-tagged-build
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - name: golangci-lint (timed)
         run: |
-          if command -v vmtouch &>/dev/null; then
-            echo "### Post-test cache residency" >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-            vmtouch "$GITHUB_WORKSPACE" 2>/dev/null | tee -a "$GITHUB_STEP_SUMMARY" || true
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-          fi
+          start=$(date +%s%N)
+          make golangci-lint
+          end=$(date +%s%N)
+          elapsed_ms=$(( (end - start) / 1000000 ))
+          echo "### Style timing" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Mode | \`${{ matrix.cache-mode }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Lint time | \`${elapsed_ms}ms\` |" >> "$GITHUB_STEP_SUMMARY"
