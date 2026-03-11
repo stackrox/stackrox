@@ -117,9 +117,10 @@ jobs:
         kubectl get nodes
 
     - name: Run pre-test
+      shell: python
       env:
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-      shell: python
+        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -140,6 +141,8 @@ jobs:
     - name: Run post-test
       if: always()
       shell: python
+      env:
+        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -150,6 +153,8 @@ jobs:
     - name: Run final-post
       if: always()
       shell: python
+      env:
+        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -244,9 +249,10 @@ jobs:
         kubectl get nodes
 
     - name: Run pre-test
+      shell: python
       env:
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-      shell: python
+        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -270,6 +276,8 @@ jobs:
     - name: Run post-test
       if: always()
       shell: python
+      env:
+        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
@@ -281,6 +289,7 @@ jobs:
       shell: python
       env:
         QA_TEST_DEBUG_LOGS: /tmp/qa-tests-backend-logs
+        PYTHONUNBUFFERED: "1"
       run: |
         import sys
         sys.path.append('.openshift-ci')
