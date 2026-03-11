@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run auto-merge action
         uses: stackrox/actions/automerge@8fcfacbfc4629361cca5573aba147be2155ba7e9
