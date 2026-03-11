@@ -687,6 +687,105 @@ func (s *AlertDatastoreImplSuite) TestWalkAll() {
 	}
 }
 
+// TestSearchAlertPolicyGroups tests the SearchAlertPolicyGroups aggregate query
+func (s *AlertDatastoreImplSuite) TestSearchAlertPolicyGroups() {
+	alert := fixtures.GetAlert()
+	alert.EntityType = storage.Alert_DEPLOYMENT
+	alert.PlatformComponent = false
+
+	// Mock platform matcher to return false for platform component
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+
+	// Upsert the alert
+	s.NoError(s.datastore.UpsertAlert(ctx, alert))
+	s.createdAlertIDs = append(s.createdAlertIDs, alert.GetId())
+
+	// Test 1: Search excluding resolved returns the alert's policy group
+	results, err := s.datastore.SearchAlertPolicyGroups(ctx, search.EmptyQuery(), true)
+	s.NoError(err)
+	s.Len(results, 1)
+	s.Equal(alert.GetPolicy().GetId(), results[0].PolicyID)
+	s.Equal(alert.GetPolicy().GetName(), results[0].PolicyName)
+	s.Equal(int(alert.GetPolicy().GetSeverity()), results[0].Severity)
+	s.Equal(alert.GetPolicy().GetDescription(), results[0].Description)
+	s.ElementsMatch(alert.GetPolicy().GetCategories(), results[0].Categories)
+	s.Equal(1, results[0].NumAlerts)
+
+	// Test 2: Mark alert as resolved
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+	resolvedAlerts, err := s.datastore.MarkAlertsResolvedBatch(ctx, alert.GetId())
+	s.NoError(err)
+	s.Len(resolvedAlerts, 1)
+
+	// Test 3: Search excluding resolved should return 0
+	results, err = s.datastore.SearchAlertPolicyGroups(ctx, search.EmptyQuery(), true)
+	s.NoError(err)
+	s.Len(results, 0)
+
+	// Test 4: Search including resolved should return 1
+	results, err = s.datastore.SearchAlertPolicyGroups(ctx, search.EmptyQuery(), false)
+	s.NoError(err)
+	s.Len(results, 1)
+	s.Equal(alert.GetPolicy().GetId(), results[0].PolicyID)
+	s.ElementsMatch(alert.GetPolicy().GetCategories(), results[0].Categories)
+}
+
+// TestSearchAlertPolicyGroupsMultiple tests with multiple alerts grouped by policy
+func (s *AlertDatastoreImplSuite) TestSearchAlertPolicyGroupsMultiple() {
+	alertIDs := []string{fixtureconsts.Alert1, fixtureconsts.Alert2, fixtureconsts.Alert3, fixtureconsts.Alert4}
+	policyCategories := [][]string{
+		{"Image Assurance"},
+		{"Image Assurance"},
+		{"Network", "Security"},
+		{"Network", "Security"},
+	}
+
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil).Times(len(alertIDs))
+
+	for i, id := range alertIDs {
+		alert := fixtures.GetAlert()
+		alert.Id = id
+		alert.EntityType = storage.Alert_DEPLOYMENT
+		alert.PlatformComponent = false
+		// Use two distinct policies: first two alerts share policy A, last two share policy B
+		if i < 2 {
+			alert.Policy.Id = "policy-a"
+			alert.Policy.Name = "Policy A"
+			alert.Policy.Severity = storage.Severity_LOW_SEVERITY
+			alert.Policy.Description = "low severity policy"
+		} else {
+			alert.Policy.Id = "policy-b"
+			alert.Policy.Name = "Policy B"
+			alert.Policy.Severity = storage.Severity_HIGH_SEVERITY
+			alert.Policy.Description = "high severity policy"
+		}
+		alert.Policy.Categories = policyCategories[i]
+		s.createAndTrackAlert(alert)
+	}
+
+	results, err := s.datastore.SearchAlertPolicyGroups(ctx, search.EmptyQuery(), true)
+	s.NoError(err)
+	s.Len(results, 2)
+
+	// Collect results into a map for order-independent assertions
+	resultMap := make(map[string]*alertviews.AlertPolicyGroup)
+	for _, r := range results {
+		resultMap[r.PolicyID] = r
+	}
+
+	s.Contains(resultMap, "policy-a")
+	s.Equal("Policy A", resultMap["policy-a"].PolicyName)
+	s.Equal(int(storage.Severity_LOW_SEVERITY), resultMap["policy-a"].Severity)
+	s.ElementsMatch([]string{"Image Assurance"}, resultMap["policy-a"].Categories)
+	s.Equal(2, resultMap["policy-a"].NumAlerts)
+
+	s.Contains(resultMap, "policy-b")
+	s.Equal("Policy B", resultMap["policy-b"].PolicyName)
+	s.Equal(int(storage.Severity_HIGH_SEVERITY), resultMap["policy-b"].Severity)
+	s.ElementsMatch([]string{"Network", "Security"}, resultMap["policy-b"].Categories)
+	s.Equal(2, resultMap["policy-b"].NumAlerts)
+}
+
 // TestUpsert_PlatformComponentAndEntityTypeAssignment tests platform component assignment logic
 // Moved from datastore_test.go and converted to use real data instead of mocks
 func (s *AlertDatastoreImplSuite) TestUpsert_PlatformComponentAndEntityTypeAssignment() {

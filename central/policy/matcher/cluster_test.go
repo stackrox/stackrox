@@ -1,6 +1,7 @@
 package matcher
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -108,7 +109,7 @@ func TestClusterMatcher(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		actual := NewClusterMatcher(c.cluster, c.namespaces).IsPolicyApplicable(c.policy)
+		actual := NewClusterMatcher(c.cluster, c.namespaces).IsPolicyApplicable(context.Background(), c.policy)
 		assert.Equal(t, c.matches, actual)
 	}
 }
@@ -231,7 +232,7 @@ func TestClusterMatcherWithExclusion(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		actual := NewClusterMatcher(c.cluster, c.namespaces).IsPolicyApplicable(c.policy)
+		actual := NewClusterMatcher(c.cluster, c.namespaces).IsPolicyApplicable(context.Background(), c.policy)
 		assert.Equal(t, c.matches, actual)
 	}
 }
