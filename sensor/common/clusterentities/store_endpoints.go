@@ -85,7 +85,9 @@ func (e *endpointsStore) RecordTick() bool {
 			for _, status := range m2 {
 				status.recordTick()
 			}
-			e.reverseHistoricalEndpoints[deploymentID][endpoint].recordTick()
+
+			reverseMap := e.reverseHistoricalEndpoints[deploymentID]
+			reverseMap[endpoint].recordTick()
 			// Remove all historical entries that expired in this tick.
 			removed := e.removeFromHistoryIfExpired(deploymentID, endpoint)
 			removedPublic = removedPublic || removed && endpoint.IPAndPort.Address.IsPublic()
@@ -132,36 +134,42 @@ func (e *endpointsStore) purgeNoLock(deploymentID string) {
 func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData) {
 	dSet, deploymentFound := e.reverseEndpointMap[deploymentID]
 	if !deploymentFound || dSet == nil {
-		dSet = set.NewSet[net.NumericEndpoint]()
+		dSet = make(set.Set[net.NumericEndpoint], len(data.endpoints))
+		e.reverseEndpointMap[deploymentID] = dSet
 	}
 
 	for ep, targetInfos := range data.endpoints {
 		dSet.Add(ep)
-		e.reverseEndpointMap[deploymentID] = dSet
 
 		deploymentsOnThisEp, epFound := e.endpointMap[ep]
 		if !epFound {
-			e.endpointMap[ep] = make(map[string]set.Set[EndpointTargetInfo])
+			// New endpoint entirely - create maps with initial capacity
+			e.endpointMap[ep] = map[string]set.Set[EndpointTargetInfo]{
+				deploymentID: make(set.Set[EndpointTargetInfo], len(targetInfos)),
+			}
 		} else if !deploymentFound {
-			// New deployment, but the endpoint exists - the new deployment takes over the already existing endpoint
-			e.endpointMap[ep][deploymentID] = set.NewSet[EndpointTargetInfo]()
-			// Mark all other deployments having with this endpoint as historical
+			// New deployment, but endpoint exists - takeover
+			e.endpointMap[ep][deploymentID] = make(set.Set[EndpointTargetInfo], len(targetInfos))
+			// Mark all other deployments with this endpoint as historical
 			for otherDeploymentID := range deploymentsOnThisEp {
-				// Currently added deployment is already in the map, so do not mark it historical
 				if otherDeploymentID != deploymentID {
 					e.moveToHistory(otherDeploymentID, ep)
 				}
 			}
+		} else {
+			// Endpoint and deployment both exist - get or create target info set
+			if _, targetFound := e.endpointMap[ep][deploymentID]; !targetFound {
+				e.endpointMap[ep][deploymentID] = make(set.Set[EndpointTargetInfo], len(targetInfos))
+			}
 		}
-		etiSet, targetFound := e.endpointMap[ep][deploymentID]
-		if !targetFound {
-			etiSet = set.NewSet[EndpointTargetInfo]()
-		}
+
+		// Add all target infos to the set
+		etiSet := e.endpointMap[ep][deploymentID]
 		for _, tgtInfo := range targetInfos {
 			etiSet.Add(tgtInfo)
 		}
-		e.endpointMap[ep][deploymentID] = etiSet
-		// Endpoints previously marked as historical may need to be restored.
+
+		// Endpoints previously marked as historical may need to be restored
 		e.deleteFromHistory(deploymentID, ep)
 	}
 }
@@ -261,17 +269,22 @@ func (e *endpointsStore) addToHistory(deploymentID string, ep net.NumericEndpoin
 		e.historicalEndpoints[ep] = make(map[string]map[EndpointTargetInfo]*entityStatus)
 	}
 	if _, ok := e.historicalEndpoints[ep][deploymentID]; !ok {
-		e.historicalEndpoints[ep][deploymentID] = make(map[EndpointTargetInfo]*entityStatus)
+		// Pre-allocate with known size from current endpoint map
+		e.historicalEndpoints[ep][deploymentID] = make(map[EndpointTargetInfo]*entityStatus, len(e.endpointMap[ep][deploymentID]))
 	}
+
+	histMap := e.historicalEndpoints[ep][deploymentID]
 	for info := range e.endpointMap[ep][deploymentID] {
-		e.historicalEndpoints[ep][deploymentID][info] = newHistoricalEntity(e.memorySize)
+		histMap[info] = newHistoricalEntity(e.memorySize)
 	}
 
 	if _, ok := e.reverseHistoricalEndpoints[deploymentID]; !ok {
-		e.reverseHistoricalEndpoints[deploymentID] = make(map[net.NumericEndpoint]*entityStatus)
+		e.reverseHistoricalEndpoints[deploymentID] = make(map[net.NumericEndpoint]*entityStatus, len(e.reverseEndpointMap[deploymentID]))
 	}
+
+	revHistMap := e.reverseHistoricalEndpoints[deploymentID]
 	for numEp := range e.reverseEndpointMap[deploymentID] {
-		e.reverseHistoricalEndpoints[deploymentID][numEp] = newHistoricalEntity(e.memorySize)
+		revHistMap[numEp] = newHistoricalEntity(e.memorySize)
 	}
 }
 
