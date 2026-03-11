@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	"github.com/stackrox/rox/pkg/version"
 	ctrl "sigs.k8s.io/controller-runtime"
-	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
@@ -54,7 +53,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	// Plug in custom event predicate to skip reconciliation for updates caused by the status controller.
 	// to prevent unnecessary Helm dry-runs.
 	predicates := []pkgReconciler.Option{
-		pkgReconciler.WithPredicate(statusController.SkipStatusControllerUpdates[ctrlClient.Object]{}),
+		pkgReconciler.WithPredicate(statusController.NewSkipStatusControllerUpdates(mgr.GetLogger(), platform.CentralGVK.Kind)),
 	}
 
 	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+len(predicates)+8)
