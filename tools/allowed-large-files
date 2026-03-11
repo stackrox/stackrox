@@ -45,6 +45,7 @@ pkg/images/enricher/enricher_impl_test.go
 pkg/images/enricher/enricher_v2_impl_test.go
 pkg/mitre/files/mitre.json
 pkg/mocks/github.com/aws/aws-sdk-go/service/securityhub/securityhubiface/mocks/mocks.go
+pkg/sac/effectiveaccessscope/effective_access_scope_test.go
 pkg/scancomponent/testdata_ComponentIDV2Golden.txt
 pkg/scannerv4/mappers/mappers.go
 pkg/scannerv4/mappers/mappers_test.go
