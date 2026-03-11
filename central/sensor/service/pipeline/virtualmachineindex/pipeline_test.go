@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	vmDatastoreMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -428,7 +429,7 @@ func TestSendSensorACK_NACK(t *testing.T) {
 		},
 	}
 
-	SendSensorACK(ctx, central.SensorACK_NACK, "vm-nack", "rate limited", injector)
+	common.SendSensorACK(ctx, central.SensorACK_NACK, central.SensorACK_VM_INDEX_REPORT, "vm-nack", "rate limited", injector)
 
 	assert.Len(t, injector.messages, 1)
 	ack := injector.messages[0].GetSensorAck()
@@ -441,16 +442,16 @@ func TestSendSensorACK_NACK(t *testing.T) {
 
 func TestSendSensorACK_NilInjector(t *testing.T) {
 	assert.NotPanics(t, func() {
-		SendSensorACK(ctx, central.SensorACK_ACK, "vm-1", "", nil)
+		common.SendSensorACK(ctx, central.SensorACK_ACK, central.SensorACK_VM_INDEX_REPORT, "vm-1", "", nil)
 	})
 }
 
 func TestSendSensorACK_InjectorWithoutCapabilityCheck(t *testing.T) {
 	injector := &mockInjector{}
 
-	SendSensorACK(ctx, central.SensorACK_ACK, "vm-1", "", injector)
+	common.SendSensorACK(ctx, central.SensorACK_ACK, central.SensorACK_VM_INDEX_REPORT, "vm-1", "", injector)
 
-	assert.Len(t, injector.messages, 1, "should send when injector doesn't implement capabilityChecker")
+	assert.Empty(t, injector.messages, "should not send when injector doesn't implement capabilityChecker")
 }
 
 func TestPipelineRun_DisabledFeature(t *testing.T) {
