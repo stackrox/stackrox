@@ -70,11 +70,6 @@ func (ds *datastoreImpl) DeleteVirtualMachines(ctx context.Context, ids ...strin
 	return ds.store.DeleteMany(ctx, ids)
 }
 
-func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachineV2", "Exists")
-	return ds.store.Exists(ctx, id)
-}
-
 func (ds *datastoreImpl) Search(ctx context.Context, query *v1.Query) ([]search.Result, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachineV2", "Search")
 	return ds.store.Search(ctx, query)
