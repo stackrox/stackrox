@@ -22,9 +22,6 @@ defaults:
 jobs:
   wait-for-images:
     runs-on: ubuntu-latest
-    env:
-      # TODO: remove the image tag override
-      MAIN_IMAGE_TAG: 4.11.x-244-g092168e534
     steps:
     - name: Checkout repo
       uses: actions/checkout@v6
@@ -66,8 +63,6 @@ jobs:
       # part of the entire former gke-upgrade-tests.
       CI_JOB_NAME: gke-upgrade-tests-central
       ARTIFACT_DIR: ./junit-reports/
-      # TODO: remove the image tag override
-      MAIN_IMAGE_TAG: 4.11.x-244-g092168e534
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.3
       volumes:
@@ -208,8 +203,6 @@ jobs:
       # part of the entire former gke-upgrade-tests.
       CI_JOB_NAME: gke-upgrade-tests-postgres
       ARTIFACT_DIR: ./junit-reports/
-      # TODO: remove the image tag override
-      MAIN_IMAGE_TAG: 4.11.x-244-g092168e534
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.3
       volumes:
@@ -351,8 +344,6 @@ jobs:
       # part of the entire former gke-upgrade-tests.
       CI_JOB_NAME: gke-upgrade-tests-sensor
       ARTIFACT_DIR: ./junit-reports/
-      # TODO: remove the image tag override
-      MAIN_IMAGE_TAG: 4.11.x-244-g092168e534
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.5.3
       volumes:
