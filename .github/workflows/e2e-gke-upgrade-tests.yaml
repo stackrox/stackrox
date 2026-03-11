@@ -191,13 +191,13 @@ jobs:
 
   # Verifies we can do Postgres major version upgrade.
   gke-upgrade-tests-postgres:
+    needs: [ wait-for-images ]
     if: >-
       !github.event.pull_request.head.repo.fork && (
         github.event_name != 'pull_request' ||
         contains(github.event.pull_request.labels.*.name, 'e2e-gke-upgrade-tests') ||
         !github.event.pull_request.draft
       )
-    needs: [ wait-for-images ]
     runs-on: ubuntu-latest
     env:
       USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
