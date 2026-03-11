@@ -25,7 +25,7 @@ jobs:
         run: |
           echo "tag=$(make --quiet --no-print-directory tag)" >> "$GITHUB_ENV"
       - name: Wait for images
-        uses: stackrox/actions/release/wait-for-image@95fcdab905faa7b504a6e95da152f98ddc6e3a8b
+        uses: stackrox/actions/release/wait-for-image@v1
         with:
           token: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
           image: |

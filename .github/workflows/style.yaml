@@ -201,7 +201,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Check GHA-built image exists
-        uses: stackrox/actions/release/wait-for-image@95fcdab905faa7b504a6e95da152f98ddc6e3a8b
+        uses: stackrox/actions/release/wait-for-image@v1
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
@@ -217,7 +217,7 @@ jobs:
             rhacs-eng/scanner-db-slim:${{ env.scanner_tag }}
 
       - name: Check Konflux-built image exists
-        uses: stackrox/actions/release/wait-for-image@95fcdab905faa7b504a6e95da152f98ddc6e3a8b
+        uses: stackrox/actions/release/wait-for-image@v1
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
