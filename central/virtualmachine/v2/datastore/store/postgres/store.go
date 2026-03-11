@@ -387,7 +387,7 @@ func (s *storeImpl) fullScanReplace(ctx context.Context, tx *postgres.Tx, vmID s
 	for _, cve := range parts.CVEs {
 		cveName := cve.GetCveBaseInfo().GetCve()
 		if t, ok := cveTimeMap[cveName]; ok {
-			if cve.CveBaseInfo == nil {
+			if cve.GetCveBaseInfo() == nil {
 				cve.CveBaseInfo = &storage.CVEInfo{}
 			}
 			cve.CveBaseInfo.CreatedAt = timestamppb.New(t)
