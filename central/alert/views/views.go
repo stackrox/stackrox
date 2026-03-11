@@ -35,6 +35,54 @@ type PolicySeverityCounts struct {
 	CriticalCount int `db:"critical_policy_count"`
 }
 
+// AlertPolicyGroup holds the result of a GROUP BY query that counts alerts per policy.
+// Used by GetAlertsGroup to avoid deserializing full alert protobuf blobs.
+type AlertPolicyGroup struct {
+	PolicyID    string   `db:"policy_id"`
+	PolicyName  string   `db:"policy"`
+	Severity    int      `db:"severity"`
+	Description string   `db:"description"`
+	Categories  []string `db:"category"`
+	NumAlerts   int      `db:"alert_id_count"`
+}
+
+// GetPolicySeverity returns the severity as a storage.Severity enum value.
+func (g *AlertPolicyGroup) GetPolicySeverity() storage.Severity {
+	return storage.Severity(g.Severity)
+}
+
+// WithAlertPolicyGroupQuery augments a query with COUNT(alert_id) and GROUP BY
+// on policy_id, policy name, severity, and description. Results are sorted by
+// policy name ascending.
+func WithAlertPolicyGroupQuery(q *v1.Query) *v1.Query {
+	cloned := q.CloneVT()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.PolicyID).Proto(),
+		search.NewQuerySelect(search.PolicyName).Proto(),
+		search.NewQuerySelect(search.Severity).Proto(),
+		search.NewQuerySelect(search.Description).Proto(),
+		search.NewQuerySelect(search.Category).Proto(),
+		search.NewQuerySelect(search.AlertID).AggrFunc(aggregatefunc.Count).Proto(),
+	}
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{
+			search.PolicyID.String(),
+			search.PolicyName.String(),
+			search.Severity.String(),
+			search.Description.String(),
+			search.Category.String(),
+		},
+	}
+	cloned.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field: search.PolicyName.String(),
+			},
+		},
+	}
+	return cloned
+}
+
 // WithPolicySeverityCountQuery augments a query with filtered COUNT(DISTINCT policy_id)
 // selects, one per severity level. Returns a single row with 4 integer columns.
 func WithPolicySeverityCountQuery(q *v1.Query) *v1.Query {

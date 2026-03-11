@@ -94,7 +94,7 @@ function DynamicConfigurationForm({
                                 <a
                                     href={getVersionedDocs(
                                         version,
-                                        'operating/use-admission-controller-enforcement'
+                                        'operating/using-policies-to-provide-security#understand-admission-controller-enforcement_use-admission-controller-enforcement'
                                     )}
                                     target="_blank"
                                     rel="noopener noreferrer"
