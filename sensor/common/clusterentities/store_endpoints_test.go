@@ -248,6 +248,94 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastEndpoints() {
 				},
 			},
 		},
+		"Deployment with zero endpoints then receives endpoints": {
+			numTicksToRemember: 5,
+			entityUpdates: map[int][]eUpdate{
+				0: {
+					// Pod arrives with containerID/IP but no endpoints (no exposed ports)
+					{
+						deploymentID: "depl1",
+						containerID:  "container1",
+						ipAddr:       "10.0.0.1",
+						port:         0, // zero = no endpoint added
+						incremental:  true,
+					},
+				},
+				1: {
+					// Same deployment now gets endpoints (ports exposed)
+					{
+						deploymentID: "depl1",
+						containerID:  "container1",
+						ipAddr:       "10.0.0.1",
+						port:         80,
+						portName:     "http",
+						incremental:  true,
+					},
+				},
+			},
+			operationAfterTick: map[int]operation{},
+			lookupResultsAfterTick: map[int][]expectation{
+				// Tick 0: Check an unrelated deployment - ensures endpoint map is empty
+				0: {
+					buildExpectation("192.168.1.1", "unrelated-depl", "http", nowhere, networkgraph.EntityForDeployment, 80),
+				},
+				// Tick 1: endpoint should be found after adding it
+				1: {
+					expectDeployment80("10.0.0.1", "depl1", "http", theMap),
+				},
+			},
+		},
+		"Endpoint takeover when first deployment has zero endpoints": {
+			numTicksToRemember: 5,
+			entityUpdates: map[int][]eUpdate{
+				0: {
+					// depl1 arrives with IP but no endpoints (pod without exposed ports)
+					{
+						deploymentID: "depl1",
+						containerID:  "container1",
+						ipAddr:       "10.0.0.1",
+						port:         0,
+						incremental:  true,
+					},
+				},
+				1: {
+					// depl2 claims the same IP with an endpoint
+					{
+						deploymentID: "depl2",
+						containerID:  "container2",
+						ipAddr:       "10.0.0.1",
+						port:         80,
+						portName:     "http",
+						incremental:  true,
+					},
+				},
+				2: {
+					// depl1 now receives endpoints - should trigger takeover
+					{
+						deploymentID: "depl1",
+						containerID:  "container1",
+						ipAddr:       "10.0.0.1",
+						port:         80,
+						portName:     "http",
+						incremental:  true,
+					},
+				},
+			},
+			operationAfterTick: map[int]operation{},
+			lookupResultsAfterTick: map[int][]expectation{
+				0: {
+					buildExpectation("192.168.1.1", "unrelated-depl", "http", nowhere, networkgraph.EntityForDeployment, 80),
+				},
+				1: {
+					expectDeployment80("10.0.0.1", "depl2", "http", theMap),
+				},
+				// Tick 2: depl1 should take over, depl2 should be historical
+				2: {
+					expectDeployment80("10.0.0.1", "depl1", "http", theMap),
+					expectDeployment80("10.0.0.1", "depl2", "http", history),
+				},
+			},
+		},
 	}
 	for name, tCase := range cases {
 		s.Run(name, func() {

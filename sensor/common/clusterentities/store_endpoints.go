@@ -138,6 +138,11 @@ func (e *endpointsStore) purgeNoLock(deploymentID string) {
 }
 
 func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData) {
+	// Only process if we have endpoints to add
+	if len(data.endpoints) == 0 {
+		return
+	}
+
 	dSet, deploymentFound := e.reverseEndpointMap[deploymentID]
 	if !deploymentFound || dSet == nil {
 		dSet = make(set.Set[net.BinaryHash], len(data.endpoints))
