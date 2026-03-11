@@ -994,6 +994,11 @@ func (s *storeImpl) GetListImagesView(ctx context.Context, q *v1.Query) ([]*view
 	cloned := q.CloneVT()
 	cloned.Selects = selects
 
+	// Add GROUP BY on the primary key to deduplicate results when joining with other tables.
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{search.ImageID.String()},
+	}
+
 	var results []*views.ListImageV2View
 	err := pgSearch.RunSelectRequestForSchemaFn[views.ListImageV2View](ctx, s.db, pkgSchema.ImagesV2Schema, cloned, func(row *views.ListImageV2View) error {
 		results = append(results, row)
