@@ -115,6 +115,7 @@ describe('Compliance Schedules', () => {
         getInputByLabel('Name').clear().type(scheduleName);
         getInputByLabel('On day(s)').click();
         getSelectOption('Tuesday').click();
+        cy.get('body').type('{esc}'); // close the checkbox select before opening TimePicker
         cy.get('input[aria-label="Time picker"]').click(); // PF Datepicker doesn't follow pattern used by helper function
         cy.get('ul[role="menu"] button:contains("00:30")').click();
 

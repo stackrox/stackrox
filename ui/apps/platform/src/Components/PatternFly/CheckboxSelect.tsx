@@ -59,6 +59,7 @@ type CheckboxSelectProps = {
     isDisabled?: boolean;
     popperProps?: SelectPopperProps;
     onChange: (selections: string[]) => void;
+    onBlur?: () => void;
 };
 
 function CheckboxSelect({
@@ -74,10 +75,14 @@ function CheckboxSelect({
     toggleAriaLabel,
     isDisabled = false,
     popperProps,
+    onBlur,
 }: CheckboxSelectProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
     function onToggle() {
+        if (isOpen && onBlur) {
+            onBlur();
+        }
         setIsOpen((prev) => !prev);
     }
 
@@ -133,6 +138,9 @@ function CheckboxSelect({
             onSelect={onSelect}
             onOpenChange={(nextOpen: boolean) => {
                 setIsOpen(nextOpen);
+                if (!nextOpen && onBlur) {
+                    onBlur();
+                }
             }}
             toggle={toggle}
             shouldFocusToggleOnSelect
