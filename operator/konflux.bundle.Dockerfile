@@ -58,7 +58,7 @@ ENV RELATED_IMAGE_CENTRAL_DB=$RELATED_IMAGE_CENTRAL_DB
 RUN echo "Checking required RELATED_IMAGE_CENTRAL_DB"; [[ "${RELATED_IMAGE_CENTRAL_DB}" != "" ]]
 
 # Set Go environment variables to ensure hermetic builds work correctly with Cachi2
-ENV CI=1 GOFLAGS="" CGO_ENABLED=1
+ENV CI=1 GOFLAGS=""
 RUN ./bundle_helpers/prepare-bundle-manifests.sh \
       --use-version="${OPERATOR_IMAGE_TAG}" \
       --first-version=4.0.0 \
