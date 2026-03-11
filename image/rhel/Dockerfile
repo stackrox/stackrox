@@ -31,15 +31,13 @@ FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS package_installer
 # Copy ubi-micro base to preserve rpmdb
 COPY --from=ubi-micro-base / /out/
 
-# Install base packages and PostgreSQL to /out/
+# Install packages not in ubi-micro (bash and coreutils-single already present)
 RUN dnf install -y \
         --installroot=/out/ \
         --setopt=reposdir=/etc/yum.repos.d \
         --releasever=8 \
         --setopt=install_weak_deps=0 \
         --nodocs \
-        bash \
-        coreutils \
         findutils \
         util-linux \
         ca-certificates \
