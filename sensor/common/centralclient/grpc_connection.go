@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/trace"
 )
 
@@ -34,6 +35,13 @@ type centralConnectionFactoryImpl struct {
 
 	stopSignal concurrency.ErrorSignal
 	okSignal   concurrency.Signal
+
+	// Fields for storing connection parameters (used for reconnection).
+	// Protected by connParamsMutex.
+	connParamsMutex  sync.RWMutex
+	clusterIDHandler ClusterIDPeekWriter
+	conn             *util.LazyClientConn
+	certLoader       CertLoader
 }
 
 // NewCentralConnectionFactory returns a factory that can create a gRPC stream between Sensor and Central.
@@ -80,6 +88,13 @@ func (f *centralConnectionFactoryImpl) getCentralGRPCPreferences() (*v1.Preferen
 // There is no guarantee that the connection to central will be ready when this function finishes!
 // Connection setup involves the configuration of certificates, parameters, and the endpoint.
 func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(clusterIDHandler ClusterIDPeekWriter, conn *util.LazyClientConn, certLoader CertLoader) {
+	// Store connection parameters for potential reconnection.
+	f.connParamsMutex.Lock()
+	f.clusterIDHandler = clusterIDHandler
+	f.conn = conn
+	f.certLoader = certLoader
+	f.connParamsMutex.Unlock()
+
 	// Both signals should not be in a triggered state at the same time.
 	// If we run into this situation something went wrong with the handling of these signals.
 	if f.stopSignal.IsDone() && f.okSignal.IsDone() {
@@ -130,4 +145,27 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(clusterID
 	conn.Set(centralConnection)
 	f.okSignal.Signal()
 	log.Info("Done setting up gRPC connection with central")
+}
+
+// TriggerReconnect closes the current gRPC connection and establishes a new one.
+// Used after certificate refresh to use updated certificates.
+// This method uses the connection parameters stored from the last SetCentralConnectionWithRetries call.
+func (f *centralConnectionFactoryImpl) TriggerReconnect() {
+	log.Info("Triggering gRPC reconnection for certificate update")
+
+	f.connParamsMutex.RLock()
+	clusterIDHandler := f.clusterIDHandler
+	conn := f.conn
+	certLoader := f.certLoader
+	f.connParamsMutex.RUnlock()
+
+	if clusterIDHandler == nil || conn == nil || certLoader == nil {
+		log.Warn("Cannot trigger reconnection: connection parameters not initialized")
+		return
+	}
+
+	// Close existing connection and establish new one with updated certificates.
+	// SetCentralConnectionWithRetries will handle closing the old connection
+	// and creating a new one via LazyClientConn.Set().
+	go f.SetCentralConnectionWithRetries(clusterIDHandler, conn, certLoader)
 }

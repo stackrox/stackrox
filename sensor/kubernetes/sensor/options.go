@@ -45,6 +45,24 @@ type clusterIDHandler interface {
 	GetNoWait() string
 }
 
+// InitCertUpgradable defines the interface for components that can register callbacks
+// for init certificate upgrade events.
+type InitCertUpgradable interface {
+	RegisterInitCertUpgradeCallback(func())
+}
+
+// ImmediateRefreshIssuer defines the interface for TLS issuers that can trigger
+// immediate certificate refresh.
+type ImmediateRefreshIssuer interface {
+	TriggerImmediateRefresh(func()) error
+}
+
+// ReconnectableCentralConnFactory defines the interface for connection factories
+// that can trigger reconnection to Central.
+type ReconnectableCentralConnFactory interface {
+	TriggerReconnect()
+}
+
 // ConfigWithDefaults creates a new config object with default properties.
 // CentralConnectionFactory is set to nil because the current constructor
 // requires an environment variable, and it starts an HTTP connection.

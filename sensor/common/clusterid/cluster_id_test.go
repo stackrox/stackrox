@@ -193,6 +193,192 @@ func (s *clusterIDSuite) Test_Set() {
 	}
 }
 
+func (s *clusterIDSuite) Test_InitCertUpgrade() {
+	initClusterID := "00000000-0000-0000-0000-000000000000"
+	realClusterID := "real-cluster-id"
+
+	s.Run("callback triggered when transitioning from init cert to real cluster ID", func() {
+		handler := NewHandler()
+		handler.parseClusterIDFromServiceCert = func(_ storage.ServiceType) (string, error) {
+			return initClusterID, nil
+		}
+		handler.isInitCertClusterID = func(id string) bool {
+			return id == initClusterID
+		}
+		handler.getClusterID = func(value, _ string) (string, error) {
+			return value, nil
+		}
+
+		// Trigger Get() to initialize isInitCertificate flag.
+		// Get() will block waiting for Set() when using init cert, so don't wait for it.
+		go func() {
+			_ = handler.Get()
+		}()
+		// Brief sleep to let Get() reach the wait point and set isInitCertificate.
+		time.Sleep(10 * time.Millisecond)
+
+		callbackTriggered := false
+		callbackDone := make(chan struct{})
+		handler.RegisterInitCertUpgradeCallback(func() {
+			callbackTriggered = true
+			close(callbackDone)
+		})
+
+		handler.Set(realClusterID)
+
+		select {
+		case <-callbackDone:
+			s.Assert().True(callbackTriggered, "callback should have been triggered")
+		case <-time.After(2 * time.Second):
+			s.Fail("timed out waiting for init cert upgrade callback")
+		}
+
+		s.Assert().False(handler.isInitCertificate, "isInitCertificate should be false after upgrade")
+	})
+
+	s.Run("callback NOT triggered when already using real certificate", func() {
+		handler := NewHandler()
+		handler.parseClusterIDFromServiceCert = func(_ storage.ServiceType) (string, error) {
+			return realClusterID, nil
+		}
+		handler.isInitCertClusterID = func(id string) bool {
+			return id == initClusterID
+		}
+		handler.getClusterID = func(value, _ string) (string, error) {
+			return value, nil
+		}
+
+		_ = handler.Get() // Non-blocking since not init cert.
+
+		callbackTriggered := false
+		callbackDone := make(chan struct{})
+		handler.RegisterInitCertUpgradeCallback(func() {
+			callbackTriggered = true
+			close(callbackDone)
+		})
+
+		handler.Set(realClusterID)
+
+		// Wait briefly to ensure callback does not fire.
+		select {
+		case <-callbackDone:
+			s.Fail("callback should NOT have been triggered")
+		case <-time.After(100 * time.Millisecond):
+			// Expected - callback should not fire.
+		}
+
+		s.Assert().False(callbackTriggered, "callback should NOT have been triggered")
+	})
+
+	s.Run("callback NOT triggered on subsequent Set calls", func() {
+		handler := NewHandler()
+		handler.parseClusterIDFromServiceCert = func(_ storage.ServiceType) (string, error) {
+			return initClusterID, nil
+		}
+		handler.isInitCertClusterID = func(id string) bool {
+			return id == initClusterID
+		}
+		handler.getClusterID = func(value, _ string) (string, error) {
+			return value, nil
+		}
+
+		go func() {
+			_ = handler.Get()
+		}()
+		time.Sleep(10 * time.Millisecond)
+
+		callbackCount := 0
+		callbackDone := make(chan struct{})
+		handler.RegisterInitCertUpgradeCallback(func() {
+			callbackCount++
+			// Only close channel on first invocation.
+			select {
+			case <-callbackDone:
+			default:
+				close(callbackDone)
+			}
+		})
+
+		// First Set should trigger callback.
+		handler.Set(realClusterID)
+		select {
+		case <-callbackDone:
+			s.Assert().Equal(1, callbackCount, "callback should be triggered once on first Set")
+		case <-time.After(2 * time.Second):
+			s.Fail("timed out waiting for init cert upgrade callback")
+		}
+
+		// Second Set should NOT trigger callback.
+		handler.Set(realClusterID)
+		// Wait briefly to ensure callback does not fire again.
+		time.Sleep(100 * time.Millisecond)
+		s.Assert().Equal(1, callbackCount, "callback should NOT be triggered on second Set")
+	})
+
+	s.Run("callback invoked immediately if registered after transition", func() {
+		handler := NewHandler()
+		handler.parseClusterIDFromServiceCert = func(_ storage.ServiceType) (string, error) {
+			return initClusterID, nil
+		}
+		handler.isInitCertClusterID = func(id string) bool {
+			return id == initClusterID
+		}
+		handler.getClusterID = func(value, _ string) (string, error) {
+			return value, nil
+		}
+
+		go func() {
+			_ = handler.Get()
+		}()
+		time.Sleep(10 * time.Millisecond)
+
+		// Set the real cluster ID to complete the transition.
+		handler.Set(realClusterID)
+
+		// Wait briefly to ensure transition is complete.
+		time.Sleep(50 * time.Millisecond)
+
+		// Register callback AFTER the transition has occurred.
+		callbackTriggered := false
+		callbackDone := make(chan struct{})
+		handler.RegisterInitCertUpgradeCallback(func() {
+			callbackTriggered = true
+			close(callbackDone)
+		})
+
+		// Callback should be invoked immediately.
+		select {
+		case <-callbackDone:
+			s.Assert().True(callbackTriggered, "callback should have been triggered immediately")
+		case <-time.After(2 * time.Second):
+			s.Fail("timed out waiting for immediate callback invocation")
+		}
+	})
+
+	s.Run("callback handles nil gracefully", func() {
+		handler := NewHandler()
+		handler.parseClusterIDFromServiceCert = func(_ storage.ServiceType) (string, error) {
+			return initClusterID, nil
+		}
+		handler.isInitCertClusterID = func(id string) bool {
+			return id == initClusterID
+		}
+		handler.getClusterID = func(value, _ string) (string, error) {
+			return value, nil
+		}
+
+		go func() {
+			_ = handler.Get()
+		}()
+		time.Sleep(10 * time.Millisecond)
+
+		// Don't register callback - test that nil callback doesn't panic.
+		s.Assert().NotPanics(func() {
+			handler.Set(realClusterID)
+		})
+	})
+}
+
 func newFuncWrapper(fn func()) *funcWrapper {
 	return &funcWrapper{
 		fn: fn,

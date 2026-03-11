@@ -66,6 +66,28 @@ import (
 
 var log = logging.LoggerForModule()
 
+// wireInitCertUpgrade sets up the init certificate upgrade callback chain.
+// When the cluster ID transitions from an init certificate to a real cluster ID,
+// this triggers an immediate certificate refresh followed by a gRPC reconnection.
+func wireInitCertUpgrade(
+	clusterIDHandler InitCertUpgradable,
+	issuer ImmediateRefreshIssuer,
+	connFactory ReconnectableCentralConnFactory,
+) {
+	if clusterIDHandler == nil || issuer == nil || connFactory == nil {
+		return
+	}
+
+	clusterIDHandler.RegisterInitCertUpgradeCallback(func() {
+		log.Info("Init certificate detected - triggering immediate refresh and reconnection")
+		if err := issuer.TriggerImmediateRefresh(func() {
+			connFactory.TriggerReconnect()
+		}); err != nil {
+			log.Errorf("Failed to upgrade init certificate: %v", err)
+		}
+	})
+}
+
 // CreateSensor takes in a client interface and returns a sensor instantiation
 func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	log.Info("Running sensor with Kubernetes re-sync disabled")
@@ -221,10 +243,12 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(cfg.k8sClient.Kubernetes(), admCtrlSettingsMgr, sensorNamespace))
 	}
 
+	// Create TLS issuer and store reference for init certificate upgrade wiring.
+	var tlsIssuer common.SensorComponent
 	if centralsensor.SecuredClusterIsNotManagedManually(helmManagedConfig) {
 		podName := os.Getenv("POD_NAME")
-		components = append(components,
-			certrefresh.NewSecuredClusterTLSIssuer(cfg.introspectionK8sClient.Kubernetes(), sensorNamespace, podName))
+		tlsIssuer = certrefresh.NewSecuredClusterTLSIssuer(cfg.introspectionK8sClient.Kubernetes(), sensorNamespace, podName)
+		components = append(components, tlsIssuer)
 	}
 
 	s, err := sensor.NewSensor(
@@ -241,6 +265,23 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create sensor")
 	}
+
+	// Wire init certificate upgrade callback chain.
+	var clusterIDUpgradable InitCertUpgradable
+	var tlsRefresher ImmediateRefreshIssuer
+	var reconnectableFactory ReconnectableCentralConnFactory
+
+	if cfg.clusterIDHandler != nil {
+		clusterIDUpgradable, _ = cfg.clusterIDHandler.(InitCertUpgradable)
+	}
+	if tlsIssuer != nil {
+		tlsRefresher, _ = tlsIssuer.(ImmediateRefreshIssuer)
+	}
+	if cfg.centralConnFactory != nil {
+		reconnectableFactory, _ = cfg.centralConnFactory.(ReconnectableCentralConnFactory)
+	}
+
+	wireInitCertUpgrade(clusterIDUpgradable, tlsRefresher, reconnectableFactory)
 
 	if cfg.workloadManager != nil {
 		cfg.workloadManager.SetSignalHandlers(processPipeline, networkFlowManager)

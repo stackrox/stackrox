@@ -21,6 +21,12 @@ type handlerImpl struct {
 	isInitCertClusterID           func(string) bool
 	getClusterID                  func(string, string) (string, error)
 	parseClusterIDFromServiceCert func(storage.ServiceType) (string, error)
+
+	// Fields for init certificate upgrade.
+	// Protected by clusterIDMutex.
+	isInitCertificate        bool
+	onInitCertUpgrade        func()
+	initCertUpgradeTriggered bool
 }
 
 // NewHandler creates a new clusterID handler
@@ -39,6 +45,9 @@ func (c *handlerImpl) Get() string {
 	c.once.Do(func() {
 		id := c.clusterIDFromCert()
 		if c.isInitCertClusterID(id) {
+			c.clusterIDMutex.Lock()
+			c.isInitCertificate = true
+			c.clusterIDMutex.Unlock()
 			log.Infof("Certificate has wildcard subject %s. Waiting to receive cluster ID from central...", id)
 			c.clusterIDAvailable.Wait()
 		} else {
@@ -58,6 +67,26 @@ func (c *handlerImpl) GetNoWait() string {
 	return c.clusterID
 }
 
+// RegisterInitCertUpgradeCallback registers a callback to be invoked when the cluster ID
+// transitions from an init certificate to a real cluster ID.
+// If the transition has already occurred by the time this is called, the callback is
+// invoked immediately.
+func (c *handlerImpl) RegisterInitCertUpgradeCallback(callback func()) {
+	c.clusterIDMutex.Lock()
+	defer c.clusterIDMutex.Unlock()
+
+	c.onInitCertUpgrade = callback
+
+	// If the init-cert -> real-cluster-ID transition has already completed by the
+	// time the callback is registered, invoke it immediately so callers do not
+	// depend on the ordering of Set() vs RegisterInitCertUpgradeCallback().
+	// The transition is complete if initCertUpgradeTriggered is true.
+	if callback != nil && c.initCertUpgradeTriggered {
+		log.Info("Init certificate already upgraded - triggering certificate upgrade callback immediately")
+		go callback()
+	}
+}
+
 // Set sets the global cluster ID value.
 func (c *handlerImpl) Set(value string) {
 	effectiveClusterID, err := c.getClusterID(value, c.clusterIDFromCert())
@@ -74,6 +103,18 @@ func (c *handlerImpl) Set(value string) {
 	if c.clusterID == "" {
 		c.clusterID = effectiveClusterID
 		c.clusterIDAvailable.Signal()
+
+		// If transitioning from init cert to real cluster ID, mark transition and trigger callback.
+		if c.isInitCertificate && !c.isInitCertClusterID(effectiveClusterID) {
+			c.isInitCertificate = false       // Only upgrade once.
+			c.initCertUpgradeTriggered = true // Track that transition occurred.
+			if c.onInitCertUpgrade != nil {
+				log.Info("Init certificate detected - triggering certificate upgrade callback")
+				// Capture callback to avoid holding lock during invocation.
+				cb := c.onInitCertUpgrade
+				go cb()
+			}
+		}
 	} else if c.clusterID != effectiveClusterID {
 		log.Panicf("Newly set cluster ID value %q conflicts with previous value %q", effectiveClusterID, c.clusterID)
 	}

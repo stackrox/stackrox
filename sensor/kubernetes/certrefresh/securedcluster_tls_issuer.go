@@ -301,3 +301,40 @@ func (i *tlsIssuerImpl) receive(ctx context.Context, requestID string) (*Respons
 	}
 	return nil, errors.Wrap(ctx.Err(), "receiving cert refresh response due to context cancellation")
 }
+
+// TriggerImmediateRefresh requests fresh certificates from Central immediately,
+// bypassing the periodic refresh timer. Used for init certificate upgrade.
+// Callback is invoked after certificates are successfully persisted.
+func (i *tlsIssuerImpl) TriggerImmediateRefresh(callback func()) error {
+	if !i.started.Load() || !i.online.Load() {
+		return errors.New("TLS issuer is not started or not online")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), certRefreshTimeout)
+	defer cancel()
+
+	// Get the certificate repository.
+	sensorOwnerReference, err := FetchSensorDeploymentOwnerRef(ctx, i.sensorPodName,
+		i.sensorNamespace, i.k8sClient, wait.Backoff{})
+	if err != nil {
+		return errors.Wrap(err, "fetching sensor deployment owner reference")
+	}
+
+	certsRepo := i.getServiceCertificatesRepoFn(*sensorOwnerReference, i.sensorNamespace,
+		i.k8sClient.CoreV1().Secrets(i.sensorNamespace))
+
+	// Perform certificate refresh using existing logic.
+	_, err = refreshCertificates(ctx, i.componentName, i.requestCertificates, GetCertsRenewalTime,
+		certsRepo, i.k8sClient)
+	if err != nil {
+		return errors.Wrap(err, "immediate certificate refresh failed")
+	}
+
+	log.Info("Successfully completed immediate certificate refresh")
+
+	if callback != nil {
+		callback()
+	}
+
+	return nil
+}
