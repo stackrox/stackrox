@@ -2,7 +2,9 @@ package compliance
 
 import (
 	"context"
+	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/quay/claircore/indexer/controller"
@@ -31,7 +33,11 @@ var (
 const (
 	rhcosFullName = "Red Hat Enterprise Linux CoreOS"
 
+	// Golden image repository for RHCOS < 4.19 (OCP-style versions like 418.94.xxx)
 	goldenKey = rhcc.RepositoryKey
+
+	// RHEL CPE repository for RHCOS 4.19+ (RHEL-style versions like 9.6.xxx)
+	rhelCPEKey = "rhel-cpe-repository"
 )
 
 var (
@@ -419,12 +425,12 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 		return
 	}
 
-	isRHCOS, version, err := c.nodeRHCOSMatcher.GetRHCOSVersion(indexWrap.NodeName)
+	isRHCOS, ocpVersion, version, err := c.nodeRHCOSMatcher.GetRHCOSVersion(indexWrap.NodeName)
 	if err != nil {
 		log.Warnf("Unable to determine RHCOS version for node %q: %v", indexWrap.NodeName, err)
 		isRHCOS = false
 	}
-	log.Debugf("Node=%q discovered RHCOS=%t rhcos-version=%q", indexWrap.NodeName, isRHCOS, version)
+	log.Debugf("Node=%q discovered RHCOS=%t ocp-version=%q rhcos-version=%q", indexWrap.NodeName, isRHCOS, ocpVersion, version)
 
 	select {
 	case <-c.stopper.Flow().StopRequested():
@@ -441,7 +447,7 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 				arch = extractArch(indexWrap.IndexReport)
 				c.archCache[indexWrap.NodeName] = arch
 			}
-			log.Debugf("Attaching OCI entry for 'rhcos' to index-report for node %s: version=%s, arch=%s", indexWrap.NodeName, version, arch)
+			log.Debugf("Attaching OCI entry for 'rhcos' to index-report for node %s: ocp-version=%s, version=%s, arch=%s", indexWrap.NodeName, ocpVersion, version, arch)
 			irWrapperFunc = attachRPMtoRHCOS
 		}
 		toC <- message.New(&central.MsgFromSensor{
@@ -452,7 +458,7 @@ func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMes
 					// This can be changed to CREATE or UPDATE for Sensor 4.8 or when Central 4.6 is out of support.
 					Action: central.ResourceAction_UNSET_ACTION_RESOURCE,
 					Resource: &central.SensorEvent_IndexReport{
-						IndexReport: irWrapperFunc(version, arch, indexWrap.IndexReport),
+						IndexReport: irWrapperFunc(ocpVersion, version, arch, indexWrap.IndexReport),
 					},
 				},
 			},
@@ -472,7 +478,37 @@ func normalizeVersion(version string) []int32 {
 	return []int32{v[0], v[1], 0, 0, 0, 0, 0, 0, 0, 0}
 }
 
-func noop(_, _ string, rpm *v4.IndexReport) *v4.IndexReport {
+// extractRHELMajorVersion extracts the major version from a RHEL-style version string.
+// For example, "9.6.20260217-1" returns "9".
+func extractRHELMajorVersion(version string) string {
+	parts := strings.SplitN(version, ".", 2)
+	if len(parts) >= 1 {
+		return parts[0]
+	}
+	return "9" // Default to RHEL 9 if parsing fails
+}
+
+// isNewRHCOSVersionSchema returns true if the RHCOS version follows the RHEL-style
+// (9.x, 10.x) rather than the OCP-style (4xx.x).
+// RHCOS 4.19+ reports versions like "9.6.20260217-1" instead of "418.94.202501011408".
+func isNewRHCOSVersionSchema(version string) bool {
+	if len(version) == 0 {
+		return false
+	}
+	parts := strings.SplitN(version, ".", 2)
+	if len(parts) < 2 {
+		return false
+	}
+	major, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return false
+	}
+	// RHEL versions are 8.x, 9.x, 10.x (single/double digit major)
+	// OCP-derived versions are 412.x, 413.x, 418.x (triple digit major)
+	return major < 100
+}
+
+func noop(_, _, _ string, rpm *v4.IndexReport) *v4.IndexReport {
 	return rpm
 }
 
@@ -506,7 +542,7 @@ func extractArch(rpm *v4.IndexReport) string {
 	return ""
 }
 
-func attachRPMtoRHCOS(version, arch string, rpm *v4.IndexReport) *v4.IndexReport {
+func attachRPMtoRHCOS(ocpVersion, version, arch string, rpm *v4.IndexReport) *v4.IndexReport {
 	idCandidate := 600 // Arbitrary selected. RHCOS has usually 520-560 rpm packages.
 	envs := rpm.GetContents().GetEnvironments()
 	if len(envs) == 0 {
@@ -516,7 +552,7 @@ func attachRPMtoRHCOS(version, arch string, rpm *v4.IndexReport) *v4.IndexReport
 		idCandidate++
 	}
 	strID := strconv.Itoa(idCandidate)
-	oci := buildRHCOSIndexReport(strID, version, arch)
+	oci := buildRHCOSIndexReport(strID, ocpVersion, version, arch)
 	for pkgID, pkg := range rpm.GetContents().GetPackages() {
 		oci.Contents.Packages[pkgID] = pkg
 	}
@@ -536,7 +572,28 @@ func attachRPMtoRHCOS(version, arch string, rpm *v4.IndexReport) *v4.IndexReport
 	return oci
 }
 
-func buildRHCOSIndexReport(Id, version, arch string) *v4.IndexReport {
+// buildRHCOSIndexReport creates an IndexReport for the synthetic "rhcos" package.
+// For RHCOS 4.19+ (new schema with RHEL-style versions like "9.6.xxx"), it uses
+// the RHEL CPE repository instead of the golden image to enable proper vulnerability
+// matching against RHEL-based CVE data.
+func buildRHCOSIndexReport(Id, ocpVersion, version, arch string) *v4.IndexReport {
+	// Determine repository configuration based on version schema
+	repoKey := goldenKey
+	repoName := goldenName
+	repoURI := goldenURI
+	repoCPE := "cpe:2.3:*"
+
+	if isNewRHCOSVersionSchema(version) {
+		// RHCOS 4.19+ uses RHEL-style versions (e.g., "9.6.xxx")
+		// Use RHEL CPE repository for proper vulnerability matching
+		rhelMajor := extractRHELMajorVersion(version)
+		repoKey = rhelCPEKey
+		repoName = fmt.Sprintf("cpe:/o:redhat:enterprise_linux:%s::baseos", rhelMajor)
+		repoURI = "" // RHEL CPE repos don't have a URI
+		repoCPE = fmt.Sprintf("cpe:2.3:o:redhat:enterprise_linux:%s:*:baseos:*:*:*:*:*", rhelMajor)
+		log.Debugf("RHCOS 4.19+ detected (version=%s): using RHEL %s CPE repository for vulnerability matching", version, rhelMajor)
+	}
+
 	return &v4.IndexReport{
 		// This hashId is arbitrary. The value doesn't play a role for matcher, but must be valid sha256.
 		HashId:  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -559,10 +616,10 @@ func buildRHCOSIndexReport(Id, version, arch string) *v4.IndexReport {
 						Name:    "rhcos",
 						Kind:    "source",
 						Version: version,
-						Cpe:     "cpe:2.3:*", // required to pass validation of scanner V4 API
+						Cpe:     repoCPE,
 					},
 					Arch: arch,
-					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
+					Cpe:  repoCPE,
 				},
 			},
 			PackagesDEPRECATED: []*v4.Package{
@@ -580,28 +637,28 @@ func buildRHCOSIndexReport(Id, version, arch string) *v4.IndexReport {
 						Name:    "rhcos",
 						Kind:    "source",
 						Version: version,
-						Cpe:     "cpe:2.3:*", // required to pass validation of scanner V4 API
+						Cpe:     repoCPE,
 					},
 					Arch: arch,
-					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
+					Cpe:  repoCPE,
 				},
 			},
 			Repositories: map[string]*v4.Repository{
 				Id: {
 					Id:   Id,
-					Name: goldenName,
-					Key:  goldenKey,
-					Uri:  goldenURI,
-					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
+					Name: repoName,
+					Key:  repoKey,
+					Uri:  repoURI,
+					Cpe:  repoCPE,
 				},
 			},
 			RepositoriesDEPRECATED: []*v4.Repository{
 				{
 					Id:   Id,
-					Name: goldenName,
-					Key:  goldenKey,
-					Uri:  goldenURI,
-					Cpe:  "cpe:2.3:*", // required to pass validation of scanner V4 API
+					Name: repoName,
+					Key:  repoKey,
+					Uri:  repoURI,
+					Cpe:  repoCPE,
 				},
 			},
 			// Environments must be present for the matcher to discover records
