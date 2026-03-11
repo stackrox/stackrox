@@ -86,12 +86,18 @@ func (ComplianceCheckStatus) EnumDescriptor() ([]byte, []int) {
 	return file_api_v2_compliance_common_proto_rawDescGZIP(), []int{0}
 }
 
+// OperatorKind is the kind of the Compliance Operator resource that this
+// `ComplianceProfileSummary` was sourced from (note that ACS represents both Compliance
+// Operator `Profiles` and `TailoredProfiles` as compliance profiles).
 type ComplianceProfileSummary_OperatorKind int32
 
 const (
+	// The kind is unspecified.
 	ComplianceProfileSummary_OPERATOR_KIND_UNSPECIFIED ComplianceProfileSummary_OperatorKind = 0
-	ComplianceProfileSummary_PROFILE                   ComplianceProfileSummary_OperatorKind = 1
-	ComplianceProfileSummary_TAILORED_PROFILE          ComplianceProfileSummary_OperatorKind = 2
+	// The kind is `Profile`.
+	ComplianceProfileSummary_PROFILE ComplianceProfileSummary_OperatorKind = 1
+	// The kind is `TailoredProfile`.
+	ComplianceProfileSummary_TAILORED_PROFILE ComplianceProfileSummary_OperatorKind = 2
 )
 
 // Enum value maps for ComplianceProfileSummary_OperatorKind.

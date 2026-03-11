@@ -23,11 +23,18 @@ message ComplianceProfile {
   string title = 9;
   repeated string values = 10;
   repeated ComplianceBenchmark standards = 11;
+  // OperatorKind is the kind of the Compliance Operator resource that this
+  // `ComplianceProfile` was sourced from (note that ACS represents both Compliance
+  // Operator `Profiles` and `TailoredProfiles` as compliance profiles).
   enum OperatorKind {
+    // The kind is unspecified.
     OPERATOR_KIND_UNSPECIFIED = 0;
+    // The kind is `Profile`.
     PROFILE = 1;
+    // The kind is `TailoredProfile`.
     TAILORED_PROFILE = 2;
   }
+
   OperatorKind operator_kind = 12;
 }
 

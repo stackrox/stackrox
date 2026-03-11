@@ -22,12 +22,18 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// OperatorKind is the kind of the Compliance Operator resource that this
+// `ComplianceProfile` was sourced from (note that ACS represents both Compliance
+// Operator `Profiles` and `TailoredProfiles` as compliance profiles).
 type ComplianceProfile_OperatorKind int32
 
 const (
+	// The kind is unspecified.
 	ComplianceProfile_OPERATOR_KIND_UNSPECIFIED ComplianceProfile_OperatorKind = 0
-	ComplianceProfile_PROFILE                   ComplianceProfile_OperatorKind = 1
-	ComplianceProfile_TAILORED_PROFILE          ComplianceProfile_OperatorKind = 2
+	// The kind is `Profile`.
+	ComplianceProfile_PROFILE ComplianceProfile_OperatorKind = 1
+	// The kind is `TailoredProfile`.
+	ComplianceProfile_TAILORED_PROFILE ComplianceProfile_OperatorKind = 2
 )
 
 // Enum value maps for ComplianceProfile_OperatorKind.
