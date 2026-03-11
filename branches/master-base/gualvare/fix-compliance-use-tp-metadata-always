@@ -2,5 +2,16 @@
   "base": {
     "name": "master-base/gualvare/ROX-31229-tailored-profiles-tracking",
     "hash": "6084289d62e8cf98d31daf65655803b3fc5cc355"
+  },
+  "upstream": {
+    "branch": "master-base/gualvare/fix-compliance-use-tp-metadata-always"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 19374,
+        "gqlID": "PR_kwDOGd6UEM7Joows"
+      }
+    }
   }
 }
