@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -66,13 +65,12 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 	}
 
 	protoProfile := &storage.ComplianceOperatorProfile{
-		Id:        string(tailoredProfile.UID),
-		ProfileId: tailoredProfile.Status.ID,
-		Name:      tailoredProfile.Name,
-		// We want to use the original compliance profiles labels and annotations as they hold data about the type of profile
-		Labels:      baseProfile.Labels,
-		Annotations: baseProfile.Annotations,
-		Description: stringutils.FirstNonEmpty(tailoredProfile.Spec.Description, baseProfile.Description),
+		Id:          string(tailoredProfile.GetUID()),
+		ProfileId:   tailoredProfile.Status.ID,
+		Name:        tailoredProfile.GetName(),
+		Labels:      tailoredProfile.GetLabels(),
+		Annotations: tailoredProfile.GetAnnotations(),
+		Description: tailoredProfile.Spec.Description,
 	}
 
 	removedRules := set.NewStringSet()
@@ -106,12 +104,12 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 
 	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
 		protoProfileV2 := &central.ComplianceOperatorProfileV2{
-			Id:           string(tailoredProfile.GetUID()),
-			ProfileId:    tailoredProfile.Status.ID,
-			Name:         tailoredProfile.GetName(),
-			Labels:       baseProfile.Labels,
-			Annotations:  baseProfile.Annotations,
-			Description:  stringutils.FirstNonEmpty(tailoredProfile.Spec.Description, baseProfile.Description),
+			Id:           protoProfile.GetId(),
+			ProfileId:    protoProfile.GetProfileId(),
+			Name:         protoProfile.GetName(),
+			Labels:       protoProfile.GetLabels(),
+			Annotations:  protoProfile.GetAnnotations(),
+			Description:  protoProfile.GetDescription(),
 			Title:        tailoredProfile.Spec.Title,
 			OperatorKind: central.ComplianceOperatorProfileV2_TAILORED_PROFILE,
 		}
