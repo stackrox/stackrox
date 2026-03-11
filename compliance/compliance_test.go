@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -44,6 +45,13 @@ func (m *mockUnconfirmedMessageHandler) RetryCommand() <-chan string {
 
 func (m *mockUnconfirmedMessageHandler) OnACK(_ func(resourceID string)) {
 	// no-op for test mock
+}
+
+func (m *mockUnconfirmedMessageHandler) Stopped() concurrency.ReadOnlyErrorSignal {
+	// Return an already-stopped signal so callers that wait on it don't hang.
+	s := concurrency.NewStopper()
+	s.Flow().ReportStopped()
+	return s.Client().Stopped()
 }
 
 func (s *ComplianceTestSuite) TestHandleComplianceACK() {

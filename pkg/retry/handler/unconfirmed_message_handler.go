@@ -122,6 +122,7 @@ func (h *UnconfirmedMessageHandlerImpl) ObserveSending(resourceID string) {
 
 // HandleACK is called when an ACK is received for a resource.
 func (h *UnconfirmedMessageHandlerImpl) HandleACK(resourceID string) {
+	var onAckCallback func(string)
 	concurrency.WithLock(&h.mu, func() {
 		// Check if handler is stopped before any operations
 		if h.ctx.Err() != nil {
@@ -133,23 +134,29 @@ func (h *UnconfirmedMessageHandlerImpl) HandleACK(resourceID string) {
 			if state.timer != nil {
 				state.timer.Stop()
 			}
-			state.retry = 0
-			state.numUnackedSendings = 0
+			delete(h.resources, resourceID)
 			log.Debugf("[%s] Received ACK for resource %s", h.handlerName, resourceID)
 		} else {
 			log.Debugf("[%s] Received ACK for unknown resource %s", h.handlerName, resourceID)
 		}
+		// Check callback inside the lock.
+		if h.onACK != nil {
+			onAckCallback = h.onACK
+		}
 	})
 
-	// Invoke callback outside lock
-	if h.onACK != nil {
-		h.onACK(resourceID)
+	// Invoke callback outside the lock to avoid potentially long-running operations inside the lock.
+	if onAckCallback != nil {
+		onAckCallback(resourceID)
 	}
 }
 
 // HandleNACK is called when a NACK is received for a resource.
 // It just logs - the existing timer will handle retry based on normal backoff.
 func (h *UnconfirmedMessageHandlerImpl) HandleNACK(resourceID string) {
+	// HandleNACK is currently a no-op and has the same behavior as not reciving any [N]ACK message.
+	// This is intentional as we want to keep retrying until Central is able to process the message.
+	// This will change in the future where NACK can be treated as a signal to slow down retries.
 	log.Debugf("[%s] Received NACK for resource %s. Message will be resent.", h.handlerName, resourceID)
 }
 
@@ -202,11 +209,14 @@ func (h *UnconfirmedMessageHandlerImpl) onTimerFired(resourceID string) {
 		return
 	case h.retryCommandCh <- resourceID:
 	default:
+		// If the channel is full or the consumer goroutine is busy, we assume that currently a
+		// transimssion of a message is in progress. This means, that we do not need to enqueue
+		// another message immediately afterwards. Thus, we drop the retry signal and log a warning.
 		log.Warnf("[%s] Retry channel full, dropping retry signal for %s", h.handlerName, resourceID)
 	}
 }
 
-// calculateNextInterval returns the next retry interval with exponential backoff.
+// calculateNextInterval returns the next retry interval with linear backoff.
 func (h *UnconfirmedMessageHandlerImpl) calculateNextInterval(retry int32) time.Duration {
 	if h.baseInterval <= 0 {
 		return defaultBaseInterval
