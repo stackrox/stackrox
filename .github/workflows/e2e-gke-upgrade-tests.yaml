@@ -405,6 +405,8 @@ jobs:
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         GOOGLE_CREDENTIALS_GCR_SCANNER_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_SCANNER_V2 }}
+        REDHAT_USERNAME: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
+        REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
         LOAD_BALANCER: lb
       run: |
         tests/upgrade/postgres_upgrade_run.sh /tmp/postgres-version-upgrade-test-logs
