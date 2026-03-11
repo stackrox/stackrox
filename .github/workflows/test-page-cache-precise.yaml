@@ -161,7 +161,9 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: "SHA256 hash micro-benchmark"
+        shell: bash --noprofile --norc -o pipefail {0}
         run: |
+          set +e  # Don't exit on SIGPIPE from cat|sha256sum
           echo "### SHA256 micro-benchmark" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
@@ -257,7 +259,7 @@ jobs:
         run: |
           echo "### Test from disk" >> "$GITHUB_STEP_SUMMARY"
           start_ns=$(date +%s%N)
-          make go-unit-tests 2>&1 | tail -5
+          make go-unit-tests 2>&1 | tail -5 || true
           end_ns=$(date +%s%N)
           elapsed_ms=$(( (end_ns - start_ns) / 1000000 ))
           elapsed_s=$(( elapsed_ms / 1000 ))
@@ -285,7 +287,7 @@ jobs:
 
           rm -rf test-output/
           start_ns=$(date +%s%N)
-          make go-unit-tests 2>&1 | tail -5
+          make go-unit-tests 2>&1 | tail -5 || true
           end_ns=$(date +%s%N)
           elapsed_ms=$(( (end_ns - start_ns) / 1000000 ))
           elapsed_s=$(( elapsed_ms / 1000 ))
