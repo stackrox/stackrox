@@ -10,6 +10,7 @@ import (
 
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
 	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
 	imageDataStoreV2 "github.com/stackrox/rox/central/imagev2/datastore"
@@ -47,12 +48,13 @@ func TestImageV2DataStore(t *testing.T) {
 type ImageV2DataStoreTestSuite struct {
 	suite.Suite
 
-	ctx                context.Context
-	testDB             *pgtest.TestPostgres
-	datastore          imageDataStoreV2.DataStore
-	mockRisk           *mockRisks.MockDataStore
-	componentDataStore imageComponentDS.DataStore
-	cveDataStore       imageCVEDS.DataStore
+	ctx                 context.Context
+	testDB              *pgtest.TestPostgres
+	datastore           imageDataStoreV2.DataStore
+	mockRisk            *mockRisks.MockDataStore
+	componentDataStore  imageComponentDS.DataStore
+	cveDataStore        imageCVEDS.DataStore
+	deploymentDataStore deploymentDS.DataStore
 }
 
 func (s *ImageV2DataStoreTestSuite) SetupSuite() {
@@ -70,9 +72,14 @@ func (s *ImageV2DataStoreTestSuite) SetupTest() {
 
 	cveStorage := imageCVEPostgres.New(s.testDB.DB)
 	s.cveDataStore = imageCVEDS.New(cveStorage)
+
+	var err error
+	s.deploymentDataStore, err = deploymentDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Require().NoError(err)
 }
 
 func (s *ImageV2DataStoreTestSuite) TearDownTest() {
+	s.truncateTable(postgresSchema.DeploymentsTableName)
 	s.truncateTable(postgresSchema.ImagesV2TableName)
 	s.truncateTable(postgresSchema.ImageComponentV2TableName)
 	s.truncateTable(postgresSchema.ImageCvesV2TableName)
@@ -761,4 +768,42 @@ func (s *ImageV2DataStoreTestSuite) TestSearchListImages() {
 	for i := 1; i < len(listImages); i++ {
 		s.LessOrEqual(listImages[i-1].GetName(), listImages[i].GetName(), "Images should be sorted by name")
 	}
+
+	// Test 10: Verify distinct results when joining with other tables (ROX-33514)
+	// Create 2 deployments that reference all 3 images
+	dep1 := fixtures.LightweightDeployment()
+	dep1.Id = uuid.NewV4().String()
+	dep1.Name = "deployment1"
+	dep1.Containers = []*storage.Container{
+		{Name: "container1", Image: &storage.ContainerImage{Id: img1.GetDigest(), IdV2: img1.GetId(), Name: img1.GetName()}},
+		{Name: "container2", Image: &storage.ContainerImage{Id: img2.GetDigest(), IdV2: img2.GetId(), Name: img2.GetName()}},
+		{Name: "container3", Image: &storage.ContainerImage{Id: img3.GetDigest(), IdV2: img3.GetId(), Name: img3.GetName()}},
+	}
+
+	dep2 := fixtures.LightweightDeployment()
+	dep2.Id = uuid.NewV4().String()
+	dep2.Name = "deployment2"
+	dep2.Containers = []*storage.Container{
+		{Name: "container4", Image: &storage.ContainerImage{Id: img1.GetDigest(), IdV2: img1.GetId(), Name: img1.GetName()}},
+		{Name: "container5", Image: &storage.ContainerImage{Id: img2.GetDigest(), IdV2: img2.GetId(), Name: img2.GetName()}},
+		{Name: "container6", Image: &storage.ContainerImage{Id: img3.GetDigest(), IdV2: img3.GetId(), Name: img3.GetName()}},
+	}
+
+	s.NoError(s.deploymentDataStore.UpsertDeployment(ctx, dep1))
+	s.NoError(s.deploymentDataStore.UpsertDeployment(ctx, dep2))
+
+	// Search for images with deployment filter - should return 3 unique images, not 6
+	q = pkgSearch.NewQueryBuilder().AddRegexes(pkgSearch.DeploymentName, ".*").ProtoQuery()
+	listImages, err = s.datastore.SearchListImages(ctx, q)
+	s.NoError(err)
+
+	// Verify we get exactly 3 unique images despite having 2 deployments referencing all 3
+	s.Len(listImages, 3, "Expected 3 unique images, not duplicates from multiple deployments")
+	imageDigests = set.NewStringSet()
+	for _, img := range listImages {
+		imageDigests.Add(img.GetId())
+	}
+	s.True(imageDigests.Contains(img1.GetDigest()))
+	s.True(imageDigests.Contains(img2.GetDigest()))
+	s.True(imageDigests.Contains(img3.GetDigest()))
 }
