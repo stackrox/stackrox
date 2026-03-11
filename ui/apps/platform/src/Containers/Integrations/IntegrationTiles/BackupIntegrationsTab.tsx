@@ -33,12 +33,12 @@ function BackupIntegrationsTab({ sourcesEnabled }: IntegrationsTabProps): ReactE
             )}
             <Gallery hasGutter>
                 {descriptors.filter(featureFlagDependencyFilter).map((descriptor) => {
-                    const { image, label, type } = descriptor;
+                    const { ImageComponent, label, type } = descriptor;
 
                     return (
                         <IntegrationTile
                             key={type}
-                            image={image}
+                            ImageComponent={ImageComponent}
                             label={label}
                             linkTo={getIntegrationsListPath(source, type)}
                             numIntegrations={countIntegrations(type)}

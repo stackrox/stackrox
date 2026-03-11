@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import type { ComponentType, ReactElement, SVGProps } from 'react';
 import {
     Badge,
     Card,
@@ -15,7 +15,7 @@ import TechPreviewLabel from 'Components/PatternFly/PreviewLabel/TechPreviewLabe
 
 type IntegrationTileProps = {
     categories?: string;
-    image: string;
+    ImageComponent: ComponentType<SVGProps<SVGSVGElement>>;
     label: string;
     linkTo: string;
     numIntegrations: number;
@@ -24,7 +24,7 @@ type IntegrationTileProps = {
 
 function IntegrationTile({
     categories,
-    image,
+    ImageComponent,
     label,
     linkTo,
     numIntegrations,
@@ -48,7 +48,11 @@ function IntegrationTile({
                                 {numIntegrations}
                             </Badge>
                         )}
-                        <img src={image} alt="" style={{ height: '100px' }} />
+                        <ImageComponent
+                            aria-label="Integration logo"
+                            role="img"
+                            style={{ height: '100px', width: 'auto', maxWidth: '100%' }}
+                        />
                     </>
                 </CardHeader>
                 <CardTitle className="pf-v6-u-color-100" style={{ whiteSpace: 'nowrap' }}>

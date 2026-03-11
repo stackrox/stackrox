@@ -39,7 +39,7 @@ function NotifierIntegrationsTab({ sourcesEnabled }: IntegrationsTabProps): Reac
             )}
             <Gallery hasGutter>
                 {descriptors.filter(featureFlagDependencyFilter).map((descriptor) => {
-                    const { image, label, type } = descriptor;
+                    const { ImageComponent, label, type } = descriptor;
                     if (!canUseAcscsEmailIntegration && type === 'acscsEmail') {
                         return null; // TODO add centralCapabilityRequirement to descriptor
                     }
@@ -47,7 +47,7 @@ function NotifierIntegrationsTab({ sourcesEnabled }: IntegrationsTabProps): Reac
                     return (
                         <IntegrationTile
                             key={type}
-                            image={image}
+                            ImageComponent={ImageComponent}
                             label={label}
                             linkTo={getIntegrationsListPath(source, type)}
                             numIntegrations={countIntegrations(type)}

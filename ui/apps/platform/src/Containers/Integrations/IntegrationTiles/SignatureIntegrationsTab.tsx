@@ -14,7 +14,7 @@ import {
     signatureIntegrationsSource as source,
 } from '../utils/integrationsList';
 
-const { image, label, type } = descriptor;
+const { ImageComponent, label, type } = descriptor;
 
 function SignatureIntegrationsTab({ sourcesEnabled }: IntegrationsTabProps): ReactElement {
     const { data, error } = useRestQuery(fetchSignatureIntegrations);
@@ -29,7 +29,7 @@ function SignatureIntegrationsTab({ sourcesEnabled }: IntegrationsTabProps): Rea
             )}
             <Gallery hasGutter>
                 <IntegrationTile
-                    image={image}
+                    ImageComponent={ImageComponent}
                     label={label}
                     linkTo={getIntegrationsListPath(source, type)}
                     numIntegrations={integrations.length}

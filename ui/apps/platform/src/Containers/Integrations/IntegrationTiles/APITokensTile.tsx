@@ -10,7 +10,7 @@ import {
 } from '../utils/integrationsList';
 import IntegrationTile from './IntegrationTile';
 
-const { image, label, type } = descriptor;
+const { ImageComponent, label, type } = descriptor;
 
 function APITokensTile(): ReactElement {
     const { data } = useRestQuery(fetchAPITokens);
@@ -18,7 +18,7 @@ function APITokensTile(): ReactElement {
 
     return (
         <IntegrationTile
-            image={image}
+            ImageComponent={ImageComponent}
             label={label}
             linkTo={getIntegrationsListPath(source, type)}
             numIntegrations={integrations.length}
