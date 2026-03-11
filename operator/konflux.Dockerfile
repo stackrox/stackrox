@@ -17,7 +17,42 @@ ENV CI=1 GOFLAGS="" CGO_ENABLED=1
 RUN GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/main.go image/bin/operator
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:5dc6ba426ccbeb3954ead6b015f36b4a2d22320e5b356b074198d08422464ed2
+# Stage: ubi-micro base (for reference and final image)
+FROM registry.access.redhat.com/ubi8/ubi-micro:latest@sha256:37552f11d3b39b3360f7be7c13f6a617e468f39be915cd4f8c8a8531ffc9d43d AS ubi-micro-base
+
+
+# Stage: Package installer with runtime packages
+FROM registry.access.redhat.com/ubi8/ubi:latest@sha256:627867e53ad6846afba2dfbf5cef1d54c868a9025633ef0afd546278d4654eac AS package_installer
+
+# CRITICAL: Copy ubi-micro base to /out/ to preserve its rpmdb
+# This ensures the final image's RPM database tracks both:
+# 1. Packages from ubi-micro base
+# 2. Packages we install below
+COPY --from=ubi-micro-base / /out/
+
+# Install minimal runtime packages to /out/ using dnf --installroot
+# operator is a Go binary with minimal dependencies, but needs ca-certificates for TLS
+# The --setopt=reposdir=/etc/yum.repos.d ensures we use host repos (cachi2) for Konflux hermetic builds
+RUN dnf install -y \
+    --installroot=/out/ \
+    --releasever=8 \
+    --setopt=install_weak_deps=False \
+    --setopt=reposdir=/etc/yum.repos.d \
+    --nodocs \
+    ca-certificates && \
+    dnf clean all --installroot=/out/ && \
+    rm -rf /out/var/cache/*
+
+# Consolidate all file copies to /out/ to reduce final image layers
+COPY --from=builder /go/src/github.com/stackrox/rox/app/image/bin/operator /out/usr/local/bin/rhacs-operator
+COPY LICENSE /out/licenses/LICENSE
+
+
+# Final stage: ubi-micro runtime
+FROM ubi-micro-base
+
+# Copy all installed packages and files from package_installer in a single layer
+COPY --from=package_installer /out/ /
 
 ARG BUILD_TAG
 
@@ -39,14 +74,6 @@ LABEL \
     # Release label is required by EC although has no practical semantics.
     # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
     release="1"
-
-COPY --from=builder /go/src/github.com/stackrox/rox/app/image/bin/operator /usr/local/bin/rhacs-operator
-
-RUN microdnf clean all && \
-    rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /var/cache/dnf /var/cache/yum
-
-COPY LICENSE /licenses/LICENSE
 
 ENV ROX_IMAGE_FLAVOR="rhacs"
 
