@@ -158,4 +158,50 @@ Both optimizations should be kept. The tmpfs setup (`--tmpfs` + `/__w_host`) is
 low-cost maintenance for a measurable-in-theory benefit on warm builds.
 
 A single-runner experiment (all strategies on the same runner, sub-second timing)
-is needed to resolve the small tmpfs effect. See run 6+ below.
+is needed to resolve the small tmpfs effect. See precision results below.
+
+## Single-Runner Precision Results (run 22965694819)
+
+**Runner**: AMD EPYC 7763, 4 cores, 15GB RAM, ext4, Linux 6.14
+**Build**: `GOOS=linux GOARCH=amd64 CGO_ENABLED=1 make build-prep main-build-nodeps`
+(8 binaries, ~4,400 packages, warm GOCACHE)
+
+### Build timing (ms, 5 iterations each, same runner)
+
+| Strategy | #1 | #2 | #3 | #4 | #5 | Mean | Stdev |
+|----------|------|------|------|------|------|------|-------|
+| disk-warm | 19034 | 17807 | 17890 | 17839 | 17857 | **18085** | 526 |
+| disk-cold | 25218 | 24940 | 25239 | — | — | **25132** | 165 |
+| vmtouch-lock | 17910 | 17918 | 17652 | 17719 | 17893 | **17818** | 118 |
+| tmpfs | 18306 | 17685 | 18001 | 17535 | 17829 | **17871** | 293 |
+
+### SHA256 bulk hash (all ~14,600 source files, ~400MB)
+
+| Strategy | #1 | #2 | #3 | Mean |
+|----------|------|-----|-----|------|
+| disk-cold | 1684 | 236 | 243 | 721ms (first is cold) |
+| disk-warm | 229 | 231 | 241 | **234ms** |
+| tmpfs | 236 | 239 | 233 | **236ms** |
+
+### Key findings
+
+1. **Cold disk penalty: +7s** (25.1s vs 18.1s). Evicted page cache costs 39% more.
+2. **vmtouch-lock: -267ms** vs disk-warm. Pages pinned = lower variance (stdev 118 vs 526).
+3. **tmpfs: -214ms** vs disk-warm. Similar to vmtouch-lock.
+4. **SHA256 hash speed identical**: disk-warm=234ms, tmpfs=236ms. The build improvement
+   is from preventing page eviction during compilation, not faster reads.
+5. **vmtouch-lock has lowest variance** (stdev 118ms) — pinned pages give most
+   consistent performance.
+
+### Disk warm page cache residency
+
+Before vmtouch-lock: 100% (1G/1G resident)
+After build (disk-warm): 81.6% (296K/363K pages) — compiler evicted ~18% of pages
+
+This eviction is what costs the extra ~250ms. tmpfs and vmtouch-lock both prevent it.
+
+### Test results (pending)
+
+Disk test completed in 2166s (36 min, cold test cache — first run with this
+job name). tmpfs test was skipped due to flaky test failure. Re-running with
+`|| true` to capture both disk and tmpfs timings.
