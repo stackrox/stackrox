@@ -43,8 +43,9 @@ import {
     Label as NodeLabel,
     Name as NodeName,
 } from 'Components/CompoundSearchFilter/attributes/node';
+import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 
-const searchFilterConfig: CompoundSearchFilterConfig = [
+const allSearchFilterEntities: CompoundSearchFilterConfig = [
     {
         displayName: 'Cluster',
         searchCategory: 'ALERTS',
@@ -88,11 +89,34 @@ const searchFilterConfig: CompoundSearchFilterConfig = [
     },
 ];
 
+const allowedEntitiesByView: Record<FilteredWorkflowView, string[]> = {
+    'Applications view': ['Cluster', 'Deployment', 'Namespace', 'Policy', 'Policy violation'],
+    'Platform view': ['Cluster', 'Deployment', 'Namespace', 'Policy', 'Policy violation'],
+    'Node view': ['Cluster', 'Policy', 'Policy violation', 'Node'],
+    'Full view': [
+        'Cluster',
+        'Deployment',
+        'Namespace',
+        'Policy',
+        'Policy violation',
+        'Node',
+        'Resource',
+    ],
+};
+
+export function getSearchFilterConfig(
+    filteredWorkflowView: FilteredWorkflowView
+): CompoundSearchFilterConfig {
+    const allowed = allowedEntitiesByView[filteredWorkflowView];
+    return allSearchFilterEntities.filter((entity) => allowed.includes(entity.displayName));
+}
+
 export type ViolationsTableSearchFilterProps = {
     searchFilter: SearchFilter;
     onFilterChange: (newFilter: SearchFilter) => void;
     onSearch: OnSearchCallback;
     additionalContextFilter: SearchFilter;
+    filteredWorkflowView: FilteredWorkflowView;
 };
 
 function ViolationsTableSearchFilter({
@@ -100,9 +124,12 @@ function ViolationsTableSearchFilter({
     onFilterChange,
     onSearch,
     additionalContextFilter,
+    filteredWorkflowView,
 }: ViolationsTableSearchFilterProps) {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
+
+    const searchFilterConfig = getSearchFilterConfig(filteredWorkflowView);
 
     const onSearchHandler: OnSearchCallback = (payload) => {
         onSearch(payload);

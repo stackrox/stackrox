@@ -36,6 +36,7 @@ import type { ListAlert } from 'types/alert.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import type { SearchFilter } from 'types/search';
 import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
+import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import ResolveConfirmation from './Modals/ResolveConfirmation';
 import ExcludeConfirmation from './Modals/ExcludeConfirmation';
 import ViolationsTableSearchFilter from './ViolationsTableSearchFilter';
@@ -81,6 +82,7 @@ type ViolationsTablePanelProps = {
     onFilterChange: (newFilter: SearchFilter) => void;
     onSearch: OnSearchCallback;
     additionalContextFilter: SearchFilter;
+    filteredWorkflowView: FilteredWorkflowView;
     hasActiveViolations: boolean;
     isTableDataUpdating: boolean;
 };
@@ -100,6 +102,7 @@ function ViolationsTablePanel({
     onFilterChange,
     onSearch,
     additionalContextFilter,
+    filteredWorkflowView,
     hasActiveViolations,
     isTableDataUpdating,
 }: ViolationsTablePanelProps): ReactElement {
@@ -240,6 +243,7 @@ function ViolationsTablePanel({
                 onFilterChange={onFilterChange}
                 onSearch={onSearch}
                 additionalContextFilter={additionalContextFilter}
+                filteredWorkflowView={filteredWorkflowView}
             />
             <Divider component="div" />
             <Toolbar>
