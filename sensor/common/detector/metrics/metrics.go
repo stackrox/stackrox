@@ -242,6 +242,14 @@ var (
 		Help:      "A counter that tracks the operations in scan and set",
 	}, []string{"Operation", "Reason"})
 
+	// Intended scanner configuration for Sensor. Labels indicate whether local image scanning is enabled, which local scanner mode is selected, and whether delegated scanning is enabled.
+	/*
+		Labels:
+		- `local`: `true|false` (whether local image scanning is enabled in Sensor)
+		- `mode`: `none|v2|v4` (Sensor local scanner mode)
+		- `delegated`: `true|false` (delegated scanning enabled status)
+	*/
+
 	scannerConfigurationInfo = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -249,6 +257,19 @@ var (
 		Help:      "Intended scanner configuration for Sensor. Labels indicate whether local image scanning is enabled, which local scanner mode is selected, and whether delegated scanning is enabled.",
 	}, []string{"local", "mode", "delegated"})
 
+	// Intended image indexing route in Sensor by image locality.
+	/*
+		Labels:
+		- `for_images`: `cluster_local|non_cluster_local`
+		- `indexer`: `local_scanner|central_scanner`
+
+		Meaning:
+		- `cluster_local` means the image registry is recognized by Sensor as local to
+		  the secured cluster.
+		- `non_cluster_local` means all other images.
+		- This metric describes intended indexing route in Sensor for each class.
+		- Vulnerability matching is always performed in Central.
+	*/
 	imageIndexingRouteInfo = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
