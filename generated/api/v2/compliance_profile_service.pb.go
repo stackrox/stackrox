@@ -23,8 +23,8 @@ const (
 )
 
 // OperatorKind is the kind of the Compliance Operator resource that this
-// `ComplianceProfile` was sourced from (note that ACS represents both Compliance
-// Operator `Profiles` and `TailoredProfiles` as compliance profiles).
+// `ComplianceProfile` was sourced from. ACS represents both Compliance
+// Operator `Profiles` and `TailoredProfiles` as compliance profiles.
 type ComplianceProfile_OperatorKind int32
 
 const (
