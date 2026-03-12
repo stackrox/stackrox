@@ -326,8 +326,8 @@ type Deployment struct {
 	StateTimestamp                int64                  `protobuf:"varint,27,opt,name=state_timestamp,json=stateTimestamp,proto3" json:"state_timestamp,omitempty" hash:"ignore" sensorhash:"ignore"`                                                                               // Internal use only @gotags: hash:"ignore" sensorhash:"ignore"
 	RiskScore                     float32                `protobuf:"fixed32,29,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Deployment Risk Score,hidden" policy:",ignore"`                                                                                             // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore"
 	PlatformComponent             bool                   `protobuf:"varint,35,opt,name=platform_component,json=platformComponent,proto3" json:"platform_component,omitempty" search:"Platform Component"`                                                                      // @gotags: search:"Platform Component"
-	InitContainers                []*Container           `protobuf:"bytes,36,rep,name=init_containers,json=initContainers,proto3" json:"init_containers,omitempty"`
-	EphemeralContainers           []*Container           `protobuf:"bytes,37,rep,name=ephemeral_containers,json=ephemeralContainers,proto3" json:"ephemeral_containers,omitempty"`
+	InitContainers                []*Container           `protobuf:"bytes,36,rep,name=init_containers,json=initContainers,proto3" json:"init_containers,omitempty" search:"-"`                                                                                // @gotags: search:"-"
+	EphemeralContainers           []*Container           `protobuf:"bytes,37,rep,name=ephemeral_containers,json=ephemeralContainers,proto3" json:"ephemeral_containers,omitempty" search:"-"`                                                                 // @gotags: search:"-"
 	unknownFields                 protoimpl.UnknownFields
 	sizeCache                     protoimpl.SizeCache
 }
