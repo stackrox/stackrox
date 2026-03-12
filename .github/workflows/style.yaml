@@ -41,7 +41,7 @@ jobs:
 
     - uses: actions/setup-python@v5
       with:
-        python-version: '3.9'  # operator/bundle_helpers venv requires Python <3.12
+        python-version: '3.9'  # operator/Makefile pins pip==21.3.1 which requires Python <3.12
 
     # setup-go@v6 sets GOTOOLCHAIN=local; override so sub-module tools
     # with newer go directives (e.g. tools/proto) can auto-download.
