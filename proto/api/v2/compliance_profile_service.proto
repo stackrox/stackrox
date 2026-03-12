@@ -24,8 +24,8 @@ message ComplianceProfile {
   repeated string values = 10;
   repeated ComplianceBenchmark standards = 11;
   // OperatorKind is the kind of the Compliance Operator resource that this
-  // `ComplianceProfile` was sourced from (note that ACS represents both Compliance
-  // Operator `Profiles` and `TailoredProfiles` as compliance profiles).
+  // `ComplianceProfile` was sourced from. ACS represents both Compliance
+  // Operator `Profiles` and `TailoredProfiles` as compliance profiles.
   enum OperatorKind {
     // The kind is unspecified.
     OPERATOR_KIND_UNSPECIFIED = 0;
