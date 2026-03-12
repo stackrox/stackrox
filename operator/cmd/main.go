@@ -25,13 +25,16 @@ import (
 	"time"
 
 	"github.com/go-logr/zapr"
+	configv1 "github.com/openshift/api/config/v1"
 	consolev1 "github.com/openshift/api/console/v1"
+	tlspkg "github.com/openshift/controller-runtime-common/pkg/tls"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	centralReconciler "github.com/stackrox/rox/operator/internal/central/reconciler"
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	status "github.com/stackrox/rox/operator/internal/common/status"
 	securedClusterReconciler "github.com/stackrox/rox/operator/internal/securedcluster/reconciler"
+	"github.com/stackrox/rox/operator/internal/tlsprofile"
 	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
@@ -99,6 +102,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(platform.AddToScheme(scheme))
 	utilruntime.Must(consolev1.Install(scheme))
+	utilruntime.Must(configv1.Install(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -138,7 +142,28 @@ func run() error {
 	}
 	defer restore()
 
+	// Read the cluster TLS profile once at startup. The TLSProfileWatcher
+	// restarts the Operator when this changes, so a single read is always current.
+	// The result is used for both the Operator's own metrics server TLS and the
+	// enricher that propagates the profile to managed workloads.
+	bootstrapClient, err := ctrlClient.New(utils.GetRHACSConfigOrDie(), ctrlClient.Options{Scheme: scheme})
+	if err != nil {
+		return errors.Wrap(err, "unable to create bootstrap client for TLS profile")
+	}
+
+	// TODO(ROX-32095): Remove once TLSAdherence is available in target OpenShift clusters.
+	tlsprofile.SetAlwaysHonorTLSProfile()
+	tlsProfile, goTLSProfileSpec := tlsprofile.FetchProfile(context.Background(), bootstrapClient, setupLog)
+
 	var tlsOpts []func(c *tls.Config)
+	if goTLSProfileSpec != nil {
+		tlsConfigFn, unsupported := tlspkg.NewTLSConfigFromProfile(*goTLSProfileSpec)
+		if len(unsupported) > 0 {
+			setupLog.Info("some ciphers from cluster TLS profile are not supported by Go, skipping them", "ciphers", unsupported)
+		}
+		tlsOpts = append(tlsOpts, tlsConfigFn)
+	}
+
 	if !enableHTTP2 {
 		// Mitigate CVE-2023-44487 by disabling HTTP2 and forcing HTTP/1.1 until
 		// the Go standard library and golang.org/x/net are fully fixed.
@@ -218,7 +243,7 @@ func run() error {
 	//+kubebuilder:scaffold:builder
 
 	if centralReconcilerEnabled.BooleanSetting() {
-		if err = centralReconciler.RegisterNewReconciler(mgr, centralLabelSelector); err != nil {
+		if err = centralReconciler.RegisterNewReconciler(mgr, centralLabelSelector, tlsProfile); err != nil {
 			return errors.Wrap(err, "unable to set up Central reconciler")
 		}
 
@@ -236,7 +261,7 @@ func run() error {
 	}
 
 	if securedClusterReconcilerEnabled.BooleanSetting() {
-		if err = securedClusterReconciler.RegisterNewReconciler(mgr, securedClusterLabelSelector); err != nil {
+		if err = securedClusterReconciler.RegisterNewReconciler(mgr, securedClusterLabelSelector, tlsProfile); err != nil {
 			return errors.Wrap(err, "unable to set up SecuredCluster reconciler")
 		}
 
@@ -260,8 +285,17 @@ func run() error {
 		return errors.Wrap(err, "unable to set up readiness check")
 	}
 
+	// Wrap the signal handler context with a cancel so the TLS profile watcher
+	// can trigger a graceful shutdown when the cluster TLS profile changes.
+	ctx, cancel := context.WithCancel(ctrl.SetupSignalHandler())
+	defer cancel()
+
+	if err = tlsprofile.SetupTLSProfileWatcher(ctx, mgr, cancel); err != nil {
+		return errors.Wrap(err, "unable to set up TLS profile watcher")
+	}
+
 	setupLog.Info("starting manager")
-	if err = mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err = mgr.Start(ctx); err != nil {
 		return errors.Wrap(err, "problem running manager")
 	}
 	return nil
