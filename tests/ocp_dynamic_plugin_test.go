@@ -411,7 +411,6 @@ func (s *OCPPluginSuite) TestProxyPathEnforcement() {
 
 	for _, tc := range testCases {
 		s.T().Run(tc.name, func(t *testing.T) {
-			t.Parallel()
 			require.EventuallyWithT(t, func(c *assert.CollectT) {
 				var body io.Reader
 				if tc.getBody != nil {
@@ -449,7 +448,6 @@ func (s *OCPPluginSuite) TestPluginManifest() {
 // when requests arrive without a bearer token or with an invalid one.
 func (s *OCPPluginSuite) TestProxyRequiresAuthentication() {
 	s.T().Run("NoAuthorizationHeader", func(t *testing.T) {
-		t.Parallel()
 		require.EventuallyWithT(t, func(c *assert.CollectT) {
 			resp := doHTTPRequest(c, s.ctx, s.client, http.MethodGet, s.proxyBaseURL+"/v1/metadata", nil, nil)
 			defer utils.IgnoreError(resp.Body.Close)
@@ -459,7 +457,6 @@ func (s *OCPPluginSuite) TestProxyRequiresAuthentication() {
 	})
 
 	s.T().Run("InvalidBearerToken", func(t *testing.T) {
-		t.Parallel()
 		require.EventuallyWithT(t, func(c *assert.CollectT) {
 			headers := map[string]string{"Authorization": "Bearer this-token-will-fail-tokenreview"}
 			resp := doHTTPRequest(c, s.ctx, s.client, http.MethodGet, s.proxyBaseURL+"/v1/metadata", headers, nil)
@@ -471,7 +468,6 @@ func (s *OCPPluginSuite) TestProxyRequiresAuthentication() {
 
 	s.T().Run("MalformedOrUnsupportedAuthorizationHeader", func(t *testing.T) {
 		t.Run("UnsupportedScheme", func(t *testing.T) {
-			t.Parallel()
 			require.EventuallyWithT(t, func(c *assert.CollectT) {
 				headers := map[string]string{"Authorization": "Token abc"}
 				resp := doHTTPRequest(c, s.ctx, s.client, http.MethodGet, s.proxyBaseURL+"/v1/metadata", headers, nil)
@@ -481,7 +477,6 @@ func (s *OCPPluginSuite) TestProxyRequiresAuthentication() {
 			}, retryTimeout, retryInterval)
 		})
 		t.Run("BearerWithoutToken", func(t *testing.T) {
-			t.Parallel()
 			require.EventuallyWithT(t, func(c *assert.CollectT) {
 				headers := map[string]string{"Authorization": "Bearer"}
 				resp := doHTTPRequest(c, s.ctx, s.client, http.MethodGet, s.proxyBaseURL+"/v1/metadata", headers, nil)
@@ -498,7 +493,6 @@ func (s *OCPPluginSuite) TestProxyRequiresAuthentication() {
 // the request, restricting access to users with permissions in the specified namespace.
 func (s *OCPPluginSuite) TestProxyNamespaceScoping() {
 	s.T().Run("NoScope", func(t *testing.T) {
-		t.Parallel()
 		// Without ACS-AUTH-NAMESPACE-SCOPE, no SubjectAccessReview is triggered and the proxy
 		// returns zero deployments.
 		headers := map[string]string{
@@ -519,7 +513,6 @@ func (s *OCPPluginSuite) TestProxyNamespaceScoping() {
 	})
 
 	s.T().Run("NamespacedScope", func(t *testing.T) {
-		t.Parallel()
 		// With ACS-AUTH-NAMESPACE-SCOPE set to a namespace where the SA has view permissions,
 		// the SubjectAccessReview should pass and the proxy should return the deployments in
 		// that namespace.
@@ -546,7 +539,6 @@ func (s *OCPPluginSuite) TestProxyNamespaceScoping() {
 	})
 
 	s.T().Run("NamespaceScopeDenied", func(t *testing.T) {
-		t.Parallel()
 		// The noScopeToken SA has no RBAC bindings, so the SubjectAccessReview for
 		// testNamespace is denied and the proxy should return 403 Forbidden.
 		// This exercises the SAR failure path (authN passes, authZ fails).
@@ -569,7 +561,6 @@ func (s *OCPPluginSuite) TestProxyNamespaceScoping() {
 	})
 
 	s.T().Run("ClusterWideScope", func(t *testing.T) {
-		t.Parallel()
 		// The wildcard scope (*) triggers a SAR for cluster-wide list permissions.
 		// The SA has a ClusterRoleBinding so the SAR passes and the proxy returns 200.
 		// Filter to apps/v1/Deployment only so the count matches the K8s API listing.
