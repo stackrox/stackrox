@@ -1,14 +1,17 @@
 package internal
 
+// Version variables with fallback defaults for ad-hoc builds (e.g. `go build`
+// without the build infrastructure). When building via go-tool.sh, these are
+// overridden by the generated zversion.go init() function.
 var (
 	// MainVersion is the Rox version.
-	MainVersion string //XDef:STABLE_MAIN_VERSION
+	MainVersion string
 	// CollectorVersion is the collector version to be used by default.
-	CollectorVersion string //XDef:STABLE_COLLECTOR_VERSION
+	CollectorVersion string
 	// FactVersion is the fact version to be used by default.
-	FactVersion string //XDef:STABLE_FACT_VERSION
+	FactVersion string
 	// ScannerVersion is the scanner version to be used with this Rox version.
-	ScannerVersion string //XDef:STABLE_SCANNER_VERSION
-	// GitShortSha is the (short) Git SHA that was built.
-	GitShortSha string //XDef:STABLE_GIT_SHORT_SHA
+	ScannerVersion string
+	// GitShortSha is the short git commit SHA.
+	GitShortSha string
 )
