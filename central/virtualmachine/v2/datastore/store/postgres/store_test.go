@@ -93,6 +93,24 @@ func (s *VMStoreTestSuite) newScanParts(vmID string) common.VMScanParts {
 				HasFixedBy:    &storage.VirtualMachineCVEV2_FixedBy{FixedBy: "1.1.2"},
 			},
 		},
+		SourceComponents: []*storage.EmbeddedVirtualMachineScanComponent{
+			{
+				Name:    "openssl",
+				Version: "1.1.1",
+				Source:  storage.SourceType_OS,
+				Vulnerabilities: []*storage.VirtualMachineVulnerability{
+					{
+						CveBaseInfo: &storage.VirtualMachineCVEInfo{
+							Cve:     "CVE-2024-0001",
+							Summary: "test vulnerability",
+						},
+						Severity:     storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+						SetFixedBy:   &storage.VirtualMachineVulnerability_FixedBy{FixedBy: "1.1.2"},
+						Cvss:         7.5,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -199,15 +217,8 @@ func (s *VMStoreTestSuite) TestUpsertScan_Unchanged() {
 	time.Sleep(10 * time.Millisecond)
 
 	// Upsert with same components and CVEs (new scan ID but same content).
+	// SourceComponents are identical since content hasn't changed.
 	parts2 := s.newScanParts(vm.GetId())
-	// Use different scan/component/CVE IDs but same content.
-	parts2.Components[0].Name = parts.Components[0].GetName()
-	parts2.Components[0].Version = parts.Components[0].GetVersion()
-	parts2.CVEs[0].CveBaseInfo = parts.CVEs[0].GetCveBaseInfo().CloneVT()
-	parts2.CVEs[0].PreferredCvss = parts.CVEs[0].GetPreferredCvss()
-	parts2.CVEs[0].Severity = parts.CVEs[0].GetSeverity()
-	parts2.CVEs[0].IsFixable = parts.CVEs[0].GetIsFixable()
-	parts2.CVEs[0].HasFixedBy = parts.CVEs[0].GetHasFixedBy()
 
 	s.NoError(s.store.UpsertScan(s.ctx, vm.GetId(), parts2))
 
@@ -252,6 +263,21 @@ func (s *VMStoreTestSuite) TestUpsertScan_Changed() {
 		},
 		PreferredCvss: 5.0,
 		Severity:      storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+	})
+	parts2.SourceComponents = append(parts2.SourceComponents, &storage.EmbeddedVirtualMachineScanComponent{
+		Name:    "curl",
+		Version: "7.68.0",
+		Source:  storage.SourceType_OS,
+		Vulnerabilities: []*storage.VirtualMachineVulnerability{
+			{
+				CveBaseInfo: &storage.VirtualMachineCVEInfo{
+					Cve:     "CVE-2024-0002",
+					Summary: "another vulnerability",
+				},
+				Severity: storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+				Cvss:     5.0,
+			},
+		},
 	})
 
 	s.NoError(s.store.UpsertScan(s.ctx, vm.GetId(), parts2))
@@ -347,14 +373,6 @@ func (s *VMStoreTestSuite) TestUpsertScan_ScanOsChangeTriggersFullReplace() {
 	// Upsert again with same components/CVEs but different ScanOs.
 	parts2 := s.newScanParts(vm.GetId())
 	parts2.Scan.ScanOs = "ubuntu22"
-	// Keep same component/CVE content.
-	parts2.Components[0].Name = parts.Components[0].GetName()
-	parts2.Components[0].Version = parts.Components[0].GetVersion()
-	parts2.CVEs[0].CveBaseInfo = parts.CVEs[0].GetCveBaseInfo().CloneVT()
-	parts2.CVEs[0].PreferredCvss = parts.CVEs[0].GetPreferredCvss()
-	parts2.CVEs[0].Severity = parts.CVEs[0].GetSeverity()
-	parts2.CVEs[0].IsFixable = parts.CVEs[0].GetIsFixable()
-	parts2.CVEs[0].HasFixedBy = parts.CVEs[0].GetHasFixedBy()
 
 	s.NoError(s.store.UpsertScan(s.ctx, vm.GetId(), parts2))
 

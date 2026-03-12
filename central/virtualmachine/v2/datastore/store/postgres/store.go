@@ -61,13 +61,14 @@ func (s *storeImpl) UpsertVM(ctx context.Context, vm *storage.VirtualMachineV2) 
 }
 
 func (s *storeImpl) upsertVM(ctx context.Context, vm *storage.VirtualMachineV2) error {
-	iTime := time.Now()
-	vm.LastUpdated = protocompat.ConvertTimeToTimestampOrNil(&iTime)
-
+	// Calculate hash to see if anything changed
 	hash, err := hashVM(vm)
 	if err != nil {
 		return err
 	}
+
+	iTime := time.Now()
+	vm.LastUpdated = protocompat.ConvertTimeToTimestampOrNil(&iTime)
 
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet([]byte(vm.GetId())), func() error {
 		tx, ctx, err := s.begin(ctx)
@@ -75,7 +76,7 @@ func (s *storeImpl) upsertVM(ctx context.Context, vm *storage.VirtualMachineV2) 
 			return err
 		}
 
-		existingVM, err := s.getVMSerialized(ctx, tx, vm.GetId())
+		existingVM, err := s.getVirtualMachine(ctx, tx, vm.GetId())
 		if err != nil {
 			if rbErr := tx.Rollback(ctx); rbErr != nil {
 				return errors.Wrapf(rbErr, "rollback after: %v", err)
@@ -108,40 +109,22 @@ func (s *storeImpl) upsertVM(ctx context.Context, vm *storage.VirtualMachineV2) 
 }
 
 func hashVM(vm *storage.VirtualMachineV2) (uint64, error) {
-	// Hash all fields except last_updated and hash itself.
-	type vmHashable struct {
-		Name        string
-		Namespace   string
-		ClusterID   string
-		ClusterName string
-		Facts       map[string]string
-		GuestOS     string
-		State       storage.VirtualMachineV2_State
-		Notes       []storage.VirtualMachineV2_Note `hash:"set"`
-		VsockCID    int32
-	}
-	h := vmHashable{
-		Name:        vm.GetName(),
-		Namespace:   vm.GetNamespace(),
-		ClusterID:   vm.GetClusterId(),
-		ClusterName: vm.GetClusterName(),
-		Facts:       vm.GetFacts(),
-		GuestOS:     vm.GetGuestOs(),
-		State:       vm.GetState(),
-		Notes:       vm.GetNotes(),
-		VsockCID:    vm.GetVsockCid(),
-	}
-	return hashstructure.Hash(h, &hashstructure.HashOptions{ZeroNil: true})
+	return hashstructure.Hash(vm, &hashstructure.HashOptions{ZeroNil: true})
 }
 
 func (s *storeImpl) insertVM(ctx context.Context, tx *postgres.Tx, vm *storage.VirtualMachineV2) error {
+	id := pgutils.NilOrUUID(vm.GetId())
+	if id == nil {
+		return errors.New("VM ID is empty or not a valid UUID")
+	}
+
 	serialized, err := vm.MarshalVT()
 	if err != nil {
 		return err
 	}
 
 	values := []interface{}{
-		pgutils.NilOrUUID(vm.GetId()),
+		id,
 		vm.GetName(),
 		vm.GetNamespace(),
 		pgutils.NilOrUUID(vm.GetClusterId()),
@@ -165,17 +148,22 @@ func (s *storeImpl) insertVM(ctx context.Context, tx *postgres.Tx, vm *storage.V
 }
 
 func (s *storeImpl) updateVMTimestamp(ctx context.Context, tx *postgres.Tx, vm *storage.VirtualMachineV2) error {
+	id := pgutils.NilOrUUID(vm.GetId())
+	if id == nil {
+		return errors.New("VM ID is empty or not a valid UUID")
+	}
+
 	serialized, err := vm.MarshalVT()
 	if err != nil {
 		return err
 	}
 
 	const stmt = "UPDATE " + vmTable + " SET LastUpdated = $2, serialized = $3 WHERE Id = $1"
-	_, err = tx.Exec(ctx, stmt, pgutils.NilOrUUID(vm.GetId()), protocompat.NilOrTime(vm.GetLastUpdated()), serialized)
+	_, err = tx.Exec(ctx, stmt, id, protocompat.NilOrTime(vm.GetLastUpdated()), serialized)
 	return err
 }
 
-func (s *storeImpl) getVMSerialized(ctx context.Context, tx *postgres.Tx, id string) (*storage.VirtualMachineV2, error) {
+func (s *storeImpl) getVirtualMachine(ctx context.Context, tx *postgres.Tx, id string) (*storage.VirtualMachineV2, error) {
 	row := tx.QueryRow(ctx, getVMStmt, pgutils.NilOrUUID(id))
 	var data []byte
 	if err := row.Scan(&data); err != nil {
@@ -200,71 +188,18 @@ func (s *storeImpl) UpsertScan(ctx context.Context, vmID string, parts common.VM
 	})
 }
 
-// componentHashable contains only the content-meaningful fields of a component,
-// excluding generated IDs that change every scan.
-type componentHashable struct {
-	Name            string
-	Version         string
-	Source          storage.SourceType
-	OperatingSystem string
-	FixedBy         string
-	CveCount        int32
-}
-
-// cveHashable contains only the content-meaningful fields of a CVE,
-// excluding generated IDs and timestamps that change every scan.
-type cveHashable struct {
-	Cve             string
-	PreferredCvss   float32
-	Severity        storage.VulnerabilitySeverity
-	ImpactScore     float32
-	Nvdcvss         float32
-	IsFixable       bool
-	FixedBy         string
-	EpssProbability float32
-	AdvisoryName    string
-	AdvisoryLink    string
-}
-
+// scanHashWrapper hashes the original v1 scan components directly, relying on
+// @gotags in the proto definitions to ignore derived/store-set fields
+// (top_cvss, risk_score, created_at). This matches the image store's pattern.
 type scanHashWrapper struct {
 	ScanOs     string
-	Components []componentHashable `hash:"set"`
-	CVEs       []cveHashable       `hash:"set"`
-	// TopCvss is intentionally excluded: it is derived from CVE CVSS values
-	// and will change whenever CVEs change.
+	Components []*storage.EmbeddedVirtualMachineScanComponent `hash:"set"`
 }
 
 func buildScanHash(parts common.VMScanParts) (uint64, error) {
-	comps := make([]componentHashable, 0, len(parts.Components))
-	for _, c := range parts.Components {
-		comps = append(comps, componentHashable{
-			Name:            c.GetName(),
-			Version:         c.GetVersion(),
-			Source:          c.GetSource(),
-			OperatingSystem: c.GetOperatingSystem(),
-			FixedBy:         c.GetFixedBy(),
-			CveCount:        c.GetCveCount(),
-		})
-	}
-	cves := make([]cveHashable, 0, len(parts.CVEs))
-	for _, v := range parts.CVEs {
-		cves = append(cves, cveHashable{
-			Cve:             v.GetCveBaseInfo().GetCve(),
-			PreferredCvss:   v.GetPreferredCvss(),
-			Severity:        v.GetSeverity(),
-			ImpactScore:     v.GetImpactScore(),
-			Nvdcvss:         v.GetNvdcvss(),
-			IsFixable:       v.GetIsFixable(),
-			FixedBy:         v.GetFixedBy(),
-			EpssProbability: v.GetEpssProbability(),
-			AdvisoryName:    v.GetAdvisory().GetName(),
-			AdvisoryLink:    v.GetAdvisory().GetLink(),
-		})
-	}
 	return hashstructure.Hash(scanHashWrapper{
 		ScanOs:     parts.Scan.GetScanOs(),
-		Components: comps,
-		CVEs:       cves,
+		Components: parts.SourceComponents,
 	}, &hashstructure.HashOptions{ZeroNil: true})
 }
 
@@ -329,7 +264,7 @@ func (s *storeImpl) upsertScan(ctx context.Context, vmID string, parts common.VM
 
 func (s *storeImpl) touchVMLastUpdated(ctx context.Context, tx *postgres.Tx, vmID string, t time.Time) error {
 	// Read the current VM to update its serialized blob with the new timestamp.
-	existingVM, err := s.getVMSerialized(ctx, tx, vmID)
+	existingVM, err := s.getVirtualMachine(ctx, tx, vmID)
 	if err != nil {
 		return errors.Wrapf(err, "reading VM %s for timestamp update", vmID)
 	}
@@ -671,7 +606,7 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.VirtualMachine
 		}
 		defer postgres.FinishReadOnlyTransaction(tx)
 
-		vm, err := s.getVMSerialized(ctx, tx, id)
+		vm, err := s.getVirtualMachine(ctx, tx, id)
 		if err != nil {
 			return nil, false, err
 		}
