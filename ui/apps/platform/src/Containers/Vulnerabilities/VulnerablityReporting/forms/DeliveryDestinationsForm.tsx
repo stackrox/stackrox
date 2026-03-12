@@ -1,14 +1,5 @@
-import type { FormEvent, ReactElement } from 'react';
-import {
-    Alert,
-    Divider,
-    Flex,
-    FlexItem,
-    Form,
-    PageSection,
-    TimePicker,
-    Title,
-} from '@patternfly/react-core';
+import type { ReactElement } from 'react';
+import { Alert, Divider, Flex, FlexItem, Form, PageSection, Title } from '@patternfly/react-core';
 import type { FormikProps } from 'formik';
 
 import type { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
@@ -61,7 +52,6 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPro
                 intervalType: null,
                 daysOfWeek: [],
                 daysOfMonth: [],
-                time: '00:00',
             })
             // Revalidate form after schedule change completes to update dependent fields
             // @ts-expect-error Formik's types incorrectly declare setFieldValue as void, but it returns a Promise
@@ -73,16 +63,11 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPro
             intervalType: selection === '' ? null : selection,
             daysOfWeek: [],
             daysOfMonth: [],
-            time: formik.values.schedule.time,
         });
     }
 
     function onScheduledDaysChange(id, selection) {
         formik.setFieldValue(id, selection);
-    }
-
-    function onScheduledTimeChange(_event: FormEvent<HTMLInputElement>, time: string): void {
-        formik.setFieldValue('schedule.time', time);
     }
 
     const cvesDiscoveredSinceError =
@@ -153,7 +138,6 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPro
                                             fieldId="schedule.intervalType"
                                             value={formik.values.schedule.intervalType || ''}
                                             handleSelect={onScheduledRepeatChange}
-                                            includeDailyOption
                                             isEditable={
                                                 formik.values.deliveryDestinations.length > 0 ||
                                                 formik.values.reportParameters
@@ -166,65 +150,41 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPro
                                         />
                                     </FormLabelGroup>
                                 </FlexItem>
-                                {formik.values.schedule.intervalType !== 'DAILY' && (
-                                    <FlexItem>
-                                        <FormLabelGroup
-                                            isRequired={
-                                                !!formik.values.schedule.intervalType ||
-                                                formik.values.reportParameters
-                                                    .cvesDiscoveredSince === 'SINCE_LAST_REPORT'
-                                            }
-                                            label="On day(s)"
+                                <FlexItem>
+                                    <FormLabelGroup
+                                        isRequired={
+                                            !!formik.values.schedule.intervalType ||
+                                            formik.values.reportParameters.cvesDiscoveredSince ===
+                                                'SINCE_LAST_REPORT'
+                                        }
+                                        label="On day(s)"
+                                        fieldId={
+                                            formik.values.schedule.intervalType === 'WEEKLY'
+                                                ? 'schedule.daysOfWeek'
+                                                : 'schedule.daysOfMonth'
+                                        }
+                                        errors={formik.errors}
+                                    >
+                                        <DayPickerDropdown
                                             fieldId={
                                                 formik.values.schedule.intervalType === 'WEEKLY'
                                                     ? 'schedule.daysOfWeek'
                                                     : 'schedule.daysOfMonth'
                                             }
-                                            errors={formik.errors}
-                                        >
-                                            <DayPickerDropdown
-                                                fieldId={
-                                                    formik.values.schedule.intervalType === 'WEEKLY'
-                                                        ? 'schedule.daysOfWeek'
-                                                        : 'schedule.daysOfMonth'
-                                                }
-                                                value={
-                                                    (formik.values.schedule.intervalType ===
-                                                    'WEEKLY'
-                                                        ? formik.values.schedule.daysOfWeek
-                                                        : formik.values.schedule.daysOfMonth) ?? []
-                                                }
-                                                handleSelect={onScheduledDaysChange}
-                                                intervalType={formik.values.schedule.intervalType}
-                                                isEditable={
-                                                    formik.values.schedule.intervalType !== null
-                                                }
-                                            />
-                                        </FormLabelGroup>
-                                    </FlexItem>
-                                )}
+                                            value={
+                                                (formik.values.schedule.intervalType === 'WEEKLY'
+                                                    ? formik.values.schedule.daysOfWeek
+                                                    : formik.values.schedule.daysOfMonth) ?? []
+                                            }
+                                            handleSelect={onScheduledDaysChange}
+                                            intervalType={formik.values.schedule.intervalType}
+                                            isEditable={
+                                                formik.values.schedule.intervalType !== null
+                                            }
+                                        />
+                                    </FormLabelGroup>
+                                </FlexItem>
                             </Flex>
-                        </FlexItem>
-                        <FlexItem flex={{ default: 'flexNone' }}>
-                            <FormLabelGroup
-                                label="Time"
-                                fieldId="schedule.time"
-                                errors={formik.errors}
-                                isRequired={formik.values.schedule.intervalType !== null}
-                                helperText="Select or enter a time between 00:00 and 23:59 UTC"
-                            >
-                                <TimePicker
-                                    time={formik.values.schedule.time}
-                                    is24Hour
-                                    onChange={onScheduledTimeChange}
-                                    isDisabled={formik.values.schedule.intervalType === null}
-                                    inputProps={{
-                                        name: 'schedule.time',
-                                    }}
-                                    invalidFormatErrorMessage=""
-                                    invalidMinMaxErrorMessage=""
-                                />
-                            </FormLabelGroup>
                         </FlexItem>
                     </Flex>
                 </Form>

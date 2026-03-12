@@ -21,7 +21,6 @@ export type ReportFormValues = {
         intervalType: IntervalType | null;
         daysOfWeek: DayOfWeek[];
         daysOfMonth: DayOfMonth[];
-        time: string;
     };
 };
 
@@ -86,7 +85,6 @@ export const defaultReportFormValues: ReportFormValues = {
         intervalType: null,
         daysOfWeek: [],
         daysOfMonth: [],
-        time: '00:00',
     },
 };
 
@@ -180,23 +178,6 @@ const validationSchema = yup.object().shape({
                 otherwise: (schema) => schema,
             })
             .defined(),
-        time: yup
-            .string()
-            .matches(/^\d{2}:\d{2}$/, 'Time must be in HH:mm format')
-            .test('valid-time', 'Time must be between 00:00 and 23:59', (value) => {
-                if (!value) {
-                    return true;
-                }
-                const [hourStr, minuteStr] = value.split(':');
-                const hour = parseInt(hourStr, 10);
-                const minute = parseInt(minuteStr, 10);
-                return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
-            })
-            .when('intervalType', {
-                is: (val: string | null) => val !== null,
-                then: (schema) => schema.required('Time is required'),
-                otherwise: (schema) => schema,
-            }),
     }),
 });
 

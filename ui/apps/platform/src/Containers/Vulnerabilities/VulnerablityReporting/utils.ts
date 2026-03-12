@@ -7,7 +7,7 @@ import type {
     VulnerabilityReportFiltersBase,
 } from 'services/ReportsService.types';
 import type { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
-import { getDate, getHourMinuteStringFromScheduleBase } from 'utils/dateUtils';
+import { getDate } from 'utils/dateUtils';
 import type { ReportStatus } from 'types/reportJob';
 import type {
     CVESDiscoveredSince,
@@ -87,21 +87,11 @@ export function getReportConfigurationFromFormValues(
     const notifiers = deliveryDestinations;
 
     let schedule: Schedule | null;
-    const [hourStr, minuteStr] = (formSchedule.time || '00:00').split(/[: ]+/);
-    const hour = parseInt(hourStr, 10);
-    const minute = parseInt(minuteStr, 10);
-
-    if (formSchedule.intervalType === 'DAILY') {
-        schedule = {
-            intervalType: 'DAILY',
-            hour,
-            minute,
-        };
-    } else if (formSchedule.intervalType === 'WEEKLY') {
+    if (formSchedule.intervalType === 'WEEKLY') {
         schedule = {
             intervalType: 'WEEKLY',
-            hour,
-            minute,
+            hour: 0,
+            minute: 0,
             daysOfWeek: {
                 days: formSchedule.daysOfWeek?.map((day) => Number(day)) ?? [],
             },
@@ -109,8 +99,8 @@ export function getReportConfigurationFromFormValues(
     } else if (formSchedule.intervalType === 'MONTHLY') {
         schedule = {
             intervalType: 'MONTHLY',
-            hour,
-            minute,
+            hour: 0,
+            minute: 0,
             daysOfMonth: {
                 days: formSchedule.daysOfMonth?.map((day) => Number(day)) ?? [],
             },
@@ -172,28 +162,18 @@ export function getReportFormValuesFromConfiguration(
             intervalType: null,
             daysOfWeek: [],
             daysOfMonth: [],
-            time: '00:00',
-        };
-    } else if (schedule.intervalType === 'DAILY') {
-        formSchedule = {
-            intervalType: 'DAILY',
-            daysOfWeek: [],
-            daysOfMonth: [],
-            time: getHourMinuteStringFromScheduleBase(schedule),
         };
     } else if (schedule.intervalType === 'WEEKLY') {
         formSchedule = {
             intervalType: 'WEEKLY',
             daysOfWeek: schedule.daysOfWeek.days.map((day) => String(day) as DayOfWeek),
             daysOfMonth: [],
-            time: getHourMinuteStringFromScheduleBase(schedule),
         };
     } else {
         formSchedule = {
             intervalType: 'MONTHLY',
             daysOfWeek: [],
             daysOfMonth: schedule.daysOfMonth.days.map((day) => String(day) as DayOfMonth),
-            time: getHourMinuteStringFromScheduleBase(schedule),
         };
     }
 
