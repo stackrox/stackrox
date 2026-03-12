@@ -216,13 +216,13 @@
     "SimpleAccessScopeRules": {
       "type": "object",
       "properties": {
-        "includedClusters": {
+        "includedClusterIds": {
           "type": "array",
           "items": {
             "type": "string"
           }
         },
-        "includedClusterIds": {
+        "includedClusters": {
           "type": "array",
           "items": {
             "type": "string"

@@ -137,6 +137,9 @@ func convertRulesToSelectors(scopeRules *storage.SimpleAccessScope_Rules) (*sele
 		if clusterID == "" && clusterName == "" {
 			continue
 		}
+		if namespaceName == "" {
+			continue
+		}
 		if clusterID != "" {
 			addToNamespaceMap(output.namespacesByClusterID, clusterID, namespaceName)
 			continue
