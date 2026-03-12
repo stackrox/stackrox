@@ -139,6 +139,13 @@ runs:
         git config --global --add safe.directory "$(pwd)"
       shell: bash
 
+    - name: Monitor disk usage
+      shell: bash
+      run: |
+        (while sleep 30; do echo "$(date -u +%H:%M:%S) $(df -BGB --output=avail / | tail -1)"; done) \
+          >> /dev/shm/disk-monitor.log 2>&1 &
+        echo $! > /dev/shm/disk-monitor.pid
+
     - name: Record job info
       uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
       id: record_job_info
@@ -165,3 +172,5 @@ runs:
             du -k / 2>/dev/null | sort -V | tail -100 || true; \
             printf "Low free disk space post-job: ${free}" | tee -a "$GITHUB_STEP_SUMMARY";\
           fi;
+          cat /dev/shm/disk-monitor.log;
+          kill $(</dev/shm/disk-monitor.pid)
