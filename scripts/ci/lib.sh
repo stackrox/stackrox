@@ -2588,31 +2588,34 @@ _record_cluster_info() {
     # Product version. Currently used for OpenShift version. Could cover cloud
     # provider versions for example.
     local oc_version
-    oc_version="$(oc version -o json 2>&1 || true)"
+    oc_version="$(oc version -o json || true)"
+    info "oc_version=${oc_version}"
     local openshiftVersion
     openshiftVersion=$(jq -r <<<"$oc_version" '.openshiftVersion')
     set_ci_shared_export "cut_product_version" "$openshiftVersion"
 
     # K8s version.
     local kubectl_version
-    kubectl_version="$(kubectl version -o json 2>&1 || true)"
+    kubectl_version="$(kubectl version -o json || true)"
+    info "kubectl version=${kubectl_version}"
     local serverGitVersion
     serverGitVersion=$(jq -r <<<"$kubectl_version" '.serverVersion.gitVersion')
     set_ci_shared_export "cut_k8s_version" "$serverGitVersion"
 
     # Node info: OS, Kernel & Container Runtime.
     local nodes
-    nodes="$(kubectl get nodes -o json 2>&1 || true)"
+    nodes="$(kubectl get nodes -o json || true)"
+    info "node[0] info=$(jq '.items?[0]?.status?.nodeInfo' <<< "$nodes")"
     local osImage
-    osImage=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.osImage')
+    osImage=$(jq -r <<<"$nodes" '.items?[0]?.status?.nodeInfo?.osImage')
     set_ci_shared_export "cut_os_image" "$osImage"
 
     local kernelVersion
-    kernelVersion=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.kernelVersion')
+    kernelVersion=$(jq -r <<<"$nodes" '.items?[0]?.status?.nodeInfo?.kernelVersion')
     set_ci_shared_export "cut_kernel_version" "$kernelVersion"
 
     local containerRuntimeVersion
-    containerRuntimeVersion=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.containerRuntimeVersion')
+    containerRuntimeVersion=$(jq -r <<<"$nodes" '.items?[0]?.status?.nodeInfo?.containerRuntimeVersion')
     set_ci_shared_export "cut_container_runtime_version" "$containerRuntimeVersion"
 }
 
