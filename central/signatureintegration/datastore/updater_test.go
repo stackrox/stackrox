@@ -34,6 +34,7 @@ func TestResolveKeyURL(t *testing.T) {
 		{"https://a.com/dir/manifest.json", "https://b.com/key.pub", "https://b.com/key.pub", false},
 		{"https://a.com/dir/manifest.json", "http://b.com/key.pub", "http://b.com/key.pub", false},
 		{"https://example.com/keys/manifest.json", "release-key.pub", "https://example.com/keys/release-key.pub", false},
+		{"https://example.com/keys/manifest.json", "  key.pub \n", "https://example.com/keys/key.pub", false},
 		{"https://example.com/keys/manifest.json", "sub/key.pub", "https://example.com/keys/sub/key.pub", false},
 		{"https://example.com/manifest.json", "key.pub", "https://example.com/key.pub", false},
 		{"https://example.com/keys/manifest.json", "https://example.com/keys/", "", true},
@@ -44,11 +45,11 @@ func TestResolveKeyURL(t *testing.T) {
 	for _, tt := range tests {
 		got, err := resolveKeyURL(tt.manifestURL, tt.keyURL)
 		if tt.wantErr {
-			require.Error(t, err, "manifest=%q key=%q", tt.manifestURL, tt.keyURL)
+			require.Errorf(t, err, "manifest=%q key=%q", tt.manifestURL, tt.keyURL)
 			continue
 		}
-		require.NoError(t, err, "manifest=%q key=%q", tt.manifestURL, tt.keyURL)
-		require.Equal(t, tt.want, got, "manifest=%q key=%q", tt.manifestURL, tt.keyURL)
+		require.NoErrorf(t, err, "manifest=%q key=%q", tt.manifestURL, tt.keyURL)
+		require.Equalf(t, tt.want, got, "manifest=%q key=%q", tt.manifestURL, tt.keyURL)
 	}
 }
 
