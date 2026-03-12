@@ -54,3 +54,16 @@ runs:
     - name: Download Go modules
       run: make deps --always-make
       shell: bash
+
+    - name: Stabilize file mtimes for Go test cache
+      run: |
+        # Go's test cache validates inputs by (path, size, mtime) — NOT content.
+        # git checkout sets all mtimes to "now", which differs between CI runs,
+        # causing every test to miss the cache. Setting a fixed mtime makes the
+        # test cache hit across runs when file content hasn't changed.
+        #
+        # Risk: if a non-.go testdata file changes content but not size between
+        # commits, the test cache could return a stale result. This is extremely
+        # rare and Go's own test cache has the same inherent limitation.
+        git ls-files -z | xargs -0 touch -t 200101010000
+      shell: bash
