@@ -40,15 +40,29 @@ message SyncComplianceScanConfigRequest {
 
 // ApplyComplianceScanConfigRequest contains information about a compliance scan configuration to be applied to secured cluster.
 message ApplyComplianceScanConfigRequest {
+  // ProfileReference identifies a compliance profile by name and its kind (Profile or TailoredProfile).
+  // New Central populates profile_refs in BaseScanSettings; Sensor prefers it over the legacy profiles field.
+  message ProfileReference {
+    string name = 1;
+    ComplianceOperatorProfileV2.OperatorKind kind = 2;
+  }
+
   message BaseScanSettings {
     string db_record_id = 1;
     string scan_name = 2;
+    // Legacy field: profile names only, without kind information.
+    // Populated by all Central versions for backward compatibility with old Sensors.
     repeated string profiles = 3;
 
     bool show_not_applicable = 4;
     bool strict_node_scan = 5;
     bool auto_apply_remediations = 6;
     bool auto_update_remediations = 7;
+
+    // profile_refs carries profile names together with their compliance operator kind.
+    // Populated by Central alongside the legacy profiles field.
+    // Sensor should prefer this field when non-empty, and fall back to profiles otherwise.
+    repeated ProfileReference profile_refs = 8;
   }
 
   message OneTimeScan {
@@ -200,6 +214,9 @@ message ComplianceOperatorProfileV2 {
     PROFILE = 1;
     TAILORED_PROFILE = 2;
   }
+
+  // OperatorKind represents the kind of the object that this ComplianceOperatorProfileV2 tracks on the Compliance
+  // Operator side (kind: Profile or kind: TailoredProfile)
   OperatorKind operator_kind = 11;
 }
 
@@ -229,6 +246,8 @@ message ComplianceOperatorRuleV2 {
     RULE = 1;
     CUSTOM_RULE = 2;
   }
+  // OperatorKind represents the kind of the object that this ComplianceOperatorRuleV2 tracks on the Compliance
+  // Operator side (kind: Rule or kind: CustomRule)
   OperatorKind operator_kind = 14;
 }
 

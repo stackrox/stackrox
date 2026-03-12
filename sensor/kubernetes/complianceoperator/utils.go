@@ -24,6 +24,14 @@ var (
 // convertFunction signature of the convert functions
 type convertFunction func(string, *central.ApplyComplianceScanConfigRequest_BaseScanSettings, string) runtime.Object
 
+// profileKindToString maps an OperatorKind proto enum to the compliance operator Kind string.
+func profileKindToString(kind central.ComplianceOperatorProfileV2_OperatorKind) string {
+	if kind == central.ComplianceOperatorProfileV2_TAILORED_PROFILE {
+		return complianceoperator.TailoredProfile.Kind
+	}
+	return complianceoperator.Profile.Kind
+}
+
 // updateFunction signature of the update functions
 type updateFunction func(*unstructured.Unstructured, *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error)
 
@@ -70,12 +78,26 @@ func convertCentralRequestToScanSetting(namespace string, request *central.Apply
 
 func convertCentralRequestToScanSettingBinding(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, _ string) runtime.Object {
 	profileRefs := make([]v1alpha1.NamedObjectReference, 0, len(request.GetProfiles()))
-	for _, profile := range request.GetProfiles() {
-		profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
-			Name:     profile,
-			Kind:     complianceoperator.Profile.Kind,
-			APIGroup: complianceoperator.GetGroupVersion().String(),
-		})
+	if refs := request.GetProfileRefs(); len(refs) > 0 {
+		// New Central: kind is provided directly — no k8s API call needed.
+		for _, ref := range refs {
+			kind := profileKindToString(ref.GetKind())
+			log.Infof("Profile %q in namespace %q: kind %q provided by Central", ref.GetName(), namespace, kind)
+			profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
+				Name:     ref.GetName(),
+				Kind:     kind,
+				APIGroup: complianceoperator.GetGroupVersion().String(),
+			})
+		}
+	} else {
+		// Legacy: old Central without profile_refs — default to Profile kind.
+		for _, profile := range request.GetProfiles() {
+			profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
+				Name:     profile,
+				Kind:     complianceoperator.Profile.Kind,
+				APIGroup: complianceoperator.GetGroupVersion().String(),
+			})
+		}
 	}
 
 	return &v1alpha1.ScanSettingBinding{
@@ -117,13 +139,28 @@ func updateScanSettingFromCentralRequest(scanSetting *v1alpha1.ScanSetting, requ
 }
 
 func updateScanSettingBindingFromCentralRequest(scanSettingBinding *v1alpha1.ScanSettingBinding, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) *v1alpha1.ScanSettingBinding {
+	ns := scanSettingBinding.GetNamespace()
 	profileRefs := make([]v1alpha1.NamedObjectReference, 0, len(request.GetProfiles()))
-	for _, profile := range request.GetProfiles() {
-		profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
-			Name:     profile,
-			Kind:     complianceoperator.Profile.Kind,
-			APIGroup: complianceoperator.GetGroupVersion().String(),
-		})
+	if refs := request.GetProfileRefs(); len(refs) > 0 {
+		// New Central: kind is provided directly — no k8s API call needed.
+		for _, ref := range refs {
+			kind := profileKindToString(ref.GetKind())
+			log.Infof("Profile %q in namespace %q: kind %q provided by Central (update)", ref.GetName(), ns, kind)
+			profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
+				Name:     ref.GetName(),
+				Kind:     kind,
+				APIGroup: complianceoperator.GetGroupVersion().String(),
+			})
+		}
+	} else {
+		// Legacy: old Central without profile_refs — default to Profile kind.
+		for _, profile := range request.GetProfiles() {
+			profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
+				Name:     profile,
+				Kind:     complianceoperator.Profile.Kind,
+				APIGroup: complianceoperator.GetGroupVersion().String(),
+			})
+		}
 	}
 
 	// TODO:  Update additional fields as ACS capability expands
