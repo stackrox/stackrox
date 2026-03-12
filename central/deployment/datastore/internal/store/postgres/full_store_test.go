@@ -21,7 +21,7 @@ func TestGetListDeployment(t *testing.T) {
 	testDB := pgtest.ForT(t)
 	fullStore := NewFullStore(testDB.DB)
 
-	dep := &storage.Deployment{
+	dep := &storage.StoredDeployment{
 		Id:          uuid.NewV4().String(),
 		Hash:        1234567890,
 		Name:        "test-deployment",
@@ -62,7 +62,7 @@ func TestGetManyListDeployments(t *testing.T) {
 	fullStore := NewFullStore(testDB.DB)
 
 	// Create test deployments
-	dep1 := &storage.Deployment{
+	dep1 := &storage.StoredDeployment{
 		Id:          uuid.NewV4().String(),
 		Hash:        1111111111,
 		Name:        "deployment-1",
@@ -71,7 +71,7 @@ func TestGetManyListDeployments(t *testing.T) {
 		Namespace:   "namespace-1",
 		NamespaceId: "cluster-1namespace-1",
 	}
-	dep2 := &storage.Deployment{
+	dep2 := &storage.StoredDeployment{
 		Id:          uuid.NewV4().String(),
 		Hash:        2222222222,
 		Name:        "deployment-2",
@@ -80,7 +80,7 @@ func TestGetManyListDeployments(t *testing.T) {
 		Namespace:   "namespace-2",
 		NamespaceId: "cluster-1namespace-2",
 	}
-	dep3 := &storage.Deployment{
+	dep3 := &storage.StoredDeployment{
 		Id:          uuid.NewV4().String(),
 		Hash:        3333333333,
 		Name:        "deployment-3",
