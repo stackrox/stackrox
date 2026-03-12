@@ -562,16 +562,19 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify connections from external sources"() {
         given:
         "Deployment A, where an external source communicates to A"
-        String deploymentUid = deployments[NGINXCONNECTIONTARGET]?.deploymentUid
-        assert deploymentUid != null
+        Deployment nginxDeployment = deployments[NGINXCONNECTIONTARGET]
+        assert nginxDeployment != null : "Deployment ${NGINXCONNECTIONTARGET} not found in deployments list."
+        String deploymentUid = nginxDeployment.deploymentUid
+        assert deploymentUid != null : "Deployment UID is not set for ${NGINXCONNECTIONTARGET}."
         String targetUrl
         if (Env.mustGetOrchestratorType() == OrchestratorTypes.K8S) {
-            String deploymentIP = deployments[NGINXCONNECTIONTARGET]?.loadBalancerIP
-            assert deploymentIP != null
-            targetUrl = "http://${deploymentIP}"
+            assert nginxDeployment.loadBalancerIP != null :
+                    "LoadBalancer IP is not set for ${NGINXCONNECTIONTARGET}." +
+                    " Check waitForLoadBalancer() logs for timeout details."
+            targetUrl = "http://${nginxDeployment.loadBalancerIP}"
         } else if (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) {
-            String routeHost = deployments[NGINXCONNECTIONTARGET]?.routeHost
-            assert routeHost != null
+            String routeHost = nginxDeployment.routeHost
+            assert routeHost != null : "Route host is not set for ${NGINXCONNECTIONTARGET}."
             targetUrl = "http://${routeHost}"
         } else {
             throw new RuntimeException("Unexpected OrchestratorType")
@@ -667,10 +670,13 @@ class NetworkFlowTest extends BaseSpecification {
         Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
         given:
         "Deployment A, exposed via LB"
-        String deploymentUid = deployments[NGINXCONNECTIONTARGET]?.deploymentUid
+        Deployment nginxDeployment = deployments[NGINXCONNECTIONTARGET]
+        assert nginxDeployment != null : "Deployment ${NGINXCONNECTIONTARGET} not found in deployments list."
+        String deploymentIP = nginxDeployment.loadBalancerIP
+        assert deploymentIP != null : "LoadBalancer IP is not set for ${NGINXCONNECTIONTARGET}." +
+                " Check waitForLoadBalancer() logs for timeout details."
+        String deploymentUid = nginxDeployment?.deploymentUid
         assert deploymentUid != null
-        String deploymentIP = deployments[NGINXCONNECTIONTARGET]?.loadBalancerIP
-        assert deploymentIP != null
 
         when:
         "create a new deployment that talks to A via the LB IP"
