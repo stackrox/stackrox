@@ -21,8 +21,8 @@ var _ permissions.ResolvedRole = (*InternalRole)(nil)
 
 // InternalRole represents claims that materialize a negotiated ephemeral role for internal use.
 type InternalRole struct {
-	RoleName    string              `json:"name,omitempty"`
-	Permissions map[string][]string `json:"permissions,omitempty"`
+	RoleName    string                      `json:"name,omitempty"`
+	Permissions map[storage.Access][]string `json:"permissions,omitempty"`
 	// The key for this cluster scope map is the cluster ID.
 	// TODO: Uncomment when access scope selection rules allow Cluster ID.
 	// Clusters ClusterScopes `json:"clusters,omitempty"`
@@ -37,6 +37,15 @@ func (r *InternalRole) GetRoleName() string {
 	return r.RoleName
 }
 
+func validateLevel(level storage.Access) storage.Access {
+	switch level {
+	case storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS:
+		return level
+	default:
+		return storage.Access_NO_ACCESS
+	}
+}
+
 func (r *InternalRole) GetPermissions() map[string]storage.Access {
 	if r == nil {
 		return nil
@@ -47,14 +56,11 @@ func (r *InternalRole) GetPermissions() map[string]storage.Access {
 	}
 	rolePermissions := make(map[string]storage.Access, permissionCount)
 	for level, resources := range r.Permissions {
-		accessLevel := storage.Access_NO_ACCESS
-		if convertedLevel, found := storage.Access_value[level]; found {
-			accessLevel = storage.Access(convertedLevel)
-		}
+		level = validateLevel(level)
 		for _, resource := range resources {
 			prevLevel := rolePermissions[resource]
-			if prevLevel <= accessLevel {
-				rolePermissions[resource] = accessLevel
+			if prevLevel <= level {
+				rolePermissions[resource] = level
 			}
 		}
 	}

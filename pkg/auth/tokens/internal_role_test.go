@@ -38,58 +38,58 @@ func TestInternalRoleGetPermissions(t *testing.T) {
 		},
 		"Input with empty read permissions": {
 			role: &InternalRole{
-				Permissions: map[string][]string{
-					storage.Access_READ_ACCESS.String(): make([]string, 0),
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_ACCESS: make([]string, 0),
 				},
 			},
 			expectedPermissions: make(map[string]storage.Access),
 		},
 		"Input with empty write permissions": {
 			role: &InternalRole{
-				Permissions: map[string][]string{
-					storage.Access_READ_WRITE_ACCESS.String(): make([]string, 0),
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_WRITE_ACCESS: make([]string, 0),
 				},
 			},
 			expectedPermissions: make(map[string]storage.Access),
 		},
 		"Input with empty read and write permissions": {
 			role: &InternalRole{
-				Permissions: map[string][]string{
-					storage.Access_READ_ACCESS.String():       make([]string, 0),
-					storage.Access_READ_WRITE_ACCESS.String(): make([]string, 0),
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_ACCESS:       make([]string, 0),
+					storage.Access_READ_WRITE_ACCESS: make([]string, 0),
 				},
 			},
 			expectedPermissions: make(map[string]storage.Access),
 		},
 		"Input with nil read permissions": {
 			role: &InternalRole{
-				Permissions: map[string][]string{
-					storage.Access_READ_ACCESS.String(): nil,
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_ACCESS: nil,
 				},
 			},
 			expectedPermissions: make(map[string]storage.Access),
 		},
 		"Input with nil write permissions": {
 			role: &InternalRole{
-				Permissions: map[string][]string{
-					storage.Access_READ_WRITE_ACCESS.String(): nil,
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_WRITE_ACCESS: nil,
 				},
 			},
 			expectedPermissions: make(map[string]storage.Access),
 		},
 		"Input with nil read and write permissions": {
 			role: &InternalRole{
-				Permissions: map[string][]string{
-					storage.Access_READ_ACCESS.String():       nil,
-					storage.Access_READ_WRITE_ACCESS.String(): nil,
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_ACCESS:       nil,
+					storage.Access_READ_WRITE_ACCESS: nil,
 				},
 			},
 			expectedPermissions: make(map[string]storage.Access),
 		},
 		"Single permission - unknown -> no access": {
 			role: &InternalRole{
-				Permissions: map[string][]string{
-					"unknown": {deploymentResource},
+				Permissions: map[storage.Access][]string{
+					storage.Access(-1): {deploymentResource},
 				},
 			},
 			expectedPermissions: map[string]storage.Access{
@@ -98,8 +98,8 @@ func TestInternalRoleGetPermissions(t *testing.T) {
 		},
 		"Single permission - no access": {
 			role: &InternalRole{
-				Permissions: map[string][]string{
-					storage.Access_NO_ACCESS.String(): {deploymentResource},
+				Permissions: map[storage.Access][]string{
+					storage.Access_NO_ACCESS: {deploymentResource},
 				},
 			},
 			expectedPermissions: map[string]storage.Access{
@@ -108,8 +108,8 @@ func TestInternalRoleGetPermissions(t *testing.T) {
 		},
 		"Single permission - read only": {
 			role: &InternalRole{
-				Permissions: map[string][]string{
-					storage.Access_READ_ACCESS.String(): {deploymentResource},
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_ACCESS: {deploymentResource},
 				},
 			},
 			expectedPermissions: map[string]storage.Access{
@@ -118,8 +118,8 @@ func TestInternalRoleGetPermissions(t *testing.T) {
 		},
 		"Single permission - read-write": {
 			role: &InternalRole{
-				Permissions: map[string][]string{
-					storage.Access_READ_WRITE_ACCESS.String(): {deploymentResource},
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_WRITE_ACCESS: {deploymentResource},
 				},
 			},
 			expectedPermissions: map[string]storage.Access{
@@ -128,8 +128,8 @@ func TestInternalRoleGetPermissions(t *testing.T) {
 		},
 		"Multiple permissions - read only": {
 			role: &InternalRole{
-				Permissions: map[string][]string{
-					storage.Access_READ_ACCESS.String(): {deploymentResource, imageResource},
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_ACCESS: {deploymentResource, imageResource},
 				},
 			},
 			expectedPermissions: map[string]storage.Access{
@@ -139,9 +139,9 @@ func TestInternalRoleGetPermissions(t *testing.T) {
 		},
 		"Multiple permissions - read and write": {
 			role: &InternalRole{
-				Permissions: map[string][]string{
-					storage.Access_READ_ACCESS.String():       {deploymentResource},
-					storage.Access_READ_WRITE_ACCESS.String(): {imageResource},
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_ACCESS:       {deploymentResource},
+					storage.Access_READ_WRITE_ACCESS: {imageResource},
 				},
 			},
 			expectedPermissions: map[string]storage.Access{
