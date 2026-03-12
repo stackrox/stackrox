@@ -1,3 +1,4 @@
+import { interactAndWaitForResponses } from '../../helpers/request';
 import { visitFromLeftNavExpandable } from '../../helpers/nav';
 import { visit } from '../../helpers/visit';
 
@@ -30,12 +31,18 @@ export function openAddModal() {
 }
 
 export function addBaseImage(imagePath: string) {
-    cy.intercept('POST', '/v2/baseimages').as('addBaseImage');
     openAddModal();
-    cy.get('input#baseImagePath').type(imagePath);
-    cy.get('button:contains("Save")').click();
-    cy.wait('@addBaseImage');
+    interactAndWaitForResponses(
+        () => {
+            cy.get('input#baseImagePath').type(imagePath);
+            cy.get('button:contains("Save")').click();
+        },
+        {
+            addBaseImage: { method: 'POST', url: '/v2/baseimages' },
+            baseImages: { method: 'GET', url: '/v2/baseimages' },
+        }
+    );
 
-    // Close the modal after adding
-    cy.get('[role="dialog"] button[aria-label="Close"]').click();
+    // Wait for modal to close before proceeding
+    cy.get('[role="dialog"]').should('not.exist');
 }

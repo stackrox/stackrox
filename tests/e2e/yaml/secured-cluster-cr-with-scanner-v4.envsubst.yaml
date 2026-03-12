@@ -74,3 +74,5 @@ spec:
         limits:
           cpu: "1000m"
           memory: "2500Mi"
+  customize:
+    envVars:$customize_envVars

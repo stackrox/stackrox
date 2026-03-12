@@ -81,12 +81,6 @@ var (
 	// Will aggregate to one edge per unique port/protocol/direction instead of one edge per unique IP/port/protocol/direction.
 	NetworkGraphAggregateExternalIPs = registerFeature("Aggregate all external IP graph edges, showing only unique port/protocol pairs", "ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS")
 
-	// NetworkFlowBatching enables batching of network flow updates to smooth out data spikes
-	NetworkFlowBatching = registerFeature("Enable batching of network flow updates to smooth out data spikes", "ROX_NETFLOW_BATCHING")
-
-	// NetworkFlowCacheLimiting enables limiting the network flow cache size to prevent memory issues
-	NetworkFlowCacheLimiting = registerFeature("Enable limiting network flow cache size to prevent memory issues", "ROX_NETFLOW_CACHE_LIMITING")
-
 	// Flattens Image Data Model for improved accuracy and performance
 	FlattenImageData = registerFeature("Uses a flattened Image Data Model for improved accuracy and performance", "ROX_FLATTEN_IMAGE_DATA")
 
@@ -127,6 +121,12 @@ var (
 
 	// LabelBasedPolicyScoping enables policy scoping based on cluster and namespace labels
 	LabelBasedPolicyScoping = registerFeature("Enable cluster and namespace label-based policy scoping", "ROX_LABEL_BASED_POLICY_SCOPING")
+
+	// VulnerabilityReportsEnhancedFiltering enables filtering similar to view-based reports in scheduled vulnerability reports
+	VulnerabilityReportsEnhancedFiltering = registerFeature("Enables filtering similar to view-based reports in scheduled vulnerability reports", "ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING")
+
+	// VirtualMachinesEnhancedDataModel enables usage of the enhanced and more flexible data model
+	VirtualMachinesEnhancedDataModel = registerFeature("Enables virtual machine enhanced data model", "ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL")
 )
 
 // The following feature flags are related to Scanner V4.

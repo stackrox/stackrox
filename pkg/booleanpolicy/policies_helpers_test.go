@@ -294,6 +294,18 @@ func policyWithSingleFieldAndValues(fieldName string, values []string, negate bo
 
 // File access test helpers shared across runtime and node criteria tests.
 
+func newRenameFileAccessEvent(old_path, new_path string) *storage.FileAccess {
+	return &storage.FileAccess{
+		File: &storage.FileAccess_File{
+			ActualPath: old_path,
+		},
+		Moved: &storage.FileAccess_File{
+			ActualPath: new_path,
+		},
+		Operation: storage.FileAccess_RENAME,
+	}
+}
+
 func newActualFileAccessEvent(path string, operation storage.FileAccess_Operation) *storage.FileAccess {
 	return &storage.FileAccess{
 		File:      &storage.FileAccess_File{ActualPath: path},

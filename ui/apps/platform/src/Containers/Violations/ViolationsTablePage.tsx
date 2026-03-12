@@ -58,10 +58,14 @@ function getFilteredWorkflowViewSearchFilter(
                 'Platform Component': 'true',
                 'Entity Type': 'DEPLOYMENT',
             };
+        case 'Node view':
+            return {
+                'Entity Type': 'NODE',
+            };
         case 'Full view':
         default:
             return {
-                'Entity Type': ['UNSET', 'DEPLOYMENT', 'CONTAINER_IMAGE', 'RESOURCE'],
+                'Entity Type': ['UNSET', 'DEPLOYMENT', 'CONTAINER_IMAGE', 'RESOURCE', 'NODE'],
             };
     }
 }
@@ -81,6 +85,10 @@ const violationPageText: Record<
         title: 'Platform violations',
         description:
             'Violations affecting workloads used by the OpenShift Platform and layered services',
+    },
+    'Node view': {
+        title: 'Node violations',
+        description: 'Violations affecting cluster nodes',
     },
     'Full view': {
         title: 'All violations',

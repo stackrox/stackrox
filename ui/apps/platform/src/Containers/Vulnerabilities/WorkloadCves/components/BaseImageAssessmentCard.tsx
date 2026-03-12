@@ -12,10 +12,11 @@ import {
     Label,
     LabelGroup,
 } from '@patternfly/react-core';
-import { Link } from 'react-router-dom-v5-compat';
+// Comment out code for potential future link to base image.
+// import { Link } from 'react-router-dom-v5-compat';
 
 import { getDistanceStrict } from 'utils/dateUtils';
-import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+// import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import type { BaseImage } from './ImageDetailBadges';
 
 export type BaseImageAssessmentCardProps = {
@@ -24,14 +25,14 @@ export type BaseImageAssessmentCardProps = {
 
 function BaseImageAssessmentCard({ baseImage }: BaseImageAssessmentCardProps) {
     const [isExpanded, setIsExpanded] = useState(false);
-    const { urlBuilder } = useWorkloadCveViewContext();
+    // const { urlBuilder } = useWorkloadCveViewContext();
 
     const onToggle = (_event: ReactMouseEvent, expanded: boolean) => {
         setIsExpanded(expanded);
     };
 
     // Use the digest (imageSha) as the image ID for the detail link
-    const imageDetailPath = urlBuilder.imageDetails(baseImage.imageSha, 'OBSERVED');
+    // const imageDetailPath = urlBuilder.imageDetails(baseImage.imageSha, 'OBSERVED');
 
     return (
         <Card isFlat isCompact>
@@ -54,16 +55,7 @@ function BaseImageAssessmentCard({ baseImage }: BaseImageAssessmentCardProps) {
                             <DescriptionListDescription>
                                 <LabelGroup numLabels={3} isCompact>
                                     {baseImage.names.map((name) => (
-                                        <Label
-                                            key={name}
-                                            color="blue"
-                                            isCompact
-                                            render={({ className, content }) => (
-                                                <Link to={imageDetailPath} className={className}>
-                                                    {content}
-                                                </Link>
-                                            )}
-                                        >
+                                        <Label key={name} isCompact>
                                             {name}
                                         </Label>
                                     ))}

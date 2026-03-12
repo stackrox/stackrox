@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/booleanpolicy/evaluator/mapeval"
 	"github.com/stackrox/rox/pkg/booleanpolicy/query"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/predicate/basematchers"
@@ -18,6 +19,13 @@ var (
 		storage.BooleanOperator_AND: query.And,
 	}
 )
+
+func valueToPathGlob(value string) string {
+	if strings.HasPrefix(value, search.GlobPrefix) {
+		return value
+	}
+	return search.GlobPrefix + value
+}
 
 func valueToStringExact(value string) string {
 	return search.ExactMatchString(value)
@@ -80,6 +88,10 @@ func (f *fieldLabelQueryBuilder) FieldQueriesForGroup(group *storage.PolicyGroup
 	return []*query.FieldQuery{fieldQueryFromGroup(group, f.fieldLabel, f.valueMapFunc)}
 }
 
+func ForFieldLabelFilePath(label search.FieldLabel) QueryBuilder {
+	return &fieldLabelQueryBuilder{fieldLabel: label, valueMapFunc: valueToPathGlob}
+}
+
 // ForFieldLabelExact returns a query builder that simply queries for the exact field value with the given search field label.
 func ForFieldLabelExact(label search.FieldLabel) QueryBuilder {
 	return &fieldLabelQueryBuilder{fieldLabel: label, valueMapFunc: valueToStringExact}
@@ -113,6 +125,37 @@ func ForFieldLabelMap(label search.FieldLabel, qb func(string, string) string) Q
 	}
 
 	return &fieldLabelQueryBuilder{fieldLabel: label, valueMapFunc: mapFunc}
+}
+
+// ForFieldLabelMapRequired builds a query for "required" map fields (Required Label,
+// Required Annotation, Required Image Label). When values are OR'd, they are combined
+// into a single conjunction group so the map evaluator checks all constraints together:
+// a violation fires only when NONE of the required entries are present. Without this,
+// each value would become an independent MapShouldNotContain matcher, and OR at the
+// evaluator level would invert the semantics via De Morgan's law (violation if ANY is
+// missing instead of violation if ALL are missing).
+func ForFieldLabelMapRequired(label search.FieldLabel) QueryBuilder {
+	return queryBuilderFunc(func(group *storage.PolicyGroup) []*query.FieldQuery {
+		if group.GetBooleanOperator() == storage.BooleanOperator_OR && len(group.GetValues()) > 1 {
+			parts := make([]string, 0, len(group.GetValues()))
+			for _, v := range group.GetValues() {
+				key, val := stringutils.Split2(v.GetValue(), "=")
+				parts = append(parts, query.MapShouldNotContain(key, val))
+			}
+			combined := strings.Join(parts, mapeval.ConjunctionMarker)
+			return []*query.FieldQuery{{
+				Field:    label.String(),
+				Values:   []string{combined},
+				Operator: operatorProtoMap[group.GetBooleanOperator()],
+				Negate:   group.GetNegate(),
+			}}
+		}
+		mapFunc := func(value string) string {
+			key, val := stringutils.Split2(value, "=")
+			return query.MapShouldNotContain(key, val)
+		}
+		return []*query.FieldQuery{fieldQueryFromGroup(group, label, mapFunc)}
+	})
 }
 
 // ForDays is like ForFieldLabel, but does a match depending on current_time - query(in days) >= event_time.

@@ -68,14 +68,15 @@ func (s *PolicyServiceTestSuite) SetupTest() {
 	s.tested = New(
 		s.policies,
 		s.clusters,
-		nil,
-		nil,
-		nil,
+		nil, // namespaces
+		nil, // deployments
+		nil, // networkPolicies
+		nil, // notifiers
 		s.mitreVectorStore,
-		nil,
+		nil, // reprocessor
 		s.mockLifecycleManager,
-		nil,
-		nil,
+		nil, // processor
+		nil, // metadataCache
 		s.mockConnectionManager,
 	)
 }

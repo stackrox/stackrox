@@ -1,6 +1,8 @@
 package scopecomp
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -70,6 +72,10 @@ func CompileScope(scope *storage.Scope, clusterLabelProvider ClusterLabelProvide
 		namespaceLabelProvider: namespaceLabelProvider,
 	}
 
+	if !features.LabelBasedPolicyScoping.Enabled() && (scope.GetClusterLabel() != nil || scope.GetNamespaceLabel() != nil) {
+		return nil, errors.New("cluster_label and namespace_label scopes require ROX_LABEL_BASED_POLICY_SCOPING feature flag to be enabled")
+	}
+
 	if features.LabelBasedPolicyScoping.Enabled() {
 		cs.ClusterLabelKey, cs.ClusterLabelValue, err = compileLabelMatchers(scope.GetClusterLabel(), clusterLabelType)
 		if err != nil {
@@ -90,15 +96,15 @@ func CompileScope(scope *storage.Scope, clusterLabelProvider ClusterLabelProvide
 }
 
 // MatchesClusterLabels evaluates cluster label matchers against a deployment's cluster
-func (c *CompiledScope) MatchesClusterLabels(deployment *storage.Deployment) bool {
-	if !features.LabelBasedPolicyScoping.Enabled() || c.ClusterLabelKey == nil {
+func (c *CompiledScope) MatchesClusterLabels(ctx context.Context, deployment *storage.Deployment) bool {
+	if c.ClusterLabelKey == nil {
 		return true
 	}
 	if c.clusterLabelProvider == nil {
 		log.Error("Cluster label matcher defined but provider is nil - failing closed")
 		return false
 	}
-	clusterLabels, err := c.clusterLabelProvider.GetClusterLabels(deployment.GetClusterId())
+	clusterLabels, err := c.clusterLabelProvider.GetClusterLabels(ctx, deployment.GetClusterId())
 	if err != nil {
 		log.Errorf("Failed to fetch cluster labels for cluster %s: %v", deployment.GetClusterId(), err)
 		return false
@@ -107,15 +113,15 @@ func (c *CompiledScope) MatchesClusterLabels(deployment *storage.Deployment) boo
 }
 
 // MatchesNamespaceLabels evaluates namespace label matchers against a deployment's namespace
-func (c *CompiledScope) MatchesNamespaceLabels(deployment *storage.Deployment) bool {
-	if !features.LabelBasedPolicyScoping.Enabled() || c.NamespaceLabelKey == nil {
+func (c *CompiledScope) MatchesNamespaceLabels(ctx context.Context, deployment *storage.Deployment) bool {
+	if c.NamespaceLabelKey == nil {
 		return true
 	}
 	if c.namespaceLabelProvider == nil {
 		log.Error("Namespace label matcher defined but provider is nil - failing closed")
 		return false
 	}
-	namespaceLabels, err := c.namespaceLabelProvider.GetNamespaceLabels(deployment.GetNamespaceId())
+	namespaceLabels, err := c.namespaceLabelProvider.GetNamespaceLabels(ctx, deployment.GetNamespaceId())
 	if err != nil {
 		log.Errorf("Failed to fetch namespace labels for namespace %s: %v", deployment.GetNamespaceId(), err)
 		return false
@@ -124,20 +130,20 @@ func (c *CompiledScope) MatchesNamespaceLabels(deployment *storage.Deployment) b
 }
 
 // MatchesDeployment evaluates a compiled scope against a deployment
-func (c *CompiledScope) MatchesDeployment(deployment *storage.Deployment) bool {
+func (c *CompiledScope) MatchesDeployment(ctx context.Context, deployment *storage.Deployment) bool {
 	if c == nil {
 		return true
 	}
 	if !c.MatchesCluster(deployment.GetClusterId()) {
 		return false
 	}
-	if !c.MatchesClusterLabels(deployment) {
+	if !c.MatchesClusterLabels(ctx, deployment) {
 		return false
 	}
 	if !c.MatchesNamespace(deployment.GetNamespace()) {
 		return false
 	}
-	if !c.MatchesNamespaceLabels(deployment) {
+	if !c.MatchesNamespaceLabels(ctx, deployment) {
 		return false
 	}
 	if !c.MatchesLabels(c.LabelKey, c.LabelValue, deployment.GetLabels()) {
@@ -175,7 +181,7 @@ func (c *CompiledScope) MatchesCluster(cluster string) bool {
 }
 
 // MatchesAuditEvent evaluates a compiled scope against a kubernetes event
-func (c *CompiledScope) MatchesAuditEvent(auditEvent *storage.KubernetesEvent) bool {
+func (c *CompiledScope) MatchesAuditEvent(ctx context.Context, auditEvent *storage.KubernetesEvent) bool {
 	if c == nil {
 		return true
 	}

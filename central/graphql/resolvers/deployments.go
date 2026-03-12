@@ -267,7 +267,7 @@ func (resolver *deploymentResolver) getApplicablePolicies(ctx context.Context, q
 		return nil, err
 	}
 
-	applicable, _ := matcher.NewDeploymentMatcher(resolver.data).FilterApplicablePolicies(policies)
+	applicable, _ := matcher.NewDeploymentMatcher(resolver.data, resolver.root.ClusterDataStore, resolver.root.NamespaceDataStore).FilterApplicablePolicies(ctx, policies)
 	return applicable, nil
 }
 
@@ -381,11 +381,11 @@ func (resolver *deploymentResolver) FailingPolicyCounter(ctx context.Context, ar
 		return nil, err
 	}
 
-	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q, true)
+	counts, err := resolver.root.ViolationsDataStore.SearchAlertPolicySeverityCounts(ctx, q, true)
 	if err != nil {
 		return nil, nil
 	}
-	return mapListAlertsToPolicySeverityCount(alerts), nil
+	return policySeverityCountsToResolver(counts), nil
 }
 
 // Secrets returns the total number of secrets for this deployment

@@ -58,6 +58,7 @@ type DispatcherRegistry interface {
 	ForComplianceOperatorSuites() Dispatcher
 	ForComplianceOperatorTailoredProfiles(profileLister cache.GenericLister) Dispatcher
 	ForComplianceOperatorRemediations() Dispatcher
+	ForComplianceOperatorCustomRules() Dispatcher
 }
 
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
@@ -107,6 +108,7 @@ func NewDispatcherRegistry(
 		complianceOperatorScanDispatcher:                dispatchers.NewScanDispatcher(),
 		complianceOperatorSuiteDispatcher:               dispatchers.NewSuitesDispatcher(),
 		complianceOperatorRemediationDispatcher:         dispatchers.NewRemediationDispatcher(),
+		complianceOperatorCustomRuleDispatcher:          dispatchers.NewCustomRuleDispatcher(),
 
 		virtualMachineDispatcher:         dispatcher.NewVirtualMachineDispatcher(clusterID, storeProvider.VirtualMachines()),
 		virtualMachineInstanceDispatcher: dispatcher.NewVirtualMachineInstanceDispatcher(clusterID, storeProvider.VirtualMachines()),
@@ -136,6 +138,7 @@ type registryImpl struct {
 	complianceOperatorTailoredProfileDispatcher     *dispatchers.TailoredProfileDispatcher
 	complianceOperatorSuiteDispatcher               *dispatchers.SuitesDispatcher
 	complianceOperatorRemediationDispatcher         *dispatchers.RemediationDispatcher
+	complianceOperatorCustomRuleDispatcher          *dispatchers.CustomRuleDispatcher
 
 	virtualMachineDispatcher         *dispatcher.VirtualMachineDispatcher
 	virtualMachineInstanceDispatcher *dispatcher.VirtualMachineInstanceDispatcher
@@ -331,6 +334,10 @@ func (d *registryImpl) ForComplianceOperatorSuites() Dispatcher {
 
 func (d *registryImpl) ForComplianceOperatorRemediations() Dispatcher {
 	return wrapDispatcher(d.complianceOperatorRemediationDispatcher, d.traceWriter)
+}
+
+func (d *registryImpl) ForComplianceOperatorCustomRules() Dispatcher {
+	return wrapDispatcher(d.complianceOperatorCustomRuleDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForVirtualMachines() Dispatcher {

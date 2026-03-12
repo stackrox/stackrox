@@ -30,6 +30,7 @@ import (
 	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -106,6 +107,62 @@ func (ds *datastoreImpl) SearchAlertPolicyNamesAndSeverities(ctx context.Context
 
 	var results []*alertviews.PolicyNameAndSeverity
 	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, clonedQuery, func(r *alertviews.PolicyNameAndSeverity) error {
+		results = append(results, r)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+// SearchAlertPolicySeverityCounts returns the count of distinct policies per severity level
+// for matching alerts. Uses a SQL aggregate query to avoid deserializing alert blobs.
+func (ds *datastoreImpl) SearchAlertPolicySeverityCounts(ctx context.Context, q *v1.Query, excludeResolved bool) (*alertviews.PolicySeverityCounts, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlertPolicySeverityCounts")
+
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+	countQuery := alertviews.WithPolicySeverityCountQuery(q)
+
+	emptyResult := &alertviews.PolicySeverityCounts{}
+	results := make([]*alertviews.PolicySeverityCounts, 0)
+	// TODO(ROX-33425): replace call with one specific for counts that only returns a single row
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, countQuery, func(r *alertviews.PolicySeverityCounts) error {
+		results = append(results, r)
+		return nil
+	})
+
+	// error handling needed to protect ourselves if this is called in
+	// the future with something other than just counts.
+	if err != nil {
+		return emptyResult, err
+	}
+	if len(results) == 0 {
+		return emptyResult, nil
+	}
+	if len(results) > 1 {
+		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
+		utils.Should(err)
+		return emptyResult, err
+	}
+
+	return results[0], err
+}
+
+// SearchAlertPolicyGroups returns alerts grouped by policy with a count per group.
+// Uses a SQL aggregate query to avoid deserializing alert blobs.
+func (ds *datastoreImpl) SearchAlertPolicyGroups(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*alertviews.AlertPolicyGroup, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlertPolicyGroups")
+
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+	groupQuery := alertviews.WithAlertPolicyGroupQuery(q)
+
+	var results []*alertviews.AlertPolicyGroup
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, groupQuery, func(r *alertviews.AlertPolicyGroup) error {
 		results = append(results, r)
 		return nil
 	})

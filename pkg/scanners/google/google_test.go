@@ -15,6 +15,7 @@ func TestGoogleValidate(t *testing.T) {
 	}{
 		{
 			name: "static credentials - success",
+			// #nosec G101 -- test data
 			config: &storage.GoogleConfig{
 				Endpoint:       "eu.gcr.io",
 				Project:        "test-project",
@@ -24,6 +25,7 @@ func TestGoogleValidate(t *testing.T) {
 		},
 		{
 			name: "static credentials - no endpoint",
+			// #nosec G101 -- test data
 			config: &storage.GoogleConfig{
 				Endpoint:       "",
 				Project:        "test-project",
@@ -33,6 +35,7 @@ func TestGoogleValidate(t *testing.T) {
 		},
 		{
 			name: "static credentials - no project",
+			// #nosec G101 -- test data
 			config: &storage.GoogleConfig{
 				Endpoint:       "eu.gcr.io",
 				Project:        "",
@@ -51,6 +54,7 @@ func TestGoogleValidate(t *testing.T) {
 		},
 		{
 			name: "workload identity - rejected",
+			// #nosec G101 -- test data
 			config: &storage.GoogleConfig{
 				Endpoint:       "eu.gcr.io",
 				Project:        "test-project",

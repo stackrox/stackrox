@@ -33,7 +33,8 @@ func Singleton() Service {
 				clusterStore: clusterStore.Singleton(),
 				roleStore:    roleStore.Singleton(),
 			},
-			now: time.Now,
+			now:    time.Now,
+			policy: defaultTokenPolicy(),
 		}
 	})
 	return s
