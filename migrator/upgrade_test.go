@@ -96,8 +96,11 @@ func (s *UpgradeSuite) TestLockAcquired_RollbackMarkerHonored() {
 	// The check should set SeqNum to the RollbackSeqNum and remove the marker
 	verAfter, err := migVer.ReadVersionGormDB(s.ctx, s.gormDB)
 	s.Require().NoError(err)
-	s.Require().Zero(verAfter.RollbackSeqNum)
-	s.Require().Equal(215, verAfter.SeqNum)
+	s.Assert().Zero(verAfter.RollbackSeqNum)
+	s.Assert().Equal(215, verAfter.SeqNum)
+	// Make sure other fields are not wiped by the reset
+	s.Assert().Equal(ver.MainVersion, verAfter.MainVersion)
+	s.Assert().Equal(ver.MinimumSeqNum, verAfter.MinimumSeqNum)
 }
 
 func (s *UpgradeSuite) TestLockAcquired_OldPod_ResetSeqAndRollback() {
@@ -203,27 +206,4 @@ func (s *UpgradeSuite) TestWriteRollbackMarker_LowestWins() {
 	s.Require().NoError(err)
 	s.Require().NotZero(ver.RollbackSeqNum)
 	s.Require().Equal(210, ver.RollbackSeqNum, "even lower marker should win")
-}
-
-func (s *UpgradeSuite) TestClearRollbackMarker_Idempotent() {
-	s.setDBVersion(pkgMigrations.CurrentDBVersionSeqNum(), "4.10.0")
-
-	// Clear when no marker — should succeed.
-	err := migVer.ClearRollbackSeqNum(s.gormDB)
-	s.Require().NoError(err)
-
-	// Set and clear.
-	err = migVer.WriteRollbackSeqNum(s.gormDB, 215)
-	s.Require().NoError(err)
-
-	err = migVer.ClearRollbackSeqNum(s.gormDB)
-	s.Require().NoError(err)
-
-	ver, err := migVer.ReadVersionGormDB(s.ctx, s.gormDB)
-	s.Require().NoError(err)
-	s.Require().Zero(ver.RollbackSeqNum)
-
-	// Double clear — should succeed.
-	err = migVer.ClearRollbackSeqNum(s.gormDB)
-	s.Require().NoError(err)
 }

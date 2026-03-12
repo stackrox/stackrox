@@ -14,8 +14,11 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/version"
 )
 
 var (
@@ -75,7 +78,13 @@ func Run(databases *types.Databases) error {
 // UpdateToCurrentVersion updates the stored version to the current binary
 // version without running any migrations.
 func UpdateToCurrentVersion(databases *types.Databases) error {
-	currentVersion := &versionStorage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNum())}
+	currentVersion := &versionStorage.Version{
+		SeqNum:        int32(pkgMigrations.CurrentDBVersionSeqNum()),
+		Version:       version.GetMainVersion(),
+		MinSeqNum:     int32(pkgMigrations.MinimumSupportedDBVersionSeqNum()),
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
+	}
+
 	ctx := sac.WithAllAccess(context.Background())
 	err := updateVersion(ctx, databases, currentVersion)
 	if err != nil {
