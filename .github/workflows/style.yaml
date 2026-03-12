@@ -39,14 +39,14 @@ jobs:
         go-version-file: go.mod
         cache: false
 
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.9'  # operator/bundle_helpers venv requires Python <3.12
-
-    # setup-go@v6 sets GOTOOLCHAIN=local; override so sub-module tools
+    # setup-go@v6 exports GOTOOLCHAIN=local; override so sub-module tools
     # with newer go directives (e.g. tools/proto) can auto-download.
     - name: Override GOTOOLCHAIN
       run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'  # operator/bundle_helpers venv requires Python <3.12
 
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
@@ -79,6 +79,8 @@ jobs:
         go-version-file: go.mod
         cache: false
 
+    # setup-go@v6 exports GOTOOLCHAIN=local; override so sub-module tools
+    # with newer go directives (e.g. tools/proto) can auto-download.
     - name: Override GOTOOLCHAIN
       run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
@@ -130,39 +132,22 @@ jobs:
           go-version-file: go.mod
           cache: false
 
+      # setup-go@v6 exports GOTOOLCHAIN=local; override so sub-module tools
+      # with newer go directives (e.g. tools/proto) can auto-download.
+      - name: Override GOTOOLCHAIN
+        run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Install tools
+      - name: Install xmlstarlet for shellcheck output to junit
         run: |
-          # Override GOTOOLCHAIN=local set by setup-go.
-          echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
-          log_dir="$(mktemp -d)"
+          sudo apt-get update -qq && sudo apt-get install -y -qq xmlstarlet
 
-          (
-            sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/v4.44.6/yq_linux_amd64"
-            sudo chmod +x /usr/local/bin/yq
-          ) >"${log_dir}/yq.log" 2>&1 &
-
-          (
-            sudo apt-get update -qq && sudo apt-get install -y -qq xmlstarlet
-          ) >"${log_dir}/xmlstarlet.log" 2>&1 &
-
-          (
-            python3 -m pip install -r .openshift-ci/dev-requirements.txt
-          ) >"${log_dir}/pip.log" 2>&1 &
-
-          failed=0
-          for pid in $(jobs -p); do
-            wait "$pid" || failed=1
-          done
-          for log in "${log_dir}"/*.log; do
-            echo "::group::$(basename "${log%.log}")"
-            cat "$log"
-            echo "::endgroup::"
-          done
-          exit $failed
+      - name: Install pycodestyle
+        run: |
+          python3 -m pip install -r .openshift-ci/dev-requirements.txt
 
       - name: Verify tools
         run: |
