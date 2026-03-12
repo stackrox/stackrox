@@ -838,7 +838,7 @@
         "TAILORED_PROFILE"
       ],
       "default": "OPERATOR_KIND_UNSPECIFIED",
-      "description": "OperatorKind is the kind of the Compliance Operator resource that this\n`ComplianceProfileSummary` was sourced from (note that ACS represents both Compliance\nOperator `Profiles` and `TailoredProfiles` as compliance profiles).\n\n - OPERATOR_KIND_UNSPECIFIED: The kind is unspecified.\n - PROFILE: The kind is `Profile`.\n - TAILORED_PROFILE: The kind is `TailoredProfile`."
+      "description": "OperatorKind is the kind of the Compliance Operator resource that this\n`ComplianceProfileSummary` was sourced from. ACS represents both Compliance\nOperator `Profiles` and `TailoredProfiles` as compliance profiles.\n\n - OPERATOR_KIND_UNSPECIFIED: The kind is unspecified.\n - PROFILE: The kind is `Profile`.\n - TAILORED_PROFILE: The kind is `TailoredProfile`."
     },
     "v2ComplianceReportHistoryResponse": {
       "type": "object",

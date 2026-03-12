@@ -87,8 +87,8 @@ func (ComplianceCheckStatus) EnumDescriptor() ([]byte, []int) {
 }
 
 // OperatorKind is the kind of the Compliance Operator resource that this
-// `ComplianceProfileSummary` was sourced from (note that ACS represents both Compliance
-// Operator `Profiles` and `TailoredProfiles` as compliance profiles).
+// `ComplianceProfileSummary` was sourced from. ACS represents both Compliance
+// Operator `Profiles` and `TailoredProfiles` as compliance profiles.
 type ComplianceProfileSummary_OperatorKind int32
 
 const (
