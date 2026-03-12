@@ -149,6 +149,23 @@ var (
 			"reason",
 		})
 
+	// fileAccessEventsReceived counts file access events entering the pipeline.
+	fileAccessEventsReceived = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "file_access_events_received_total",
+		Help:      "Total number of file access events received from the FACT agent and entering the processing pipeline",
+	})
+
+	// fileAccessPolicyMatchDuration tracks how long policy matching takes per file access event.
+	fileAccessPolicyMatchDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "file_access_policy_match_duration_seconds",
+		Help:      "Time spent evaluating file access policies per event, including glob pattern matching",
+		Buckets:   prometheus.DefBuckets,
+	})
+
 	// DetectorProcessIndicatorQueueOperations keeps track of the operations of the detection process indicator buffer.
 	DetectorProcessIndicatorQueueOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -188,23 +205,6 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "detector_file_access_queue_depth",
 		Help:      "Current number of items in the file access detection queue",
-	})
-
-	// fileAccessEventsReceived counts file access events entering the pipeline.
-	fileAccessEventsReceived = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "file_access_events_received_total",
-		Help:      "Total number of file access events received from the FACT agent and entering the processing pipeline",
-	})
-
-	// fileAccessPolicyMatchDuration tracks how long policy matching takes per file access event.
-	fileAccessPolicyMatchDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "file_access_policy_match_duration_seconds",
-		Help:      "Time spent evaluating file access policies per event, including glob pattern matching",
-		Buckets:   prometheus.DefBuckets,
 	})
 
 	// DetectorProcessIndicatorDroppedCount keeps track of the number of process indicators dropped in the detector.
