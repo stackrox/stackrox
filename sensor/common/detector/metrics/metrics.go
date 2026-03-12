@@ -253,7 +253,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "image_indexing_route_info",
-		Help: `Intended image indexing route in Sensor by image locality. "cluster_local" means the image registry is recognized by Sensor as local to the secured cluster, so indexing uses local scanner when local image scanning is enabled. "non_cluster_local" means all other images and indexing uses central scanner path. Vulnerability matching is always performed in Central.`,
+		Help:      `Intended image indexing route in Sensor by image locality. "cluster_local" means the image registry is recognized by Sensor as local to the secured cluster, so indexing uses local scanner when local image scanning is enabled. "non_cluster_local" means all other images and indexing uses central scanner path. Vulnerability matching is always performed in Central.`,
 	}, []string{"for_images", "indexer"})
 )
 
