@@ -331,8 +331,8 @@ func TestExtractorIdentityForRequest(t *testing.T) {
 
 	internalRole := &tokens.InternalRole{
 		RoleName: "test internal role",
-		Permissions: map[string][]string{
-			storage.Access_READ_ACCESS.String(): {deploymentResource},
+		Permissions: map[storage.Access][]string{
+			storage.Access_READ_ACCESS: {deploymentResource},
 		},
 		ClustersByName: tokens.ClusterScopes{
 			cluster1: []string{"*"},
