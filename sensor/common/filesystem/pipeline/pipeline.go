@@ -177,10 +177,13 @@ func (p *Pipeline) run() {
 				// Channel closed, no more messages
 				return
 			}
+			detectorMetrics.ObserveFileAccessEventReceived()
 			event := p.translate(fs)
-			if event != nil {
-				detectorMetrics.ObserveFileAccessEventReceived()
+			if event == nil {
+				detectorMetrics.DetectorFileAccessDroppedCount.Inc()
+				continue
 			}
+
 			p.detector.ProcessFileAccess(p.msgCtx, event)
 		}
 	}
