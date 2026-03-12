@@ -25,12 +25,17 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      options: >-
+        --tmpfs /__w/stackrox/stackrox:rw,exec,size=2g
+        -v /home/runner/work:/__w_host
     steps:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Expose local actions to host
+      run: cp -a .github /__w_host/stackrox/stackrox/.github
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -41,8 +46,6 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
-      with:
-        save: false  # ~752 MB, style-dominated, no critical path speedup
 
     - name: Check Generated
       run: scripts/ci/jobs/check-generated.sh
@@ -57,7 +60,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -70,7 +72,11 @@ jobs:
     - name: Ensure no trailing whitespaces
       if: github.event_name == 'pull_request'
       # Markdown files aren't checked for trailing whitespaces because it's a valid linebreak there.
-      run: git diff --check "${{ github.event.pull_request.base.sha }}"...HEAD ':(exclude)*.md'
+      # Two-dot diff (base..HEAD) shows changes reachable from HEAD but not base.
+      # Three-dot (base...HEAD) requires a merge-base which shallow clones lack.
+      run: |
+        git fetch --depth=1 origin "${{ github.event.pull_request.base.sha }}:refs/remotes/origin/pr-base"
+        git diff --check origin/pr-base..HEAD ':(exclude)*.md'
 
     - name: Check PR fixes
       run: scripts/ci/jobs/check-pr-fixes.sh
@@ -100,12 +106,17 @@ jobs:
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
+      options: >-
+        --tmpfs /__w/stackrox/stackrox:rw,exec,size=2g
+        -v /home/runner/work:/__w_host
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Expose local actions to host
+        run: cp -a .github /__w_host/stackrox/stackrox/.github
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -114,8 +125,6 @@ jobs:
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
-        with:
-          save: false  # ~2,183 MB, style-dominated, no critical path speedup
 
       - name: Cache UI dependencies
         uses: ./.github/actions/cache-ui-dependencies
@@ -136,6 +145,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
 
+    - name: Fetch base branch for incremental lint
+      if: github.event_name == 'pull_request'
+      run: git fetch --depth=1 origin "${{ github.base_ref }}"
+
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -149,17 +162,7 @@ jobs:
       run: make golangci-lint-cache-status
 
     - name: Cache golangci-lint
-      if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
       uses: actions/cache@v5
-      with:
-        path: ${{ env.HOME }}/.cache/golangci-lint
-        key: go-lint-v2-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          go-lint-v2-
-
-    - name: Restore golangci-lint analysis cache
-      if: ${{ !(github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) }}
-      uses: actions/cache/restore@v5
       with:
         path: ${{ env.HOME }}/.cache/golangci-lint
         key: go-lint-v2-${{ hashFiles('**/go.sum') }}
@@ -265,7 +268,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble

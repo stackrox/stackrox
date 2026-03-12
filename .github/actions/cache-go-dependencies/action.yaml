@@ -1,10 +1,29 @@
 name: Cache Go Dependencies
 description: Cache Go Dependencies
 inputs:
-  save:
-    description: Whether this job saves caches on pushes to the default branch.
+  key-suffix:
+    description: Extra suffix for cache keys (use to distinguish matrix jobs).
     required: false
-    default: 'true'
+    default: ''
+outputs:
+  gocache:
+    description: GOCACHE path
+    value: ${{ steps.cache-paths.outputs.GOCACHE }}
+  gomodcache:
+    description: GOMODCACHE path
+    value: ${{ steps.cache-paths.outputs.GOMODCACHE }}
+  build-cache-key:
+    description: Build cache key for explicit save
+    value: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
+  mod-cache-key:
+    description: Mod cache key for explicit save
+    value: go-mod-v2-${{ hashFiles('**/go.sum') }}
+  build-cache-hit:
+    description: Whether the build cache was an exact hit
+    value: ${{ steps.restore-build.outputs.cache-hit }}
+  mod-cache-hit:
+    description: Whether the mod cache was an exact hit
+    value: ${{ steps.restore-mod.outputs.cache-hit }}
 runs:
   using: composite
   steps:
@@ -14,43 +33,36 @@ runs:
         echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
         echo "GOMODCACHE=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
         echo "GOARCH=$(go env GOARCH)" >> "$GITHUB_OUTPUT"
-        echo "TAG=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+        echo "TAG=$(date +%Yw%U)" >> "$GITHUB_OUTPUT"
+        suffix="${{ inputs.key-suffix }}"
+        echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"
       shell: bash
 
-    # Save caches only on pushes to the default branch.
-    # All other events (PRs, etc.) restore only.
-    - name: Cache Go Dependencies (save)
-      if: inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
+    # Uses actions/cache@v5 which restores on setup and saves in a post-step.
+    # The post-step save runs automatically when the job succeeds and the key
+    # is not an exact hit. For jobs where tests may fail (like go unit tests),
+    # add explicit actions/cache/save@v5 steps with if: always() in the
+    # workflow to ensure caches are saved regardless of test outcome.
+    - name: Cache Go Dependencies
+      id: restore-mod
       uses: actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOMODCACHE }}
-        key: go-mod-v1-${{ hashFiles('**/go.sum') }}
-        restore-keys: go-mod-v1-
+        key: go-mod-v2-${{ hashFiles('**/go.sum') }}
+        restore-keys: go-mod-v2-
 
-    - name: Cache Go Dependencies (restore)
-      if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
-      uses: actions/cache/restore@v5
-      with:
-        path: ${{ steps.cache-paths.outputs.GOMODCACHE }}
-        key: go-mod-v1-${{ hashFiles('**/go.sum') }}
-        restore-keys: go-mod-v1-
-
-    - name: Cache Go Build (save)
-      if: inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
+    - name: Cache Go Build
+      id: restore-build
       uses: actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
-        restore-keys: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-
-
-    - name: Cache Go Build (restore)
-      if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
-      uses: actions/cache/restore@v5
-      with:
-        path: ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
-        restore-keys: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-
+        key: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
+        restore-keys: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
     - name: Download Go modules
       run: make deps --always-make
+      shell: bash
+
+    - name: Stabilize file mtimes for Go test cache
+      run: git ls-files -z | xargs -0 touch -t 200101010000
       shell: bash

@@ -60,7 +60,7 @@ TAG := $(BUILD_TAG)
 endif
 
 ifeq ($(TAG),)
-TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
+TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' 2>/dev/null || cat VERSION 2>/dev/null || echo "0.0.0")
 endif
 
 # Set expiration on Quay.io for non-release tags.
