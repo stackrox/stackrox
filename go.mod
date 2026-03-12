@@ -95,8 +95,10 @@ require (
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/openshift-online/ocm-sdk-go v0.1.498
-	github.com/openshift/api v0.0.0-20251122153900-88cca31a44c9
-	github.com/openshift/client-go v0.0.0-20251123231646-4685125c2287
+	github.com/openshift/api v0.0.0-20260213155647-8fe9fe363807
+	github.com/openshift/client-go v0.0.0-20260108185524-48f4ccfc4e13
+	github.com/openshift/controller-runtime-common v0.0.0-20260307102856-5db94f69ad3a
+	github.com/openshift/library-go v0.0.0-20260213153706-03f1709971c5
 	github.com/openshift/runtime-utils v0.0.0-20230921210328-7bdb5b9c177b
 	github.com/operator-framework/helm-operator-plugins v0.0.0-00010101000000-000000000000
 	github.com/owenrumney/go-sarif/v2 v2.3.3
@@ -171,7 +173,7 @@ require (
 	k8s.io/client-go v0.35.2
 	k8s.io/kubectl v0.35.2
 	k8s.io/kubelet v0.32.13
-	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
+	k8s.io/utils v0.0.0-20260108192941-914a6e750570
 	kubevirt.io/api v1.7.1
 	sigs.k8s.io/controller-runtime v0.23.3
 	sigs.k8s.io/controller-tools v0.20.1
@@ -590,3 +592,5 @@ replace (
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.2.0
 	github.com/mholt/archiver/v3 => github.com/anchore/archiver/v3 v3.5.2
 )
+
+replace github.com/openshift/api => github.com/richardsonnick/api v0.0.0-20260309135128-a7b56d5f66cb

@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/operator/internal/proxy"
 	"github.com/stackrox/rox/operator/internal/reconciler"
 	"github.com/stackrox/rox/operator/internal/route"
+	"github.com/stackrox/rox/operator/internal/tlsprofile"
 	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	"github.com/stackrox/rox/pkg/version"
@@ -22,7 +23,7 @@ import (
 )
 
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
-func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
+func RegisterNewReconciler(mgr ctrl.Manager, selector string, tlsProfile *tlsprofile.TLSProfile) error {
 	renderCache := rendercache.NewRenderCache()
 	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
 	extraEventWatcher := pkgReconciler.WithExtraWatch(
@@ -78,6 +79,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		translation.WithEnrichment(
 			centralTranslation.New(mgr.GetClient()),
 			proxy.NewProxyEnvVarsInjector(proxyEnv, mgr.GetLogger()),
+			tlsprofile.NewEnricher(tlsProfile),
 			// Using uncached UncachedClient since this is reading secrets not
 			// owned by the operator so we can't guarantee labels for cache
 			// are set properly.
