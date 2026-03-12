@@ -79,7 +79,7 @@ func (s *UpgradeSuite) TestLockNotAcquired_OldPodWritesRollbackMarker() {
 	s.Require().Equal(currSeqNum, ver.RollbackSeqNum)
 }
 
-func (s *UpgradeSuite) TestLockAcquired_RollbackMarkerHonored() {
+func (s *UpgradeSuite) TestCheckAndResetRollbackMarker() {
 	// Simulate: A previous upgrade failed. DB is at seqnum 218, rollback marker is 215.
 	s.setDBVersion(218, "4.10.0")
 	err := migVer.WriteRollbackSeqNum(s.gormDB, 215)
@@ -92,7 +92,7 @@ func (s *UpgradeSuite) TestLockAcquired_RollbackMarkerHonored() {
 	s.Require().Equal(215, ver.RollbackSeqNum)
 	s.Require().Equal(218, ver.SeqNum)
 
-	checkAndResetRollbackMarker(s.ctx, s.pool, ver)
+	checkAndResetRollbackMarker(s.ctx, s.gormDB, ver)
 	// The check should set SeqNum to the RollbackSeqNum and remove the marker
 	verAfter, err := migVer.ReadVersionGormDB(s.ctx, s.gormDB)
 	s.Require().NoError(err)

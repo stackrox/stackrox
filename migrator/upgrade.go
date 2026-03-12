@@ -106,7 +106,7 @@ func upgradeWithLock(ctx context.Context, pgPool postgres.DB, gormDB *gorm.DB, d
 	}
 	log.WriteToStderrf("version for %q is %v", dbClone, ver)
 
-	checkAndResetRollbackMarker(ctx, pgPool, ver)
+	checkAndResetRollbackMarker(ctx, gormDB, ver)
 
 	databases := &types.Databases{
 		GormDB:     gormDB,
@@ -121,7 +121,7 @@ func upgradeWithLock(ctx context.Context, pgPool postgres.DB, gormDB *gorm.DB, d
 	return nil
 }
 
-func checkAndResetRollbackMarker(ctx context.Context, pgPool postgres.DB, dbVer *pkgMigrations.MigrationVersion) {
+func checkAndResetRollbackMarker(ctx context.Context, gormDB *gorm.DB, dbVer *pkgMigrations.MigrationVersion) {
 	if dbVer.RollbackSeqNum != 0 && dbVer.SeqNum > dbVer.RollbackSeqNum {
 		// restart of a old version pod happened while a migration was in progress:
 		// the old pod wrote a marker for deferred rollback before it exited.
@@ -135,6 +135,6 @@ func checkAndResetRollbackMarker(ctx context.Context, pgPool postgres.DB, dbVer 
 			RollbackSeqNum: 0,
 		}
 
-		migVer.UpdateVersionPostgres(ctx, pgPool, startMigFromVer)
+		migVer.SetVersionGormDB(ctx, gormDB, startMigFromVer, false)
 	}
 }
