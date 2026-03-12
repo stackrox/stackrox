@@ -26,13 +26,16 @@ func (rm *roleManager) createRoleForRoxClaims(
 	role := &tokens.InternalRole{
 		RoleName: internalRoleName,
 	}
+	requestedPermissions := req.GetPermissions()
+	if len(requestedPermissions) > 0 {
+		role.Permissions = make(map[string][]string)
+	}
 	for resource, access := range req.GetPermissions() {
-		switch access {
-		case v1.Access_READ_ACCESS:
-			role.ReadResources = append(role.ReadResources, resource)
-		case v1.Access_READ_WRITE_ACCESS:
-			role.WriteResources = append(role.WriteResources, resource)
+		accessString := access.String()
+		if _, found := role.Permissions[accessString]; !found {
+			role.Permissions[accessString] = make([]string, 0)
 		}
+		role.Permissions[accessString] = append(role.Permissions[accessString], resource)
 	}
 	if len(req.GetClusterScopes()) > 0 {
 		role.ClustersByName = make(tokens.ClusterScopes)
