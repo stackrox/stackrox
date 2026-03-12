@@ -14,5 +14,4 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_218_to_m_219_plop_index_to_btree"
 	_ "github.com/stackrox/rox/migrator/migrations/m_219_to_m_220_network_flow_index_to_btree"
 	_ "github.com/stackrox/rox/migrator/migrations/m_220_to_m_221_add_deployment_hash_column"
-	_ "github.com/stackrox/rox/migrator/migrations/m_221_to_m_222_backfill_image_cve_infos_from_image_cves_v2"
 )
