@@ -25,6 +25,7 @@ func WriteRollbackSeqNum(db *gorm.DB, seqNum int) error {
 // ClearRollbackSeqNum clears the rollbackseqnum marker using GORM.
 func ClearRollbackSeqNum(db *gorm.DB) error {
 	result := db.Table(pkgSchema.VersionsSchema.Table).
+		Where("1=1").
 		Update("rollbackseqnum", 0)
 	return errors.Wrap(result.Error, "clearing rollbackseqnum marker")
 }
