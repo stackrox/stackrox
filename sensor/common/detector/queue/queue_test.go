@@ -1,6 +1,8 @@
 package queue
 
 import (
+	"context"
+	"fmt"
 	"testing"
 	"testing/synctest"
 	"time"
@@ -8,108 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stretchr/testify/assert"
 )
-
-func createAndStartQueue(t *testing.T, stopper concurrency.Stopper, size int) *Queue[*string] {
-	t.Helper()
-	q := NewQueue[*string](stopper, "queue", size, nil, nil)
-	q.Start()
-	return q
-}
-
-func push(t *testing.T, q *Queue[*string]) {
-	t.Helper()
-	old := q.queue.Len()
-	item := "item"
-	q.Push(&item)
-	assert.Equal(t, old+1, q.queue.Len())
-}
-
-func pause(_ *testing.T, q *Queue[*string]) {
-	q.Pause()
-}
-
-func resume(_ *testing.T, q *Queue[*string]) {
-	q.Resume()
-}
-
-// noPull verifies that Pull() blocks when the queue is paused.
-// With synctest's fake clock, time advances only when all goroutines are durably blocked.
-func noPull(t *testing.T, q *Queue[*string], stopper concurrency.Stopper) {
-	t.Helper()
-	ch := make(chan *string)
-	go func() {
-		defer close(ch)
-		select {
-		case item := <-q.Pull():
-			// Pull returned - either got an item or queue was stopped (nil).
-			// Use nested select to avoid blocking if nobody reads from ch.
-			if item != nil {
-				select {
-				case ch <- item:
-				case <-stopper.Flow().StopRequested():
-				}
-			}
-		case <-stopper.Flow().StopRequested():
-		}
-	}()
-	// With fake clock, this advances time instantly when goroutines are blocked
-	select {
-	case <-time.After(500 * time.Millisecond):
-		return // Expected: timeout means Pull() is blocked
-	case item := <-ch:
-		t.Fatalf("should not pull from the queue, but %s was pulled", *item)
-	}
-}
-
-// pull verifies that Pull() succeeds within a timeout.
-func pull(t *testing.T, q *Queue[*string], stopper concurrency.Stopper) {
-	t.Helper()
-	ch := make(chan *string)
-	go func() {
-		defer close(ch)
-		select {
-		case item := <-q.Pull():
-			// Use nested select to avoid blocking if nobody reads from ch.
-			select {
-			case ch <- item:
-			case <-stopper.Flow().StopRequested():
-			}
-		case <-stopper.Flow().StopRequested():
-		}
-	}()
-	select {
-	case <-time.After(500 * time.Millisecond):
-		t.Fatal("timeout waiting to pull from the queue")
-	case item := <-ch:
-		assert.Equal(t, "item", *item)
-	}
-}
-
-// stopPull verifies that Pull() returns nil when the queue is stopped.
-func stopPull(t *testing.T, q *Queue[*string]) {
-	t.Helper()
-	// Schedule the stop after a delay - with fake clock this fires when goroutines block
-	time.AfterFunc(500*time.Millisecond, func() {
-		q.stopper.Client().Stop()
-	})
-	// Wait for the goroutine to be blocked, then time advances and AfterFunc fires
-	item := <-q.Pull()
-	assert.Nil(t, item, "Pull() should return nil after stop")
-}
-
-// pushPullBlocking verifies that Pull() blocks until an item is pushed.
-func pushPullBlocking(t *testing.T, q *Queue[*string]) {
-	t.Helper()
-	// Schedule a push after a delay - with fake clock this fires when goroutines block
-	time.AfterFunc(500*time.Millisecond, func() {
-		item := "item"
-		q.Push(&item)
-	})
-	// Pull will block, time advances, AfterFunc fires, then Pull returns
-	item := <-q.Pull()
-	assert.NotNil(t, item)
-	assert.Equal(t, "item", *item)
-}
 
 // TestPauseAndResume tests various queue pause/resume scenarios using synctest
 // for deterministic concurrent testing with a fake clock.
@@ -213,4 +113,115 @@ func TestPauseAndResume(t *testing.T) {
 			synctest.Test(t, testFn)
 		})
 	}
+}
+
+func createAndStartQueue(t *testing.T, stopper concurrency.Stopper, size int) *Queue[*string] {
+	t.Helper()
+	q := NewQueue[*string](stopper, "queue", size, nil, nil)
+	q.Start()
+	return q
+}
+
+func push(t *testing.T, q *Queue[*string]) {
+	t.Helper()
+	old := q.queue.Len()
+	item := "item"
+	q.Push(&item)
+	assert.Equal(t, old+1, q.queue.Len())
+}
+
+func pause(_ *testing.T, q *Queue[*string]) {
+	q.Pause()
+}
+
+func resume(_ *testing.T, q *Queue[*string]) {
+	q.Resume()
+}
+
+// noPull verifies that Pull() blocks when the queue is paused.
+// With synctest's fake clock, time advances only when all goroutines are durably blocked.
+func noPull(t *testing.T, q *Queue[*string], stopper concurrency.Stopper) {
+	t.Helper()
+	// errCh is used to signal errors from the goroutine as the goroutine should not call t.Fatal() directly.
+	errCh := make(chan error)
+	// Successful exit path - stop goroutine without writing to errCh.
+	done, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func() {
+		defer close(errCh)
+		select {
+		case item, ok := <-q.Pull():
+			if !ok {
+				errCh <- fmt.Errorf("unexpected closed pull channel while paused")
+				return
+			}
+			if item == nil {
+				errCh <- fmt.Errorf("unexpected nil item pulled while paused")
+				return
+			}
+			errCh <- fmt.Errorf("should not pull from the queue, but %s was pulled", *item)
+		case <-done.Done():
+			return
+		case <-stopper.Flow().StopRequested():
+			errCh <- fmt.Errorf("unexpected stop request while asserting Pull() should block")
+		}
+	}()
+	// With fake clock, this advances time instantly when goroutines are blocked
+	select {
+	case <-time.After(50 * time.Millisecond):
+		return // Expected: timeout means Pull() is blocked
+	case err := <-errCh:
+		t.Fatal(err)
+	}
+}
+
+// pull verifies that Pull() succeeds within a timeout.
+func pull(t *testing.T, q *Queue[*string], stopper concurrency.Stopper) {
+	t.Helper()
+	ch := make(chan *string)
+	go func() {
+		defer close(ch)
+		select {
+		case item := <-q.Pull():
+			// Use nested select to avoid blocking if nobody reads from ch.
+			select {
+			case ch <- item:
+			case <-stopper.Flow().StopRequested():
+			}
+		case <-stopper.Flow().StopRequested():
+		}
+	}()
+	select {
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("timeout waiting to pull from the queue")
+	case item := <-ch:
+		assert.Equal(t, "item", *item)
+	}
+}
+
+// stopPull verifies that Pull() returns nil when the queue is stopped.
+func stopPull(t *testing.T, q *Queue[*string]) {
+	t.Helper()
+	// Schedule the stop after a delay - with fake clock this fires when goroutines block
+	time.AfterFunc(500*time.Millisecond, func() {
+		q.stopper.Client().Stop()
+	})
+	// Wait for the goroutine to be blocked, then time advances and AfterFunc fires
+	item := <-q.Pull()
+	assert.Nil(t, item, "Pull() should return nil after stop")
+}
+
+// pushPullBlocking verifies that Pull() blocks until an item is pushed.
+func pushPullBlocking(t *testing.T, q *Queue[*string]) {
+	t.Helper()
+	// Schedule a push after a delay - with fake clock this fires when goroutines block
+	time.AfterFunc(500*time.Millisecond, func() {
+		item := "item"
+		q.Push(&item)
+	})
+	// Pull will block, time advances, AfterFunc fires, then Pull returns
+	item := <-q.Pull()
+	assert.NotNil(t, item)
+	assert.Equal(t, "item", *item)
 }
