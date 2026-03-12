@@ -68,6 +68,11 @@ const allSearchFilterEntities: CompoundSearchFilterConfig = [
         attributes: [NamespaceAnnotation, NamespaceID, NamespaceLabel, NamespaceName],
     },
     {
+        displayName: 'Node',
+        searchCategory: 'ALERTS',
+        attributes: [NodeAnnotation, NodeLabel, NodeName],
+    },
+    {
         displayName: 'Policy',
         searchCategory: 'ALERTS',
         attributes: [PolicyCategory, PolicyLifecycleStage, PolicyName, PolicySeverity],
@@ -76,11 +81,6 @@ const allSearchFilterEntities: CompoundSearchFilterConfig = [
         displayName: 'Policy violation',
         searchCategory: 'ALERTS',
         attributes: [AlertViolationTime, AlertEntityType], // non-alphabetical because no Name
-    },
-    {
-        displayName: 'Node',
-        searchCategory: 'ALERTS',
-        attributes: [NodeAnnotation, NodeLabel, NodeName],
     },
     {
         displayName: 'Resource',
