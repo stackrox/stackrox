@@ -139,7 +139,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version-file: ui/package.json
 
       - name: Install xmlstarlet for shellcheck output to junit
         run: |
