@@ -94,7 +94,7 @@ require (
 	github.com/onsi/gomega v1.39.1
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
-	github.com/openshift-online/ocm-sdk-go v0.1.497
+	github.com/openshift-online/ocm-sdk-go v0.1.498
 	github.com/openshift/api v0.0.0-20251122153900-88cca31a44c9
 	github.com/openshift/client-go v0.0.0-20251123231646-4685125c2287
 	github.com/openshift/runtime-utils v0.0.0-20230921210328-7bdb5b9c177b
@@ -139,16 +139,16 @@ require (
 	go.uber.org/mock v0.6.0
 	go.uber.org/zap v1.27.1
 	go.yaml.in/yaml/v3 v3.0.4
-	golang.org/x/crypto v0.48.0
-	golang.org/x/mod v0.33.0
-	golang.org/x/net v0.51.0
+	golang.org/x/crypto v0.49.0
+	golang.org/x/mod v0.34.0
+	golang.org/x/net v0.52.0
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sync v0.20.0
 	golang.org/x/sys v0.42.0
-	golang.org/x/term v0.40.0
-	golang.org/x/text v0.34.0
+	golang.org/x/term v0.41.0
+	golang.org/x/text v0.35.0
 	golang.org/x/time v0.15.0
-	golang.org/x/tools v0.42.0
+	golang.org/x/tools v0.43.0
 	golang.stackrox.io/grpc-http1 v0.5.1
 	google.golang.org/api v0.271.0
 	google.golang.org/genproto v0.0.0-20260217215200-42d3e9bedb6d
@@ -162,14 +162,14 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
-	helm.sh/helm/v3 v3.19.4
+	helm.sh/helm/v3 v3.20.1
 	k8s.io/api v0.35.2
 	k8s.io/apiextensions-apiserver v0.35.2
 	k8s.io/apimachinery v0.35.2
 	k8s.io/apiserver v0.35.2
-	k8s.io/cli-runtime v0.34.5
+	k8s.io/cli-runtime v0.35.1
 	k8s.io/client-go v0.35.2
-	k8s.io/kubectl v0.34.5
+	k8s.io/kubectl v0.35.1
 	k8s.io/kubelet v0.32.13
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	kubevirt.io/api v1.7.1
@@ -269,7 +269,7 @@ require (
 	github.com/cockroachdb/tokenbucket v0.0.0-20250429170803-42689b6311bb // indirect
 	github.com/coder/websocket v1.8.14 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
-	github.com/containerd/containerd v1.7.29 // indirect
+	github.com/containerd/containerd v1.7.30 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
@@ -421,8 +421,8 @@ require (
 	github.com/olekukonko/errors v1.1.0 // indirect
 	github.com/olekukonko/ll v0.1.4-0.20260115111900-9e59c2286df0 // indirect
 	github.com/opencontainers/runtime-spec v1.2.1 // indirect
-	github.com/openshift-online/ocm-api-model/clientapi v0.0.452 // indirect
-	github.com/openshift-online/ocm-api-model/model v0.0.452 // indirect
+	github.com/openshift-online/ocm-api-model/clientapi v0.0.453 // indirect
+	github.com/openshift-online/ocm-api-model/model v0.0.453 // indirect
 	github.com/openshift/custom-resource-status v1.1.2 // indirect
 	github.com/operator-framework/operator-lib v0.17.0 // indirect
 	github.com/package-url/packageurl-go v0.1.3 // indirect
@@ -436,7 +436,7 @@ require (
 	github.com/quay/goval-parser v0.8.8 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
-	github.com/rubenv/sql-migrate v1.8.0 // indirect
+	github.com/rubenv/sql-migrate v1.8.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
@@ -511,7 +511,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/code-generator v0.35.2 // indirect
 	k8s.io/component-base v0.35.2 // indirect
-	k8s.io/component-helpers v0.34.5 // indirect
+	k8s.io/component-helpers v0.35.1 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250922181213-ec3ebc5fd46b // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
