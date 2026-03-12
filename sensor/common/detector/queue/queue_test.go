@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"testing/synctest"
@@ -153,18 +154,18 @@ func noPull(t *testing.T, q *Queue[*string], stopper concurrency.Stopper) {
 		select {
 		case item, ok := <-q.Pull():
 			if !ok {
-				errCh <- fmt.Errorf("unexpected closed pull channel while paused")
+				errCh <- errors.New("unexpected closed pull channel while paused")
 				return
 			}
 			if item == nil {
-				errCh <- fmt.Errorf("unexpected nil item pulled while paused")
+				errCh <- errors.New("unexpected nil item pulled while paused")
 				return
 			}
 			errCh <- fmt.Errorf("should not pull from the queue, but %s was pulled", *item)
 		case <-done.Done():
 			return
 		case <-stopper.Flow().StopRequested():
-			errCh <- fmt.Errorf("unexpected stop request while asserting Pull() should block")
+			errCh <- errors.New("unexpected stop request while asserting Pull() should block")
 		}
 	}()
 	// With fake clock, this advances time instantly when goroutines are blocked
