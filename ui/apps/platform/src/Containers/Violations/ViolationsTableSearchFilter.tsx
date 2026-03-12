@@ -93,21 +93,16 @@ const allowedEntitiesByView: Record<FilteredWorkflowView, string[]> = {
     'Applications view': ['Cluster', 'Deployment', 'Namespace', 'Policy', 'Policy violation'],
     'Platform view': ['Cluster', 'Deployment', 'Namespace', 'Policy', 'Policy violation'],
     'Node view': ['Cluster', 'Policy', 'Policy violation', 'Node'],
-    'Full view': [
-        'Cluster',
-        'Deployment',
-        'Namespace',
-        'Policy',
-        'Policy violation',
-        'Node',
-        'Resource',
-    ],
+    'Full view': [],
 };
 
 export function getSearchFilterConfig(
     filteredWorkflowView: FilteredWorkflowView
 ): CompoundSearchFilterConfig {
     const allowed = allowedEntitiesByView[filteredWorkflowView];
+    if (allowed.length === 0) {
+        return allSearchFilterEntities;
+    }
     return allSearchFilterEntities.filter((entity) => allowed.includes(entity.displayName));
 }
 
