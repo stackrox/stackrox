@@ -50,7 +50,7 @@ export type ViewBasedVulnerabilityReportFilters = {
 
 // Scheduling types
 
-export const intervalTypes = ['DAILY', 'WEEKLY', 'MONTHLY'] as const;
+export const intervalTypes = ['WEEKLY', 'MONTHLY'] as const;
 export type IntervalType = (typeof intervalTypes)[number];
 
 // Sunday = 0, Monday = 1, .... Saturday =  6
@@ -66,11 +66,6 @@ export type DaysOfMonth = {
 export type Interval = DaysOfWeek | DaysOfMonth;
 
 export type Schedule =
-    | {
-          intervalType: 'DAILY';
-          hour: number;
-          minute: number;
-      }
     | {
           intervalType: 'WEEKLY';
           hour: number;
