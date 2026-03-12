@@ -1,12 +1,14 @@
 package datastore
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -184,42 +186,29 @@ func (u *updater) downloadFile(url string, destination string) error {
 }
 
 func replaceDirectoryContents(targetDir, sourceDir string) error {
-	if err := clearDirectory(targetDir); err != nil {
-		return errors.Wrap(err, "clearing target directory")
+	backupDir := targetDir + ".backup-" + strconv.FormatInt(time.Now().UnixNano(), 10)
+	if err := os.Rename(targetDir, backupDir); err != nil {
+		return errors.Wrap(err, "moving current target directory to backup")
 	}
-
-	entries, err := os.ReadDir(sourceDir)
-	if err != nil {
-		return errors.Wrap(err, "reading source directory")
-	}
-	for _, entry := range entries {
-		sourcePath := filepath.Join(sourceDir, entry.Name())
-		targetPath := filepath.Join(targetDir, entry.Name())
-		if err := os.Rename(sourcePath, targetPath); err != nil {
-			return errors.Wrapf(err, "moving %q to target directory", entry.Name())
+	if err := os.Rename(sourceDir, targetDir); err != nil {
+		rollbackErr := os.Rename(backupDir, targetDir)
+		if rollbackErr != nil {
+			return errors.Wrapf(err, "moving staged directory into target failed and rollback failed: %v", rollbackErr)
 		}
+		return errors.Wrap(err, "moving staged directory into target")
 	}
-
-	return nil
-}
-
-func clearDirectory(dir string) error {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return errors.Wrap(err, "reading directory entries")
-	}
-	for _, entry := range entries {
-		entryPath := filepath.Join(dir, entry.Name())
-		if err := os.RemoveAll(entryPath); err != nil {
-			return errors.Wrapf(err, "removing %q", entryPath)
-		}
+	if err := os.RemoveAll(backupDir); err != nil {
+		return errors.Wrap(err, "removing backup directory")
 	}
 
 	return nil
 }
 
 func (u *updater) downloadBytes(rawURL string) ([]byte, error) {
-	req, err := http.NewRequest(http.MethodGet, rawURL, nil)
+	reqCtx, cancel := u.newRequestContext()
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, rawURL, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "constructing request")
 	}
@@ -231,7 +220,7 @@ func (u *updater) downloadBytes(rawURL string) ([]byte, error) {
 	defer utils.IgnoreError(resp.Body.Close)
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.Errorf("HTTP response code was %d", resp.StatusCode)
+		return nil, errors.Errorf("HTTP %d for %q", resp.StatusCode, rawURL)
 	}
 
 	body, err := io.ReadAll(resp.Body)
@@ -240,6 +229,27 @@ func (u *updater) downloadBytes(rawURL string) ([]byte, error) {
 	}
 
 	return body, nil
+}
+
+func (u *updater) newRequestContext() (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	select {
+	case <-u.stopSig.Done():
+		cancel()
+		return ctx, cancel
+	default:
+	}
+
+	go func() {
+		select {
+		case <-u.stopSig.Done():
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+
+	return ctx, cancel
 }
 
 func (u *updater) downloadManifest(manifestURL string) (manifest, error) {
