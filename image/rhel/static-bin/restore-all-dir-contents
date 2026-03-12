@@ -6,4 +6,14 @@ set -euo pipefail
 
 [ -d /.init-dirs ] || exit 0
 
-cp -rfP /.init-dirs/* /
+# TODO(DO NOT MERGE): Franky, I don't love the idea of `--no-clobber`. It's
+#  going to hide problems where the directories are misconfigured. The
+#  reason it's here right now, however, is because sensor calls this script
+#  twice and some of the files don't have the write permission bit set (so force
+#  `--force` won't work either, which was something I had to previously
+#  work through anyway since we had that flag before this PR). That being said,
+#  `--no-clobber` makes this operation idempotent assuming the directories were
+#  configured correctly in the first place. Also, this kind of gets around the
+#  problem where you're trying to test something locally but forget to add a
+#  tmpfs mount to the appropriate mount points.
+cp --recursive --no-dereference --no-clobber /.init-dirs/* /
