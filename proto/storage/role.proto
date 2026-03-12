@@ -68,14 +68,18 @@ message SimpleAccessScope {
       string cluster_id = 3;
       string cluster_name = 1;
       string namespace_name = 2;
+
+      // Next ID: 4
     }
 
-    repeated string included_clusters = 1;
     repeated string included_cluster_ids = 5;
+    repeated string included_clusters = 1;
     repeated Namespace included_namespaces = 2;
 
     repeated SetBasedLabelSelector cluster_label_selectors = 3;
     repeated SetBasedLabelSelector namespace_label_selectors = 4;
+
+    // Next ID: 6
   }
 
   // `id` is generated and cannot be changed.

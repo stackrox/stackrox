@@ -100,15 +100,15 @@ func (m *SimpleAccessScope_Rules) CloneVT() *SimpleAccessScope_Rules {
 		return (*SimpleAccessScope_Rules)(nil)
 	}
 	r := new(SimpleAccessScope_Rules)
-	if rhs := m.IncludedClusters; rhs != nil {
-		tmpContainer := make([]string, len(rhs))
-		copy(tmpContainer, rhs)
-		r.IncludedClusters = tmpContainer
-	}
 	if rhs := m.IncludedClusterIds; rhs != nil {
 		tmpContainer := make([]string, len(rhs))
 		copy(tmpContainer, rhs)
 		r.IncludedClusterIds = tmpContainer
+	}
+	if rhs := m.IncludedClusters; rhs != nil {
+		tmpContainer := make([]string, len(rhs))
+		copy(tmpContainer, rhs)
+		r.IncludedClusters = tmpContainer
 	}
 	if rhs := m.IncludedNamespaces; rhs != nil {
 		tmpContainer := make([]*SimpleAccessScope_Rules_Namespace, len(rhs))

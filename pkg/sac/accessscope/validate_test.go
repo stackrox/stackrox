@@ -10,9 +10,13 @@ import (
 
 func TestValidateSimpleAccessScopeRules(t *testing.T) {
 	mockClusterName := "Infinite Improbability Drive"
-	mockGoodNamespace := &storage.SimpleAccessScope_Rules_Namespace{
+	mockGoodNamespace1 := &storage.SimpleAccessScope_Rules_Namespace{
 		ClusterName:   "Atomic Vector Plotter",
 		NamespaceName: "Advanced Tea Substitute",
+	}
+	mockGoodNamespace2 := &storage.SimpleAccessScope_Rules_Namespace{
+		ClusterId:     "Heart Of Gold",
+		NamespaceName: "Cheerful Door",
 	}
 	mockBadNamespace1 := &storage.SimpleAccessScope_Rules_Namespace{
 		ClusterName: "Brownian Motion Producer",
@@ -30,7 +34,12 @@ func TestValidateSimpleAccessScopeRules(t *testing.T) {
 	testCasesGood := map[string]*storage.SimpleAccessScope_Rules{
 		"valid namespace label selector": {
 			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-				mockGoodNamespace,
+				mockGoodNamespace1,
+			},
+		},
+		"valid namespace selector": {
+			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+				mockGoodNamespace2,
 			},
 		},
 		"all possible rules are set": {
@@ -38,7 +47,7 @@ func TestValidateSimpleAccessScopeRules(t *testing.T) {
 				mockClusterName,
 			},
 			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-				mockGoodNamespace,
+				mockGoodNamespace1,
 			},
 			ClusterLabelSelectors: []*storage.SetBasedLabelSelector{
 				mockGoodSelector,

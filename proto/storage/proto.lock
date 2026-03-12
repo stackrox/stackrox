@@ -16295,14 +16295,14 @@
                 "name": "Rules",
                 "fields": [
                   {
-                    "id": 1,
-                    "name": "included_clusters",
+                    "id": 5,
+                    "name": "included_cluster_ids",
                     "type": "string",
                     "is_repeated": true
                   },
                   {
-                    "id": 5,
-                    "name": "included_cluster_ids",
+                    "id": 1,
+                    "name": "included_clusters",
                     "type": "string",
                     "is_repeated": true
                   },
