@@ -809,15 +809,17 @@ reinstall-dev-tools: clean-dev-tools
 install-dev-tools: gotools-all
 	@echo "+ $@"
 
+ROXVET_SCOPE ?= ./...
+
 .PHONY: roxvet
 roxvet: skip-dirs := operator/pkg/clientset
 roxvet: $(ROXVET_BIN)
 	@echo "+ $@"
 	@# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
-	$(SILENT)go list -e ./... \
+	$(SILENT)go list -e $(ROXVET_SCOPE) \
 	    | $(foreach d,$(skip-dirs),grep -v '$(d)' |) \
 	    xargs -n 1000 go vet -vettool "$(ROXVET_BIN)" -donotcompareproto -gogoprotofunctions -tags "sql_integration test_e2e test race destructive integration scanner_db_integration compliance externalbackups"
-	$(SILENT)go list -e ./... \
+	$(SILENT)go list -e $(ROXVET_SCOPE) \
 	    | $(foreach d,$(skip-dirs),grep -v '$(d)' |) \
 	    xargs -n 1000 go vet -vettool "$(ROXVET_BIN)"
 

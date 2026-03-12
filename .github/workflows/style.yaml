@@ -23,8 +23,6 @@ jobs:
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -35,6 +33,20 @@ jobs:
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version-file: operator/bundle_helpers/.python-version
+
+    # setup-go@v6 sets GOTOOLCHAIN=local; override so sub-module tools
+    # with newer go directives (e.g. tools/proto) can auto-download.
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
@@ -51,8 +63,6 @@ jobs:
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -63,6 +73,14 @@ jobs:
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
@@ -93,13 +111,36 @@ jobs:
     - name: Check dependabot gomod configurations match go.mod files
       run: if [ -s scripts/ci/jobs/check-dependabot-gomod.sh ]; then scripts/ci/jobs/check-dependabot-gomod.sh; fi
 
-  style-check:
+  style-targets:
+    # Discover style-slim sub-targets from the Makefile so the matrix
+    # stays in sync without hardcoding target names in the workflow.
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
+    outputs:
+      targets: ${{ steps.discover.outputs.targets }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout: Makefile
+      - id: discover
+        run: |
+          # Parse the style-slim prerequisite list from the Makefile.
+          # shellcheck disable=SC1003
+          targets=$(sed -n '/^style-slim:/,/^$/p' Makefile \
+            | tr '\\' ' ' | xargs \
+            | sed 's/^style-slim: //')
+          # Shard roxvet across top-level package directories for parallelism.
+          targets=${targets/roxvet/roxvet:central roxvet:pkg roxvet:other}
+          json=$(echo "$targets" | jq -Rc 'split(" ")')
+          echo "targets=$json" >> "$GITHUB_OUTPUT"
+          echo "Discovered targets: $targets"
+
+  style-check:
+    needs: style-targets
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(needs.style-targets.outputs.targets) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -109,25 +150,60 @@ jobs:
 
       - uses: ./.github/actions/job-preamble
         with:
-          free-disk-space: '30'
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Override GOTOOLCHAIN
+        run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-node@v4
+        if: matrix.target == 'ui-lint'
+        with:
+          node-version-file: ui/package.json
+
+      - name: Install xmlstarlet
+        if: matrix.target == 'shell-style'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq xmlstarlet
+
+      - name: Install Python linters
+        if: matrix.target == 'openshift-ci-style'
+        run: python3 -m pip install -r .openshift-ci/dev-requirements.txt
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
         with:
-          save: false  # ~2,183 MB, style-dominated, no critical path speedup
+          save: false
 
       - name: Cache UI dependencies
+        if: matrix.target == 'ui-lint'
         uses: ./.github/actions/cache-ui-dependencies
 
       - name: Cache QA Test dependencies
+        if: matrix.target == 'qa-tests-style'
         uses: ./.github/actions/cache-gradle-dependencies
 
       - name: Fetch UI deps
+        if: matrix.target == 'ui-lint'
         run: make -C ui deps
 
-      - name: make style-slim
-        run: make style-slim
+      - name: make ${{ matrix.target }}
+        run: |
+          target="${{ matrix.target }}"
+          if [[ "$target" == roxvet:* ]]; then
+            shard="${target#roxvet:}"
+            case "$shard" in
+              central) scope="./central/..." ;;
+              pkg)     scope="./pkg/..." ;;
+              other)   scope="./sensor/... ./roxctl/... ./migrator/... ./compliance/... ./scanner/... ./tools/... ./generated/... ./operator/... ./config-controller/... ./tests/... ./scale/... ./image/... ./webhookserver/..." ;;
+            esac
+            make roxvet ROXVET_SCOPE="$scope"
+          else
+            make "$target"
+          fi
 
   golangci-lint:
     timeout-minutes: 240
@@ -259,8 +335,6 @@ jobs:
 
   openshift-ci-lint:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -271,6 +345,9 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Install Python linters
+        run: python3 -m pip install -r .openshift-ci/dev-requirements.txt
 
       - name: pycodestyle
         run: make -C .openshift-ci style
