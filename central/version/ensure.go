@@ -5,11 +5,8 @@ import (
 
 	"github.com/pkg/errors"
 	vStore "github.com/stackrox/rox/central/version/store"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
-	"github.com/stackrox/rox/pkg/protocompat"
-	versionUtil "github.com/stackrox/rox/pkg/version"
 )
 
 var (
@@ -28,30 +25,22 @@ func Ensure(versionStore vStore.Store) error {
 		return errors.Wrap(err, "failed to read version from DB")
 	}
 
-	// No version in the DB. This means that we're starting from scratch, with a blank DB, so we can just
-	// write the current version in and move on.
 	if version == nil {
-		err = versionStore.UpdateVersion(
-			&storage.Version{
-				SeqNum:        int32(migrations.CurrentDBVersionSeqNum()),
-				Version:       versionUtil.GetMainVersion(),
-				MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum()),
-				LastPersisted: protocompat.TimestampNow(),
-			},
-		)
-		if err != nil {
-			return errors.Wrap(err, "failed to write version to the DB")
-		}
-		log.Info("No version found in the DB. Assuming that this is a fresh install...")
+		return fmt.Errorf("no DB version found")
+	}
+
+	actualSeqNum := int(version.GetSeqNum())
+	expectedSeqNum := migrations.CurrentDBVersionSeqNum()
+
+	switch {
+	case actualSeqNum < expectedSeqNum:
+		return fmt.Errorf("DB version %d below expected version %d", version.GetSeqNum(), migrations.CurrentDBVersionSeqNum())
+	case actualSeqNum > expectedSeqNum:
+		// This case allows old version centrals to restart for rollbacks and during RollingUpdates
+		log.Info("DB version higher than expected version, central can start since it's backward compatible")
+		return nil
+	default:
+		log.Info("Version found in the DB was current. We're good to go!")
 		return nil
 	}
-
-	if int(version.GetSeqNum()) != migrations.CurrentDBVersionSeqNum() {
-		return fmt.Errorf("invalid DB version found: %s", protocompat.MarshalTextString(version))
-	}
-
-	// TYPICAL CASE: DB is of the same version. This happens if Central does a regular restart, and was not patched.
-
-	log.Info("Version found in the DB was current. We're good to go!")
-	return nil
 }
