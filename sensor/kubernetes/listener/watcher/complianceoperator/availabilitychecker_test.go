@@ -24,6 +24,8 @@ func TestAllCOResourcesAreAddedToTheAvailabilityChecker(t *testing.T) {
 	allowList := []string{
 		"groupVersion",
 		"requiredAPIResources",
+		"optionalAPIResources",
+		"CustomRule",
 	}
 
 	resFinder := &resourcesFinder{}

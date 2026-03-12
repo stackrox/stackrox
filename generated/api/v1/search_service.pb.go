@@ -22,86 +22,90 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Next available tag: 80
+// Next available tag: 84
 type SearchCategory int32
 
 const (
-	SearchCategory_SEARCH_UNSET                     SearchCategory = 0
-	SearchCategory_ALERTS                           SearchCategory = 1
-	SearchCategory_IMAGES                           SearchCategory = 2
-	SearchCategory_IMAGE_COMPONENTS                 SearchCategory = 20
-	SearchCategory_IMAGE_VULN_EDGE                  SearchCategory = 27
-	SearchCategory_IMAGE_COMPONENT_EDGE             SearchCategory = 23
-	SearchCategory_POLICIES                         SearchCategory = 3
-	SearchCategory_DEPLOYMENTS                      SearchCategory = 4
-	SearchCategory_PODS                             SearchCategory = 25
-	SearchCategory_SECRETS                          SearchCategory = 5
-	SearchCategory_PROCESS_INDICATORS               SearchCategory = 6
-	SearchCategory_COMPLIANCE                       SearchCategory = 7
-	SearchCategory_CLUSTERS                         SearchCategory = 8
-	SearchCategory_NAMESPACES                       SearchCategory = 9
-	SearchCategory_NODES                            SearchCategory = 10
-	SearchCategory_NODE_COMPONENTS                  SearchCategory = 38
-	SearchCategory_NODE_VULN_EDGE                   SearchCategory = 28
-	SearchCategory_NODE_COMPONENT_EDGE              SearchCategory = 29
-	SearchCategory_NODE_COMPONENT_CVE_EDGE          SearchCategory = 33
-	SearchCategory_COMPLIANCE_STANDARD              SearchCategory = 11
-	SearchCategory_COMPLIANCE_CONTROL_GROUP         SearchCategory = 12
-	SearchCategory_COMPLIANCE_CONTROL               SearchCategory = 13
-	SearchCategory_SERVICE_ACCOUNTS                 SearchCategory = 14
-	SearchCategory_ROLES                            SearchCategory = 15
-	SearchCategory_ROLEBINDINGS                     SearchCategory = 16
-	SearchCategory_REPORT_CONFIGURATIONS            SearchCategory = 37
-	SearchCategory_PROCESS_BASELINES                SearchCategory = 17
-	SearchCategory_SUBJECTS                         SearchCategory = 18
-	SearchCategory_RISKS                            SearchCategory = 19
-	SearchCategory_VULNERABILITIES                  SearchCategory = 21
-	SearchCategory_CLUSTER_VULNERABILITIES          SearchCategory = 34
-	SearchCategory_IMAGE_VULNERABILITIES            SearchCategory = 35
-	SearchCategory_NODE_VULNERABILITIES             SearchCategory = 36
-	SearchCategory_COMPONENT_VULN_EDGE              SearchCategory = 22
-	SearchCategory_CLUSTER_VULN_EDGE                SearchCategory = 24
-	SearchCategory_NETWORK_ENTITY                   SearchCategory = 26
-	SearchCategory_VULN_REQUEST                     SearchCategory = 32
-	SearchCategory_NETWORK_BASELINE                 SearchCategory = 39
-	SearchCategory_NETWORK_POLICIES                 SearchCategory = 40
-	SearchCategory_PROCESS_BASELINE_RESULTS         SearchCategory = 41
-	SearchCategory_COMPLIANCE_METADATA              SearchCategory = 42
-	SearchCategory_COMPLIANCE_RESULTS               SearchCategory = 43
-	SearchCategory_COMPLIANCE_DOMAIN                SearchCategory = 44
-	SearchCategory_CLUSTER_HEALTH                   SearchCategory = 45
-	SearchCategory_POLICY_CATEGORIES                SearchCategory = 46
-	SearchCategory_IMAGE_INTEGRATIONS               SearchCategory = 47
-	SearchCategory_COLLECTIONS                      SearchCategory = 48
-	SearchCategory_POLICY_CATEGORY_EDGE             SearchCategory = 49
-	SearchCategory_PROCESS_LISTENING_ON_PORT        SearchCategory = 50
-	SearchCategory_API_TOKEN                        SearchCategory = 51
-	SearchCategory_REPORT_METADATA                  SearchCategory = 52
-	SearchCategory_REPORT_SNAPSHOT                  SearchCategory = 53
-	SearchCategory_COMPLIANCE_INTEGRATIONS          SearchCategory = 54
-	SearchCategory_COMPLIANCE_SCAN_CONFIG           SearchCategory = 55
-	SearchCategory_COMPLIANCE_SCAN                  SearchCategory = 56
-	SearchCategory_COMPLIANCE_CHECK_RESULTS         SearchCategory = 57
-	SearchCategory_BLOB                             SearchCategory = 58
-	SearchCategory_ADMINISTRATION_EVENTS            SearchCategory = 60
-	SearchCategory_COMPLIANCE_SCAN_CONFIG_STATUS    SearchCategory = 61
-	SearchCategory_ADMINISTRATION_USAGE             SearchCategory = 62
-	SearchCategory_COMPLIANCE_PROFILES              SearchCategory = 63
-	SearchCategory_COMPLIANCE_RULES                 SearchCategory = 65
-	SearchCategory_COMPLIANCE_SCAN_SETTING_BINDINGS SearchCategory = 66
-	SearchCategory_COMPLIANCE_SUITES                SearchCategory = 67
-	SearchCategory_CLOUD_SOURCES                    SearchCategory = 68
-	SearchCategory_DISCOVERED_CLUSTERS              SearchCategory = 69
-	SearchCategory_COMPLIANCE_REMEDIATIONS          SearchCategory = 70
-	SearchCategory_COMPLIANCE_BENCHMARKS            SearchCategory = 71
-	SearchCategory_AUTH_PROVIDERS                   SearchCategory = 72
-	SearchCategory_COMPLIANCE_REPORT_SNAPSHOT       SearchCategory = 73
-	SearchCategory_IMAGE_COMPONENTS_V2              SearchCategory = 74
-	SearchCategory_IMAGE_VULNERABILITIES_V2         SearchCategory = 75
-	SearchCategory_IMAGES_V2                        SearchCategory = 76
-	SearchCategory_VIRTUAL_MACHINES                 SearchCategory = 77
-	SearchCategory_BASE_IMAGES                      SearchCategory = 78
-	SearchCategory_BASE_IMAGE_LAYERS                SearchCategory = 79
+	SearchCategory_SEARCH_UNSET                       SearchCategory = 0
+	SearchCategory_ALERTS                             SearchCategory = 1
+	SearchCategory_IMAGES                             SearchCategory = 2
+	SearchCategory_IMAGE_COMPONENTS                   SearchCategory = 20
+	SearchCategory_IMAGE_VULN_EDGE                    SearchCategory = 27
+	SearchCategory_IMAGE_COMPONENT_EDGE               SearchCategory = 23
+	SearchCategory_POLICIES                           SearchCategory = 3
+	SearchCategory_DEPLOYMENTS                        SearchCategory = 4
+	SearchCategory_PODS                               SearchCategory = 25
+	SearchCategory_SECRETS                            SearchCategory = 5
+	SearchCategory_PROCESS_INDICATORS                 SearchCategory = 6
+	SearchCategory_COMPLIANCE                         SearchCategory = 7
+	SearchCategory_CLUSTERS                           SearchCategory = 8
+	SearchCategory_NAMESPACES                         SearchCategory = 9
+	SearchCategory_NODES                              SearchCategory = 10
+	SearchCategory_NODE_COMPONENTS                    SearchCategory = 38
+	SearchCategory_NODE_VULN_EDGE                     SearchCategory = 28
+	SearchCategory_NODE_COMPONENT_EDGE                SearchCategory = 29
+	SearchCategory_NODE_COMPONENT_CVE_EDGE            SearchCategory = 33
+	SearchCategory_COMPLIANCE_STANDARD                SearchCategory = 11
+	SearchCategory_COMPLIANCE_CONTROL_GROUP           SearchCategory = 12
+	SearchCategory_COMPLIANCE_CONTROL                 SearchCategory = 13
+	SearchCategory_SERVICE_ACCOUNTS                   SearchCategory = 14
+	SearchCategory_ROLES                              SearchCategory = 15
+	SearchCategory_ROLEBINDINGS                       SearchCategory = 16
+	SearchCategory_REPORT_CONFIGURATIONS              SearchCategory = 37
+	SearchCategory_PROCESS_BASELINES                  SearchCategory = 17
+	SearchCategory_SUBJECTS                           SearchCategory = 18
+	SearchCategory_RISKS                              SearchCategory = 19
+	SearchCategory_VULNERABILITIES                    SearchCategory = 21
+	SearchCategory_CLUSTER_VULNERABILITIES            SearchCategory = 34
+	SearchCategory_IMAGE_VULNERABILITIES              SearchCategory = 35
+	SearchCategory_NODE_VULNERABILITIES               SearchCategory = 36
+	SearchCategory_COMPONENT_VULN_EDGE                SearchCategory = 22
+	SearchCategory_CLUSTER_VULN_EDGE                  SearchCategory = 24
+	SearchCategory_NETWORK_ENTITY                     SearchCategory = 26
+	SearchCategory_VULN_REQUEST                       SearchCategory = 32
+	SearchCategory_NETWORK_BASELINE                   SearchCategory = 39
+	SearchCategory_NETWORK_POLICIES                   SearchCategory = 40
+	SearchCategory_PROCESS_BASELINE_RESULTS           SearchCategory = 41
+	SearchCategory_COMPLIANCE_METADATA                SearchCategory = 42
+	SearchCategory_COMPLIANCE_RESULTS                 SearchCategory = 43
+	SearchCategory_COMPLIANCE_DOMAIN                  SearchCategory = 44
+	SearchCategory_CLUSTER_HEALTH                     SearchCategory = 45
+	SearchCategory_POLICY_CATEGORIES                  SearchCategory = 46
+	SearchCategory_IMAGE_INTEGRATIONS                 SearchCategory = 47
+	SearchCategory_COLLECTIONS                        SearchCategory = 48
+	SearchCategory_POLICY_CATEGORY_EDGE               SearchCategory = 49
+	SearchCategory_PROCESS_LISTENING_ON_PORT          SearchCategory = 50
+	SearchCategory_API_TOKEN                          SearchCategory = 51
+	SearchCategory_REPORT_METADATA                    SearchCategory = 52
+	SearchCategory_REPORT_SNAPSHOT                    SearchCategory = 53
+	SearchCategory_COMPLIANCE_INTEGRATIONS            SearchCategory = 54
+	SearchCategory_COMPLIANCE_SCAN_CONFIG             SearchCategory = 55
+	SearchCategory_COMPLIANCE_SCAN                    SearchCategory = 56
+	SearchCategory_COMPLIANCE_CHECK_RESULTS           SearchCategory = 57
+	SearchCategory_BLOB                               SearchCategory = 58
+	SearchCategory_ADMINISTRATION_EVENTS              SearchCategory = 60
+	SearchCategory_COMPLIANCE_SCAN_CONFIG_STATUS      SearchCategory = 61
+	SearchCategory_ADMINISTRATION_USAGE               SearchCategory = 62
+	SearchCategory_COMPLIANCE_PROFILES                SearchCategory = 63
+	SearchCategory_COMPLIANCE_RULES                   SearchCategory = 65
+	SearchCategory_COMPLIANCE_SCAN_SETTING_BINDINGS   SearchCategory = 66
+	SearchCategory_COMPLIANCE_SUITES                  SearchCategory = 67
+	SearchCategory_CLOUD_SOURCES                      SearchCategory = 68
+	SearchCategory_DISCOVERED_CLUSTERS                SearchCategory = 69
+	SearchCategory_COMPLIANCE_REMEDIATIONS            SearchCategory = 70
+	SearchCategory_COMPLIANCE_BENCHMARKS              SearchCategory = 71
+	SearchCategory_AUTH_PROVIDERS                     SearchCategory = 72
+	SearchCategory_COMPLIANCE_REPORT_SNAPSHOT         SearchCategory = 73
+	SearchCategory_IMAGE_COMPONENTS_V2                SearchCategory = 74
+	SearchCategory_IMAGE_VULNERABILITIES_V2           SearchCategory = 75
+	SearchCategory_IMAGES_V2                          SearchCategory = 76
+	SearchCategory_VIRTUAL_MACHINES                   SearchCategory = 77
+	SearchCategory_BASE_IMAGES                        SearchCategory = 78
+	SearchCategory_BASE_IMAGE_LAYERS                  SearchCategory = 79
+	SearchCategory_VIRTUAL_MACHINES_V2                SearchCategory = 80
+	SearchCategory_VIRTUAL_MACHINE_SCANS_V2           SearchCategory = 81
+	SearchCategory_VIRTUAL_MACHINE_COMPONENTS_V2      SearchCategory = 82
+	SearchCategory_VIRTUAL_MACHINE_VULNERABILITIES_V2 SearchCategory = 83
 )
 
 // Enum value maps for SearchCategory.
@@ -183,84 +187,92 @@ var (
 		77: "VIRTUAL_MACHINES",
 		78: "BASE_IMAGES",
 		79: "BASE_IMAGE_LAYERS",
+		80: "VIRTUAL_MACHINES_V2",
+		81: "VIRTUAL_MACHINE_SCANS_V2",
+		82: "VIRTUAL_MACHINE_COMPONENTS_V2",
+		83: "VIRTUAL_MACHINE_VULNERABILITIES_V2",
 	}
 	SearchCategory_value = map[string]int32{
-		"SEARCH_UNSET":                     0,
-		"ALERTS":                           1,
-		"IMAGES":                           2,
-		"IMAGE_COMPONENTS":                 20,
-		"IMAGE_VULN_EDGE":                  27,
-		"IMAGE_COMPONENT_EDGE":             23,
-		"POLICIES":                         3,
-		"DEPLOYMENTS":                      4,
-		"PODS":                             25,
-		"SECRETS":                          5,
-		"PROCESS_INDICATORS":               6,
-		"COMPLIANCE":                       7,
-		"CLUSTERS":                         8,
-		"NAMESPACES":                       9,
-		"NODES":                            10,
-		"NODE_COMPONENTS":                  38,
-		"NODE_VULN_EDGE":                   28,
-		"NODE_COMPONENT_EDGE":              29,
-		"NODE_COMPONENT_CVE_EDGE":          33,
-		"COMPLIANCE_STANDARD":              11,
-		"COMPLIANCE_CONTROL_GROUP":         12,
-		"COMPLIANCE_CONTROL":               13,
-		"SERVICE_ACCOUNTS":                 14,
-		"ROLES":                            15,
-		"ROLEBINDINGS":                     16,
-		"REPORT_CONFIGURATIONS":            37,
-		"PROCESS_BASELINES":                17,
-		"SUBJECTS":                         18,
-		"RISKS":                            19,
-		"VULNERABILITIES":                  21,
-		"CLUSTER_VULNERABILITIES":          34,
-		"IMAGE_VULNERABILITIES":            35,
-		"NODE_VULNERABILITIES":             36,
-		"COMPONENT_VULN_EDGE":              22,
-		"CLUSTER_VULN_EDGE":                24,
-		"NETWORK_ENTITY":                   26,
-		"VULN_REQUEST":                     32,
-		"NETWORK_BASELINE":                 39,
-		"NETWORK_POLICIES":                 40,
-		"PROCESS_BASELINE_RESULTS":         41,
-		"COMPLIANCE_METADATA":              42,
-		"COMPLIANCE_RESULTS":               43,
-		"COMPLIANCE_DOMAIN":                44,
-		"CLUSTER_HEALTH":                   45,
-		"POLICY_CATEGORIES":                46,
-		"IMAGE_INTEGRATIONS":               47,
-		"COLLECTIONS":                      48,
-		"POLICY_CATEGORY_EDGE":             49,
-		"PROCESS_LISTENING_ON_PORT":        50,
-		"API_TOKEN":                        51,
-		"REPORT_METADATA":                  52,
-		"REPORT_SNAPSHOT":                  53,
-		"COMPLIANCE_INTEGRATIONS":          54,
-		"COMPLIANCE_SCAN_CONFIG":           55,
-		"COMPLIANCE_SCAN":                  56,
-		"COMPLIANCE_CHECK_RESULTS":         57,
-		"BLOB":                             58,
-		"ADMINISTRATION_EVENTS":            60,
-		"COMPLIANCE_SCAN_CONFIG_STATUS":    61,
-		"ADMINISTRATION_USAGE":             62,
-		"COMPLIANCE_PROFILES":              63,
-		"COMPLIANCE_RULES":                 65,
-		"COMPLIANCE_SCAN_SETTING_BINDINGS": 66,
-		"COMPLIANCE_SUITES":                67,
-		"CLOUD_SOURCES":                    68,
-		"DISCOVERED_CLUSTERS":              69,
-		"COMPLIANCE_REMEDIATIONS":          70,
-		"COMPLIANCE_BENCHMARKS":            71,
-		"AUTH_PROVIDERS":                   72,
-		"COMPLIANCE_REPORT_SNAPSHOT":       73,
-		"IMAGE_COMPONENTS_V2":              74,
-		"IMAGE_VULNERABILITIES_V2":         75,
-		"IMAGES_V2":                        76,
-		"VIRTUAL_MACHINES":                 77,
-		"BASE_IMAGES":                      78,
-		"BASE_IMAGE_LAYERS":                79,
+		"SEARCH_UNSET":                       0,
+		"ALERTS":                             1,
+		"IMAGES":                             2,
+		"IMAGE_COMPONENTS":                   20,
+		"IMAGE_VULN_EDGE":                    27,
+		"IMAGE_COMPONENT_EDGE":               23,
+		"POLICIES":                           3,
+		"DEPLOYMENTS":                        4,
+		"PODS":                               25,
+		"SECRETS":                            5,
+		"PROCESS_INDICATORS":                 6,
+		"COMPLIANCE":                         7,
+		"CLUSTERS":                           8,
+		"NAMESPACES":                         9,
+		"NODES":                              10,
+		"NODE_COMPONENTS":                    38,
+		"NODE_VULN_EDGE":                     28,
+		"NODE_COMPONENT_EDGE":                29,
+		"NODE_COMPONENT_CVE_EDGE":            33,
+		"COMPLIANCE_STANDARD":                11,
+		"COMPLIANCE_CONTROL_GROUP":           12,
+		"COMPLIANCE_CONTROL":                 13,
+		"SERVICE_ACCOUNTS":                   14,
+		"ROLES":                              15,
+		"ROLEBINDINGS":                       16,
+		"REPORT_CONFIGURATIONS":              37,
+		"PROCESS_BASELINES":                  17,
+		"SUBJECTS":                           18,
+		"RISKS":                              19,
+		"VULNERABILITIES":                    21,
+		"CLUSTER_VULNERABILITIES":            34,
+		"IMAGE_VULNERABILITIES":              35,
+		"NODE_VULNERABILITIES":               36,
+		"COMPONENT_VULN_EDGE":                22,
+		"CLUSTER_VULN_EDGE":                  24,
+		"NETWORK_ENTITY":                     26,
+		"VULN_REQUEST":                       32,
+		"NETWORK_BASELINE":                   39,
+		"NETWORK_POLICIES":                   40,
+		"PROCESS_BASELINE_RESULTS":           41,
+		"COMPLIANCE_METADATA":                42,
+		"COMPLIANCE_RESULTS":                 43,
+		"COMPLIANCE_DOMAIN":                  44,
+		"CLUSTER_HEALTH":                     45,
+		"POLICY_CATEGORIES":                  46,
+		"IMAGE_INTEGRATIONS":                 47,
+		"COLLECTIONS":                        48,
+		"POLICY_CATEGORY_EDGE":               49,
+		"PROCESS_LISTENING_ON_PORT":          50,
+		"API_TOKEN":                          51,
+		"REPORT_METADATA":                    52,
+		"REPORT_SNAPSHOT":                    53,
+		"COMPLIANCE_INTEGRATIONS":            54,
+		"COMPLIANCE_SCAN_CONFIG":             55,
+		"COMPLIANCE_SCAN":                    56,
+		"COMPLIANCE_CHECK_RESULTS":           57,
+		"BLOB":                               58,
+		"ADMINISTRATION_EVENTS":              60,
+		"COMPLIANCE_SCAN_CONFIG_STATUS":      61,
+		"ADMINISTRATION_USAGE":               62,
+		"COMPLIANCE_PROFILES":                63,
+		"COMPLIANCE_RULES":                   65,
+		"COMPLIANCE_SCAN_SETTING_BINDINGS":   66,
+		"COMPLIANCE_SUITES":                  67,
+		"CLOUD_SOURCES":                      68,
+		"DISCOVERED_CLUSTERS":                69,
+		"COMPLIANCE_REMEDIATIONS":            70,
+		"COMPLIANCE_BENCHMARKS":              71,
+		"AUTH_PROVIDERS":                     72,
+		"COMPLIANCE_REPORT_SNAPSHOT":         73,
+		"IMAGE_COMPONENTS_V2":                74,
+		"IMAGE_VULNERABILITIES_V2":           75,
+		"IMAGES_V2":                          76,
+		"VIRTUAL_MACHINES":                   77,
+		"BASE_IMAGES":                        78,
+		"BASE_IMAGE_LAYERS":                  79,
+		"VIRTUAL_MACHINES_V2":                80,
+		"VIRTUAL_MACHINE_SCANS_V2":           81,
+		"VIRTUAL_MACHINE_COMPONENTS_V2":      82,
+		"VIRTUAL_MACHINE_VULNERABILITIES_V2": 83,
 	}
 )
 
@@ -1920,7 +1932,7 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\x15SearchOptionsResponse\x12\x18\n" +
 	"\aoptions\x18\x01 \x03(\tR\aoptions\".\n" +
 	"\x14AutocompleteResponse\x12\x16\n" +
-	"\x06values\x18\x01 \x03(\tR\x06values*\xaf\r\n" +
+	"\x06values\x18\x01 \x03(\tR\x06values*\xb1\x0e\n" +
 	"\x0eSearchCategory\x12\x10\n" +
 	"\fSEARCH_UNSET\x10\x00\x12\n" +
 	"\n" +
@@ -2002,7 +2014,11 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\tIMAGES_V2\x10L\x12\x14\n" +
 	"\x10VIRTUAL_MACHINES\x10M\x12\x0f\n" +
 	"\vBASE_IMAGES\x10N\x12\x15\n" +
-	"\x11BASE_IMAGE_LAYERS\x10O\"\x04\b\x1e\x10\x1e\"\x04\b;\x10;\"\x04\b@\x10@*~\n" +
+	"\x11BASE_IMAGE_LAYERS\x10O\x12\x17\n" +
+	"\x13VIRTUAL_MACHINES_V2\x10P\x12\x1c\n" +
+	"\x18VIRTUAL_MACHINE_SCANS_V2\x10Q\x12!\n" +
+	"\x1dVIRTUAL_MACHINE_COMPONENTS_V2\x10R\x12&\n" +
+	"\"VIRTUAL_MACHINE_VULNERABILITIES_V2\x10S\"\x04\b\x1e\x10\x1e\"\x04\b;\x10;\"\x04\b@\x10@*~\n" +
 	"\x0eSearchDataType\x12\x0f\n" +
 	"\vSEARCH_BOOL\x10\x00\x12\x12\n" +
 	"\x0eSEARCH_NUMERIC\x10\x01\x12\x11\n" +

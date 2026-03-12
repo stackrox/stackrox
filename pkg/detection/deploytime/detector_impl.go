@@ -1,6 +1,8 @@
 package deploytime
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
@@ -17,7 +19,7 @@ func (d *detectorImpl) PolicySet() detection.PolicySet {
 }
 
 // Detect runs detection on a deployment, returning any generated alerts.
-func (d *detectorImpl) Detect(ctx DetectionContext, enhancedDeployment booleanpolicy.EnhancedDeployment, filters ...detection.FilterOption) ([]*storage.Alert, error) {
+func (d *detectorImpl) Detect(goctx context.Context, ctx DetectionContext, enhancedDeployment booleanpolicy.EnhancedDeployment, filters ...detection.FilterOption) ([]*storage.Alert, error) {
 	var alerts []*storage.Alert
 	var cacheReceptacle booleanpolicy.CacheReceptacle
 	err := d.policySet.ForEach(func(compiled detection.CompiledPolicy) error {
@@ -30,7 +32,7 @@ func (d *detectorImpl) Detect(ctx DetectionContext, enhancedDeployment booleanpo
 			}
 		}
 		// Check predicate on deployment.
-		if !compiled.AppliesTo(enhancedDeployment.Deployment) {
+		if !compiled.AppliesTo(goctx, enhancedDeployment.Deployment) {
 			return nil
 		}
 

@@ -145,7 +145,15 @@ func (k *listenerImpl) handleAllEvents() {
 	syncingResources.Set(true)
 
 	// Compliance Operator Watcher and Informers
-	var complianceResultInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer, complianceSuiteInformer, complianceRemediationInformer cache.SharedIndexInformer
+	var (
+		complianceResultInformer              cache.SharedIndexInformer
+		complianceScanSettingBindingsInformer cache.SharedIndexInformer
+		complianceRuleInformer                cache.SharedIndexInformer
+		complianceScanInformer                cache.SharedIndexInformer
+		complianceSuiteInformer               cache.SharedIndexInformer
+		complianceRemediationInformer         cache.SharedIndexInformer
+		complianceCustomRuleInformer          cache.SharedIndexInformer
+	)
 	var profileLister cache.GenericLister
 
 	coCrdWatcher := crd.NewCRDWatcher(&k.stopSig, dynamicSif)
@@ -165,6 +173,8 @@ func (k *listenerImpl) handleAllEvents() {
 	if err != nil {
 		log.Errorf("Failed to check the availability of Compliance Operator resources: %v", err)
 	}
+
+	var customRulesAvailable bool
 	if coAvailable {
 		log.Info("Initializing compliance operator informers")
 		complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceCheckResult.GroupVersionResource()).Informer()
@@ -173,6 +183,15 @@ func (k *listenerImpl) handleAllEvents() {
 		complianceScanInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceScan.GroupVersionResource()).Informer()
 		complianceSuiteInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceSuite.GroupVersionResource()).Informer()
 		complianceRemediationInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceRemediation.GroupVersionResource()).Informer()
+
+		customRulesAvailable, err = sensorUtils.HasAPI(k.client.Kubernetes(), complianceoperator.GetGroupVersion().String(), complianceoperator.CustomRule.Kind)
+		if err != nil {
+			log.Errorf("Failed to check the availability of Compliance Operator Custom Rules, they won't be tracked: %v", err)
+		}
+		if customRulesAvailable {
+			complianceCustomRuleInformer = crdSharedInformerFactory.ForResource(complianceoperator.CustomRule.GroupVersionResource()).Informer()
+		}
+
 		// Override the coCrdHandlerFn to only handle when the resources become unavailable
 		coCrdHandlerFn = crdWatcherCallbackWrapper(k.context,
 			resourcesUnavailable(),
@@ -318,6 +337,10 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, complianceScanInformer, dispatchers.ForComplianceOperatorScans(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 		handle(k.context, complianceSuiteInformer, dispatchers.ForComplianceOperatorSuites(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 		handle(k.context, complianceRemediationInformer, dispatchers.ForComplianceOperatorRemediations(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+
+		if customRulesAvailable {
+			handle(k.context, complianceCustomRuleInformer, dispatchers.ForComplianceOperatorCustomRules(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+		}
 	}
 
 	if shouldTrackVirtualMachines {
