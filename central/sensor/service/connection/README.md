@@ -34,6 +34,11 @@ The per-type fan-out is primarily about **category isolation**: a surge of one m
 `NetworkFlowUpdate`). These queues use `DedupingQueue`, so messages carrying a `DedupeKey`
 are collapsed (see [Deduplication](#deduplication) for which messages set this key and when).
 
+**Gotcha (unbounded queues):** all `DedupingQueue` instances at every layer are unbounded.
+If a producer outpaces the consumer goroutine, the queue grows without limit and will
+eventually cause an OOM. The replace-in-place dedup provides partial relief for messages
+that carry a `DedupeKey`, but messages with an empty key are always appended.
+
 **Gotcha:** only `Event` messages continue into further queuing (Layers 3–4). All other
 types (NetworkFlow, Compliance, Telemetry, …) are handled inline in `handleMessage()`
 without further queuing.
