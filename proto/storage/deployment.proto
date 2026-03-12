@@ -59,8 +59,8 @@ message Deployment {
 
   bool platform_component = 35; // @gotags: search:"Platform Component"
 
-  repeated Container init_containers = 36;
-  repeated Container ephemeral_containers = 37;
+  repeated Container init_containers = 36; // @gotags: search:"-"
+  repeated Container ephemeral_containers = 37; // @gotags: search:"-"
 }
 
 // Next tag: 13
