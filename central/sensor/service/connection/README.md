@@ -34,11 +34,6 @@ The per-type fan-out is primarily about **category isolation**: a surge of one m
 `NetworkFlowUpdate`). These queues use `DedupingQueue`, so messages carrying a `DedupeKey`
 are collapsed (see [Deduplication](#deduplication) for which messages set this key and when).
 
-**Gotcha (unbounded queues):** all `DedupingQueue` instances at every layer are unbounded.
-If a producer outpaces the consumer goroutine, the queue grows without limit and will
-eventually cause an OOM. The replace-in-place dedup provides partial relief for messages
-that carry a `DedupeKey`, but messages with an empty key are always appended.
-
 **Gotcha:** only `Event` messages continue into further queuing (Layers 3–4). All other
 types (NetworkFlow, Compliance, Telemetry, …) are handled inline in `handleMessage()`
 without further queuing.
@@ -73,6 +68,13 @@ N clusters × M resource types seen × 17 workers
 
 For 10 clusters each sending 15 resource types that is 2 550 goroutines just for workers,
 plus Layer-2 queues and their goroutines on top.
+
+**Gotcha (unbounded queues):** the Layer-4 `DedupingQueue` slots have no capacity cap.
+Items flow through Layers 2 and 3 quickly (dispatch only), but sit in Layer 4 until a
+worker goroutine runs the pipeline fragment — which involves DB writes and can be slow. If
+events arrive faster than the pipeline can process them, the queues grow without limit and
+will eventually cause an OOM. Replace-in-place dedup provides partial relief for messages
+that carry a `DedupeKey`, but messages with an empty key are always appended.
 
 ### Layer 5 — Pipeline fragments
 
