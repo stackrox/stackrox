@@ -240,7 +240,7 @@ func (s *storeImpl) upsertScan(ctx context.Context, vmID string, parts common.VM
 		if existingScan != nil && existingScan.GetHash() == hash {
 			// Unchanged: scan_time-only update using existing scan's identity.
 			existingScan.ScanTime = scanTime
-			if err := s.updateScanTime(ctx, tx, existingScan.GetId(), existingScan, iTime); err != nil {
+			if err := s.updateScanTime(ctx, tx, existingScan.GetId(), existingScan); err != nil {
 				if rbErr := tx.Rollback(ctx); rbErr != nil {
 					return errors.Wrapf(rbErr, "rollback after: %v", err)
 				}
@@ -288,14 +288,19 @@ func (s *storeImpl) getScanForVM(ctx context.Context, tx *postgres.Tx, vmID stri
 	return &scan, nil
 }
 
-func (s *storeImpl) updateScanTime(ctx context.Context, tx *postgres.Tx, scanID string, scan *storage.VirtualMachineScanV2, t time.Time) error {
+func (s *storeImpl) updateScanTime(ctx context.Context, tx *postgres.Tx, scanID string, scan *storage.VirtualMachineScanV2) error {
+	id := pgutils.NilOrUUID(scanID)
+	if id == nil {
+		return errors.New("scan ID is empty or not a valid UUID")
+	}
+
 	serialized, err := scan.MarshalVT()
 	if err != nil {
 		return err
 	}
 
 	const stmt = "UPDATE " + scanTable + " SET ScanTime = $2, serialized = $3 WHERE Id = $1"
-	_, err = tx.Exec(ctx, stmt, pgutils.NilOrUUID(scanID), protocompat.NilOrTime(scan.GetScanTime()), serialized)
+	_, err = tx.Exec(ctx, stmt, id, protocompat.NilOrTime(scan.GetScanTime()), serialized)
 	return err
 }
 
@@ -396,14 +401,23 @@ func (s *storeImpl) getExistingCVETimes(ctx context.Context, tx *postgres.Tx, vm
 }
 
 func (s *storeImpl) insertScan(ctx context.Context, tx *postgres.Tx, scan *storage.VirtualMachineScanV2) error {
+	id := pgutils.NilOrUUID(scan.GetId())
+	if id == nil {
+		return errors.New("scan ID is empty or not a valid UUID")
+	}
+	vmID := pgutils.NilOrUUID(scan.GetVmV2Id())
+	if vmID == nil {
+		return errors.New("scan VM ID is empty or not a valid UUID")
+	}
+
 	serialized, err := scan.MarshalVT()
 	if err != nil {
 		return err
 	}
 
 	values := []interface{}{
-		pgutils.NilOrUUID(scan.GetId()),
-		pgutils.NilOrUUID(scan.GetVmV2Id()),
+		id,
+		vmID,
 		protocompat.NilOrTime(scan.GetScanTime()),
 		scan.GetTopCvss(),
 		serialized,
@@ -439,14 +453,23 @@ func (s *storeImpl) copyFromComponents(ctx context.Context, tx *postgres.Tx, com
 	}
 
 	for idx, obj := range components {
+		id := pgutils.NilOrUUID(obj.GetId())
+		if id == nil {
+			return errors.Errorf("component %d ID is empty or not a valid UUID", idx)
+		}
+		scanID := pgutils.NilOrUUID(obj.GetVmScanId())
+		if scanID == nil {
+			return errors.Errorf("component %d scan ID is empty or not a valid UUID", idx)
+		}
+
 		serialized, err := obj.MarshalVT()
 		if err != nil {
 			return err
 		}
 
 		inputRows = append(inputRows, []interface{}{
-			pgutils.NilOrUUID(obj.GetId()),
-			pgutils.NilOrUUID(obj.GetVmScanId()),
+			id,
+			scanID,
 			obj.GetName(),
 			obj.GetVersion(),
 			obj.GetSource(),
@@ -498,15 +521,28 @@ func (s *storeImpl) copyFromCVEs(ctx context.Context, tx *postgres.Tx, cves []*s
 	}
 
 	for idx, obj := range cves {
+		id := pgutils.NilOrUUID(obj.GetId())
+		if id == nil {
+			return errors.Errorf("CVE %d ID is empty or not a valid UUID", idx)
+		}
+		vmID := pgutils.NilOrUUID(obj.GetVmV2Id())
+		if vmID == nil {
+			return errors.Errorf("CVE %d VM ID is empty or not a valid UUID", idx)
+		}
+		compID := pgutils.NilOrUUID(obj.GetVmComponentId())
+		if compID == nil {
+			return errors.Errorf("CVE %d component ID is empty or not a valid UUID", idx)
+		}
+
 		serialized, err := obj.MarshalVT()
 		if err != nil {
 			return err
 		}
 
 		inputRows = append(inputRows, []interface{}{
-			pgutils.NilOrUUID(obj.GetId()),
-			pgutils.NilOrUUID(obj.GetVmV2Id()),
-			pgutils.NilOrUUID(obj.GetVmComponentId()),
+			id,
+			vmID,
+			compID,
 			obj.GetCveBaseInfo().GetCve(),
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
