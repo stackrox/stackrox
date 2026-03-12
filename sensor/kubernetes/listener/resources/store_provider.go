@@ -162,3 +162,8 @@ func (p *StoreProvider) VirtualMachines() *vmStore.VirtualMachineStore {
 func (p *StoreProvider) ClusterLabels() *clusterlabels.Store {
 	return p.clusterLabelsStore
 }
+
+// Namespaces returns the namespace store
+func (p *StoreProvider) Namespaces() *namespaceStore {
+	return p.nsStore
+}

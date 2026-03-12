@@ -42,6 +42,28 @@ var (
 	)
 )
 
+// clusterLabelProviderAdapter adapts admission control's static cluster labels to the ClusterLabelProvider interface.
+type clusterLabelProviderAdapter struct {
+	labels map[string]string
+}
+
+func (a *clusterLabelProviderAdapter) GetClusterLabels(_ context.Context, _ string) (map[string]string, error) {
+	return a.labels, nil
+}
+
+// namespaceLabelProviderAdapter adapts admission control's namespace store to the NamespaceLabelProvider interface.
+type namespaceLabelProviderAdapter struct {
+	store *resources.NamespaceStore
+}
+
+func (a *namespaceLabelProviderAdapter) GetNamespaceLabels(_ context.Context, namespaceID string) (map[string]string, error) {
+	labels, found := a.store.LookupNamespaceLabelsByID(namespaceID)
+	if !found {
+		return nil, nil
+	}
+	return labels, nil
+}
+
 type state struct {
 	*sensor.AdmissionControlSettings
 	deploytimeDetector deploytime.Detector
@@ -239,11 +261,11 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		return // no update
 	}
 
-	// TODO(ROX-33188): Wire cluster and namespace label providers from Sensor's in-memory stores.
-	// For now, passing nil providers means policies with cluster_label/namespace_label scopes will
-	// fail closed (not match) in admission control.
-	allRuntimePolicySet := detection.NewPolicySet(nil, nil)
-	runtimePoliciesWithDeployFields, runtimePoliciesWithoutDeployFields := detection.NewPolicySet(nil, nil), detection.NewPolicySet(nil, nil)
+	// Wire label providers for admission control.
+	clusterLabelProvider := &clusterLabelProviderAdapter{labels: newSettings.GetClusterLabels()}
+	namespaceLabelProvider := &namespaceLabelProviderAdapter{store: m.namespaces}
+	allRuntimePolicySet := detection.NewPolicySet(clusterLabelProvider, namespaceLabelProvider)
+	runtimePoliciesWithDeployFields, runtimePoliciesWithoutDeployFields := detection.NewPolicySet(clusterLabelProvider, namespaceLabelProvider), detection.NewPolicySet(clusterLabelProvider, namespaceLabelProvider)
 	for _, policy := range newSettings.GetRuntimePolicies().GetPolicies() {
 		if policyfields.ContainsEnrichmentRequiredFields(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
 			log.Warn(errors.ImageScanUnavailableMsg(policy))
@@ -269,8 +291,8 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	enforceOnCreates := newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnabled()
 	enforceOnUpdates := newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates()
 
-	// TODO(ROX-33188): Wire cluster and namespace label providers.
-	deployTimePolicySet := detection.NewPolicySet(nil, nil)
+	// Wire label providers for deploy-time policies.
+	deployTimePolicySet := detection.NewPolicySet(clusterLabelProvider, namespaceLabelProvider)
 	if enforceOnCreates || enforceOnUpdates {
 		for _, policy := range newSettings.GetEnforcedDeployTimePolicies().GetPolicies() {
 			if policyfields.ContainsEnrichmentRequiredFields(policy) &&

@@ -111,6 +111,11 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 	centralEndpoint := cm.Data[admissioncontrol.CentralEndpointDataKey]
 	clusterID := cm.Data[admissioncontrol.ClusterIDDataKey]
 
+	clusterLabels, err := decompressAndUnmarshalClusterLabels(cm.BinaryData[admissioncontrol.ClusterLabelsGZDataKey])
+	if err != nil {
+		return nil, errors.Wrap(err, "reading cluster labels from configmap")
+	}
+
 	settings := &sensor.AdmissionControlSettings{
 		ClusterConfig:              &config,
 		EnforcedDeployTimePolicies: deployTimePolicies,
@@ -119,6 +124,7 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 		CacheVersion:               cacheVersion,
 		CentralEndpoint:            centralEndpoint,
 		ClusterId:                  clusterID,
+		ClusterLabels:              clusterLabels,
 	}
 
 	return settings, nil
