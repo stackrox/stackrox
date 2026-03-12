@@ -2,11 +2,16 @@ package metrics
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 )
 
 // AckOrigin tells what entity issued the Ack message
@@ -236,6 +241,20 @@ var (
 		Name:      "scan_and_set_calls_total",
 		Help:      "A counter that tracks the operations in scan and set",
 	}, []string{"Operation", "Reason"})
+
+	scannerConfigurationInfo = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "scanner_configuration_info",
+		Help:      "Intended scanner configuration for Sensor. Labels indicate whether local image scanning is enabled, which local scanner mode is selected, and whether delegated scanning is enabled.",
+	}, []string{"local", "mode", "delegated"})
+
+	imageIndexingRouteInfo = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "image_indexing_route_info",
+		Help: `Intended image indexing route in Sensor by image locality. "cluster_local" means the image registry is recognized by Sensor as local to the secured cluster, so indexing uses local scanner when local image scanning is enabled. "non_cluster_local" means all other images and indexing uses central scanner path. Vulnerability matching is always performed in Central.`,
+	}, []string{"for_images", "indexer"})
 )
 
 // ObserveTimeSpentInExponentialBackoff observes the metric.
@@ -331,6 +350,44 @@ func RemoveScanAndSetCall(reason string) {
 	}).Inc()
 }
 
+func scannerMode(localEnabled bool) string {
+	if !localEnabled {
+		return "none"
+	}
+	if features.ScannerV4.Enabled() && centralcaps.Has(centralsensor.ScannerV4Supported) {
+		return "v4"
+	}
+	return "v2"
+}
+
+// UpdateScannerConfigurationInfo updates static info metrics that describe Sensor scanner topology.
+func UpdateScannerConfigurationInfo() {
+	localEnabled := env.LocalImageScanningEnabled.BooleanSetting()
+	delegatedEnabled := localEnabled && !env.DelegatedScanningDisabled.BooleanSetting()
+
+	scannerConfigurationInfo.Reset()
+	scannerConfigurationInfo.With(prometheus.Labels{
+		"local":     strconv.FormatBool(localEnabled),
+		"mode":      scannerMode(localEnabled),
+		"delegated": strconv.FormatBool(delegatedEnabled),
+	}).Set(1)
+
+	clusterLocalIndexer := "central_scanner"
+	if localEnabled {
+		clusterLocalIndexer = "local_scanner"
+	}
+
+	imageIndexingRouteInfo.Reset()
+	imageIndexingRouteInfo.With(prometheus.Labels{
+		"for_images": "cluster_local",
+		"indexer":    clusterLocalIndexer,
+	}).Set(1)
+	imageIndexingRouteInfo.With(prometheus.Labels{
+		"for_images": "non_cluster_local",
+		"indexer":    "central_scanner",
+	}).Set(1)
+}
+
 func init() {
 	prometheus.MustRegister(timeSpentInExponentialBackoff,
 		networkPoliciesStored,
@@ -350,5 +407,9 @@ func init() {
 		DetectorDeploymentDroppedCount,
 		DetectorFileAccessQueueOperations,
 		DetectorFileAccessDroppedCount,
+		scannerConfigurationInfo,
+		imageIndexingRouteInfo,
 	)
+
+	UpdateScannerConfigurationInfo()
 }
