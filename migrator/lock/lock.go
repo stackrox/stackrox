@@ -24,7 +24,7 @@ func TryAcquireMigrationLock(ctx context.Context, pool postgres.DB) (bool, func(
 	}
 
 	var acquired bool
-	err = conn.PgxPoolConn.QueryRow(ctx, "SELECT pg_try_advisory_lock($1)", migrationAdvisoryLockID).Scan(&acquired)
+	err = conn.QueryRow(ctx, "SELECT pg_try_advisory_lock($1)", migrationAdvisoryLockID).Scan(&acquired)
 	if err != nil {
 		conn.Release()
 		return false, nil, errors.Wrap(err, "trying migration advisory lock")
@@ -48,7 +48,7 @@ func makeRelease(conn *postgres.Conn) func() {
 		released = true
 		unlockCtx, unlockCancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer unlockCancel()
-		_, err := conn.PgxPoolConn.Exec(unlockCtx, "SELECT pg_advisory_unlock($1)", migrationAdvisoryLockID)
+		_, err := conn.Exec(unlockCtx, "SELECT pg_advisory_unlock($1)", migrationAdvisoryLockID)
 		if err != nil {
 			log.WriteToStderrf("Warning: failed to release migration advisory lock: %v", err)
 		} else {
