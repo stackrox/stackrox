@@ -57,7 +57,11 @@ RUN dnf install -y \
         util-linux \
         ca-certificates \
         curl && \
-    dnf module enable -y postgresql:${PG_VERSION} && \
+    dnf module enable -y \
+        --installroot=/out/ \
+        --setopt=reposdir=/etc/yum.repos.d \
+        --releasever=8 \
+        postgresql:${PG_VERSION} && \
     dnf install -y \
         --installroot=/out/ \
         --setopt=reposdir=/etc/yum.repos.d \
