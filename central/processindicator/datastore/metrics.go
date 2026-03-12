@@ -36,7 +36,7 @@ var (
 		Name:      "process_upserted_args_size",
 		Help:      "Distribution of process argument sizes in characters for upserted indicators",
 		Buckets:   []float64{0, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536},
-	}, []string{"cluster"})
+	}, []string{"cluster", "namespace"})
 )
 
 func incrementPrunedProcessesMetric(num int) {
@@ -65,7 +65,8 @@ func recordProcessIndicatorsBatchAdded(indicators []*storage.ProcessIndicator) {
 	for _, indicator := range indicators {
 		argsSizeChars := getProcessArgsSizeChars(indicator)
 		clusterID := indicator.GetClusterId()
-		processUpsertedArgsSizeHistogram.WithLabelValues(clusterID).Observe(float64(argsSizeChars))
+		namespace := indicator.GetNamespace()
+		processUpsertedArgsSizeHistogram.WithLabelValues(clusterID, namespace).Observe(float64(argsSizeChars))
 	}
 }
 
