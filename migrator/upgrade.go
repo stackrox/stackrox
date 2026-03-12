@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-
 	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
 )
