@@ -188,6 +188,7 @@ export_test_environment() {
     ci_export ROX_CVE_FIX_TIMESTAMP "${ROX_CVE_FIX_TIMESTAMP:-true}"
     ci_export ROX_BASE_IMAGE_DETECTION "${ROX_BASE_IMAGE_DETECTION:-true}"
     ci_export ROX_LABEL_BASED_POLICY_SCOPING "${ROX_LABEL_BASED_POLICY_SCOPING:-true}"
+    ci_export ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING "${ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING:-true}"
     ci_export ROX_NETFLOW_BATCHING "${ROX_NETFLOW_BATCHING:-true}"
     ci_export ROX_NETFLOW_CACHE_LIMITING "${ROX_NETFLOW_CACHE_LIMITING:-true}"
 
@@ -338,6 +339,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_SENSITIVE_FILE_ACTIVITY'
     customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_CVE_FIX_TIMESTAMP'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_BASE_IMAGE_DETECTION'
     customize_envVars+=$'\n        value: "false"'

@@ -20,78 +20,10 @@ jobs:
     if: github.repository_owner == 'stackrox'
 
     steps:
-      - name: Find and process PRs with auto-merge labels
-        env:
-          GH_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
+      - name: Checkout repository
+        uses: actions/checkout@v6
 
-          # Extract repo owner and name
-          OWNER="${{ github.repository_owner }}"
-          REPO="${{ github.event.repository.name }}"
-
-          echo "::notice::Querying PRs with auto-merge labels"
-
-          # Get all PRs with auto-merge labels (non-draft, mergeable only)
-          PR_DATA=$(gh pr list \
-            --repo "${{ github.repository }}" \
-            --label "auto-merge" \
-            --draft=false \
-            --state open \
-            --limit 50 \
-            --json number,mergeable,author \
-            --jq ".[] | select(.mergeable == \"MERGEABLE\") | {number, author: .author.login}")
-
-          if [[ -z "$PR_DATA" ]]; then
-            echo "::notice::No eligible PRs found with auto-merge labels"
-            exit 0
-          fi
-
-          # Process each PR
-          echo "$PR_DATA" | jq -c '.' | while read -r PR_JSON; do
-            PR_NUMBER=$(echo "$PR_JSON" | jq -r '.number')
-            AUTHOR=$(echo "$PR_JSON" | jq -r '.author')
-
-            echo "::notice::Processing PR #$PR_NUMBER (author=$AUTHOR)"
-
-            # Check if all checks have passed using GraphQL statusCheckRollup
-            STATUS=$(gh api graphql -F owner="$OWNER" -F repo="$REPO" -F number="$PR_NUMBER" -f query="
-              query(\$owner: String!, \$repo: String!, \$number: Int!) {
-                repository(owner: \$owner, name: \$repo) {
-                  pullRequest(number: \$number) {
-                    commits(last: 1) {
-                      nodes {
-                        commit {
-                          statusCheckRollup {
-                            state
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            " --jq ".data.repository.pullRequest.commits.nodes[0].commit.statusCheckRollup.state" || echo "null")
-
-            echo "::notice::PR #$PR_NUMBER status check rollup: $STATUS"
-
-            # Only proceed if all checks passed
-            if [[ "$STATUS" != "SUCCESS" ]]; then
-              echo "::warning::Skipping PR #$PR_NUMBER - checks not passed (status: $STATUS)"
-              continue
-            fi
-
-            # Enable auto-merge for all PRs with the label
-            echo "::notice::Enabling auto-merge for PR #$PR_NUMBER"
-            gh pr merge --repo "${{ github.repository }}" \
-              --auto --squash "$PR_NUMBER"
-
-            # Auto-approve only Dependabot PRs
-            if [[ "$AUTHOR" == "app/dependabot" ]]; then
-              echo "::notice::Approving Dependabot PR #$PR_NUMBER"
-              gh pr review --repo "${{ github.repository }}" \
-                --approve "$PR_NUMBER" || true
-            fi
-
-            echo "::notice::✓ Auto-merge enabled for PR #$PR_NUMBER"
-          done
+      - name: Run auto-merge action
+        uses: stackrox/actions/automerge@8fcfacbfc4629361cca5573aba147be2155ba7e9
+        with:
+          github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}

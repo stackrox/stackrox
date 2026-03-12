@@ -4,10 +4,12 @@ import (
 	"context"
 	"math"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	dataStoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	"github.com/stackrox/rox/central/alert/mappings"
+	alertviews "github.com/stackrox/rox/central/alert/views"
 	"github.com/stackrox/rox/central/alerttest"
 	baselineMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -203,36 +205,20 @@ type getAlertsGroupsTests struct {
 }
 
 func (s *getAlertsGroupsTests) TestGetAlertsGroupForOneCategory() {
-	fakeListAlertSlice := []*storage.ListAlert{
+	fakeGroups := []*alertviews.AlertPolicyGroup{
 		{
-			Id: "id1",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance"},
-				Id:         "id1",
-				Name:       "policy1",
-				Severity:   storage.Severity_LOW_SEVERITY,
-			},
-			Time: protocompat.GetProtoTimestampFromSeconds(300),
+			PolicyID:   "id1",
+			PolicyName: "policy1",
+			Severity:   int(storage.Severity_LOW_SEVERITY),
+			Categories: []string{"Image Assurance"},
+			NumAlerts:  2,
 		},
 		{
-			Id: "id2",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance"},
-				Id:         "id2",
-				Name:       "policy2",
-				Severity:   storage.Severity_HIGH_SEVERITY,
-			},
-			Time: protocompat.GetProtoTimestampFromSeconds(200),
-		},
-		{
-			Id: "id3",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance"},
-				Id:         "id1",
-				Name:       "policy1",
-				Severity:   storage.Severity_LOW_SEVERITY,
-			},
-			Time: protocompat.GetProtoTimestampFromSeconds(100),
+			PolicyID:   "id2",
+			PolicyName: "policy2",
+			Severity:   int(storage.Severity_HIGH_SEVERITY),
+			Categories: []string{"Network", "Security"},
+			NumAlerts:  1,
 		},
 	}
 
@@ -240,69 +226,53 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForOneCategory() {
 		AlertsByPolicies: []*v1.GetAlertsGroupResponse_PolicyGroup{
 			{
 				Policy: &storage.ListAlertPolicy{
-					Categories: []string{"Image Assurance"},
 					Id:         "id1",
 					Name:       "policy1",
 					Severity:   storage.Severity_LOW_SEVERITY,
+					Categories: []string{"Image Assurance"},
 				},
 				NumAlerts: 2,
 			},
 			{
 				Policy: &storage.ListAlertPolicy{
-					Categories: []string{"Image Assurance"},
 					Id:         "id2",
 					Name:       "policy2",
 					Severity:   storage.Severity_HIGH_SEVERITY,
+					Categories: []string{"Network", "Security"},
 				},
 				NumAlerts: 1,
 			},
 		},
 	}
 
-	s.testGetAlertsGroupFor(fakeListAlertSlice, expected)
+	s.testGetAlertsGroupFor(fakeGroups, expected)
 }
 
-func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
-	fakeListAlertSlice := []*storage.ListAlert{
+func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultiplePolicies() {
+	fakeGroups := []*alertviews.AlertPolicyGroup{
 		{
-			Id: "id1",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance"},
-				Id:         "id1",
-				Name:       "policy1",
-				Severity:   storage.Severity_LOW_SEVERITY,
-			},
-			Time: protocompat.GetProtoTimestampFromSeconds(300),
+			PolicyID:    "id1",
+			PolicyName:  "policy1",
+			Severity:    int(storage.Severity_LOW_SEVERITY),
+			Description: "low severity policy",
+			Categories:  []string{"Image Assurance"},
+			NumAlerts:   2,
 		},
 		{
-			Id: "id2",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance", "Privileges Capabilities"},
-				Id:         "id2",
-				Name:       "policy2",
-				Severity:   storage.Severity_HIGH_SEVERITY,
-			},
-			Time: protocompat.GetProtoTimestampFromSeconds(200),
+			PolicyID:    "id2",
+			PolicyName:  "policy2",
+			Severity:    int(storage.Severity_HIGH_SEVERITY),
+			Description: "high severity policy",
+			Categories:  []string{"Network"},
+			NumAlerts:   1,
 		},
 		{
-			Id: "id3",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Container Configuration"},
-				Id:         "id30",
-				Name:       "policy30",
-				Severity:   storage.Severity_CRITICAL_SEVERITY,
-			},
-			Time: protocompat.GetProtoTimestampFromSeconds(150),
-		},
-		{
-			Id: "id4",
-			Policy: &storage.ListAlertPolicy{
-				Categories: []string{"Image Assurance"},
-				Id:         "id1",
-				Name:       "policy1",
-				Severity:   storage.Severity_LOW_SEVERITY,
-			},
-			Time: protocompat.GetProtoTimestampFromSeconds(100),
+			PolicyID:    "id30",
+			PolicyName:  "policy30",
+			Severity:    int(storage.Severity_CRITICAL_SEVERITY),
+			Description: "critical policy",
+			Categories:  []string{"Security", "DevOps"},
+			NumAlerts:   1,
 		},
 	}
 
@@ -310,44 +280,44 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 		AlertsByPolicies: []*v1.GetAlertsGroupResponse_PolicyGroup{
 			{
 				Policy: &storage.ListAlertPolicy{
-					Categories: []string{"Image Assurance"},
-					Id:         "id1",
-					Name:       "policy1",
-					Severity:   storage.Severity_LOW_SEVERITY,
+					Id:          "id1",
+					Name:        "policy1",
+					Severity:    storage.Severity_LOW_SEVERITY,
+					Description: "low severity policy",
+					Categories:  []string{"Image Assurance"},
 				},
 				NumAlerts: 2,
 			},
 			{
 				Policy: &storage.ListAlertPolicy{
-					Categories: []string{"Image Assurance", "Privileges Capabilities"},
-					Id:         "id2",
-					Name:       "policy2",
-					Severity:   storage.Severity_HIGH_SEVERITY,
+					Id:          "id2",
+					Name:        "policy2",
+					Severity:    storage.Severity_HIGH_SEVERITY,
+					Description: "high severity policy",
+					Categories:  []string{"Network"},
 				},
 				NumAlerts: 1,
 			},
 			{
 				Policy: &storage.ListAlertPolicy{
-					Categories: []string{"Container Configuration"},
-					Id:         "id30",
-					Name:       "policy30",
-					Severity:   storage.Severity_CRITICAL_SEVERITY,
+					Id:          "id30",
+					Name:        "policy30",
+					Severity:    storage.Severity_CRITICAL_SEVERITY,
+					Description: "critical policy",
+					Categories:  []string{"Security", "DevOps"},
 				},
 				NumAlerts: 1,
 			},
 		},
 	}
 
-	s.testGetAlertsGroupFor(fakeListAlertSlice, expected)
+	s.testGetAlertsGroupFor(fakeGroups, expected)
 }
 
-func (s *getAlertsGroupsTests) testGetAlertsGroupFor(fakeListAlertSlice []*storage.ListAlert, expected *v1.GetAlertsGroupResponse) {
+func (s *getAlertsGroupsTests) testGetAlertsGroupFor(fakeGroups []*alertviews.AlertPolicyGroup, expected *v1.GetAlertsGroupResponse) {
 	fakeContext := context.Background()
 	protoQuery := search.NewQueryBuilder().ProtoQuery()
-	protoQuery.Pagination = &v1.QueryPagination{
-		Limit: math.MaxInt32,
-	}
-	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(fakeListAlertSlice, nil)
+	s.datastoreMock.EXPECT().SearchAlertPolicyGroups(fakeContext, protoQuery, true).Return(fakeGroups, nil)
 
 	result, err := s.service.GetAlertsGroup(fakeContext, &v1.ListAlertsRequest{
 		Query: "",
@@ -360,10 +330,7 @@ func (s *getAlertsGroupsTests) testGetAlertsGroupFor(fakeListAlertSlice []*stora
 func (s *getAlertsGroupsTests) TestGetAlertsGroupWhenTheDataAccessLayerFails() {
 	fakeContext := context.Background()
 	protoQuery := search.NewQueryBuilder().ProtoQuery()
-	protoQuery.Pagination = &v1.QueryPagination{
-		Limit: math.MaxInt32,
-	}
-	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(nil, errFake)
+	s.datastoreMock.EXPECT().SearchAlertPolicyGroups(fakeContext, protoQuery, true).Return(nil, errFake)
 
 	result, err := s.service.GetAlertsGroup(fakeContext, &v1.ListAlertsRequest{
 		Query: "",
@@ -760,40 +727,36 @@ type getAlertTimeseriesTests struct {
 }
 
 func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
-	alerts := []*storage.ListAlert{
+	time1 := time.Unix(1, 0)
+	time6 := time.Unix(6, 0)
+	events := []*alertviews.AlertTimeseriesEvent{
 		{
-			Id:   "id1",
-			Time: protocompat.GetProtoTimestampFromSeconds(1),
-
-			State:            storage.ViolationState_RESOLVED,
-			Entity:           &storage.ListAlert_Deployment{Deployment: &storage.ListAlertDeployment{ClusterName: "dev"}},
-			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{ClusterName: "dev"},
-			Policy:           &storage.ListAlertPolicy{Severity: storage.Severity_CRITICAL_SEVERITY},
+			AlertID:     "id1",
+			ClusterName: "dev",
+			Severity:    int(storage.Severity_CRITICAL_SEVERITY),
+			Time:        &time1,
+			State:       int(storage.ViolationState_RESOLVED),
 		},
 		{
-			Id:   "id2",
-			Time: protocompat.GetProtoTimestampFromSeconds(6),
-
-			Entity:           &storage.ListAlert_Deployment{Deployment: &storage.ListAlertDeployment{ClusterName: "dev"}},
-			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{ClusterName: "dev"},
-			Policy:           &storage.ListAlertPolicy{Severity: storage.Severity_HIGH_SEVERITY},
+			AlertID:     "id2",
+			ClusterName: "dev",
+			Severity:    int(storage.Severity_HIGH_SEVERITY),
+			Time:        &time6,
+			State:       int(storage.ViolationState_ACTIVE),
 		},
 		{
-			Id:   "id3",
-			Time: protocompat.GetProtoTimestampFromSeconds(1),
-
-			State:            storage.ViolationState_RESOLVED,
-			Entity:           &storage.ListAlert_Deployment{Deployment: &storage.ListAlertDeployment{ClusterName: "prod"}},
-			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{ClusterName: "prod"},
-			Policy:           &storage.ListAlertPolicy{Severity: storage.Severity_LOW_SEVERITY},
+			AlertID:     "id3",
+			ClusterName: "prod",
+			Severity:    int(storage.Severity_LOW_SEVERITY),
+			Time:        &time1,
+			State:       int(storage.ViolationState_RESOLVED),
 		},
 		{
-			Id:   "id4",
-			Time: protocompat.GetProtoTimestampFromSeconds(6),
-
-			Entity:           &storage.ListAlert_Deployment{Deployment: &storage.ListAlertDeployment{ClusterName: "prod"}},
-			CommonEntityInfo: &storage.ListAlert_CommonEntityInfo{ClusterName: "prod"},
-			Policy:           &storage.ListAlertPolicy{Severity: storage.Severity_MEDIUM_SEVERITY},
+			AlertID:     "id4",
+			ClusterName: "prod",
+			Severity:    int(storage.Severity_MEDIUM_SEVERITY),
+			Time:        &time6,
+			State:       int(storage.ViolationState_ACTIVE),
 		},
 	}
 
@@ -863,7 +826,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 	}
 	fakeContext := context.Background()
 	protoQuery := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery()
-	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(alerts, nil)
+	s.datastoreMock.EXPECT().SearchAlertTimeseriesEvents(fakeContext, protoQuery, true).Return(events, nil)
 
 	result, err := s.service.GetAlertTimeseries(fakeContext, &v1.ListAlertsRequest{
 		Query: "",
@@ -876,7 +839,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 func (s *getAlertTimeseriesTests) TestGetAlertTimeseriesWhenTheDataAccessLayerFails() {
 	fakeContext := context.Background()
 	protoQuery := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery()
-	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(nil, errFake)
+	s.datastoreMock.EXPECT().SearchAlertTimeseriesEvents(fakeContext, protoQuery, true).Return(nil, errFake)
 
 	result, err := s.service.GetAlertTimeseries(fakeContext, &v1.ListAlertsRequest{
 		Query: "",

@@ -76,5 +76,20 @@ func ComplianceOperatorRule(sensorData *central.ComplianceOperatorRuleV2, cluste
 		RuleRefId:    BuildNameRefID(clusterID, parentRule),
 		Instructions: sensorData.GetInstructions(),
 		ParentRule:   parentRule,
+		OperatorKind: centralToStorageRuleKind(sensorData.GetOperatorKind()),
+	}
+}
+
+func centralToStorageRuleKind(kind central.ComplianceOperatorRuleV2_OperatorKind) storage.ComplianceOperatorRuleV2_OperatorKind {
+	switch kind {
+	case central.ComplianceOperatorRuleV2_RULE:
+		return storage.ComplianceOperatorRuleV2_RULE
+	case central.ComplianceOperatorRuleV2_CUSTOM_RULE:
+		return storage.ComplianceOperatorRuleV2_CUSTOM_RULE
+	case central.ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED:
+		return storage.ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED
+	default:
+		log.Errorf("Unexpected rule operator kind %v", kind)
+		return storage.ComplianceOperatorRuleV2_OPERATOR_KIND_UNSPECIFIED
 	}
 }
