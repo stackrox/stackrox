@@ -6,7 +6,6 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgSchema "github.com/stackrox/rox/migrator/migrations/m_221_to_m_222_remove_v1_report_configs/postgres/schema"
 	"github.com/stackrox/rox/pkg/logging"
@@ -34,27 +33,12 @@ type (
 
 // Store is the interface to interact with the storage for storage.ReportConfiguration
 type Store interface {
-	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) error
-	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
-	PruneMany(ctx context.Context, identifiers []string) error
-
-	Count(ctx context.Context, q *v1.Query) (int, error)
-	Exists(ctx context.Context, id string) (bool, error)
-	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
-
 	Get(ctx context.Context, id string) (*storeType, bool, error)
-	// Deprecated: use GetByQueryFn instead
-	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
-	GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
-	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
-
 	Walk(ctx context.Context, fn callback) error
-	WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
 }
 
 // New returns a new Store instance using the provided sql instance.
