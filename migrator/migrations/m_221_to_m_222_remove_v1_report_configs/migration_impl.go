@@ -12,19 +12,20 @@ import (
 func migrate(database *types.Databases) error {
 	configStore := postgresStore.New(database.PostgresDB)
 	ctx := sac.WithAllAccess(context.Background())
-	reportConfigs := []*storage.ReportConfiguration{}
+	reportConfigIDs := []string{}
 
 	err := configStore.Walk(ctx, func(reportConfig *storage.ReportConfiguration) error {
 		// if report config version is 0 or 1 then delete the report config
 		// configs with version 0 are v1 report configs not migrated to v2
+		// configs with version 1 are v1 report config
 		if reportConfig.GetVersion() < 2 {
-			reportConfigs = append(reportConfigs, reportConfig)
+			reportConfigIDs = append(reportConfigIDs, reportConfig.GetId())
 		}
 		return nil
 	})
 
-	for _, repConfig := range reportConfigs {
-		err := configStore.Delete(ctx, repConfig.GetId())
+	for _, repConfigID := range reportConfigIDs {
+		err := configStore.Delete(ctx, repConfigID)
 		if err != nil {
 			return err
 		}
