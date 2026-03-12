@@ -163,7 +163,7 @@ jobs:
       - uses: actions/setup-node@v4
         if: matrix.target == 'ui-lint'
         with:
-          node-version: '22'
+          node-version-file: ui/package.json
 
       - name: Install xmlstarlet
         if: matrix.target == 'shell-style'
