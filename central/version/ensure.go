@@ -26,7 +26,7 @@ func Ensure(versionStore vStore.Store) error {
 	}
 
 	if version == nil {
-		return fmt.Errorf("no DB version found")
+		return errors.New("no DB version found")
 	}
 
 	actualSeqNum := int(version.GetSeqNum())
