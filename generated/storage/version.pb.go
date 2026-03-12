@@ -36,7 +36,7 @@ type Version struct {
 	// Deferred rollback marker. During rolling upgrades, the old pod writes its
 	// sequence number here so the lock holder can reset if the upgrade fails.
 	// A value of 0 means no rollback marker is set.
-	RollbackSeqNum int32 `protobuf:"varint,5,opt,name=rollback_seq_num,json=rollbackSeqNum,proto3" json:"rollback_seq_num,omitempty"`
+	RollbackSeqNum int32 `protobuf:"varint,5,opt,name=rollback_seq_num,json=rollbackSeqNum,proto3" json:"rollback_seq_num,omitempty" search:"Rollback Sequence Number"` // @gotags: search:"Rollback Sequence Number"
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }

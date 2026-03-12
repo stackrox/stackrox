@@ -20,5 +20,5 @@ message Version {
   // Deferred rollback marker. During rolling upgrades, the old pod writes its
   // sequence number here so the lock holder can reset if the upgrade fails.
   // A value of 0 means no rollback marker is set.
-  int32 rollback_seq_num = 5;
+  int32 rollback_seq_num = 5; // @gotags: search:"Rollback Sequence Number"
 }
