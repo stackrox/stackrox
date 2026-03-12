@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	getStmt    = "SELECT seqnum, version, minseqnum, lastpersisted FROM versions LIMIT 1"
+	getStmt    = "SELECT seqnum, version, minseqnum, lastpersisted, rollbackseqnum FROM versions LIMIT 1"
 	deleteStmt = "DELETE FROM versions"
 )
 
@@ -42,9 +42,10 @@ func insertIntoVersions(ctx context.Context, tx *postgres.Tx, obj *storage.Versi
 		obj.GetVersion(),
 		obj.GetMinSeqNum(),
 		protocompat.NilOrTime(obj.GetLastPersisted()),
+		obj.GetRollbackSeqNum(),
 	}
 
-	finalStr := "INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)"
+	finalStr := "INSERT INTO versions (seqnum, version, minseqnum, lastpersisted, rollbackseqnum) VALUES($1, $2, $3, $4, $5)"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -104,14 +105,16 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.Version, bool, e
 	var version string
 	var minSequenceNum int
 	var lastPersistedTime *time.Time
-	if err := row.Scan(&sequenceNum, &version, &minSequenceNum, &lastPersistedTime); err != nil {
+	var rollbackSeqNum int
+	if err := row.Scan(&sequenceNum, &version, &minSequenceNum, &lastPersistedTime, &rollbackSeqNum); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
 	msg := storage.Version{
-		SeqNum:    int32(sequenceNum),
-		Version:   version,
-		MinSeqNum: int32(minSequenceNum),
+		SeqNum:         int32(sequenceNum),
+		Version:        version,
+		MinSeqNum:      int32(minSequenceNum),
+		RollbackSeqNum: int32(rollbackSeqNum),
 	}
 
 	if lastPersistedTime != nil {
