@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralproxy/allowedpaths"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
+	detectormetrics "github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
 	"github.com/stackrox/rox/sensor/common/trace"
@@ -248,6 +249,7 @@ func (s *centralCommunicationImpl) hello(stream central.SensorService_Communicat
 	centralid.Set(centralHello.GetCentralId())
 	centralCaps := centralHello.GetCapabilities()
 	centralcaps.Set(sliceutils.FromStringSlice[centralsensor.CentralCapability](centralCaps...))
+	detectormetrics.UpdateScannerConfigurationInfo()
 
 	if centralcaps.Has(centralsensor.CentralProxyPathFiltering) {
 		allowedpaths.Set(centralHello.GetAllowedProxyPaths())
