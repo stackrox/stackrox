@@ -48,11 +48,17 @@ RUN dnf install -y \
 # Copy PostgreSQL RPMs and install to /out/
 COPY --from=downloads /output/rpms/ /tmp/
 COPY signatures/RPM-GPG-KEY-CentOS-Official /tmp/
-RUN chroot /out /bin/sh -c " \
-    rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
-    rpm -i --nodeps /tmp/postgres-libs.rpm /tmp/postgres.rpm \
-    " && \
-    rm -rf /tmp/*.rpm /tmp/RPM-GPG-KEY-CentOS-Official
+RUN rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
+    dnf install -y \
+        --installroot=/out/ \
+        --setopt=reposdir=/etc/yum.repos.d \
+        --releasever=8 \
+        --setopt=install_weak_deps=0 \
+        --nodocs \
+        /tmp/postgres-libs.rpm \
+        /tmp/postgres.rpm && \
+    dnf --installroot=/out/ clean all && \
+    rm -rf /tmp/*.rpm /tmp/RPM-GPG-KEY-CentOS-Official /out/var/cache/dnf /out/var/cache/yum
 
 # Setup stackrox directories with correct ownership
 RUN mkdir -p /out/stackrox && \
