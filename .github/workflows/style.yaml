@@ -46,7 +46,7 @@ jobs:
 
     - uses: actions/setup-python@v5
       with:
-        python-version: '3.9'  # operator/Makefile pins pip==21.3.1 which requires Python <3.12
+        python-version-file: operator/bundle_helpers/.python-version
 
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
