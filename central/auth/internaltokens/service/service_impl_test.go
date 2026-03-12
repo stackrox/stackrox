@@ -111,7 +111,7 @@ type mockContainer struct {
 
 func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 	deploymentPermission := map[string]v1.Access{
-		"Deployment": v1.Access_READ_ACCESS,
+		deploymentResource: v1.Access_READ_ACCESS,
 	}
 	requestSingleNamespace := &v1.ClusterScope{
 		ClusterId:         fixtureconsts.Cluster1,
@@ -146,9 +146,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 
 	// error cases
 	for name, tc := range map[string]struct {
-		input *v1.GenerateTokenForPermissionsAndScopeRequest
-		setup func(*mockContainer)
-		// policy      *tokenPolicy
+		input       *v1.GenerateTokenForPermissionsAndScopeRequest
+		setup       func(*mockContainer)
 		expectedErr error
 	}{
 		"nil request": {
@@ -198,8 +197,10 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
-							RoleName:      internalRoleName,
-							ReadResources: []string{"Deployment"},
+							RoleName: internalRoleName,
+							Permissions: map[string][]string{
+								storage.Access_READ_ACCESS.String(): {deploymentResource},
+							},
 							ClustersByName: tokens.ClusterScopes{
 								testSensorClusterID: []string{"namespace A"},
 							},
@@ -222,7 +223,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				Permissions: map[string]v1.Access{
 					// The tokenPolicy used for these error tests (permissivePolicy)
 					// does not allow actions on the NetworkGraph resource.
-					"NetworkGraph": v1.Access_READ_ACCESS,
+					networkGraphResource: v1.Access_READ_ACCESS,
 				},
 				ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
 				Lifetime:      testExpirationDuration,
@@ -234,7 +235,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				Permissions: map[string]v1.Access{
 					// The tokenPolicy used for these error tests (permissivePolicy)
 					// only allows read actions on the Deployment resource.
-					"Deployment": v1.Access_READ_WRITE_ACCESS,
+					deploymentResource: v1.Access_READ_WRITE_ACCESS,
 				},
 				ClusterScopes: []*v1.ClusterScope{requestSingleNamespace},
 				Lifetime:      testExpirationDuration,
@@ -293,8 +294,10 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
-							RoleName:      internalRoleName,
-							ReadResources: []string{deploymentResource},
+							RoleName: internalRoleName,
+							Permissions: map[string][]string{
+								storage.Access_READ_ACCESS.String(): {deploymentResource},
+							},
 							ClustersByName: tokens.ClusterScopes{
 								testSensorClusterID: []string{"namespace A"},
 							},
@@ -330,8 +333,10 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
-							RoleName:      internalRoleName,
-							ReadResources: []string{deploymentResource},
+							RoleName: internalRoleName,
+							Permissions: map[string][]string{
+								storage.Access_READ_ACCESS.String(): {deploymentResource},
+							},
 							ClustersByName: tokens.ClusterScopes{
 								testSensorClusterID: []string{"namespace A"},
 							},
@@ -366,8 +371,10 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
-							RoleName:      internalRoleName,
-							ReadResources: []string{deploymentResource},
+							RoleName: internalRoleName,
+							Permissions: map[string][]string{
+								storage.Access_READ_ACCESS.String(): {deploymentResource},
+							},
 							ClustersByName: tokens.ClusterScopes{
 								testSensorClusterID: []string{"namespace A"},
 							},
@@ -433,8 +440,10 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
-							RoleName:       internalRoleName,
-							ReadResources:  []string{deploymentResource},
+							RoleName: internalRoleName,
+							Permissions: map[string][]string{
+								storage.Access_READ_ACCESS.String(): {deploymentResource},
+							},
 							ClustersByName: nil,
 						},
 					},
@@ -455,8 +464,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		"success - multiple permissions and cluster scopes": {
 			input: &v1.GenerateTokenForPermissionsAndScopeRequest{
 				Permissions: map[string]v1.Access{
-					"Deployment": v1.Access_READ_ACCESS,
-					"Image":      v1.Access_READ_WRITE_ACCESS,
+					deploymentResource: v1.Access_READ_ACCESS,
+					imageResource:      v1.Access_READ_WRITE_ACCESS,
 				},
 				ClusterScopes: []*v1.ClusterScope{
 					requestSingleNamespace,
@@ -465,8 +474,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				Lifetime: testExpirationDuration,
 			},
 			policy: newTokenPolicy(300*time.Second, map[string]v1.Access{
-				"Deployment": v1.Access_READ_ACCESS,
-				"Image":      v1.Access_READ_WRITE_ACCESS,
+				deploymentResource: v1.Access_READ_ACCESS,
+				imageResource:      v1.Access_READ_WRITE_ACCESS,
 			}),
 			setup: func(t *testing.T, mocks *mockContainer) {
 				setClusterStoreExpectations(mocks.clusterStore, clusterIDNameMap)
@@ -474,9 +483,11 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				expectedClaims := tokens.RoxClaims{
 					InternalRoles: []*tokens.InternalRole{
 						{
-							RoleName:       internalRoleName,
-							ReadResources:  []string{deploymentResource},
-							WriteResources: []string{imageResource},
+							RoleName: internalRoleName,
+							Permissions: map[string][]string{
+								storage.Access_READ_ACCESS.String():       {deploymentResource},
+								storage.Access_READ_WRITE_ACCESS.String(): {imageResource},
+							},
 							ClustersByName: tokens.ClusterScopes{
 								testSensorClusterID: []string{"*"},
 							},
