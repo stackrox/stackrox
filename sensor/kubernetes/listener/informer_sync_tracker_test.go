@@ -92,6 +92,22 @@ func TestInformerSyncTracker_MarkSyncedUnknown(t *testing.T) {
 	assert.Equal(t, informerNamespaces, state.pending[0].name)
 }
 
+func TestInformerSyncTracker_NilInformerValue(t *testing.T) {
+	tracker := newTestTracker(t)
+
+	tracker.mu.Lock()
+	tracker.informers[informerNamespaces] = nil
+	tracker.mu.Unlock()
+
+	assert.NotPanics(t, func() {
+		tracker.markSynced(informerNamespaces)
+	})
+
+	state := tracker.getState()
+	assert.Empty(t, state.synced, "nil informer tracker should not be considered synced")
+	assert.Empty(t, state.pending, "nil informer tracker should not be considered pending")
+}
+
 func TestInformerSyncTracker_MarkSyncedIdempotent(t *testing.T) {
 	tracker := newTestTracker(t)
 

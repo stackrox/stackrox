@@ -55,17 +55,13 @@ const (
 // If no informers are registered after 1m, it is likely that Sensor is running without connection to k8s API server.
 const noRegistrationsTimeout = 60 * time.Second
 
-type syncStatus int
-
-const (
-	syncPending syncStatus = iota
-	syncComplete
-)
-
 type informerState struct {
-	status       syncStatus
 	registeredAt time.Time
 	syncedAt     time.Time
+}
+
+func (i *informerState) isPending() bool {
+	return i.syncedAt.IsZero()
 }
 
 // informerSyncTracker monitors individual informer sync progress and periodically logs
@@ -120,7 +116,6 @@ func (t *informerSyncTracker) register(name string) {
 	}
 
 	t.informers[name] = &informerState{
-		status:       syncPending,
 		registeredAt: time.Now(),
 	}
 	sensorMetrics.InformersRegisteredCurrent.Inc()
@@ -136,24 +131,11 @@ func (t *informerSyncTracker) markSynced(name string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if inf, ok := t.informers[name]; ok && inf.status == syncPending {
-		inf.status = syncComplete
+	if inf, ok := t.informers[name]; ok && inf != nil && inf.isPending() {
 		inf.syncedAt = time.Now()
 		sensorMetrics.InformersPendingCurrent.Dec()
 		sensorMetrics.ObserveInformerSyncDuration(name, inf.syncedAt.Sub(inf.registeredAt))
 	}
-}
-
-// pendingInformer holds the name and duration of an informer that has not yet synced.
-type pendingInformer struct {
-	name    string
-	pending time.Duration
-}
-
-// syncState holds the current state of informer sync progress.
-type syncState struct {
-	synced  []string
-	pending []pendingInformer
 }
 
 // stop requests the background goroutine to shut down and waits for it to exit.
@@ -202,6 +184,46 @@ func (t *informerSyncTracker) run() {
 	}
 }
 
+// getState returns the current sync state: which informers are synced and which are pending.
+func (t *informerSyncTracker) getState() syncState {
+	if t == nil {
+		return syncState{}
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	var state syncState
+	now := time.Now()
+	for name, inf := range t.informers {
+		if inf == nil {
+			log.Warnf("Informer %q has nil tracker state; skipping from sync progress", name)
+			continue
+		}
+		if inf.isPending() {
+			state.pending = append(state.pending, pendingInformer{
+				name:    name,
+				pending: now.Sub(inf.registeredAt),
+			})
+			continue
+		}
+		state.synced = append(state.synced, name)
+	}
+	return state
+}
+
+// pendingInformer holds the name and duration of an informer that has not yet synced.
+type pendingInformer struct {
+	name    string
+	pending time.Duration
+}
+
+// syncState holds the current state of informer sync progress.
+type syncState struct {
+	synced  []string
+	pending []pendingInformer
+}
+
+// log prints the log message for the current state of informer sync progress.
 func (s syncState) log() {
 	total := len(s.synced) + len(s.pending)
 	if total == 0 {
@@ -224,28 +246,4 @@ func (s syncState) log() {
 	}
 	log.Warnf("Informer sync progress: %d/%d synced. Pending: %s",
 		len(s.synced), total, sb.String())
-}
-
-// getState returns the current sync state: which informers are synced and which are pending.
-func (t *informerSyncTracker) getState() syncState {
-	if t == nil {
-		return syncState{}
-	}
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	var state syncState
-	now := time.Now()
-	for name, inf := range t.informers {
-		switch inf.status {
-		case syncComplete:
-			state.synced = append(state.synced, name)
-		case syncPending:
-			state.pending = append(state.pending, pendingInformer{
-				name:    name,
-				pending: now.Sub(inf.registeredAt),
-			})
-		}
-	}
-	return state
 }
