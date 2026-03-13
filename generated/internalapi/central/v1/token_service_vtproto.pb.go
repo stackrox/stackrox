@@ -28,7 +28,7 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) CloneVT() *GenerateTokenFor
 	}
 	r := new(GenerateTokenForPermissionsAndScopeRequest)
 	r.Lifetime = (*durationpb.Duration)((*durationpb1.Duration)(m.Lifetime).CloneVT())
-	r.TargetAudience = m.TargetAudience
+	r.Audience = m.Audience
 	if rhs := m.Permissions; rhs != nil {
 		tmpContainer := make(map[string]Access, len(rhs))
 		for k, v := range rhs {
@@ -132,7 +132,7 @@ func (this *GenerateTokenForPermissionsAndScopeRequest) EqualVT(that *GenerateTo
 	if !(*durationpb1.Duration)(this.Lifetime).EqualVT((*durationpb1.Duration)(that.Lifetime)) {
 		return false
 	}
-	if this.TargetAudience != that.TargetAudience {
+	if this.Audience != that.Audience {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -225,10 +225,10 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) MarshalToSizedBufferVT(dAtA
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.TargetAudience) > 0 {
-		i -= len(m.TargetAudience)
-		copy(dAtA[i:], m.TargetAudience)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.TargetAudience)))
+	if len(m.Audience) > 0 {
+		i -= len(m.Audience)
+		copy(dAtA[i:], m.Audience)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Audience)))
 		i--
 		dAtA[i] = 0x22
 	}
@@ -397,7 +397,7 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) SizeVT() (n int) {
 		l = (*durationpb1.Duration)(m.Lifetime).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	l = len(m.TargetAudience)
+	l = len(m.Audience)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -656,7 +656,7 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) UnmarshalVT(dAtA []byte) er
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TargetAudience", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Audience", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -684,7 +684,7 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) UnmarshalVT(dAtA []byte) er
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.TargetAudience = string(dAtA[iNdEx:postIndex])
+			m.Audience = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1144,7 +1144,7 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) UnmarshalVTUnsafe(dAtA []by
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TargetAudience", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Audience", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1176,7 +1176,7 @@ func (m *GenerateTokenForPermissionsAndScopeRequest) UnmarshalVTUnsafe(dAtA []by
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.TargetAudience = stringValue
+			m.Audience = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
