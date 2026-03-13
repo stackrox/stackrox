@@ -622,17 +622,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          driver-opts: |
-            image=moby/buildkit:latest
-
-      - name: Cache Docker layers
-        uses: actions/cache@v5
-        with:
-          path: /tmp/.buildx-cache
-          key: buildx-operator-${{ matrix.arch }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            buildx-operator-${{ matrix.arch }}-
 
       - name: Cache Go dependencies
         env:
@@ -688,13 +677,11 @@ jobs:
           CGO_ENABLED=0                           scripts/lib.sh retry 6 true make -C operator/ build
           # Once the native architecture dependencies are installed by the above command, the following one
           # simply builds the actual operator binary for the correct target architecture. Skip proto generation.
+          # Use GitHub Actions cache backend (type=gha) which handles cache management automatically.
           CGO_ENABLED=0 GOARCH=${{ matrix.arch }} ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true \
-            BUILDKIT_CACHE_FROM="type=local,src=/tmp/.buildx-cache" \
-            BUILDKIT_CACHE_TO="type=local,dest=/tmp/.buildx-cache-new,mode=max" \
+            BUILDKIT_CACHE_FROM="type=gha,scope=operator-${{ matrix.arch }}" \
+            BUILDKIT_CACHE_TO="type=gha,scope=operator-${{ matrix.arch }},mode=max" \
             scripts/lib.sh retry 6 true make -C operator/ docker-build
-          # Move cache to avoid unbounded growth
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@v4
