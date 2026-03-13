@@ -70,6 +70,7 @@ jobs:
       - /opt:/mnt/opt
     timeout-minutes: 180 # Keep in sync with cluster's lifespan
     steps:
+
     - name: Checkout repo
       uses: actions/checkout@v6
       with:
@@ -210,6 +211,7 @@ jobs:
       - /opt:/mnt/opt
     timeout-minutes: 180 # Keep in sync with cluster's lifespan
     steps:
+
     - name: Checkout repo
       uses: actions/checkout@v6
       with:
@@ -351,6 +353,7 @@ jobs:
       - /opt:/mnt/opt
     timeout-minutes: 60 # Keep in sync with cluster's lifespan
     steps:
+
     - name: Checkout repo
       uses: actions/checkout@v6
       with:
