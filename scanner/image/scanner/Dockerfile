@@ -30,6 +30,7 @@ SHELL ["/bin/sh", "-o", "pipefail", "-c"]
 COPY scripts/entrypoint.sh \
      scripts/import-additional-cas \
      scripts/restore-all-dir-contents \
+     scripts/fix-etc-pki-permissions \
      scripts/save-dir-contents /usr/local/bin/
 COPY bin/scanner /usr/local/bin/
 COPY THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
