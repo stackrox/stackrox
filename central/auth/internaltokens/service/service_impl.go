@@ -113,7 +113,7 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 		RoleNames: []string{roleName},
 		Name:      claimName,
 	}
-	targetAudience := req.GetTargetAudience()
+	targetAudience := req.GetAudience()
 	if targetAudience == "" {
 		targetAudience = internalTokenId
 	}
