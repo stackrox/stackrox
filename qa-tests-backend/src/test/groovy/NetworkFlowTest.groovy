@@ -190,7 +190,7 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Shared
-    private List<Deployment> deployments
+    private Map<String, Deployment> deployments
 
     def createDeployments() {
         targetDeployments = buildTargetDeployments()
@@ -203,7 +203,7 @@ class NetworkFlowTest extends BaseSpecification {
         for (Deployment d : sourceDeployments) {
             assert Services.waitForDeployment(d)
         }
-        deployments = sourceDeployments + targetDeployments
+        deployments = (sourceDeployments + targetDeployments).collectEntries { [(it.name): it] }
         //
         // Commenting out ICMP test setup for now
         // See ROX-635
@@ -267,9 +267,9 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify one-time connections show at first and are closed after the afterglow period"() {
         given:
         "Two deployments, A and B, where B communicates to A a single time during initial deployment"
-        String targetUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
+        String targetUid = deployments[NGINXCONNECTIONTARGET]?.deploymentUid
         assert targetUid != null
-        String sourceUid = deployments.find { it.name == SINGLECONNECTIONSOURCE }?.deploymentUid
+        String sourceUid = deployments[SINGLECONNECTIONSOURCE]?.deploymentUid
         assert sourceUid != null
 
         when:
@@ -346,9 +346,9 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify connections can be detected: #protocol"() {
         given:
         "Two deployments, A and B, where B communicates to A via #protocol"
-        String targetUid = deployments.find { it.name == targetDeployment }?.deploymentUid
+        String targetUid = deployments[targetDeployment]?.deploymentUid
         assert targetUid != null
-        String sourceUid = deployments.find { it.name == sourceDeployment }?.deploymentUid
+        String sourceUid = deployments[sourceDeployment]?.deploymentUid
         assert sourceUid != null
 
         expect:
@@ -358,7 +358,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         assert edges
         assert edges.get(0).protocol == protocol
-        assert deployments.find { it.name == targetDeployment }?.ports?.keySet()?.contains(edges.get(0).port)
+        assert deployments[targetDeployment]?.ports?.keySet()?.contains(edges.get(0).port)
 
         where:
         "Data is:"
@@ -376,7 +376,7 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify listen port availability matches feature flag: #targetDeployment"() {
         given:
         "Deployment with listening port"
-        String targetUid = deployments.find { it.name == targetDeployment }?.deploymentUid
+        String targetUid = deployments[targetDeployment]?.deploymentUid
         assert targetUid
 
         expect:
@@ -401,9 +401,9 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify connections with short consistent intervals between 2 deployments"() {
         given:
         "Two deployments, A and B, where B communicates to A in short consistent intervals"
-        String targetUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
+        String targetUid = deployments[NGINXCONNECTIONTARGET]?.deploymentUid
         assert targetUid != null
-        String sourceUid = deployments.find { it.name == SHORTCONSISTENTSOURCE }?.deploymentUid
+        String sourceUid = deployments[SHORTCONSISTENTSOURCE]?.deploymentUid
         assert sourceUid != null
 
         when:
@@ -466,9 +466,9 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify network flows with graph filtering"() {
         given:
         "Two deployments, A and B, where B communicates to A"
-        String sourceUid = deployments.find { it.name == TCPCONNECTIONSOURCE }?.deploymentUid
+        String sourceUid = deployments[TCPCONNECTIONSOURCE]?.deploymentUid
         assert sourceUid != null
-        String targetUid = deployments.find { it.name == TCPCONNECTIONTARGET }?.deploymentUid
+        String targetUid = deployments[TCPCONNECTIONTARGET]?.deploymentUid
         assert targetUid != null
 
         when:
@@ -489,7 +489,7 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify connections to external sources"() {
         given:
         "Deployment A, where A communicates to an external target"
-        String deploymentUid = deployments.find { it.name == EXTERNALDESTINATION }?.deploymentUid
+        String deploymentUid = deployments[EXTERNALDESTINATION]?.deploymentUid
         assert deploymentUid != null
 
         when: "External IPs is disabled"
@@ -562,15 +562,15 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify connections from external sources"() {
         given:
         "Deployment A, where an external source communicates to A"
-        String deploymentUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
+        String deploymentUid = deployments[NGINXCONNECTIONTARGET]?.deploymentUid
         assert deploymentUid != null
         String targetUrl
         if (Env.mustGetOrchestratorType() == OrchestratorTypes.K8S) {
-            String deploymentIP = deployments.find { it.name == NGINXCONNECTIONTARGET }?.loadBalancerIP
+            String deploymentIP = deployments[NGINXCONNECTIONTARGET]?.loadBalancerIP
             assert deploymentIP != null
             targetUrl = "http://${deploymentIP}"
         } else if (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) {
-            String routeHost = deployments.find { it.name == NGINXCONNECTIONTARGET }?.routeHost
+            String routeHost = deployments[NGINXCONNECTIONTARGET]?.routeHost
             assert routeHost != null
             targetUrl = "http://${routeHost}"
         } else {
@@ -667,9 +667,9 @@ class NetworkFlowTest extends BaseSpecification {
         Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
         given:
         "Deployment A, exposed via LB"
-        String deploymentUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
+        String deploymentUid = deployments[NGINXCONNECTIONTARGET]?.deploymentUid
         assert deploymentUid != null
-        String deploymentIP = deployments.find { it.name == NGINXCONNECTIONTARGET }?.loadBalancerIP
+        String deploymentIP = deployments[NGINXCONNECTIONTARGET]?.loadBalancerIP
         assert deploymentIP != null
 
         when:
@@ -706,9 +706,9 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify no connections between 2 deployments"() {
         given:
         "Two deployments, A and B, where neither communicates to the other"
-        String targetUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
+        String targetUid = deployments[NGINXCONNECTIONTARGET]?.deploymentUid
         assert targetUid != null
-        String sourceUid = deployments.find { it.name == NOCONNECTIONSOURCE }?.deploymentUid
+        String sourceUid = deployments[NOCONNECTIONSOURCE]?.deploymentUid
         assert sourceUid != null
 
         expect:
@@ -721,9 +721,9 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify connections between two deployments on 2 separate ports shows both edges in the graph"() {
         given:
         "Two deployments, A and B, where B communicates to A on 2 different ports"
-        String targetUid = deployments.find { it.name == TCPCONNECTIONTARGET }?.deploymentUid
+        String targetUid = deployments[TCPCONNECTIONTARGET]?.deploymentUid
         assert targetUid != null
-        String sourceUid = deployments.find { it.name == MULTIPLEPORTSCONNECTION }?.deploymentUid
+        String sourceUid = deployments[MULTIPLEPORTSCONNECTION]?.deploymentUid
         assert sourceUid != null
 
         when:
@@ -748,9 +748,9 @@ class NetworkFlowTest extends BaseSpecification {
 
         given:
         "Two deployments, A and B, where B communicates to A"
-        String targetUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
+        String targetUid = deployments[NGINXCONNECTIONTARGET]?.deploymentUid
         assert targetUid != null
-        String sourceUid = deployments.find { it.name == SHORTCONSISTENTSOURCE }?.deploymentUid
+        String sourceUid = deployments[SHORTCONSISTENTSOURCE]?.deploymentUid
         assert sourceUid != null
 
         and:
@@ -816,7 +816,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         and:
         "delete a deployment"
-        Deployment delete = deployments.find { it.name == NOCONNECTIONSOURCE }
+        Deployment delete = deployments[NOCONNECTIONSOURCE]
         orchestrator.deleteDeployment(delete)
         Services.waitForSRDeletion(delete)
 
@@ -841,7 +841,7 @@ class NetworkFlowTest extends BaseSpecification {
                 List<NetworkNode> outNodes = currentGraph.nodesList.findAll { node ->
                     node.outEdgesMap.containsKey(index)
                 }
-                def allowAllIngress = deployments.find { it.name == deploymentName }?.createLoadBalancer ||
+                def allowAllIngress = deployments[deploymentName]?.createLoadBalancer ||
                     currentGraph.nodesList.find { it.entity.type == Type.INTERNET }.outEdgesMap.containsKey(index)
                 if (allowAllIngress) {
                     log.info "${deploymentName} has LB/External incoming traffic - ensure All Ingress allowed"
@@ -880,7 +880,7 @@ class NetworkFlowTest extends BaseSpecification {
             assert yaml."metadata"."labels"."network-policy-generator.stackrox.io/generated"
             assert yaml."metadata"."namespace"
             def index = currentGraph.nodesList.findIndexOf { node -> node.deploymentName == deploymentName }
-            def allowAllIngress = deployments.find { it.name == deploymentName }?.createLoadBalancer ||
+            def allowAllIngress = deployments[deploymentName]?.createLoadBalancer ||
                 currentGraph.nodesList.find { it.entity.type == Type.INTERNET }.outEdgesMap.containsKey(index)
             List<NetworkNode> outNodes = currentGraph.nodesList.findAll { node ->
                 node.outEdgesMap.containsKey(index)
