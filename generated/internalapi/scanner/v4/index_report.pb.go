@@ -31,6 +31,7 @@ type IndexReport struct {
 	Success       bool                   `protobuf:"varint,3,opt,name=success,proto3" json:"success,omitempty"`
 	Err           string                 `protobuf:"bytes,4,opt,name=err,proto3" json:"err,omitempty"`
 	Contents      *Contents              `protobuf:"bytes,5,opt,name=contents,proto3" json:"contents,omitempty"`
+	Distro        *Distribution          `protobuf:"bytes,6,opt,name=distro,proto3" json:"distro,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -100,18 +101,26 @@ func (x *IndexReport) GetContents() *Contents {
 	return nil
 }
 
+func (x *IndexReport) GetDistro() *Distribution {
+	if x != nil {
+		return x.Distro
+	}
+	return nil
+}
+
 var File_internalapi_scanner_v4_index_report_proto protoreflect.FileDescriptor
 
 const file_internalapi_scanner_v4_index_report_proto_rawDesc = "" +
 	"\n" +
 	")internalapi/scanner/v4/index_report.proto\x12\n" +
-	"scanner.v4\x1a#internalapi/scanner/v4/common.proto\"\x9a\x01\n" +
+	"scanner.v4\x1a#internalapi/scanner/v4/common.proto\"\xcc\x01\n" +
 	"\vIndexReport\x12\x17\n" +
 	"\ahash_id\x18\x01 \x01(\tR\x06hashId\x12\x14\n" +
 	"\x05state\x18\x02 \x01(\tR\x05state\x12\x18\n" +
 	"\asuccess\x18\x03 \x01(\bR\asuccess\x12\x10\n" +
 	"\x03err\x18\x04 \x01(\tR\x03err\x120\n" +
-	"\bcontents\x18\x05 \x01(\v2\x14.scanner.v4.ContentsR\bcontentsB\x1dZ\x1b./internalapi/scanner/v4;v4b\x06proto3"
+	"\bcontents\x18\x05 \x01(\v2\x14.scanner.v4.ContentsR\bcontents\x120\n" +
+	"\x06distro\x18\x06 \x01(\v2\x18.scanner.v4.DistributionR\x06distroB\x1dZ\x1b./internalapi/scanner/v4;v4b\x06proto3"
 
 var (
 	file_internalapi_scanner_v4_index_report_proto_rawDescOnce sync.Once
@@ -127,16 +136,18 @@ func file_internalapi_scanner_v4_index_report_proto_rawDescGZIP() []byte {
 
 var file_internalapi_scanner_v4_index_report_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_internalapi_scanner_v4_index_report_proto_goTypes = []any{
-	(*IndexReport)(nil), // 0: scanner.v4.IndexReport
-	(*Contents)(nil),    // 1: scanner.v4.Contents
+	(*IndexReport)(nil),  // 0: scanner.v4.IndexReport
+	(*Contents)(nil),     // 1: scanner.v4.Contents
+	(*Distribution)(nil), // 2: scanner.v4.Distribution
 }
 var file_internalapi_scanner_v4_index_report_proto_depIdxs = []int32{
 	1, // 0: scanner.v4.IndexReport.contents:type_name -> scanner.v4.Contents
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	2, // 1: scanner.v4.IndexReport.distro:type_name -> scanner.v4.Distribution
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_scanner_v4_index_report_proto_init() }

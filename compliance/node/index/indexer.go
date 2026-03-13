@@ -167,11 +167,6 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 	}
 	defer pkgutils.IgnoreError(layer.Close)
 
-	_, err = runOSScanner(ctx, layer)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to scan os-release")
-	}
-
 	repos, err := runRepositoryScanner(ctx, l.cfg, layer)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to run repository scanner")
@@ -196,6 +191,13 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 		return nil, errors.Wrap(err, "converting clair report to v4 report")
 	}
 
+	dists, err := runOSScanner(ctx, layer)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to scan os-release")
+	}
+	if len(dists) > 0 {
+		report.Distro = mapDistribution(dists[0])
+	}
 	return report, nil
 }
 
@@ -301,4 +303,18 @@ func runOSScanner(ctx context.Context, layer *claircore.Layer) ([]*claircore.Dis
 		d.ID = strconv.Itoa(i)
 	}
 	return dists, nil
+}
+
+func mapDistribution(ccDist *claircore.Distribution) *v4.Distribution {
+	return &v4.Distribution{
+		Id:              ccDist.ID,
+		Did:             ccDist.DID,
+		Name:            ccDist.Name,
+		Version:         ccDist.Version,
+		VersionCodeName: ccDist.VersionCodeName,
+		VersionId:       ccDist.VersionID,
+		Arch:            ccDist.Arch,
+		Cpe:             ccDist.CPE.BindFS(), // Converts WFN object to string
+		PrettyName:      ccDist.PrettyName,
+	}
 }
