@@ -8,6 +8,8 @@ import (
 )
 
 // Validator is responsible for validating (and thus parsing) tokens.
+//
+//go:generate mockgen-wrapper
 type Validator interface {
 	Validate(ctx context.Context, token string) (*TokenInfo, error)
 }

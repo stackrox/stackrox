@@ -221,7 +221,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                                 <a
                                     href={getVersionedDocs(
                                         version,
-                                        'operating/managing-security-policies#con-policy-lifecycle_about-security-policies'
+                                        'operating/using-policies-to-provide-security'
                                     )}
                                     target="_blank"
                                     rel="noopener noreferrer"

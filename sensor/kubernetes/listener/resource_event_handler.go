@@ -2,6 +2,7 @@ package listener
 
 import (
 	"context"
+	"time"
 
 	osAppsExtVersions "github.com/openshift/client-go/apps/informers/externalversions"
 	osConfigExtVersions "github.com/openshift/client-go/config/informers/externalversions"
@@ -114,6 +115,17 @@ func crdWatcherCallbackWrapper(ctx context.Context, cond callbackCondition, pubS
 // since the PodLister is used to populate the image ids of deployments.
 func (k *listenerImpl) handleAllEvents() {
 	defer k.mayCreateHandlers.Signal()
+
+	var informerTracker *informerSyncTracker
+	if features.SensorInformerWatchdog.Enabled() {
+		// One log message every 30 seconds if any informers are still pending.
+		// This is meant to spam the logs if informers are stuck, as there were many cases
+		// where informers were stuck for hours without any indication to the user.
+		loggingPeriod := 30 * time.Second
+		informerTracker = newInformerSyncTracker(loggingPeriod)
+		defer informerTracker.stop()
+	}
+
 	sif := informers.NewSharedInformerFactory(k.client.Kubernetes(), noResyncPeriod)
 	crdSharedInformerFactory := dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
 	dynamicSif := dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
@@ -273,13 +285,13 @@ func (k *listenerImpl) handleAllEvents() {
 	stopSignal := &k.stopSig
 
 	// Informers that need to be synced initially
-	handle(k.context, namespaceInformer, dispatchers.ForNamespaces(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
-	handle(k.context, secretInformer, dispatchers.ForSecrets(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
-	handle(k.context, saInformer, dispatchers.ForServiceAccounts(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+	handle(k.context, informerNamespaces, namespaceInformer, dispatchers.ForNamespaces(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
+	handle(k.context, informerSecrets, secretInformer, dispatchers.ForSecrets(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
+	handle(k.context, informerServiceAccounts, saInformer, dispatchers.ForServiceAccounts(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 
 	// Roles need to be synced before role bindings because role bindings have a reference
-	handle(k.context, roleInformer, dispatchers.ForRBAC(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
-	handle(k.context, clusterRoleInformer, dispatchers.ForRBAC(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+	handle(k.context, informerRoles, roleInformer, dispatchers.ForRBAC(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
+	handle(k.context, informerClusterRoles, clusterRoleInformer, dispatchers.ForRBAC(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 
 	// For openshift clusters only
 	var osConfigFactory osConfigExtVersions.SharedInformerFactory
@@ -294,18 +306,18 @@ func (k *listenerImpl) handleAllEvents() {
 
 			if listenerUtils.ResourceExists(resourceList, osClusterOperatorsResourceName, osConfigGroupVersion) {
 				log.Infof("Initializing %q informer", osClusterOperatorsResourceName)
-				handle(k.context, osConfigFactory.Config().V1().ClusterOperators().Informer(), dispatchers.ForClusterOperators(), k.pubSubDispatcher, k.outputQueue, nil, noDependencyWaitGroup, stopSignal, &eventLock)
+				handle(k.context, informerClusterOperators, osConfigFactory.Config().V1().ClusterOperators().Informer(), dispatchers.ForClusterOperators(), k.pubSubDispatcher, k.outputQueue, nil, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 			}
 
 			if env.RegistryMirroringEnabled.BooleanSetting() {
 				if listenerUtils.ResourceExists(resourceList, osImageDigestMirrorSetsResourceName, osConfigGroupVersion) {
 					log.Infof("Initializing %q informer", osImageDigestMirrorSetsResourceName)
-					handle(k.context, osConfigFactory.Config().V1().ImageDigestMirrorSets().Informer(), dispatchers.ForRegistryMirrors(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+					handle(k.context, informerImageDigestMirrorSets, osConfigFactory.Config().V1().ImageDigestMirrorSets().Informer(), dispatchers.ForRegistryMirrors(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 				}
 
 				if listenerUtils.ResourceExists(resourceList, osImageTagMirrorSetsResourceName, osConfigGroupVersion) {
 					log.Infof("Initializing %q informer", osImageTagMirrorSetsResourceName)
-					handle(k.context, osConfigFactory.Config().V1().ImageTagMirrorSets().Informer(), dispatchers.ForRegistryMirrors(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+					handle(k.context, informerImageTagMirrorSets, osConfigFactory.Config().V1().ImageTagMirrorSets().Informer(), dispatchers.ForRegistryMirrors(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 				}
 			}
 		}
@@ -323,7 +335,7 @@ func (k *listenerImpl) handleAllEvents() {
 
 			if listenerUtils.ResourceExists(resourceList, osImageContentSourcePoliciesResourceName, osOperatorAlphaGroupVersion) {
 				log.Infof("Initializing %q informer", osImageContentSourcePoliciesResourceName)
-				handle(k.context, osOperatorFactory.Operator().V1alpha1().ImageContentSourcePolicies().Informer(), dispatchers.ForRegistryMirrors(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+				handle(k.context, informerImageContentSourcePolicies, osOperatorFactory.Operator().V1alpha1().ImageContentSourcePolicies().Informer(), dispatchers.ForRegistryMirrors(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 			}
 		}
 	}
@@ -331,15 +343,15 @@ func (k *listenerImpl) handleAllEvents() {
 	if coAvailable {
 		log.Info("Syncing compliance operator resources")
 		// Handle results, rules, and scan setting bindings first
-		handle(k.context, complianceResultInformer, dispatchers.ForComplianceOperatorResults(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
-		handle(k.context, complianceRuleInformer, dispatchers.ForComplianceOperatorRules(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
-		handle(k.context, complianceScanSettingBindingsInformer, dispatchers.ForComplianceOperatorScanSettingBindings(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
-		handle(k.context, complianceScanInformer, dispatchers.ForComplianceOperatorScans(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
-		handle(k.context, complianceSuiteInformer, dispatchers.ForComplianceOperatorSuites(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
-		handle(k.context, complianceRemediationInformer, dispatchers.ForComplianceOperatorRemediations(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+		handle(k.context, informerComplianceCheckResults, complianceResultInformer, dispatchers.ForComplianceOperatorResults(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
+		handle(k.context, informerComplianceRules, complianceRuleInformer, dispatchers.ForComplianceOperatorRules(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
+		handle(k.context, informerComplianceScanSettingBindings, complianceScanSettingBindingsInformer, dispatchers.ForComplianceOperatorScanSettingBindings(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
+		handle(k.context, informerComplianceScans, complianceScanInformer, dispatchers.ForComplianceOperatorScans(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
+		handle(k.context, informerComplianceSuites, complianceSuiteInformer, dispatchers.ForComplianceOperatorSuites(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
+		handle(k.context, informerComplianceRemediations, complianceRemediationInformer, dispatchers.ForComplianceOperatorRemediations(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 
 		if customRulesAvailable {
-			handle(k.context, complianceCustomRuleInformer, dispatchers.ForComplianceOperatorCustomRules(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+			handle(k.context, informerComplianceCustomRules, complianceCustomRuleInformer, dispatchers.ForComplianceOperatorCustomRules(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 		}
 	}
 
@@ -348,7 +360,7 @@ func (k *listenerImpl) handleAllEvents() {
 		// This is because if both informers are racing in the sync, we could
 		// send duplicate update events during sync
 		log.Info("Syncing virtual machine instances")
-		handle(k.context, virtualMachineInstanceInformer, dispatchers.ForVirtualMachineInstances(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+		handle(k.context, informerVirtualMachineInstances, virtualMachineInstanceInformer, dispatchers.ForVirtualMachineInstances(), k.pubSubDispatcher, k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock, informerTracker)
 	}
 
 	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {
@@ -361,7 +373,7 @@ func (k *listenerImpl) handleAllEvents() {
 		log.Info("Syncing virtual machines")
 		virtualMachineInformer := crdSharedInformerFactory.ForResource(virtualmachine.VirtualMachine.GroupVersionResource()).Informer()
 		vmWaitGroup := &concurrency.WaitGroup{}
-		handle(k.context, virtualMachineInformer, dispatchers.ForVirtualMachines(), k.pubSubDispatcher, k.outputQueue, &syncingResources, vmWaitGroup, stopSignal, &eventLock)
+		handle(k.context, informerVirtualMachines, virtualMachineInformer, dispatchers.ForVirtualMachines(), k.pubSubDispatcher, k.outputQueue, &syncingResources, vmWaitGroup, stopSignal, &eventLock, informerTracker)
 		if !startAndWait(stopSignal, vmWaitGroup, sif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {
 			return
 		}
@@ -374,8 +386,8 @@ func (k *listenerImpl) handleAllEvents() {
 	roleBindingInformer := sif.Rbac().V1().RoleBindings().Informer()
 	clusterRoleBindingInformer := sif.Rbac().V1().ClusterRoleBindings().Informer()
 
-	handle(k.context, roleBindingInformer, dispatchers.ForRBAC(), k.pubSubDispatcher, k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
-	handle(k.context, clusterRoleBindingInformer, dispatchers.ForRBAC(), k.pubSubDispatcher, k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock)
+	handle(k.context, informerRoleBindings, roleBindingInformer, dispatchers.ForRBAC(), k.pubSubDispatcher, k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock, informerTracker)
+	handle(k.context, informerClusterRoleBindings, clusterRoleBindingInformer, dispatchers.ForRBAC(), k.pubSubDispatcher, k.outputQueue, &syncingResources, prePodWaitGroup, stopSignal, &eventLock, informerTracker)
 
 	if !startAndWait(stopSignal, prePodWaitGroup, sif) {
 		return
@@ -388,26 +400,28 @@ func (k *listenerImpl) handleAllEvents() {
 	// However, do not ACTUALLY handle, pod events yet -- those need to wait for deployments to be
 	// synced, since we need to enrich pods with the deployment ids, and for that we need the entire
 	// hierarchy to be populated.
+	informerTracker.register(informerPodCache)
 	if !cache.WaitForCacheSync(stopSignal.Done(), podInformer.Informer().HasSynced) {
 		return
 	}
+	informerTracker.markSynced(informerPodCache)
 	log.Info("Successfully synced k8s pod cache")
 
 	preTopLevelDeploymentWaitGroup := &concurrency.WaitGroup{}
 
 	// Non-deployment types.
-	handle(k.context, sif.Networking().V1().NetworkPolicies().Informer(), dispatchers.ForNetworkPolicies(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
-	handle(k.context, sif.Core().V1().Nodes().Informer(), dispatchers.ForNodes(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
-	handle(k.context, sif.Core().V1().Services().Informer(), dispatchers.ForServices(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+	handle(k.context, informerNetworkPolicies, sif.Networking().V1().NetworkPolicies().Informer(), dispatchers.ForNetworkPolicies(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
+	handle(k.context, informerNodes, sif.Core().V1().Nodes().Informer(), dispatchers.ForNodes(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
+	handle(k.context, informerServices, sif.Core().V1().Services().Informer(), dispatchers.ForServices(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
 
 	if osRouteFactory != nil {
-		handle(k.context, osRouteFactory.Route().V1().Routes().Informer(), dispatchers.ForOpenshiftRoutes(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+		handle(k.context, informerRoutes, osRouteFactory.Route().V1().Routes().Informer(), dispatchers.ForOpenshiftRoutes(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
 	}
 
 	// Deployment subtypes (this ensures that the hierarchy maps are generated correctly)
-	handle(k.context, sif.Batch().V1().Jobs().Informer(), dispatchers.ForJobs(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
-	handle(k.context, sif.Apps().V1().ReplicaSets().Informer(), dispatchers.ForDeployments(kubernetesPkg.ReplicaSet), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
-	handle(k.context, sif.Core().V1().ReplicationControllers().Informer(), dispatchers.ForDeployments(kubernetesPkg.ReplicationController), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+	handle(k.context, informerJobs, sif.Batch().V1().Jobs().Informer(), dispatchers.ForJobs(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
+	handle(k.context, informerReplicaSets, sif.Apps().V1().ReplicaSets().Informer(), dispatchers.ForDeployments(kubernetesPkg.ReplicaSet), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
+	handle(k.context, informerReplicationControllers, sif.Core().V1().ReplicationControllers().Informer(), dispatchers.ForDeployments(kubernetesPkg.ReplicationController), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
 
 	// Compliance operator profiles are handled AFTER results, rules, and scan setting bindings have been synced
 	if coAvailable {
@@ -415,8 +429,8 @@ func (k *listenerImpl) handleAllEvents() {
 		complianceProfileInformer := profileGenericInformer.Informer()
 		profileLister = profileGenericInformer.Lister()
 		complianceTailoredProfileInformer := crdSharedInformerFactory.ForResource(complianceoperator.TailoredProfile.GroupVersionResource()).Informer()
-		handle(k.context, complianceProfileInformer, dispatchers.ForComplianceOperatorProfiles(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
-		handle(k.context, complianceTailoredProfileInformer, dispatchers.ForComplianceOperatorTailoredProfiles(profileLister), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock)
+		handle(k.context, informerComplianceProfiles, complianceProfileInformer, dispatchers.ForComplianceOperatorProfiles(), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
+		handle(k.context, informerComplianceTailoredProfiles, complianceTailoredProfileInformer, dispatchers.ForComplianceOperatorTailoredProfiles(profileLister), k.pubSubDispatcher, k.outputQueue, &syncingResources, preTopLevelDeploymentWaitGroup, stopSignal, &eventLock, informerTracker)
 	}
 
 	if !startAndWait(stopSignal, preTopLevelDeploymentWaitGroup, sif, crdSharedInformerFactory, osRouteFactory) {
@@ -428,19 +442,19 @@ func (k *listenerImpl) handleAllEvents() {
 	wg := &concurrency.WaitGroup{}
 
 	// Deployment types.
-	handle(k.context, sif.Apps().V1().DaemonSets().Informer(), dispatchers.ForDeployments(kubernetesPkg.DaemonSet), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
-	handle(k.context, sif.Apps().V1().Deployments().Informer(), dispatchers.ForDeployments(kubernetesPkg.Deployment), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
-	handle(k.context, sif.Apps().V1().StatefulSets().Informer(), dispatchers.ForDeployments(kubernetesPkg.StatefulSet), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
+	handle(k.context, informerDaemonSets, sif.Apps().V1().DaemonSets().Informer(), dispatchers.ForDeployments(kubernetesPkg.DaemonSet), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
+	handle(k.context, informerDeployments, sif.Apps().V1().Deployments().Informer(), dispatchers.ForDeployments(kubernetesPkg.Deployment), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
+	handle(k.context, informerStatefulSets, sif.Apps().V1().StatefulSets().Informer(), dispatchers.ForDeployments(kubernetesPkg.StatefulSet), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
 
 	if ok, err := sensorUtils.HasAPI(k.client.Kubernetes(), "batch/v1", kubernetesPkg.CronJob); err != nil {
 		log.Errorf("error determining API version to use for CronJobs: %v", err)
 	} else if ok {
-		handle(k.context, sif.Batch().V1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetesPkg.CronJob), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
+		handle(k.context, informerCronJobs, sif.Batch().V1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetesPkg.CronJob), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
 	} else {
-		handle(k.context, sif.Batch().V1beta1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetesPkg.CronJob), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
+		handle(k.context, informerCronJobs, sif.Batch().V1beta1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetesPkg.CronJob), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
 	}
 	if osAppsFactory != nil {
-		handle(k.context, osAppsFactory.Apps().V1().DeploymentConfigs().Informer(), dispatchers.ForDeployments(kubernetesPkg.DeploymentConfig), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock)
+		handle(k.context, informerDeploymentConfigs, osAppsFactory.Apps().V1().DeploymentConfigs().Informer(), dispatchers.ForDeployments(kubernetesPkg.DeploymentConfig), k.pubSubDispatcher, k.outputQueue, &syncingResources, wg, stopSignal, &eventLock, informerTracker)
 	}
 
 	// SharedInformerFactories can have Start called multiple times which will start the rest of the handlers
@@ -452,7 +466,7 @@ func (k *listenerImpl) handleAllEvents() {
 
 	// Finally, run the pod informer, and process pod events.
 	podWaitGroup := &concurrency.WaitGroup{}
-	handle(k.context, podInformer.Informer(), dispatchers.ForDeployments(kubernetesPkg.Pod), k.pubSubDispatcher, k.outputQueue, &syncingResources, podWaitGroup, stopSignal, &eventLock)
+	handle(k.context, informerPods, podInformer.Informer(), dispatchers.ForDeployments(kubernetesPkg.Pod), k.pubSubDispatcher, k.outputQueue, &syncingResources, podWaitGroup, stopSignal, &eventLock, informerTracker)
 	if !startAndWait(stopSignal, podWaitGroup, sif) {
 		return
 	}
@@ -492,9 +506,11 @@ func (k *listenerImpl) handleAllEvents() {
 }
 
 // Helper function that creates and adds a handler to an informer.
-// ////////////////////////////////////////////////////////////////
+// The name parameter identifies the informer for sync tracking.
+// The tracker parameter may be nil when the watchdog feature is disabled.
 func handle(
 	ctx context.Context,
+	name string,
 	informer cache.SharedIndexInformer,
 	dispatcher resources.Dispatcher,
 	pubSubDispatcher pubSubPublisher,
@@ -503,7 +519,9 @@ func handle(
 	wg *concurrency.WaitGroup,
 	stopSignal *concurrency.Signal,
 	eventLock *sync.Mutex,
+	tracker *informerSyncTracker,
 ) {
+	tracker.register(name)
 	utils.Should(func() error {
 		if features.SensorInternalPubSub.Enabled() && pubSubDispatcher == nil {
 			return errors.Errorf("informer `handle` was called with a `nil` PubSubDispatcher when %q is enabled", features.SensorInternalPubSub.EnvVar())
@@ -535,6 +553,7 @@ func handle(
 		if !cache.WaitForCacheSync(stopSignal.Done(), informer.HasSynced) {
 			return
 		}
+		tracker.markSynced(name)
 		doneChannel := handlerImpl.PopulateInitialObjects(informer.GetIndexer().List())
 		select {
 		case <-stopSignal.Done():

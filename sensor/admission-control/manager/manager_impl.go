@@ -46,9 +46,9 @@ type state struct {
 	*sensor.AdmissionControlSettings
 	deploytimeDetector deploytime.Detector
 
-	allRuntimePoliciesDetector                    runtime.Detector
-	runtimeDetectorForPoliciesWithoutDeployFields runtime.Detector
-	runtimeDetectorForPoliciesWithDeployFields    runtime.Detector
+	allK8sEventPoliciesDetector runtime.Detector
+	fastPathDetector            runtime.Detector
+	slowPathDetector            runtime.Detector
 
 	bypassForUsers, bypassForGroups set.FrozenStringSet
 	enforcedOps                     map[admission.Operation]struct{}
@@ -242,24 +242,24 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	// TODO(ROX-33188): Wire cluster and namespace label providers from Sensor's in-memory stores.
 	// For now, passing nil providers means policies with cluster_label/namespace_label scopes will
 	// fail closed (not match) in admission control.
-	allRuntimePolicySet := detection.NewPolicySet(nil, nil)
-	runtimePoliciesWithDeployFields, runtimePoliciesWithoutDeployFields := detection.NewPolicySet(nil, nil), detection.NewPolicySet(nil, nil)
+	allK8sEventPolicySet := detection.NewPolicySet(nil, nil)
+	k8sEventPoliciesWithDeployFields, k8sEventPoliciesWithoutDeployFields := detection.NewPolicySet(nil, nil), detection.NewPolicySet(nil, nil)
 	for _, policy := range newSettings.GetRuntimePolicies().GetPolicies() {
 		if policyfields.ContainsEnrichmentRequiredFields(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
 			log.Warn(errors.ImageScanUnavailableMsg(policy))
 			continue
 		}
 
-		if err := allRuntimePolicySet.UpsertPolicy(policy); err != nil {
+		if err := allK8sEventPolicySet.UpsertPolicy(policy); err != nil {
 			log.Errorf("Unable to upsert policy %q (%s), will not be able to detect", policy.GetName(), policy.GetId())
 		}
 
 		if booleanpolicy.ContainsDeployTimeFields(policy) {
-			if err := runtimePoliciesWithDeployFields.UpsertPolicy(policy); err != nil {
+			if err := k8sEventPoliciesWithDeployFields.UpsertPolicy(policy); err != nil {
 				log.Errorf("Unable to upsert policy %q (%s), will not be able to detect", policy.GetName(), policy.GetId())
 			}
 		} else {
-			if err := runtimePoliciesWithoutDeployFields.UpsertPolicy(policy); err != nil {
+			if err := k8sEventPoliciesWithoutDeployFields.UpsertPolicy(policy); err != nil {
 				log.Errorf("Unable to upsert policy %q (%s), will not be able to detect", policy.GetName(), policy.GetId())
 			}
 		}
@@ -295,14 +295,14 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 
 	oldState := m.currentState()
 	newState := &state{
-		AdmissionControlSettings:                      newSettings,
-		deploytimeDetector:                            deploytime.NewDetector(deployTimePolicySet),
-		allRuntimePoliciesDetector:                    runtime.NewDetector(allRuntimePolicySet),
-		runtimeDetectorForPoliciesWithDeployFields:    runtime.NewDetector(runtimePoliciesWithDeployFields),
-		runtimeDetectorForPoliciesWithoutDeployFields: runtime.NewDetector(runtimePoliciesWithoutDeployFields),
-		bypassForUsers:                                allowAlwaysUsers,
-		bypassForGroups:                               allowAlwaysGroups,
-		enforcedOps:                                   enforcedOperations,
+		AdmissionControlSettings:    newSettings,
+		deploytimeDetector:          deploytime.NewDetector(deployTimePolicySet),
+		allK8sEventPoliciesDetector: runtime.NewDetector(allK8sEventPolicySet),
+		slowPathDetector:            runtime.NewDetector(k8sEventPoliciesWithDeployFields),
+		fastPathDetector:            runtime.NewDetector(k8sEventPoliciesWithoutDeployFields),
+		bypassForUsers:              allowAlwaysUsers,
+		bypassForGroups:             allowAlwaysGroups,
+		enforcedOps:                 enforcedOperations,
 	}
 
 	if oldState != nil && newSettings.GetCentralEndpoint() == oldState.GetCentralEndpoint() {
@@ -340,7 +340,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	m.lastSettingsUpdate = protocompat.ConvertTimestampToTimeOrNil(newSettings.GetTimestamp())
 
 	enforceablePolicies := 0
-	for _, policy := range allRuntimePolicySet.GetCompiledPolicies() {
+	for _, policy := range allK8sEventPolicySet.GetCompiledPolicies() {
 		if len(policy.Policy().GetEnforcementActions()) > 0 {
 			enforceablePolicies++
 		}
@@ -350,7 +350,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		"detecting on %d run-time policies; "+
 		"enforcing on %d run-time policies).",
 		len(deployTimePolicySet.GetCompiledPolicies()),
-		len(allRuntimePolicySet.GetCompiledPolicies()),
+		len(allK8sEventPolicySet.GetCompiledPolicies()),
 		enforceablePolicies)
 
 	m.settingsStream.Push(newSettings)

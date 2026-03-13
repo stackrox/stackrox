@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.9.0
 	cloud.google.com/go/containeranalysis v0.14.2
 	cloud.google.com/go/securitycenter v1.38.1
-	cloud.google.com/go/storage v1.60.0
+	cloud.google.com/go/storage v1.61.2
 	dario.cat/mergo v1.0.2
 	github.com/Azure/azure-sdk-for-go-extensions v0.5.1
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.21.0
@@ -29,9 +29,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.32.11
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.11
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.19
-	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.22.6
-	github.com/aws/aws-sdk-go-v2/service/ecr v1.55.4
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.96.4
+	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.22.7
+	github.com/aws/aws-sdk-go-v2/service/ecr v1.56.0
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.97.0
 	github.com/aws/aws-sdk-go-v2/service/securityhub v1.68.1
 	github.com/aws/aws-sdk-go-v2/service/sts v1.41.8
 	github.com/aws/smithy-go v1.24.2
@@ -62,7 +62,7 @@ require (
 	github.com/google/go-containerregistry v0.20.7
 	github.com/google/go-github/v60 v60.0.0
 	github.com/google/uuid v1.6.0
-	github.com/googleapis/gax-go/v2 v2.17.0
+	github.com/googleapis/gax-go/v2 v2.18.0
 	github.com/gorilla/schema v1.4.1
 	github.com/grafana/pyroscope-go v1.2.7
 	github.com/graph-gophers/graphql-go v1.5.0
@@ -89,12 +89,12 @@ require (
 	github.com/np-guard/cluster-topology-analyzer/v2 v2.3.0
 	github.com/np-guard/netpol-analyzer v1.4.4
 	github.com/nxadm/tail v1.4.11
-	github.com/olekukonko/tablewriter v1.1.3
+	github.com/olekukonko/tablewriter v1.1.4
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/onsi/gomega v1.39.1
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
-	github.com/openshift-online/ocm-sdk-go v0.1.497
+	github.com/openshift-online/ocm-sdk-go v0.1.498
 	github.com/openshift/api v0.0.0-20251122153900-88cca31a44c9
 	github.com/openshift/client-go v0.0.0-20251123231646-4685125c2287
 	github.com/openshift/runtime-utils v0.0.0-20230921210328-7bdb5b9c177b
@@ -139,20 +139,20 @@ require (
 	go.uber.org/mock v0.6.0
 	go.uber.org/zap v1.27.1
 	go.yaml.in/yaml/v3 v3.0.4
-	golang.org/x/crypto v0.48.0
-	golang.org/x/mod v0.33.0
-	golang.org/x/net v0.51.0
-	golang.org/x/oauth2 v0.35.0
+	golang.org/x/crypto v0.49.0
+	golang.org/x/mod v0.34.0
+	golang.org/x/net v0.52.0
+	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sync v0.20.0
 	golang.org/x/sys v0.42.0
-	golang.org/x/term v0.40.0
-	golang.org/x/text v0.34.0
+	golang.org/x/term v0.41.0
+	golang.org/x/text v0.35.0
 	golang.org/x/time v0.15.0
-	golang.org/x/tools v0.42.0
+	golang.org/x/tools v0.43.0
 	golang.stackrox.io/grpc-http1 v0.5.1
-	google.golang.org/api v0.270.0
-	google.golang.org/genproto v0.0.0-20260128011058-8636f8732409
-	google.golang.org/genproto/googleapis/api v0.0.0-20260209200024-4cfbd4190f57
+	google.golang.org/api v0.271.0
+	google.golang.org/genproto v0.0.0-20260217215200-42d3e9bedb6d
+	google.golang.org/genproto/googleapis/api v0.0.0-20260217215200-42d3e9bedb6d
 	google.golang.org/grpc v1.79.2
 	google.golang.org/grpc/examples v0.0.0-20250407062114-b368379ef8f6
 	google.golang.org/protobuf v1.36.11
@@ -162,14 +162,14 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
-	helm.sh/helm/v3 v3.19.4
+	helm.sh/helm/v3 v3.20.1
 	k8s.io/api v0.35.2
 	k8s.io/apiextensions-apiserver v0.35.2
 	k8s.io/apimachinery v0.35.2
 	k8s.io/apiserver v0.35.2
-	k8s.io/cli-runtime v0.34.5
+	k8s.io/cli-runtime v0.35.2
 	k8s.io/client-go v0.35.2
-	k8s.io/kubectl v0.34.5
+	k8s.io/kubectl v0.35.2
 	k8s.io/kubelet v0.32.13
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	kubevirt.io/api v1.7.1
@@ -256,9 +256,8 @@ require (
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/chrismellard/docker-credential-acr-env v0.0.0-20230304212654-82a0ddb27589 // indirect
 	github.com/clbanning/mxj/v2 v2.7.0 // indirect
-	github.com/clipperhouse/displaywidth v0.6.2 // indirect
-	github.com/clipperhouse/stringish v0.1.1 // indirect
-	github.com/clipperhouse/uax29/v2 v2.3.0 // indirect
+	github.com/clipperhouse/displaywidth v0.10.0 // indirect
+	github.com/clipperhouse/uax29/v2 v2.6.0 // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
 	github.com/cncf/xds/go v0.0.0-20251210132809-ee656c7534f5 // indirect
 	github.com/cockroachdb/crlib v0.0.0-20250617202621-0794c595bbe6 // indirect
@@ -269,7 +268,7 @@ require (
 	github.com/cockroachdb/tokenbucket v0.0.0-20250429170803-42689b6311bb // indirect
 	github.com/coder/websocket v1.8.14 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
-	github.com/containerd/containerd v1.7.29 // indirect
+	github.com/containerd/containerd v1.7.30 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
@@ -418,11 +417,11 @@ require (
 	github.com/nwaples/rardecode v1.1.3 // indirect
 	github.com/oklog/ulid/v2 v2.1.1 // indirect
 	github.com/olekukonko/cat v0.0.0-20250911104152-50322a0618f6 // indirect
-	github.com/olekukonko/errors v1.1.0 // indirect
-	github.com/olekukonko/ll v0.1.4-0.20260115111900-9e59c2286df0 // indirect
+	github.com/olekukonko/errors v1.2.0 // indirect
+	github.com/olekukonko/ll v0.1.6 // indirect
 	github.com/opencontainers/runtime-spec v1.2.1 // indirect
-	github.com/openshift-online/ocm-api-model/clientapi v0.0.452 // indirect
-	github.com/openshift-online/ocm-api-model/model v0.0.452 // indirect
+	github.com/openshift-online/ocm-api-model/clientapi v0.0.453 // indirect
+	github.com/openshift-online/ocm-api-model/model v0.0.453 // indirect
 	github.com/openshift/custom-resource-status v1.1.2 // indirect
 	github.com/operator-framework/operator-lib v0.17.0 // indirect
 	github.com/package-url/packageurl-go v0.1.3 // indirect
@@ -436,7 +435,7 @@ require (
 	github.com/quay/goval-parser v0.8.8 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
-	github.com/rubenv/sql-migrate v1.8.0 // indirect
+	github.com/rubenv/sql-migrate v1.8.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
@@ -511,7 +510,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/code-generator v0.35.2 // indirect
 	k8s.io/component-base v0.35.2 // indirect
-	k8s.io/component-helpers v0.34.5 // indirect
+	k8s.io/component-helpers v0.35.2 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250922181213-ec3ebc5fd46b // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect

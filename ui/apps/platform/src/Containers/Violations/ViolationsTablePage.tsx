@@ -64,9 +64,8 @@ function getFilteredWorkflowViewSearchFilter(
             };
         case 'Full view':
         default:
-            return {
-                'Entity Type': ['UNSET', 'DEPLOYMENT', 'CONTAINER_IMAGE', 'RESOURCE', 'NODE'],
-            };
+            // No filter returns all types
+            return {};
     }
 }
 
