@@ -109,5 +109,6 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	log.Debugf("Successfully enriched and stored VM %s with %d components",
 		vm.GetId(), len(vm.GetScan().GetComponents()))
 
+	common.SendSensorACK(ctx, central.SensorACK_ACK, central.SensorACK_VM_INDEX_REPORT, index.GetId(), "", injector)
 	return nil
 }

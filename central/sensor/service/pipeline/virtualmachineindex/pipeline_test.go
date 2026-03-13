@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	vmDatastoreMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -12,6 +13,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	vmEnricherMocks "github.com/stackrox/rox/pkg/virtualmachine/enricher/mocks"
 	"github.com/stretchr/testify/assert"
@@ -321,6 +323,135 @@ func TestPipelineEdgeCases(t *testing.T) {
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "unexpected resource type")
 	})
+}
+
+// mockInjector records InjectMessage calls.
+type mockInjector struct {
+	messages  []*central.MsgToSensor
+	injectErr error
+}
+
+func (m *mockInjector) InjectMessage(_ concurrency.Waitable, msg *central.MsgToSensor) error {
+	m.messages = append(m.messages, msg)
+	return m.injectErr
+}
+
+func (m *mockInjector) InjectMessageIntoQueue(_ *central.MsgFromSensor) {}
+
+// mockInjectorWithCaps wraps mockInjector and additionally implements capabilityChecker.
+type mockInjectorWithCaps struct {
+	mockInjector
+	capabilities map[centralsensor.SensorCapability]bool
+}
+
+func (m *mockInjectorWithCaps) HasCapability(cap centralsensor.SensorCapability) bool {
+	return m.capabilities[cap]
+}
+
+func (suite *PipelineTestSuite) TestRun_SendsACKOnSuccess() {
+	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
+	vmID := "vm-ack-test"
+	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
+
+	suite.enricher.EXPECT().
+		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+		Return(nil)
+	suite.vmDatastore.EXPECT().
+		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
+		Return(nil)
+
+	injector := &mockInjectorWithCaps{
+		capabilities: map[centralsensor.SensorCapability]bool{
+			centralsensor.SensorACKSupport: true,
+		},
+	}
+
+	err := suite.pipeline.Run(ctx, testClusterID, msg, injector)
+	suite.NoError(err)
+
+	suite.Require().Len(injector.messages, 1)
+	ack := injector.messages[0].GetSensorAck()
+	suite.Require().NotNil(ack)
+	suite.Equal(central.SensorACK_ACK, ack.GetAction())
+	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
+	suite.Equal(vmID, ack.GetResourceId())
+	suite.Empty(ack.GetReason())
+}
+
+func (suite *PipelineTestSuite) TestRun_NoACKWhenCapabilityMissing() {
+	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
+	vmID := "vm-no-cap"
+	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
+
+	suite.enricher.EXPECT().
+		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+		Return(nil)
+	suite.vmDatastore.EXPECT().
+		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
+		Return(nil)
+
+	injector := &mockInjectorWithCaps{
+		capabilities: map[centralsensor.SensorCapability]bool{},
+	}
+
+	err := suite.pipeline.Run(ctx, testClusterID, msg, injector)
+	suite.NoError(err)
+	suite.Empty(injector.messages, "should not send ACK when SensorACKSupport is missing")
+}
+
+func (suite *PipelineTestSuite) TestRun_NoACKOnError() {
+	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
+	vmID := "vm-error"
+	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
+
+	suite.enricher.EXPECT().
+		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+		Return(nil)
+	suite.vmDatastore.EXPECT().
+		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
+		Return(errors.New("db error"))
+
+	injector := &mockInjectorWithCaps{
+		capabilities: map[centralsensor.SensorCapability]bool{
+			centralsensor.SensorACKSupport: true,
+		},
+	}
+
+	err := suite.pipeline.Run(ctx, testClusterID, msg, injector)
+	suite.Error(err)
+	suite.Empty(injector.messages, "should not send ACK when pipeline errors")
+}
+
+func TestSendSensorACK_NACK(t *testing.T) {
+	injector := &mockInjectorWithCaps{
+		capabilities: map[centralsensor.SensorCapability]bool{
+			centralsensor.SensorACKSupport: true,
+		},
+	}
+
+	common.SendSensorACK(ctx, central.SensorACK_NACK, central.SensorACK_VM_INDEX_REPORT, "vm-nack", "rate limited", injector)
+
+	assert.Len(t, injector.messages, 1)
+	ack := injector.messages[0].GetSensorAck()
+	assert.NotNil(t, ack)
+	assert.Equal(t, central.SensorACK_NACK, ack.GetAction())
+	assert.Equal(t, central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
+	assert.Equal(t, "vm-nack", ack.GetResourceId())
+	assert.Equal(t, "rate limited", ack.GetReason())
+}
+
+func TestSendSensorACK_NilInjector(t *testing.T) {
+	assert.NotPanics(t, func() {
+		common.SendSensorACK(ctx, central.SensorACK_ACK, central.SensorACK_VM_INDEX_REPORT, "vm-1", "", nil)
+	})
+}
+
+func TestSendSensorACK_InjectorWithoutCapabilityCheck(t *testing.T) {
+	injector := &mockInjector{}
+
+	common.SendSensorACK(ctx, central.SensorACK_ACK, central.SensorACK_VM_INDEX_REPORT, "vm-1", "", injector)
+
+	assert.Empty(t, injector.messages, "should not send when injector doesn't implement capabilityChecker")
 }
 
 func TestPipelineRun_DisabledFeature(t *testing.T) {
