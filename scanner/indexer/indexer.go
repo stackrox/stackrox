@@ -185,6 +185,7 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 			_ = store.Close(ctx)
 		}
 	}()
+	zlog.Debug(ctx).Msg("indexer store initialized")
 
 	locker, err := ctxlock.New(ctx, pool)
 	if err != nil {
@@ -195,6 +196,7 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 			_ = locker.Close(ctx)
 		}
 	}()
+	zlog.Debug(ctx).Msg("locker initialized")
 
 	var metadataStore postgres.IndexerMetadataStore
 	if features.ScannerV4ReIndex.Enabled() {
@@ -204,6 +206,7 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		if err != nil {
 			return nil, fmt.Errorf("initializing postgres indexer metadata store: %w", err)
 		}
+		zlog.Debug(ctx).Msg("reindexing metadata store initialized")
 	}
 
 	root, err := os.MkdirTemp("", "scanner-fetcharena-*")
@@ -215,6 +218,7 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 			_ = os.RemoveAll(root)
 		}
 	}()
+	zlog.Debug(ctx).Msg("fetch arena initialized")
 
 	defaultTransport := httputil.NewInsecureCapableTransport(http.DefaultTransport.(*http.Transport))
 	t, err := httputil.TransportMux(defaultTransport, httputil.WithDenyStackRoxServices(!cfg.StackRoxServices))
@@ -224,11 +228,13 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 	client := &http.Client{
 		Transport: t,
 	}
+	zlog.Debug(ctx).Msg("default http client initialized")
 
 	indexer, err := newLibindex(ctx, cfg, client, root, store, locker)
 	if err != nil {
 		return nil, err
 	}
+	zlog.Debug(ctx).Msg("claircore indexer initialized")
 
 	// Use indexer.Ecosystems instead of the ecosystems we pass to libindex.New
 	// in case libindex.New adds any ecosystems (which it does).
@@ -236,27 +242,19 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 	if err != nil {
 		return nil, err
 	}
+	zlog.Debug(ctx).Msg("versioned scanners retrieved ")
 
 	var manifestManager *manifest.Manager
 	if features.ScannerV4ReIndex.Enabled() {
 		manifestManager = manifest.NewManager(ctx, metadataStore, locker)
-		// Set any manifests indexed prior to the existence of the manifest_metadata table
-		// to expire immediately.
-		// TODO(ROX-26957): Consider moving this elsewhere so we do not block initialization.
-		// TODO(ROX-26995): Consider updating the immediate purge condition.
-		// It may be possible we want to purge all manifests upon startup for other reasons.
-		err = manifestManager.MigrateManifests(ctx, time.Now())
-		if err != nil {
-			// TODO(ROX-26958): Consider just logging this instead once we start deleting entries
-			// missing from the metadata table, too.
-			return nil, fmt.Errorf("migrating manifests to metadata store: %w", err)
-		}
 		// Start the manifest GC.
 		go func() {
-			if err := manifestManager.StartGC(); err != nil {
+			if err := manifestManager.StartGC(ctx); err != nil {
 				zlog.Error(ctx).Err(err).Msg("manifest GC failed")
 			}
+			zlog.Info(ctx).Msg("manifest GC has been stopped")
 		}()
+		zlog.Debug(ctx).Msg("reindexing manifest manager GC running")
 	}
 
 	deleteIntervalStart := env.ScannerV4ManifestDeleteStart.DurationSetting()
