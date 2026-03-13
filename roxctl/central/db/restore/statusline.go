@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/vbauerster/mpb/v4/decor"
+	"github.com/vbauerster/mpb/v8/decor"
 )
 
 // statusLine is an mpb.Filler implementation that can be used to display a status, along with an optional spinner.
@@ -71,6 +71,7 @@ func (l *statusLine) currentLine(width int) string {
 	return line
 }
 
-func (l *statusLine) Fill(w io.Writer, width int, _ *decor.Statistics) {
-	_, _ = fmt.Fprint(w, l.currentLine(width))
+func (l *statusLine) Fill(w io.Writer, st decor.Statistics) error {
+	_, err := fmt.Fprint(w, l.currentLine(st.AvailableWidth))
+	return err
 }
