@@ -301,7 +301,10 @@ class LoginPage extends Component {
                                 </form>
                             </PanelMain>
                         </Panel>
-                        <BrandLogo className="pf-v6-u-p-2xl" />
+                        <BrandLogo
+                            style={{ width: '350px', height: '156px' }}
+                            className="pf-v6-u-p-2xl"
+                        />
                     </Flex>
                 </Flex>
             </>

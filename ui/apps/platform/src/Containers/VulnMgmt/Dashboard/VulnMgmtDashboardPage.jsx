@@ -72,12 +72,7 @@ const VulnMgmtDashboardPage = () => {
             <PageTitle title="Vulnerability Management - Dashboard" />
             <div className="flex items-center">
                 <div className="flex h-full mr-3 pr-3 border-r-2 border-base-400">
-                    <div
-                        className="flex mr-2"
-                        style={{
-                            backgroundColor: 'var(--pf-t--color--red--10)',
-                        }}
-                    >
+                    <div className="flex mr-2">
                         <CvesMenu />
                     </div>
                     <NodesCountTile />

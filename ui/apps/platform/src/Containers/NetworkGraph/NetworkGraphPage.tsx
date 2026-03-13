@@ -24,7 +24,6 @@ import { fetchNetworkFlowGraph } from 'services/NetworkService';
 import queryService from 'utils/queryService';
 import { isCompleteSearchFilter } from 'utils/searchUtils';
 
-import { CodeViewerThemeProvider } from 'Components/CodeViewer';
 import PageTitle from 'Components/PageTitle';
 import useURLParameter from 'hooks/useURLParameter';
 import type { SearchFilter } from 'types/search';
@@ -285,7 +284,7 @@ function NetworkGraphPageContent() {
     }
 
     return (
-        <CodeViewerThemeProvider>
+        <>
             {!isBannerDismissed && (
                 <Alert
                     variant="info"
@@ -439,7 +438,7 @@ function NetworkGraphPageContent() {
                     onClose={toggleCIDRBlockForm}
                 />
             </PageSection>
-        </CodeViewerThemeProvider>
+        </>
     );
 }
 

@@ -1,7 +1,5 @@
-import { createContext, useContext, useState } from 'react';
-import type { CSSProperties, Dispatch, ReactElement, ReactNode, SetStateAction } from 'react';
-import { Button, ClipboardCopyButton, CodeBlock, CodeBlockAction } from '@patternfly/react-core';
-import { MoonIcon, SunIcon } from '@patternfly/react-icons';
+import type { CSSProperties, ReactElement, ReactNode } from 'react';
+import { ClipboardCopyButton, CodeBlock, CodeBlockAction } from '@patternfly/react-core';
 
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import lightTheme from 'react-syntax-highlighter/dist/esm/styles/prism/one-light';
@@ -9,50 +7,12 @@ import darkTheme from 'react-syntax-highlighter/dist/esm/styles/prism/one-dark';
 import yaml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
 
 import useClipboardCopy from 'hooks/useClipboardCopy';
+import { useTheme } from 'hooks/useTheme';
 
 SyntaxHighlighter.registerLanguage('yaml', yaml);
 
-const CodeViewerThemeContext = createContext<
-    ['light' | 'dark', Dispatch<SetStateAction<'light' | 'dark'>>] | undefined
->(undefined);
-
-export const CodeViewerThemeProvider = ({ children }: { children: ReactNode }) => {
-    const [state, setState] = useState<'light' | 'dark'>('light');
-
-    return (
-        <CodeViewerThemeContext.Provider value={[state, setState]}>
-            {children}
-        </CodeViewerThemeContext.Provider>
-    );
-};
-
-export const useCodeViewerThemeContext = () => {
-    const context = useContext(CodeViewerThemeContext);
-    // Fallback state provides the ability to toggle theme for a single instance if no provider is detected uptree
-    const fallbackState = useState<'light' | 'dark'>('light');
-    return context ?? fallbackState;
-};
-
 // When adding to the supported languages, the correct language definition must be imported and registered as well
 type SupportedLanguages = 'yaml';
-
-const defaultStyle = {
-    '--pf-v6-u-max-height--MaxHeight': '300px',
-    '--pf-v6-c-code-block__content--PaddingBlockStart': '0',
-    '--pf-v6-c-code-block__content--PaddingBlockEnd': '0',
-    '--pf-v6-c-code-block__content--PaddingInlineStart': '0',
-    '--pf-v6-c-code-block__content--PaddingInlineEnd': '0',
-    overflowY: 'auto',
-} as const;
-
-const lightThemeStyles = {} as const;
-
-// TODO This should be deleted when we move to proper PatternFly theming
-const darkThemeStyles = {
-    '--pf-t--global--background--color--secondary--default': 'var(--pf-t--color--gray--95)',
-    '--pf-t--global--text--color--regular': 'var(--pf-t--color--white)',
-    '--pf-t--global--icon--color--regular': 'var(--pf-t--color--white)',
-} as const;
 
 export type CodeViewerProps = {
     code: string;
@@ -70,11 +30,7 @@ export default function CodeViewer({
     additionalControls,
 }: CodeViewerProps): ReactElement {
     const { wasCopied, setWasCopied, copyToClipboard } = useClipboardCopy();
-    const [theme, setTheme] = useCodeViewerThemeContext();
-
-    function toggleTheme() {
-        setTheme((prevValue) => (prevValue === 'light' ? 'dark' : 'light'));
-    }
+    const theme = useTheme();
 
     const actions = (
         <>
@@ -90,33 +46,22 @@ export default function CodeViewer({
                     {wasCopied ? 'Successfully copied to clipboard!' : 'Copy to clipboard'}
                 </ClipboardCopyButton>
             </CodeBlockAction>
-            <CodeBlockAction>
-                <Button
-                    variant="plain"
-                    aria-label={theme === 'light' ? 'Set dark theme' : 'Set light theme'}
-                    icon={theme === 'light' ? <MoonIcon /> : <SunIcon />}
-                    onClick={() => toggleTheme()}
-                />
-            </CodeBlockAction>
             {additionalControls}
         </>
     );
 
-    const themeStyles = theme === 'light' ? lightThemeStyles : darkThemeStyles;
-
     // TODO - When Tailwind is removed, we likely need to get rid of this font size override
     return (
         <CodeBlock
-            data-component-theme={theme}
             className={`pf-v6-u-p-0 pf-v6-u-font-size-xs pf-v6-u-max-height ${className}`}
-            style={{ ...defaultStyle, ...style, ...themeStyles }}
+            style={style}
             actions={actions}
         >
             <SyntaxHighlighter
                 language={language}
                 showLineNumbers
                 wrapLongLines
-                style={theme === 'light' ? lightTheme : darkTheme}
+                style={theme.isDarkMode ? darkTheme : lightTheme}
                 customStyle={{
                     margin: 0,
                     background: 'var(--pf-v6-c-code-block--BackgroundColor)',
