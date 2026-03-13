@@ -15,19 +15,16 @@ import (
 // restarted by Kubernetes with the new TLS configuration applied to its
 // metrics server and the updated profile propagated to managed workloads.
 //
-// On non-OpenShift clusters where the APIServer resource does not exist,
-// the function returns nil and no watcher is set up.
-func SetupTLSProfileWatcher(ctx context.Context, mgr ctrl.Manager, cancel context.CancelFunc) error {
-	initialProfile, err := tlspkg.FetchAPIServerTLSProfile(ctx, mgr.GetClient())
-	if err != nil {
-		// On non-OpenShift clusters the resource does not exist; log and skip.
-		mgr.GetLogger().Info("could not fetch APIServer TLS profile, skipping watcher setup", "err", err)
+// initialProfile is the TLS profile spec already fetched at startup via
+// FetchProfile. If nil, no watcher is set up (non-OpenShift / legacy mode).
+func SetupTLSProfileWatcher(mgr ctrl.Manager, initialProfile *configv1.TLSProfileSpec, cancel context.CancelFunc) error {
+	if initialProfile == nil {
 		return nil
 	}
 
 	watcher := &tlspkg.SecurityProfileWatcher{
 		Client:                mgr.GetClient(),
-		InitialTLSProfileSpec: initialProfile,
+		InitialTLSProfileSpec: *initialProfile,
 		OnProfileChange: func(_ context.Context, oldSpec, newSpec configv1.TLSProfileSpec) {
 			mgr.GetLogger().Info(
 				"cluster TLS profile changed, restarting Operator to apply new settings",
