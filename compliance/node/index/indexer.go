@@ -18,11 +18,11 @@ import (
 	"github.com/quay/claircore"
 	ccindexer "github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/indexer/controller"
-	"github.com/quay/claircore/osrelease"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
 	"github.com/stackrox/rox/compliance/node"
+	"github.com/stackrox/rox/compliance/node/index/osrelease"
 	"github.com/stackrox/rox/compliance/utils"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/env"
@@ -169,11 +169,6 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 	}
 	defer pkgutils.IgnoreError(layer.Close)
 
-	_, err = runOSScanner(ctx, layer)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to scan os-release")
-	}
-
 	repos, err := runRepositoryScanner(ctx, l.cfg, layer)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to run repository scanner")
@@ -198,6 +193,13 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 		return nil, errors.Wrap(err, "converting clair report to v4 report")
 	}
 
+	dists, err := runOSScanner(ctx, layer)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to scan os-release")
+	}
+	if dists != nil {
+		report.Rhcoscpe = rhcosCPE(dists)
+	}
 	return report, nil
 }
 
@@ -305,15 +307,31 @@ func runCoalescer(ctx context.Context, layerDigest claircore.Digest, repos []*cl
 	return ir, nil
 }
 
-func runOSScanner(ctx context.Context, layer *claircore.Layer) ([]*claircore.Distribution, error) {
+func runOSScanner(ctx context.Context, layer *claircore.Layer) (*osrelease.NodeDistribution, error) {
 	scanner := &osrelease.Scanner{}
-	dists, err := scanner.Scan(ctx, layer)
+
+	dist, err := scanner.Scan(ctx, layer)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to scan layer for os-release: %w", err)
 	}
-	// ID is required for the coalescer to link artifacts correctly
-	for i, d := range dists {
-		d.ID = strconv.Itoa(i)
+
+	if dist == nil {
+		return nil, nil
 	}
-	return dists, nil
+
+	if dist.ID == "" {
+		dist.ID = "0"
+	}
+
+	return dist, nil
+}
+
+func rhcosCPE(dist *osrelease.NodeDistribution) string {
+	edition := strings.TrimPrefix(dist.PlatformID, "platform:")
+
+	// Format: cpe:/<part>:<vendor>:<product>:<version>:<update>:<edition>
+	return fmt.Sprintf("cpe:/a:redhat:openshift:%s::%s",
+		dist.OpenShiftVersion,
+		edition,
+	)
 }
