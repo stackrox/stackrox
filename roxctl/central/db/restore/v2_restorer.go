@@ -27,8 +27,8 @@ import (
 	"github.com/stackrox/rox/pkg/v2backuprestore"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
-	"github.com/vbauerster/mpb/v4"
-	"github.com/vbauerster/mpb/v4/decor"
+	"github.com/vbauerster/mpb/v8"
+	"github.com/vbauerster/mpb/v8/decor"
 	"golang.org/x/term"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -180,8 +180,12 @@ func (r *v2Restorer) Run(ctx context.Context, file *os.File) (*http.Response, er
 			),
 		)
 
-		progressBarContainer.Add(0, &r.errorLine)
-		progressBarContainer.Add(0, &r.statusLine)
+		if _, err := progressBarContainer.Add(0, &r.errorLine); err != nil {
+			return nil, errors.Wrap(err, "adding error line to progress bar")
+		}
+		if _, err := progressBarContainer.Add(0, &r.statusLine); err != nil {
+			return nil, errors.Wrap(err, "adding status line to progress bar")
+		}
 
 		// In case we resumed, initialized the transfer progress bar with the refill.
 		pos, err := r.dataReader.Seek(0, io.SeekCurrent)
