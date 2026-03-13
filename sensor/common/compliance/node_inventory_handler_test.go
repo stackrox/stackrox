@@ -709,12 +709,24 @@ func consumeAndCountCompliance(t *testing.T, ch <-chan common.MessageToComplianc
 					st.Flow().StopWithError(fmt.Errorf("consumer consumed %d messages but expected to do %d", i, numToConsume))
 					return
 				}
-				t.Logf("Executing ++ on action %s", msg.Msg.GetAck().GetAction())
-				switch msg.Msg.GetAck().GetAction() {
-				case sensor.MsgToCompliance_NodeInventoryACK_ACK:
-					ms.ACKCount++
-				case sensor.MsgToCompliance_NodeInventoryACK_NACK:
-					ms.NACKCount++
+				if ack := msg.Msg.GetAck(); ack != nil {
+					t.Logf("Executing ++ on legacy ack action %s", ack.GetAction())
+					switch ack.GetAction() {
+					case sensor.MsgToCompliance_NodeInventoryACK_ACK:
+						ms.ACKCount++
+					case sensor.MsgToCompliance_NodeInventoryACK_NACK:
+						ms.NACKCount++
+					}
+					continue
+				}
+				if complianceAck := msg.Msg.GetComplianceAck(); complianceAck != nil {
+					t.Logf("Executing ++ on compliance ack action %s", complianceAck.GetAction())
+					switch complianceAck.GetAction() {
+					case sensor.MsgToCompliance_ComplianceACK_ACK:
+						ms.ACKCount++
+					case sensor.MsgToCompliance_ComplianceACK_NACK:
+						ms.NACKCount++
+					}
 				}
 			}
 		}
@@ -830,7 +842,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerNodeUnknown() {
 	s.NoError(h.Start())
 	// expect centralConsumer to get 0 messages - sensor should drop inventory when node is not found
 	centralConsumer := consumeAndCount(h.ResponsesC(), 0)
-	// expect complianceConsumer to get 10 NACK messages
+	// expect complianceConsumer to get 10 NACK messages (ComplianceACK only)
 	complianceConsumer := consumeAndCount(h.ComplianceC(), 10)
 	s.NoError(producer.Stopped().Wait())
 	s.NoError(centralConsumer.Stopped().Wait())
@@ -849,7 +861,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralNotReady() {
 	s.NoError(h.Start())
 	// expect centralConsumer to get 0 messages - sensor should NACK to compliance when the connection with central is not ready
 	centralConsumer := consumeAndCount(h.ResponsesC(), 0)
-	// expect complianceConsumer to get 10 NACK messages
+	// expect complianceConsumer to get 10 NACK messages (ComplianceACK only)
 	complianceConsumer := consumeAndCount(h.ComplianceC(), 10)
 	s.NoError(producer.Stopped().Wait())
 	s.NoError(centralConsumer.Stopped().Wait())

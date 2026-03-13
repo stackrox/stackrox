@@ -180,7 +180,13 @@ func (c *nodeInventoryHandlerImpl) processSensorACK(sensorAck *central.SensorACK
 		return nil
 	}
 
-	c.sendComplianceAckToCompliance(sensorAck.GetResourceId(), action, messageType, sensorAck.GetReason())
+	c.sendComplianceAck(
+		sensorAck.GetResourceId(),
+		action,
+		messageType,
+		sensorAck.GetReason(),
+		metrics.AckReasonForwardingFromCentral,
+	)
 	return nil
 }
 
@@ -268,18 +274,25 @@ func (c *nodeInventoryHandlerImpl) handleNodeInventory(
 	metrics.ObserveNodeScan(inventory.GetNodeName(), metrics.NodeScanTypeNodeInventory, metrics.NodeScanOperationReceive)
 	if !c.centralReady.IsDone() {
 		log.Warn("Received NodeInventory but Central is not reachable. Requesting Compliance to resend NodeInventory later")
-		c.sendAckToCompliance(inventory.GetNodeName(),
-			sensor.MsgToCompliance_NodeInventoryACK_NACK,
-			sensor.MsgToCompliance_NodeInventoryACK_NodeInventory, metrics.AckReasonCentralUnreachable)
+		c.sendComplianceAck(
+			inventory.GetNodeName(),
+			sensor.MsgToCompliance_ComplianceACK_NACK,
+			sensor.MsgToCompliance_ComplianceACK_NODE_INVENTORY,
+			string(metrics.AckReasonCentralUnreachable),
+			metrics.AckReasonCentralUnreachable,
+		)
 		return
 	}
 
 	if nodeID, err := c.nodeMatcher.GetNodeID(inventory.GetNodeName()); err != nil {
 		log.Warnf("Node %q unknown to Sensor. Requesting Compliance to resend NodeInventory later", inventory.GetNodeName())
-		c.sendAckToCompliance(inventory.GetNodeName(),
-			sensor.MsgToCompliance_NodeInventoryACK_NACK,
-			sensor.MsgToCompliance_NodeInventoryACK_NodeInventory,
-			metrics.AckReasonNodeUnknown)
+		c.sendComplianceAck(
+			inventory.GetNodeName(),
+			sensor.MsgToCompliance_ComplianceACK_NACK,
+			sensor.MsgToCompliance_ComplianceACK_NODE_INVENTORY,
+			string(metrics.AckReasonNodeUnknown),
+			metrics.AckReasonNodeUnknown,
+		)
 
 	} else {
 		inventory.NodeId = nodeID
@@ -300,19 +313,25 @@ func (c *nodeInventoryHandlerImpl) handleNodeIndex(
 	metrics.ObserveNodeScan(index.NodeName, metrics.NodeScanTypeNodeIndex, metrics.NodeScanOperationReceive)
 	if !c.centralReady.IsDone() {
 		log.Warn("Received IndexReport but Central is not reachable. Requesting Compliance to resend later.")
-		c.sendAckToCompliance(index.NodeName,
-			sensor.MsgToCompliance_NodeInventoryACK_NACK,
-			sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer,
-			metrics.AckReasonCentralUnreachable)
+		c.sendComplianceAck(
+			index.NodeName,
+			sensor.MsgToCompliance_ComplianceACK_NACK,
+			sensor.MsgToCompliance_ComplianceACK_NODE_INDEX_REPORT,
+			string(metrics.AckReasonCentralUnreachable),
+			metrics.AckReasonCentralUnreachable,
+		)
 		return
 	}
 
 	if nodeID, err := c.nodeMatcher.GetNodeID(index.NodeName); err != nil {
 		log.Warnf("Received Index Report from Node %q that is unknown to Sensor. Requesting Compliance to resend later.", index.NodeName)
-		c.sendAckToCompliance(index.NodeName,
-			sensor.MsgToCompliance_NodeInventoryACK_NACK,
-			sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer,
-			metrics.AckReasonNodeUnknown)
+		c.sendComplianceAck(
+			index.NodeName,
+			sensor.MsgToCompliance_ComplianceACK_NACK,
+			sensor.MsgToCompliance_ComplianceACK_NODE_INDEX_REPORT,
+			string(metrics.AckReasonNodeUnknown),
+			metrics.AckReasonNodeUnknown,
+		)
 	} else {
 		index.NodeID = nodeID
 		log.Debugf("Mapping IndexReport name '%s' to Node ID '%s'", index.NodeName, nodeID)
@@ -348,13 +367,13 @@ func (c *nodeInventoryHandlerImpl) sendAckToCompliance(
 		reason, metrics.AckOriginSensor)
 }
 
-// sendComplianceAckToCompliance sends the new ComplianceACK message to Compliance.
-// This is used for the new SensorACK message from Central 4.10+.
-func (c *nodeInventoryHandlerImpl) sendComplianceAckToCompliance(
+// sendComplianceAck sends a ComplianceACK message to Compliance.
+func (c *nodeInventoryHandlerImpl) sendComplianceAck(
 	resourceID string,
 	action sensor.MsgToCompliance_ComplianceACK_Action,
 	messageType sensor.MsgToCompliance_ComplianceACK_MessageType,
 	reason string,
+	metricReason metrics.AckReason,
 ) {
 	select {
 	case <-c.stopper.Flow().StopRequested():
@@ -377,14 +396,12 @@ func (c *nodeInventoryHandlerImpl) sendComplianceAckToCompliance(
 		log.Debugf("Sent ComplianceACK to Compliance: type=%s, action=%s, resource_id=%s, reason=%s",
 			messageType, action, resourceID, reason)
 
-		// Record old metric for compatiblity.
-		// Note the new 'reason' is set in Central and is a string, not an enum, thus hardcoding here to 'forward'.
-		// The new metric for the SensorACK records the reason fully (as a string).
+		// Record old metric for compatibility.
 		metrics.ObserveNodeScanningAck(resourceID,
 			action.String(),
 			messageType.String(),
 			metrics.AckOperationSend,
-			metrics.AckReasonForwardingFromCentral,
+			metricReason,
 			metrics.AckOriginSensor)
 	}
 }
