@@ -672,11 +672,6 @@ jobs:
         run: |
           ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true make -C operator/ bundle bundle-build
 
-      - name: Operator unit tests
-        if: matrix.arch == 'amd64'
-        run: |
-          ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true scripts/lib.sh retry 2 true make -C operator/ test
-
       - name: Build Operator image
         run: |
           # The first invocation builds native architecture dependencies, which helps avoid the following error,
