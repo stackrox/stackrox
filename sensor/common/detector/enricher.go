@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v6"
 	pkgErrors "github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -135,38 +135,36 @@ func (c *cacheValue) scanWithRetries(ctx context.Context, svc v1.ImageServiceCli
 	eb.InitialInterval = 5 * time.Second
 	eb.Multiplier = 2
 	eb.MaxInterval = 4 * time.Minute
-	eb.MaxElapsedTime = 0 // Never stop the backoff, leave that decision to the parent context.
-
 	eb.Reset()
 
 	defer metrics.SetScanCallDuration(time.Now())
 
+	var totalBackoff time.Duration
 outer:
 	for {
-		// We want to get the time spent in backoff without including the time it took to scan the image.
-		timeSpentInBackoffSoFar := eb.GetElapsedTime()
 		scannedImage, err := scanFn(ctx, svc, req, c.localScan)
 		if err != nil {
 			for _, detail := range status.Convert(err).Details() {
-				// If the client is effectively rate-limited, backoff and try again.
 				if _, isTooManyParallelScans := detail.(*v1.ScanImageInternalResponseDetails_TooManyParallelScans); isTooManyParallelScans {
-					time.Sleep(eb.NextBackOff())
+					dur := eb.NextBackOff()
+					time.Sleep(dur)
+					totalBackoff += dur
 					continue outer
 				}
 			}
 
-			// If cluster local scan is rate-limited, backoff and try again
 			if errors.Is(err, scan.ErrTooManyParallelScans) {
 				dur := eb.NextBackOff()
 				log.Debugf("local scan rate limited, backing off for %q: %q", dur, req.containerImage.GetName().GetFullName())
 				time.Sleep(dur)
+				totalBackoff += dur
 				continue outer
 			}
 
 			return nil, err
 		}
 
-		metrics.ObserveTimeSpentInExponentialBackoff(timeSpentInBackoffSoFar)
+		metrics.ObserveTimeSpentInExponentialBackoff(totalBackoff)
 
 		return scannedImage, nil
 	}

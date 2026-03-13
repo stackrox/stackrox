@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v6"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -127,8 +127,10 @@ func (s *tcpSender) dialWithRetry() (net.Conn, error) {
 	eb.MaxInterval = maxBackoff
 	eb.InitialInterval = initialBackoff
 	eb.RandomizationFactor = backoffRandomizationFactor
-	// backoff.WithContext will return a permanent error if the context has expired.
-	err := backoff.Retry(dial, backoff.WithContext(eb, ctx))
+	eb.Reset()
+	_, err := backoff.Retry(ctx, func() (struct{}, error) {
+		return struct{}{}, dial()
+	}, backoff.WithBackOff(eb))
 
 	return conn, err
 }

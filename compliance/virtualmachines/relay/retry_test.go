@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v6"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stretchr/testify/assert"
@@ -76,10 +76,8 @@ func TestRunWithRetry(t *testing.T) {
 			expectedErr:               context.Canceled,
 			expectedOperationAttempts: 1,
 		},
-		// This test cancels the context inside the operation, then relies on
-		// backoff.WithContext to detect the cancelled context and return Stop
-		// from NextBackOff — skipping the 1-hour configured sleep. The backoff
-		// library's RetryNotify then returns ctx.Err() from the wrapped backoff.
+		// Context is cancelled inside the operation; backoff.Retry(ctx, ...)
+		// detects it and returns ctx.Err() without waiting the 1-hour sleep.
 		"should stop retries when context is canceled during backoff sleep": {
 			operationErrors:            []error{errors.New("vsock not available")},
 			cancelOnFirstStreamAttempt: true,
