@@ -30,8 +30,7 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
     - name: Get image tag
       id: get-tag
-      run: |
-        echo "tag=${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}" | tee -a "$GITHUB_ENV"
+      run: echo "tag=${MAIN_IMAGE_TAG:-"$(make --quiet --no-print-directory tag)"}" | tee -a "$GITHUB_ENV"
     - name: Wait for images
       uses: stackrox/actions/release/wait-for-image@v1
       with:
@@ -96,8 +95,7 @@ jobs:
       env:
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-      run: |
-        docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
+      run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v3
@@ -105,8 +103,7 @@ jobs:
         install_components: "gke-gcloud-auth-plugin"
 
     - name: Build roxctl
-      run: |
-        make roxctl_linux-amd64
+      run: make roxctl_linux-amd64
 
     - name: Wait for the cluster and grab artifacts
       timeout-minutes: 25
@@ -142,8 +139,7 @@ jobs:
         REDHAT_USERNAME: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
         REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
         LOAD_BALANCER: lb
-      run: |
-        tests/upgrade/postgres_run.sh /tmp/postgres-upgrade-test-logs
+      run: tests/upgrade/postgres_run.sh /tmp/postgres-upgrade-test-logs
 
     - name: Run post-test
       if: always()
@@ -170,8 +166,7 @@ jobs:
 
     - name: Delete cluster
       if: always()
-      run: |
-        infractl delete "${CLUSTER_NAME}"
+      run: infractl delete "${CLUSTER_NAME}"
 
     - name: Report junit failures in jira
       if: (!cancelled())
@@ -234,8 +229,7 @@ jobs:
       env:
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-      run: |
-        docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
+      run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v3
@@ -243,8 +237,7 @@ jobs:
         install_components: "gke-gcloud-auth-plugin"
 
     - name: Build roxctl
-      run: |
-        make roxctl_linux-amd64
+      run: make roxctl_linux-amd64
 
     - name: Wait for the cluster and grab artifacts
       timeout-minutes: 25
@@ -280,8 +273,7 @@ jobs:
         REDHAT_USERNAME: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
         REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
         LOAD_BALANCER: lb
-      run: |
-        tests/upgrade/postgres_upgrade_run.sh /tmp/postgres-version-upgrade-test-logs
+      run: tests/upgrade/postgres_upgrade_run.sh /tmp/postgres-version-upgrade-test-logs
 
     - name: Run post-test
       if: always()
@@ -309,8 +301,7 @@ jobs:
 
     - name: Delete cluster
       if: always()
-      run: |
-        infractl delete "${CLUSTER_NAME}"
+      run: infractl delete "${CLUSTER_NAME}"
 
     - name: Report junit failures in jira
       if: (!cancelled())
@@ -373,8 +364,7 @@ jobs:
       env:
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-      run: |
-        docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
+      run: docker login -u "${REGISTRY_USERNAME}" --password-stdin quay.io <<<"${REGISTRY_PASSWORD}"
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v3
@@ -382,8 +372,7 @@ jobs:
         install_components: "gke-gcloud-auth-plugin"
 
     - name: Build roxctl and upgrader
-      run: |
-        make roxctl_linux-amd64 upgrader
+      run: make roxctl_linux-amd64 upgrader
 
     - name: Wait for the cluster and grab artifacts
       timeout-minutes: 25
@@ -416,8 +405,7 @@ jobs:
         REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         LOAD_BALANCER: lb
-      run: |
-        tests/upgrade/postgres_sensor_run.sh /tmp/postgres-sensor-upgrade-test-logs
+      run: tests/upgrade/postgres_sensor_run.sh /tmp/postgres-sensor-upgrade-test-logs
 
     - name: Run post-test
       if: always()
@@ -444,8 +432,7 @@ jobs:
 
     - name: Delete cluster
       if: always()
-      run: |
-        infractl delete "${CLUSTER_NAME}"
+      run: infractl delete "${CLUSTER_NAME}"
 
     - name: Report junit failures in jira
       if: (!cancelled())
