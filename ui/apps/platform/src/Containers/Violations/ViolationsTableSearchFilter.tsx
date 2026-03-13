@@ -3,108 +3,12 @@ import { Toolbar, ToolbarContent, ToolbarGroup, ToolbarItem } from '@patternfly/
 import type { SearchFilter } from 'types/search';
 import useAnalytics from 'hooks/useAnalytics';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
-import type {
-    CompoundSearchFilterConfig,
-    OnSearchCallback,
-} from 'Components/CompoundSearchFilter/types';
+import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import CompoundSearchFilterLabels from 'Components/CompoundSearchFilter/components/CompoundSearchFilterLabels';
-import {
-    Category as PolicyCategory,
-    LifecycleStage as PolicyLifecycleStage,
-    Name as PolicyName,
-    Severity as PolicySeverity,
-} from 'Components/CompoundSearchFilter/attributes/policy';
-import {
-    EntityType as AlertEntityType,
-    ViolationTime as AlertViolationTime,
-} from 'Components/CompoundSearchFilter/attributes/alert';
-import {
-    clusterIdAttribute,
-    clusterLabelAttribute,
-    clusterNameAttribute,
-} from 'Components/CompoundSearchFilter/attributes/cluster';
-import {
-    Annotation as NamespaceAnnotation,
-    ID as NamespaceID,
-    Label as NamespaceLabel,
-    Name as NamespaceName,
-} from 'Components/CompoundSearchFilter/attributes/namespace';
-import {
-    Annotation as DeploymentAnnotation,
-    ID as DeploymentID,
-    Inactive as DeploymentInactive,
-    Label as DeploymentLabel,
-    Name as DeploymentName,
-} from 'Components/CompoundSearchFilter/attributes/deployment';
-import { Name as ResourceName } from 'Components/CompoundSearchFilter/attributes/resource';
-import {
-    Annotation as NodeAnnotation,
-    Label as NodeLabel,
-    Name as NodeName,
-} from 'Components/CompoundSearchFilter/attributes/node';
 import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 
-const allSearchFilterEntities: CompoundSearchFilterConfig = [
-    {
-        displayName: 'Cluster',
-        searchCategory: 'ALERTS',
-        attributes: [clusterIdAttribute, clusterLabelAttribute, clusterNameAttribute],
-    },
-    {
-        displayName: 'Deployment',
-        searchCategory: 'ALERTS',
-        attributes: [
-            DeploymentAnnotation,
-            DeploymentID,
-            DeploymentLabel,
-            DeploymentName,
-            DeploymentInactive, // Status
-        ],
-    },
-    {
-        displayName: 'Namespace',
-        searchCategory: 'ALERTS',
-        attributes: [NamespaceAnnotation, NamespaceID, NamespaceLabel, NamespaceName],
-    },
-    {
-        displayName: 'Node',
-        searchCategory: 'ALERTS',
-        attributes: [NodeAnnotation, NodeLabel, NodeName],
-    },
-    {
-        displayName: 'Policy',
-        searchCategory: 'ALERTS',
-        attributes: [PolicyCategory, PolicyLifecycleStage, PolicyName, PolicySeverity],
-    },
-    {
-        displayName: 'Policy violation',
-        searchCategory: 'ALERTS',
-        attributes: [AlertViolationTime, AlertEntityType], // non-alphabetical because no Name
-    },
-    {
-        displayName: 'Resource',
-        searchCategory: 'ALERTS',
-        attributes: [ResourceName],
-    },
-];
-
-const allowedEntitiesByView: Record<FilteredWorkflowView, string[]> = {
-    'Applications view': ['Cluster', 'Deployment', 'Namespace', 'Policy', 'Policy violation'],
-    'Platform view': ['Cluster', 'Deployment', 'Namespace', 'Policy', 'Policy violation'],
-    'Node view': ['Cluster', 'Policy', 'Policy violation', 'Node'],
-    'Full view': [],
-};
-
-export function getSearchFilterConfig(
-    filteredWorkflowView: FilteredWorkflowView
-): CompoundSearchFilterConfig {
-    const allowed = allowedEntitiesByView[filteredWorkflowView];
-    if (allowed.length === 0) {
-        return allSearchFilterEntities;
-    }
-    return allSearchFilterEntities.filter((entity) => allowed.includes(entity.displayName));
-}
+import { getSearchFilterConfig } from './ViolationsTableSearchFilter.utils';
 
 export type ViolationsTableSearchFilterProps = {
     searchFilter: SearchFilter;
