@@ -51,6 +51,14 @@ var (
 		Name:      "process_upserted_count",
 		Help:      "Number of process indicators upserted by cluster and namespace",
 	}, []string{"cluster", "namespace"})
+
+	processIndicatorsLineageSizeHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "process_indicators_lineage_size",
+		Help:      "Distribution of process lineage sizes in characters for upserted indicators",
+		Buckets:   []float64{0, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536},
+	}, []string{"cluster", "namespace"})
 )
 
 func incrementPrunedProcessesMetric(num int) {
@@ -80,17 +88,39 @@ func getProcessArgsSizeChars(indicator *storage.ProcessIndicator) int {
 	return utf8.RuneCountInString(indicator.GetSignal().GetArgs())
 }
 
+// getProcessLineageSizeChars safely calculates the total size of process lineage in characters (runes).
+// Returns 0 if signal or lineage are nil/empty.
+func getProcessLineageSizeChars(indicator *storage.ProcessIndicator) int {
+	if indicator == nil || indicator.GetSignal() == nil {
+		return 0
+	}
+
+	lineageInfo := indicator.GetSignal().GetLineageInfo()
+	if len(lineageInfo) == 0 {
+		return 0
+	}
+
+	totalChars := 0
+	for _, info := range lineageInfo {
+		if info != nil {
+			totalChars += utf8.RuneCountInString(info.GetParentExecFilePath())
+		}
+	}
+
+	return totalChars
+}
+
 // recordProcessIndicatorsBatchAdded records metrics for a batch of process indicators successfully written to DB.
 func recordProcessIndicatorsBatchAdded(indicators []*storage.ProcessIndicator) {
 	for _, indicator := range indicators {
 		argsSizeChars := getProcessArgsSizeChars(indicator)
+		lineageSizeChars := getProcessLineageSizeChars(indicator)
 		clusterID := indicator.GetClusterId()
 		namespace := indicator.GetNamespace()
-
 		processUpsertedArgsSizeHistogram.Observe(float64(argsSizeChars))
-
 		processUpsertedArgsSizeTotal.WithLabelValues(clusterID, namespace).Add(float64(argsSizeChars))
 		processUpsertedCount.WithLabelValues(clusterID, namespace).Inc()
+		processIndicatorsLineageSizeHistogram.WithLabelValues(clusterID, namespace).Observe(float64(lineageSizeChars))
 	}
 }
 
@@ -102,5 +132,6 @@ func init() {
 		processUpsertedArgsSizeHistogram,
 		processUpsertedArgsSizeTotal,
 		processUpsertedCount,
+		processIndicatorsLineageSizeHistogram,
 	)
 }
