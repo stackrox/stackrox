@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v60/github"
+	"github.com/google/go-github/v84/github"
 )
 
 func createComment(ctx context.Context, client *github.Client, prNumber int, comment string) {

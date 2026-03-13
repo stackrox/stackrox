@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v60/github"
+	"github.com/google/go-github/v84/github"
 )
 
 // allowedCheckFailures defines a set of PR checks that should not prevent the retest job starting
