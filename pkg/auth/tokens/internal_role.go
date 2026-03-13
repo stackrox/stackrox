@@ -3,6 +3,7 @@ package tokens
 import (
 	"encoding/json"
 	"slices"
+	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -20,44 +21,10 @@ type ClusterScopes map[string][]string
 
 var _ permissions.ResolvedRole = (*InternalRole)(nil)
 
-type AccessWrapper storage.Access
-
-func (a AccessWrapper) MarshalText() ([]byte, error) {
-	access := storage.Access(a)
-	switch access {
-	case storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS:
-		return []byte(access.String()), nil
-	default:
-		return []byte(storage.Access_NO_ACCESS.String()), nil
-	}
-}
-
-func (a *AccessWrapper) UnmarshalText(b []byte) error {
-	s := string(b)
-	access := storage.Access_NO_ACCESS
-	if asInt, found := storage.Access_value[s]; found {
-		access = storage.Access(asInt)
-	}
-	*a = AccessWrapper(access)
-	return nil
-}
-
-func (a *AccessWrapper) AsAccess() storage.Access {
-	if a == nil {
-		return storage.Access_NO_ACCESS
-	}
-	switch storage.Access(*a) {
-	case storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS:
-		return storage.Access(*a)
-	default:
-		return storage.Access_NO_ACCESS
-	}
-}
-
 // InternalRole represents claims that materialize a negotiated ephemeral role for internal use.
 type InternalRole struct {
-	RoleName    string                     `json:"name,omitempty"`
-	Permissions map[AccessWrapper][]string `json:"permissions,omitempty"`
+	RoleName    string                      `json:"name,omitempty"`
+	Permissions map[storage.Access][]string `json:"permissions,omitempty"`
 	// The key for this cluster scope map is the cluster ID.
 	// TODO: Uncomment when access scope selection rules allow Cluster ID.
 	// Clusters ClusterScopes `json:"clusters,omitempty"`
@@ -66,7 +33,7 @@ type InternalRole struct {
 }
 
 // MarshalJSON implements json.Marshaler for InternalRole.
-// This is necessary because go-jose doesn't support map[AccessWrapper][]string directly.
+// This is necessary because go-jose doesn't support map[storage.Access][]string directly.
 func (r *InternalRole) MarshalJSON() ([]byte, error) {
 	// Create a temporary struct with string-keyed permissions map
 	type Alias InternalRole
@@ -77,15 +44,20 @@ func (r *InternalRole) MarshalJSON() ([]byte, error) {
 		Alias: (*Alias)(r),
 	}
 
-	// Convert map[AccessWrapper][]string to map[string][]string
+	// Convert map[storage.Access][]string to map[string][]string
+	// Validate and normalize access levels during marshaling
 	if r.Permissions != nil {
 		aux.Permissions = make(map[string][]string, len(r.Permissions))
 		for k, v := range r.Permissions {
-			keyBytes, err := k.MarshalText()
-			if err != nil {
-				return nil, err
+			validatedAccess := validateAccessLevel(k)
+			key := "none"
+			if validatedAccess != storage.Access_NO_ACCESS {
+				key = validatedAccess.String()
+				key = strings.TrimSuffix(key, "_ACCESS")
+				key = strings.ToLower(key)
+				key = strings.ReplaceAll(key, "_", "-")
 			}
-			aux.Permissions[string(keyBytes)] = v
+			aux.Permissions[key] = v
 		}
 	}
 
@@ -107,15 +79,20 @@ func (r *InternalRole) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	// Convert map[string][]string to map[AccessWrapper][]string
+	// Convert map[string][]string to map[storage.Access][]string
 	if aux.Permissions != nil {
-		r.Permissions = make(map[AccessWrapper][]string, len(aux.Permissions))
+		r.Permissions = make(map[storage.Access][]string, len(aux.Permissions))
 		for k, v := range aux.Permissions {
-			var wrapper AccessWrapper
-			if err := wrapper.UnmarshalText([]byte(k)); err != nil {
-				return err
+			// Parse the access level from string
+			access := storage.Access_NO_ACCESS
+			key := k
+			key = strings.ReplaceAll(key, "-", "_")
+			key = strings.ToUpper(key)
+			key += "_ACCESS"
+			if asInt, found := storage.Access_value[key]; found {
+				access = storage.Access(asInt)
 			}
-			r.Permissions[wrapper] = v
+			r.Permissions[access] = v
 		}
 	}
 
@@ -139,7 +116,8 @@ func (r *InternalRole) GetPermissions() map[string]storage.Access {
 	}
 	rolePermissions := make(map[string]storage.Access, permissionCount)
 	for level, resources := range r.Permissions {
-		accessLevel := level.AsAccess()
+		// Validate that the access level is a known enum value, default to NO_ACCESS
+		accessLevel := validateAccessLevel(level)
 		for _, resource := range resources {
 			prevLevel := rolePermissions[resource]
 			if prevLevel <= accessLevel {
@@ -148,6 +126,17 @@ func (r *InternalRole) GetPermissions() map[string]storage.Access {
 		}
 	}
 	return rolePermissions
+}
+
+// validateAccessLevel ensures the access level is a valid storage.Access enum value.
+// Returns the access level if valid (READ_ACCESS or READ_WRITE_ACCESS), otherwise NO_ACCESS.
+func validateAccessLevel(access storage.Access) storage.Access {
+	switch access {
+	case storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS:
+		return access
+	default:
+		return storage.Access_NO_ACCESS
+	}
 }
 
 func (r *InternalRole) GetAccessScope() *storage.SimpleAccessScope {

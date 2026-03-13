@@ -198,8 +198,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					InternalRoles: []*tokens.InternalRole{
 						{
 							RoleName: internalRoleName,
-							Permissions: map[tokens.AccessWrapper][]string{
-								tokens.AccessWrapper(storage.Access_READ_ACCESS): {deploymentResource},
+							Permissions: map[storage.Access][]string{
+								storage.Access_READ_ACCESS: {deploymentResource},
 							},
 							ClustersByName: tokens.ClusterScopes{
 								testSensorClusterID: []string{"namespace A"},
@@ -295,8 +295,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					InternalRoles: []*tokens.InternalRole{
 						{
 							RoleName: internalRoleName,
-							Permissions: map[tokens.AccessWrapper][]string{
-								tokens.AccessWrapper(storage.Access_READ_ACCESS): {deploymentResource},
+							Permissions: map[storage.Access][]string{
+								storage.Access_READ_ACCESS: {deploymentResource},
 							},
 							ClustersByName: tokens.ClusterScopes{
 								testSensorClusterID: []string{"namespace A"},
@@ -334,8 +334,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					InternalRoles: []*tokens.InternalRole{
 						{
 							RoleName: internalRoleName,
-							Permissions: map[tokens.AccessWrapper][]string{
-								tokens.AccessWrapper(storage.Access_READ_ACCESS): {deploymentResource},
+							Permissions: map[storage.Access][]string{
+								storage.Access_READ_ACCESS: {deploymentResource},
 							},
 							ClustersByName: tokens.ClusterScopes{
 								testSensorClusterID: []string{"namespace A"},
@@ -372,8 +372,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					InternalRoles: []*tokens.InternalRole{
 						{
 							RoleName: internalRoleName,
-							Permissions: map[tokens.AccessWrapper][]string{
-								tokens.AccessWrapper(storage.Access_READ_ACCESS): {deploymentResource},
+							Permissions: map[storage.Access][]string{
+								storage.Access_READ_ACCESS: {deploymentResource},
 							},
 							ClustersByName: tokens.ClusterScopes{
 								testSensorClusterID: []string{"namespace A"},
@@ -441,8 +441,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					InternalRoles: []*tokens.InternalRole{
 						{
 							RoleName: internalRoleName,
-							Permissions: map[tokens.AccessWrapper][]string{
-								tokens.AccessWrapper(storage.Access_READ_ACCESS): {deploymentResource},
+							Permissions: map[storage.Access][]string{
+								storage.Access_READ_ACCESS: {deploymentResource},
 							},
 							ClustersByName: nil,
 						},
@@ -484,9 +484,9 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 					InternalRoles: []*tokens.InternalRole{
 						{
 							RoleName: internalRoleName,
-							Permissions: map[tokens.AccessWrapper][]string{
-								tokens.AccessWrapper(storage.Access_READ_ACCESS):       {deploymentResource},
-								tokens.AccessWrapper(storage.Access_READ_WRITE_ACCESS): {imageResource},
+							Permissions: map[storage.Access][]string{
+								storage.Access_READ_ACCESS:       {deploymentResource},
+								storage.Access_READ_WRITE_ACCESS: {imageResource},
 							},
 							ClustersByName: tokens.ClusterScopes{
 								testSensorClusterID: []string{"*"},
