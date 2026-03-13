@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -1101,14 +1101,19 @@ func (c *TestContext) WaitForResourceDeleted(obj k8s.Object) error {
 	return nil
 }
 
-func execWithRetry(timeout, interval time.Duration, fn backoff.Operation) error {
+func execWithRetry(timeout, interval time.Duration, fn func() error) error {
 	exponential := backoff.NewExponentialBackOff()
-	exponential.MaxElapsedTime = timeout
 	exponential.MaxInterval = interval
+	exponential.Reset()
 	var notifyErr error
-	if backoffErr := backoff.RetryNotify(fn, exponential, func(err error, d time.Duration) {
-		notifyErr = errors.Wrap(err, "timeout reached waiting for resource")
-	}); backoffErr != nil {
+	_, backoffErr := backoff.Retry(context.Background(), func() (struct{}, error) {
+		return struct{}{}, fn()
+	}, backoff.WithBackOff(exponential),
+		backoff.WithMaxElapsedTime(timeout),
+		backoff.WithNotify(func(err error, d time.Duration) {
+			notifyErr = errors.Wrap(err, "timeout reached waiting for resource")
+		}))
+	if backoffErr != nil {
 		if notifyErr != nil {
 			return notifyErr
 		}

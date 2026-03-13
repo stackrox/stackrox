@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v5"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
@@ -427,7 +427,7 @@ func (c *clairify) GetVulnerabilities(image *storage.Image, components *scannerT
 }
 
 func retryOnGRPCErrors(ctx context.Context, name string, f func() error) error {
-	op := func() error {
+	op := func() (struct{}, error) {
 		err := f()
 		if err != nil {
 			e, _ := status.FromError(err)
@@ -440,18 +440,22 @@ func retryOnGRPCErrors(ctx context.Context, name string, f func() error) error {
 			// to retry on certain conditions that are retriable, e.g concurrency issue,
 			// sequencer check failures, transaction aborts, etc.
 			case codes.Aborted, codes.Unavailable:
-				return err
+				return struct{}{}, err
 			default:
-				return backoff.Permanent(err)
+				return struct{}{}, backoff.Permanent(err)
 			}
 		}
-		return err
+		return struct{}{}, err
 	}
 	notify := func(err error, duration time.Duration) {
 		log.Warnf("calling %s() (retrying in %s): %v", name, duration, err)
 	}
 	eb := backoff.NewExponentialBackOff()
-	return backoff.RetryNotify(op, backoff.WithContext(eb, ctx), notify)
+	eb.Reset()
+	_, err := backoff.Retry(ctx, op,
+		backoff.WithBackOff(eb),
+		backoff.WithNotify(notify))
+	return err
 }
 
 func (c *clairify) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory, ir *v4.IndexReport) (*storage.NodeScan, error) {

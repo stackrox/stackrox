@@ -3,7 +3,7 @@ package common
 import (
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v5"
 )
 
 const (
@@ -14,9 +14,8 @@ const (
 // NewBackOffForSensorConn return an exponentialBackOff for sensor connection.
 func NewBackOffForSensorConn() *backoff.ExponentialBackOff {
 	eb := backoff.NewExponentialBackOff()
-	eb.MaxInterval = 1 * time.Minute
 	eb.InitialInterval = 10 * time.Second
-	eb.MaxElapsedTime = 365 * 24 * time.Hour
+	eb.MaxInterval = 1 * time.Minute
 	eb.Reset()
 
 	return eb

@@ -7,7 +7,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
 	"github.com/stackrox/rox/compliance/collection/compliance_checks"
@@ -416,22 +416,25 @@ func (c *Compliance) manageSendToSensor(ctx context.Context, cli sensor.Complian
 func (c *Compliance) initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, *sensor.MsgToCompliance_ScrapeConfig, error) {
 	eb := backoff.NewExponentialBackOff()
 	eb.MaxInterval = 30 * time.Second
-	eb.MaxElapsedTime = 15 * time.Minute
+	eb.Reset()
 
 	var client sensor.ComplianceService_CommunicateClient
 	var config *sensor.MsgToCompliance_ScrapeConfig
 
-	operation := func() error {
+	operation := func() (struct{}, error) {
 		var err error
 		client, config, err = c.initialClientAndConfig(ctx, cli)
 		if err != nil && ctx.Err() != nil {
-			return backoff.Permanent(err)
+			return struct{}{}, backoff.Permanent(err)
 		}
-		return err
+		return struct{}{}, err
 	}
-	err := backoff.RetryNotify(operation, eb, func(err error, t time.Duration) {
-		log.Infof("Sleeping for %0.2f seconds between attempts to connect to Sensor, err: %v", t.Seconds(), err)
-	})
+	_, err := backoff.Retry(ctx, operation,
+		backoff.WithBackOff(eb),
+		backoff.WithMaxElapsedTime(15*time.Minute),
+		backoff.WithNotify(func(err error, t time.Duration) {
+			log.Infof("Sleeping for %0.2f seconds between attempts to connect to Sensor, err: %v", t.Seconds(), err)
+		}))
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "Failed to initialize sensor connection")
 	}

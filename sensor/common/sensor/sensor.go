@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -444,14 +444,17 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 	// This re-creates the entire gRPC communication stack, and assumes that a reconciliation should be made once the
 	// connection is up again.
 	exponential := backoff.NewExponentialBackOff()
-	exponential.MaxElapsedTime = 0 // It never stops if set to 0
 	exponential.InitialInterval = env.ConnectionRetryInitialInterval.DurationSetting()
 	exponential.MaxInterval = env.ConnectionRetryMaxInterval.DurationSetting()
+	exponential.Reset()
 
 	s.reconcile.Store(true)
-	err := backoff.RetryNotify(s.communicationWithCentral(centralReachable, exponential), exponential, func(err error, d time.Duration) {
-		log.Infof("Central communication stopped: %s. Retrying after %s...", err, d.Round(time.Second))
-	})
+	_, err := backoff.Retry(context.Background(), func() (struct{}, error) {
+		return struct{}{}, s.communicationWithCentral(centralReachable, exponential)()
+	}, backoff.WithBackOff(exponential),
+		backoff.WithNotify(func(err error, d time.Duration) {
+			log.Infof("Central communication stopped: %s. Retrying after %s...", err, d.Round(time.Second))
+		}))
 
 	log.Info("Stopping gRPC connection retry loop.")
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -61,7 +61,7 @@ func (s *alertSenderImpl) run(ctx context.Context) {
 		if err != nil {
 			nextBackOff := s.eb.NextBackOff()
 			if nextBackOff == backoff.Stop {
-				log.Errorf("Exceeded the maximum elapsed time %v to reconnect to Sensor", s.eb.MaxElapsedTime)
+				log.Error("Exceeded the maximum elapsed time to reconnect to Sensor")
 				return
 			}
 

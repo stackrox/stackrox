@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -112,7 +112,6 @@ func (s *alertSenderSuite) createFakeAlertSender(alertC <-chan []*storage.Alert)
 	eb := backoff.NewExponentialBackOff()
 	eb.MaxInterval = 1 * time.Second
 	eb.InitialInterval = 1 * time.Millisecond
-	eb.MaxElapsedTime = 10 * time.Second
 	eb.Reset()
 	s.service = &alertSenderImpl{
 		client:       s.cl,

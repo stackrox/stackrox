@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v5"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/quay/zlog"
@@ -464,24 +464,28 @@ func getImageManifestID(ref name.Digest) string {
 
 // retryWithBackoff is a utility function to wrap backoff.Retry to handle common
 // retryable gRPC codes.
-func retryWithBackoff(ctx context.Context, b backoff.BackOff, rpc string, op backoff.Operation) error {
+func retryWithBackoff(ctx context.Context, b backoff.BackOff, rpc string, op func() error) error {
 	ctx = zlog.ContextWithValues(ctx, "rpc", rpc)
-	f := func() error {
+	f := func() (struct{}, error) {
 		err := op()
 		if e, ok := status.FromError(err); ok {
 			switch e.Code() {
 			case codes.OK:
-				return nil
+				return struct{}{}, nil
 			case codes.Aborted, codes.Unavailable, codes.Internal:
 			default:
-				return backoff.Permanent(err)
+				return struct{}{}, backoff.Permanent(err)
 			}
 		}
-		return err
+		return struct{}{}, err
 	}
-	return backoff.RetryNotify(f, backoff.WithContext(b, ctx), func(err error, duration time.Duration) {
-		zlog.Debug(ctx).Err(err).Dur("duration", duration).Msg("retrying gRPC call")
-	})
+	_, err := backoff.Retry(ctx, f,
+		backoff.WithBackOff(b),
+		backoff.WithMaxElapsedTime(10*time.Second),
+		backoff.WithNotify(func(err error, duration time.Duration) {
+			zlog.Debug(ctx).Err(err).Dur("duration", duration).Msg("retrying gRPC call")
+		}))
+	return err
 }
 
 func defaultBackoff() backoff.BackOff {
@@ -490,7 +494,7 @@ func defaultBackoff() backoff.BackOff {
 	b.RandomizationFactor = 0.25
 	b.MaxInterval = time.Second * 5
 	b.Multiplier = 2
-	b.MaxElapsedTime = time.Second * 10
+	b.Reset()
 	return b
 }
 
