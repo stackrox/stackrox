@@ -204,8 +204,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			InternalRoles: []*tokens.InternalRole{
 				{
 					RoleName: internalRoleName,
-					Permissions: map[storage.Access][]string{
-						storage.Access_READ_ACCESS: {deploymentResource},
+					Permissions: map[tokens.AccessWrapper][]string{
+						tokens.AccessWrapper(storage.Access_READ_ACCESS): {deploymentResource},
 					},
 					ClustersByName: tokens.ClusterScopes{
 						fixtureconsts.Cluster1: []string{"namespace A"},
@@ -252,8 +252,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			InternalRoles: []*tokens.InternalRole{
 				{
 					RoleName: internalRoleName,
-					Permissions: map[storage.Access][]string{
-						storage.Access_READ_ACCESS: {deploymentResource},
+					Permissions: map[tokens.AccessWrapper][]string{
+						tokens.AccessWrapper(storage.Access_READ_ACCESS): {deploymentResource},
 					},
 					ClustersByName: make(tokens.ClusterScopes),
 				},
@@ -296,8 +296,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				InternalRoles: []*tokens.InternalRole{
 					{
 						RoleName: internalRoleName,
-						Permissions: map[storage.Access][]string{
-							storage.Access_READ_ACCESS: {deploymentResource},
+						Permissions: map[tokens.AccessWrapper][]string{
+							tokens.AccessWrapper(storage.Access_READ_ACCESS): {deploymentResource},
 						},
 						ClustersByName: tokens.ClusterScopes{
 							fixtureconsts.Cluster1: []string{"namespace A"},
@@ -343,8 +343,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				InternalRoles: []*tokens.InternalRole{
 					{
 						RoleName: internalRoleName,
-						Permissions: map[storage.Access][]string{
-							storage.Access_READ_ACCESS: {deploymentResource},
+						Permissions: map[tokens.AccessWrapper][]string{
+							tokens.AccessWrapper(storage.Access_READ_ACCESS): {deploymentResource},
 						},
 					},
 				},
@@ -372,9 +372,9 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 				InternalRoles: []*tokens.InternalRole{
 					{
 						RoleName: internalRoleName,
-						Permissions: map[storage.Access][]string{
-							storage.Access_READ_ACCESS:       {deploymentResource},
-							storage.Access_READ_WRITE_ACCESS: {imageResource},
+						Permissions: map[tokens.AccessWrapper][]string{
+							tokens.AccessWrapper(storage.Access_READ_ACCESS):       {deploymentResource},
+							tokens.AccessWrapper(storage.Access_READ_WRITE_ACCESS): {imageResource},
 						},
 						ClustersByName: tokens.ClusterScopes{
 							fixtureconsts.Cluster1: []string{"*"},
@@ -500,8 +500,8 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 			InternalRoles: []*tokens.InternalRole{
 				{
 					RoleName: internalRoleName,
-					Permissions: map[storage.Access][]string{
-						storage.Access_READ_ACCESS: {deploymentResource},
+					Permissions: map[tokens.AccessWrapper][]string{
+						tokens.AccessWrapper(storage.Access_READ_ACCESS): {deploymentResource},
 					},
 					ClustersByName: tokens.ClusterScopes{
 						fixtureconsts.Cluster1: []string{"namespace A"},

@@ -29,10 +29,10 @@ func (rm *roleManager) createRoleForRoxClaims(
 	}
 	requestedPermissions := req.GetPermissions()
 	if len(requestedPermissions) > 0 {
-		role.Permissions = make(map[storage.Access][]string)
+		role.Permissions = make(map[tokens.AccessWrapper][]string)
 	}
 	for resource, v1Access := range req.GetPermissions() {
-		access := convertAccess(v1Access)
+		access := tokens.AccessWrapper(convertAccess(v1Access))
 		if _, found := role.Permissions[access]; !found {
 			role.Permissions[access] = make([]string, 0)
 		}
