@@ -1,6 +1,7 @@
 package tokens
 
 import (
+	"encoding/json"
 	"slices"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -62,6 +63,63 @@ type InternalRole struct {
 	// Clusters ClusterScopes `json:"clusters,omitempty"`
 	// The key for this cluster scope map is the cluster Name.
 	ClustersByName ClusterScopes `json:"named_clusters,omitempty"`
+}
+
+// MarshalJSON implements json.Marshaler for InternalRole.
+// This is necessary because go-jose doesn't support map[AccessWrapper][]string directly.
+func (r *InternalRole) MarshalJSON() ([]byte, error) {
+	// Create a temporary struct with string-keyed permissions map
+	type Alias InternalRole
+	aux := &struct {
+		Permissions map[string][]string `json:"permissions,omitempty"`
+		*Alias
+	}{
+		Alias: (*Alias)(r),
+	}
+
+	// Convert map[AccessWrapper][]string to map[string][]string
+	if r.Permissions != nil {
+		aux.Permissions = make(map[string][]string, len(r.Permissions))
+		for k, v := range r.Permissions {
+			keyBytes, err := k.MarshalText()
+			if err != nil {
+				return nil, err
+			}
+			aux.Permissions[string(keyBytes)] = v
+		}
+	}
+
+	return json.Marshal(aux)
+}
+
+// UnmarshalJSON implements json.Unmarshaler for InternalRole.
+func (r *InternalRole) UnmarshalJSON(data []byte) error {
+	// Create a temporary struct with string-keyed permissions map
+	type Alias InternalRole
+	aux := &struct {
+		Permissions map[string][]string `json:"permissions,omitempty"`
+		*Alias
+	}{
+		Alias: (*Alias)(r),
+	}
+
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+
+	// Convert map[string][]string to map[AccessWrapper][]string
+	if aux.Permissions != nil {
+		r.Permissions = make(map[AccessWrapper][]string, len(aux.Permissions))
+		for k, v := range aux.Permissions {
+			var wrapper AccessWrapper
+			if err := wrapper.UnmarshalText([]byte(k)); err != nil {
+				return err
+			}
+			r.Permissions[wrapper] = v
+		}
+	}
+
+	return nil
 }
 
 func (r *InternalRole) GetRoleName() string {
