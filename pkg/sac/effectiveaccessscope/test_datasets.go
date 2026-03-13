@@ -22,6 +22,9 @@ import (
 //   Bene Gesserit { region: dune_universe, alias: witches }                  //
 //   Fremen        { }                                                        //
 //                                                                            //
+// Giedi=Prime { focus: melange }                                             //
+//   Harkonnen     { focus: melange }
+//                                                                            //
 
 // storage.Cluster objects
 var (
@@ -37,18 +40,33 @@ var (
 			"focus": "melange",
 		},
 	}
+
+	clusterGiediPrime = &storage.Cluster{
+		Id:   "planet.giedi=prime",
+		Name: "Giedi=Prime",
+		Labels: map[string]string{
+			"focus": "melange",
+		},
+	}
 )
 
 // Cluster helpers
 var (
 	clusterIDs = map[string]string{
-		clusterEarth.GetId():   clusterEarth.GetName(),
-		clusterArrakis.GetId(): clusterArrakis.GetName(),
+		clusterEarth.GetId():      clusterEarth.GetName(),
+		clusterArrakis.GetId():    clusterArrakis.GetName(),
+		clusterGiediPrime.GetId(): clusterGiediPrime.GetName(),
 	}
 
 	arrakisAttributes = treeNodeAttributes{
 		ID:     "planet.arrakis",
 		Name:   "Arrakis",
+		Labels: map[string]string{"focus": "melange"},
+	}
+
+	giediPrimeAttributes = treeNodeAttributes{
+		ID:     "planet.giedi=prime",
+		Name:   "Giedi=Prime",
 		Labels: map[string]string{"focus": "melange"},
 	}
 
@@ -131,6 +149,16 @@ var (
 		Name:        "Harkonnen",
 		ClusterId:   "planet.arrakis",
 		ClusterName: "Arrakis",
+		Labels: map[string]string{
+			"focus": "melange",
+		},
+	}
+
+	nsHarkonnenAtHome = &storage.NamespaceMetadata{
+		Id:          "house.harkonnen",
+		Name:        "Harkonnen",
+		ClusterId:   "planet.giedi=prime",
+		ClusterName: "Giedi=Prime",
 		Labels: map[string]string{
 			"focus": "melange",
 		},
@@ -568,7 +596,7 @@ func namespacesTree(namespaces ...*namespacesScopeSubTree) map[string]*namespace
 }
 
 func included(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
-	return namespace(Included, n)
+	return namespaceSubTree(Included, n)
 }
 
 func includedStandard(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
@@ -576,14 +604,14 @@ func includedStandard(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
 }
 
 func excluded(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
-	return namespace(Excluded, n)
+	return namespaceSubTree(Excluded, n)
 }
 
 func excludedStandard(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
 	return namespaceStandard(Excluded, n)
 }
 
-func namespace(scope scopeState, n *storage.NamespaceMetadata) *namespacesScopeSubTree {
+func namespaceSubTree(scope scopeState, n *storage.NamespaceMetadata) *namespacesScopeSubTree {
 	return &namespacesScopeSubTree{State: scope, Attributes: treeNodeAttributes{
 		ID:     n.GetId(),
 		Name:   n.GetName(),
