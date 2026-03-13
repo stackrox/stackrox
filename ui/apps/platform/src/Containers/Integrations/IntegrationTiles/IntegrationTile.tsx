@@ -15,7 +15,7 @@ import TechPreviewLabel from 'Components/PatternFly/PreviewLabel/TechPreviewLabe
 
 type IntegrationTileProps = {
     categories?: string;
-    ImageComponent: ComponentType<SVGProps<SVGSVGElement>>;
+    Logo: ComponentType<SVGProps<SVGSVGElement>>;
     label: string;
     linkTo: string;
     numIntegrations: number;
@@ -24,7 +24,7 @@ type IntegrationTileProps = {
 
 function IntegrationTile({
     categories,
-    ImageComponent,
+    Logo,
     label,
     linkTo,
     numIntegrations,
@@ -48,7 +48,7 @@ function IntegrationTile({
                                 {numIntegrations}
                             </Badge>
                         )}
-                        <ImageComponent
+                        <Logo
                             aria-label="Integration logo"
                             role="img"
                             style={{ height: '100px', width: 'auto', maxWidth: '100%' }}

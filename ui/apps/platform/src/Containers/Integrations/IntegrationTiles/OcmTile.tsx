@@ -10,7 +10,7 @@ import {
 import IntegrationTile from './IntegrationTile';
 import { integrationTypeCounter } from './integrationTiles.utils';
 
-const { ImageComponent, label, type } = descriptor;
+const { Logo, label, type } = descriptor;
 
 export type OcmTileProps = {
     integrations: CloudSourceIntegration[];
@@ -21,7 +21,7 @@ function OcmTile({ integrations }: OcmTileProps): ReactElement {
 
     return (
         <IntegrationTile
-            ImageComponent={ImageComponent}
+            Logo={Logo}
             label={label}
             linkTo={getIntegrationsListPath(source, type)}
             numIntegrations={countIntegrations('TYPE_OCM')}

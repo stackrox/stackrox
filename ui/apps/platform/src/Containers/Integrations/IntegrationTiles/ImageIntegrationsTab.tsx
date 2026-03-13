@@ -33,13 +33,13 @@ function ImageIntegrationsTab({ sourcesEnabled }: IntegrationsTabProps): ReactEl
             )}
             <Gallery hasGutter>
                 {descriptors.filter(featureFlagDependencyFilter).map((descriptor) => {
-                    const { categories, ImageComponent, label, type } = descriptor;
+                    const { categories, Logo, label, type } = descriptor;
 
                     return (
                         <IntegrationTile
                             key={type}
                             categories={categories}
-                            ImageComponent={ImageComponent}
+                            Logo={Logo}
                             label={label}
                             linkTo={getIntegrationsListPath(source, type)}
                             numIntegrations={countIntegrations(type)}

@@ -89,7 +89,7 @@ export type CloudSourceDescriptor = {
 export type BaseIntegrationDescriptor = {
     type: string;
     label: string;
-    ImageComponent: ComponentType<SVGProps<SVGSVGElement>>;
+    Logo: ComponentType<SVGProps<SVGSVGElement>>;
     centralCapabilityRequirement?: CentralCapabilitiesFlags;
     featureFlagDependency?: FeatureFlagEnvVar[];
 };
@@ -99,92 +99,92 @@ export const imageIntegrationsSource: IntegrationSource = 'imageIntegrations';
 export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
     {
         categories: 'Image Scanner + Node Scanner',
-        ImageComponent: LogoSvg,
+        Logo: LogoSvg,
         label: 'Scanner V4',
         type: 'scannerv4',
         featureFlagDependency: ['ROX_SCANNER_V4'],
     },
     {
         categories: 'Registry',
-        ImageComponent: DockerSvg,
+        Logo: DockerSvg,
         label: 'Generic Docker Registry',
         type: 'docker',
     },
     {
         categories: 'Registry',
-        ImageComponent: AwsSvg,
+        Logo: AwsSvg,
         label: 'Amazon ECR',
         type: 'ecr',
     },
     {
         categories: 'Registry',
-        ImageComponent: GoogleArtifactSvg,
+        Logo: GoogleArtifactSvg,
         label: 'Google Artifact Registry',
         type: 'artifactregistry',
     },
     {
         categories: 'Registry',
-        ImageComponent: AzureSvg,
+        Logo: AzureSvg,
         label: 'Microsoft ACR',
         type: 'azure',
     },
     {
         categories: 'Registry',
-        ImageComponent: ArtifactorySvg,
+        Logo: ArtifactorySvg,
         label: 'JFrog Artifactory',
         type: 'artifactory',
     },
     {
         categories: 'Registry + Scanner',
-        ImageComponent: QuaySvg,
+        Logo: QuaySvg,
         label: 'Quay.io',
         type: 'quay',
     },
     {
         categories: 'Scanner',
-        ImageComponent: ClairSvg,
+        Logo: ClairSvg,
         label: 'Clair v4',
         type: 'clairV4',
     },
     {
         categories: 'Registry',
-        ImageComponent: NexusSvg,
+        Logo: NexusSvg,
         label: 'Sonatype Nexus',
         type: 'nexus',
     },
     {
         categories: 'Registry',
-        ImageComponent: IbmSvg,
+        Logo: IbmSvg,
         label: 'IBM Cloud',
         type: 'ibm',
     },
     {
         categories: 'Registry',
-        ImageComponent: RedhatSvg,
+        Logo: RedhatSvg,
         label: 'Red Hat',
         type: 'rhel',
     },
     {
         categories: 'Registry',
-        ImageComponent: GhcrSvg,
+        Logo: GhcrSvg,
         label: 'GitHub Container Registry',
         type: 'ghcr',
     },
     {
         categories: 'Image Scanner + Node Scanner',
-        ImageComponent: LogoSvg,
+        Logo: LogoSvg,
         label: '[DEPRECATED] StackRox Scanner',
         type: 'clairify',
     },
     {
         categories: 'Scanner',
-        ImageComponent: ClairSvg,
+        Logo: ClairSvg,
         label: '[DEPRECATED] CoreOS Clair',
         type: 'clair',
     },
     {
         categories: 'Registry + Scanner',
-        ImageComponent: GoogleRegistrySvg,
+        Logo: GoogleRegistrySvg,
         label: '[DEPRECATED] Google Container Registry',
         type: 'google',
     },
@@ -193,7 +193,7 @@ export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
 export const signatureIntegrationsSource = 'signatureIntegrations';
 
 export const signatureIntegrationDescriptor: SignatureIntegrationDescriptor = {
-    ImageComponent: SignatureSvg,
+    Logo: SignatureSvg,
     label: 'Signature',
     type: 'signature',
 };
@@ -204,67 +204,67 @@ export const notifierIntegrationsSource = 'notifiers';
 
 export const notifierIntegrationsDescriptors: NotifierIntegrationDescriptor[] = [
     {
-        ImageComponent: SlackSvg,
+        Logo: SlackSvg,
         label: 'Slack',
         type: 'slack',
     },
     {
-        ImageComponent: LogoSvg,
+        Logo: LogoSvg,
         label: 'Generic Webhook',
         type: 'generic',
     },
     {
-        ImageComponent: JiraSvg,
+        Logo: JiraSvg,
         label: 'Jira',
         type: 'jira',
     },
     {
-        ImageComponent: EmailSvg,
+        Logo: EmailSvg,
         label: 'Email',
         type: 'email',
     },
     {
-        ImageComponent: AcscsEmailSvg,
+        Logo: AcscsEmailSvg,
         label: 'RHACS Cloud Service',
         type: 'acscsEmail',
     },
     {
-        ImageComponent: GoogleSvg,
+        Logo: GoogleSvg,
         label: 'Google Cloud SCC',
         type: 'cscc',
     },
     {
-        ImageComponent: SplunkSvg,
+        Logo: SplunkSvg,
         label: 'Splunk',
         type: 'splunk',
     },
     {
-        ImageComponent: PagerDutySvg,
+        Logo: PagerDutySvg,
         label: 'PagerDuty',
         type: 'pagerduty',
     },
     {
-        ImageComponent: SumologicSvg,
+        Logo: SumologicSvg,
         label: 'Sumo Logic',
         type: 'sumologic',
     },
     {
-        ImageComponent: TeamsSvg,
+        Logo: TeamsSvg,
         label: 'Microsoft Teams',
         type: 'teams',
     },
     {
-        ImageComponent: AwsSecurityHubSvg,
+        Logo: AwsSecurityHubSvg,
         label: 'AWS Security Hub',
         type: 'awsSecurityHub',
     },
     {
-        ImageComponent: SyslogSvg,
+        Logo: SyslogSvg,
         label: 'Syslog',
         type: 'syslog',
     },
     {
-        ImageComponent: MicrosoftSentinelSvg,
+        Logo: MicrosoftSentinelSvg,
         label: 'Microsoft Sentinel',
         type: 'microsoftSentinel',
     },
@@ -274,17 +274,17 @@ export const backupIntegrationsSource = 'backups';
 
 export const backupIntegrationsDescriptors: BackupIntegrationDescriptor[] = [
     {
-        ImageComponent: S3Svg,
+        Logo: S3Svg,
         label: 'Amazon S3',
         type: 's3',
     },
     {
-        ImageComponent: S3CompatibleSvg,
+        Logo: S3CompatibleSvg,
         label: 'S3 API Compatible',
         type: 's3compatible',
     },
     {
-        ImageComponent: GoogleSvg,
+        Logo: GoogleSvg,
         label: 'Google Cloud Storage',
         type: 'gcs',
     },
@@ -293,13 +293,13 @@ export const backupIntegrationsDescriptors: BackupIntegrationDescriptor[] = [
 export const authenticationTokensSource = 'authProviders';
 
 export const apiTokenDescriptor: AuthProviderDescriptor = {
-    ImageComponent: LogoSvg,
+    Logo: LogoSvg,
     label: 'API Token',
     type: 'apitoken',
 };
 
 export const machineAccessDescriptor: AuthProviderDescriptor = {
-    ImageComponent: LogoSvg,
+    Logo: LogoSvg,
     label: 'Machine access configuration',
     type: 'machineAccess',
 };
@@ -309,13 +309,13 @@ const authenticationTokensDescriptors = [apiTokenDescriptor, machineAccessDescri
 export const cloudSourcesSource = 'cloudSources';
 
 export const paladinCloudDescriptor: CloudSourceDescriptor = {
-    ImageComponent: PaladinCloudSvg,
+    Logo: PaladinCloudSvg,
     label: 'Paladin Cloud',
     type: 'paladinCloud',
 };
 
 export const ocmDescriptor: CloudSourceDescriptor = {
-    ImageComponent: RedhatSvg,
+    Logo: RedhatSvg,
     label: 'OpenShift Cluster Manager',
     type: 'ocm',
 };
