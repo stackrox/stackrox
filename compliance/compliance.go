@@ -342,29 +342,6 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 					log.Warn("Attempting to stop an un-started audit log reader - this is a no-op")
 				}
 			}
-		case *sensor.MsgToCompliance_Ack:
-			switch t.Ack.GetAction() {
-			case sensor.MsgToCompliance_NodeInventoryACK_ACK:
-				switch t.Ack.GetMessageType() {
-				case sensor.MsgToCompliance_NodeInventoryACK_NodeInventory:
-					c.umhNodeInventory.HandleACK()
-				case sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer:
-					c.umhNodeIndex.HandleACK()
-				default:
-					log.Errorf("Unknown ACK Type: %s", t.Ack.GetMessageType())
-				}
-			case sensor.MsgToCompliance_NodeInventoryACK_NACK:
-				switch t.Ack.GetMessageType() {
-				case sensor.MsgToCompliance_NodeInventoryACK_NodeInventory:
-					c.umhNodeInventory.HandleNACK()
-				case sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer:
-					c.umhNodeIndex.HandleNACK()
-				default:
-					log.Errorf("Unknown ACK Type: %s", t.Ack.GetMessageType())
-				}
-			default:
-				log.Errorf("Unknown ACK Action: %s", t.Ack.GetAction())
-			}
 		case *sensor.MsgToCompliance_ComplianceAck:
 			complianceAck := t.ComplianceAck
 			log.Debugf("Received ComplianceACK: type=%s, action=%s, resource_id=%s, reason=%s",

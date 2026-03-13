@@ -200,32 +200,35 @@ func (c *nodeInventoryHandlerImpl) processNodeInventoryACK(ackMsg *central.NodeI
 		ackMsg.GetMessageType().String(),
 		metrics.AckOperationReceive,
 		"", metrics.AckOriginSensor)
+
+	var action sensor.MsgToCompliance_ComplianceACK_Action
 	switch ackMsg.GetAction() {
 	case central.NodeInventoryACK_ACK:
-		switch ackMsg.GetMessageType() {
-		case central.NodeInventoryACK_NodeIndexer:
-			c.sendAckToCompliance(ackMsg.GetNodeName(),
-				sensor.MsgToCompliance_NodeInventoryACK_ACK,
-				sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer, metrics.AckReasonForwardingFromCentral)
-		default:
-			// If Central version is behind Sensor, then MessageType field will be unset - then default to NodeInventory.
-			c.sendAckToCompliance(ackMsg.GetNodeName(),
-				sensor.MsgToCompliance_NodeInventoryACK_ACK,
-				sensor.MsgToCompliance_NodeInventoryACK_NodeInventory, metrics.AckReasonForwardingFromCentral)
-		}
+		action = sensor.MsgToCompliance_ComplianceACK_ACK
 	case central.NodeInventoryACK_NACK:
-		switch ackMsg.GetMessageType() {
-		case central.NodeInventoryACK_NodeIndexer:
-			c.sendAckToCompliance(ackMsg.GetNodeName(),
-				sensor.MsgToCompliance_NodeInventoryACK_NACK,
-				sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer, metrics.AckReasonForwardingFromCentral)
-		default:
-			// If Central version is behind Sensor, then MessageType field will be unset - then default to NodeInventory.
-			c.sendAckToCompliance(ackMsg.GetNodeName(),
-				sensor.MsgToCompliance_NodeInventoryACK_NACK,
-				sensor.MsgToCompliance_NodeInventoryACK_NodeInventory, metrics.AckReasonForwardingFromCentral)
-		}
+		action = sensor.MsgToCompliance_ComplianceACK_NACK
+	default:
+		log.Debugf("Ignoring legacy NodeInventoryACK with unknown action %s", ackMsg.GetAction())
+		return nil
 	}
+
+	var messageType sensor.MsgToCompliance_ComplianceACK_MessageType
+	switch ackMsg.GetMessageType() {
+	case central.NodeInventoryACK_NodeIndexer:
+		messageType = sensor.MsgToCompliance_ComplianceACK_NODE_INDEX_REPORT
+	default:
+		// If Central version is behind Sensor, MessageType can be unset: default to node inventory.
+		messageType = sensor.MsgToCompliance_ComplianceACK_NODE_INVENTORY
+	}
+
+	c.sendComplianceAck(
+		ackMsg.GetNodeName(),
+		action,
+		messageType,
+		"",
+		metrics.AckReasonForwardingFromCentral,
+	)
+
 	return nil
 }
 
@@ -337,34 +340,6 @@ func (c *nodeInventoryHandlerImpl) handleNodeIndex(
 		log.Debugf("Mapping IndexReport name '%s' to Node ID '%s'", index.NodeName, nodeID)
 		c.sendNodeIndex(toCentral, index)
 	}
-}
-
-func (c *nodeInventoryHandlerImpl) sendAckToCompliance(
-	nodeName string,
-	action sensor.MsgToCompliance_NodeInventoryACK_Action,
-	messageType sensor.MsgToCompliance_NodeInventoryACK_MessageType,
-	reason metrics.AckReason,
-) {
-	select {
-	case <-c.stopper.Flow().StopRequested():
-	case c.toCompliance <- common.MessageToComplianceWithAddress{
-		Msg: &sensor.MsgToCompliance{
-			Msg: &sensor.MsgToCompliance_Ack{
-				Ack: &sensor.MsgToCompliance_NodeInventoryACK{
-					Action:      action,
-					MessageType: messageType,
-				},
-			},
-		},
-		Hostname:  nodeName,
-		Broadcast: nodeName == "",
-	}:
-	}
-	metrics.ObserveNodeScanningAck(nodeName,
-		action.String(),
-		messageType.String(),
-		metrics.AckOperationSend,
-		reason, metrics.AckOriginSensor)
 }
 
 // sendComplianceAck sends a ComplianceACK message to Compliance.
