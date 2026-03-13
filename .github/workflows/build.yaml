@@ -656,6 +656,11 @@ jobs:
         run: |
           ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
 
+      - name: Set up Python for bundle build
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: operator/bundle_helpers/.python-version
+
       - name: Build Operator Bundle image
         if: |
           matrix.name != 'STACKROX_BRANDING'
