@@ -222,9 +222,9 @@ Make sure to use the URL where `authuser` corresponds to your @redhat.com accoun
 You can check this by clicking on the user avatar in the top right corner of Google Cloud Console page
 after following the link.
 
-* [authuser=0](${browser_job_url}?authuser=0")
-* [authuser=1](${browser_job_url}?authuser=1")
-* [authuser=2](${browser_job_url}?authuser=2")
+* [authuser=0](${browser_job_url}?authuser=0)
+* [authuser=1](${browser_job_url}?authuser=1)
+* [authuser=2](${browser_job_url}?authuser=2)
             ' | envsubst | tee -a "${GITHUB_STEP_SUMMARY}"
         )
     else
