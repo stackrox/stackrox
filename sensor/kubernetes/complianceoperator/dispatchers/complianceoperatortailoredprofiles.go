@@ -4,8 +4,10 @@ import (
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -100,6 +102,31 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 				ComplianceOperatorProfile: protoProfile,
 			},
 		},
+	}
+
+	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
+		protoProfileV2 := &central.ComplianceOperatorProfileV2{
+			Id:           string(tailoredProfile.GetUID()),
+			ProfileId:    tailoredProfile.Status.ID,
+			Name:         tailoredProfile.GetName(),
+			Labels:       baseProfile.Labels,
+			Annotations:  baseProfile.Annotations,
+			Description:  stringutils.FirstNonEmpty(tailoredProfile.Spec.Description, baseProfile.Description),
+			Title:        tailoredProfile.Spec.Title,
+			OperatorKind: central.ComplianceOperatorProfileV2_TAILORED_PROFILE,
+		}
+
+		for _, rule := range protoProfile.GetRules() {
+			protoProfileV2.Rules = append(protoProfileV2.Rules, &central.ComplianceOperatorProfileV2_Rule{RuleName: rule.GetName()})
+		}
+
+		events = append(events, &central.SensorEvent{
+			Id:     protoProfileV2.GetId(),
+			Action: action,
+			Resource: &central.SensorEvent_ComplianceOperatorProfileV2{
+				ComplianceOperatorProfileV2: protoProfileV2,
+			},
+		})
 	}
 
 	return component.NewEvent(events...)
