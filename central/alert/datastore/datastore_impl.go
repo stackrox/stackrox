@@ -203,20 +203,14 @@ func (ds *datastoreImpl) SearchAlertDeploymentIDs(ctx context.Context, q *v1.Que
 	}
 	clonedQuery := q.CloneVT()
 	clonedQuery.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.DeploymentID).Proto(),
+		search.NewQuerySelect(search.DeploymentID).Distinct().Proto(),
 	}
 	// No sorting needed — we only collect unique IDs.
 	clonedQuery.Pagination = nil
 
-	seen := make(map[string]struct{})
 	var ids []string
 	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, clonedQuery, func(r *alertviews.DeploymentIDResult) error {
-		id := r.GetDeploymentID()
-		if id == "" {
-			return nil
-		}
-		if _, ok := seen[id]; !ok {
-			seen[id] = struct{}{}
+		if id := r.GetDeploymentID(); id != "" {
 			ids = append(ids, id)
 		}
 		return nil
