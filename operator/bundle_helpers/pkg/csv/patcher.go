@@ -1,0 +1,314 @@
+package csv
+
+import (
+	"errors"
+	"fmt"
+	"os"
+	"strings"
+	"time"
+
+	"github.com/stackrox/rox/operator/bundle_helpers/pkg/rewrite"
+	"github.com/stackrox/rox/operator/bundle_helpers/pkg/values"
+	"helm.sh/helm/v3/pkg/chartutil"
+)
+
+// PatchOptions contains all options for patching a CSV
+type PatchOptions struct {
+	Version             string
+	OperatorImage       string
+	FirstVersion        string
+	RelatedImagesMode   string
+	ExtraSupportedArchs []string
+	Unreleased          string
+}
+
+const rawNameSuffix = ".v0.0.1"
+
+// GetRawName returns the operator name prefix from metadata.name,
+// which is expected to end with ".v0.0.1" (the placeholder version).
+func GetRawName(doc chartutil.Values) (string, error) {
+	name, err := values.GetString(doc, "metadata.name")
+	if err != nil {
+		return "", fmt.Errorf("failed to get metadata.name: %w", err)
+	}
+	if !strings.HasSuffix(name, rawNameSuffix) {
+		return "", fmt.Errorf("metadata.name does not end with %s: %s", rawNameSuffix, name)
+	}
+	return strings.TrimSuffix(name, rawNameSuffix), nil
+}
+
+// PatchCSV modifies the CSV document in-place according to options
+func PatchCSV(doc chartutil.Values, opts PatchOptions) error {
+	// Update createdAt timestamp
+	if err := values.SetValue(doc, "metadata.annotations.createdAt", time.Now().UTC().Format(time.RFC3339)); err != nil {
+		return fmt.Errorf("failed to set createdAt: %w", err)
+	}
+
+	// Replace placeholder image with actual operator image
+	placeholderImage, err := values.GetString(doc, "metadata.annotations.containerImage")
+	if err != nil {
+		return fmt.Errorf("failed to get containerImage: %w", err)
+	}
+	rewrite.Strings(doc, placeholderImage, opts.OperatorImage)
+
+	// Update metadata name with version
+	rawName, err := GetRawName(doc)
+	if err != nil {
+		return err
+	}
+	if err := values.SetValue(doc, "metadata.name", fmt.Sprintf("%s.v%s", rawName, opts.Version)); err != nil {
+		return fmt.Errorf("failed to set metadata.name: %w", err)
+	}
+
+	// Update spec.version
+	if err := values.SetValue(doc, "spec.version", opts.Version); err != nil {
+		return fmt.Errorf("failed to set spec.version: %w", err)
+	}
+	spec, err := doc.Table("spec")
+	if err != nil {
+		return fmt.Errorf("failed to get spec: %w", err)
+	}
+
+	// Handle related images based on mode
+	if opts.RelatedImagesMode != "omit" {
+		if err := injectRelatedImageEnvVars(spec); err != nil {
+			return err
+		}
+	}
+
+	switch opts.RelatedImagesMode {
+	case "downstream":
+		delete(spec, "relatedImages")
+	case "omit":
+		delete(spec, "relatedImages")
+	case "konflux":
+		if err := setRelatedImages(spec, opts.OperatorImage); err != nil {
+			return err
+		}
+	}
+
+	// Ensure metadata.labels is always a map; SetValue preserves any existing labels.
+	if err := values.SetValue(doc, "metadata.labels", map[string]any{}); err != nil {
+		return fmt.Errorf("failed to initialize metadata.labels: %w", err)
+	}
+	// Add multi-arch labels
+	labels, err := doc.Table("metadata.labels")
+	if err != nil {
+		return fmt.Errorf("failed to get metadata.labels: %w", err)
+	}
+	for _, arch := range opts.ExtraSupportedArchs {
+		labels[fmt.Sprintf("operatorframework.io/arch.%s", arch)] = "supported"
+	}
+
+	// Calculate previous Y-stream and replaced version
+	previousYStream, replacedVersion, err := CalculateReplacedVersionForCSV(
+		opts.Version,
+		opts.FirstVersion,
+		opts.Unreleased,
+		rawName,
+		spec,
+	)
+	if err != nil {
+		return err
+	}
+
+	// Set olm.skipRange
+	annotations, err := doc.Table("metadata.annotations")
+	if err != nil {
+		return fmt.Errorf("failed to get metadata.annotations: %w", err)
+	}
+	annotations["olm.skipRange"] = fmt.Sprintf(">= %s < %s", previousYStream, opts.Version)
+
+	// Only set replaces if there is a replacement version
+	if replacedVersion != nil {
+		if err := values.SetValue(doc, "spec.replaces", fmt.Sprintf("%s.v%s", rawName, replacedVersion.String())); err != nil {
+			return fmt.Errorf("failed to set spec.replaces: %w", err)
+		}
+	}
+
+	// Improve SecurityPolicy CRD metadata in ACS operator CSV
+	if err := addSecurityPolicyCRD(spec); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func injectRelatedImageEnvVars(tree any) error {
+	// Find all RELATED_IMAGE_* env vars in the spec and replace with actual values
+	switch v := tree.(type) {
+	case map[string]any:
+		if name, ok := v["name"].(string); ok && strings.HasPrefix(name, "RELATED_IMAGE_") {
+			envValue := os.Getenv(name)
+			if envValue == "" {
+				return fmt.Errorf("required environment variable %s is not set", name)
+			}
+			v["value"] = envValue
+		}
+		for _, value := range v {
+			if err := injectRelatedImageEnvVars(value); err != nil {
+				return err
+			}
+		}
+	case chartutil.Values:
+		// chartutil.Values is a named type over map[string]interface{}; convert
+		// and recurse so the map[string]any branch handles it uniformly.
+		return injectRelatedImageEnvVars(map[string]any(v))
+	case []any:
+		for _, value := range v {
+			if err := injectRelatedImageEnvVars(value); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func setRelatedImages(spec chartutil.Values, managerImage string) error {
+	if managerImage == "" {
+		return errors.New("managerImage cannot be empty")
+	}
+
+	relatedImages := make([]map[string]any, 0)
+
+	// Collect all RELATED_IMAGE_* env vars
+	for _, envVar := range os.Environ() {
+		if strings.HasPrefix(envVar, "RELATED_IMAGE_") {
+			parts := strings.SplitN(envVar, "=", 2)
+			if len(parts) != 2 {
+				return fmt.Errorf("malformed RELATED_IMAGE environment variable: %s", envVar)
+			}
+			name := strings.TrimPrefix(parts[0], "RELATED_IMAGE_")
+			name = strings.ToLower(name)
+			image := parts[1]
+
+			relatedImages = append(relatedImages, map[string]any{
+				"name":  name,
+				"image": image,
+			})
+		}
+	}
+
+	// Add manager image
+	relatedImages = append(relatedImages, map[string]any{
+		"name":  "manager",
+		"image": managerImage,
+	})
+
+	spec["relatedImages"] = relatedImages
+	return nil
+}
+
+func addSecurityPolicyCRD(spec chartutil.Values) error {
+	crd := map[string]any{
+		"name":        "securitypolicies.config.stackrox.io",
+		"version":     "v1alpha1",
+		"kind":        "SecurityPolicy",
+		"displayName": "Security Policy",
+		"description": "SecurityPolicy is the schema for the policies API.",
+		"resources": []map[string]any{
+			{
+				"kind":    "Deployment",
+				"name":    "",
+				"version": "v1",
+			},
+		},
+	}
+
+	crds, err := spec.Table("customresourcedefinitions")
+	if err != nil {
+		return errors.New("spec.customresourcedefinitions field is missing")
+	}
+
+	owned, err := values.GetArray(crds, "owned")
+	if err != nil {
+		return errors.New("spec.customresourcedefinitions.owned field is missing or has wrong type")
+	}
+
+	// Filter out existing SecurityPolicy CRDs to prevent duplicates
+	filteredOwned := make([]any, 0, len(owned))
+	for _, crdEntry := range owned {
+		crdMap, ok := crdEntry.(map[string]any)
+		if !ok {
+			filteredOwned = append(filteredOwned, crdEntry)
+			continue
+		}
+		kind, _ := crdMap["kind"].(string)
+		if kind != "SecurityPolicy" {
+			filteredOwned = append(filteredOwned, crdEntry)
+		}
+	}
+
+	crds["owned"] = append(filteredOwned, crd)
+
+	return nil
+}
+
+// ParseSkips extracts and parses skip versions from the spec.
+// It filters out the placeholder "0.0.1" version and returns parsed XyzVersion entries.
+// The prefix parameter should be the operator name prefix (e.g., "rhacs-operator").
+func ParseSkips(prefix string, spec chartutil.Values) ([]XyzVersion, error) {
+	skips := make([]XyzVersion, 0)
+	if rawSkips, ok := spec["skips"].([]any); ok {
+		for _, s := range rawSkips {
+			skipStr, ok := s.(string)
+			if !ok {
+				return nil, errors.New("skip entry is not a string")
+			}
+			// Filter out the placeholder version
+			if skipStr == prefix+".v0.0.1" {
+				continue
+			}
+			// Extract version from prefix
+			skipVer := strings.TrimPrefix(skipStr, prefix+".")
+
+			v, err := ParseXyzVersion(skipVer)
+			if err != nil {
+				return nil, err
+			}
+			skips = append(skips, v)
+		}
+	}
+	return skips, nil
+}
+
+// CalculateReplacedVersionForCSV returns the previous
+// Y-stream version (used for skipRange) and the replaced version for a CSV document.
+func CalculateReplacedVersionForCSV(
+	version, firstVersion, unreleased string,
+	operatorNamePrefix string,
+	spec chartutil.Values,
+) (previousYStream *XyzVersion, replacedVersion *XyzVersion, err error) {
+	versionXyz, err := ParseXyzVersion(version)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	firstXyz, err := ParseXyzVersion(firstVersion)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	skips, err := ParseSkips(operatorNamePrefix, spec)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	previousYStream, err = GetPreviousYStream(versionXyz)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	replacedVersion, err = CalculateReplacedVersion(
+		versionXyz,
+		firstXyz,
+		*previousYStream,
+		skips,
+		unreleased,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return previousYStream, replacedVersion, nil
+}

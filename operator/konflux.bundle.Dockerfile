@@ -1,7 +1,8 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:5dc6ba426ccbeb3954ead6b015f36b4a2d22320e5b356b074198d08422464ed2 AS builder
-
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.25@sha256:aa03597ee8c7594ffecef5cbb6a0f059d362259d2a41225617b27ec912a3d0d3 AS builder
 # This installs both PyYAML and Python.
-RUN microdnf -y install python3.12-pyyaml
+RUN dnf -y install python3.12-pyyaml
+# builder image comes with uncompatible preinstalled python version, make installed 3.12 the default
+RUN alternatives --set python3 /usr/bin/python3.12
 
 COPY . /stackrox
 WORKDIR /stackrox/operator
@@ -56,6 +57,8 @@ ARG RELATED_IMAGE_CENTRAL_DB
 ENV RELATED_IMAGE_CENTRAL_DB=$RELATED_IMAGE_CENTRAL_DB
 RUN echo "Checking required RELATED_IMAGE_CENTRAL_DB"; [[ "${RELATED_IMAGE_CENTRAL_DB}" != "" ]]
 
+# Set Go environment variables to ensure hermetic builds work correctly with Cachi2
+ENV CI=1 GOFLAGS=""
 RUN ./bundle_helpers/prepare-bundle-manifests.sh \
       --use-version="${OPERATOR_IMAGE_TAG}" \
       --first-version=4.0.0 \
