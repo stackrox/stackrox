@@ -438,6 +438,8 @@ upgrade-dirty-tag-via-olm: kuttl
 ##@ Bundle and Index build
 
 # Commands to enter local Python virtual environment and get needed dependencies there.
+# pip 21.3.1 and setuptools 59.6.0 use pkgutil.ImpImporter, removed in Python 3.12.
+# The required Python version is tracked in bundle_helpers/.python-version.
 ACTIVATE_PYTHON = $(PYTHON) -m venv bundle_helpers/.venv ;\
 	. bundle_helpers/.venv/bin/activate ;\
 	pip3 install --upgrade pip==21.3.1 setuptools==59.6.0 ;\
