@@ -1,7 +1,6 @@
 package tokens
 
 import (
-	"encoding/json"
 	"slices"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -22,24 +21,18 @@ var _ permissions.ResolvedRole = (*InternalRole)(nil)
 
 type AccessWrapper storage.Access
 
-func (a *AccessWrapper) MarshalText() ([]byte, error) {
-	if a == nil {
-		return json.Marshal("null")
-	}
-	access := storage.Access(*a)
+func (a AccessWrapper) MarshalText() ([]byte, error) {
+	access := storage.Access(a)
 	switch access {
 	case storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS:
-		return json.Marshal(access.String())
+		return []byte(access.String()), nil
 	default:
-		return json.Marshal(storage.Access_NO_ACCESS.String())
+		return []byte(storage.Access_NO_ACCESS.String()), nil
 	}
 }
 
 func (a *AccessWrapper) UnmarshalText(b []byte) error {
-	var s string
-	if err := json.Unmarshal(b, &s); err != nil {
-		return err
-	}
+	s := string(b)
 	access := storage.Access_NO_ACCESS
 	if asInt, found := storage.Access_value[s]; found {
 		access = storage.Access(asInt)
