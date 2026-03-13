@@ -684,7 +684,7 @@ func TestGenerateEmbeddedComponentV2LayerType(t *testing.T) {
 
 			embedded := generateEmbeddedComponentV2(componentParts)
 
-			assert.Equal(t, tc.layerType, embedded.LayerType,
+			assert.Equal(t, tc.layerType, embedded.GetLayerType(),
 				"LayerType should be copied from ImageComponentV2 to EmbeddedImageScanComponent")
 		})
 	}

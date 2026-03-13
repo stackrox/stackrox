@@ -680,12 +680,11 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         name: 'Base Image Layer Type',
         shortName: 'Base image layer type',
         category: policyCriteriaCategories.IMAGE_CONTENTS,
-        type: 'radioGroup',
+        type: 'radioGroupString',
         radioButtons: [
             { text: 'Application', value: 'APPLICATION' },
             { text: 'Base Image', value: 'BASE_IMAGE' },
         ],
-        defaultValue: 'APPLICATION',
         canBooleanLogic: false,
         lifecycleStages: ['BUILD', 'DEPLOY'],
     },
