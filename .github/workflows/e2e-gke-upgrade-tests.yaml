@@ -81,11 +81,9 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Fix $PATH for infractl
-      run: echo "$HOME/.local/bin" | tee -a "$GITHUB_PATH"
-
     - name: Trigger test cluster creation
-      uses: stackrox/actions/infra/create-cluster@v1
+      # TODO: switch stackrox/actions/infra/create-cluster to v1
+      uses: stackrox/actions/infra/create-cluster@ef3dd2e7cc63063ed8b84983b8058b189afb7807
       with:
         token: ${{ secrets.INFRA_TOKEN }}
         flavor: gke-default
@@ -222,11 +220,8 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Fix $PATH for infractl
-      run: echo "$HOME/.local/bin" | tee -a "$GITHUB_PATH"
-
     - name: Trigger test cluster creation
-      uses: stackrox/actions/infra/create-cluster@v1
+      uses: stackrox/actions/infra/create-cluster@ef3dd2e7cc63063ed8b84983b8058b189afb7807
       with:
         token: ${{ secrets.INFRA_TOKEN }}
         flavor: gke-default
@@ -364,11 +359,8 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Fix $PATH for infractl
-      run: echo "$HOME/.local/bin" | tee -a "$GITHUB_PATH"
-
     - name: Trigger test cluster creation
-      uses: stackrox/actions/infra/create-cluster@v1
+      uses: stackrox/actions/infra/create-cluster@ef3dd2e7cc63063ed8b84983b8058b189afb7807
       with:
         token: ${{ secrets.INFRA_TOKEN }}
         flavor: gke-default
