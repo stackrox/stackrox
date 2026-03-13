@@ -186,12 +186,6 @@ jobs:
           git pull origin --rebase ${{env.main_branch}}
           git tag --annotate --message "Upstream automation" \
             "${{needs.variables.outputs.next-minor-release}}.x" HEAD
-      - name: Update VERSION on ${{env.main_branch}}
-        if: steps.check-existing.outputs.branch-exists == 'false'
-        run: |
-          echo "${{needs.variables.outputs.next-minor-release}}.x" > VERSION
-          git add VERSION
-          git commit --message "chore: update VERSION to ${{needs.variables.outputs.next-minor-release}}.x"
       - name: Push changes
         if: env.DRY_RUN == 'false'
         env:
@@ -200,6 +194,26 @@ jobs:
           git switch "${{needs.variables.outputs.branch}}"
           # This command pushes all new tags, not just the ones on the current branch. Therefore, it will push the tag we put on ${{env.main_branch}}.
           git push --follow-tags --set-upstream origin "${{needs.variables.outputs.branch}}"
+      - name: Create PR to update VERSION on ${{env.main_branch}}
+        if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'false'
+        env:
+          GH_TOKEN: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
+        run: |
+          branch="automation/update-version-${{needs.variables.outputs.next-minor-release}}"
+          git switch ${{env.main_branch}}
+          git pull origin --rebase ${{env.main_branch}}
+          git switch --create "$branch"
+          echo "${{needs.variables.outputs.next-minor-release}}.x" > VERSION
+          git add VERSION
+          git commit --message "chore: update VERSION to ${{needs.variables.outputs.next-minor-release}}.x"
+          git push --set-upstream origin "$branch"
+          gh pr create \
+            --base ${{env.main_branch}} \
+            --head "$branch" \
+            --title "chore: update VERSION to ${{needs.variables.outputs.next-minor-release}}.x" \
+            --body "Automated VERSION update from release ${{needs.variables.outputs.release}}." \
+            --reviewer "${{github.actor}}" \
+            --label "area/ci"
 
   ci:
     name: Configure OpenShift CI jobs
