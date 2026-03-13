@@ -26,6 +26,7 @@ const (
 	ImageScanAgeKey                 = "imageScanAge"
 	ImageSignatureVerifiedKey       = "imageSignatureVerified"
 	ImageUserKey                    = "imageUser"
+	LayerTypeKey                    = "layerType"
 	LineKey                         = "line"
 	LivenessProbeDefinedKey         = "livenessProbeDefined"
 	NamespaceKey                    = "namespace"
@@ -72,6 +73,7 @@ func init() {
 	registerFunc(ImageScanAgeKey, imageScanAgePrinter)
 	registerFunc(ImageSignatureVerifiedKey, imageSignatureVerifiedPrinter)
 	registerFunc(ImageUserKey, imageUserPrinter)
+	registerFunc(LayerTypeKey, layerTypePrinter)
 	registerFunc(LineKey, linePrinter)
 	registerFunc(LivenessProbeDefinedKey, livenessProbeDefinedPrinter)
 	registerFunc(NamespaceKey, namespacePrinter)

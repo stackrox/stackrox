@@ -274,6 +274,15 @@ func initializeFieldMetadata() FieldMetadata {
 		negationForbidden,
 		operatorsForbidden)
 
+	f.registerFieldMetadataRegex(fieldnames.BaseImageLayerType,
+		querybuilders.ForFieldLabel(search.ComponentLayerType),
+		violationmessages.ImageContextFields,
+		func(*validateConfiguration) *regexp.Regexp {
+			return layerTypeValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{})
+
 	f.registerFieldMetadataRegex(fieldnames.CVE,
 		querybuilders.ForCVE(),
 		violationmessages.VulnContextFields,

@@ -862,6 +862,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"op: LabelSelector_Operator!",
 		"values: [String!]!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.LayerType(0)))
 	utils.Must(builder.AddType("License", []string{
 		"name: String!",
 		"type: String!",
@@ -10019,6 +10020,24 @@ func (resolver *labelSelector_RequirementResolver) Op(ctx context.Context) strin
 func (resolver *labelSelector_RequirementResolver) Values(ctx context.Context) []string {
 	value := resolver.data.GetValues()
 	return value
+}
+
+func toLayerType(value *string) storage.LayerType {
+	if value != nil {
+		return storage.LayerType(storage.LayerType_value[*value])
+	}
+	return storage.LayerType(0)
+}
+
+func toLayerTypes(values *[]string) []storage.LayerType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.LayerType, len(*values))
+	for i, v := range *values {
+		output[i] = toLayerType(&v)
+	}
+	return output
 }
 
 type licenseResolver struct {

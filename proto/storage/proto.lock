@@ -8910,6 +8910,18 @@
                 "integer": 6
               }
             ]
+          },
+          {
+            "name": "LayerType",
+            "enum_fields": [
+              {
+                "name": "APPLICATION"
+              },
+              {
+                "name": "BASE_IMAGE",
+                "integer": 1
+              }
+            ]
           }
         ],
         "messages": [
@@ -9205,6 +9217,11 @@
                 "id": 13,
                 "name": "architecture",
                 "type": "string"
+              },
+              {
+                "id": 14,
+                "name": "layer_type",
+                "type": "LayerType"
               }
             ],
             "messages": [
@@ -9579,20 +9596,6 @@
     {
       "protopath": "image_component.proto",
       "def": {
-        "enums": [
-          {
-            "name": "LayerType",
-            "enum_fields": [
-              {
-                "name": "APPLICATION"
-              },
-              {
-                "name": "BASE_IMAGE",
-                "integer": 1
-              }
-            ]
-          }
-        ],
         "messages": [
           {
             "name": "ImageComponent",
