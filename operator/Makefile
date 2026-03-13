@@ -357,9 +357,13 @@ build/Dockerfile.gen: Dockerfile
 
 .PHONY: docker-build
 docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with the operator.
-	BUILDKIT_PROGRESS=plain ../scripts/docker-build.sh \
+	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain ../scripts/docker-build.sh \
 		-t ${IMG} \
 		$(if $(GOARCH),--build-arg TARGET_ARCH=$(GOARCH)) \
+		--build-arg GOMODCACHE_PATH=$(shell go env GOMODCACHE) \
+		--build-arg GOCACHE_PATH=$(shell go env GOCACHE) \
+		$(if $(BUILDKIT_CACHE_FROM),--cache-from $(BUILDKIT_CACHE_FROM)) \
+		$(if $(BUILDKIT_CACHE_TO),--cache-to $(BUILDKIT_CACHE_TO)) \
 		-f $< \
 		..
 
