@@ -629,7 +629,7 @@ func initializeFieldMetadata() FieldMetadata {
 		func(*validateConfiguration) *regexp.Regexp {
 			return stringValueRegex
 		},
-		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT},
+		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT, storage.EventSource_NODE_EVENT},
 		[]RuntimeFieldType{Process})
 
 	f.registerFieldMetadataRegex(fieldnames.ProcessArguments,
@@ -638,7 +638,7 @@ func initializeFieldMetadata() FieldMetadata {
 		func(*validateConfiguration) *regexp.Regexp {
 			return stringValueRegex
 		},
-		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT},
+		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT, storage.EventSource_NODE_EVENT},
 		[]RuntimeFieldType{Process})
 
 	f.registerFieldMetadataRegex(fieldnames.ProcessName,
@@ -647,7 +647,7 @@ func initializeFieldMetadata() FieldMetadata {
 		func(*validateConfiguration) *regexp.Regexp {
 			return stringValueRegex
 		},
-		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT},
+		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT, storage.EventSource_NODE_EVENT},
 		[]RuntimeFieldType{Process})
 
 	f.registerFieldMetadataRegex(fieldnames.ProcessUID,
@@ -656,7 +656,7 @@ func initializeFieldMetadata() FieldMetadata {
 		func(*validateConfiguration) *regexp.Regexp {
 			return stringValueRegex
 		},
-		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT},
+		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT, storage.EventSource_NODE_EVENT},
 		[]RuntimeFieldType{Process})
 
 	f.registerFieldMetadataRegex(fieldnames.ExposedPortProtocol,

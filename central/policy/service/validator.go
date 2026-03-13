@@ -373,7 +373,9 @@ func (s *policyValidator) compilesForRunTime(policy *storage.Policy, options ...
 	}
 
 	if !booleanpolicy.ContainsDiscreteRuntimeFieldCategorySections(policy) {
-		return errors.New("A runtime policy section must contain only one criterion from process, network flow, audit log events, or Kubernetes events criteria categories")
+		if !(booleanpolicy.ContainsOneOf(policy, booleanpolicy.FileAccess) && booleanpolicy.ContainsOneOf(policy, booleanpolicy.Process)) {
+			return errors.New("A runtime policy section must contain only one criterion from process, network flow, audit log events, or Kubernetes events criteria categories")
+		}
 	}
 
 	if err := s.validateNodeEventPolicy(policy); err != nil {
