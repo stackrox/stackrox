@@ -1,0 +1,115 @@
+name: FIPS check-payload
+on:
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
+  workflow_dispatch:
+    inputs:
+      image:
+        description: 'The image to scan with check-payload'
+        default: 'registry.redhat.io/advanced-cluster-security/rhacs-main'
+        required: true
+        type: string
+      image_match:
+        description: 'Regex of image names to include'
+        default: '\(bundle\|operator\|\(roxctl\|slim\|db\|v4\|scanner\|main\|collector\)\(-rhel.\)\?\)$'
+        required: false
+        type: string
+      image_filter:
+        description: 'Regex of image names to exclude'
+        default: 'drivers'
+        required: false
+        type: string
+      tag_match:
+        description: 'Regex of tags to include'
+        default: '^[^0-3]\.'
+        required: false
+        type: string
+
+run-name: ${{ format('Verify FIPS-compliant {0}', inputs.image) }}
+
+env:
+  script_url: /repos/${{ github.repository }}/contents/.github/workflows/scripts/common.sh?ref=${{ github.head_ref || github.ref_name }}
+  ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
+  GH_TOKEN: ${{ github.token }}
+  GH_NO_UPDATE_NOTIFIER: 1
+
+jobs:
+  check-payload:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tag_match: [ '', '^4.9', '^4.8' ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: 'stackrox/openshift-check-payload'
+          ref: main
+
+      - uses: actions/setup-go@v5
+
+      - uses: actions/cache@v4
+        id: cache-check-payload
+        with:
+          path: check-payload
+          key: ${{ runner.os }}-check-payload
+
+      - name: compile check-payload
+        if: steps.cache-check-payload.outputs.cache-hit != 'true'
+        run: |
+          make
+
+      - name: install oc-cli
+        run: |
+          cd /tmp
+          oc version && exit 0
+          curl --retry 5 -o oc.tar.gz https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/openshift-client-linux.tar.gz
+          tar xvzf oc.tar.gz oc
+          rm oc.tar.gz
+          echo "$PATH"
+          chmod ugo+x oc
+          mv oc /usr/bin/ || mv oc /usr/local/bin/
+          which oc
+          oc version || true
+
+      - name: install podman, skopeo
+        run: |
+          which podman || sudo apt-get -y install podman || true
+          which skopeo || sudo apt-get -y install skopeo || true
+          podman -v
+          skopeo -v
+
+      - name: Login to Quay.io
+        uses: docker/login-action@v3
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
+
+      - name: Login to brew.registry.redhat.io
+        uses: docker/login-action@v3
+        with:
+          registry: brew.registry.redhat.io
+          username: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
+          password: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
+
+      - name: Login to registry.redhat.io
+        uses: docker/login-action@v3
+        with:
+          registry: registry.redhat.io
+          username: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
+          password: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
+
+      - name: Run FIPS check-payload on image(s)
+        run: |
+          export PATH=${PATH}:${PWD}
+          gh api -H "$ACCEPT_RAW" "${{ env.script_url }}" | bash -s -- \
+            fips-check-payload \
+            "${{ github.event.inputs.image }}" \
+            "${{ github.event.inputs.image_match }}" \
+            "${{ github.event.inputs.image_filter }}" \
+            "${{ matrix.tag_match}}" \
