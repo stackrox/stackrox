@@ -23,8 +23,6 @@ jobs:
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -36,13 +34,25 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    # setup-go@v6 exports GOTOOLCHAIN=local; override so sub-module tools
+    # with newer go directives (e.g. tools/proto) can auto-download.
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version-file: operator/bundle_helpers/.python-version
+
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
-      with:
-        save: false  # ~752 MB, style-dominated, no critical path speedup
 
     - name: Check Generated
       run: scripts/ci/jobs/check-generated.sh
@@ -51,8 +61,6 @@ jobs:
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -63,6 +71,16 @@ jobs:
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    # setup-go@v6 exports GOTOOLCHAIN=local; override so sub-module tools
+    # with newer go directives (e.g. tools/proto) can auto-download.
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
     - name: Create artifacts dir
       run: mkdir -p "$ARTIFACT_DIR"
@@ -95,11 +113,6 @@ jobs:
 
   style-check:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -112,10 +125,36 @@ jobs:
           free-disk-space: '30'
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      # setup-go@v6 exports GOTOOLCHAIN=local; override so sub-module tools
+      # with newer go directives (e.g. tools/proto) can auto-download.
+      - name: Override GOTOOLCHAIN
+        run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ui/package.json
+
+      - name: Install xmlstarlet for shellcheck output to junit
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq xmlstarlet
+
+      - name: Install pycodestyle
+        run: |
+          python3 -m pip install -r .openshift-ci/dev-requirements.txt
+
+      - name: Verify tools
+        run: |
+          yq --version
+          xmlstarlet --version
+          pycodestyle --version
+
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
-        with:
-          save: false  # ~2,183 MB, style-dominated, no critical path speedup
 
       - name: Cache UI dependencies
         uses: ./.github/actions/cache-ui-dependencies
@@ -259,8 +298,6 @@ jobs:
 
   openshift-ci-lint:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -271,6 +308,9 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Install Python linters
+        run: python3 -m pip install -r .openshift-ci/dev-requirements.txt
 
       - name: pycodestyle
         run: make -C .openshift-ci style

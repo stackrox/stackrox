@@ -786,6 +786,104 @@ func (s *AlertDatastoreImplSuite) TestSearchAlertPolicyGroupsMultiple() {
 	s.Equal(2, resultMap["policy-b"].NumAlerts)
 }
 
+// TestSearchAlertTimeseriesEvents tests the SearchAlertTimeseriesEvents column-projection query
+func (s *AlertDatastoreImplSuite) TestSearchAlertTimeseriesEvents() {
+	alert := fixtures.GetAlert()
+	alert.EntityType = storage.Alert_DEPLOYMENT
+	alert.PlatformComponent = false
+
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+	s.createAndTrackAlert(alert)
+
+	// Test 1: Search excluding resolved returns the alert's timeseries event fields
+	results, err := s.datastore.SearchAlertTimeseriesEvents(ctx, search.EmptyQuery(), true)
+	s.NoError(err)
+	s.Len(results, 1)
+	s.Equal(alert.GetId(), results[0].GetAlertID())
+	s.Equal(alert.GetDeployment().GetClusterName(), results[0].GetClusterName())
+	s.Equal(alert.GetPolicy().GetSeverity(), results[0].GetSeverity())
+	s.Equal(alert.GetState(), results[0].GetState())
+	s.NotNil(results[0].Time)
+
+	// Test 2: Mark alert as resolved
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+	resolvedAlerts, err := s.datastore.MarkAlertsResolvedBatch(ctx, alert.GetId())
+	s.NoError(err)
+	s.Len(resolvedAlerts, 1)
+
+	// Test 3: Search excluding resolved should return 0
+	results, err = s.datastore.SearchAlertTimeseriesEvents(ctx, search.EmptyQuery(), true)
+	s.NoError(err)
+	s.Len(results, 0)
+
+	// Test 4: Search including resolved should return 1
+	results, err = s.datastore.SearchAlertTimeseriesEvents(ctx, search.EmptyQuery(), false)
+	s.NoError(err)
+	s.Len(results, 1)
+	s.Equal(alert.GetId(), results[0].GetAlertID())
+	s.Equal(storage.ViolationState_RESOLVED, results[0].GetState())
+}
+
+// TestSearchAlertTimeseriesEventsMultiple tests with multiple alerts across clusters/severities
+func (s *AlertDatastoreImplSuite) TestSearchAlertTimeseriesEventsMultiple() {
+	alertIDs := []string{fixtureconsts.Alert1, fixtureconsts.Alert2, fixtureconsts.Alert3, fixtureconsts.Alert4}
+	clusterNames := []string{"dev", "dev", "prod", "prod"}
+	severities := []storage.Severity{
+		storage.Severity_CRITICAL_SEVERITY,
+		storage.Severity_HIGH_SEVERITY,
+		storage.Severity_LOW_SEVERITY,
+		storage.Severity_MEDIUM_SEVERITY,
+	}
+	states := []storage.ViolationState{
+		storage.ViolationState_RESOLVED,
+		storage.ViolationState_ACTIVE,
+		storage.ViolationState_RESOLVED,
+		storage.ViolationState_ACTIVE,
+	}
+
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil).Times(len(alertIDs))
+
+	for i, id := range alertIDs {
+		alert := fixtures.GetAlert()
+		alert.Id = id
+		alert.EntityType = storage.Alert_DEPLOYMENT
+		alert.PlatformComponent = false
+		alert.Policy.Severity = severities[i]
+		alert.State = states[i]
+		alert.GetDeployment().ClusterName = clusterNames[i]
+		alert.GetDeployment().ClusterId = fmt.Sprintf("cluster-%s", clusterNames[i])
+		alert.ClusterName = clusterNames[i]
+		alert.ClusterId = fmt.Sprintf("cluster-%s", clusterNames[i])
+		s.createAndTrackAlert(alert)
+	}
+
+	// Search including all states to get all 4 alerts
+	results, err := s.datastore.SearchAlertTimeseriesEvents(ctx, search.EmptyQuery(), false)
+	s.NoError(err)
+	s.Len(results, len(alertIDs))
+
+	// Collect results into a map for order-independent assertions
+	resultMap := make(map[string]*alertviews.AlertTimeseriesEvent)
+	for _, r := range results {
+		resultMap[r.GetAlertID()] = r
+	}
+
+	for i, id := range alertIDs {
+		s.Contains(resultMap, id)
+		s.Equal(clusterNames[i], resultMap[id].GetClusterName())
+		s.Equal(severities[i], resultMap[id].GetSeverity())
+		s.Equal(states[i], resultMap[id].GetState())
+	}
+
+	// Search excluding resolved should return only active alerts
+	results, err = s.datastore.SearchAlertTimeseriesEvents(ctx, search.EmptyQuery(), true)
+	s.NoError(err)
+	s.Len(results, 2)
+	for _, r := range results {
+		s.NotEqual(storage.ViolationState_RESOLVED, r.GetState())
+	}
+}
+
 // TestUpsert_PlatformComponentAndEntityTypeAssignment tests platform component assignment logic
 // Moved from datastore_test.go and converted to use real data instead of mocks
 func (s *AlertDatastoreImplSuite) TestUpsert_PlatformComponentAndEntityTypeAssignment() {

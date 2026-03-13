@@ -10,6 +10,8 @@ import (
 	"github.com/stackrox/rox/pkg/auth/user"
 )
 
+//go:generate mockgen-wrapper
+
 // An Provider is an authenticator which is based on an external service, like auth0.
 type Provider interface {
 	tokens.Source

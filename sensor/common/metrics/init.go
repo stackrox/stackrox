@@ -42,5 +42,8 @@ func init() {
 		ComponentQueueOperations,
 		componentProcessMessageDurationSeconds,
 		componentProcessMessageErrorsCount,
+		InformersRegisteredCurrent,
+		InformersPendingCurrent,
+		informerSyncDurationMs,
 	)
 }

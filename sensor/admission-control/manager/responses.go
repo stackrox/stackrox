@@ -63,13 +63,9 @@ func fail(uid types.UID, message string) *admission.AdmissionResponse {
 }
 
 func message(alerts []*storage.Alert, addBypassMsg bool) string {
-	noun := "policies"
-	if len(alerts) == 1 {
-		noun = "policy"
-	}
 
 	// We add a line break at the beginning to look nicer in kubectl
-	msgHeader := fmt.Sprintf("\nThe attempted operation violated %d enforced %s, described below:\n\n", len(alerts), noun)
+	msgHeader := "\nThe attempted operation violated one or more enforced policies, described below:\n\n"
 	data := map[string]interface{}{
 		"Alerts": alerts,
 	}
