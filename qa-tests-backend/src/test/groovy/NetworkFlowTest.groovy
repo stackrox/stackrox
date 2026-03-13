@@ -244,10 +244,10 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     def destroyDeployments() {
-        for (Deployment deployment : deployments) {
+        for (Deployment deployment : deployments.values()) {
             orchestrator.deleteDeployment(deployment)
         }
-        for (Deployment deployment : deployments) {
+        for (Deployment deployment : deployments.values()) {
             if (deployment.exposeAsService) {
                 orchestrator.waitForServiceDeletion(new Service(deployment.name, deployment.namespace))
             }
@@ -791,7 +791,7 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify edge timestamps are never in the future, or before start of flow tests"() {
         given:
         "Get current state of edges and current timestamp"
-        def queryString = "Deployment:" + deployments.name.join(",")
+        String queryString = "Deployment:" + deployments.keySet().join(",")
         NetworkGraph currentGraph = NetworkGraphService.getNetworkGraph(null, queryString)
         long currentTime = System.currentTimeMillis()
 
@@ -841,7 +841,7 @@ class NetworkFlowTest extends BaseSpecification {
                 List<NetworkNode> outNodes = currentGraph.nodesList.findAll { node ->
                     node.outEdgesMap.containsKey(index)
                 }
-                def allowAllIngress = deployments[deploymentName]?.createLoadBalancer ||
+                boolean allowAllIngress = deployments[deploymentName]?.createLoadBalancer ||
                     currentGraph.nodesList.find { it.entity.type == Type.INTERNET }.outEdgesMap.containsKey(index)
                 if (allowAllIngress) {
                     log.info "${deploymentName} has LB/External incoming traffic - ensure All Ingress allowed"
@@ -880,7 +880,7 @@ class NetworkFlowTest extends BaseSpecification {
             assert yaml."metadata"."labels"."network-policy-generator.stackrox.io/generated"
             assert yaml."metadata"."namespace"
             def index = currentGraph.nodesList.findIndexOf { node -> node.deploymentName == deploymentName }
-            def allowAllIngress = deployments[deploymentName]?.createLoadBalancer ||
+            boolean allowAllIngress = deployments[deploymentName]?.createLoadBalancer ||
                 currentGraph.nodesList.find { it.entity.type == Type.INTERNET }.outEdgesMap.containsKey(index)
             List<NetworkNode> outNodes = currentGraph.nodesList.findAll { node ->
                 node.outEdgesMap.containsKey(index)
