@@ -94,10 +94,37 @@ func ContainsValueWithFieldName(policy *storage.Policy, fieldName string) bool {
 
 }
 
+// processAndFileAccessInSameSection checks that if a policy contains both Process and FileAccess fields,
+// they must be in the same section.
+func processAndFileAccessInSameSection(policy *storage.Policy) bool {
+	hasProcess := ContainsOneOf(policy, Process)
+	hasFileAccess := ContainsOneOf(policy, FileAccess)
+
+	if !hasProcess || !hasFileAccess {
+		return true
+	}
+
+	for _, section := range policy.GetPolicySections() {
+		hasProcessInSection := SectionContainsFieldOfType(section, Process)
+		hasFileAccessInSection := SectionContainsFieldOfType(section, FileAccess)
+
+		if !(hasProcessInSection && hasFileAccessInSection) {
+			return false
+		}
+	}
+
+	return true
+}
+
 // ContainsValidRuntimeFieldCategorySections checks that policy sections only contain
 // compatible runtime field types (as defined by runtimeFieldTypeGroups).
 func ContainsValidRuntimeFieldCategorySections(policy *storage.Policy) bool {
 	if len(policy.GetPolicySections()) == 0 {
+		return false
+	}
+
+	// Ensure Process and FileAccess are in the same section when both are present
+	if !processAndFileAccessInSameSection(policy) {
 		return false
 	}
 
