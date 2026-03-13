@@ -22,7 +22,7 @@ var _ permissions.ResolvedRole = (*InternalRole)(nil)
 
 type AccessWrapper storage.Access
 
-func (a *AccessWrapper) MarshalJSON() ([]byte, error) {
+func (a *AccessWrapper) MarshalText() ([]byte, error) {
 	if a == nil {
 		return json.Marshal("null")
 	}
@@ -35,7 +35,7 @@ func (a *AccessWrapper) MarshalJSON() ([]byte, error) {
 	}
 }
 
-func (a *AccessWrapper) UnmarshalJSON(b []byte) error {
+func (a *AccessWrapper) UnmarshalText(b []byte) error {
 	var s string
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
