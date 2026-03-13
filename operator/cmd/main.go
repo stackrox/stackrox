@@ -290,7 +290,7 @@ func run() error {
 	ctx, cancel := context.WithCancel(ctrl.SetupSignalHandler())
 	defer cancel()
 
-	if err = tlsprofile.SetupTLSProfileWatcher(ctx, mgr, cancel); err != nil {
+	if err = tlsprofile.SetupTLSProfileWatcher(mgr, goTLSProfileSpec, cancel); err != nil {
 		return errors.Wrap(err, "unable to set up TLS profile watcher")
 	}
 
