@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+# Note: This is also used for Scanner.
+
+if [ -d "/etc/pki/ca-trust/extracted/pem/directory-hash" ]; then
+    chmod u+w /etc/pki/ca-trust/extracted/pem/directory-hash
+fi
