@@ -670,12 +670,12 @@ jobs:
         if: |
           matrix.name != 'STACKROX_BRANDING'
         run: |
-          make -C operator/ bundle bundle-build
+          ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true make -C operator/ bundle bundle-build
 
       - name: Operator unit tests
         if: matrix.arch == 'amd64'
         run: |
-          scripts/lib.sh retry 2 true make -C operator/ test
+          ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true scripts/lib.sh retry 2 true make -C operator/ test
 
       - name: Build Operator image
         run: |
@@ -685,7 +685,8 @@ jobs:
           # or in a separate intermediate target.
           #   + protoc-gen-go
           #   go: cannot install cross-compiled binaries when GOBIN is set
-          CGO_ENABLED=0                           scripts/lib.sh retry 6 true make -C operator/ build
+          # Skip proto generation in CI - sources are already committed.
+          CGO_ENABLED=0 ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true scripts/lib.sh retry 6 true make -C operator/ build
           # Once the native architecture dependencies are installed by the above command, the following one
           # simply builds the actual operator binary for the correct target architecture. Skip proto generation.
           # Use GitHub Actions cache backend (type=gha) which handles cache management automatically.
