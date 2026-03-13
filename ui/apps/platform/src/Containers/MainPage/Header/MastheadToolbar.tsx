@@ -13,6 +13,7 @@ import CLIDownloadMenu from './CLIDownloadMenu';
 import ClusterStatusProblems from './ClusterStatusProblems';
 import HelpMenu from './HelpMenu';
 import OrchestratorComponentsToggle from './OrchestratorComponentsToggle';
+import ThemeToggleButton from './ThemeToggleButton';
 import UserMenu from './UserMenu';
 
 function MastheadToolbar(): ReactElement {
@@ -49,13 +50,9 @@ function MastheadToolbar(): ReactElement {
             <FlexItem>
                 <CLIDownloadMenu />
             </FlexItem>
-            {/*
-                * TODO: remove this comment, which hides the light-mode/dark-mode toggle,
-                *       after we update to use PatternFly themes for dark mode
             <FlexItem>
                 <ThemeToggleButton />
             </FlexItem>
-            */}
             <FlexItem>
                 <ClusterStatusProblems />
             </FlexItem>
