@@ -157,6 +157,14 @@ jobs:
           git switch --create "${{needs.variables.outputs.branch}}"
           git commit --allow-empty --message \
             "Empty commit to diverge ${{needs.variables.outputs.release}} from ${{env.main_branch}}"
+      - name: Verify VERSION file matches release
+        run: |
+          expected="${{needs.variables.outputs.release}}.x"
+          actual="$(cat VERSION 2>/dev/null || echo '')"
+          if [ "$actual" != "$expected" ]; then
+            echo "::error::VERSION file contains '$actual', expected '$expected'"
+            exit 1
+          fi
       - name: Tag release branch with rc.0 ${{needs.variables.outputs.branch}}
         run: |
           git tag --annotate --message "Upstream automation" \
@@ -178,6 +186,12 @@ jobs:
           git pull origin --rebase ${{env.main_branch}}
           git tag --annotate --message "Upstream automation" \
             "${{needs.variables.outputs.next-minor-release}}.x" HEAD
+      - name: Update VERSION on ${{env.main_branch}}
+        if: steps.check-existing.outputs.branch-exists == 'false'
+        run: |
+          echo "${{needs.variables.outputs.next-minor-release}}.x" > VERSION
+          git add VERSION
+          git commit --message "chore: update VERSION to ${{needs.variables.outputs.next-minor-release}}.x"
       - name: Push changes
         if: env.DRY_RUN == 'false'
         env:
