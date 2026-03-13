@@ -59,8 +59,8 @@ jobs:
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
       # The cluster name must be no longer than 26 characters.
       CLUSTER_NAME: e2e-cent-${{ github.run_id }}-${{ github.run_attempt }}
-      # Not making CI_JOB_NAME match *gke-upgrade-tests because JUnit reporting will be broken since this is only a
-      # part of the entire former gke-upgrade-tests.
+      # Not making CI_JOB_NAME match *gke-upgrade-tests because JUnit reporting will be broken since the former
+      # gke-upgrade-tests expect all sensor, central and postgres tests to run together in a single sequence.
       CI_JOB_NAME: gke-upgrade-tests-central
       ARTIFACT_DIR: ./junit-reports/
     container:
@@ -199,8 +199,8 @@ jobs:
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
       # The cluster name must be no longer than 26 characters.
       CLUSTER_NAME: e2e-pg-${{ github.run_id }}-${{ github.run_attempt }}
-      # Not making CI_JOB_NAME match *gke-upgrade-tests because JUnit reporting will be broken since this is only a
-      # part of the entire former gke-upgrade-tests.
+      # Not making CI_JOB_NAME match *gke-upgrade-tests because JUnit reporting will be broken since the former
+      # gke-upgrade-tests expect all sensor, central and postgres tests to run together in a single sequence.
       CI_JOB_NAME: gke-upgrade-tests-postgres
       ARTIFACT_DIR: ./junit-reports/
     container:
@@ -340,8 +340,8 @@ jobs:
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
       # The cluster name must be no longer than 26 characters.
       CLUSTER_NAME: e2e-sens-${{ github.run_id }}-${{ github.run_attempt }}
-      # Not making CI_JOB_NAME match *gke-upgrade-tests because JUnit reporting will be broken since this is only a
-      # part of the entire former gke-upgrade-tests.
+      # Not making CI_JOB_NAME match *gke-upgrade-tests because JUnit reporting will be broken since the former
+      # gke-upgrade-tests expect all sensor, central and postgres tests to run together in a single sequence.
       CI_JOB_NAME: gke-upgrade-tests-sensor
       ARTIFACT_DIR: ./junit-reports/
     container:
