@@ -21,6 +21,7 @@ func TestExternalSrcsHandler(t *testing.T) {
 	defer cancel()
 
 	require.NoError(t, handler.Start())
+	t.Cleanup(handler.Stop)
 
 	vs := handler.ExternalSrcsValueStream().Iterator(true)
 
@@ -201,6 +202,7 @@ func TestExternalSourcesLookup(t *testing.T) {
 	defer cancel()
 
 	require.NoError(t, handler.Start())
+	t.Cleanup(handler.Stop)
 
 	vs := handler.ExternalSrcsValueStream().Iterator(true)
 
