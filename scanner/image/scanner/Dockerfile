@@ -35,7 +35,7 @@ COPY bin/scanner /usr/local/bin/
 COPY THIRD_PARTY_NOTICES/ /THIRD_PARTY_NOTICES/
 COPY --from=mappings /mappings/repository-to-cpe.json /mappings/container-name-repos-map.json /run/mappings/
 
-RUN microdnf upgrade --nobest && \
+RUN microdnf upgrade -y --nobest && \
     microdnf clean all && \
     # (Optional) Remove line below to keep package management utilities
     rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
