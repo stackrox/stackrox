@@ -311,6 +311,10 @@ type recordingInjectorWithCapabilities struct {
 	capabilities map[centralsensor.SensorCapability]bool
 }
 
+func (r *recordingInjectorWithCapabilities) HasCapability(cap centralsensor.SensorCapability) bool {
+	return r.capabilities[cap]
+}
+
 func (r *recordingInjector) InjectMessage(_ concurrency.Waitable, msg *central.MsgToSensor) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
@@ -324,10 +328,6 @@ func (r *recordingInjector) InjectMessage(_ concurrency.Waitable, msg *central.M
 }
 
 func (r *recordingInjector) InjectMessageIntoQueue(_ *central.MsgFromSensor) {}
-
-func (r *recordingInjectorWithCapabilities) HasCapability(cap centralsensor.SensorCapability) bool {
-	return r.capabilities[cap]
-}
 
 func (r *recordingInjector) getSentACKs() []*central.NodeInventoryACK {
 	r.lock.Lock()
