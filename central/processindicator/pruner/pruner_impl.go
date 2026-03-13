@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/RoaringBitmap/roaring"
+	"github.com/RoaringBitmap/roaring/v2"
 	"github.com/stackrox/rox/central/processindicator"
 )
 
