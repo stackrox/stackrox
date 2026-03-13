@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/roxctl/common"
-	"github.com/vbauerster/mpb/v4"
+	"github.com/vbauerster/mpb/v8"
 )
 
 type progressWatchReader struct {

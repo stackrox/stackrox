@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/vbauerster/mpb/v4"
-	"github.com/vbauerster/mpb/v4/decor"
+	"github.com/vbauerster/mpb/v8"
+	"github.com/vbauerster/mpb/v8/decor"
 	"golang.org/x/term"
 )
 
@@ -33,19 +33,19 @@ func newSingleCounterDecorator(fmt string) decor.Decorator {
 	}
 }
 
-func (d *singleCounterDecorator) Decor(st *decor.Statistics) string {
+func (d *singleCounterDecorator) Decor(st decor.Statistics) (string, int) {
 	str := fmt.Sprintf(d.fmt, decor.SizeB1024(st.Current))
-	return d.FormatMsg(str)
+	return d.WC.Format(str)
 }
 
 type unknownTotalSizeFiller struct {
 	tick int
 }
 
-func (f *unknownTotalSizeFiller) Fill(w io.Writer, width int, _ *decor.Statistics) {
+func (f *unknownTotalSizeFiller) Fill(w io.Writer, st decor.Statistics) error {
 	f.tick++
 
-	effectiveWidth := width - 2
+	effectiveWidth := st.AvailableWidth - 2
 
 	arrowWidth := 5
 	arrowSpace := 10
@@ -61,7 +61,8 @@ func (f *unknownTotalSizeFiller) Fill(w io.Writer, width int, _ *decor.Statistic
 		}
 	}
 	_, _ = bar.WriteRune(']')
-	_, _ = w.Write([]byte(bar.String()))
+	_, err := w.Write([]byte(bar.String()))
+	return err
 }
 
 func createProgressBars(_ context.Context, name string, totalSize int64) (*mpb.Bar, func()) {
@@ -75,9 +76,9 @@ func createProgressBars(_ context.Context, name string, totalSize int64) (*mpb.B
 	shutdownSig := concurrency.NewSignal()
 
 	if !term.IsTerminal(int(outFile.Fd())) {
-		refreshC := make(chan time.Time, 1)
+		refreshC := make(chan interface{}, 1)
 		refreshC <- time.Now() // first tick right away
-		shutdownNotifyC := make(chan struct{})
+		shutdownNotifyC := make(chan interface{})
 		shutdownC := shutdownSig.Done()
 
 		go func() {
@@ -104,27 +105,34 @@ func createProgressBars(_ context.Context, name string, totalSize int64) (*mpb.B
 
 	progressBars := mpb.New(opts...)
 
-	var filler mpb.Filler
+	var progressBar *mpb.Bar
 	var counterDecorator decor.Decorator
-	if totalSize == 0 {
-		filler = &unknownTotalSizeFiller{}
-		counterDecorator = newSingleCounterDecorator("% 10.1f")
-	} else {
-		counterDecorator = decor.CountersKibiByte("% 10.1f / % 10.1f")
-	}
 
 	appendedDecorators := []decor.Decorator{
-		decor.AverageSpeed(decor.UnitKiB, "% 11.1f"),
+		decor.AverageSpeed(decor.SizeB1024(0), "% 11.1f"),
 		decor.Name(fmt.Sprintf(" %s ", name)),
 	}
-	if totalSize != 0 {
-		appendedDecorators = append(appendedDecorators, decor.AverageETA(decor.ET_STYLE_MMSS))
-	}
 
-	progressBar := progressBars.Add(totalSize, filler,
-		mpb.PrependDecorators(counterDecorator),
-		mpb.AppendDecorators(appendedDecorators...),
-	)
+	if totalSize == 0 {
+		filler := &unknownTotalSizeFiller{}
+		counterDecorator = newSingleCounterDecorator("% 10.1f")
+		var err error
+		progressBar, err = progressBars.Add(totalSize, filler,
+			mpb.PrependDecorators(counterDecorator),
+			mpb.AppendDecorators(appendedDecorators...),
+		)
+		if err != nil {
+			// Should not happen unless progressBars.Wait() was already called
+			panic(err)
+		}
+	} else {
+		counterDecorator = decor.CountersKibiByte("% 10.1f / % 10.1f")
+		appendedDecorators = append(appendedDecorators, decor.AverageETA(decor.ET_STYLE_MMSS))
+		progressBar = progressBars.AddBar(totalSize,
+			mpb.PrependDecorators(counterDecorator),
+			mpb.AppendDecorators(appendedDecorators...),
+		)
+	}
 
 	shutdownFunc := func() {
 		if totalSize == 0 && !progressBar.Completed() {
