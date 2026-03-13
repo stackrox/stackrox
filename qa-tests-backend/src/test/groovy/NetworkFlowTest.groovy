@@ -812,7 +812,7 @@ class NetworkFlowTest extends BaseSpecification {
 
         given:
         "Get current state of deployed namespaces"
-        List<String> deployedNamespaces = deployments*.namespace
+        List<String> deployedNamespaces = deployments.values()*.namespace
 
         and:
         "delete a deployment"
