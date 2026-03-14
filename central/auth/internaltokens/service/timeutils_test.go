@@ -13,8 +13,6 @@ var (
 	testExpirationDuration = &durationpb.Duration{Seconds: 300}
 	// testTokenExpiry is the timestamp of the token expiration.
 	testTokenExpiry = testClock().Add(testExpirationDuration.AsDuration())
-	// testExpiredTraits include the expired trait.
-	testExpiredTraits, _ = generateTraitsWithExpiry(testTokenExpiry.Add(rbacObjectsGraceExpiration))
 )
 
 // testClock is the clock function injection for testing purposes.
@@ -25,5 +23,4 @@ func testClock() time.Time {
 func Test_clock(t *testing.T) {
 	now := testClock()
 	assert.Equal(t, testExpirationDuration.GetSeconds(), int64(testTokenExpiry.Sub(now).Seconds()))
-	assert.Equal(t, rbacObjectsGraceExpiration, testExpiredTraits.GetExpiresAt().AsTime().Sub(testTokenExpiry))
 }

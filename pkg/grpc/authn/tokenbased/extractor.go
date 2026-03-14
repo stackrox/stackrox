@@ -90,6 +90,14 @@ func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reque
 		return identityWithExternalUser, nil
 	}
 
+	if len(token.InternalRoles) > 0 {
+		resolvedRoles := make([]permissions.ResolvedRole, 0, len(token.InternalRoles))
+		for _, role := range token.InternalRoles {
+			resolvedRoles = append(resolvedRoles, role)
+		}
+		return withResolvedRoles(resolvedRoles, token, authProviderSrc), nil
+	}
+
 	return nil, getExtractorError("could not determine token type", nil)
 }
 
@@ -100,18 +108,27 @@ func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, 
 	}
 	// Ensure there are no invalid roles listed in the token.
 	filteredRoles := authn.FilterOutNoneRole(resolvedRoles)
+	return withResolvedRoles(filteredRoles, token, authProvider), nil
+}
+
+func withResolvedRoles(
+	roles []permissions.ResolvedRole,
+	token *tokens.TokenInfo,
+	authProvider authproviders.Provider,
+) authn.Identity {
+	roleNames := permissionsUtils.RoleNames(roles)
 	var email string
 	if token.ExternalUser != nil {
 		email = token.ExternalUser.Email
 	}
 
-	attributes := map[string][]string{"role": permissionsUtils.RoleNames(filteredRoles), "name": {token.Name}}
+	attributes := map[string][]string{"role": roleNames, "name": {token.Name}}
 	id := &roleBasedIdentity{
 		uid:           fmt.Sprintf("auth-token:%s", token.ID),
 		username:      email,
 		friendlyName:  token.Subject,
 		fullName:      token.Name,
-		resolvedRoles: filteredRoles,
+		resolvedRoles: roles,
 		expiry:        token.Expiry(),
 		attributes:    attributes,
 		authProvider:  authProvider,
@@ -124,7 +141,7 @@ func (e *extractor) withRoleNames(ctx context.Context, token *tokens.TokenInfo, 
 			token.ID,
 			token.Expiry().Format(time.RFC3339))
 	}
-	return id, nil
+	return id
 }
 
 func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInfo, authProvider authproviders.Provider) (authn.Identity, error) {
