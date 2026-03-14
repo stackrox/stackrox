@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 # We have to emulate directory layout as in the repo so that imports in go files work fine.
 ARG roxpath=/workspace/src/github.com/stackrox/rox
 ARG TARGET_ARCH=amd64
@@ -7,6 +9,9 @@ FROM --platform=$BUILDPLATFORM registry.access.redhat.com/ubi9/go-toolset:1.25 A
 # Build the manager binary
 ARG TARGET_ARCH
 ARG roxpath
+# Cache mount paths - can be overridden to match local go env
+ARG GOMODCACHE_PATH=/workspace/pkg/mod
+ARG GOCACHE_PATH=/root/.cache/go-build
 
 WORKDIR ${roxpath}/
 ENV GOPATH=/workspace
@@ -29,7 +34,11 @@ COPY go.sum go.sum
 # image).
 # Retry as the proxy can be unavailable at times.
 ENV GOPROXY=https://proxy.golang.org|https://goproxy.io|direct
-RUN go mod download || go mod download || go mod download
+ARG GOMODCACHE_PATH
+ARG GOCACHE_PATH
+RUN --mount=type=cache,target=${GOMODCACHE_PATH},uid=1001,gid=0 \
+    --mount=type=cache,target=${GOCACHE_PATH},uid=1001,gid=0 \
+    go mod download || go mod download || go mod download
 
 # Copy operator source
 COPY operator/ operator/
