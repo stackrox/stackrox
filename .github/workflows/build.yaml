@@ -180,6 +180,10 @@ jobs:
           name: cli-build
           path: cli-build.tgz
 
+      - name: Trim stale GOCACHE entries
+        if: always()
+        uses: ./.github/actions/trim-go-cache
+
   pre-build-go-binaries:
     strategy:
       # Supports three go binary builds:
@@ -209,6 +213,8 @@ jobs:
         env:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
+        with:
+          key-suffix: ${{ matrix.name }}
 
       - uses: ./.github/actions/handle-tagged-build
 
@@ -257,6 +263,10 @@ jobs:
           name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
           path: go-binaries-build.tgz
 
+      - name: Trim stale GOCACHE entries
+        if: always()
+        uses: ./.github/actions/trim-go-cache
+
   pre-build-docs:
     runs-on: ubuntu-latest
     container:
@@ -294,6 +304,10 @@ jobs:
           name: docs-build
           path: |
             image/rhel/docs
+
+      - name: Trim stale GOCACHE entries
+        if: always()
+        uses: ./.github/actions/trim-go-cache
 
   build-and-push-main:
     runs-on: ubuntu-latest
@@ -633,6 +647,8 @@ jobs:
         env:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
+        with:
+          key-suffix: ${{ matrix.name }}
 
       - uses: ./.github/actions/handle-tagged-build
 
@@ -740,6 +756,10 @@ jobs:
           matrix.name != 'STACKROX_BRANDING' && (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
         run: |
           make -C operator/ docker-push-index | cat
+
+      - name: Trim stale GOCACHE entries
+        if: always()
+        uses: ./.github/actions/trim-go-cache
 
   push-operator-manifests:
     runs-on: ubuntu-latest
