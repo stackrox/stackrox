@@ -566,9 +566,12 @@ class NetworkFlowTest extends BaseSpecification {
         assert deploymentUid != null
         String targetUrl
         if (Env.mustGetOrchestratorType() == OrchestratorTypes.K8S) {
-            String deploymentIP = deployments.find { it.name == NGINXCONNECTIONTARGET }?.loadBalancerIP
-            assert deploymentIP != null
-            targetUrl = "http://${deploymentIP}"
+            Deployment nginxDeployment = deployments.find { it.name == NGINXCONNECTIONTARGET }
+            assert nginxDeployment != null : "Deployment ${NGINXCONNECTIONTARGET} not found in deployments list."
+            assert nginxDeployment.loadBalancerIP != null :
+                    "LoadBalancer IP is not set for ${NGINXCONNECTIONTARGET}." +
+                    " Check waitForLoadBalancer() logs for timeout details."
+            targetUrl = "http://${nginxDeployment.loadBalancerIP}"
         } else if (Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) {
             String routeHost = deployments.find { it.name == NGINXCONNECTIONTARGET }?.routeHost
             assert routeHost != null
@@ -669,8 +672,11 @@ class NetworkFlowTest extends BaseSpecification {
         "Deployment A, exposed via LB"
         String deploymentUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert deploymentUid != null
-        String deploymentIP = deployments.find { it.name == NGINXCONNECTIONTARGET }?.loadBalancerIP
-        assert deploymentIP != null
+        Deployment nginxDeployment = deployments.find { it.name == NGINXCONNECTIONTARGET }
+        assert nginxDeployment != null : "Deployment ${NGINXCONNECTIONTARGET} not found in deployments list."
+        String deploymentIP = nginxDeployment.loadBalancerIP
+        assert deploymentIP != null : "LoadBalancer IP is not set for ${NGINXCONNECTIONTARGET}." +
+                " Check waitForLoadBalancer() logs for timeout details."
 
         when:
         "create a new deployment that talks to A via the LB IP"
