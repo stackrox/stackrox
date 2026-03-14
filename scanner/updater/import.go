@@ -22,6 +22,12 @@ func Load(ctx context.Context, connString, vulnsURL string) error {
 	if err != nil {
 		return fmt.Errorf("initializing postgres matcher store: %w", err)
 	}
+	// Reset the pool to force re-registration of custom PostgreSQL types (e.g.
+	// VersionRange) created by the migration above. Resetting ensures
+	// all subsequent connections see the fully-migrated schema.
+	// TODO: Remove after claircore updated to v1.5.50+.
+	pool.Reset()
+
 	metadataStore, err := postgres.InitPostgresMatcherMetadataStore(ctx, pool, true)
 	if err != nil {
 		return fmt.Errorf("initializing postgres matcher metadata store: %w", err)
