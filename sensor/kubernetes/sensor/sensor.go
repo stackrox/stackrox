@@ -22,11 +22,13 @@ import (
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
+	"github.com/stackrox/rox/sensor/common/configmap"
 	"github.com/stackrox/rox/sensor/common/delegatedregistry"
 	"github.com/stackrox/rox/sensor/common/deployment"
 	"github.com/stackrox/rox/sensor/common/deploymentenhancer"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
+	"github.com/stackrox/rox/sensor/common/filesystem"
 	filesystemPipeline "github.com/stackrox/rox/sensor/common/filesystem/pipeline"
 	filesystemService "github.com/stackrox/rox/sensor/common/filesystem/service"
 	"github.com/stackrox/rox/sensor/common/heritage"
@@ -48,7 +50,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/sensor"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
 	vmIndex "github.com/stackrox/rox/sensor/common/virtualmachine/index"
-	k8sadmctrl "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
 	"github.com/stackrox/rox/sensor/kubernetes/clustermetrics"
@@ -90,6 +91,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	hm := heritage.NewHeritageManager(pods.GetPodNamespace(), cfg.k8sClient.Kubernetes().CoreV1(), time.Now())
 	storeProvider := resources.InitializeStore(hm)
 	admCtrlSettingsMgr := admissioncontroller.NewSettingsManager(clusterID, storeProvider.Deployments(), storeProvider.Pods())
+	factSettingsMgr := filesystem.NewFactSettingsManager()
 
 	helmManagedConfig, err := helm.GetHelmManagedConfig(storage.ServiceType_SENSOR_SERVICE)
 	if err != nil {
@@ -140,7 +142,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	pubSub := internalmessage.NewMessageSubscriber()
 
-	policyDetector := detector.New(clusterID, enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan, storeProvider.Nodes())
+	policyDetector := detector.New(clusterID, enforcer, admCtrlSettingsMgr, storeProvider.Deployments(), storeProvider.ServiceAccounts(), imageCache, auditLogEventsInput, auditLogCollectionManager, storeProvider.NetworkPolicies(), storeProvider.Registries(), localScan, storeProvider.Nodes(), factSettingsMgr)
 	reprocessorHandler := reprocessor.NewHandler(admCtrlSettingsMgr, policyDetector, imageCache)
 	pipeline, err := eventpipeline.New(clusterID, cfg.k8sClient, configHandler, policyDetector, reprocessorHandler, k8sNodeName.Setting(), cfg.traceWriter, storeProvider, cfg.eventPipelineQueueSize, pubSub, internalMessageDispatcher)
 	if err != nil {
@@ -218,7 +220,14 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	sensorNamespace := pods.GetPodNamespace()
 
 	if admCtrlSettingsMgr != nil {
-		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(cfg.k8sClient.Kubernetes(), admCtrlSettingsMgr, sensorNamespace))
+		components = append(components,
+			configmap.NewConfigMapPersister(
+				"admissionController",
+				sensorNamespace,
+				cfg.k8sClient.Kubernetes(),
+				admCtrlSettingsMgr.ConfigMapStream().Iterator(false),
+			),
+		)
 	}
 
 	if centralsensor.SecuredClusterIsNotManagedManually(helmManagedConfig) {
@@ -273,6 +282,17 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		fileSystemPipeline := filesystemPipeline.NewFileSystemPipeline(policyDetector, storeProvider.Entities(), activityChan)
 		fileSystemService := filesystemService.NewService(fileSystemPipeline, activityChan)
 		apiServices = append(apiServices, fileSystemService)
+
+		if factSettingsMgr != nil {
+			components = append(components,
+				configmap.NewConfigMapPersister(
+					"fact",
+					sensorNamespace,
+					cfg.k8sClient.Kubernetes(),
+					factSettingsMgr.ConfigMapStream().Iterator(false),
+				),
+			)
+		}
 	}
 
 	if features.VirtualMachines.Enabled() {

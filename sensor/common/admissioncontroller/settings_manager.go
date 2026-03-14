@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	v1 "k8s.io/api/core/v1"
 )
 
 // SettingsManager allows managing admission control settings. It allows updating policies and cluster configuration
@@ -20,5 +21,6 @@ type SettingsManager interface {
 	FlushCache()
 
 	SettingsStream() concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings]
+	ConfigMapStream() concurrency.ReadOnlyValueStream[*v1.ConfigMap]
 	SensorEventsStream() concurrency.ReadOnlyValueStream[*sensor.AdmCtrlUpdateResourceRequest]
 }

@@ -34,6 +34,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector/unified"
 	"github.com/stackrox/rox/sensor/common/enforcer"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
+	"github.com/stackrox/rox/sensor/common/filesystem"
 	fsUtils "github.com/stackrox/rox/sensor/common/filesystem/utils"
 	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -73,7 +74,7 @@ type Detector interface {
 // New returns a new detector
 func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
 	deploymentStore store.DeploymentStore, serviceAccountStore store.ServiceAccountStore, cache cache.Image, auditLogEvents chan *sensor.AuditEvents,
-	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan, nodeStore store.NodeStore) Detector {
+	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan, nodeStore store.NodeStore, factSettingsMgr filesystem.SettingsManager) Detector {
 	detectorStopper := concurrency.NewStopper()
 	netFlowQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorNetworkFlowBufferSize)
 	piQueueSize := queueScaler.ScaleSizeOnNonDefault(env.DetectorProcessIndicatorBufferSize)
@@ -132,6 +133,7 @@ func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSetti
 
 		admCtrlSettingsMgr: admCtrlSettingsMgr,
 		auditLogUpdater:    auditLogUpdater,
+		factSettingsMgr:    factSettingsMgr,
 
 		detectorStopper:   detectorStopper,
 		auditStopper:      concurrency.NewStopper(),
@@ -173,6 +175,7 @@ type detectorImpl struct {
 
 	admCtrlSettingsMgr admissioncontroller.SettingsManager
 	auditLogUpdater    updater.Component
+	factSettingsMgr    filesystem.SettingsManager
 
 	detectorStopper   concurrency.Stopper
 	auditStopper      concurrency.Stopper
@@ -319,6 +322,10 @@ func (d *detectorImpl) ProcessPolicySync(ctx context.Context, sync *central.Poli
 
 	if d.admCtrlSettingsMgr != nil {
 		d.admCtrlSettingsMgr.UpdatePolicies(sync.GetPolicies())
+	}
+
+	if d.factSettingsMgr != nil {
+		d.factSettingsMgr.UpdateFactSettings(sync.GetPolicies())
 	}
 	return nil
 }

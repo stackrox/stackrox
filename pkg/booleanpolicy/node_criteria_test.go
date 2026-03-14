@@ -291,6 +291,44 @@ func (s *NodeCriteriaTestSuite) TestNodeFileAccess() {
 				},
 			},
 		},
+		{
+			description: "Node file policy with all allowed files",
+			policy:      newFileAccessPolicy(storage.EventSource_NODE_EVENT, nil, false, "/etc/passwd", "/etc/ssh/sshd_config", "/etc/shadow", "/etc/sudoers"),
+			events: []eventWrapper{
+				{
+					access:      newActualFileAccessEvent("/etc/passwd", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/etc/shadow", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/etc/ssh/sshd_config", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+				{
+					access:      newActualFileAccessEvent("/etc/sudoers", storage.FileAccess_OPEN),
+					expectAlert: true,
+				},
+			},
+		},
+		{
+			description: "Node file policy with event containing both matching paths",
+			policy:      newFileAccessPolicy(storage.EventSource_NODE_EVENT, nil, false, "/etc/passwd"),
+			events: []eventWrapper{
+				{
+					access: &storage.FileAccess{
+						File: &storage.FileAccess_File{
+							ActualPath:    "/etc/passwd",
+							EffectivePath: "/etc/passwd",
+						},
+						Operation: storage.FileAccess_OPEN,
+					},
+					expectAlert: true,
+				},
+			},
+		},
 	} {
 		testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, true)
 		defer testutils.MustUpdateFeature(s.T(), features.SensitiveFileActivity, false)

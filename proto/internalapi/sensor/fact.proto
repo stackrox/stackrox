@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package sensor;
+
+option cc_enable_arenas = true;
+option go_package = "./internalapi/sensor;sensor";
+
+message FactGRPCConfig {
+  string url = 1;
+  string certs = 2;
+}
+
+message FactEndpointConfig {
+  string address = 1;
+  bool expose_metrics = 2; // @gotags: yaml:"expose_metrics"
+  bool health_check = 3; // @gotags: yaml:"health_check"
+}
+
+message FactSettings {
+  repeated string paths = 1;
+  FactGRPCConfig grpc = 2; // @gotags: yaml:",omitempty"
+  FactEndpointConfig endpoint = 3; // @gotags: yaml:",omitempty"
+  bool skip_pre_flight = 4; // @gotags: yaml:"skip_pre_flight,omitempty"
+  bool json = 5; // @gotags: yaml:",omitempty"
+  uint32 ringbuf_size = 6; // @gotags: yaml:"ringbuf_size,omitempty"
+  bool hotreload = 7; // @gotags: yaml:",omitempty"
+}
