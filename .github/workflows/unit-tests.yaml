@@ -87,7 +87,6 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
-
   go-postgres:
     strategy:
       fail-fast: false
@@ -155,7 +154,6 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
-
   go-bench:
     runs-on: ubuntu-latest
     container:
@@ -203,7 +201,6 @@ jobs:
 
     # Do not create junit report for bench tests:
     # https://github.com/jstemmer/go-junit-report/issues/174
-
 
   ui:
     runs-on: ubuntu-latest
@@ -327,7 +324,6 @@ jobs:
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'roxctl-test-output'
-
 
   shell-unit-tests:
     runs-on: ubuntu-latest
@@ -459,7 +455,6 @@ jobs:
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
-
 
   slack-on-unit-tests-failure:
     env:

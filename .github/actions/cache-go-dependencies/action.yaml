@@ -79,11 +79,11 @@ runs:
     - name: Trim stale GOCACHE entries (post-step)
       uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
       with:
-        run: echo "GOCACHE trim will run in post-step"
         post: >
+          set +e;
           gocache="$(go env GOCACHE)";
           if [[ ! -d "$gocache" ]] || [[ ! -f "$gocache/trim.txt" ]]; then
-            echo "Skipping GOCACHE trim (no cache or mark step did not run)";
+            echo "Skipping GOCACHE trim";
             exit 0;
           fi;
           before=$(du -sm "$gocache" 2>/dev/null | cut -f1);

@@ -180,7 +180,6 @@ jobs:
           name: cli-build
           path: cli-build.tgz
 
-
   pre-build-go-binaries:
     strategy:
       # Supports three go binary builds:
@@ -260,7 +259,6 @@ jobs:
           name: go-binaries-build-${{ matrix.arch }}-${{ matrix.name }}
           path: go-binaries-build.tgz
 
-
   pre-build-docs:
     runs-on: ubuntu-latest
     container:
@@ -298,7 +296,6 @@ jobs:
           name: docs-build
           path: |
             image/rhel/docs
-
 
   build-and-push-main:
     runs-on: ubuntu-latest
@@ -747,7 +744,6 @@ jobs:
           matrix.name != 'STACKROX_BRANDING' && (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
         run: |
           make -C operator/ docker-push-index | cat
-
 
   push-operator-manifests:
     runs-on: ubuntu-latest
