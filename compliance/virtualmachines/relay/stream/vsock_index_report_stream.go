@@ -38,12 +38,28 @@ type VsockIndexReportStream struct {
 // New creates a VsockIndexReportStream with a vsock listener.
 // Concurrency limits are read from env vars VirtualMachinesMaxConcurrentVsockConnections
 // and VirtualMachinesConcurrencyTimeout.
+//
+// Bind-failure return path: vsock.NewListener() performs a one-shot bind. If vsock support is unavailable
+// (e.g. KubeVirt not yet installed), the error propagates to the caller. There is no retry here; the caller
+// (compliance) is responsible for retrying if desired.
 func New() (*VsockIndexReportStream, error) {
 	listener, err := vsock.NewListener()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating vsock listener")
 	}
+	return newWithListener(listener), nil
+}
 
+// NewWithListener creates a VsockIndexReportStream with the given listener.
+// For testing only; use New() in production.
+func NewWithListener(listener net.Listener) (*VsockIndexReportStream, error) {
+	if listener == nil {
+		return nil, errors.New("listener is nil")
+	}
+	return newWithListener(listener), nil
+}
+
+func newWithListener(listener net.Listener) *VsockIndexReportStream {
 	maxConcurrentConnections := env.VirtualMachinesMaxConcurrentVsockConnections.IntegerSetting()
 	semaphoreTimeout := env.VirtualMachinesConcurrencyTimeout.DurationSetting()
 	maxSizeBytes := env.VirtualMachinesVsockConnMaxSizeKB.IntegerSetting() * 1024
@@ -56,7 +72,7 @@ func New() (*VsockIndexReportStream, error) {
 		connectionReadTimeout:    10 * time.Second,
 		waitAfterFailedAccept:    time.Second,
 		maxSizeBytes:             maxSizeBytes,
-	}, nil
+	}
 }
 
 // Start begins accepting vsock connections and returns a channel of validated reports.

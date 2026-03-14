@@ -125,24 +125,33 @@ func (c *Compliance) Start() {
 	// The virtual machine relay (ROX-30476), which reads VM index reports from vsock connections and forwards them to
 	// sensor, is currently started and run in the compliance container. This enables reusing the existing connection to
 	// sensor and accelerates initial development.
+	//
+	// Startup flow: stream.New() binds to vsock (via vsock.NewListener). If vsock is unavailable (e.g. KubeVirt not yet
+	// installed), the bind fails. Retry with backoff below recovers when vsock becomes available after KubeVirt is
+	// installed; without retry the relay would be disabled for the pod lifetime until restart.
 	go func(ctx context.Context) {
 		defer wg.Add(-1)
-		if features.VirtualMachines.Enabled() {
-			log.Infof("Virtual machine relay enabled")
+		if !features.VirtualMachines.Enabled() {
+			return
+		}
+		log.Infof("Virtual machine relay enabled")
 
-			reportStream, err := stream.New()
-			if err != nil {
-				log.Errorf("Error creating report stream: %v", err)
+		reportStream, err := createVMRelayStreamWithRetry(ctx, stream.New)
+		if err != nil {
+			if ctx.Err() != nil {
+				log.Info("Virtual machine relay startup cancelled during vsock retry")
 				return
 			}
+			log.Errorf("Error creating report stream after retries: %v", err)
+			return
+		}
 
-			sensorClient := sensor.NewVirtualMachineIndexReportServiceClient(conn)
-			reportSender := sender.New(sensorClient)
+		sensorClient := sensor.NewVirtualMachineIndexReportServiceClient(conn)
+		reportSender := sender.New(sensorClient)
 
-			vmRelay := relay.New(reportStream, reportSender)
-			if err := vmRelay.Run(ctx); err != nil {
-				log.Errorf("Error running virtual machine relay: %v", err)
-			}
+		vmRelay := relay.New(reportStream, reportSender)
+		if err := vmRelay.Run(ctx); err != nil {
+			log.Errorf("Error running virtual machine relay: %v", err)
 		}
 	}(ctx)
 
