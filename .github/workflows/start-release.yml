@@ -176,6 +176,9 @@ jobs:
           # those commits after all their artifacts have already been built and tested.
           git switch ${{env.main_branch}}
           git pull origin --rebase ${{env.main_branch}}
+          echo "${{needs.variables.outputs.next-minor-release}}.x" > VERSION
+          git add VERSION
+          git commit --message "chore: update VERSION to ${{needs.variables.outputs.next-minor-release}}.x"
           git tag --annotate --message "Upstream automation" \
             "${{needs.variables.outputs.next-minor-release}}.x" HEAD
       - name: Push changes

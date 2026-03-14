@@ -100,8 +100,6 @@ jobs:
     # Checkout master to get the latest local actions
     - name: Checkout repository
       uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -111,7 +109,6 @@ jobs:
     - name: Checkout specific reference
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Authenticate with test GCS bucket
@@ -147,8 +144,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v6
       if: always()
-      with:
-        fetch-depth: 0
 
   upload-nvd-feeds:
     needs:
@@ -159,7 +154,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ github.ref }}
 
     - uses: ./.github/actions/download-artifact-with-retry
@@ -188,7 +182,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ github.ref }}
 
     - uses: ./.github/actions/download-artifact-with-retry

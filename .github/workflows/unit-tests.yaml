@@ -33,8 +33,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -108,8 +106,6 @@ jobs:
 
     - name: Checkout
       uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -168,8 +164,6 @@ jobs:
 
     - name: Checkout
       uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -294,7 +288,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -335,7 +328,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -369,7 +361,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -388,8 +379,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
 
     - name: Set up Go
       uses: actions/setup-go@v6
