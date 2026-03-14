@@ -15,6 +15,36 @@ func ContainsOneOf(policy *storage.Policy, fieldType RuntimeFieldType) bool {
 	return false
 }
 
+// ContainsFileAccessOnly returns whether the policy contains at least one field that is FileAccess
+// but NOT also Process (i.e., exclusively FileAccess).
+func ContainsFileAccessOnly(policy *storage.Policy) bool {
+	for _, section := range policy.GetPolicySections() {
+		for _, group := range section.GetPolicyGroups() {
+			fieldName := group.GetFieldName()
+			metadata := FieldMetadataSingleton().fieldsToQB[fieldName]
+			if metadata == nil {
+				continue
+			}
+
+			isProcess := false
+			isFileAccess := false
+			for _, fieldType := range metadata.fieldTypes {
+				if fieldType == Process {
+					isProcess = true
+				}
+				if fieldType == FileAccess {
+					isFileAccess = true
+				}
+			}
+
+			if isFileAccess && !isProcess {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // HasDiscreteEventSource returns whether the policy contains only fields that
 // match the specified event source
 func HasDiscreteEventSource(policy *storage.Policy, eventSource storage.EventSource) bool {
@@ -98,7 +128,7 @@ func ContainsValueWithFieldName(policy *storage.Policy, fieldName string) bool {
 // they must be in the same section.
 func processAndFileAccessInSameSection(policy *storage.Policy) bool {
 	hasProcess := ContainsOneOf(policy, Process)
-	hasFileAccess := ContainsOneOf(policy, FileAccess)
+	hasFileAccess := ContainsFileAccessOnly(policy)
 
 	if !hasProcess || !hasFileAccess {
 		return true
