@@ -1,9 +1,12 @@
 ARG RPMS_REGISTRY=registry.access.redhat.com
 ARG RPMS_BASE_IMAGE=ubi8
 ARG RPMS_BASE_TAG=latest
+
 ARG BASE_REGISTRY=registry.access.redhat.com
-ARG BASE_IMAGE=ubi8-minimal
+ARG BASE_IMAGE=ubi8-micro
 ARG BASE_TAG=latest
+
+FROM registry.access.redhat.com/ubi8/ubi-micro:latest AS ubi-micro-base
 
 FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS downloads
 
@@ -13,14 +16,59 @@ WORKDIR /
 COPY download.sh /download.sh
 RUN /download.sh
 
-FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS stackrox_data
+# Prepare stackrox-data using ubi8 (has zip utility)
+FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS stackrox_data
 
-RUN mkdir /stackrox-data
-RUN microdnf upgrade --nobest -y  && microdnf install -y zip
+RUN dnf install -y zip && dnf clean all
 
 WORKDIR /
 COPY fetch-stackrox-data.sh .
-RUN /fetch-stackrox-data.sh /stackrox-data
+RUN mkdir /stackrox-data && /fetch-stackrox-data.sh /stackrox-data
+
+# Install all runtime dependencies to /out/
+FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS package_installer
+
+# Copy ubi-micro base to preserve rpmdb
+COPY --from=ubi-micro-base / /out/
+
+# Install packages not in ubi-micro (bash and coreutils-single already present)
+RUN dnf install -y \
+        --installroot=/out/ \
+        --setopt=reposdir=/etc/yum.repos.d \
+        --releasever=8 \
+        --setopt=install_weak_deps=0 \
+        --nodocs \
+        findutils \
+        util-linux \
+        ca-certificates \
+        curl && \
+    dnf --installroot=/out/ clean all && \
+    rm -rf /out/var/cache/dnf /out/var/cache/yum
+
+# Copy PostgreSQL RPMs and install to /out/
+COPY --from=downloads /output/rpms/ /tmp/
+COPY signatures/RPM-GPG-KEY-CentOS-Official /tmp/
+RUN rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
+    dnf install -y \
+        --installroot=/out/ \
+        --setopt=reposdir=/etc/yum.repos.d \
+        --releasever=8 \
+        --setopt=install_weak_deps=0 \
+        --nodocs \
+        /tmp/postgres-libs.rpm \
+        /tmp/postgres.rpm && \
+    dnf --installroot=/out/ clean all && \
+    rm -rf /tmp/*.rpm /tmp/RPM-GPG-KEY-CentOS-Official /out/var/cache/dnf /out/var/cache/yum
+
+# Setup stackrox directories with correct ownership
+RUN mkdir -p /out/stackrox && \
+    mkdir -p /out/etc/pki/ca-trust/source/anchors /out/etc/ssl && \
+    mkdir -p /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox && \
+    chown -R 4000:4000 /out/etc/pki/ca-trust /out/etc/ssl /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox /out/tmp
+
+# Copy static binaries and run save-dir-contents in chroot
+COPY static-bin /out/stackrox/
+RUN chroot /out /stackrox/save-dir-contents /etc/pki/ca-trust /etc/ssl
 
 FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
 
@@ -45,31 +93,11 @@ ENV PATH="/stackrox:$PATH" \
     ROX_IMAGE_FLAVOR=${ROX_IMAGE_FLAVOR} \
     ROX_PRODUCT_BRANDING=${ROX_PRODUCT_BRANDING}
 
-COPY signatures/RPM-GPG-KEY-CentOS-Official /
-COPY static-bin /stackrox/
+# Copy all dependencies and binaries from package_installer
+COPY --from=package_installer /out/ /
 
-COPY --from=downloads /output/rpms/ /tmp/
+# Copy Go binaries (already at /stackrox from downloads stage)
 COPY --from=downloads /output/go/ /go/
-
-RUN rpm --import RPM-GPG-KEY-CentOS-Official && \
-    microdnf -y upgrade --nobest && \
-    rpm -i --nodeps /tmp/postgres-libs.rpm && \
-    rpm -i --nodeps /tmp/postgres.rpm && \
-    microdnf install --setopt=install_weak_deps=0 --nodocs -y util-linux && \
-    microdnf clean all -y && \
-    rm /tmp/postgres.rpm /tmp/postgres-libs.rpm RPM-GPG-KEY-CentOS-Official && \
-    # (Optional) Remove line below to keep package management utilities
-    rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /var/cache/dnf /var/cache/yum && \
-    # The contents of paths mounted as emptyDir volumes in Kubernetes are saved
-    # by the script `save-dir-contents` during the image build. The directory
-    # contents are then restored by the script `restore-all-dir-contents`
-    # during the container start.
-    chown -R 4000:4000 /etc/pki/ca-trust /etc/ssl && save-dir-contents /etc/pki/ca-trust /etc/ssl && \
-    mkdir -p /var/lib/stackrox && chown -R 4000:4000 /var/lib/stackrox && \
-    mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
-    mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
-    chown -R 4000:4000 /tmp
 
 COPY --from=stackrox_data /stackrox-data /stackrox/static-data
 COPY ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
