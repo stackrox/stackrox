@@ -32,6 +32,10 @@ test_ui_e2e() {
     deploy_optional_e2e_components
     deploy_stackrox
 
+    if [[ "${ROX_SCANNER_V4:-}" == "true" ]]; then
+        wait_for_scanner_v4_vuln_load
+    fi
+
     run_ui_e2e_tests
 }
 

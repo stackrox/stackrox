@@ -194,6 +194,9 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 			_ = store.Close(ctx)
 		}
 	}()
+	// Reset the pool to force re-registration of custom PostgreSQL types
+	// created by the migration above. See matcher.NewMatcher for details.
+	pool.Reset()
 
 	locker, err := ctxlock.New(ctx, pool)
 	if err != nil {

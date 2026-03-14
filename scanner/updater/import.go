@@ -22,6 +22,9 @@ func Load(ctx context.Context, connString, vulnsURL string) error {
 	if err != nil {
 		return fmt.Errorf("initializing postgres matcher store: %w", err)
 	}
+	// Reset the pool to force re-registration of custom PostgreSQL types
+	// created by the migration above. See matcher.NewMatcher for details.
+	pool.Reset()
 	metadataStore, err := postgres.InitPostgresMatcherMetadataStore(ctx, pool, true)
 	if err != nil {
 		return fmt.Errorf("initializing postgres matcher metadata store: %w", err)

@@ -191,6 +191,7 @@ export_test_environment() {
     ci_export ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING "${ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING:-true}"
     ci_export ROX_NETFLOW_BATCHING "${ROX_NETFLOW_BATCHING:-true}"
     ci_export ROX_NETFLOW_CACHE_LIMITING "${ROX_NETFLOW_CACHE_LIMITING:-true}"
+    ci_export ROX_SCANNER_V4 "true"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -257,6 +258,18 @@ deploy_central() {
         DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
         CENTRAL_NAMESPACE="${central_namespace}" "${ROOT}/${DEPLOY_DIR}/central.sh"
     fi
+}
+
+# _scanner_v4_db_persistence_yaml prints the YAML snippet for the scannerV4.db
+# persistence block, indented for use inside an operator CR template. Prints
+# nothing when SCANNER_V4_DB_STORAGE_CLASS is unset.
+_scanner_v4_db_persistence_yaml() {
+    [[ -n "${SCANNER_V4_DB_STORAGE_CLASS:-}" ]] || return 0
+    cat <<EOF
+      persistence:
+        persistentVolumeClaim:
+          storageClassName: "${SCANNER_V4_DB_STORAGE_CLASS}"
+EOF
 }
 
 # shellcheck disable=SC2120
@@ -351,6 +364,9 @@ deploy_central_via_operator() {
         false) scannerV4ScannerComponent="Disabled" ;;
     esac
 
+    local scannerV4DbPersistenceYaml
+    scannerV4DbPersistenceYaml="$(_scanner_v4_db_persistence_yaml)"
+
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
     # Different yaml for midstream images
     if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
@@ -366,6 +382,7 @@ deploy_central_via_operator() {
       central_exposure_route_enabled="$central_exposure_route_enabled" \
       customize_envVars="$customize_envVars" \
       scannerV4ScannerComponent="$scannerV4ScannerComponent" \
+      scannerV4DbPersistenceYaml="$scannerV4DbPersistenceYaml" \
     "${envsubst}" \
       < "${CENTRAL_YAML_PATH}" | kubectl apply -n "${central_namespace}" -f -
 
@@ -461,11 +478,15 @@ deploy_sensor_via_operator() {
         customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_CACHE_LIMITING}"'"'
     fi
 
+    local scannerV4DbPersistenceYaml
+    scannerV4DbPersistenceYaml="$(_scanner_v4_db_persistence_yaml)"
+
     env - \
       scanner_component_setting="$scanner_component_setting" \
       fam_mode_setting="$fam_mode_setting" \
       central_endpoint="$central_endpoint" \
       customize_envVars="$customize_envVars" \
+      scannerV4DbPersistenceYaml="$scannerV4DbPersistenceYaml" \
     "${envsubst}" \
       < "${secured_cluster_yaml_path}" | kubectl apply -n "${sensor_namespace}" --validate="${validate}" -f -
 
@@ -1146,6 +1167,57 @@ wait_for_ready_deployment() {
     done
 
     info "Deployment ${deployment_name} is ready in namespace ${namespace}."
+}
+
+# wait_for_scanner_v4_vuln_load waits until the Scanner V4 matcher has completed
+# its initial vulnerability load, verified via Central's integration health API.
+# This is distinct from wait_for_scanner_V4, which only waits for pod readiness
+# (i.e. database connectivity). Call this separately in jobs that verify scan
+# results, after deploy_stackrox has returned.
+# Requires: API_ENDPOINT, ROX_ADMIN_PASSWORD (both set by wait_for_api).
+wait_for_scanner_v4_vuln_load() {
+    local max_seconds="${SCANNER_V4_VULN_LOAD_TIMEOUT:-2400}"
+    info "Waiting for Scanner V4 to finish loading vulnerabilities..."
+
+    require_environment "API_ENDPOINT"
+    require_environment "ROX_ADMIN_PASSWORD"
+
+    local start_time elapsed
+    start_time="$(date '+%s')"
+    while true; do
+        # -w '\n%{http_code}' appends a newline and the HTTP status code after the
+        # response body, letting us capture both in a single variable.
+        local response http_code body
+        response=$(curl -sk \
+            --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") \
+            -w '\n%{http_code}' \
+            "https://${API_ENDPOINT}/v1/integrationhealth/vulndefinitions?component=SCANNER_V4")
+        # ##*$'\n' strips up to and including the last newline (leaving just the 3-digit code).
+        http_code="${response##*$'\n'}"
+        # %$'\n'* strips the trailing newline+code (leaving just the body).
+        body="${response%$'\n'*}"
+
+        elapsed=$(( $(date '+%s') - start_time ))
+
+        if [[ "${http_code}" != "200" ]]; then
+            # Try to extract the message field from a JSON error body; fall back to
+            # the raw body if it's not JSON or the field is absent.
+            local err_detail
+            err_detail=$(jq -r '.message // empty' <<< "${body}" 2>/dev/null)
+            info "Scanner V4 vuln load check: HTTP ${http_code} (${elapsed}s/${max_seconds}s): ${err_detail:-${body}}"
+        elif echo "${body}" | jq -e '.lastUpdatedTimestamp != null' >/dev/null 2>&1; then
+            info "Scanner V4 vulnerability loading complete (${elapsed}s elapsed)."
+            return
+        else
+            info "Scanner V4 vuln load check: HTTP 200, lastUpdatedTimestamp not set yet (${elapsed}s/${max_seconds}s)"
+        fi
+
+        if (( elapsed > max_seconds )); then
+            die "wait_for_scanner_v4_vuln_load() timed out after ${max_seconds}s."
+        fi
+
+        sleep 30
+    done
 }
 
 # shellcheck disable=SC2120

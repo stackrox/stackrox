@@ -12,6 +12,7 @@ from compatibility_test import (
 
 # set required test parameters
 os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
+os.environ["SCANNER_V4_DB_STORAGE_CLASS"] = "faster"
 
 # Run supported central and sensor version tuples against QaE2eGoCompatibilityTest (nongroovy compatibility tests)
 run_compatibility_tests(QaE2eGoCompatibilityTest, "nongroovy-compat-test")

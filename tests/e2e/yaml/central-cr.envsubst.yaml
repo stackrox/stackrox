@@ -64,13 +64,14 @@ $centralAdditionalCAIndented
           cpu: "6000m"
           memory: "2000Mi"
     db:
+$scannerV4DbPersistenceYaml
       resources:
         requests:
           cpu: "300m"
           memory: "500Mi"
         limits:
           cpu: "1000m"
-          memory: "1000Mi"
+          memory: "2000Mi"
 ---
 apiVersion: v1
 kind: Secret

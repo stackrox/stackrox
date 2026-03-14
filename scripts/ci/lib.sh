@@ -146,7 +146,7 @@ setup_deployment_env() {
     fi
 
     ci_export ROX_PRODUCT_BRANDING "RHACS_BRANDING"
-}
+ }
 
 get_central_debug_dump() {
     info "Getting a central debug dump"
