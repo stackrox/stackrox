@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector"
+	detectorMetrics "github.com/stackrox/rox/sensor/common/detector/metrics"
 )
 
 var (
@@ -176,7 +177,13 @@ func (p *Pipeline) run() {
 				// Channel closed, no more messages
 				return
 			}
+			detectorMetrics.ObserveFileAccessEventReceived()
 			event := p.translate(fs)
+			if event == nil {
+				detectorMetrics.DetectorFileAccessDroppedCount.Inc()
+				continue
+			}
+
 			p.detector.ProcessFileAccess(p.msgCtx, event)
 		}
 	}
