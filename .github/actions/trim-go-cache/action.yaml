@@ -1,0 +1,18 @@
+name: Trim stale GOCACHE entries
+description: >
+  Deletes GOCACHE entries not accessed during this job.
+  Must be paired with cache-go-dependencies which marks entries before the build.
+runs:
+  using: composite
+  steps:
+    - name: Trim stale GOCACHE entries
+      run: |
+        gocache="$(go env GOCACHE)"
+        before=$(du -sm "$gocache" 2>/dev/null | cut -f1)
+        cutoff=$(mktemp); touch -t 200001020000 "$cutoff"
+        find "$gocache" -type f ! -newer "$cutoff" -delete 2>/dev/null || true
+        rm -f "$cutoff"
+        find "$gocache" -mindepth 1 -type d -empty -delete 2>/dev/null || true
+        after=$(du -sm "$gocache" 2>/dev/null | cut -f1)
+        echo "GOCACHE trimmed: ${before:-0}MB -> ${after:-0}MB"
+      shell: bash
