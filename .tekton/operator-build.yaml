@@ -50,7 +50,11 @@ spec:
   - name: hermetic
     value: "true"
   - name: prefetch-input
-    value: '{"type": "gomod", "path": "."}'
+    value: |
+      [
+        { "type": "gomod", "path": "." },
+        { "type": "rpm", "path": "." }
+      ]
   - name: build-source-image
     value: 'true'
   - name: clone-depth
@@ -75,6 +79,11 @@ spec:
           cpu: 2
         requests:
           cpu: 2
+    params:
+    - name: ACTIVATION_KEY
+      value: subscription-manager-activation-key-prod
+    - name: dev-package-managers
+      value: "true"
   - pipelineTaskName: build-source-image
     stepSpecs:
     # Bump memory for source image build because the one with defaults tends to get sometimes OOM-killed.
