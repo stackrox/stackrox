@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -200,7 +201,11 @@ func Test_pipelineImpl_Run_SendsSensorAndLegacyACKs(t *testing.T) {
 			},
 		},
 	}
-	injector := &recordingInjector{}
+	injector := &recordingInjectorWithCapabilities{
+		capabilities: map[centralsensor.SensorCapability]bool{
+			centralsensor.SensorACKSupport: true,
+		},
+	}
 
 	gomock.InOrder(
 		nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(&node, true, nil),
@@ -236,12 +241,78 @@ func Test_pipelineImpl_Run_SendsSensorAndLegacyACKs(t *testing.T) {
 	}, injector.getSentSensorACKs(), "sensor ACKs")
 }
 
+func Test_pipelineImpl_Run_SkipsSensorACKWhenCapabilityMissing(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	clusterStore := clusterDatastoreMocks.NewMockDataStore(ctrl)
+	nodeDatastore := nodeDatastoreMocks.NewMockDataStore(ctrl)
+	riskManager := riskManagerMocks.NewMockManager(ctrl)
+	enricher := nodesEnricherMocks.NewMockNodeEnricher(ctrl)
+
+	clusterID := "cluster-1"
+	nodeName := "node-name"
+	node := storage.Node{
+		Id:        "node-id",
+		ClusterId: clusterID,
+	}
+	msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Action: central.ResourceAction_CREATE_RESOURCE,
+				Resource: &central.SensorEvent_NodeInventory{
+					NodeInventory: &storage.NodeInventory{
+						NodeId:   node.GetId(),
+						NodeName: nodeName,
+					},
+				},
+			},
+		},
+	}
+	injector := &recordingInjectorWithCapabilities{
+		capabilities: map[centralsensor.SensorCapability]bool{},
+	}
+
+	gomock.InOrder(
+		nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(&node, true, nil),
+		enricher.EXPECT().EnrichNodeWithVulnerabilities(gomock.Any(), gomock.Any(), nil).Times(1).Return(nil),
+		riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil),
+	)
+
+	p := &pipelineImpl{
+		clusterStore:  clusterStore,
+		nodeDatastore: nodeDatastore,
+		enricher:      enricher,
+		riskManager:   riskManager,
+	}
+
+	err := p.Run(context.Background(), clusterID, msg, injector)
+	assert.NoError(t, err)
+	assert.Empty(t, injector.getSentSensorACKs(), "sensor ACK should be skipped without SensorACKSupport")
+
+	protoassert.SlicesEqual(t, []*central.NodeInventoryACK{
+		{
+			ClusterId:   clusterID,
+			NodeName:    nodeName,
+			Action:      central.NodeInventoryACK_ACK,
+			MessageType: central.NodeInventoryACK_NodeInventory,
+		},
+	}, injector.getSentACKs(), "legacy ACKs")
+}
+
 var _ common.MessageInjector = (*recordingInjector)(nil)
 
 type recordingInjector struct {
 	lock     sync.Mutex
 	messages []*central.NodeInventoryACK
 	sensor   []*central.SensorACK
+}
+
+type recordingInjectorWithCapabilities struct {
+	recordingInjector
+	capabilities map[centralsensor.SensorCapability]bool
+}
+
+func (r *recordingInjectorWithCapabilities) HasCapability(cap centralsensor.SensorCapability) bool {
+	return r.capabilities[cap]
 }
 
 func (r *recordingInjector) InjectMessage(_ concurrency.Waitable, msg *central.MsgToSensor) error {

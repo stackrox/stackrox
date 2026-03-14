@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
@@ -103,7 +104,11 @@ func TestPipelineSendsSensorAndLegacyACKs(t *testing.T) {
 		riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil),
 	)
 
-	injector := &recordingInjector{}
+	injector := &recordingInjectorWithCapabilities{
+		capabilities: map[centralsensor.SensorCapability]bool{
+			centralsensor.SensorACKSupport: true,
+		},
+	}
 	p := &pipelineImpl{
 		clusterStore:  clusterStore,
 		nodeDatastore: nodeDatastore,
@@ -132,6 +137,53 @@ func TestPipelineSendsSensorAndLegacyACKs(t *testing.T) {
 	}, injector.getSentACKs())
 }
 
+func TestPipelineSkipsSensorACKWhenCapabilityMissing(t *testing.T) {
+	t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
+	t.Setenv(features.ScannerV4.EnvVar(), "true")
+
+	ctrl := gomock.NewController(t)
+	clusterStore := clusterDatastoreMocks.NewMockDataStore(ctrl)
+	nodeDatastore := nodeDatastoreMocks.NewMockDataStore(ctrl)
+	riskManager := riskManagerMocks.NewMockManager(ctrl)
+	enricher := nodesEnricherMocks.NewMockNodeEnricher(ctrl)
+
+	node := storage.Node{
+		Id:        "1",
+		Name:      "node-name",
+		ClusterId: "cluster-id",
+	}
+	msg := createMsg(mockIndexReport)
+
+	gomock.InOrder(
+		nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(&node, true, nil),
+		enricher.EXPECT().EnrichNodeWithVulnerabilities(gomock.Any(), nil, gomock.Any()).Times(1).Return(nil),
+		riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil),
+	)
+
+	injector := &recordingInjectorWithCapabilities{
+		capabilities: map[centralsensor.SensorCapability]bool{},
+	}
+	p := &pipelineImpl{
+		clusterStore:  clusterStore,
+		nodeDatastore: nodeDatastore,
+		riskManager:   riskManager,
+		enricher:      enricher,
+	}
+
+	err := p.Run(t.Context(), node.GetClusterId(), msg, injector)
+	assert.NoError(t, err)
+	assert.Empty(t, injector.getSentSensorACKs(), "sensor ACK should be skipped without SensorACKSupport")
+
+	protoassert.SlicesEqual(t, []*central.NodeInventoryACK{
+		{
+			ClusterId:   node.GetClusterId(),
+			NodeName:    node.GetName(),
+			Action:      central.NodeInventoryACK_ACK,
+			MessageType: central.NodeInventoryACK_NodeIndexer,
+		},
+	}, injector.getSentACKs())
+}
+
 func createMsg(ir *v4.IndexReport) *central.MsgFromSensor {
 	return &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
@@ -149,6 +201,15 @@ type recordingInjector struct {
 	lock   sync.Mutex
 	legacy []*central.NodeInventoryACK
 	sensor []*central.SensorACK
+}
+
+type recordingInjectorWithCapabilities struct {
+	recordingInjector
+	capabilities map[centralsensor.SensorCapability]bool
+}
+
+func (r *recordingInjectorWithCapabilities) HasCapability(cap centralsensor.SensorCapability) bool {
+	return r.capabilities[cap]
 }
 
 func (r *recordingInjector) InjectMessage(_ concurrency.Waitable, msg *central.MsgToSensor) error {
