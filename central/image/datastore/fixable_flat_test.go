@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -23,7 +24,11 @@ type normalizedImageComponent struct {
 	version string
 }
 
+// TODO(ROX-30117): Remove this test when FlattenImageData feature flag is removed.
 func TestFixableFlatSearch(t *testing.T) {
+	if features.FlattenImageData.Enabled() {
+		t.Skip("Skipping test - FlattenImageData is enabled. Equivalent tests exist in imageV2 datastore.")
+	}
 	suite.Run(t, new(FixableFlatSearchTestSuite))
 }
 

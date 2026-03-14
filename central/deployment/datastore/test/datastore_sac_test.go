@@ -362,7 +362,6 @@ func (s *deploymentDatastoreSACSuite) runGetImagesForDeploymentTest(testContexts
 	// This will help us check if GetImagesForDeployment returns the image from the deployment object,
 	// or the data from the image datastore.
 	imageToStore.IsClusterLocal = true
-
 	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
 	if features.FlattenImageData.Enabled() {
 		err := s.imageV2Store.UpsertImage(sac.WithAllAccess(context.Background()), imageUtils.ConvertToV2(imageToStore))

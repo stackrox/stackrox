@@ -92,7 +92,7 @@ func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 	bts.testDB = pgtest.ForT(bts.b)
 
 	// set up tables
-	imageDataStore := resolvers.CreateTestImageV2Datastore(bts.b, bts.testDB, mockCtrl)
+	imageDataStore := resolvers.CreateTestImageDatastore(bts.b, bts.testDB, mockCtrl)
 	bts.watchedImageDatastore = watchedImageDS.GetTestPostgresDataStore(bts.b, bts.testDB.DB)
 	var schema *graphql.Schema
 	bts.resolver, schema = resolvers.SetupTestResolver(bts.b,

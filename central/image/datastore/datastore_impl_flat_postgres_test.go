@@ -37,7 +37,11 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+// TODO(ROX-30117): Remove this test when FlattenImageData feature flag is removed.
 func TestImageFlatDataStoreWithPostgres(t *testing.T) {
+	if features.FlattenImageData.Enabled() {
+		t.Skip("Skipping test - FlattenImageData is enabled. Equivalent tests exist in imageV2 datastore.")
+	}
 	suite.Run(t, new(ImageFlatPostgresDataStoreTestSuite))
 }
 

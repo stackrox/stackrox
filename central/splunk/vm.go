@@ -88,7 +88,6 @@ func NewVulnMgmtHandler(deployments datastore.DataStore, images imageDatastore.D
 					continue
 				}
 				imageSet.Add(imgID)
-
 				err := arrayWriter.WriteObject(&splunkDeploymentEvent{
 					Type:        "deployment",
 					Cluster:     deployment.GetClusterName(),

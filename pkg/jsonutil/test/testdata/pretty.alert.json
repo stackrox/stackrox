@@ -223,7 +223,8 @@
             "remote": "library/nginx",
             "tag": "1.10",
             "fullName": "docker.io/library/nginx:1.10"
-          }
+          },
+          "idV2": "04c935ba-f0f5-55b9-a819-1f856ee23282"
         },
         "name": "nginx110container"
       }

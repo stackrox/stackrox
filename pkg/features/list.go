@@ -82,7 +82,7 @@ var (
 	NetworkGraphAggregateExternalIPs = registerFeature("Aggregate all external IP graph edges, showing only unique port/protocol pairs", "ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS")
 
 	// Flattens Image Data Model for improved accuracy and performance
-	FlattenImageData = registerFeature("Uses a flattened Image Data Model for improved accuracy and performance", "ROX_FLATTEN_IMAGE_DATA")
+	FlattenImageData = registerFeature("Uses a flattened Image Data Model for improved accuracy and performance", "ROX_FLATTEN_IMAGE_DATA", enabled)
 
 	// Adds the ability to generate view-based vulnerability reports
 	VulnerabilityViewBasedReports = registerFeature("Adds the ability to generate view-based vulnerability reports", "ROX_VULNERABILITY_VIEW_BASED_REPORTS", enabled)
