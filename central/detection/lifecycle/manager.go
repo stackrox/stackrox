@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/detection/runtime"
 	baselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/storage"
@@ -75,6 +76,8 @@ func newManager(buildTimeDetector buildtime.Detector, deployTimeDetector deployt
 		removedOrDisabledPolicies: set.NewStringSet(),
 
 		connectionManager: connectionManager,
+
+		matcher: platformmatcher.Singleton(),
 	}
 
 	go m.flushQueuePeriodically()
