@@ -578,12 +578,14 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"clusterName: String!",
 		"containers: [Container]!",
 		"created: Time",
+		"ephemeralContainers: [Container]!",
 		"hostIpc: Boolean!",
 		"hostNetwork: Boolean!",
 		"hostPid: Boolean!",
 		"id: ID!",
 		"imagePullSecrets: [String!]!",
 		"inactive: Boolean!",
+		"initContainers: [Container]!",
 		"labelSelector: LabelSelector",
 		"labels: [Label!]!",
 		"name: String!",
@@ -7154,6 +7156,12 @@ func (resolver *deploymentResolver) Created(ctx context.Context) (*graphql.Time,
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
+func (resolver *deploymentResolver) EphemeralContainers(ctx context.Context) ([]*containerResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetEphemeralContainers()
+	return resolver.root.wrapContainers(value, nil)
+}
+
 func (resolver *deploymentResolver) HostIpc(ctx context.Context) bool {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetHostIpc()
@@ -7190,6 +7198,12 @@ func (resolver *deploymentResolver) Inactive(ctx context.Context) bool {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetInactive()
 	return value
+}
+
+func (resolver *deploymentResolver) InitContainers(ctx context.Context) ([]*containerResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetInitContainers()
+	return resolver.root.wrapContainers(value, nil)
 }
 
 func (resolver *deploymentResolver) LabelSelector(ctx context.Context) (*labelSelectorResolver, error) {

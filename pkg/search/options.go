@@ -143,6 +143,7 @@ var (
 	ContainerID                  = newFieldLabel("Container ID")
 	ContainerImageDigest         = newFieldLabel("Container Image Digest")
 	ContainerName                = newFieldLabel("Container Name")
+	ContainerType                = newFieldLabel("Container Type")
 	DeploymentID                 = newFieldLabel("Deployment ID")
 	DeploymentHash               = newFieldLabel("Deployment Hash")
 	DeploymentName               = newFieldLabel("Deployment")
