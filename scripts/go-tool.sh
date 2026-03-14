@@ -12,6 +12,7 @@ die() {
 }
 
 RACE="${RACE:-false}"
+REPO_ROOT="${SCRIPT_DIR}/.."
 
 x_defs=()
 x_def_errors=()
@@ -26,7 +27,7 @@ while read -r line || [[ -n "$line" ]]; do
 	else
 		die "Malformed status.sh output line ${line}"
 	fi
-done < <(cd "${SCRIPT_DIR}/.."; ./status.sh)
+done < <(cd "${REPO_ROOT}"; ./status.sh)
 
 while read -r line || [[ -n "$line" ]]; do
 	if [[ "$line" =~ ^[[:space:]]*$ ]]; then
@@ -41,33 +42,68 @@ while read -r line || [[ -n "$line" ]]; do
 		[[ -n "${!varname}" ]] || x_def_errors+=(
 			"Variable ${go_var} defined in ${go_file}:${go_line} references status var ${status_var} that is not part of the status.sh output"
 		)
-		go_package="$(cd "${SCRIPT_DIR}/.."; go list -e "./$(dirname "$go_file")")"
+		go_package="$(cd "${REPO_ROOT}"; go list -e "./$(dirname "$go_file")")"
 
 		x_defs+=(-X "\"${go_package}.${go_var}=${!varname}\"")
 	fi
-done < <(git -C "${SCRIPT_DIR}/.." grep -n '//XDef:' -- '*.go')
+done < <(git -C "${REPO_ROOT}" grep -n '//XDef:' -- '*.go')
 if [[ "${#x_def_errors[@]}" -gt 0 ]]; then
 	printf >&2 "%s\n" "${x_def_errors[@]}"
 	exit 1
 fi
 
-ldflags=("${x_defs[@]}")
+# Build ldflags: full version for builds, stable base tag for tests.
+# Go includes -X ldflags in the link ActionID (exec.go:1404), so per-commit
+# values (MainVersion, GitShortSha) invalidate the test result cache.
+# Using a stable base tag for tests keeps test ActionIDs constant across commits.
+build_ldflags=("${x_defs[@]}")
+
+BASE_VERSION="$(cd "${REPO_ROOT}"; git describe --tags --abbrev=0 --exclude '*-nightly-*' 2>/dev/null || echo "")"
+if [[ -n "$BASE_VERSION" ]]; then
+  version_pkg="$(cd "${REPO_ROOT}"; go list -e ./pkg/version/internal)"
+  test_ldflags=()
+  # x_defs contains pairs: -X "pkg.Var=value". Iterate in steps of 2.
+  for (( i=0; i<${#x_defs[@]}; i+=2 )); do
+    xflag="${x_defs[i]}"      # -X
+    xval="${x_defs[i+1]}"     # "pkg.Var=value"
+    if [[ "$xval" == *"MainVersion="* ]]; then
+      test_ldflags+=(-X "\"${version_pkg}.MainVersion=${BASE_VERSION}\"")
+    elif [[ "$xval" == *"GitShortSha="* ]]; then
+      # Skip GitShortSha for tests — not needed and changes per commit.
+      :
+    else
+      test_ldflags+=("$xflag" "$xval")
+    fi
+  done
+else
+  # No git tags available — fall back to full ldflags for tests too.
+  test_ldflags=("${x_defs[@]}")
+fi
+
 if [[ "$DEBUG_BUILD" != "yes" ]]; then
-  ldflags+=(-s -w)
+  build_ldflags+=(-s -w)
+  test_ldflags+=(-s -w)
 fi
 
 if [[ "${CGO_ENABLED}" != 0 ]]; then
   echo >&2 "CGO_ENABLED is not 0. Compiling with -linkmode=external"
-  ldflags+=('-linkmode=external')
+  build_ldflags+=('-linkmode=external')
+  test_ldflags+=('-linkmode=external')
 fi
 
 function invoke_go() {
-  tool="$1"
+  local tool="$1"
   shift
-  if [[ "$RACE" == "true" ]]; then
-    CGO_ENABLED=1 go "$tool" -race -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" "$@"
+  local flags
+  if [[ "$tool" == "test" ]]; then
+    flags="${test_ldflags[*]}"
   else
-    go "$tool" -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" "$@"
+    flags="${build_ldflags[*]}"
+  fi
+  if [[ "$RACE" == "true" ]]; then
+    CGO_ENABLED=1 go "$tool" -race -buildvcs=false -ldflags="${flags}" -tags "$(tr , ' ' <<<"$GOTAGS")" "$@"
+  else
+    go "$tool" -buildvcs=false -ldflags="${flags}" -tags "$(tr , ' ' <<<"$GOTAGS")" "$@"
   fi
 }
 
