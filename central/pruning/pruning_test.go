@@ -1359,7 +1359,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedProcesses() {
 			actualProcessDatastore := processIndicatorDatastore.GetTestPostgresDataStore(t, db.DB)
 			s.NoError(actualProcessDatastore.AddProcessIndicators(s.ctx, c.initialProcesses...))
 
-			processes.EXPECT().PruneProcessIndicators(gomock.Any(), c.expectedDeletions).AnyTimes()
+			processes.EXPECT().PruneProcessIndicators(gomock.Any(), c.expectedDeletions, gomock.Any()).AnyTimes()
 			gci.removeOrphanedProcesses()
 		})
 	}

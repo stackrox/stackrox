@@ -430,7 +430,7 @@ func (g *garbageCollectorImpl) removeOrphanedProcesses() {
 		return
 	}
 
-	deploymentIndicatorCount, err := g.removeProcesses(processesToRemove, "deployment")
+	deploymentIndicatorCount, err := g.removeProcesses(processesToRemove, processDatastore.PruneReasonOrphanedByDeployment, "deployment")
 	if err != nil {
 		log.Errorf("[Pruning] Error removing processes orphaned by deployment: %v", err)
 	}
@@ -441,7 +441,7 @@ func (g *garbageCollectorImpl) removeOrphanedProcesses() {
 		return
 	}
 
-	podIndicatorCount, err := g.removeProcesses(processesToRemove, "pod")
+	podIndicatorCount, err := g.removeProcesses(processesToRemove, processDatastore.PruneReasonOrphanedByPod, "pod")
 	if err != nil {
 		log.Errorf("[Pruning] Error removing processes orphaned by pod: %v", err)
 	}
@@ -450,18 +450,18 @@ func (g *garbageCollectorImpl) removeOrphanedProcesses() {
 		deploymentIndicatorCount+podIndicatorCount, deploymentIndicatorCount, podIndicatorCount)
 }
 
-func (g *garbageCollectorImpl) removeProcesses(processesToRemove []string, processParent string) (int, error) {
+func (g *garbageCollectorImpl) removeProcesses(processesToRemove []string, reason, displayName string) (int, error) {
 	if len(processesToRemove) == 0 {
-		log.Infof("[Pruning] Found no processes orphaned by %s...", processParent)
+		log.Infof("[Pruning] Found no processes orphaned by %s...", displayName)
 		return 0, nil
 	}
 	log.Infof("[Pruning] Found %d orphaned processes (from formerly deleted %s). Deleting...",
-		len(processesToRemove), processParent)
+		len(processesToRemove), displayName)
 
 	pruneCtxWithTimeout, cancel := contextutil.ContextWithTimeoutIfNotExists(pruningCtx, pruningTimeout)
 	defer cancel()
 
-	return g.processes.PruneProcessIndicators(pruneCtxWithTimeout, processesToRemove)
+	return g.processes.PruneProcessIndicators(pruneCtxWithTimeout, processesToRemove, reason)
 }
 
 func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.FrozenStringSet) {
