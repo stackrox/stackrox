@@ -139,6 +139,32 @@ runs:
         git config --global --add safe.directory "$(pwd)"
       shell: bash
 
+    - name: Resolve version tag for shallow clones
+      run: |
+        # Shallow clones lack git history for git describe / make tag.
+        # Find the nearest .x version tag, deepen history to include it,
+        # and fetch the tag ref so git describe works natively.
+        # We avoid BUILD_TAG because it triggers GOTAGS=release in
+        # env.mk, making CI builds release builds (wrong feature flags).
+        if [ "$(git rev-parse --is-shallow-repository)" != "true" ]; then
+          exit 0
+        fi
+        sha=$(git rev-parse HEAD)
+        all_tags=$(git ls-remote --tags origin \
+          | grep -oP 'refs/tags/\K[0-9]+\.[0-9]+\.x$' \
+          | sort -rV)
+        for tag in $all_tags; do
+          if git fetch --shallow-exclude="$tag" origin "$sha" 2>/dev/null; then
+            git fetch --deepen=1 origin 2>/dev/null
+            git fetch --depth=1 origin "refs/tags/${tag}:refs/tags/${tag}" 2>/dev/null
+            version=$(git describe --tags --abbrev=10 --long --exclude '*-nightly-*' 2>/dev/null)
+            echo "::notice::Resolved version: ${version}"
+            exit 0
+          fi
+        done
+        echo "::warning::No reachable version tag found"
+      shell: bash
+
     - name: Record job info
       uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
       id: record_job_info
