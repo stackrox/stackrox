@@ -210,44 +210,79 @@ func TestSafeChannel_NegativeSize(t *testing.T) {
 	}, "NewChannel should panic when size is negative")
 }
 
-func TestSafeChannel_Close_MultipleTimes(t *testing.T) {
+func TestSafeChannel_AutoClose_WhenWaitableTriggered(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	ch := NewChannel[int](5, ctx)
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		ch := NewChannel[int](5, ctx)
 
-	cancel()
-	<-ctx.Done()
+		// Write some items
+		require.NoError(t, ch.Write(1))
+		require.NoError(t, ch.Write(2))
 
-	// Close multiple times should not panic
-	ch.Close()
-	ch.Close()
-	ch.Close()
+		// Trigger the waitable
+		cancel()
+		synctest.Wait()
+
+		// Channel should be automatically closed
+		// Read existing items first
+		assert.Equal(t, 1, <-ch.Chan())
+		assert.Equal(t, 2, <-ch.Chan())
+
+		// Eventually the channel should be closed
+		val, ok := <-ch.Chan()
+		assert.False(t, ok, "channel should be automatically closed")
+		assert.Equal(t, 0, val)
+	})
 }
 
-func TestSafeChannel_Close_ProperShutdownSequence(t *testing.T) {
+func TestSafeChannel_AutoClose_PreservesBufferedData(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	ch := NewChannel[int](5, ctx)
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		ch := NewChannel[int](5, ctx)
 
-	// Write some items
-	require.NoError(t, ch.Write(1))
-	require.NoError(t, ch.Write(2))
+		// Write some items
+		require.NoError(t, ch.Write(1))
+		require.NoError(t, ch.Write(2))
 
-	// Proper shutdown sequence
-	cancel()
-	<-ctx.Done()
-	ch.Close()
+		// Trigger shutdown
+		cancel()
+		synctest.Wait()
 
-	// Should still be able to read existing items
-	assert.Equal(t, 1, <-ch.Chan())
-	assert.Equal(t, 2, <-ch.Chan())
+		// Should still be able to read existing items even after auto-close
+		assert.Equal(t, 1, <-ch.Chan())
+		assert.Equal(t, 2, <-ch.Chan())
 
-	// Channel should be closed now
-	val, ok := <-ch.Chan()
-	assert.False(t, ok, "channel should be closed")
-	assert.Equal(t, 0, val)
+		// Channel should be closed now
+		val, ok := <-ch.Chan()
+		assert.False(t, ok, "channel should be closed")
+		assert.Equal(t, 0, val)
+	})
+}
+
+func TestSafeChannel_AutoClose_PreventsItemsToBeBuffered(t *testing.T) {
+	defer goleak.AssertNoGoroutineLeaks(t)
+
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		ch := NewChannel[int](5, ctx)
+
+		// Trigger shutdown
+		cancel()
+		synctest.Wait()
+
+		// Try to write some items
+		require.Error(t, ch.Write(1))
+		require.Error(t, ch.Write(2))
+
+		// Channel should be closed - no items should be buffered
+		val, ok := <-ch.Chan()
+		assert.False(t, ok, "channel should be closed")
+		assert.Equal(t, 0, val)
+	})
 }
 
 func TestSafeChannel_ConcurrentWrites(t *testing.T) {
@@ -275,11 +310,9 @@ func TestSafeChannel_ConcurrentWrites(t *testing.T) {
 		}(i)
 	}
 
-	// Reads are possible after we call Close
+	// Reads are possible after waitable is triggered (auto-close)
 	wg.Wait()
 	cancel()
-	<-ctx.Done()
-	ch.Close()
 
 	// Read all items in another goroutine
 	received := set.NewIntSet()
@@ -299,10 +332,10 @@ func TestSafeChannel_ConcurrentWrites(t *testing.T) {
 	assert.Len(t, received, numGoroutines*numWrites)
 }
 
-func TestSafeChannel_ConcurrentWritesAndClose(t *testing.T) {
+func TestSafeChannel_ConcurrentWritesAndAutoClose(t *testing.T) {
 	defer goleak.AssertNoGoroutineLeaks(t)
 
-	// This test ensures there are no panics when writing and closing concurrently
+	// This test ensures there are no panics when writing while auto-close happens
 	for range 100 {
 		ctx, cancel := context.WithCancel(context.Background())
 		ch := NewChannel[int](10, ctx)
@@ -323,13 +356,11 @@ func TestSafeChannel_ConcurrentWritesAndClose(t *testing.T) {
 			}
 		}()
 
-		// Closer goroutine - wait for writes to start, then close while writing
+		// Cancel goroutine - wait for writes to start, then trigger auto-close
 		go func() {
 			defer wg.Done()
 			<-writeStarted.Done()
 			cancel()
-			<-ctx.Done()
-			ch.Close()
 		}()
 
 		wg.Wait()
@@ -377,18 +408,4 @@ func TestSafeChannel_NewSafeChannel_PanicsOnNilWaitable(t *testing.T) {
 	assert.Panics(t, func() {
 		NewChannel[int](5, nil)
 	}, "NewChannel should panic when waitable is nil")
-}
-
-func TestSafeChannel_Close_PanicsOnUntriggeredWaitable(t *testing.T) {
-	defer goleak.AssertNoGoroutineLeaks(t)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	ch := NewChannel[int](5, ctx)
-
-	// Calling Close without triggering the waitable should panic
-	assert.Panics(t, func() {
-		ch.Close()
-	}, "Close should panic when waitable has not been triggered")
 }
