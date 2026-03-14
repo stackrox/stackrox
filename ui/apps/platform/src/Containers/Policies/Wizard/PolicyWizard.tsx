@@ -14,6 +14,7 @@ import {
 } from '@patternfly/react-core';
 import type { WizardStepType } from '@patternfly/react-core';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { createPolicy, savePolicy } from 'services/PoliciesService';
 import { fetchAlertCount } from 'services/AlertsService';
 import type { ClientPolicy } from 'types/policy.proto';
@@ -50,6 +51,7 @@ type PolicyWizardProps = {
 
 function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
     const navigate = useNavigate();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const [stepId, setStepId] = useState<number | string>(POLICY_DEFINITION_DETAILS_ID);
     const [isValidOnServer, setIsValidOnServer] = useState(false);
     const [policyErrorMessage, setPolicyErrorMessage] = useState('');
@@ -216,7 +218,11 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                             isExpandable
                             steps={[
                                 <WizardStep
-                                    name="Scope"
+                                    name={
+                                        isFeatureFlagEnabled('ROX_LABEL_BASED_POLICY_SCOPING')
+                                            ? 'Coverage'
+                                            : 'Scopes and Exclusions'
+                                    }
                                     id={POLICY_BEHAVIOR_SCOPE_ID}
                                     key={POLICY_BEHAVIOR_SCOPE_ID}
                                     body={{ hasNoPadding: true }}
