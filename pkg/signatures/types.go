@@ -18,7 +18,7 @@ const (
 // The file below was downloaded from https://access.redhat.com/security/team/key
 //
 //go:embed "release-key-3.pub.txt"
-var releaseKey3PublicKey string
+var ReleaseKey3PublicKey string
 
 var DefaultRedHatSignatureIntegration = &storage.SignatureIntegration{
 	// PLEASE DON'T CHANGE THIS ID!! A migration may be needed if this is changed.
@@ -28,7 +28,7 @@ var DefaultRedHatSignatureIntegration = &storage.SignatureIntegration{
 		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 			{
 				Name:            "Red Hat Release Key 3",
-				PublicKeyPemEnc: releaseKey3PublicKey,
+				PublicKeyPemEnc: ReleaseKey3PublicKey,
 			},
 		},
 	},
