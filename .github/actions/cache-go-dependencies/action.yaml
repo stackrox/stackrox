@@ -82,10 +82,7 @@ runs:
         post: >
           set +e;
           gocache="$(go env GOCACHE)";
-          if [[ ! -d "$gocache" ]] || [[ ! -f "$gocache/trim.txt" ]]; then
-            echo "Skipping GOCACHE trim";
-            exit 0;
-          fi;
+          [[ -d "$gocache" ]] && [[ -f "$gocache/trim.txt" ]] || { echo "Skipping GOCACHE trim"; exit 0; };
           before=$(du -sm "$gocache" 2>/dev/null | cut -f1);
           cutoff=$(mktemp); touch -t 200001020000 "$cutoff";
           find "$gocache" -type f ! -newer "$cutoff" -delete 2>/dev/null || true;
