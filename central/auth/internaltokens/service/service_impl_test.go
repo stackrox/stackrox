@@ -117,14 +117,16 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 
 	createService := func(
 		t testing.TB,
-		issuer tokens.Issuer,
+		issuerFactory tokens.IssuerFactory,
 		clusterStore clusterDataStore.DataStore,
 		roleStore roleDataStore.DataStore,
 		policy *tokenPolicy,
 	) *serviceImpl {
 		t.Helper()
+		issuerMgr := newIssuerManager(issuerFactory, time.Second)
+		issuerMgr.Start()
 		return &serviceImpl{
-			issuer: issuer,
+			issuerManager: issuerMgr,
 			roleManager: &roleManager{
 				clusterStore: clusterStore,
 				roleStore:    roleStore,
@@ -145,6 +147,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
 		mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
 		svc := createService(it, nil, mockClusterStore, mockRoleStore, permissivePolicy)
+		defer svc.issuerManager.Stop()
 		ctx := sensorContext(it, mockCtrl, testSensorClusterID)
 
 		rsp, err := svc.GenerateTokenForPermissionsAndScope(ctx, input)
@@ -162,6 +165,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
 		mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
 		svc := createService(it, nil, mockClusterStore, mockRoleStore, permissivePolicy)
+		defer svc.issuerManager.Stop()
 		mockRoleStore.EXPECT().
 			UpsertPermissionSet(
 				gomock.Any(),
@@ -184,7 +188,10 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
 		mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
 		mockIssuer := tokensMocks.NewMockIssuer(mockCtrl)
-		svc := createService(it, mockIssuer, mockClusterStore, mockRoleStore, permissivePolicy)
+		mockIssuerFactory := tokensMocks.NewMockIssuerFactory(mockCtrl)
+		mockIssuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).Times(1).Return(mockIssuer, nil)
+		svc := createService(it, mockIssuerFactory, mockClusterStore, mockRoleStore, permissivePolicy)
+		defer svc.issuerManager.Stop()
 		setClusterStoreExpectations(input, mockClusterStore)
 		setNormalRoleStoreExpectations(deploymentPS, singleNSScope, expectedRole, nil, mockRoleStore)
 		expectedClaims := tokens.RoxClaims{
@@ -215,7 +222,10 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
 		mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
 		mockIssuer := tokensMocks.NewMockIssuer(mockCtrl)
-		svc := createService(it, mockIssuer, mockClusterStore, mockRoleStore, permissivePolicy)
+		mockIssuerFactory := tokensMocks.NewMockIssuerFactory(mockCtrl)
+		mockIssuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).Times(1).Return(mockIssuer, nil)
+		svc := createService(it, mockIssuerFactory, mockClusterStore, mockRoleStore, permissivePolicy)
+		defer svc.issuerManager.Stop()
 		setClusterStoreExpectations(input, mockClusterStore)
 		setNormalRoleStoreExpectations(deploymentPS, singleNSScope, expectedRole, nil, mockRoleStore)
 		expectedClaims := tokens.RoxClaims{
@@ -254,6 +264,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
 		mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
 		svc := createService(it, nil, mockClusterStore, mockRoleStore, permissivePolicy)
+		defer svc.issuerManager.Stop()
 		ctx := sensorContext(it, mockCtrl, testSensorClusterID)
 
 		rsp, err := svc.GenerateTokenForPermissionsAndScope(ctx, input)
@@ -272,6 +283,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
 		mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
 		svc := createService(it, nil, mockClusterStore, mockRoleStore, permissivePolicy)
+		defer svc.issuerManager.Stop()
 		ctx := sensorContext(it, mockCtrl, testSensorClusterID)
 
 		rsp, err := svc.GenerateTokenForPermissionsAndScope(ctx, input)
@@ -290,6 +302,7 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
 		mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
 		svc := createService(it, nil, mockClusterStore, mockRoleStore, permissivePolicy)
+		defer svc.issuerManager.Stop()
 		ctx := sensorContext(it, mockCtrl, testSensorClusterID)
 
 		rsp, err := svc.GenerateTokenForPermissionsAndScope(ctx, input)
@@ -344,7 +357,10 @@ func TestGenerateTokenForPermissionsAndScope(t *testing.T) {
 		mockClusterStore := clusterDataStoreMocks.NewMockDataStore(mockCtrl)
 		mockRoleStore := roleDataStoreMocks.NewMockDataStore(mockCtrl)
 		mockIssuer := tokensMocks.NewMockIssuer(mockCtrl)
-		svc := createService(it, mockIssuer, mockClusterStore, mockRoleStore, shortMaxPolicy)
+		mockIssuerFactory := tokensMocks.NewMockIssuerFactory(mockCtrl)
+		mockIssuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).Times(1).Return(mockIssuer, nil)
+		svc := createService(it, mockIssuerFactory, mockClusterStore, mockRoleStore, shortMaxPolicy)
+		defer svc.issuerManager.Stop()
 		setClusterStoreExpectations(input, mockClusterStore)
 		mockRoleStore.EXPECT().
 			UpsertPermissionSet(gomock.Any(), protomock.GoMockMatcherEqualMessage(cappedPS)).

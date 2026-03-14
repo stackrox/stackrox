@@ -50,9 +50,8 @@ var (
 )
 
 type serviceImpl struct {
-	issuer tokens.Issuer
-
-	roleManager *roleManager
+	roleManager   *roleManager
+	issuerManager *issuerManager
 
 	now func() time.Time
 
@@ -114,7 +113,16 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 		RoleNames: []string{roleName},
 		Name:      claimName,
 	}
-	tokenInfo, err := s.issuer.Issue(ctx, roxClaims, tokens.WithExpiry(expiresAt))
+	targetAudience := req.GetAudience()
+	if targetAudience == "" {
+		targetAudience = internalTokenId
+	}
+	issuer, err := s.issuerManager.getIssuer(targetAudience, expiresAt.Add(time.Minute))
+	if err != nil {
+		observeTokenGeneration(tokenGenResultRoleCreationError, time.Since(start))
+		return nil, errors.Wrap(err, "getting token issuer for requested audience")
+	}
+	tokenInfo, err := issuer.Issue(ctx, roxClaims, tokens.WithExpiry(expiresAt))
 	if err != nil {
 		observeTokenGeneration(tokenGenResultIssuanceError, time.Since(start))
 		return nil, err

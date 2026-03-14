@@ -35,6 +35,10 @@ message GenerateTokenForPermissionsAndScopeRequest {
   map<string, Access> permissions = 1;
   repeated ClusterScope cluster_scopes = 2;
   google.protobuf.Duration lifetime = 3;
+  // The audience field allows to set a custom string for the audience
+  // in the generated token. This can allow finer-grain tracking
+  // of who requested an internal token in the audit log trail.
+  string audience = 4;
 }
 
 // ClusterScope represents the access scope of a role within a cluster.
