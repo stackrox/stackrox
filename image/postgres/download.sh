@@ -3,7 +3,7 @@
 set -euo pipefail
 
 postgres_major=15
-pg_rhel_major=8
+pg_rhel_major=9
 
 arch="$(uname -m)"
 dnf_list_args=()
@@ -28,8 +28,12 @@ else
   postgres_minor="$postgres_minor.$arch"
 
   postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_major}-${arch}"
+  echo "Fetching ${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"
   curl --retry 3 -sS --fail -o "${output_dir}/postgres.rpm" "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"
+  echo "Fetching ${postgres_url}/postgresql${postgres_major}-server-${postgres_minor}.rpm"
   curl --retry 3 -sS --fail -o "${output_dir}/postgres-server.rpm" "${postgres_url}/postgresql${postgres_major}-server-${postgres_minor}.rpm"
+  echo "Fetching ${postgres_url}/postgresql${postgres_major}-libs-${postgres_minor}.rpm"
   curl --retry 3 -sS --fail -o "${output_dir}/postgres-libs.rpm" "${postgres_url}/postgresql${postgres_major}-libs-${postgres_minor}.rpm"
+  echo "Fetching ${postgres_url}/postgresql${postgres_major}-contrib-${postgres_minor}.rpm"
   curl --retry 3 -sS --fail -o "${output_dir}/postgres-contrib.rpm" "${postgres_url}/postgresql${postgres_major}-contrib-${postgres_minor}.rpm"
 fi

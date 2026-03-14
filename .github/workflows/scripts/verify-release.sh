@@ -87,7 +87,7 @@ validate_helm_charts() {
 
 validate_images() {
     RELEASE_PATCH="$1"
-    check_docker_image "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8:${RELEASE_PATCH}"
+    check_docker_image "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel9:${RELEASE_PATCH}"
     check_docker_image "quay.io/stackrox-io/main:${RELEASE_PATCH}"
     check_docker_image "quay.io/rhacs-eng/main:${RELEASE_PATCH}"
 }

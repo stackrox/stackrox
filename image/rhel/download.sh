@@ -40,13 +40,15 @@ if [[ "$arch" == "s390x" ]]; then
   mv /tmp/postgresql-*.rpm "${output_dir}/rpms/postgres.rpm"
 else
   postgres_major=15
-  pg_rhel_major=8
+  pg_rhel_major=9
   postgres_repo_url="https://download.postgresql.org/pub/repos/yum/reporpms/EL-${pg_rhel_major}-${arch}/pgdg-redhat-repo-latest.noarch.rpm"
   dnf install --disablerepo='*' -y "${postgres_repo_url}"
   postgres_minor=$(dnf list ${dnf_list_args[@]+"${dnf_list_args[@]}"} --disablerepo='*' ""--enablerepo=pgdg${postgres_major} -y postgresql${postgres_major}-server."$arch" | tail -n 1 | awk '{print $2}')
   postgres_minor="$postgres_minor.$arch"
 
   postgres_url="https://download.postgresql.org/pub/repos/yum/${postgres_major}/redhat/rhel-${pg_rhel_major}-${arch}"
+  echo "Fetching ${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"
   curl --retry 3 -sS --fail -o "${output_dir}/rpms/postgres.rpm" "${postgres_url}/postgresql${postgres_major}-${postgres_minor}.rpm"
+  echo "Fetching ${postgres_url}/postgresql${postgres_major}-libs-${postgres_minor}.rpm"
   curl --retry 3 -sS --fail -o "${output_dir}/rpms/postgres-libs.rpm" "${postgres_url}/postgresql${postgres_major}-libs-${postgres_minor}.rpm"
 fi

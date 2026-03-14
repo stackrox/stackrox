@@ -56,7 +56,7 @@ ENV CGO_ENABLED=0
 RUN GOOS=linux GOARCH=${TARGET_ARCH} scripts/go-build-file.sh operator/cmd/main.go stackrox-operator
 
 ARG TARGET_ARCH
-FROM --platform=linux/${TARGET_ARCH} registry.access.redhat.com/ubi9-micro:latest
+FROM --platform=linux/${TARGET_ARCH} registry.access.redhat.com/ubi9-minimal:latest
 
 ARG roxpath
 

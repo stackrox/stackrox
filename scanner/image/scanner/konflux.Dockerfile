@@ -1,4 +1,4 @@
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.25@sha256:aa03597ee8c7594ffecef5cbb6a0f059d362259d2a41225617b27ec912a3d0d3 AS builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.25@sha256:bd531796aacb86e4f97443797262680fbf36ca048717c00b6f4248465e1a7c0c AS builder
 
 ARG BUILD_TAG
 RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
@@ -17,7 +17,7 @@ WORKDIR /src
 RUN make -C scanner NODEPS=1 CGO_ENABLED=1 image/scanner/bin/scanner copy-scripts
 
 
-FROM registry.access.redhat.com/ubi8-minimal:latest@sha256:5dc6ba426ccbeb3954ead6b015f36b4a2d22320e5b356b074198d08422464ed2
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:69f5c9886ecb19b23e88275a5cd904c47dd982dfa370fbbd0c356d7b1047ef68
 
 ARG BUILD_TAG
 
@@ -29,7 +29,7 @@ LABEL \
     io.k8s.display-name="scanner-v4" \
     io.openshift.tags="rhacs,scanner-v4,stackrox" \
     maintainer="Red Hat, Inc." \
-    name="advanced-cluster-security/rhacs-scanner-v4-rhel8" \
+    name="advanced-cluster-security/rhacs-scanner-v4-rhel9" \
     # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
     source-location="https://github.com/stackrox/stackrox" \
     summary="The image scanner v4 for Red Hat Advanced Cluster Security for Kubernetes" \
@@ -44,6 +44,7 @@ COPY --from=builder \
     /src/scanner/image/scanner/scripts/entrypoint.sh \
     /src/scanner/image/scanner/scripts/import-additional-cas \
     /src/scanner/image/scanner/scripts/restore-all-dir-contents \
+    /src/scanner/image/scanner/scripts/fix-etc-pki-permissions \
     /src/scanner/image/scanner/scripts/save-dir-contents \
     /src/scanner/image/scanner/bin/scanner \
     /usr/local/bin/

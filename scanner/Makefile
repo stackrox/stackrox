@@ -146,7 +146,8 @@ image-prefix := scanner-v4
 
 image-scripts        := restore-all-dir-contents \
                         import-additional-cas \
-                        save-dir-contents
+                        save-dir-contents \
+                        fix-etc-pki-permissions
 image-scripts-prefix := image/scanner/scripts
 image-scripts-t      := $(addprefix $(image-scripts-prefix)/,$(image-scripts))
 
