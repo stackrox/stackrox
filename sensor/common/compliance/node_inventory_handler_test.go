@@ -160,10 +160,109 @@ func (s *NodeInventoryHandlerTestSuite) TestExtractArch() {
 	}
 }
 
+func (s *NodeInventoryHandlerTestSuite) TestIsNewRHCOSVersionSchema() {
+	cases := map[string]struct {
+		version  string
+		expected bool
+	}{
+		"empty string": {
+			version:  "",
+			expected: false,
+		},
+		"old schema - 4.17 derived": {
+			version:  "417.94.202501011408",
+			expected: false,
+		},
+		"old schema - 4.18 derived": {
+			version:  "418.94.202501011408-0",
+			expected: false,
+		},
+		"old schema - 4.12 derived": {
+			version:  "412.86.202212081411-0",
+			expected: false,
+		},
+		"new schema - RHEL 9.6 based": {
+			version:  "9.6.20260204",
+			expected: true,
+		},
+		"new schema - RHEL 9.6 with suffix": {
+			version:  "9.6.20260217-1",
+			expected: true,
+		},
+		"new schema - RHEL 8.x based": {
+			version:  "8.10.20250115",
+			expected: true,
+		},
+		"new schema - RHEL 10.x based": {
+			version:  "10.0.20260115",
+			expected: true,
+		},
+		"malformed - no dots": {
+			version:  "94176",
+			expected: false,
+		},
+		"malformed - non-numeric": {
+			version:  "abc.def.xyz",
+			expected: false,
+		},
+	}
+	for name, tc := range cases {
+		s.Run(name, func() {
+			got := isNewRHCOSVersionSchema(tc.version)
+			s.Equal(tc.expected, got, "isNewRHCOSVersionSchema(%q) = %v, want %v", tc.version, got, tc.expected)
+		})
+	}
+}
+
+func (s *NodeInventoryHandlerTestSuite) TestBuildRHCOSIndexReportCPERepository() {
+	cases := map[string]struct {
+		ocpVersion      string
+		rhcosVersion    string
+		expectedVersion string
+		expectedRepoKey string
+		expectedRepoCPE string
+	}{
+		"old schema - uses golden image": {
+			ocpVersion:      "4.17",
+			rhcosVersion:    "417.94.202501071621-0",
+			expectedVersion: "417.94.202501071621-0",
+			expectedRepoKey: goldenKey,
+			expectedRepoCPE: "cpe:2.3:*",
+		},
+		"new schema RHEL 9 - uses RHEL CPE": {
+			ocpVersion:      "4.21",
+			rhcosVersion:    "9.6.20260217-1",
+			expectedVersion: "9.6.20260217-1",
+			expectedRepoKey: "rhel-cpe-repository",
+			expectedRepoCPE: "cpe:2.3:o:redhat:enterprise_linux:9:*:baseos:*:*:*:*:*",
+		},
+		"new schema RHEL 10 - uses RHEL CPE": {
+			ocpVersion:      "4.25",
+			rhcosVersion:    "10.0.20270115",
+			expectedVersion: "10.0.20270115",
+			expectedRepoKey: "rhel-cpe-repository",
+			expectedRepoCPE: "cpe:2.3:o:redhat:enterprise_linux:10:*:baseos:*:*:*:*:*",
+		},
+	}
+	for name, tc := range cases {
+		s.Run(name, func() {
+			got := buildRHCOSIndexReport("1", tc.ocpVersion, tc.rhcosVersion, "x86_64")
+			rhcosPkg := got.GetContents().GetPackages()["1"]
+			s.Require().NotNil(rhcosPkg, "rhcos package should exist")
+			s.Equal(tc.expectedVersion, rhcosPkg.GetVersion(), "rhcos package version should match expected")
+
+			repo := got.GetContents().GetRepositories()["1"]
+			s.Require().NotNil(repo, "repository should exist")
+			s.Equal(tc.expectedRepoKey, repo.GetKey(), "repository key should match expected")
+			s.Equal(tc.expectedRepoCPE, repo.GetCpe(), "repository CPE should match expected")
+		})
+	}
+}
+
 func (s *NodeInventoryHandlerTestSuite) TestAttachRPMtoRHCOS() {
 	arch := "x86_64"
 	rpmIR := fakeNodeIndex(arch)
-	got := attachRPMtoRHCOS("417.94.202501071621-0", arch, rpmIR)
+	got := attachRPMtoRHCOS("4.17", "417.94.202501071621-0", arch, rpmIR)
 
 	s.Lenf(got.GetContents().GetPackages(), len(rpmIR.GetContents().GetPackages())+1, "IR should have 1 extra package")
 	s.Lenf(got.GetContents().GetEnvironments(), len(rpmIR.GetContents().GetEnvironments())+1, "IR should have 1 extra envinronment")
@@ -212,6 +311,33 @@ func (s *NodeInventoryHandlerTestSuite) TestAttachRPMtoRHCOS() {
 	s.Equal(goldenKey, rhcosRepo.GetKey())
 	s.Equal(goldenName, rhcosRepo.GetName())
 	s.Equal(goldenURI, rhcosRepo.GetUri())
+}
+
+func (s *NodeInventoryHandlerTestSuite) TestAttachRPMtoRHCOS_NewSchema() {
+	arch := "x86_64"
+	rpmIR := fakeNodeIndex(arch)
+	// Test with RHCOS 4.21 which uses RHEL-style versioning (9.6.xxx)
+	got := attachRPMtoRHCOS("4.21", "9.6.20260217-1", arch, rpmIR)
+
+	var rhcosPKG *v4.Package
+	for _, p := range got.GetContents().GetPackages() {
+		if p.GetName() == "rhcos" {
+			rhcosPKG = p
+			break
+		}
+	}
+	s.Require().NotNil(rhcosPKG, "the 'rhcos' pkg should exist in node index")
+	s.Equal("rhcos", rhcosPKG.GetName())
+	// For new schema, version should NOT be prefixed - it uses RHEL CPE repository instead
+	s.Equal("9.6.20260217-1", rhcosPKG.GetVersion())
+	// CPE should be RHEL 9 based
+	s.Equal("cpe:2.3:o:redhat:enterprise_linux:9:*:baseos:*:*:*:*:*", rhcosPKG.GetCpe())
+
+	// Verify the RHCOS repository uses RHEL CPE (ID "600" is the RHCOS package/repo ID)
+	rhcosRepo := got.GetContents().GetRepositories()["600"]
+	s.Require().NotNil(rhcosRepo, "RHCOS repository should exist")
+	s.Equal("rhel-cpe-repository", rhcosRepo.GetKey())
+	s.Equal("cpe:/o:redhat:enterprise_linux:9::baseos", rhcosRepo.GetName())
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestCapabilities() {
@@ -876,10 +1002,18 @@ func (c *mockNeverHitNodeIDMatcher) GetNodeID(_ string) (string, error) {
 	return "", errors.New("cannot find node")
 }
 
-// mockNeverHitNodeIDMatcher simulates inability to find a node when GetNodeResource is called
+// mockRHCOSNodeMatcher simulates RHCOS version detection
 type mockRHCOSNodeMatcher struct{}
 
-// GetRHCOSVersion always identifies as RHCOS and provides a valid version
-func (c *mockRHCOSNodeMatcher) GetRHCOSVersion(_ string) (bool, string, error) {
-	return true, "417.94.202412120651-0", nil
+// GetRHCOSVersion always identifies as RHCOS and provides a valid OCP-style version
+func (c *mockRHCOSNodeMatcher) GetRHCOSVersion(_ string) (bool, string, string, error) {
+	return true, "4.17", "417.94.202412120651-0", nil
+}
+
+// mockRHCOSNewSchemaNodeMatcher simulates RHCOS 4.19+ version detection with RHEL-style version
+type mockRHCOSNewSchemaNodeMatcher struct{}
+
+// GetRHCOSVersion identifies as RHCOS 4.19+ and provides a RHEL-style version
+func (c *mockRHCOSNewSchemaNodeMatcher) GetRHCOSVersion(_ string) (bool, string, string, error) {
+	return true, "4.21", "9.6.20260217-1", nil
 }
