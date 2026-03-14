@@ -11,7 +11,7 @@ plugins:
     output: dist
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
-projectName: rhacs-operator
+projectName: stackrox-operator
 repo: github.com/stackrox/rox
 resources:
 - api:
