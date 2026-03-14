@@ -51,6 +51,23 @@ runs:
         key: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
         restore-keys: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
+    - name: Mark GOCACHE entries for stale detection
+      run: |
+        gocache="${{ steps.cache-paths.outputs.GOCACHE }}"
+        if [[ -d "$gocache" ]]; then
+          # Backdate all cache entries to year 2000. During the build/test,
+          # Go's markUsed() updates mtimes of accessed entries to "now"
+          # (it always updates when mtime is >1 hour old). At the end of
+          # the job, a trim step deletes entries still at year 2000.
+          find "$gocache" -type f -exec touch -t 200001010000 {} +
+          # Protect trim.txt: if backdated, Go's built-in Trim() sees
+          # "last trim was in year 2000" and deletes ALL backdated entries
+          # before the build starts. Setting it to now prevents this.
+          echo "$(date +%s)" > "$gocache/trim.txt"
+          echo "Marked GOCACHE entries for stale detection"
+        fi
+      shell: bash
+
     - name: Download Go modules
       run: make deps --always-make
       shell: bash

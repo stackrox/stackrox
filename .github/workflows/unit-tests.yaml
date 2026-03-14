@@ -87,6 +87,10 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
+    - name: Trim stale GOCACHE entries
+      if: always()
+      uses: ./.github/actions/trim-go-cache
+
   go-postgres:
     strategy:
       fail-fast: false
@@ -154,6 +158,10 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 
+    - name: Trim stale GOCACHE entries
+      if: always()
+      uses: ./.github/actions/trim-go-cache
+
   go-bench:
     runs-on: ubuntu-latest
     container:
@@ -201,6 +209,10 @@ jobs:
 
     # Do not create junit report for bench tests:
     # https://github.com/jstemmer/go-junit-report/issues/174
+
+    - name: Trim stale GOCACHE entries
+      if: always()
+      uses: ./.github/actions/trim-go-cache
 
   ui:
     runs-on: ubuntu-latest
@@ -324,6 +336,10 @@ jobs:
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'roxctl-test-output'
+
+    - name: Trim stale GOCACHE entries
+      if: always()
+      uses: ./.github/actions/trim-go-cache
 
   shell-unit-tests:
     runs-on: ubuntu-latest
@@ -455,6 +471,10 @@ jobs:
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
+
+    - name: Trim stale GOCACHE entries
+      if: always()
+      uses: ./.github/actions/trim-go-cache
 
   slack-on-unit-tests-failure:
     env:
