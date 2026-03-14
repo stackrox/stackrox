@@ -1,7 +1,7 @@
 ARG PG_VERSION=15
 
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.25@sha256:aa03597ee8c7594ffecef5cbb6a0f059d362259d2a41225617b27ec912a3d0d3 AS go-builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.25@sha256:bd531796aacb86e4f97443797262680fbf36ca048717c00b6f4248465e1a7c0c AS go-builder
 
 RUN dnf -y install --allowerasing jq
 
@@ -37,7 +37,7 @@ RUN mkdir -p image/rhel/docs/api/v1 && \
 RUN make copy-go-binaries-to-image-dir
 
 
-FROM registry.access.redhat.com/ubi9/nodejs-20:latest@sha256:ad30ca76c555dafd2c0c772f8a12aae41cadc767c9654761c6fb706fd1659920 AS ui-builder
+FROM registry.access.redhat.com/ubi9/nodejs-20:latest AS ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -59,7 +59,7 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:5dc6ba426ccbeb3954ead6b015f36b4a2d22320e5b356b074198d08422464ed2
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
 ARG PG_VERSION
 
@@ -98,7 +98,7 @@ LABEL \
     io.k8s.display-name="main" \
     io.openshift.tags="rhacs,main,stackrox" \
     maintainer="Red Hat, Inc." \
-    name="advanced-cluster-security/rhacs-main-rhel8" \
+    name="advanced-cluster-security/rhacs-main-rhel9" \
     # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
     source-location="https://github.com/stackrox/stackrox" \
     summary="Main Image for Red Hat Advanced Cluster Security for Kubernetes" \
