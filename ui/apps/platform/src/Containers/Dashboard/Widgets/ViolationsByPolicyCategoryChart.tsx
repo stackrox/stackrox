@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import type { SyntheticEvent } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     Chart,
@@ -10,8 +11,8 @@ import {
     ChartTooltip,
     getInteractiveLegendEvents,
     getInteractiveLegendItemStyles,
-} from '@patternfly/react-charts';
-import type { ChartLabelProps } from '@patternfly/react-charts';
+} from '@patternfly/react-charts/victory';
+import type { ChartLabelProps, ChartLegendProps } from '@patternfly/react-charts/victory';
 import sortBy from 'lodash/sortBy';
 
 import { filteredWorkflowViewKey } from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
@@ -195,6 +196,7 @@ function ViolationsByPolicyCategoryChart({
             <ChartBar
                 barWidth={defaultChartBarWidth}
                 key={severity}
+                name={severityLabels[severity]}
                 data={data}
                 labelComponent={<ChartTooltip constrainToVisibleArea />}
                 events={[
@@ -224,7 +226,13 @@ function ViolationsByPolicyCategoryChart({
         return legendData;
     }
 
-    function onLegendClick({ index }: { index: number }) {
+    /*
+     * getInteractiveLegendEvents' onLegendClick is not called when ChartBar
+     * is wrapped in ChartStack/ChartGroup alongside ChartAxis.
+     * https://github.com/patternfly/patternfly-react/issues/12263
+     * Apply click events directly to ChartLegend as a workaround.
+     */
+    function handleLegendClick(_evt: SyntheticEvent, { index }: { index: number }) {
         const newHidden = new Set(hiddenSeverities);
         const targetSeverity = severitiesLowToCritical[index];
         if (newHidden.has(targetSeverity)) {
@@ -233,8 +241,14 @@ function ViolationsByPolicyCategoryChart({
         } else if (hiddenSeverities.size < 3) {
             newHidden.add(targetSeverity);
         }
-        return setHiddenSeverities(newHidden);
+        setHiddenSeverities(newHidden).catch(() => {});
+        return [];
     }
+
+    const legendClickEvents: ChartLegendProps['events'] = [
+        { target: 'data', eventHandlers: { onClick: handleLegendClick } },
+        { target: 'labels', eventHandlers: { onClick: handleLegendClick } },
+    ];
 
     return (
         <div ref={setWidgetContainer}>
@@ -246,10 +260,11 @@ function ViolationsByPolicyCategoryChart({
                     chartNames: [Object.values(severityLabels)],
                     isHidden: (index) => hiddenSeverities.has(severitiesLowToCritical[index]),
                     legendName: 'legend',
-                    onLegendClick,
                 })}
                 containerComponent={<ChartContainer role="figure" />}
-                legendComponent={<ChartLegend name="legend" data={getLegendData()} />}
+                legendComponent={
+                    <ChartLegend name="legend" data={getLegendData()} events={legendClickEvents} />
+                }
                 legendPosition="bottom"
                 height={chartHeight}
                 width={widgetContainerResizeEntry?.contentRect.width} // Victory defaults to 450

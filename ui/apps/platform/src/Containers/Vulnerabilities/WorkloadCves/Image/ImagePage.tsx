@@ -7,7 +7,6 @@ import {
     Bullseye,
     Button,
     ClipboardCopy,
-    Divider,
     Flex,
     FlexItem,
     PageSection,
@@ -196,13 +195,13 @@ function ImagePage({
 
     if (error) {
         mainContent = (
-            <PageSection variant="light">
+            <PageSection>
                 <Bullseye>
                     <EmptyStateTemplate
                         title={getAxiosErrorMessage(error)}
                         headingLevel="h2"
                         icon={ExclamationCircleIcon}
-                        iconClassName="pf-v5-u-danger-color-100"
+                        status="danger"
                     />
                 </Bullseye>
             </PageSection>
@@ -211,7 +210,7 @@ function ImagePage({
         const sha = imageData?.id;
         mainContent = (
             <>
-                <PageSection variant="light">
+                <PageSection>
                     {imageData ? (
                         <Flex
                             direction={{ default: 'column' }}
@@ -228,7 +227,7 @@ function ImagePage({
                                             hoverTip="Copy SHA"
                                             clickTip="Copied!"
                                             variant="inline-compact"
-                                            className="pf-v5-u-font-size-sm"
+                                            className="pf-v6-u-font-size-sm"
                                         >
                                             {sha}
                                         </ClipboardCopy>
@@ -271,7 +270,7 @@ function ImagePage({
                             </Flex>
                             {hasScanMessage && (
                                 <Alert
-                                    className="pf-v5-u-w-100"
+                                    className="pf-v6-u-w-100"
                                     variant="warning"
                                     isInline
                                     title="CVE data may be inaccurate"
@@ -294,22 +293,17 @@ function ImagePage({
                         />
                     )}
                 </PageSection>
-                <PageSection
-                    className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
-                    padding={{ default: 'noPadding' }}
-                >
+                <PageSection type="tabs">
                     <Tabs
                         activeKey={activeTabKey}
                         onSelect={(_e, key) => {
                             setActiveTabKey(key);
                             pagination.setPage(1);
                         }}
-                        className="pf-v5-u-pl-md pf-v5-u-background-color-100"
                         mountOnEnter
                         unmountOnExit
                     >
                         <Tab
-                            className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                             eventKey="Vulnerabilities"
                             title={<TabTitleText>Vulnerabilities</TabTitleText>}
                         >
@@ -336,11 +330,7 @@ function ImagePage({
                                 }
                             />
                         </Tab>
-                        <Tab
-                            className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
-                            eventKey="Resources"
-                            title={<TabTitleText>Resources</TabTitleText>}
-                        >
+                        <Tab eventKey="Resources" title={<TabTitleText>Resources</TabTitleText>}>
                             <ImagePageResources
                                 imageId={imageId}
                                 pagination={pagination}
@@ -350,7 +340,6 @@ function ImagePage({
                             />
                         </Tab>
                         <Tab
-                            className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                             eventKey="Signature verification"
                             title={<TabTitleText>Signature verification</TabTitleText>}
                         >
@@ -367,7 +356,7 @@ function ImagePage({
     return (
         <>
             <PageTitle title={`${pageTitle} - Image ${imageData ? imageDisplayName : ''}`} />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewImagePath}>
                         Images
@@ -383,7 +372,6 @@ function ImagePage({
                     )}
                 </Breadcrumb>
             </PageSection>
-            <Divider component="div" />
             {mainContent}
             {isViewBasedReportsEnabled && isCreateViewBasedReportModalOpen && (
                 <CreateViewBasedReportModal

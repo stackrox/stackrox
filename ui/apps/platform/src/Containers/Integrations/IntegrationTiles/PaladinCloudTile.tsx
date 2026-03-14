@@ -10,7 +10,7 @@ import {
 import IntegrationTile from './IntegrationTile';
 import { integrationTypeCounter } from './integrationTiles.utils';
 
-const { image, label, type } = descriptor;
+const { Logo, label, type } = descriptor;
 
 export type PaladinCloudTileProps = {
     integrations: CloudSourceIntegration[];
@@ -21,7 +21,7 @@ function PaladinCloudTile({ integrations }: PaladinCloudTileProps): ReactElement
 
     return (
         <IntegrationTile
-            image={image}
+            Logo={Logo}
             label={label}
             linkTo={getIntegrationsListPath(source, type)}
             numIntegrations={countIntegrations('TYPE_PALADIN_CLOUD')}

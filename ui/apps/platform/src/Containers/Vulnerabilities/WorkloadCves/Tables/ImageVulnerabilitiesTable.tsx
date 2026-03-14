@@ -192,7 +192,7 @@ function ImageVulnerabilitiesTable({
     const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
 
     return (
-        <Table borders={false} variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <ExpandRowTh className={getVisibilityClass('rowExpansion')} />
@@ -242,7 +242,7 @@ function ImageVulnerabilitiesTable({
                     </TooltipTh>
                     {/* eslint-disable-next-line generic/Th-defaultColumns */}
                     <Th className={getVisibilityClass('rowActions')}>
-                        <span className="pf-v5-screen-reader">Row actions</span>
+                        <span className="pf-v6-screen-reader">Row actions</span>
                     </Th>
                 </Tr>
             </Thead>
@@ -312,14 +312,12 @@ function ImageVulnerabilitiesTable({
                         // Td style={{ paddingTop: 0 }} prop emulates vertical space when label was in cell instead of row
                         // and assumes adjacent empty cell has no paddingTop.
                         return (
-                            <Tbody
-                                key={cve}
-                                style={{
-                                    borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
-                                }}
-                                isExpanded={isExpanded}
-                            >
-                                <Tr>
+                            <Tbody key={cve} isExpanded={isExpanded}>
+                                <Tr
+                                    style={
+                                        labels.length !== 0 ? { borderBlockEnd: 'none' } : undefined
+                                    }
+                                >
                                     <Td
                                         className={getVisibilityClass('rowExpansion')}
                                         expand={{
@@ -429,7 +427,7 @@ function ImageVulnerabilitiesTable({
                                     </Td>
                                 </Tr>
                                 {labels.length !== 0 && (
-                                    <Tr>
+                                    <Tr style={isExpanded ? { borderBlockEnd: 'none' } : undefined}>
                                         <Td colSpan={2} />
                                         <Td colSpan={colSpan - 2} style={{ paddingTop: 0 }}>
                                             <LabelGroup numLabels={labels.length}>
@@ -444,7 +442,7 @@ function ImageVulnerabilitiesTable({
                                         <ExpandableRowContent>
                                             <>
                                                 {summary && (
-                                                    <p className="pf-v5-u-mb-md">{summary}</p>
+                                                    <p className="pf-v6-u-mb-md">{summary}</p>
                                                 )}
                                                 {imageMetadata ? (
                                                     <ImageComponentVulnerabilitiesTable

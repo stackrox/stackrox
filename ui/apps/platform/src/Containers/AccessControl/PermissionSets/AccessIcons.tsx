@@ -8,12 +8,18 @@ import { getIsReadAccess, getIsWriteAccess } from './permissionSets.utils';
 
 const forbiddenIcon = (
     <Icon size="sm">
-        <TimesIcon color="var(--pf-v5-global--danger-color--100)" aria-label="forbidden" />
+        <TimesIcon
+            color="var(--pf-t--global--icon--color--status--danger--default)"
+            aria-label="forbidden"
+        />
     </Icon>
 );
 const permittedIcon = (
     <Icon size="sm">
-        <CheckIcon color="var(--pf-v5-global--success-color--100)" aria-label="permitted" />
+        <CheckIcon
+            color="var(--pf-t--global--icon--color--status--success--default)"
+            aria-label="permitted"
+        />
     </Icon>
 );
 

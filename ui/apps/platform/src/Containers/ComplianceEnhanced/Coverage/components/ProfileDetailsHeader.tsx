@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import type { MouseEvent } from 'react';
 import {
+    Content,
     ExpandableSection,
     Flex,
     FlexItem,
     Label,
     LabelGroup,
     Skeleton,
-    Text,
     Title,
 } from '@patternfly/react-core';
 
@@ -32,10 +32,7 @@ function ProfileDetailsHeader({
 
     if (isLoading) {
         return (
-            <Flex
-                className="pf-v5-u-p-md pf-v5-u-background-color-100"
-                direction={{ default: 'column' }}
-            >
+            <Flex className="pf-v6-u-p-lg" direction={{ default: 'column' }}>
                 <Title headingLevel="h2">{profileName}</Title>
                 <Skeleton screenreaderText="Loading profile details" />
             </Flex>
@@ -46,10 +43,7 @@ function ProfileDetailsHeader({
         const { description, productType, profileVersion, title } = profileDetails;
 
         return (
-            <Flex
-                className="pf-v5-u-p-md pf-v5-u-background-color-100"
-                direction={{ default: 'column' }}
-            >
+            <Flex className="pf-v6-u-p-lg" direction={{ default: 'column' }}>
                 <Flex
                     alignItems={{ default: 'alignItemsFlexStart' }}
                     justifyContent={{ default: 'justifyContentSpaceBetween' }}
@@ -67,11 +61,13 @@ function ProfileDetailsHeader({
                     </FlexItem>
                 </Flex>
                 <FlexItem>
-                    <Text className="pf-v5-u-font-size-sm">{title}</Text>
+                    <Content component="p" className="pf-v6-u-font-size-sm">
+                        {title}
+                    </Content>
                 </FlexItem>
                 <FlexItem>
                     <ExpandableSection
-                        className="pf-v5-u-font-size-sm"
+                        className="pf-v6-u-font-size-sm"
                         isExpanded={isExpanded}
                         toggleText={isExpanded ? 'Show less' : 'Show more'}
                         truncateMaxLines={5}

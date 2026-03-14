@@ -6,7 +6,6 @@ import {
     Alert,
     Breadcrumb,
     BreadcrumbItem,
-    Divider,
     PageSection,
     Title,
     Wizard,
@@ -105,7 +104,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
 
     function scrollToTop() {
         // wizard does not by default scroll to top of body when navigating to a step
-        document.getElementsByClassName('pf-v5-c-wizard__main')[0].scrollTop = 0;
+        document.getElementsByClassName('pf-v6-c-wizard__main')[0].scrollTop = 0;
     }
 
     useEffect(() => {
@@ -147,23 +146,22 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                     policy will be automatically overwritten during the next resync.
                 </Alert>
             )}
-            <PageSection variant="light" isFilled id="policy-page" className="pf-v5-u-pb-0">
-                <Breadcrumb className="pf-v5-u-mb-md">
+            <PageSection type="breadcrumb">
+                <Breadcrumb>
                     <BreadcrumbItemLink to={policiesBasePath}>Policies</BreadcrumbItemLink>
                     <BreadcrumbItem isActive>{policy?.name || 'Create policy'}</BreadcrumbItem>
                 </Breadcrumb>
+            </PageSection>
+            <PageSection isFilled id="policy-page">
                 <Title headingLevel="h1">{policy?.name || 'Create policy'}</Title>
-                <div className="pf-v5-u-mb-md pf-v5-u-mt-sm">
-                    Design custom security policies for your environment
-                </div>
-                <Divider component="div" />
+                <div>Design custom security policies for your environment</div>
             </PageSection>
             <PageSection
-                variant="light"
+                hasBodyWrapper={false}
                 isFilled
                 hasOverflowScroll
                 padding={{ default: 'noPadding' }}
-                className="pf-v5-u-h-100"
+                className="pf-v6-u-h-100"
             >
                 <FormikProvider value={formik}>
                     <Wizard

@@ -17,7 +17,7 @@ function ServerStatusBanner(): ReactElement | null {
 
     if (serverStatus === 'RESURRECTED') {
         return (
-            <Banner className="pf-v5-u-text-align-center" variant="green">
+            <Banner className="pf-v6-u-text-align-center" color="green">
                 The server has become reachable again after a connection problem. If you experience
                 issues, please {reloadPageButton}
             </Banner>
@@ -26,7 +26,7 @@ function ServerStatusBanner(): ReactElement | null {
 
     if (serverStatus === 'UNREACHABLE') {
         return (
-            <Banner className="pf-v5-u-text-align-center" variant="red">
+            <Banner className="pf-v6-u-text-align-center" color="red">
                 There seems to be an issue reaching the server. Please check your network connection
                 or {reloadPageButton}
             </Banner>

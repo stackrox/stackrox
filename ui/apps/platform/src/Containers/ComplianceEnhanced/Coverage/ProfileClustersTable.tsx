@@ -60,7 +60,7 @@ function ProfileClustersTable({
                     <ToolbarItem>
                         <ProfilesTableToggleGroup activeToggle="clusters" />
                     </ToolbarItem>
-                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                         <Pagination
                             itemCount={profileClustersResultsCount}
                             page={page}

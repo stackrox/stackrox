@@ -41,8 +41,8 @@ function EntityTableCell({ original }: EntityTableCellProps): ReactElement {
 
     return (
         <Flex direction={{ default: 'column' }}>
-            <FlexItem className="pf-v5-u-mb-0">{name}</FlexItem>
-            <FlexItem className="pf-v5-u-color-200 pf-v5-u-font-size-xs">{`in "${entityPath}"`}</FlexItem>
+            <FlexItem className="pf-v6-u-mb-0">{name}</FlexItem>
+            <FlexItem className="pf-v6-u-color-200 pf-v6-u-font-size-xs">{`in "${entityPath}"`}</FlexItem>
         </Flex>
     );
 }
@@ -72,7 +72,9 @@ function EnforcementColumn({ original }: EnforcementColumnProps): ReactElement {
         const message = `${ENFORCEMENT_ACTIONS_AS_PAST_TENSE[original?.enforcementAction]}`;
         return (
             <IconText
-                icon={<ExclamationCircleIcon color="var(--pf-v5-global--danger-color--100)" />}
+                icon={
+                    <ExclamationCircleIcon color="var(--pf-t--global--icon--color--status--danger--default)" />
+                }
                 text={message}
             />
         );

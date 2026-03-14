@@ -28,10 +28,10 @@ export function SecurityVulnerabilitiesPage() {
                     setSearchFilter(result);
                 }}
             />
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <Title headingLevel="h1">Workload vulnerabilities</Title>
             </PageSection>
-            <PageSection variant="light">
+            <PageSection hasBodyWrapper={false}>
                 <VulnerabilitiesOverviewContainer />
             </PageSection>
         </WorkloadCveViewContext.Provider>

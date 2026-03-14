@@ -7,6 +7,7 @@ import {
     SelectList,
     SelectOption,
     TextInput,
+    ToolbarItem,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
 import { ArrowRightIcon } from '@patternfly/react-icons';
@@ -113,7 +114,7 @@ function SearchFilterConditionText({ attribute, onSearch }: SearchFilterConditio
 
     const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
-            className="pf-v5-u-flex-shrink-0"
+            className="pf-v6-u-flex-shrink-0"
             aria-label="Condition selector toggle"
             ref={toggleRef}
             onClick={onToggleClick}
@@ -125,49 +126,54 @@ function SearchFilterConditionText({ attribute, onSearch }: SearchFilterConditio
 
     return (
         <>
-            <Select
-                isOpen={isOpen}
-                selected={conditionKey}
-                onSelect={onSelect}
-                onOpenChange={(isOpen) => setIsOpen(isOpen)}
-                toggle={toggle}
-                shouldFocusToggleOnSelect
-            >
-                <SelectList aria-label="Condition selector menu">
-                    {conditionEntries.map(([conditionKey, conditionText]) => (
-                        <SelectOption key={conditionKey} value={conditionKey}>
-                            {conditionText}
-                        </SelectOption>
-                    ))}
-                </SelectList>
-            </Select>
-            <TextInput
-                aria-label="Condition value input"
-                className="ConditionTextInput"
-                onChange={(event: FormEvent<HTMLInputElement>) => {
-                    const { value: changedText } = event.target as HTMLInputElement;
-                    setExternalText(changedText);
-                }}
-                validated={validateExternalText(externalText) ? 'success' : 'error'}
-                value={externalText}
-            />
-            <Button
-                aria-label="Apply condition and number input to search"
-                isDisabled={!validateExternalText(externalText)}
-                onClick={() => {
-                    const internalText = convertFromExternalToInternalText(externalText);
-                    onSearch([
-                        {
-                            action: 'APPEND',
-                            category,
-                            value: joinConditionText(conditionKey, internalText),
-                        },
-                    ]);
-                }}
-                variant="control"
-            >
-                <ArrowRightIcon />
-            </Button>
+            <ToolbarItem>
+                <Select
+                    isOpen={isOpen}
+                    selected={conditionKey}
+                    onSelect={onSelect}
+                    onOpenChange={(isOpen) => setIsOpen(isOpen)}
+                    toggle={toggle}
+                    shouldFocusToggleOnSelect
+                >
+                    <SelectList aria-label="Condition selector menu">
+                        {conditionEntries.map(([conditionKey, conditionText]) => (
+                            <SelectOption key={conditionKey} value={conditionKey}>
+                                {conditionText}
+                            </SelectOption>
+                        ))}
+                    </SelectList>
+                </Select>
+            </ToolbarItem>
+            <ToolbarItem>
+                <TextInput
+                    aria-label="Condition value input"
+                    className="ConditionTextInput"
+                    onChange={(event: FormEvent<HTMLInputElement>) => {
+                        const { value: changedText } = event.target as HTMLInputElement;
+                        setExternalText(changedText);
+                    }}
+                    validated={validateExternalText(externalText) ? 'success' : 'error'}
+                    value={externalText}
+                />
+            </ToolbarItem>
+            <ToolbarItem>
+                <Button
+                    icon={<ArrowRightIcon />}
+                    aria-label="Apply condition and number input to search"
+                    isDisabled={!validateExternalText(externalText)}
+                    onClick={() => {
+                        const internalText = convertFromExternalToInternalText(externalText);
+                        onSearch([
+                            {
+                                action: 'APPEND',
+                                category,
+                                value: joinConditionText(conditionKey, internalText),
+                            },
+                        ]);
+                    }}
+                    variant="control"
+                ></Button>
+            </ToolbarItem>
         </>
     );
 }

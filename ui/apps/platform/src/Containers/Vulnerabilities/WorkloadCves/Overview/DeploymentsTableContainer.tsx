@@ -1,4 +1,4 @@
-import { Divider, ToolbarItem } from '@patternfly/react-core';
+import { ToolbarItem } from '@patternfly/react-core';
 
 import type useURLSort from 'hooks/useURLSort';
 import type useURLPagination from 'hooks/useURLPagination';
@@ -70,14 +70,13 @@ function DeploymentsTableContainer({
                 tableRowCount={rowCount}
                 isFiltered={isFiltered}
             >
-                <ToolbarItem align={{ default: 'alignRight' }}>
+                <ToolbarItem align={{ default: 'alignEnd' }}>
                     <ColumnManagementButton
                         columnConfig={columnConfig}
                         onApplyColumns={managedColumnState.setVisibility}
                     />
                 </ToolbarItem>
             </TableEntityToolbar>
-            <Divider component="div" />
             <div
                 style={{ overflowX: 'auto' }}
                 aria-live="polite"

@@ -35,7 +35,7 @@ function BaseImageAssessmentCard({ baseImage }: BaseImageAssessmentCardProps) {
     // const imageDetailPath = urlBuilder.imageDetails(baseImage.imageSha, 'OBSERVED');
 
     return (
-        <Card isFlat isCompact>
+        <Card isCompact>
             <CardBody>
                 <ExpandableSection
                     toggleText="Base image assessment"
@@ -46,7 +46,7 @@ function BaseImageAssessmentCard({ baseImage }: BaseImageAssessmentCardProps) {
                         isCompact
                         isHorizontal
                         columnModifier={{ default: '1Col' }}
-                        termWidth="150px"
+                        horizontalTermWidthModifier={{ default: '150px' }}
                     >
                         <DescriptionListGroup>
                             <DescriptionListTerm>

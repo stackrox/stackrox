@@ -1,11 +1,9 @@
 import {
+    Content,
     Flex,
     PageSection,
     Pagination,
-    Text,
-    Title,
     Toolbar,
-    ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
@@ -104,33 +102,26 @@ function RequestCVEsTable({
     const colSpan = 6;
 
     return (
-        <PageSection variant="light">
+        <PageSection>
             <Flex direction={{ default: 'column' }}>
                 <Toolbar>
-                    <ToolbarContent className="pf-v5-u-justify-content-space-between">
-                        <ToolbarItem variant="label">
-                            <Title headingLevel="h2">
-                                {countQuery.data?.imageCVECount || 0} results found
-                            </Title>
-                        </ToolbarItem>
-                        <ToolbarItem variant="pagination">
-                            <Pagination
-                                itemCount={countQuery.data?.imageCVECount}
-                                perPage={perPage}
-                                page={page}
-                                onSetPage={(_, newPage) => setPage(newPage)}
-                                onPerPageSelect={(_, newPerPage) => {
-                                    setPerPage(newPerPage);
-                                }}
-                            />
-                        </ToolbarItem>
-                    </ToolbarContent>
+                    <ToolbarItem variant="pagination">
+                        <Pagination
+                            itemCount={countQuery.data?.imageCVECount}
+                            perPage={perPage}
+                            page={page}
+                            onSetPage={(_, newPage) => setPage(newPage)}
+                            onPerPageSelect={(_, newPerPage) => {
+                                setPerPage(newPerPage);
+                            }}
+                        />
+                    </ToolbarItem>
                 </Toolbar>
                 <Table variant="compact">
                     <Thead noWrap>
                         <Tr>
                             <Th>
-                                <span className="pf-v5-screen-reader">Row expansion</span>
+                                <span className="pf-v6-screen-reader">Row expansion</span>
                             </Th>
                             <Th sort={getSortParams('CVE')}>CVE</Th>
                             <Th
@@ -250,7 +241,7 @@ function RequestCVEsTable({
                                             <Td colSpan={colSpan - 1}>
                                                 <ExpandableRowContent>
                                                     {prioritizedDistros.length > 0 && (
-                                                        <Text>{summary}</Text>
+                                                        <Content component="p">{summary}</Content>
                                                     )}
                                                 </ExpandableRowContent>
                                             </Td>

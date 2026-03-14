@@ -9,6 +9,6 @@ describe('Central database card', () => {
         // against the current deployed version of Postgres
         visitSystemHealth();
 
-        cy.get('.pf-v5-c-card:contains("Central database health"):contains("no errors")');
+        cy.get('.pf-v6-c-card:contains("Central database health"):contains("no errors")');
     });
 });

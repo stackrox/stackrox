@@ -63,18 +63,18 @@ function ImagesAtMostRiskTable({
         <Table variant="compact" borders={false}>
             <Thead>
                 <Tr>
-                    <Th width={35} className="pf-v5-u-pl-0">
+                    <Th width={35} className="pf-v6-u-pl-0">
                         Image
                     </Th>
-                    <Th className="pf-v5-u-text-align-center-on-md">Risk priority</Th>
+                    <Th className="pf-v6-u-text-align-center-on-md">Risk priority</Th>
                     <Th>Critical CVEs</Th>
-                    <Th className="pf-v5-u-pr-0">Important CVEs</Th>
+                    <Th className="pf-v6-u-pr-0">Important CVEs</Th>
                 </Tr>
             </Thead>
             <Tbody>
                 {images.map(({ id, name, priority, imageVulnerabilityCounter }) => (
                     <Tr key={id}>
-                        <Td className="pf-v5-u-pl-0" dataLabel="Image">
+                        <Td className="pf-v6-u-pl-0" dataLabel="Image">
                             <Link
                                 to={linkToImage(id)}
                                 scroll={(el: HTMLElement) =>
@@ -93,12 +93,12 @@ function ImagesAtMostRiskTable({
                                 </Tooltip>
                             </Link>
                         </Td>
-                        <Td className="pf-v5-u-text-align-center-on-md" dataLabel="Risk priority">
+                        <Td className="pf-v6-u-text-align-center-on-md" dataLabel="Risk priority">
                             {priority}
                         </Td>
                         <Td dataLabel="Critical CVEs">
                             <CriticalSeverityIcon
-                                className="pf-v5-u-display-inline pf-v5-u-mr-xs"
+                                className="pf-v6-u-display-inline pf-v6-u-mr-xs"
                                 color={
                                     countCritical(imageVulnerabilityCounter, cveStatusOption) === 0
                                         ? noViolationsColor
@@ -111,9 +111,9 @@ function ImagesAtMostRiskTable({
                                     : `${imageVulnerabilityCounter.critical.total} CVEs`}
                             </span>
                         </Td>
-                        <Td className="pf-v5-u-pr-0" dataLabel="Important CVEs">
+                        <Td className="pf-v6-u-pr-0" dataLabel="Important CVEs">
                             <ImportantSeverityIcon
-                                className="pf-v5-u-display-inline pf-v5-u-mr-xs"
+                                className="pf-v6-u-display-inline pf-v6-u-mr-xs"
                                 color={
                                     countImportant(imageVulnerabilityCounter, cveStatusOption) === 0
                                         ? noViolationsColor
