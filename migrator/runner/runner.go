@@ -14,8 +14,11 @@ import (
 	"github.com/stackrox/rox/migrator/types"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/version"
 )
 
 var (
@@ -37,7 +40,8 @@ func init() {
 	}
 }
 
-// Run runs the migrator.
+// Run runs the migrator. It reads the current DB version and runs all
+// necessary migrations to bring the DB up to the current binary version.
 func Run(databases *types.Databases) error {
 	log.WriteToStderrf("In runner.Run")
 
@@ -67,14 +71,25 @@ func Run(databases *types.Databases) error {
 	}
 
 	// Make sure version is up to date after migrations to ensure latest version schema is used in the event
-	// there are no migrations executed.
-	currentVersion := &versionStorage.Version{SeqNum: int32(pkgMigrations.CurrentDBVersionSeqNum())}
+	// there are no migrations executed. This also resets the rollback marker in case there is one.
+	return UpdateToCurrentVersion(databases)
+}
+
+// UpdateToCurrentVersion updates the stored version to the current binary
+// version without running any migrations.
+func UpdateToCurrentVersion(databases *types.Databases) error {
+	currentVersion := &versionStorage.Version{
+		SeqNum:        int32(pkgMigrations.CurrentDBVersionSeqNum()),
+		Version:       version.GetMainVersion(),
+		MinSeqNum:     int32(pkgMigrations.MinimumSupportedDBVersionSeqNum()),
+		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
+	}
+
 	ctx := sac.WithAllAccess(context.Background())
-	err = updateVersion(ctx, databases, currentVersion)
+	err := updateVersion(ctx, databases, currentVersion)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update version after migrations %d", currentVersion.GetSeqNum())
 	}
-
 	return nil
 }
 
