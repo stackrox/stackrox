@@ -2,6 +2,7 @@ package booleanpolicy
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // ContainsOneOf returns whether the policy contains at least one group with a field of specified type.
@@ -9,6 +10,36 @@ func ContainsOneOf(policy *storage.Policy, fieldType RuntimeFieldType) bool {
 	for _, section := range policy.GetPolicySections() {
 		if SectionContainsFieldOfType(section, fieldType) {
 			return true
+		}
+	}
+	return false
+}
+
+// ContainsFileAccessOnly returns whether the policy contains at least one field that is FileAccess
+// but NOT also Process (i.e., exclusively FileAccess).
+func ContainsFileAccessOnly(policy *storage.Policy) bool {
+	for _, section := range policy.GetPolicySections() {
+		for _, group := range section.GetPolicyGroups() {
+			fieldName := group.GetFieldName()
+			metadata := FieldMetadataSingleton().fieldsToQB[fieldName]
+			if metadata == nil {
+				continue
+			}
+
+			isProcess := false
+			isFileAccess := false
+			for _, fieldType := range metadata.fieldTypes {
+				if fieldType == Process {
+					isProcess = true
+				}
+				if fieldType == FileAccess {
+					isFileAccess = true
+				}
+			}
+
+			if isFileAccess && !isProcess {
+				return true
+			}
 		}
 	}
 	return false
@@ -93,30 +124,66 @@ func ContainsValueWithFieldName(policy *storage.Policy, fieldName string) bool {
 
 }
 
-// ContainsDiscreteRuntimeFieldCategorySections returns false if the policy groups
-// contain combination of process and kubernetes events fields.
-func ContainsDiscreteRuntimeFieldCategorySections(policy *storage.Policy) bool {
+// processAndFileAccessInSameSection checks that if a policy contains both Process and FileAccess fields,
+// they must be in the same section.
+func processAndFileAccessInSameSection(policy *storage.Policy) bool {
+	hasProcess := ContainsOneOf(policy, Process)
+	hasFileAccess := ContainsFileAccessOnly(policy)
+
+	if !hasProcess || !hasFileAccess {
+		return true
+	}
+
+	for _, section := range policy.GetPolicySections() {
+		hasProcessInSection := SectionContainsFieldOfType(section, Process)
+		hasFileAccessInSection := SectionContainsFieldOfType(section, FileAccess)
+
+		if !(hasProcessInSection && hasFileAccessInSection) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// ContainsValidRuntimeFieldCategorySections checks that policy sections only contain
+// compatible runtime field types (as defined by runtimeFieldTypeGroups).
+func ContainsValidRuntimeFieldCategorySections(policy *storage.Policy) bool {
 	if len(policy.GetPolicySections()) == 0 {
 		return false
 	}
 
+	// Ensure Process and FileAccess are in the same section when both are present
+	if !processAndFileAccessInSameSection(policy) {
+		return false
+	}
+
+	var runtimeFieldTypeMap = map[RuntimeFieldType]RuntimeFieldType{
+		Process:     Process,
+		FileAccess:  Process, // FileAccess events contain process information
+		NetworkFlow: NetworkFlow,
+		KubeEvent:   KubeEvent,
+	}
+
 	for _, section := range policy.GetPolicySections() {
-		var numRuntimeCategories int
-		if SectionContainsFieldOfType(section, KubeEvent) {
-			numRuntimeCategories++
+		groupsSeen := set.NewStringSet()
+
+		for _, group := range section.GetPolicyGroups() {
+			fieldName := group.GetFieldName()
+			metadata := FieldMetadataSingleton().fieldsToQB[fieldName]
+			if metadata == nil {
+				continue
+			}
+			for _, fieldType := range metadata.fieldTypes {
+				if fieldTypeGroup, ok := runtimeFieldTypeMap[fieldType]; ok {
+					groupsSeen.Add(string(fieldTypeGroup))
+				}
+			}
+
 		}
-		if SectionContainsFieldOfType(section, Process) {
-			numRuntimeCategories++
-		}
-		if SectionContainsFieldOfType(section, NetworkFlow) {
-			numRuntimeCategories++
-		}
-		// TODO(ROX-30807): update to support a combination of FileAccess and Process
-		// fields.
-		if SectionContainsFieldOfType(section, FileAccess) {
-			numRuntimeCategories++
-		}
-		if numRuntimeCategories > 1 {
+
+		// A section can only contain fields from one compatibility group
+		if groupsSeen.Cardinality() > 1 {
 			return false
 		}
 	}
@@ -128,6 +195,16 @@ func ContainsDiscreteRuntimeFieldCategorySections(policy *storage.Policy) bool {
 func SectionContainsFieldOfType(section *storage.PolicySection, fieldType RuntimeFieldType) bool {
 	for _, group := range section.GetPolicyGroups() {
 		if FieldMetadataSingleton().FieldIsOfType(group.GetFieldName(), fieldType) {
+			return true
+		}
+	}
+	return false
+}
+
+// SectionContainsFieldName returns true if the section contains a policy group with the given field name.
+func SectionContainsFieldName(section *storage.PolicySection, fieldName string) bool {
+	for _, group := range section.GetPolicyGroups() {
+		if group.GetFieldName() == fieldName {
 			return true
 		}
 	}

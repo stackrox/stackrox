@@ -98,8 +98,7 @@ func (m *metadataAndQB) IsOfType(expectedType RuntimeFieldType) bool {
 }
 
 func (m *metadataAndQB) IsDeploymentEventField() bool {
-	// TODO(ROX-30809): update with m.IsOfType(FileAccess)
-	return m.IsOfType(Process) || m.IsOfType(NetworkFlow) || m.IsOfType(KubeEvent)
+	return m.IsOfType(Process) || m.IsOfType(NetworkFlow) || m.IsOfType(KubeEvent) || m.IsOfType(FileAccess)
 }
 
 func (m *metadataAndQB) IsAuditLogEventField() bool {
@@ -630,7 +629,7 @@ func initializeFieldMetadata() FieldMetadata {
 			return stringValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT},
-		[]RuntimeFieldType{Process})
+		[]RuntimeFieldType{Process, FileAccess})
 
 	f.registerFieldMetadataRegex(fieldnames.ProcessArguments,
 		querybuilders.ForFieldLabelContainsRegex(search.ProcessArguments),
@@ -639,7 +638,7 @@ func initializeFieldMetadata() FieldMetadata {
 			return stringValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT},
-		[]RuntimeFieldType{Process})
+		[]RuntimeFieldType{Process, FileAccess})
 
 	f.registerFieldMetadataRegex(fieldnames.ProcessName,
 		querybuilders.ForFieldLabelRegex(search.ProcessName),
@@ -648,7 +647,7 @@ func initializeFieldMetadata() FieldMetadata {
 			return stringValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT},
-		[]RuntimeFieldType{Process})
+		[]RuntimeFieldType{Process, FileAccess})
 
 	f.registerFieldMetadataRegex(fieldnames.ProcessUID,
 		querybuilders.ForFieldLabel(search.ProcessUID),
@@ -657,7 +656,7 @@ func initializeFieldMetadata() FieldMetadata {
 			return stringValueRegex
 		},
 		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT},
-		[]RuntimeFieldType{Process})
+		[]RuntimeFieldType{Process, FileAccess})
 
 	f.registerFieldMetadataRegex(fieldnames.ExposedPortProtocol,
 		querybuilders.ForFieldLabelUpper(search.PortProtocol),

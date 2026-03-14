@@ -33,14 +33,11 @@ var (
 			AddAugmentedObjectAt([]string{networkFlowAugKey}, NetworkFlowMeta).
 			AddAugmentedObjectAt([]string{networkPoliciesAppliedKey}, NetworkPoliciesAppliedMeta)
 
-	// This is a bit of a duplication of the DeploymentMeta with the following
-	// changes:
-	// - Containers.Process.ProcessMeta has been removed
-	// - FileAccess.FileAccessMeta has been added.
+	// This is a specialized version of DeploymentMeta for file access events.
+	// FileAccessMeta has been added which includes both file access criteria and process criteria
+	// (since FileAccess events contain process information).
 	//
-	// The file access event contains process information, which would otherwise
-	// conflict with the existing process fields, so we can't just include
-	// FileAccessMeta in DeploymentMeta
+	// This enables policies to detect file access events based on both file and process criteria.
 	DeploymentFileAccessMeta = pathutil.NewAugmentedObjMeta((*storage.Deployment)(nil)).
 					AddAugmentedObjectAt([]string{"Containers", imageAugmentKey}, ImageMeta).
 					AddPlainObjectAt([]string{"Containers", "Config", "Env", envVarAugmentKey}, (*envVar)(nil)).

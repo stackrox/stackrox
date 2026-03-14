@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/regexutils"
 	"github.com/stackrox/rox/pkg/scopecomp"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // CompiledPolicy is a compiled policy, which means it can match a policy, as well as check whether a policy is applicable.
@@ -60,10 +61,9 @@ func newCompiledPolicy(policy *storage.Policy, clusterLabelProvider scopecomp.Cl
 		if err := compiled.setRuntimeMatchers(policy); err != nil {
 			return nil, err
 		}
-		// There should be exactly one defined
-		if !compiled.exactlyOneRuntimeMatcherDefined() {
-			return nil, errors.Errorf("incorrect sections for a runtime policy %q. Section must have exactly "+
-				"one runtime constraint from either process, or kubernetes event category, or network baseline.", policy.GetName())
+		if !compiled.hasAllowedRuntimeMatchers() {
+			return nil, errors.Errorf("incorrect sections for a runtime policy %q. Section must have "+
+				"compatible runtime constraints.", policy.GetName())
 		}
 
 		// set predicates
@@ -254,28 +254,51 @@ func (cp *compiledPolicy) setNodeEventMatcher(policy *storage.Policy) error {
 	return nil
 }
 
-func (cp *compiledPolicy) exactlyOneRuntimeMatcherDefined() bool {
-	var numMatchers int
-	if cp.deploymentWithProcessMatcher != nil {
-		numMatchers++
-	}
-	if cp.kubeEventsMatcher != nil {
-		numMatchers++
-	}
-	if cp.deploymentWithNetworkFlowMatcher != nil {
-		numMatchers++
-	}
-	if cp.deploymentWithFileAccessMatcher != nil {
-		numMatchers++
-	}
-	if cp.auditLogEventMatcher != nil {
-		numMatchers++
-	}
-	if cp.nodeMatcher != nil {
-		numMatchers++
+func (cp *compiledPolicy) hasAllowedRuntimeMatchers() bool {
+	// matcherGroupMap defines which matchers belong to which compatibility group.
+	// Process and FileAccess belong to the same group since file access events
+	// contain process information.
+	type matcherIdentifier int
+	const (
+		kubeEventMatcherID matcherIdentifier = iota
+		processMatcherID
+		fileAccessMatcherID
+		networkFlowMatcherID
+		auditLogMatcherID
+		nodeMatcherID
+	)
+
+	var matcherGroupMap = map[matcherIdentifier]string{
+		kubeEventMatcherID:   "KubeEvent",
+		processMatcherID:     "Process",
+		fileAccessMatcherID:  "Process", // FileAccess events contain process information
+		networkFlowMatcherID: "NetworkFlow",
+		auditLogMatcherID:    "AuditLog",
+		nodeMatcherID:        "Node",
 	}
 
-	return numMatchers == 1
+	groupsSeen := set.NewStringSet()
+
+	if cp.kubeEventsMatcher != nil {
+		groupsSeen.Add(matcherGroupMap[kubeEventMatcherID])
+	}
+	if cp.deploymentWithProcessMatcher != nil {
+		groupsSeen.Add(matcherGroupMap[processMatcherID])
+	}
+	if cp.deploymentWithFileAccessMatcher != nil {
+		groupsSeen.Add(matcherGroupMap[fileAccessMatcherID])
+	}
+	if cp.deploymentWithNetworkFlowMatcher != nil {
+		groupsSeen.Add(matcherGroupMap[networkFlowMatcherID])
+	}
+	if cp.auditLogEventMatcher != nil {
+		groupsSeen.Add(matcherGroupMap[auditLogMatcherID])
+	}
+	if cp.nodeMatcher != nil {
+		groupsSeen.Add(matcherGroupMap[nodeMatcherID])
+	}
+
+	return groupsSeen.Cardinality() == 1
 }
 
 // Top level compiled Policy.
