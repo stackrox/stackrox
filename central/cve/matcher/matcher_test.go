@@ -7,8 +7,10 @@ import (
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
 	mockClusterDataStore "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	mockImagesDataStore "github.com/stackrox/rox/central/image/datastore/mocks"
+	mockImageV2DataStore "github.com/stackrox/rox/central/imagev2/datastore/mocks"
 	mockNamespaceDataStore "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -30,6 +32,7 @@ type cveMatcherTestSuite struct {
 	clusters   *mockClusterDataStore.MockDataStore
 	namespaces *mockNamespaceDataStore.MockDataStore
 	images     *mockImagesDataStore.MockDataStore
+	imagesV2   *mockImageV2DataStore.MockDataStore
 
 	mockCtrl *gomock.Controller
 }
@@ -48,9 +51,10 @@ func (s *cveMatcherTestSuite) SetupTest() {
 	s.clusters = mockClusterDataStore.NewMockDataStore(s.mockCtrl)
 	s.namespaces = mockNamespaceDataStore.NewMockDataStore(s.mockCtrl)
 	s.images = mockImagesDataStore.NewMockDataStore(s.mockCtrl)
+	s.imagesV2 = mockImageV2DataStore.NewMockDataStore(s.mockCtrl)
 
 	var err error
-	s.cveMatcher, err = NewCVEMatcher(s.clusters, s.namespaces, s.images)
+	s.cveMatcher, err = NewCVEMatcher(s.clusters, s.namespaces, s.images, s.imagesV2)
 	s.Require().NoError(err)
 }
 
@@ -746,7 +750,17 @@ func (s *cveMatcherTestSuite) TestIstioCVEImpactsCluster() {
 
 	s.clusters.EXPECT().GetClusters(gomock.Any()).Return(clusters, nil).AnyTimes()
 	s.namespaces.EXPECT().Search(gomock.Any(), gomock.Any()).Return(namespaces, nil).AnyTimes()
-	s.images.EXPECT().SearchRawImages(gomock.Any(), gomock.Any()).Return(images, nil).AnyTimes()
+
+	// Matcher uses images or imagesV2 depending on FlattenImageData.
+	imagesV2 := make([]*storage.ImageV2, len(images))
+	for i, img := range images {
+		imagesV2[i] = &storage.ImageV2{Id: img.GetId(), Name: img.GetName()}
+	}
+	if features.FlattenImageData.Enabled() {
+		s.imagesV2.EXPECT().SearchRawImages(gomock.Any(), gomock.Any()).Return(imagesV2, nil).AnyTimes()
+	} else {
+		s.images.EXPECT().SearchRawImages(gomock.Any(), gomock.Any()).Return(images, nil).AnyTimes()
+	}
 
 	ok, err := s.cveMatcher.isIstioControlPlaneRunning(context.Background())
 	s.Nil(err)
