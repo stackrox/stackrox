@@ -5,13 +5,16 @@ import (
 	"flag"
 	"fmt"
 	golog "log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"time"
 
+	tklog "github.com/quay/claircore/toolkit/log"
 	"github.com/quay/zlog"
+	zlogv2 "github.com/quay/zlog/v2"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -141,7 +144,10 @@ func main() {
 	zlog.Info(ctx).Str("signal", sig.String()).Send()
 }
 
-// initializeLogging Initialize zerolog and Quay's zlog.
+// slogLevel is the slog.Leveler used by the zlog/v2 handler.
+var slogLevel slog.LevelVar
+
+// initializeLogging initializes zlog and slog for claircore.
 func initializeLogging(logLevel zerolog.Level) error {
 	hostname, err := os.Hostname()
 	if err != nil {
@@ -156,7 +162,34 @@ func initializeLogging(logLevel zerolog.Level) error {
 	zlog.Set(&logger)
 	// Disable the default zerolog logger.
 	log.Logger = zerolog.Nop()
+
+	// Initialize slog for claircore using zlog/v2 handler.
+	slogLevel.Set(zerologToSlogLevel(logLevel))
+	slogHandler := zlogv2.NewHandler(os.Stdout, &zlogv2.Options{
+		Level:      &slogLevel,
+		ContextKey: tklog.AttrsKey,
+		LevelKey:   tklog.LevelKey,
+	})
+	slogLogger := slog.New(slogHandler).With("host", hostname)
+	slog.SetDefault(slogLogger)
+
 	return nil
+}
+
+// zerologToSlogLevel converts a zerolog.Level to slog.Level.
+func zerologToSlogLevel(level zerolog.Level) slog.Level {
+	switch level {
+	case zerolog.TraceLevel, zerolog.DebugLevel:
+		return slog.LevelDebug
+	case zerolog.InfoLevel:
+		return slog.LevelInfo
+	case zerolog.WarnLevel:
+		return slog.LevelWarn
+	case zerolog.ErrorLevel, zerolog.FatalLevel, zerolog.PanicLevel:
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
 }
 
 // createGRPCService creates a ready-to-start gRPC API instance and register its services.

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -33,7 +34,7 @@ func TestIndexerServiceSuite(t *testing.T) {
 
 func (s *indexerServiceTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
-	s.ctx = context.Background()
+	s.ctx = test.Logging(s.T())
 	s.indexerMock = mocks.NewMockIndexer(s.mockCtrl)
 	s.service = NewIndexerService(s.indexerMock)
 }

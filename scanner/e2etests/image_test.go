@@ -1,7 +1,6 @@
 package e2etests
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/quay/claircore/test"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stackrox/rox/pkg/utils"
@@ -78,7 +78,7 @@ func TestImage(t *testing.T) {
 	t.Logf("Indexer Address: %s", indexerAddr)
 	t.Logf("Matcher Address: %s", matcherAddr)
 	t.Logf("Debug: %v", debug)
-	ctx := context.Background()
+	ctx := test.Logging(t)
 	c, err := client.NewGRPCScanner(ctx,
 		client.WithIndexerAddress(indexerAddr),
 		client.WithMatcherAddress(matcherAddr),

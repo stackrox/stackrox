@@ -303,7 +303,7 @@ func TestUpdater_Initialized(t *testing.T) {
 }
 
 func TestUpdater_Import(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	ctrl := gomock.NewController(t)
 
 	// Represents one vulnerability or enrichment iteration.
