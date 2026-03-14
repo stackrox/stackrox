@@ -80,6 +80,20 @@ func (mr *MockvirtualMachineStoreMockRecorder) Get(id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockvirtualMachineStore)(nil).Get), id)
 }
 
+// GetDiscoveredFacts mocks base method.
+func (m *MockvirtualMachineStore) GetDiscoveredFacts(id virtualmachine.VMID) map[string]string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDiscoveredFacts", id)
+	ret0, _ := ret[0].(map[string]string)
+	return ret0
+}
+
+// GetDiscoveredFacts indicates an expected call of GetDiscoveredFacts.
+func (mr *MockvirtualMachineStoreMockRecorder) GetDiscoveredFacts(id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDiscoveredFacts", reflect.TypeOf((*MockvirtualMachineStore)(nil).GetDiscoveredFacts), id)
+}
+
 // Has mocks base method.
 func (m *MockvirtualMachineStore) Has(id virtualmachine.VMID) bool {
 	m.ctrl.T.Helper()
