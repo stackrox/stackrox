@@ -373,7 +373,7 @@ func (s *PostgresPruningSuite) TestRemoveOrphanedProcesses() {
 			for _, process := range c.initialProcesses {
 				cleanupIDs = append(cleanupIDs, process.GetId())
 			}
-			s.Require().NoError(processDatastore.RemoveProcessIndicators(s.ctx, cleanupIDs))
+			s.Require().NoError(processDatastore.RemoveProcessIndicators(s.ctx, cleanupIDs, processIndicatorDatastore.RemovalReasonProcessFilter))
 
 			for _, deploymentID := range c.deployments.AsSlice() {
 				s.Require().NoError(deploymentDS.RemoveDeployment(s.ctx, fixtureconsts.Cluster1, deploymentID))

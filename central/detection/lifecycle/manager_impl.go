@@ -128,7 +128,7 @@ func (m *managerImpl) buildIndicatorFilter() {
 	}
 
 	log.Infof("Cleaning up %d processes as a part of building process filter", len(processesToRemove))
-	if err := m.processesDataStore.RemoveProcessIndicators(ctx, processesToRemove); err != nil {
+	if err := m.processesDataStore.RemoveProcessIndicators(ctx, processesToRemove, processIndicatorDatastore.RemovalReasonProcessFilter); err != nil {
 		utils.Should(errors.Wrap(err, "error removing process indicators"))
 	}
 	log.Infof("Successfully cleaned up those %d processes", len(processesToRemove))
