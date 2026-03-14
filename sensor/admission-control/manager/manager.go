@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/size"
 	"google.golang.org/grpc"
 	admission "k8s.io/api/admission/v1"
@@ -39,5 +40,6 @@ type Manager interface {
 
 // New creates a new admission control manager
 func New(conn *grpc.ClientConn, namespace string) Manager {
-	return NewManager(namespace, 200*size.MB, sensor.NewImageServiceClient(conn), sensor.NewDeploymentServiceClient(conn))
+	cacheSize := int64(env.AdmissionControlImageCacheMaxSizeMB.IntegerSetting())
+	return NewManager(namespace, cacheSize*size.MB, sensor.NewImageServiceClient(conn), sensor.NewDeploymentServiceClient(conn))
 }
