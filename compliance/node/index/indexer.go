@@ -16,6 +16,7 @@ import (
 	"github.com/quay/claircore"
 	ccindexer "github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/indexer/controller"
+	"github.com/quay/claircore/osrelease"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
@@ -190,6 +191,13 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 		return nil, errors.Wrap(err, "converting clair report to v4 report")
 	}
 
+	dists, err := runOSScanner(ctx, layer)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to scan os-release")
+	}
+	if len(dists) > 0 {
+		report.Distro = mapDistribution(dists[0])
+	}
 	return report, nil
 }
 
@@ -282,4 +290,31 @@ func runCoalescer(ctx context.Context, layerDigest claircore.Digest, repos []*cl
 	}
 
 	return ir, nil
+}
+
+func runOSScanner(ctx context.Context, layer *claircore.Layer) ([]*claircore.Distribution, error) {
+	scanner := &osrelease.Scanner{}
+	dists, err := scanner.Scan(ctx, layer)
+	if err != nil {
+		return nil, err
+	}
+	// ID is required for the coalescer to link artifacts correctly
+	for i, d := range dists {
+		d.ID = strconv.Itoa(i)
+	}
+	return dists, nil
+}
+
+func mapDistribution(ccDist *claircore.Distribution) *v4.Distribution {
+	return &v4.Distribution{
+		Id:              ccDist.ID,
+		Did:             ccDist.DID,
+		Name:            ccDist.Name,
+		Version:         ccDist.Version,
+		VersionCodeName: ccDist.VersionCodeName,
+		VersionId:       ccDist.VersionID,
+		Arch:            ccDist.Arch,
+		Cpe:             ccDist.CPE.BindFS(), // Converts WFN object to string
+		PrettyName:      ccDist.PrettyName,
+	}
 }
