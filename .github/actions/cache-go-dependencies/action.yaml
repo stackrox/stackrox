@@ -63,8 +63,8 @@ runs:
         if [[ -d "$gocache" ]]; then
           # Backdate all cache entries to year 2000. During the build/test,
           # Go's markUsed() updates mtimes of accessed entries to "now"
-          # (it always updates when mtime is >1 hour old). At the end of
-          # the job, a trim step deletes entries still at year 2000.
+          # (it always updates when mtime is >1 hour old). The post-step
+          # below trims entries still at year 2000 before cache save.
           find "$gocache" -type f -exec touch -t 200001010000 {} +
           # Protect trim.txt: if backdated, Go's built-in Trim() sees
           # "last trim was in year 2000" and deletes ALL backdated entries
@@ -73,6 +73,26 @@ runs:
           echo "Marked GOCACHE entries for stale detection"
         fi
       shell: bash
+
+    # Registered AFTER cache steps so the post-step runs BEFORE cache save
+    # (GHA runs post-steps in reverse registration order).
+    - name: Trim stale GOCACHE entries (post-step)
+      uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
+      with:
+        run: echo "GOCACHE trim will run in post-step"
+        post: >
+          gocache="$(go env GOCACHE)";
+          if [[ ! -d "$gocache" ]] || [[ ! -f "$gocache/trim.txt" ]]; then
+            echo "Skipping GOCACHE trim (no cache or mark step did not run)";
+            exit 0;
+          fi;
+          before=$(du -sm "$gocache" 2>/dev/null | cut -f1);
+          cutoff=$(mktemp); touch -t 200001020000 "$cutoff";
+          find "$gocache" -type f ! -newer "$cutoff" -delete 2>/dev/null || true;
+          rm -f "$cutoff";
+          find "$gocache" -mindepth 1 -type d -empty -delete 2>/dev/null || true;
+          after=$(du -sm "$gocache" 2>/dev/null | cut -f1);
+          echo "GOCACHE trimmed: ${before:-0}MB -> ${after:-0}MB (removed $((${before:-0} - ${after:-0}))MB)"
 
     - name: Download Go modules
       run: make deps --always-make
