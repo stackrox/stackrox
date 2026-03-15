@@ -65,7 +65,7 @@ runs:
           # Go's markUsed() updates mtimes of accessed entries to "now"
           # (it always updates when mtime is >1 hour old). The post-step
           # below trims entries still at year 2000 before cache save.
-          find "$gocache" -type f -exec touch -t 200001010000 {} +
+          timeout 120 find "$gocache" -type f -exec touch -t 200001010000 {} + || true
           # Protect trim.txt: if backdated, Go's built-in Trim() sees
           # "last trim was in year 2000" and deletes ALL backdated entries
           # before the build starts. Setting it to now prevents this.
