@@ -105,6 +105,11 @@ func createDeploymentLabels(random bool, numLabels int) map[string]string {
 }
 
 func (w *WorkloadManager) getDeployment(workload DeploymentWorkload, idx int, deploymentIDs, replicaSetIDs, podIDs []string) *deploymentResourcesToBeManaged {
+	return w.getDeploymentWithImage(workload, idx, deploymentIDs, replicaSetIDs, podIDs, "")
+}
+
+// getDeploymentWithImage creates a deployment with a specific image (if provided) or random images
+func (w *WorkloadManager) getDeploymentWithImage(workload DeploymentWorkload, idx int, deploymentIDs, replicaSetIDs, podIDs []string, imageOverride string) *deploymentResourcesToBeManaged {
 	var labels map[string]string
 	if workload.NumLabels == 0 {
 		labels = createDeploymentLabels(workload.RandomLabels, 3)
@@ -114,7 +119,7 @@ func (w *WorkloadManager) getDeployment(workload DeploymentWorkload, idx int, de
 
 	var containers []corev1.Container
 	for i := 0; i < workload.PodWorkload.NumContainers; i++ {
-		containers = append(containers, getContainer(workload.PodWorkload.ContainerWorkload))
+		containers = append(containers, getContainerWithImage(workload.PodWorkload.ContainerWorkload, imageOverride))
 	}
 
 	namespace, valid := namespacePool.randomElem()
@@ -292,8 +297,16 @@ func getPod(replicaSet *appsv1.ReplicaSet, id string, ipPool *pool, containerPoo
 }
 
 func getContainer(workload ContainerWorkload) corev1.Container {
+	return getContainerWithImage(workload, "")
+}
+
+// getContainerWithImage creates a container with either a specific image or a random one
+// If imageOverride is empty, a random image is selected based on workload settings
+func getContainerWithImage(workload ContainerWorkload, imageOverride string) corev1.Container {
 	var imageName string
-	if workload.NumImages == 0 {
+	if imageOverride != "" {
+		imageName = imageOverride
+	} else if workload.NumImages == 0 {
 		imageName = fixtures.GetRandomImage().FullName()
 	} else {
 		imageName = fixtures.GetRandomImageN(workload.NumImages).FullName()
@@ -410,6 +423,132 @@ func (w *WorkloadManager) manageDeployment(ctx context.Context, resources *deplo
 		for _, pod := range pods {
 			if _, err := w.client.Kubernetes().CoreV1().Pods(deployment.Namespace).Create(ctx, pod, metav1.CreateOptions{}); err != nil {
 				log.Errorf("error creating pod: %v", err)
+			}
+		}
+	}
+}
+
+// manageDeploymentPair manages a pair of deployments created from ImageCopies (one with _orig, one with _copy).
+// When the lifecycle expires, it recreates both deployments together using a new random ImageCopyPair.
+// this function should be called with go w.manageDeploymentPair
+func (w *WorkloadManager) manageDeploymentPair(ctx context.Context, origResources, copyResources *deploymentResourcesToBeManaged) {
+	defer w.wg.Done()
+
+	// NumLifecycles+1 is to handle the initial startup. These start up resources
+	// are like deploying Sensor into a new environment and syncing all objects.
+	for count := 0; origResources.workload.NumLifecycles == 0 || count < origResources.workload.NumLifecycles+1; count++ {
+		w.manageDeploymentPairLifecycle(ctx, origResources, copyResources)
+
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		// Recreate both deployments with a new random ImageCopyPair
+		origResources, copyResources = w.getDeploymentPairFromImageCopies(origResources.workload, 0, nil, nil, nil)
+
+		// Create _orig deployment
+		w.createDeploymentResources(ctx, origResources)
+
+		// Create _copy deployment
+		w.createDeploymentResources(ctx, copyResources)
+	}
+}
+
+// createDeploymentResources creates the Kubernetes resources for a deployment
+func (w *WorkloadManager) createDeploymentResources(ctx context.Context, resources *deploymentResourcesToBeManaged) {
+	deployment, replicaSet, pods := resources.deployment, resources.replicaSet, resources.pods
+	if _, err := w.client.Kubernetes().AppsV1().Deployments(deployment.Namespace).Create(ctx, deployment, metav1.CreateOptions{}); err != nil {
+		log.Errorf("error creating deployment: %v", err)
+	}
+	if _, err := w.client.Kubernetes().AppsV1().ReplicaSets(deployment.Namespace).Create(ctx, replicaSet, metav1.CreateOptions{}); err != nil {
+		log.Errorf("error creating replica set: %v", err)
+	}
+	for _, pod := range pods {
+		if _, err := w.client.Kubernetes().CoreV1().Pods(deployment.Namespace).Create(ctx, pod, metav1.CreateOptions{}); err != nil {
+			log.Errorf("error creating pod: %v", err)
+		}
+	}
+}
+
+// manageDeploymentPairLifecycle manages the lifecycle of a pair of deployments (orig and copy).
+// It waits for the lifecycle duration, then deletes both deployments.
+func (w *WorkloadManager) manageDeploymentPairLifecycle(ctx context.Context, origResources, copyResources *deploymentResourcesToBeManaged) {
+	timer := newTimerWithJitter(origResources.workload.LifecycleDuration/2 + time.Duration(rand.Int63n(int64(origResources.workload.LifecycleDuration))))
+	defer timer.Stop()
+
+	deploymentNextUpdate := calculateDurationWithJitter(origResources.workload.UpdateInterval)
+
+	origDeployment := origResources.deployment
+	origReplicaset := origResources.replicaSet
+	copyDeployment := copyResources.deployment
+	copyReplicaset := copyResources.replicaSet
+
+	stopSig := concurrency.NewSignal()
+
+	origDeploymentClient := w.client.Kubernetes().AppsV1().Deployments(origDeployment.Namespace)
+	origReplicaSetClient := w.client.Kubernetes().AppsV1().ReplicaSets(origDeployment.Namespace)
+	copyDeploymentClient := w.client.Kubernetes().AppsV1().Deployments(copyDeployment.Namespace)
+	copyReplicaSetClient := w.client.Kubernetes().AppsV1().ReplicaSets(copyDeployment.Namespace)
+
+	// Start pod management for both deployments
+	for _, pod := range origResources.pods {
+		go w.managePod(ctx, &stopSig, origResources.workload.PodWorkload, pod)
+	}
+	for _, pod := range copyResources.pods {
+		go w.managePod(ctx, &stopSig, copyResources.workload.PodWorkload, pod)
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			stopSig.Signal()
+			return
+		case <-timer.C:
+			stopSig.Signal()
+			// Delete _orig deployment
+			if err := origDeploymentClient.Delete(ctx, origDeployment.Name, metav1.DeleteOptions{}); err != nil {
+				log.Error(err)
+			}
+			w.deleteID(deploymentPrefix, origDeployment.UID)
+			if err := origReplicaSetClient.Delete(ctx, origReplicaset.Name, metav1.DeleteOptions{}); err != nil {
+				log.Error(err)
+			}
+			w.deleteID(replicaSetPrefix, origReplicaset.UID)
+
+			// Delete _copy deployment
+			if err := copyDeploymentClient.Delete(ctx, copyDeployment.Name, metav1.DeleteOptions{}); err != nil {
+				log.Error(err)
+			}
+			w.deleteID(deploymentPrefix, copyDeployment.UID)
+			if err := copyReplicaSetClient.Delete(ctx, copyReplicaset.Name, metav1.DeleteOptions{}); err != nil {
+				log.Error(err)
+			}
+			w.deleteID(replicaSetPrefix, copyReplicaset.UID)
+			return
+		case <-time.After(deploymentNextUpdate):
+			deploymentNextUpdate = calculateDurationWithJitter(origResources.workload.UpdateInterval)
+
+			// Update annotations on both deployments
+			annotations := createRandMap(16, 3)
+
+			origDeployment.Annotations = annotations
+			origReplicaset.Annotations = annotations
+			copyDeployment.Annotations = annotations
+			copyReplicaset.Annotations = annotations
+
+			if _, err := origDeploymentClient.Update(ctx, origDeployment, metav1.UpdateOptions{}); err != nil {
+				log.Errorf("error updating orig deployment: %v", err)
+			}
+			if _, err := origReplicaSetClient.Update(ctx, origReplicaset, metav1.UpdateOptions{}); err != nil {
+				log.Errorf("error updating orig replica set: %v", err)
+			}
+			if _, err := copyDeploymentClient.Update(ctx, copyDeployment, metav1.UpdateOptions{}); err != nil {
+				log.Errorf("error updating copy deployment: %v", err)
+			}
+			if _, err := copyReplicaSetClient.Update(ctx, copyReplicaset, metav1.UpdateOptions{}); err != nil {
+				log.Errorf("error updating copy replica set: %v", err)
 			}
 		}
 	}
@@ -589,4 +728,23 @@ func (w *WorkloadManager) manageProcessesForPod(ctx context.Context, podSig *con
 			return
 		}
 	}
+}
+
+// getDeploymentPairFromImageCopies creates a pair of deployments using an image copy pair
+// It returns two deployments: one with the _orig image and one with the _copy image
+func (w *WorkloadManager) getDeploymentPairFromImageCopies(workload DeploymentWorkload, idx int, deploymentIDs, replicaSetIDs, podIDs []string) (*deploymentResourcesToBeManaged, *deploymentResourcesToBeManaged) {
+	var imagePair fixtures.ImageCopyPair
+	if workload.PodWorkload.ContainerWorkload.NumImages == 0 {
+		imagePair = fixtures.GetRandomImageCopyPair()
+	} else {
+		imagePair = fixtures.GetRandomImageCopyPairN(workload.PodWorkload.ContainerWorkload.NumImages)
+	}
+
+	// Create deployment with _orig image
+	origDeployment := w.getDeploymentWithImage(workload, idx*2, deploymentIDs, replicaSetIDs, podIDs, imagePair.Orig.FullName())
+
+	// Create deployment with _copy image
+	copyDeployment := w.getDeploymentWithImage(workload, idx*2+1, deploymentIDs, replicaSetIDs, podIDs, imagePair.Copy.FullName())
+
+	return origDeployment, copyDeployment
 }

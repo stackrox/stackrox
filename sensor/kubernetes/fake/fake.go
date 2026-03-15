@@ -419,18 +419,46 @@ func (w *WorkloadManager) initializePreexistingResources() {
 
 	objects = append(objects, w.getRBAC(w.workload.RBACWorkload, w.getIDsForPrefix(serviceAccountPrefix), w.getIDsForPrefix(rolesPrefix), w.getIDsForPrefix(rolebindingsPrefix))...)
 	var resources []*deploymentResourcesToBeManaged
+	// resourcePairs holds pairs of deployments for UseImageCopies mode
+	type deploymentPair struct {
+		orig *deploymentResourcesToBeManaged
+		copy *deploymentResourcesToBeManaged
+	}
+	var resourcePairs []deploymentPair
 
 	deploymentIDs := w.getIDsForPrefix(deploymentPrefix)
 	replicaSetIDs := w.getIDsForPrefix(replicaSetPrefix)
 	podIDs := w.getIDsForPrefix(podPrefix)
 	for _, deploymentWorkload := range w.workload.DeploymentWorkload {
-		for i := 0; i < deploymentWorkload.NumDeployments; i++ {
-			resource := w.getDeployment(deploymentWorkload, i, deploymentIDs, replicaSetIDs, podIDs)
-			resources = append(resources, resource)
+		if deploymentWorkload.PodWorkload.ContainerWorkload.UseImageCopies {
+			// When using image copies, create paired deployments (one with _orig, one with _copy)
+			for i := 0; i < deploymentWorkload.NumDeployments; i++ {
+				origResource, copyResource := w.getDeploymentPairFromImageCopies(deploymentWorkload, i, deploymentIDs, replicaSetIDs, podIDs)
 
-			objects = append(objects, resource.deployment, resource.replicaSet)
-			for _, p := range resource.pods {
-				objects = append(objects, p)
+				// Store the pair for later management
+				resourcePairs = append(resourcePairs, deploymentPair{orig: origResource, copy: copyResource})
+
+				// Add _orig deployment objects
+				objects = append(objects, origResource.deployment, origResource.replicaSet)
+				for _, p := range origResource.pods {
+					objects = append(objects, p)
+				}
+
+				// Add _copy deployment objects
+				objects = append(objects, copyResource.deployment, copyResource.replicaSet)
+				for _, p := range copyResource.pods {
+					objects = append(objects, p)
+				}
+			}
+		} else {
+			for i := 0; i < deploymentWorkload.NumDeployments; i++ {
+				resource := w.getDeployment(deploymentWorkload, i, deploymentIDs, replicaSetIDs, podIDs)
+				resources = append(resources, resource)
+
+				objects = append(objects, resource.deployment, resource.replicaSet)
+				for _, p := range resource.pods {
+					objects = append(objects, p)
+				}
 			}
 		}
 	}
@@ -509,6 +537,12 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	for _, resource := range resources {
 		w.wg.Add(1)
 		go w.manageDeployment(w.shutdownCtx, resource)
+	}
+
+	// Fork management of deployment pairs (for UseImageCopies mode)
+	for _, pair := range resourcePairs {
+		w.wg.Add(1)
+		go w.manageDeploymentPair(w.shutdownCtx, pair.orig, pair.copy)
 	}
 
 	// Fork management of networkPolicy resources

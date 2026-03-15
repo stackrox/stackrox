@@ -31,6 +31,9 @@ type NetworkPolicyWorkload struct {
 // ContainerWorkload defines the workloads for the container within the Pod
 type ContainerWorkload struct {
 	NumImages int `yaml:"numImages"`
+	// UseImageCopies when true uses ImageCopies instead of ImageNames
+	// This creates paired deployments with _orig and _copy images for each random selection
+	UseImageCopies bool `yaml:"useImageCopies"`
 }
 
 // ProcessWorkload defines the rate of process generation
