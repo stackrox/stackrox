@@ -5,6 +5,10 @@ inputs:
     description: Whether this job saves caches on pushes to the default branch.
     required: false
     default: 'true'
+  key-suffix:
+    description: Extra suffix for cache keys (use to distinguish matrix entries that share github.job).
+    required: false
+    default: ''
 runs:
   using: composite
   steps:
@@ -15,6 +19,8 @@ runs:
         echo "GOMODCACHE=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
         echo "GOARCH=$(go env GOARCH)" >> "$GITHUB_OUTPUT"
         echo "TAG=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+        suffix="${{ inputs.key-suffix }}"
+        echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"  # prepends dash if set
       shell: bash
 
     # Save caches only on pushes to the default branch.
@@ -40,16 +46,50 @@ runs:
       uses: actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
-        restore-keys: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-
+        key: go-build-v1-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
+        restore-keys: go-build-v1-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
     - name: Cache Go Build (restore)
       if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
       uses: actions/cache/restore@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
-        restore-keys: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-
+        key: go-build-v1-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
+        restore-keys: go-build-v1-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
+
+    - name: Mark GOCACHE entries for stale detection
+      run: |
+        gocache="${{ steps.cache-paths.outputs.GOCACHE }}"
+        if [[ -d "$gocache" ]]; then
+          # Backdate all cache entries to year 2000. During the build/test,
+          # Go's markUsed() updates mtimes of accessed entries to "now"
+          # (it always updates when mtime is >1 hour old). The post-step
+          # below trims entries still at year 2000 before cache save.
+          timeout 120 find "$gocache" -type f -exec touch -t 200001010000 {} + || true
+          # Protect trim.txt: if backdated, Go's built-in Trim() sees
+          # "last trim was in year 2000" and deletes ALL backdated entries
+          # before the build starts. Setting it to now prevents this.
+          echo "$(date +%s)" > "$gocache/trim.txt"
+          echo "Marked GOCACHE entries for stale detection"
+        fi
+      shell: bash
+
+    # Registered AFTER cache steps so the post-step runs BEFORE cache save
+    # (GHA runs post-steps in reverse registration order).
+    - name: Trim stale GOCACHE entries (post-step)
+      uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
+      with:
+        post: >
+          set +e;
+          gocache="$(go env GOCACHE)";
+          [[ -d "$gocache" ]] && [[ -f "$gocache/trim.txt" ]] || { echo "Skipping GOCACHE trim"; exit 0; };
+          before=$(du -sm "$gocache" 2>/dev/null | cut -f1);
+          cutoff=$(mktemp); touch -t 200001020000 "$cutoff";
+          find "$gocache" -type f ! -newer "$cutoff" -delete 2>/dev/null || true;
+          rm -f "$cutoff";
+          find "$gocache" -mindepth 1 -type d -empty -delete 2>/dev/null || true;
+          after=$(du -sm "$gocache" 2>/dev/null | cut -f1);
+          echo "GOCACHE trimmed: ${before:-0}MB -> ${after:-0}MB (removed $((${before:-0} - ${after:-0}))MB)"
 
     - name: Download Go modules
       run: make deps --always-make
