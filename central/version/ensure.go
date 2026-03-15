@@ -19,7 +19,7 @@ var (
 // Ensure is an opaque command that ensures that the DB is in a good state by the time it returns.
 // It will simply return if the DB version is already what Central expects.
 // If the DB is empty, then it will write the current DB version to the DB.
-// It will returns an error if the DB is of an old version.
+// It will return an error if the DB is of an old version.
 // If Ensure returns an error, the state of the DB is undefined, and it is not safe for Central to try to
 // function normally.
 func Ensure(versionStore vStore.Store) error {

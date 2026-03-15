@@ -122,7 +122,7 @@ func SetPostgresTest(t *testing.T, db postgres.DB) postgres.DB {
 	return postgresDB
 }
 
-// InitializePostgres creates and returns returns a global database instance.
+// InitializePostgres creates and returns a global database instance.
 func InitializePostgres(ctx context.Context) postgres.DB {
 	pgSync.Do(func() {
 		_, dbConfig, err := pgconfig.GetPostgresConfig()
