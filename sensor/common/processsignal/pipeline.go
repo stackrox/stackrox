@@ -8,9 +8,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/channelmultiplexer"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
-	"github.com/stackrox/rox/pkg/process/normalize"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
@@ -18,50 +19,243 @@ import (
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/pubsub"
 )
 
 var (
 	log = logging.LoggerForModule()
 )
 
-// Pipeline is the struct that handles a process signal
-type Pipeline struct {
-	clusterEntities    *clusterentities.Store
-	indicators         chan *message.ExpiringMessage
-	enrichedIndicators chan *storage.ProcessIndicator
-	enricher           *enricher
-	processFilter      filter.Filter
-	detector           detector.Detector
-	cm                 *channelmultiplexer.ChannelMultiplexer[*storage.ProcessIndicator]
-	stopper            concurrency.Stopper
-	// enricher context
-	cancelEnricherCtx context.CancelCauseFunc
+type processPipeline interface {
+	Start() error
+	Stop() error
+	Process(signal *storage.ProcessIndicator)
 }
 
-// NewProcessPipeline defines how to process a ProcessIndicator
-func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntities *clusterentities.Store, processFilter filter.Filter, detector detector.Detector) *Pipeline {
-	log.Debug("Calling NewProcessPipeline")
-	enricherCtx, cancelEnricherCtx := context.WithCancelCause(context.Background())
-	en := newEnricher(enricherCtx, clusterEntities)
+type basePipeline struct {
+	processFilter     filter.Filter
+	detector          detector.Detector
+	stopper           concurrency.Stopper
+	cancelEnricherCtx context.CancelCauseFunc
+	enricher          *enricher
+	indicators        chan *message.ExpiringMessage
+}
+
+func newBasePipeline(indicators chan *message.ExpiringMessage, enricher *enricher, processFilter filter.Filter, detector detector.Detector, stopper concurrency.Stopper, cancelEnricherCtx context.CancelCauseFunc) basePipeline {
+	return basePipeline{
+		processFilter:     processFilter,
+		detector:          detector,
+		stopper:           stopper,
+		enricher:          enricher,
+		cancelEnricherCtx: cancelEnricherCtx,
+		indicators:        indicators,
+	}
+}
+
+func (p *basePipeline) Start() error {
+	return nil
+}
+
+func (p *basePipeline) Stop() error {
+	p.cancelEnricherCtx(errors.New("pipeline shutdown"))
+	p.stopper.Client().Stop()
+	_ = p.enricher.Stopped().Wait()
+	_ = p.stopper.Client().Stopped().Wait()
+	return nil
+}
+
+func (p *basePipeline) sendToCentral(msg *message.ExpiringMessage) {
+	select {
+	case p.indicators <- msg:
+	case <-p.stopper.Flow().StopRequested():
+		return
+	default:
+		metrics.IncrementProcessSignalDroppedCount()
+		log.Errorf("The output channel is full. Dropping process indicator event for deployment %s with id %s and process name %s",
+			msg.GetEvent().GetProcessIndicator().GetDeploymentId(),
+			msg.GetEvent().GetProcessIndicator().GetId(),
+			msg.GetEvent().GetProcessIndicator().GetSignal().GetName())
+	}
+}
+
+// processEnrichedIndicator replaces the sendIndicatorEvent goroutine in legacy mode.
+func (p *basePipeline) processEnrichedIndicator(event pubsub.Event) error {
+	enrichedEvent, ok := event.(*EnrichedProcessIndicatorEvent)
+	if !ok {
+		log.Errorf("Received unexpected event type: %T", event)
+		return errors.Errorf("unexpected event type: %T", event)
+	}
+
+	indicator := enrichedEvent.Indicator
+	if indicator == nil {
+		return errors.New("enriched process indicator event has nil indicator")
+	}
+
+	if !p.processFilter.Add(indicator) {
+		return nil
+	}
+
+	p.handleEnrichedIndicator(enrichedEvent.Context, indicator)
+	return nil
+}
+
+func (p *basePipeline) handleEnrichedIndicator(ctx context.Context, indicator *storage.ProcessIndicator) {
+	p.detector.ProcessIndicator(ctx, indicator)
+
+	p.sendToCentral(
+		message.NewExpiring(ctx, &central.MsgFromSensor{
+			Msg: &central.MsgFromSensor_Event{
+				Event: &central.SensorEvent{
+					Id:     indicator.GetId(),
+					Action: central.ResourceAction_CREATE_RESOURCE,
+					Resource: &central.SensorEvent_ProcessIndicator{
+						ProcessIndicator: indicator,
+					},
+				},
+			},
+		}),
+	)
+
+	metrics.SetProcessSignalBufferSizeGauge(len(p.indicators))
+}
+
+type channelPipeline struct {
+	basePipeline
+
+	cm                 *channelmultiplexer.ChannelMultiplexer[*storage.ProcessIndicator]
+	clusterEntities    *clusterentities.Store
+	enrichedIndicators chan *storage.ProcessIndicator
+}
+
+func newChannelPipeline(base basePipeline, clusterEntities *clusterentities.Store) processPipeline {
 	enrichedIndicators := make(chan *storage.ProcessIndicator)
 
 	cm := channelmultiplexer.NewMultiplexer[*storage.ProcessIndicator]()
-	cm.AddChannel(en.getEnrichedC())  // PIs that are enriched in the enricher
-	cm.AddChannel(enrichedIndicators) // PIs that are enriched directly in the pipeline
+	cm.AddChannel(base.enricher.getEnrichedC()) // PIs that are enriched in the enricher
+	cm.AddChannel(enrichedIndicators)           // PIs that are enriched directly in the pipeline
 	cm.Run()
-	p := &Pipeline{
-		clusterEntities:    clusterEntities,
-		indicators:         indicators,
-		enricher:           en,
-		enrichedIndicators: enrichedIndicators,
-		processFilter:      processFilter,
-		detector:           detector,
+
+	return &channelPipeline{
+		basePipeline:       base,
 		cm:                 cm,
-		cancelEnricherCtx:  cancelEnricherCtx,
-		stopper:            concurrency.NewStopper(),
+		clusterEntities:    clusterEntities,
+		enrichedIndicators: enrichedIndicators,
 	}
+}
+
+func (p *channelPipeline) Start() error {
+	errlist := errorhelpers.NewErrorList("starting channel pipeline")
+	if err := p.basePipeline.Start(); err != nil {
+		errlist.AddError(err)
+	}
+
 	go p.sendIndicatorEvent()
-	return p
+	return errlist.ToError()
+}
+
+func (p *channelPipeline) sendIndicatorEvent() {
+	defer p.stopper.Flow().ReportStopped()
+	for indicator := range p.cm.GetOutput() {
+		if err := p.processEnrichedIndicator(NewEnrichedProcessIndicatorEvent(context.Background(), indicator)); err != nil {
+			log.Errorf("failed to process enriched indicator: %v", err)
+		}
+	}
+}
+
+func (p *channelPipeline) Stop() error {
+	close(p.enrichedIndicators)
+
+	errlist := errorhelpers.NewErrorList("stopping channel pipeline")
+	if err := p.basePipeline.Stop(); err != nil {
+		errlist.AddError(err)
+	}
+
+	return errlist.ToError()
+}
+
+func (p *channelPipeline) Process(indicator *storage.ProcessIndicator) {
+	p.enricher.add(indicator)
+}
+
+type pubsubPipeline struct {
+	basePipeline
+	pubSubDispatcher common.PubSubDispatcher
+}
+
+func newPubSubPipeline(base basePipeline, pubSubDispatcher common.PubSubDispatcher) processPipeline {
+	return &pubsubPipeline{
+		basePipeline:     base,
+		pubSubDispatcher: pubSubDispatcher,
+	}
+}
+
+func (p *pubsubPipeline) Start() error {
+	errlist := errorhelpers.NewErrorList("starting pubsub pipeline")
+	if err := p.basePipeline.Start(); err != nil {
+		errlist.AddError(err)
+	}
+
+	if err := p.pubSubDispatcher.RegisterConsumerToLane(
+		pubsub.EnrichedProcessConsumer,
+		pubsub.EnrichedProcessIndicatorTopic,
+		pubsub.EnrichedProcessIndicatorLane,
+		p.processEnrichedIndicator,
+	); err != nil {
+		errlist.AddWrap(err, "Failed to register consumer for enriched process indicators")
+	}
+
+	return errlist.ToError()
+}
+
+func (p *pubsubPipeline) Stop() error {
+	errlist := errorhelpers.NewErrorList("stopping pubsub pipeline")
+	if err := p.basePipeline.Stop(); err != nil {
+		errlist.AddError(err)
+	}
+
+	return errlist.ToError()
+}
+
+func (p *pubsubPipeline) Process(indicator *storage.ProcessIndicator) {
+	event := NewUnenrichedProcessIndicatorEvent(context.Background(), indicator)
+	if err := p.pubSubDispatcher.Publish(event); err != nil {
+		dropSignal(indicator.GetSignal(), "Failed to published to dispatcher")
+	}
+}
+
+// Pipeline is the struct that handles a process signal
+type Pipeline struct {
+	inner   processPipeline
+	stopper concurrency.Stopper
+}
+
+// NewProcessPipeline defines how to process a ProcessIndicator
+func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntities *clusterentities.Store, processFilter filter.Filter, detector detector.Detector, pubSubDispatcher common.PubSubDispatcher) *Pipeline {
+	log.Debug("Calling NewProcessPipeline")
+
+	enricherCtx, cancelEnricherCtx := context.WithCancelCause(context.Background())
+	en := newEnricher(enricherCtx, clusterEntities, pubSubDispatcher)
+
+	stopper := concurrency.NewStopper()
+	base := newBasePipeline(indicators, en, processFilter, detector, stopper, cancelEnricherCtx)
+
+	var inner processPipeline
+	if features.SensorInternalPubSub.Enabled() && pubSubDispatcher != nil {
+		log.Info("Process pipeline using pub/sub mode")
+		inner = newPubSubPipeline(base, pubSubDispatcher)
+	} else {
+		log.Info("Process pipeline using legacy channel mode")
+		inner = newChannelPipeline(base, clusterEntities)
+	}
+
+	if err := inner.Start(); err != nil {
+		log.Error("Failed to start process pipeline:", err)
+	}
+
+	return &Pipeline{
+		inner:   inner,
+		stopper: stopper,
+	}
 }
 
 func populateIndicatorFromCachedContainer(indicator *storage.ProcessIndicator, cachedContainer clusterentities.ContainerMetadata) {
@@ -76,21 +270,17 @@ func populateIndicatorFromCachedContainer(indicator *storage.ProcessIndicator, c
 
 // Shutdown closes all communication channels and shutdowns the enricher
 func (p *Pipeline) Shutdown() {
-	p.cancelEnricherCtx(errors.New("pipeline shutdown"))
 	defer func() {
-		close(p.enrichedIndicators)
-		_ = p.enricher.Stopped().Wait()
+		_ = p.inner.Stop()
 		_ = p.stopper.Client().Stopped().Wait()
 	}()
+
 	p.stopper.Client().Stop()
 }
 
 // WaitForShutdown waits for the pipeline shutdown to complete.
 // This is useful for tests that need to ensure shutdown has fully completed.
 func (p *Pipeline) WaitForShutdown() error {
-	if err := p.enricher.Stopped().Wait(); err != nil {
-		return errors.Wrap(err, "waiting for enricher to stop")
-	}
 	if err := p.stopper.Client().Stopped().Wait(); err != nil {
 		return errors.Wrap(err, "waiting for pipeline stopper")
 	}
@@ -106,10 +296,9 @@ func (p *Pipeline) Notify(e common.SensorComponentEvent) {
 // Process defines processes to process a ProcessIndicator
 // If the pipeline is shutting down, the signal is dropped to prevent sending on closed channels.
 func (p *Pipeline) Process(signal *storage.ProcessSignal) {
-	// Check if shutdown has been requested before processing
 	select {
 	case <-p.stopper.Flow().StopRequested():
-		p.dropIndicator(signal, "pipeline shutting down before enrichment")
+		dropSignal(signal, "pipeline shutting down before enrichment")
 		return
 	default:
 	}
@@ -118,69 +307,14 @@ func (p *Pipeline) Process(signal *storage.ProcessSignal) {
 		Id:     uuid.NewV4().String(),
 		Signal: signal,
 	}
-
-	// indicator.GetSignal() is never nil at this point
-	metadata, ok, _ := p.clusterEntities.LookupByContainerID(indicator.GetSignal().GetContainerId())
-	if !ok {
-		p.enricher.Add(indicator)
-		return
-	}
-	metrics.IncrementProcessEnrichmentHits()
-	populateIndicatorFromCachedContainer(indicator, metadata)
-	normalize.Indicator(indicator)
-
-	// Use select to avoid sending on closed channel if shutdown happens between check and send
-	select {
-	case p.enrichedIndicators <- indicator:
-	case <-p.stopper.Flow().StopRequested():
-		p.dropIndicator(indicator.GetSignal(), "pipeline shutting down during send")
-		return
-	}
+	p.inner.Process(indicator)
 }
 
-func (p *Pipeline) dropIndicator(signal *storage.ProcessSignal, reason string) {
+func dropSignal(signal *storage.ProcessSignal, reason string) {
 	metrics.IncrementProcessSignalDroppedCount()
 	if signal != nil {
 		log.Debugf("Dropping process signal for container %s: %s", signal.GetContainerId(), reason)
 	} else {
 		log.Debugf("Dropping process signal: %s", reason)
-	}
-}
-
-func (p *Pipeline) sendIndicatorEvent() {
-	defer p.stopper.Flow().ReportStopped()
-	for indicator := range p.cm.GetOutput() {
-		if !p.processFilter.Add(indicator) {
-			continue
-		}
-		p.detector.ProcessIndicator(context.Background(), indicator)
-		p.sendToCentral(
-			message.NewExpiring(context.Background(), &central.MsgFromSensor{
-				Msg: &central.MsgFromSensor_Event{
-					Event: &central.SensorEvent{
-						Id:     indicator.GetId(),
-						Action: central.ResourceAction_CREATE_RESOURCE,
-						Resource: &central.SensorEvent_ProcessIndicator{
-							ProcessIndicator: indicator,
-						},
-					},
-				},
-			}),
-		)
-		metrics.SetProcessSignalBufferSizeGauge(len(p.indicators))
-	}
-}
-
-func (p *Pipeline) sendToCentral(msg *message.ExpiringMessage) {
-	select {
-	case p.indicators <- msg:
-	case <-p.stopper.Flow().StopRequested():
-		return
-	default:
-		metrics.IncrementProcessSignalDroppedCount()
-		log.Errorf("The output channel is full. Dropping process indicator event for deployment %s with id %s and process name %s",
-			msg.GetEvent().GetProcessIndicator().GetDeploymentId(),
-			msg.GetEvent().GetProcessIndicator().GetId(),
-			msg.GetEvent().GetProcessIndicator().GetSignal().GetName())
 	}
 }

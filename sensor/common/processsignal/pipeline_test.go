@@ -26,19 +26,21 @@ const (
 	outputChannelSize = 2
 )
 
+type pipelineAssertFunc = func(*testing.T, *Pipeline, chan *message.ExpiringMessage)
+
 func TestProcessPipelineOfflineV3(t *testing.T) {
 	// With event buffering enabled, going from online to offline and vice-versa won't do anything.
 	// The tests add the functions online and offline to illustrate how the pipeline would be called in a real scenario.
 	cases := map[string]struct {
 		entities []clusterentities.ContainerMetadata
-		events   []func(*testing.T, *Pipeline)
+		events   []pipelineAssertFunc
 	}{
 		"Online -> signal -> read -> offline -> signal -> online -> read": {
 			entities: []clusterentities.ContainerMetadata{
 				newEntity(containerID1, deploymentID1),
 				newEntity(containerID2, deploymentID2),
 			},
-			events: []func(*testing.T, *Pipeline){
+			events: []pipelineAssertFunc{
 				online,
 				signal(&storage.ProcessSignal{ContainerId: containerID1}, false),
 				assertSize(1),
@@ -57,7 +59,7 @@ func TestProcessPipelineOfflineV3(t *testing.T) {
 				newEntity(containerID1, deploymentID1),
 				newEntity(containerID2, deploymentID2),
 			},
-			events: []func(*testing.T, *Pipeline){
+			events: []pipelineAssertFunc{
 				offline,
 				signal(&storage.ProcessSignal{ContainerId: containerID1}, false),
 				signal(&storage.ProcessSignal{ContainerId: containerID2}, false),
@@ -74,7 +76,7 @@ func TestProcessPipelineOfflineV3(t *testing.T) {
 				newEntity(containerID2, deploymentID2),
 				newEntity(containerID3, deploymentID3),
 			},
-			events: []func(*testing.T, *Pipeline){
+			events: []pipelineAssertFunc{
 				offline,
 				signal(&storage.ProcessSignal{ContainerId: containerID1}, false),
 				signal(&storage.ProcessSignal{ContainerId: containerID2}, false),
@@ -96,7 +98,7 @@ func TestProcessPipelineOfflineV3(t *testing.T) {
 			mockDetector := mocks.NewMockDetector(mockCtrl)
 			pipeline := NewProcessPipeline(sensorEvents, mockStore,
 				filter.NewFilter(5, 5, []int{3, 3, 3}),
-				mockDetector)
+				mockDetector, nil)
 			t.Cleanup(func() {
 				pipeline.Shutdown()
 				for _, entity := range tc.entities {
@@ -109,7 +111,7 @@ func TestProcessPipelineOfflineV3(t *testing.T) {
 				updateStore(entity.ContainerID, entity.DeploymentID, entity, mockStore)
 			}
 			for _, fn := range tc.events {
-				fn(t, pipeline)
+				fn(t, pipeline, sensorEvents)
 			}
 		})
 	}
@@ -122,34 +124,34 @@ func newEntity(containerID, deploymentID string) clusterentities.ContainerMetada
 	}
 }
 
-func online(_ *testing.T, pipeline *Pipeline) {
+func online(_ *testing.T, pipeline *Pipeline, _ chan *message.ExpiringMessage) {
 	pipeline.Notify(common.SensorComponentEventCentralReachable)
 }
 
-func offline(_ *testing.T, pipeline *Pipeline) {
+func offline(_ *testing.T, pipeline *Pipeline, _ chan *message.ExpiringMessage) {
 	pipeline.Notify(common.SensorComponentEventOfflineMode)
 }
 
-func signal(signal *storage.ProcessSignal, shouldBeDropped bool) func(*testing.T, *Pipeline) {
-	return func(t *testing.T, pipeline *Pipeline) {
-		previousLen := len(pipeline.indicators)
+func signal(signal *storage.ProcessSignal, shouldBeDropped bool) func(*testing.T, *Pipeline, chan *message.ExpiringMessage) {
+	return func(t *testing.T, pipeline *Pipeline, indicators chan *message.ExpiringMessage) {
+		previousLen := len(indicators)
 		pipeline.Process(signal)
 		if shouldBeDropped {
 			assert.Never(t, func() bool {
-				return previousLen < len(pipeline.indicators)
+				return previousLen < len(indicators)
 			}, 500*time.Millisecond, 10*time.Millisecond, "the indicator should be dropped")
 		} else {
 			assert.Eventually(t, func() bool {
-				return previousLen < len(pipeline.indicators)
+				return previousLen < len(indicators)
 			}, 500*time.Millisecond, 10*time.Millisecond, "timeout waiting for indicator")
 		}
 	}
 }
 
-func read(containerID, deploymentID string) func(*testing.T, *Pipeline) {
-	return func(t *testing.T, pipeline *Pipeline) {
+func read(containerID, deploymentID string) func(*testing.T, *Pipeline, chan *message.ExpiringMessage) {
+	return func(t *testing.T, pipeline *Pipeline, indicators chan *message.ExpiringMessage) {
 		select {
-		case msg, ok := <-pipeline.indicators:
+		case msg, ok := <-indicators:
 			if !ok {
 				t.Error("The indicators channel should not be closed")
 			}
@@ -163,9 +165,9 @@ func read(containerID, deploymentID string) func(*testing.T, *Pipeline) {
 	}
 }
 
-func assertSize(size int) func(*testing.T, *Pipeline) {
-	return func(t *testing.T, pipeline *Pipeline) {
-		assert.Len(t, pipeline.indicators, size)
+func assertSize(size int) func(*testing.T, *Pipeline, chan *message.ExpiringMessage) {
+	return func(t *testing.T, pipeline *Pipeline, indicators chan *message.ExpiringMessage) {
+		assert.Len(t, indicators, size)
 	}
 }
 
@@ -179,7 +181,7 @@ func TestProcessPipelineOnline(t *testing.T) {
 	mockDetector := mocks.NewMockDetector(mockCtrl)
 
 	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
-		mockDetector)
+		mockDetector, nil)
 	p.Notify(common.SensorComponentEventCentralReachable)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -289,7 +291,7 @@ func TestProcessPipelineShutdownRace(t *testing.T) {
 	mockDetector := mocks.NewMockDetector(mockCtrl)
 
 	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
-		mockDetector)
+		mockDetector, nil)
 
 	containerID := "test-container-id"
 	containerMetadata := clusterentities.ContainerMetadata{
