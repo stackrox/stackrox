@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
 	"github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/printer"
+	"github.com/stackrox/rox/roxctl/common/scan"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -267,12 +268,7 @@ func (s *imageScanTestSuite) SetupTest() {
 		retryDelay: 3,
 		retryCount: 3,
 		timeout:    1 * time.Minute,
-		severities: []string{
-			lowCVESeverity.String(),
-			moderateCVESeverity.String(),
-			importantCVESeverity.String(),
-			criticalCVESeverity.String(),
-		},
+		severities: validSeverities,
 	}
 }
 
@@ -464,7 +460,7 @@ func (s *imageScanTestSuite) TestScan_TableOutput() {
 		"should return a vulnerability found error": {
 			components:                   testComponents,
 			failOnFinding:                true,
-			error:                        errVulnerabilityFound,
+			error:                        scan.ErrVulnerabilityFound,
 			expectedOutput:               "testComponents.txt",
 			expectedErrorOutput:          "WARN:\tA total of 11 unique vulnerabilities were found in 5 components\n",
 			expectedErrorOutputColorized: "\x1b[95mWARN:\tA total of 11 unique vulnerabilities were found in 5 components\n\x1b[0m",
@@ -491,7 +487,7 @@ func (s *imageScanTestSuite) TestScan_JSONOutput() {
 		"should return a vulnerability found error": {
 			components:     testComponents,
 			failOnFinding:  true,
-			error:          errVulnerabilityFound,
+			error:          scan.ErrVulnerabilityFound,
 			expectedOutput: "testComponents.json",
 		},
 		"should print nothing with empty components in image scan": {
@@ -517,7 +513,7 @@ func (s *imageScanTestSuite) TestScan_CSVOutput() {
 		"should return a vulnerability found error": {
 			components:     testComponents,
 			failOnFinding:  true,
-			error:          errVulnerabilityFound,
+			error:          scan.ErrVulnerabilityFound,
 			expectedOutput: "testComponents.csv",
 		},
 		"should print only headers with empty components in image scan": {

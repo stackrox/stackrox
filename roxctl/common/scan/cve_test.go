@@ -66,66 +66,65 @@ func TestNewCVESummaryForPrinting(t *testing.T) {
 	}
 
 	// Expected vulns and components without filtering.
-	expectedVulnsComponentA := []cveVulnerabilityJSON{
-		{CveID: "CVE-TEST-1", CveSeverity: criticalCVESeverity, CveInfo: "cve-link-1", CveCVSS: 10.0, ComponentName: "componentA", ComponentVersion: "1.0.0-1", ComponentFixedVersion: "1.2"},
-		{CveID: "CVE-TEST-5", CveSeverity: importantCVESeverity, CveInfo: "cve-link-5", CveCVSS: 8.1, ComponentName: "componentA", ComponentVersion: "1.0.0-1", ComponentFixedVersion: "1.5", AdvisoryID: "ADVISORY-TEST-5", AdvisoryInfo: "advisory-link-5"},
-		{CveID: "CVE-TEST-3", CveSeverity: importantCVESeverity, CveInfo: "cve-link-3", CveCVSS: 7.5, ComponentName: "componentA", ComponentVersion: "1.0.0-1", ComponentFixedVersion: "1.3"},
-		{CveID: "CVE-TEST-4", CveSeverity: moderateCVESeverity, CveInfo: "cve-link-4", ComponentName: "componentA", ComponentVersion: "1.0.0-1", ComponentFixedVersion: "1.4"},
-		{CveID: "CVE-TEST-2", CveSeverity: lowCVESeverity, CveInfo: "cve-link-2", CveCVSS: 1.2, ComponentName: "componentA", ComponentVersion: "1.0.0-1", ComponentFixedVersion: "1.0"},
-		{CveID: "CVE-TEST-6", CveSeverity: lowCVESeverity, CveInfo: "cve-link-6", ComponentName: "componentA", ComponentVersion: "1.0.0-1", ComponentFixedVersion: "1.6", AdvisoryID: "ADVISORY-TEST-6", AdvisoryInfo: "advisory-link-6"},
+	expectedVulnsComponentA := []CVEVulnerabilityJSON{
+		{CveID: "CVE-TEST-1", CveSeverity: CriticalCVESeverity, CveInfo: "cve-link-1", CveCVSS: 10.0, ComponentName: "componentA", ComponentVersion: "1.0.0-1", ComponentFixedVersion: "1.2"},
+		{CveID: "CVE-TEST-5", CveSeverity: ImportantCVESeverity, CveInfo: "cve-link-5", CveCVSS: 8.1, ComponentName: "componentA", ComponentVersion: "1.0.0-1", ComponentFixedVersion: "1.5", AdvisoryID: "ADVISORY-TEST-5", AdvisoryInfo: "advisory-link-5"},
+		{CveID: "CVE-TEST-3", CveSeverity: ImportantCVESeverity, CveInfo: "cve-link-3", CveCVSS: 7.5, ComponentName: "componentA", ComponentVersion: "1.0.0-1", ComponentFixedVersion: "1.3"},
+		{CveID: "CVE-TEST-4", CveSeverity: ModerateCVESeverity, CveInfo: "cve-link-4", ComponentName: "componentA", ComponentVersion: "1.0.0-1", ComponentFixedVersion: "1.4"},
+		{CveID: "CVE-TEST-2", CveSeverity: LowCVESeverity, CveInfo: "cve-link-2", CveCVSS: 1.2, ComponentName: "componentA", ComponentVersion: "1.0.0-1", ComponentFixedVersion: "1.0"},
+		{CveID: "CVE-TEST-6", CveSeverity: LowCVESeverity, CveInfo: "cve-link-6", ComponentName: "componentA", ComponentVersion: "1.0.0-1", ComponentFixedVersion: "1.6", AdvisoryID: "ADVISORY-TEST-6", AdvisoryInfo: "advisory-link-6"},
 	}
-	expectedVulnsComponentB := []cveVulnerabilityJSON{
-		{CveID: "CVE-TEST-1", CveSeverity: criticalCVESeverity, CveInfo: "cve-link-1", CveCVSS: 10.0, ComponentName: "componentB", ComponentVersion: "1.0.0-2", ComponentFixedVersion: "1.2"},
-		{CveID: "CVE-TEST-5", CveSeverity: importantCVESeverity, CveInfo: "cve-link-5", CveCVSS: 8.1, ComponentName: "componentB", ComponentVersion: "1.0.0-2", ComponentFixedVersion: "1.5", AdvisoryID: "ADVISORY-TEST-5", AdvisoryInfo: "advisory-link-5"},
-		{CveID: "CVE-TEST-3", CveSeverity: importantCVESeverity, CveInfo: "cve-link-3", CveCVSS: 7.5, ComponentName: "componentB", ComponentVersion: "1.0.0-2", ComponentFixedVersion: "1.3"},
-		{CveID: "CVE-TEST-4", CveSeverity: moderateCVESeverity, CveInfo: "cve-link-4", ComponentName: "componentB", ComponentVersion: "1.0.0-2", ComponentFixedVersion: "1.4"},
-		{CveID: "CVE-TEST-2", CveSeverity: lowCVESeverity, CveInfo: "cve-link-2", CveCVSS: 1.2, ComponentName: "componentB", ComponentVersion: "1.0.0-2", ComponentFixedVersion: "1.0"},
-		{CveID: "CVE-TEST-6", CveSeverity: lowCVESeverity, CveInfo: "cve-link-6", ComponentName: "componentB", ComponentVersion: "1.0.0-2", ComponentFixedVersion: "1.6", AdvisoryID: "ADVISORY-TEST-6", AdvisoryInfo: "advisory-link-6"},
+	expectedVulnsComponentB := []CVEVulnerabilityJSON{
+		{CveID: "CVE-TEST-1", CveSeverity: CriticalCVESeverity, CveInfo: "cve-link-1", CveCVSS: 10.0, ComponentName: "componentB", ComponentVersion: "1.0.0-2", ComponentFixedVersion: "1.2"},
+		{CveID: "CVE-TEST-5", CveSeverity: ImportantCVESeverity, CveInfo: "cve-link-5", CveCVSS: 8.1, ComponentName: "componentB", ComponentVersion: "1.0.0-2", ComponentFixedVersion: "1.5", AdvisoryID: "ADVISORY-TEST-5", AdvisoryInfo: "advisory-link-5"},
+		{CveID: "CVE-TEST-3", CveSeverity: ImportantCVESeverity, CveInfo: "cve-link-3", CveCVSS: 7.5, ComponentName: "componentB", ComponentVersion: "1.0.0-2", ComponentFixedVersion: "1.3"},
+		{CveID: "CVE-TEST-4", CveSeverity: ModerateCVESeverity, CveInfo: "cve-link-4", ComponentName: "componentB", ComponentVersion: "1.0.0-2", ComponentFixedVersion: "1.4"},
+		{CveID: "CVE-TEST-2", CveSeverity: LowCVESeverity, CveInfo: "cve-link-2", CveCVSS: 1.2, ComponentName: "componentB", ComponentVersion: "1.0.0-2", ComponentFixedVersion: "1.0"},
+		{CveID: "CVE-TEST-6", CveSeverity: LowCVESeverity, CveInfo: "cve-link-6", ComponentName: "componentB", ComponentVersion: "1.0.0-2", ComponentFixedVersion: "1.6", AdvisoryID: "ADVISORY-TEST-6", AdvisoryInfo: "advisory-link-6"},
 	}
-	expectedVulnsComponentC := []cveVulnerabilityJSON{
-		{CveID: "CVE-TEST-1", CveSeverity: criticalCVESeverity, CveInfo: "cve-link-1", CveCVSS: 10.0, ComponentName: "componentC", ComponentVersion: "1.0.0-3", ComponentFixedVersion: "1.2"},
-		{CveID: "CVE-TEST-5", CveSeverity: importantCVESeverity, CveInfo: "cve-link-5", CveCVSS: 8.1, ComponentName: "componentC", ComponentVersion: "1.0.0-3", ComponentFixedVersion: "1.5", AdvisoryID: "ADVISORY-TEST-5", AdvisoryInfo: "advisory-link-5"},
-		{CveID: "CVE-TEST-3", CveSeverity: importantCVESeverity, CveInfo: "cve-link-3", CveCVSS: 7.5, ComponentName: "componentC", ComponentVersion: "1.0.0-3", ComponentFixedVersion: "1.3"},
-		{CveID: "CVE-TEST-4", CveSeverity: moderateCVESeverity, CveInfo: "cve-link-4", ComponentName: "componentC", ComponentVersion: "1.0.0-3", ComponentFixedVersion: "1.4"},
-		{CveID: "CVE-TEST-2", CveSeverity: lowCVESeverity, CveInfo: "cve-link-2", CveCVSS: 1.2, ComponentName: "componentC", ComponentVersion: "1.0.0-3", ComponentFixedVersion: "1.0"},
-		{CveID: "CVE-TEST-6", CveSeverity: lowCVESeverity, CveInfo: "cve-link-6", ComponentName: "componentC", ComponentVersion: "1.0.0-3", ComponentFixedVersion: "1.6", AdvisoryID: "ADVISORY-TEST-6", AdvisoryInfo: "advisory-link-6"},
+	expectedVulnsComponentC := []CVEVulnerabilityJSON{
+		{CveID: "CVE-TEST-1", CveSeverity: CriticalCVESeverity, CveInfo: "cve-link-1", CveCVSS: 10.0, ComponentName: "componentC", ComponentVersion: "1.0.0-3", ComponentFixedVersion: "1.2"},
+		{CveID: "CVE-TEST-5", CveSeverity: ImportantCVESeverity, CveInfo: "cve-link-5", CveCVSS: 8.1, ComponentName: "componentC", ComponentVersion: "1.0.0-3", ComponentFixedVersion: "1.5", AdvisoryID: "ADVISORY-TEST-5", AdvisoryInfo: "advisory-link-5"},
+		{CveID: "CVE-TEST-3", CveSeverity: ImportantCVESeverity, CveInfo: "cve-link-3", CveCVSS: 7.5, ComponentName: "componentC", ComponentVersion: "1.0.0-3", ComponentFixedVersion: "1.3"},
+		{CveID: "CVE-TEST-4", CveSeverity: ModerateCVESeverity, CveInfo: "cve-link-4", ComponentName: "componentC", ComponentVersion: "1.0.0-3", ComponentFixedVersion: "1.4"},
+		{CveID: "CVE-TEST-2", CveSeverity: LowCVESeverity, CveInfo: "cve-link-2", CveCVSS: 1.2, ComponentName: "componentC", ComponentVersion: "1.0.0-3", ComponentFixedVersion: "1.0"},
+		{CveID: "CVE-TEST-6", CveSeverity: LowCVESeverity, CveInfo: "cve-link-6", ComponentName: "componentC", ComponentVersion: "1.0.0-3", ComponentFixedVersion: "1.6", AdvisoryID: "ADVISORY-TEST-6", AdvisoryInfo: "advisory-link-6"},
 	}
-	expectedVulnsComponentD := []cveVulnerabilityJSON{
+	expectedVulnsComponentD := []CVEVulnerabilityJSON{
 		{
-			CveID: "CVE-TEST-10", CveSeverity: criticalCVESeverity, CveInfo: "cve-link-10", ComponentName: "componentD", ComponentVersion: "1.0.0-1", ComponentFixedVersion: "3.0",
+			CveID: "CVE-TEST-10", CveSeverity: CriticalCVESeverity, CveInfo: "cve-link-10", ComponentName: "componentD", ComponentVersion: "1.0.0-1", ComponentFixedVersion: "3.0",
 		},
 	}
 
 	// Expected vulns and components when filtered.
-	expectedVulnsComponentAFiltered := []cveVulnerabilityJSON{
-		{CveID: "CVE-TEST-5", CveSeverity: importantCVESeverity, CveInfo: "cve-link-5", CveCVSS: 8.1, ComponentName: "componentA", ComponentVersion: "1.0.0-1", ComponentFixedVersion: "1.5", AdvisoryID: "ADVISORY-TEST-5", AdvisoryInfo: "advisory-link-5"},
-		{CveID: "CVE-TEST-3", CveSeverity: importantCVESeverity, CveInfo: "cve-link-3", CveCVSS: 7.5, ComponentName: "componentA", ComponentVersion: "1.0.0-1", ComponentFixedVersion: "1.3"},
-		{CveID: "CVE-TEST-4", CveSeverity: moderateCVESeverity, CveInfo: "cve-link-4", ComponentName: "componentA", ComponentVersion: "1.0.0-1", ComponentFixedVersion: "1.4"},
+	expectedVulnsComponentAFiltered := []CVEVulnerabilityJSON{
+		{CveID: "CVE-TEST-5", CveSeverity: ImportantCVESeverity, CveInfo: "cve-link-5", CveCVSS: 8.1, ComponentName: "componentA", ComponentVersion: "1.0.0-1", ComponentFixedVersion: "1.5", AdvisoryID: "ADVISORY-TEST-5", AdvisoryInfo: "advisory-link-5"},
+		{CveID: "CVE-TEST-3", CveSeverity: ImportantCVESeverity, CveInfo: "cve-link-3", CveCVSS: 7.5, ComponentName: "componentA", ComponentVersion: "1.0.0-1", ComponentFixedVersion: "1.3"},
+		{CveID: "CVE-TEST-4", CveSeverity: ModerateCVESeverity, CveInfo: "cve-link-4", ComponentName: "componentA", ComponentVersion: "1.0.0-1", ComponentFixedVersion: "1.4"},
 	}
-	expectedVulnsComponentBFiltered := []cveVulnerabilityJSON{
-		{CveID: "CVE-TEST-5", CveSeverity: importantCVESeverity, CveInfo: "cve-link-5", CveCVSS: 8.1, ComponentName: "componentB", ComponentVersion: "1.0.0-2", ComponentFixedVersion: "1.5", AdvisoryID: "ADVISORY-TEST-5", AdvisoryInfo: "advisory-link-5"},
-		{CveID: "CVE-TEST-3", CveSeverity: importantCVESeverity, CveInfo: "cve-link-3", CveCVSS: 7.5, ComponentName: "componentB", ComponentVersion: "1.0.0-2", ComponentFixedVersion: "1.3"},
-		{CveID: "CVE-TEST-4", CveSeverity: moderateCVESeverity, CveInfo: "cve-link-4", ComponentName: "componentB", ComponentVersion: "1.0.0-2", ComponentFixedVersion: "1.4"},
+	expectedVulnsComponentBFiltered := []CVEVulnerabilityJSON{
+		{CveID: "CVE-TEST-5", CveSeverity: ImportantCVESeverity, CveInfo: "cve-link-5", CveCVSS: 8.1, ComponentName: "componentB", ComponentVersion: "1.0.0-2", ComponentFixedVersion: "1.5", AdvisoryID: "ADVISORY-TEST-5", AdvisoryInfo: "advisory-link-5"},
+		{CveID: "CVE-TEST-3", CveSeverity: ImportantCVESeverity, CveInfo: "cve-link-3", CveCVSS: 7.5, ComponentName: "componentB", ComponentVersion: "1.0.0-2", ComponentFixedVersion: "1.3"},
+		{CveID: "CVE-TEST-4", CveSeverity: ModerateCVESeverity, CveInfo: "cve-link-4", ComponentName: "componentB", ComponentVersion: "1.0.0-2", ComponentFixedVersion: "1.4"},
 	}
-	expectedVulnsComponentCFiltered := []cveVulnerabilityJSON{
-		{CveID: "CVE-TEST-5", CveSeverity: importantCVESeverity, CveInfo: "cve-link-5", CveCVSS: 8.1, ComponentName: "componentC", ComponentVersion: "1.0.0-3", ComponentFixedVersion: "1.5", AdvisoryID: "ADVISORY-TEST-5", AdvisoryInfo: "advisory-link-5"},
-		{CveID: "CVE-TEST-3", CveSeverity: importantCVESeverity, CveInfo: "cve-link-3", CveCVSS: 7.5, ComponentName: "componentC", ComponentVersion: "1.0.0-3", ComponentFixedVersion: "1.3"},
-		{CveID: "CVE-TEST-4", CveSeverity: moderateCVESeverity, CveInfo: "cve-link-4", ComponentName: "componentC", ComponentVersion: "1.0.0-3", ComponentFixedVersion: "1.4"},
+	expectedVulnsComponentCFiltered := []CVEVulnerabilityJSON{
+		{CveID: "CVE-TEST-5", CveSeverity: ImportantCVESeverity, CveInfo: "cve-link-5", CveCVSS: 8.1, ComponentName: "componentC", ComponentVersion: "1.0.0-3", ComponentFixedVersion: "1.5", AdvisoryID: "ADVISORY-TEST-5", AdvisoryInfo: "advisory-link-5"},
+		{CveID: "CVE-TEST-3", CveSeverity: ImportantCVESeverity, CveInfo: "cve-link-3", CveCVSS: 7.5, ComponentName: "componentC", ComponentVersion: "1.0.0-3", ComponentFixedVersion: "1.3"},
+		{CveID: "CVE-TEST-4", CveSeverity: ModerateCVESeverity, CveInfo: "cve-link-4", ComponentName: "componentC", ComponentVersion: "1.0.0-3", ComponentFixedVersion: "1.4"},
 	}
 
 	cases := map[string]struct {
 		scan           *storage.ImageScan
 		severities     []string
-		expectedOutput *cveJSONResult
+		expectedOutput *CVEJSONResult
 	}{
 		"empty img scan results": {
 			scan: &storage.ImageScan{
 				Components: nil,
 			},
-			severities: []string{lowCVESeverity.String(), moderateCVESeverity.String(), importantCVESeverity.String(),
-				criticalCVESeverity.String()},
-			expectedOutput: &cveJSONResult{
-				Result: cveJSONStructure{
+			severities: AllSeverities(),
+			expectedOutput: &CVEJSONResult{
+				Result: CVEJSONStructure{
 					Summary: map[string]int{
 						"TOTAL-VULNERABILITIES": 0,
 						"TOTAL-COMPONENTS":      0,
@@ -139,8 +138,11 @@ func TestNewCVESummaryForPrinting(t *testing.T) {
 			},
 		},
 		"duplicated CVEs across multiple components": {
-			severities: []string{lowCVESeverity.String(), moderateCVESeverity.String(), importantCVESeverity.String(),
-				criticalCVESeverity.String()},
+			severities: []string{
+				LowCVESeverity.String(),
+				ModerateCVESeverity.String(),
+				ImportantCVESeverity.String(),
+				CriticalCVESeverity.String()},
 			scan: &storage.ImageScan{
 				Components: []*storage.EmbeddedImageScanComponent{
 					{
@@ -175,8 +177,8 @@ func TestNewCVESummaryForPrinting(t *testing.T) {
 					},
 				},
 			},
-			expectedOutput: &cveJSONResult{
-				Result: cveJSONStructure{
+			expectedOutput: &CVEJSONResult{
+				Result: CVEJSONStructure{
 					Summary: map[string]int{
 						"TOTAL-VULNERABILITIES": 1,
 						"TOTAL-COMPONENTS":      3,
@@ -185,22 +187,22 @@ func TestNewCVESummaryForPrinting(t *testing.T) {
 						"IMPORTANT":             0,
 						"CRITICAL":              0,
 					},
-					Vulnerabilities: []cveVulnerabilityJSON{
+					Vulnerabilities: []CVEVulnerabilityJSON{
 						{
 							CveID:            "CVE-2022-42010",
-							CveSeverity:      moderateCVESeverity,
+							CveSeverity:      ModerateCVESeverity,
 							ComponentName:    "dbus",
 							ComponentVersion: "1:1.12.20-6.el9.x86_64",
 						},
 						{
 							CveID:            "CVE-2022-42010",
-							CveSeverity:      moderateCVESeverity,
+							CveSeverity:      ModerateCVESeverity,
 							ComponentName:    "dbus-common",
 							ComponentVersion: "1:1.12.20-6.el9.noarch",
 						},
 						{
 							CveID:            "CVE-2022-42010",
-							CveSeverity:      moderateCVESeverity,
+							CveSeverity:      ModerateCVESeverity,
 							ComponentName:    "dbus-libs",
 							ComponentVersion: "1:1.12.20-6.el9.x86_64",
 						},
@@ -209,8 +211,11 @@ func TestNewCVESummaryForPrinting(t *testing.T) {
 			},
 		},
 		"components with vulnerabilities of all severity": {
-			severities: []string{lowCVESeverity.String(), moderateCVESeverity.String(), importantCVESeverity.String(),
-				criticalCVESeverity.String()},
+			severities: []string{
+				LowCVESeverity.String(),
+				ModerateCVESeverity.String(),
+				ImportantCVESeverity.String(),
+				CriticalCVESeverity.String()},
 			scan: &storage.ImageScan{
 				Components: []*storage.EmbeddedImageScanComponent{
 					{
@@ -247,8 +252,8 @@ func TestNewCVESummaryForPrinting(t *testing.T) {
 					},
 				},
 			},
-			expectedOutput: &cveJSONResult{
-				Result: cveJSONStructure{
+			expectedOutput: &CVEJSONResult{
+				Result: CVEJSONStructure{
 					Summary: map[string]int{
 						"TOTAL-VULNERABILITIES": 7,
 						"TOTAL-COMPONENTS":      4,
@@ -262,7 +267,9 @@ func TestNewCVESummaryForPrinting(t *testing.T) {
 			},
 		},
 		"components with vulnerabilities of all severity but filtering": {
-			severities: []string{moderateCVESeverity.String(), importantCVESeverity.String()},
+			severities: []string{
+				ModerateCVESeverity.String(),
+				ImportantCVESeverity.String()},
 			scan: &storage.ImageScan{
 				Components: []*storage.EmbeddedImageScanComponent{
 					{
@@ -299,8 +306,8 @@ func TestNewCVESummaryForPrinting(t *testing.T) {
 					},
 				},
 			},
-			expectedOutput: &cveJSONResult{
-				Result: cveJSONStructure{
+			expectedOutput: &CVEJSONResult{
+				Result: CVEJSONStructure{
 					Summary: map[string]int{
 						"TOTAL-VULNERABILITIES": 3,
 						"TOTAL-COMPONENTS":      3,
@@ -317,7 +324,7 @@ func TestNewCVESummaryForPrinting(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			cveSummary := newCVESummaryForPrinting(c.scan, c.severities)
+			cveSummary := NewCVESummaryForPrinting(c.scan, c.severities)
 			assert.Equal(t, c.expectedOutput, cveSummary)
 		})
 	}
