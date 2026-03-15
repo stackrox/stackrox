@@ -20,7 +20,7 @@ runs:
         echo "GOARCH=$(go env GOARCH)" >> "$GITHUB_OUTPUT"
         echo "TAG=${{ github.sha }}" >> "$GITHUB_OUTPUT"
         suffix="${{ inputs.key-suffix }}"
-        echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"
+        echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"  # prepends dash if set
       shell: bash
 
     # Save caches only on pushes to the default branch.
