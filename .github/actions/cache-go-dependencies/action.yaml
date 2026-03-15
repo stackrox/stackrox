@@ -23,6 +23,7 @@ runs:
         echo "KEY_SUFFIX=${suffix:+-$suffix}" >> "$GITHUB_OUTPUT"
       shell: bash
 
+    # Temporarily always save for testing cache effectiveness.
     - name: Cache Go Dependencies
       uses: actions/cache@v5
       with:
@@ -34,28 +35,8 @@ runs:
       uses: actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
-        restore-keys: go-build-v2-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
-
-    - name: Mark GOCACHE entries for stale detection
-      run: |
-        gocache="${{ steps.cache-paths.outputs.GOCACHE }}"
-        if [[ -d "$gocache" ]]; then
-          # Backdate all cache entries to year 2000. During the build/test,
-          # Go's markUsed() updates mtimes of accessed entries to "now"
-          # (it always updates when mtime is >1 hour old). At the end of
-          # the job, a trim step deletes entries still at year 2000 before
-          # the cache post-step saves the directory.
-          find "$gocache" -type f -exec touch -t 200001010000 {} +
-
-          # Protect trim.txt: if backdated, Go's built-in Trim() sees
-          # "last trim was in year 2000" and aggressively deletes ALL
-          # backdated entries before the build starts. Setting it to now
-          # prevents Trim() from running.
-          echo "$(date +%s)" > "$gocache/trim.txt"
-          echo "Marked GOCACHE entries for stale detection"
-        fi
-      shell: bash
+        key: go-build-v1-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ steps.cache-paths.outputs.TAG }}
+        restore-keys: go-build-v1-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
     - name: Download Go modules
       run: make deps --always-make
