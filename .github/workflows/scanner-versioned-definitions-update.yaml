@@ -378,8 +378,10 @@ jobs:
   upload-definitions:
     needs:
     - build-and-run
-    if: ${{ (failure() || success()) && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'false')) }}
+    if: ${{ (failure() || success()) && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
     runs-on: ubuntu-latest
+    env:
+      DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
     steps:
     # Checkout to run ./.github/actions/download-artifact-with-retry
     - uses: actions/checkout@v6
@@ -446,14 +448,26 @@ jobs:
         # Upload all bundle directories (preserving the `<verions>/<file>` structure).
         bucket="gs://definitions.stackrox.io/v4/vulnerability-bundles"
         echo "Uploading all dir(s) to $bucket/"
-        gsutil -m cp -r . "$bucket/"
+
+        RUN=""
+        if [ "$DRY_RUN" = "true" ]; then
+          RUN="echo [DRY-RUN] Would execute:"
+        fi
+
+        $RUN gsutil -m cp -r . "$bucket/"
 
     - name: Update downstream dev
       # Run on schedule or when dispatched to build "dev" (only possible if RC was not requested).
       if: github.event_name == 'schedule' || (github.event.inputs.rc_ref == '' && github.event.inputs.stream == 'dev')
       run: |
         echo "Copy upstream dev (dev) to downstream dev (1.0.0)"
-        gsutil cp -r gs://definitions.stackrox.io/v4/vulnerability-bundles/dev/* gs://definitions.stackrox.io/v4/vulnerability-bundles/1.0.0/
+
+        RUN=""
+        if [ "$DRY_RUN" = "true" ]; then
+          RUN="echo [DRY-RUN] Would execute:"
+        fi
+
+        $RUN gsutil cp -r gs://definitions.stackrox.io/v4/vulnerability-bundles/dev/* gs://definitions.stackrox.io/v4/vulnerability-bundles/1.0.0/
 
     - name: Copy v1 to pre-versioned bundles
       # Run on schedule or when dispatched to build "GA" (only possible if RC was not requested).
@@ -464,6 +478,12 @@ jobs:
            echo "error: no definition files for v1 were created: skipping..."
            exit 0
         fi
+
+        RUN=""
+        if [ "$DRY_RUN" = "true" ]; then
+          RUN="echo [DRY-RUN] Would execute:"
+        fi
+
         # Using v1 bundle for released versions listed in RELEASE_VERSION.
         single=gs://definitions.stackrox.io/v4/vulnerability-bundles/v1/vulns.json.zst
         multi=gs://definitions.stackrox.io/v4/vulnerability-bundles/v1/vulnerabilities.zip
@@ -472,11 +492,11 @@ jobs:
         grep -E "^4\.(4|5)\.[0-9]+$" scanner/updater/version/RELEASE_VERSION | while read -r release; do
           case "$release" in
           4.4.*)
-            gsutil cp "$single" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
+            $RUN gsutil cp "$single" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
             ;;
           4.5.*)
-            gsutil cp "$single" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
-            gsutil cp "$multi" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
+            $RUN gsutil cp "$single" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
+            $RUN gsutil cp "$multi" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
             ;;
           *)
             echo "Should not happen!"
