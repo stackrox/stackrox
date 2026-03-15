@@ -104,10 +104,13 @@ function go_build() (
   wait
   local compiled
   compiled=$(cat "$compiled_count" 2>/dev/null | tr -d ' ')
-  local cached=$((total - compiled))
-  echo >&2 "Build cache: ${cached}/${total} deps cached ($compiled compiled)"
-  if [[ "$total" -gt 0 ]] && [[ $((cached * 100 / total)) -lt 50 ]]; then
-    echo >&2 "WARNING: Build cache hit rate below 50% (${cached}/${total}). Significant code changes invalidate the cached build — expect slower compilation."
+  total="${total:-0}"; compiled="${compiled:-0}"
+  if [[ "$total" =~ ^[0-9]+$ ]] && [[ "$compiled" =~ ^[0-9]+$ ]] && [[ "$total" -gt 0 ]]; then
+    local cached=$((total - compiled))
+    echo >&2 "Build cache: ${cached}/${total} deps cached ($compiled compiled)"
+    if [[ $((cached * 100 / total)) -lt 50 ]]; then
+      echo >&2 "WARNING: Build cache hit rate below 50% (${cached}/${total}). Significant code changes invalidate the cached build — expect slower compilation."
+    fi
   fi
 )
 
