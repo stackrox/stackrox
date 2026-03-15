@@ -18,7 +18,6 @@ REPO_ROOT="${SCRIPT_DIR}/.."
 COLLECTOR_VERSION="$(cat "${REPO_ROOT}/COLLECTOR_VERSION")" || die "Missing COLLECTOR_VERSION"
 SCANNER_VERSION="$(cat "${REPO_ROOT}/SCANNER_VERSION")" || die "Missing SCANNER_VERSION"
 FACT_VERSION="$(cat "${REPO_ROOT}/FACT_VERSION")" || die "Missing FACT_VERSION"
-BASE_VERSION="$(cat "${REPO_ROOT}/VERSION")" || die "Missing VERSION"
 
 # Generate version data file. Tests use only the base tag (stable across
 # commits) to keep ActionIDs stable for test result caching. Builds get
@@ -29,7 +28,7 @@ generate_version_file() {
 
 	if [[ "$TOOL" == "test" ]]; then
 		# Base tag only (e.g. "4.11.x") — stable across commits.
-		main_version="${BASE_VERSION}"
+		main_version="$(cd "${REPO_ROOT}"; git describe --tags --abbrev=0 --exclude '*-nightly-*' 2>/dev/null)" || die "git describe failed"
 		git_short_sha=""
 	elif [[ -n "${BUILD_TAG:-}" ]]; then
 		# Konflux/release builds set BUILD_TAG to the full version string.
@@ -37,11 +36,9 @@ generate_version_file() {
 		main_version="${BUILD_TAG}"
 		git_short_sha="$(echo "$BUILD_TAG" | grep -oP 'g\K[0-9a-f]+$' || echo "")"
 	else
-		# Full format matching git describe (e.g. "4.11.x-193-g7257553280").
-		local commit_count
+		# Full version from git describe (e.g. "4.11.x-193-g7257553280").
+		main_version="$(cd "${REPO_ROOT}"; git describe --tags --abbrev=10 --long --exclude '*-nightly-*' 2>/dev/null)" || die "git describe failed"
 		git_short_sha="$(cd "${REPO_ROOT}"; git rev-parse --short HEAD 2>/dev/null || echo "")"
-		commit_count="$(cd "${REPO_ROOT}"; git rev-list --count "${BASE_VERSION}..HEAD" 2>/dev/null || echo "0")"
-		main_version="${BASE_VERSION}-${commit_count}-g${git_short_sha}"
 	fi
 
 	local new_content
