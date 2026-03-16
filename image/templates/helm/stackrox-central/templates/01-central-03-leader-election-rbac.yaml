@@ -1,0 +1,33 @@
+{{- include "srox.init" . -}}
+
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: central-leader-election
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- include "srox.annotations" (list . "role" "central-leader-election") | nindent 4 }}
+  labels:
+    {{- include "srox.labels" (list . "role" "central-leader-election") | nindent 4 }}
+rules:
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: central-leader-election
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "central-leader-election") | nindent 4 }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "central-leader-election") | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: central
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: central-leader-election
+  apiGroup: rbac.authorization.k8s.io
