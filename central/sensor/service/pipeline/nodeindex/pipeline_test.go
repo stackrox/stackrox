@@ -104,7 +104,7 @@ func TestPipelineSendsSensorAndLegacyACKs(t *testing.T) {
 		riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil),
 	)
 
-	injector := &recordingInjectorWithCapabilities{
+	injector := &recordingInjector{
 		capabilities: map[centralsensor.SensorCapability]bool{
 			centralsensor.SensorACKSupport: true,
 		},
@@ -160,7 +160,7 @@ func TestPipelineSkipsSensorACKWhenCapabilityMissing(t *testing.T) {
 		riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil),
 	)
 
-	injector := &recordingInjectorWithCapabilities{
+	injector := &recordingInjector{
 		capabilities: map[centralsensor.SensorCapability]bool{},
 	}
 	p := &pipelineImpl{
@@ -198,17 +198,13 @@ func createMsg(ir *v4.IndexReport) *central.MsgFromSensor {
 }
 
 type recordingInjector struct {
-	lock   sync.Mutex
-	legacy []*central.NodeInventoryACK
-	sensor []*central.SensorACK
-}
-
-type recordingInjectorWithCapabilities struct {
-	recordingInjector
+	lock         sync.Mutex
+	legacy       []*central.NodeInventoryACK
+	sensor       []*central.SensorACK
 	capabilities map[centralsensor.SensorCapability]bool
 }
 
-func (r *recordingInjectorWithCapabilities) HasCapability(cap centralsensor.SensorCapability) bool {
+func (r *recordingInjector) HasCapability(cap centralsensor.SensorCapability) bool {
 	return r.capabilities[cap]
 }
 

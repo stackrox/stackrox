@@ -6,18 +6,13 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 )
 
-type capabilityChecker interface {
-	HasCapability(centralsensor.SensorCapability) bool
-}
-
 // SendSensorACK sends a SensorACK only when sensor capability support is explicitly advertised.
 func SendSensorACK(ctx concurrency.Waitable, action central.SensorACK_Action, messageType central.SensorACK_MessageType, resourceID, reason string, injector MessageInjector) {
 	if injector == nil {
 		return
 	}
 
-	checker, ok := injector.(capabilityChecker)
-	if !ok || !checker.HasCapability(centralsensor.SensorACKSupport) {
+	if !injector.HasCapability(centralsensor.SensorACKSupport) {
 		return
 	}
 

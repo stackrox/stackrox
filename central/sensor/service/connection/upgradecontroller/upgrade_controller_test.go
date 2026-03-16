@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection/upgradecontroller/stateutils"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sensorupgrader"
@@ -94,6 +95,10 @@ func (r *recordingConn) InjectMessage(_ concurrency.Waitable, msg *central.MsgTo
 }
 
 func (r *recordingConn) InjectMessageIntoQueue(_ *central.MsgFromSensor) {}
+
+func (*recordingConn) HasCapability(_ centralsensor.SensorCapability) bool {
+	return false
+}
 
 func (r *recordingConn) getSentTriggers() []*central.SensorUpgradeTrigger {
 	r.lock.Lock()

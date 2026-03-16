@@ -201,7 +201,7 @@ func Test_pipelineImpl_Run_SendsSensorAndLegacyACKs(t *testing.T) {
 			},
 		},
 	}
-	injector := &recordingInjectorWithCapabilities{
+	injector := &recordingInjector{
 		capabilities: map[centralsensor.SensorCapability]bool{
 			centralsensor.SensorACKSupport: true,
 		},
@@ -267,7 +267,7 @@ func Test_pipelineImpl_Run_SkipsSensorACKWhenCapabilityMissing(t *testing.T) {
 			},
 		},
 	}
-	injector := &recordingInjectorWithCapabilities{
+	injector := &recordingInjector{
 		capabilities: map[centralsensor.SensorCapability]bool{},
 	}
 
@@ -301,17 +301,13 @@ func Test_pipelineImpl_Run_SkipsSensorACKWhenCapabilityMissing(t *testing.T) {
 var _ common.MessageInjector = (*recordingInjector)(nil)
 
 type recordingInjector struct {
-	lock     sync.Mutex
-	messages []*central.NodeInventoryACK
-	sensor   []*central.SensorACK
-}
-
-type recordingInjectorWithCapabilities struct {
-	recordingInjector
+	lock         sync.Mutex
+	messages     []*central.NodeInventoryACK
+	sensor       []*central.SensorACK
 	capabilities map[centralsensor.SensorCapability]bool
 }
 
-func (r *recordingInjectorWithCapabilities) HasCapability(cap centralsensor.SensorCapability) bool {
+func (r *recordingInjector) HasCapability(cap centralsensor.SensorCapability) bool {
 	return r.capabilities[cap]
 }
 
