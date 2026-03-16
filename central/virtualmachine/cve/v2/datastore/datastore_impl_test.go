@@ -112,8 +112,8 @@ func (s *vmCVEV2DataStoreTestSuite) createTestCVE(vmID, componentID string, inde
 		},
 		PreferredCvss: 7.5,
 		Severity:      storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
-		IsFixable:  true,
-		HasFixedBy: &storage.VirtualMachineCVEV2_FixedBy{FixedBy: "1.1.2"},
+		IsFixable:     true,
+		HasFixedBy:    &storage.VirtualMachineCVEV2_FixedBy{FixedBy: "1.1.2"},
 	}
 }
 
