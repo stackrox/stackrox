@@ -173,6 +173,7 @@ jobs:
       uses: ./.github/actions/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
+        jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: ${{ env.ARTIFACT_DIR }}
@@ -307,6 +308,7 @@ jobs:
       uses: ./.github/actions/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
+        jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: ${{ env.ARTIFACT_DIR }}
@@ -438,6 +440,7 @@ jobs:
       uses: ./.github/actions/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
+        jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: ${{ env.ARTIFACT_DIR }}
