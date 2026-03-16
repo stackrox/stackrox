@@ -11,6 +11,9 @@ inputs:
   gcp-account:
     description: 'Account to be used to upload tests data'
     required: true
+  jira-user:
+    description: 'User used to authenticate with Jira.'
+    required: true
   jira-token:
     description: 'Token used to authenticate with Jira.'
     required: true
