@@ -184,6 +184,7 @@ jobs:
       if: always()
       with:
         jira-token: ${{ secrets.JIRA_TOKEN }}
+        jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
 

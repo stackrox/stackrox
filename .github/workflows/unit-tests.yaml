@@ -83,6 +83,7 @@ jobs:
       uses: ./.github/actions/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
+        jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
@@ -150,6 +151,7 @@ jobs:
       uses: ./.github/actions/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
+        jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
@@ -234,6 +236,7 @@ jobs:
       uses: ./.github/actions/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
+        jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'ui/apps/platform/test-results/reports'
@@ -277,6 +280,7 @@ jobs:
       uses: ./.github/actions/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
+        jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'ui/apps/platform/cypress/test-results/reports'
@@ -321,6 +325,7 @@ jobs:
       uses: ./.github/actions/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
+        jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'roxctl-test-output'
@@ -357,6 +362,7 @@ jobs:
       uses: ./.github/actions/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
+        jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'shell-test-output'
@@ -452,6 +458,7 @@ jobs:
       uses: ./.github/actions/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
+        jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'

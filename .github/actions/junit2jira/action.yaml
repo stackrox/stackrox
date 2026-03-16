@@ -61,6 +61,7 @@ runs:
     shell: bash
     env:
       GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
+      JIRA_USER: ${{ inputs.jira-user }}
       JIRA_TOKEN: ${{ inputs.jira-token }}
     if: "${{ env.GCP_SERVICE_ACCOUNT_STACKROX_CI != '' || env.JIRA_TOKEN != '' }}"
     run: |
