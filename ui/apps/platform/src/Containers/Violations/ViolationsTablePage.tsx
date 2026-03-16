@@ -24,7 +24,6 @@ import { VIOLATION_STATES } from 'constants/violationStates';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
-import { nodeWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import type { SearchFilter } from 'types/search';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -131,7 +130,7 @@ function ViolationsTablePage(): ReactElement {
     // is not applicable. Reset to Active if user switches to Node view while on it.
     useEffect(() => {
         if (
-            filteredWorkflowView === nodeWorkflowView &&
+            filteredWorkflowView === 'Node view' &&
             selectedViolationStateTab === 'ATTEMPTED'
         ) {
             setSelectedViolationStateTab('ACTIVE');
@@ -328,7 +327,7 @@ function ViolationsTablePage(): ReactElement {
                         tabContentId={tabContentId}
                         title={<TabTitleText>Resolved</TabTitleText>}
                     />
-                    {filteredWorkflowView !== nodeWorkflowView && (
+                    {filteredWorkflowView !== 'Node view' && (
                         <Tab
                             eventKey="ATTEMPTED"
                             tabContentId={tabContentId}
