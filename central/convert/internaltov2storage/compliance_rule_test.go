@@ -1,0 +1,79 @@
+package internaltov2storage
+
+import (
+	"testing"
+
+	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stretchr/testify/assert"
+)
+
+func Test_idToDNSFriendlyName(t *testing.T) {
+	cases := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "ssgproject rule ID strips prefix",
+			input:    "xccdf_org.ssgproject.content_rule_kubelet_configure_tls_cert",
+			expected: "kubelet-configure-tls-cert",
+		},
+		{
+			name:     "custom rule ID with non-ssgproject prefix keeps prefix",
+			input:    "xccdf_org.example_rule_check_no_latest_tag",
+			expected: "xccdf-org.example-rule-check-no-latest-tag",
+		},
+		{
+			name:     "already lowercase, no underscores",
+			input:    "some-rule",
+			expected: "some-rule",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, idToDNSFriendlyName(tc.input))
+		})
+	}
+}
+
+func TestComplianceOperatorRule_ParentRuleAndRuleRefId(t *testing.T) {
+	const clusterID = fixtureconsts.Cluster1
+
+	t.Run("regular rule uses annotation for parentRule", func(t *testing.T) {
+		msg := &central.ComplianceOperatorRuleV2{
+			Id:           "rule-uid",
+			RuleId:       "xccdf_org.ssgproject.content_rule_kubelet_configure_tls_cert",
+			Name:         "kubelet-configure-tls-cert",
+			OperatorKind: central.ComplianceOperatorRuleV2_RULE,
+			Annotations: map[string]string{
+				v1alpha1.RuleIDAnnotationKey: "kubelet-configure-tls-cert",
+			},
+		}
+
+		result := ComplianceOperatorRule(msg, clusterID)
+
+		assert.Equal(t, "kubelet-configure-tls-cert", result.GetParentRule())
+		assert.Equal(t, BuildNameRefID(clusterID, "kubelet-configure-tls-cert"), result.GetRuleRefId())
+	})
+
+	t.Run("custom rule derives parentRule from RuleId, ignoring absent annotation", func(t *testing.T) {
+		msg := &central.ComplianceOperatorRuleV2{
+			Id:           "custom-rule-uid",
+			RuleId:       "xccdf_org.example_rule_check_no_latest_tag",
+			Name:         "check-no-latest-tag",
+			OperatorKind: central.ComplianceOperatorRuleV2_CUSTOM_RULE,
+			Annotations:  map[string]string{}, // no compliance.openshift.io/rule
+		}
+
+		result := ComplianceOperatorRule(msg, clusterID)
+
+		// CO sets compliance.openshift.io/rule on custom rule check results to
+		// IDToDNSFriendlyName(Spec.ID). parentRule must equal that value so that
+		// BuildNameRefID produces matching RuleRefIds on both sides of the join.
+		expectedParentRule := "xccdf-org.example-rule-check-no-latest-tag"
+		assert.Equal(t, expectedParentRule, result.GetParentRule())
+		assert.Equal(t, BuildNameRefID(clusterID, expectedParentRule), result.GetRuleRefId())
+	})
+}
