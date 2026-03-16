@@ -183,7 +183,7 @@ jobs:
       uses: ./.github/actions/junit2jira
       if: always()
       with:
-        jira-token: ${{ secrets.JIRA_TOKEN }}
+        jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'
