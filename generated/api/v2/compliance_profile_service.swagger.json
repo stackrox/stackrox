@@ -341,9 +341,22 @@
             "type": "object",
             "$ref": "#/definitions/v2ComplianceBenchmark"
           }
+        },
+        "operatorKind": {
+          "$ref": "#/definitions/v2ComplianceProfileOperatorKind"
         }
       },
-      "title": "Next Tag: 12"
+      "title": "Next Tag: 13"
+    },
+    "v2ComplianceProfileOperatorKind": {
+      "type": "string",
+      "enum": [
+        "OPERATOR_KIND_UNSPECIFIED",
+        "PROFILE",
+        "TAILORED_PROFILE"
+      ],
+      "default": "OPERATOR_KIND_UNSPECIFIED",
+      "description": "OperatorKind is the kind of the Compliance Operator resource that this\n`ComplianceProfile` was sourced from. ACS represents both Compliance\nOperator `Profiles` and `TailoredProfiles` as compliance profiles.\n\n - OPERATOR_KIND_UNSPECIFIED: The kind is unspecified.\n - PROFILE: The kind is `Profile`.\n - TAILORED_PROFILE: The kind is `TailoredProfile`."
     },
     "v2ComplianceProfileSummary": {
       "type": "object",
@@ -373,9 +386,22 @@
             "type": "object",
             "$ref": "#/definitions/v2ComplianceBenchmark"
           }
+        },
+        "operatorKind": {
+          "$ref": "#/definitions/v2ComplianceProfileSummaryOperatorKind"
         }
       },
-      "title": "Next Tag: 8"
+      "title": "Next Tag: 9"
+    },
+    "v2ComplianceProfileSummaryOperatorKind": {
+      "type": "string",
+      "enum": [
+        "OPERATOR_KIND_UNSPECIFIED",
+        "PROFILE",
+        "TAILORED_PROFILE"
+      ],
+      "default": "OPERATOR_KIND_UNSPECIFIED",
+      "description": "OperatorKind is the kind of the Compliance Operator resource that this\n`ComplianceProfileSummary` was sourced from. ACS represents both Compliance\nOperator `Profiles` and `TailoredProfiles` as compliance profiles.\n\n - OPERATOR_KIND_UNSPECIFIED: The kind is unspecified.\n - PROFILE: The kind is `Profile`.\n - TAILORED_PROFILE: The kind is `TailoredProfile`."
     },
     "v2ComplianceRule": {
       "type": "object",
