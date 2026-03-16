@@ -109,7 +109,9 @@ jobs:
       - name: Check that Jira release ${{needs.variables.outputs.release}}.${{needs.variables.outputs.patch}} is not released
         id: check-jira-release
         env:
+          JIRA_USER: ${{ vars.RHACS_BOT_GITHUB_EMAIL }}
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+          JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
@@ -119,7 +121,7 @@ jobs:
 
   branch:
     name: Prepare release branch
-    needs: [variables, start-sha]
+    needs: [variables, start-sha, check-jira]
     runs-on: ubuntu-latest
     steps:
       - name: Check out code (normal release)

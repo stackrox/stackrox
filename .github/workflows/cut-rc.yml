@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       slack-channel: ${{ fromJSON(format('["{0}","{1}"]', steps.fetch.outputs.dry-slack-channel, steps.fetch.outputs.slack-channel))[github.event.inputs.dry-run != 'true'] }}
-      jira-projects: ${{ steps.fetch.outputs.jira-projects }}
+      jira-project: ${{ steps.fetch.outputs.jira-project }}
     steps:
       - name: Read workflow properties file
         id: fetch
@@ -102,12 +102,14 @@ jobs:
         # Checking unequal with "false" because closed milestones have unset input values.
         if: github.event.inputs.check-jira-issues != 'false'
         env:
+          JIRA_USER: ${{ vars.RHACS_BOT_GITHUB_EMAIL }}
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+          JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
         run: |
           set -uo pipefail
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
             check-jira-issues \
-            "${{needs.properties.outputs.jira-projects}}" \
+            "${{needs.properties.outputs.jira-project}}" \
             "${{needs.variables.outputs.release}}" \
             "${{needs.variables.outputs.patch}}" \
             "${{needs.variables.outputs.named-release-patch}}"
@@ -183,6 +185,13 @@ jobs:
         run: |
           git config user.name "${{github.event.sender.login}}"
           git config user.email noreply@github.com
+      - name: Check CHANGELOG entry exists for release "${{ needs.variables.outputs.named-release-patch }}"
+        run: |
+          set -uo pipefail
+          gh api -H "$ACCEPT_RAW" "${{ env.script_url }}" | bash -s -- \
+            check-changelog \
+            "${{ needs.variables.outputs.branch }}" \
+            "${{ needs.variables.outputs.named-release-patch }}"
       - run: |
           # Could be optimized: done only if there are closed PRs to cherry-pick
           git fetch origin ${{env.main_branch}}:${{env.main_branch}} --unshallow
