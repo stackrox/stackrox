@@ -1,3 +1,11 @@
 {
-  "continuations": null
+  "continuations": [
+    {
+      "command": [
+        "branch",
+        "restack"
+      ],
+      "branch": "master-base/gualvare/fix-compliance-use-tp-metadata-always"
+    }
+  ]
 }
