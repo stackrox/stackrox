@@ -1,8 +1,6 @@
 package dispatchers
 
 import (
-	"strings"
-
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -52,17 +50,6 @@ func (c *CustomRuleDispatcher) ProcessEvent(obj, _ interface{}, action central.R
 		})
 	}
 
-	// CustomRule objects don't have the compliance.openshift.io/rule annotation that regular Rule
-	// objects get from the profile parser. The compliance operator sets that annotation on check
-	// results using IDToDNSFriendlyName(Spec.ID), which replaces underscores with hyphens. We
-	// synthesize the same value here so that BuildNameRefID produces matching RuleRefIds on both
-	// the rule and the check result sides.
-	annotations := make(map[string]string, len(customRule.Annotations)+1)
-	for k, v := range customRule.Annotations {
-		annotations[k] = v
-	}
-	annotations[v1alpha1.RuleIDAnnotationKey] = strings.ToLower(strings.ReplaceAll(customRule.Spec.ID, "_", "-"))
-
 	events := []*central.SensorEvent{
 		{
 			Id:     id,
@@ -75,7 +62,7 @@ func (c *CustomRuleDispatcher) ProcessEvent(obj, _ interface{}, action central.R
 					RuleType:     customRule.Spec.CheckType,
 					Severity:     ruleSeverityToV2Severity(customRule.Spec.Severity),
 					Labels:       customRule.Labels,
-					Annotations:  annotations,
+					Annotations:  customRule.Annotations,
 					Title:        customRule.Spec.Title,
 					Description:  customRule.Spec.Description,
 					Rationale:    customRule.Spec.Rationale,
