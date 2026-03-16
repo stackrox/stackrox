@@ -44,17 +44,17 @@ function MitreTacticSelect({
             isExpanded={isOpen}
             isDisabled={isDisabled}
             aria-label={label}
-            className="pf-v5-u-w-100"
+            className="pf-v6-u-w-100"
         >
             {!tacticId ? (
                 label
             ) : selectedTactic ? (
                 <Flex spaceItems={{ default: 'spaceItemsSm' }}>
-                    <FlexItem className="pf-v5-u-text-truncate">
+                    <FlexItem className="pf-v6-u-text-truncate">
                         {selectedTactic.tactic.name}
                     </FlexItem>
-                    <FlexItem className="pf-v5-u-color-200 pf-v5-u-font-size-sm">|</FlexItem>
-                    <FlexItem className="pf-v5-u-color-200 pf-v5-u-font-size-sm">
+                    <FlexItem className="pf-v6-u-color-200 pf-v6-u-font-size-sm">|</FlexItem>
+                    <FlexItem className="pf-v6-u-color-200 pf-v6-u-font-size-sm">
                         {selectedTactic.tactic.id}
                     </FlexItem>
                 </Flex>

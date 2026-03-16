@@ -1,4 +1,4 @@
-import { SelectOption } from '@patternfly/react-core';
+import { SelectOption, ToolbarItem } from '@patternfly/react-core';
 
 import SimpleSelect from './SimpleSelect';
 import type { CompoundSearchFilterAttribute } from '../types';
@@ -20,21 +20,23 @@ function AttributeSelector({
     menuToggleClassName,
 }: AttributeSelectorProps) {
     return (
-        <SimpleSelect
-            menuToggleClassName={menuToggleClassName}
-            value={attribute.displayName}
-            onChange={onChange}
-            ariaLabelMenu="compound search filter attribute selector menu"
-            ariaLabelToggle="compound search filter attribute selector toggle"
-        >
-            {attributes.map(({ displayName }) => {
-                return (
-                    <SelectOption key={displayName} value={displayName}>
-                        {displayName}
-                    </SelectOption>
-                );
-            })}
-        </SimpleSelect>
+        <ToolbarItem>
+            <SimpleSelect
+                menuToggleClassName={menuToggleClassName}
+                value={attribute.displayName}
+                onChange={onChange}
+                ariaLabelMenu="compound search filter attribute selector menu"
+                ariaLabelToggle="compound search filter attribute selector toggle"
+            >
+                {attributes.map(({ displayName }) => {
+                    return (
+                        <SelectOption key={displayName} value={displayName}>
+                            {displayName}
+                        </SelectOption>
+                    );
+                })}
+            </SimpleSelect>
+        </ToolbarItem>
     );
 }
 

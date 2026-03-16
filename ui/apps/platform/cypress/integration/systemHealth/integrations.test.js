@@ -3,11 +3,11 @@ import withAuth from '../../helpers/basicAuth';
 import { visitSystemHealth } from '../../helpers/systemHealth';
 
 function getCardBodyDescendantSelector(cardTitle, descendant) {
-    return `.pf-v5-c-card:has('h2:contains("${cardTitle}")') .pf-v5-c-card__body ${descendant}`;
+    return `.pf-v6-c-card:has('h2:contains("${cardTitle}")') .pf-v6-c-card__body ${descendant}`;
 }
 
 function getCardHeaderDescendantSelector(cardTitle, descendant) {
-    return `.pf-v5-c-card__header:has('h2:contains("${cardTitle}")') ${descendant}`;
+    return `.pf-v6-c-card__header:has('h2:contains("${cardTitle}")') ${descendant}`;
 }
 
 describe('System Health Integrations fixtures', () => {

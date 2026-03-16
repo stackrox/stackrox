@@ -14,7 +14,9 @@ import { actions } from 'reducers/feedback';
 import { getClustersForPermissions } from 'services/RolesService';
 import { clustersBasePath } from 'routePaths';
 
+import Banners from './Banners/Banners';
 import Header from './Header/Header';
+import PublicConfigHeader from './PublicConfig/PublicConfigHeader';
 import PublicConfigFooter from './PublicConfig/PublicConfigFooter';
 import NavigationSidebar from './Navigation/NavigationSidebar';
 import HorizontalSubnav from './Navigation/HorizontalSubnav';
@@ -74,9 +76,11 @@ function MainPage(): ReactElement {
     return (
         <>
             <div id="PageParent">
+                <PublicConfigHeader />
+                <Banners />
                 <Button
                     style={{
-                        bottom: 'calc(var(--pf-v5-global--spacer--lg) * 6)',
+                        bottom: 'calc(2 * var(--pf-t--global--spacer--4xl))',
                         position: 'absolute',
                         right: '0',
                         transform: 'rotate(270deg)',
@@ -96,7 +100,7 @@ function MainPage(): ReactElement {
                 {showFeedbackModal && <AcsFeedbackModal />}
                 <Page
                     mainContainerId="main-page-container"
-                    header={<Header />}
+                    masthead={<Header />}
                     isManagedSidebar
                     sidebar={
                         <NavigationSidebar

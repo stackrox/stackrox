@@ -5,12 +5,12 @@ import {
     CardBody,
     CardTitle,
     CodeBlock,
+    Content,
     Divider,
-    Modal,
     Stack,
     StackItem,
-    Text,
 } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 
 import type { PlatformComponentRule } from 'types/config.proto';
 
@@ -27,25 +27,25 @@ function RedHatLayeredProductsCard({ rule }: RedHatLayeredProductsCardProps) {
 
     return (
         <>
-            <Card isFlat>
+            <Card>
                 <CardTitle>Red Hat layered products</CardTitle>
                 <CardBody>
                     <Stack hasGutter>
-                        <Text>
+                        <Content component="p">
                             Components found in Red Hat layered and partner product namespaces are
                             included in the platform definition by default.
-                        </Text>
+                        </Content>
                         <Divider component="div" />
-                        <Text component="small" className="pf-v5-u-color-200">
+                        <Content component="small" className="pf-v6-u-color-200">
                             Namespaces match (Regex)
-                        </Text>
+                        </Content>
                         <CodeBlock>
                             <div className="truncate-multiline">
                                 {rule?.namespaceRule?.regex || 'None'}
                             </div>
                         </CodeBlock>
                         {rule?.namespaceRule.regex !== '' && (
-                            <StackItem className="pf-v5-u-text-align-center pf-v5-u-mt-sm">
+                            <StackItem className="pf-v6-u-text-align-center pf-v6-u-mt-sm">
                                 <Button variant="link" isInline onClick={toggleModal}>
                                     View more
                                 </Button>

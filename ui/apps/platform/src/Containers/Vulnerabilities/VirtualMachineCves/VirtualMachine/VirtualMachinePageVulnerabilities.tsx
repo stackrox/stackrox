@@ -110,10 +110,10 @@ function VirtualMachinePageVulnerabilities({
     }
 
     return (
-        <PageSection variant="light" isFilled padding={{ default: 'padding' }}>
+        <PageSection hasBodyWrapper={false} isFilled padding={{ default: 'padding' }}>
             <VirtualMachineScanScopeAlert />
             <AdvancedFiltersToolbar
-                className="pf-v5-u-px-sm pf-v5-u-pb-0"
+                className="pf-v6-u-px-sm pf-v6-u-pb-0"
                 defaultSearchFilterEntity="CVE"
                 searchFilter={searchFilter}
                 searchFilterConfig={searchFilterConfig}

@@ -22,7 +22,7 @@ body {
    * Borrow rules from Red Hat OpenShift Container Platform,
    * but #root instead of body to avoid conflict with background-color from base.css
    */
-  background-color: #151515;
+  background-color: var(--pf-t--global--background--color--secondary--default);
 }
 
 /*
@@ -44,4 +44,8 @@ body {
   overflow: auto;
   position: relative;
   width: 100%;
+}
+
+.pf-v6-c-page__main-container {
+  height: 100%;
 }

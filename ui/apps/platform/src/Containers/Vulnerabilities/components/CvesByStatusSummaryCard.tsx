@@ -2,10 +2,10 @@ import {
     Card,
     CardBody,
     CardTitle,
+    Content,
     Flex,
     Grid,
     GridItem,
-    Text,
     pluralize,
 } from '@patternfly/react-core';
 import { MinusIcon, WrenchIcon } from '@patternfly/react-icons';
@@ -71,7 +71,7 @@ const statusDisplays = [
     },
 ] as const;
 
-const disabledColor100 = 'var(--pf-v5-global--disabled-color--100)';
+const disabledColor = 'var(--pf-t--global--text--color--disabled)';
 
 const statusHiddenText = {
     Fixable: 'Fixable hidden',
@@ -88,29 +88,30 @@ function CvesByStatusSummaryCard({
     hiddenStatuses,
 }: CvesByStatusSummaryCardProps) {
     return (
-        <Card isCompact isFlat isFullHeight>
+        <Card isCompact isFullHeight>
             <CardTitle>CVEs by status</CardTitle>
             <CardBody>
-                <Grid className="pf-v5-u-pl-sm">
+                <Grid className="pf-v6-u-pl-sm">
                     {statusDisplays.map(({ status, Icon, text }) => {
                         const isHidden = hiddenStatuses.has(status);
                         return (
                             <GridItem key={status} span={12}>
                                 <Flex
-                                    className="pf-v5-u-pt-sm"
+                                    className="pf-v6-u-pt-sm"
                                     spaceItems={{ default: 'spaceItemsSm' }}
                                     alignItems={{ default: 'alignItemsCenter' }}
                                 >
                                     <Icon />
-                                    <Text
+                                    <Content
+                                        component="p"
                                         style={{
-                                            color: isHidden ? disabledColor100 : 'inherit',
+                                            color: isHidden ? disabledColor : 'inherit',
                                         }}
                                     >
                                         {isHidden
                                             ? statusHiddenText[status]
                                             : text(cveStatusCounts)}
-                                    </Text>
+                                    </Content>
                                 </Flex>
                             </GridItem>
                         );
