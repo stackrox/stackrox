@@ -30,14 +30,14 @@ func ScanPartsFromV1Scan(vmID string, scan *storage.VirtualMachineScan) common.V
 		fixedBy := highestFixedBy(comp.GetVulnerabilities())
 
 		componentV2 := &storage.VirtualMachineComponentV2{
-			Id:              componentID,
-			VmScanId:        scanID,
-			Name:            comp.GetName(),
-			Version:         comp.GetVersion(),
-			Source:          comp.GetSource(),
-			SetTopCvss:      topCvssFromComponent(comp),
-			FixedBy:         fixedBy,
-			CveCount:        int32(len(comp.GetVulnerabilities())),
+			Id:         componentID,
+			VmScanId:   scanID,
+			Name:       comp.GetName(),
+			Version:    comp.GetVersion(),
+			Source:     comp.GetSource(),
+			SetTopCvss: topCvssFromComponent(comp),
+			FixedBy:    fixedBy,
+			CveCount:   int32(len(comp.GetVulnerabilities())),
 		}
 		components = append(components, componentV2)
 
