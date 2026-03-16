@@ -2,6 +2,7 @@ package resources
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -99,9 +100,47 @@ func (s *nodeStoreImpl) getNode(nodeName string) *nodeWrap {
 	return s.nodes[nodeName]
 }
 
+func (s *nodeStoreImpl) getNodeByPrefix(prefix string) *nodeWrap {
+	s.mutex.RLock()
+	s.mutex.RUnlock()
+
+	for k := range s.nodes {
+		if strings.HasPrefix(k, prefix) {
+			return s.nodes[k]
+		}
+	}
+
+	return nil
+}
+
 // GetNode returns node with a given name or nil if not found
 func (s *nodeStoreImpl) GetNode(nodeName string) *storage.Node {
 	if wrap := s.getNode(nodeName); wrap != nil {
+		return buildNode(wrap.Node)
+	}
+	return nil
+}
+
+// GetNodeByHostname looks up a node based on its hostname. The hostname
+// is not guaranteed to match the name completely, for example on EKS/AWS,
+// the node name is <hostname>.<domain> - the private DNS name for the nodes.
+//
+// This function is split into a fast-path, where we first look up with exact
+// match (single map lookup) and then if that fails, we perform a prefix
+// match against the known node names to identify the correct one. If neither
+// lookup matches, we do not have that node stored.
+func (s *nodeStoreImpl) GetNodeByHostname(hostname string) *storage.Node {
+	// fast path: hostname matches name
+	if node := s.GetNode(hostname); node != nil {
+		return node
+	}
+
+	// Search prefix including '.' to avoid false positives where
+	// a hostname is a prefix of another hostname
+	// e.g. ip-10-0-24-9 is a prefix of both:
+	//         ip-10-0-24-99.ec2.internal
+	//         ip-10-0-24-9.ec2.internal
+	if wrap := s.getNodeByPrefix(hostname + "."); wrap != nil {
 		return buildNode(wrap.Node)
 	}
 	return nil
