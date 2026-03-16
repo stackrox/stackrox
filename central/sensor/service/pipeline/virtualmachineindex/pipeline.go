@@ -4,11 +4,13 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/convert/v1tov2storage"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	vmDatastore "github.com/stackrox/rox/central/virtualmachine/datastore"
+	vmV2DataStore "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -29,21 +31,23 @@ func GetPipeline() pipeline.Fragment {
 	return newPipeline(
 		vmDatastore.Singleton(),
 		vmEnricher.Singleton(),
+		vmV2DataStore.Singleton(),
 	)
 }
 
 // newPipeline returns a new instance of Pipeline.
-
-func newPipeline(vms vmDatastore.DataStore, enricher vmEnricher.VirtualMachineEnricher) pipeline.Fragment {
+func newPipeline(vms vmDatastore.DataStore, enricher vmEnricher.VirtualMachineEnricher, vmV2Store vmV2DataStore.DataStore) pipeline.Fragment {
 	return &pipelineImpl{
 		vmDatastore: vms,
 		enricher:    enricher,
+		vmV2Store:   vmV2Store,
 	}
 }
 
 type pipelineImpl struct {
 	vmDatastore vmDatastore.DataStore
 	enricher    vmEnricher.VirtualMachineEnricher
+	vmV2Store   vmV2DataStore.DataStore
 }
 
 func (p *pipelineImpl) OnFinish(string) {}
@@ -117,10 +121,21 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		return errors.Wrapf(err, "failed to enrich VM %s with vulnerabilities", index.GetId())
 	}
 
-	// Store enriched VM
-	if err := p.vmDatastore.UpdateVirtualMachineScan(ctx, vm.GetId(), vm.GetScan()); err != nil {
-		sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonStorageFailed, injector)
-		return errors.Wrapf(err, "failed to upsert VM %s to datastore", index.GetId())
+	if p.vmV2Store != nil {
+		// Upsert minimal VM record to satisfy FK constraint.
+		vmV2 := &storage.VirtualMachineV2{Id: vm.GetId(), ClusterId: clusterID}
+		if err := p.vmV2Store.UpsertVirtualMachine(ctx, vmV2); err != nil {
+			return errors.Wrapf(err, "failed to upsert VM v2 %s to datastore", index.GetId())
+		}
+		// Convert v1 scan to v2 parts and upsert.
+		scanParts := v1tov2storage.ScanPartsFromV1Scan(vm.GetId(), vm.GetScan())
+		if err := p.vmV2Store.UpsertScan(ctx, vm.GetId(), scanParts); err != nil {
+			return errors.Wrapf(err, "failed to upsert VM v2 scan %s to datastore", index.GetId())
+		}
+	} else {
+		if err := p.vmDatastore.UpdateVirtualMachineScan(ctx, vm.GetId(), vm.GetScan()); err != nil {
+			return errors.Wrapf(err, "failed to upsert VM %s to datastore", index.GetId())
+		}
 	}
 
 	log.Debugf("Successfully enriched and stored VM %s with %d components",

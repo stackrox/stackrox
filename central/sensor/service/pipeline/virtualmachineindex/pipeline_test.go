@@ -7,6 +7,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	vmDatastoreMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
+	vmV2DataStoreMocks "github.com/stackrox/rox/central/virtualmachine/v2/datastore/mocks"
+	"github.com/stackrox/rox/central/virtualmachine/v2/datastore/store/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
@@ -177,13 +179,14 @@ func (suite *PipelineTestSuite) TestGetPipeline() {
 func (suite *PipelineTestSuite) TestNewPipeline() {
 	mockDatastore := vmDatastoreMocks.NewMockDataStore(suite.mockCtrl)
 	mockEnricher := vmEnricherMocks.NewMockVirtualMachineEnricher(suite.mockCtrl)
-	pipeline := newPipeline(mockDatastore, mockEnricher)
+	pipeline := newPipeline(mockDatastore, mockEnricher, nil)
 	suite.NotNil(pipeline)
 
 	impl, ok := pipeline.(*pipelineImpl)
 	suite.True(ok, "Should return pipelineImpl instance")
 	suite.Equal(mockDatastore, impl.vmDatastore)
 	suite.Equal(mockEnricher, impl.enricher)
+	suite.Nil(impl.vmV2Store)
 }
 
 // Test table-driven approach for different actions
@@ -558,4 +561,138 @@ func TestPipelineRun_DisabledFeature(t *testing.T) {
 	assert.Equal(t, central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
 	assert.Equal(t, vmID, ack.GetResourceId())
 	assert.Equal(t, centralsensor.SensorACKReasonFeatureDisabled, ack.GetReason())
+}
+
+func TestPipelineRunV2(t *testing.T) {
+	t.Run("v2 upserts VM and scan after enrichment", func(t *testing.T) {
+		t.Setenv(features.VirtualMachines.EnvVar(), "true")
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+		mockV2Store := vmV2DataStoreMocks.NewMockDataStore(ctrl)
+
+		pipeline := &pipelineImpl{
+			enricher:  enricher,
+			vmV2Store: mockV2Store,
+		}
+
+		vmID := "vm-1"
+		msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
+
+		enricher.EXPECT().
+			EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+			Return(nil)
+
+		mockV2Store.EXPECT().
+			UpsertVirtualMachine(gomock.Any(), gomock.Any()).
+			Do(func(_ context.Context, vm *storage.VirtualMachineV2) {
+				assert.Equal(t, vmID, vm.GetId())
+				assert.Equal(t, testClusterID, vm.GetClusterId())
+			}).
+			Return(nil)
+
+		mockV2Store.EXPECT().
+			UpsertScan(gomock.Any(), vmID, gomock.Any()).
+			Do(func(_ context.Context, id string, parts common.VMScanParts) {
+				assert.Equal(t, vmID, id)
+			}).
+			Return(nil)
+
+		err := pipeline.Run(ctx, testClusterID, msg, nil)
+		assert.NoError(t, err)
+	})
+
+	t.Run("v2 upsert VM error propagates", func(t *testing.T) {
+		t.Setenv(features.VirtualMachines.EnvVar(), "true")
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+		mockV2Store := vmV2DataStoreMocks.NewMockDataStore(ctrl)
+
+		pipeline := &pipelineImpl{
+			enricher:  enricher,
+			vmV2Store: mockV2Store,
+		}
+
+		vmID := "vm-1"
+		msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
+
+		enricher.EXPECT().
+			EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+			Return(nil)
+
+		expectedErr := errors.New("upsert error")
+		mockV2Store.EXPECT().
+			UpsertVirtualMachine(gomock.Any(), gomock.Any()).
+			Return(expectedErr)
+
+		err := pipeline.Run(ctx, testClusterID, msg, nil)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "upsert error")
+	})
+
+	t.Run("v2 scan upsert error propagates", func(t *testing.T) {
+		t.Setenv(features.VirtualMachines.EnvVar(), "true")
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+		mockV2Store := vmV2DataStoreMocks.NewMockDataStore(ctrl)
+
+		pipeline := &pipelineImpl{
+			enricher:  enricher,
+			vmV2Store: mockV2Store,
+		}
+
+		vmID := "vm-1"
+		msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
+
+		enricher.EXPECT().
+			EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+			Return(nil)
+
+		mockV2Store.EXPECT().
+			UpsertVirtualMachine(gomock.Any(), gomock.Any()).
+			Return(nil)
+
+		expectedErr := errors.New("scan upsert error")
+		mockV2Store.EXPECT().
+			UpsertScan(gomock.Any(), vmID, gomock.Any()).
+			Return(expectedErr)
+
+		err := pipeline.Run(ctx, testClusterID, msg, nil)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "scan upsert error")
+	})
+
+	t.Run("v1 store is not called when v2 store is non-nil", func(t *testing.T) {
+		t.Setenv(features.VirtualMachines.EnvVar(), "true")
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		// v1 mock with no expectations — any call will cause test failure
+		v1Store := vmDatastoreMocks.NewMockDataStore(ctrl)
+		enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+		mockV2Store := vmV2DataStoreMocks.NewMockDataStore(ctrl)
+
+		pipeline := &pipelineImpl{
+			vmDatastore: v1Store,
+			enricher:    enricher,
+			vmV2Store:   mockV2Store,
+		}
+
+		vmID := "vm-1"
+		msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
+
+		enricher.EXPECT().
+			EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+			Return(nil)
+		mockV2Store.EXPECT().UpsertVirtualMachine(gomock.Any(), gomock.Any()).Return(nil)
+		mockV2Store.EXPECT().UpsertScan(gomock.Any(), vmID, gomock.Any()).Return(nil)
+
+		err := pipeline.Run(ctx, testClusterID, msg, nil)
+		assert.NoError(t, err)
+	})
 }
