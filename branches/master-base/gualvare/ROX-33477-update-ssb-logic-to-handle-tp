@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "master-base/gualvare/fix-compliance-use-tp-metadata-always",
-    "hash": "3f65e63a4a88bea2bea4d6c47ed22431d1452b60"
+    "hash": "40a9093055fef3f284807517f1e2fd6d04c5509e"
   },
   "upstream": {
     "branch": "master-base/gualvare/ROX-33477-update-ssb-logic-to-handle-tp"
