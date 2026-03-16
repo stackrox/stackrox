@@ -81,8 +81,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Trigger test cluster creation
-      # TODO: switch stackrox/actions/infra/create-cluster to v1
-      uses: stackrox/actions/infra/create-cluster@ef3dd2e7cc63063ed8b84983b8058b189afb7807
+      uses: stackrox/actions/infra/create-cluster@v1
       with:
         token: ${{ secrets.INFRA_TOKEN }}
         flavor: gke-default
@@ -216,7 +215,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Trigger test cluster creation
-      uses: stackrox/actions/infra/create-cluster@ef3dd2e7cc63063ed8b84983b8058b189afb7807
+      uses: stackrox/actions/infra/create-cluster@v1
       with:
         token: ${{ secrets.INFRA_TOKEN }}
         flavor: gke-default
@@ -350,7 +349,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Trigger test cluster creation
-      uses: stackrox/actions/infra/create-cluster@ef3dd2e7cc63063ed8b84983b8058b189afb7807
+      uses: stackrox/actions/infra/create-cluster@v1
       with:
         token: ${{ secrets.INFRA_TOKEN }}
         flavor: gke-default
