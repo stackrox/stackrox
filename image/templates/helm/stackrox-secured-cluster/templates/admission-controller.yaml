@@ -107,6 +107,8 @@ spec:
           - name: ROX_ENABLE_SECURE_METRICS
             value: "true"
           {{- end }}
+          - name: ROX_ADMISSION_CONTROL_IMAGE_CACHE_MAX_SIZE
+            value: {{ if and (eq ._rox.env.installMethod "operator") ._rox.admissionControl.enforce }}"500"{{ else }}"200"{{ end }}
           {{- include "srox.envVars" (list . "deployment" "admission-controller" "admission-controller") | nindent 10 }}
           volumeMounts:
             - name: config

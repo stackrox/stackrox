@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
-import { Button, Modal, Tab, TabTitleText, Tabs } from '@patternfly/react-core';
+import { Button, Tab, TabTitleText, Tabs } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import { useFormik } from 'formik';
 import isEmpty from 'lodash/isEmpty';
 
@@ -73,12 +74,12 @@ function EmailTemplateModal({
               >
                   Apply
               </Button>,
-              <Button key="cancel" variant="link" isInline onClick={onClose}>
+              <Button key="cancel" variant="link" onClick={onClose}>
                   Cancel
               </Button>,
           ]
         : [
-              <Button key="cancel" variant="secondary" isInline onClick={onClose}>
+              <Button key="cancel" variant="secondary" onClick={onClose}>
                   Close
               </Button>,
           ];

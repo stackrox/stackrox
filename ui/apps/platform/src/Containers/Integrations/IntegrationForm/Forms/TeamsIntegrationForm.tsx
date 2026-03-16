@@ -68,7 +68,7 @@ function TeamsIntegrationForm({
 
     return (
         <>
-            <PageSection variant="light" isFilled hasOverflowScroll>
+            <PageSection isFilled hasOverflowScroll>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup
@@ -109,7 +109,7 @@ function TeamsIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Annotation key for Teams webhook"
-                        labelIcon={<AnnotationKeyLabelIcon />}
+                        labelHelp={<AnnotationKeyLabelIcon />}
                         fieldId="labelKey"
                         errors={errors}
                     >

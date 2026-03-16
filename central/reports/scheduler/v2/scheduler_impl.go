@@ -133,6 +133,7 @@ func (s *scheduler) Start() {
 		return
 	}
 	s.queuePendingReports()
+	s.recoverMissedSchedules()
 	s.queueScheduledReports()
 	go s.runReports()
 }
@@ -378,6 +379,119 @@ func (s *scheduler) queueScheduledReports() {
 			}
 		}
 	}
+}
+
+func (s *scheduler) recoverMissedSchedules() {
+	if !env.ReportMissedScheduleRecovery.BooleanSetting() {
+		return
+	}
+
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ReportType, storage.ReportConfiguration_VULNERABILITY.String()).
+		ProtoQuery()
+	filteredQ := common.WithoutV1ReportConfigs(query)
+	reportConfigs, err := s.reportConfigDatastore.GetReportConfigurations(scheduledCtx, filteredQ)
+	if err != nil {
+		log.Errorf("Error finding report configs for missed schedule recovery: %s", err)
+		return
+	}
+
+	for _, rc := range reportConfigs {
+		if rc.GetSchedule() == nil {
+			continue
+		}
+
+		cronSpec, err := schedule.ConvertToCronTab(rc.GetSchedule())
+		if err != nil {
+			log.Errorf("Error converting schedule to crontab for config '%s': %v", rc.GetId(), err)
+			continue
+		}
+
+		cronSchedule, err := cron.Parse(cronSpec)
+		if err != nil {
+			log.Errorf("Error parsing cron spec for config '%s': %v", rc.GetId(), err)
+			continue
+		}
+
+		// Find the most recent time this schedule should have fired.
+		// We approximate the previous fire time by stepping back from now.
+		now := time.Now()
+		previousFireTime := findPreviousFireTime(cronSchedule, now)
+		if previousFireTime.IsZero() {
+			continue
+		}
+
+		// Query for the most recent report snapshot for this config
+		snapshotQuery := search.NewQueryBuilder().
+			AddExactMatches(search.ReportConfigID, rc.GetId()).
+			AddExactMatches(search.ReportRequestType, storage.ReportStatus_SCHEDULED.String()).
+			WithPagination(search.NewPagination().
+				AddSortOption(search.NewSortOption(search.ReportQueuedTime).Reversed(true)).
+				Limit(1)).
+			ProtoQuery()
+		snapshots, err := s.reportSnapshotStore.SearchReportSnapshots(scheduledCtx, snapshotQuery)
+		if err != nil {
+			log.Errorf("Error querying snapshots for missed schedule recovery, config '%s': %v", rc.GetId(), err)
+			continue
+		}
+
+		// If there are no snapshots, the schedule has never run yet. Don't recover it;
+		// the cron job will fire at the correct time.
+		if len(snapshots) == 0 {
+			continue
+		}
+
+		lastSnapshot := snapshots[0]
+		// If the most recent snapshot is still pending, queuePendingReports already handles it.
+		runState := lastSnapshot.GetReportStatus().GetRunState()
+		if runState == storage.ReportStatus_WAITING || runState == storage.ReportStatus_PREPARING {
+			continue
+		}
+
+		shouldRecover := false
+		lastTime := lastSnapshot.GetReportStatus().GetQueuedAt()
+		if lastTime != nil {
+			lastQueuedAt, err := protocompat.ConvertTimestampToTimeOrError(lastTime)
+			if err != nil {
+				log.Errorf("Error converting timestamp for config '%s': %v", rc.GetId(), err)
+				continue
+			}
+			if lastQueuedAt.Before(previousFireTime) {
+				shouldRecover = true
+			}
+		}
+
+		if shouldRecover {
+			log.Infof("Recovering missed scheduled report for config '%s' (name: '%s')", rc.GetId(), rc.GetName())
+			reportReq, err := s.validator.ValidateAndGenerateReportRequest(rc.GetId(), storage.ReportStatus_EMAIL,
+				storage.ReportStatus_SCHEDULED, nil)
+			if err != nil {
+				log.Errorf("Error generating report request for missed schedule recovery, config '%s': %v", rc.GetId(), err)
+				continue
+			}
+			_, err = s.SubmitReportRequest(scheduledCtx, reportReq, false)
+			if err != nil {
+				log.Errorf("Error submitting missed scheduled report for config '%s': %v", rc.GetId(), err)
+			}
+		}
+	}
+}
+
+// findPreviousFireTime finds the most recent time before `now` that the cron schedule would have fired.
+// It does this by stepping back in time and checking when the next fire time from that point would be.
+func findPreviousFireTime(cronSchedule cron.Schedule, now time.Time) time.Time {
+	// Start from 32 days ago to cover monthly schedules (max interval between fires)
+	candidate := now.Add(-32 * 24 * time.Hour)
+	var previousFire time.Time
+	for {
+		next := cronSchedule.Next(candidate)
+		if next.After(now) {
+			break
+		}
+		previousFire = next
+		candidate = next
+	}
+	return previousFire
 }
 
 /* Utility Functions */

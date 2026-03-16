@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
-import { Text } from '@patternfly/react-core';
+import { Content } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import CvssFormatted from 'Components/CvssFormatted';
@@ -124,7 +124,7 @@ function CVEsTable({ tableState, getSortParams, onClearFilters }: CVEsTableProps
                                     <Td colSpan={COL_SPAN - 1}>
                                         <ExpandableRowContent>
                                             {summary ? (
-                                                <Text>{summary}</Text>
+                                                <Content component="p">{summary}</Content>
                                             ) : (
                                                 <PartialCVEDataAlert />
                                             )}

@@ -12,6 +12,10 @@ export const integrationSources = [
 
 export type IntegrationSource = (typeof integrationSources)[number];
 
+export function isIntegrationSource(source: unknown): source is IntegrationSource {
+    return integrationSources.some((s) => s === source);
+}
+
 export type IntegrationType =
     | AuthProviderType
     | BackupIntegrationType

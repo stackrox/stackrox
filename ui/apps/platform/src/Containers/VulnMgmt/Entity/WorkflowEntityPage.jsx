@@ -92,7 +92,7 @@ const WorkflowEntityPage = ({
                     title="Unable to load data"
                     headingLevel="h3"
                     icon={ExclamationTriangleIcon}
-                    iconClassName="pf-v5-u-warning-color-100"
+                    status="warning"
                 >
                     {error.message}
                 </EmptyStateTemplate>

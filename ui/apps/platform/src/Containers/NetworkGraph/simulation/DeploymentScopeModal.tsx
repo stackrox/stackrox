@@ -2,13 +2,13 @@ import { useState } from 'react';
 import {
     Bullseye,
     Button,
-    Modal,
     Pagination,
     Spinner,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql, useQuery } from '@apollo/client';
@@ -83,7 +83,7 @@ function DeploymentScopeModal({
         >
             <Toolbar>
                 <ToolbarContent>
-                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                         <Pagination
                             isCompact
                             itemCount={scopeDeploymentCount}
@@ -103,7 +103,7 @@ function DeploymentScopeModal({
                         title="There was an error loading deployments"
                         headingLevel="h2"
                         icon={ExclamationCircleIcon}
-                        iconClassName="pf-v5-u-danger-color-100"
+                        status="danger"
                     >
                         {error.message}
                     </EmptyStateTemplate>

@@ -19,23 +19,50 @@ export type ResourceIconProps = {
 };
 
 const IconAttributes: Record<K8sResourceKind, { text: string; backgroundColor: string }> = {
-    Cluster: { text: 'CL', backgroundColor: 'var(--pf-v5-global--palette--purple-500)' },
-    ConfigMap: { text: 'CM', backgroundColor: 'var(--pf-v5-global--palette--purple-600)' },
-    ClusterRoles: { text: 'CR', backgroundColor: 'var(--pf-v5-global--palette--purple-600)' },
+    Cluster: {
+        text: 'CL',
+        backgroundColor: 'var(--pf-t--color--purple--50)',
+    },
+    ConfigMap: {
+        text: 'CM',
+        backgroundColor: 'var(--pf-t--color--purple--60)',
+    },
+    ClusterRoles: {
+        text: 'CR',
+        backgroundColor: 'var(--pf-t--color--purple--60)',
+    },
     ClusterRoleBindings: {
         text: 'CRB',
-        backgroundColor: 'var(--pf-v5-global--palette--purple-600)',
+        backgroundColor: 'var(--pf-t--color--purple--60)',
     },
-    NetworkPolicies: { text: 'NP', backgroundColor: 'var(--pf-v5-global--palette--purple-600)' },
+    NetworkPolicies: {
+        text: 'NP',
+        backgroundColor: 'var(--pf-t--color--purple--60)',
+    },
     SecurityContextConstraints: {
         text: 'SCC',
-        backgroundColor: 'var(--pf-v5-global--palette--purple-600)',
+        backgroundColor: 'var(--pf-t--color--purple--60)',
     },
-    EgressFirewalls: { text: 'EF', backgroundColor: 'var(--pf-v5-global--palette--purple-600)' },
-    Deployment: { text: 'D', backgroundColor: 'var(--pf-v5-global--palette--blue-500)' },
-    Namespace: { text: 'NS', backgroundColor: 'var(--pf-v5-global--palette--green-500)' },
-    Secret: { text: 'S', backgroundColor: 'var(--pf-v5-global--palette--orange-600)' },
-    Unknown: { text: '?', backgroundColor: 'var(--pf-v5-global--palette--black-700)' },
+    EgressFirewalls: {
+        text: 'EF',
+        backgroundColor: 'var(--pf-t--color--purple--60)',
+    },
+    Deployment: {
+        text: 'D',
+        backgroundColor: 'var(--pf-t--color--blue--50)',
+    },
+    Namespace: {
+        text: 'NS',
+        backgroundColor: 'var(--pf-t--color--green--50)',
+    },
+    Secret: {
+        text: 'S',
+        backgroundColor: 'var(--pf-t--color--orange--60)',
+    },
+    Unknown: {
+        text: '?',
+        backgroundColor: 'var(--pf-t--color--gray--70)',
+    },
 } as const;
 
 /**
@@ -49,7 +76,7 @@ const IconAttributes: Record<K8sResourceKind, { text: string; backgroundColor: s
 function ResourceIcon(props: ResourceIconProps) {
     const { text, backgroundColor } = IconAttributes[props.kind] ?? {
         text: '?',
-        backgroundColor: 'var(--pf-v5-global--palette--black-700)',
+        backgroundColor: 'var(--pf-t--color--gray--70)',
     };
 
     return (

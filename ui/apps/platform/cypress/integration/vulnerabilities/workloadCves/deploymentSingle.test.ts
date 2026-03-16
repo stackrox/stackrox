@@ -8,6 +8,7 @@ import {
 } from './WorkloadCves.helpers';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import { selectors } from './WorkloadCves.selectors';
+import { compoundFiltersSelectors } from '../../../helpers/compoundFilters';
 
 describe('Workload CVE Deployment Single page', () => {
     withAuth();
@@ -23,11 +24,11 @@ describe('Workload CVE Deployment Single page', () => {
         visitFirstDeployment();
 
         // Check that only applicable resource menu items are present in the toolbar
-        cy.get(selectors.searchEntityDropdown).click();
-        cy.get(selectors.searchEntityMenuItem).contains('Image');
-        cy.get(selectors.searchEntityMenuItem).contains('CVE');
-        cy.get(selectors.searchEntityMenuItem).contains('Image component');
-        cy.get(selectors.searchEntityDropdown).click();
+        cy.get(compoundFiltersSelectors.entityMenuToggle).click();
+        cy.get(compoundFiltersSelectors.entityMenuItem).contains('Image');
+        cy.get(compoundFiltersSelectors.entityMenuItem).contains('CVE');
+        cy.get(compoundFiltersSelectors.entityMenuItem).contains('Image component');
+        cy.get(compoundFiltersSelectors.entityMenuToggle).click();
     });
 
     it('should navigate between vulnerabilities and resources tabs', () => {

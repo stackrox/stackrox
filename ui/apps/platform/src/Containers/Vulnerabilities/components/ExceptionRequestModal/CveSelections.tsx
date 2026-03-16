@@ -1,5 +1,5 @@
 import { Link, generatePath } from 'react-router-dom-v5-compat';
-import { Alert, Button, Flex, FlexItem, List, ListItem, Text } from '@patternfly/react-core';
+import { Alert, Button, Content, Flex, FlexItem, List, ListItem } from '@patternfly/react-core';
 import { MinusCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
@@ -25,7 +25,7 @@ function CveSelections({ cves, selectedCVEIds, onAdd, onRemove }: CveSelectionsP
 
     return (
         <>
-            <div className="pf-v5-u-mb-md">
+            <div className="pf-v6-u-mb-md">
                 <Alert
                     title="Include or exclude selected CVEs"
                     component="p"
@@ -40,10 +40,7 @@ function CveSelections({ cves, selectedCVEIds, onAdd, onRemove }: CveSelectionsP
                 {cves.map(({ cve, summary }) => {
                     const isSelected = selectedCVEIds.includes(cve);
                     return (
-                        <ListItem
-                            key={cve}
-                            className={!isSelected ? 'pf-v5-u-background-color-200' : ''}
-                        >
+                        <ListItem key={cve}>
                             <Flex direction={{ default: 'column' }}>
                                 <Flex direction={{ default: 'row' }}>
                                     <ExternalLink>
@@ -80,7 +77,7 @@ function CveSelections({ cves, selectedCVEIds, onAdd, onRemove }: CveSelectionsP
                                         )}
                                     </FlexItem>
                                 </Flex>
-                                <Text>{summary}</Text>
+                                <Content component="p">{summary}</Content>
                             </Flex>
                         </ListItem>
                     );

@@ -11,6 +11,9 @@ import {
     HelperText,
     HelperTextItem,
     Modal,
+    ModalBody,
+    ModalFooter,
+    ModalHeader,
     TextInput,
     Title,
 } from '@patternfly/react-core';
@@ -197,132 +200,127 @@ function BaseImagesModal({
     return (
         <Modal
             aria-labelledby="base-image-modal-title"
-            header={
-                <Title id="base-image-modal-title" headingLevel="h2">
-                    {modalTitle}
-                </Title>
-            }
             isOpen={isOpen}
             onClose={handleModalClose}
             variant="medium"
-            showClose
-            actions={[
+        >
+            <ModalHeader>
+                <Title id="base-image-modal-title" headingLevel="h2">
+                    {modalTitle}
+                </Title>
+            </ModalHeader>
+            <ModalBody>
+                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
+                    {activeMutation.isSuccess && (
+                        <Alert variant="success" isInline title={successMessage} component="p" />
+                    )}
+                    {activeMutation.isError && (
+                        <Alert variant="danger" isInline title={errorTitle} component="p">
+                            {getAxiosErrorMessage(activeMutation.error)}
+                        </Alert>
+                    )}
+                    {isEditMode ? (
+                        <Form onSubmit={editFormik.handleSubmit}>
+                            <FormGroup label="Repository path" fieldId="baseImageRepoPath">
+                                <TextInput
+                                    id="baseImageRepoPath"
+                                    type="text"
+                                    value={baseImageToEdit.baseImageRepoPath}
+                                    isDisabled
+                                    aria-label="Repository path (read-only)"
+                                />
+                                <FormHelperText>
+                                    <HelperText>
+                                        <HelperTextItem>
+                                            Repository path cannot be changed after creation
+                                        </HelperTextItem>
+                                    </HelperText>
+                                </FormHelperText>
+                            </FormGroup>
+                            <FormGroup label="Tag pattern" fieldId="baseImageTagPattern" isRequired>
+                                <TextInput
+                                    id="baseImageTagPattern"
+                                    type="text"
+                                    value={editFormik.values.baseImageTagPattern}
+                                    validated={
+                                        editFormik.errors.baseImageTagPattern &&
+                                        editFormik.touched.baseImageTagPattern
+                                            ? 'error'
+                                            : 'default'
+                                    }
+                                    onChange={(e) => editFormik.handleChange(e)}
+                                    onBlur={editFormik.handleBlur}
+                                    isDisabled={isSubmitting}
+                                    placeholder="22.04 or 3.*"
+                                    isRequired
+                                />
+                                <FormHelperText>
+                                    <HelperText>
+                                        {editFormik.errors.baseImageTagPattern &&
+                                            editFormik.touched.baseImageTagPattern && (
+                                                <HelperTextItem variant="error">
+                                                    {editFormik.errors.baseImageTagPattern}
+                                                </HelperTextItem>
+                                            )}
+                                        <HelperTextItem>
+                                            Tag can be a specific version or pattern (e.g., 1.*)
+                                        </HelperTextItem>
+                                    </HelperText>
+                                </FormHelperText>
+                            </FormGroup>
+                        </Form>
+                    ) : (
+                        <Form onSubmit={addFormik.handleSubmit}>
+                            <FormGroup label="Base image path" fieldId="baseImagePath" isRequired>
+                                <TextInput
+                                    id="baseImagePath"
+                                    type="text"
+                                    value={addFormik.values.baseImagePath}
+                                    validated={
+                                        addFormik.errors.baseImagePath &&
+                                        addFormik.touched.baseImagePath
+                                            ? 'error'
+                                            : 'default'
+                                    }
+                                    onChange={(e) => addFormik.handleChange(e)}
+                                    onBlur={addFormik.handleBlur}
+                                    isDisabled={isSubmitting}
+                                    placeholder="example-registry.io/path/to/image:tag"
+                                    isRequired
+                                />
+                                <FormHelperText>
+                                    <HelperText>
+                                        {addFormik.errors.baseImagePath &&
+                                            addFormik.touched.baseImagePath && (
+                                                <HelperTextItem variant="error">
+                                                    {addFormik.errors.baseImagePath}
+                                                </HelperTextItem>
+                                            )}
+                                        <HelperTextItem>
+                                            Include repository path and tag (e.g.,
+                                            example-registry.io/path/to/image:tag). Tag can be a
+                                            pattern (e.g., 1.*)
+                                        </HelperTextItem>
+                                    </HelperText>
+                                </FormHelperText>
+                            </FormGroup>
+                        </Form>
+                    )}
+                </Flex>
+            </ModalBody>
+            <ModalFooter>
                 <Button
-                    key="save"
                     variant="primary"
                     onClick={formik.submitForm}
                     isLoading={isSubmitting}
                     isDisabled={isSubmitting || !formik.isValid}
                 >
                     Save
-                </Button>,
-                <Button
-                    key="cancel"
-                    variant="link"
-                    onClick={handleModalClose}
-                    isDisabled={isSubmitting}
-                >
+                </Button>
+                <Button variant="link" onClick={handleModalClose} isDisabled={isSubmitting}>
                     Cancel
-                </Button>,
-            ]}
-        >
-            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
-                {activeMutation.isSuccess && (
-                    <Alert variant="success" isInline title={successMessage} component="p" />
-                )}
-                {activeMutation.isError && (
-                    <Alert variant="danger" isInline title={errorTitle} component="p">
-                        {getAxiosErrorMessage(activeMutation.error)}
-                    </Alert>
-                )}
-                {isEditMode ? (
-                    <Form onSubmit={editFormik.handleSubmit}>
-                        <FormGroup label="Repository path" fieldId="baseImageRepoPath">
-                            <TextInput
-                                id="baseImageRepoPath"
-                                type="text"
-                                value={baseImageToEdit.baseImageRepoPath}
-                                isDisabled
-                                aria-label="Repository path (read-only)"
-                            />
-                            <FormHelperText>
-                                <HelperText>
-                                    <HelperTextItem>
-                                        Repository path cannot be changed after creation
-                                    </HelperTextItem>
-                                </HelperText>
-                            </FormHelperText>
-                        </FormGroup>
-                        <FormGroup label="Tag pattern" fieldId="baseImageTagPattern" isRequired>
-                            <TextInput
-                                id="baseImageTagPattern"
-                                type="text"
-                                value={editFormik.values.baseImageTagPattern}
-                                validated={
-                                    editFormik.errors.baseImageTagPattern &&
-                                    editFormik.touched.baseImageTagPattern
-                                        ? 'error'
-                                        : 'default'
-                                }
-                                onChange={(e) => editFormik.handleChange(e)}
-                                onBlur={editFormik.handleBlur}
-                                isDisabled={isSubmitting}
-                                placeholder="22.04 or 3.*"
-                                isRequired
-                            />
-                            <FormHelperText>
-                                <HelperText>
-                                    {editFormik.errors.baseImageTagPattern &&
-                                        editFormik.touched.baseImageTagPattern && (
-                                            <HelperTextItem variant="error">
-                                                {editFormik.errors.baseImageTagPattern}
-                                            </HelperTextItem>
-                                        )}
-                                    <HelperTextItem>
-                                        Tag can be a specific version or pattern (e.g., 1.*)
-                                    </HelperTextItem>
-                                </HelperText>
-                            </FormHelperText>
-                        </FormGroup>
-                    </Form>
-                ) : (
-                    <Form onSubmit={addFormik.handleSubmit}>
-                        <FormGroup label="Base image path" fieldId="baseImagePath" isRequired>
-                            <TextInput
-                                id="baseImagePath"
-                                type="text"
-                                value={addFormik.values.baseImagePath}
-                                validated={
-                                    addFormik.errors.baseImagePath &&
-                                    addFormik.touched.baseImagePath
-                                        ? 'error'
-                                        : 'default'
-                                }
-                                onChange={(e) => addFormik.handleChange(e)}
-                                onBlur={addFormik.handleBlur}
-                                isDisabled={isSubmitting}
-                                placeholder="example-registry.io/path/to/image:tag"
-                                isRequired
-                            />
-                            <FormHelperText>
-                                <HelperText>
-                                    {addFormik.errors.baseImagePath &&
-                                        addFormik.touched.baseImagePath && (
-                                            <HelperTextItem variant="error">
-                                                {addFormik.errors.baseImagePath}
-                                            </HelperTextItem>
-                                        )}
-                                    <HelperTextItem>
-                                        Include repository path and tag (e.g.,
-                                        example-registry.io/path/to/image:tag). Tag can be a pattern
-                                        (e.g., 1.*)
-                                    </HelperTextItem>
-                                </HelperText>
-                            </FormHelperText>
-                        </FormGroup>
-                    </Form>
-                )}
-            </Flex>
+                </Button>
+            </ModalFooter>
         </Modal>
     );
 }
