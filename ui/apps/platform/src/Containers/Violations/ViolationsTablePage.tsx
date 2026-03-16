@@ -129,10 +129,7 @@ function ViolationsTablePage(): ReactElement {
     // Node policies have no admission controller evaluation, so the Attempted tab
     // is not applicable. Reset to Active if user switches to Node view while on it.
     useEffect(() => {
-        if (
-            filteredWorkflowView === 'Node view' &&
-            selectedViolationStateTab === 'ATTEMPTED'
-        ) {
+        if (filteredWorkflowView === 'Node view' && selectedViolationStateTab === 'ATTEMPTED') {
             setSelectedViolationStateTab('ACTIVE');
         }
     }, [filteredWorkflowView, selectedViolationStateTab, setSelectedViolationStateTab]);
