@@ -105,7 +105,7 @@ function InitBundleForm(): ReactElement {
 
     function onChangePlatform(value) {
         return setValues({
-            installation: value === 'OpenShift' ? 'Operator' : 'Helm',
+            installation: 'Operator',
             name: values.name, // redundant but function requires all values
             platform: value,
         });
@@ -171,21 +171,16 @@ function InitBundleForm(): ReactElement {
                                 id="installation"
                                 value={values.installation}
                                 handleSelect={onSelectInstallation}
-                                isDisabled={values.platform !== 'OpenShift'}
                                 toggleAriaLabel="Installation method menu toggle"
                                 aria-label="Select an installation method"
                             >
-                                {Object.entries(installationOptions)
-                                    .filter(
-                                        ([installationKey]) =>
-                                            values.platform === 'OpenShift' ||
-                                            installationKey !== 'Operator'
-                                    )
-                                    .map(([installationKey, installationLabel]) => (
+                                {Object.entries(installationOptions).map(
+                                    ([installationKey, installationLabel]) => (
                                         <SelectOption key={installationKey} value={installationKey}>
                                             {installationLabel}
                                         </SelectOption>
-                                    ))}
+                                    )
+                                )}
                             </SelectSingle>
                             <FormHelperText>
                                 <HelperText>
