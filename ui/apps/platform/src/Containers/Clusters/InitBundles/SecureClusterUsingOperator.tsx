@@ -64,7 +64,7 @@ function SecureClusterUsingOperator({
                 </ListItem>
                 <ListItem>
                     <p>
-                        In the cluster that you are securing, you have installed the RHACS Operator.
+                        You have installed the RHACS Operator on the cluster you are securing.
                     </p>
                     <p>
                         For Operator installation, create a new project or namespace.{' '}
