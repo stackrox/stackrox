@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Sets some necessary variables up for local testing.
-# JIRA_TOKEN still has to be set manually.
+# JIRA_TOKEN, JIRA_USER and JIRA_BASE_URL still have to be set manually.
 #
 # Usage example:
 #     bash local-env.sh check-jira-release 3.73.0 ROX
@@ -26,7 +26,8 @@ SCRIPTS_ROOT=$(git rev-parse --show-toplevel)/.github/workflows/scripts
 CI="false" # true if running in GitHub context
 export CI
 
-# shellcheck source=./common.sh
+# Supress shellcheck false warning:
+# shellcheck source=/dev/null
 source "$SCRIPTS_ROOT/common.sh"
 
 SCRIPT="$SCRIPTS_ROOT/$1.sh"
