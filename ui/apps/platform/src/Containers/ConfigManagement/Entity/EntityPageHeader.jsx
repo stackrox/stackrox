@@ -25,7 +25,7 @@ const EntityPageHeader = ({ entityType, entityId, urlParams, isExporting, setIsE
         <PageHeader
             header={header}
             subHeader={subHeader}
-            classes="z-1 pr-0 ignore-react-onclickoutside"
+            classes="z-1 pr-0"
         >
             <div className="flex flex-1 justify-end h-full">
                 <div className="flex items-center">
