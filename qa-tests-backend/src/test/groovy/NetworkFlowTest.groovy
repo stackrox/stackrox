@@ -566,8 +566,7 @@ class NetworkFlowTest extends BaseSpecification {
         assert deploymentUid != null
         String targetUrl
         if (Env.mustGetOrchestratorType() == OrchestratorTypes.K8S) {
-            String deploymentIP = deployments[NGINXCONNECTIONTARGET]?.loadBalancerIP
-            Deployment nginxDeployment = deployments.find { it.name == NGINXCONNECTIONTARGET }
+            Deployment nginxDeployment = deployments[NGINXCONNECTIONTARGET]
             assert nginxDeployment != null : "Deployment ${NGINXCONNECTIONTARGET} not found in deployments list."
             assert nginxDeployment.loadBalancerIP != null :
                     "LoadBalancer IP is not set for ${NGINXCONNECTIONTARGET}." +
@@ -671,21 +670,13 @@ class NetworkFlowTest extends BaseSpecification {
         Assume.assumeFalse(Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT)
         given:
         "Deployment A, exposed via LB"
-        String deploymentUid = deployments[NGINXCONNECTIONTARGET]?.deploymentUid
-        assert deploymentUid != null
-<<<<<<< HEAD
-        String deploymentIP = deployments[NGINXCONNECTIONTARGET]?.loadBalancerIP
-        assert deploymentIP != null : "LoadBalancer IP was not provisioned for ${NGINXCONNECTIONTARGET}." +
-||||||| parent of 6204a24a2a (fix the weak assumption on the missing IP cause)
-        String deploymentIP = deployments.find { it.name == NGINXCONNECTIONTARGET }?.loadBalancerIP
-        assert deploymentIP != null : "LoadBalancer IP was not provisioned for ${NGINXCONNECTIONTARGET}." +
-=======
-        Deployment nginxDeployment = deployments.find { it.name == NGINXCONNECTIONTARGET }
+        Deployment nginxDeployment = deployments[NGINXCONNECTIONTARGET]
         assert nginxDeployment != null : "Deployment ${NGINXCONNECTIONTARGET} not found in deployments list."
         String deploymentIP = nginxDeployment.loadBalancerIP
         assert deploymentIP != null : "LoadBalancer IP is not set for ${NGINXCONNECTIONTARGET}." +
->>>>>>> 6204a24a2a (fix the weak assumption on the missing IP cause)
                 " Check waitForLoadBalancer() logs for timeout details."
+        String deploymentUid = nginxDeployment?.deploymentUid
+        assert deploymentUid != null
 
         when:
         "create a new deployment that talks to A via the LB IP"
