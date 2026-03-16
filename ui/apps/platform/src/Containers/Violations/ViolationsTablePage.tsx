@@ -24,6 +24,7 @@ import { VIOLATION_STATES } from 'constants/violationStates';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import type { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import { updateSearchFilter } from 'Components/CompoundSearchFilter/utils/utils';
+import { nodeWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import type { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import type { SearchFilter } from 'types/search';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -125,6 +126,17 @@ function ViolationsTablePage(): ReactElement {
         violationStateTabs
     );
     const { filteredWorkflowView } = useFilteredWorkflowViewURLState();
+
+    // Node policies have no admission controller evaluation, so the Attempted tab
+    // is not applicable. Reset to Active if user switches to Node view while on it.
+    useEffect(() => {
+        if (
+            filteredWorkflowView === nodeWorkflowView &&
+            selectedViolationStateTab === 'ATTEMPTED'
+        ) {
+            setSelectedViolationStateTab('ACTIVE');
+        }
+    }, [filteredWorkflowView, selectedViolationStateTab, setSelectedViolationStateTab]);
 
     const hasExecutableFilter =
         Object.keys(searchFilter).length &&
@@ -316,11 +328,13 @@ function ViolationsTablePage(): ReactElement {
                         tabContentId={tabContentId}
                         title={<TabTitleText>Resolved</TabTitleText>}
                     />
-                    <Tab
-                        eventKey="ATTEMPTED"
-                        tabContentId={tabContentId}
-                        title={<TabTitleText>Attempted</TabTitleText>}
-                    />
+                    {filteredWorkflowView !== nodeWorkflowView && (
+                        <Tab
+                            eventKey="ATTEMPTED"
+                            tabContentId={tabContentId}
+                            title={<TabTitleText>Attempted</TabTitleText>}
+                        />
+                    )}
                 </Tabs>
             </PageSection>
             <PageSection>
