@@ -54,8 +54,8 @@ const validationSchema: yup.ObjectSchema<InitBundleFormValues> = yup.object().sh
             'Name can have only the following characters: letters, digits, period, underscore, hyphen (but no spaces)'
         )
         .required('Bundle name is required'),
-    installation: yup.string().trim().required(), // Select
-    platform: yup.string().trim().required(), // Radio
+    installation: yup.string<InstallationKey>().trim().oneOf(['Operator', 'Helm']).required(),
+    platform: yup.string<PlatformKey>().trim().oneOf(['OpenShift', 'EKS', 'AKS', 'GKE']).required(),
 });
 
 function InitBundleForm(): ReactElement {
