@@ -13,7 +13,7 @@ function SecureClusterUsingOperator({
     return (
         <Flex direction={{ default: 'column' }}>
             <p>
-                You can install secured cluster services on your clusters by using the{' '}
+                You can install secured cluster services on your clusters using the{' '}
                 <strong>SecuredCluster</strong> custom resource.
             </p>
             <Title headingLevel={subHeadingLevel}>Prerequisites</Title>
@@ -21,13 +21,11 @@ function SecureClusterUsingOperator({
                 <ListItem>
                     <p>
                         In the RHACS web portal, you have created a cluster registration secret and
-                        downloaded the YAML file for the cluster registration secret.
+                        downloaded its YAML file.
                     </p>
                 </ListItem>
                 <ListItem>
-                    <p>
-                        You have installed the RHACS Operator on the cluster you are securing.
-                    </p>
+                    <p>You have installed the RHACS Operator on the cluster you are securing.</p>
                     <p>
                         For Operator installation, create a new project or namespace.{' '}
                         <strong>rhacs-operator</strong> is a good name choice.
@@ -46,9 +44,7 @@ function SecureClusterUsingOperator({
                 </ListItem>
                 <ListItem>
                     <p>Apply the cluster registration secret on the secured cluster. </p>
-                    <p>
-                        Perform one of the following tasks to apply the cluster registration secret:
-                    </p>
+                    <p>Apply it using one of the following methods:</p>
                     <List component="ul">
                         <ListItem>
                             <p>
@@ -85,10 +81,7 @@ function SecureClusterUsingOperator({
                     </List>
                 </ListItem>
                 <ListItem>
-                    <p>
-                        On the cluster that you are securing, install secured cluster services using
-                        the RHACS Operator.
-                    </p>
+                    <p>Install secured cluster services on the cluster using the RHACS Operator.</p>
                 </ListItem>
             </List>
         </Flex>

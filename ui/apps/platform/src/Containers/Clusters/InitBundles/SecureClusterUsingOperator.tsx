@@ -51,21 +51,19 @@ function SecureClusterUsingOperator({
                 </>
             )}
             <p>
-                You can install secured cluster services on your clusters by using the{' '}
+                You can install secured cluster services on your clusters using the{' '}
                 <strong>SecuredCluster</strong> custom resource.
             </p>
             <Title headingLevel={subHeadingLevel}>Prerequisites</Title>
             <List component="ul">
                 <ListItem>
                     <p>
-                        In the RHACS web portal, you have created an init bundle and downloaded the
-                        YAML file for the init bundle.
+                        In the RHACS web portal, you have created an init bundle and downloaded its
+                        YAML file.
                     </p>
                 </ListItem>
                 <ListItem>
-                    <p>
-                        You have installed the RHACS Operator on the cluster you are securing.
-                    </p>
+                    <p>You have installed the RHACS Operator on the cluster you are securing.</p>
                     <p>
                         For Operator installation, create a new project or namespace.{' '}
                         <strong>rhacs-operator</strong> is a good name choice.
@@ -89,8 +87,8 @@ function SecureClusterUsingOperator({
                     <p>Apply the init bundle on the secured cluster. </p>
                     <p>
                         Applying the init bundle creates the secrets and resources that the secured
-                        cluster needs to communicate with RHACS. Perform one of the following tasks
-                        to apply the init bundle:
+                        cluster needs to communicate with RHACS. Apply it using one of the following
+                        methods:
                     </p>
                     {version && (
                         <ExternalLink>
@@ -139,10 +137,7 @@ function SecureClusterUsingOperator({
                     </List>
                 </ListItem>
                 <ListItem>
-                    <p>
-                        On the cluster that you are securing, install secured cluster services using
-                        the RHACS Operator.
-                    </p>
+                    <p>Install secured cluster services on the cluster using the RHACS Operator.</p>
                 </ListItem>
             </List>
         </Flex>
