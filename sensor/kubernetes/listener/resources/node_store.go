@@ -102,7 +102,7 @@ func (s *nodeStoreImpl) getNode(nodeName string) *nodeWrap {
 
 func (s *nodeStoreImpl) getNodeByPrefix(prefix string) *nodeWrap {
 	s.mutex.RLock()
-	s.mutex.RUnlock()
+	defer s.mutex.RUnlock()
 
 	for k := range s.nodes {
 		if strings.HasPrefix(k, prefix) {
