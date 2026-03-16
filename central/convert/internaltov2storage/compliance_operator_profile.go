@@ -43,7 +43,7 @@ func centralToStorageProfileKind(kind central.ComplianceOperatorProfileV2_Operat
 	case central.ComplianceOperatorProfileV2_TAILORED_PROFILE:
 		return storage.ComplianceOperatorProfileV2_TAILORED_PROFILE
 	case central.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
-		return storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED
+		return storage.ComplianceOperatorProfileV2_PROFILE
 	default:
 		log.Warnf("Unexpected profile operator kind %v", kind)
 		return storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED
