@@ -81,7 +81,7 @@ func (m *manager) shouldBypass(s *state, req *admission.AdmissionRequest) bool {
 // due to the absence (or presence) of image scans.
 func hasNonNoScanAlerts(alerts []*storage.Alert) bool {
 	for _, a := range alerts {
-		if !policyfields.ContainsScanRequiredFields(a.GetPolicy()) {
+		if !policyfields.AlertsOnMissingEnrichment(a.GetPolicy()) {
 			return true
 		}
 	}
@@ -93,7 +93,7 @@ func hasNonNoScanAlerts(alerts []*storage.Alert) bool {
 func filterOutNoScanAlerts(alerts []*storage.Alert) []*storage.Alert {
 	filteredAlerts := alerts[:0]
 	for _, a := range alerts {
-		if policyfields.ContainsScanRequiredFields(a.GetPolicy()) {
+		if policyfields.AlertsOnMissingEnrichment(a.GetPolicy()) {
 			continue
 		}
 		filteredAlerts = append(filteredAlerts, a)
