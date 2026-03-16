@@ -159,11 +159,9 @@ func TestProcessEvent_ExtendsProfile(t *testing.T) {
 	}, ruleNames)
 }
 
-// TestProcessEvent_FromScratch tests that TPs without Extends work (only EnableRules) and
-// that the tailored profile's own annotations (including product-type) are used as fallback.
-// This is important: without the fallback, productType would be empty, causing BuildProfileRefID
-// to produce a different hash than the one computed from the scan's scanType, breaking the JOIN.
-func TestProcessEvent_FromScratch(t *testing.T) {
+// TestProcessEvent_StoresTailoredProfileMetadata tests that all metadata fields are stored
+// from the tailored profile itself, rather than from the base profile it extends.
+func TestProcessEvent_StoresTailoredProfileMetadata(t *testing.T) {
 	tp := &v1alpha1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "tp-from-scratch",
@@ -175,6 +173,42 @@ func TestProcessEvent_FromScratch(t *testing.T) {
 			Labels: map[string]string{
 				"some-label": "some-value",
 			},
+		},
+		Spec: v1alpha1.TailoredProfileSpec{
+			Description: "My tailored description",
+			EnableRules: []v1alpha1.RuleReferenceSpec{
+				{Name: "ocp4-api-server-anonymous-auth"},
+			},
+		},
+		Status: v1alpha1.TailoredProfileStatus{
+			ID:    "xccdf_compliance.openshift.io_profile_tp-from-scratch",
+			State: "READY",
+		},
+	}
+
+	dispatcher := NewTailoredProfileDispatcher(newMockProfileLister())
+	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
+
+	require.NotNil(t, event)
+	require.NotEmpty(t, event.ForwardMessages)
+	profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
+
+	assert.Equal(t, "tp-from-scratch", profile.GetName())
+	assert.Equal(t, "tp-uid", profile.GetId())
+	assert.Equal(t, "xccdf_compliance.openshift.io_profile_tp-from-scratch", profile.GetProfileId())
+	assert.Equal(t, "My tailored description", profile.GetDescription())
+	assert.Equal(t, "Platform", profile.GetAnnotations()[v1alpha1.ProductTypeAnnotation])
+	assert.Equal(t, "some-value", profile.GetLabels()["some-label"])
+}
+
+// TestProcessEvent_FromScratch tests that TPs without Extends work: only EnableRules are included,
+// with no base profile rules.
+func TestProcessEvent_FromScratch(t *testing.T) {
+	tp := &v1alpha1.TailoredProfile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "tp-from-scratch",
+			Namespace: "openshift-compliance",
+			UID:       "tp-uid",
 		},
 		Spec: v1alpha1.TailoredProfileSpec{
 			// No Extends
@@ -189,19 +223,13 @@ func TestProcessEvent_FromScratch(t *testing.T) {
 		},
 	}
 
-	lister := newMockProfileLister() // No base profile needed
-	dispatcher := NewTailoredProfileDispatcher(lister)
+	dispatcher := NewTailoredProfileDispatcher(newMockProfileLister())
 	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
 
 	require.NotNil(t, event)
 	require.NotEmpty(t, event.ForwardMessages)
 	profile := event.ForwardMessages[0].GetComplianceOperatorProfile()
 
-	// Annotations from the tailored profile itself must be present.
-	assert.Equal(t, "Platform", profile.GetAnnotations()[v1alpha1.ProductTypeAnnotation])
-	assert.Equal(t, "some-value", profile.GetLabels()["some-label"])
-
-	// Only enabled rules should be present
 	ruleNames := make([]string, len(profile.GetRules()))
 	for i, r := range profile.GetRules() {
 		ruleNames[i] = r.GetName()
