@@ -1,7 +1,6 @@
 package tokens
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
