@@ -17,8 +17,6 @@ const (
 	internalTokenId = "https://stackrox.io/jwt-sources#internal-rox-tokens"
 	//#nosec G101 -- This constant is only there as a source type name, not as a credential.
 	internalToken = "internal-token"
-
-	defaultSourcePurgeInterval = 5 * time.Minute
 )
 
 var (
