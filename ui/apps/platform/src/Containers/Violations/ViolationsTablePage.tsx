@@ -168,6 +168,11 @@ function ViolationsTablePage(): ReactElement {
     };
 
     useEffectAfterFirstRender(() => {
+        setSearchFilter({});
+        setPage(1);
+    }, [filteredWorkflowView, setSearchFilter, setPage]);
+
+    useEffectAfterFirstRender(() => {
         if (hasExecutableFilter && !isViewFiltered) {
             // If the user applies a filter to a previously unfiltered table, return to page 1
             setIsViewFiltered(true);
@@ -350,6 +355,7 @@ function ViolationsTablePage(): ReactElement {
                             onFilterChange={setSearchFilter}
                             onSearch={onSearch}
                             additionalContextFilter={additionalContextFilter}
+                            filteredWorkflowView={filteredWorkflowView}
                             hasActiveViolations={selectedViolationStateTab === 'ACTIVE'}
                             isTableDataUpdating={isTableDataUpdating}
                         />
