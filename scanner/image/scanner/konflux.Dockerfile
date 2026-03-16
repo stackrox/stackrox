@@ -44,6 +44,7 @@ COPY --from=builder \
     /src/scanner/image/scanner/scripts/entrypoint.sh \
     /src/scanner/image/scanner/scripts/import-additional-cas \
     /src/scanner/image/scanner/scripts/restore-all-dir-contents \
+    /src/scanner/image/scanner/scripts/fix-etc-pki-permissions \
     /src/scanner/image/scanner/scripts/save-dir-contents \
     /src/scanner/image/scanner/bin/scanner \
     /usr/local/bin/

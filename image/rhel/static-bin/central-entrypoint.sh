@@ -21,6 +21,7 @@ if [ "$(id -u)" == 0 ]; then
      exec su-exec 4000:4000 "$0" "$@"
 fi
 
+fix-etc-pki-permissions
 restore-all-dir-contents
 import-additional-cas
 
