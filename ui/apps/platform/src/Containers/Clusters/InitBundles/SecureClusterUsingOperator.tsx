@@ -18,7 +18,7 @@ function SecureClusterUsingOperator({
     return (
         <Flex direction={{ default: 'column' }}>
             <Title headingLevel={headingLevel}>
-                Secure a cluster using Operator installation method
+                Secure a cluster using the Operator installation method
             </Title>
             {version && (
                 <>
@@ -109,9 +109,9 @@ function SecureClusterUsingOperator({
                     <List component="ul">
                         <ListItem>
                             <p>
-                                On an OpenShift cluster: In the OpenShift Container Platform web
-                                console on the cluster that you are securing, in the top menu, click{' '}
-                                <strong>+</strong> to open the <strong>Import YAML</strong> page.
+                                On an OpenShift cluster, in the OpenShift Container Platform web
+                                console, in the top menu, click <strong>+</strong> to open the{' '}
+                                <strong>Import YAML</strong> page.
                             </p>
                             <p>
                                 You can drag the init bundle file or copy and paste its contents

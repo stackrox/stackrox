@@ -47,15 +47,14 @@ function SecureClusterUsingOperator({
                 <ListItem>
                     <p>Apply the cluster registration secret on the secured cluster. </p>
                     <p>
-                        Perform one of the following tasks to apply the cluster registration
-                        secrets:
+                        Perform one of the following tasks to apply the cluster registration secret:
                     </p>
                     <List component="ul">
                         <ListItem>
                             <p>
-                                On an OpenShift cluster: In the OpenShift Container Platform web
-                                console on the cluster that you are securing, in the top menu, click{' '}
-                                <strong>+</strong> to open the <strong>Import YAML</strong> page.
+                                On an OpenShift cluster, in the OpenShift Container Platform web
+                                console, in the top menu, click <strong>+</strong> to open the{' '}
+                                <strong>Import YAML</strong> page.
                             </p>
                             <p>
                                 You can drag the cluster registration secret file or copy and paste
