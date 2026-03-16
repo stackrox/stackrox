@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "master-base/gualvare/ROX-33477-update-ssb-logic-to-handle-tp",
-    "hash": "5b5c7ec043c5c8b8694dcd67d60d7f1f00252e04"
+    "hash": "39c9b2c4f332bb5a0b776ae7ad3fd82ac97d4226"
   },
   "upstream": {
     "branch": "master-base/gualvare/fix-compliance-custom-rules-gotchas"
