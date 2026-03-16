@@ -79,7 +79,11 @@ func (v *Validator) validateSchedule(config *apiV2.ReportConfiguration) error {
 	}
 	switch schedule.GetIntervalType() {
 	case apiV2.ReportSchedule_UNSET:
-		return errors.Wrap(errox.InvalidArgs, "Report configuration schedule must be one of WEEKLY or MONTHLY")
+		return errors.Wrap(errox.InvalidArgs, "Report configuration schedule must be one of DAILY, WEEKLY, or MONTHLY")
+	case apiV2.ReportSchedule_DAILY:
+		if schedule.GetDaysOfWeek() != nil || schedule.GetDaysOfMonth() != nil {
+			return errors.Wrap(errox.InvalidArgs, "Daily schedule must not specify days of week or days of month")
+		}
 	case apiV2.ReportSchedule_WEEKLY:
 		if schedule.GetDaysOfWeek() == nil || len(schedule.GetDaysOfWeek().GetDays()) == 0 {
 			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify days of week for weekly schedule")

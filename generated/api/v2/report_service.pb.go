@@ -268,6 +268,7 @@ const (
 	ReportSchedule_UNSET   ReportSchedule_IntervalType = 0
 	ReportSchedule_WEEKLY  ReportSchedule_IntervalType = 1
 	ReportSchedule_MONTHLY ReportSchedule_IntervalType = 2
+	ReportSchedule_DAILY   ReportSchedule_IntervalType = 3
 )
 
 // Enum value maps for ReportSchedule_IntervalType.
@@ -276,11 +277,13 @@ var (
 		0: "UNSET",
 		1: "WEEKLY",
 		2: "MONTHLY",
+		3: "DAILY",
 	}
 	ReportSchedule_IntervalType_value = map[string]int32{
 		"UNSET":   0,
 		"WEEKLY":  1,
 		"MONTHLY": 2,
+		"DAILY":   3,
 	}
 )
 
@@ -2127,7 +2130,7 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\n" +
 	"cves_since\";\n" +
 	"#ViewBasedVulnerabilityReportFilters\x12\x14\n" +
-	"\x05query\x18\x05 \x01(\tR\x05query\"\x90\x03\n" +
+	"\x05query\x18\x05 \x01(\tR\x05query\"\x9b\x03\n" +
 	"\x0eReportSchedule\x12D\n" +
 	"\rinterval_type\x18\x01 \x01(\x0e2\x1f.v2.ReportSchedule.IntervalTypeR\fintervalType\x12\x12\n" +
 	"\x04hour\x18\x02 \x01(\x05R\x04hour\x12\x16\n" +
@@ -2139,12 +2142,13 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"DaysOfWeek\x12\x12\n" +
 	"\x04days\x18\x01 \x03(\x05R\x04days\x1a!\n" +
 	"\vDaysOfMonth\x12\x12\n" +
-	"\x04days\x18\x01 \x03(\x05R\x04days\"2\n" +
+	"\x04days\x18\x01 \x03(\x05R\x04days\"=\n" +
 	"\fIntervalType\x12\t\n" +
 	"\x05UNSET\x10\x00\x12\n" +
 	"\n" +
 	"\x06WEEKLY\x10\x01\x12\v\n" +
-	"\aMONTHLY\x10\x02B\n" +
+	"\aMONTHLY\x10\x02\x12\t\n" +
+	"\x05DAILY\x10\x03B\n" +
 	"\n" +
 	"\bInterval\"h\n" +
 	"\rResourceScope\x12D\n" +
