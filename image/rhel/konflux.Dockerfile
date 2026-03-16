@@ -64,8 +64,7 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:69f5c9886ecb19b23
 ARG PG_VERSION
 
 RUN microdnf -y module enable postgresql:${PG_VERSION} && \
-    # find is used in /stackrox/import-additional-cas \
-    microdnf -y install findutils postgresql && \
+    microdnf -y install postgresql && \
     microdnf -y clean all && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum
