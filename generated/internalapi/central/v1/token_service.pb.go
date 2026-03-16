@@ -95,10 +95,10 @@ type GenerateTokenForPermissionsAndScopeRequest struct {
 	Permissions   map[string]Access    `protobuf:"bytes,1,rep,name=permissions,proto3" json:"permissions,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=central.v1.Access"`
 	ClusterScopes []*ClusterScope      `protobuf:"bytes,2,rep,name=cluster_scopes,json=clusterScopes,proto3" json:"cluster_scopes,omitempty"`
 	Lifetime      *durationpb.Duration `protobuf:"bytes,3,opt,name=lifetime,proto3" json:"lifetime,omitempty"`
-	// The audience field allows to set a custom string for the audience
-	// in the generated token. This can allow finer-grain tracking
+	// The requester field allows to set a custom string in the generated token,
+	// identifying who requested it. This can allow finer-grain tracking
 	// of who requested an internal token in the audit log trail.
-	Audience      string `protobuf:"bytes,4,opt,name=audience,proto3" json:"audience,omitempty"`
+	Requester     string `protobuf:"bytes,4,opt,name=requester,proto3" json:"requester,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -154,9 +154,9 @@ func (x *GenerateTokenForPermissionsAndScopeRequest) GetLifetime() *durationpb.D
 	return nil
 }
 
-func (x *GenerateTokenForPermissionsAndScopeRequest) GetAudience() string {
+func (x *GenerateTokenForPermissionsAndScopeRequest) GetRequester() string {
 	if x != nil {
-		return x.Audience
+		return x.Requester
 	}
 	return ""
 }
@@ -278,12 +278,12 @@ var File_internalapi_central_v1_token_service_proto protoreflect.FileDescriptor
 const file_internalapi_central_v1_token_service_proto_rawDesc = "" +
 	"\n" +
 	"*internalapi/central/v1/token_service.proto\x12\n" +
-	"central.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\"\xff\x02\n" +
+	"central.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1egoogle/protobuf/duration.proto\"\x81\x03\n" +
 	"*GenerateTokenForPermissionsAndScopeRequest\x12i\n" +
 	"\vpermissions\x18\x01 \x03(\v2G.central.v1.GenerateTokenForPermissionsAndScopeRequest.PermissionsEntryR\vpermissions\x12?\n" +
 	"\x0ecluster_scopes\x18\x02 \x03(\v2\x18.central.v1.ClusterScopeR\rclusterScopes\x125\n" +
-	"\blifetime\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\blifetime\x12\x1a\n" +
-	"\baudience\x18\x04 \x01(\tR\baudience\x1aR\n" +
+	"\blifetime\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\blifetime\x12\x1c\n" +
+	"\trequester\x18\x04 \x01(\tR\trequester\x1aR\n" +
 	"\x10PermissionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12(\n" +
 	"\x05value\x18\x02 \x01(\x0e2\x12.central.v1.AccessR\x05value:\x028\x01\"}\n" +

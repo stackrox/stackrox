@@ -28,6 +28,8 @@ type RoxClaims struct {
 	ExternalUser *ExternalUserClaim `json:"external_user,omitempty"`
 	// Name represents the name of the token assigned by the creator.
 	Name string `json:"name,omitempty"`
+	// Requester represents the name of the token requester, assigned by the creator.
+	Requester string `json:"req,omitempty"`
 }
 
 // Claims are the claims contained in a token.

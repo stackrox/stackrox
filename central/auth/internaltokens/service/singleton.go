@@ -6,7 +6,10 @@ import (
 	clusterStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/jwt"
 	roleStore "github.com/stackrox/rox/central/role/datastore"
+	"github.com/stackrox/rox/pkg/auth/authproviders/tokenbased"
+	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -26,10 +29,8 @@ var (
 // Singleton returns a new auth service instance.
 func Singleton() Service {
 	once.Do(func() {
-		issuerMgr := newIssuerManager(jwt.IssuerFactorySingleton(), defaultSourcePurgeInterval)
-		issuerMgr.Start()
 		s = &serviceImpl{
-			issuerManager: issuerMgr,
+			issuer: getTokenIssuer(jwt.IssuerFactorySingleton()),
 			roleManager: &roleManager{
 				clusterStore: clusterStore.Singleton(),
 				roleStore:    roleStore.Singleton(),
@@ -39,4 +40,19 @@ func Singleton() Service {
 		}
 	})
 	return s
+}
+
+func getTokenSource() tokens.Source {
+	return tokenbased.NewTokenAuthProvider(
+		internalTokenId,
+		internalToken,
+		internalToken,
+		tokenbased.WithRevocationLayer(tokens.NewRevocationLayer()),
+	)
+}
+
+func getTokenIssuer(issuerFactory tokens.IssuerFactory) tokens.Issuer {
+	issuer, err := issuerFactory.CreateIssuer(getTokenSource())
+	utils.Must(err)
+	return issuer
 }
