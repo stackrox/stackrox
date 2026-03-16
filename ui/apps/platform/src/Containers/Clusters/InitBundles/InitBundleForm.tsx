@@ -68,7 +68,6 @@ function InitBundleForm(): ReactElement {
         isSubmitting,
         isValid,
         setFieldValue,
-        setValues,
         submitForm,
         touched,
         values,
@@ -104,11 +103,7 @@ function InitBundleForm(): ReactElement {
     }
 
     function onChangePlatform(value) {
-        return setValues({
-            installation: 'Operator',
-            name: values.name, // redundant but function requires all values
-            platform: value,
-        });
+        return setFieldValue('platform', value);
     }
 
     function onSelectInstallation(_id: string, value: string) {
