@@ -346,12 +346,12 @@ The following block checks for the validity of the provided init bundle. (`helm 
   {{ include "srox.fail" "A CA certificate must be specified (please make sure that either an init bundle or a cluster registration secret has been provided)" }}
 {{- end }}
 
+{{ $imagePullSecretNames := list "stackrox" }}
 [<- if not .KubectlOutput ->]
 {{/*
    Scanner setup.
   */}}
 
-{{ $imagePullSecretNames := list }}
 
 {{ $anyScannerEnabled := or (eq ._rox.scanner.disable false) (eq ._rox.scannerV4.disable false) }}
 {{ if $anyScannerEnabled }}
@@ -386,12 +386,6 @@ The following block checks for the validity of the provided init bundle. (`helm 
     {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox-scanner-v4" }}
   {{ end }}
 
-  {{ if not (empty $imagePullSecretNames) }}
-    {{ $imagePullSecretNames = append $imagePullSecretNames "stackrox" }}
-    {{/* Note: This must happen late, as we rely on "srox.configureImage" to collect the
-        set of all referenced images first. */}}
-    {{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" $imagePullSecretNames $.Release.Namespace) }}
-  {{ end }}
 {{ end }}
 
 [<- end >]
@@ -402,6 +396,7 @@ The following block checks for the validity of the provided init bundle. (`helm 
      set of all referenced images first. */}}
 {{ include "srox.configureImagePullSecrets" (list $ "mainImagePullSecrets" $._rox.mainImagePullSecrets "secured-cluster-services-main" (list "stackrox") $._rox._namespace) }}
 {{ include "srox.configureImagePullSecrets" (list $ "collectorImagePullSecrets" $._rox.collectorImagePullSecrets "secured-cluster-services-collector" (list "stackrox" "collector-stackrox") $._rox._namespace) }}
+{{ include "srox.configureImagePullSecrets" (list $ "imagePullSecrets" $._rox.imagePullSecrets "secured-cluster-services-main" $imagePullSecretNames $._rox._namespace) }}
 
 {{/* Derive internal representation of specific chart configuration settings. */}}
 
