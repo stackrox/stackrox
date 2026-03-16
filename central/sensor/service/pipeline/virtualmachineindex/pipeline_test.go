@@ -327,8 +327,9 @@ func TestPipelineEdgeCases(t *testing.T) {
 
 // mockInjector records InjectMessage calls.
 type mockInjector struct {
-	messages  []*central.MsgToSensor
-	injectErr error
+	messages     []*central.MsgToSensor
+	injectErr    error
+	capabilities map[centralsensor.SensorCapability]bool
 }
 
 func (m *mockInjector) InjectMessage(_ concurrency.Waitable, msg *central.MsgToSensor) error {
@@ -338,13 +339,7 @@ func (m *mockInjector) InjectMessage(_ concurrency.Waitable, msg *central.MsgToS
 
 func (m *mockInjector) InjectMessageIntoQueue(_ *central.MsgFromSensor) {}
 
-// mockInjectorWithCaps wraps mockInjector and additionally implements capabilityChecker.
-type mockInjectorWithCaps struct {
-	mockInjector
-	capabilities map[centralsensor.SensorCapability]bool
-}
-
-func (m *mockInjectorWithCaps) HasCapability(cap centralsensor.SensorCapability) bool {
+func (m *mockInjector) HasCapability(cap centralsensor.SensorCapability) bool {
 	return m.capabilities[cap]
 }
 
@@ -360,7 +355,7 @@ func (suite *PipelineTestSuite) TestRun_SendsACKOnSuccess() {
 		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
 		Return(nil)
 
-	injector := &mockInjectorWithCaps{
+	injector := &mockInjector{
 		capabilities: map[centralsensor.SensorCapability]bool{
 			centralsensor.SensorACKSupport: true,
 		},
@@ -390,7 +385,7 @@ func (suite *PipelineTestSuite) TestRun_NoACKWhenCapabilityMissing() {
 		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
 		Return(nil)
 
-	injector := &mockInjectorWithCaps{
+	injector := &mockInjector{
 		capabilities: map[centralsensor.SensorCapability]bool{},
 	}
 
@@ -411,7 +406,7 @@ func (suite *PipelineTestSuite) TestRun_NoACKOnError() {
 		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
 		Return(errors.New("db error"))
 
-	injector := &mockInjectorWithCaps{
+	injector := &mockInjector{
 		capabilities: map[centralsensor.SensorCapability]bool{
 			centralsensor.SensorACKSupport: true,
 		},
@@ -423,7 +418,7 @@ func (suite *PipelineTestSuite) TestRun_NoACKOnError() {
 }
 
 func TestSendSensorACK_NACK(t *testing.T) {
-	injector := &mockInjectorWithCaps{
+	injector := &mockInjector{
 		capabilities: map[centralsensor.SensorCapability]bool{
 			centralsensor.SensorACKSupport: true,
 		},
@@ -446,12 +441,12 @@ func TestSendSensorACK_NilInjector(t *testing.T) {
 	})
 }
 
-func TestSendSensorACK_InjectorWithoutCapabilityCheck(t *testing.T) {
+func TestSendSensorACK_InjectorWithoutCapabilitySupport(t *testing.T) {
 	injector := &mockInjector{}
 
 	common.SendSensorACK(ctx, central.SensorACK_ACK, central.SensorACK_VM_INDEX_REPORT, "vm-1", "", injector)
 
-	assert.Empty(t, injector.messages, "should not send when injector doesn't implement capabilityChecker")
+	assert.Empty(t, injector.messages, "should not send when SensorACKSupport capability is not advertised")
 }
 
 func TestPipelineRun_DisabledFeature(t *testing.T) {
