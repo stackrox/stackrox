@@ -125,7 +125,7 @@ func ContainsValueWithFieldName(policy *storage.Policy, fieldName string) bool {
 }
 
 // processAndFileAccessInSameSection checks that if a policy contains both Process and FileAccess fields,
-// they must be in the same section.
+// every section with Process must also have FileAccess. FileAccess-only sections are allowed.
 func processAndFileAccessInSameSection(policy *storage.Policy) bool {
 	hasProcess := ContainsOneOf(policy, Process)
 	hasFileAccess := ContainsFileAccessOnly(policy)
@@ -135,10 +135,8 @@ func processAndFileAccessInSameSection(policy *storage.Policy) bool {
 	}
 
 	for _, section := range policy.GetPolicySections() {
-		hasProcessInSection := SectionContainsFieldOfType(section, Process)
-		hasFileAccessInSection := SectionContainsFieldOfType(section, FileAccess)
-
-		if !(hasProcessInSection && hasFileAccessInSection) {
+		if SectionContainsFieldOfType(section, Process) &&
+			!SectionContainsFieldOfType(section, FileAccess) {
 			return false
 		}
 	}
@@ -153,7 +151,6 @@ func ContainsValidRuntimeFieldCategorySections(policy *storage.Policy) bool {
 		return false
 	}
 
-	// Ensure Process and FileAccess are in the same section when both are present
 	if !processAndFileAccessInSameSection(policy) {
 		return false
 	}
@@ -165,9 +162,10 @@ func ContainsValidRuntimeFieldCategorySections(policy *storage.Policy) bool {
 		KubeEvent:   KubeEvent,
 	}
 
+	// Check policy-wide: only one runtime category group allowed across all sections.
+	// Process and FileAccess count as one group since FileAccess events contain process information.
+	groupsSeen := set.NewStringSet()
 	for _, section := range policy.GetPolicySections() {
-		groupsSeen := set.NewStringSet()
-
 		for _, group := range section.GetPolicyGroups() {
 			fieldName := group.GetFieldName()
 			metadata := FieldMetadataSingleton().fieldsToQB[fieldName]
@@ -179,15 +177,11 @@ func ContainsValidRuntimeFieldCategorySections(policy *storage.Policy) bool {
 					groupsSeen.Add(string(fieldTypeGroup))
 				}
 			}
-
-		}
-
-		// A section can only contain fields from one compatibility group
-		if groupsSeen.Cardinality() > 1 {
-			return false
 		}
 	}
-	return true
+
+	// A section can only contain fields from one compatibility group
+	return groupsSeen.Cardinality() <= 1
 }
 
 // SectionContainsFieldOfType returns true if the policy section contains at least one field
