@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/virtualmachine/v2/datastore/store/common"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -29,6 +30,9 @@ type VMStoreTestSuite struct {
 }
 
 func TestVMStore(t *testing.T) {
+	if !features.VirtualMachinesEnhancedDataModel.Enabled() {
+		t.Skip("VM enhanced data model is not enabled")
+	}
 	suite.Run(t, new(VMStoreTestSuite))
 }
 
