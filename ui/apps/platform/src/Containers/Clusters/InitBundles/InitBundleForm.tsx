@@ -110,7 +110,7 @@ function InitBundleForm(): ReactElement {
         return setFieldValue(event.target.id, value);
     }
 
-    function onChangePlatform(value) {
+    function onChangePlatform(value: string) {
         return setFieldValue('platform', value);
     }
 
