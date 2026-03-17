@@ -1,9 +1,23 @@
 package alertmanager
 
 import (
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/metrics"
 )
+
+// observeDurationMs returns a function that, when called, observes the elapsed
+// time in milliseconds since observeDurationMs was invoked. Intended for use
+// with defer:
+//
+//	defer observeDurationMs(myHistogram)()
+func observeDurationMs(h prometheus.Histogram) func() {
+	start := time.Now()
+	return func() {
+		h.Observe(float64(time.Since(start).Milliseconds()))
+	}
+}
 
 var (
 	alertAndNotifyDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
@@ -45,6 +59,12 @@ var (
 		Help:      "Cumulative count of alert outcomes from mergeManyAlerts",
 	}, []string{"outcome"})
 )
+
+func recordAlertOutcomes(newCount, updatedCount, resolvedCount int) {
+	alertOutcomeTotal.WithLabelValues("new").Add(float64(newCount))
+	alertOutcomeTotal.WithLabelValues("updated").Add(float64(updatedCount))
+	alertOutcomeTotal.WithLabelValues("resolved").Add(float64(resolvedCount))
+}
 
 func init() {
 	metrics.EmplaceCollector(
