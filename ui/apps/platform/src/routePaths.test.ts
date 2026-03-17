@@ -19,14 +19,14 @@ describe('routePaths', () => {
                 (resource) => resource === 'ImageAdministration'
             );
             const isFeatureFlagEnabled: IsFeatureFlagEnabled = vi.fn(
-                (flag) => flag === 'ROX_BASE_IMAGE_DETECTION'
+                (flag) => flag === 'ROX_SCANNER_V4'
             );
 
             const enabled = isRouteEnabled({ hasReadAccess, isFeatureFlagEnabled }, 'base-images');
 
             expect(enabled).toBe(true);
             expect(hasReadAccess).toHaveBeenCalledWith('ImageAdministration');
-            expect(isFeatureFlagEnabled).toHaveBeenCalledWith('ROX_BASE_IMAGE_DETECTION');
+            expect(isFeatureFlagEnabled).toHaveBeenCalledWith('ROX_SCANNER_V4');
         });
 
         it('should disable route when feature flag is disabled', () => {

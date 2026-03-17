@@ -349,8 +349,6 @@ describe('Workload CVE overview page tests', () => {
 
     describe('Layer type filter tests', () => {
         it('should apply Layer type filter correctly', () => {
-            interceptAndOverrideFeatureFlags({ ROX_BASE_IMAGE_DETECTION: true });
-
             visitWorkloadCveOverview();
 
             addCheckboxSelectFilter('Image component', 'Layer type', 'Base image');
