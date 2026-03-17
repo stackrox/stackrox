@@ -48,6 +48,11 @@ func getDeploymentIDsFromAlerts(alertSlices ...[]*storage.Alert) set.StringSet {
 
 // AlertAndNotify is the main function that implements the AlertManager interface
 func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (set.StringSet, error) {
+	defer func(start time.Time) {
+		alertAndNotifyDuration.Observe(float64(time.Since(start).Milliseconds()))
+	}(time.Now())
+	alertAndNotifyIncomingCount.Observe(float64(len(currentAlerts)))
+
 	// Merge the old and the new alerts.
 	newAlerts, updatedAlerts, toBeResolvedAlerts, err := d.mergeManyAlerts(ctx, currentAlerts, oldAlertFilters...)
 	if err != nil {
@@ -377,6 +382,13 @@ func (d *alertManagerImpl) mergeManyAlerts(
 	incomingAlerts []*storage.Alert,
 	oldAlertFilters ...AlertFilterOption,
 ) (newAlerts, updatedAlerts, toBeResolvedAlerts []*storage.Alert, err error) {
+	defer func(start time.Time) {
+		mergeManyAlertsDuration.Observe(float64(time.Since(start).Milliseconds()))
+		alertOutcomeTotal.WithLabelValues("new").Add(float64(len(newAlerts)))
+		alertOutcomeTotal.WithLabelValues("updated").Add(float64(len(updatedAlerts)))
+		alertOutcomeTotal.WithLabelValues("resolved").Add(float64(len(toBeResolvedAlerts)))
+	}(time.Now())
+
 	qb := search.NewQueryBuilder().AddExactMatches(
 		search.ViolationState,
 		storage.ViolationState_ACTIVE.String(),
@@ -389,6 +401,7 @@ func (d *alertManagerImpl) mergeManyAlerts(
 		err = errors.Wrapf(err, "couldn't load previous alerts (query was %s)", qb.Query())
 		return
 	}
+	mergeManyAlertsPreviousCount.Observe(float64(len(previousAlerts)))
 
 	// Merge any alerts that have new and old alerts.
 	for _, alert := range incomingAlerts {
