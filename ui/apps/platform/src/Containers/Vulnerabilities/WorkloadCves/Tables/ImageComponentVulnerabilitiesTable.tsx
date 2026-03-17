@@ -54,10 +54,8 @@ function ImageComponentVulnerabilitiesTable({
 }: ImageComponentVulnerabilitiesTableProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isAdvisoryColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const isLayerTypeColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
-    const colSpanForDockerfileLayer =
-        5 + (isAdvisoryColumnEnabled ? 1 : 0) + (isLayerTypeColumnEnabled ? 1 : 0);
+    const colSpanForDockerfileLayer = 6 + (isAdvisoryColumnEnabled ? 1 : 0);
 
     const { sortOption, getSortParams } = useTableSort({ sortFields, defaultSortOption });
     const componentVulns = flattenImageComponentVulns(
@@ -75,7 +73,7 @@ function ImageComponentVulnerabilitiesTable({
                     <Th>CVE fixed in</Th>
                     {isAdvisoryColumnEnabled && <Th>Advisory</Th>}
                     <Th>Source</Th>
-                    {isLayerTypeColumnEnabled && <Th>Layer type</Th>}
+                    <Th>Layer type</Th>
                     <Th>Location</Th>
                 </Tr>
             </Thead>
@@ -114,13 +112,11 @@ function ImageComponentVulnerabilitiesTable({
                                 </Td>
                             )}
                             <Td dataLabel="Source">{source}</Td>
-                            {isLayerTypeColumnEnabled && (
-                                <Td dataLabel="Layer type">
-                                    <Label color={inBaseImageLayer ? 'blue' : 'grey'} isCompact>
-                                        {inBaseImageLayer ? 'Base image' : 'Application'}
-                                    </Label>
-                                </Td>
-                            )}
+                            <Td dataLabel="Layer type">
+                                <Label color={inBaseImageLayer ? 'blue' : 'grey'} isCompact>
+                                    {inBaseImageLayer ? 'Base image' : 'Application'}
+                                </Label>
+                            </Td>
                             <Td dataLabel="Location">
                                 <ComponentLocation location={location} source={source} />
                             </Td>
