@@ -61,13 +61,9 @@ function ImageComponentVulnerabilitiesTable({
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isAdvisoryColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const isOriginColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const isLayerTypeColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const colSpanForDockerfileLayer =
-        7 +
-        (isAdvisoryColumnEnabled ? 1 : 0) +
-        (isOriginColumnEnabled ? 1 : 0) +
-        (isLayerTypeColumnEnabled ? 1 : 0);
+        8 + (isAdvisoryColumnEnabled ? 1 : 0) + (isOriginColumnEnabled ? 1 : 0);
 
     const { sortOption, getSortParams } = useTableSort({ sortFields, defaultSortOption });
     const componentVulns = flattenImageComponentVulns(
@@ -88,7 +84,7 @@ function ImageComponentVulnerabilitiesTable({
                     {isAdvisoryColumnEnabled && <Th>Advisory</Th>}
                     <Th>Source</Th>
                     {isOriginColumnEnabled && <Th>CVE origin</Th>}
-                    {isLayerTypeColumnEnabled && <Th>Layer type</Th>}
+                    <Th>Layer type</Th>
                     <Th>Location</Th>
                 </Tr>
             </Thead>
@@ -140,13 +136,11 @@ function ImageComponentVulnerabilitiesTable({
                             {isOriginColumnEnabled && (
                                 <Td dataLabel="CVE origin">{getOriginDisplayName(origin)}</Td>
                             )}
-                            {isLayerTypeColumnEnabled && (
-                                <Td dataLabel="Layer type">
-                                    <Label color={inBaseImageLayer ? 'blue' : 'grey'} isCompact>
-                                        {inBaseImageLayer ? 'Base image' : 'Application'}
-                                    </Label>
-                                </Td>
-                            )}
+                            <Td dataLabel="Layer type">
+                                <Label color={inBaseImageLayer ? 'blue' : 'grey'} isCompact>
+                                    {inBaseImageLayer ? 'Base image' : 'Application'}
+                                </Label>
+                            </Td>
                             <Td dataLabel="Location">
                                 <ComponentLocation location={location} source={source} />
                             </Td>

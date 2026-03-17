@@ -14,28 +14,16 @@ import { getLinkToDeploymentInNetworkGraph, isRouteEnabled } from './routePaths'
  */
 describe('routePaths', () => {
     describe('isRouteEnabled for base-images', () => {
-        it('should enable route when feature flag is enabled and user has ImageAdministration read access', () => {
+        it('should enable route when user has ImageAdministration read access', () => {
             const hasReadAccess: HasReadAccess = vi.fn(
                 (resource) => resource === 'ImageAdministration'
             );
-            const isFeatureFlagEnabled: IsFeatureFlagEnabled = vi.fn(
-                (flag) => flag === 'ROX_SCANNER_V4'
-            );
+            const isFeatureFlagEnabled: IsFeatureFlagEnabled = vi.fn(() => false);
 
             const enabled = isRouteEnabled({ hasReadAccess, isFeatureFlagEnabled }, 'base-images');
 
             expect(enabled).toBe(true);
             expect(hasReadAccess).toHaveBeenCalledWith('ImageAdministration');
-            expect(isFeatureFlagEnabled).toHaveBeenCalledWith('ROX_SCANNER_V4');
-        });
-
-        it('should disable route when feature flag is disabled', () => {
-            const hasReadAccess: HasReadAccess = vi.fn(() => true);
-            const isFeatureFlagEnabled: IsFeatureFlagEnabled = vi.fn(() => false);
-
-            const enabled = isRouteEnabled({ hasReadAccess, isFeatureFlagEnabled }, 'base-images');
-
-            expect(enabled).toBe(false);
         });
 
         it('should disable route when user lacks ImageAdministration read access', () => {

@@ -153,7 +153,6 @@ function ImagePageVulnerabilities({
     setSearchFilter,
 }: ImagePageVulnerabilitiesProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isBaseImageDetectionEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const isNewImageDataModelEnabled = isFeatureFlagEnabled('ROX_FLATTEN_IMAGE_DATA');
 
     const { analyticsTrack } = useAnalytics();
@@ -304,7 +303,7 @@ function ImagePageVulnerabilities({
                 </Content>
             </PageSection>
             <Divider component="div" />
-            {isBaseImageDetectionEnabled && baseImage && (
+            {baseImage && (
                 <PageSection component="div">
                     <BaseImageAssessmentCard baseImage={baseImage} />
                 </PageSection>
