@@ -863,7 +863,7 @@ func (d *detectorImpl) pushFileAccess(ctx context.Context, access *storage.FileA
 		item.Deployment = deployment
 		item.Netpols = d.getNetworkPoliciesApplied(deployment)
 	} else {
-		node := d.nodeStore.GetNode(access.GetHostname())
+		node := d.nodeStore.GetNodeByHostname(access.GetHostname())
 		if node == nil {
 			log.Warnf("Node %+v does not exist in store", access.GetHostname())
 			return
