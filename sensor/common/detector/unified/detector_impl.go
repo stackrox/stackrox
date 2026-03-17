@@ -26,8 +26,8 @@ func (d *detectorImpl) ReconcilePolicies(newList []*storage.Policy) {
 	})
 }
 
-func (d *detectorImpl) DetectDeployment(ctx deploytime.DetectionContext, enhancedDeployment booleanpolicy.EnhancedDeployment) []*storage.Alert {
-	alerts, err := d.deploytimeDetector.Detect(context.Background(), ctx, enhancedDeployment)
+func (d *detectorImpl) DetectDeployment(enhancedDeployment booleanpolicy.EnhancedDeployment) []*storage.Alert {
+	alerts, err := d.deploytimeDetector.Detect(context.Background(), enhancedDeployment)
 	if err != nil {
 		log.Errorf("Error running detection on deployment %q: %v", enhancedDeployment.Deployment.GetName(), err)
 	}

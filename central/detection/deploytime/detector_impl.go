@@ -20,11 +20,6 @@ func (d *detectorImpl) PolicySet() detection.PolicySet {
 }
 
 // Detect runs detection on a deployment, returning any generated alerts.
-func (d *detectorImpl) Detect(goctx context.Context, ctx deploytime.DetectionContext, enhancedDeployment booleanpolicy.EnhancedDeployment, policyFilters ...detection.FilterOption) ([]*storage.Alert, error) {
-	alerts, err := d.singleDetector.Detect(goctx, ctx, enhancedDeployment, policyFilters...)
-	if err != nil {
-		return nil, err
-	}
-
-	return alerts, nil
+func (d *detectorImpl) Detect(ctx context.Context, enhancedDeployment booleanpolicy.EnhancedDeployment, opts ...deploytime.DetectOption) ([]*storage.Alert, error) {
+	return d.singleDetector.Detect(ctx, enhancedDeployment, opts...)
 }
