@@ -21,6 +21,9 @@ os.environ["SENSOR_SCANNER_SUPPORT"] = "true"
 os.environ["ROX_DEPLOY_SENSOR_WITH_CRS"] = "true"
 os.environ["SENSOR_HELM_MANAGED"] = "true"
 
+# Enable the Fact (SFA) agent in the collector DaemonSet
+os.environ["SFA_AGENT"] = "true"
+
 ClusterTestRunner(
     cluster=GKECluster("nongroovy-test"),
     pre_test=PreSystemTests(),
