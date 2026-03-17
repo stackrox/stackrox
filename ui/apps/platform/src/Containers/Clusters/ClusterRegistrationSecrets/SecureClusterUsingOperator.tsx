@@ -43,7 +43,7 @@ function SecureClusterUsingOperator({
                     </List>
                 </ListItem>
                 <ListItem>
-                    <p>Apply the cluster registration secret on the secured cluster. </p>
+                    <p>Apply the cluster registration secret on the secured cluster.</p>
                     <p>Apply it using one of the following methods:</p>
                     <List component="ul">
                         <ListItem>

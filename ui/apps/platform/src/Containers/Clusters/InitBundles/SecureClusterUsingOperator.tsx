@@ -84,7 +84,7 @@ function SecureClusterUsingOperator({
             <Title headingLevel={subHeadingLevel}>Repeat for each secured cluster</Title>
             <List component="ol">
                 <ListItem>
-                    <p>Apply the init bundle on the secured cluster. </p>
+                    <p>Apply the init bundle on the secured cluster.</p>
                     <p>
                         Applying the init bundle creates the secrets and resources that the secured
                         cluster needs to communicate with RHACS. Apply it using one of the following
