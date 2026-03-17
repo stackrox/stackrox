@@ -5,6 +5,9 @@ export type SecureClusterUsingOperatorProps = {
     headingLevel: 'h2' | 'h3';
 };
 
+const ocApplyCommand = 'oc create -f <cluster-registration-secret-file>.yaml -n stackrox';
+const kubectlApplyCommand = 'kubectl create -f <cluster-registration-secret-file>.yaml -n stackrox';
+
 function SecureClusterUsingOperator({
     headingLevel,
 }: SecureClusterUsingOperatorProps): ReactElement {
@@ -63,20 +66,14 @@ function SecureClusterUsingOperator({
                                 On an OpenShift cluster: using the <strong>oc</strong> CLI, run a
                                 command similar to the following:
                             </p>
-                            <ClipboardCopy>
-                                {'oc create -f <cluster-registration-secret-file>.yaml -n stackrox'}
-                            </ClipboardCopy>
+                            <ClipboardCopy>{ocApplyCommand}</ClipboardCopy>
                         </ListItem>
                         <ListItem>
                             <p>
                                 On other clusters: using the <strong>kubectl</strong> CLI, run a
                                 command similar to the following:
                             </p>
-                            <ClipboardCopy>
-                                {
-                                    'kubectl create -f <cluster-registration-secret-file>.yaml -n stackrox'
-                                }
-                            </ClipboardCopy>
+                            <ClipboardCopy>{kubectlApplyCommand}</ClipboardCopy>
                         </ListItem>
                     </List>
                 </ListItem>
