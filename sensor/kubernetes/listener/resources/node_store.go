@@ -104,13 +104,24 @@ func (s *nodeStoreImpl) getNodeByPrefix(prefix string) *nodeWrap {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
+	var match *nodeWrap
 	for k, v := range s.nodes {
 		if strings.HasPrefix(k, prefix) {
-			return v
+			if match != nil {
+				log.Warnf("Additional nodes match prefix %q: %s", prefix, match.Name)
+			}
+			if match == nil || k < match.Name {
+				// favor the closest match, whether the prefix matches more
+				// of the string. This serves two purposes:
+				//   1. it is deterministic
+				//   2. it returns the most likely requested node of the multiple
+				//      matches
+				match = v
+			}
 		}
 	}
 
-	return nil
+	return match
 }
 
 // GetNode returns node with a given name or nil if not found
