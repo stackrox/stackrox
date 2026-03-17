@@ -47,6 +47,8 @@ ARG PG_VERSION
 COPY --from=ubi-micro-base / /out/
 
 # Install packages not in ubi-micro (bash and coreutils-single already present)
+# Note: --setopt=reposdir=/etc/yum.repos.d instructs dnf to use repo configurations pointing to RPMs
+# prefetched by Hermeto/Cachi2, instead of installroot's default UBI repos.
 RUN dnf install -y \
         --installroot=/out/ \
         --setopt=reposdir=/etc/yum.repos.d \
@@ -56,7 +58,7 @@ RUN dnf install -y \
         findutils \
         util-linux \
         ca-certificates \
-        curl && \
+        openssl && \
     dnf module enable -y \
         --installroot=/out/ \
         --setopt=reposdir=/etc/yum.repos.d \

@@ -40,8 +40,7 @@ RUN dnf install -y \
         --nodocs \
         findutils \
         util-linux \
-        ca-certificates \
-        curl && \
+        ca-certificates && \
     dnf --installroot=/out/ clean all && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
@@ -124,5 +123,3 @@ EXPOSE 8443
 USER 4000:4000
 
 ENTRYPOINT ["/stackrox/roxctl"]
-
-HEALTHCHECK CMD curl --insecure --fail https://127.0.0.1:8443/v1/ping
