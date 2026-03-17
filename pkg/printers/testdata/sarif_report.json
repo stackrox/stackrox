@@ -1,143 +1,230 @@
 {
-  "version": "2.1.0",
   "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
   "runs": [
     {
+      "addresses": [],
+      "graphs": [],
+      "invocations": [],
+      "language": "en-US",
+      "logicalLocations": [],
+      "newlineSequences": [
+        "\r\n",
+        "\n"
+      ],
+      "policies": [],
+      "redactionTokens": [],
+      "results": [
+        {
+          "attachments": [],
+          "codeFlows": [],
+          "fixes": [],
+          "graphTraversals": [],
+          "graphs": [],
+          "kind": "fail",
+          "level": "error",
+          "locations": [
+            {
+              "annotations": null,
+              "id": 0,
+              "logicalLocations": null,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": -1,
+                  "uri": "docker.io/nginx:1.19"
+                },
+                "region": {
+                  "byteOffset": -1,
+                  "charOffset": -1,
+                  "endLine": 1,
+                  "startLine": 1
+                }
+              },
+              "relationships": null
+            }
+          ],
+          "message": {
+            "arguments": [],
+            "text": "something about misconfiguration"
+          },
+          "rank": -1,
+          "relatedLocations": [],
+          "ruleId": "first-violation",
+          "ruleIndex": -1,
+          "stacks": [],
+          "taxa": []
+        },
+        {
+          "attachments": [],
+          "codeFlows": [],
+          "fixes": [],
+          "graphTraversals": [],
+          "graphs": [],
+          "kind": "fail",
+          "level": "note",
+          "locations": [
+            {
+              "annotations": null,
+              "id": 0,
+              "logicalLocations": null,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": -1,
+                  "uri": "docker.io/nginx:1.19"
+                },
+                "region": {
+                  "byteOffset": -1,
+                  "charOffset": -1,
+                  "endLine": 1,
+                  "startLine": 1
+                }
+              },
+              "relationships": null
+            }
+          ],
+          "message": {
+            "arguments": [],
+            "text": "something about vulnerabilities"
+          },
+          "rank": -1,
+          "relatedLocations": [],
+          "ruleId": "second-violation",
+          "ruleIndex": -1,
+          "stacks": [],
+          "taxa": []
+        },
+        {
+          "attachments": [],
+          "codeFlows": [],
+          "fixes": [],
+          "graphTraversals": [],
+          "graphs": [],
+          "kind": "fail",
+          "level": "error",
+          "locations": [
+            {
+              "annotations": null,
+              "id": 0,
+              "logicalLocations": null,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": -1,
+                  "uri": "docker.io/nginx:1.19"
+                },
+                "region": {
+                  "byteOffset": -1,
+                  "charOffset": -1,
+                  "endLine": 1,
+                  "startLine": 1
+                }
+              },
+              "relationships": null
+            }
+          ],
+          "message": {
+            "arguments": [],
+            "text": "something about secrets"
+          },
+          "rank": -1,
+          "relatedLocations": [],
+          "ruleId": "third-violation",
+          "ruleIndex": -1,
+          "stacks": [],
+          "taxa": []
+        }
+      ],
+      "runAggregates": [],
+      "taxonomies": [],
+      "threadFlowLocations": [],
       "tool": {
         "driver": {
+          "contents": [
+            "localizedData",
+            "nonLocalizedData"
+          ],
           "fullName": "roxctl command line utility",
           "informationUri": "https://github.com/stackrox/stackrox",
+          "isComprehensive": false,
+          "language": "en-US",
+          "locations": [],
           "name": "roxctl",
+          "notifications": [],
           "rules": [
             {
-              "id": "first-violation",
-              "name": "PolicyViolations",
-              "shortDescription": {
-                "text": "first-violation"
-              },
               "fullDescription": {
                 "text": "first-violation"
               },
               "help": {
                 "text": "something about misconfiguration"
               },
+              "id": "first-violation",
+              "name": "PolicyViolations",
               "properties": {
                 "precision": "very-high",
                 "tags": [
                   "policy-violation",
                   "IMPORTANT"
                 ]
+              },
+              "relationships": [],
+              "shortDescription": {
+                "text": "first-violation"
               }
             },
             {
-              "id": "second-violation",
-              "name": "PolicyViolations",
-              "shortDescription": {
-                "text": "second-violation"
-              },
               "fullDescription": {
                 "text": "second-violation"
               },
               "help": {
                 "text": "something about vulnerabilities"
               },
+              "id": "second-violation",
+              "name": "PolicyViolations",
               "properties": {
                 "precision": "very-high",
                 "tags": [
                   "policy-violation",
                   "LOW"
                 ]
+              },
+              "relationships": [],
+              "shortDescription": {
+                "text": "second-violation"
               }
             },
             {
-              "id": "third-violation",
-              "name": "PolicyViolations",
-              "shortDescription": {
-                "text": "third-violation"
-              },
               "fullDescription": {
                 "text": "third-violation"
               },
               "help": {
                 "text": "something about secrets"
               },
+              "id": "third-violation",
+              "name": "PolicyViolations",
               "properties": {
                 "precision": "very-high",
                 "tags": [
                   "policy-violation",
                   "CRITICAL"
                 ]
+              },
+              "relationships": [],
+              "shortDescription": {
+                "text": "third-violation"
               }
             }
           ],
+          "supportedTaxonomies": [],
+          "taxa": [],
           "version": ""
-        }
+        },
+        "extensions": []
       },
-      "results": [
-        {
-          "ruleId": "first-violation",
-          "ruleIndex": 0,
-          "level": "error",
-          "message": {
-            "text": "something about misconfiguration"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "docker.io/nginx:1.19"
-                },
-                "region": {
-                  "startLine": 1,
-                  "endLine": 1
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "second-violation",
-          "ruleIndex": 1,
-          "level": "note",
-          "message": {
-            "text": "something about vulnerabilities"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "docker.io/nginx:1.19"
-                },
-                "region": {
-                  "startLine": 1,
-                  "endLine": 1
-                }
-              }
-            }
-          ]
-        },
-        {
-          "ruleId": "third-violation",
-          "ruleIndex": 2,
-          "level": "error",
-          "message": {
-            "text": "something about secrets"
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "docker.io/nginx:1.19"
-                },
-                "region": {
-                  "startLine": 1,
-                  "endLine": 1
-                }
-              }
-            }
-          ]
-        }
-      ]
+      "translations": [],
+      "versionControlProvenance": [],
+      "webRequests": [],
+      "webResponses": []
     }
-  ]
+  ],
+  "properties": {}
 }
