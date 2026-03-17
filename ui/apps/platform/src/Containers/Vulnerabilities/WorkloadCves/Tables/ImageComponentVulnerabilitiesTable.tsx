@@ -61,7 +61,7 @@ function ImageComponentVulnerabilitiesTable({
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isAdvisoryColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const isOriginColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const isLayerTypeColumnEnabled = isFeatureFlagEnabled('ROX_BASE_IMAGE_DETECTION');
+    const isLayerTypeColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const colSpanForDockerfileLayer =
         7 +
