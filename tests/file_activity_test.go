@@ -34,8 +34,7 @@ func TestFileActivity(t *testing.T) {
 	policyService := v1.NewPolicyServiceClient(conn)
 	alertService := v1.NewAlertServiceClient(conn)
 
-	restoreFactPaths := patchFactPaths(t, k8sClient)
-	t.Cleanup(restoreFactPaths)
+	patchFactPaths(t, k8sClient)
 
 	t.Run("DeploymentLevel", func(t *testing.T) {
 		deploymentName := "fa-test-" + uuid.NewV4().String()[:8]

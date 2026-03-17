@@ -4,9 +4,7 @@ package tests
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -52,137 +50,22 @@ func skipIfNoFact(t *testing.T) {
 	t.Skip("Fact container not found or not running in collector pods, skipping file activity test")
 }
 
-// patchFactPaths appends /tmp/**/* to the FACT_PATHS env var on the Fact container
-// in the collector DaemonSet. Returns a restore function that reverts the change.
-func patchFactPaths(t *testing.T, client kubernetes.Interface) func() {
+// patchFactPaths ensures /tmp/**/* is included in the FACT_PATHS env var on the
+// Fact container in the collector DaemonSet, then waits for the rollout.
+func patchFactPaths(t *testing.T, client kubernetes.Interface) {
 	t.Helper()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	ds, err := client.AppsV1().DaemonSets(namespaces.StackRox).Get(ctx, "collector", metaV1.GetOptions{})
-	require.NoError(t, err, "getting collector DaemonSet")
+	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"spec":{"containers":[{"name":%q,"env":[{"name":"FACT_PATHS","value":"/tmp/**/*"}]}]}}}}`, factContainerName))
 
-	factIdx := -1
-	for i, c := range ds.Spec.Template.Spec.Containers {
-		if c.Name == factContainerName {
-			factIdx = i
-			break
-		}
-	}
-	require.NotEqual(t, -1, factIdx, "Fact container not found in collector DaemonSet")
-
-	// Find current FACT_PATHS value.
-	envIdx := -1
-	originalValue := ""
-	for i, env := range ds.Spec.Template.Spec.Containers[factIdx].Env {
-		if env.Name == "FACT_PATHS" {
-			envIdx = i
-			originalValue = env.Value
-			break
-		}
-	}
-
-	const tmpGlob = "/tmp/**/*"
-
-	if strings.Contains(originalValue, tmpGlob) {
-		t.Log("FACT_PATHS already contains /tmp/**/*")
-		return func() {}
-	}
-
-	newValue := originalValue
-	if newValue == "" {
-		newValue = tmpGlob
-	} else {
-		newValue = newValue + ":" + tmpGlob
-	}
-
-	var patch []map[string]interface{}
-	if envIdx >= 0 {
-		patch = []map[string]interface{}{
-			{
-				"op":    "replace",
-				"path":  fmt.Sprintf("/spec/template/spec/containers/%d/env/%d/value", factIdx, envIdx),
-				"value": newValue,
-			},
-		}
-	} else {
-		patch = []map[string]interface{}{
-			{
-				"op":   "add",
-				"path": fmt.Sprintf("/spec/template/spec/containers/%d/env/-", factIdx),
-				"value": map[string]interface{}{
-					"name":  "FACT_PATHS",
-					"value": newValue,
-				},
-			},
-		}
-	}
-
-	patchBytes, err := json.Marshal(patch)
-	require.NoError(t, err, "marshalling patch")
-
-	_, err = client.AppsV1().DaemonSets(namespaces.StackRox).Patch(
-		ctx, "collector", types.JSONPatchType, patchBytes, metaV1.PatchOptions{})
+	_, err := client.AppsV1().DaemonSets(namespaces.StackRox).Patch(
+		ctx, "collector", types.StrategicMergePatchType, patch, metaV1.PatchOptions{})
 	require.NoError(t, err, "patching collector DaemonSet FACT_PATHS")
-	t.Logf("Patched FACT_PATHS to %q", newValue)
+	t.Log("Patched FACT_PATHS to include /tmp/**/*")
 
 	waitForCollectorReady(t, client)
-
-	restore := func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-
-		var restorePatch []map[string]interface{}
-		if envIdx >= 0 {
-			restorePatch = []map[string]interface{}{
-				{
-					"op":    "replace",
-					"path":  fmt.Sprintf("/spec/template/spec/containers/%d/env/%d/value", factIdx, envIdx),
-					"value": originalValue,
-				},
-			}
-		} else {
-			// Remove the env var we added (it was last).
-			ds, err := client.AppsV1().DaemonSets(namespaces.StackRox).Get(ctx, "collector", metaV1.GetOptions{})
-			if err != nil {
-				t.Logf("Warning: failed to get DaemonSet for FACT_PATHS restore: %v", err)
-				return
-			}
-			newEnvIdx := -1
-			for i, env := range ds.Spec.Template.Spec.Containers[factIdx].Env {
-				if env.Name == "FACT_PATHS" {
-					newEnvIdx = i
-					break
-				}
-			}
-			if newEnvIdx < 0 {
-				return
-			}
-			restorePatch = []map[string]interface{}{
-				{
-					"op":   "remove",
-					"path": fmt.Sprintf("/spec/template/spec/containers/%d/env/%d", factIdx, newEnvIdx),
-				},
-			}
-		}
-
-		restoreBytes, err := json.Marshal(restorePatch)
-		if err != nil {
-			t.Logf("Warning: failed to marshal restore patch: %v", err)
-			return
-		}
-		_, err = client.AppsV1().DaemonSets(namespaces.StackRox).Patch(
-			ctx, "collector", types.JSONPatchType, restoreBytes, metaV1.PatchOptions{})
-		if err != nil {
-			t.Logf("Warning: failed to restore FACT_PATHS: %v", err)
-		} else {
-			t.Log("Restored FACT_PATHS")
-			waitForCollectorReady(t, client)
-		}
-	}
-
-	return restore
 }
 
 // createFileActivityPolicy builds a storage.Policy for file activity detection.
