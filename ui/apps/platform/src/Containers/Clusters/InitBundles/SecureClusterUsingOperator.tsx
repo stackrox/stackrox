@@ -122,7 +122,7 @@ function SecureClusterUsingOperator({
                                 command similar to the following:
                             </p>
                             <ClipboardCopy>
-                                oc create -f &lt;init-bundle-file&gt;.yaml -n stackrox
+                                {'oc create -f <init-bundle-file>.yaml -n stackrox'}
                             </ClipboardCopy>
                         </ListItem>
                         <ListItem>
@@ -131,7 +131,7 @@ function SecureClusterUsingOperator({
                                 command similar to the following:
                             </p>
                             <ClipboardCopy>
-                                kubectl create -f &lt;init-bundle-file&gt;.yaml -n stackrox
+                                {'kubectl create -f <init-bundle-file>.yaml -n stackrox'}
                             </ClipboardCopy>
                         </ListItem>
                     </List>
