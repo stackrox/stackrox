@@ -18,7 +18,7 @@ var (
 // Detector is a thin layer atop the other detectors that provides a unified interface.
 type Detector interface {
 	ReconcilePolicies(newList []*storage.Policy)
-	DetectDeployment(ctx deploytime.DetectionContext, deployment booleanpolicy.EnhancedDeployment) []*storage.Alert
+	DetectDeployment(deployment booleanpolicy.EnhancedDeployment) []*storage.Alert
 	DetectProcess(enhancedDeployment booleanpolicy.EnhancedDeployment, processIndicator *storage.ProcessIndicator, processNotInBaseline bool) []*storage.Alert
 	DetectKubeEventForDeployment(enhancedDeployment booleanpolicy.EnhancedDeployment, kubeEvent *storage.KubernetesEvent) []*storage.Alert
 	DetectNetworkFlowForDeployment(enhancedDeployment booleanpolicy.EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) []*storage.Alert

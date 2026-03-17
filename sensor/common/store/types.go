@@ -92,6 +92,7 @@ type EndpointManager interface {
 // NodeStore represents a collection of Nodes
 type NodeStore interface {
 	GetNode(nodeName string) *storage.Node
+	GetNodeByHostname(hostname string) *storage.Node
 }
 
 // HashReconciler is the logic that will generate sensor messages based on a deduper state.

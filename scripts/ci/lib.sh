@@ -1729,6 +1729,7 @@ post_process_test_results() {
             -build-tag "${STACKROX_BUILD_TAG}" \
             -csv-output "${csv_output}" \
             -jira-project "${jira_project}" \
+            -jira-url "https://redhat.atlassian.net/" \
             -job-name "${JOB_NAME}" \
             -junit-reports-dir "${ARTIFACT_DIR}" \
             -orchestrator "${ORCHESTRATOR_FLAVOR:-PROW}" \

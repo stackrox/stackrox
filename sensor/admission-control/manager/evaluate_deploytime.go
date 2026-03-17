@@ -25,12 +25,6 @@ const (
 	ScaleSubResource = "scale"
 )
 
-var (
-	detectionCtx = deploytime.DetectionContext{
-		EnforcementOnly: true,
-	}
-)
-
 func (m *manager) shouldBypass(s *state, req *admission.AdmissionRequest) bool {
 	if !s.activeForOperation(req.Operation) {
 		log.Debugf("Not enforcing on operation, bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
@@ -177,10 +171,11 @@ func (m *manager) evaluateFastPath(s *state, req *admission.AdmissionRequest, de
 		return nil, nil
 	}
 
-	alerts, err := s.specOnlyDeployDetector.Detect(context.Background(), detectionCtx, booleanpolicy.EnhancedDeployment{
+	alerts, err := s.specOnlyDeployDetector.Detect(context.Background(), booleanpolicy.EnhancedDeployment{
 		Deployment: deployment,
 		Images:     toPlaceholderImages(deployment),
-	})
+	}, deploytime.WithEnforcementOnly())
+
 	if err != nil {
 		observeAdmissionReview(reviewResultError, time.Since(start))
 		return nil, errors.Wrapf(err, "running %s detection", branding.GetProductNameShort())
@@ -216,10 +211,10 @@ func (m *manager) evaluateSlowPath(s *state, req *admission.AdmissionRequest, de
 	}
 
 	getAlertsFunc := func(dep *storage.Deployment, imgs []*storage.Image) ([]*storage.Alert, error) {
-		return s.enrichmentRequiredDeployDetector.Detect(context.Background(), detectionCtx, booleanpolicy.EnhancedDeployment{
+		return s.enrichmentRequiredDeployDetector.Detect(context.Background(), booleanpolicy.EnhancedDeployment{
 			Deployment: dep,
 			Images:     imgs,
-		})
+		}, deploytime.WithEnforcementOnly())
 	}
 
 	alerts, err := m.kickOffImgScansAndDetect(fetchImgCtx, s, getAlertsFunc, deployment)
