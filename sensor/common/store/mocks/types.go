@@ -707,6 +707,20 @@ func (mr *MockNodeStoreMockRecorder) GetNode(nodeName any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNode", reflect.TypeOf((*MockNodeStore)(nil).GetNode), nodeName)
 }
 
+// GetNodeByHostname mocks base method.
+func (m *MockNodeStore) GetNodeByHostname(hostname string) *storage.Node {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNodeByHostname", hostname)
+	ret0, _ := ret[0].(*storage.Node)
+	return ret0
+}
+
+// GetNodeByHostname indicates an expected call of GetNodeByHostname.
+func (mr *MockNodeStoreMockRecorder) GetNodeByHostname(hostname any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeByHostname", reflect.TypeOf((*MockNodeStore)(nil).GetNodeByHostname), hostname)
+}
+
 // MockHashReconciler is a mock of HashReconciler interface.
 type MockHashReconciler struct {
 	ctrl     *gomock.Controller
