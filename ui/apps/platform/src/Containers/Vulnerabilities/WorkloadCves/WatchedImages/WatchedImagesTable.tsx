@@ -33,20 +33,12 @@ function WatchedImagesTable({
                 </Bullseye>
             )}
             {watchedImages.length > 0 && (
-                <Table
-                    aria-labelledby={props['aria-labelledby']}
-                    variant="compact"
-                    style={
-                        {
-                            '--pf-v5-c-table--m-compact--cell--first-last-child--PaddingLeft': '0',
-                        } as CSSProperties
-                    }
-                >
+                <Table aria-labelledby={props['aria-labelledby']} variant="compact">
                     <Thead noWrap>
                         <Tr>
                             <Th>Image</Th>
                             <Th>
-                                <span className="pf-v5-screen-reader">Row action</span>
+                                <span className="pf-v6-screen-reader">Row action</span>
                             </Th>
                         </Tr>
                     </Thead>
@@ -54,13 +46,12 @@ function WatchedImagesTable({
                         {watchedImages.map(({ name }) => (
                             <Tr key={name}>
                                 <Td dataLabel="Image">{name}</Td>
-                                <Td dataLabel="Row action" className="pf-v5-u-text-align-right">
+                                <Td dataLabel="Row action" className="pf-v6-u-text-align-right">
                                     <Button
                                         variant="link"
-                                        isInline
                                         icon={
                                             <Icon>
-                                                <MinusCircleIcon color="var(--pf-v5-global--danger-color--100)" />
+                                                <MinusCircleIcon color="var(--pf-t--global--icon--color--status--danger--default)" />
                                             </Icon>
                                         }
                                         onClick={() => unwatchImage(name)}

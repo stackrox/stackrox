@@ -99,10 +99,11 @@ function CollectionsTable({
         <>
             <Toolbar>
                 <ToolbarContent>
-                    <ToolbarItem variant="search-filter" className="pf-v5-u-flex-grow-1">
+                    <ToolbarItem className="pf-v6-u-flex-grow-1">
                         <SearchInput
                             aria-label="Search by name"
                             placeholder="Search by name"
+                            className="pf-v6-u-w-100"
                             value={searchValue}
                             onChange={onSearchInputChange}
                             onSearch={() => setSearchFilter({ 'Collection Name': searchValue })}
@@ -112,7 +113,7 @@ function CollectionsTable({
                             }}
                         />
                     </ToolbarItem>
-                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                         <Pagination
                             isCompact
                             itemCount={collectionsCount}
@@ -135,7 +136,7 @@ function CollectionsTable({
                         <Th modifier="wrap">Description</Th>
                         {hasWriteAccess && (
                             <Th>
-                                <span className="pf-v5-screen-reader">Row actions</span>
+                                <span className="pf-v6-screen-reader">Row actions</span>
                             </Th>
                         )}
                     </Tr>

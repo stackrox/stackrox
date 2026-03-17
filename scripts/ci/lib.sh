@@ -1720,7 +1720,7 @@ post_process_test_results() {
         # we will fallback to short commit
         base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
         calculated_base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
-        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.25/junit2jira -o junit2jira && \
+        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.26/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "${base_link:-$calculated_base_link}" \
@@ -1729,6 +1729,7 @@ post_process_test_results() {
             -build-tag "${STACKROX_BUILD_TAG}" \
             -csv-output "${csv_output}" \
             -jira-project "${jira_project}" \
+            -jira-url "https://redhat.atlassian.net/" \
             -job-name "${JOB_NAME}" \
             -junit-reports-dir "${ARTIFACT_DIR}" \
             -orchestrator "${ORCHESTRATOR_FLAVOR:-PROW}" \
@@ -1756,7 +1757,7 @@ gate_flaky_tests() {
     fi
 
     # Prepare flakechecker
-    curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.25/flakechecker -o /tmp/flakechecker || exit "${exit_code}"
+    curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.26/flakechecker -o /tmp/flakechecker || exit "${exit_code}"
     chmod +x /tmp/flakechecker
     setup_gcp || echo "setup_gcp called"
 

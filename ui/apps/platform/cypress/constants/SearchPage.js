@@ -11,12 +11,12 @@ export const selectors = {
         input: search.input,
         options: search.input,
     }),
-    empty: scopeSelectors('.pf-v5-c-empty-state', {
+    empty: scopeSelectors('.pf-v6-c-empty-state', {
         head: 'h1',
-        body: '.pf-v5-c-empty-state__body',
+        body: '.pf-v6-c-empty-state__body',
     }),
-    tab: 'li.pf-v5-c-tabs__item',
-    count: '.pf-v5-c-badge',
+    tab: 'li.pf-v6-c-tabs__item',
+    count: '.pf-v6-c-badge',
     globalSearchResults: scopeSelectors('[data-testid="global-search-results"]', {
         header: 'h1',
     }),

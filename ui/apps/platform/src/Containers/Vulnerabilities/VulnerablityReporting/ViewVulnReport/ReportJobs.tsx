@@ -15,6 +15,7 @@ import {
     Bullseye,
     Button,
     Card,
+    Content,
     Divider,
     Flex,
     FlexItem,
@@ -22,7 +23,6 @@ import {
     SelectOption,
     Spinner,
     Switch,
-    Text,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -123,7 +123,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
     return (
         <>
             <Toolbar>
-                <ToolbarContent>
+                <ToolbarContent alignItems="center">
                     <ToolbarItem>
                         <CheckboxSelect
                             ariaLabel="Report status filter"
@@ -152,16 +152,15 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                             </SelectOption>
                         </CheckboxSelect>
                     </ToolbarItem>
-                    <ToolbarItem className="pf-v5-u-flex-grow-1">
+                    <ToolbarItem className="pf-v6-u-flex-grow-1">
                         <Switch
                             id="view-only-my-jobs"
                             label="View only my jobs"
-                            labelOff="View only my jobs"
                             isChecked={showOnlyMyJobs}
                             onChange={(_event, checked: boolean) => handleChange(checked)}
                         />
                     </ToolbarItem>
-                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                    <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                         <Pagination
                             toggleTemplate={({ firstIndex, lastIndex }) => (
                                 <span>
@@ -180,21 +179,20 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
-            <Divider component="div" />
             {error && (
-                <Bullseye className="pf-v5-u-background-color-100">
+                <Bullseye>
                     <EmptyStateTemplate
                         title="Error loading report jobs"
                         headingLevel="h2"
                         icon={ExclamationCircleIcon}
-                        iconClassName="pf-v5-u-danger-color-100"
+                        status="danger"
                     >
                         {error}
                     </EmptyStateTemplate>
                 </Bullseye>
             )}
             {isLoading && !reportSnapshots && (
-                <Bullseye className="pf-v5-u-background-color-100 pf-v5-u-p-lg">
+                <Bullseye className="pf-v6-u-p-lg">
                     <Spinner aria-label="Loading report jobs" />
                 </Bullseye>
             )}
@@ -203,7 +201,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                     <Thead>
                         <Tr>
                             <Th>
-                                <span className="pf-v5-screen-reader">Row expansion</span>
+                                <span className="pf-v6-screen-reader">Row expansion</span>
                             </Th>
                             <Th width={25} sort={getSortParams('Report Completion Time')}>
                                 Completed
@@ -211,7 +209,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                             <Th width={25}>Status</Th>
                             <Th width={50}>Requester</Th>
                             <Th>
-                                <span className="pf-v5-screen-reader">Row actions</span>
+                                <span className="pf-v6-screen-reader">Row actions</span>
                             </Th>
                         </Tr>
                     </Thead>
@@ -224,7 +222,9 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                                             title="No report jobs found"
                                             headingLevel="h2"
                                         >
-                                            <Text>Clear any search value and try again</Text>
+                                            <Content component="p">
+                                                Clear any search value and try again
+                                            </Content>
                                             <Button
                                                 variant="link"
                                                 onClick={() => {
@@ -277,7 +277,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                         const rowActions = [
                             {
                                 title: (
-                                    <span className="pf-v5-u-danger-color-100">
+                                    <span className="pf-v6-u-text-color-status-danger">
                                         Delete download
                                     </span>
                                 ),
@@ -325,7 +325,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                                 <Tr isExpanded={isExpanded}>
                                     <Td colSpan={5}>
                                         <ExpandableRowContent>
-                                            <Card className="pf-v5-u-m-md pf-v5-u-p-md" isFlat>
+                                            <Card className="pf-v6-u-m-md pf-v6-u-p-md">
                                                 <Flex>
                                                     <FlexItem>
                                                         <JobDetails
@@ -337,7 +337,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                                                     </FlexItem>
                                                     <Divider
                                                         component="div"
-                                                        className="pf-v5-u-my-md"
+                                                        className="pf-v6-u-my-md"
                                                     />
                                                     <FlexItem>
                                                         <ReportParametersDetails
@@ -347,7 +347,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                                                     </FlexItem>
                                                     <Divider
                                                         component="div"
-                                                        className="pf-v5-u-my-md"
+                                                        className="pf-v6-u-my-md"
                                                     />
                                                     <FlexItem>
                                                         <NotifierConfigurationView
@@ -382,7 +382,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                                                     </FlexItem>
                                                     <Divider
                                                         component="div"
-                                                        className="pf-v5-u-my-md"
+                                                        className="pf-v6-u-my-md"
                                                     />
                                                     <FlexItem>
                                                         <ScheduleDetails formValues={formValues} />
@@ -411,7 +411,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                             variant="danger"
                             title={deleteDownloadError}
                             component="p"
-                            className="pf-v5-u-mb-sm"
+                            className="pf-v6-u-mb-sm"
                         />
                     )}
                 </AlertGroup>

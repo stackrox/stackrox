@@ -149,6 +149,11 @@ StackRox is a Kubernetes-native security platform with a distributed microservic
 
 ### Detailed Documentation
 
+**In-code documentation:** Packages with non-obvious architecture or operational
+gotchas often contain a markdown file (e.g. `README.md`) co-located with the
+source code. Before researching a subsystem from scratch, check for markdown
+files in its package directory.
+
 When working on specific areas, refer to these detailed guides:
 
 **Operator Development:**

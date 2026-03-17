@@ -45,7 +45,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyCriteriaFormProps) {
     const headingElements = (
         <>
             <Title headingLevel="h2">Rules</Title>
-            <div className="pf-v5-u-mt-sm">Chain criteria with boolean logic.</div>
+            <div className="pf-v6-u-mt-sm">Chain criteria with boolean logic.</div>
         </>
     );
 
@@ -56,7 +56,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyCriteriaFormProps) {
                 direction={{ default: 'column' }}
                 spaceItems={{ default: 'spaceItemsNone' }}
                 flexWrap={{ default: 'nowrap' }}
-                className="pf-v5-u-h-100 pf-v5-u-p-lg"
+                className="pf-v6-u-h-100 pf-v6-u-p-lg"
                 id="policy-sections-container"
             >
                 {headingElements}
@@ -66,7 +66,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyCriteriaFormProps) {
                         isInline
                         title="Editing policy criteria is disabled for system default policies"
                         component="p"
-                        className="pf-v5-u-mt-sm pf-v5-u-mb-md"
+                        className="pf-v6-u-mt-sm pf-v6-u-mb-md"
                         data-testid="default-policy-alert"
                     >
                         If you need to edit policy criteria, clone this policy or create a new
@@ -78,7 +78,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyCriteriaFormProps) {
                         isInline
                         title="This policy has active violations, and the policy criteria cannot be changed. To update criteria, disable the policy first."
                         component="p"
-                        className="pf-v5-u-mt-sm pf-v5-u-mb-md"
+                        className="pf-v6-u-mt-sm pf-v6-u-mb-md"
                         data-testid="active-violations-policy-alert"
                     />
                 )}
@@ -94,17 +94,17 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyCriteriaFormProps) {
 
         @ts-expect-error DndProvider types do not expect children as props */
         <DndProvider backend={HTML5Backend}>
-            <Flex fullWidth={{ default: 'fullWidth' }} className="pf-v5-u-h-100">
+            <Flex fullWidth={{ default: 'fullWidth' }} className="pf-v6-u-h-100">
                 <Flex
                     flex={{ default: 'flex_1' }}
                     direction={{ default: 'column' }}
-                    className="pf-v5-u-h-100"
+                    className="pf-v6-u-h-100"
                     spaceItems={{ default: 'spaceItemsNone' }}
                     fullWidth={{ default: 'fullWidth' }}
                     flexWrap={{ default: 'nowrap' }}
                     id="policy-sections-container"
                 >
-                    <Flex direction={{ default: 'row' }} className="pf-v5-u-p-lg">
+                    <Flex direction={{ default: 'row' }} className="pf-v6-u-p-lg">
                         <FlexItem flex={{ default: 'flex_1' }}>{headingElements}</FlexItem>
                         <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
                             <Button
@@ -121,7 +121,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyCriteriaFormProps) {
                         direction={{ default: 'column', lg: 'row' }}
                         flexWrap={{ default: 'nowrap' }}
                         id="policy-sections"
-                        className="pf-v5-u-p-lg pf-v5-u-h-100"
+                        className="pf-v6-u-p-lg pf-v6-u-h-100"
                     >
                         <BooleanPolicyLogicSection />
                     </Flex>
@@ -129,7 +129,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyCriteriaFormProps) {
                 <Divider component="div" orientation={{ default: 'vertical' }} />
                 {!showPolicyCriteriaModal && (
                     <Flex
-                        className="pf-v5-u-h-100 pf-v5-u-pt-lg"
+                        className="pf-v6-u-h-100 pf-v6-u-pt-lg"
                         id="policy-criteria-keys-container"
                     >
                         <PolicyCriteriaKeys

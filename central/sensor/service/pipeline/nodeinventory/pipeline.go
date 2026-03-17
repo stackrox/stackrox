@@ -144,32 +144,16 @@ func replyCompliance(ctx context.Context, clusterID, nodeName string, t central.
 		return
 	}
 
-	// Always send SensorACK (new path).
-	if err := injector.InjectMessage(ctx, &central.MsgToSensor{
-		Msg: &central.MsgToSensor_SensorAck{
-			SensorAck: &central.SensorACK{
-				Action:      convertLegacyActionToSensor(t),
-				MessageType: central.SensorACK_NODE_INVENTORY,
-				ResourceId:  nodeName,
-			},
-		},
-	}); err != nil {
-		log.Warnf("Failed injecting SensorACK for node inventory (clusterID=%s, nodeName=%s): %v", clusterID, nodeName, err)
-	}
+	common.SendSensorACK(ctx, convertLegacyActionToSensor(t), central.SensorACK_NODE_INVENTORY, nodeName, "", injector)
 
-	// Always send legacy NodeInventoryACK for backward compatibility.
-	if err := injector.InjectMessage(ctx, &central.MsgToSensor{
-		Msg: &central.MsgToSensor_NodeInventoryAck{
-			NodeInventoryAck: &central.NodeInventoryACK{
-				ClusterId:   clusterID,
-				NodeName:    nodeName,
-				Action:      t,
-				MessageType: central.NodeInventoryACK_NodeInventory,
-			},
-		},
-	}); err != nil {
-		log.Warnf("Failed injecting legacy NodeInventoryACK for node inventory (clusterID=%s, nodeName=%s): %v", clusterID, nodeName, err)
-	}
+	common.SendLegacyNodeInventoryACK(
+		ctx,
+		clusterID,
+		nodeName,
+		t,
+		central.NodeInventoryACK_NodeInventory,
+		injector,
+	)
 
 	log.Debugf("Sent node-inventory ACKs for node %s in cluster %s", nodeName, clusterID)
 }

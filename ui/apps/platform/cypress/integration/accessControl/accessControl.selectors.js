@@ -1,17 +1,15 @@
 import scopeSelectors from '../../helpers/scopeSelectors';
 
 function getFormGroupControlForLabel(label) {
-    return `.pf-v5-c-form__group-label:contains("${label}") + .pf-v5-c-form__group-control`;
+    return `.pf-v6-c-form__group-label:contains("${label}") + .pf-v6-c-form__group-control`;
 }
 
 export const selectors = scopeSelectors('main', {
-    alertTitle: '.pf-v5-c-alert__title',
+    alertTitle: '.pf-v6-c-alert__title',
 
     list: {
         authProviders: {
             dataRows: 'tbody tr',
-            createDropdownItem:
-                'button:contains("Create auth provider") + div ul li button[role="menuitem"]',
             tdType: 'td[data-label="Type"]',
             tdMinimumAccessRole: 'td[data-label="Minimum access role',
             tdRules: 'td[data-label="Rules"]',
@@ -35,7 +33,7 @@ export const selectors = scopeSelectors('main', {
     },
 
     form: {
-        notEditableLabel: '.pf-v5-c-label:contains("Not editable")',
+        notEditableLabel: '.pf-v6-c-label:contains("Not editable")',
         editButton: 'button:contains("Edit")',
         saveButton: 'button:contains("Save")',
         cancelButton: 'button:contains("Cancel")',
@@ -46,7 +44,7 @@ export const selectors = scopeSelectors('main', {
         authProvider: scopeSelectors('form', {
             selectAuthProviderType: `${getFormGroupControlForLabel(
                 'Auth provider type'
-            )} .pf-v5-c-menu-toggle`,
+            )} .pf-v6-c-menu-toggle`,
 
             auth0: {
                 inputAuth0Tenant: `${getFormGroupControlForLabel('Auth0 tenant')} input`,
@@ -55,15 +53,12 @@ export const selectors = scopeSelectors('main', {
             oidc: {
                 selectCallbackMode: `${getFormGroupControlForLabel(
                     'Callback mode'
-                )} .pf-v5-c-menu-toggle`,
-                selectCallbackModeItem: `${getFormGroupControlForLabel(
-                    'Callback mode'
-                )} .pf-v5-c-menu .pf-v5-c-menu__list .pf-v5-c-menu__item`,
+                )} .pf-v6-c-menu-toggle`,
                 inputIssuer: `${getFormGroupControlForLabel('Issuer')} input`,
                 inputClientID: `${getFormGroupControlForLabel('Client ID')} input`,
                 inputClientSecret: `${getFormGroupControlForLabel('Client Secret')} input`, // TODO sentence case?
                 checkboxDoNotUseClientSecret:
-                    '.pf-v5-c-check:contains("Do not use Client Secret") input[type="checkbox"]',
+                    '.pf-v6-c-check:contains("Do not use Client Secret") input[type="checkbox"]',
             },
             saml: {
                 inputServiceProviderIssuer: `${getFormGroupControlForLabel(
@@ -71,7 +66,7 @@ export const selectors = scopeSelectors('main', {
                 )} input`, // TODO sentence case?
                 selectConfiguration: `${getFormGroupControlForLabel(
                     'Configuration'
-                )} .pf-v5-c-menu-toggle`,
+                )} .pf-v6-c-menu-toggle`,
                 inputMetadataURL: `${getFormGroupControlForLabel('IdP Metadata URL')} input`, // TODO sentence case?
             },
             userpki: {
@@ -87,23 +82,20 @@ export const selectors = scopeSelectors('main', {
         minimumAccessRole: scopeSelectors('form', {
             selectMinimumAccessRole: `${getFormGroupControlForLabel(
                 'Minimum access role'
-            )} .pf-v5-c-menu-toggle`,
-            selectMinimumAccessRoleItem: `${getFormGroupControlForLabel(
-                'Minimum access role'
-            )} .pf-v5-c-menu .pf-v5-c-menu__list .pf-v5-c-menu__item`,
+            )} .pf-v6-c-menu-toggle`,
         }),
 
         role: scopeSelectors('#role-form', {
             getRadioPermissionSetForName: (name) =>
-                `.pf-v5-c-form__group-label:contains("Permission set") + .pf-v5-c-form__group-control tr:contains("${name}") input[type="radio"]`,
+                `.pf-v6-c-form__group-label:contains("Permission set") + .pf-v6-c-form__group-control tr:contains("${name}") input[type="radio"]`,
             getRadioAccessScopeForName: (name) =>
-                `.pf-v5-c-form__group-label:contains("Access scope") + .pf-v5-c-form__group-control tr:contains("${name}") input[type="radio"]`,
+                `.pf-v6-c-form__group-label:contains("Access scope") + .pf-v6-c-form__group-control tr:contains("${name}") input[type="radio"]`,
         }),
 
         permissionSet: scopeSelectors('#permission-set-form', {
-            resourceCount: 'th:contains("Resource") .pf-v5-c-badge',
-            readCount: 'th:contains("Read") .pf-v5-c-badge',
-            writeCount: 'th:contains("Write") .pf-v5-c-badge',
+            resourceCount: 'th:contains("Resource") .pf-v6-c-badge',
+            readCount: 'th:contains("Read") .pf-v6-c-badge',
+            writeCount: 'th:contains("Write") .pf-v6-c-badge',
             tdResource: 'td[data-label="Resource"] p:first-child',
 
             // Zero-based index for Image instead of ImageComponent, ImageIntegration, WatchedImage.
@@ -112,7 +104,7 @@ export const selectors = scopeSelectors('main', {
             getWriteAccessIconForResource: (resource, index = 0) =>
                 `td[data-label="Resource"]:has('p:first-child:contains("${resource}")'):eq(${index}) ~ td[data-label="Write"] svg`,
             getAccessLevelSelectForResource: (resource, index = 0) =>
-                `td[data-label="Resource"]:has('p:first-child:contains("${resource}")'):eq(${index}) ~ td[data-label="Access level"] .pf-v5-c-menu-toggle`,
+                `td[data-label="Resource"]:has('p:first-child:contains("${resource}")'):eq(${index}) ~ td[data-label="Access level"] .pf-v6-c-menu-toggle`,
         }),
 
         accessScope: scopeSelectors('#access-scope-form', {}),
@@ -120,9 +112,9 @@ export const selectors = scopeSelectors('main', {
 });
 
 export const accessModalSelectors = {
-    title: '.pf-v5-c-modal-box__title-text',
-    body: '.pf-v5-c-modal-box__body',
-    button: '.pf-v5-c-modal-box__footer button',
-    cancel: '.pf-v5-c-modal-box__footer button:contains("Cancel")',
-    delete: '.pf-v5-c-modal-box__footer button:contains("Delete")',
+    title: '.pf-v6-c-modal-box__title-text',
+    body: '.pf-v6-c-modal-box__body',
+    button: '.pf-v6-c-modal-box__footer button',
+    cancel: '.pf-v6-c-modal-box__footer button:contains("Cancel")',
+    delete: '.pf-v6-c-modal-box__footer button:contains("Delete")',
 };

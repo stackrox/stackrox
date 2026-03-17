@@ -7,7 +7,6 @@ import {
     Card,
     CardBody,
     CardTitle,
-    Divider,
     Label,
     LabelGroup,
     PageSection,
@@ -15,9 +14,8 @@ import {
     Tab,
     TabTitleText,
     Tabs,
-    Text,
-    Title,
 } from '@patternfly/react-core';
+import PageHeader from '@patternfly/react-component-groups/dist/dynamic/PageHeader';
 
 import PolicyDetailContent from 'Containers/Policies/Detail/PolicyDetailContent';
 import { getClientWizardPolicy } from 'Containers/Policies/policies.utils';
@@ -109,32 +107,42 @@ function ViolationDetailsPage(): ReactElement {
 
     return (
         <>
-            <ViolationsBreadcrumbs current={title} filteredWorkflowView={filteredWorkflowView} />
-            <PageSection variant="light">
-                <Title headingLevel="h1">{title}</Title>
-                <Text
-                    component="p"
-                    className="pf-v5-u-mb-sm"
-                >{`in "${entityName}" ${displayedResourceType}`}</Text>
-                <LabelGroup numLabels={2} aria-label="Violation state and resolution">
-                    <Label>State: {VIOLATION_STATE_LABELS[alert.state]}</Label>
-                    {alert.state === 'RESOLVED' && (
-                        <Label>
-                            Resolved on:{' '}
-                            {alert.resolvedAt ? getDateTime(alert.resolvedAt) : 'Not available'}
-                        </Label>
-                    )}
-                </LabelGroup>
-            </PageSection>
-            <PageSection variant="default" padding={{ default: 'noPadding' }}>
+            <PageHeader
+                title={title}
+                subtitle={`in "${entityName}" ${displayedResourceType}`}
+                breadcrumbs={
+                    <ViolationsBreadcrumbs
+                        current={title}
+                        filteredWorkflowView={filteredWorkflowView}
+                    />
+                }
+            />
+            <LabelGroup
+                className="pf-v6-u-px-lg pf-v6-u-pb-md"
+                numLabels={2}
+                aria-label="Violation state and resolution"
+            >
+                <Label>State: {VIOLATION_STATE_LABELS[alert.state]}</Label>
+                {alert.state === 'RESOLVED' && (
+                    <Label>
+                        Resolved on:{' '}
+                        {alert.resolvedAt ? getDateTime(alert.resolvedAt) : 'Not available'}
+                    </Label>
+                )}
+            </LabelGroup>
+            <PageSection
+                hasBodyWrapper={false}
+                variant="default"
+                padding={{ default: 'noPadding' }}
+            >
                 <Tabs
                     mountOnEnter
                     activeKey={activeTabKey}
                     onSelect={handleTabClick}
-                    className="pf-v5-u-background-color-100 pf-v5-u-pl-lg"
+                    className="pf-v6-u-pl-lg"
                 >
                     <Tab eventKey={0} title={<TabTitleText>Violation</TabTitleText>}>
-                        <PageSection variant="default">
+                        <PageSection hasBodyWrapper={false} variant="default">
                             <ViolationDetails
                                 violations={alert.violations}
                                 processViolation={alert.processViolation}
@@ -144,14 +152,14 @@ function ViolationDetailsPage(): ReactElement {
                     </Tab>
                     {enforcement && (
                         <Tab eventKey={1} title={<TabTitleText>Enforcement</TabTitleText>}>
-                            <PageSection variant="default">
+                            <PageSection hasBodyWrapper={false} variant="default">
                                 <EnforcementDetails alert={alert} enforcement={enforcement} />
                             </PageSection>
                         </Tab>
                     )}
                     {isDeploymentAlert(alert) && (
                         <Tab eventKey={2} title={<TabTitleText>Deployment</TabTitleText>}>
-                            <PageSection variant="default">
+                            <PageSection hasBodyWrapper={false} variant="default">
                                 {hasReadAccessForDeployment ? (
                                     <DeploymentTabWithReadAccessForDeployment
                                         alertDeployment={alert.deployment}
@@ -167,7 +175,7 @@ function ViolationDetailsPage(): ReactElement {
                     {isNodeAlert(alert) && (
                         <Tab eventKey={3} title={<TabTitleText>Node</TabTitleText>}>
                             <PageSection>
-                                <Card isFlat>
+                                <Card>
                                     <CardTitle component="h3">Node overview</CardTitle>
                                     <CardBody>
                                         <NodeOverview alertNode={alert.node} />
@@ -178,18 +186,14 @@ function ViolationDetailsPage(): ReactElement {
                     )}
                     {isRouteEnabledForPolicy && (
                         <Tab eventKey={4} title={<TabTitleText>Policy</TabTitleText>}>
-                            <PageSection variant="default">
-                                <Title headingLevel="h2" className="pf-v5-u-mb-md">
-                                    Policy overview
-                                </Title>
-                                <Divider component="div" className="pf-v5-u-pb-md" />
+                            <PageSection hasBodyWrapper={false} variant="default">
                                 <PolicyDetailContent policy={getClientWizardPolicy(policy)} />
                             </PageSection>
                         </Tab>
                     )}
                     {isDeploymentAlert(alert) && hasReadAccessForNetworkPolicy && (
                         <Tab eventKey={5} title={<TabTitleText>Network policies</TabTitleText>}>
-                            <PageSection variant="default">
+                            <PageSection hasBodyWrapper={false} variant="default">
                                 <NetworkPolicies
                                     clusterId={alert.deployment.clusterId}
                                     namespaceName={alert.deployment.namespace}

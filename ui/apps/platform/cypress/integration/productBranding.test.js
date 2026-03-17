@@ -1,8 +1,8 @@
 import withAuth from '../helpers/basicAuth';
 import { visitMainDashboard } from '../helpers/main';
 
-const rhacsLogoImage = 'img[alt="Red Hat Advanced Cluster Security Logo"]';
-const stackroxLogoImage = 'img[alt="StackRox Logo"]';
+const rhacsLogoImage = 'svg[role="img"][aria-label="Red Hat Advanced Cluster Security Logo"]';
+const stackroxLogoImage = 'svg[role="img"][aria-label="StackRox Logo"]';
 
 describe('Logo and title product branding checks', () => {
     withAuth();

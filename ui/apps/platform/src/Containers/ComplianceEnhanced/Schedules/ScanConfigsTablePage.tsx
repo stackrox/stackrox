@@ -9,7 +9,7 @@ import {
     AlertGroup,
     Bullseye,
     Button,
-    Divider,
+    Content,
     Flex,
     FlexItem,
     List,
@@ -17,8 +17,6 @@ import {
     PageSection,
     Pagination,
     Spinner,
-    Text,
-    TextContent,
     Title,
     Toolbar,
     ToolbarContent,
@@ -290,7 +288,7 @@ function ScanConfigsTablePage({
                         {hasWriteAccessForCompliance && (
                             <Flex direction={{ default: 'column' }}>
                                 <FlexItem>
-                                    <Text>Create one to get started</Text>
+                                    <Content component="p">Create one to get started</Content>
                                 </FlexItem>
                                 <FlexItem>
                                     <CreateScanConfigButton />
@@ -316,14 +314,14 @@ function ScanConfigsTablePage({
     return (
         <>
             <PageTitle title="Compliance - Schedules" />
-            <PageSection component="div" variant="light">
+            <PageSection>
                 <Flex direction={{ default: 'row' }} alignItems={{ default: 'alignItemsCenter' }}>
                     <Flex direction={{ default: 'column' }}>
                         <Title headingLevel="h1">Schedules</Title>
-                        <Text>
+                        <Content component="p">
                             Configure scan schedules to run profile compliance checks on selected
                             clusters
-                        </Text>
+                        </Content>
                     </Flex>
                     {hasWriteAccessForCompliance && (
                         <FlexItem align={{ default: 'alignRight' }}>
@@ -332,9 +330,8 @@ function ScanConfigsTablePage({
                     )}
                 </Flex>
             </PageSection>
-            <Divider component="div" />
             {error ? (
-                <PageSection variant="light" isFilled id="policies-table-error">
+                <PageSection isFilled id="policies-table-error">
                     <Bullseye>
                         <Alert variant="danger" title={getAxiosErrorMessage(error)} component="p" />
                     </Bullseye>
@@ -347,7 +344,7 @@ function ScanConfigsTablePage({
                             component="p"
                             variant={alertObj.type}
                             isInline
-                            className="pf-v5-u-mb-lg"
+                            className="pf-v6-u-mb-lg"
                             actionClose={<AlertActionCloseButton onClose={clearAlertObj} />}
                         >
                             {alertObj.children}
@@ -356,7 +353,7 @@ function ScanConfigsTablePage({
 
                     <Toolbar>
                         <ToolbarContent>
-                            <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                            <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                                 <Pagination
                                     itemCount={listData?.totalCount ?? 0}
                                     page={page}
@@ -395,7 +392,7 @@ function ScanConfigsTablePage({
                                 </HelpIconTh>
                                 {hasWriteAccessForCompliance && (
                                     <Th>
-                                        <span className="pf-v5-screen-reader">Row actions</span>
+                                        <span className="pf-v6-screen-reader">Row actions</span>
                                     </Th>
                                 )}
                             </Tr>
@@ -421,7 +418,7 @@ function ScanConfigsTablePage({
                                             variant="danger"
                                             title="Failed to delete"
                                             component="p"
-                                            className="pf-v5-u-mb-sm"
+                                            className="pf-v6-u-mb-sm"
                                         >
                                             {deleteError.toString()}
                                         </Alert>
@@ -431,18 +428,18 @@ function ScanConfigsTablePage({
                         ) : (
                             <></>
                         )}
-                        <TextContent>
-                            <Text>
+                        <Content>
+                            <Content component="p">
                                 The following scan{' '}
                                 {`${pluralize('schedule', scanConfigsToDelete.length)}`} will be
                                 deleted.
-                            </Text>
+                            </Content>
                             <List>
                                 {scanConfigsToDelete.map((scanConfig) => (
                                     <ListItem key={scanConfig.id}>{scanConfig.scanName}</ListItem>
                                 ))}
                             </List>
-                        </TextContent>
+                        </Content>
                     </DeleteModal>
                 </PageSection>
             )}
