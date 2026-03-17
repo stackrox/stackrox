@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/networkpolicy"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
@@ -398,7 +397,7 @@ func (d *detectorImpl) runDetector() {
 			return
 		case scanOutput := <-d.enricher.outputChan():
 			detectorMetrics.RemoveBlockingScanCall()
-			alerts := d.unifiedDetector.DetectDeployment(deploytime.DetectionContext{}, booleanpolicy.EnhancedDeployment{
+			alerts := d.unifiedDetector.DetectDeployment(booleanpolicy.EnhancedDeployment{
 				Deployment:             scanOutput.deployment,
 				Images:                 scanOutput.images,
 				NetworkPoliciesApplied: scanOutput.networkPoliciesApplied,

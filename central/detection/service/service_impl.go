@@ -295,10 +295,6 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 		}
 	}
 
-	detectionCtx := deploytimePkg.DetectionContext{
-		EnforcementOnly: enrichmentContext.EnforcementOnly,
-	}
-
 	var appliedNetpols *augmentedobjs.NetworkPoliciesApplied
 	if enrichmentContext.ClusterID != "" {
 		var err error
@@ -311,11 +307,16 @@ func (s *serviceImpl) enrichAndDetect(ctx context.Context, enrichmentContext enr
 	}
 
 	filter, getUnusedCategories := centralDetection.MakeCategoryFilter(policyCategories)
-	alerts, err := s.detector.Detect(ctx, detectionCtx, booleanpolicy.EnhancedDeployment{
+	var opts []deploytimePkg.DetectOption
+	if enrichmentContext.EnforcementOnly {
+		opts = append(opts, deploytimePkg.WithEnforcementOnly())
+	}
+	opts = append(opts, deploytimePkg.WithPolicyFilters(filter))
+	alerts, err := s.detector.Detect(ctx, booleanpolicy.EnhancedDeployment{
 		Deployment:             deployment,
 		Images:                 images,
 		NetworkPoliciesApplied: appliedNetpols,
-	}, filter)
+	}, opts...)
 	if err != nil {
 		return nil, err
 	}
