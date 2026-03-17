@@ -25,39 +25,41 @@ var (
 type convertFunction func(string, *central.ApplyComplianceScanConfigRequest_BaseScanSettings, string) runtime.Object
 
 // profileKindToString maps an OperatorKind proto enum to the compliance operator Kind string.
-func profileKindToString(kind central.ComplianceOperatorProfileV2_OperatorKind) (string, bool) {
+func profileKindToString(kind central.ComplianceOperatorProfileV2_OperatorKind) string {
 	switch kind {
 	case central.ComplianceOperatorProfileV2_PROFILE:
-		return complianceoperator.Profile.Kind, true
+		return complianceoperator.Profile.Kind
 	case central.ComplianceOperatorProfileV2_TAILORED_PROFILE:
-		return complianceoperator.TailoredProfile.Kind, true
+		return complianceoperator.TailoredProfile.Kind
 	case central.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
-		return "", false
+		return ""
 	default:
-		return "", false
+		return ""
 	}
+}
+
+func validateScanSettingBindingProfileRefs(request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) error {
+	for _, ref := range request.GetProfileRefs() {
+		k := ref.GetKind()
+		if k != central.ComplianceOperatorProfileV2_PROFILE && k != central.ComplianceOperatorProfileV2_TAILORED_PROFILE {
+			err := errors.Errorf("invalid profile ref %q: unsupported operator kind %v", ref.GetName(), k)
+			log.Error(err)
+			return err
+		}
+	}
+	return nil
 }
 
 func buildScanSettingBindingProfileRefs(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) []v1alpha1.NamedObjectReference {
 	profileRefs := make([]v1alpha1.NamedObjectReference, 0, len(request.GetProfiles()))
 	if refs := request.GetProfileRefs(); len(refs) > 0 {
 		// New Central: kind is provided directly — no k8s API call needed.
-		invalidCount := 0
 		for _, ref := range refs {
-			kind, ok := profileKindToString(ref.GetKind())
-			if !ok {
-				invalidCount++
-				log.Errorf("Ignoring profile ref %q in namespace %q due to unsupported operator kind %v", ref.GetName(), namespace, ref.GetKind())
-				continue
-			}
 			profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
 				Name:     ref.GetName(),
-				Kind:     kind,
+				Kind:     profileKindToString(ref.GetKind()),
 				APIGroup: complianceoperator.GetGroupVersion().String(),
 			})
-		}
-		if invalidCount > 0 {
-			log.Warnf("Skipped %d invalid profile refs from Central in namespace %q", invalidCount, namespace)
 		}
 		log.Debugf("Using %d profile_refs from Central for namespace %q", len(refs), namespace)
 		return profileRefs
@@ -160,13 +162,16 @@ func updateScanSettingFromCentralRequest(scanSetting *v1alpha1.ScanSetting, requ
 	return scanSetting
 }
 
-func updateScanSettingBindingFromCentralRequest(scanSettingBinding *v1alpha1.ScanSettingBinding, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) *v1alpha1.ScanSettingBinding {
+func updateScanSettingBindingFromCentralRequest(scanSettingBinding *v1alpha1.ScanSettingBinding, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) (*v1alpha1.ScanSettingBinding, error) {
+	if err := validateScanSettingBindingProfileRefs(request); err != nil {
+		return nil, err
+	}
 	profileRefs := buildScanSettingBindingProfileRefs(scanSettingBinding.GetNamespace(), request)
 
 	// TODO:  Update additional fields as ACS capability expands
 	scanSettingBinding.Profiles = profileRefs
 
-	return scanSettingBinding
+	return scanSettingBinding, nil
 }
 
 func validateApplyScheduledScanConfigRequest(req *central.ApplyComplianceScanConfigRequest_ScheduledScan) error {
@@ -185,6 +190,9 @@ func validateApplyScheduledScanConfigRequest(req *central.ApplyComplianceScanCon
 		if !cron.IsValid(req.GetCron()) {
 			errList.AddStrings("schedule is not valid")
 		}
+	}
+	if err := validateScanSettingBindingProfileRefs(req.GetScanSettings()); err != nil {
+		errList.AddError(err)
 	}
 	return errList.ToError()
 }
@@ -205,6 +213,9 @@ func validateUpdateScheduledScanConfigRequest(req *central.ApplyComplianceScanCo
 		if !cron.IsValid(req.GetCron()) {
 			errList.AddStrings("schedule is not valid")
 		}
+	}
+	if err := validateScanSettingBindingProfileRefs(req.GetScanSettings()); err != nil {
+		errList.AddError(err)
 	}
 	return errList.ToError()
 }
@@ -253,5 +264,10 @@ func updateScanSettingBindingFromUpdateRequest(obj *unstructured.Unstructured, r
 		return nil, errors.Wrap(err, "Could not convert unstructured to scan setting")
 	}
 
-	return runtimeObjToUnstructured(updateScanSettingBindingFromCentralRequest(&scanSettingBinding, req.GetScanSettings()))
+	updatedScanSettingBinding, err := updateScanSettingBindingFromCentralRequest(&scanSettingBinding, req.GetScanSettings())
+	if err != nil {
+		return nil, err
+	}
+
+	return runtimeObjToUnstructured(updatedScanSettingBinding)
 }
