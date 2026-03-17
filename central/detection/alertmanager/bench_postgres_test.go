@@ -33,12 +33,6 @@ var defaultPolicyIDs = []struct {
 	{"cf80fb33-c7d0-4490-b6f4-e56e1f27b4e4", "Log4Shell: log4j Remote Code Execution vulnerability", storage.Severity_CRITICAL_SEVERITY},
 }
 
-var deploymentIDs = []string{
-	fixtureconsts.Deployment1,
-	fixtureconsts.Deployment2,
-	fixtureconsts.Deployment3,
-}
-
 type benchFixture struct {
 	ctx          context.Context
 	alertManager AlertManager
