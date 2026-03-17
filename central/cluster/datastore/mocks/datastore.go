@@ -198,6 +198,21 @@ func (mr *MockDataStoreMockRecorder) LookupOrCreateClusterFromConfig(ctx, cluste
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LookupOrCreateClusterFromConfig", reflect.TypeOf((*MockDataStore)(nil).LookupOrCreateClusterFromConfig), ctx, clusterID, bundleID, hello)
 }
 
+// MatchProcessIndicator mocks base method.
+func (m *MockDataStore) MatchProcessIndicator(ctx context.Context, indicator *storage.ProcessIndicator) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MatchProcessIndicator", ctx, indicator)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MatchProcessIndicator indicates an expected call of MatchProcessIndicator.
+func (mr *MockDataStoreMockRecorder) MatchProcessIndicator(ctx, indicator any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MatchProcessIndicator", reflect.TypeOf((*MockDataStore)(nil).MatchProcessIndicator), ctx, indicator)
+}
+
 // RemoveCluster mocks base method.
 func (m *MockDataStore) RemoveCluster(ctx context.Context, id string, done *concurrency.Signal) error {
 	m.ctrl.T.Helper()
