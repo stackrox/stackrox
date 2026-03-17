@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -145,7 +146,7 @@ func TestScanPartsFromV1Scan_WithComponentsAndVulns(t *testing.T) {
 	assert.Empty(t, cve2.GetFixedBy())
 
 	// SourceComponents preserved
-	assert.Equal(t, scan.GetComponents(), parts.SourceComponents)
+	protoassert.SlicesEqual(t, scan.GetComponents(), parts.SourceComponents)
 }
 
 func TestHighestFixedBy(t *testing.T) {
