@@ -373,7 +373,7 @@ func (s *policyValidator) compilesForRunTime(policy *storage.Policy, options ...
 	}
 
 	if !booleanpolicy.ContainsValidRuntimeFieldCategorySections(policy) {
-		return errors.New("A runtime policy section must contain only one criterion from process, network flow, audit log events, or Kubernetes events criteria categories")
+		return errors.New("A runtime policy must not mix incompatible runtime criteria: process and file criteria must be in the same section, and cannot coexist with network flow or Kubernetes events criteria")
 	}
 
 	if err := s.validateNodeEventPolicy(policy); err != nil {
