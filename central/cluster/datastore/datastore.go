@@ -73,6 +73,8 @@ type DataStore interface {
 	SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 
 	LookupOrCreateClusterFromConfig(ctx context.Context, clusterID, bundleID string, hello *central.SensorHello) (*storage.Cluster, error)
+
+	MatchProcessIndicator(ctx context.Context, indicator *storage.ProcessIndicator) (bool, error)
 }
 
 // New returns an instance of DataStore.
@@ -120,6 +122,7 @@ func New(
 		clusterRanker:             clusterRanker,
 		networkBaselineMgr:        networkBaselineMgr,
 		idToNameCache:             simplecache.New(),
+		idToRegexCache:            simplecache.New(),
 		nameToIDCache:             simplecache.New(),
 		compliancePruner:          compliancePruner,
 		clusterInitStore:          clusterInitStore,

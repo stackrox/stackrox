@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -34,7 +35,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	clusterValidation "github.com/stackrox/rox/pkg/cluster"
+	clusterPkg "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
@@ -94,8 +95,9 @@ type datastoreImpl struct {
 	notifier      notifierProcessor.Processor
 	clusterRanker *ranking.Ranker
 
-	idToNameCache simplecache.Cache
-	nameToIDCache simplecache.Cache
+	idToNameCache  simplecache.Cache
+	idToRegexCache simplecache.Cache
+	nameToIDCache  simplecache.Cache
 
 	lock sync.Mutex
 }
@@ -179,6 +181,8 @@ func (ds *datastoreImpl) buildCache(ctx context.Context) error {
 
 	for _, c := range clusters {
 		ds.idToNameCache.Add(c.GetId(), c.GetName())
+		ds.idToRegexCache.Add(c.GetId(),
+			regexp.MustCompile(clusterPkg.GetNamespaceFilter(c)))
 		ds.nameToIDCache.Add(c.GetName(), c.GetId())
 		c.HealthStatus = clusterHealthStatuses[c.GetId()]
 	}
@@ -331,6 +335,23 @@ func (ds *datastoreImpl) GetClusterName(ctx context.Context, id string) (string,
 		return "", false, nil
 	}
 	return val.(string), true, nil
+}
+
+func (ds *datastoreImpl) MatchProcessIndicator(ctx context.Context,
+	indicator *storage.ProcessIndicator) (bool, error) {
+
+	id := indicator.GetClusterId()
+
+	if ok, err := clusterSAC.ReadAllowed(ctx, sac.ClusterScopeKey(id)); err != nil || !ok {
+		return false, err
+	}
+
+	filter, ok := ds.idToRegexCache.Get(id)
+	if !ok {
+		return false, nil
+	}
+
+	return filter.(*regexp.Regexp).MatchString(indicator.GetNamespace()), nil
 }
 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
@@ -585,6 +606,7 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 		return errors.Wrapf(err, "failed to remove cluster %q", id)
 	}
 	ds.idToNameCache.Remove(id)
+	ds.idToRegexCache.Remove(id)
 	ds.nameToIDCache.Remove(cluster.GetName())
 
 	deleteRelatedCtx := sac.WithAllAccess(context.Background())
@@ -892,6 +914,8 @@ func (ds *datastoreImpl) updateClusterNoLock(ctx context.Context, cluster *stora
 		return err
 	}
 	ds.idToNameCache.Add(cluster.GetId(), cluster.GetName())
+	ds.idToRegexCache.Add(cluster.GetId(),
+		regexp.MustCompile(clusterPkg.GetNamespaceFilter(cluster)))
 	ds.nameToIDCache.Add(cluster.GetName(), cluster.GetId())
 	return nil
 }
@@ -1097,7 +1121,7 @@ func normalizeCluster(cluster *storage.Cluster) error {
 }
 
 func validateInput(cluster *storage.Cluster) error {
-	return clusterValidation.Validate(cluster).ToError()
+	return clusterPkg.Validate(cluster).ToError()
 }
 
 // addDefaults enriches the provided non-nil cluster object with defaults for
