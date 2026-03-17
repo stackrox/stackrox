@@ -41,10 +41,10 @@ const validationSchema = yup.object().shape({
         .test('emails', 'Invalid email address', (value) =>
             Boolean(
                 value &&
-                    value
-                        .split(',')
-                        .map((v) => v.trim())
-                        .every(isEmail)
+                value
+                    .split(',')
+                    .map((v) => v.trim())
+                    .every(isEmail)
             )
         ), // .string().trim().required('At least one email is required'),
     provider: yup.string().required('An auth provider is required'),
