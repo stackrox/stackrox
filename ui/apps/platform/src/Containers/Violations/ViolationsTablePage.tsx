@@ -120,19 +120,18 @@ function getDescriptionForSelectedViolationState(
 function ViolationsTablePage(): ReactElement {
     const { searchFilter, setSearchFilter } = useURLSearch();
 
-    const [selectedViolationStateTab, setSelectedViolationStateTab] = useURLStringUnion(
-        'violationState',
-        violationStateTabs
-    );
     const { filteredWorkflowView } = useFilteredWorkflowViewURLState();
 
-    // Node policies have no admission controller evaluation, so the Attempted tab
-    // is not applicable. Reset to Active if user switches to Node view while on it.
-    useEffect(() => {
-        if (filteredWorkflowView === 'Node view' && selectedViolationStateTab === 'ATTEMPTED') {
-            setSelectedViolationStateTab('ACTIVE');
-        }
-    }, [filteredWorkflowView, selectedViolationStateTab, setSelectedViolationStateTab]);
+    // Node policies have no admission controller evaluation, so attempted
+    // alerts are never generated for nodes. Limit the valid tabs accordingly.
+    const allowedViolationStateTabs =
+        filteredWorkflowView === 'Node view'
+            ? (['ACTIVE', 'RESOLVED'] as const)
+            : violationStateTabs;
+    const [selectedViolationStateTab, setSelectedViolationStateTab] = useURLStringUnion(
+        'violationState',
+        allowedViolationStateTabs
+    );
 
     const hasExecutableFilter =
         Object.keys(searchFilter).length &&
