@@ -39,7 +39,10 @@ RUN dnf install -y \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/*
 
-ARG BUILD_TAG
+
+FROM ubi-micro-base
+
+ ARG BUILD_TAG
 
 LABEL \
     com.redhat.component="rhacs-operator-container" \
