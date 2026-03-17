@@ -45,18 +45,18 @@ var (
 type state struct {
 	*sensor.AdmissionControlSettings
 
-	// fastPathDeployDetector evaluates deploy policies that only reference
+	// specOnlyDeployDetector evaluates deploy policies that only reference
 	// deployment spec fields (privileged, capabilities, labels, etc.) and
 	// can produce a review response without requiring image enrichment data.
-	fastPathDeployDetector deploytime.Detector
+	specOnlyDeployDetector deploytime.Detector
 
-	// slowPathDeployDetector evaluates deploy policies that require image
+	// enrichmentRequiredDeployDetector evaluates deploy policies that require image
 	// enrichment data (scan results, image metadata, signatures).
-	slowPathDeployDetector deploytime.Detector
+	enrichmentRequiredDeployDetector deploytime.Detector
 
-	allK8sEventPoliciesDetector runtime.Detector
-	slowPathK8sEventDetector    runtime.Detector
-	fastPathK8sEventDetector    runtime.Detector
+	allK8sEventDetector    runtime.Detector
+	deployFieldK8sDetector runtime.Detector
+	eventOnlyK8sDetector   runtime.Detector
 
 	bypassForUsers, bypassForGroups set.FrozenStringSet
 	enforcedOps                     map[admission.Operation]struct{}
@@ -250,24 +250,24 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	// TODO(ROX-33188): Wire cluster and namespace label providers.
 	// For now, passing nil providers means policies with cluster_label/namespace_label scopes will
 	// fail closed (not match) in admission control.
-	allK8sEventPolicySet := detection.NewPolicySet(nil, nil)
-	k8sEventPoliciesWithDeployFields, k8sEventPoliciesWithoutDeployFields := detection.NewPolicySet(nil, nil), detection.NewPolicySet(nil, nil)
+	allK8sEventPolicies := detection.NewPolicySet(nil, nil)
+	deployFieldK8sEventPolicies, k8sEventOnlyPolicies := detection.NewPolicySet(nil, nil), detection.NewPolicySet(nil, nil)
 	for _, policy := range newSettings.GetRuntimePolicies().GetPolicies() {
 		if policyfields.AlertsOnMissingEnrichment(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
 			log.Warn(errors.ImageScanUnavailableMsg(policy))
 			continue
 		}
 
-		if err := allK8sEventPolicySet.UpsertPolicy(policy); err != nil {
+		if err := allK8sEventPolicies.UpsertPolicy(policy); err != nil {
 			log.Errorf("Unable to upsert policy %q (%s), will not be able to detect", policy.GetName(), policy.GetId())
 		}
 
 		if booleanpolicy.ContainsDeployTimeFields(policy) {
-			if err := k8sEventPoliciesWithDeployFields.UpsertPolicy(policy); err != nil {
+			if err := deployFieldK8sEventPolicies.UpsertPolicy(policy); err != nil {
 				log.Errorf("Unable to upsert policy %q (%s), will not be able to detect", policy.GetName(), policy.GetId())
 			}
 		} else {
-			if err := k8sEventPoliciesWithoutDeployFields.UpsertPolicy(policy); err != nil {
+			if err := k8sEventOnlyPolicies.UpsertPolicy(policy); err != nil {
 				log.Errorf("Unable to upsert policy %q (%s), will not be able to detect", policy.GetName(), policy.GetId())
 			}
 		}
@@ -277,8 +277,8 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	enforceOnCreates := newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnabled()
 	enforceOnUpdates := newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates()
 
-	fastPathPolicies := detection.NewPolicySet(nil, nil)
-	slowPathPolicies := detection.NewPolicySet(nil, nil)
+	specOnlyPolicies := detection.NewPolicySet(nil, nil)
+	enrichmentRequiredPolicies := detection.NewPolicySet(nil, nil)
 	if enforceOnCreates || enforceOnUpdates {
 		for _, policy := range newSettings.GetEnforcedDeployTimePolicies().GetPolicies() {
 			if policyfields.AlertsOnMissingEnrichment(policy) &&
@@ -292,9 +292,9 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 				continue
 			}
 			if compiled.RequiresImageEnrichment() {
-				slowPathPolicies.UpsertCompiledPolicy(compiled)
+				enrichmentRequiredPolicies.UpsertCompiledPolicy(compiled)
 			} else {
-				fastPathPolicies.UpsertCompiledPolicy(compiled)
+				specOnlyPolicies.UpsertCompiledPolicy(compiled)
 			}
 		}
 	}
@@ -310,15 +310,15 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 
 	oldState := m.currentState()
 	newState := &state{
-		AdmissionControlSettings:    newSettings,
-		fastPathDeployDetector:      deploytime.NewDetector(fastPathPolicies),
-		slowPathDeployDetector:      deploytime.NewDetector(slowPathPolicies),
-		allK8sEventPoliciesDetector: runtime.NewDetector(allK8sEventPolicySet),
-		slowPathK8sEventDetector:    runtime.NewDetector(k8sEventPoliciesWithDeployFields),
-		fastPathK8sEventDetector:    runtime.NewDetector(k8sEventPoliciesWithoutDeployFields),
-		bypassForUsers:              allowAlwaysUsers,
-		bypassForGroups:             allowAlwaysGroups,
-		enforcedOps:                 enforcedOperations,
+		AdmissionControlSettings:         newSettings,
+		specOnlyDeployDetector:           deploytime.NewDetector(specOnlyPolicies),
+		enrichmentRequiredDeployDetector: deploytime.NewDetector(enrichmentRequiredPolicies),
+		allK8sEventDetector:              runtime.NewDetector(allK8sEventPolicies),
+		deployFieldK8sDetector:           runtime.NewDetector(deployFieldK8sEventPolicies),
+		eventOnlyK8sDetector:             runtime.NewDetector(k8sEventOnlyPolicies),
+		bypassForUsers:                   allowAlwaysUsers,
+		bypassForGroups:                  allowAlwaysGroups,
+		enforcedOps:                      enforcedOperations,
 	}
 
 	if oldState != nil && newSettings.GetCentralEndpoint() == oldState.GetCentralEndpoint() {
@@ -356,7 +356,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	m.lastSettingsUpdate = protocompat.ConvertTimestampToTimeOrNil(newSettings.GetTimestamp())
 
 	enforceablePolicies := 0
-	for _, policy := range allK8sEventPolicySet.GetCompiledPolicies() {
+	for _, policy := range allK8sEventPolicies.GetCompiledPolicies() {
 		if len(policy.Policy().GetEnforcementActions()) > 0 {
 			enforceablePolicies++
 		}
@@ -365,10 +365,10 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		"(enforcing on %d deploy-time policies: %d deployment metadata only, %d image enrichment data required; "+
 		"detecting on %d run-time policies; "+
 		"enforcing on %d run-time policies).",
-		len(fastPathPolicies.GetCompiledPolicies())+len(slowPathPolicies.GetCompiledPolicies()),
-		len(fastPathPolicies.GetCompiledPolicies()),
-		len(slowPathPolicies.GetCompiledPolicies()),
-		len(allK8sEventPolicySet.GetCompiledPolicies()),
+		len(specOnlyPolicies.GetCompiledPolicies())+len(enrichmentRequiredPolicies.GetCompiledPolicies()),
+		len(specOnlyPolicies.GetCompiledPolicies()),
+		len(enrichmentRequiredPolicies.GetCompiledPolicies()),
+		len(allK8sEventPolicies.GetCompiledPolicies()),
 		enforceablePolicies)
 
 	m.settingsStream.Push(newSettings)

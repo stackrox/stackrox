@@ -173,11 +173,11 @@ func (m *manager) evaluateAdmissionRequest(s *state, req *admission.AdmissionReq
 // evaluateFastPath runs deployment-spec-only policies that don't require image enrichment data.
 func (m *manager) evaluateFastPath(s *state, req *admission.AdmissionRequest, deployment *storage.Deployment, start time.Time) (*admission.AdmissionResponse, error) {
 	// Fast path: skip entirely if there are no policies that require deployment spec fields only.
-	if len(s.fastPathDeployDetector.PolicySet().GetCompiledPolicies()) == 0 {
+	if len(s.specOnlyDeployDetector.PolicySet().GetCompiledPolicies()) == 0 {
 		return nil, nil
 	}
 
-	alerts, err := s.fastPathDeployDetector.Detect(context.Background(), detectionCtx, booleanpolicy.EnhancedDeployment{
+	alerts, err := s.specOnlyDeployDetector.Detect(context.Background(), detectionCtx, booleanpolicy.EnhancedDeployment{
 		Deployment: deployment,
 		Images:     toPlaceholderImages(deployment),
 	})
@@ -192,7 +192,7 @@ func (m *manager) evaluateFastPath(s *state, req *admission.AdmissionRequest, de
 	if !pointer.BoolDeref(req.DryRun, false) {
 		go m.filterAndPutAttemptedAlertsOnChan(req.Operation, alerts...)
 	}
-	unevaluatedPolicyCount := len(s.slowPathDeployDetector.PolicySet().GetCompiledPolicies())
+	unevaluatedPolicyCount := len(s.enrichmentRequiredDeployDetector.PolicySet().GetCompiledPolicies())
 	log.Debugf("Violated policies (fast path): %d, rejecting %s request on %s/%s [%s]", len(alerts), req.Operation, req.Namespace, req.Name, req.Kind)
 	observeAdmissionReview(reviewResultDenied, time.Since(start))
 	return fail(req.UID, message(alerts, !s.GetClusterConfig().GetAdmissionControllerConfig().GetDisableBypass(), unevaluatedPolicyCount)), nil
@@ -201,7 +201,7 @@ func (m *manager) evaluateFastPath(s *state, req *admission.AdmissionRequest, de
 // evaluateSlowPath runs image-dependent policies, fetching and scanning images as needed.
 func (m *manager) evaluateSlowPath(s *state, req *admission.AdmissionRequest, deployment *storage.Deployment, start time.Time) (*admission.AdmissionResponse, error) {
 	// Slow path: skip entirely if there are no policies that require image enrichment data.
-	if len(s.slowPathDeployDetector.PolicySet().GetCompiledPolicies()) == 0 {
+	if len(s.enrichmentRequiredDeployDetector.PolicySet().GetCompiledPolicies()) == 0 {
 		log.Debugf("No policies violated, allowing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
 		observeAdmissionReview(reviewResultAllowed, time.Since(start))
 		return pass(req.UID), nil
@@ -216,7 +216,7 @@ func (m *manager) evaluateSlowPath(s *state, req *admission.AdmissionRequest, de
 	}
 
 	getAlertsFunc := func(dep *storage.Deployment, imgs []*storage.Image) ([]*storage.Alert, error) {
-		return s.slowPathDeployDetector.Detect(context.Background(), detectionCtx, booleanpolicy.EnhancedDeployment{
+		return s.enrichmentRequiredDeployDetector.Detect(context.Background(), detectionCtx, booleanpolicy.EnhancedDeployment{
 			Deployment: dep,
 			Images:     imgs,
 		})
