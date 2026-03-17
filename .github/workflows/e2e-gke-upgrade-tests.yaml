@@ -170,13 +170,6 @@ jobs:
       if: always()
       run: infractl delete "${CLUSTER_NAME}"
 
-    # TODO: remove me
-    - uses: ./.github/actions/upload-artifact-with-retry
-      if: always()
-      with:
-        name: junit-central-debug
-        path: ${{ env.ARTIFACT_DIR }}
-
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
@@ -315,13 +308,6 @@ jobs:
       if: always()
       run: infractl delete "${CLUSTER_NAME}"
 
-    # TODO: remove me
-    - uses: ./.github/actions/upload-artifact-with-retry
-      if: always()
-      with:
-        name: junit-postgres-debug
-        path: ${{ env.ARTIFACT_DIR }}
-
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
@@ -453,13 +439,6 @@ jobs:
     - name: Delete cluster
       if: always()
       run: infractl delete "${CLUSTER_NAME}"
-
-    # TODO: remove me
-    - uses: ./.github/actions/upload-artifact-with-retry
-      if: always()
-      with:
-        name: junit-sensor-debug
-        path: ${{ env.ARTIFACT_DIR }}
 
     - name: Report junit failures in jira
       if: (!cancelled())
