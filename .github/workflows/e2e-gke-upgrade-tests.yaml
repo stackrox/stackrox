@@ -138,7 +138,10 @@ jobs:
         REDHAT_USERNAME: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
         REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
         LOAD_BALANCER: lb
-      run: tests/upgrade/postgres_run.sh /tmp/postgres-upgrade-test-logs
+      run: |
+        tests/upgrade/postgres_run.sh /tmp/postgres-upgrade-test-logs
+        # This makes sure Stackrox_Deployment / Was Stackrox deployed to the cluster? test does not fail.
+        touch /tmp/stackrox_ci_state_deployed
 
     - name: Run post-test
       if: always()
@@ -280,7 +283,10 @@ jobs:
         REDHAT_USERNAME: ${{ secrets.RH_REGISTRY_USERNAME_RO }}
         REDHAT_PASSWORD: ${{ secrets.RH_REGISTRY_PASSWORD_RO }}
         LOAD_BALANCER: lb
-      run: tests/upgrade/postgres_upgrade_run.sh /tmp/postgres-version-upgrade-test-logs
+      run: |
+        tests/upgrade/postgres_upgrade_run.sh /tmp/postgres-version-upgrade-test-logs
+        # This makes sure Stackrox_Deployment / Was Stackrox deployed to the cluster? test does not fail.
+        touch /tmp/stackrox_ci_state_deployed
 
     - name: Run post-test
       if: always()
