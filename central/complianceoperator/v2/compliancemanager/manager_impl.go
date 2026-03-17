@@ -285,6 +285,14 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		return nil, errors.Errorf("Unable to find all profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
+	// Reject if any profile has unsupported operator kind (symmetric with Sensor: it would reject on receive).
+	for _, p := range returnedProfiles {
+		k := p.GetOperatorKind()
+		if k != storage.ComplianceOperatorProfileV2_PROFILE && k != storage.ComplianceOperatorProfileV2_TAILORED_PROFILE {
+			return nil, errors.Errorf("scan configuration %q: profile %q has unsupported operator kind %v", scanRequest.GetScanConfigName(), p.GetName(), k)
+		}
+	}
+
 	// Build profile refs from the already-fetched profiles so Sensor can use the correct CO kind
 	// (Profile vs TailoredProfile) without needing to probe the k8s API.
 	profileRefs := make([]*central.ApplyComplianceScanConfigRequest_ProfileReference, 0, len(returnedProfiles))
