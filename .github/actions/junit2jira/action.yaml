@@ -82,6 +82,7 @@ runs:
           -build-link "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
           -build-tag "${{ github.ref_name }}@${{ github.sha }}" \
           -csv-output "${csv_output}" \
+          -jira-url "https://redhat.atlassian.net/" \
           -job-name "${{ github.job }}" \
           -junit-reports-dir "${{ inputs.directory }}" \
           -orchestrator "${{ runner.name }} ${{ runner.os }}-${{ runner.arch }}" \
