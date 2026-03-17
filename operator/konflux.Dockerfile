@@ -39,14 +39,6 @@ RUN dnf install -y \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/*
 
-COPY --from=builder /go/src/github.com/stackrox/rox/app/image/bin/operator /out/usr/local/bin/rhacs-operator
-COPY LICENSE /out/licenses/LICENSE
-
-
-FROM ubi-micro-base
-
-COPY --from=package_installer /out/ /
-
 ARG BUILD_TAG
 
 LABEL \
@@ -67,6 +59,12 @@ LABEL \
     # Release label is required by EC although has no practical semantics.
     # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
     release="1"
+
+COPY --from=package_installer /out/ /
+
+COPY --from=builder /go/src/github.com/stackrox/rox/app/image/bin/operator /usr/local/bin/rhacs-operator
+
+COPY LICENSE /licenses/LICENSE
 
 ENV ROX_IMAGE_FLAVOR="rhacs"
 
