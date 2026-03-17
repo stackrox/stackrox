@@ -361,10 +361,11 @@ func (suite *RuntimeCriteriaTestSuite) TestKubeEventConstraints() {
 			builderErr: true,
 		},
 		{
+			// KubeEvent and Process in separate sections is now invalid
 			event:              podExecEvent("p1", "c1", ""),
 			groups:             []*storage.PolicyGroup{podExecGroup},
-			expectedViolations: []*storage.Alert_Violation{podExecViolationMsg("p1", "c1", "")},
 			withProcessSection: true,
+			builderErr:         true,
 		},
 		// PODS_ATTACH test cases
 		{

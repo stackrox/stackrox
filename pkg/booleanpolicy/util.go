@@ -15,31 +15,40 @@ func ContainsOneOf(policy *storage.Policy, fieldType RuntimeFieldType) bool {
 	return false
 }
 
+// SectionContainsFileAccessOnly returns true if the section contains at least one field
+// that is FileAccess but NOT also Process (i.e., exclusively FileAccess).
+func SectionContainsFileAccessOnly(section *storage.PolicySection) bool {
+	for _, group := range section.GetPolicyGroups() {
+		fieldName := group.GetFieldName()
+		metadata := FieldMetadataSingleton().fieldsToQB[fieldName]
+		if metadata == nil {
+			continue
+		}
+
+		isProcess := false
+		isFileAccess := false
+		for _, fieldType := range metadata.fieldTypes {
+			if fieldType == Process {
+				isProcess = true
+			}
+			if fieldType == FileAccess {
+				isFileAccess = true
+			}
+		}
+
+		if isFileAccess && !isProcess {
+			return true
+		}
+	}
+	return false
+}
+
 // ContainsFileAccessOnly returns whether the policy contains at least one field that is FileAccess
 // but NOT also Process (i.e., exclusively FileAccess).
 func ContainsFileAccessOnly(policy *storage.Policy) bool {
 	for _, section := range policy.GetPolicySections() {
-		for _, group := range section.GetPolicyGroups() {
-			fieldName := group.GetFieldName()
-			metadata := FieldMetadataSingleton().fieldsToQB[fieldName]
-			if metadata == nil {
-				continue
-			}
-
-			isProcess := false
-			isFileAccess := false
-			for _, fieldType := range metadata.fieldTypes {
-				if fieldType == Process {
-					isProcess = true
-				}
-				if fieldType == FileAccess {
-					isFileAccess = true
-				}
-			}
-
-			if isFileAccess && !isProcess {
-				return true
-			}
+		if SectionContainsFileAccessOnly(section) {
+			return true
 		}
 	}
 	return false
@@ -136,7 +145,7 @@ func processAndFileAccessInSameSection(policy *storage.Policy) bool {
 
 	for _, section := range policy.GetPolicySections() {
 		if SectionContainsFieldOfType(section, Process) &&
-			!SectionContainsFieldOfType(section, FileAccess) {
+			!SectionContainsFileAccessOnly(section) {
 			return false
 		}
 	}
