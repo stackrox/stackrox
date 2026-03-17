@@ -25,6 +25,9 @@ import (
 )
 
 func TestVMScanV2DataStore(t *testing.T) {
+	if !features.VirtualMachinesEnhancedDataModel.Enabled() {
+		t.Skip("VM enhanced data model is not enabled")
+	}
 	suite.Run(t, new(vmScanV2DataStoreTestSuite))
 }
 
