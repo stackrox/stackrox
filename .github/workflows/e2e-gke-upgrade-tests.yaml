@@ -170,6 +170,13 @@ jobs:
       if: always()
       run: infractl delete "${CLUSTER_NAME}"
 
+    - name: Publish test summary
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
+        show: all
+
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
@@ -308,6 +315,13 @@ jobs:
       if: always()
       run: infractl delete "${CLUSTER_NAME}"
 
+    - name: Publish test summary
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
+        show: all
+
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
@@ -439,6 +453,13 @@ jobs:
     - name: Delete cluster
       if: always()
       run: infractl delete "${CLUSTER_NAME}"
+
+    - name: Publish test summary
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
+        show: all
 
     - name: Report junit failures in jira
       if: (!cancelled())
