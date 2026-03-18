@@ -342,29 +342,6 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 					log.Warn("Attempting to stop an un-started audit log reader - this is a no-op")
 				}
 			}
-		case *sensor.MsgToCompliance_Ack:
-			switch t.Ack.GetAction() {
-			case sensor.MsgToCompliance_NodeInventoryACK_ACK:
-				switch t.Ack.GetMessageType() {
-				case sensor.MsgToCompliance_NodeInventoryACK_NodeInventory:
-					c.umhNodeInventory.HandleACK()
-				case sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer:
-					c.umhNodeIndex.HandleACK()
-				default:
-					log.Errorf("Unknown ACK Type: %s", t.Ack.GetMessageType())
-				}
-			case sensor.MsgToCompliance_NodeInventoryACK_NACK:
-				switch t.Ack.GetMessageType() {
-				case sensor.MsgToCompliance_NodeInventoryACK_NodeInventory:
-					c.umhNodeInventory.HandleNACK()
-				case sensor.MsgToCompliance_NodeInventoryACK_NodeIndexer:
-					c.umhNodeIndex.HandleNACK()
-				default:
-					log.Errorf("Unknown ACK Type: %s", t.Ack.GetMessageType())
-				}
-			default:
-				log.Errorf("Unknown ACK Action: %s", t.Ack.GetAction())
-			}
 		case *sensor.MsgToCompliance_ComplianceAck:
 			complianceAck := t.ComplianceAck
 			log.Debugf("Received ComplianceACK: type=%s, action=%s, resource_id=%s, reason=%s",
@@ -373,10 +350,36 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 				complianceAck.GetResourceId(),
 				complianceAck.GetReason(),
 			)
-		// TODO: Handle ComplianceACK message from Sensor/Central 4.10.
+			c.handleNodeScanningComplianceAck(complianceAck)
 		default:
 			utils.Should(errors.Errorf("Unhandled msg type: %T", t))
 		}
+	}
+}
+
+func (c *Compliance) handleNodeScanningComplianceAck(complianceAck *sensor.MsgToCompliance_ComplianceACK) {
+	if complianceAck == nil {
+		return
+	}
+
+	var handler node.UnconfirmedMessageHandler
+	switch complianceAck.GetMessageType() {
+	case sensor.MsgToCompliance_ComplianceACK_NODE_INVENTORY:
+		handler = c.umhNodeInventory
+	case sensor.MsgToCompliance_ComplianceACK_NODE_INDEX_REPORT:
+		handler = c.umhNodeIndex
+	default:
+		log.Debugf("Ignoring ComplianceACK with unsupported message type: %s", complianceAck.GetMessageType())
+		return
+	}
+
+	switch complianceAck.GetAction() {
+	case sensor.MsgToCompliance_ComplianceACK_ACK:
+		handler.HandleACK()
+	case sensor.MsgToCompliance_ComplianceACK_NACK:
+		handler.HandleNACK()
+	default:
+		log.Errorf("Unknown ComplianceACK action: %s", complianceAck.GetAction())
 	}
 }
 
