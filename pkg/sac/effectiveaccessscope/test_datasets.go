@@ -596,7 +596,7 @@ func namespacesTree(namespaces ...*namespacesScopeSubTree) map[string]*namespace
 }
 
 func included(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
-	return namespace(Included, n)
+	return namespaceSubTree(Included, n)
 }
 
 func includedStandard(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
@@ -604,14 +604,14 @@ func includedStandard(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
 }
 
 func excluded(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
-	return namespace(Excluded, n)
+	return namespaceSubTree(Excluded, n)
 }
 
 func excludedStandard(n *storage.NamespaceMetadata) *namespacesScopeSubTree {
 	return namespaceStandard(Excluded, n)
 }
 
-func namespace(scope scopeState, n *storage.NamespaceMetadata) *namespacesScopeSubTree {
+func namespaceSubTree(scope scopeState, n *storage.NamespaceMetadata) *namespacesScopeSubTree {
 	return &namespacesScopeSubTree{State: scope, Attributes: treeNodeAttributes{
 		ID:     n.GetId(),
 		Name:   n.GetName(),
