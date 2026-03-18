@@ -1501,6 +1501,37 @@ func TestScopeTreePopulateStateForCluster(t *testing.T) {
 				},
 			},
 		},
+		"cluster state is NOT updated if previously computed state is greater": {
+			root: &ScopeTree{
+				State: Excluded,
+				Clusters: map[string]*clustersScopeSubTree{
+					clusterEarth.GetName(): {
+						State:      Included,
+						Namespaces: make(map[string]*namespacesScopeSubTree),
+						Attributes: treeNodeAttributes{},
+					},
+				},
+				clusterIDToName: map[string]string{
+					clusterEarth.GetId(): clusterEarth.GetName(),
+				},
+			},
+			ruleSelectors: nil, // Selection rules exclude the cluster.
+			cluster:       clusterEarth,
+			detail:        v1.ComputeEffectiveAccessScopeRequest_MINIMAL,
+			expected: &ScopeTree{
+				State: Excluded,
+				Clusters: map[string]*clustersScopeSubTree{
+					clusterEarth.GetName(): {
+						State:      Included,
+						Namespaces: make(map[string]*namespacesScopeSubTree),
+						Attributes: treeNodeAttributes{},
+					},
+				},
+				clusterIDToName: map[string]string{
+					clusterEarth.GetId(): clusterEarth.GetName(),
+				},
+			},
+		},
 	} {
 		t.Run(name, func(it *testing.T) {
 			tc.root.populateStateForCluster(tc.cluster, tc.ruleSelectors, tc.detail)
@@ -1527,6 +1558,56 @@ func TestClusterScopeSubTreePopulateStateForNamespace(t *testing.T) {
 			detail:        v1.ComputeEffectiveAccessScopeRequest_HIGH,
 			expected: &clustersScopeSubTree{
 				State: Included,
+				Namespaces: map[string]*namespacesScopeSubTree{
+					nsJPL.GetName(): {
+						State:      Included,
+						Attributes: nodeAttributesForNamespace(nsJPL, v1.ComputeEffectiveAccessScopeRequest_HIGH),
+					},
+				},
+			},
+		},
+		"State of already added namespace is updated if higher": {
+			clusterSubTree: &clustersScopeSubTree{
+				State: Excluded,
+				Namespaces: map[string]*namespacesScopeSubTree{
+					nsJPL.GetName(): {
+						State:      Excluded,
+						Attributes: nodeAttributesForNamespace(nsJPL, v1.ComputeEffectiveAccessScopeRequest_HIGH),
+					},
+				},
+			},
+			ruleSelectors: &selectors{
+				namespacesByClusterName: map[string]map[string]bool{
+					nsJPL.GetClusterName(): {nsJPL.GetName(): true},
+				},
+			},
+			namespace: nsJPL,
+			detail:    v1.ComputeEffectiveAccessScopeRequest_MINIMAL,
+			expected: &clustersScopeSubTree{
+				State: Excluded,
+				Namespaces: map[string]*namespacesScopeSubTree{
+					nsJPL.GetName(): {
+						State:      Included,
+						Attributes: nodeAttributesForNamespace(nsJPL, v1.ComputeEffectiveAccessScopeRequest_HIGH),
+					},
+				},
+			},
+		},
+		"State of already added namespace is NOT updated if lower": {
+			clusterSubTree: &clustersScopeSubTree{
+				State: Excluded,
+				Namespaces: map[string]*namespacesScopeSubTree{
+					nsJPL.GetName(): {
+						State:      Included,
+						Attributes: nodeAttributesForNamespace(nsJPL, v1.ComputeEffectiveAccessScopeRequest_HIGH),
+					},
+				},
+			},
+			ruleSelectors: nil, // recomputed namespace state is Excluded
+			namespace:     nsJPL,
+			detail:        v1.ComputeEffectiveAccessScopeRequest_MINIMAL,
+			expected: &clustersScopeSubTree{
+				State: Excluded,
 				Namespaces: map[string]*namespacesScopeSubTree{
 					nsJPL.GetName(): {
 						State:      Included,
