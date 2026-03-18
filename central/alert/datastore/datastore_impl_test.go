@@ -884,6 +884,108 @@ func (s *AlertDatastoreImplSuite) TestSearchAlertTimeseriesEventsMultiple() {
 	}
 }
 
+// TestSearchAlertDeploymentIDs tests the deployment ID projection query
+func (s *AlertDatastoreImplSuite) TestSearchAlertDeploymentIDs() {
+	alert := fixtures.GetAlert()
+	alert.EntityType = storage.Alert_DEPLOYMENT
+	alert.PlatformComponent = false
+
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+	s.createAndTrackAlert(alert)
+
+	// Test 1: Search excluding resolved returns the deployment ID
+	ids, err := s.datastore.SearchAlertDeploymentIDs(ctx, search.EmptyQuery(), true)
+	s.NoError(err)
+	s.Len(ids, 1)
+	s.Equal(alert.GetDeployment().GetId(), ids[0])
+
+	// Test 2: Search with policy filter
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.PolicyID, alert.GetPolicy().GetId()).
+		ProtoQuery()
+	ids, err = s.datastore.SearchAlertDeploymentIDs(ctx, q, true)
+	s.NoError(err)
+	s.Len(ids, 1)
+	s.Equal(alert.GetDeployment().GetId(), ids[0])
+
+	// Test 3: Mark alert as resolved
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+	_, err = s.datastore.MarkAlertsResolvedBatch(ctx, alert.GetId())
+	s.NoError(err)
+
+	// Test 4: Search excluding resolved should return 0
+	ids, err = s.datastore.SearchAlertDeploymentIDs(ctx, search.EmptyQuery(), true)
+	s.NoError(err)
+	s.Len(ids, 0)
+
+	// Test 5: Search including resolved should return 1
+	ids, err = s.datastore.SearchAlertDeploymentIDs(ctx, search.EmptyQuery(), false)
+	s.NoError(err)
+	s.Len(ids, 1)
+}
+
+// TestSearchAlertDeploymentIDsDeduplication tests that duplicate deployment IDs are collapsed
+func (s *AlertDatastoreImplSuite) TestSearchAlertDeploymentIDsDeduplication() {
+	// Create multiple alerts for the same deployment (different policies)
+	alertIDs := []string{fixtureconsts.Alert1, fixtureconsts.Alert2, fixtureconsts.Alert3}
+
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil).Times(len(alertIDs))
+
+	sharedDeploymentID := fixtureconsts.Deployment1
+	for i, id := range alertIDs {
+		alert := fixtures.GetAlert()
+		alert.Id = id
+		alert.EntityType = storage.Alert_DEPLOYMENT
+		alert.PlatformComponent = false
+		alert.Policy.Id = fmt.Sprintf("policy-%d", i)
+		alert.Policy.Name = fmt.Sprintf("Policy %d", i)
+		alert.GetDeployment().Id = sharedDeploymentID
+		s.createAndTrackAlert(alert)
+	}
+
+	// Should return only 1 unique deployment ID despite 3 alerts
+	ids, err := s.datastore.SearchAlertDeploymentIDs(ctx, search.EmptyQuery(), true)
+	s.NoError(err)
+	s.Len(ids, 1)
+	s.Equal(sharedDeploymentID, ids[0])
+}
+
+// TestSearchAlertDeploymentIDsMultipleDeployments tests with alerts across different deployments
+func (s *AlertDatastoreImplSuite) TestSearchAlertDeploymentIDsMultipleDeployments() {
+	alertIDs := []string{fixtureconsts.Alert1, fixtureconsts.Alert2, fixtureconsts.Alert3}
+	deploymentIDs := []string{fixtureconsts.Deployment1, fixtureconsts.Deployment2, fixtureconsts.Deployment3}
+
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil).Times(len(alertIDs))
+
+	for i, id := range alertIDs {
+		alert := fixtures.GetAlert()
+		alert.Id = id
+		alert.EntityType = storage.Alert_DEPLOYMENT
+		alert.PlatformComponent = false
+		alert.GetDeployment().Id = deploymentIDs[i]
+		s.createAndTrackAlert(alert)
+	}
+
+	ids, err := s.datastore.SearchAlertDeploymentIDs(ctx, search.EmptyQuery(), true)
+	s.NoError(err)
+	s.Len(ids, 3)
+	s.ElementsMatch(deploymentIDs, ids)
+}
+
+// TestSearchAlertDeploymentIDsResourceAlerts tests that resource alerts (no deployment) return empty deployment IDs
+func (s *AlertDatastoreImplSuite) TestSearchAlertDeploymentIDsResourceAlerts() {
+	alert := fixtures.GetResourceAlert()
+	alert.PlatformComponent = false
+
+	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+	s.createAndTrackAlert(alert)
+
+	// Resource alerts have no deployment ID — should be filtered out
+	ids, err := s.datastore.SearchAlertDeploymentIDs(ctx, search.EmptyQuery(), true)
+	s.NoError(err)
+	s.Len(ids, 0)
+}
+
 // TestUpsert_PlatformComponentAndEntityTypeAssignment tests platform component assignment logic
 // Moved from datastore_test.go and converted to use real data instead of mocks
 func (s *AlertDatastoreImplSuite) TestUpsert_PlatformComponentAndEntityTypeAssignment() {
