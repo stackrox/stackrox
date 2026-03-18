@@ -142,12 +142,18 @@ func (w *WorkloadManager) manageSecrets(ctx context.Context, workload SecretWork
 func (w *WorkloadManager) updateAllDockerConfigSecrets(ctx context.Context, wave int) {
 	updated := 0
 	for _, ns := range w.dockerSecretNamespaces {
+		if ctx.Err() != nil {
+			return
+		}
 		secretClient := w.client.Kubernetes().CoreV1().Secrets(ns)
 		list, err := secretClient.List(ctx, metav1.ListOptions{})
 		if err != nil {
 			continue
 		}
 		for i := range list.Items {
+			if ctx.Err() != nil {
+				return
+			}
 			secret := &list.Items[i]
 			if secret.Type != corev1.SecretTypeDockerConfigJson && secret.Type != corev1.SecretTypeDockercfg {
 				continue
