@@ -102,6 +102,8 @@ class SplunkUtil {
                     .basic("admin", SPLUNK_ADMIN_PASSWORD)
                     .param("output_mode", "json")
                     .get("https://127.0.0.1:${port}/services/search/jobs/${searchId}/events")
+            assert response.statusCode() == 200 :
+                    "GET search results for ${searchId} failed with status ${response.statusCode()}: ${response.asString()}"
         }
         return response
     }
@@ -115,6 +117,9 @@ class SplunkUtil {
                     .formParam("search", search)
                     .formParam("output_mode", "json")
                     .post("https://127.0.0.1:${port}/services/search/jobs")
+            // Splunk REST API returns 201 for search job creation
+            assert response.statusCode() == 201 :
+                    "POST search jobs failed with status ${response.statusCode()}: ${response.asString()}"
         }
 
         log.debug response?.asString()
@@ -163,7 +168,7 @@ class SplunkUtil {
                     new Deployment()
                             .setNamespace(namespace)
                             .setName(deploymentName)
-                            .setImage("quay.io/rhacs-eng/qa:splunk-test-repo-9-0-5")
+                            .setImage("docker.io/splunk/splunk:9.4.6")
                             .addPort(8000)
                             .addPort(8088)
                             .addPort(8089)
@@ -237,10 +242,13 @@ class SplunkUtil {
 
     static void postToSplunk(int port, String path, Map<String, String> parameters) {
         withRetry(20, 30) {
-            given().auth().basic("admin", SPLUNK_ADMIN_PASSWORD)
+            def response = given().auth().basic("admin", SPLUNK_ADMIN_PASSWORD)
                     .relaxedHTTPSValidation()
                     .params(parameters)
                     .post("https://localhost:${port}${path}")
+            // Splunk REST API returns 200 for updates, 201 for resource creation
+            assert response.statusCode() == 200 || response.statusCode() == 201 :
+                    "POST ${path} failed with status ${response.statusCode()}: ${response.asString()}"
         }
     }
 

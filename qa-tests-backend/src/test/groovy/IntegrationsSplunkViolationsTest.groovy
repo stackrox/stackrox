@@ -5,7 +5,6 @@ import static util.SplunkUtil.tearDownSplunk
 import static util.SplunkUtil.waitForSplunkBoot
 
 import java.nio.file.Paths
-import java.util.concurrent.TimeUnit
 
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
@@ -32,7 +31,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     private static final String ASSETS_DIR = Paths.get(
             System.getProperty("user.dir"), "artifacts", "splunk-violations-test")
     private static final String PATH_TO_SPLUNK_TA_SPL = Paths.get(ASSETS_DIR,
-    "2024-09-17-TA-stackrox-2.0.3.spl")
+    "TA-stackrox-2.0.5.spl")
     // CIM downloaded from https://classic.splunkbase.splunk.com/app/1621/
     private static final String PATH_TO_CIM_TA_TGZ = Paths.get(ASSETS_DIR,
     "splunk-common-information-model-cim_511.tgz")
@@ -41,7 +40,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     private static final String TEST_NAMESPACE = Constants.SPLUNK_TEST_NAMESPACE
     private static final String SPLUNK_INPUT_NAME = "stackrox-violations-input"
     private static final String SPLUNK_TA_CONVERSION_JOB_NAME =
-            "Threat%20-%20Create%20Notable%20from%20RHACS%20Alert%20-%20Rule"
+            "Threat - Create Notable from RHACS Alert - Rule"
 
     private SplunkDeployment splunkDeployment
 
@@ -102,8 +101,10 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                 ["central_endpoint": "${centralHost}:443",
                  "api_token": tokenResp.getToken(),])
         // create new input to search violations from
-        postToSplunk(port, "/servicesNS/nobody/TA-stackrox/data/inputs/stackrox_violations",
-                ["name": SPLUNK_INPUT_NAME, "interval": "5", "from_checkpoint": "2000-01-01T00:00:00.000Z"])
+        // UCC-based TAs register inputs via custom REST handlers, not data/inputs/
+        postToSplunk(port, "/servicesNS/nobody/TA-stackrox/TA_stackrox_stackrox_violations",
+                ["name": SPLUNK_INPUT_NAME, "interval": "5", "from_checkpoint": "2000-01-01T00:00:00.000Z",
+                 "index": "main"])
     }
 
     @Tag("Integration")
@@ -126,7 +127,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         def port = splunkDeployment.splunkPortForward.getLocalPort()
         withRetry(40, 15) {
             def searchId = SplunkUtil.createSearch(port, "search sourcetype=stackrox-violations")
-            TimeUnit.SECONDS.sleep(15)
             Response response = SplunkUtil.getSearchResults(port, searchId)
             // We should have at least one violation in the response
             assert response != null
@@ -143,7 +143,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         log.info "Starting conversion of ACS violations to Splunk alerts"
         // This conversion job is run by the Splunk Cronjob every 5 minutes. We need the created alerts.
         // This forces an out of schedule run to minimize waiting time for its results.
-        postToSplunk(port, "/services/saved/searches/" + SPLUNK_TA_CONVERSION_JOB_NAME +"/dispatch", [
+        postToSplunk(port, "/services/saved/searches/" + SPLUNK_TA_CONVERSION_JOB_NAME + "/dispatch", [
                 "dispatch.now": "true",
                 "force_dispatch": "true",
         ])
@@ -156,7 +156,6 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             // Hint: If this produces no results, evaluate expanding the earliest_time, e.g. to -15m.
             // This can be done by expanding `createSearch` with a new parameter.
             def vSearchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
-            TimeUnit.SECONDS.sleep(15)
             Response vResponse = SplunkUtil.getSearchResults(port, vSearchId)
             // We should have at least one violation in the response
             assert vResponse != null
@@ -193,12 +192,13 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         // Note that policyDescription and signature might be absent, i.e. null
         assert result.get("signature") == policyInfo.get("policyDescription")
 
-        // user
+        // user — when processInfo fields are absent (e.g. K8S_EVENT violations),
+        // Splunk's EVAL-user concatenation produces "unknown" rather than null
         def processUid = processInfo.get("processUid")
         def processGid = processInfo.get("processGid")
         def expectedUser = processUid == null || processGid == null
                 ? "unknown" : processUid + ":" + processGid
-        verifyRequiredResultKey(result, "user", expectedUser)
+        assert result.get("user") == expectedUser
 
         // severity
         String severity = coalesce(extractNestedString(originalEvent, "policyInfo.policySeverity"), "unknown")
@@ -223,7 +223,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         )
         verifyRequiredResultKey(result, "src_type", srcType)
 
-        // dest
+        // dest — CIM data model fills missing dest with "unknown"
         String dest = coalesce(
                 extractDestOrSrc(originalEvent, "destination"),
                 extractNestedString(originalEvent, "networkFlowInfo.destination.name"),
