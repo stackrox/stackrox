@@ -19,7 +19,10 @@ const isProd = process.env.NODE_ENV === 'production';
  */
 function getProductVersion() {
     const repositoryRoot = path.resolve(__dirname, '../../..');
-    const rawVersion = execSync('make tag', { cwd: repositoryRoot, encoding: 'utf-8' }).trim();
+    const rawVersion = execSync('make --no-print-directory tag', {
+        cwd: repositoryRoot,
+        encoding: 'utf-8',
+    }).trim();
     const version = rawVersion.replace(/\.x/, '.0');
 
     // eslint-disable-next-line no-console
