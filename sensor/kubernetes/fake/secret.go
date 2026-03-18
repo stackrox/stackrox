@@ -32,14 +32,17 @@ func getDockerConfigSecret(namespace, id string, registryIdx int) *corev1.Secret
 			},
 		},
 	}
-	data, _ := json.Marshal(cfg)
+	data, err := json.Marshal(cfg)
+	if err != nil {
+		log.Errorf("Failed to marshal docker config JSON: %v", err)
+	}
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("pull-secret-%04d", registryIdx),
+			Name:      fmt.Sprintf("pull-secret-%04d-%s", registryIdx, randStringWithLength(5)),
 			Namespace: namespace,
 			UID:       idOrNewUID(id),
 			CreationTimestamp: metav1.Time{
@@ -60,7 +63,7 @@ func getOpaqueSecret(namespace, id string, idx int) *corev1.Secret {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("opaque-secret-%04d", idx),
+			Name:      fmt.Sprintf("opaque-secret-%04d-%s", idx, randStringWithLength(5)),
 			Namespace: namespace,
 			UID:       idOrNewUID(id),
 			CreationTimestamp: metav1.Time{
@@ -77,13 +80,25 @@ func getOpaqueSecret(namespace, id string, idx int) *corev1.Secret {
 func (w *WorkloadManager) getSecrets(workload SecretWorkload, ids []string) []runtime.Object {
 	total := workload.NumDockerCfgSecrets + workload.NumOpaqueSecrets
 	objects := make([]runtime.Object, 0, total)
+	// Namespace assignment uses GetArbitraryElem which is hash-dependent, not
+	// uniformly random. The goal is to trigger per-secret ResolveAllDeployments
+	// amplification, not even distribution. If namespace imbalance matters for
+	// a specific reproduction scenario, switch to round-robin.
+	nsSet := make(map[string]struct{})
 	idx := 0
 	for i := 0; i < workload.NumDockerCfgSecrets; i++ {
 		ns := namespacePool.mustGetRandomElem()
+		nsSet[ns] = struct{}{}
 		secret := getDockerConfigSecret(ns, getID(ids, idx), i)
 		w.writeID(secretPrefix, secret.UID)
 		objects = append(objects, secret)
 		idx++
+	}
+	// Track namespaces that received docker config secrets so update waves
+	// only scan relevant namespaces instead of the entire namespace pool.
+	w.dockerSecretNamespaces = make([]string, 0, len(nsSet))
+	for ns := range nsSet {
+		w.dockerSecretNamespaces = append(w.dockerSecretNamespaces, ns)
 	}
 	for i := 0; i < workload.NumOpaqueSecrets; i++ {
 		ns := namespacePool.mustGetRandomElem()
@@ -103,10 +118,6 @@ func (w *WorkloadManager) getSecrets(workload SecretWorkload, ids []string) []ru
 // harmless; once deployments are in the store the amplification kicks in.
 func (w *WorkloadManager) manageSecrets(ctx context.Context, workload SecretWorkload) {
 	defer w.wg.Done()
-	if workload.UpdateInterval <= 0 {
-		return
-	}
-
 	log.Infof("Secret workload: starting update waves every %s for %d docker config secrets",
 		workload.UpdateInterval, workload.NumDockerCfgSecrets)
 
@@ -130,7 +141,7 @@ func (w *WorkloadManager) manageSecrets(ctx context.Context, workload SecretWork
 // causes the secret dispatcher to call ResolveAllDeployments().
 func (w *WorkloadManager) updateAllDockerConfigSecrets(ctx context.Context, wave int) {
 	updated := 0
-	for _, ns := range namespacePool.elems() {
+	for _, ns := range w.dockerSecretNamespaces {
 		secretClient := w.client.Kubernetes().CoreV1().Secrets(ns)
 		list, err := secretClient.List(ctx, metav1.ListOptions{})
 		if err != nil {

@@ -1,11 +1,21 @@
 #!/usr/bin/env bash
-# Monitor sensor metrics during ICT OOM reproduction.
+# Monitor sensor metrics during secret OOM reproduction.
 # Tracks the ResolveAllDeployments() amplification waterfall:
 #   resolver queue saturation -> handler blocking -> memory growth
 #
 # Run this in a separate terminal while local-sensor is running.
 #
-# Usage: ./ict-oom-repro-monitor.sh [interval_seconds]
+# Usage: ./secret-oom-repro-monitor.sh [interval_seconds]
+#
+# Limitations:
+# - Parses Prometheus text exposition format with grep+awk. This is
+#   fragile if metric names, label sets, or exposition formatting change.
+# - Does not use `set -e` because curl failures are expected while the
+#   sensor is starting up; they are handled with an explicit check.
+# - Does not use `set -o pipefail` because grep exits 1 when a metric
+#   line is absent, which would falsely propagate as a pipeline error.
+
+set -u
 
 INTERVAL="${1:-5}"
 METRICS_URL="http://localhost:9090/metrics"

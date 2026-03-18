@@ -2,6 +2,7 @@ package fake
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -153,6 +154,7 @@ type WorkloadManager struct {
 	registeredHostConnections []manager.HostNetworkInfo
 	workload                  *Workload
 	originatorCache           *OriginatorCache
+	dockerSecretNamespaces    []string
 
 	// signals services
 	servicesInitialized  concurrency.Signal
@@ -311,7 +313,14 @@ func validateWorkload(workload *Workload) error {
 		return fmt.Errorf("incorrect probability value %.2f for 'openPortReuseProbability', "+
 			"rounding to %.2f", workload.NetworkWorkload.OpenPortReuseProbability, corrected)
 	}
-	// More validation checks can be added in the future
+	if workload.SecretWorkload.NumDockerCfgSecrets < 0 {
+		workload.SecretWorkload.NumDockerCfgSecrets = 0
+		return errors.New("negative numDockerCfgSecrets, clamped to 0")
+	}
+	if workload.SecretWorkload.NumOpaqueSecrets < 0 {
+		workload.SecretWorkload.NumOpaqueSecrets = 0
+		return errors.New("negative numOpaqueSecrets, clamped to 0")
+	}
 	return nil
 }
 

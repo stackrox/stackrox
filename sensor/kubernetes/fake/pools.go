@@ -59,12 +59,6 @@ func (p *pool) mustGetRandomElem() string {
 	return val
 }
 
-func (p *pool) elems() []string {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
-	return p.pool.AsSlice()
-}
-
 // EndpointPool stores endpoints by containerID using a map
 type EndpointPool struct {
 	Endpoints           map[string][]*sensor.NetworkEndpoint
