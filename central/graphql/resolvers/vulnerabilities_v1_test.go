@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/central/cve/matcher"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
-	imageV2Mocks "github.com/stackrox/rox/central/imagev2/datastore/mocks"
 	nsMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
@@ -72,8 +71,7 @@ func TestK8sCVEEnvImpact(t *testing.T) {
 	clusterDataStore := clusterMocks.NewMockDataStore(ctrl)
 	nsDataStore := nsMocks.NewMockDataStore(ctrl)
 	imageDataStore := imageMocks.NewMockDataStore(ctrl)
-	imageV2DataStore := imageV2Mocks.NewMockDataStore(ctrl)
-	cveMatcher, err := matcher.NewCVEMatcher(clusterDataStore, nsDataStore, imageDataStore, imageV2DataStore)
+	cveMatcher, err := matcher.NewCVEMatcher(clusterDataStore, nsDataStore, imageDataStore, nil)
 	require.NoError(t, err)
 
 	clusterDataStore.EXPECT().GetClusters(gomock.Any()).Return(clusters, nil).AnyTimes()
