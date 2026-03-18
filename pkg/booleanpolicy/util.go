@@ -176,8 +176,7 @@ func ContainsValidRuntimeFieldCategorySections(policy *storage.Policy) bool {
 	groupsSeen := set.NewStringSet()
 	for _, section := range policy.GetPolicySections() {
 		for _, group := range section.GetPolicyGroups() {
-			fieldName := group.GetFieldName()
-			metadata := FieldMetadataSingleton().fieldsToQB[fieldName]
+			metadata := FieldMetadataSingleton().fieldsToQB[group.GetFieldName()]
 			if metadata == nil {
 				continue
 			}
