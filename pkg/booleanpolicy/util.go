@@ -203,16 +203,6 @@ func SectionContainsFieldOfType(section *storage.PolicySection, fieldType Runtim
 	return false
 }
 
-// SectionContainsFieldName returns true if the section contains a policy group with the given field name.
-func SectionContainsFieldName(section *storage.PolicySection, fieldName string) bool {
-	for _, group := range section.GetPolicyGroups() {
-		if group.GetFieldName() == fieldName {
-			return true
-		}
-	}
-	return false
-}
-
 // FilterPolicySections returns a new policy containing only the policy sections that satisfy the predicate.
 func FilterPolicySections(policy *storage.Policy, pred func(section *storage.PolicySection) bool) *storage.Policy {
 	cloned := policy.CloneVT()
