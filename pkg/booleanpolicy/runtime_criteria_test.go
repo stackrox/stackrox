@@ -1675,20 +1675,7 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentDualPathMatching() {
 }
 
 func (suite *RuntimeCriteriaTestSuite) TestDeploymentFileAccessWithProcessCriteria() {
-	deployment := &storage.Deployment{
-		Name: "test-deployment",
-		Id:   "test-deployment-id",
-		Containers: []*storage.Container{
-			{
-				Name: "test-container",
-				Config: &storage.ContainerConfig{
-					Env: []*storage.ContainerConfig_EnvironmentConfig{
-						{Key: "PATH", Value: "/usr/bin:/bin"},
-					},
-				},
-			},
-		},
-	}
+	deployment := fixtures.LightweightDeployment()
 
 	type eventWrapper struct {
 		access      *storage.FileAccess
