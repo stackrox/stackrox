@@ -600,22 +600,17 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - define-job-matrix
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
-      env:
-        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-        QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-        QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-        QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
+      ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: true
+      QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+      QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+      QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
+      QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
+      QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -627,6 +622,12 @@ jobs:
         with:
           free-disk-space: 40
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -665,24 +666,41 @@ jobs:
         run: |
           ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
 
+      - name: Set up Python for bundle build
+        if: matrix.name != 'STACKROX_BRANDING'
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: operator/bundle_helpers/.python-version
+
       - name: Build Operator Bundle image
         if: |
           matrix.name != 'STACKROX_BRANDING'
         run: |
           make -C operator/ bundle bundle-build
 
+      - name: Prepare operator build dependencies
+        run: |
+          # Prepare Dockerfile and smuggled status for version info
+          make -C operator/ build/Dockerfile.gen smuggled-status-sh
+
+      - name: Build Operator binary for target architecture
+        run: |
+          # Build the operator binary for the target architecture
+          # This leverages GitHub Actions' Go module cache for faster builds
+          GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 \
+            scripts/go-build-file.sh operator/cmd/main.go bin/linux_${{ matrix.arch }}/stackrox-operator
+
+      - name: Determine operator image tag
+        id: operator-tag
+        run: |
+          TAG=$(make -C operator --quiet --no-print-directory tag)
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "image=quay.io/${{ env.QUAY_ORG }}/stackrox-operator:${TAG}" >> "$GITHUB_OUTPUT"
+
       - name: Build Operator image
         run: |
-          # The first invocation builds native architecture dependencies, which helps avoid the following error,
-          # which otherwise happens when cross-building. It also needlessly builds the operator binary for the
-          # native architecture, but this is quick and more robust than trying to repeat the dependencies here
-          # or in a separate intermediate target.
-          #   + protoc-gen-go
-          #   go: cannot install cross-compiled binaries when GOBIN is set
-          CGO_ENABLED=0                           scripts/lib.sh retry 6 true make -C operator/ build
-          # Once the native architecture dependencies are installed by the above command, the following one
-          # simply builds the actual operator binary for the correct target architecture.
-          CGO_ENABLED=0 GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ build docker-build
+          # Build operator image with pre-built binary
+          GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ docker-build
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@v4

@@ -1,6 +1,8 @@
 **/node_modules/
 /.git/
 /bin/
+# Allow operator pre-built binaries for optimized Docker builds
+!/bin/linux_*/stackrox-operator
 /image/bin/
 /image/rhel/bin/
 /linux-gocache/
