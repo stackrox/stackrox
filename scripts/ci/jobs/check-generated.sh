@@ -118,9 +118,16 @@ function check-operator-generated-files-up-to-date() {
     # Reorder resources in the files, strip comments, pretty print, and remove expected differences:
     # - "resource-policy: keep" on the CRDs in the chart
     # - namespace resource in the manifest
-    $yq -P ea '[.] | sort_by(.kind, .metadata.name) | del(.[].metadata.annotations.["helm.sh/resource-policy"]) | .[] | splitDoc | ... comments=""' \
+    # - imagePullSecrets in the deployment: empty array in the manifest, omitted in chart by templating
+    $yq -P ea '[.] | sort_by(.kind, .metadata.name)
+      | del(.[].metadata.annotations.["helm.sh/resource-policy"])
+      | del(.[] | select(.kind == "Deployment").spec.template.spec.imagePullSecrets)
+      | .[] | splitDoc | ... comments=""' \
       operator/dist/chart.yaml > operator/dist/chart-sorted.yaml
-    $yq -P ea '[.] | sort_by(.kind, .metadata.name) | filter(.kind != "Namespace")                              | .[] | splitDoc | ... comments=""' \
+    $yq -P ea '[.] | sort_by(.kind, .metadata.name)
+      | filter(.kind != "Namespace")
+      | del(.[] | select(.kind == "Deployment").spec.template.spec.imagePullSecrets)
+      | .[] | splitDoc | ... comments=""' \
       operator/dist/install.yaml > operator/dist/install-sorted.yaml
     github_endgroup
 
