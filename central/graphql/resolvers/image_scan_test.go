@@ -21,7 +21,7 @@ import (
 const (
 	imageWithScanQuery = `
 		query getImages($query: String, $pagination: Pagination) {
-			images(query: $query, pagination: $pagination) { 
+			images(query: $query, pagination: $pagination) {
 				id
 				scan {
 					imageComponents {
@@ -35,7 +35,7 @@ const (
 
 	imageWithoutScanQuery = `
 		query getImages($query: String, $pagination: Pagination) {
-			images(query: $query, pagination: $pagination) { 
+			images(query: $query, pagination: $pagination) {
 				id
 				imageComponents {
 					name
