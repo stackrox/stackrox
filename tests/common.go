@@ -39,11 +39,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/remotecommand"
 )
 
 //lint:file-ignore U1000 since common.go is included in several different go:build tags but not every function is used
@@ -603,44 +601,6 @@ func teardownPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 	require.NoError(t, err)
 
 	waitForTermination(t, pod.GetName())
-}
-
-// execInPod runs a command inside a pod container and returns stdout and stderr.
-func execInPod(t *testing.T, k8sClient kubernetes.Interface, namespace, podName, containerName string, command []string) (string, string) {
-	t.Helper()
-
-	config := getConfig(t)
-
-	req := k8sClient.CoreV1().RESTClient().Post().
-		Resource("pods").
-		Name(podName).
-		Namespace(namespace).
-		SubResource("exec").
-		VersionedParams(&coreV1.PodExecOptions{
-			Container: containerName,
-			Command:   command,
-			Stdin:     false,
-			Stdout:    true,
-			Stderr:    true,
-		}, scheme.ParameterCodec)
-
-	exec, err := remotecommand.NewSPDYExecutor(config, "POST", req.URL())
-	require.NoError(t, err, "creating SPDY executor")
-
-	var stdout, stderr bytes.Buffer
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
-		Stdout: &stdout,
-		Stderr: &stderr,
-	})
-	if err != nil {
-		t.Logf("execInPod command %v failed: %v\nstdout: %s\nstderr: %s", command, err, stdout.String(), stderr.String())
-	}
-	require.NoError(t, err, "executing command in pod %s/%s", namespace, podName)
-
-	return stdout.String(), stderr.String()
 }
 
 // teardownDeploymentInternal handles deployment deletion with configurable verification.
