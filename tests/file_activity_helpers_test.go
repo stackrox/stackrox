@@ -50,20 +50,34 @@ func skipIfNoFact(t *testing.T) {
 	t.Skip("Fact container not found or not running in collector pods, skipping file activity test")
 }
 
-// patchFactPaths ensures /tmp/**/* is included in the FACT_PATHS env var on the
-// Fact container in the collector DaemonSet, then waits for the rollout.
+// patchFactPaths sets FACT_PATHS and FACT_JSON env vars on the Fact container
+// in the collector DaemonSet, then waits for the rollout.
 func patchFactPaths(t *testing.T, client kubernetes.Interface) {
 	t.Helper()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"spec":{"containers":[{"name":%q,"env":[{"name":"FACT_PATHS","value":"/tmp/**/*"}]}]}}}}`, factContainerName))
+	patch := fmt.Sprintf(`{
+		"spec": {
+			"template": {
+				"spec": {
+					"containers": [{
+						"name": %q,
+						"env": [
+							{"name": "FACT_PATHS", "value": "/tmp/**/*"},
+							{"name": "FACT_JSON", "value": "true"}
+						]
+					}]
+				}
+			}
+		}
+	}`, factContainerName)
 
 	_, err := client.AppsV1().DaemonSets(namespaces.StackRox).Patch(
-		ctx, "collector", types.StrategicMergePatchType, patch, metaV1.PatchOptions{})
-	require.NoError(t, err, "patching collector DaemonSet FACT_PATHS")
-	t.Log("Patched FACT_PATHS to include /tmp/**/*")
+		ctx, "collector", types.StrategicMergePatchType, []byte(patch), metaV1.PatchOptions{})
+	require.NoError(t, err, "patching collector DaemonSet with FACT env vars")
+	t.Log("Patched FACT container: FACT_PATHS=/tmp/**/* FACT_JSON=true")
 
 	waitForCollectorReady(t, client)
 }
