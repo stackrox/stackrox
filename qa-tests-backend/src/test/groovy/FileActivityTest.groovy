@@ -105,11 +105,11 @@ class FileActivityTest extends BaseSpecification {
         "a privileged deployment that can exec on the host"
         def hostDeployment = new objects.Deployment()
                 .setName("fa-host-${RUN_ID}")
-                .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1.36")
+                .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1")
                 .setCommand(["sh", "-c", "sleep 3600"])
                 .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
                 .setPrivilegedFlag(true)
-                .addVolume("host-root", "/host", true)
+                .addHostMount("host-root", "/host")
         orchestrator.createDeployment(hostDeployment)
         assert Services.waitForDeployment(hostDeployment)
 
