@@ -264,9 +264,9 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
             confirmText="Save policy"
             confirmDisabled={Boolean(
                 messageObj ||
-                    policy.name.length < 6 ||
-                    !policy.severity ||
-                    !policy.lifecycleStages.length
+                policy.name.length < 6 ||
+                !policy.severity ||
+                !policy.lifecycleStages.length
             )}
             onCancel={closeWithoutSaving}
         >

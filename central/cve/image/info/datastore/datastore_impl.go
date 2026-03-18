@@ -7,6 +7,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -42,6 +43,15 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage.ImageCVEInfo, error) {
 	infos, _, err := ds.storage.GetMany(ctx, ids)
 	return infos, err
+}
+
+func (ds *datastoreImpl) GetByCVENames(ctx context.Context, cveNames []string) ([]*storage.ImageCVEInfo, error) {
+	if len(cveNames) == 0 {
+		return nil, nil
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.CVE, cveNames...).ProtoQuery()
+	return ds.SearchRawImageCVEInfos(ctx, q)
 }
 
 func (ds *datastoreImpl) Upsert(ctx context.Context, info *storage.ImageCVEInfo) error {
