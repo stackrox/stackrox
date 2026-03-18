@@ -37,3 +37,65 @@ tests:
       version: "v1.11.0"
   expect:
     .notes | assertThat(contains("we have inferred that you are deploying into an OpenShift 3"))
+
+- name: "Detect OpenShift 4 if openshift-4.18 server resources are visible"
+  server:
+    visibleSchemas:
+      - openshift-4.18
+  expect: |
+    .notes | assertThat(contains("we have inferred that you are deploying into an OpenShift 4"))
+    .configmaps["injected-cabundle-stackrox-central-services"] | assertThat(. != null)
+    .roles["use-central-scc"] | assertThat(. !=  null) # OpenShift 3-only 
+  tests:
+  - name: "and env.openshift is unset"
+  - name: "and env.openshift is set to true"
+    set:
+      env.openshift: true
+
+- name: "OpenShift 3 can be forced, producing a warning"
+  server:
+    visibleSchemas:
+      - openshift-4.18
+  set:
+    env.openshift: 3
+  expect: |
+    .notes | assertThat(contains("we have inferred that you are deploying into an OpenShift 4"))
+    .notes | assertThat(contains("User setting env.openshift=3 is in contrast to the result of the auto-sensing, which yielded an OpenShift 4.x target cluster"))
+    .configmaps["injected-cabundle-stackrox-central-services"] | assertThat(. == null) # OpenShift 4-only
+    .roles["use-central-scc"] | assertThat(. !=  null) # OpenShift 3-only 
+
+- name: "OpenShift 4 can be forced, producing a warning"
+  server:
+    visibleSchemas:
+      - openshift-3.11.0
+  capabilities:
+    kubeVersion:
+      version: "v1.11.0"
+  set:
+    env.openshift: 4
+  expect: |
+    .notes | assertThat(contains("we have inferred that you are deploying into an OpenShift 3"))
+    .notes | assertThat(contains("User setting env.openshift=4 is in contrast to the result of the auto-sensing, which yielded an OpenShift 3.x target cluster"))
+    .configmaps["injected-cabundle-stackrox-central-services"] | assertThat(. != null) # OpenShift 4-only
+
+- name: "non-OpenShift can be forced, producing a warning"
+  set:
+    env.openshift: false
+  expect: |
+    .notes | assertThat(contains("we have inferred that you are deploying into an OpenShift"))
+    .notes | assertThat(contains("User setting env.openshift=false is in contrast to the result of the auto-sensing, which yielded an OpenShift"))
+    .configmaps["injected-cabundle-stackrox-central-services"] | assertThat(. == null) # OpenShift 4-only
+    .roles["use-central-scc"] | assertThat(. ==  null) # OpenShift 3-only
+
+  tests:
+  - name: "when OpenShift 4 server resources are visible"
+    server:
+      visibleSchemas:
+        - openshift-4.18
+  - name: "when OpenShift 3 server resources are visible"
+    server:
+      visibleSchemas:
+        - openshift-3.11.0
+    capabilities:
+      kubeVersion:
+        version: "v1.11.0"
