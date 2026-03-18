@@ -1,0 +1,66 @@
+# ICT OOM Reproduction - Light version
+#
+# Scaled-down version for quick local verification on a laptop.
+# Demonstrates the ResolveAllDeployments() amplification waterfall.
+#
+# After an initial 30s settling period (for deployments to populate),
+# the secret manager sends a wave of updates to ALL 500 docker config
+# secrets every 30 seconds. Each wave triggers:
+#   500 secrets × 200 deployments = 100,000 resolves in the resolver.
+#
+# The resolver processes ~1,275 resolves/sec, so one wave takes ~78s
+# to drain — but the next wave arrives after 30s, before the previous
+# one finishes. The resolver falls irreversibly behind.
+#
+# To reproduce:
+#   go run ./tools/local-sensor \
+#       -with-fakeworkload scale/workloads/ict-oom-repro-light.yaml \
+#       -with-metrics \
+#       -with-pprof-server \
+#       -duration 15m \
+#       -skip-central-output
+#
+# Then monitor:
+#   ./scale/workloads/ict-oom-repro-monitor.sh
+
+numNamespaces: 50
+
+nodeWorkload:
+  numNodes: 20
+
+rbacWorkload:
+  numRoles: 100
+  numServiceAccounts: 100
+  numBindings: 100
+
+# 500 docker config secrets. After 30s startup delay, ALL are updated
+# every 30s (simulating informer re-list). Each update triggers
+# ResolveAllDeployments(200). One wave = 100K resolves, takes ~78s,
+# but next wave arrives in 30s -> resolver never catches up.
+secretWorkload:
+  numDockerCfgSecrets: 500
+  numOpaqueSecrets: 50
+  updateInterval: 30s
+
+deploymentWorkload:
+- deploymentType: Deployment
+  numDeployments: 200
+  numLabels: 5
+  lifecycleDuration: 60m
+  numLifecycles: 0
+  updateInterval: 60s
+  podWorkload:
+    numPods: 2
+    numContainers: 2
+    containerWorkload:
+      numImages: 10
+    lifecycleDuration: 120s
+    processWorkload:
+      processInterval: 30s
+      alertRate: 0.001
+
+networkWorkload:
+  batchSize: 20
+  flowInterval: 10s
+  generateUnclosedEndpoints: true
+  openPortReuseProbability: 0.05
