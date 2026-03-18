@@ -8,6 +8,7 @@ import (
 	labelUtils "github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 )
@@ -30,10 +31,14 @@ import (
 //   Bene Gesserit { region: dune_universe, alias: witches }                  //
 //   Fremen        { }                                                        //
 //                                                                            //
+// Giedi=Prime { focus: melange }                                             //
+//   Harkonnen     { focus: melange }
+//                                                                            //
 
 var clusters = []*storage.Cluster{
 	clusterEarth,
 	clusterArrakis,
+	clusterGiediPrime,
 }
 
 var namespaces = []*storage.NamespaceMetadata{
@@ -49,6 +54,8 @@ var namespaces = []*storage.NamespaceMetadata{
 	nsSpacingGuild,
 	nsBeneGesserit,
 	nsFremen,
+	// Giedi Prime
+	nsHarkonnenAtHome,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -115,6 +122,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Attributes: arrakisAttributes,
 					},
+					"Giedi=Prime": {
+						State: Excluded,
+						Namespaces: namespacesTree(
+							excluded(nsHarkonnenAtHome),
+						),
+						Attributes: giediPrimeAttributes,
+					},
 					"Not Found": notFoundCluster,
 				},
 			},
@@ -154,6 +168,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 							excluded(nsFremen),
 						),
 						Attributes: arrakisAttributes,
+					},
+					"Giedi=Prime": {
+						State: Excluded,
+						Namespaces: namespacesTree(
+							excluded(nsHarkonnenAtHome),
+						),
+						Attributes: giediPrimeAttributes,
 					},
 					"Not Found": notFoundCluster,
 				},
@@ -201,6 +222,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Attributes: arrakisAttributes,
 					},
+					"Giedi=Prime": {
+						State: Excluded,
+						Namespaces: namespacesTree(
+							excluded(nsHarkonnenAtHome),
+						),
+						Attributes: giediPrimeAttributes,
+					},
 					"Not Found": notFoundCluster,
 				},
 			},
@@ -244,6 +272,63 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Attributes: arrakisAttributes,
 					},
+					"Giedi=Prime": {
+						State: Excluded,
+						Namespaces: namespacesTree(
+							excluded(nsHarkonnenAtHome),
+						),
+						Attributes: giediPrimeAttributes,
+					},
+					"Not Found": notFoundCluster,
+				},
+			},
+			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
+			hasError: false,
+		},
+		{
+			desc:      "cluster included by name (not matching k8s label syntax) includes all its namespaces",
+			scopeDesc: `cluster: "Giedi=Prime" => { "Giedi=Prime::*" }`,
+			scopeStr:  "Giedi=Prime::*",
+			scopeJSON: `{"Giedi=Prime":["*"]}`,
+			scope: &storage.SimpleAccessScope{
+				Id:   accessScopeID,
+				Name: accessScopeName,
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedClusters: []string{"Giedi=Prime"},
+				},
+			},
+			expected: &ScopeTree{
+				State:           Partial,
+				clusterIDToName: clusterIDs,
+				Clusters: map[string]*clustersScopeSubTree{
+					"Earth": {
+						State: Excluded,
+						Namespaces: namespacesTree(
+							excluded(nsSkunkWorks),
+							excluded(nsFraunhofer),
+							excluded(nsCERN),
+							excluded(nsJPL),
+						),
+						Attributes: earthAttributes,
+					},
+					"Arrakis": {
+						State: Excluded,
+						Namespaces: namespacesTree(
+							excluded(nsAtreides),
+							excluded(nsHarkonnen),
+							excluded(nsSpacingGuild),
+							excluded(nsBeneGesserit),
+							excluded(nsFremen),
+						),
+						Attributes: arrakisAttributes,
+					},
+					"Giedi=Prime": {
+						State: Included,
+						Namespaces: namespacesTree(
+							included(nsHarkonnenAtHome),
+						),
+						Attributes: giediPrimeAttributes,
+					},
 					"Not Found": notFoundCluster,
 				},
 			},
@@ -277,9 +362,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		},
 		{
 			desc:      "cluster(s) included by label include all underlying namespaces",
-			scopeDesc: `cluster.labels: focus in (melange) => { "Arrakis::*" }`,
-			scopeStr:  "Arrakis::*",
-			scopeJSON: `{"Arrakis":["*"]}`,
+			scopeDesc: `cluster.labels: focus in (melange) => { "Arrakis::*, Giedi=Prime::*" }`,
+			scopeStr:  "Arrakis::*, Giedi=Prime::*",
+			scopeJSON: `{"Arrakis":["*"],"Giedi=Prime":["*"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -311,6 +396,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 							included(nsFremen),
 						),
 						Attributes: arrakisAttributes,
+					},
+					"Giedi=Prime": {
+						State: Included,
+						Namespaces: namespacesTree(
+							included(nsHarkonnenAtHome),
+						),
+						Attributes: giediPrimeAttributes,
 					},
 					"Not Found": notFoundCluster,
 				},
@@ -360,6 +452,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Attributes: arrakisAttributes,
 					},
+					"Giedi=Prime": {
+						State: Excluded,
+						Namespaces: namespacesTree(
+							excluded(nsHarkonnenAtHome),
+						),
+						Attributes: giediPrimeAttributes,
+					},
 					"Not Found": notFoundCluster,
 				},
 			},
@@ -368,9 +467,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		},
 		{
 			desc:      "namespace(s) included by label do not include anything else",
-			scopeDesc: `namespace.labels: focus in (melange) => { "Arrakis::Atreides", "Arrakis::Harkonnen" }`,
-			scopeStr:  "Arrakis::{Atreides, Harkonnen}",
-			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"]}`,
+			scopeDesc: `namespace.labels: focus in (melange) => { "Arrakis::Atreides", "Arrakis::Harkonnen", "Giedi=Prime::Harkonnen" }`,
+			scopeStr:  "Arrakis::{Atreides, Harkonnen}, Giedi=Prime::Harkonnen",
+			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"],"Giedi=Prime":["Harkonnen"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -402,6 +501,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 							excluded(nsFremen),
 						),
 						Attributes: arrakisAttributes,
+					},
+					"Giedi=Prime": {
+						State: Partial,
+						Namespaces: namespacesTree(
+							included(nsHarkonnenAtHome),
+						),
+						Attributes: giediPrimeAttributes,
 					},
 					"Not Found": notFoundCluster,
 				},
@@ -445,6 +551,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 							excluded(nsFremen),
 						),
 						Attributes: arrakisAttributes,
+					},
+					"Giedi=Prime": {
+						State: Excluded,
+						Namespaces: namespacesTree(
+							excluded(nsHarkonnenAtHome),
+						),
+						Attributes: giediPrimeAttributes,
 					},
 					"Not Found": notFoundCluster,
 				},
@@ -496,6 +609,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Attributes: arrakisAttributes,
 					},
+					"Giedi=Prime": {
+						State: Excluded,
+						Namespaces: namespacesTree(
+							excluded(nsHarkonnenAtHome),
+						),
+						Attributes: giediPrimeAttributes,
+					},
 					"Not Found": notFoundCluster,
 				},
 			},
@@ -546,6 +666,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 							excluded(nsFremen),
 						),
 						Attributes: arrakisAttributes,
+					},
+					"Giedi=Prime": {
+						State: Excluded,
+						Namespaces: namespacesTree(
+							excluded(nsHarkonnenAtHome),
+						),
+						Attributes: giediPrimeAttributes,
 					},
 					"Not Found": notFoundCluster,
 				},
@@ -599,6 +726,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Attributes: arrakisAttributes,
 					},
+					"Giedi=Prime": {
+						State: Excluded,
+						Namespaces: namespacesTree(
+							excluded(nsHarkonnenAtHome),
+						),
+						Attributes: giediPrimeAttributes,
+					},
 					"Not Found": notFoundCluster,
 				},
 			},
@@ -607,9 +741,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		},
 		{
 			desc:      "rules are joined by OR",
-			scopeDesc: `namespace: "Earth::Skunk Works" OR cluster.labels: focus in (melange) OR namespace.labels: region in (EU) => { "Earth::Skunk Works", "Earth::Fraunhofer", "Earth::CERN", "Arrakis::*" }`,
-			scopeStr:  "Arrakis::*, Earth::{CERN, Fraunhofer, Skunk Works}",
-			scopeJSON: `{"Earth":["CERN","Fraunhofer","Skunk Works"],"Arrakis":["*"]}`,
+			scopeDesc: `namespace: "Earth::Skunk Works" OR cluster.labels: focus in (melange) OR namespace.labels: region in (EU) => { "Earth::Skunk Works", "Earth::Fraunhofer", "Earth::CERN", "Arrakis::*", "Giedi=Prime::*" }`,
+			scopeStr:  "Arrakis::*, Earth::{CERN, Fraunhofer, Skunk Works}, Giedi=Prime::*",
+			scopeJSON: `{"Earth":["CERN","Fraunhofer","Skunk Works"],"Arrakis":["*"],"Giedi=Prime":["*"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -649,6 +783,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Attributes: arrakisAttributes,
 					},
+					"Giedi=Prime": {
+						State: Included,
+						Namespaces: namespacesTree(
+							included(nsHarkonnenAtHome),
+						),
+						Attributes: giediPrimeAttributes,
+					},
 					"Not Found": notFoundCluster,
 				},
 			},
@@ -657,9 +798,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		},
 		{
 			desc:      "all excluded namespaces are removed from cluster in minimal form",
-			scopeDesc: `"namespace.labels: focus in (melange)" => { "Arrakis::Atreides", "Arrakis::Harkonnen" }`,
-			scopeStr:  "Arrakis::{Atreides, Harkonnen}",
-			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"]}`,
+			scopeDesc: `"namespace.labels: focus in (melange)" => { "Arrakis::Atreides", "Arrakis::Harkonnen", "Giedi=Prime::Harkonnen" }`,
+			scopeStr:  "Arrakis::{Atreides, Harkonnen}, Giedi=Prime::Harkonnen",
+			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"],"Giedi=Prime":["Harkonnen"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -685,6 +826,16 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						},
 						Attributes: treeNodeAttributes{ID: "planet.arrakis"},
 					},
+					"Giedi=Prime": {
+						State: Partial,
+						Namespaces: map[string]*namespacesScopeSubTree{
+							"Harkonnen": {
+								State:      Included,
+								Attributes: treeNodeAttributes{ID: "house.harkonnen"},
+							},
+						},
+						Attributes: treeNodeAttributes{ID: "planet.giedi=prime"},
+					},
 				},
 			},
 			detail:   v1.ComputeEffectiveAccessScopeRequest_MINIMAL,
@@ -692,9 +843,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		},
 		{
 			desc:      "no labels in standard form",
-			scopeDesc: `"namespace.labels: focus in (melange)" => { "Arrakis::Atreides", "Arrakis::Harkonnen" }`,
-			scopeStr:  "Arrakis::{Atreides, Harkonnen}",
-			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"]}`,
+			scopeDesc: `"namespace.labels: focus in (melange)" => { "Arrakis::Atreides", "Arrakis::Harkonnen", "Giedi=Prime::Harkonnen" }`,
+			scopeStr:  "Arrakis::{Atreides, Harkonnen}, Giedi=Prime::Harkonnen",
+			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"],"Giedi=Prime":["Harkonnen"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -726,6 +877,13 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 							excludedStandard(nsFremen),
 						),
 						Attributes: treeNodeAttributes{ID: "planet.arrakis", Name: "Arrakis"},
+					},
+					"Giedi=Prime": {
+						State: Partial,
+						Namespaces: namespacesTree(
+							includedStandard(nsHarkonnenAtHome),
+						),
+						Attributes: treeNodeAttributes{ID: "planet.giedi=prime", Name: "Giedi=Prime"},
 					},
 					"Not Found": {
 						State:      Excluded,
@@ -1150,6 +1308,264 @@ func TestNewUnvalidatedRequirement(t *testing.T) {
 	for _, tc := range testCasesBad {
 		t.Run(tc.String(), func(t *testing.T) {
 			assert.Falsef(t, selector.Matches(tc), "%q should not match %q", selector.String(), tc.String())
+		})
+	}
+}
+
+func TestSelectorsMatchCluster(t *testing.T) {
+	focusOnMelangeRequirement, err := labels.NewRequirement("focus", selection.Equals, []string{"melange"})
+	require.NoError(t, err)
+	require.NotNil(t, focusOnMelangeRequirement)
+
+	for name, tc := range map[string]struct {
+		ruleSelector *selectors
+		cluster      *storage.Cluster
+		expected     scopeState
+	}{
+		"nil selector always excludes cluster": {
+			ruleSelector: nil,
+			cluster:      clusterEarth,
+			expected:     Excluded,
+		},
+		"cluster matched by name (matching k8s syntax) is included": {
+			ruleSelector: &selectors{
+				clustersByName: map[string]bool{
+					clusterEarth.GetName(): true,
+				},
+			},
+			cluster:  clusterEarth,
+			expected: Included,
+		},
+		"cluster matched by name (NOT matching k8s syntax) is included": {
+			ruleSelector: &selectors{
+				clustersByName: map[string]bool{
+					clusterGiediPrime.GetName(): true,
+				},
+			},
+			cluster:  clusterGiediPrime,
+			expected: Included,
+		},
+		"cluster matched by label is included": {
+			ruleSelector: &selectors{
+				clustersByLabel: []labels.Selector{
+					labels.NewSelector().Add(*focusOnMelangeRequirement),
+				},
+			},
+			cluster:  clusterArrakis,
+			expected: Included,
+		},
+		"cluster NOT matched by label is excluded": {
+			ruleSelector: &selectors{
+				clustersByLabel: []labels.Selector{
+					labels.NewSelector().Add(*focusOnMelangeRequirement),
+				},
+			},
+			cluster:  clusterEarth,
+			expected: Excluded,
+		},
+	} {
+		t.Run(name, func(it *testing.T) {
+			result := tc.ruleSelector.matchCluster(tc.cluster)
+			assert.Equal(it, tc.expected, result)
+		})
+	}
+}
+
+func TestSelectorsMatchNamespace(t *testing.T) {
+	focusOnMelangeRequirement, err := labels.NewRequirement("focus", selection.Equals, []string{"melange"})
+	require.NoError(t, err)
+	require.NotNil(t, focusOnMelangeRequirement)
+
+	for name, tc := range map[string]struct {
+		ruleSelectors *selectors
+		namespace     *storage.NamespaceMetadata
+		expected      scopeState
+	}{
+		"nil selector always exclude namespaces": {
+			ruleSelectors: nil,
+			namespace:     nsSkunkWorks,
+			expected:      Excluded,
+		},
+		"namespace matched by cluster name is included": {
+			ruleSelectors: &selectors{
+				namespacesByClusterName: map[string]map[string]bool{
+					nsSkunkWorks.GetClusterName(): {
+						nsSkunkWorks.GetName(): true,
+					},
+				},
+			},
+			namespace: nsSkunkWorks,
+			expected:  Included,
+		},
+		"namespace matched by label is included": {
+			ruleSelectors: &selectors{
+				namespacesByLabel: []labels.Selector{
+					labels.NewSelector().Add(*focusOnMelangeRequirement),
+				},
+			},
+			namespace: nsAtreides,
+			expected:  Included,
+		},
+		"namespace NOT matched by label is included": {
+			ruleSelectors: &selectors{
+				namespacesByLabel: []labels.Selector{
+					labels.NewSelector().Add(*focusOnMelangeRequirement),
+				},
+			},
+			namespace: nsSkunkWorks,
+			expected:  Excluded,
+		},
+	} {
+		t.Run(name, func(it *testing.T) {
+			result := tc.ruleSelectors.matchNamespace(tc.namespace)
+			assert.Equal(it, tc.expected, result)
+		})
+	}
+}
+
+func TestScopeTreePopulateStateForCluster(t *testing.T) {
+	for name, tc := range map[string]struct {
+		root          *ScopeTree
+		ruleSelectors *selectors
+		cluster       Cluster
+		detail        v1.ComputeEffectiveAccessScopeRequest_Detail
+		expected      *ScopeTree
+	}{
+		"matching cluster is added to the scope tree if not existing": {
+			root:          newEffectiveAccessScopeTree(Excluded),
+			ruleSelectors: &selectors{clustersByName: map[string]bool{clusterEarth.GetName(): true}},
+			cluster:       clusterEarth,
+			detail:        v1.ComputeEffectiveAccessScopeRequest_HIGH,
+			expected: &ScopeTree{
+				State: Excluded,
+				Clusters: map[string]*clustersScopeSubTree{
+					clusterEarth.GetName(): {
+						State:      Included,
+						Namespaces: make(map[string]*namespacesScopeSubTree),
+						Attributes: treeNodeAttributes{
+							ID:     clusterEarth.GetId(),
+							Name:   clusterEarth.GetName(),
+							Labels: clusterEarth.GetLabels(),
+						},
+					},
+				},
+				clusterIDToName: map[string]string{
+					clusterEarth.GetId(): clusterEarth.GetName(),
+				},
+			},
+		},
+		"matching cluster state is updated if previously computed state is lower": {
+			root: &ScopeTree{
+				State: Excluded,
+				Clusters: map[string]*clustersScopeSubTree{
+					clusterEarth.GetName(): {
+						State:      Excluded,
+						Namespaces: make(map[string]*namespacesScopeSubTree),
+						Attributes: treeNodeAttributes{},
+					},
+				},
+				clusterIDToName: map[string]string{
+					clusterEarth.GetId(): clusterEarth.GetName(),
+				},
+			},
+			ruleSelectors: &selectors{clustersByName: map[string]bool{clusterEarth.GetName(): true}},
+			cluster:       clusterEarth,
+			detail:        v1.ComputeEffectiveAccessScopeRequest_MINIMAL,
+			expected: &ScopeTree{
+				State: Excluded,
+				Clusters: map[string]*clustersScopeSubTree{
+					clusterEarth.GetName(): {
+						State:      Included,
+						Namespaces: make(map[string]*namespacesScopeSubTree),
+						Attributes: treeNodeAttributes{
+							ID: clusterEarth.GetId(),
+						},
+					},
+				},
+				clusterIDToName: map[string]string{
+					clusterEarth.GetId(): clusterEarth.GetName(),
+				},
+			},
+		},
+	} {
+		t.Run(name, func(it *testing.T) {
+			tc.root.populateStateForCluster(tc.cluster, tc.ruleSelectors, tc.detail)
+			assert.Equal(it, tc.expected, tc.root)
+		})
+	}
+}
+
+func TestClusterScopeSubTreePopulateStateForNamespace(t *testing.T) {
+	for name, tc := range map[string]struct {
+		clusterSubTree *clustersScopeSubTree
+		ruleSelectors  *selectors
+		namespace      Namespace
+		detail         v1.ComputeEffectiveAccessScopeRequest_Detail
+		expected       *clustersScopeSubTree
+	}{
+		"Namespace from included cluster is added as included regardless of the selection rules": {
+			clusterSubTree: &clustersScopeSubTree{
+				State:      Included,
+				Namespaces: make(map[string]*namespacesScopeSubTree),
+			},
+			ruleSelectors: nil, // nil selector excluded the namespace
+			namespace:     nsJPL,
+			detail:        v1.ComputeEffectiveAccessScopeRequest_HIGH,
+			expected: &clustersScopeSubTree{
+				State: Included,
+				Namespaces: map[string]*namespacesScopeSubTree{
+					nsJPL.GetName(): {
+						State:      Included,
+						Attributes: nodeAttributesForNamespace(nsJPL, v1.ComputeEffectiveAccessScopeRequest_HIGH),
+					},
+				},
+			},
+		},
+		"New namespace is added with computed state (Excluded)": {
+			clusterSubTree: &clustersScopeSubTree{
+				State:      Excluded,
+				Namespaces: make(map[string]*namespacesScopeSubTree),
+			},
+			ruleSelectors: nil, // nil selector excluded the namespace
+			namespace:     nsJPL,
+			detail:        v1.ComputeEffectiveAccessScopeRequest_HIGH,
+			expected: &clustersScopeSubTree{
+				State: Excluded,
+				Namespaces: map[string]*namespacesScopeSubTree{
+					nsJPL.GetName(): {
+						State:      Excluded,
+						Attributes: nodeAttributesForNamespace(nsJPL, v1.ComputeEffectiveAccessScopeRequest_HIGH),
+					},
+				},
+			},
+		},
+		"New namespace is added with computed state (Included)": {
+
+			clusterSubTree: &clustersScopeSubTree{
+				State:      Excluded,
+				Namespaces: make(map[string]*namespacesScopeSubTree),
+			},
+			ruleSelectors: &selectors{
+				namespacesByClusterName: map[string]map[string]bool{
+					nsJPL.GetClusterName(): {nsJPL.GetName(): true},
+				},
+			},
+			namespace: nsJPL,
+			detail:    v1.ComputeEffectiveAccessScopeRequest_STANDARD,
+			expected: &clustersScopeSubTree{
+				State: Excluded,
+				Namespaces: map[string]*namespacesScopeSubTree{
+					nsJPL.GetName(): {
+						State:      Included,
+						Attributes: nodeAttributesForNamespace(nsJPL, v1.ComputeEffectiveAccessScopeRequest_STANDARD),
+					},
+				},
+			},
+		},
+	} {
+		t.Run(name, func(it *testing.T) {
+			tc.clusterSubTree.populateStateForNamespace(tc.namespace, tc.ruleSelectors, tc.detail)
+			assert.Equal(it, tc.expected, tc.clusterSubTree)
 		})
 	}
 }
