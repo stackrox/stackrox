@@ -709,13 +709,22 @@ func consumeAndCountCompliance(t *testing.T, ch <-chan common.MessageToComplianc
 					st.Flow().StopWithError(fmt.Errorf("consumer consumed %d messages but expected to do %d", i, numToConsume))
 					return
 				}
-				t.Logf("Executing ++ on action %s", msg.Msg.GetAck().GetAction())
-				switch msg.Msg.GetAck().GetAction() {
-				case sensor.MsgToCompliance_NodeInventoryACK_ACK:
-					ms.ACKCount++
-				case sensor.MsgToCompliance_NodeInventoryACK_NACK:
-					ms.NACKCount++
+				if ack := msg.Msg.GetAck(); ack != nil {
+					st.Flow().StopWithError(fmt.Errorf("unexpected legacy ACK message from Sensor to Compliance: action=%s type=%s", ack.GetAction(), ack.GetMessageType()))
+					return
 				}
+				if complianceAck := msg.Msg.GetComplianceAck(); complianceAck != nil {
+					t.Logf("Executing ++ on compliance ack action %s", complianceAck.GetAction())
+					switch complianceAck.GetAction() {
+					case sensor.MsgToCompliance_ComplianceACK_ACK:
+						ms.ACKCount++
+					case sensor.MsgToCompliance_ComplianceACK_NACK:
+						ms.NACKCount++
+					}
+					continue
+				}
+				st.Flow().StopWithError(fmt.Errorf("unexpected message to Compliance: %T", msg.Msg.GetMsg()))
+				return
 			}
 		}
 	}()
