@@ -16,6 +16,7 @@ import (
 	sensorMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/sac"
@@ -518,6 +519,10 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequestSendsProfileRefsW
 		getTestProfileWithKind("ocp4-cis", "1.0.0", "platform", "ocp4", testconsts.Cluster1, 1, storage.ComplianceOperatorProfileV2_PROFILE),
 		getTestProfileWithKind("rhcos4-cis", "1.0.0", "node", "rhcos4", testconsts.Cluster1, 1, storage.ComplianceOperatorProfileV2_TAILORED_PROFILE),
 	}, nil).Times(1)
+	// Second SearchProfiles: hash validation for the tailored profile across the selected cluster.
+	suite.profileDS.EXPECT().SearchProfiles(ctx, gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{
+		getTestProfileWithKind("rhcos4-cis", "1.0.0", "node", "rhcos4", testconsts.Cluster1, 1, storage.ComplianceOperatorProfileV2_TAILORED_PROFILE),
+	}, nil).Times(1)
 	suite.scanConfigDS.EXPECT().UpsertScanConfiguration(ctx, gomock.Any()).Return(nil).Times(1)
 	suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).DoAndReturn(
 		func(_ string, msg *central.MsgToSensor) error {
@@ -922,4 +927,89 @@ func (suite *complianceManagerTestSuite) TestRemoveObsoleteResultsByProfiles() {
 			suite.NoError(err)
 		})
 	}
+}
+
+// TestTailoredProfileHashValidation verifies that multi-cluster scan configs with tailored
+// profiles are rejected when the profile content (equivalence_hash) differs across clusters.
+func (suite *complianceManagerTestSuite) TestTailoredProfileHashValidation() {
+	ctx := suite.testContexts[testutils.UnrestrictedReadWriteCtx]
+	req := getTestRecWithClustersAndProfiles("", []string{testconsts.Cluster1, testconsts.Cluster2}, []string{"my-tp"})
+
+	tpCluster1 := getTestProfileWithKind("my-tp", "1.0.0", "platform", "ocp4", testconsts.Cluster1, 1, storage.ComplianceOperatorProfileV2_TAILORED_PROFILE)
+	tpCluster2SameHash := getTestProfileWithKind("my-tp", "1.0.0", "platform", "ocp4", testconsts.Cluster2, 1, storage.ComplianceOperatorProfileV2_TAILORED_PROFILE)
+	tpCluster2DiffHash := getTestProfileWithKind("my-tp", "1.0.0", "platform", "ocp4", testconsts.Cluster2, 1, storage.ComplianceOperatorProfileV2_TAILORED_PROFILE)
+	tpCluster1.EquivalenceHash = "hash-abc"
+	tpCluster2SameHash.EquivalenceHash = "hash-abc"
+	tpCluster2DiffHash.EquivalenceHash = "hash-xyz"
+
+	suite.T().Run("multi-cluster tailored profile same hash passes", func(t *testing.T) {
+		suite.scanConfigDS.EXPECT().GetScanConfigurationByName(ctx, mockScanName).Return(nil, nil).Times(1)
+		suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		// First SearchProfiles: cluster 0 only
+		suite.profileDS.EXPECT().SearchProfiles(ctx, gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{tpCluster1}, nil).Times(1)
+		// Second SearchProfiles: all clusters for hash validation
+		suite.profileDS.EXPECT().SearchProfiles(ctx, gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{tpCluster1, tpCluster2SameHash}, nil).Times(1)
+		suite.scanConfigDS.EXPECT().UpsertScanConfiguration(ctx, gomock.Any()).Return(nil).Times(1)
+		suite.connectionMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any()).Return(nil).Times(2)
+		suite.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return("test_cluster", true, nil).Times(2)
+		suite.scanConfigDS.EXPECT().UpdateClusterStatus(ctx, gomock.Any(), gomock.Any(), "", "test_cluster").Times(2)
+
+		config, err := suite.manager.ProcessScanRequest(ctx, req, []string{testconsts.Cluster1, testconsts.Cluster2})
+		suite.Require().NoError(err)
+		suite.Require().NotNil(config)
+		// Restore scan request ID so it can be reused.
+		req.Id = ""
+	})
+
+	suite.T().Run("multi-cluster tailored profile different hash rejected", func(t *testing.T) {
+		suite.scanConfigDS.EXPECT().GetScanConfigurationByName(ctx, mockScanName).Return(nil, nil).Times(1)
+		suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		// First SearchProfiles: cluster 0 only
+		suite.profileDS.EXPECT().SearchProfiles(ctx, gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{tpCluster1}, nil).Times(1)
+		// Second SearchProfiles: returns divergent hashes
+		suite.profileDS.EXPECT().SearchProfiles(ctx, gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{tpCluster1, tpCluster2DiffHash}, nil).Times(1)
+		// No Upsert or SendMessage expected — we fail before that.
+
+		req.Id = ""
+		config, err := suite.manager.ProcessScanRequest(ctx, req, []string{testconsts.Cluster1, testconsts.Cluster2})
+		suite.Require().Error(err)
+		suite.Require().Nil(config)
+		suite.Require().ErrorContains(err, "different content across clusters")
+		req.Id = ""
+	})
+
+	suite.T().Run("single-cluster tailored profile passes (one instance = one distinct hash)", func(t *testing.T) {
+		reqSingle := getTestRecWithClustersAndProfiles("", []string{testconsts.Cluster1}, []string{"my-tp"})
+		suite.scanConfigDS.EXPECT().GetScanConfigurationByName(ctx, mockScanName).Return(nil, nil).Times(1)
+		suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		suite.profileDS.EXPECT().SearchProfiles(ctx, gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{tpCluster1}, nil).Times(1)
+		// Hash validation: single instance always passes.
+		suite.profileDS.EXPECT().SearchProfiles(ctx, gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{tpCluster1}, nil).Times(1)
+		suite.scanConfigDS.EXPECT().UpsertScanConfiguration(ctx, gomock.Any()).Return(nil).Times(1)
+		suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).Return(nil).Times(1)
+		suite.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return("test_cluster", true, nil).Times(1)
+		suite.scanConfigDS.EXPECT().UpdateClusterStatus(ctx, gomock.Any(), testconsts.Cluster1, "", "test_cluster").Times(1)
+
+		config, err := suite.manager.ProcessScanRequest(ctx, reqSingle, []string{testconsts.Cluster1})
+		suite.Require().NoError(err)
+		suite.Require().NotNil(config)
+	})
+
+	suite.T().Run("bypass env skips hash validation for multi-cluster tailored profile", func(t *testing.T) {
+		suite.T().Setenv(env.SkipTailoredProfileEquivalenceHash.EnvVar(), "true")
+
+		reqBypass := getTestRecWithClustersAndProfiles("", []string{testconsts.Cluster1, testconsts.Cluster2}, []string{"my-tp"})
+		suite.scanConfigDS.EXPECT().GetScanConfigurationByName(ctx, mockScanName).Return(nil, nil).Times(1)
+		suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		// First SearchProfiles only — second (hash validation) call skipped due to bypass.
+		suite.profileDS.EXPECT().SearchProfiles(ctx, gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{tpCluster1}, nil).Times(1)
+		suite.scanConfigDS.EXPECT().UpsertScanConfiguration(ctx, gomock.Any()).Return(nil).Times(1)
+		suite.connectionMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any()).Return(nil).Times(2)
+		suite.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return("test_cluster", true, nil).Times(2)
+		suite.scanConfigDS.EXPECT().UpdateClusterStatus(ctx, gomock.Any(), gomock.Any(), "", "test_cluster").Times(2)
+
+		config, err := suite.manager.ProcessScanRequest(ctx, reqBypass, []string{testconsts.Cluster1, testconsts.Cluster2})
+		suite.Require().NoError(err)
+		suite.Require().NotNil(config)
+	})
 }

@@ -266,6 +266,97 @@ func TestProcessEvent_NoStatusID(t *testing.T) {
 	assert.Nil(t, event)
 }
 
+// TestProcessEvent_EquivalenceHash verifies that the V2 event carries a non-empty
+// equivalence_hash derived from the tailored profile's effective content, and that
+// changing any input field (name, namespace, description, title, rules) produces a
+// different hash.
+func TestProcessEvent_EquivalenceHash(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations})
+	t.Cleanup(func() { centralcaps.Set(nil) })
+
+	makeTP := func(name, ns, desc, title string, enableRules []string) *v1alpha1.TailoredProfile {
+		tp := &v1alpha1.TailoredProfile{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: ns,
+				UID:       "uid-hash-test",
+			},
+			Spec: v1alpha1.TailoredProfileSpec{
+				Description: desc,
+				Title:       title,
+			},
+			Status: v1alpha1.TailoredProfileStatus{
+				ID:    "xccdf_compliance.openshift.io_profile_" + name,
+				State: "READY",
+			},
+		}
+		for _, r := range enableRules {
+			tp.Spec.EnableRules = append(tp.Spec.EnableRules, v1alpha1.RuleReferenceSpec{Name: r})
+		}
+		return tp
+	}
+
+	getV2Hash := func(t *testing.T, tp *v1alpha1.TailoredProfile) string {
+		t.Helper()
+		dispatcher := NewTailoredProfileDispatcher(newMockProfileLister())
+		event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
+		require.NotNil(t, event)
+		// The V2 event is the second message in ForwardMessages.
+		require.Len(t, event.ForwardMessages, 2)
+		v2 := event.ForwardMessages[1].GetComplianceOperatorProfileV2()
+		require.NotNil(t, v2)
+		return v2.GetEquivalenceHash()
+	}
+
+	base := makeTP("my-tp", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-b"})
+	baseHash := getV2Hash(t, base)
+	assert.Len(t, baseHash, 64, "hash should be hex-encoded SHA-256")
+
+	// Expected value: same inputs must produce same hash as the standalone function.
+	expected := computeProfileEquivalenceHash("my-tp", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-b"})
+	assert.Equal(t, expected, baseHash)
+
+	// Each field change must produce a different hash.
+	assert.NotEqual(t, baseHash, getV2Hash(t, makeTP("other-name", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-b"})), "name change")
+	assert.NotEqual(t, baseHash, getV2Hash(t, makeTP("my-tp", "other-ns", "desc", "title", []string{"rule-a", "rule-b"})), "namespace change")
+	assert.NotEqual(t, baseHash, getV2Hash(t, makeTP("my-tp", "openshift-compliance", "other-desc", "title", []string{"rule-a", "rule-b"})), "description change")
+	assert.NotEqual(t, baseHash, getV2Hash(t, makeTP("my-tp", "openshift-compliance", "desc", "other-title", []string{"rule-a", "rule-b"})), "title change")
+	assert.NotEqual(t, baseHash, getV2Hash(t, makeTP("my-tp", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-c"})), "rule change")
+
+	// Rule order must not affect the hash.
+	h1 := getV2Hash(t, makeTP("my-tp", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-b"}))
+	h2 := getV2Hash(t, makeTP("my-tp", "openshift-compliance", "desc", "title", []string{"rule-b", "rule-a"}))
+	assert.Equal(t, h1, h2, "rule order should not affect hash")
+}
+
+// TestProcessEvent_NonTailoredProfileNoHash verifies that non-tailored profiles do not set an equivalence hash.
+func TestProcessEvent_NonTailoredProfileNoHash(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations})
+	t.Cleanup(func() { centralcaps.Set(nil) })
+
+	// Use the non-tailored profile dispatcher (ProfileDispatcher).
+	profile := &v1alpha1.Profile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ocp4-cis",
+			Namespace: "openshift-compliance",
+			UID:       "standard-uid",
+		},
+		ProfilePayload: v1alpha1.ProfilePayload{
+			ID:    "xccdf_org.ssgproject.content_profile_cis",
+			Title: "CIS Benchmark",
+		},
+	}
+	dispatcher := NewProfileDispatcher()
+	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(profile)
+	require.NoError(t, err)
+	event := dispatcher.ProcessEvent(&unstructured.Unstructured{Object: unstructuredObj}, nil, central.ResourceAction_CREATE_RESOURCE)
+	require.NotNil(t, event)
+	require.Len(t, event.ForwardMessages, 2)
+	v2 := event.ForwardMessages[1].GetComplianceOperatorProfileV2()
+	require.NotNil(t, v2)
+	assert.Empty(t, v2.GetEquivalenceHash(), "non-tailored profiles must not carry an equivalence_hash")
+}
+
 // TestProcessEvent_BaseProfileNotFound tests that TPs with missing base profile are skipped
 func TestProcessEvent_BaseProfileNotFound(t *testing.T) {
 	tp := &v1alpha1.TailoredProfile{

@@ -193,7 +193,7 @@ message ComplianceOperatorCheckResultV2 {
 }
 
 // ComplianceOperatorProfileV2 is a message from Sensor (to Central) representing a compliance check profile.
-// Next tag: 12.
+// Next tag: 13.
 message ComplianceOperatorProfileV2 {
   string id = 1;
   string profile_id = 2;
@@ -215,6 +215,11 @@ message ComplianceOperatorProfileV2 {
     TAILORED_PROFILE = 2;
   }
   OperatorKind operator_kind = 11;
+  // equivalence_hash identifies whether two profiles with the same name carry equivalent
+  // content across clusters. Central uses it to enforce content consistency before
+  // creating multi-cluster scan configurations.
+  // Next tag: 13.
+  string equivalence_hash = 12;
 }
 
 // ComplianceOperatorRuleV2 is a message from Sensor (to Central) representing a compliance check rule.

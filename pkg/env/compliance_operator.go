@@ -30,6 +30,13 @@ var (
 	// This value can be customized via the ROX_COMPLIANCE_MINIMAL_SUPPORTED_OPERATOR_VERSION environment variable.
 	// If the environment variable is unset, contains an invalid version, or is lower than the default value, the default value "v1.6.0" will be used.
 	ComplianceMinimalSupportedVersion = RegisterVersionSetting("ROX_COMPLIANCE_MINIMAL_SUPPORTED_OPERATOR_VERSION", "v1.6.0", "v1.6.0")
+	// SkipTailoredProfileEquivalenceHash disables hash-based equivalence for tailored profiles when true.
+	// When enabled, tailored profiles are treated like non-tailored profiles: name presence on all clusters
+	// is sufficient for listing and scan config creation, regardless of content differences across clusters.
+	// Use as a break-glass escape hatch; logs a warning at Central startup.
+	// Default off — hash-based equivalence is active.
+	SkipTailoredProfileEquivalenceHash = RegisterBooleanSetting("ROX_COMPLIANCE_SKIP_TAILORED_PROFILE_EQUIVALENCE_HASH", false)
+
 	// ComplianceScansRunningInParallelMetricObservationPeriod defines an observation window for the compliance operator metrics in Central.
 	// For example, a metric output like this:
 	// rox_central_complianceoperator_num_scans_running_in_parallel_bucket{le="0"} 0
