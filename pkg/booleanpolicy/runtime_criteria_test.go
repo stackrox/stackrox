@@ -1984,15 +1984,8 @@ func (suite *RuntimeCriteriaTestSuite) TestDeploymentFileAccessWithProcessCriter
 			for _, event := range tc.events {
 				var cache CacheReceptacle
 				enhancedDep := EnhancedDeployment{
-					Deployment: deployment,
-					Images: []*storage.Image{
-						{
-							Id: "test-image-id",
-							Name: &storage.ImageName{
-								FullName: "test-image:latest",
-							},
-						},
-					},
+					Deployment:             deployment,
+					Images:                 []*storage.Image{fixtures.LightweightDeploymentImage()},
 					NetworkPoliciesApplied: nil,
 				}
 				violations, err := matcher.MatchDeploymentWithFileAccess(&cache, enhancedDep, event.access)
