@@ -78,6 +78,7 @@ func (c *ProfileDispatcher) ProcessEvent(obj, _ interface{}, action central.Reso
 			Annotations:    complianceProfile.Annotations,
 			Description:    complianceProfile.Description,
 			Title:          complianceProfile.Title,
+			OperatorKind:   central.ComplianceOperatorProfileV2_PROFILE,
 		}
 
 		for _, r := range complianceProfile.Rules {

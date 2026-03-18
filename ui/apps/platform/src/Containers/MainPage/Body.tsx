@@ -133,9 +133,7 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'clusters/cluster-registration-secrets': {
         component: asyncComponent(
             () =>
-                import(
-                    'Containers/Clusters/ClusterRegistrationSecrets/ClusterRegistrationSecretsRoute'
-                )
+                import('Containers/Clusters/ClusterRegistrationSecrets/ClusterRegistrationSecretsRoute')
         ),
         path: clustersClusterRegistrationSecretsPathWithParam,
     },
