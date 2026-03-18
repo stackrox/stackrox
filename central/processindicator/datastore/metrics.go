@@ -42,7 +42,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "process_upserted_args_size_total",
-		Help:      "Total process argument sizes in characters by cluster and namespace",
+		Help:      "Total upserted process argument sizes in characters by cluster and namespace",
 	}, []string{"cluster", "namespace"})
 )
 
