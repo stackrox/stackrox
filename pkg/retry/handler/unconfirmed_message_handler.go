@@ -25,7 +25,7 @@ type resourceState struct {
 }
 
 // UnconfirmedMessageHandlerImpl handles ACK/NACK messages for multiple resources.
-// Each resource has independent retry state with exponential backoff.
+// Each resource has independent retry state with linear backoff.
 type UnconfirmedMessageHandlerImpl struct {
 	handlerName  string
 	baseInterval time.Duration
@@ -154,7 +154,7 @@ func (h *UnconfirmedMessageHandlerImpl) HandleACK(resourceID string) {
 // HandleNACK is called when a NACK is received for a resource.
 // It just logs - the existing timer will handle retry based on normal backoff.
 func (h *UnconfirmedMessageHandlerImpl) HandleNACK(resourceID string) {
-	// HandleNACK is currently a no-op and has the same behavior as not reciving any [N]ACK message.
+	// HandleNACK is currently a no-op and has the same behavior as not receiving any [N]ACK message.
 	// This is intentional as we want to keep retrying until Central is able to process the message.
 	// This will change in the future where NACK can be treated as a signal to slow down retries.
 	log.Debugf("[%s] Received NACK for resource %s. Message will be resent.", h.handlerName, resourceID)
@@ -203,16 +203,16 @@ func (h *UnconfirmedMessageHandlerImpl) onTimerFired(resourceID string) {
 	// Schedule next retry
 	h.resetTimer(resourceID, state, nextInterval)
 
-	// Signal retry (non-blocking); if the channel is full we log and drop the signal.
+	// Signal retry (non-blocking); if no receiver is ready on the unbuffered channel, we drop the signal.
 	select {
 	case <-h.ctx.Done():
 		return
 	case h.retryCommandCh <- resourceID:
 	default:
-		// If the channel is full or the consumer goroutine is busy, we assume that currently a
-		// transimssion of a message is in progress. This means, that we do not need to enqueue
-		// another message immediately afterwards. Thus, we drop the retry signal and log a warning.
-		log.Warnf("[%s] Retry channel full, dropping retry signal for %s", h.handlerName, resourceID)
+		// If no receiver is ready or the consumer goroutine is busy, we assume that a
+		// transmission of a message is in progress. This means we do not need to enqueue
+		// another retry signal immediately afterwards. Thus, we drop the retry signal and log a warning.
+		log.Warnf("[%s] No receiver ready on retry channel, dropping retry signal for %s", h.handlerName, resourceID)
 	}
 }
 

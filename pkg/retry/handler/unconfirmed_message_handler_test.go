@@ -150,9 +150,12 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestOnACKCallback() {
 	umh := NewUnconfirmedMessageHandler(ctx, "test", baseInterval)
 
 	var ackedResources []string
+	var ackMu sync.Mutex
 	wg := concurrency.NewWaitGroup(3)
 	umh.OnACK(func(resourceID string) {
 		defer wg.Add(-1)
+		ackMu.Lock()
+		defer ackMu.Unlock()
 		ackedResources = append(ackedResources, resourceID)
 	})
 
@@ -166,7 +169,11 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestOnACKCallback() {
 		suite.Fail("expected all callbacks to be invoked")
 	case <-wg.Done():
 	}
-	suite.Equal([]string{"resource-ack-1", "resource-ack-2", "resource-ack-3"}, ackedResources)
+
+	ackMu.Lock()
+	defer ackMu.Unlock()
+	suite.Len(ackedResources, 3)
+	suite.ElementsMatch([]string{"resource-ack-1", "resource-ack-2", "resource-ack-3"}, ackedResources)
 }
 
 func (suite *UnconfirmedMessageHandlerTestSuite) TestShutdown() {

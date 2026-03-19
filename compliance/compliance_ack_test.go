@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,10 +13,12 @@ type fakeUMH struct {
 	nackCount int
 }
 
-func (f *fakeUMH) HandleACK()                    { f.ackCount++ }
-func (f *fakeUMH) HandleNACK()                   { f.nackCount++ }
-func (f *fakeUMH) ObserveSending()               {}
-func (f *fakeUMH) RetryCommand() <-chan struct{} { return nil }
+func (f *fakeUMH) HandleACK(string)                         { f.ackCount++ }
+func (f *fakeUMH) HandleNACK(string)                        { f.nackCount++ }
+func (f *fakeUMH) ObserveSending(string)                    {}
+func (f *fakeUMH) RetryCommand() <-chan string              { return nil }
+func (f *fakeUMH) OnACK(func(resourceID string))            {}
+func (f *fakeUMH) Stopped() concurrency.ReadOnlyErrorSignal { return nil }
 
 func TestHandleNodeScanningComplianceAck(t *testing.T) {
 	inv := &fakeUMH{}
@@ -89,7 +92,7 @@ func TestHandleNodeScanningComplianceAck(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			inv.ackCount, inv.nackCount = 0, 0
 			idx.ackCount, idx.nackCount = 0, 0
-			c.handleNodeScanningComplianceAck(tt.ack)
+			c.handleComplianceACK(tt.ack)
 			assert.Equal(t, tt.wantInvACK, inv.ackCount)
 			assert.Equal(t, tt.wantInvNACK, inv.nackCount)
 			assert.Equal(t, tt.wantIdxACK, idx.ackCount)
