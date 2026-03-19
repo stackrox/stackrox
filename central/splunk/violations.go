@@ -258,6 +258,14 @@ func extractViolations(alert *storage.Alert, fromTime time.Time, toTime time.Tim
 			NetworkFlowInfo: v.GetNetworkFlowInfo().CloneVT(),
 		}
 
+		if v.GetType() == storage.Alert_Violation_FILE_ACCESS {
+			fileAccess := v.GetFileAccess()
+			violation.FileAccessInfo = extractFileAccessInfo(fileAccess)
+			if proc := fileAccess.GetProcess(); proc != nil {
+				violation.ProcessInfo = extractProcessInfo(alert.GetId(), proc)
+			}
+		}
+
 		addEntityInfoToSplunkViolation(alert, &violation, deploymentInfo)
 
 		result = append(result, &violation)
@@ -334,6 +342,12 @@ func extractProcessViolationInfo(fromAlert *storage.Alert, fromProcViolation *st
 func getNonProcessViolationTime(fromAlert *storage.Alert, fromViolation *storage.Alert_Violation) *time.Time {
 	timestamp := fromViolation.GetTime()
 	if timestamp == nil {
+		// File access violations store time on the FileAccess message
+		if fa := fromViolation.GetFileAccess(); fa != nil {
+			timestamp = fa.GetTimestamp()
+		}
+	}
+	if timestamp == nil {
 		// Use alert timestamp as a fallback in case violation timestamp wasn't provided.
 		timestamp = fromAlert.GetTime()
 	}
@@ -366,6 +380,8 @@ func extractNonProcessViolationInfo(fromAlert *storage.Alert, fromViolation *sto
 		typ = integrations.SplunkViolation_ViolationInfo_K8S_EVENT
 	case storage.Alert_Violation_NETWORK_FLOW:
 		typ = integrations.SplunkViolation_ViolationInfo_NETWORK_FLOW
+	case storage.Alert_Violation_FILE_ACCESS:
+		typ = integrations.SplunkViolation_ViolationInfo_FILE_ACCESS
 	}
 
 	violationTime := getNonProcessViolationTime(fromAlert, fromViolation)
@@ -454,6 +470,32 @@ func extractProcessInfo(alertID string, from *storage.ProcessIndicator) *integra
 	}
 
 	return splunkProcessInfo
+}
+
+func extractFileAccessInfo(from *storage.FileAccess) *integrations.SplunkViolation_FileAccessInfo {
+	if from == nil {
+		return nil
+	}
+	info := &integrations.SplunkViolation_FileAccessInfo{
+		Operation: from.GetOperation().String(),
+		Hostname:  from.GetHostname(),
+	}
+	if f := from.GetFile(); f != nil {
+		info.EffectivePath = f.GetEffectivePath()
+		info.ActualPath = f.GetActualPath()
+		if m := f.GetMeta(); m != nil {
+			info.FileUid = protocompat.ProtoUInt32Value(m.GetUid())
+			info.FileGid = protocompat.ProtoUInt32Value(m.GetGid())
+			info.FileMode = protocompat.ProtoUInt32Value(m.GetMode())
+			info.FileUsername = m.GetUsername()
+			info.FileGroup = m.GetGroup()
+		}
+	}
+	if moved := from.GetMoved(); moved != nil {
+		info.MovedEffectivePath = moved.GetEffectivePath()
+		info.MovedActualPath = moved.GetActualPath()
+	}
+	return info
 }
 
 func extractAlertInfo(from *storage.Alert, violationInfo *integrations.SplunkViolation_ViolationInfo) *integrations.SplunkViolation_AlertInfo {

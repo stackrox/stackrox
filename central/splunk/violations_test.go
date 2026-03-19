@@ -613,6 +613,111 @@ var (
 		Time:          makeTimestamp("2021-07-15T17:36:35.115310605Z"),
 		FirstOccurred: makeTimestamp("2021-07-15T17:26:35.115310605Z"),
 	}
+
+	fileAccessAlert = storage.Alert{
+		Id: "fa1eacce-5500-4000-a000-111111111111",
+		Policy: &storage.Policy{
+			Id:              "fa1eacce-5500-4000-b000-222222222222",
+			Name:            "File Access: /etc/passwd modified",
+			Description:     "Alert on modifications to /etc/passwd",
+			Rationale:       "Modifications to /etc/passwd may indicate credential tampering",
+			Categories:      []string{"Security Best Practices"},
+			LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_RUNTIME},
+			Severity:        storage.Severity_HIGH_SEVERITY,
+			PolicyVersion:   "1.1",
+		},
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
+		Entity: &storage.Alert_Deployment_{
+			Deployment: &storage.Alert_Deployment{
+				Id:          "fa1eacce-5500-4000-c000-333333333333",
+				Name:        "nginx",
+				Type:        "Deployment",
+				Namespace:   "default",
+				NamespaceId: "fa1eacce-5500-4000-d000-444444444444",
+				ClusterId:   "fa1eacce-5500-4000-e000-555555555555",
+				ClusterName: "remote",
+			},
+		},
+		Violations: []*storage.Alert_Violation{
+			{
+				Message: "'/etc/passwd' opened (writable)",
+				MessageAttributes: &storage.Alert_Violation_FileAccess{
+					FileAccess: &storage.FileAccess{
+						File: &storage.FileAccess_File{
+							EffectivePath: "/etc/passwd",
+							ActualPath:    "/rootfs/etc/passwd",
+							Meta: &storage.FileAccess_FileMetadata{
+								Uid:      0,
+								Gid:      0,
+								Mode:     0644,
+								Username: "root",
+								Group:    "root",
+							},
+						},
+						Operation: storage.FileAccess_OPEN,
+						Timestamp: makeTimestamp("2021-08-10T14:30:00.123456789Z"),
+						Process: &storage.ProcessIndicator{
+							Id:           "fa1eacce-5500-4000-f000-666666666666",
+							DeploymentId: "fa1eacce-5500-4000-c000-333333333333",
+							Namespace:    "default",
+							ClusterId:    "fa1eacce-5500-4000-e000-555555555555",
+							ContainerName: "nginx",
+							PodId:        "nginx-abc123",
+							Signal: &storage.ProcessSignal{
+								Name:         "vi",
+								Args:         "/etc/passwd",
+								ExecFilePath: "/usr/bin/vi",
+								Pid:          1234,
+								Uid:          0,
+								Gid:          0,
+								Time:         makeTimestamp("2021-08-10T14:29:59.000000000Z"),
+							},
+						},
+						Hostname: "worker-node-01",
+					},
+				},
+				Type: storage.Alert_Violation_FILE_ACCESS,
+			},
+			{
+				Message: "'/var/log/app.log' renamed",
+				MessageAttributes: &storage.Alert_Violation_FileAccess{
+					FileAccess: &storage.FileAccess{
+						File: &storage.FileAccess_File{
+							EffectivePath: "/var/log/app.log",
+							ActualPath:    "/rootfs/var/log/app.log",
+						},
+						Operation: storage.FileAccess_RENAME,
+						Moved: &storage.FileAccess_File{
+							EffectivePath: "/var/log/app.log.bak",
+							ActualPath:    "/rootfs/var/log/app.log.bak",
+						},
+						Timestamp: makeTimestamp("2021-08-10T14:31:00.987654321Z"),
+						Process: &storage.ProcessIndicator{
+							Id:           "fa1eacce-5500-4000-f000-777777777777",
+							DeploymentId: "fa1eacce-5500-4000-c000-333333333333",
+							Namespace:    "default",
+							ClusterId:    "fa1eacce-5500-4000-e000-555555555555",
+							ContainerName: "nginx",
+							PodId:        "nginx-abc123",
+							Signal: &storage.ProcessSignal{
+								Name:         "mv",
+								Args:         "/var/log/app.log /var/log/app.log.bak",
+								ExecFilePath: "/usr/bin/mv",
+								Pid:          1235,
+								Uid:          0,
+								Gid:          0,
+								Time:         makeTimestamp("2021-08-10T14:31:00.000000000Z"),
+							},
+						},
+						Hostname: "worker-node-01",
+					},
+				},
+				Type: storage.Alert_Violation_FILE_ACCESS,
+			},
+		},
+		Time:          makeTimestamp("2021-08-10T14:31:00.987654321Z"),
+		FirstOccurred: makeTimestamp("2021-08-10T14:30:00.123456789Z"),
+	}
 )
 
 func TestViolations(t *testing.T) {
@@ -625,6 +730,7 @@ func (s *violationsTestSuite) SetupTest() {
 	s.k8sAlert = k8sAlert.CloneVT()
 	s.networkAlert = networkAlert.CloneVT()
 	s.resourceAlert = resourceAlert.CloneVT()
+	s.fileAccessAlert = fileAccessAlert.CloneVT()
 	s.allowCtx = sac.WithAllAccess(context.Background())
 }
 
@@ -775,6 +881,51 @@ func (s *violationsTestSuite) TestResourceAlert() {
 	s.Equal("2021-07-15T17:26:35.115310605Z", s.extr(vs[0], ".violationInfo.violationTime"))
 	s.Equal("2021-07-15T17:36:35.115310605Z", s.extr(vs[1], ".violationInfo.violationTime"))
 
+}
+
+func (s *violationsTestSuite) TestFileAccessAlert() {
+	vs := s.getViolations(s.prepare().setAlerts(s.fileAccessAlert).runRequestAndGetBody())
+	s.Len(vs, 2)
+
+	for _, v := range vs {
+		s.Equal("FILE_ACCESS", s.extr(v, ".violationInfo.violationType"))
+		s.checkViolationInfo(v)
+		s.checkAlertInfo(v, ".lifecycleStage")
+		s.assertPresent(v, ".deploymentInfo", ".deploymentId", ".deploymentName", ".deploymentType",
+			".deploymentNamespace", ".clusterId", ".clusterName")
+		s.checkPolicy(v)
+
+		// File access violations should have process info from FileAccess.process
+		s.assertPresent(v, ".processInfo", ".processName", ".execFilePath", ".pid")
+		s.Equal(float64(0), s.extr(v, ".processInfo.processUid"))
+		s.Equal(float64(0), s.extr(v, ".processInfo.processGid"))
+
+		// File access info should be present
+		s.assertPresent(v, ".fileAccessInfo", ".effectivePath", ".actualPath", ".operation", ".hostname")
+		s.Equal("worker-node-01", s.extr(v, ".fileAccessInfo.hostname"))
+	}
+
+	// First violation: OPEN on /etc/passwd
+	s.Equal("2021-08-10T14:30:00.123456789Z", s.extr(vs[0], ".violationInfo.violationTime"))
+	s.Equal("OPEN", s.extr(vs[0], ".fileAccessInfo.operation"))
+	s.Equal("/etc/passwd", s.extr(vs[0], ".fileAccessInfo.effectivePath"))
+	s.Equal("/rootfs/etc/passwd", s.extr(vs[0], ".fileAccessInfo.actualPath"))
+	s.Equal("vi", s.extr(vs[0], ".processInfo.processName"))
+	// File metadata
+	s.Equal(float64(0), s.extr(vs[0], ".fileAccessInfo.fileUid"))
+	s.Equal(float64(0), s.extr(vs[0], ".fileAccessInfo.fileGid"))
+	s.Equal(float64(0644), s.extr(vs[0], ".fileAccessInfo.fileMode"))
+	s.Equal("root", s.extr(vs[0], ".fileAccessInfo.fileUsername"))
+	s.Equal("root", s.extr(vs[0], ".fileAccessInfo.fileGroup"))
+
+	// Second violation: RENAME
+	s.Equal("2021-08-10T14:31:00.987654321Z", s.extr(vs[1], ".violationInfo.violationTime"))
+	s.Equal("RENAME", s.extr(vs[1], ".fileAccessInfo.operation"))
+	s.Equal("/var/log/app.log", s.extr(vs[1], ".fileAccessInfo.effectivePath"))
+	s.Equal("mv", s.extr(vs[1], ".processInfo.processName"))
+	// Rename destination paths
+	s.Equal("/var/log/app.log.bak", s.extr(vs[1], ".fileAccessInfo.movedEffectivePath"))
+	s.Equal("/rootfs/var/log/app.log.bak", s.extr(vs[1], ".fileAccessInfo.movedActualPath"))
 }
 
 func (s *violationsTestSuite) TestViolationIdsAreDistinct() {

@@ -25,8 +25,8 @@ import (
 // if the definition is another file
 type violationsTestSuite struct {
 	suite.Suite
-	deployAlert, processAlert, k8sAlert, networkAlert, resourceAlert *storage.Alert
-	allowCtx                                                         context.Context
+	deployAlert, processAlert, k8sAlert, networkAlert, resourceAlert, fileAccessAlert *storage.Alert
+	allowCtx                                                                           context.Context
 }
 
 func mustParseTime(timeStr string) time.Time {
