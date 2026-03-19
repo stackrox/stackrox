@@ -53,7 +53,7 @@ RUN git init && git add .
 ENV CGO_ENABLED=0
 
 # Build the operator binary.
-RUN GOOS=linux GOARCH=${TARGET_ARCH} scripts/go-build-file.sh operator/cmd/main.go stackrox-operator
+RUN GOOS=linux GOARCH=${TARGET_ARCH} scripts/go-build-file.sh operator/stackrox-operator/main.go stackrox-operator
 
 ARG TARGET_ARCH
 FROM --platform=linux/${TARGET_ARCH} registry.access.redhat.com/ubi9-micro:latest

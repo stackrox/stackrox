@@ -492,7 +492,8 @@ main-build-nodeps:
 		sensor/admission-control \
 		sensor/kubernetes \
 		sensor/upgrader \
-		compliance/virtualmachines/roxagent
+		compliance/virtualmachines/roxagent \
+		operator/stackrox-operator
 ifndef CI
 	CGO_ENABLED=0 $(GOBUILD) roxctl
 endif

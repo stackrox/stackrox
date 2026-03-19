@@ -42,7 +42,6 @@ jobs:
 
           matrix='{
             "pre_build_go_binaries": { "name":[], "arch":[] },
-            "pre_build_operator_binaries": { "arch":[] },
             "build_and_push_main": { "name":[], "arch":[] },
             "push_main_multiarch_manifests": { "name":[] },
             "build_and_push_operator": { "name":[], "arch":[] },
@@ -53,8 +52,6 @@ jobs:
           # The base matrix
           matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
           matrix="$(jq '.pre_build_go_binaries.arch += ["amd64", "arm64"]' <<< "$matrix")"
-
-          matrix="$(jq '.pre_build_operator_binaries.arch += ["amd64", "arm64"]' <<< "$matrix")"
 
           matrix="$(jq '.build_and_push_main.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.build_and_push_main.arch += ["amd64", "arm64"]' <<< "$matrix")"
@@ -299,53 +296,6 @@ jobs:
           name: docs-build
           path: |
             image/rhel/docs
-
-  pre-build-operator-binaries:
-    runs-on: ubuntu-latest
-    needs: define-job-matrix
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_operator_binaries }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: false
-
-      - name: Cache Go dependencies
-        env:
-          GOARCH: ${{ matrix.arch }}
-        uses: ./.github/actions/cache-go-dependencies
-
-      - uses: ./.github/actions/handle-tagged-build
-
-      - name: Prepare operator build dependencies
-        run: |
-          make -C operator/ build/Dockerfile.gen smuggled-status-sh
-
-      - name: Build Operator binary for target architecture
-        run: |
-          GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 \
-            scripts/go-build-file.sh operator/cmd/main.go bin/linux_${{ matrix.arch }}/stackrox-operator
-
-      - name: Bundle operator binary
-        run: tar -cvzf operator-binary-${{ matrix.arch }}.tgz bin/linux_${{ matrix.arch }}/stackrox-operator
-
-      - uses: ./.github/actions/upload-artifact-with-retry
-        with:
-          name: operator-binary-${{ matrix.arch }}
-          path: operator-binary-${{ matrix.arch }}.tgz
 
   build-and-push-main:
     runs-on: ubuntu-latest
@@ -650,7 +600,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - define-job-matrix
-      - pre-build-operator-binaries
+      - pre-build-go-binaries
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
@@ -729,18 +679,13 @@ jobs:
         run: |
           make -C operator/ bundle bundle-build
 
-      - name: Prepare operator build dependencies
-        run: |
-          # Prepare Dockerfile and smuggled status for version info
-          make -C operator/ build/Dockerfile.gen smuggled-status-sh
-
       - uses: ./.github/actions/download-artifact-with-retry
         with:
-          name: operator-binary-${{ matrix.arch }}
+          name: go-binaries-build-${{ matrix.arch }}-default
 
       - name: Unpack operator binary
         run: |
-          tar xvzf operator-binary-${{ matrix.arch }}.tgz
+          tar xvzf go-binaries-build.tgz
 
       - name: Determine operator image tag
         id: operator-tag

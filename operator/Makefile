@@ -303,7 +303,7 @@ check-ci-setup: ## Make sure this target is not started in CI environment.
 
 .PHONY: run
 run: check-ci-setup manifests generate ensure-rox-main-image-exists fmt vet ## Run operator from your host without deploying it to a cluster.
-	../scripts/go-run.sh ./cmd/main.go
+	../scripts/go-run.sh ./stackrox-operator/main.go
 
 .PHONY: ensure-rox-main-image-exists
 ensure-rox-main-image-exists:
@@ -334,7 +334,7 @@ chart: kubebuilder manifests ## Generate a helm chart with all necessary resourc
 
 .PHONY: build
 build: manifests generate fmt vet ## Build operator local binary.
-	../scripts/go-build-file.sh ./cmd/main.go bin/manager
+	../scripts/go-build-file.sh ./stackrox-operator/main.go bin/manager
 
 .PHONY: smuggled-status-sh
 smuggled-status-sh:
