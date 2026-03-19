@@ -319,9 +319,6 @@ jobs:
           go-version-file: go.mod
           cache: false
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
