@@ -297,6 +297,59 @@ jobs:
           path: |
             image/rhel/docs
 
+  pre-build-operator-bundle:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
+      env:
+        QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
+        QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Cache Go dependencies
+        uses: ./.github/actions/cache-go-dependencies
+
+      - uses: ./.github/actions/handle-tagged-build
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: operator/bundle_helpers/.python-version
+
+      - name: Setup Go RHACS build environment
+        run: echo "QUAY_ORG=rhacs-eng" >> "$GITHUB_ENV"
+
+      - name: Docker login
+        # Skip for external contributions.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        run: |
+          ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
+
+      - name: Build and Push Operator Bundle
+        env:
+          ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: true
+          ROX_PRODUCT_BRANDING: RHACS_BRANDING
+        run: |
+          make -C operator/ bundle bundle-build
+          if [[ "${{ github.event_name }}" == "push" ]] || [[ "${{ github.event.pull_request.head.repo.fork }}" != "true" ]]; then
+            make -C operator/ docker-push-bundle | cat
+            make -C operator/ index-build
+            make -C operator/ docker-push-index | cat
+          fi
+
   build-and-push-main:
     runs-on: ubuntu-latest
     needs:
@@ -601,6 +654,7 @@ jobs:
     needs:
       - define-job-matrix
       - pre-build-go-binaries
+      - pre-build-operator-bundle
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
@@ -624,26 +678,7 @@ jobs:
           free-disk-space: 40
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: false
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Cache Go dependencies
-        env:
-          GOARCH: ${{ matrix.arch }}
-        uses: ./.github/actions/cache-go-dependencies
-        with:
-          key-suffix: ${{ matrix.name }}
-
       - uses: ./.github/actions/handle-tagged-build
-
-      - name: Resolve mods for protos
-        run: go mod tidy
 
       - name: PR labels
         uses: joerick/pr-labels-action@v1.0.9
@@ -666,18 +701,6 @@ jobs:
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
-
-      - name: Set up Python for bundle build
-        if: matrix.name != 'STACKROX_BRANDING'
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: operator/bundle_helpers/.python-version
-
-      - name: Build Operator Bundle image
-        if: |
-          matrix.name != 'STACKROX_BRANDING'
-        run: |
-          make -C operator/ bundle bundle-build
 
       - uses: ./.github/actions/download-artifact-with-retry
         with:
@@ -732,28 +755,6 @@ jobs:
               exit 1
             fi
             echo "Operator image push completed successfully"
-
-      - name: Push bundle image
-        # Skip for external contributions, and for upstream.
-        if: |
-          matrix.name != 'STACKROX_BRANDING' && (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
-        run: |
-          make -C operator/ docker-push-bundle | cat
-
-      # Index image can only be built once bundle was pushed
-      - name: Build index
-        # Skip for external contributions and for upstream, as the build relies on the previous image to be pushed.
-        if: |
-          matrix.name != 'STACKROX_BRANDING' && (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
-        run: |
-          make -C operator/ index-build
-
-      - name: Push index image
-        # Skip for external contributions, and for upstream.
-        if: |
-          matrix.name != 'STACKROX_BRANDING' && (github.event_name == 'push' || !github.event.pull_request.head.repo.fork)
-        run: |
-          make -C operator/ docker-push-index | cat
 
   push-operator-manifests:
     runs-on: ubuntu-latest
@@ -947,6 +948,7 @@ jobs:
       - pre-build-cli
       - pre-build-go-binaries
       - pre-build-docs
+      - pre-build-operator-bundle
       - build-and-push-main
       - build-and-push-operator
       - scan-images-with-roxctl
