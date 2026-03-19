@@ -19,6 +19,32 @@ const (
 
 func TestConvertRulesToSelectors(t *testing.T) {
 	// Error cases
+	for name, tc := range map[string]struct {
+		rules *storage.SimpleAccessScope_Rules
+	}{
+		"bad label selection rules triggger an error": {
+			rules: &storage.SimpleAccessScope_Rules{
+				ClusterLabelSelectors: []*storage.SetBasedLabelSelector{
+					{
+						Requirements: []*storage.SetBasedLabelSelector_Requirement{
+							{
+								Key: "some-label",
+								Op:  storage.SetBasedLabelSelector_IN,
+								// The clusterName2 value is not a valid label value as it contains the '=' character.
+								Values: []string{clusterName2},
+							},
+						},
+					},
+				},
+			},
+		},
+	} {
+		t.Run(name, func(it *testing.T) {
+			output, convertErr := convertRulesToSelectors(tc.rules)
+			assert.Error(it, convertErr)
+			assert.Nil(it, output)
+		})
+	}
 
 	// Success cases
 	for name, tc := range map[string]struct {
