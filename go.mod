@@ -75,7 +75,7 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/heimdalr/dag v1.5.0
 	github.com/helm/helm-mapkubeapis v0.6.1
-	github.com/heroku/docker-registry-client v0.0.0
+	github.com/heroku/docker-registry-client v0.2.1
 	github.com/jackc/pgx/v5 v5.8.0
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/joshdk/go-junit v1.0.0
@@ -98,7 +98,7 @@ require (
 	github.com/openshift/api v0.0.0-20251122153900-88cca31a44c9
 	github.com/openshift/client-go v0.0.0-20251123231646-4685125c2287
 	github.com/openshift/runtime-utils v0.0.0-20230921210328-7bdb5b9c177b
-	github.com/operator-framework/helm-operator-plugins v0.0.0-00010101000000-000000000000
+	github.com/operator-framework/helm-operator-plugins v0.8.0
 	github.com/owenrumney/go-sarif/v2 v2.3.3
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/pkg/errors v0.9.1
