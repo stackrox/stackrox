@@ -80,7 +80,7 @@ require (
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/joshdk/go-junit v1.0.0
 	github.com/klauspost/compress v1.18.4
-	github.com/lib/pq v1.11.2
+	github.com/lib/pq v1.12.0
 	github.com/machinebox/graphql v0.2.2
 	github.com/mailru/easyjson v0.9.2
 	github.com/mdlayher/vsock v1.2.1
