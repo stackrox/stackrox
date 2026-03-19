@@ -6,25 +6,26 @@ ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi9-micro
 ARG BASE_TAG=latest
 
-# Download PostgreSQL RPMs from upstream
 FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS postgres_rpms
 
 COPY scripts/download.sh /download.sh
 RUN /download.sh
 
-# Install all runtime dependencies for PostgreSQL to /out/
+FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS ubi-micro-base
+
 FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS dependency_builder
 
+COPY --from=ubi-micro-base / /out/
+
+# If this is updated, be sure to update postgres_major in download.sh and the signature file.
 ENV PG_MAJOR=15
 
 RUN dnf install \
     --installroot=/out/ \
-    --releasever=8 \
+    --releasever=9 \
     --setopt=install_weak_deps=0 \
     --nodocs \
     -y \
-    bash \
-    coreutils \
     findutils \
     util-linux \
     shadow-utils \
@@ -48,13 +49,11 @@ RUN dnf install \
 
 COPY --from=postgres_rpms /rpms/postgres.rpm /rpms/postgres-libs.rpm /rpms/postgres-server.rpm /rpms/postgres-contrib.rpm /tmp/
 
-# Import GPG key and install PostgreSQL to /out/
 COPY signatures/PGDG-RPM-GPG-KEY-RHEL /tmp/
 RUN rpm --root=/out/ --import /tmp/PGDG-RPM-GPG-KEY-RHEL && \
     rpm --root=/out/ -ivh --nodeps /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
     rm -rf /tmp/*.rpm /tmp/PGDG-RPM-GPG-KEY-RHEL
 
-# Create postgres user/group with UID/GID 70 and setup locale
 RUN chroot /out /bin/sh -c " \
     if getent group postgres >/dev/null; then \
         current_gid=\$(getent group postgres | cut -d: -f3); \
@@ -75,7 +74,6 @@ RUN chroot /out /bin/sh -c " \
     localedef -f UTF-8 -i en_US en_US.UTF-8 \
     "
 
-# Create required directories with correct permissions
 RUN mkdir -p /out/docker-entrypoint-initdb.d \
              /out/var/run/postgresql && \
     chroot /out /bin/sh -c "chown postgres:postgres /var/run/postgresql && chmod 03775 /var/run/postgresql"
