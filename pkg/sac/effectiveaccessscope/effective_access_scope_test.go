@@ -286,7 +286,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			hasError: false,
 		},
 		"cluster included by name (not matching k8s label syntax) includes all its namespaces": {
-			desc:      "cluster included by name includes all its namespaces",
+			desc:      "cluster included by name (not matching k8s label syntax) includes all its namespaces",
 			scopeDesc: `cluster: "Giedi=Prime" => { "Giedi=Prime::*" }`,
 			scopeStr:  "Giedi=Prime::*",
 			scopeJSON: `{"Giedi=Prime":["*"]}`,
