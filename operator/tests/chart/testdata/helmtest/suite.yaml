@@ -1,0 +1,16 @@
+server:
+  visibleSchemas:
+  - kubernetes-1.20.2
+tests:
+- name: image pull secrets omitted by default
+  expect: |
+    .deployments["rhacs-operator-controller-manager"].spec.template.spec.imagePullSecrets | assertThat(. == null)
+- name: image pull secrets propagated as required
+  set:
+    # Installation instructions say:
+    # --set manager.imagePullSecrets[0].name=your-pull-secret-name
+    # but helmtest does not support array subscripting, so we need to use an explicit array here:
+    manager.imagePullSecrets:
+     - name: your-pull-secret-name
+  expect: |
+    .deployments["rhacs-operator-controller-manager"].spec.template.spec.imagePullSecrets[0] | assertThat(.name == "your-pull-secret-name")

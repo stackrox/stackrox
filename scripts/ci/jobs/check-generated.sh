@@ -118,7 +118,8 @@ function check-operator-generated-files-up-to-date() {
     # Reorder resources in the files, strip comments, pretty print, and remove expected differences:
     # - "resource-policy: keep" on the CRDs in the chart
     # - namespace resource in the manifest
-    # - imagePullSecrets in the deployment: empty array in the manifest, omitted in chart by templating
+    # - imagePullSecrets in the deployment: empty array in the manifest, omitted in chart by templating; we test this
+    #   in operator/tests/chart
     $yq -P ea '[.] | sort_by(.kind, .metadata.name)
       | del(.[].metadata.annotations.["helm.sh/resource-policy"])
       | del(.[] | select(.kind == "Deployment").spec.template.spec.imagePullSecrets)
