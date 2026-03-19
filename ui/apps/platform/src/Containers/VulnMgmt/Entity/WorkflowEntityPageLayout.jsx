@@ -6,13 +6,13 @@ import PageHeader from 'Components/PageHeader';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import workflowStateContext from 'Containers/workflowStateContext';
 import parseURL from 'utils/URLParser';
-import getSidePanelEntity from 'utils/getSidePanelEntity';
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
 import { WorkflowState } from 'utils/WorkflowState';
 import { getVulnerabilityManagementEntityTypes } from 'utils/entityRelationships';
 import useEntityName from 'hooks/useEntityName';
 
 import { entityNounSentenceCaseSingular } from '../entitiesForVulnerabilityManagement';
+import getSidePanelEntity from '../getSidePanelEntity';
 import WorkflowSidePanel from '../WorkflowSidePanel';
 import EntityComponent from './VulnMgmtEntity';
 import EntityTabs from './EntityTabs';
