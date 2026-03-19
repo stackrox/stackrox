@@ -3,24 +3,18 @@ package handler
 import (
 	"context"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const testResourceID = "test-resource"
 
-func TestUnconfirmedMessageHandler(t *testing.T) {
-	suite.Run(t, new(UnconfirmedMessageHandlerTestSuite))
-}
-
-type UnconfirmedMessageHandlerTestSuite struct {
-	suite.Suite
-}
-
-func (suite *UnconfirmedMessageHandlerTestSuite) TestWithRetryable() {
+func TestWithRetryable(t *testing.T) {
 	cases := map[string]struct {
 		baseDuration    time.Duration
 		wait            time.Duration
@@ -74,7 +68,7 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestWithRetryable() {
 	}
 
 	for name, cc := range cases {
-		suite.Run(name, func() {
+		t.Run(name, func(t *testing.T) {
 			counterMux := &sync.Mutex{}
 			counter := 0
 
@@ -85,7 +79,7 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestWithRetryable() {
 			for _, tt := range cc.sendAfter {
 				go func(tt time.Duration) {
 					<-time.After(tt)
-					suite.T().Logf("Sending test message")
+					t.Logf("Sending test message")
 					umh.ObserveSending(testResourceID)
 				}(tt)
 			}
@@ -115,12 +109,12 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestWithRetryable() {
 
 			counterMux.Lock()
 			defer counterMux.Unlock()
-			suite.Equal(cc.expectedRetries, counter)
+			assert.Equal(t, cc.expectedRetries, counter)
 		})
 	}
 }
 
-func (suite *UnconfirmedMessageHandlerTestSuite) TestMultipleResources() {
+func TestMultipleResources(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -137,13 +131,13 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestMultipleResources() {
 	// Wait for resource-2 to trigger retry (baseInterval + margin)
 	select {
 	case resourceID := <-umh.RetryCommand():
-		suite.Equal("resource-2", resourceID, "should retry resource-2")
+		assert.Equal(t, "resource-2", resourceID, "should retry resource-2")
 	case <-time.After(baseInterval + 500*time.Millisecond):
-		suite.Fail("expected retry for resource-2")
+		t.Fatal("expected retry for resource-2")
 	}
 }
 
-func (suite *UnconfirmedMessageHandlerTestSuite) TestOnACKCallback() {
+func TestOnACKCallback(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	baseInterval := 50 * time.Millisecond
@@ -166,17 +160,17 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestOnACKCallback() {
 
 	select {
 	case <-time.After(100 * time.Millisecond):
-		suite.Fail("expected all callbacks to be invoked")
+		t.Fatal("expected all callbacks to be invoked")
 	case <-wg.Done():
 	}
 
 	ackMu.Lock()
 	defer ackMu.Unlock()
-	suite.Len(ackedResources, 3)
-	suite.ElementsMatch([]string{"resource-ack-1", "resource-ack-2", "resource-ack-3"}, ackedResources)
+	assert.Len(t, ackedResources, 3)
+	assert.ElementsMatch(t, []string{"resource-ack-1", "resource-ack-2", "resource-ack-3"}, ackedResources)
 }
 
-func (suite *UnconfirmedMessageHandlerTestSuite) TestShutdown() {
+func TestShutdown(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	baseInterval := 50 * time.Millisecond
 	umh := NewUnconfirmedMessageHandler(ctx, "test", baseInterval)
@@ -190,22 +184,22 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestShutdown() {
 	case <-umh.Stopped().Done():
 		// Cleanup complete
 	case <-time.After(time.Second):
-		suite.Fail("Cleanup should complete within timeout")
+		t.Fatal("Cleanup should complete within timeout")
 	}
 
 	// After shutdown, retryCommand channel should be closed (receive returns zero value, ok=false)
 	select {
 	case rid, ok := <-umh.RetryCommand():
 		if ok {
-			suite.Failf("Expected channel to be closed or empty, got value", "rid=%s", rid)
+			t.Fatalf("expected channel to be closed or empty, got value: rid=%s", rid)
 		}
 		// ok=false means channel is closed, which is expected
 	case <-time.After(100 * time.Millisecond):
-		suite.Fail("Channel should be closed and not block")
+		t.Fatal("Channel should be closed and not block")
 	}
 }
 
-func (suite *UnconfirmedMessageHandlerTestSuite) TestOperationsOnDeadHandler() {
+func TestOperationsOnDeadHandler(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	baseInterval := 50 * time.Millisecond
 	umh := NewUnconfirmedMessageHandler(ctx, "test-dead", baseInterval)
@@ -218,11 +212,11 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestOperationsOnDeadHandler() {
 	case <-umh.Stopped().Done():
 		// Cleanup complete
 	case <-time.After(time.Second):
-		suite.Fail("Cleanup should complete within timeout")
+		t.Fatal("Cleanup should complete within timeout")
 	}
 
 	// All operations on dead handler should be safe (no panic, no race, no blocking)
-	suite.NotPanics(func() {
+	require.NotPanics(t, func() {
 		// These should not panic on a dead handler
 		umh.ObserveSending("resource-1")
 		umh.ObserveSending("resource-2")
@@ -239,11 +233,86 @@ func (suite *UnconfirmedMessageHandlerTestSuite) TestOperationsOnDeadHandler() {
 	// Verify RetryCommand channel is closed (receive should not block)
 	select {
 	case _, ok := <-umh.RetryCommand():
-		suite.False(ok, "RetryCommand channel should be closed")
+		assert.False(t, ok, "RetryCommand channel should be closed")
 	case <-time.After(100 * time.Millisecond):
-		suite.Fail("RetryCommand channel should not block")
+		t.Fatal("RetryCommand channel should not block")
 	}
 
 	// Stopped should already be signaled
-	suite.True(umh.Stopped().IsDone(), "Stopped should be signaled")
+	assert.True(t, umh.Stopped().IsDone(), "Stopped should be signaled")
+}
+
+func TestOnTimerFiredDoesNotBlockWhenRetryQueueFull(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		umh := NewUnconfirmedMessageHandler(ctx, "test-full-queue", 100*time.Millisecond)
+
+		// Seed one resource with an unacked sending so timer logic is exercised.
+		umh.mu.Lock()
+		umh.resources["resource-full-queue"] = &resourceState{
+			numUnackedSendings: 1,
+		}
+		umh.mu.Unlock()
+
+		// Fill the single-slot retry queue to force coalescing/default branch.
+		umh.retryCommandCh <- "already-queued"
+
+		done := concurrency.NewSignal()
+		go func() {
+			umh.onTimerFired("resource-full-queue")
+			done.Signal()
+		}()
+
+		// Wait until all runnable goroutines settle before asserting completion.
+		synctest.Wait()
+		select {
+		case <-done.Done():
+		default:
+			t.Fatal("onTimerFired should not block when retry queue is full")
+		}
+
+		// Cleanup should complete without relying on real-time deadlines.
+		cancel()
+		synctest.Wait()
+		select {
+		case <-umh.Stopped().Done():
+		default:
+			t.Fatal("cleanup should complete")
+		}
+	})
+}
+
+func TestShutdownWithPendingBufferedRetrySignal(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		umh := NewUnconfirmedMessageHandler(ctx, "test-shutdown-buffered", time.Second)
+
+		// Put one pending retry signal in the buffered channel without a consumer.
+		umh.retryCommandCh <- "pending-retry"
+		cancel()
+		synctest.Wait()
+
+		select {
+		case <-umh.Stopped().Done():
+		default:
+			t.Fatal("cleanup should complete")
+		}
+
+		// After shutdown, a pending buffered value may be drained first, but then the channel must be closed.
+		ch := umh.RetryCommand()
+		select {
+		case _, ok := <-ch:
+			// ok=true means we drained the buffered value; ok=false means channel was already closed.
+			if ok {
+				select {
+				case _, ok := <-ch:
+					assert.False(t, ok, "retry channel should be closed after draining pending buffered value")
+				default:
+					t.Fatal("retry channel close check should not block")
+				}
+			}
+		default:
+			t.Fatal("retry channel drain/close should not block")
+		}
+	})
 }

@@ -33,7 +33,8 @@ type UnconfirmedMessageHandlerImpl struct {
 	resources map[string]*resourceState
 	mu        sync.Mutex
 
-	// retryCommandCh emits resourceID when a retry should be attempted
+	// retryCommandCh emits resourceID when a retry should be attempted.
+	// It is intentionally buffered (size 1) to allow one pending retry signal.
 	retryCommandCh chan string
 	// onACK is called when an ACK is received for a resource (optional)
 	onACK func(resourceID string)
@@ -50,7 +51,7 @@ func NewUnconfirmedMessageHandler(ctx context.Context, handlerName string, baseI
 		handlerName:    handlerName,
 		baseInterval:   baseInterval,
 		resources:      make(map[string]*resourceState),
-		retryCommandCh: make(chan string),
+		retryCommandCh: make(chan string, 1),
 		ctx:            ctx,
 		cleanupDone:    concurrency.NewStopper(),
 	}
@@ -203,16 +204,15 @@ func (h *UnconfirmedMessageHandlerImpl) onTimerFired(resourceID string) {
 	// Schedule next retry
 	h.resetTimer(resourceID, state, nextInterval)
 
-	// Signal retry (non-blocking); if no receiver is ready on the unbuffered channel, we drop the signal.
+	// Signal retry (non-blocking); keep at most one pending retry signal.
 	select {
 	case <-h.ctx.Done():
 		return
 	case h.retryCommandCh <- resourceID:
 	default:
-		// If no receiver is ready or the consumer goroutine is busy, we assume that a
-		// transmission of a message is in progress. This means we do not need to enqueue
-		// another retry signal immediately afterwards. Thus, we drop the retry signal and log a warning.
-		log.Warnf("[%s] No receiver ready on retry channel, dropping retry signal for %s", h.handlerName, resourceID)
+		// A pending retry signal is already queued (or being processed); additional
+		// signals for this timer tick are intentionally coalesced.
+		log.Debugf("[%s] Retry signal queue full, coalescing retry signal for %s", h.handlerName, resourceID)
 	}
 }
 
