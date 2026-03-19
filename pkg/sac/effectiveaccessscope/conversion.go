@@ -1,9 +1,7 @@
 package effectiveaccessscope
 
 import (
-	"reflect"
 	"sort"
-	"unsafe"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -173,29 +171,4 @@ func convertSetBasedLabelSelectorToK8sLabelSelector(selector *storage.SetBasedLa
 	}
 
 	return compiled, nil
-}
-
-// newUnvalidatedRequirement is like labels.NewRequirement() but without label
-// key and values validation. Fully qualified scope names:
-//   - contain a separator which must be forbidden in label values;
-//   - might exceed 63 length limit.
-//
-// The hacks below enable us to create labels.Requirement for FQSN and hence
-// embed the by-name inclusions into the general selector matching approach.
-func newUnvalidatedRequirement(key string, op selection.Operator, values []string) (*labels.Requirement, error) {
-	req := &labels.Requirement{}
-	reqUnleashed := reflect.ValueOf(req).Elem()
-
-	setValue := func(fieldName string, value interface{}) {
-		field := reqUnleashed.FieldByName(fieldName)
-		//#nosec G103
-		field = reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem()
-		field.Set(reflect.ValueOf(value).Elem())
-	}
-
-	setValue("key", &key)
-	setValue("operator", &op)
-	setValue("strValues", &values)
-
-	return req, nil
 }

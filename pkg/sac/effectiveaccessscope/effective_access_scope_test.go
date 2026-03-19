@@ -1275,44 +1275,6 @@ func TestUnrestrictedEffectiveAccessScope(t *testing.T) {
 	assert.JSONEq(t, expectedJSON, json)
 }
 
-// TestNewUnvalidatedRequirement covers both use cases we currently have:
-//   - label value contains a forbidden token (scope separator);
-//   - label value length exceeds 63 characters.
-func TestNewUnvalidatedRequirement(t *testing.T) {
-	validKey := "stackrox.io/authz.metadata.test.valid.key"
-	operatorIn := selection.In
-	tooLongValue := "i.am.a.fully.qualified.scope.name.for.some.namespace.longer.than.63"
-	invalidTokenValue := "toto" + scopeSeparator + "tutu"
-
-	// Check *labels.Requirement can be created with invalid values.
-	req, err := newUnvalidatedRequirement(validKey, operatorIn, []string{tooLongValue, invalidTokenValue})
-	assert.NoError(t, err)
-
-	// Check the selector built from *labels.Requirement instance works.
-	selector := labels.NewSelector()
-	selector = selector.Add(*req)
-
-	testCasesGood := []labels.Set{
-		labels.Set(map[string]string{validKey: tooLongValue}),
-		labels.Set(map[string]string{validKey: invalidTokenValue}),
-	}
-	for _, tc := range testCasesGood {
-		t.Run(tc.String(), func(t *testing.T) {
-			assert.Truef(t, selector.Matches(tc), "%q should match %q", selector.String(), tc.String())
-		})
-	}
-
-	testCasesBad := []labels.Set{
-		{},
-		labels.Set(map[string]string{"random.key": tooLongValue}),
-	}
-	for _, tc := range testCasesBad {
-		t.Run(tc.String(), func(t *testing.T) {
-			assert.Falsef(t, selector.Matches(tc), "%q should not match %q", selector.String(), tc.String())
-		})
-	}
-}
-
 func TestSelectorsMatchCluster(t *testing.T) {
 	focusOnMelangeRequirement, err := labels.NewRequirement("focus", selection.Equals, []string{"melange"})
 	require.NoError(t, err)
