@@ -44,6 +44,13 @@ var (
 		Name:      "process_upserted_args_size_total",
 		Help:      "Total upserted process argument sizes in characters by cluster and namespace",
 	}, []string{"cluster", "namespace"})
+
+	processUpsertedCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "process_upserted_count",
+		Help:      "Number of process indicators upserted by cluster and namespace",
+	}, []string{"cluster", "namespace"})
 )
 
 func incrementPrunedProcessesMetric(num int) {
@@ -83,6 +90,7 @@ func recordProcessIndicatorsBatchAdded(indicators []*storage.ProcessIndicator) {
 		processUpsertedArgsSizeHistogram.Observe(float64(argsSizeChars))
 
 		processUpsertedArgsSizeTotal.WithLabelValues(clusterID, namespace).Add(float64(argsSizeChars))
+		processUpsertedCount.WithLabelValues(clusterID, namespace).Inc()
 	}
 }
 
@@ -93,5 +101,6 @@ func init() {
 		processPruningCacheMisses,
 		processUpsertedArgsSizeHistogram,
 		processUpsertedArgsSizeTotal,
+		processUpsertedCount,
 	)
 }
