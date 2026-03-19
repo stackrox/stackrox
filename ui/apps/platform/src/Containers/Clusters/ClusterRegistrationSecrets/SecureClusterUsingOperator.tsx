@@ -36,8 +36,8 @@ function SecureClusterUsingOperator({
                     <p>To install the RHACS Operator:</p>
                     <List component="ul">
                         <ListItem>
-                            On Red Hat OpenShift Container Platform, use{' '}
-                            <strong>Operators &gt; OperatorHub</strong> in the web console.
+                            On Red Hat OpenShift Container Platform, install it from
+                            OperatorHub in the web console.
                         </ListItem>
                         <ListItem>
                             On other platforms, apply an image pull secret and use the{' '}
@@ -78,7 +78,10 @@ function SecureClusterUsingOperator({
                     </List>
                 </ListItem>
                 <ListItem>
-                    <p>Install secured cluster services on the cluster using the RHACS Operator.</p>
+                    <p>
+                        Create a <strong>SecuredCluster</strong> custom resource to install secured
+                        cluster services on the cluster.
+                    </p>
                 </ListItem>
             </List>
         </Flex>
