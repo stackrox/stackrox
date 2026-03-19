@@ -1,0 +1,4 @@
+{"type":"server-started","port":53648,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:53648","screen_dir":"/home/ebenshet/go/src/github.com/stackrox/stackrox/.superpowers/brainstorm/187997-1773926811"}
+{"type":"screen-added","file":"/home/ebenshet/go/src/github.com/stackrox/stackrox/.superpowers/brainstorm/187997-1773926811/code-patterns.html"}
+{"type":"screen-added","file":"/home/ebenshet/go/src/github.com/stackrox/stackrox/.superpowers/brainstorm/187997-1773926811/architecture-map.html"}
+{"type":"server-stopped","reason":"idle timeout"}

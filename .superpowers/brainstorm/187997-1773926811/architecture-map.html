@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Central Data Processing Architecture</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', system-ui, sans-serif; padding: 24px; }
+  h1 { color: #89b4fa; margin-bottom: 8px; font-size: 22px; }
+  h2 { color: #a6e3a1; margin: 24px 0 12px; font-size: 16px; border-bottom: 1px solid #45475a; padding-bottom: 6px; }
+  h3 { color: #f9e2af; font-size: 13px; margin-bottom: 6px; }
+  .subtitle { color: #9399b2; font-size: 13px; margin-bottom: 20px; }
+
+  .flow-section { margin-bottom: 32px; }
+
+  /* Main flow diagram */
+  .flow-diagram {
+    display: flex; align-items: flex-start; gap: 8px; overflow-x: auto;
+    padding: 16px; background: #181825; border-radius: 8px; border: 1px solid #313244;
+  }
+  .flow-arrow { color: #6c7086; font-size: 24px; padding-top: 20px; flex-shrink: 0; }
+
+  .component-box {
+    border-radius: 8px; padding: 10px 12px; min-width: 160px; flex-shrink: 0;
+    border: 2px solid; font-size: 12px;
+  }
+  .component-box .label { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+  .component-box .detail { color: #9399b2; font-size: 11px; line-height: 1.4; }
+  .component-box .metric-status { margin-top: 6px; font-size: 10px; padding: 2px 6px; border-radius: 4px; display: inline-block; }
+
+  /* Color coding by archetype */
+  .type-external { border-color: #89b4fa; background: rgba(137,180,250,0.08); }
+  .type-external .label { color: #89b4fa; }
+
+  .type-queue { border-color: #fab387; background: rgba(250,179,135,0.08); }
+  .type-queue .label { color: #fab387; }
+
+  .type-pipeline { border-color: #a6e3a1; background: rgba(166,227,161,0.08); }
+  .type-pipeline .label { color: #a6e3a1; }
+
+  .type-enrichment { border-color: #cba6f7; background: rgba(203,166,247,0.08); }
+  .type-enrichment .label { color: #cba6f7; }
+
+  .type-detection { border-color: #f38ba8; background: rgba(243,139,168,0.08); }
+  .type-detection .label { color: #f38ba8; }
+
+  .type-storage { border-color: #94e2d5; background: rgba(148,226,213,0.08); }
+  .type-storage .label { color: #94e2d5; }
+
+  .type-loop { border-color: #f9e2af; background: rgba(249,226,175,0.08); }
+  .type-loop .label { color: #f9e2af; }
+
+  .metrics-good { background: rgba(166,227,161,0.2); color: #a6e3a1; }
+  .metrics-partial { background: rgba(249,226,175,0.2); color: #f9e2af; }
+  .metrics-none { background: rgba(243,139,168,0.2); color: #f38ba8; }
+
+  /* Pipeline fragments grid */
+  .fragment-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 6px; padding: 12px; background: #181825; border-radius: 8px; border: 1px solid #313244;
+  }
+  .fragment-item {
+    background: rgba(166,227,161,0.06); border: 1px solid #313244; border-radius: 6px;
+    padding: 8px 10px; font-size: 11px;
+  }
+  .fragment-item .name { color: #a6e3a1; font-weight: 600; font-size: 12px; }
+  .fragment-item .msg-type { color: #9399b2; }
+  .fragment-item .triggers { color: #cba6f7; font-size: 10px; margin-top: 2px; }
+
+  /* Background loops grid */
+  .loops-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 8px; padding: 12px; background: #181825; border-radius: 8px; border: 1px solid #313244;
+  }
+  .loop-item {
+    background: rgba(249,226,175,0.06); border: 1px solid #313244; border-radius: 6px;
+    padding: 10px 12px; font-size: 11px;
+  }
+  .loop-item .name { color: #f9e2af; font-weight: 600; font-size: 12px; }
+  .loop-item .interval { color: #fab387; font-size: 11px; }
+  .loop-item .goroutines { color: #89b4fa; font-size: 10px; }
+  .loop-item .work { color: #9399b2; font-size: 10px; margin-top: 3px; line-height: 1.4; }
+
+  /* Legend */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 12px; padding: 12px;
+    background: #181825; border-radius: 8px; border: 1px solid #313244; margin-bottom: 20px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 3px; border: 2px solid; }
+
+  /* Connection lines description */
+  .connections {
+    padding: 12px; background: #181825; border-radius: 8px; border: 1px solid #313244;
+    font-size: 12px; line-height: 1.8;
+  }
+  .conn-arrow { color: #fab387; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<h1>Central Data Processing Architecture Map</h1>
+<p class="subtitle">Categories 1-3: Sensor Pipeline, Background Loops, and Enrichment/Detection paths</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="border-color:#89b4fa; background:rgba(137,180,250,0.15)"></div> External (Sensor/Scanner)</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color:#fab387; background:rgba(250,179,135,0.15)"></div> Queue / Worker Pool</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color:#a6e3a1; background:rgba(166,227,161,0.15)"></div> Pipeline Fragment</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color:#cba6f7; background:rgba(203,166,247,0.15)"></div> Enrichment</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color:#f38ba8; background:rgba(243,139,168,0.15)"></div> Detection / Alerts</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color:#94e2d5; background:rgba(148,226,213,0.15)"></div> Storage (Postgres)</div>
+  <div class="legend-item"><div class="legend-swatch" style="border-color:#f9e2af; background:rgba(249,226,175,0.15)"></div> Background Loop</div>
+  <div class="legend-item"><span class="metric-status metrics-good">has metrics</span></div>
+  <div class="legend-item"><span class="metric-status metrics-partial">partial</span></div>
+  <div class="legend-item"><span class="metric-status metrics-none">no metrics</span></div>
+</div>
+
+<!-- ===== CORE DATA FLOW ===== -->
+<h2>Core Data Flow: Sensor → Central → Storage</h2>
+
+<div class="flow-diagram">
+  <div class="component-box type-external">
+    <div class="label">Sensor (per cluster)</div>
+    <div class="detail">Bidirectional gRPC stream<br>MsgFromSensor / MsgToSensor<br>mTLS authenticated</div>
+    <div class="metric-status metrics-partial">partial: connect counter</div>
+  </div>
+  <div class="flow-arrow">→</div>
+  <div class="component-box type-queue">
+    <div class="label">Deduper</div>
+    <div class="detail">Hash-based dedup<br>per connection<br>Prevents reprocessing identical msgs</div>
+    <div class="metric-status metrics-partial">partial: passed/deduped counter</div>
+  </div>
+  <div class="flow-arrow">→</div>
+  <div class="component-box type-queue">
+    <div class="label">Worker Queue</div>
+    <div class="detail">FNV hash → poolSize+1 shards<br>Each shard = DedupingQueue + goroutine<br>Retry: 5 attempts, 5min backoff</div>
+    <div class="metric-status metrics-partial">partial: add/remove/dedupe counters only</div>
+  </div>
+  <div class="flow-arrow">→</div>
+  <div class="component-box type-pipeline">
+    <div class="label">Pipeline Router</div>
+    <div class="detail">Match() selects 1 of 25 fragments<br>safe.Run() wraps execution<br>Panic recovery per message</div>
+    <div class="metric-status metrics-partial">partial: panic counter, event duration</div>
+  </div>
+  <div class="flow-arrow">→</div>
+  <div class="component-box type-pipeline">
+    <div class="label">Fragment.Run()</div>
+    <div class="detail">Type-specific processing<br>Validates, enriches context<br>May trigger detection/risk</div>
+    <div class="metric-status metrics-partial">partial: resource_processed_count</div>
+  </div>
+  <div class="flow-arrow">→</div>
+  <div class="component-box type-storage">
+    <div class="label">PostgreSQL</div>
+    <div class="detail">250+ datastores<br>KeyFence for dedup<br>Connection pool</div>
+    <div class="metric-status metrics-good">has metrics: op duration, table stats</div>
+  </div>
+</div>
+
+<!-- ===== PIPELINE FRAGMENTS ===== -->
+<h2>Pipeline Fragments (25 message type handlers)</h2>
+<p class="subtitle">Each processes a specific MsgFromSensor type. Colored tags show what side-effects they trigger.</p>
+
+<div class="fragment-grid">
+  <div class="fragment-item">
+    <div class="name">deploymentevents</div>
+    <div class="msg-type">Deployment CRUD</div>
+    <div class="triggers">→ Risk reprocess (async)</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">alerts</div>
+    <div class="msg-type">AlertResults</div>
+    <div class="triggers">→ Detection lifecycle mgr</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">processindicators</div>
+    <div class="msg-type">ProcessIndicator</div>
+    <div class="triggers">→ Detection lifecycle (queued)</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">networkflowupdate</div>
+    <div class="msg-type">NetworkFlowUpdate</div>
+    <div class="triggers">→ Flow store + baselines (LOCAL)</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">nodes</div>
+    <div class="msg-type">Node CRUD</div>
+    <div class="triggers">→ Vuln enrichment + Risk calc</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">nodeindex</div>
+    <div class="msg-type">IndexReport (v4)</div>
+    <div class="triggers">→ Vuln enrichment + Risk calc</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">nodeinventory</div>
+    <div class="msg-type">NodeInventory (v2)</div>
+    <div class="triggers">→ Vuln enrichment + Risk calc</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">podevents</div>
+    <div class="msg-type">Pod CRUD</div>
+    <div class="triggers">Store only</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">namespaces</div>
+    <div class="msg-type">Namespace CRUD</div>
+    <div class="triggers">Store + network graph epoch</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">networkpolicies</div>
+    <div class="msg-type">NetworkPolicy CRUD</div>
+    <div class="triggers">Store + network graph epoch</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">secrets</div>
+    <div class="msg-type">Secret CRUD</div>
+    <div class="triggers">Store only</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">roles</div>
+    <div class="msg-type">K8s Role CRUD</div>
+    <div class="triggers">Store only</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">rolebindings</div>
+    <div class="msg-type">K8s RoleBinding CRUD</div>
+    <div class="triggers">Store only</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">serviceaccounts</div>
+    <div class="msg-type">ServiceAccount CRUD</div>
+    <div class="triggers">→ Risk reprocess (conditional)</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">imageintegrations</div>
+    <div class="msg-type">ImageIntegration</div>
+    <div class="triggers">→ Enrichment + Detection loop</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">reprocessing</div>
+    <div class="msg-type">ReprocessDeployment</div>
+    <div class="triggers">→ Risk manager</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">enhancements</div>
+    <div class="msg-type">DeploymentEnhancementResp</div>
+    <div class="triggers">→ Enhancement broker</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">processlisteningonport</div>
+    <div class="msg-type">ProcessListeningOnPort</div>
+    <div class="triggers">Store only</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">clustermetrics</div>
+    <div class="msg-type">ClusterMetrics</div>
+    <div class="triggers">Prometheus gauges + telemetry</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">clusterstatusupdate</div>
+    <div class="msg-type">ClusterStatusUpdate</div>
+    <div class="triggers">→ CVE fetcher trigger</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">clusterhealthupdate</div>
+    <div class="msg-type">ClusterHealthInfo</div>
+    <div class="triggers">Health status computation</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">auditlogstateupdate</div>
+    <div class="msg-type">AuditLogStatusInfo</div>
+    <div class="triggers">Store only</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">virtualmachines</div>
+    <div class="msg-type">VirtualMachine CRUD</div>
+    <div class="triggers">Store only (feature-gated)</div>
+  </div>
+  <div class="fragment-item">
+    <div class="name">virtualmachineindex</div>
+    <div class="msg-type">VMIndexReport</div>
+    <div class="triggers">→ Vuln enrichment (feature-gated)</div>
+  </div>
+</div>
+
+<!-- ===== ENRICHMENT & DETECTION ===== -->
+<h2>Enrichment & Detection Paths</h2>
+<p class="subtitle">Two paths to enrichment: inline (real-time from pipeline) and background (reprocessor loop)</p>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+  <div class="component-box type-enrichment" style="min-width: auto;">
+    <div class="label">Inline Enrichment (Pipeline-triggered)</div>
+    <div class="detail" style="line-height: 1.6;">
+      <strong>Image Enrichment:</strong><br>
+      &nbsp; Pipeline → EnrichDeployment() → imageEnricher.EnrichImage()<br>
+      &nbsp; Semaphore: internalScanSemaphore (configurable)<br>
+      &nbsp; External: Scanner + Registry calls<br>
+      &nbsp; scanWaiterManager deduplicates concurrent scans<br><br>
+      <strong>Node Enrichment:</strong><br>
+      &nbsp; nodeindex/nodeinventory fragments → nodeEnricher.EnrichNode()<br>
+      &nbsp; Vulnerability data merged into node<br><br>
+      <strong>Context Enrichment:</strong><br>
+      &nbsp; Most fragments add cluster name/ID to resources
+    </div>
+    <div class="metric-status metrics-partial">partial: scan semaphore gauges only</div>
+  </div>
+
+  <div class="component-box type-enrichment" style="min-width: auto;">
+    <div class="label">Background Enrichment (Reprocessor)</div>
+    <div class="detail" style="line-height: 1.6;">
+      <strong>Image Reprocessing (every 4h):</strong><br>
+      &nbsp; Query all images → semaphore(5) parallel enrichment<br>
+      &nbsp; ForceRefetchCachedValuesOnly on tick<br>
+      &nbsp; Send updated images back to Sensor clusters<br><br>
+      <strong>Node Reprocessing:</strong><br>
+      &nbsp; All nodes → semaphore(5) parallel enrichment<br>
+      &nbsp; Skip host-scanned nodes<br><br>
+      <strong>Watched Images:</strong><br>
+      &nbsp; Separately reprocessed (may delegate to cluster)<br><br>
+      <strong>Signature Verification:</strong><br>
+      &nbsp; Triggered by signal, re-verifies all image sigs
+    </div>
+    <div class="metric-status metrics-partial">partial: total duration gauge only</div>
+  </div>
+</div>
+
+<div style="margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+  <div class="component-box type-detection" style="min-width: auto;">
+    <div class="label">Build-time Detection</div>
+    <div class="detail">API-triggered only<br>Evaluates policies against image<br>Returns alerts synchronously</div>
+    <div class="metric-status metrics-none">no pipeline metrics</div>
+  </div>
+  <div class="component-box type-detection" style="min-width: auto;">
+    <div class="label">Deploy-time Detection</div>
+    <div class="detail">Sensor sends AlertResults<br>Lifecycle mgr merges alerts<br>Alert create/update/resolve</div>
+    <div class="metric-status metrics-partial">partial: resource count</div>
+  </div>
+  <div class="component-box type-detection" style="min-width: auto;">
+    <div class="label">Runtime Detection</div>
+    <div class="detail">Process indicators queued<br>Batched flush every 1 min<br>Baseline generation/locking</div>
+    <div class="metric-status metrics-partial">partial: queue length gauge</div>
+  </div>
+</div>
+
+<div style="margin-top: 12px;">
+  <div class="component-box type-detection" style="min-width: auto;">
+    <div class="label">Alert Manager & Risk Calculator</div>
+    <div class="detail" style="line-height: 1.6;">
+      <strong>Alert Manager:</strong> Merges new alerts with existing → classifies as new/updated/resolved → dispatches notifications → triggers risk reprocess<br>
+      <strong>Risk Manager:</strong> Scores deployments (image risk + violations + port exposure), images (vulns + age + components), nodes (vulns). Updates namespace/cluster rankings.
+    </div>
+    <div class="metric-status metrics-partial">partial: risk_processing_duration histogram</div>
+  </div>
+</div>
+
+<!-- ===== BACKGROUND LOOPS ===== -->
+<h2>Background Loops (19 loops, 30+ goroutines)</h2>
+<p class="subtitle">Only showing loops in Categories 1-3 scope. Loops marked with * are candidates for standard metrics.</p>
+
+<div class="loops-grid">
+  <div class="loop-item">
+    <div class="name">* Reprocessor (enrichLoop)</div>
+    <div class="interval">Every 4h (ROX_REPROCESS_INTERVAL)</div>
+    <div class="goroutines">1 goroutine + semaphore(5) workers per batch</div>
+    <div class="work">Reprocess all images, nodes, watched images. Resync deployments to sensors. Can be short-circuited.</div>
+    <div class="metric-status metrics-partial">partial: duration gauge</div>
+  </div>
+  <div class="loop-item">
+    <div class="name">* Reprocessor (riskLoop)</div>
+    <div class="interval">Every ROX_RISK_REPROCESS_INTERVAL</div>
+    <div class="goroutines">1 goroutine</div>
+    <div class="work">Drains deploymentRiskSet, sends risk reprocess messages to sensor connections.</div>
+    <div class="metric-status metrics-none">no metrics</div>
+  </div>
+  <div class="loop-item">
+    <div class="name">* Reprocessor (activeComponentLoop)</div>
+    <div class="interval">Every ROX_ACTIVE_VULN_REFRESH_INTERVAL</div>
+    <div class="goroutines">1 goroutine</div>
+    <div class="work">Updates active (exploitable) component tracking.</div>
+    <div class="metric-status metrics-none">no metrics</div>
+  </div>
+  <div class="loop-item">
+    <div class="name">* CVE Suppress</div>
+    <div class="interval">Every 1h (hardcoded)</div>
+    <div class="goroutines">1 goroutine</div>
+    <div class="work">Unsuppress CVEs with expired suppress state.</div>
+    <div class="metric-status metrics-none">no metrics</div>
+  </div>
+  <div class="loop-item">
+    <div class="name">* Pruning (GC)</div>
+    <div class="interval">Every ROX_PRUNE_INTERVAL</div>
+    <div class="goroutines">1 goroutine + semaphore(5) for network flows</div>
+    <div class="work">Prune old alerts, orphaned pods/nodes, expired requests, stale baselines, log imbues, network flows.</div>
+    <div class="metric-status metrics-partial">partial: prune_duration histogram</div>
+  </div>
+  <div class="loop-item">
+    <div class="name">* CVE Fetcher</div>
+    <div class="interval">ROX_ORCHESTRATOR_VULN_SCAN_INTERVAL</div>
+    <div class="goroutines">1 goroutine</div>
+    <div class="work">Reconcile orchestrator + Istio CVEs. Throttled on cluster connection.</div>
+    <div class="metric-status metrics-none">no metrics</div>
+  </div>
+  <div class="loop-item">
+    <div class="name">* Lifecycle Mgr (indicator flush)</div>
+    <div class="interval">Every 1 min</div>
+    <div class="goroutines">1 goroutine</div>
+    <div class="work">Flush queued process indicators to datastore. Batch indexing. Baseline evaluation.</div>
+    <div class="metric-status metrics-partial">partial: process_queue_length gauge</div>
+  </div>
+  <div class="loop-item">
+    <div class="name">* Network Baseline Flush</div>
+    <div class="interval">Every 5s (hardcoded)</div>
+    <div class="goroutines">1 goroutine</div>
+    <div class="work">Flush accumulated network baseline changes to storage.</div>
+    <div class="metric-status metrics-none">no metrics</div>
+  </div>
+  <div class="loop-item">
+    <div class="name">* Hash Manager Flush</div>
+    <div class="interval">ROX_HASH_FLUSH_INTERVAL</div>
+    <div class="goroutines">1 goroutine (optional)</div>
+    <div class="work">Flush deduplication hashes to database.</div>
+    <div class="metric-status metrics-partial">partial: hash_size gauge</div>
+  </div>
+  <div class="loop-item">
+    <div class="name">Conn Manager Health</div>
+    <div class="interval">Every 30s (hardcoded)</div>
+    <div class="goroutines">1 goroutine</div>
+    <div class="work">Update inactive/active cluster health status.</div>
+    <div class="metric-status metrics-none">no metrics</div>
+  </div>
+  <div class="loop-item">
+    <div class="name">Vuln Request Manager</div>
+    <div class="interval">ROX_VULN_REQUEST_REVERT_TIMER_DURATION</div>
+    <div class="goroutines">3 goroutines</div>
+    <div class="work">Expire timed deferrals, expire fixable CVE deferrals, unsuppress CVEs.</div>
+    <div class="metric-status metrics-none">no metrics</div>
+  </div>
+  <div class="loop-item">
+    <div class="name">Network Gatherer</div>
+    <div class="interval">ROX_EXT_NETWORK_SRCS_GATHER_INTERVAL</div>
+    <div class="goroutines">2 goroutines</div>
+    <div class="work">Fetch default external networks, reconcile with storage.</div>
+    <div class="metric-status metrics-none">no metrics</div>
+  </div>
+</div>
+
+<!-- ===== DATA FLOW CONNECTIONS ===== -->
+<h2>Key Data Flow Connections</h2>
+<div class="connections">
+  <strong style="color:#89b4fa">Sensor</strong> <span class="conn-arrow">→</span> Deduper <span class="conn-arrow">→</span> WorkerQueue(sharded) <span class="conn-arrow">→</span> Pipeline Router <span class="conn-arrow">→</span> Fragment.Run() <span class="conn-arrow">→</span> <strong style="color:#94e2d5">Datastore</strong><br>
+  <br>
+  <strong style="color:#a6e3a1">deploymentevents</strong> fragment <span class="conn-arrow">→</span> stores deployment <span class="conn-arrow">→</span> queues to <strong style="color:#f9e2af">riskLoop</strong> <span class="conn-arrow">→</span> sends ReprocessDeploymentRisk back through pipeline<br>
+  <strong style="color:#a6e3a1">alerts</strong> fragment <span class="conn-arrow">→</span> <strong style="color:#f38ba8">lifecycle manager</strong> <span class="conn-arrow">→</span> alert manager (merge/notify) <span class="conn-arrow">→</span> risk reprocess<br>
+  <strong style="color:#a6e3a1">processindicators</strong> fragment <span class="conn-arrow">→</span> <strong style="color:#f38ba8">lifecycle manager indicator queue</strong> <span class="conn-arrow">→</span> flush every 1min <span class="conn-arrow">→</span> baseline evaluation<br>
+  <strong style="color:#a6e3a1">imageintegrations</strong> fragment <span class="conn-arrow">→</span> <strong style="color:#cba6f7">reprocessor.ShortCircuit()</strong> <span class="conn-arrow">→</span> triggers immediate enrichment cycle<br>
+  <strong style="color:#a6e3a1">nodes/nodeindex/nodeinventory</strong> <span class="conn-arrow">→</span> <strong style="color:#cba6f7">nodeEnricher.EnrichNode()</strong> <span class="conn-arrow">→</span> risk calc <span class="conn-arrow">→</span> store<br>
+  <br>
+  <strong style="color:#f9e2af">enrichLoop (4h)</strong> <span class="conn-arrow">→</span> query all images <span class="conn-arrow">→</span> <strong style="color:#cba6f7">imageEnricher.EnrichImage()</strong> per image <span class="conn-arrow">→</span> risk calc <span class="conn-arrow">→</span> send updated images to <strong style="color:#89b4fa">Sensor</strong><br>
+  <strong style="color:#f9e2af">pruning (periodic)</strong> <span class="conn-arrow">→</span> query stale data <span class="conn-arrow">→</span> batch delete from <strong style="color:#94e2d5">Postgres</strong><br>
+  <strong style="color:#f9e2af">CVE suppress (1h)</strong> <span class="conn-arrow">→</span> query expired suppressions <span class="conn-arrow">→</span> unsuppress CVEs in <strong style="color:#94e2d5">Postgres</strong>
+</div>
+
+<div style="margin-top: 24px; padding: 16px; border: 2px solid #f9e2af; border-radius: 8px; background: rgba(249,226,175,0.05);">
+  <h3 style="color: #f9e2af; margin-bottom: 8px;">Observability Gaps Summary</h3>
+  <div style="font-size: 12px; line-height: 1.8;">
+    <strong style="color: #fab387;">Worker Queue:</strong> No depth gauge, no worker utilization, no retry metrics, no in-flight count, no end-to-end latency<br>
+    <strong style="color: #f9e2af;">Background Loops:</strong> 7 of 12 loops have ZERO metrics. No "is running" flag, no batch size, no items processed/failed per run, no time-since-last-run<br>
+    <strong style="color: #cba6f7;">Enrichment:</strong> No call count by trigger source, no success/failure/skip rates, no cache hit rates<br>
+    <strong style="color: #f38ba8;">Detection:</strong> No alerts-generated-per-evaluation, no violations-found vs clean ratio, no baseline generation timing<br>
+    <strong style="color: #94e2d5;">Cross-cutting:</strong> No end-to-end trace from Sensor message arrival to final storage commit
+  </div>
+</div>
+
+</body>
+</html>
