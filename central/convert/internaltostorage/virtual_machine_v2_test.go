@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,7 +30,7 @@ func TestVirtualMachineV2(t *testing.T) {
 				Name:      "virtual-machine-name",
 				ClusterId: uuid.NewTestUUID(1).String(),
 				Facts: map[string]string{
-					"guestOS": "Red Hat Enterprise Linux",
+					virtualmachine.GuestOSKey: "Red Hat Enterprise Linux",
 				},
 				VsockCid: 42,
 				State:    virtualMachineV1.VirtualMachine_RUNNING,
@@ -40,7 +41,7 @@ func TestVirtualMachineV2(t *testing.T) {
 				Name:      "virtual-machine-name",
 				ClusterId: uuid.NewTestUUID(1).String(),
 				Facts: map[string]string{
-					"guestOS": "Red Hat Enterprise Linux",
+					virtualmachine.GuestOSKey: "Red Hat Enterprise Linux",
 				},
 				GuestOs:  "Red Hat Enterprise Linux",
 				VsockCid: 42,

@@ -134,9 +134,12 @@ func (suite *PipelineTestSuite) TestRun_UpdateScanError() {
 	vmID := "vm-1"
 	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
 
-	// Expect enricher to be called successfully
+	// Expect enricher to be called successfully (must set scan on VM)
 	suite.enricher.EXPECT().
 		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+		Do(func(vm *storage.VirtualMachine, _ *v4.IndexReport) {
+			vm.Scan = &storage.VirtualMachineScan{}
+		}).
 		Return(nil)
 
 	expectedError := errors.New("datastore error")
@@ -242,9 +245,12 @@ func TestPipelineRun_DifferentActions(t *testing.T) {
 			msg := createVMIndexMessage(vmID, tt.action)
 
 			if tt.expectUpdate {
-				// Expect enricher to be called for action
+				// Expect enricher to be called for action (must set scan on VM)
 				enricher.EXPECT().
 					EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+					Do(func(vm *storage.VirtualMachine, _ *v4.IndexReport) {
+						vm.Scan = &storage.VirtualMachineScan{}
+					}).
 					Return(nil)
 
 				vmDatastore.EXPECT().
@@ -582,6 +588,9 @@ func TestPipelineRunV2(t *testing.T) {
 
 		enricher.EXPECT().
 			EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+			Do(func(vm *storage.VirtualMachine, _ *v4.IndexReport) {
+				vm.Scan = &storage.VirtualMachineScan{}
+			}).
 			Return(nil)
 
 		mockV2Store.EXPECT().
@@ -621,6 +630,9 @@ func TestPipelineRunV2(t *testing.T) {
 
 		enricher.EXPECT().
 			EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+			Do(func(vm *storage.VirtualMachine, _ *v4.IndexReport) {
+				vm.Scan = &storage.VirtualMachineScan{}
+			}).
 			Return(nil)
 
 		expectedErr := errors.New("upsert error")
@@ -651,6 +663,9 @@ func TestPipelineRunV2(t *testing.T) {
 
 		enricher.EXPECT().
 			EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+			Do(func(vm *storage.VirtualMachine, _ *v4.IndexReport) {
+				vm.Scan = &storage.VirtualMachineScan{}
+			}).
 			Return(nil)
 
 		mockV2Store.EXPECT().
@@ -688,6 +703,9 @@ func TestPipelineRunV2(t *testing.T) {
 
 		enricher.EXPECT().
 			EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+			Do(func(vm *storage.VirtualMachine, _ *v4.IndexReport) {
+				vm.Scan = &storage.VirtualMachineScan{}
+			}).
 			Return(nil)
 		mockV2Store.EXPECT().UpsertVirtualMachine(gomock.Any(), gomock.Any()).Return(nil)
 		mockV2Store.EXPECT().UpsertScan(gomock.Any(), vmID, gomock.Any()).Return(nil)

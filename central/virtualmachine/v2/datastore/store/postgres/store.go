@@ -13,6 +13,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -22,6 +23,8 @@ import (
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
+
+var log = logging.LoggerForModule()
 
 const (
 	vmTable        = pkgSchema.VirtualMachineV2TableName
@@ -204,12 +207,18 @@ func buildScanHash(parts common.VMScanParts) (uint64, error) {
 }
 
 func (s *storeImpl) upsertScan(ctx context.Context, vmID string, parts common.VMScanParts) error {
+	if parts.Scan == nil {
+		return errors.New("cannot upsert scan: scan is nil")
+	}
 	iTime := time.Now()
 
 	hash, err := buildScanHash(parts)
 	if err != nil {
 		return errors.Wrap(err, "computing scan hash")
 	}
+
+	log.Infof("VM v2 store: upserting scan for VM %s (scan=%s, hash=%d, %d components, %d CVEs)",
+		vmID, parts.Scan.GetId(), hash, len(parts.Components), len(parts.CVEs))
 
 	return s.keyFence.DoStatusWithLock(concurrency.DiscreteKeySet([]byte(vmID)), func() error {
 		tx, ctx, err := s.begin(ctx)
@@ -238,6 +247,8 @@ func (s *storeImpl) upsertScan(ctx context.Context, vmID string, parts common.VM
 		parts.Scan.ScanTime = scanTime
 
 		if existingScan != nil && existingScan.GetHash() == hash {
+			log.Infof("VM v2 store: scan unchanged for VM %s (existing scan=%s), updating scan time only",
+				vmID, existingScan.GetId())
 			// Unchanged: scan_time-only update using existing scan's identity.
 			existingScan.ScanTime = scanTime
 			if err := s.updateScanTime(ctx, tx, existingScan.GetId(), existingScan); err != nil {
@@ -251,6 +262,13 @@ func (s *storeImpl) upsertScan(ctx context.Context, vmID string, parts common.VM
 
 		// Changed or new: full replace.
 		parts.Scan.Hash = hash
+
+		if existingScan == nil {
+			log.Infof("VM v2 store: no existing scan for VM %s, performing full insert", vmID)
+		} else {
+			log.Infof("VM v2 store: scan changed for VM %s (old hash=%d, new hash=%d), performing full replace",
+				vmID, existingScan.GetHash(), hash)
+		}
 
 		if err := s.fullScanReplace(ctx, tx, vmID, parts, iTime); err != nil {
 			if rbErr := tx.Rollback(ctx); rbErr != nil {

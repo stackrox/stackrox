@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -42,9 +43,9 @@ func TestVirtualMachine(t *testing.T) {
 				ClusterId:   "cluster-456",
 				ClusterName: "test-cluster",
 				Facts: map[string]string{
-					"guestOS":     "Red Hat Enterprise Linux",
-					"nodeName":    "node-1",
-					"ipAddresses": "10.0.0.1, 10.0.0.2",
+					virtualmachine.GuestOSKey: "Red Hat Enterprise Linux",
+					"nodeName":                "node-1",
+					"ipAddresses":             "10.0.0.1, 10.0.0.2",
 				},
 				VsockCid:    int32(42),
 				State:       storage.VirtualMachine_RUNNING,
@@ -58,9 +59,9 @@ func TestVirtualMachine(t *testing.T) {
 				ClusterId:   "cluster-456",
 				ClusterName: "test-cluster",
 				Facts: map[string]string{
-					"guestOS":     "Red Hat Enterprise Linux",
-					"nodeName":    "node-1",
-					"ipAddresses": "10.0.0.1, 10.0.0.2",
+					virtualmachine.GuestOSKey: "Red Hat Enterprise Linux",
+					"nodeName":                "node-1",
+					"ipAddresses":             "10.0.0.1, 10.0.0.2",
 				},
 				VsockCid:    int32(42),
 				State:       v2.VirtualMachine_RUNNING,

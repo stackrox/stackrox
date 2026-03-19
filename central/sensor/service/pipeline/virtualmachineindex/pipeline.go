@@ -121,25 +121,37 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		return errors.Wrapf(err, "failed to enrich VM %s with vulnerabilities", index.GetId())
 	}
 
+	if vm.GetScan() == nil {
+		return errors.Errorf("enrichment succeeded but scan is nil for VM %s", index.GetId())
+	}
+
 	if p.vmV2Store != nil {
+		log.Infof("VM v2 pipeline: enriched VM %s with %d components, %s scan OS; upserting VM record",
+			vm.GetId(), len(vm.GetScan().GetComponents()), vm.GetScan().GetOperatingSystem())
+
 		// Upsert minimal VM record to satisfy FK constraint.
 		vmV2 := &storage.VirtualMachineV2{Id: vm.GetId(), ClusterId: clusterID}
 		if err := p.vmV2Store.UpsertVirtualMachine(ctx, vmV2); err != nil {
 			return errors.Wrapf(err, "failed to upsert VM v2 %s to datastore", index.GetId())
 		}
+		log.Infof("VM v2 pipeline: upserted VM record %s; converting and upserting scan", vm.GetId())
+
 		// Convert v1 scan to v2 parts and upsert.
 		scanParts := v1tov2storage.ScanPartsFromV1Scan(vm.GetId(), vm.GetScan())
+		log.Infof("VM v2 pipeline: converted scan for VM %s: scan=%s, %d components, %d CVEs",
+			vm.GetId(), scanParts.Scan.GetId(), len(scanParts.Components), len(scanParts.CVEs))
+
 		if err := p.vmV2Store.UpsertScan(ctx, vm.GetId(), scanParts); err != nil {
 			return errors.Wrapf(err, "failed to upsert VM v2 scan %s to datastore", index.GetId())
 		}
+		log.Infof("VM v2 pipeline: successfully stored scan for VM %s", vm.GetId())
 	} else {
 		if err := p.vmDatastore.UpdateVirtualMachineScan(ctx, vm.GetId(), vm.GetScan()); err != nil {
 			return errors.Wrapf(err, "failed to upsert VM %s to datastore", index.GetId())
 		}
+		log.Debugf("Successfully enriched and stored VM %s with %d components",
+			vm.GetId(), len(vm.GetScan().GetComponents()))
 	}
-
-	log.Debugf("Successfully enriched and stored VM %s with %d components",
-		vm.GetId(), len(vm.GetScan().GetComponents()))
 
 	sendVMIndexACK(ctx, index.GetId(), "", injector)
 	return nil

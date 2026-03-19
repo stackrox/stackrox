@@ -43,10 +43,10 @@ func getVirtualMachineVSockCID(vm *sensorVirtualMachine.Info) (int32, bool) {
 
 func getFacts(vm *sensorVirtualMachine.Info) map[string]string {
 	facts := map[string]string{
-		GuestOSKey: UnknownGuestOS,
+		virtualmachine.GuestOSKey: virtualmachine.UnknownGuestOS,
 	}
 	if vm.GuestOS != "" {
-		facts[GuestOSKey] = vm.GuestOS
+		facts[virtualmachine.GuestOSKey] = vm.GuestOS
 	}
 	if vm.Description != "" {
 		facts[DescriptionKey] = vm.Description
