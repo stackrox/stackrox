@@ -5,6 +5,7 @@ import {
     visitWithStaticResponseForPermissions,
 } from '../../helpers/visit';
 import navSelectors from '../../selectors/navigation';
+import pf6 from '../../selectors/pf6';
 import { tryCreateCollection, tryDeleteCollection } from './Collections.helpers';
 import { collectionSelectors } from './Collections.selectors';
 
@@ -95,9 +96,9 @@ describe('Collection permission checks', () => {
         const linkSelector = collectionSelectors.tableLinkByName(collectionName);
         // Ensure that menu options in table rows are available
         cy.get(`tr:has(${linkSelector}) button[aria-label="Kebab toggle"]`).click();
-        cy.get(`tr:has(${linkSelector}) button:contains("Edit collection")`);
-        cy.get(`tr:has(${linkSelector}) button:contains("Clone collection")`);
-        cy.get(`tr:has(${linkSelector}) button:contains("Delete collection")`);
+        cy.get(`${pf6.dropdownItem}:contains("Edit collection")`);
+        cy.get(`${pf6.dropdownItem}:contains("Clone collection")`);
+        cy.get(`${pf6.dropdownItem}:contains("Delete collection")`);
 
         // Visit page for individual collection and verify action button is present
         cy.get(linkSelector).click();

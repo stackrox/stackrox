@@ -12,6 +12,24 @@ import type { LifecycleStage } from 'types/policy.proto';
 
 import ImageSigningTableModal from './ImageSigningTableModal';
 
+/**
+ * Validates that a file path is absolute and does not contain directory traversal.
+ * Glob pattern validation is left to the backend (Go's doublestar library).
+ */
+export function validateFilePath(value: string): string | undefined {
+    const trimmed = value.trim();
+    if (trimmed.length === 0) {
+        return undefined;
+    }
+    if (!trimmed.startsWith('/')) {
+        return 'File path must be absolute (start with /)';
+    }
+    if (trimmed.split('/').includes('..')) {
+        return 'File path must not contain directory traversal (..)';
+    }
+    return undefined;
+}
+
 const equalityOptions: DescriptorOption[] = [
     { label: 'Is greater than', value: '>' },
     {
@@ -132,17 +150,59 @@ const APIVerbs: DescriptorOption[] = ['CREATE', 'DELETE', 'GET', 'PATCH', 'UPDAT
 const fileOperationOptions: DescriptorOption[] = [
     ['OPEN', 'Open (Writable)'],
     ['CREATE', 'Create'],
-    ['UNLINK', 'Delete'],
+    ['RENAME', 'Rename'],
+    ['UNLINK', 'Delete (Unlink)'],
     ['PERMISSION_CHANGE', 'Permission change'],
     ['OWNERSHIP_CHANGE', 'Ownership change'],
 ].map(([value, label]) => ({ value, label }));
 
-const fileActivityPathOptions: DescriptorOption[] = [
-    '/etc/passwd',
-    '/etc/ssh/sshd_config',
-    '/etc/shadow',
-    '/etc/sudoers',
-].map((path) => ({ label: path, value: path }));
+const processActivityDescriptors: Descriptor[] = [
+    {
+        name: 'Process Name',
+        shortName: 'Process name',
+        longName: 'Process name is',
+        negatedName: 'Process name doesn’t match',
+        category: policyCriteriaCategories.PROCESS_ACTIVITY,
+        type: 'text',
+        placeholder: 'apt-get',
+        canBooleanLogic: true,
+        lifecycleStages: ['RUNTIME'],
+    },
+    {
+        name: 'Process Ancestor',
+        shortName: 'Process ancestor',
+        longName: 'Process ancestor is',
+        negatedName: 'Process ancestor doesn’t match',
+        category: policyCriteriaCategories.PROCESS_ACTIVITY,
+        type: 'text',
+        placeholder: 'java',
+        canBooleanLogic: true,
+        lifecycleStages: ['RUNTIME'],
+    },
+    {
+        name: 'Process Arguments',
+        shortName: 'Process arguments',
+        longName: 'Process arguments are',
+        negatedName: 'Process arguments don’t match',
+        category: policyCriteriaCategories.PROCESS_ACTIVITY,
+        type: 'text',
+        placeholder: 'install nmap',
+        canBooleanLogic: true,
+        lifecycleStages: ['RUNTIME'],
+    },
+    {
+        label: 'Process UID',
+        name: 'Process UID',
+        shortName: 'Process UID',
+        longName: 'Process UID is',
+        negatedName: 'Process UID doesn’t match',
+        category: policyCriteriaCategories.PROCESS_ACTIVITY,
+        type: 'text',
+        placeholder: '0',
+        canBooleanLogic: true,
+        lifecycleStages: ['RUNTIME'],
+    },
+];
 
 const subComponentsForContainerMemory: SubComponent[] = [
     {
@@ -328,6 +388,8 @@ export type SelectDescriptor = {
 export type TextDescriptor = {
     type: 'text';
     placeholder?: string;
+    helperText?: string;
+    validate?: (value: string) => string | undefined;
 } & BaseDescriptor &
     DescriptorCanBoolean &
     DescriptorCanNegate;
@@ -1169,51 +1231,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         canBooleanLogic: false,
         lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
-    {
-        name: 'Process Name',
-        shortName: 'Process name',
-        longName: 'Process name is',
-        negatedName: 'Process name doesn’t match',
-        category: policyCriteriaCategories.PROCESS_ACTIVITY,
-        type: 'text',
-        placeholder: 'apt-get',
-        canBooleanLogic: true,
-        lifecycleStages: ['RUNTIME'],
-    },
-    {
-        name: 'Process Ancestor',
-        shortName: 'Process ancestor',
-        longName: 'Process ancestor is',
-        negatedName: 'Process ancestor doesn’t match',
-        category: policyCriteriaCategories.PROCESS_ACTIVITY,
-        type: 'text',
-        placeholder: 'java',
-        canBooleanLogic: true,
-        lifecycleStages: ['RUNTIME'],
-    },
-    {
-        name: 'Process Arguments',
-        shortName: 'Process arguments',
-        longName: 'Process arguments are',
-        negatedName: 'Process arguments don’t match',
-        category: policyCriteriaCategories.PROCESS_ACTIVITY,
-        type: 'text',
-        placeholder: 'install nmap',
-        canBooleanLogic: true,
-        lifecycleStages: ['RUNTIME'],
-    },
-    {
-        label: 'Process UID',
-        name: 'Process UID',
-        shortName: 'Process UID',
-        longName: 'Process UID is',
-        negatedName: 'Process UID doesn’t match',
-        category: policyCriteriaCategories.PROCESS_ACTIVITY,
-        type: 'text',
-        placeholder: '0',
-        canBooleanLogic: true,
-        lifecycleStages: ['RUNTIME'],
-    },
+    ...processActivityDescriptors,
     {
         label: 'Network baselining enabled',
         name: 'Unexpected Network Flow Detected',
@@ -1405,11 +1423,15 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         type: 'select',
         options: [
             {
+                label: 'Pod attach',
+                value: 'PODS_ATTACH',
+            },
+            {
                 label: 'Pod exec',
                 value: 'PODS_EXEC',
             },
             {
-                label: 'Pods port forward',
+                label: 'Pod port forward',
                 value: 'PODS_PORTFORWARD',
             },
         ],
@@ -1502,27 +1524,14 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
     {
-        label: 'Effective path',
-        name: 'Effective Path',
-        shortName: 'Effective path',
-        longName: 'The file path as observed by the process',
+        label: 'File path',
+        name: 'File Path',
+        shortName: 'File path',
         category: policyCriteriaCategories.FILE_ACTIVITY,
-        type: 'select',
-        placeholder: 'Select a file path',
-        options: fileActivityPathOptions,
-        canBooleanLogic: false,
-        lifecycleStages: ['RUNTIME'],
-        featureFlagDependency: ['ROX_SENSITIVE_FILE_ACTIVITY'],
-    },
-    {
-        label: 'Actual path',
-        name: 'Actual Path',
-        shortName: 'Actual path',
-        longName: 'The file path on the filesystem or volume mount',
-        category: policyCriteriaCategories.FILE_ACTIVITY,
-        type: 'select',
-        placeholder: 'Select a file path',
-        options: fileActivityPathOptions,
+        type: 'text',
+        placeholder: '/home/**/.ssh/id_*',
+        helperText: 'Enter an absolute file path. Supports glob patterns.',
+        validate: validateFilePath,
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
         featureFlagDependency: ['ROX_SENSITIVE_FILE_ACTIVITY'],
@@ -1662,13 +1671,14 @@ export const auditLogDescriptor: Descriptor[] = [
 
 export const nodeEventDescriptor: Descriptor[] = [
     {
-        label: 'Actual path',
-        name: 'Actual Path',
-        shortName: 'Actual path',
+        label: 'File path',
+        name: 'File Path',
+        shortName: 'File path',
         category: policyCriteriaCategories.FILE_ACTIVITY,
-        type: 'select',
-        placeholder: 'Select a file path',
-        options: fileActivityPathOptions,
+        type: 'text',
+        placeholder: '/home/**/.ssh/id_*',
+        helperText: 'Enter an absolute file path. Supports glob patterns.',
+        validate: validateFilePath,
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
     },
@@ -1683,4 +1693,5 @@ export const nodeEventDescriptor: Descriptor[] = [
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
     },
+    ...processActivityDescriptors,
 ];

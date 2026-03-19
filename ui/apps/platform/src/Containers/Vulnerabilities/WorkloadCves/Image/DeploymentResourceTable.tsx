@@ -58,6 +58,24 @@ export const deploymentResourcesFragment = gql`
     }
 `;
 
+/**
+ * Same fields as DeploymentResources but on ImageV2; when ROX_FLATTEN_IMAGE_DATA is enabled,
+ * we call ImageV2 resolver which returns ImageV2 type.
+ */
+export const deploymentResourcesV2Fragment = gql`
+    fragment DeploymentResourcesV2 on ImageV2 {
+        deploymentCount(query: $query)
+        deployments(query: $query, pagination: $pagination) {
+            id
+            name
+            type
+            clusterName
+            namespace
+            created
+        }
+    }
+`;
+
 export type DeploymentResourceTableProps = {
     data: DeploymentResources;
     getSortParams: UseURLSortResult['getSortParams'];
@@ -73,7 +91,7 @@ function DeploymentResourceTable({
     const vulnerabilityState = useVulnerabilityState();
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
     return (
-        <Table borders={false} variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th className={getVisibilityClass('name')} sort={getSortParams('Deployment')}>
@@ -94,12 +112,7 @@ function DeploymentResourceTable({
             {data.deployments.length === 0 && <EmptyTableResults colSpan={4} />}
             {data.deployments.map(({ id, name, type, clusterName, namespace, created }) => {
                 return (
-                    <Tbody
-                        key={id}
-                        style={{
-                            borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
-                        }}
-                    >
+                    <Tbody key={id}>
                         <Tr>
                             <Td dataLabel="Name" className={getVisibilityClass('name')}>
                                 <Link

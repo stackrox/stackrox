@@ -147,7 +147,8 @@ func collectFields(q *v1.Query) (set.StringSet, set.StringSet) {
 		nullableFields.AddAll(nullable.AsSlice()...)
 	}
 	for _, selectField := range q.GetSelects() {
-		collectedFields.Add(selectField.GetField().GetName())
+		fieldName := selectField.GetField().GetName()
+		collectedFields.Add(fieldName)
 		collected, nullable := collectFields(selectField.GetFilter().GetQuery())
 		collectedFields.AddAll(collected.AsSlice()...)
 		nullableFields.AddAll(nullable.AsSlice()...)
@@ -166,8 +167,18 @@ type searchFieldMetadata struct {
 	derivedMetadata *walker.DerivedSearchField
 }
 
-func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]searchFieldMetadata) {
+// isChildSchema checks if a schema is a child (or grandchild, etc.) of the parent schema.
+func isChildSchema(childSchema *walker.Schema, parentSchema *walker.Schema) bool {
+	if childSchema == nil || parentSchema == nil {
+		return false
+	}
+	return isChildTable(childSchema.Table, parentSchema)
+}
+
+func getJoinsAndFields(src *walker.Schema, q *v1.Query, arrayFields map[string]bool) ([]Join, map[string]searchFieldMetadata) {
 	unreachedFields, nullableFields := collectFields(q)
+
+	hasGroupBy := len(q.GetGroupBy().GetFields()) > 0
 
 	joinTreeRoot := &joinTreeNode{
 		currNode: src,
@@ -194,6 +205,13 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 					if nullableFields.Remove(lowerCaseName) {
 						joinType = Left
 					}
+					if arrayFields != nil && isChildSchema(currElem.schema, src) && !hasGroupBy {
+						// Compute alias using the same formula as selectQueryField
+						alias := strings.Join(strings.Fields(lowerCaseName), "_")
+						if arrayFields[alias] {
+							joinType = Left
+						}
+					}
 				}
 			}
 
@@ -211,6 +229,7 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 				}
 			}
 		}
+
 		// We found a field in this schema; if this is not the root schema itself, we'll need to add it to the join tree.
 		if len(reachableFields) > numReachableFieldsBefore && len(currElem.pathFromRoot) > 0 {
 			joinTreeRoot.addPathToTree(currElem.pathFromRoot, currElem.schema, joinType)
@@ -238,8 +257,10 @@ func getJoinsAndFields(src *walker.Schema, q *v1.Query) ([]Join, map[string]sear
 			}
 			if src.SearchScope == nil {
 				queue = append(queue, newElem)
-			} else if _, foundInSearchScope := src.SearchScope[newElem.schema.OptionsMap.PrimaryCategory()]; foundInSearchScope {
-				queue = append(queue, newElem)
+			} else if newElem.schema.OptionsMap != nil {
+				if _, foundInSearchScope := src.SearchScope[newElem.schema.OptionsMap.PrimaryCategory()]; foundInSearchScope {
+					queue = append(queue, newElem)
+				}
 			}
 		}
 	}

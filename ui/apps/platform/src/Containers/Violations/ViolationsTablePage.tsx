@@ -4,6 +4,7 @@ import {
     Alert,
     Bullseye,
     Button,
+    Content,
     Flex,
     PageSection,
     Popover,
@@ -11,7 +12,6 @@ import {
     Tab,
     TabTitleText,
     Tabs,
-    Text,
     Title,
 } from '@patternfly/react-core';
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
@@ -58,11 +58,14 @@ function getFilteredWorkflowViewSearchFilter(
                 'Platform Component': 'true',
                 'Entity Type': 'DEPLOYMENT',
             };
+        case 'Node view':
+            return {
+                'Entity Type': 'NODE',
+            };
         case 'Full view':
         default:
-            return {
-                'Entity Type': ['UNSET', 'DEPLOYMENT', 'CONTAINER_IMAGE', 'RESOURCE'],
-            };
+            // No filter returns all types
+            return {};
     }
 }
 
@@ -81,6 +84,10 @@ const violationPageText: Record<
         title: 'Platform violations',
         description:
             'Violations affecting workloads used by the OpenShift Platform and layered services',
+    },
+    'Node view': {
+        title: 'Node violations',
+        description: 'Violations affecting cluster nodes',
     },
     'Full view': {
         title: 'All violations',
@@ -113,11 +120,18 @@ function getDescriptionForSelectedViolationState(
 function ViolationsTablePage(): ReactElement {
     const { searchFilter, setSearchFilter } = useURLSearch();
 
+    const { filteredWorkflowView } = useFilteredWorkflowViewURLState();
+
+    // Node policies have no admission controller evaluation, so attempted
+    // alerts are never generated for nodes. Limit the valid tabs accordingly.
+    const allowedViolationStateTabs =
+        filteredWorkflowView === 'Node view'
+            ? (['ACTIVE', 'RESOLVED'] as const)
+            : violationStateTabs;
     const [selectedViolationStateTab, setSelectedViolationStateTab] = useURLStringUnion(
         'violationState',
-        violationStateTabs
+        allowedViolationStateTabs
     );
-    const { filteredWorkflowView } = useFilteredWorkflowViewURLState();
 
     const hasExecutableFilter =
         Object.keys(searchFilter).length &&
@@ -159,6 +173,11 @@ function ViolationsTablePage(): ReactElement {
     const onSearch: OnSearchCallback = (payload) => {
         setSearchFilter(updateSearchFilter(searchFilter, payload));
     };
+
+    useEffectAfterFirstRender(() => {
+        setSearchFilter({});
+        setPage(1);
+    }, [filteredWorkflowView, setSearchFilter, setPage]);
 
     useEffectAfterFirstRender(() => {
         if (hasExecutableFilter && !isViewFiltered) {
@@ -262,25 +281,27 @@ function ViolationsTablePage(): ReactElement {
 
     return (
         <>
-            <PageSection variant="light" id="violations-table">
+            <PageSection id="violations-table">
                 <Flex
                     direction={{ default: 'row' }}
                     alignItems={{ default: 'alignItemsCenter' }}
                     spaceItems={{ default: 'spaceItemsNone' }}
-                    className="pf-v5-u-flex-grow-1"
+                    className="pf-v6-u-flex-grow-1"
                 >
                     <Title headingLevel="h1">{title}</Title>
                     <Popover
                         aria-label="More information about the current page"
                         bodyContent={description}
                     >
-                        <Button title="Page description" variant="plain">
-                            <OutlinedQuestionCircleIcon />
-                        </Button>
+                        <Button
+                            icon={<OutlinedQuestionCircleIcon />}
+                            title="Page description"
+                            variant="plain"
+                        />
                     </Popover>
                 </Flex>
             </PageSection>
-            <PageSection variant="light" className="pf-v5-u-py-0">
+            <PageSection type="tabs">
                 <Tabs
                     activeKey={selectedViolationStateTab}
                     onSelect={(_e, tab) => {
@@ -290,6 +311,7 @@ function ViolationsTablePage(): ReactElement {
                         setSelectedViolationStateTab(tab);
                     }}
                     aria-label="Violation state tabs"
+                    usePageInsets
                 >
                     <Tab
                         eventKey="ACTIVE"
@@ -301,23 +323,29 @@ function ViolationsTablePage(): ReactElement {
                         tabContentId={tabContentId}
                         title={<TabTitleText>Resolved</TabTitleText>}
                     />
-                    <Tab
-                        eventKey="ATTEMPTED"
-                        tabContentId={tabContentId}
-                        title={<TabTitleText>Attempted</TabTitleText>}
-                    />
+                    {filteredWorkflowView !== 'Node view' && (
+                        <Tab
+                            eventKey="ATTEMPTED"
+                            tabContentId={tabContentId}
+                            title={<TabTitleText>Attempted</TabTitleText>}
+                        />
+                    )}
                 </Tabs>
             </PageSection>
-            <PageSection variant="light">
-                <Text>{getDescriptionForSelectedViolationState(selectedViolationStateTab)}</Text>
+            <PageSection>
+                <Content component="p">
+                    {getDescriptionForSelectedViolationState(selectedViolationStateTab)}
+                </Content>
             </PageSection>
-            <PageSection variant="default" id={tabContentId}>
-                {isLoadingAlerts && (
+            {isLoadingAlerts && (
+                <PageSection id={tabContentId}>
                     <Bullseye>
                         <Spinner size="xl" />
                     </Bullseye>
-                )}
-                {!isLoadingAlerts && currentPageAlertsErrorMessage && (
+                </PageSection>
+            )}
+            {!isLoadingAlerts && currentPageAlertsErrorMessage && (
+                <PageSection id={tabContentId}>
                     <Bullseye>
                         <Alert
                             variant="danger"
@@ -325,30 +353,29 @@ function ViolationsTablePage(): ReactElement {
                             component="p"
                         />
                     </Bullseye>
-                )}
-                {!isLoadingAlerts && !currentPageAlertsErrorMessage && (
-                    <PageSection variant="light">
-                        <ViolationsTablePanel
-                            violations={currentPageAlerts}
-                            violationsCount={alertCount}
-                            currentPage={page}
-                            setCurrentPage={setPage}
-                            resolvableAlerts={resolvableAlerts}
-                            excludableAlerts={excludableAlerts}
-                            perPage={perPage}
-                            setPerPage={setPerPage}
-                            getSortParams={getSortParams}
-                            columns={columns}
-                            searchFilter={searchFilter}
-                            onFilterChange={setSearchFilter}
-                            onSearch={onSearch}
-                            additionalContextFilter={additionalContextFilter}
-                            hasActiveViolations={selectedViolationStateTab === 'ACTIVE'}
-                            isTableDataUpdating={isTableDataUpdating}
-                        />
-                    </PageSection>
-                )}
-            </PageSection>
+                </PageSection>
+            )}
+            {!isLoadingAlerts && !currentPageAlertsErrorMessage && (
+                <ViolationsTablePanel
+                    violations={currentPageAlerts}
+                    violationsCount={alertCount}
+                    currentPage={page}
+                    setCurrentPage={setPage}
+                    resolvableAlerts={resolvableAlerts}
+                    excludableAlerts={excludableAlerts}
+                    perPage={perPage}
+                    setPerPage={setPerPage}
+                    getSortParams={getSortParams}
+                    columns={columns}
+                    searchFilter={searchFilter}
+                    onFilterChange={setSearchFilter}
+                    onSearch={onSearch}
+                    additionalContextFilter={additionalContextFilter}
+                    filteredWorkflowView={filteredWorkflowView}
+                    hasActiveViolations={selectedViolationStateTab === 'ACTIVE'}
+                    isTableDataUpdating={isTableDataUpdating}
+                />
+            )}
         </>
     );
 }

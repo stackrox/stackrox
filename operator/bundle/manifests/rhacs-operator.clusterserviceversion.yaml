@@ -1407,10 +1407,10 @@ spec:
           for scanning the Nodes' filesystem.
         displayName: Node Scanning Settings
         path: perNode.nodeInventory
-      - description: Settings for the Sensitive File Activity container, which is
-          responsible for file activity monitoring on the Node.
-        displayName: SFA
-        path: perNode.sfa
+      - description: Settings for the File Activity Monitoring container, which is
+          responsible for monitoring file operations on the Node.
+        displayName: File Activity Monitoring Settings
+        path: perNode.fileActivityMonitoring
       - description: 'To ensure comprehensive monitoring of your cluster activity,
           Red Hat Advanced Cluster Security
 
@@ -1470,25 +1470,28 @@ spec:
         path: perNode.compliance.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: 'Specifies whether File Activity Monitoring is deployed.
+
+          The default is: Disabled.'
+        displayName: Mode
+        path: perNode.fileActivityMonitoring.mode
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:select:Enabled
+        - urn:alm:descriptor:com.tectonic.ui:select:Disabled
+      - description: 'Allows overriding the default resource settings for this component.
+          Please consult the documentation
+
+          for an overview of default resource requirements and a sizing guide.'
+        displayName: Resources
+        path: perNode.fileActivityMonitoring.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
       - description: 'Allows overriding the default resource settings for this component.
           Please consult the documentation
 
           for an overview of default resource requirements and a sizing guide.'
         displayName: Resources
         path: perNode.nodeInventory.resources
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: 'Specifies whether Sensitive File Activity agent is deployed.
-
-          The default is: Disabled.'
-        displayName: SFA Agent
-        path: perNode.sfa.agent
-      - description: 'Allows overriding the default resource settings for this component.
-          Please consult the documentation
-
-          for an overview of default resource requirements and a sizing guide.'
-        displayName: Resources
-        path: perNode.sfa.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
       - description: 'Should process baselines be automatically locked when the observation
@@ -1858,13 +1861,13 @@ spec:
     \ back to Central. These services allow users to enforce policies and monitor\
     \ your OpenShift and Kubernetes clusters. Secured Cluster Services come as two\
     \ Deployments (Sensor and Admission Controller) and one DaemonSet (Collector).\n\
-    \n**Console Plugin:** RHACS provides a dynamic plugin that displays vulnerability\
-    \ management information in the OpenShift web console. Install a SecuredCluster\
-    \ to deploy the plugin. Enable the plugin by selecting *Operators* > *Installed\
-    \ Operators* or by modifying the console Operator configuration.\n**Important:**\
-    \ The Console Plugin requires OpenShift 4.19 or later.\n\n### Central Services\
-    \ Explained\n\n| Service                          | Deployment Type | Description\
-    \     |\n| :------------------------------- | :-------------- | :--------------\
+    \n**Console Plugin (Tech Preview):** RHACS provides a dynamic plugin that displays\
+    \ vulnerability management information in the OpenShift web console. Install a\
+    \ SecuredCluster to deploy the plugin. Enable the plugin by selecting *Operators*\
+    \ > *Installed Operators* or by modifying the console Operator configuration.\n\
+    **Important:** The Console Plugin requires OpenShift 4.19 or later.\n\n### Central\
+    \ Services Explained\n\n| Service                          | Deployment Type |\
+    \ Description     |\n| :------------------------------- | :-------------- | :--------------\
     \ |\n| Central                          | Deployment      | Users interact with\
     \ Red Hat Advanced Cluster Security through the user interface or APIs on Central.\
     \ Central also sends notifications for violations and interacts with integrations.\
@@ -1986,8 +1989,8 @@ spec:
             spec:
               containers:
               - args:
-                - --health-probe-bind-address=:8081
                 - --metrics-bind-address=0.0.0.0:8443
+                - --health-probe-bind-address=:8081
                 - --leader-elect
                 env:
                 - name: RELATED_IMAGE_MAIN
@@ -1996,6 +1999,7 @@ spec:
                 - name: RELATED_IMAGE_SCANNER_DB
                 - name: RELATED_IMAGE_SCANNER_DB_SLIM
                 - name: RELATED_IMAGE_COLLECTOR
+                - name: RELATED_IMAGE_FACT
                 - name: RELATED_IMAGE_ROXCTL
                 - name: RELATED_IMAGE_CENTRAL_DB
                 - name: RELATED_IMAGE_SCANNER_V4_DB
@@ -2007,6 +2011,7 @@ spec:
                       divisor: '0'
                       resource: limits.memory
                 image: controller:latest
+                imagePullPolicy: IfNotPresent
                 livenessProbe:
                   httpGet:
                     path: /healthz

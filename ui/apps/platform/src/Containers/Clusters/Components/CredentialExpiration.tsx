@@ -93,7 +93,7 @@ function CredentialExpiration({
                                 <a
                                     href={getVersionedDocs(
                                         version,
-                                        'configuring/reissue-internal-certificates#reissue-internal-certificates-secured-clusters'
+                                        'configuring/reissue-internal-certificates#reissue-internal-certificates-secured-clusters_reissue-internal-certificates'
                                     )}
                                     target="_blank"
                                     rel="noopener noreferrer"

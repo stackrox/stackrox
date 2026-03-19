@@ -7,6 +7,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"sync/atomic"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -17,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/centralproxy/allowedpaths"
 	"google.golang.org/grpc"
 	"k8s.io/client-go/kubernetes"
 )
@@ -127,6 +129,19 @@ func (h *Handler) validateRequest(request *http.Request) error {
 		return pkghttputil.NewError(http.StatusServiceUnavailable, "central not reachable")
 	}
 
+	// Only enforce path filtering when Central advertises the capability.
+	// Otherwise allow the request for backwards compatibility.
+	if centralcaps.Has(centralsensor.CentralProxyPathFiltering) {
+		normalizedPath := request.URL.EscapedPath()
+		if normalizedPath == "" {
+			normalizedPath = "/"
+		}
+		if !allowedpaths.IsAllowed(normalizedPath) {
+			return pkghttputil.Errorf(http.StatusForbidden,
+				"path %q is not allowed by the proxy allow-list", request.URL.Path)
+		}
+	}
+
 	return nil
 }
 
@@ -142,17 +157,26 @@ func checkInternalTokenAPISupport() error {
 
 // ServeHTTP handles incoming HTTP requests and proxies them to Central.
 func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	start := time.Now()
+	result := requestResultSuccess
+	defer func() {
+		observeProxyRequest(result, time.Since(start))
+	}()
+
 	if err := checkInternalTokenAPISupport(); err != nil {
+		result = requestResultNotImplemented
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 
 	if err := h.validateRequest(request); err != nil {
+		result = requestResultValidationError
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 
 	if h.authorizer == nil {
+		result = requestResultConfigError
 		log.Error("Authorizer is nil - this indicates a misconfiguration in the central proxy handler")
 		http.Error(writer, "authorizer not configured", http.StatusInternalServerError)
 		return
@@ -160,14 +184,21 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 
 	userInfo, err := h.authorizer.authenticate(request.Context(), request)
 	if err != nil {
+		result = requestResultAuthnError
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 
 	if err := h.authorizer.authorize(request.Context(), userInfo, request); err != nil {
+		result = requestResultAuthzError
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
 
-	h.proxy.ServeHTTP(writer, request)
+	tracker := pkghttputil.NewStatusTrackingWriter(writer)
+	h.proxy.ServeHTTP(tracker, request)
+
+	if statusCode := tracker.GetStatusCode(); statusCode != nil && *statusCode >= http.StatusBadRequest {
+		result = requestResultProxyError
+	}
 }

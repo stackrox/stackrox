@@ -85,6 +85,17 @@ When creating pull requests, you must follow these requirements:
 - `make go-generated-srcs` - Generate Go code (mockgen, stringer, easyjson)
 - `make generated-srcs` - Generate all source code
 
+### Adding Database Columns
+When the user needs to add a new column to an existing database table:
+- Read `migrator/README.md` for the authoritative migration workflow and examples
+- Prompt the user about their specific needs (column type, backfill requirements, performance considerations)
+- Present options based on similar migrations in `migrator/migrations/` directory
+- Reference the "Code Generation Commands" section above for regenerating schema/store code
+- Suggest running code generation commands in the background if appropriate (they can be slow)
+- After code generation, run code quality checks from the "Code Quality Commands" section above
+
+The migrator README contains detailed examples of frozen schemas, GORM usage patterns, and migration best practices.
+
 ### Local Development Commands
 - `./deploy/deploy-local.sh` - Deploy StackRox locally (requires existing k8s cluster)
 - `make install-dev-tools` - Install development tools (linters, generators)
@@ -137,6 +148,11 @@ StackRox is a Kubernetes-native security platform with a distributed microservic
 - `/qa-tests-backend/` - Integration tests (Groovy/Spock)
 
 ### Detailed Documentation
+
+**In-code documentation:** Packages with non-obvious architecture or operational
+gotchas often contain a markdown file (e.g. `README.md`) co-located with the
+source code. Before researching a subsystem from scratch, check for markdown
+files in its package directory.
 
 When working on specific areas, refer to these detailed guides:
 

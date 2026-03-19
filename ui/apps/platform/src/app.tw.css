@@ -16,12 +16,6 @@
 @import 'react-vis/dist/style.css';
 
 
-.theme-dark .react-select__option:hover,
-.theme-dark .react-select__option:focus,
-.theme-dark .react-select__option:active {
-    background: var(--base-400);
-}
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -132,8 +126,8 @@ h6 {
 .toast-selector {
     background-color: #ffffff;
     color: #151515;
-    font-family: var(--pf-v5-global--FontFamily--sans-serif);
-    font-size: var(--pf-v5-global--FontSize--sm);
+    font-family: var(--pf-v6-global--FontFamily--sans-serif);
+    font-size: var(--pf-t--global--font--size--sm);
 }
 
 .Toastify__close-button--default {
@@ -447,20 +441,6 @@ h6 {
     @apply bg-base-100 !important; /* th also needs background for horizontal scrolling beyond tr width */
 }
 
-.theme-dark .ReactTable .rt-thead.-header .rt-tr {
-    @apply border-b border-base-200 bg-base-0 !important;
-    box-shadow: -10px 0 0 var(--base-100), 10px 0 0 var(--base-100), 0 2px 8px 0 hsl(233, 25%, 15%) !important;
-}
-
-.theme-dark .ReactTable .rt-th {
-    @apply bg-base-0 !important; /* th also needs background for horizontal scrolling beyond tr width */
-}
-
-.theme-dark .widget .ReactTable .rt-thead.-header .rt-tr,
-.theme-dark .widget .ReactTable .rt-th {
-    @apply bg-base-100 !important;
-}
-
 .ReactTable .rt-thead .rt-th.-sort-desc,
 .ReactTable .rt-thead .rt-th.-sort-asc {
     @apply shadow-none !important;
@@ -720,6 +700,10 @@ h6 {
 .redoc-wrap,
 .redoc-wrap .menu-content {
     @apply h-full !important;
+}
+
+.redoc-wrap div:has(a[href*="redocly.com"]) {
+    position: static;
 }
 
 .redoc-wrap .api-content {

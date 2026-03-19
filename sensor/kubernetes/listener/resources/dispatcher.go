@@ -56,15 +56,15 @@ type DispatcherRegistry interface {
 	ForComplianceOperatorScanSettingBindings() Dispatcher
 	ForComplianceOperatorScans() Dispatcher
 	ForComplianceOperatorSuites() Dispatcher
-	ForComplianceOperatorTailoredProfiles() Dispatcher
+	ForComplianceOperatorTailoredProfiles(profileLister cache.GenericLister) Dispatcher
 	ForComplianceOperatorRemediations() Dispatcher
+	ForComplianceOperatorCustomRules() Dispatcher
 }
 
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
 func NewDispatcherRegistry(
 	clusterID string,
 	podLister v1Listers.PodLister,
-	profileLister cache.GenericLister,
 	processFilter filter.Filter,
 	configHandler config.Handler,
 	credentialsManager awscredentials.RegistryCredentialsManager,
@@ -106,9 +106,9 @@ func NewDispatcherRegistry(
 		complianceOperatorProfileDispatcher:             dispatchers.NewProfileDispatcher(),
 		complianceOperatorScanSettingBindingsDispatcher: dispatchers.NewScanSettingBindingsDispatcher(),
 		complianceOperatorScanDispatcher:                dispatchers.NewScanDispatcher(),
-		complianceOperatorTailoredProfileDispatcher:     dispatchers.NewTailoredProfileDispatcher(profileLister),
 		complianceOperatorSuiteDispatcher:               dispatchers.NewSuitesDispatcher(),
 		complianceOperatorRemediationDispatcher:         dispatchers.NewRemediationDispatcher(),
+		complianceOperatorCustomRuleDispatcher:          dispatchers.NewCustomRuleDispatcher(),
 
 		virtualMachineDispatcher:         dispatcher.NewVirtualMachineDispatcher(clusterID, storeProvider.VirtualMachines()),
 		virtualMachineInstanceDispatcher: dispatcher.NewVirtualMachineInstanceDispatcher(clusterID, storeProvider.VirtualMachines()),
@@ -138,6 +138,7 @@ type registryImpl struct {
 	complianceOperatorTailoredProfileDispatcher     *dispatchers.TailoredProfileDispatcher
 	complianceOperatorSuiteDispatcher               *dispatchers.SuitesDispatcher
 	complianceOperatorRemediationDispatcher         *dispatchers.RemediationDispatcher
+	complianceOperatorCustomRuleDispatcher          *dispatchers.CustomRuleDispatcher
 
 	virtualMachineDispatcher         *dispatcher.VirtualMachineDispatcher
 	virtualMachineInstanceDispatcher *dispatcher.VirtualMachineInstanceDispatcher
@@ -301,7 +302,13 @@ func (d *registryImpl) ForComplianceOperatorProfiles() Dispatcher {
 	return wrapDispatcher(d.complianceOperatorProfileDispatcher, d.traceWriter)
 }
 
-func (d *registryImpl) ForComplianceOperatorTailoredProfiles() Dispatcher {
+func (d *registryImpl) ForComplianceOperatorTailoredProfiles(profileLister cache.GenericLister) Dispatcher {
+	// Lazy initialization: create the dispatcher on first call.
+	// This allows the profileLister to be provided after the registry is created,
+	// which is necessary to avoid creating the Profile informer too early in the startup sequence.
+	if d.complianceOperatorTailoredProfileDispatcher == nil {
+		d.complianceOperatorTailoredProfileDispatcher = dispatchers.NewTailoredProfileDispatcher(profileLister)
+	}
 	return wrapDispatcher(d.complianceOperatorTailoredProfileDispatcher, d.traceWriter)
 }
 
@@ -327,6 +334,10 @@ func (d *registryImpl) ForComplianceOperatorSuites() Dispatcher {
 
 func (d *registryImpl) ForComplianceOperatorRemediations() Dispatcher {
 	return wrapDispatcher(d.complianceOperatorRemediationDispatcher, d.traceWriter)
+}
+
+func (d *registryImpl) ForComplianceOperatorCustomRules() Dispatcher {
+	return wrapDispatcher(d.complianceOperatorCustomRuleDispatcher, d.traceWriter)
 }
 
 func (d *registryImpl) ForVirtualMachines() Dispatcher {

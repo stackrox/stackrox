@@ -284,7 +284,7 @@ const rules = {
                         'vm-filter-toolbar-dropdown', // Vulnerabilities components folder
                         'vulnerability-exception-request-overview', // Vulnerabilities RequestOverview.tsx
                         'widget-options-menu', // Dashboard WidgetOptionsMenu.tsx
-                        'z-xs-101', // Search SearchPage.tsx
+                        'z-sm-201', // Search SearchPage.tsx
                     ];
                     const isTailwind = (className) =>
                         !className.startsWith('pf-') && !classNamesApplication.includes(className);

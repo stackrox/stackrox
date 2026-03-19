@@ -96,8 +96,8 @@ func (s *PodHierarchySuite) Test_ContainerSpecOnDeployment() {
 			s.Require().NoError(err)
 
 			testC.LastDeploymentState(t, "nginx-deployment",
-				assertDeploymentContainerImages("docker.io/library/nginx:1.14.2"),
-				"nginx deployment should have a single container with nginx:1.14.2 image")
+				assertDeploymentContainerImages("quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1"),
+				"nginx deployment should have a single container with quay.io nginx image")
 
 			messages := testC.GetFakeCentral().GetAllMessages()
 			uniquePodNames := helper.GetUniquePodNamesFromPrefix(messages, "sensor-integration", "nginx-")
@@ -122,8 +122,8 @@ func (s *PodHierarchySuite) Test_ParentlessPodsAreTreatedAsDeployments() {
 			s.Require().NoError(err)
 
 			testC.LastDeploymentState(t, "nginx-rogue",
-				assertDeploymentContainerImages("docker.io/library/nginx:1.14.1"),
-				"nginx standalone pod should have a single container with nginx:1.14.1 image")
+				assertDeploymentContainerImages("quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1"),
+				"nginx standalone pod should have a single container with quay.io nginx image")
 
 			messages := testC.GetFakeCentral().GetAllMessages()
 			uniqueDeployments := helper.GetUniqueDeploymentNames(messages, "sensor-integration")

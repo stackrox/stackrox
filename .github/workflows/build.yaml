@@ -65,7 +65,7 @@ jobs:
           matrix="$(jq '.push_operator_multiarch_manifests.archs = [.build_and_push_operator.arch | join(",")]' <<< "$matrix")"
 
           matrix="$(jq '.scan_images_with_roxctl.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.scan_images_with_roxctl.image += ["central-db", "collector", "main", "roxctl", "scanner", "scanner-db", "scanner-db-slim", "scanner-slim", "stackrox-operator"]' <<< "$matrix")"
+          matrix="$(jq '.scan_images_with_roxctl.image += ["central-db", "collector", "fact", "main", "roxctl", "scanner", "scanner-db", "scanner-db-slim", "scanner-slim", "stackrox-operator"]' <<< "$matrix")"
           # TODO(ROX-27191): remove the exclusion once there's a community operator.
           matrix="$(jq '.scan_images_with_roxctl.exclude += [{ "name": "STACKROX_BRANDING", "image": "stackrox-operator" }]' <<< "$matrix")"
 
@@ -114,7 +114,7 @@ jobs:
       UI_PKG_INSTALL_EXTRA_ARGS: --ignore-scripts
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -149,7 +149,7 @@ jobs:
   pre-build-cli:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -190,7 +190,7 @@ jobs:
     needs: define-job-matrix
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -260,7 +260,7 @@ jobs:
   pre-build-docs:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -320,7 +320,7 @@ jobs:
       GO_BINARIES_BUILD_ARTIFACT: ""
       ROX_PRODUCT_BRANDING: ""
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -375,7 +375,7 @@ jobs:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
@@ -385,10 +385,10 @@ jobs:
 
       - name: Set up QEMU
         if: matrix.arch != 'amd64'
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Checkout submodules
         run: |
@@ -504,7 +504,7 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ""
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -599,7 +599,7 @@ jobs:
     needs:
       - define-job-matrix
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -623,11 +623,11 @@ jobs:
 
       - uses: ./.github/actions/job-preamble
         with:
-          free-disk-space: 30
+          free-disk-space: 40
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Cache Go dependencies
         env:
@@ -686,7 +686,7 @@ jobs:
           CGO_ENABLED=0 GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ build docker-build
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         # Skip for external contributions.
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
@@ -696,7 +696,7 @@ jobs:
 
       - name: Set up QEMU
         if: matrix.arch != 'amd64'
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Check that Operator image is runnable
         run: docker run --rm --platform linux/${{ matrix.arch }} "quay.io/${QUAY_ORG}/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
@@ -761,7 +761,7 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
         - /usr:/mnt/usr
         - /opt:/mnt/opt
@@ -805,7 +805,7 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.1
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     needs:
     - pre-build-cli
     - pre-build-go-binaries
@@ -850,6 +850,7 @@ jobs:
       uses: ./.github/actions/junit2jira
       if: always()
       with:
+        jira-user: ${{ secrets.JIRA_USER }}
         jira-token: ${{ secrets.JIRA_TOKEN }}
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
         directory: 'junit-reports'

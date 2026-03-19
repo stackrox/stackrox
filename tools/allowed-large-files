@@ -3,6 +3,7 @@
 CHANGELOG.md
 central/alert/datastore/internal/store/postgres/store.go
 central/baseimage/watcher/watcher_impl_test.go
+central/cluster/datastore/datastore_impl_postgres_test.go
 central/cluster/datastore/datastore_impl_test.go
 central/compliance/checks/fixtures/scraped.go
 central/compliance/standards/metadata/pci_dss_3_2.go
@@ -15,6 +16,7 @@ central/networkpolicies/graph/evaluator_test.go
 central/processlisteningonport/datastore/datastore_impl_test.go
 central/pruning/pruning_test.go
 central/reports/service/v2/service_impl_test.go
+central/sensor/service/connection/sensor-central-data-flow.excalidraw.svg
 central/splunk/violations_test.go
 central/testutils/testdata/imgdata.json.gz
 central/vulnmgmt/vulnerabilityrequest/datastore/datastore_impl_postgres_test.go
@@ -29,7 +31,8 @@ operator/config/crd/bases/*.yaml
 operator/config/manifests/bases/*.yaml
 operator/install/manifest.yaml
 operator/tests/img/*.png
-pkg/booleanpolicy/default_policies_test.go
+pkg/booleanpolicy/default_policies_builtin_test.go
+pkg/booleanpolicy/runtime_criteria_test.go
 pkg/branding/files/red_hat_acs_logo_rgb.png
 pkg/branding/files/stackrox_integration_logo.png
 pkg/continuousprofiling/docs/img/*.png
@@ -39,6 +42,7 @@ pkg/fixtures/graph.go
 pkg/fixtures/image.go
 pkg/fixtures/image/files/*
 pkg/fixtures/vmindexreport/packages_fixture.go
+pkg/grpc/authn/tokenbased/extractor_test.go
 pkg/images/enricher/enricher_impl_test.go
 pkg/images/enricher/enricher_v2_impl_test.go
 pkg/mitre/files/mitre.json
@@ -47,6 +51,7 @@ pkg/scancomponent/testdata_ComponentIDV2Golden.txt
 pkg/scannerv4/mappers/mappers.go
 pkg/scannerv4/mappers/mappers_test.go
 pkg/search/postgres/common_test.go
+pkg/search/postgres/index_test.go
 pkg/sliceutils/gen-builtins-generic.go
 pkg/testutils/hashdata/image.json
 proto/storage/proto.lock

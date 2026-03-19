@@ -1,10 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import {
-    Card,
-    CardBody,
+    Content,
     PageSection,
     Pagination,
-    Text,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -149,67 +147,61 @@ function ViewBasedReportsTab() {
     return (
         <>
             <PageTitle title="Vulnerability reporting - View-based reports" />
-            <PageSection variant="light">
-                <Text>
+            <PageSection>
+                <Content component="p">
                     Check job status and download view-based reports in CSV format. Requests are
                     purged according to retention settings.
-                </Text>
+                </Content>
             </PageSection>
             <PageSection>
-                <Card>
-                    <CardBody className="pf-v5-u-p-0">
-                        <Toolbar>
-                            <ToolbarContent>
-                                <ToolbarItem alignItems="center">
-                                    <ReportJobStatusFilter
-                                        availableStatuses={[
-                                            'WAITING',
-                                            'PREPARING',
-                                            'DOWNLOAD_GENERATED',
-                                            'ERROR',
-                                        ]}
-                                        selectedStatuses={ensureReportJobStatuses(
-                                            reportJobStatusFilters
-                                        )}
-                                        onChange={onReportJobStatusFilterChange}
-                                    />
-                                </ToolbarItem>
-                                <ToolbarItem className="pf-v5-u-flex-grow-1" alignSelf="center">
-                                    <MyJobsFilter
-                                        isViewingOnlyMyJobs={ensureBoolean(isViewingOnlyMyJobs)}
-                                        onMyJobsFilterChange={onMyJobsFilterChange}
-                                    />
-                                </ToolbarItem>
-                                <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
-                                    {/* TODO: Change this to determinate pagination pattern */}
-                                    <Pagination
-                                        toggleTemplate={({ firstIndex, lastIndex }) => (
-                                            <span>
-                                                <b>
-                                                    {firstIndex} - {lastIndex}
-                                                </b>{' '}
-                                                of <b>many</b>
-                                            </span>
-                                        )}
-                                        page={page}
-                                        perPage={perPage}
-                                        onSetPage={(_, newPage) => setPage(newPage)}
-                                        onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
-                                        isCompact
-                                    />
-                                </ToolbarItem>
-                            </ToolbarContent>
-                        </Toolbar>
-                        <ViewBasedReportsTable
-                            tableState={tableState}
-                            getSortParams={getSortParams}
-                            onClearFilters={() => {
-                                setSearchFilter({});
-                                setPage(1);
-                            }}
-                        />
-                    </CardBody>
-                </Card>
+                <Toolbar>
+                    <ToolbarContent>
+                        <ToolbarItem alignItems="center">
+                            <ReportJobStatusFilter
+                                availableStatuses={[
+                                    'WAITING',
+                                    'PREPARING',
+                                    'DOWNLOAD_GENERATED',
+                                    'ERROR',
+                                ]}
+                                selectedStatuses={ensureReportJobStatuses(reportJobStatusFilters)}
+                                onChange={onReportJobStatusFilterChange}
+                            />
+                        </ToolbarItem>
+                        <ToolbarItem className="pf-v6-u-flex-grow-1" alignSelf="center">
+                            <MyJobsFilter
+                                isViewingOnlyMyJobs={ensureBoolean(isViewingOnlyMyJobs)}
+                                onMyJobsFilterChange={onMyJobsFilterChange}
+                            />
+                        </ToolbarItem>
+                        <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
+                            {/* TODO: Change this to determinate pagination pattern */}
+                            <Pagination
+                                toggleTemplate={({ firstIndex, lastIndex }) => (
+                                    <span>
+                                        <b>
+                                            {firstIndex} - {lastIndex}
+                                        </b>{' '}
+                                        of <b>many</b>
+                                    </span>
+                                )}
+                                page={page}
+                                perPage={perPage}
+                                onSetPage={(_, newPage) => setPage(newPage)}
+                                onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
+                                isCompact
+                            />
+                        </ToolbarItem>
+                    </ToolbarContent>
+                </Toolbar>
+                <ViewBasedReportsTable
+                    tableState={tableState}
+                    getSortParams={getSortParams}
+                    onClearFilters={() => {
+                        setSearchFilter({});
+                        setPage(1);
+                    }}
+                />
             </PageSection>
         </>
     );

@@ -7,7 +7,7 @@ metadata:
 spec:
   containers:
   - name: talk
-    image: alpine/curl
+    image: quay.io/rhacs-eng/qa:alpine-3.16.0
     command: ["/bin/sh", "-c"]
     args:
-     - "while true ; do sleep 2; curl http://nginx-service.sensor-integration.svc.cluster.local:80; done"
+     - "while true ; do sleep 2; wget -O- http://nginx-service.sensor-integration.svc.cluster.local:80; done"

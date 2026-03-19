@@ -12,6 +12,7 @@ option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 message InitBundleMeta {
+  option deprecated = true;
   message ImpactedCluster {
     string name = 1;
     string id = 2;
@@ -31,9 +32,13 @@ message CRSMeta {
   google.protobuf.Timestamp created_at = 3;
   storage.User created_by = 4;
   google.protobuf.Timestamp expires_at = 5;
+  uint64 max_registrations = 7;
+  repeated string registrations_initiated = 8;
+  repeated string registrations_completed = 9;
 }
 
 message InitBundleGenResponse {
+  option deprecated = true;
   InitBundleMeta meta = 1;
   bytes helm_values_bundle = 2;
   bytes kubectl_bundle = 3;
@@ -49,6 +54,7 @@ message GetCAConfigResponse {
 }
 
 message InitBundleMetasResponse {
+  option deprecated = true;
   repeated InitBundleMeta items = 1;
 }
 
@@ -57,6 +63,7 @@ message CRSMetasResponse {
 }
 
 message InitBundleGenRequest {
+  option deprecated = true;
   string name = 1;
 }
 
@@ -68,10 +75,12 @@ message CRSGenRequestExtended {
   string name = 1;
   google.protobuf.Timestamp valid_until = 2;
   google.protobuf.Duration valid_for = 3;
-  int32 max_registrations = 4; // Support for this is to be implemented in ROX-26769.
+  // 4 was int32 max_registrations
+  uint64 max_registrations = 5;
 }
 
 message InitBundleRevokeRequest {
+  option deprecated = true;
   repeated string ids = 1;
   repeated string confirm_impacted_clusters_ids = 2;
 }
@@ -81,6 +90,7 @@ message CRSRevokeRequest {
 }
 
 message InitBundleRevokeResponse {
+  option deprecated = true;
   message InitBundleRevocationError {
     string id = 1;
     string error = 2;
@@ -107,7 +117,9 @@ service ClusterInitService {
   // then its ID should be included in request.
   // If confirm_impacted_clusters_ids does not match with current impacted clusters
   // then request will fail with error that includes all impacted clusters.
+  // Init bundles are deprecated in favor of Cluster Registration Secrets (CRS).
   rpc RevokeInitBundle(InitBundleRevokeRequest) returns (InitBundleRevokeResponse) {
+    option deprecated = true;
     option (google.api.http) = {
       patch: "/v1/cluster-init/init-bundles/revoke"
       body: "*"
@@ -126,7 +138,9 @@ service ClusterInitService {
     option (google.api.http) = {get: "/v1/cluster-init/ca-config"};
   }
 
+  // Init bundles are deprecated in favor of Cluster Registration Secrets (CRS).
   rpc GetInitBundles(Empty) returns (InitBundleMetasResponse) {
+    option deprecated = true;
     option (google.api.http) = {get: "/v1/cluster-init/init-bundles"};
   }
 
@@ -134,7 +148,9 @@ service ClusterInitService {
     option (google.api.http) = {get: "/v1/cluster-init/crs"};
   }
 
+  // Init bundles are deprecated in favor of Cluster Registration Secrets (CRS).
   rpc GenerateInitBundle(InitBundleGenRequest) returns (InitBundleGenResponse) {
+    option deprecated = true;
     option (google.api.http) = {
       post: "/v1/cluster-init/init-bundles"
       body: "*"

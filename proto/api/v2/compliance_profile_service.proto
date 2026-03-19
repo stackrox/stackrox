@@ -10,7 +10,7 @@ import weak "google/api/annotations.proto";
 option go_package = "./api/v2;v2";
 option java_package = "io.stackrox.proto.api.v2";
 
-// Next Tag: 12
+// Next Tag: 13
 message ComplianceProfile {
   string id = 1;
   string name = 2;
@@ -23,6 +23,19 @@ message ComplianceProfile {
   string title = 9;
   repeated string values = 10;
   repeated ComplianceBenchmark standards = 11;
+  // OperatorKind is the kind of the Compliance Operator resource that this
+  // `ComplianceProfile` was sourced from. ACS represents both Compliance
+  // Operator `Profiles` and `TailoredProfiles` as compliance profiles.
+  enum OperatorKind {
+    // The kind is unspecified.
+    OPERATOR_KIND_UNSPECIFIED = 0;
+    // The kind is `Profile`.
+    PROFILE = 1;
+    // The kind is `TailoredProfile`.
+    TAILORED_PROFILE = 2;
+  }
+
+  OperatorKind operator_kind = 12;
 }
 
 // ListComplianceProfilesResponse provides a list of profiles

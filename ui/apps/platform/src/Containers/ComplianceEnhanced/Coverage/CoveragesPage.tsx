@@ -10,7 +10,6 @@ import {
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
-    ToolbarItem,
 } from '@patternfly/react-core';
 
 import ComplianceUsageDisclaimer, {
@@ -99,111 +98,96 @@ function CoveragesPage() {
         <>
             <PageTitle title="Compliance coverage - Profile clusters" />
             <CoveragesPageHeader />
-            <Divider component="div" />
-            <ScanConfigurationSelect
-                isLoading={scanConfigurationsQuery.isLoading}
-                scanConfigs={scanConfigurationsQuery.response.configurations}
-                selectedScanConfigName={selectedScanConfigName}
-                setSelectedScanConfigName={setSelectedScanConfigName}
-            />
-            {!isDisclaimerAccepted && (
-                <ComplianceUsageDisclaimer onAccept={() => setIsDisclaimerAccepted(true)} />
-            )}
-            <PageSection>
-                {isLoadingScanConfigProfiles ? (
-                    <Bullseye>
-                        <Spinner />
-                    </Bullseye>
-                ) : (
-                    <>
-                        <ProfilesToggleGroup
-                            profileName={profileName}
-                            profiles={scanConfigProfilesResponse.profiles}
-                            handleToggleChange={handleProfilesToggleChange}
-                        />
-                        <Divider component="div" />
-                        <Flex
-                            alignItems={{ default: 'alignItemsStretch' }}
-                            className="pf-v5-u-background-color-100"
-                            columnGap={{ default: 'columnGapNone' }}
-                            direction={{ default: 'column', md: 'row' }}
-                            flexWrap={{ default: 'nowrap' }}
-                            spaceItems={{ default: 'spaceItemsNone' }}
-                        >
-                            <FlexItem flex={{ default: 'flex_2' }}>
-                                <ProfileDetailsHeader
-                                    isLoading={isLoadingScanConfigProfiles}
-                                    profileName={profileName}
-                                    profileDetails={selectedProfileDetails}
-                                />
-                            </FlexItem>
-                            {(selectedProfileStats ||
-                                isLoadingProfilesStats ||
-                                profilesStatsError) && (
-                                <>
-                                    <Divider
-                                        orientation={{ default: 'horizontal', md: 'vertical' }}
-                                    />
-                                    <FlexItem
-                                        alignSelf={{ default: 'alignSelfStretch' }}
-                                        flex={{ default: 'flex_1' }}
-                                        style={{
-                                            minWidth: '400px',
-                                            minHeight: `${defaultChartHeight}px`,
-                                        }}
-                                    >
-                                        <ProfileStatsWidget
-                                            error={profilesStatsError}
-                                            isLoading={isLoadingProfilesStats}
-                                            profileScanStats={selectedProfileStats}
-                                        />
-                                    </FlexItem>
-                                </>
-                            )}
-                        </Flex>
-                        <Divider component="div" />
-                        <PageSection variant="light" className="pf-v5-u-p-0" component="div">
-                            <Toolbar>
-                                <ToolbarContent>
-                                    <ToolbarGroup className="pf-v5-u-w-100">
-                                        <ToolbarItem className="pf-v5-u-flex-1">
-                                            <CompoundSearchFilter
-                                                config={searchFilterConfig}
-                                                defaultEntity="Profile check"
-                                                searchFilter={searchFilter}
-                                                onSearch={onSearch}
-                                            />
-                                        </ToolbarItem>
-                                        <ToolbarItem>
-                                            <SearchFilterSelectInclusive
-                                                attribute={attributeForComplianceCheckStatus}
-                                                isSeparate
-                                                onSearch={onSearch}
-                                                searchFilter={searchFilter}
-                                            />
-                                        </ToolbarItem>
-                                    </ToolbarGroup>
-                                    <ToolbarGroup className="pf-v5-u-w-100">
-                                        <CompoundSearchFilterLabels
-                                            attributesSeparateFromConfig={[
-                                                attributeForComplianceCheckStatus,
-                                            ]}
-                                            config={searchFilterConfig}
-                                            onFilterChange={setSearchFilter}
-                                            searchFilter={searchFilter}
-                                        />
-                                    </ToolbarGroup>
-                                </ToolbarContent>
-                            </Toolbar>
-                            <Divider />
-                            <Routes>
-                                <Route path="checks" element={<ProfileChecksPage />} />
-                                <Route path="clusters" element={<ProfileClustersPage />} />
-                                <Route path="*" element={<Navigate to="checks" replace />} />
-                            </Routes>
-                        </PageSection>
-                    </>
+            <PageSection hasBodyWrapper={false}>
+                <ScanConfigurationSelect
+                    isLoading={scanConfigurationsQuery.isLoading}
+                    scanConfigs={scanConfigurationsQuery.response.configurations}
+                    selectedScanConfigName={selectedScanConfigName}
+                    setSelectedScanConfigName={setSelectedScanConfigName}
+                />
+                {!isDisclaimerAccepted && (
+                    <ComplianceUsageDisclaimer onAccept={() => setIsDisclaimerAccepted(true)} />
                 )}
+            </PageSection>
+            {isLoadingScanConfigProfiles ? (
+                <Bullseye>
+                    <Spinner />
+                </Bullseye>
+            ) : (
+                <>
+                    <ProfilesToggleGroup
+                        profileName={profileName}
+                        profiles={scanConfigProfilesResponse.profiles}
+                        handleToggleChange={handleProfilesToggleChange}
+                    />
+                    <Divider component="div" />
+                    <Flex
+                        alignItems={{ default: 'alignItemsStretch' }}
+                        columnGap={{ default: 'columnGapNone' }}
+                        direction={{ default: 'column', md: 'row' }}
+                        flexWrap={{ default: 'nowrap' }}
+                        spaceItems={{ default: 'spaceItemsNone' }}
+                    >
+                        <FlexItem flex={{ default: 'flex_2' }}>
+                            <ProfileDetailsHeader
+                                isLoading={isLoadingScanConfigProfiles}
+                                profileName={profileName}
+                                profileDetails={selectedProfileDetails}
+                            />
+                        </FlexItem>
+                        {(selectedProfileStats || isLoadingProfilesStats || profilesStatsError) && (
+                            <>
+                                <Divider orientation={{ default: 'horizontal', md: 'vertical' }} />
+                                <FlexItem
+                                    alignSelf={{ default: 'alignSelfStretch' }}
+                                    flex={{ default: 'flex_1' }}
+                                    style={{
+                                        minWidth: '400px',
+                                        minHeight: `${defaultChartHeight}px`,
+                                    }}
+                                >
+                                    <ProfileStatsWidget
+                                        error={profilesStatsError}
+                                        isLoading={isLoadingProfilesStats}
+                                        profileScanStats={selectedProfileStats}
+                                    />
+                                </FlexItem>
+                            </>
+                        )}
+                    </Flex>
+                </>
+            )}
+            <Divider component="div" />
+            <PageSection>
+                <Toolbar>
+                    <ToolbarContent>
+                        <CompoundSearchFilter
+                            config={searchFilterConfig}
+                            defaultEntity="Profile check"
+                            searchFilter={searchFilter}
+                            onSearch={onSearch}
+                        />
+                        <SearchFilterSelectInclusive
+                            attribute={attributeForComplianceCheckStatus}
+                            isSeparate
+                            onSearch={onSearch}
+                            searchFilter={searchFilter}
+                        />
+                        <ToolbarGroup className="pf-v6-u-w-100">
+                            <CompoundSearchFilterLabels
+                                attributesSeparateFromConfig={[attributeForComplianceCheckStatus]}
+                                config={searchFilterConfig}
+                                onFilterChange={setSearchFilter}
+                                searchFilter={searchFilter}
+                            />
+                        </ToolbarGroup>
+                    </ToolbarContent>
+                </Toolbar>
+                <Routes>
+                    <Route path="checks" element={<ProfileChecksPage />} />
+                    <Route path="clusters" element={<ProfileClustersPage />} />
+                    <Route path="*" element={<Navigate to="checks" replace />} />
+                </Routes>
             </PageSection>
         </>
     );

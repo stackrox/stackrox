@@ -1,0 +1,47 @@
+{
+  "id": "fe59d982-a155-4aac-bf36-a74aa29ea565",
+  "name": "Kubernetes Actions: Attach to Pod",
+  "description": "Alerts when Kubernetes API receives request to attach to a container",
+  "rationale": "'pods/attach' is non-standard approach for interacting with containers. Attackers with permissions could execute malicious code and compromise resources within a cluster",
+  "remediation": "Restrict RBAC access to the 'pods/attach' resource according to the Principle of Least Privilege. Limit such usage only to development, testing or debugging (non-production) activities",
+  "categories": [
+    "Kubernetes Events"
+  ],
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "eventSource": "DEPLOYMENT_EVENT",
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Kubernetes Resource",
+          "values": [
+            {
+              "value": "PODS_ATTACH"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0002",
+      "techniques": [
+        "T1609"
+      ]
+    },
+    {
+      "tactic": "TA0002",
+      "techniques": [
+        "T1059.004"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

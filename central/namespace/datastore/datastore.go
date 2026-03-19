@@ -29,6 +29,7 @@ type DataStore interface {
 	GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
 	GetNamespacesForSAC() ([]effectiveaccessscope.Namespace, error)
 	GetManyNamespaces(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error)
+	GetNamespaceLabels(ctx context.Context, namespaceID string) (map[string]string, error)
 
 	AddNamespace(context.Context, *storage.NamespaceMetadata) error
 	UpdateNamespace(context.Context, *storage.NamespaceMetadata) error
@@ -269,6 +270,18 @@ func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadat
 	for _, ns := range nss {
 		ns.Priority = b.namespaceRanker.GetRankForID(ns.GetId())
 	}
+}
+
+// GetNamespaceLabels returns the labels for the specified namespace.
+func (b *datastoreImpl) GetNamespaceLabels(ctx context.Context, namespaceID string) (map[string]string, error) {
+	namespace, exists, err := b.GetNamespace(ctx, namespaceID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, nil
+	}
+	return namespace.GetLabels(), nil
 }
 
 // NamespaceSearchResultConverter implements search.SearchResultConverter for namespace search results.

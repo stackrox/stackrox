@@ -254,8 +254,8 @@ push_image_manifest_lists() {
         fi
     done
 
-    # Push manifest lists for scanner and collector for amd64 only
-    local amd64_image_set=("scanner" "scanner-db" "scanner-slim" "scanner-db-slim" "collector")
+    # Push manifest lists for scanner, fact and collector for amd64 only
+    local amd64_image_set=("scanner" "scanner-db" "scanner-slim" "scanner-db-slim" "collector" "fact")
     for image in "${amd64_image_set[@]}"; do
         retry 5 true \
           "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "amd64" | cat
@@ -640,6 +640,27 @@ _image_prefetcher_prebuilt_start() {
         # prefect list stays up to date with additions.
         ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
         ;;
+    *sensor-integration-tests)
+        image_prefetcher_start_set sensor-integration
+        # Override the default image pull policy for containers with quay.io
+        # images to rely on prefetched images. This helps ensure that the static
+        # prefect list stays up to date with additions.
+        ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
+        ;;
+    *nongroovy-compatibility-tests)
+        image_prefetcher_start_set nongroovy-compatibility
+        # Override the default image pull policy for containers with quay.io
+        # images to rely on prefetched images. This helps ensure that the static
+        # prefect list stays up to date with additions.
+        ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
+        ;;
+    *compatibility-tests)
+        image_prefetcher_start_set compatibility
+        # Override the default image pull policy for containers with quay.io
+        # images to rely on prefetched images. This helps ensure that the static
+        # prefect list stays up to date with additions.
+        ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
+        ;;
     *-operator-e2e-tests)
         image_prefetcher_start_set operator-e2e
         # TODO(ROX-20508): pre-fetch images of the release from which operator upgrade test starts as well.
@@ -762,6 +783,12 @@ _image_prefetcher_prebuilt_await() {
         ;;
     *nongroovy-e2e-tests)
         image_prefetcher_await_set qa-nongroovy-e2e
+        ;;
+    *sensor-integration-tests)
+        image_prefetcher_await_set sensor-integration
+        ;;
+    *compatibility-tests)
+        image_prefetcher_await_set compatibility
         ;;
     *-operator-e2e-tests)
         image_prefetcher_await_set operator-e2e
@@ -919,6 +946,15 @@ populate_prefetcher_image_list() {
         ;;
     qa-nongroovy-e2e)
         cp "$SCRIPTS_ROOT/tests/images-to-prefetch.txt" "$image_list"
+        ;;
+    sensor-integration)
+        cp "$SCRIPTS_ROOT/sensor/tests/images-to-prefetch.txt" "$image_list"
+        ;;
+    nongroovy-compatibility)
+        cp "$SCRIPTS_ROOT/tests/images-to-prefetch.txt" "$image_list"
+        ;;
+    compatibility)
+        cp "$SCRIPTS_ROOT/qa-tests-backend/scripts/images-to-prefetch.txt" "$image_list"
         ;;
     *)
         die "ERROR: An unsupported image prefetcher target was requested: $name"
@@ -1110,11 +1146,17 @@ push_helm_charts() {
     local secured_cluster_services_chart_dir
     central_services_chart_dir="$(mktemp -d)"
     secured_cluster_services_chart_dir="$(mktemp -d)"
+    operator_chart_dir="$(mktemp -d)"
     roxctl helm output central-services --image-defaults=rhacs --output-dir "${central_services_chart_dir}/rhacs"
     roxctl helm output central-services --image-defaults=opensource --output-dir "${central_services_chart_dir}/opensource"
     roxctl helm output secured-cluster-services --image-defaults=rhacs --output-dir "${secured_cluster_services_chart_dir}/rhacs"
     roxctl helm output secured-cluster-services --image-defaults=opensource --output-dir "${secured_cluster_services_chart_dir}/opensource"
-    "${SCRIPTS_ROOT}/scripts/ci/publish-helm-charts.sh" "${tag}" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}"
+    ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true ./operator/hack/generate-chart.sh opensource
+    mv operator/dist/chart "${operator_chart_dir}/opensource"
+    # TODO(ROX-33131): Consider moving the downstream chart build/publishing to konflux.
+    ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true ./operator/hack/generate-chart.sh rhacs
+    mv operator/dist/chart "${operator_chart_dir}/rhacs"
+    "${SCRIPTS_ROOT}/scripts/ci/publish-helm-charts.sh" "${tag}" "${central_services_chart_dir}" "${secured_cluster_services_chart_dir}" "${operator_chart_dir}"
 }
 
 gitbot() {
@@ -1684,7 +1726,7 @@ post_process_test_results() {
         # we will fallback to short commit
         base_link="$(echo "$JOB_SPEC" | jq ".refs.base_link | select( . != null )" -r)"
         calculated_base_link="https://github.com/stackrox/stackrox/commit/$(make --quiet --no-print-directory shortcommit)"
-        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.25/junit2jira -o junit2jira && \
+        curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.26/junit2jira -o junit2jira && \
         chmod +x junit2jira && \
         ./junit2jira \
             -base-link "${base_link:-$calculated_base_link}" \
@@ -1693,6 +1735,7 @@ post_process_test_results() {
             -build-tag "${STACKROX_BUILD_TAG}" \
             -csv-output "${csv_output}" \
             -jira-project "${jira_project}" \
+            -jira-url "https://redhat.atlassian.net/" \
             -job-name "${JOB_NAME}" \
             -junit-reports-dir "${ARTIFACT_DIR}" \
             -orchestrator "${ORCHESTRATOR_FLAVOR:-PROW}" \
@@ -1720,7 +1763,7 @@ gate_flaky_tests() {
     fi
 
     # Prepare flakechecker
-    curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.25/flakechecker -o /tmp/flakechecker || exit "${exit_code}"
+    curl --retry 5 --retry-connrefused -SsfL https://github.com/stackrox/junit2jira/releases/download/v0.0.26/flakechecker -o /tmp/flakechecker || exit "${exit_code}"
     chmod +x /tmp/flakechecker
     setup_gcp || echo "setup_gcp called"
 
@@ -2183,7 +2226,8 @@ junit_contains_failure() {
     # and "return" does not mix with piping to "while read", so we use a "for" over find.
     # shellcheck disable=SC2044
     for f in $(find "$dir" -type f -iname '*.xml'); do
-        if grep -q '<failure ' "$f"; then
+        # Match both <failure> and <failure ...> formats
+        if grep -q '<failure[ >]' "$f"; then
             return 0
         fi
     done
@@ -2320,6 +2364,85 @@ _EO_SKIPPED_
     done
 
     echo "</testsuite>" >> "${junit_file}"
+}
+
+# capture_job_failure_as_junit() - generates a JUnit failure record when a job
+# fails without producing JUnit test failures. This captures infrastructure
+# failures (e.g., docker login, setup steps) that occur before tests run.
+#
+# Usage: capture_job_failure_as_junit <directory> <job_name> <job_status> <steps_json> <workflow_run_url>
+#
+# Arguments:
+#   directory        - Directory where JUnit XML files are stored
+#   job_name         - Name of the current GitHub Actions job
+#   job_status       - Status of the job (success, failure, cancelled)
+#   steps_json       - JSON output from toJSON(steps) context
+#   workflow_run_url - URL to the workflow run for debugging
+#
+# Returns:
+#   0 if no action was needed or if failure record was created successfully
+#   1 if there was an error
+capture_job_failure_as_junit() {
+    if [[ "$#" -ne 5 ]]; then
+        die "missing args. usage: capture_job_failure_as_junit <directory> <job_name> <job_status> <steps_json> <workflow_run_url>"
+    fi
+
+    local directory="$1"
+    local job_name="$2"
+    local job_status="$3"
+    local steps_json="$4"
+    local workflow_run_url="$5"
+
+    # Only process failures
+    if [[ "$job_status" != "failure" ]]; then
+        info "Job status: ${job_status} - no failure record needed"
+        return 0
+    fi
+
+    # Check if JUnit test failures already exist
+    if junit_contains_failure "$directory"; then
+        info "JUnit test failures already exist - skipping failure record"
+        return 0
+    fi
+
+    info "Job failed but no JUnit test failures found - looking for failed step"
+
+    # Try to find a specific failed step from steps context (only includes steps with id)
+    local failed_step
+    failed_step=$(echo "$steps_json" | jq -r 'to_entries[] | select(.value.outcome == "failure") | .key' | head -1)
+
+    if [[ -n "$failed_step" ]]; then
+        # Found a specific failed step - use its details
+        local step_outcome step_conclusion
+        step_outcome=$(echo "$steps_json" | jq -r ".[\"$failed_step\"].outcome")
+        step_conclusion=$(echo "$steps_json" | jq -r ".[\"$failed_step\"].conclusion")
+
+        local failure_details
+        failure_details=$(cat <<EOF
+Step failed during workflow execution.
+Outcome: ${step_outcome}
+Conclusion: ${step_conclusion}
+
+Check workflow logs for details: ${workflow_run_url}
+EOF
+        )
+
+        save_junit_failure "$job_name" "$failed_step" "$failure_details"
+        info "Created JUnit failure record for step: $failed_step"
+        return 0
+    fi
+
+    # Fallback for steps without id (e.g., docker login, built-in setup steps)
+    local generic_failure
+    generic_failure=$(cat <<EOF
+Job failed without producing JUnit test failures. This typically indicates an infrastructure failure in a step without an id (e.g., docker login, setup step, artifact download).
+Check workflow logs: ${workflow_run_url}
+EOF
+    )
+
+    save_junit_failure "$job_name" "error" "$generic_failure"
+    info "Created generic JUnit failure record for job: $job_name"
+    return 0
 }
 
 add_build_comment_to_pr() {

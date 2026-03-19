@@ -11,6 +11,9 @@ inputs:
   gcp-account:
     description: 'Account to be used to upload tests data'
     required: true
+  jira-user:
+    description: 'User used to authenticate with Jira.'
+    required: true
   jira-token:
     description: 'Token used to authenticate with Jira.'
     required: true
@@ -31,7 +34,7 @@ runs:
   - name: Download junit2jira
     shell: bash
     env:
-      VERSION: "v0.0.25"
+      VERSION: "v0.0.26"
     run: |
       set -u
       LOCATION="https://github.com/stackrox/junit2jira/releases/download/$VERSION/junit2jira"
@@ -40,11 +43,28 @@ runs:
         curl --retry 5 --retry-connrefused --silent --show-error --fail --location --output junit2jira "$LOCATION"
         chmod +x junit2jira
       fi
+  - name: Capture job failure as JUnit if no test failures exist
+    shell: bash
+    if: always()
+    env:
+      STEPS_JSON: ${{ toJSON(steps) }}
+    run: |
+      set -u
+      source scripts/ci/lib.sh
+      export ARTIFACT_DIR="${{ inputs.directory }}"
+
+      capture_job_failure_as_junit \
+        "${{ inputs.directory }}" \
+        "${{ github.job }}" \
+        "${{ job.status }}" \
+        "$STEPS_JSON" \
+        "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   - name: Check files
     id: run
     shell: bash
     env:
       GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
+      JIRA_USER: ${{ inputs.jira-user }}
       JIRA_TOKEN: ${{ inputs.jira-token }}
     if: "${{ env.GCP_SERVICE_ACCOUNT_STACKROX_CI != '' || env.JIRA_TOKEN != '' }}"
     run: |
@@ -62,6 +82,7 @@ runs:
           -build-link "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
           -build-tag "${{ github.ref_name }}@${{ github.sha }}" \
           -csv-output "${csv_output}" \
+          -jira-url "https://redhat.atlassian.net/" \
           -job-name "${{ github.job }}" \
           -junit-reports-dir "${{ inputs.directory }}" \
           -orchestrator "${{ runner.name }} ${{ runner.os }}-${{ runner.arch }}" \

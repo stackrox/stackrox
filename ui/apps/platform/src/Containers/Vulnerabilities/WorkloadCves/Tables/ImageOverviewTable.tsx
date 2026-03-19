@@ -116,6 +116,7 @@ export const imageListQuery = gql`
                     status
                     verifiedImageReferences
                     verifierId
+                    verifierName
                 }
             }
         }
@@ -166,6 +167,7 @@ export const imageV2ListQuery = gql`
                     status
                     verifiedImageReferences
                     verifierId
+                    verifierName
                 }
             }
         }
@@ -237,7 +239,7 @@ function ImageOverviewTable({
     const [sbomTargetImage, setSbomTargetImage] = useState<GenerateSbomImageParams>();
 
     return (
-        <Table borders={false} variant="compact">
+        <Table variant="compact">
             <Thead noWrap>
                 <Tr>
                     <Th className={getVisibilityClass('image')} sort={getSortParams('Image')}>
@@ -278,7 +280,7 @@ function ImageOverviewTable({
                     </Th>
                     {/* eslint-disable-next-line generic/Th-defaultColumns */}
                     <Th className={getVisibilityClass('rowActions')}>
-                        <span className="pf-v5-screen-reader">Row actions</span>
+                        <span className="pf-v6-screen-reader">Row actions</span>
                     </Th>
                 </Tr>
             </Thead>
@@ -387,13 +389,12 @@ function ImageOverviewTable({
                         // Td style={{ paddingTop: 0 }} prop emulates vertical space when label was in cell instead of row
                         // and assumes adjacent empty cell has no paddingTop.
                         return (
-                            <Tbody
-                                key={id}
-                                style={{
-                                    borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
-                                }}
-                            >
-                                <Tr>
+                            <Tbody key={id}>
+                                <Tr
+                                    style={
+                                        labels.length !== 0 ? { borderBlockEnd: 'none' } : undefined
+                                    }
+                                >
                                     <Td className={getVisibilityClass('image')} dataLabel="Image">
                                         {name ? (
                                             <ImageNameLink

@@ -38,7 +38,7 @@ function SecureClusterUsingOperator({
                         <a
                             href={getVersionedDocs(
                                 version,
-                                'installing/installing-rhacs-on-red-hat-openshift#install-secured-cluster-operator_install-secured-cluster-ocp'
+                                'installing/installing-rhacs-on-red-hat-openshift#install-secured-cluster-ocp'
                             )}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -85,7 +85,7 @@ function SecureClusterUsingOperator({
                             <a
                                 href={getVersionedDocs(
                                     version,
-                                    'rhacs_cloud_service/setting-up-rhacs-cloud-service-with-red-hat-openshift-secured-clusters#create-resource-init-bundle_init-bundle-cloud-ocp-apply'
+                                    'rhacs_cloud_service/setting-up-rhacs-cloud-service-with-red-hat-openshift-secured-clusters#init-bundle-cloud-ocp-apply'
                                 )}
                                 target="_blank"
                                 rel="noopener noreferrer"

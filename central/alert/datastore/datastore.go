@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	pgStore "github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
+	alertviews "github.com/stackrox/rox/central/alert/views"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -29,6 +30,11 @@ type DataStore interface {
 	SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.Alert, error)
 	SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error)
+	SearchAlertPolicyNamesAndSeverities(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*alertviews.PolicyNameAndSeverity, error)
+	SearchAlertPolicySeverityCounts(ctx context.Context, q *v1.Query, excludeResolved bool) (*alertviews.PolicySeverityCounts, error)
+	SearchAlertPolicyGroups(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*alertviews.AlertPolicyGroup, error)
+	SearchAlertTimeseriesEvents(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*alertviews.AlertTimeseriesEvent, error)
+	SearchAlertDeploymentIDs(ctx context.Context, q *v1.Query, excludeResolved bool) ([]string, error)
 
 	WalkByQuery(ctx context.Context, q *v1.Query, db func(d *storage.Alert) error) error
 	WalkAll(ctx context.Context, fn func(alert *storage.ListAlert) error) error
@@ -44,9 +50,10 @@ type DataStore interface {
 }
 
 // New returns a new soleInstance of DataStore using the input store, and searcher.
-func New(alertStore store.Store, platformMatcher platformmatcher.PlatformMatcher) DataStore {
+func New(db postgres.DB, alertStore store.Store, platformMatcher platformmatcher.PlatformMatcher) DataStore {
 	ds := &datastoreImpl{
 		storage:         alertStore,
+		db:              db,
 		keyedMutex:      concurrency.NewKeyedMutex(mutexPoolSize),
 		keyFence:        concurrency.NewKeyFence(),
 		platformMatcher: platformMatcher,
@@ -59,5 +66,5 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
 	alertStore := pgStore.New(pool)
 	mockCtrl := gomock.NewController(t)
 
-	return New(alertStore, platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl))
+	return New(pool, alertStore, platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl))
 }

@@ -160,7 +160,7 @@ func (suite *AlertManagerTestSuite) SetupTest() {
 	suite.alertsMock = alertMocks.NewMockDataStore(suite.mockCtrl)
 	suite.notifierMock = notifierMocks.NewMockProcessor(suite.mockCtrl)
 	suite.runtimeDetectorMock = runtimeDetectorMocks.NewMockDetector(suite.mockCtrl)
-	suite.policySet = detection.NewPolicySet(policyMocks.NewMockDataStore(suite.mockCtrl))
+	suite.policySet = detection.NewPolicySet(policyMocks.NewMockDataStore(suite.mockCtrl), nil, nil)
 
 	suite.alertManager = New(suite.notifierMock, suite.alertsMock, suite.runtimeDetectorMock)
 }

@@ -67,17 +67,19 @@ jobs:
     runs-on: ubuntu-latest
     needs: [variables, properties]
     env:
+      JIRA_USER: ${{ vars.RHACS_BOT_GITHUB_EMAIL }}
       JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+      JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
     steps:
       - name: Login to Quay.io
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
 
       - name: Login to registry.redhat.io
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: registry.redhat.io
           username: ${{ secrets.RH_REGISTRY_USERNAME_RO }}

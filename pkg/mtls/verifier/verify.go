@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/tlsprofile"
 )
 
 // A TLSConfigurer instantiates the appropriate TLS config for your environment.
@@ -79,21 +80,20 @@ func (NonCA) TLSConfig() (*tls.Config, error) {
 	return conf, nil
 }
 
-// DefaultTLSServerConfig returns the default TLS config for servers in StackRox
+// DefaultTLSServerConfig returns the default TLS config for servers in StackRox.
+//
+// The minimum TLS version and cipher suites can be overridden via the
+// ROX_TLS_MIN_VERSION and ROX_TLS_CIPHER_SUITES environment variables.
+// When these are unset the compiled-in defaults are used (TLS 1.2 with
+// AES-256-GCM preferred over AES-128-GCM).
 func DefaultTLSServerConfig(certPool *x509.CertPool, certs []tls.Certificate) *tls.Config {
-	// Government clients require TLS >=1.2 and require that AES-256 be preferred over AES-128
 	cfg := &tls.Config{
-		MinVersion:               tls.VersionTLS12,
+		MinVersion:               tlsprofile.MinVersion(),
 		PreferServerCipherSuites: true,
-		CipherSuites: []uint16{
-			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-		},
-		ClientAuth:   tls.VerifyClientCertIfGiven,
-		ClientCAs:    certPool,
-		Certificates: certs,
+		CipherSuites:             tlsprofile.CipherSuites(),
+		ClientAuth:               tls.VerifyClientCertIfGiven,
+		ClientCAs:                certPool,
+		Certificates:             certs,
 	}
 	cfg.NextProtos = []string{"h2"}
 	return cfg

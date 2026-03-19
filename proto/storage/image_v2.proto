@@ -22,7 +22,7 @@ message ImageV2 {
 
   message ScanStats {
     // Caching component count to avoid re-calculating it by joining on the component table.
-    int32 component_count = 1; // @gotags: search:"Component Count,hidden"
+    int32 component_count = 1; // @gotags: search:"Image Component Count,hidden"
 
     // Caching cve count to avoid re-calculating it by joining on the cve table.
     int32 cve_count = 2; // @gotags: search:"Image CVE Count,hidden"

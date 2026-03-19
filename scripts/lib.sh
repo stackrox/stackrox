@@ -13,14 +13,56 @@ Reuse with:
   method [args...]"
 }
 
-info() {
-    echo "INFO: $(date): $*"
+is_GITHUB_ACTIONS() {
+    [[ -n "${GITHUB_ACTION:-}" ]]
 }
+export -f is_GITHUB_ACTIONS
+
+info() {
+    if is_GITHUB_ACTIONS; then
+        echo "::notice::INFO: $*"
+    else
+        echo "INFO: $(date): $*"
+    fi
+}
+export -f info
+
+warn() {
+    if is_GITHUB_ACTIONS; then
+        echo "::warning::WARNING: $*"
+    else
+        echo "WARNING: $(date): $*"
+    fi
+}
+export -f warn
 
 die() {
-    echo >&2 "ERROR:" "$@"
+    if is_GITHUB_ACTIONS; then
+        echo >&2 "::error::ERROR: $*"
+    else
+        echo >&2 "ERROR:" "$@"
+    fi
     exit 1
 }
+export -f die
+
+# Start a collapsible group in GitHub Actions logs
+github_group() {
+    if is_GITHUB_ACTIONS; then
+        echo "::group::$*"
+    else
+        info "$*"
+    fi
+}
+export -f github_group
+
+# End a collapsible group in GitHub Actions logs
+github_endgroup() {
+    if is_GITHUB_ACTIONS; then
+        echo "::endgroup::"
+    fi
+}
+export -f github_endgroup
 
 # Caution when editing: make sure groups would correspond to BASH_REMATCH use.
 RELEASE_RC_TAG_BASH_REGEX='^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$'
@@ -72,10 +114,6 @@ is_CI() {
 
 is_OPENSHIFT_CI() {
     [[ "${OPENSHIFT_CI:-}" == "true" ]]
-}
-
-is_GITHUB_ACTIONS() {
-    [[ -n "${GITHUB_ACTION:-}" ]]
 }
 
 is_darwin() {

@@ -12,6 +12,10 @@ CSV_VERSION ?= v$(VERSION)
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
+# Python binary to use for bundle helpers. Can be overridden to use a specific version (e.g., python3.9).
+# The Konflux build uses Python 3.9, so using python3.9 locally ensures compatibility.
+PYTHON ?= python3
+
 # This can be adjusted if deploying into non-standard namespaces. For example, as in
 #
 #   NAMESPACE=... make -C operator stackrox-image-pull-secret
@@ -189,7 +193,7 @@ include $(PROJECT_DIR)/../make/gotools.mk
 $(call go-tool, CONTROLLER_GEN, sigs.k8s.io/controller-tools/cmd/controller-gen, tools/controller-gen)
 $(call go-tool, ENVTEST, sigs.k8s.io/controller-runtime/tools/setup-envtest, tools/envtest)
 $(call go-tool, KUSTOMIZE, sigs.k8s.io/kustomize/kustomize/v5, tools/kustomize)
-$(call go-tool, OLM, github.com/operator-framework/operator-lifecycle-manager/cmd/olm, tools/operator-sdk)
+$(call go-tool, KUBEBUILDER, sigs.k8s.io/kubebuilder/v4, tools/kubebuilder)
 $(call go-tool, KUTTL, github.com/kudobuilder/kuttl/cmd/kubectl-kuttl, tools/kuttl)
 $(call go-tool, YQ, github.com/mikefarah/yq/v4, tools/yq)
 
@@ -201,10 +205,12 @@ $(OPERATOR_SDK): tools/operator-sdk/go.mod tools/operator-sdk/go.sum
 	$(SILENT)cd tools/operator-sdk && GOBIN="$(dir $@)" go install -tags=containers_image_openpgp github.com/operator-framework/operator-sdk/cmd/operator-sdk
 
 OPERATOR_SDK_VERSION = $(shell cd tools/operator-sdk; go list -m -f '{{ .Version }}' github.com/operator-framework/operator-sdk)
-OLM_VERSION = $(shell cd tools/operator-sdk; go list -m -f '{{ .Version }}' github.com/operator-framework/operator-lifecycle-manager)
 
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
+
+.PHONY: kubebuilder
+kubebuilder: $(KUBEBUILDER) ## Download kubebuilder locally if necessary.
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
@@ -226,7 +232,7 @@ yq: $(YQ) ## Download yq.
 
 .PHONY: parent-proto-generate
 parent-proto-generate: ## Make sure ../generated directory has up-to-date content that this operator (transitively) depends upon.
-	$(MAKE) -C .. proto-generated-srcs
+	[[ $${ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS:-false} = true ]] || $(MAKE) -C .. proto-generated-srcs
 
 .PHONY: manifests
 manifests: parent-proto-generate controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
@@ -313,6 +319,19 @@ build-installer: manifests generate kustomize ## Generate a consolidated YAML wi
 	mkdir -p dist
 	$(KUSTOMIZE) build build/dist > dist/install.yaml
 
+.PHONY: chart
+chart: kubebuilder manifests ## Generate a helm chart with all necessary resources.
+# The dependency above makes sure protos are up to date, so we can skip this time-consuming process below
+# by specifying the SKIP env var. Otherwise each target that kubebuilder invokes (and there is a bunch) would regen protos.
+	rm -rf dist/chart
+# Run the sed and kubebuilder as a single command, propagating the VERSION from when the directory is still pristine, to prevent -dirty suffix while PROJECT is modified.
+	set -e; \
+	if [[ "$(ROX_IMAGE_FLAVOR)" = opensource ]]; then sed -i'.bak' -e 's,^projectName: rhacs-operator,projectName: stackrox-operator,' PROJECT; fi; \
+	VERSION=$(VERSION) ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS=true $(KUBEBUILDER) edit --plugins=helm/v2-alpha --force
+	if [[ "$(ROX_IMAGE_FLAVOR)" = opensource ]]; then mv PROJECT.bak PROJECT; fi
+	sed -i'.bak' -e 's,0.1.0,$(VERSION),g' dist/chart/Chart.yaml
+	rm -f dist/chart/Chart.yaml.bak
+
 .PHONY: build
 build: manifests generate fmt vet ## Build operator local binary.
 	../scripts/go-build-file.sh ./cmd/main.go bin/manager
@@ -343,7 +362,7 @@ build/Dockerfile.gen: Dockerfile
 
 .PHONY: docker-build
 docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with the operator.
-	DOCKER_BUILDKIT=1 BUILDKIT_PROGRESS=plain docker build \
+	BUILDKIT_PROGRESS=plain ../scripts/docker-build.sh \
 		-t ${IMG} \
 		$(if $(GOARCH),--build-arg TARGET_ARCH=$(GOARCH)) \
 		-f $< \
@@ -354,14 +373,6 @@ docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with
 ifndef ignore-not-found
   ignore-not-found = false
 endif
-
-.PHONY: olm-install
-olm-install: operator-sdk ## Install OLM on Kubernetes cluster
-	$(OPERATOR_SDK) olm install --version=$(OLM_VERSION)
-
-.PHONY: olm-uninstall
-olm-uninstall: operator-sdk ## Uninstall OLM previously installed on Kubernetes cluster
-	$(OPERATOR_SDK) olm uninstall
 
 .PHONY: install
 install: check-ci-setup manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
@@ -415,6 +426,12 @@ deploy-via-installer: ## Deploy current version of operator via distribution man
 # TODO(ROX-11901): work this around somehow to make it possible to deploy and e2e-test the community build
 	./hack/retry-kubectl.sh </dev/null rollout status deployment -n $(TEST_NAMESPACE) rhacs-operator-controller-manager --timeout=300s
 
+.PHONY: deploy-via-chart
+deploy-via-chart: ## Deploy current version of operator via helm chart produced by the chart target.
+	helm install --create-namespace --namespace $(TEST_NAMESPACE) --wait \
+		--set manager.envOverrides.NO_PROXY=127.1.2.3/8 `# A hack for the NO_PROXY assertions in the e2e tests.` \
+		rhacs-operator ./dist/chart
+
 .PHONY: upgrade-via-olm
 upgrade-via-olm: kuttl
 	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-upgrade.sh $(TEST_NAMESPACE) $(INSTALL_VERSION)
@@ -426,10 +443,12 @@ upgrade-dirty-tag-via-olm: kuttl
 ##@ Bundle and Index build
 
 # Commands to enter local Python virtual environment and get needed dependencies there.
-ACTIVATE_PYTHON = python3 -m venv bundle_helpers/.venv ;\
+# pip 21.3.1 and setuptools 59.6.0 use pkgutil.ImpImporter, removed in Python 3.12.
+# The required Python version is tracked in bundle_helpers/.python-version.
+ACTIVATE_PYTHON = $(PYTHON) -m venv bundle_helpers/.venv ;\
 	. bundle_helpers/.venv/bin/activate ;\
 	pip3 install --upgrade pip==21.3.1 setuptools==59.6.0 ;\
-	pip3 install -r bundle_helpers/requirements-gha.txt
+	pip3 install -r bundle_helpers/requirements.txt
 
 .PHONY: bundle
 bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
@@ -497,7 +516,7 @@ bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file t
 
 .PHONY: bundle-build
 bundle-build: bundle.Dockerfile bundle-post-process ## Build the bundle image.
-	docker build -f $< -t $(BUNDLE_IMG) .
+	docker build $(if $(DOCKER_BUILD_LOAD),--load) -f $< -t $(BUNDLE_IMG) .
 
 .PHONY: bundle-test
 bundle-test: operator-sdk bundle-post-process ## Run scorecard tests against bundle files.

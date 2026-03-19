@@ -1,6 +1,8 @@
 package matcher
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scopecomp"
@@ -19,12 +21,12 @@ func NewNamespaceMatcher(namespace *storage.NamespaceMetadata) Matcher {
 }
 
 // FilterApplicablePolicies filters incoming policies into policies that apply to namespace and policies that do not apply to namespace
-func (m *namespaceMatcher) FilterApplicablePolicies(policies []*storage.Policy) ([]*storage.Policy, []*storage.Policy) {
+func (m *namespaceMatcher) FilterApplicablePolicies(ctx context.Context, policies []*storage.Policy) ([]*storage.Policy, []*storage.Policy) {
 	applicable := make([]*storage.Policy, 0, len(policies)/2)
 	notApplicable := make([]*storage.Policy, 0, len(policies)/2)
 
 	for _, policy := range policies {
-		if m.IsPolicyApplicable(policy) {
+		if m.IsPolicyApplicable(ctx, policy) {
 			applicable = append(applicable, policy)
 		} else {
 			notApplicable = append(notApplicable, policy)
@@ -34,7 +36,7 @@ func (m *namespaceMatcher) FilterApplicablePolicies(policies []*storage.Policy) 
 }
 
 // IsPolicyApplicable returns true if the policy is applicable to namespace
-func (m *namespaceMatcher) IsPolicyApplicable(policy *storage.Policy) bool {
+func (m *namespaceMatcher) IsPolicyApplicable(_ context.Context, policy *storage.Policy) bool {
 	return !policy.GetDisabled() && !m.anyExclusionMatches(policy.GetExclusions()) && m.anyScopeMatches(policy.GetScope())
 }
 
@@ -65,7 +67,7 @@ func (m *namespaceMatcher) anyScopeMatches(scopes []*storage.Scope) bool {
 }
 
 func (m *namespaceMatcher) scopeMatches(scope *storage.Scope) bool {
-	cs, err := scopecomp.CompileScope(scope)
+	cs, err := scopecomp.CompileScope(scope, nil, nil)
 	if err != nil {
 		utils.Should(errors.Wrap(err, "could not compiled scope"))
 		return false

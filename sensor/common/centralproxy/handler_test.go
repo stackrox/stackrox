@@ -13,6 +13,7 @@ import (
 	pkghttputil "github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/centralproxy/allowedpaths"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	authenticationv1 "k8s.io/api/authentication/v1"
@@ -21,17 +22,6 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	k8sTesting "k8s.io/client-go/testing"
 )
-
-// setupCentralCapsForTest sets the Central capabilities required for the proxy to function.
-// It returns a cleanup function that clears the capabilities.
-func setupCentralCapsForTest(t *testing.T) {
-	centralcaps.Set([]centralsensor.CentralCapability{
-		centralsensor.InternalTokenAPISupported,
-	})
-	t.Cleanup(func() {
-		centralcaps.Set(nil)
-	})
-}
 
 func TestValidateRequest(t *testing.T) {
 	tests := []struct {
@@ -130,30 +120,11 @@ func TestServeHTTP(t *testing.T) {
 	})
 
 	t.Run("validation passes, request proxied", func(t *testing.T) {
-		setupCentralCapsForTest(t)
-		var proxyCalled bool
-		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-			proxyCalled = true
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
-				Header:     http.Header{"Content-Type": []string{"application/json"}},
-			}, nil
+		f := newProxyTestFixture(t, newAllowingAuthorizer(t))
+		w := f.serveHTTP(t, http.MethodGet, "/v1/alerts", map[string]string{
+			"Authorization": "Bearer test-token",
 		})
-
-		baseURL, err := url.Parse("https://central:443")
-		require.NoError(t, err)
-
-		h := newTestHandler(t, baseURL, mockTransport, newAllowingAuthorizer(t), "test-token")
-		h.centralReachable.Store(true)
-
-		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
-		req.Header.Set("Authorization", "Bearer test-token")
-		w := httptest.NewRecorder()
-
-		h.ServeHTTP(w, req)
-
-		assert.True(t, proxyCalled, "proxy should be called")
+		assert.True(t, f.proxyCalled, "proxy should be called")
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
 
@@ -379,189 +350,64 @@ func TestExtractBearerToken(t *testing.T) {
 
 func TestServeHTTP_AuthorizationIntegration(t *testing.T) {
 	t.Run("authorization failure prevents proxy call", func(t *testing.T) {
-		setupCentralCapsForTest(t)
-		var proxyCalled bool
-		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-			proxyCalled = true
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
-				Header:     http.Header{"Content-Type": []string{"application/json"}},
-			}, nil
+		f := newProxyTestFixture(t, newDenyingAuthorizer(t))
+		// Set namespace scope header to trigger SAR check.
+		w := f.serveHTTP(t, http.MethodGet, "/v1/alerts", map[string]string{
+			"Authorization":         "Bearer test-token",
+			stackroxNamespaceHeader: "my-namespace",
 		})
-
-		baseURL, err := url.Parse("https://central:443")
-		require.NoError(t, err)
-
-		// Create a k8sAuthorizer with a fake client that denies access
-		denyingAuthorizer := newDenyingAuthorizer(t)
-
-		h := newTestHandler(t, baseURL, mockTransport, denyingAuthorizer, "test-token")
-		h.centralReachable.Store(true)
-
-		// Set namespace scope header to trigger SAR check
-		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
-		req.Header.Set("Authorization", "Bearer test-token")
-		req.Header.Set(stackroxNamespaceHeader, "my-namespace")
-		w := httptest.NewRecorder()
-
-		h.ServeHTTP(w, req)
-
-		assert.False(t, proxyCalled, "proxy should not be called when authorization fails")
+		assert.False(t, f.proxyCalled, "proxy should not be called when authorization fails")
 		assert.Equal(t, http.StatusForbidden, w.Code)
 		assert.Contains(t, w.Body.String(), "lacks")
 	})
 
 	t.Run("no authorizer returns server error", func(t *testing.T) {
-		setupCentralCapsForTest(t)
-		var proxyCalled bool
-		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-			proxyCalled = true
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
-				Header:     http.Header{"Content-Type": []string{"application/json"}},
-			}, nil
-		})
-
-		baseURL, err := url.Parse("https://central:443")
-		require.NoError(t, err)
-
-		h := newTestHandler(t, baseURL, mockTransport, nil, "test-token")
-		h.centralReachable.Store(true)
-
-		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
-		w := httptest.NewRecorder()
-
-		h.ServeHTTP(w, req)
-
-		assert.False(t, proxyCalled, "proxy should not be called when authorizer is not configured")
+		f := newProxyTestFixture(t, nil)
+		w := f.serveHTTP(t, http.MethodGet, "/v1/alerts", nil)
+		assert.False(t, f.proxyCalled, "proxy should not be called when authorizer is not configured")
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		assert.Contains(t, w.Body.String(), "authorizer not configured")
 	})
 
 	t.Run("authorization success allows proxy call", func(t *testing.T) {
-		setupCentralCapsForTest(t)
-		var proxyCalled bool
-		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-			proxyCalled = true
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
-				Header:     http.Header{"Content-Type": []string{"application/json"}},
-			}, nil
+		f := newProxyTestFixture(t, newAllowingAuthorizer(t))
+		w := f.serveHTTP(t, http.MethodGet, "/v1/alerts", map[string]string{
+			"Authorization": "Bearer test-token",
 		})
-
-		baseURL, err := url.Parse("https://central:443")
-		require.NoError(t, err)
-
-		h := newTestHandler(t, baseURL, mockTransport, newAllowingAuthorizer(t), "test-token")
-		h.centralReachable.Store(true)
-
-		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
-		req.Header.Set("Authorization", "Bearer test-token")
-		w := httptest.NewRecorder()
-
-		h.ServeHTTP(w, req)
-
-		assert.True(t, proxyCalled, "proxy should be called when authorization succeeds")
+		assert.True(t, f.proxyCalled, "proxy should be called when authorization succeeds")
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
 }
 
 func TestServeHTTP_NamespaceScopeBasedAuthorization(t *testing.T) {
 	t.Run("empty namespace scope skips SAR check", func(t *testing.T) {
-		setupCentralCapsForTest(t)
-		var proxyCalled bool
-		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-			proxyCalled = true
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
-				Header:     http.Header{"Content-Type": []string{"application/json"}},
-			}, nil
+		// Create authorizer that denies SAR but allows TokenReview.
+		f := newProxyTestFixture(t, newDenyingAuthorizer(t))
+		// No namespace scope header - should skip SAR.
+		w := f.serveHTTP(t, http.MethodGet, "/v1/metadata", map[string]string{
+			"Authorization": "Bearer test-token",
 		})
-
-		baseURL, err := url.Parse("https://central:443")
-		require.NoError(t, err)
-
-		// Create authorizer that denies SAR but allows TokenReview
-		denyingAuthorizer := newDenyingAuthorizer(t)
-
-		h := newTestHandler(t, baseURL, mockTransport, denyingAuthorizer, "test-token")
-		h.centralReachable.Store(true)
-
-		// No namespace scope header - should skip SAR
-		req := httptest.NewRequest(http.MethodGet, "/v1/metadata", nil)
-		req.Header.Set("Authorization", "Bearer test-token")
-		// NOT setting ACS-AUTH-NAMESPACE-SCOPE header
-		w := httptest.NewRecorder()
-
-		h.ServeHTTP(w, req)
-
-		assert.True(t, proxyCalled, "proxy should be called when namespace scope is empty (no SAR)")
+		assert.True(t, f.proxyCalled, "proxy should be called when namespace scope is empty (no SAR)")
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
 
 	t.Run("specific namespace scope triggers SAR check", func(t *testing.T) {
-		setupCentralCapsForTest(t)
-		var proxyCalled bool
-		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-			proxyCalled = true
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
-				Header:     http.Header{"Content-Type": []string{"application/json"}},
-			}, nil
+		f := newProxyTestFixture(t, newDenyingAuthorizer(t))
+		w := f.serveHTTP(t, http.MethodGet, "/v1/alerts", map[string]string{
+			"Authorization":         "Bearer test-token",
+			stackroxNamespaceHeader: "my-namespace",
 		})
-
-		baseURL, err := url.Parse("https://central:443")
-		require.NoError(t, err)
-
-		denyingAuthorizer := newDenyingAuthorizer(t)
-
-		h := newTestHandler(t, baseURL, mockTransport, denyingAuthorizer, "test-token")
-		h.centralReachable.Store(true)
-
-		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
-		req.Header.Set("Authorization", "Bearer test-token")
-		req.Header.Set(stackroxNamespaceHeader, "my-namespace")
-		w := httptest.NewRecorder()
-
-		h.ServeHTTP(w, req)
-
-		assert.False(t, proxyCalled, "proxy should not be called when SAR fails for namespace scope")
+		assert.False(t, f.proxyCalled, "proxy should not be called when SAR fails for namespace scope")
 		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
 
 	t.Run("cluster-wide scope (*) triggers SAR check", func(t *testing.T) {
-		setupCentralCapsForTest(t)
-		var proxyCalled bool
-		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-			proxyCalled = true
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
-				Header:     http.Header{"Content-Type": []string{"application/json"}},
-			}, nil
+		f := newProxyTestFixture(t, newDenyingAuthorizer(t))
+		w := f.serveHTTP(t, http.MethodGet, "/v1/alerts", map[string]string{
+			"Authorization":         "Bearer test-token",
+			stackroxNamespaceHeader: FullClusterAccessScope,
 		})
-
-		baseURL, err := url.Parse("https://central:443")
-		require.NoError(t, err)
-
-		denyingAuthorizer := newDenyingAuthorizer(t)
-
-		h := newTestHandler(t, baseURL, mockTransport, denyingAuthorizer, "test-token")
-		h.centralReachable.Store(true)
-
-		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
-		req.Header.Set("Authorization", "Bearer test-token")
-		req.Header.Set(stackroxNamespaceHeader, FullClusterAccessScope)
-		w := httptest.NewRecorder()
-
-		h.ServeHTTP(w, req)
-
-		assert.False(t, proxyCalled, "proxy should not be called when SAR fails for cluster-wide scope")
+		assert.False(t, f.proxyCalled, "proxy should not be called when SAR fails for cluster-wide scope")
 		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
 
@@ -691,59 +537,56 @@ func TestServeHTTP_TokenInjection(t *testing.T) {
 
 func TestServeHTTP_RequiresAuthentication(t *testing.T) {
 	t.Run("missing token returns 401", func(t *testing.T) {
-		setupCentralCapsForTest(t)
-		var proxyCalled bool
-		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-			proxyCalled = true
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
-				Header:     http.Header{"Content-Type": []string{"application/json"}},
-			}, nil
-		})
-
-		baseURL, err := url.Parse("https://central:443")
-		require.NoError(t, err)
-
-		h := newTestHandler(t, baseURL, mockTransport, newAllowingAuthorizer(t), "test-token")
-		h.centralReachable.Store(true)
-
-		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
-		// No Authorization header set
-		w := httptest.NewRecorder()
-
-		h.ServeHTTP(w, req)
-
-		assert.False(t, proxyCalled, "proxy should not be called without authorization header")
+		f := newProxyTestFixture(t, newAllowingAuthorizer(t))
+		// No Authorization header set.
+		w := f.serveHTTP(t, http.MethodGet, "/v1/alerts", nil)
+		assert.False(t, f.proxyCalled, "proxy should not be called without authorization header")
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 		assert.Contains(t, w.Body.String(), "bearer token")
 	})
 
 	t.Run("invalid token returns 401", func(t *testing.T) {
-		setupCentralCapsForTest(t)
-		var proxyCalled bool
-		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-			proxyCalled = true
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
-				Header:     http.Header{"Content-Type": []string{"application/json"}},
-			}, nil
+		f := newProxyTestFixture(t, newUnauthenticatedAuthorizer(t))
+		w := f.serveHTTP(t, http.MethodGet, "/v1/alerts", map[string]string{
+			"Authorization": "Bearer invalid-token",
 		})
-
-		baseURL, err := url.Parse("https://central:443")
-		require.NoError(t, err)
-
-		h := newTestHandler(t, baseURL, mockTransport, newUnauthenticatedAuthorizer(t), "test-token")
-		h.centralReachable.Store(true)
-
-		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
-		req.Header.Set("Authorization", "Bearer invalid-token")
-		w := httptest.NewRecorder()
-
-		h.ServeHTTP(w, req)
-
-		assert.False(t, proxyCalled, "proxy should not be called with unauthenticated token")
+		assert.False(t, f.proxyCalled, "proxy should not be called with unauthenticated token")
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+}
+
+func TestServeHTTP_PathFiltering(t *testing.T) {
+	t.Run("disallowed path returns 403", func(t *testing.T) {
+		f := newProxyTestFixture(t, newAllowingAuthorizer(t))
+		w := f.serveHTTP(t, http.MethodGet, "/admin/secret", map[string]string{
+			"Authorization": "Bearer test-token",
+		})
+		assert.False(t, f.proxyCalled, "proxy should not be called for disallowed path")
+		assert.Equal(t, http.StatusForbidden, w.Code)
+		assert.Contains(t, w.Body.String(), "not allowed by the proxy allow-list")
+	})
+
+	t.Run("allowed path proceeds normally", func(t *testing.T) {
+		f := newProxyTestFixture(t, newAllowingAuthorizer(t))
+		w := f.serveHTTP(t, http.MethodGet, "/v1/alerts", map[string]string{
+			"Authorization": "Bearer test-token",
+		})
+		assert.True(t, f.proxyCalled, "proxy should be called for allowed path")
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("no allow-list configured allows all paths", func(t *testing.T) {
+		f := newProxyTestFixture(t, newAllowingAuthorizer(t))
+		// Override: remove path filtering capability and clear allowed paths.
+		centralcaps.Set([]centralsensor.CentralCapability{
+			centralsensor.InternalTokenAPISupported,
+		})
+		allowedpaths.Reset()
+
+		w := f.serveHTTP(t, http.MethodGet, "/admin/anything", map[string]string{
+			"Authorization": "Bearer test-token",
+		})
+		assert.True(t, f.proxyCalled, "proxy should be called when no allow-list is configured")
+		assert.Equal(t, http.StatusOK, w.Code)
 	})
 }

@@ -3,7 +3,6 @@ package booleanpolicy
 import (
 	"fmt"
 	"regexp"
-	"strings"
 
 	"github.com/stackrox/rox/pkg/signatures"
 )
@@ -12,17 +11,6 @@ const (
 	ipv4Regex = "(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})"
 	ipv6Regex = "((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*::((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4}))*|((?:[0-9A-Fa-f]{1,4}))((?::[0-9A-Fa-f]{1,4})){7}"
 )
-
-// The following paths are the bare minimum supported for the
-// file activity tech preview. This is to control and minimize the
-// scale/quantity of runtime events, and prove the feature before
-// widening support to an arbitrary list of files.
-var filePathAllowedStrings = []string{
-	"/etc/passwd",
-	"/etc/shadow",
-	"/etc/ssh/sshd_config",
-	"/etc/sudoers",
-}
 
 var (
 	keyValueValueRegex                       = createRegex("[^=]+=.*")
@@ -38,7 +26,7 @@ var (
 	addCapabilitiesValueRegex                = createRegex("(?i:(AUDIT_CONTROL|AUDIT_READ|AUDIT_WRITE|BLOCK_SUSPEND|CHOWN|DAC_OVERRIDE|DAC_READ_SEARCH|FOWNER|FSETID|IPC_LOCK|IPC_OWNER|KILL|LEASE|LINUX_IMMUTABLE|MAC_ADMIN|MAC_OVERRIDE|MKNOD|NET_ADMIN|NET_BIND_SERVICE|NET_BROADCAST|NET_RAW|SETGID|SETFCAP|SETPCAP|SETUID|SYS_ADMIN|SYS_BOOT|SYS_CHROOT|SYS_MODULE|SYS_NICE|SYS_PACCT|SYS_PTRACE|SYS_RAWIO|SYS_RESOURCE|SYS_TIME|SYS_TTY_CONFIG|SYSLOG|WAKE_ALARM))")
 	rbacPermissionValueRegex                 = createRegex("(?i:DEFAULT|ELEVATED_IN_NAMESPACE|ELEVATED_CLUSTER_WIDE|CLUSTER_ADMIN)")
 	portExposureValueRegex                   = createRegex("(?i:UNSET|EXTERNAL|NODE|HOST|INTERNAL|ROUTE)")
-	kubernetesResourceValueRegex             = createRegex(`(?i:PODS_EXEC|PODS_PORTFORWARD)`)
+	kubernetesResourceValueRegex             = createRegex(`(?i:PODS_EXEC|PODS_PORTFORWARD|PODS_ATTACH)`)
 	mountPropagationValueRegex               = createRegex("(?i:NONE|HOSTTOCONTAINER|BIDIRECTIONAL)")
 	seccompProfileTypeValueRegex             = createRegex(`(?i:UNCONFINED|RUNTIME_DEFAULT|LOCALHOST)`)
 	severityValueRegex                       = createRegex(`(<|>|<=|>=)?[[:space:]]*(?i:UNKNOWN|LOW|MODERATE|IMPORTANT|CRITICAL)`)
@@ -47,8 +35,7 @@ var (
 	kubernetesNameRegex                      = createRegex(`(?i:[a-z0-9])(?i:[-:a-z0-9]*[a-z0-9])?`)
 	ipAddressValueRegex                      = createRegex(fmt.Sprintf(`(%s)|(%s)`, ipv4Regex, ipv6Regex))
 	signatureIntegrationIDValueRegex         = createRegex(regexp.QuoteMeta(signatures.SignatureIntegrationIDPrefix) + "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
-	allowedFilePathRegex                     = createRegex(fmt.Sprintf("(?i:%s)", strings.Join(filePathAllowedStrings, "|")))
-	fileOperationRegex                       = createRegex(`(?i:OPEN|CREATE|UNLINK|OWNERSHIP_CHANGE|PERMISSION_CHANGE)`)
+	fileOperationRegex                       = createRegex(`(?i:OPEN|CREATE|RENAME|UNLINK|OWNERSHIP_CHANGE|PERMISSION_CHANGE)`)
 )
 
 func createRegex(s string) *regexp.Regexp {

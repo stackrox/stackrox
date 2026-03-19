@@ -1,14 +1,14 @@
-const navExpandable = 'ul.pf-v5-c-nav__list li.pf-v5-c-nav__item.pf-m-expandable button';
+const navExpandable = 'ul.pf-v6-c-nav__list li.pf-v6-c-nav__item button';
 
 const navigation = {
-    allNavLinks: '.pf-v5-c-nav a',
-    horizontalNavBar: 'nav.pf-m-horizontal-subnav',
-    horizontalNavLinks: 'nav.pf-m-horizontal-subnav a',
-    navLinks: '.pf-v5-c-nav > ul.pf-v5-c-nav__list > li > a',
+    allNavLinks: '.pf-v6-c-nav a',
+    horizontalNavBar: 'nav.pf-m-horizontal.pf-m-subnav',
+    horizontalNavLinks: 'nav.pf-m-horizontal.pf-m-subnav a',
+    navLinks: '.pf-v6-c-nav > ul.pf-v6-c-nav__list > li > a',
     navExpandable,
     navExpandablePlatformConfiguration: `${navExpandable}:contains("Platform Configuration")`,
     navExpandableVulnerabilityManagement: `${navExpandable}:contains("Vulnerability Management")`,
-    nestedNavLinks: '.pf-v5-c-nav__subnav ul.pf-v5-c-nav__list li a',
+    nestedNavLinks: '.pf-v6-c-nav__subnav ul.pf-v6-c-nav__list li a',
     leftNavBar: 'nav.left-navigation li a',
     navPanel: '.navigation-panel ul li a',
     topNavBar: '[data-testid="top-nav-bar"]',

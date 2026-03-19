@@ -1,25 +1,35 @@
 package scopecomp
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/scopecomp/mocks"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func TestWithinScope(t *testing.T) {
 	subtests := []struct {
-		name       string
-		scope      *storage.Scope
-		deployment *storage.Deployment
-		result     bool
+		name               string
+		scope              *storage.Scope
+		deployment         *storage.Deployment
+		clusterLabels      map[string]string
+		namespaceLabels    map[string]string
+		featureFlagEnabled bool
+		expectError        bool
+		result             bool
 	}{
 		{
-			name:       "empty scope",
-			scope:      &storage.Scope{},
-			deployment: &storage.Deployment{},
-			result:     true,
+			name:               "empty scope",
+			scope:              &storage.Scope{},
+			deployment:         &storage.Deployment{},
+			featureFlagEnabled: false,
+			result:             true,
 		},
 		{
 			name: "matching cluster",
@@ -29,7 +39,8 @@ func TestWithinScope(t *testing.T) {
 			deployment: &storage.Deployment{
 				ClusterId: "cluster",
 			},
-			result: true,
+			featureFlagEnabled: false,
+			result:             true,
 		},
 		{
 			name: "not matching cluster",
@@ -39,7 +50,8 @@ func TestWithinScope(t *testing.T) {
 			deployment: &storage.Deployment{
 				ClusterId: "cluster",
 			},
-			result: false,
+			featureFlagEnabled: false,
+			result:             false,
 		},
 		{
 			name: "matching namespace",
@@ -49,7 +61,8 @@ func TestWithinScope(t *testing.T) {
 			deployment: &storage.Deployment{
 				Namespace: "namespace",
 			},
-			result: true,
+			featureFlagEnabled: false,
+			result:             true,
 		},
 		{
 			name: "not matching namespace",
@@ -59,7 +72,8 @@ func TestWithinScope(t *testing.T) {
 			deployment: &storage.Deployment{
 				Namespace: "namespace",
 			},
-			result: false,
+			featureFlagEnabled: false,
+			result:             false,
 		},
 		{
 			name: "matching cluster with no namespace scope",
@@ -70,7 +84,8 @@ func TestWithinScope(t *testing.T) {
 				ClusterId: "cluster",
 				Namespace: "namespace",
 			},
-			result: true,
+			featureFlagEnabled: false,
+			result:             true,
 		},
 		{
 			name: "matching label",
@@ -86,7 +101,8 @@ func TestWithinScope(t *testing.T) {
 					"key2": "value2",
 				},
 			},
-			result: true,
+			featureFlagEnabled: false,
+			result:             true,
 		},
 		{
 			name: "not matching label value",
@@ -102,7 +118,8 @@ func TestWithinScope(t *testing.T) {
 					"key2": "value2",
 				},
 			},
-			result: false,
+			featureFlagEnabled: false,
+			result:             false,
 		},
 		{
 			name: "not matching key value",
@@ -118,7 +135,8 @@ func TestWithinScope(t *testing.T) {
 					"key2": "value2",
 				},
 			},
-			result: false,
+			featureFlagEnabled: false,
+			result:             false,
 		},
 		{
 			name: "match all",
@@ -138,12 +156,202 @@ func TestWithinScope(t *testing.T) {
 					"key2": "value2",
 				},
 			},
-			result: true,
+			featureFlagEnabled: false,
+			result:             true,
+		},
+		{
+			name: "scope with cluster_label",
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+			},
+			deployment: &storage.Deployment{
+				ClusterId: "cluster",
+			},
+			clusterLabels:      map[string]string{"env": "prod"},
+			featureFlagEnabled: true,
+			result:             true,
+		},
+		{
+			name: "scope with namespace_label",
+			scope: &storage.Scope{
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "backend",
+				},
+			},
+			deployment: &storage.Deployment{
+				Namespace: "default",
+			},
+			namespaceLabels:    map[string]string{"team": "backend"},
+			featureFlagEnabled: true,
+			result:             true,
+		},
+		{
+			name: "scope with cluster_label and namespace_label",
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "backend",
+				},
+			},
+			deployment: &storage.Deployment{
+				ClusterId: "cluster",
+				Namespace: "default",
+			},
+			clusterLabels:      map[string]string{"env": "prod"},
+			namespaceLabels:    map[string]string{"team": "backend"},
+			featureFlagEnabled: true,
+			result:             true,
+		},
+		// Test cases verifying feature flag behavior
+		{
+			name: "cluster_label with flag OFF fails to compile",
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+			},
+			deployment: &storage.Deployment{
+				ClusterId: "cluster",
+			},
+			clusterLabels:      map[string]string{"env": "dev"},
+			featureFlagEnabled: false,
+			expectError:        true,
+		},
+		{
+			name: "cluster_label mismatch with flag ON fails",
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+			},
+			deployment: &storage.Deployment{
+				ClusterId: "cluster",
+			},
+			clusterLabels:      map[string]string{"env": "dev"},
+			featureFlagEnabled: true,
+			result:             false,
+		},
+		{
+			name: "namespace_label with flag OFF fails to compile",
+			scope: &storage.Scope{
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "backend",
+				},
+			},
+			deployment: &storage.Deployment{
+				Namespace: "default",
+			},
+			namespaceLabels:    map[string]string{"team": "frontend"},
+			featureFlagEnabled: false,
+			expectError:        true,
+		},
+		{
+			name: "namespace_label mismatch with flag ON fails",
+			scope: &storage.Scope{
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "backend",
+				},
+			},
+			deployment: &storage.Deployment{
+				Namespace: "default",
+			},
+			namespaceLabels:    map[string]string{"team": "frontend"},
+			featureFlagEnabled: true,
+			result:             false,
+		},
+		// Test cases for nil provider handling
+		{
+			name: "nil providers with no label matchers should pass",
+			scope: &storage.Scope{
+				Cluster:   "cluster",
+				Namespace: "namespace",
+			},
+			deployment: &storage.Deployment{
+				ClusterId: "cluster",
+				Namespace: "namespace",
+			},
+			clusterLabels:      nil,
+			namespaceLabels:    nil,
+			featureFlagEnabled: true,
+			result:             true,
+		},
+		{
+			name: "nil cluster provider with cluster_label matcher should fail",
+			scope: &storage.Scope{
+				ClusterLabel: &storage.Scope_Label{
+					Key:   "env",
+					Value: "prod",
+				},
+			},
+			deployment: &storage.Deployment{
+				ClusterId: "cluster",
+			},
+			clusterLabels:      nil,
+			namespaceLabels:    nil,
+			featureFlagEnabled: true,
+			result:             false,
+		},
+		{
+			name: "nil namespace provider with namespace_label matcher should fail",
+			scope: &storage.Scope{
+				NamespaceLabel: &storage.Scope_Label{
+					Key:   "team",
+					Value: "backend",
+				},
+			},
+			deployment: &storage.Deployment{
+				Namespace: "default",
+			},
+			clusterLabels:      nil,
+			namespaceLabels:    nil,
+			featureFlagEnabled: true,
+			result:             false,
 		},
 	}
 	for _, test := range subtests {
-		cs, err := CompileScope(test.scope)
+		testutils.MustUpdateFeature(t, features.LabelBasedPolicyScoping, test.featureFlagEnabled)
+
+		// Create gomock controller and mock providers
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		var clusterProvider ClusterLabelProvider
+		var namespaceProvider NamespaceLabelProvider
+		if test.clusterLabels != nil {
+			mockCluster := mocks.NewMockClusterLabelProvider(ctrl)
+			mockCluster.EXPECT().
+				GetClusterLabels(gomock.Any(), gomock.Any()).
+				Return(test.clusterLabels, nil).
+				AnyTimes()
+			clusterProvider = mockCluster
+		}
+		if test.namespaceLabels != nil {
+			mockNamespace := mocks.NewMockNamespaceLabelProvider(ctrl)
+			mockNamespace.EXPECT().
+				GetNamespaceLabels(gomock.Any(), gomock.Any()).
+				Return(test.namespaceLabels, nil).
+				AnyTimes()
+			namespaceProvider = mockNamespace
+		}
+
+		cs, err := CompileScope(test.scope, clusterProvider, namespaceProvider)
+		if test.expectError {
+			require.Errorf(t, err, "Expected error for test '%s'", test.name)
+			return
+		}
 		require.NoError(t, err)
-		assert.Equalf(t, test.result, cs.MatchesDeployment(test.deployment), "Failed test '%s'", test.name)
+		assert.Equalf(t, test.result, cs.MatchesDeployment(context.Background(), test.deployment), "Failed test '%s'", test.name)
 	}
 }

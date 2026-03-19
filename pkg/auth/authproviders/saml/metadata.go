@@ -31,7 +31,7 @@ func fetchIDPMetadata(ctx context.Context, url string) (string, *types.IDPSSODes
 		return "", nil, errors.Wrap(err, "could not create HTTP request")
 	}
 
-	httpClient := http.DefaultClient
+	httpClient := defaultHTTPClient
 	if stringutils.ConsumeSuffix(&request.URL.Scheme, "+insecure") {
 		httpClient = insecureHTTPClient
 	}

@@ -110,7 +110,7 @@ spec:
 
       [<- if .FeatureFlags.ROX_SENSITIVE_FILE_ACTIVITY >]
 
-      {{- if ._rox.collector.sfaEnabled }}
+      {{- if ._rox.collector.famEnabled }}
       - name: fact
         image: {{ quote ._rox.image.fact.fullRef }}
         imagePullPolicy: {{ ._rox.fact.imagePullPolicy }}
@@ -133,7 +133,7 @@ spec:
           value: "/etc/ssh/sshd_config:/etc/sudoers:/etc/passwd:/etc/shadow"
         {{- include "srox.envVars" (list . "daemonset" "collector" "fact") | nindent 8 }}
         resources:
-          {{- ._rox.collector._sfaResources | nindent 10 }}
+          {{- ._rox.collector._famResources | nindent 10 }}
         securityContext:
           capabilities:
             drop:

@@ -1,12 +1,12 @@
 package deploytime
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/defaults/policies"
-	"github.com/stackrox/rox/pkg/detection/deploytime"
 	"github.com/stackrox/rox/pkg/fixtures"
 	pkgPolicies "github.com/stackrox/rox/pkg/policies"
 	"github.com/stretchr/testify/require"
@@ -14,7 +14,7 @@ import (
 
 func BenchmarkDefaultPolicies(b *testing.B) {
 
-	policySet = detection.NewPolicySet(nil)
+	policySet = detection.NewPolicySet(nil, nil, nil)
 
 	policies, err := policies.DefaultPolicies()
 	require.NoError(b, err)
@@ -31,7 +31,7 @@ func BenchmarkDefaultPolicies(b *testing.B) {
 	images := fixtures.DeploymentImages()
 
 	for b.Loop() {
-		_, err := detection.Detect(deploytime.DetectionContext{}, booleanpolicy.EnhancedDeployment{
+		_, err := detection.Detect(context.Background(), booleanpolicy.EnhancedDeployment{
 			Deployment: dep,
 			Images:     images,
 		})

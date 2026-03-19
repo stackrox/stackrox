@@ -8,9 +8,9 @@ import (
 	"sort"
 	"testing"
 
-	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
+	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
 	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
 	imageDataStoreV2 "github.com/stackrox/rox/central/imagev2/datastore"
@@ -48,12 +48,13 @@ func TestImageV2DataStore(t *testing.T) {
 type ImageV2DataStoreTestSuite struct {
 	suite.Suite
 
-	ctx                context.Context
-	testDB             *pgtest.TestPostgres
-	datastore          imageDataStoreV2.DataStore
-	mockRisk           *mockRisks.MockDataStore
-	componentDataStore imageComponentDS.DataStore
-	cveDataStore       imageCVEDS.DataStore
+	ctx                 context.Context
+	testDB              *pgtest.TestPostgres
+	datastore           imageDataStoreV2.DataStore
+	mockRisk            *mockRisks.MockDataStore
+	componentDataStore  imageComponentDS.DataStore
+	cveDataStore        imageCVEDS.DataStore
+	deploymentDataStore deploymentDS.DataStore
 }
 
 func (s *ImageV2DataStoreTestSuite) SetupSuite() {
@@ -64,17 +65,21 @@ func (s *ImageV2DataStoreTestSuite) SetupSuite() {
 func (s *ImageV2DataStoreTestSuite) SetupTest() {
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
 	dbStore := pgStore.New(s.testDB.DB, false, keyfence.ImageKeyFenceSingleton())
-	imageCVEInfo := imageCVEInfoDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
-	s.datastore = imageDataStoreV2.NewWithPostgres(dbStore, s.mockRisk, ranking.NewRanker(), ranking.NewRanker(), imageCVEInfo)
+	s.datastore = imageDataStoreV2.NewWithPostgres(dbStore, s.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	componentStorage := imageComponentPostgres.New(s.testDB.DB)
 	s.componentDataStore = imageComponentDS.New(componentStorage, s.mockRisk, ranking.NewRanker())
 
 	cveStorage := imageCVEPostgres.New(s.testDB.DB)
 	s.cveDataStore = imageCVEDS.New(cveStorage)
+
+	var err error
+	s.deploymentDataStore, err = deploymentDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
+	s.Require().NoError(err)
 }
 
 func (s *ImageV2DataStoreTestSuite) TearDownTest() {
+	s.truncateTable(postgresSchema.DeploymentsTableName)
 	s.truncateTable(postgresSchema.ImagesV2TableName)
 	s.truncateTable(postgresSchema.ImageComponentV2TableName)
 	s.truncateTable(postgresSchema.ImageCvesV2TableName)
@@ -647,4 +652,158 @@ func cloneAndUpdateRiskPriority(image *storage.ImageV2) *storage.ImageV2 {
 		component.Priority = 1
 	}
 	return cloned
+}
+
+func (s *ImageV2DataStoreTestSuite) TestSearchListImages() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	// Create and upsert test images
+	img1 := getTestImageV2("img1")
+	img2 := getTestImageV2("img2")
+	img3 := getTestImageV2("img3")
+
+	s.NoError(s.datastore.UpsertImage(ctx, img1))
+	s.NoError(s.datastore.UpsertImage(ctx, img2))
+	s.NoError(s.datastore.UpsertImage(ctx, img3))
+
+	// Test 1: Search all images with empty query
+	listImages, err := s.datastore.SearchListImages(ctx, pkgSearch.EmptyQuery())
+	s.NoError(err)
+	s.Len(listImages, 3)
+
+	// Verify that all images are present
+	// Note: In V2->V1 conversion, Image.Id is set to the digest (SHA), not the UUID
+	imageDigests := set.NewStringSet()
+	for _, img := range listImages {
+		imageDigests.Add(img.GetId())
+		// Verify priority is set by the ranker
+		s.NotZero(img.GetPriority())
+		// Verify ListImage has expected fields
+		s.NotEmpty(img.GetId())
+		s.NotEmpty(img.GetName())
+		// LastUpdated should be set
+		s.NotNil(img.GetLastUpdated())
+	}
+	// Verify all image digests are present
+	s.True(imageDigests.Contains(img1.GetDigest()))
+	s.True(imageDigests.Contains(img2.GetDigest()))
+	s.True(imageDigests.Contains(img3.GetDigest()))
+
+	// Test 2: Search with specific image name
+	q := pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.ImageName, "registry.test.io/img1:latest").ProtoQuery()
+	listImages, err = s.datastore.SearchListImages(ctx, q)
+	s.NoError(err)
+	s.Len(listImages, 1)
+	s.Equal(img1.GetDigest(), listImages[0].GetId()) // ListImage ID is the digest in V1 format
+	s.Equal("registry.test.io/img1:latest", listImages[0].GetName())
+
+	// Test 3: Search with image UUID (V2 ID)
+	q = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ImageID, img2.GetId()).ProtoQuery()
+	listImages, err = s.datastore.SearchListImages(ctx, q)
+	s.NoError(err)
+	s.Len(listImages, 1)
+	s.Equal(img2.GetDigest(), listImages[0].GetId())
+
+	// Test 4: Search with SHA
+	q = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ImageSHA, img3.GetDigest()).ProtoQuery()
+	listImages, err = s.datastore.SearchListImages(ctx, q)
+	s.NoError(err)
+	s.Len(listImages, 1)
+	s.Equal(img3.GetDigest(), listImages[0].GetId())
+
+	// Test 5: Search with pagination
+	q = pkgSearch.EmptyQuery()
+	q.Pagination = &v1.QueryPagination{
+		Limit:  2,
+		Offset: 0,
+	}
+	listImages, err = s.datastore.SearchListImages(ctx, q)
+	s.NoError(err)
+	s.Len(listImages, 2)
+
+	// Test 6: Search with no results
+	q = pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.ImageName, "nonexistent").ProtoQuery()
+	listImages, err = s.datastore.SearchListImages(ctx, q)
+	s.NoError(err)
+	s.Len(listImages, 0)
+
+	// Test 7: Verify ListImage contains component and CVE counts from ScanStats
+	// Create an image with scan stats populated
+	imgWithStats := fixtures.GetImageV2WithUniqueComponents(3)
+	s.NoError(s.datastore.UpsertImage(ctx, imgWithStats))
+
+	q = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ImageID, imgWithStats.GetId()).ProtoQuery()
+	listImages, err = s.datastore.SearchListImages(ctx, q)
+	s.NoError(err)
+	s.Len(listImages, 1)
+	s.Equal(imgWithStats.GetDigest(), listImages[0].GetId())
+
+	// Verify the component count comes from ScanStats (fixture sets ComponentCount to 3)
+	s.Equal(int32(3), listImages[0].GetComponents(), "Expected component count to match fixture")
+
+	// CVE and fixable CVE counts may be populated by the datastore during upsert
+	// We just verify they are non-negative (could be 0 if not populated)
+	s.GreaterOrEqual(listImages[0].GetCves(), int32(0))
+	s.GreaterOrEqual(listImages[0].GetFixableCves(), int32(0))
+
+	// Test 8: Test with access control - no access context
+	noAccessCtx := sac.WithNoAccess(context.Background())
+	listImages, err = s.datastore.SearchListImages(noAccessCtx, pkgSearch.EmptyQuery())
+	s.NoError(err)
+	s.Len(listImages, 0)
+
+	// Test 9: Verify sorting works correctly
+	q = pkgSearch.EmptyQuery()
+	q.Pagination = &v1.QueryPagination{
+		SortOptions: []*v1.QuerySortOption{
+			{
+				Field: pkgSearch.ImageName.String(),
+			},
+		},
+	}
+	listImages, err = s.datastore.SearchListImages(ctx, q)
+	s.NoError(err)
+	s.Greater(len(listImages), 1)
+	// Verify images are sorted by name
+	for i := 1; i < len(listImages); i++ {
+		s.LessOrEqual(listImages[i-1].GetName(), listImages[i].GetName(), "Images should be sorted by name")
+	}
+
+	// Test 10: Verify distinct results when joining with other tables (ROX-33514)
+	// Create 2 deployments that reference all 3 images
+	dep1 := fixtures.LightweightDeployment()
+	dep1.Id = uuid.NewV4().String()
+	dep1.Name = "deployment1"
+	dep1.Containers = []*storage.Container{
+		{Name: "container1", Image: &storage.ContainerImage{Id: img1.GetDigest(), IdV2: img1.GetId(), Name: img1.GetName()}},
+		{Name: "container2", Image: &storage.ContainerImage{Id: img2.GetDigest(), IdV2: img2.GetId(), Name: img2.GetName()}},
+		{Name: "container3", Image: &storage.ContainerImage{Id: img3.GetDigest(), IdV2: img3.GetId(), Name: img3.GetName()}},
+	}
+
+	dep2 := fixtures.LightweightDeployment()
+	dep2.Id = uuid.NewV4().String()
+	dep2.Name = "deployment2"
+	dep2.Containers = []*storage.Container{
+		{Name: "container4", Image: &storage.ContainerImage{Id: img1.GetDigest(), IdV2: img1.GetId(), Name: img1.GetName()}},
+		{Name: "container5", Image: &storage.ContainerImage{Id: img2.GetDigest(), IdV2: img2.GetId(), Name: img2.GetName()}},
+		{Name: "container6", Image: &storage.ContainerImage{Id: img3.GetDigest(), IdV2: img3.GetId(), Name: img3.GetName()}},
+	}
+
+	s.NoError(s.deploymentDataStore.UpsertDeployment(ctx, dep1))
+	s.NoError(s.deploymentDataStore.UpsertDeployment(ctx, dep2))
+
+	// Search for images with deployment filter - should return 3 unique images, not 6
+	q = pkgSearch.NewQueryBuilder().AddRegexes(pkgSearch.DeploymentName, ".*").ProtoQuery()
+	listImages, err = s.datastore.SearchListImages(ctx, q)
+	s.NoError(err)
+
+	// Verify we get exactly 3 unique images despite having 2 deployments referencing all 3
+	s.Len(listImages, 3, "Expected 3 unique images, not duplicates from multiple deployments")
+	imageDigests = set.NewStringSet()
+	for _, img := range listImages {
+		imageDigests.Add(img.GetId())
+	}
+	s.True(imageDigests.Contains(img1.GetDigest()))
+	s.True(imageDigests.Contains(img2.GetDigest()))
+	s.True(imageDigests.Contains(img3.GetDigest()))
 }

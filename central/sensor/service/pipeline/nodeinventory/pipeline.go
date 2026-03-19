@@ -94,7 +94,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 
 	if shouldDiscardMsg(node) {
 		// To prevent resending the inventory, still acknowledge receipt of it
-		sendComplianceAck(ctx, node, ninv, injector)
+		replyCompliance(ctx, node.GetClusterId(), ninv.GetNodeName(), central.NodeInventoryACK_ACK, injector)
 		log.Debug("Discarding v2 NodeScan in favor of v4 NodeScan")
 		return nil
 	}
@@ -115,7 +115,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		return err
 	}
 
-	sendComplianceAck(ctx, node, ninv, injector)
+	replyCompliance(ctx, node.GetClusterId(), ninv.GetNodeName(), central.NodeInventoryACK_ACK, injector)
 	return nil
 }
 
@@ -138,29 +138,31 @@ func shouldDiscardMsg(node *storage.Node) bool {
 	return false
 }
 
-func sendComplianceAck(ctx context.Context, node *storage.Node, ninv *storage.NodeInventory, injector common.MessageInjector) {
+// replyCompliance uses injector to send a SensorACK and NodeInventoryACK to Compliance.
+func replyCompliance(ctx context.Context, clusterID, nodeName string, t central.NodeInventoryACK_Action, injector common.MessageInjector) {
 	if injector == nil {
 		return
 	}
-	reply := replyCompliance(node.GetClusterId(), ninv.GetNodeName(), central.NodeInventoryACK_ACK)
-	if err := injector.InjectMessage(ctx, reply); err != nil {
-		log.Warnf("Failed sending node-inventory-ACK to Sensor for %s: %v", nodeDatastore.NodeString(node), err)
-	} else {
-		log.Debugf("Sent node-inventory-ACK for %s", nodeDatastore.NodeString(node))
-	}
-}
 
-func replyCompliance(clusterID, nodeName string, t central.NodeInventoryACK_Action) *central.MsgToSensor {
-	return &central.MsgToSensor{
-		Msg: &central.MsgToSensor_NodeInventoryAck{
-			NodeInventoryAck: &central.NodeInventoryACK{
-				ClusterId:   clusterID,
-				NodeName:    nodeName,
-				Action:      t,
-				MessageType: central.NodeInventoryACK_NodeInventory,
-			},
-		},
-	}
+	common.SendSensorACK(ctx, convertLegacyActionToSensor(t), central.SensorACK_NODE_INVENTORY, nodeName, "", injector)
+
+	common.SendLegacyNodeInventoryACK(
+		ctx,
+		clusterID,
+		nodeName,
+		t,
+		central.NodeInventoryACK_NodeInventory,
+		injector,
+	)
+
+	log.Debugf("Sent node-inventory ACKs for node %s in cluster %s", nodeName, clusterID)
 }
 
 func (p *pipelineImpl) OnFinish(_ string) {}
+
+func convertLegacyActionToSensor(action central.NodeInventoryACK_Action) central.SensorACK_Action {
+	if action == central.NodeInventoryACK_ACK {
+		return central.SensorACK_ACK
+	}
+	return central.SensorACK_NACK
+}

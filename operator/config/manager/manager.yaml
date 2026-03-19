@@ -55,8 +55,8 @@ spec:
         #   type: RuntimeDefault
       containers:
       - args:
-        - "--health-probe-bind-address=:8081"
         - "--metrics-bind-address=0.0.0.0:8443"
+        - "--health-probe-bind-address=:8081"
         - --leader-elect
         env:
         - name: RELATED_IMAGE_MAIN
@@ -65,6 +65,7 @@ spec:
         - name: RELATED_IMAGE_SCANNER_DB
         - name: RELATED_IMAGE_SCANNER_DB_SLIM
         - name: RELATED_IMAGE_COLLECTOR
+        - name: RELATED_IMAGE_FACT
         - name: RELATED_IMAGE_ROXCTL
         - name: RELATED_IMAGE_CENTRAL_DB
         - name: RELATED_IMAGE_SCANNER_V4_DB
@@ -75,6 +76,7 @@ spec:
               containerName: manager
               resource: limits.memory
         image: controller:latest
+        imagePullPolicy: IfNotPresent
         name: manager
         securityContext:
           allowPrivilegeEscalation: false

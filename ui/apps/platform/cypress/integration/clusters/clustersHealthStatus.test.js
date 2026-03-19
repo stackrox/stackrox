@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 
 import {
     visitClusterByNameWithFixtureMetadataDatetime,
@@ -246,10 +245,7 @@ describe.skip('Clusters Health Status', () => {
                 datetimeISOString
             );
 
-            const nameInputSelector = hasFeatureFlag('ROX_ADMISSION_CONTROLLER_CONFIG')
-                ? `.pf-v5-c-form__group-label:contains("Cluster name") + .pf-v5-c-form__group-control input`
-                : selectors.clusterForm.nameInput;
-            cy.get(nameInputSelector).should('have.value', clusterName);
+            cy.get(selectors.clusterForm.nameInput).should('have.value', clusterName);
 
             // Cluster Status
             cy.get(selectors.clusterHealth.clusterStatus).should('have.text', clusterStatus);

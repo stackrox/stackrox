@@ -1006,10 +1006,13 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF
         - urn:alm:descriptor:com.tectonic.ui:select:NoCollection
       - description: |-
-          Specifies whether Sensitive File Activity agent is deployed.
+          Specifies whether File Activity Monitoring is deployed.
           The default is: Disabled.
-        displayName: SFA Agent
-        path: perNode.sfa.agent
+        displayName: Mode
+        path: perNode.fileActivityMonitoring.mode
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:select:Enabled
+        - urn:alm:descriptor:com.tectonic.ui:select:Disabled
       - description: |-
           Should process baselines be automatically locked when the observation period (1 hour by default) ends.
           The default is: Disabled.
@@ -1225,10 +1228,10 @@ spec:
           When Optional is false, and the specified resource does not exist in the output manifests, an error will be thrown.
         displayName: Optional
         path: overlays[0].optional
-      - description: Settings for the Sensitive File Activity container, which is
-          responsible for file activity monitoring on the Node.
-        displayName: SFA
-        path: perNode.sfa
+      - description: Settings for the File Activity Monitoring container, which is
+          responsible for monitoring file operations on the Node.
+        displayName: File Activity Monitoring Settings
+        path: perNode.fileActivityMonitoring
       - description: 'The default is: 5.'
         displayName: Autoscaling Maximum Replicas
         path: scanner.analyzer.scaling.maxReplicas
@@ -1354,14 +1357,14 @@ spec:
           Allows overriding the default resource settings for this component. Please consult the documentation
           for an overview of default resource requirements and a sizing guide.
         displayName: Resources
-        path: perNode.nodeInventory.resources
+        path: perNode.fileActivityMonitoring.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
       - description: |-
           Allows overriding the default resource settings for this component. Please consult the documentation
           for an overview of default resource requirements and a sizing guide.
         displayName: Resources
-        path: perNode.sfa.resources
+        path: perNode.nodeInventory.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
       - description: |-
@@ -1587,7 +1590,7 @@ spec:
 
     2. **Secured Cluster Services** - Secured cluster services are placed on each cluster you manage and report back to Central. These services allow users to enforce policies and monitor your OpenShift and Kubernetes clusters. Secured Cluster Services come as two Deployments (Sensor and Admission Controller) and one DaemonSet (Collector).
 
-    **Console Plugin:** RHACS provides a dynamic plugin that displays vulnerability management information in the OpenShift web console. Install a SecuredCluster to deploy the plugin. Enable the plugin by selecting *Operators* > *Installed Operators* or by modifying the console Operator configuration.
+    **Console Plugin (Tech Preview):** RHACS provides a dynamic plugin that displays vulnerability management information in the OpenShift web console. Install a SecuredCluster to deploy the plugin. Enable the plugin by selecting *Operators* > *Installed Operators* or by modifying the console Operator configuration.
     **Important:** The Console Plugin requires OpenShift 4.19 or later.
 
     ### Central Services Explained

@@ -107,6 +107,7 @@ const (
 type Deployments struct {
 	ID                            string                  `gorm:"column:id;type:uuid;primaryKey"`
 	Name                          string                  `gorm:"column:name;type:varchar"`
+	Hash                          uint64                  `gorm:"column:hash;type:numeric"`
 	Type                          string                  `gorm:"column:type;type:varchar"`
 	Namespace                     string                  `gorm:"column:namespace;type:varchar;index:deployments_sac_filter,type:btree"`
 	NamespaceID                   string                  `gorm:"column:namespaceid;type:uuid"`

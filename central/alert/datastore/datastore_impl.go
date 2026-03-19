@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	alertutils "github.com/stackrox/rox/central/alert/utils"
+	alertviews "github.com/stackrox/rox/central/alert/views"
 	"github.com/stackrox/rox/central/metrics"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -18,14 +19,18 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	searchCommon "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -41,7 +46,10 @@ var (
 // datastoreImpl is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert
 // objects.
 type datastoreImpl struct {
-	storage         store.Store
+	storage store.Store
+	// TODO(ROX-31142): No way to call RunSelectRequestForSchemaFn via
+	// the store so we have to allow for access to the DB here.
+	db              postgres.DB
 	keyedMutex      *concurrency.KeyedMutex
 	keyFence        concurrency.KeyFence
 	platformMatcher platformmatcher.PlatformMatcher
@@ -81,6 +89,136 @@ func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excl
 		return nil, err
 	}
 	return listAlerts, nil
+}
+
+// SearchAlertPolicyNamesAndSeverities returns lightweight policy name and severity pairs
+// for matching alerts.
+func (ds *datastoreImpl) SearchAlertPolicyNamesAndSeverities(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*alertviews.PolicyNameAndSeverity, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlertPolicyNamesAndSeverities")
+
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+	clonedQuery := q.CloneVT()
+	clonedQuery.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.PolicyName).Proto(),
+		search.NewQuerySelect(search.Severity).Proto(),
+	}
+
+	var results []*alertviews.PolicyNameAndSeverity
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, clonedQuery, func(r *alertviews.PolicyNameAndSeverity) error {
+		results = append(results, r)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+// SearchAlertPolicySeverityCounts returns the count of distinct policies per severity level
+// for matching alerts. Uses a SQL aggregate query to avoid deserializing alert blobs.
+func (ds *datastoreImpl) SearchAlertPolicySeverityCounts(ctx context.Context, q *v1.Query, excludeResolved bool) (*alertviews.PolicySeverityCounts, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlertPolicySeverityCounts")
+
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+	countQuery := alertviews.WithPolicySeverityCountQuery(q)
+
+	emptyResult := &alertviews.PolicySeverityCounts{}
+	results := make([]*alertviews.PolicySeverityCounts, 0)
+	// TODO(ROX-33425): replace call with one specific for counts that only returns a single row
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, countQuery, func(r *alertviews.PolicySeverityCounts) error {
+		results = append(results, r)
+		return nil
+	})
+
+	// error handling needed to protect ourselves if this is called in
+	// the future with something other than just counts.
+	if err != nil {
+		return emptyResult, err
+	}
+	if len(results) == 0 {
+		return emptyResult, nil
+	}
+	if len(results) > 1 {
+		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
+		utils.Should(err)
+		return emptyResult, err
+	}
+
+	return results[0], err
+}
+
+// SearchAlertPolicyGroups returns alerts grouped by policy with a count per group.
+// Uses a SQL aggregate query to avoid deserializing alert blobs.
+func (ds *datastoreImpl) SearchAlertPolicyGroups(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*alertviews.AlertPolicyGroup, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlertPolicyGroups")
+
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+	groupQuery := alertviews.WithAlertPolicyGroupQuery(q)
+
+	var results []*alertviews.AlertPolicyGroup
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, groupQuery, func(r *alertviews.AlertPolicyGroup) error {
+		results = append(results, r)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+// SearchAlertTimeseriesEvents returns lightweight alert event data for timeseries display.
+// Uses a SQL projection query to avoid deserializing full alert protobuf blobs.
+func (ds *datastoreImpl) SearchAlertTimeseriesEvents(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*alertviews.AlertTimeseriesEvent, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlertTimeseriesEvents")
+
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+	timeseriesQuery := alertviews.WithAlertTimeseriesQuery(q)
+
+	var results []*alertviews.AlertTimeseriesEvent
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, timeseriesQuery, func(r *alertviews.AlertTimeseriesEvent) error {
+		results = append(results, r)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
+}
+
+// SearchAlertDeploymentIDs returns distinct deployment IDs from alerts matching the query.
+// Uses a SQL projection to avoid deserializing full alert protobuf blobs.
+func (ds *datastoreImpl) SearchAlertDeploymentIDs(ctx context.Context, q *v1.Query, excludeResolved bool) ([]string, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlertDeploymentIDs")
+
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+	clonedQuery := q.CloneVT()
+	clonedQuery.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.DeploymentID).Distinct().Proto(),
+	}
+	// No sorting needed — we only collect unique IDs.
+	clonedQuery.Pagination = nil
+
+	var ids []string
+	err := pgSearch.RunSelectRequestForSchemaFn(ctx, ds.db, schema.AlertsSchema, clonedQuery, func(r *alertviews.DeploymentIDResult) error {
+		if id := r.GetDeploymentID(); id != "" {
+			ids = append(ids, id)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ids, nil
 }
 
 // SearchAlerts returns search results for the given request. This will exclude resolved alerts by default unless Violation State = Resolved is explicitly specified in the query

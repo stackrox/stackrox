@@ -51,6 +51,9 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)
+	// Deprecated: use GetByQueryFn instead
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
@@ -68,7 +71,7 @@ func New(db postgres.DB) Store {
 		schema,
 		pkGetter,
 		insertIntoImageCveInfos,
-		copyFromImageCveInfos,
+		nil,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		metricsSetCacheOperationDurationTime,
@@ -108,63 +111,12 @@ func insertIntoImageCveInfos(batch *pgx.Batch, obj *storage.ImageCVEInfo) error 
 		obj.GetId(),
 		protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
 		protocompat.NilOrTime(obj.GetFirstSystemOccurrence()),
+		obj.GetCve(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_cve_infos (Id, FixAvailableTimestamp, FirstSystemOccurrence, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, FixAvailableTimestamp = EXCLUDED.FixAvailableTimestamp, FirstSystemOccurrence = EXCLUDED.FirstSystemOccurrence, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_cve_infos (Id, FixAvailableTimestamp, FirstSystemOccurrence, Cve, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, FixAvailableTimestamp = EXCLUDED.FixAvailableTimestamp, FirstSystemOccurrence = EXCLUDED.FirstSystemOccurrence, Cve = EXCLUDED.Cve, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
-
-	return nil
-}
-
-var copyColsImageCveInfos = []string{
-	"id",
-	"fixavailabletimestamp",
-	"firstsystemoccurrence",
-	"serialized",
-}
-
-func copyFromImageCveInfos(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs ...*storage.ImageCVEInfo) error {
-	if len(objs) == 0 {
-		return nil
-	}
-
-	{
-		// CopyFrom does not upsert, so delete existing rows first to achieve upsert behavior.
-		// Parent deletion cascades to children, so only the top-level parent needs deletion.
-		deletes := make([]string, 0, len(objs))
-		for _, obj := range objs {
-			deletes = append(deletes, obj.GetId())
-		}
-		if err := s.DeleteMany(ctx, deletes); err != nil {
-			return err
-		}
-	}
-
-	idx := 0
-	inputRows := pgx.CopyFromFunc(func() ([]any, error) {
-		if idx >= len(objs) {
-			return nil, nil
-		}
-		obj := objs[idx]
-		idx++
-
-		serialized, marshalErr := obj.MarshalVT()
-		if marshalErr != nil {
-			return nil, marshalErr
-		}
-
-		return []interface{}{
-			obj.GetId(),
-			protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
-			protocompat.NilOrTime(obj.GetFirstSystemOccurrence()),
-			serialized,
-		}, nil
-	})
-
-	if _, err := tx.CopyFrom(ctx, pgx.Identifier{"image_cve_infos"}, copyColsImageCveInfos, inputRows); err != nil {
-		return err
-	}
 
 	return nil
 }

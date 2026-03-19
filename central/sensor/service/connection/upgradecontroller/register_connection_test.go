@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
@@ -84,6 +85,10 @@ func (f fakeConnection) InjectMessage(_ concurrency.Waitable, _ *central.MsgToSe
 
 func (f fakeConnection) InjectMessageIntoQueue(_ *central.MsgFromSensor) {
 	panic("not implemented")
+}
+
+func (f fakeConnection) HasCapability(_ centralsensor.SensorCapability) bool {
+	return false
 }
 
 func (f fakeConnection) CheckAutoUpgradeSupport() error {

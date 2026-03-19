@@ -73,6 +73,7 @@ export const userRolePath = `${userBasePath}/roles/:roleName`;
 export const violationsBasePath = `${mainPath}/violations`;
 export const violationsUserWorkloadsViewPath = `${mainPath}/violations?filteredWorkflowView=Applications view`;
 export const violationsPlatformViewPath = `${mainPath}/violations?filteredWorkflowView=Platform view`;
+export const violationsNodeViewPath = `${mainPath}/violations?filteredWorkflowView=Node view`;
 export const violationsFullViewPath = `${mainPath}/violations?filteredWorkflowView=Full view`;
 export const violationsPath = `${violationsBasePath}/:alertId?`;
 export const vulnManagementPath = `${mainPath}/vulnerability-management`;

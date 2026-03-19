@@ -16,6 +16,7 @@ import (
 	component "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	resources "github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	gomock "go.uber.org/mock/gomock"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // MockDispatcher is a mock of Dispatcher interface.
@@ -92,6 +93,20 @@ func (m *MockDispatcherRegistry) ForClusterOperators() resources.Dispatcher {
 func (mr *MockDispatcherRegistryMockRecorder) ForClusterOperators() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForClusterOperators", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForClusterOperators))
+}
+
+// ForComplianceOperatorCustomRules mocks base method.
+func (m *MockDispatcherRegistry) ForComplianceOperatorCustomRules() resources.Dispatcher {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ForComplianceOperatorCustomRules")
+	ret0, _ := ret[0].(resources.Dispatcher)
+	return ret0
+}
+
+// ForComplianceOperatorCustomRules indicates an expected call of ForComplianceOperatorCustomRules.
+func (mr *MockDispatcherRegistryMockRecorder) ForComplianceOperatorCustomRules() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForComplianceOperatorCustomRules", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForComplianceOperatorCustomRules))
 }
 
 // ForComplianceOperatorProfiles mocks base method.
@@ -193,17 +208,17 @@ func (mr *MockDispatcherRegistryMockRecorder) ForComplianceOperatorSuites() *gom
 }
 
 // ForComplianceOperatorTailoredProfiles mocks base method.
-func (m *MockDispatcherRegistry) ForComplianceOperatorTailoredProfiles() resources.Dispatcher {
+func (m *MockDispatcherRegistry) ForComplianceOperatorTailoredProfiles(profileLister cache.GenericLister) resources.Dispatcher {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ForComplianceOperatorTailoredProfiles")
+	ret := m.ctrl.Call(m, "ForComplianceOperatorTailoredProfiles", profileLister)
 	ret0, _ := ret[0].(resources.Dispatcher)
 	return ret0
 }
 
 // ForComplianceOperatorTailoredProfiles indicates an expected call of ForComplianceOperatorTailoredProfiles.
-func (mr *MockDispatcherRegistryMockRecorder) ForComplianceOperatorTailoredProfiles() *gomock.Call {
+func (mr *MockDispatcherRegistryMockRecorder) ForComplianceOperatorTailoredProfiles(profileLister any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForComplianceOperatorTailoredProfiles", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForComplianceOperatorTailoredProfiles))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForComplianceOperatorTailoredProfiles", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForComplianceOperatorTailoredProfiles), profileLister)
 }
 
 // ForDeployments mocks base method.

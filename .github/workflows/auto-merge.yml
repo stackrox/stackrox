@@ -1,30 +1,29 @@
 name: auto-merge
 
 on:
-  pull_request_target:
-    types:
-    - labeled
+  schedule:
+    - cron: '*/15 * * * *'  # Every 15 minutes
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: auto-merge
+  cancel-in-progress: false
 
 jobs:
-  auto-merge-minor:
-    name: Auto-merge semver minor and patch bumps
+  auto-merge:
+    name: Enable auto-merge for eligible PRs
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]' && github.event.label.name == 'auto-merge'
-    steps:
-    - uses: ahmadnassri/action-dependabot-auto-merge@v2.6
-      with:
-        github-token: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
-        command: "squash and merge"
-        approve: true
-        target: minor
+    if: github.repository_owner == 'stackrox'
 
-  auto-merge-any:
-    name: Auto-merge any version bumps
-    runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]' && github.event.label.name == 'auto-merge-any'
     steps:
-    - uses: ahmadnassri/action-dependabot-auto-merge@v2.6
-      with:
-        github-token: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
-        command: "squash and merge"
-        approve: true
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Run auto-merge action
+        uses: stackrox/actions/automerge@8fcfacbfc4629361cca5573aba147be2155ba7e9
+        with:
+          github-token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}

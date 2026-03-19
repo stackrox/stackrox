@@ -56,6 +56,8 @@ type serviceImpl struct {
 
 	now func() time.Time
 
+	policy *tokenPolicy
+
 	v1.UnimplementedTokenServiceServer
 }
 
@@ -78,22 +80,33 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	ctx context.Context,
 	req *v1.GenerateTokenForPermissionsAndScopeRequest,
 ) (*v1.GenerateTokenForPermissionsAndScopeResponse, error) {
+	start := time.Now()
+
 	// Enable dynamic RBAC pruning.
 	pruning.EnableDynamicRBACPruning()
+
+	// Validate request against policy and modify request if necessary.
+	req, err := s.policy.enforce(ctx, req)
+	if err != nil {
+		return nil, err
+	}
 
 	// Calculate expiry first so we can set it on the RBAC objects.
 	expiresAt, err := s.getExpiresAt(ctx, req)
 	if err != nil {
+		observeTokenGeneration(tokenGenResultInvalidArgs, time.Since(start))
 		return nil, errors.Wrap(err, "getting expiration time")
 	}
 	traits, err := generateTraitsWithExpiry(expiresAt.Add(rbacObjectsGraceExpiration))
 	if err != nil {
+		observeTokenGeneration(tokenGenResultInvalidArgs, time.Since(start))
 		return nil, errBadExpirationValue.CausedBy(err)
 	}
 	// Create the role with the same expiry as the token, so pruning can clean
 	// it up.
 	roleName, err := s.roleManager.createRole(ctx, req, traits)
 	if err != nil {
+		observeTokenGeneration(tokenGenResultRoleCreationError, time.Since(start))
 		return nil, errors.Wrap(err, "creating and storing target role")
 	}
 	claimName := fmt.Sprintf(claimNameFormat, roleName, expiresAt.Format(time.RFC3339Nano))
@@ -103,8 +116,10 @@ func (s *serviceImpl) GenerateTokenForPermissionsAndScope(
 	}
 	tokenInfo, err := s.issuer.Issue(ctx, roxClaims, tokens.WithExpiry(expiresAt))
 	if err != nil {
+		observeTokenGeneration(tokenGenResultIssuanceError, time.Since(start))
 		return nil, err
 	}
+	observeTokenGeneration(tokenGenResultSuccess, time.Since(start))
 	response := &v1.GenerateTokenForPermissionsAndScopeResponse{
 		Token: tokenInfo.Token,
 	}
@@ -118,10 +133,7 @@ func (s *serviceImpl) getExpiresAt(
 ) (time.Time, error) {
 	duration, err := protocompat.DurationFromProto(req.GetLifetime())
 	if err != nil {
-		return time.Time{}, errox.InvalidArgs.CausedByf("converting requested token validity duration: %v", err)
-	}
-	if duration <= 0 {
-		return time.Time{}, errox.InvalidArgs.CausedBy("token validity duration should be positive")
+		return time.Time{}, errox.InvalidArgs.CausedByf("converting requested token lifetime: %v", err)
 	}
 	return s.now().Add(duration), nil
 }

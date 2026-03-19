@@ -1,6 +1,8 @@
 package matcher
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scopecomp"
@@ -21,12 +23,12 @@ func NewClusterMatcher(cluster *storage.Cluster, namespaces []*storage.Namespace
 }
 
 // FilterApplicablePolicies filters incoming policies into policies that apply to cluster and policies that do not apply to cluster
-func (m *clusterMatcher) FilterApplicablePolicies(policies []*storage.Policy) ([]*storage.Policy, []*storage.Policy) {
+func (m *clusterMatcher) FilterApplicablePolicies(ctx context.Context, policies []*storage.Policy) ([]*storage.Policy, []*storage.Policy) {
 	applicable := make([]*storage.Policy, 0, len(policies)/2)
 	notApplicable := make([]*storage.Policy, 0, len(policies)/2)
 
 	for _, policy := range policies {
-		if m.IsPolicyApplicable(policy) {
+		if m.IsPolicyApplicable(ctx, policy) {
 			applicable = append(applicable, policy)
 		} else {
 			notApplicable = append(notApplicable, policy)
@@ -36,7 +38,7 @@ func (m *clusterMatcher) FilterApplicablePolicies(policies []*storage.Policy) ([
 }
 
 // IsPolicyApplicable returns true if the policy is applicable to cluster
-func (m *clusterMatcher) IsPolicyApplicable(policy *storage.Policy) bool {
+func (m *clusterMatcher) IsPolicyApplicable(_ context.Context, policy *storage.Policy) bool {
 	return !policy.GetDisabled() && !m.anyExclusionMatches(policy.GetExclusions()) && m.anyScopeMatches(policy.GetScope())
 }
 
@@ -50,7 +52,7 @@ func (m *clusterMatcher) anyExclusionMatches(exclusions []*storage.Exclusion) bo
 }
 
 func (m *clusterMatcher) exclusionMatches(exclusion *storage.Exclusion) bool {
-	cs, err := scopecomp.CompileScope(exclusion.GetDeployment().GetScope())
+	cs, err := scopecomp.CompileScope(exclusion.GetDeployment().GetScope(), nil, nil)
 	if err != nil {
 		utils.Should(errors.Wrap(err, "could not compile excluded scopes"))
 		return false
@@ -86,7 +88,7 @@ func (m *clusterMatcher) anyScopeMatches(scopes []*storage.Scope) bool {
 }
 
 func (m *clusterMatcher) scopeMatches(scope *storage.Scope) bool {
-	cs, err := scopecomp.CompileScope(scope)
+	cs, err := scopecomp.CompileScope(scope, nil, nil)
 	if err != nil {
 		utils.Should(errors.Wrap(err, "could not compile scope"))
 		return false

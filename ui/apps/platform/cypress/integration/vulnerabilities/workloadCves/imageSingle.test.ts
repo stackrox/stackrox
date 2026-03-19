@@ -1,4 +1,5 @@
 import withAuth from '../../../helpers/basicAuth';
+import { addAutocompleteFilter, compoundFiltersSelectors } from '../../../helpers/compoundFilters';
 import { hasFeatureFlag } from '../../../helpers/features';
 import {
     getRouteMatcherMapForGraphQL,
@@ -17,7 +18,6 @@ import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import {
     applyLocalSeverityFilters,
     selectEntityTab,
-    typeAndEnterSearchFilterValue,
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
@@ -45,48 +45,54 @@ describe('Workload CVE Image Single page', () => {
         visitFirstImage();
 
         // Check that only applicable resource menu items are present in the toolbar
-        cy.get(selectors.searchEntityDropdown).click();
-        cy.get(selectors.searchEntityMenuItem).contains('Image');
-        cy.get(selectors.searchEntityMenuItem).contains('Image component');
-        cy.get(selectors.searchEntityDropdown).click();
+        cy.get(compoundFiltersSelectors.entityMenuToggle).click();
+        cy.get(compoundFiltersSelectors.entityMenuItem).contains('Image');
+        cy.get(compoundFiltersSelectors.entityMenuItem).contains('Image component');
+        cy.get(compoundFiltersSelectors.entityMenuToggle).click();
     });
 
     it('should display consistent data between the cards and the table test', () => {
         visitFirstImage();
 
-        // Check that the CVEs by severity totals in the card match the number in the "results found" text
-        const cardSelector = vulnSelectors.summaryCard('CVEs by severity');
+        const severityCardSelector = vulnSelectors.summaryCard('CVEs by severity');
+        const statusCardSelector = vulnSelectors.summaryCard('CVEs by status');
+
+        // Verify the severity card renders all five severity levels with numeric counts
         cy.get(
             [
-                `${cardSelector} span.pf-v5-c-icon:contains("Critical") ~ p`,
-                `${cardSelector} span.pf-v5-c-icon:contains("Important") ~ p`,
-                `${cardSelector} span.pf-v5-c-icon:contains("Moderate") ~ p`,
-                `${cardSelector} span.pf-v5-c-icon:contains("Low") ~ p`,
+                `${severityCardSelector} span.pf-v6-c-icon:contains("Critical") ~ p`,
+                `${severityCardSelector} span.pf-v6-c-icon:contains("Important") ~ p`,
+                `${severityCardSelector} span.pf-v6-c-icon:contains("Moderate") ~ p`,
+                `${severityCardSelector} span.pf-v6-c-icon:contains("Low") ~ p`,
+                `${severityCardSelector} span.pf-v6-c-icon:contains("Unknown") ~ p`,
             ].join(',')
         ).then(($severityTotals) => {
+            // All five severity levels should be rendered
+            expect($severityTotals).to.have.length(5);
+
             const severityTotal = $severityTotals.toArray().reduce((acc, $el) => {
                 const count = acc + parseInt($el.innerText.replace(/\D/g, ''), 10);
                 return Number.isNaN(count) ? acc : count;
             }, 0);
-            const plural = severityTotal === 1 ? '' : 's';
-            cy.get(`*:contains(${severityTotal} result${plural} found)`);
-        });
 
-        // Check that the CVEs by status totals in the card match the number in the "results found" text
-        const fixStatusCardSelector = vulnSelectors.summaryCard('CVEs by status');
-        cy.get(
-            [
-                `${fixStatusCardSelector} p:contains('with available fixes')`,
-                `${fixStatusCardSelector} p:contains("without fixes")`,
-            ].join(',')
-        ).then(($statusTotals) => {
-            const statusTotal = $statusTotals.toArray().reduce((acc, $el) => {
-                const count = acc + parseInt($el.innerText.replace(/\D/g, ''), 10);
-                return Number.isNaN(count) ? 0 : count;
-            }, 0);
+            // Verify that the status card totals (fixable + unfixable) match the severity
+            // card totals, since both are derived from the same imageCVECountBySeverity data.
+            // Note: These sums may differ from "results found" because a single CVE can be
+            // counted under multiple severity levels when different sources assign different
+            // severities, while imageVulnerabilityCount is a deduplicated count.
+            cy.get(
+                [
+                    `${statusCardSelector} p:contains('with available fixes')`,
+                    `${statusCardSelector} p:contains("without fixes")`,
+                ].join(',')
+            ).then(($statusTotals) => {
+                const statusTotal = $statusTotals.toArray().reduce((acc, $el) => {
+                    const count = acc + parseInt($el.innerText.replace(/\D/g, ''), 10);
+                    return Number.isNaN(count) ? acc : count;
+                }, 0);
 
-            const plural = statusTotal === 1 ? '' : 's';
-            cy.get(`*:contains(${statusTotal} result${plural} found)`);
+                expect(statusTotal).to.equal(severityTotal);
+            });
         });
     });
 
@@ -138,7 +144,7 @@ describe('Workload CVE Image Single page', () => {
             .then(([$cveNameCell]) => {
                 const cveName = $cveNameCell.innerText;
                 // Enter the CVE name into the CVE filter
-                typeAndEnterSearchFilterValue('CVE', 'Name', cveName);
+                addAutocompleteFilter('CVE', 'Name', cveName);
                 // Check that the header above the table shows only one result
                 cy.get(`*:contains("1 result found")`);
                 // Check that the only row in the table has the correct CVE name

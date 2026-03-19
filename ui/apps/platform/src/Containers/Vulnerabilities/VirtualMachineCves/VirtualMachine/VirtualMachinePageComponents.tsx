@@ -5,7 +5,6 @@ import {
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
-    ToolbarItem,
 } from '@patternfly/react-core';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
@@ -28,17 +27,16 @@ import {
     getVirtualMachineComponentsTableData,
 } from '../aggregateUtils';
 import { virtualMachineComponentSearchFilterConfig } from '../../searchFilterConfig';
-import { scannableStatuses } from '../../types';
+import { scanStatuses } from '../../types';
 import VirtualMachineComponentsPageTable from './VirtualMachineComponentsPageTable';
 
-export const attributeForScannable: SelectSearchFilterAttribute = {
+export const attributeForScanStatus: SelectSearchFilterAttribute = {
     displayName: 'Scan status',
     filterChipLabel: 'Scan status',
-    searchTerm: 'SCANNABLE', // TODO can it become 'Scannable' instead of ALL CAPS before GA?
+    searchTerm: 'Scan Status',
     inputType: 'select',
     inputProps: {
-        // TODO can value become true and file instead of Scanned and Not scanned before GA?
-        options: scannableStatuses.map((label) => ({ label, value: label })),
+        options: scanStatuses.map((label) => ({ label, value: label })),
     },
 };
 
@@ -116,35 +114,29 @@ function VirtualMachinePageComponents({
         setPage(1);
     };
 
-    const onSearchScannable: OnSearchCallback = (payload) => {
+    const onSearchScanStatus: OnSearchCallback = (payload) => {
         setSearchFilter(updateSearchFilter(searchFilter, payload));
         setPage(1);
     };
 
     return (
-        <PageSection variant="light" isFilled padding={{ default: 'padding' }}>
+        <PageSection isFilled>
             <Toolbar>
                 <ToolbarContent>
-                    <ToolbarGroup className="pf-v5-u-w-100">
-                        <ToolbarItem className="pf-v5-u-flex-1">
-                            <CompoundSearchFilter
-                                config={searchFilterConfig}
-                                searchFilter={searchFilter}
-                                onSearch={onSearch}
-                            />
-                        </ToolbarItem>
-                        <ToolbarItem>
-                            <SearchFilterSelectInclusive
-                                attribute={attributeForScannable}
-                                isSeparate
-                                onSearch={onSearchScannable}
-                                searchFilter={searchFilter}
-                            />
-                        </ToolbarItem>
-                    </ToolbarGroup>
-                    <ToolbarGroup className="pf-v5-u-w-100">
+                    <CompoundSearchFilter
+                        config={searchFilterConfig}
+                        searchFilter={searchFilter}
+                        onSearch={onSearch}
+                    />
+                    <SearchFilterSelectInclusive
+                        attribute={attributeForScanStatus}
+                        isSeparate
+                        onSearch={onSearchScanStatus}
+                        searchFilter={searchFilter}
+                    />
+                    <ToolbarGroup className="pf-v6-u-w-100">
                         <CompoundSearchFilterLabels
-                            attributesSeparateFromConfig={[attributeForScannable]}
+                            attributesSeparateFromConfig={[attributeForScanStatus]}
                             config={searchFilterConfig}
                             searchFilter={searchFilter}
                             onFilterChange={setSearchFilter}

@@ -22,9 +22,8 @@ import {
     RequestedItems,
     Requester,
 } from './components/ExceptionRequestTableCells';
-
-import { DEFAULT_VM_PAGE_SIZE } from '../constants';
 import AdvancedFiltersToolbar from '../components/AdvancedFiltersToolbar';
+import { DEFAULT_VM_PAGE_SIZE } from '../constants';
 import { vulnRequestSearchFilterConfig } from './searchFilterConfig';
 
 const sortFields = [
@@ -85,7 +84,7 @@ function ApprovedDeferrals() {
 
     if (tableState.type === 'ERROR') {
         return (
-            <PageSection variant="light">
+            <PageSection>
                 <TableErrorComponent
                     error={tableState.error}
                     message="An error occurred. Try refreshing again"
@@ -104,7 +103,7 @@ function ApprovedDeferrals() {
                 includeCveSeverityFilters={false}
                 includeCveStatusFilters={false}
             >
-                <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
                     <Pagination
                         toggleTemplate={({ firstIndex, lastIndex }) => (
                             <span>
@@ -122,7 +121,7 @@ function ApprovedDeferrals() {
                     />
                 </ToolbarItem>
             </AdvancedFiltersToolbar>
-            <Table borders={false}>
+            <Table>
                 <Thead noWrap>
                     <Tr>
                         <Th sort={getSortParams('Request Name')}>Request name</Th>

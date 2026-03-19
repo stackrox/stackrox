@@ -1,0 +1,26 @@
+# Images used by sensor integration tests - prefetched to avoid Docker Hub rate limits
+#
+# This file is referenced by scripts/ci/lib.sh:populate_prefetcher_image_list()
+# Pattern follows tests/images-to-prefetch.txt and qa-tests-backend/scripts/images-to-prefetch.txt
+
+# Used by sensor/tests/connection/runtime/yaml/nginx.yaml
+# Used by sensor/tests/connection/alerts/yaml/nginx.yaml
+# Used by sensor/tests/connection/k8sreconciliation/yaml/nginx*.yaml (4 files)
+# Used by sensor/tests/connection/yaml/nginx*.yaml (2 files)
+# Used by sensor/tests/resource/networkpolicy/yaml/nginx.yaml
+# Used by sensor/tests/resource/pod/yaml/nginx.yaml
+# Used by sensor/tests/resource/role/yaml/nginx.yaml
+# Used by sensor/tests/resource/service/yaml/nginx.yaml
+quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1
+
+# Used by sensor/tests/resource/pod/yaml/nginx-pod.yaml
+# Used by sensor/tests/resource/role/yaml/nginx-pod.yaml
+# Used by sensor/tests/resource/service/yaml/nginx-pod.yaml
+# Used by sensor/tests/resource/imagescan/yaml/pod.yaml
+# (All nginx-pod.yaml files use the same nginx-1.21.1 image)
+
+# Used by sensor/tests/connection/runtime/yaml/talk.yaml
+quay.io/rhacs-eng/qa:alpine-3.16.0
+
+# Used by sensor/tests/complianceoperator/yaml/co-deployment.yaml
+quay.io/rhacs-eng/qa-multi-arch-busybox:1.30

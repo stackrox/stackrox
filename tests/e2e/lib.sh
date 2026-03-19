@@ -188,6 +188,9 @@ export_test_environment() {
     ci_export ROX_CVE_FIX_TIMESTAMP "${ROX_CVE_FIX_TIMESTAMP:-true}"
     ci_export ROX_BASE_IMAGE_DETECTION "${ROX_BASE_IMAGE_DETECTION:-true}"
     ci_export ROX_LABEL_BASED_POLICY_SCOPING "${ROX_LABEL_BASED_POLICY_SCOPING:-true}"
+    ci_export ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING "${ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING:-true}"
+    ci_export ROX_NETFLOW_BATCHING "${ROX_NETFLOW_BATCHING:-true}"
+    ci_export ROX_NETFLOW_CACHE_LIMITING "${ROX_NETFLOW_CACHE_LIMITING:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -337,6 +340,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_CVE_FIX_TIMESTAMP'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_VULNERABILITY_REPORTS_ENHANCED_FILTERING'
+    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_BASE_IMAGE_DETECTION'
     customize_envVars+=$'\n        value: "false"'
 
@@ -414,7 +419,7 @@ deploy_sensor_via_operator() {
     local central_namespace=${2:-stackrox}
     local validate=${3:-true}
     local scanner_component_setting="Disabled"
-    local sfa_agent_setting="Disabled"
+    local fam_mode_setting="Disabled"
     local central_endpoint="central.${central_namespace}.svc:443"
 
     info "Deploying sensor using operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
@@ -442,14 +447,25 @@ deploy_sensor_via_operator() {
     fi
 
     if [[ "${SFA_AGENT:-}" == "Enabled" ]]; then
-       echo "Enabling SFA agent due to SFA_AGENT variable: ${SFA_AGENT}"
-       sfa_agent_setting="Enabled"
+       echo "Enabling File Activity Monitoring due to SFA_AGENT variable: ${SFA_AGENT}"
+       fam_mode_setting="Enabled"
+    fi
+
+    customize_envVars=""
+    if [[ -n "${ROX_NETFLOW_BATCHING:-}" ]]; then
+        customize_envVars+=$'\n    - name: ROX_NETFLOW_BATCHING'
+        customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_BATCHING}"'"'
+    fi
+    if [[ -n "${ROX_NETFLOW_CACHE_LIMITING:-}" ]]; then
+        customize_envVars+=$'\n    - name: ROX_NETFLOW_CACHE_LIMITING'
+        customize_envVars+=$'\n      value: "'"${ROX_NETFLOW_CACHE_LIMITING}"'"'
     fi
 
     env - \
       scanner_component_setting="$scanner_component_setting" \
-      sfa_agent_setting="$sfa_agent_setting" \
+      fam_mode_setting="$fam_mode_setting" \
       central_endpoint="$central_endpoint" \
+      customize_envVars="$customize_envVars" \
     "${envsubst}" \
       < "${secured_cluster_yaml_path}" | kubectl apply -n "${sensor_namespace}" --validate="${validate}" -f -
 

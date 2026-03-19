@@ -23,8 +23,7 @@ var (
 	// requiring the key to also exist.
 	fieldDependencies = map[string]set.StringSet{
 		fieldnames.FileOperation: set.NewStringSet(
-			fieldnames.ActualPath,
-			fieldnames.EffectivePath,
+			fieldnames.FilePath,
 		),
 		fieldnames.KubeUserName: set.NewStringSet(
 			fieldnames.KubeResource,
@@ -45,7 +44,7 @@ var (
 		// node events. In the future, when more node events are supported,
 		// this constraint can be relaxed.
 		storage.EventSource_NODE_EVENT: set.NewStringSet(
-			fieldnames.ActualPath,
+			fieldnames.FilePath,
 		),
 	}
 )
@@ -173,8 +172,8 @@ func validatePolicySection(s *storage.PolicySection, configuration *validateConf
 			errorList.AddStringf("policy criteria %q does not support more than one value %q", g.GetFieldName(), g.GetValues())
 		}
 		for idx, v := range g.GetValues() {
-			if !m.valueRegex(configuration).MatchString(v.GetValue()) {
-				errorList.AddStringf("policy criteria %q has invalid value[%d]=%q must match regex %q", g.GetFieldName(), idx, v.GetValue(), m.valueRegex(configuration).String())
+			if match, err := m.validator(configuration, v.GetValue()); !match || err != nil {
+				errorList.AddStringf("policy criteria %q has invalid value[%d]=%q: %v", g.GetFieldName(), idx, v.GetValue(), err)
 			}
 		}
 	}

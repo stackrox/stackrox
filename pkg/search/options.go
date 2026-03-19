@@ -97,6 +97,7 @@ var (
 	ImageUser                      = newFieldLabel("Image User")
 	ImageCommand                   = newFieldLabel("Image Command")
 	ImageCVECount                  = newFieldLabel("Image CVE Count")
+	ImageComponentCount            = newFieldLabel("Image Component Count")
 	ImageEntrypoint                = newFieldLabel("Image Entrypoint")
 	ImageLabel                     = newFieldLabel("Image Label")
 	ImageVolumes                   = newFieldLabel("Image Volumes")
@@ -143,6 +144,7 @@ var (
 	ContainerImageDigest         = newFieldLabel("Container Image Digest")
 	ContainerName                = newFieldLabel("Container Name")
 	DeploymentID                 = newFieldLabel("Deployment ID")
+	DeploymentHash               = newFieldLabel("Deployment Hash")
 	DeploymentName               = newFieldLabel("Deployment")
 	DeploymentLabel              = newFieldLabel("Deployment Label")
 	DeploymentType               = newFieldLabel("Deployment Type")
@@ -488,8 +490,13 @@ var (
 	AuthProviderName = newFieldLabel("AuthProvider Name")
 
 	// Virtual Machine fields.
-	VirtualMachineID   = newFieldLabel("Virtual Machine ID")
-	VirtualMachineName = newFieldLabel("Virtual Machine Name")
+	VirtualMachineID       = newFieldLabel("Virtual Machine ID")
+	VirtualMachineName     = newFieldLabel("Virtual Machine Name")
+	GuestOS                = newFieldLabel("Guest OS")
+	VirtualMachineState    = newFieldLabel("Virtual Machine State")
+	VirtualMachineScanTime = newFieldLabel("Virtual Machine Scan Time")
+	VirtualMachineScanOS   = newFieldLabel("Virtual Machine Scan OS")
+	VirtualMachineTopCVSS  = newFieldLabel("Virtual Machine Top CVSS")
 
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
@@ -504,6 +511,7 @@ var (
 	TestFloat             = newFieldLabel("Test Float")
 	TestLabels            = newFieldLabel("Test Labels")
 	TestTimestamp         = newFieldLabel("Test Timestamp")
+	TestTimestampTZ       = newFieldLabel("Test TimestampTZ")
 	TestEnum              = newFieldLabel("Test Enum")
 	TestEnumSlice         = newFieldLabel("Test Enum Slice")
 	TestNestedString      = newFieldLabel("Test Nested String")

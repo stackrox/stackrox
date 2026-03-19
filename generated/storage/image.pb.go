@@ -759,7 +759,7 @@ func (x *ImageSignatureVerificationData) GetResults() []*ImageSignatureVerificat
 	return nil
 }
 
-// Next Tag: 6
+// Next Tag: 7
 type ImageSignatureVerificationResult struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	VerificationTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=verification_time,json=verificationTime,proto3" json:"verification_time,omitempty"`
@@ -770,8 +770,10 @@ type ImageSignatureVerificationResult struct {
 	Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 	// The full image names that are verified by this specific signature integration ID.
 	VerifiedImageReferences []string `protobuf:"bytes,5,rep,name=verified_image_references,json=verifiedImageReferences,proto3" json:"verified_image_references,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// verifier_name is the name of the signature integration associated with `verifier_id`.
+	VerifierName  string `protobuf:"bytes,6,opt,name=verifier_name,json=verifierName,proto3" json:"verifier_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ImageSignatureVerificationResult) Reset() {
@@ -837,6 +839,13 @@ func (x *ImageSignatureVerificationResult) GetVerifiedImageReferences() []string
 		return x.VerifiedImageReferences
 	}
 	return nil
+}
+
+func (x *ImageSignatureVerificationResult) GetVerifierName() string {
+	if x != nil {
+		return x.VerifierName
+	}
+	return ""
 }
 
 // Next Tag: 14
@@ -2067,14 +2076,15 @@ const file_storage_image_proto_rawDesc = "" +
 	"\x1fCERTIFIED_RHEL_SCAN_UNAVAILABLE\x10\x06B\v\n" +
 	"\thashoneof\"e\n" +
 	"\x1eImageSignatureVerificationData\x12C\n" +
-	"\aresults\x18\x01 \x03(\v2).storage.ImageSignatureVerificationResultR\aresults\"\xb9\x03\n" +
+	"\aresults\x18\x01 \x03(\v2).storage.ImageSignatureVerificationResultR\aresults\"\xde\x03\n" +
 	" ImageSignatureVerificationResult\x12G\n" +
 	"\x11verification_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x10verificationTime\x12\x1f\n" +
 	"\vverifier_id\x18\x02 \x01(\tR\n" +
 	"verifierId\x12H\n" +
 	"\x06status\x18\x03 \x01(\x0e20.storage.ImageSignatureVerificationResult.StatusR\x06status\x12 \n" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x12:\n" +
-	"\x19verified_image_references\x18\x05 \x03(\tR\x17verifiedImageReferences\"\x82\x01\n" +
+	"\x19verified_image_references\x18\x05 \x03(\tR\x17verifiedImageReferences\x12#\n" +
+	"\rverifier_name\x18\x06 \x01(\tR\fverifierName\"\x82\x01\n" +
 	"\x06Status\x12\t\n" +
 	"\x05UNSET\x10\x00\x12\f\n" +
 	"\bVERIFIED\x10\x01\x12\x17\n" +

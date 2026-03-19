@@ -54,6 +54,7 @@ export const imageDetailsFragment = gql`
                 verificationTime
                 verifiedImageReferences
                 verifierId
+                verifierName
             }
         }
         baseImage {
@@ -87,6 +88,7 @@ export const imageV2DetailsFragment = gql`
                 verificationTime
                 verifiedImageReferences
                 verifierId
+                verifierName
             }
         }
         baseImage {
@@ -119,7 +121,7 @@ function ImageDetailBadges({ imageData }: ImageDetailBadgesProps) {
 
     return (
         <LabelGroup numLabels={Infinity}>
-            <Label color={isActive ? 'green' : 'gold'}>{isActive ? 'Active' : 'Inactive'}</Label>
+            <Label color={isActive ? 'green' : 'yellow'}>{isActive ? 'Active' : 'Inactive'}</Label>
             {verifiedSignatureResults.length !== 0 && (
                 <VerifiedSignatureLabel verifiedSignatureResults={verifiedSignatureResults} />
             )}

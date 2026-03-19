@@ -9,10 +9,22 @@ runs:
   using: composite
   steps:
     - name: Cache UI Dependencies
+      if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
       uses: actions/cache@v5
       with:
         path: |
-          /github/home/.npm
-          /github/home/.cache/Cypress
+          ~/.npm
+          ~/.cache/Cypress
           /usr/local/share/.cache
-        key: npm-v2-${{ hashFiles(inputs.lockFile) }}
+        key: npm-v3-${{ hashFiles(inputs.lockFile) }}
+
+    - name: Restore UI Dependencies
+      if: ${{ !(github.event_name == 'push' && github.ref_name == github.event.repository.default_branch) }}
+      uses: actions/cache/restore@v5
+      with:
+        path: |
+          ~/.npm
+          ~/.cache/Cypress
+          /usr/local/share/.cache
+        key: npm-v3-${{ hashFiles(inputs.lockFile) }}
+        restore-keys: npm-v3-

@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { useEffect, useState } from 'react';
 import type { JsonValue } from 'utils/type.utils';
 
@@ -65,6 +64,7 @@ function useLocalStorage<Storage extends JsonValue>(
             return;
         }
 
+        /* eslint-disable no-console */
         try {
             const parsedValue = JSON.parse(event.newValue ?? 'null');
             if (isValidPredicate(parsedValue)) {
@@ -78,6 +78,7 @@ function useLocalStorage<Storage extends JsonValue>(
         } catch (error: unknown) {
             console.warn('Failed to parse incoming JSON value', error);
         }
+        /* eslint-enable no-console */
     }
 
     useEffect(() => {

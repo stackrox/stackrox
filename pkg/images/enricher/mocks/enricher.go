@@ -136,3 +136,55 @@ func (mr *MockCVESuppressorMockRecorder) EnrichImageWithSuppressedCVEs(image any
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichImageWithSuppressedCVEs", reflect.TypeOf((*MockCVESuppressor)(nil).EnrichImageWithSuppressedCVEs), image)
 }
+
+// MockCVEInfoEnricher is a mock of CVEInfoEnricher interface.
+type MockCVEInfoEnricher struct {
+	ctrl     *gomock.Controller
+	recorder *MockCVEInfoEnricherMockRecorder
+	isgomock struct{}
+}
+
+// MockCVEInfoEnricherMockRecorder is the mock recorder for MockCVEInfoEnricher.
+type MockCVEInfoEnricherMockRecorder struct {
+	mock *MockCVEInfoEnricher
+}
+
+// NewMockCVEInfoEnricher creates a new mock instance.
+func NewMockCVEInfoEnricher(ctrl *gomock.Controller) *MockCVEInfoEnricher {
+	mock := &MockCVEInfoEnricher{ctrl: ctrl}
+	mock.recorder = &MockCVEInfoEnricherMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockCVEInfoEnricher) EXPECT() *MockCVEInfoEnricherMockRecorder {
+	return m.recorder
+}
+
+// EnrichImageV2WithCVEInfo mocks base method.
+func (m *MockCVEInfoEnricher) EnrichImageV2WithCVEInfo(ctx context.Context, image *storage.ImageV2) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnrichImageV2WithCVEInfo", ctx, image)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnrichImageV2WithCVEInfo indicates an expected call of EnrichImageV2WithCVEInfo.
+func (mr *MockCVEInfoEnricherMockRecorder) EnrichImageV2WithCVEInfo(ctx, image any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichImageV2WithCVEInfo", reflect.TypeOf((*MockCVEInfoEnricher)(nil).EnrichImageV2WithCVEInfo), ctx, image)
+}
+
+// EnrichImageWithCVEInfo mocks base method.
+func (m *MockCVEInfoEnricher) EnrichImageWithCVEInfo(ctx context.Context, image *storage.Image) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnrichImageWithCVEInfo", ctx, image)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnrichImageWithCVEInfo indicates an expected call of EnrichImageWithCVEInfo.
+func (mr *MockCVEInfoEnricherMockRecorder) EnrichImageWithCVEInfo(ctx, image any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichImageWithCVEInfo", reflect.TypeOf((*MockCVEInfoEnricher)(nil).EnrichImageWithCVEInfo), ctx, image)
+}

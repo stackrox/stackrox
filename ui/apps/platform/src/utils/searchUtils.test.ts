@@ -1,5 +1,6 @@
 import type { GraphQLSortOption } from 'types/search';
 import {
+    applyRegexSearchModifiers,
     convertSortToGraphQLFormat,
     convertSortToRestFormat,
     convertToExactMatch,
@@ -11,6 +12,7 @@ import {
     getViewStateFromSearch,
     hasSearchKeyValue,
     searchValueAsArray,
+    wrapInQuotes,
 } from './searchUtils';
 import type { NonEmptyArray } from './type.utils';
 
@@ -428,6 +430,74 @@ describe('searchUtils', () => {
             const keysToDelete = ['Deployment'];
             const result = deleteKeysCaseInsensitive(searchFilter, keysToDelete);
             expect(result).toEqual({ Namespace: 'test', Cluster: 'test' });
+        });
+    });
+
+    describe('wrapInQuotes', () => {
+        it('wraps a string in double quotes', () => {
+            expect(wrapInQuotes('hello')).toBe('"hello"');
+            expect(wrapInQuotes('test value')).toBe('"test value"');
+        });
+
+        it('escapes internal double quotes', () => {
+            expect(wrapInQuotes('hello"world')).toBe('"hello\\"world"');
+            expect(wrapInQuotes('say "hello"')).toBe('"say \\"hello\\""');
+        });
+
+        it('handles empty string', () => {
+            expect(wrapInQuotes('')).toBe('""');
+        });
+    });
+
+    describe('applyRegexSearchModifiers', () => {
+        it('wraps text search values with regex modifier', () => {
+            const searchFilter = { Cluster: 'production' };
+            const result = applyRegexSearchModifiers(searchFilter);
+            expect(result).toEqual({ Cluster: ['r/production'] });
+        });
+
+        it('does not wrap quoted strings with regex modifier', () => {
+            const searchFilter = { Cluster: '"production"' };
+            const result = applyRegexSearchModifiers(searchFilter);
+            expect(result).toEqual({ Cluster: ['"production"'] });
+        });
+
+        it('handles mixed quoted and unquoted values', () => {
+            const searchFilter = {
+                Cluster: [
+                    'production',
+                    '"exact-match"',
+                    'staging',
+                    '"exact-w-\\"quote"',
+                    'regex-w-"quote',
+                ],
+            };
+            const result = applyRegexSearchModifiers(searchFilter);
+            expect(result).toEqual({
+                Cluster: [
+                    'r/production',
+                    '"exact-match"',
+                    'r/staging',
+                    '"exact-w-\\"quote"',
+                    'r/regex-w-"quote',
+                ],
+            });
+        });
+
+        it('handles quoted strings with escaped quotes', () => {
+            const searchFilter = { Cluster: '"cluster\\"name"' };
+            const result = applyRegexSearchModifiers(searchFilter);
+            expect(result).toEqual({ Cluster: ['"cluster\\"name"'] });
+        });
+
+        it('only applies to text and autocomplete input types', () => {
+            const searchFilter = {
+                Cluster: 'production', // autocomplete field
+                'Random Field': 'value', // not in regexSearchOptions
+            };
+            const result = applyRegexSearchModifiers(searchFilter);
+            expect(result.Cluster).toEqual(['r/production']);
+            expect(result['Random Field']).toEqual('value'); // should not be modified
         });
     });
 });

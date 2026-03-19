@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
@@ -26,14 +25,7 @@ func (v *platformCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, 
 		return 0, err
 	}
 
-	var err error
-	q, err = common.WithSACFilter(ctx, resources.Cluster, q)
-	if err != nil {
-		return 0, err
-	}
-
-	var results []*platformCVECoreCount
-	results, err = pgSearch.RunSelectRequestForSchema[platformCVECoreCount](ctx, v.db, v.schema, common.WithCountQuery(q, search.CVEID))
+	results, err := pgSearch.RunSelectRequestForSchema[platformCVECoreCount](ctx, v.db, v.schema, common.WithCountQuery(q, search.CVEID))
 	if err != nil {
 		return 0, err
 	}
@@ -53,14 +45,7 @@ func (v *platformCVECoreViewImpl) Get(ctx context.Context, q *v1.Query) ([]CveCo
 		return nil, err
 	}
 
-	var err error
-	q, err = common.WithSACFilter(ctx, resources.Cluster, q)
-	if err != nil {
-		return nil, err
-	}
-
-	var results []*platformCVECoreResponse
-	results, err = pgSearch.RunSelectRequestForSchema[platformCVECoreResponse](ctx, v.db, v.schema, withSelectQuery(q))
+	results, err := pgSearch.RunSelectRequestForSchema[platformCVECoreResponse](ctx, v.db, v.schema, withSelectQuery(q))
 	if err != nil {
 		return nil, err
 	}
@@ -73,18 +58,11 @@ func (v *platformCVECoreViewImpl) Get(ctx context.Context, q *v1.Query) ([]CveCo
 }
 
 func (v *platformCVECoreViewImpl) GetClusterIDs(ctx context.Context, q *v1.Query) ([]string, error) {
-	var err error
-	q, err = common.WithSACFilter(ctx, resources.Cluster, q)
-	if err != nil {
-		return nil, err
-	}
-
 	q.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.ClusterID).Distinct().Proto(),
 	}
 
-	var results []*clusterResponse
-	results, err = pgSearch.RunSelectRequestForSchema[clusterResponse](ctx, v.db, v.schema, q)
+	results, err := pgSearch.RunSelectRequestForSchema[clusterResponse](ctx, v.db, v.schema, q)
 	if err != nil || len(results) == 0 {
 		return nil, err
 	}
@@ -101,14 +79,7 @@ func (v *platformCVECoreViewImpl) CVECountByType(ctx context.Context, q *v1.Quer
 		return nil, err
 	}
 
-	var err error
-	q, err = common.WithSACFilter(ctx, resources.Cluster, q)
-	if err != nil {
-		return nil, err
-	}
-
-	var results []*cveCountByTypeResponse
-	results, err = pgSearch.RunSelectRequestForSchema[cveCountByTypeResponse](ctx, v.db, v.schema, withCVECountByTypeQuery(q))
+	results, err := pgSearch.RunSelectRequestForSchema[cveCountByTypeResponse](ctx, v.db, v.schema, withCVECountByTypeQuery(q))
 	if err != nil {
 		return nil, err
 	}
@@ -129,14 +100,7 @@ func (v *platformCVECoreViewImpl) CVECountByFixability(ctx context.Context, q *v
 		return nil, err
 	}
 
-	var err error
-	q, err = common.WithSACFilter(ctx, resources.Cluster, q)
-	if err != nil {
-		return nil, err
-	}
-
-	var results []*cveCountByFixabilityResponse
-	results, err = pgSearch.RunSelectRequestForSchema[cveCountByFixabilityResponse](ctx, v.db, v.schema, withCVECountByFixabilityQuery(q))
+	results, err := pgSearch.RunSelectRequestForSchema[cveCountByFixabilityResponse](ctx, v.db, v.schema, withCVECountByFixabilityQuery(q))
 	if err != nil {
 		return nil, err
 	}

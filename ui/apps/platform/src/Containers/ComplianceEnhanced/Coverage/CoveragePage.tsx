@@ -35,7 +35,7 @@ function CoverageContent() {
         );
     }
 
-    if (!isLoading && scanConfigProfilesResponse.totalCount === 0) {
+    if (!isLoading && scanConfigProfilesResponse.profiles.length === 0) {
         return <CoverageEmptyState />;
     }
 
@@ -64,6 +64,10 @@ function ProfilesRedirectHandler() {
                 <Spinner />
             </Bullseye>
         );
+    }
+
+    if (!firstProfile) {
+        return <CoverageEmptyState />;
     }
 
     return <Navigate to={`profiles/${firstProfile.name}/checks`} replace />;

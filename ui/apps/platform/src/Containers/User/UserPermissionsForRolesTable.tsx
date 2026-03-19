@@ -1,13 +1,7 @@
-import type { CSSProperties, ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import RolesForResourceAccess from './RolesForResourceAccess';
-
-// Normal horizontal padding to separate icons from text in the preceding cell.
-const style = {
-    '--pf-v5-c-table--m-compact--cell--PaddingLeft': 'var(--pf-v5-global--spacer--md)',
-    '--pf-v5-c-table--m-compact--cell--PaddingRight': 'var(--pf-v5-global--spacer--md)',
-} as CSSProperties;
 
 export type PermissionByRole = {
     read: string[];
@@ -22,7 +16,7 @@ function UserPermissionsForRolesTable({
     resourceToAccessByRole,
 }: UserPermissionsForRolesTableProps): ReactElement {
     return (
-        <Table aria-label="Permissions for roles" variant="compact" style={style}>
+        <Table aria-label="Permissions for roles" variant="compact">
             <Thead>
                 <Tr>
                     <Th key="resourceName">Resource</Th>

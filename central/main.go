@@ -43,6 +43,7 @@ import (
 	clusterService "github.com/stackrox/rox/central/cluster/service"
 	"github.com/stackrox/rox/central/clusterinit/backend"
 	clusterInitService "github.com/stackrox/rox/central/clusterinit/service"
+	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store/singleton"
 	clustersHelmConfig "github.com/stackrox/rox/central/clusters/helmconfig"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
 	complianceDatastore "github.com/stackrox/rox/central/compliance/datastore"
@@ -104,6 +105,7 @@ import (
 	imageintegrationsDS "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
+	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	installationStore "github.com/stackrox/rox/central/installation/store"
 	integrationHealthService "github.com/stackrox/rox/central/integrationhealth/service"
 	"github.com/stackrox/rox/central/internal"
@@ -455,7 +457,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		roleService.Singleton(),
 		searchService.Singleton(),
 		secretService.Singleton(),
-		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton(), installationStore.Singleton()),
+		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton(), installationStore.Singleton(), clusterInitStore.Singleton()),
 		sensorUpgradeControlService.Singleton(),
 		sensorUpgradeService.Singleton(),
 		serviceAccountService.Singleton(),
@@ -807,13 +809,19 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/api/v1/images/sbom",
 			Authorizer:    user.With(permissions.Modify(resources.Image)),
-			ServerHandler: imageService.SBOMHandler(imageintegration.Set(), enrichment.ImageEnricherSingleton(), enrichment.ImageEnricherV2Singleton(), sachelper.NewClusterSacHelper(clusterDataStore.Singleton()), riskManager.Singleton()),
+			ServerHandler: imageService.SBOMGenHandler(imageintegration.Set(), enrichment.ImageEnricherSingleton(), enrichment.ImageEnricherV2Singleton(), sachelper.NewClusterSacHelper(clusterDataStore.Singleton()), riskManager.Singleton()),
+			Compression:   true,
+		},
+		{
+			Route:         "/api/v1/sboms/scan",
+			Authorizer:    user.With(permissions.Modify(resources.Image)),
+			ServerHandler: imageService.SBOMScanHandler(imageintegration.Set()),
 			Compression:   true,
 		},
 		{
 			Route:         "/api/splunk/ta/vulnmgmt",
 			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)),
-			ServerHandler: splunk.NewVulnMgmtHandler(deploymentDatastore.Singleton(), imageDatastore.Singleton()),
+			ServerHandler: splunk.NewVulnMgmtHandler(deploymentDatastore.Singleton(), imageDatastore.Singleton(), imageV2Datastore.Singleton()),
 			Compression:   true,
 		},
 		{

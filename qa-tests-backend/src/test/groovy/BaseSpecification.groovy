@@ -209,7 +209,7 @@ class BaseSpecification extends Specification {
             TimeUnit.SECONDS
     )
     @Rule
-    TestName name = new TestName()
+    protected final TestName currentTestName = new TestName()
 
     @Shared
     Logger log = LoggerFactory.getLogger("test." + this.getClass().getSimpleName())
@@ -290,7 +290,7 @@ class BaseSpecification extends Specification {
         // These .puts() have to be repeated here or else the key is cleared.
         MDC.put("logFileName", this.class.getSimpleName())
         MDC.put("specification", this.class.getSimpleName())
-        log.info("Starting testcase: ${name.getMethodName()}")
+        log.info("Starting testcase: ${currentTestName.getMethodName()}")
 
         // Make sure to use or revert back to the desired central gRPC auth
         // before each test.

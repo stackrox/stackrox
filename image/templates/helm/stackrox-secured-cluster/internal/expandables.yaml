@@ -28,7 +28,7 @@ collector:
   resources: true
   complianceResources: true
   nodeScanningResources: true
-  sfaResources: true
+  famResources: true
   nodeSelector: true
 scanner:
   resources: true

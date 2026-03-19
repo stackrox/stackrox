@@ -15,6 +15,7 @@ import type { MenuToggleElement } from '@patternfly/react-core';
 
 import {
     violationsFullViewPath,
+    violationsNodeViewPath,
     violationsPlatformViewPath,
     violationsUserWorkloadsViewPath,
     vulnerabilitiesAllImagesPath,
@@ -67,6 +68,16 @@ function getSubnavDescriptionGroups(
                 isActive: (location) => {
                     const search: string = location.search || '';
                     return hasSearchKeyValue(search, 'filteredWorkflowView', 'Platform view');
+                },
+                routeKey: 'violations',
+            },
+            {
+                type: 'link',
+                content: 'Nodes',
+                path: violationsNodeViewPath,
+                isActive: (location) => {
+                    const search: string = location.search || '';
+                    return hasSearchKeyValue(search, 'filteredWorkflowView', 'Node view');
                 },
                 routeKey: 'violations',
             },
@@ -261,9 +272,9 @@ function HorizontalSubnav({
                             return (
                                 <Dropdown
                                     key={key}
-                                    isPlain
                                     onSelect={onSelect}
                                     isOpen={openDropdownKey === key}
+                                    popperProps={{ maxWidth: '300px' }}
                                     onOpenChange={(isOpen: boolean) =>
                                         setOpenDropdownKey(isOpen ? key : null)
                                     }
@@ -291,7 +302,7 @@ function HorizontalSubnav({
                                                 return (
                                                     <NavItemSeparator
                                                         key={child.key}
-                                                        role="listitem"
+                                                        role="separator"
                                                     />
                                                 );
                                             }

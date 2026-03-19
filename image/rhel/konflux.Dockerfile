@@ -1,7 +1,7 @@
 ARG PG_VERSION=15
 
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.25@sha256:527782f4a0270f786192281f68d0374f4a21b3ab759643eee4bfcafb6f539468 AS go-builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.25@sha256:aa03597ee8c7594ffecef5cbb6a0f059d362259d2a41225617b27ec912a3d0d3 AS go-builder
 
 RUN dnf -y install --allowerasing jq
 
@@ -20,7 +20,7 @@ ENV CI=1
 
 # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy.
 # CLI builds are without strictfipsruntime (and CGO_ENABLED is set to 0) because these binaries are for user download and use outside the cluster.
-RUN make cli-build
+RUN make roxctl-build
 
 ENV CGO_ENABLED=1
 # TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
@@ -37,7 +37,7 @@ RUN mkdir -p image/rhel/docs/api/v1 && \
 RUN make copy-go-binaries-to-image-dir
 
 
-FROM registry.access.redhat.com/ubi9/nodejs-20:latest@sha256:71a3810707370f30bc0958aea14c3a5af564a3962ae0819bf16fdde7df9b4378 AS ui-builder
+FROM registry.access.redhat.com/ubi9/nodejs-20:latest@sha256:ad30ca76c555dafd2c0c772f8a12aae41cadc767c9654761c6fb706fd1659920 AS ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -59,7 +59,7 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:a670c5b613280e17a666c858c9263a50aafe1a023a8d5730c7a83cb53771487b
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:5dc6ba426ccbeb3954ead6b015f36b4a2d22320e5b356b074198d08422464ed2
 
 ARG PG_VERSION
 

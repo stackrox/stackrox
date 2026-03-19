@@ -670,6 +670,7 @@ func (m *ComplianceOperatorProfileV2) CloneVT() *ComplianceOperatorProfileV2 {
 	r.ProfileVersion = m.ProfileVersion
 	r.Description = m.Description
 	r.Title = m.Title
+	r.OperatorKind = m.OperatorKind
 	if rhs := m.Labels; rhs != nil {
 		tmpContainer := make(map[string]string, len(rhs))
 		for k, v := range rhs {
@@ -740,6 +741,7 @@ func (m *ComplianceOperatorRuleV2) CloneVT() *ComplianceOperatorRuleV2 {
 	r.Rationale = m.Rationale
 	r.Warning = m.Warning
 	r.Instructions = m.Instructions
+	r.OperatorKind = m.OperatorKind
 	if rhs := m.Labels; rhs != nil {
 		tmpContainer := make(map[string]string, len(rhs))
 		for k, v := range rhs {
@@ -2118,6 +2120,9 @@ func (this *ComplianceOperatorProfileV2) EqualVT(that *ComplianceOperatorProfile
 			return false
 		}
 	}
+	if this.OperatorKind != that.OperatorKind {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -2225,6 +2230,9 @@ func (this *ComplianceOperatorRuleV2) EqualVT(that *ComplianceOperatorRuleV2) bo
 		return false
 	}
 	if this.Instructions != that.Instructions {
+		return false
+	}
+	if this.OperatorKind != that.OperatorKind {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -4123,6 +4131,11 @@ func (m *ComplianceOperatorProfileV2) MarshalToSizedBufferVT(dAtA []byte) (int, 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.OperatorKind != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.OperatorKind))
+		i--
+		dAtA[i] = 0x58
+	}
 	if len(m.Values) > 0 {
 		for iNdEx := len(m.Values) - 1; iNdEx >= 0; iNdEx-- {
 			i -= len(m.Values[iNdEx])
@@ -4303,6 +4316,11 @@ func (m *ComplianceOperatorRuleV2) MarshalToSizedBufferVT(dAtA []byte) (int, err
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.OperatorKind != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.OperatorKind))
+		i--
+		dAtA[i] = 0x70
 	}
 	if len(m.Instructions) > 0 {
 		i -= len(m.Instructions)
@@ -5767,6 +5785,9 @@ func (m *ComplianceOperatorProfileV2) SizeVT() (n int) {
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
+	if m.OperatorKind != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.OperatorKind))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -5855,6 +5876,9 @@ func (m *ComplianceOperatorRuleV2) SizeVT() (n int) {
 	l = len(m.Instructions)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.OperatorKind != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.OperatorKind))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -10063,6 +10087,25 @@ func (m *ComplianceOperatorProfileV2) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Values = append(m.Values, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OperatorKind", wireType)
+			}
+			m.OperatorKind = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.OperatorKind |= ComplianceOperatorProfileV2_OperatorKind(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -10824,6 +10867,25 @@ func (m *ComplianceOperatorRuleV2) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Instructions = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 14:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OperatorKind", wireType)
+			}
+			m.OperatorKind = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.OperatorKind |= ComplianceOperatorRuleV2_OperatorKind(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -17071,6 +17133,25 @@ func (m *ComplianceOperatorProfileV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.Values = append(m.Values, stringValue)
 			iNdEx = postIndex
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OperatorKind", wireType)
+			}
+			m.OperatorKind = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.OperatorKind |= ComplianceOperatorProfileV2_OperatorKind(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -17892,6 +17973,25 @@ func (m *ComplianceOperatorRuleV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.Instructions = stringValue
 			iNdEx = postIndex
+		case 14:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OperatorKind", wireType)
+			}
+			m.OperatorKind = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.OperatorKind |= ComplianceOperatorRuleV2_OperatorKind(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

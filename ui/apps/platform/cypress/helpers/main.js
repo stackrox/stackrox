@@ -80,7 +80,7 @@ export function visitMainDashboardFromLeftNav() {
 export function visitMainDashboard(staticResponseMap) {
     visit(basePath, routeMatcherMap, staticResponseMap);
 
-    cy.get(`.pf-v5-c-nav__link.pf-m-current:contains("${title}")`);
+    cy.get(`.pf-v6-c-nav__link.pf-m-current:contains("${title}")`);
     cy.get(`h1:contains("${title}")`);
 }
 

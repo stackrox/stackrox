@@ -57,11 +57,11 @@ _EO_KUTTL_HELP_
         fi
         [[ $FAILED = 0 ]] || die "operator upgrade tests failed"
     else
-        info "Deploying operator using manifests..."
+        info "Deploying operator using helm chart..."
         junit_wrap deploy-operator \
                    "Deploy current version of the operator." \
                    "${kuttl_help}" \
-                   "make" "-C" "operator" "build-installer" "deploy-via-installer" TEST_NAMESPACE="rhacs-operator-system"
+                   "make" "-C" "operator" "chart" "deploy-via-chart" TEST_NAMESPACE="rhacs-operator-system"
     fi
 
     info "Executing operator e2e tests"

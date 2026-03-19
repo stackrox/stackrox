@@ -37,8 +37,9 @@ import (
 var _ ImageEnricherV2 = (*enricherV2Impl)(nil)
 
 type enricherV2Impl struct {
-	cvesSuppressor CVESuppressor
-	integrations   integration.Set
+	cvesSuppressor  CVESuppressor
+	cveInfoEnricher CVEInfoEnricher
+	integrations    integration.Set
 
 	errorsPerRegistry  map[registryTypes.ImageRegistry]int32
 	registryErrorsLock sync.RWMutex
@@ -73,6 +74,7 @@ func (e *enricherV2Impl) EnrichWithVulnerabilities(imageV2 *storage.ImageV2, com
 		}, errors.New("no image scanners are integrated")
 	}
 
+	e.enrichWithBaseImage(context.Background(), imageV2)
 	for _, imageScanner := range scanners.GetAll() {
 		scanner := imageScanner.GetScanner()
 		if vulnScanner, ok := scanner.(scannerTypes.ImageVulnerabilityGetter); ok {
@@ -87,6 +89,14 @@ func (e *enricherV2Impl) EnrichWithVulnerabilities(imageV2 *storage.ImageV2, com
 					ScanResult: ScanNotDone,
 				}, errors.Wrapf(err, "retrieving image vulnerabilities from %s [%s]", scanner.Name(), scanner.Type())
 			}
+
+			// Enrich CVEs with timing metadata (FixAvailableTimestamp, FirstSystemOccurrence)
+			if e.cveInfoEnricher != nil {
+				if err := e.cveInfoEnricher.EnrichImageV2WithCVEInfo(context.Background(), imageV2); err != nil {
+					log.Warnf("Failed to enrich CVEs from ImageCVEInfo: %v", err)
+				}
+			}
+
 			e.cvesSuppressor.EnrichImageV2WithSuppressedCVEs(imageV2)
 
 			return EnrichmentResult{
@@ -157,6 +167,8 @@ func (e *enricherV2Impl) delegateEnrichImage(ctx context.Context, enrichCtx Enri
 	if exists && cachedImageV2IsValid(existingImg) {
 		updated := e.updateImageWithExistingImage(imageV2, existingImg, enrichCtx.FetchOpt)
 		if updated {
+			// Image is cached, but we force base image detection in case base images tags were updated.
+			e.enrichWithBaseImage(ctx, imageV2)
 			e.cvesSuppressor.EnrichImageV2WithSuppressedCVEs(imageV2)
 			// Errors for signature verification will be logged, so we can safely ignore them for the time being.
 			_, _ = e.enrichWithSignatureVerificationData(ctx, enrichCtx, imageV2)
@@ -176,6 +188,13 @@ func (e *enricherV2Impl) delegateEnrichImage(ctx context.Context, enrichCtx Enri
 	// Copy the fields from scannedImage into image, EnrichImage expecting modification in place
 	imageV2.Reset()
 	protocompat.Merge(imageV2, scannedImage)
+
+	// Enrich CVEs with timing metadata (FixAvailableTimestamp, FirstSystemOccurrence)
+	if e.cveInfoEnricher != nil {
+		if err := e.cveInfoEnricher.EnrichImageV2WithCVEInfo(ctx, imageV2); err != nil {
+			log.Warnf("Failed to enrich CVEs from ImageCVEInfo: %v", err)
+		}
+	}
 
 	e.cvesSuppressor.EnrichImageV2WithSuppressedCVEs(imageV2)
 	return true, nil
@@ -211,6 +230,48 @@ func (e *enricherV2Impl) updateImageWithExistingImage(imageV2 *storage.ImageV2, 
 	e.useExistingSignature(imageV2, existingImageV2, option)
 	e.useExistingSignatureVerificationData(imageV2, existingImageV2, option)
 	return e.useExistingScan(imageV2, existingImageV2, option)
+}
+
+func (e *enricherV2Impl) enrichWithBaseImage(ctx context.Context, imageV2 *storage.ImageV2) {
+	if !features.BaseImageDetection.Enabled() {
+		return
+	}
+	if imageV2.GetMetadata() == nil {
+		log.Warnw("Matching image with base images failed as there's no image metadata",
+			logging.ImageID(imageV2.GetId()),
+			logging.String("image_name", imageV2.GetName().GetFullName()))
+		return
+	}
+	layers := imageV2.GetMetadata().GetLayerShas()
+	if len(layers) == 0 {
+		log.Warnw("Matching image with base images failed as there's no image layer SHAs",
+			logging.ImageID(imageV2.GetId()),
+			logging.String("image_name", imageV2.GetName().GetFullName()))
+		return
+	}
+
+	adminCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.ImageAdministration),
+		),
+	)
+
+	matchedBaseImages, err := e.baseImageGetter(adminCtx, layers)
+	if err != nil {
+		log.Warnw("Matching image with base images failed",
+			logging.ImageID(imageV2.GetId()),
+			logging.Err(err),
+			logging.String("image_name", imageV2.GetName().GetFullName()))
+		return
+	}
+
+	if len(matchedBaseImages) > 0 {
+		log.Debugw("Matching image with base images succeeded",
+			logging.ImageID(imageV2.GetId()),
+			logging.String("image_name", imageV2.GetName().GetFullName()))
+		imageV2.BaseImageInfo = toBaseImageInfos(imageV2.GetMetadata(), matchedBaseImages)
+	}
 }
 
 // EnrichImage enriches an image with the integration set present.
@@ -262,24 +323,7 @@ func (e *enricherV2Impl) EnrichImage(ctx context.Context, enrichContext Enrichme
 
 	updated = updated || didUpdateMetadata
 
-	if features.BaseImageDetection.Enabled() {
-		adminCtx :=
-			sac.WithGlobalAccessScopeChecker(ctx,
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-					sac.ResourceScopeKeys(resources.ImageAdministration),
-				),
-			)
-		matchedBaseImages, err := e.baseImageGetter(adminCtx, imageV2.GetMetadata().GetLayerShas())
-		if err != nil {
-			log.Warnw("Matching image with base images",
-				logging.FromContext(ctx),
-				logging.ImageID(imageV2.GetId()),
-				logging.Err(err),
-				logging.String("request_image", imageV2.GetName().GetFullName()))
-		}
-		imageV2.BaseImageInfo = toBaseImageInfos(imageV2.GetMetadata(), matchedBaseImages)
-	}
+	e.enrichWithBaseImage(ctx, imageV2)
 	updated = updated || len(imageV2.GetBaseImageInfo()) > 0
 
 	// Update the image with existing values depending on the FetchOption provided or whether any are available.
@@ -313,6 +357,13 @@ func (e *enricherV2Impl) EnrichImage(ctx context.Context, enrichContext Enrichme
 	}
 
 	updated = updated || didUpdateSigVerificationData
+
+	// Enrich CVEs with timing metadata (FixAvailableTimestamp, FirstSystemOccurrence)
+	if e.cveInfoEnricher != nil {
+		if err := e.cveInfoEnricher.EnrichImageV2WithCVEInfo(ctx, imageV2); err != nil {
+			log.Warnf("Failed to enrich CVEs from ImageCVEInfo: %v", err)
+		}
+	}
 
 	e.cvesSuppressor.EnrichImageV2WithSuppressedCVEs(imageV2)
 

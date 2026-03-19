@@ -17,7 +17,7 @@ import (
 )
 
 func (m *manager) shouldBypassRuntimeDetection(s *state, req *admission.AdmissionRequest) bool {
-	if s.allRuntimePoliciesDetector == nil {
+	if s.allK8sEventDetector == nil {
 		log.Debugf("Runtime policy matcher not found, bypassing %s request on %s/%s [%s]", req.Operation, req.Namespace, req.Name, req.Kind)
 		return true
 	}
@@ -88,7 +88,7 @@ func (m *manager) evaluateRuntimeAdmissionRequest(s *state, req *admission.Admis
 		if sendAlerts {
 			go m.filterAndPutAttemptedAlertsOnChan(req.Operation, alerts...)
 		}
-		return fail(req.UID, message(alerts, false)), nil
+		return fail(req.UID, message(alerts, false, 0)), nil
 	}
 
 	if sendAlerts {
@@ -104,6 +104,21 @@ func (m *manager) evaluatePodEvent(s *state, req *admission.AdmissionRequest, ev
 		log.Debugf("Found deployment %s (id=%s) for %s/%s", deployment.GetName(), deployment.GetId(),
 			event.GetObject().GetNamespace(), event.GetObject().GetName())
 
+		// Fast path: skip image fetches when no k8s event policies require deploy-time fields.
+		// Note: This webhook handles user-initiated commands (exec, port-forward) and
+		// lacks the requirement for burst resilience at scale, so this optimization is intentionally kept simple
+		if len(s.deployFieldK8sDetector.PolicySet().GetCompiledPolicies()) == 0 {
+			alerts, err := s.eventOnlyK8sDetector.DetectForDeploymentAndKubeEvent(context.Background(),
+				booleanpolicy.EnhancedDeployment{
+					Deployment: deployment,
+					Images:     make([]*storage.Image, len(deployment.GetContainers())),
+				}, event)
+			if err != nil {
+				return nil, false, errors.Wrap(err, "runtime detection for event (no deploy-field policies)")
+			}
+			return alerts, true, nil
+		}
+
 		var fetchImgCtx context.Context
 		if timeoutSecs := s.GetClusterConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(); timeoutSecs > 1 {
 			var cancel context.CancelFunc
@@ -116,7 +131,7 @@ func (m *manager) evaluatePodEvent(s *state, req *admission.AdmissionRequest, ev
 				Deployment: dep,
 				Images:     imgs,
 			}
-			return s.allRuntimePoliciesDetector.DetectForDeploymentAndKubeEvent(enhancedDeployment, event)
+			return s.allK8sEventDetector.DetectForDeploymentAndKubeEvent(context.Background(), enhancedDeployment, event)
 		}
 
 		alerts, err := m.kickOffImgScansAndDetect(fetchImgCtx, s, getAlertsFunc, deployment)
@@ -136,7 +151,7 @@ func (m *manager) evaluatePodEvent(s *state, req *admission.AdmissionRequest, ev
 		go m.waitForDeploymentAndDetect(s, event)
 	}
 
-	alerts, err := s.runtimeDetectorForPoliciesWithoutDeployFields.DetectForDeploymentAndKubeEvent(booleanpolicy.EnhancedDeployment{}, event)
+	alerts, err := s.eventOnlyK8sDetector.DetectForDeploymentAndKubeEvent(context.Background(), booleanpolicy.EnhancedDeployment{}, event)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "runtime detection without deployment enrichment")
 	}
@@ -144,6 +159,11 @@ func (m *manager) evaluatePodEvent(s *state, req *admission.AdmissionRequest, ev
 }
 
 func (m *manager) waitForDeploymentAndDetect(s *state, event *storage.KubernetesEvent) {
+	// No policies containing deploy-time fields; skip background image fetches and detection.
+	if len(s.deployFieldK8sDetector.PolicySet().GetCompiledPolicies()) == 0 {
+		return
+	}
+
 	select {
 	case <-m.stopper.Flow().StopRequested():
 		return
@@ -179,7 +199,7 @@ func (m *manager) waitForDeploymentAndDetect(s *state, event *storage.Kubernetes
 				Deployment: dep,
 				Images:     imgs,
 			}
-			return s.runtimeDetectorForPoliciesWithDeployFields.DetectForDeploymentAndKubeEvent(enhancedDeployment, event)
+			return s.deployFieldK8sDetector.DetectForDeploymentAndKubeEvent(context.Background(), enhancedDeployment, event)
 		}
 
 		alerts, err := m.kickOffImgScansAndDetect(fetchImgCtx, s, getAlertsFunc, deployment)

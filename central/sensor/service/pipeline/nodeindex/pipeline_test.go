@@ -9,8 +9,12 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	nodesEnricherMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
+	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -77,6 +81,109 @@ func TestPipelineEnrichesAndUpserts(t *testing.T) {
 	}
 }
 
+func TestPipelineSendsSensorAndLegacyACKs(t *testing.T) {
+	t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
+	t.Setenv(features.ScannerV4.EnvVar(), "true")
+
+	ctrl := gomock.NewController(t)
+	clusterStore := clusterDatastoreMocks.NewMockDataStore(ctrl)
+	nodeDatastore := nodeDatastoreMocks.NewMockDataStore(ctrl)
+	riskManager := riskManagerMocks.NewMockManager(ctrl)
+	enricher := nodesEnricherMocks.NewMockNodeEnricher(ctrl)
+
+	node := storage.Node{
+		Id:        "1",
+		Name:      "node-name",
+		ClusterId: "cluster-id",
+	}
+	msg := createMsg(mockIndexReport)
+
+	gomock.InOrder(
+		nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(&node, true, nil),
+		enricher.EXPECT().EnrichNodeWithVulnerabilities(gomock.Any(), nil, gomock.Any()).Times(1).Return(nil),
+		riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil),
+	)
+
+	injector := &recordingInjector{
+		capabilities: map[centralsensor.SensorCapability]bool{
+			centralsensor.SensorACKSupport: true,
+		},
+	}
+	p := &pipelineImpl{
+		clusterStore:  clusterStore,
+		nodeDatastore: nodeDatastore,
+		riskManager:   riskManager,
+		enricher:      enricher,
+	}
+
+	err := p.Run(t.Context(), node.GetClusterId(), msg, injector)
+	assert.NoError(t, err)
+
+	protoassert.SlicesEqual(t, []*central.SensorACK{
+		{
+			Action:      central.SensorACK_ACK,
+			MessageType: central.SensorACK_NODE_INDEX_REPORT,
+			ResourceId:  node.GetName(),
+		},
+	}, injector.getSentSensorACKs())
+
+	protoassert.SlicesEqual(t, []*central.NodeInventoryACK{
+		{
+			ClusterId:   node.GetClusterId(),
+			NodeName:    node.GetName(),
+			Action:      central.NodeInventoryACK_ACK,
+			MessageType: central.NodeInventoryACK_NodeIndexer,
+		},
+	}, injector.getSentACKs())
+}
+
+func TestPipelineSkipsSensorACKWhenCapabilityMissing(t *testing.T) {
+	t.Setenv(features.NodeIndexEnabled.EnvVar(), "true")
+	t.Setenv(features.ScannerV4.EnvVar(), "true")
+
+	ctrl := gomock.NewController(t)
+	clusterStore := clusterDatastoreMocks.NewMockDataStore(ctrl)
+	nodeDatastore := nodeDatastoreMocks.NewMockDataStore(ctrl)
+	riskManager := riskManagerMocks.NewMockManager(ctrl)
+	enricher := nodesEnricherMocks.NewMockNodeEnricher(ctrl)
+
+	node := storage.Node{
+		Id:        "1",
+		Name:      "node-name",
+		ClusterId: "cluster-id",
+	}
+	msg := createMsg(mockIndexReport)
+
+	gomock.InOrder(
+		nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(&node, true, nil),
+		enricher.EXPECT().EnrichNodeWithVulnerabilities(gomock.Any(), nil, gomock.Any()).Times(1).Return(nil),
+		riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil),
+	)
+
+	injector := &recordingInjector{
+		capabilities: map[centralsensor.SensorCapability]bool{},
+	}
+	p := &pipelineImpl{
+		clusterStore:  clusterStore,
+		nodeDatastore: nodeDatastore,
+		riskManager:   riskManager,
+		enricher:      enricher,
+	}
+
+	err := p.Run(t.Context(), node.GetClusterId(), msg, injector)
+	assert.NoError(t, err)
+	assert.Empty(t, injector.getSentSensorACKs(), "sensor ACK should be skipped without SensorACKSupport")
+
+	protoassert.SlicesEqual(t, []*central.NodeInventoryACK{
+		{
+			ClusterId:   node.GetClusterId(),
+			NodeName:    node.GetName(),
+			Action:      central.NodeInventoryACK_ACK,
+			MessageType: central.NodeInventoryACK_NodeIndexer,
+		},
+	}, injector.getSentACKs())
+}
+
 func createMsg(ir *v4.IndexReport) *central.MsgFromSensor {
 	return &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
@@ -88,6 +195,55 @@ func createMsg(ir *v4.IndexReport) *central.MsgFromSensor {
 			},
 		},
 	}
+}
+
+type recordingInjector struct {
+	lock         sync.Mutex
+	legacy       []*central.NodeInventoryACK
+	sensor       []*central.SensorACK
+	capabilities map[centralsensor.SensorCapability]bool
+}
+
+func (r *recordingInjector) HasCapability(cap centralsensor.SensorCapability) bool {
+	return r.capabilities[cap]
+}
+
+func (r *recordingInjector) InjectMessage(_ concurrency.Waitable, msg *central.MsgToSensor) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	if ack := msg.GetNodeInventoryAck(); ack != nil {
+		r.legacy = append(r.legacy, ack.CloneVT())
+	}
+	if ack := msg.GetSensorAck(); ack != nil {
+		r.sensor = append(r.sensor, ack.CloneVT())
+	}
+	return nil
+}
+
+func (r *recordingInjector) InjectMessageIntoQueue(_ *central.MsgFromSensor) {}
+
+func (r *recordingInjector) getSentACKs() []*central.NodeInventoryACK {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	out := make([]*central.NodeInventoryACK, 0, len(r.legacy))
+	for _, ack := range r.legacy {
+		if ack != nil {
+			out = append(out, ack)
+		}
+	}
+	return out
+}
+
+func (r *recordingInjector) getSentSensorACKs() []*central.SensorACK {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	out := make([]*central.SensorACK, 0, len(r.sensor))
+	for _, ack := range r.sensor {
+		if ack != nil {
+			out = append(out, ack)
+		}
+	}
+	return out
 }
 
 var (

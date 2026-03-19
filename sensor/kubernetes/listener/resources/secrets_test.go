@@ -461,26 +461,31 @@ func Test_secretDispatcher_processDockerConfigEvent(t *testing.T) {
 		wantNumEvents int
 	}{
 		"bad secret with non-utf auth (nu\\x00Op\\x07pZQ)": {
+			// #nosec G101 -- test data
 			secretData:    `{"example.com":{"auth":"nullOp7pZQ=="}}`,
 			action:        central.ResourceAction_CREATE_RESOURCE,
 			wantNumEvents: 0,
 		},
 		"secret containing one correct and one broken auth entry": {
+			// #nosec G101 -- test data
 			secretData:    `{"bad.example.com":{"auth":"nullOp7pZQ=="}, "good.example.com":{"auth":"dXNlcjE6cXdmcGI="}}`,
 			action:        central.ResourceAction_CREATE_RESOURCE,
 			wantNumEvents: 2, // 1 secret + 1 image integration
 		},
 		"bad secret with non-utf in auth (user\\xc5name)": {
+			// #nosec G101 -- test data
 			secretData:    `{"example.com":{"auth":"dXNlcspuYW1lOnBhc3N3b3Jk"}}`,
 			action:        central.ResourceAction_CREATE_RESOURCE,
 			wantNumEvents: 0,
 		},
 		"good secret": {
+			// #nosec G101 -- test data
 			secretData:    `{"auths":{"example.com":{"auth":"dXNlcjE6cXdmcGI="}}}`,
 			action:        central.ResourceAction_CREATE_RESOURCE,
 			wantNumEvents: 2, // 1 secret + 1 image integration
 		},
 		"secret containing two good registries": {
+			// #nosec G101 -- test data
 			secretData:    `{"1.example.com":{"auth":"dXNlcjE6cXdmcGI="}, "2.example.com":{"auth":"dXNlcjE6cXdmcGI="}}`,
 			action:        central.ResourceAction_CREATE_RESOURCE,
 			wantNumEvents: 3, // 1 secret + 2 image integrations

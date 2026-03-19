@@ -1,6 +1,8 @@
 package deploytime
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
@@ -17,26 +19,34 @@ func (d *detectorImpl) PolicySet() detection.PolicySet {
 }
 
 // Detect runs detection on a deployment, returning any generated alerts.
-func (d *detectorImpl) Detect(ctx DetectionContext, enhancedDeployment booleanpolicy.EnhancedDeployment, filters ...detection.FilterOption) ([]*storage.Alert, error) {
+func (d *detectorImpl) Detect(ctx context.Context, enhancedDeployment booleanpolicy.EnhancedDeployment, opts ...DetectOption) ([]*storage.Alert, error) {
+	var cfg detectionConfig
+	for _, o := range opts {
+		if o == nil {
+			continue
+		}
+		o(&cfg)
+	}
+
 	var alerts []*storage.Alert
 	var cacheReceptacle booleanpolicy.CacheReceptacle
 	err := d.policySet.ForEach(func(compiled detection.CompiledPolicy) error {
 		if compiled.Policy().GetDisabled() {
 			return nil
 		}
-		for _, filter := range filters {
+		for _, filter := range cfg.policyFilters {
 			if !filter(compiled.Policy()) {
 				return nil
 			}
 		}
 		// Check predicate on deployment.
-		if !compiled.AppliesTo(enhancedDeployment.Deployment) {
+		if !compiled.AppliesTo(ctx, enhancedDeployment.Deployment) {
 			return nil
 		}
 
 		// Check enforcement on deployment if we don't want unenforced alerts.
 		enforcement, _ := buildEnforcement(compiled.Policy(), enhancedDeployment.Deployment)
-		if enforcement == storage.EnforcementAction_UNSET_ENFORCEMENT && ctx.EnforcementOnly {
+		if enforcement == storage.EnforcementAction_UNSET_ENFORCEMENT && cfg.enforcementOnly {
 			return nil
 		}
 

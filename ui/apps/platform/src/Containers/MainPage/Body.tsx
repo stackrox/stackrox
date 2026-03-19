@@ -68,7 +68,7 @@ import InviteUsersModal from './InviteUsers/InviteUsersModal';
 
 function NotFoundPage(): ReactElement {
     return (
-        <PageSection variant="light">
+        <PageSection hasBodyWrapper={false}>
             <PageTitle title="Not Found" />
             <PageNotFound />
         </PageSection>
@@ -133,9 +133,7 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'clusters/cluster-registration-secrets': {
         component: asyncComponent(
             () =>
-                import(
-                    'Containers/Clusters/ClusterRegistrationSecrets/ClusterRegistrationSecretsRoute'
-                )
+                import('Containers/Clusters/ClusterRegistrationSecrets/ClusterRegistrationSecretsRoute')
         ),
         path: clustersClusterRegistrationSecretsPathWithParam,
     },

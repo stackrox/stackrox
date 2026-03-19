@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
@@ -41,8 +40,8 @@ type DataStore interface {
 // NewWithPostgres returns a new instance of DataStore using the input store, and searcher.
 // noUpdateTimestamps controls whether timestamps are automatically updated when upserting images.
 // This should be set to `false` except for some tests.
-func NewWithPostgres(storage store.Store, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker, imageCVEInfo imageCVEInfoDS.DataStore) DataStore {
-	ds := newDatastoreImpl(storage, risks, imageRanker, imageComponentRanker, imageCVEInfo)
+func NewWithPostgres(storage store.Store, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
+	ds := newDatastoreImpl(storage, risks, imageRanker, imageComponentRanker)
 	go ds.initializeRankers()
 	return ds
 }

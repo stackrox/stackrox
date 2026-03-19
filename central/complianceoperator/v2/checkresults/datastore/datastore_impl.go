@@ -7,7 +7,6 @@ import (
 
 	"github.com/pkg/errors"
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
-	complianceUtils "github.com/stackrox/rox/central/complianceoperator/v2/utils"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -77,12 +76,6 @@ func (d *datastoreImpl) GetComplianceCheckResult(ctx context.Context, compliance
 func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v1.Query) ([]*ResourceResultCountByClusterScan, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ComplianceOperatorCheckResultV2", "ComplianceCheckResultStats")
 
-	var err error
-	query, err = complianceUtils.WithSACFilter(ctx, resources.Compliance, query)
-	if err != nil {
-		return nil, err
-	}
-
 	cloned := query.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.ClusterID).Proto(),
@@ -127,12 +120,6 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 func (d *datastoreImpl) ComplianceProfileResultStats(ctx context.Context, query *v1.Query) ([]*ResourceResultCountByProfile, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ComplianceOperatorCheckResultV2", "ComplianceProfileResultStats")
 
-	var err error
-	query, err = complianceUtils.WithSACFilter(ctx, resources.Compliance, query)
-	if err != nil {
-		return nil, err
-	}
-
 	cloned := query.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.ComplianceOperatorProfileName).Proto(),
@@ -166,12 +153,6 @@ func (d *datastoreImpl) ComplianceProfileResultStats(ctx context.Context, query 
 // ComplianceProfileResults retrieves the profile results specified by query
 func (d *datastoreImpl) ComplianceProfileResults(ctx context.Context, query *v1.Query) ([]*ResourceResultsByProfile, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ComplianceOperatorCheckResultV2", "ComplianceProfileResultStats")
-
-	var err error
-	query, err = complianceUtils.WithSACFilter(ctx, resources.Compliance, query)
-	if err != nil {
-		return nil, err
-	}
 
 	cloned := query.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
@@ -222,12 +203,6 @@ func (d *datastoreImpl) ComplianceProfileResults(ctx context.Context, query *v1.
 func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Query) ([]*ResultStatusCountByCluster, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ComplianceOperatorCheckResultV2", "ComplianceClusterStats")
 
-	var err error
-	query, err = complianceUtils.WithSACFilter(ctx, resources.Compliance, query)
-	if err != nil {
-		return nil, err
-	}
-
 	cloned := query.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.ClusterID).Proto(),
@@ -267,11 +242,6 @@ func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Qu
 
 // CountByField retrieves the distinct scan result counts specified by query based on specified search field
 func (d *datastoreImpl) CountByField(ctx context.Context, query *v1.Query, field search.FieldLabel) (int, error) {
-	var err error
-	query, err = complianceUtils.WithSACFilter(ctx, resources.Compliance, query)
-	if err != nil {
-		return 0, err
-	}
 
 	switch field {
 	case search.ClusterID:

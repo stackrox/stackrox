@@ -7,7 +7,6 @@ import (
 	"sort"
 	"testing"
 
-	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imagePostgresV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
@@ -102,13 +101,11 @@ func (s *DeploymentViewTestSuite) SetupSuite() {
 	mockRisk := mockRisks.NewMockDataStore(mockCtrl)
 
 	// Initialize the datastore.
-	imageCVEInfo := imageCVEInfoDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	imageStore := imageDS.NewWithPostgres(
 		imagePostgresV2.New(s.testDB.DB, false, concurrency.NewKeyFence()),
 		mockRisk,
 		ranking.ImageRanker(),
 		ranking.ComponentRanker(),
-		imageCVEInfo,
 	)
 	deploymentStore, err := deploymentDS.NewTestDataStore(
 		s.T(),

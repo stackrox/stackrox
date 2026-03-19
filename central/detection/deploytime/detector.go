@@ -1,6 +1,8 @@
 package deploytime
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/detection"
@@ -11,7 +13,7 @@ import (
 type Detector interface {
 	PolicySet() detection.PolicySet
 
-	Detect(ctx deploytime.DetectionContext, enhancedDeployment booleanpolicy.EnhancedDeployment, policyFilters ...detection.FilterOption) ([]*storage.Alert, error)
+	Detect(ctx context.Context, enhancedDeployment booleanpolicy.EnhancedDeployment, opts ...deploytime.DetectOption) ([]*storage.Alert, error)
 }
 
 // NewDetector returns a new instance of a Detector.

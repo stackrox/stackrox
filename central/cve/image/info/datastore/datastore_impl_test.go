@@ -44,6 +44,7 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpdateTimestamps_NilOld() {
 	now := time.Now()
 	newInfo := &storage.ImageCVEInfo{
 		Id:                    "test-id",
+		Cve:                   "test-cve",
 		FirstSystemOccurrence: timestamppb.New(now),
 		FixAvailableTimestamp: timestamppb.New(now),
 	}
@@ -62,10 +63,12 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpdateTimestamps_PreservesEarlierFirstS
 
 	oldInfo := &storage.ImageCVEInfo{
 		Id:                    "test-id",
+		Cve:                   "test-cve",
 		FirstSystemOccurrence: timestamppb.New(earlier),
 	}
 	newInfo := &storage.ImageCVEInfo{
 		Id:                    "test-id",
+		Cve:                   "test-cve",
 		FirstSystemOccurrence: timestamppb.New(later),
 	}
 
@@ -82,10 +85,12 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpdateTimestamps_PreservesEarlierFixAva
 
 	oldInfo := &storage.ImageCVEInfo{
 		Id:                    "test-id",
+		Cve:                   "test-cve",
 		FixAvailableTimestamp: timestamppb.New(earlier),
 	}
 	newInfo := &storage.ImageCVEInfo{
 		Id:                    "test-id",
+		Cve:                   "test-cve",
 		FixAvailableTimestamp: timestamppb.New(later),
 	}
 
@@ -101,10 +106,12 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpdateTimestamps_UsesNewWhenOldIsZero()
 
 	oldInfo := &storage.ImageCVEInfo{
 		Id:                    "test-id",
+		Cve:                   "test-cve",
 		FirstSystemOccurrence: nil, // Zero timestamp
 	}
 	newInfo := &storage.ImageCVEInfo{
 		Id:                    "test-id",
+		Cve:                   "test-cve",
 		FirstSystemOccurrence: timestamppb.New(now),
 	}
 
@@ -120,10 +127,12 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpdateTimestamps_UsesOldWhenNewIsZero()
 
 	oldInfo := &storage.ImageCVEInfo{
 		Id:                    "test-id",
+		Cve:                   "test-cve",
 		FirstSystemOccurrence: timestamppb.New(earlier),
 	}
 	newInfo := &storage.ImageCVEInfo{
 		Id:                    "test-id",
+		Cve:                   "test-cve",
 		FirstSystemOccurrence: nil, // Zero timestamp
 	}
 
@@ -141,6 +150,7 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpsert_PreservesTimestamps() {
 	// First, insert an info with an earlier timestamp
 	firstInfo := &storage.ImageCVEInfo{
 		Id:                    "test-cve#test-pkg#test-ds",
+		Cve:                   "test-cve",
 		FirstSystemOccurrence: timestamppb.New(earlier),
 		FixAvailableTimestamp: timestamppb.New(earlier),
 	}
@@ -150,6 +160,7 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpsert_PreservesTimestamps() {
 	// Now upsert with a later timestamp
 	secondInfo := &storage.ImageCVEInfo{
 		Id:                    "test-cve#test-pkg#test-ds",
+		Cve:                   "test-cve",
 		FirstSystemOccurrence: timestamppb.New(later),
 		FixAvailableTimestamp: timestamppb.New(later),
 	}
@@ -175,16 +186,19 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpsertMany_PreservesTimestamps() {
 	firstInfos := []*storage.ImageCVEInfo{
 		{
 			Id:                    "test-cve-1#test-pkg#test-ds",
+			Cve:                   "test-cve-1",
 			FirstSystemOccurrence: timestamppb.New(earlier),
 			FixAvailableTimestamp: timestamppb.New(earlier),
 		},
 		{
 			Id:                    "test-cve-2#test-pkg#test-ds",
+			Cve:                   "test-cve-2",
 			FirstSystemOccurrence: timestamppb.New(earlier),
 			FixAvailableTimestamp: timestamppb.New(earlier),
 		},
 		{
 			Id:                    "test-cve-1#test-pkg#test-ds",
+			Cve:                   "test-cve-1",
 			FirstSystemOccurrence: nil,
 			FixAvailableTimestamp: timestamppb.New(earlier2),
 		},
@@ -196,11 +210,13 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpsertMany_PreservesTimestamps() {
 	secondInfos := []*storage.ImageCVEInfo{
 		{
 			Id:                    "test-cve-1#test-pkg#test-ds",
+			Cve:                   "test-cve-1",
 			FirstSystemOccurrence: timestamppb.New(later),
 			FixAvailableTimestamp: timestamppb.New(later),
 		},
 		{
 			Id:                    "test-cve-2#test-pkg#test-ds",
+			Cve:                   "test-cve-2",
 			FirstSystemOccurrence: timestamppb.New(later),
 			FixAvailableTimestamp: timestamppb.New(later),
 		},
@@ -225,6 +241,7 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpsert_NewInfo() {
 
 	info := &storage.ImageCVEInfo{
 		Id:                    "new-cve#new-pkg#new-ds",
+		Cve:                   "new-cve",
 		FirstSystemOccurrence: timestamppb.New(now),
 		FixAvailableTimestamp: timestamppb.New(now),
 	}
@@ -237,6 +254,67 @@ func (s *ImageCVEInfoDataStoreSuite) TestUpsert_NewInfo() {
 	s.Equal(info.GetId(), result.GetId())
 	s.Equal(now.Unix(), result.GetFirstSystemOccurrence().AsTime().Unix())
 	s.Equal(now.Unix(), result.GetFixAvailableTimestamp().AsTime().Unix())
+}
+
+// TestSearchRawImageCVEInfos tests that SearchRawImageCVEInfos can query by CVE name.
+func (s *ImageCVEInfoDataStoreSuite) TestSearchRawImageCVEInfos() {
+	now := time.Now()
+
+	// Insert test data with different CVE names
+	infos := []*storage.ImageCVEInfo{
+		{
+			Id:                    "CVE-2024-1234#package-a#datasource-1",
+			Cve:                   "CVE-2024-1234",
+			FirstSystemOccurrence: timestamppb.New(now.Add(-24 * time.Hour)),
+		},
+		{
+			Id:                    "CVE-2024-1234#package-b#datasource-2",
+			Cve:                   "CVE-2024-1234",
+			FirstSystemOccurrence: timestamppb.New(now.Add(-12 * time.Hour)),
+		},
+		{
+			Id:                    "CVE-2024-5678#package-a#datasource-1",
+			Cve:                   "CVE-2024-5678",
+			FirstSystemOccurrence: timestamppb.New(now),
+		},
+		{
+			Id:                    "CVE-2024-9999#package-c#datasource-3",
+			Cve:                   "CVE-2024-9999",
+			FirstSystemOccurrence: timestamppb.New(now.Add(-6 * time.Hour)),
+		},
+	}
+
+	err := s.datastore.UpsertMany(s.ctx, infos)
+	s.NoError(err)
+
+	// Test 1: Query for single CVE name
+	results, err := s.datastore.GetByCVENames(s.ctx, []string{"CVE-2024-1234"})
+	s.NoError(err)
+	s.Len(results, 2, "Should return 2 records for CVE-2024-1234")
+	for _, result := range results {
+		s.Equal("CVE-2024-1234", result.GetCve())
+	}
+
+	// Test 2: Query for multiple CVE names
+	results, err = s.datastore.GetByCVENames(s.ctx, []string{"CVE-2024-5678", "CVE-2024-9999"})
+	s.NoError(err)
+	s.Len(results, 2, "Should return 2 records (one for each CVE)")
+	cveNames := map[string]bool{}
+	for _, result := range results {
+		cveNames[result.GetCve()] = true
+	}
+	s.True(cveNames["CVE-2024-5678"])
+	s.True(cveNames["CVE-2024-9999"])
+
+	// Test 3: Query for non-existent CVE
+	results, err = s.datastore.GetByCVENames(s.ctx, []string{"CVE-2024-NONEXISTENT"})
+	s.NoError(err)
+	s.Len(results, 0, "Should return empty for non-existent CVE")
+
+	// Test 4: Query with empty list
+	results, err = s.datastore.GetByCVENames(s.ctx, []string{})
+	s.NoError(err)
+	s.Len(results, 0, "Should return empty for empty query")
 }
 
 // Ensure protocompat is used (to satisfy import)

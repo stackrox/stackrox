@@ -13,11 +13,11 @@ import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterPostgres "github.com/stackrox/rox/central/cluster/store/cluster/postgres"
 	clusterHealthPostgres "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
+	clusterInitStoreMocks "github.com/stackrox/rox/central/clusterinit/store/mocks"
 	compliancePrunerMocks "github.com/stackrox/rox/central/complianceoperator/v2/pruner/mocks"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
-	imageCVEInfoDS "github.com/stackrox/rox/central/cve/image/info/datastore"
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -255,14 +255,12 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 
 	var images imageDatastore.DataStore
 	var imagesV2 imageV2Datastore.DataStore
-	imageCVEInfo := imageCVEInfoDS.GetTestPostgresDataStore(s.T(), s.pool)
 	if features.FlattenImageData.Enabled() {
 		imagesV2 = imageV2Datastore.NewWithPostgres(
 			imageV2Postgres.New(s.pool, true, concurrency.NewKeyFence()),
 			mockRiskDatastore,
 			ranking.ImageRanker(),
 			ranking.ComponentRanker(),
-			imageCVEInfo,
 		)
 	} else {
 		images = imageDatastore.NewWithPostgres(
@@ -270,7 +268,6 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 			mockRiskDatastore,
 			ranking.ImageRanker(),
 			ranking.ComponentRanker(),
-			imageCVEInfo,
 		)
 	}
 
@@ -361,6 +358,7 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	clusterFlows := networkFlowDatastoreMocks.NewMockClusterDataStore(mockCtrl)
 	flows := networkFlowDatastoreMocks.NewMockFlowDataStore(mockCtrl)
 	clusterCVEs := clusterCVEDS.NewMockDataStore(mockCtrl)
+	clusterInitStore := clusterInitStoreMocks.NewMockStore(mockCtrl)
 
 	// A bunch of these get called when a cluster is deleted
 	flowsDataStore.EXPECT().CreateFlowStore(gomock.Any(), gomock.Any()).AnyTimes().Return(networkFlowDatastoreMocks.NewMockFlowDataStore(mockCtrl), nil)
@@ -419,7 +417,8 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 		notifierMock,
 		ranking.NewRanker(),
 		networkBaselineMgr,
-		compliancePruner)
+		compliancePruner,
+		clusterInitStore)
 	require.NoError(s.T(), err)
 
 	return mockConfigDatastore, deployments, clusterDataStore

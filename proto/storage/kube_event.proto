@@ -7,6 +7,7 @@ import "google/protobuf/timestamp.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
+//Next Tag: 22
 message KubernetesEvent {
   enum APIVerb {
     UNKNOWN = 0;
@@ -33,6 +34,7 @@ message KubernetesEvent {
       NETWORK_POLICIES = 7;
       SECURITY_CONTEXT_CONSTRAINTS = 8;
       EGRESS_FIREWALLS = 9;
+      PODS_ATTACH = 10;
     }
 
     string name = 1; // @gotags: policy:"Kubernetes Resource Name"
@@ -51,6 +53,7 @@ message KubernetesEvent {
   oneof ObjectArgs {
     PodExecArgs pod_exec_args = 5;
     PodPortForwardArgs pod_port_forward_args = 6;
+    PodAttachArgs pod_attach_args = 21;
   }
 
   // Extended arguments. May not be available for pod exec and port forward events.
@@ -69,6 +72,10 @@ message KubernetesEvent {
 
   message PodPortForwardArgs {
     repeated int32 ports = 1;
+  }
+
+  message PodAttachArgs {
+    string container = 1;
   }
 
   message ResponseStatus {

@@ -29,7 +29,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -51,7 +51,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -71,7 +71,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -103,7 +103,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -136,7 +136,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -157,6 +157,7 @@
     },
     "/v1/cluster-init/init-bundles": {
       "get": {
+        "summary": "Init bundles are deprecated in favor of Cluster Registration Secrets (CRS).",
         "operationId": "ClusterInitService_GetInitBundles",
         "responses": {
           "200": {
@@ -168,7 +169,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -177,6 +178,7 @@
         ]
       },
       "post": {
+        "summary": "Init bundles are deprecated in favor of Cluster Registration Secrets (CRS).",
         "operationId": "ClusterInitService_GenerateInitBundle",
         "responses": {
           "200": {
@@ -188,7 +190,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -209,7 +211,7 @@
     },
     "/v1/cluster-init/init-bundles/revoke": {
       "patch": {
-        "summary": "RevokeInitBundle deletes cluster init bundle. If this operation impacts any cluster\nthen its ID should be included in request.\nIf confirm_impacted_clusters_ids does not match with current impacted clusters\nthen request will fail with error that includes all impacted clusters.",
+        "summary": "RevokeInitBundle deletes cluster init bundle. If this operation impacts any cluster\nthen its ID should be included in request.\nIf confirm_impacted_clusters_ids does not match with current impacted clusters\nthen request will fail with error that includes all impacted clusters.\nInit bundles are deprecated in favor of Cluster Registration Secrets (CRS).",
         "operationId": "ClusterInitService_RevokeInitBundle",
         "responses": {
           "200": {
@@ -221,7 +223,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
+              "$ref": "#/definitions/googleRpcStatus"
             }
           }
         },
@@ -282,7 +284,7 @@
         }
       }
     },
-    "googlerpcStatus": {
+    "googleRpcStatus": {
       "type": "object",
       "properties": {
         "code": {
@@ -367,9 +369,9 @@
           "type": "string"
         },
         "maxRegistrations": {
-          "type": "integer",
-          "format": "int32",
-          "description": "Support for this is to be implemented in ROX-26769."
+          "type": "string",
+          "format": "uint64",
+          "title": "4 was int32 max_registrations"
         }
       }
     },
@@ -404,6 +406,22 @@
         "expiresAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "maxRegistrations": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "registrationsInitiated": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "registrationsCompleted": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

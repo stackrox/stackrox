@@ -266,9 +266,9 @@ type PerNodeSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Node Scanning Settings"
 	NodeInventory *ContainerSpec `json:"nodeInventory,omitempty"`
 
-	// Settings for the Sensitive File Activity container, which is responsible for file activity monitoring on the Node.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4,displayName="SFA"
-	SFA *SFAContainerSpec `json:"sfa,omitempty"`
+	// Settings for the File Activity Monitoring container, which is responsible for monitoring file operations on the Node.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4,displayName="File Activity Monitoring Settings"
+	FileActivityMonitoring *FAMContainerSpec `json:"fileActivityMonitoring,omitempty"`
 
 	// To ensure comprehensive monitoring of your cluster activity, Red Hat Advanced Cluster Security
 	// will run services on every node in the cluster, including tainted nodes by default. If you do
@@ -370,28 +370,28 @@ type CollectorContainerSpec struct {
 	ContainerSpec `json:",inline"`
 }
 
-// SFAContainerSpec defines settings for the Sensitive File Activity agent container.
-type SFAContainerSpec struct {
-	// Specifies whether Sensitive File Activity agent is deployed.
+// FAMContainerSpec defines settings for the File Activity Monitoring container.
+type FAMContainerSpec struct {
+	// Specifies whether File Activity Monitoring is deployed.
 	// The default is: Disabled.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="SFA Agent"
-	Agent *DeploySFAAgent `json:"agent,omitempty"`
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enabled", "urn:alm:descriptor:com.tectonic.ui:select:Disabled"}
+	Mode *FAMMode `json:"mode,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	ContainerSpec `json:",inline"`
 }
 
-// DeploySFAAgent is a type for values of spec.perNode.sfa.agent
+// FAMMode is a type for values of spec.perNode.fileActivityMonitoring.mode
 // +kubebuilder:validation:Enum=Enabled;Disabled
-type DeploySFAAgent string
+type FAMMode string
 
 const (
-	SFAAgentEnabled  DeploySFAAgent = "Enabled"
-	SFAAgentDisabled DeploySFAAgent = "Disabled"
+	FileActivityMonitoringEnabled  FAMMode = "Enabled"
+	FileActivityMonitoringDisabled FAMMode = "Disabled"
 )
 
-// Pointer returns the given DeploySFAAgent value as a pointer, needed in k8s resource structs.
-func (v DeploySFAAgent) Pointer() *DeploySFAAgent {
+// Pointer returns the given Mode value as a pointer, needed in k8s resource structs.
+func (v FAMMode) Pointer() *FAMMode {
 	return &v
 }
 

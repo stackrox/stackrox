@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	v2ProfileMocks "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
+	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	"github.com/stackrox/rox/central/convert/testutils"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -49,7 +50,8 @@ func (s *PipelineTestSuite) TestRunCreate() {
 	ctx := context.Background()
 
 	pipeline := NewPipeline(s.v2ProfileDS)
-	s.v2ProfileDS.EXPECT().UpsertProfile(ctx, testutils.GetProfileV2Storage(s.T())).Return(nil).Times(1)
+	expectedProfile := internaltov2storage.ComplianceOperatorProfileV2(testutils.GetProfileV2SensorMsg(s.T()), fixtureconsts.Cluster1)
+	s.v2ProfileDS.EXPECT().UpsertProfile(ctx, expectedProfile).Return(nil).Times(1)
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{

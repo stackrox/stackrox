@@ -43,11 +43,10 @@ collector:
       memory: "500Mi"
       cpu: "1"
 
-  sfaResources:
-    resources:
-      requests:
-        memory: "320Mi"
-        cpu: "50m"
-      limits:
-        memory: "1Gi"
-        cpu: "750m"
+  famResources:
+    requests:
+      memory: "320Mi"
+      cpu: "50m"
+    limits:
+      memory: "1Gi"
+      cpu: "750m"

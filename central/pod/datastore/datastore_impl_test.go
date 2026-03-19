@@ -62,9 +62,9 @@ func (suite *PodDataStoreTestSuite) TestNoAccessAllowed() {
 	_, ok, _ := suite.datastore.GetPod(ctx, expectedPod.GetId())
 	suite.False(ok)
 
-	suite.Error(suite.datastore.UpsertPod(ctx, expectedPod), "permission denied")
-
-	suite.Error(suite.datastore.RemovePod(ctx, expectedPod.GetId()), "permission denied")
+	// The datastore delegates the access control checks to the storage layer
+	// for UpsertPod and RemovePod.  The "end-to-end" behaviour of the datastore
+	// for these functions is now tested in datastore_sac_test.go
 }
 
 func (suite *PodDataStoreTestSuite) TestGetPod() {

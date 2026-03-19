@@ -2873,6 +2873,23 @@
                 "id": 7,
                 "name": "version",
                 "type": "InitBundleVersion"
+              },
+              {
+                "id": 8,
+                "name": "max_registrations",
+                "type": "uint64"
+              },
+              {
+                "id": 9,
+                "name": "registrations_initiated",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 10,
+                "name": "registrations_completed",
+                "type": "string",
+                "is_repeated": true
               }
             ]
           }
@@ -4055,6 +4072,38 @@
             ]
           },
           {
+            "name": "ComplianceOperatorRuleV2.OperatorKind",
+            "enum_fields": [
+              {
+                "name": "OPERATOR_KIND_UNSPECIFIED"
+              },
+              {
+                "name": "RULE",
+                "integer": 1
+              },
+              {
+                "name": "CUSTOM_RULE",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorProfileV2.OperatorKind",
+            "enum_fields": [
+              {
+                "name": "OPERATOR_KIND_UNSPECIFIED"
+              },
+              {
+                "name": "PROFILE",
+                "integer": 1
+              },
+              {
+                "name": "TAILORED_PROFILE",
+                "integer": 2
+              }
+            ]
+          },
+          {
             "name": "ComplianceOperatorCheckResultV2.CheckStatus",
             "enum_fields": [
               {
@@ -4236,6 +4285,11 @@
                 "id": 15,
                 "name": "profile_ref_id",
                 "type": "string"
+              },
+              {
+                "id": 16,
+                "name": "operator_kind",
+                "type": "OperatorKind"
               }
             ],
             "maps": [
@@ -4348,6 +4402,11 @@
                 "id": 17,
                 "name": "instructions",
                 "type": "string"
+              },
+              {
+                "id": 18,
+                "name": "operator_kind",
+                "type": "OperatorKind"
               }
             ],
             "maps": [
@@ -6895,6 +6954,11 @@
                 "id": 3,
                 "name": "first_system_occurrence",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 4,
+                "name": "cve",
+                "type": "string"
               }
             ]
           }
@@ -9083,6 +9147,11 @@
                 "name": "verified_image_references",
                 "type": "string",
                 "is_repeated": true
+              },
+              {
+                "id": 6,
+                "name": "verifier_name",
+                "type": "string"
               }
             ]
           },
@@ -10670,6 +10739,10 @@
               {
                 "name": "EGRESS_FIREWALLS",
                 "integer": 9
+              },
+              {
+                "name": "PODS_ATTACH",
+                "integer": 10
               }
             ]
           }
@@ -10708,6 +10781,12 @@
                 "id": 6,
                 "name": "pod_port_forward_args",
                 "type": "PodPortForwardArgs",
+                "oneof_parent": "ObjectArgs"
+              },
+              {
+                "id": 21,
+                "name": "pod_attach_args",
+                "type": "PodAttachArgs",
                 "oneof_parent": "ObjectArgs"
               },
               {
@@ -10792,6 +10871,16 @@
                     "name": "ports",
                     "type": "int32",
                     "is_repeated": true
+                  }
+                ]
+              },
+              {
+                "name": "PodAttachArgs",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "container",
+                    "type": "string"
                   }
                 ]
               },
@@ -16509,6 +16598,16 @@
                 "id": 3,
                 "name": "label",
                 "type": "Label"
+              },
+              {
+                "id": 4,
+                "name": "cluster_label",
+                "type": "Label"
+              },
+              {
+                "id": 5,
+                "name": "namespace_label",
+                "type": "Label"
               }
             ],
             "messages": [
@@ -17748,6 +17847,11 @@
                 "id": 16,
                 "name": "bytess",
                 "type": "bytes"
+              },
+              {
+                "id": 17,
+                "name": "timestamptz",
+                "type": "google.protobuf.Timestamp"
               }
             ],
             "maps": [
@@ -18101,6 +18205,11 @@
                 "name": "int32_slice",
                 "type": "int32",
                 "is_repeated": true
+              },
+              {
+                "id": 19,
+                "name": "timestamptz",
+                "type": "google.protobuf.Timestamp"
               },
               {
                 "id": 12,
@@ -19234,6 +19343,421 @@
         "package": {
           "name": "storage"
         }
+      }
+    },
+    {
+      "protopath": "virtual_machine_component_v2.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "VirtualMachineComponentV2.Note",
+            "enum_fields": [
+              {
+                "name": "UNSPECIFIED"
+              },
+              {
+                "name": "UNSCANNED",
+                "integer": 1
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "VirtualMachineComponentV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "vm_scan_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "version",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "source",
+                "type": "SourceType"
+              },
+              {
+                "id": 6,
+                "name": "operating_system",
+                "type": "string"
+              },
+              {
+                "id": 7,
+                "name": "top_cvss",
+                "type": "float",
+                "oneof_parent": "set_top_cvss"
+              },
+              {
+                "id": 8,
+                "name": "fixed_by",
+                "type": "string"
+              },
+              {
+                "id": 9,
+                "name": "cve_count",
+                "type": "int32"
+              },
+              {
+                "id": 10,
+                "name": "notes",
+                "type": "Note",
+                "is_repeated": true
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "storage/image.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "./storage;storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
+      }
+    },
+    {
+      "protopath": "virtual_machine_cve_v2.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "VirtualMachineCVEV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "vm_v2_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "vm_component_id",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "cve_base_info",
+                "type": "CVEInfo"
+              },
+              {
+                "id": 5,
+                "name": "preferred_cvss",
+                "type": "float"
+              },
+              {
+                "id": 6,
+                "name": "preferred_cvss_version",
+                "type": "CvssScoreVersion"
+              },
+              {
+                "id": 7,
+                "name": "severity",
+                "type": "VulnerabilitySeverity"
+              },
+              {
+                "id": 8,
+                "name": "impact_score",
+                "type": "float"
+              },
+              {
+                "id": 9,
+                "name": "nvdcvss",
+                "type": "float"
+              },
+              {
+                "id": 10,
+                "name": "nvd_score_version",
+                "type": "CvssScoreVersion"
+              },
+              {
+                "id": 11,
+                "name": "is_fixable",
+                "type": "bool"
+              },
+              {
+                "id": 12,
+                "name": "fixed_by",
+                "type": "string",
+                "oneof_parent": "has_fixed_by"
+              },
+              {
+                "id": 13,
+                "name": "epss_probability",
+                "type": "float"
+              },
+              {
+                "id": 14,
+                "name": "advisory",
+                "type": "Advisory"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "storage/cve.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "./storage;storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
+      }
+    },
+    {
+      "protopath": "virtual_machine_scan_v2.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "VirtualMachineScanV2.Note",
+            "enum_fields": [
+              {
+                "name": "UNSET"
+              },
+              {
+                "name": "OS_UNKNOWN",
+                "integer": 1
+              },
+              {
+                "name": "OS_UNSUPPORTED",
+                "integer": 2
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "VirtualMachineScanV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "vm_v2_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "scan_os",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "scan_time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "top_cvss",
+                "type": "float"
+              },
+              {
+                "id": 6,
+                "name": "notes",
+                "type": "Note",
+                "is_repeated": true
+              },
+              {
+                "id": 7,
+                "name": "hash",
+                "type": "uint64"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "./storage;storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
+      }
+    },
+    {
+      "protopath": "virtual_machine_v2.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "VirtualMachineV2.State",
+            "enum_fields": [
+              {
+                "name": "UNKNOWN"
+              },
+              {
+                "name": "STOPPED",
+                "integer": 1
+              },
+              {
+                "name": "RUNNING",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "VirtualMachineV2.Note",
+            "enum_fields": [
+              {
+                "name": "MISSING_METADATA"
+              },
+              {
+                "name": "MISSING_SCAN_DATA",
+                "integer": 1
+              },
+              {
+                "name": "MISSING_SIGNATURE",
+                "integer": 2
+              },
+              {
+                "name": "MISSING_SIGNATURE_VERIFICATION_DATA",
+                "integer": 3
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "VirtualMachineV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "namespace",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "cluster_id",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "cluster_name",
+                "type": "string"
+              },
+              {
+                "id": 7,
+                "name": "guest_os",
+                "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "state",
+                "type": "State"
+              },
+              {
+                "id": 9,
+                "name": "last_updated",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 10,
+                "name": "notes",
+                "type": "Note",
+                "is_repeated": true
+              },
+              {
+                "id": 11,
+                "name": "vsock_cid",
+                "type": "int32"
+              },
+              {
+                "id": 12,
+                "name": "hash",
+                "type": "uint64"
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 6,
+                  "name": "facts",
+                  "type": "string"
+                }
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "./storage;storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
       }
     },
     {

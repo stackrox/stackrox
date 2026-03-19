@@ -6,10 +6,10 @@ const parserTypeScriptESLint = require('@typescript-eslint/parser');
 
 const pluginCypress = require('eslint-plugin-cypress');
 const pluginCSS = require('@eslint/css').default;
-const pluginESLint = require('@eslint/js'); // eslint-disable-line import/no-extraneous-dependencies
+const pluginESLint = require('@eslint/js');
 const pluginJSON = require('@eslint/json').default;
 const pluginMarkdown = require('@eslint/markdown').default; // ECMAScript module requires Node.js 22.12.0 or later
-const pluginESLintComments = require('eslint-plugin-eslint-comments');
+const pluginESLintComments = require('@eslint-community/eslint-plugin-eslint-comments');
 const pluginImport = require('eslint-plugin-import');
 const pluginJestDOM = require('eslint-plugin-jest-dom');
 const pluginPrettier = require('eslint-plugin-prettier');
@@ -121,7 +121,7 @@ module.exports = [
 
         // Key of plugin is namespace of its rules.
         plugins: {
-            'eslint-comments': pluginESLintComments,
+            '@eslint-community/eslint-comments': pluginESLintComments,
             import: pluginImport,
             prettier: pluginPrettier,
         },
@@ -139,7 +139,7 @@ module.exports = [
             ...pluginESLintComments.configs.recommended.rules,
 
             // Turn off new rules until after we fix errors in follow-up contributions.
-            'eslint-comments/disable-enable-pair': 'off', // fix more than 50 errors
+            '@eslint-community/eslint-comments/disable-enable-pair': 'off', // fix more than 50 errors
 
             // https://github.com/import-js/eslint-plugin-import/blob/main/config/errors.js
             ...pluginImport.configs.errors.rules, // depends on parsers and resolver in settings
@@ -255,11 +255,11 @@ module.exports = [
                     message: 'Please use Number.isNaN instead',
                 },
                 {
-                    property: '__defineGetter__',
+                    property: 'function __defineGetter__() { [native code] }',
                     message: 'Please use Object.defineProperty instead.',
                 },
                 {
-                    property: '__defineSetter__',
+                    property: 'function __defineSetter__() { [native code] }',
                     message: 'Please use Object.defineProperty instead.',
                 },
                 {

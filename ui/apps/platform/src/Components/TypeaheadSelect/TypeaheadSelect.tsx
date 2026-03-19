@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type {
     FocusEventHandler,
     FormEvent,
@@ -9,6 +9,7 @@ import type {
     Ref,
 } from 'react';
 import {
+    Button,
     MenuFooter,
     MenuToggle,
     Select,
@@ -16,8 +17,10 @@ import {
     SelectOption,
     TextInputGroup,
     TextInputGroupMain,
+    TextInputGroupUtilities,
 } from '@patternfly/react-core';
 import type { MenuToggleElement } from '@patternfly/react-core';
+import { TimesIcon } from '@patternfly/react-icons';
 
 export type TypeaheadSelectOption = {
     value: string;
@@ -32,6 +35,7 @@ export type TypeaheadSelectProps = {
     onChange: (value: string) => void;
     options: TypeaheadSelectOption[];
     allowCreate?: boolean;
+    isClearable?: boolean;
     placeholder?: string;
     isDisabled?: boolean;
     toggleAriaLabel?: string;
@@ -50,6 +54,7 @@ function TypeaheadSelect({
     onChange,
     options,
     allowCreate = false,
+    isClearable = false,
     placeholder = 'Type to search...',
     isDisabled = false,
     toggleAriaLabel,
@@ -63,6 +68,7 @@ function TypeaheadSelect({
     const [isOpen, setIsOpen] = useState(false);
     const [inputValue, setInputValue] = useState('');
     const [focusedItemIndex, setFocusedItemIndex] = useState<number>(-1);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     function onSelect(
         _event: ReactMouseEvent<Element, MouseEvent> | undefined,
@@ -142,6 +148,17 @@ function TypeaheadSelect({
         return selectedOption?.label || selectedOption?.value || value;
     };
 
+    const hasClearButton = isClearable && !isDisabled && Boolean(value || inputValue);
+
+    function onClear(event: ReactMouseEvent<HTMLButtonElement, MouseEvent>) {
+        event.stopPropagation();
+        onChange('');
+        setInputValue('');
+        setFocusedItemIndex(-1);
+        setIsOpen(false);
+        inputRef.current?.focus();
+    }
+
     const toggle = (toggleRef: Ref<MenuToggleElement>) => (
         <MenuToggle
             ref={toggleRef}
@@ -153,7 +170,7 @@ function TypeaheadSelect({
             id={menuToggleId}
             className={className}
         >
-            <TextInputGroup>
+            <TextInputGroup isPlain>
                 <TextInputGroupMain
                     value={isOpen ? inputValue : getDisplayValue()}
                     placeholder={placeholder}
@@ -162,7 +179,20 @@ function TypeaheadSelect({
                     onKeyDown={onKeyDown}
                     autoComplete="off"
                     id={`${id}-select-typeahead`}
+                    innerRef={inputRef}
                 />
+                <TextInputGroupUtilities
+                    {...(!hasClearButton ? { style: { display: 'none' } } : {})}
+                >
+                    <Button
+                        variant="plain"
+                        onClick={onClear}
+                        aria-label="Clear input value"
+                        isDisabled={isDisabled}
+                    >
+                        <TimesIcon aria-hidden />
+                    </Button>
+                </TextInputGroupUtilities>
             </TextInputGroup>
         </MenuToggle>
     );
