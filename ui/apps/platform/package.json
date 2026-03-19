@@ -199,6 +199,9 @@
     },
     "overrides": {
         "autoprefixer": "10.4.5",
+        "cypress-vite": {
+            "vite": "^8.0.0"
+        },
         "nth-check": "^2.1.1",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
