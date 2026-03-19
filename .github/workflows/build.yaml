@@ -299,6 +299,8 @@ jobs:
 
   pre-build-operator-bundle:
     runs-on: ubuntu-latest
+    outputs:
+      operator-tag: ${{ steps.operator-tag.outputs.tag }}
     env:
       QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
       QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
@@ -338,6 +340,12 @@ jobs:
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
+
+      - name: Determine operator image tag
+        id: operator-tag
+        run: |
+          TAG=$(make -C operator --quiet --no-print-directory tag)
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Build and Push Operator Bundle
         env:
@@ -711,10 +719,10 @@ jobs:
         run: |
           tar xvzf go-binaries-build.tgz
 
-      - name: Determine operator image tag
+      - name: Use operator tag from bundle job
         id: operator-tag
         run: |
-          TAG=$(make -C operator --quiet --no-print-directory tag)
+          TAG="${{ needs.pre-build-operator-bundle.outputs.operator-tag }}"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "image=quay.io/${{ env.QUAY_ORG }}/stackrox-operator:${TAG}" >> "$GITHUB_OUTPUT"
 
