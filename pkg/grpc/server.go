@@ -11,7 +11,7 @@ import (
 
 	"github.com/NYTimes/gziphandler"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -51,9 +51,17 @@ const (
 	defaultMaxGrpcConcurrentStreams = 100               // HTTP/2 spec recommendation for minimum value
 )
 
+var (
+	serverMetrics = grpc_prometheus.NewServerMetrics(
+		grpc_prometheus.WithServerHandlingTimeHistogram(),
+	)
+)
+
 func init() {
-	grpc_prometheus.EnableHandlingTimeHistogram()
 	grpc_logging.InitGrpcLogger()
+	if err := prometheus.Register(serverMetrics); err != nil {
+		log.Warnf("failed to register gRPC server metrics: %v", err)
+	}
 }
 
 var (
@@ -224,7 +232,7 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 	// The metrics and error interceptors are first in line, i.e., outermost, to
 	// make sure all requests are registered in Prometheus with errors converted
 	// to gRPC status codes.
-	u = append(u, grpc_prometheus.UnaryServerInterceptor)
+	u = append(u, serverMetrics.UnaryServerInterceptor())
 	u = append(u, grpc_errors.ErrorToGrpcCodeInterceptor)
 
 	if a.config.RateLimiter != nil {
@@ -271,7 +279,7 @@ func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 	// The metrics and error interceptors are first in line, i.e., outermost, to
 	// make sure all requests are registered in Prometheus with errors converted
 	// to gRPC status codes.
-	s = append(s, grpc_prometheus.StreamServerInterceptor)
+	s = append(s, serverMetrics.StreamServerInterceptor())
 	s = append(s, grpc_errors.ErrorToGrpcCodeStreamInterceptor)
 
 	if a.config.RateLimiter != nil {
