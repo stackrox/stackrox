@@ -39,7 +39,11 @@ function DeploymentTabWithReadAccessForDeployment({
                 </Alert>
             )}
             <Flex flex={{ default: 'flex_1' }}>
-                <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>
+                <Flex
+                    direction={{ default: 'column' }}
+                    flex={{ default: 'flex_1' }}
+                    style={{ minWidth: 0 }}
+                >
                     <FlexItem>
                         <Card>
                             <CardTitle component="h3">Deployment overview</CardTitle>
@@ -58,7 +62,11 @@ function DeploymentTabWithReadAccessForDeployment({
                         <SecurityContext deployment={relatedDeployment} />
                     </FlexItem>
                 </Flex>
-                <Flex direction={{ default: 'column' }} flex={{ default: 'flex_1' }}>
+                <Flex
+                    direction={{ default: 'column' }}
+                    flex={{ default: 'flex_1' }}
+                    style={{ minWidth: 0 }}
+                >
                     <FlexItem>
                         <ContainerConfiguration deployment={relatedDeployment} />
                     </FlexItem>

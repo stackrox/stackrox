@@ -12,9 +12,10 @@ import SecurityContext from 'Components/SecurityContext';
 
 type DeploymentContainerConfigProps = {
     container: Container;
+    getImageUrl: (imageId: string) => string;
 };
 
-function DeploymentContainerConfig({ container }: DeploymentContainerConfigProps) {
+function DeploymentContainerConfig({ container, getImageUrl }: DeploymentContainerConfigProps) {
     const [isExpanded, setIsExpanded] = useState(false);
 
     const onToggle = (_isExpanded: boolean) => {
@@ -34,7 +35,7 @@ function DeploymentContainerConfig({ container }: DeploymentContainerConfigProps
         >
             <Stack hasGutter>
                 <StackItem>
-                    <ContainerImageInfo image={container.image} />
+                    <ContainerImageInfo image={container.image} getImageUrl={getImageUrl} />
                 </StackItem>
                 <StackItem>
                     <ContainerResourcesInfo resources={container.resources} />

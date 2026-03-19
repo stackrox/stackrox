@@ -5,7 +5,6 @@ import { fetchDeployment } from 'services/DeploymentsService';
 import CollapsibleCard from 'Components/CollapsibleCard';
 import { getDateTime } from 'utils/dateUtils';
 import { portExposureLabels } from 'messages/common';
-import SecurityContext from './SecurityContext';
 import ContainerConfigurations from './ContainerConfigurations';
 import KeyValuePairs from './KeyValuePairs';
 import type { Deployment, PortConfig } from 'types/deployment.proto';
@@ -83,7 +82,6 @@ function DeploymentDetails({ deployment }: DeploymentDetailsProps) {
                 </CollapsibleCard>
             </div>
             <ContainerConfigurations deployment={relatedDeployment || deployment} />
-            <SecurityContext deployment={relatedDeployment || deployment} />
         </div>
     );
 }
