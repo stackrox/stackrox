@@ -364,7 +364,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			desc:      "cluster(s) included by label include all underlying namespaces",
 			scopeDesc: `cluster.labels: focus in (melange) => { "Arrakis::*, Giedi=Prime::*" }`,
 			scopeStr:  "Arrakis::*, Giedi=Prime::*",
-			scopeJSON: `{"Arrakis":["*"], "Giedi=Prime": ["*"]}`,
+			scopeJSON: `{"Arrakis":["*"],"Giedi=Prime":["*"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -524,7 +524,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			desc:      "namespace(s) included by label do not include anything else",
 			scopeDesc: `namespace.labels: focus in (melange) => { "Arrakis::Atreides", "Arrakis::Harkonnen", "Giedi=Prime::Harkonnen" }`,
 			scopeStr:  "Arrakis::{Atreides, Harkonnen}, Giedi=Prime::Harkonnen",
-			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"], "Giedi=Prime":["Harkonnen"]}`,
+			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"],"Giedi=Prime":["Harkonnen"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -798,7 +798,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			desc:      "rules are joined by OR",
 			scopeDesc: `namespace: "Earth::Skunk Works" OR cluster.labels: focus in (melange) OR namespace.labels: region in (EU) => { "Earth::Skunk Works", "Earth::Fraunhofer", "Earth::CERN", "Arrakis::*", "Giedi=Prime::*" }`,
 			scopeStr:  "Arrakis::*, Earth::{CERN, Fraunhofer, Skunk Works}, Giedi=Prime::*",
-			scopeJSON: `{"Earth":["CERN","Fraunhofer","Skunk Works"],"Arrakis":["*"], "Giedi=Prime":["*"]}`,
+			scopeJSON: `{"Earth":["CERN","Fraunhofer","Skunk Works"],"Arrakis":["*"],"Giedi=Prime":["*"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -855,7 +855,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			desc:      "all excluded namespaces are removed from cluster in minimal form",
 			scopeDesc: `"namespace.labels: focus in (melange)" => { "Arrakis::Atreides", "Arrakis::Harkonnen", "Giedi=Prime::Harkonnen" }`,
 			scopeStr:  "Arrakis::{Atreides, Harkonnen}, Giedi=Prime::Harkonnen",
-			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"], "Giedi=Prime":["Harkonnen"]}`,
+			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"],"Giedi=Prime":["Harkonnen"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,
@@ -900,7 +900,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			desc:      "no labels in standard form",
 			scopeDesc: `"namespace.labels: focus in (melange)" => { "Arrakis::Atreides", "Arrakis::Harkonnen", "Giedi=Prime::Harkonnen" }`,
 			scopeStr:  "Arrakis::{Atreides, Harkonnen}, Giedi=Prime::Harkonnen",
-			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"], "Giedi=Prime":["Harkonnen"]}`,
+			scopeJSON: `{"Arrakis":["Atreides","Harkonnen"],"Giedi=Prime":["Harkonnen"]}`,
 			scope: &storage.SimpleAccessScope{
 				Id:   accessScopeID,
 				Name: accessScopeName,

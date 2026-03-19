@@ -29,7 +29,7 @@ func TestConvertRulesToSelectors(t *testing.T) {
 			rules:    nil,
 			expected: emptySelector(),
 		},
-		"empty ruleset result in an empty selector": {
+		"empty ruleset results in an empty selector": {
 			rules:    &storage.SimpleAccessScope_Rules{},
 			expected: emptySelector(),
 		},

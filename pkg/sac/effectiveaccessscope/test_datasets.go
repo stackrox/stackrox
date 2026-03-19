@@ -64,15 +64,15 @@ var (
 		Labels: map[string]string{"focus": "melange"},
 	}
 
+	earthAttributes = treeNodeAttributes{
+		ID:   "planet.earth",
+		Name: "Earth",
+	}
+
 	giediPrimeAttributes = treeNodeAttributes{
 		ID:     "planet.giedi=prime",
 		Name:   "Giedi=Prime",
 		Labels: map[string]string{"focus": "melange"},
-	}
-
-	earthAttributes = treeNodeAttributes{
-		ID:   "planet.earth",
-		Name: "Earth",
 	}
 
 	notFoundCluster = &clustersScopeSubTree{

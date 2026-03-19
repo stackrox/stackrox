@@ -315,10 +315,10 @@ func (root *ScopeTree) populateStateForCluster(
 	// If root is eventually Included then we can include the cluster and short-circuit:
 	// no need to match if parent is included.
 
-	// Match the cluster
+	// Match the cluster.
 	clusterState := ruleSelectors.matchCluster(cluster)
 
-	// Set the cluster state to the pre-existing state
+	// Set the cluster state to the pre-existing state.
 	if clusterSubTree := root.Clusters[clusterName]; clusterSubTree != nil {
 		if clusterSubTree.State < clusterState {
 			clusterSubTree.State = clusterState
@@ -327,7 +327,7 @@ func (root *ScopeTree) populateStateForCluster(
 		return
 	}
 
-	// Update the tree
+	// Update the tree.
 	root.Clusters[clusterName] = newClusterScopeSubTree(clusterState, nodeAttributesForCluster(cluster, detail))
 	root.clusterIDToName[clusterID] = clusterName
 }
@@ -460,7 +460,7 @@ func (cluster *clustersScopeSubTree) populateStateForNamespace(
 		return
 	}
 
-	// Update the tree
+	// Update the tree.
 	cluster.Namespaces[namespaceName] = newNamespacesScopeSubTree(namespaceState, nodeAttributesForNamespace(namespace, detail))
 }
 
