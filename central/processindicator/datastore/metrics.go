@@ -64,6 +64,12 @@ func getProcessArgsSizeChars(indicator *storage.ProcessIndicator) int {
 	if indicator == nil || indicator.GetSignal() == nil {
 		return 0
 	}
+	// RuneCountInString returns the number of UTF-8 characters.
+	// For ASCII this is going to be equivalent to len(), but
+	// it is not going to be equivalent for special characters.
+	// len() is O(1), but RuneCountInString is O(n). This should
+	// not be a problem because metrics are handled async and should
+	// not block other processes such as database writes.
 	return utf8.RuneCountInString(indicator.GetSignal().GetArgs())
 }
 
