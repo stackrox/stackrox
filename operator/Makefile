@@ -362,8 +362,8 @@ build/Dockerfile.gen: Dockerfile
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the operator.
-	$(SILENT)if [ -f "../bin/linux_$(GOARCH)/stackrox-operator" ] || [ -f "bin/linux_$(GOARCH)/stackrox-operator" ]; then \
-		echo "Using pre-built binary"; \
+	$(SILENT)if [ "$$CI" = "true" ] && ([ -f "../bin/linux_$(GOARCH)/stackrox-operator" ] || [ -f "bin/linux_$(GOARCH)/stackrox-operator" ]); then \
+		echo "Using pre-built binary (CI mode)"; \
 		$(MAKE) docker-build-prebuilt; \
 	else \
 		echo "Building binary inside Docker"; \
@@ -589,8 +589,8 @@ PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
 docker-buildx: ## Build and push docker image for the manager for cross-platform support
 	@echo "Note: docker-buildx with pre-built binaries requires binaries for all platforms to be built first"
 	@echo "Building for platforms: $(PLATFORMS)"
-	$(SILENT)if [ -f "../bin/linux_amd64/stackrox-operator" ]; then \
-		echo "Using pre-built binaries for multi-platform build"; \
+	$(SILENT)if [ "$$CI" = "true" ] && [ -f "../bin/linux_amd64/stackrox-operator" ]; then \
+		echo "Using pre-built binaries for multi-platform build (CI mode)"; \
 		$(MAKE) docker-buildx-prebuilt; \
 	else \
 		echo "Building binaries inside Docker for multi-platform build"; \
