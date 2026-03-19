@@ -26,7 +26,7 @@ import (
 type violationsTestSuite struct {
 	suite.Suite
 	deployAlert, processAlert, k8sAlert, networkAlert, resourceAlert, fileAccessAlert *storage.Alert
-	allowCtx                                                                           context.Context
+	allowCtx                                                                          context.Context
 }
 
 func mustParseTime(timeStr string) time.Time {

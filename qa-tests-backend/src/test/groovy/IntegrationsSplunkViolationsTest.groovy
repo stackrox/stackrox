@@ -1,3 +1,4 @@
+import static util.Helpers.waitForTrue
 import static util.Helpers.withRetry
 import static util.SplunkUtil.postToSplunk
 import static util.SplunkUtil.tearDownSplunk
@@ -7,18 +8,21 @@ import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
 
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass
 
 import common.Constants
 import objects.Deployment
 import services.AlertService
 import services.ApiTokenService
 import services.NetworkBaselineService
+import services.PolicyService
 import util.Env
 import util.NetworkGraphUtil
 import util.SplunkUtil
 import util.SplunkUtil.SplunkDeployment
 import util.Timer
 
+import org.junit.Assume
 import spock.lang.IgnoreIf
 import spock.lang.Tag
 
@@ -32,6 +36,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
 
     @spock.lang.Shared
     private SplunkDeployment splunkDeployment
+    private static final String FACT_CONTAINER = "fact"
+    private static final String COLLECTOR_DS = "collector"
 
     def setupSpec() {
         orchestrator.deleteNamespace(TEST_NAMESPACE)
@@ -123,6 +129,126 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         for (alert in alerts) {
             validateCimMappings(alert)
         }
+    }
+
+    @Tag("Integration")
+    def "Verify Splunk violations: file access violations reach Splunk TA"() {
+        given:
+        "FACT is enabled in the collector"
+        Assume.assumeTrue(
+                "FACT container not found in collector DaemonSet — skipping file access test",
+                orchestrator.containsDaemonSetContainer(
+                        Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER))
+
+        and:
+        "FACT is configured to monitor /tmp paths"
+        patchFactEnv()
+
+        and:
+        "Splunk TA is installed and configured"
+        String centralHost = orchestrator.getServiceIP("central", "stackrox")
+        configureSplunkTA(splunkDeployment, centralHost)
+
+        and:
+        "a file activity policy targeting a unique path"
+        def path = "/tmp/fa-splunk-${UUID.randomUUID()}"
+        def policyName = "FA-Splunk-${UUID.randomUUID()}"
+        def policy = createFileActivityPolicy(policyName, path)
+        def policyID = PolicyService.createNewPolicy(policy)
+        assert policyID
+
+        when:
+        "a file is created at that path inside the Splunk pod"
+        orchestrator.execInContainer(splunkDeployment.deployment, "touch ${path}")
+
+        and:
+        "we wait for the violation to be detected"
+        assert Services.waitForViolation(splunkDeployment.deployment.name, policyName, 90)
+
+        and:
+        "we search for file access violations in Splunk"
+        def port = splunkDeployment.splunkPortForward.getLocalPort()
+        List<Map<String, String>> results = Collections.emptyList()
+        withRetry(40, 15) {
+            def searchId = SplunkUtil.createSearch(port, "search sourcetype=stackrox-violations")
+            Response response = SplunkUtil.getSearchResults(port, searchId)
+            assert response != null
+            results = response.getBody().jsonPath().getList("results")
+            assert !results.isEmpty()
+            assert results.any { isViolationOfType(it, "FILE_ACCESS") }
+        }
+
+        then:
+        "file access violations are present with correct fields"
+        def fileAccessResults = results.findAll { isViolationOfType(it, "FILE_ACCESS") }
+        assert !fileAccessResults.isEmpty()
+
+        for (result in fileAccessResults) {
+            def originalEvent = new JsonPath(result.get("_raw"))
+            def fileAccessInfo = originalEvent.getMap("fileAccessInfo") ?: [:]
+
+            // fileAccessInfo should be populated in the raw event
+            assert fileAccessInfo.get("operation") != null
+            assert fileAccessInfo.get("hostname") != null
+            assert coalesce(
+                    fileAccessInfo.get("effectivePath"),
+                    fileAccessInfo.get("actualPath")) != null
+        }
+
+        cleanup:
+        if (policyID) {
+            PolicyService.deletePolicy(policyID)
+        }
+    }
+
+    private void patchFactEnv() {
+        log.info "Setting FACT_PATHS on collector DaemonSet"
+        waitForTrue(2, 20) {
+            orchestrator.updateDaemonSetEnv(
+                    Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
+                    "FACT_PATHS", "/tmp/**/*")
+            try {
+                waitForTrue(20, 10) {
+                    orchestrator.daemonSetEnvVarUpdated(
+                            Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
+                            "FACT_PATHS", "/tmp/**/*")
+                }
+                waitForTrue(20, 10) {
+                    orchestrator.daemonSetReady(Constants.STACKROX_NAMESPACE, COLLECTOR_DS)
+                }
+            } catch (Exception ignored) {
+                log.info "Unable to bring collector DS to desired state"
+                return false
+            }
+            return true
+        }
+    }
+
+    private static PolicyOuterClass.Policy createFileActivityPolicy(String name, String path) {
+        return PolicyOuterClass.Policy.newBuilder()
+                .setName(name)
+                .addLifecycleStages(PolicyOuterClass.LifecycleStage.RUNTIME)
+                .setEventSource(PolicyOuterClass.EventSource.DEPLOYMENT_EVENT)
+                .setSeverityValue(2)
+                .addCategories("File Activity Monitoring")
+                .setDisabled(false)
+                .addPolicySections(
+                        PolicyOuterClass.PolicySection.newBuilder()
+                                .setSectionName("file-access")
+                                .addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("File Path")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue(path))
+                                                .build())
+                                .addPolicyGroups(
+                                        PolicyOuterClass.PolicyGroup.newBuilder()
+                                                .setFieldName("File Operation")
+                                                .addValues(PolicyOuterClass.PolicyValue.newBuilder()
+                                                        .setValue("CREATE"))
+                                                .build())
+                                .build())
+                .build()
     }
 
     private static void validateCimMappings(Map<String, String> result) {
@@ -336,6 +462,10 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
 
     boolean isProcessViolation(Map<String, String> result) {
         return isViolationOfType(result, "PROCESS_EVENT")
+    }
+
+    boolean isFileAccessViolation(Map<String, String> result) {
+        return isViolationOfType(result, "FILE_ACCESS")
     }
 
     boolean isViolationOfType(Map<String, String> result, String type) {
