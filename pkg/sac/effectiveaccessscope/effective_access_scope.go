@@ -64,11 +64,11 @@ func (n *namespacesScopeSubTree) copy() *namespacesScopeSubTree {
 }
 
 type selectors struct {
-	clustersByID    map[string]bool
+	clustersByID    set.StringSet
 	clustersByName  set.StringSet
 	clustersByLabel []labels.Selector
 
-	namespacesByClusterID   map[string]map[string]bool
+	namespacesByClusterID   map[string]set.StringSet
 	namespacesByClusterName map[string]set.StringSet
 	namespacesByLabel       []labels.Selector
 }
@@ -79,7 +79,7 @@ func (s *selectors) matchCluster(cluster Cluster) scopeState {
 	}
 
 	clusterID := cluster.GetId()
-	if s.clustersByID != nil && s.clustersByID[clusterID] {
+	if s.clustersByID != nil && s.clustersByID.Contains(clusterID) {
 		return Included
 	}
 

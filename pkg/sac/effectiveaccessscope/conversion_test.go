@@ -282,15 +282,12 @@ func TestConvertRulesToSelectors(t *testing.T) {
 				NamespaceLabelSelectors: nil,
 			},
 			expected: &selectors{
-				clustersByID: map[string]bool{
-					fixtureconsts.Cluster1: true,
-					fixtureconsts.Cluster2: true,
-				},
+				clustersByID:    set.NewStringSet(fixtureconsts.Cluster1, fixtureconsts.Cluster2),
 				clustersByName:  set.NewStringSet(clusterName1, clusterName2),
 				clustersByLabel: make([]labels.Selector, 0),
-				namespacesByClusterID: map[string]map[string]bool{
-					fixtureconsts.Cluster1: {namespaceName2: true},
-					fixtureconsts.Cluster2: {namespaceName1: true},
+				namespacesByClusterID: map[string]set.StringSet{
+					fixtureconsts.Cluster1: set.NewStringSet(namespaceName2),
+					fixtureconsts.Cluster2: set.NewStringSet(namespaceName1),
 				},
 				namespacesByClusterName: map[string]set.StringSet{
 					clusterName1: set.NewStringSet(namespaceName1),
@@ -309,10 +306,10 @@ func TestConvertRulesToSelectors(t *testing.T) {
 
 func emptySelector() *selectors {
 	return &selectors{
-		clustersByID:            make(map[string]bool),
+		clustersByID:            set.NewStringSet(),
 		clustersByName:          set.NewStringSet(),
 		clustersByLabel:         make([]labels.Selector, 0),
-		namespacesByClusterID:   make(map[string]map[string]bool),
+		namespacesByClusterID:   make(map[string]set.StringSet),
 		namespacesByClusterName: make(map[string]set.StringSet),
 		namespacesByLabel:       make([]labels.Selector, 0),
 	}
@@ -320,9 +317,7 @@ func emptySelector() *selectors {
 
 func selectOnlyClustersByID(clusterIDs []string) *selectors {
 	selector := emptySelector()
-	for _, clusterID := range clusterIDs {
-		selector.clustersByID[clusterID] = true
-	}
+	selector.clustersByID.AddAll(clusterIDs...)
 	return selector
 }
 
@@ -338,10 +333,7 @@ func selectNamespacesByCluster(
 ) *selectors {
 	selector := emptySelector()
 	for clusterID, clusterNamespaces := range namespacesByClusterID {
-		selector.namespacesByClusterID[clusterID] = make(map[string]bool)
-		for _, ns := range clusterNamespaces {
-			selector.namespacesByClusterID[clusterID][ns] = true
-		}
+		selector.namespacesByClusterID[clusterID] = set.NewStringSet(clusterNamespaces...)
 	}
 	for clusterName, clusterNamespaces := range namespacesByClusterName {
 		selector.namespacesByClusterName[clusterName] = set.NewStringSet(clusterNamespaces...)

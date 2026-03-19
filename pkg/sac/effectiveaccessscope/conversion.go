@@ -113,10 +113,7 @@ func convertRulesToSelectors(scopeRules *storage.SimpleAccessScope_Rules) (*sele
 	output.clustersByName = set.NewStringSet(scopeRules.GetIncludedClusters()...)
 
 	includedClusterIDs := scopeRules.GetIncludedClusterIds()
-	output.clustersByID = make(map[string]bool, len(includedClusterIDs))
-	for _, clusterID := range includedClusterIDs {
-		output.clustersByID[clusterID] = true
-	}
+	output.clustersByID = set.NewStringSet(includedClusterIDs...)
 
 	// Convert each selector to labels.Selector.
 	namespaceSelectors, namespaceSelectorErr := convertEachSetBasedLabelSelectorToK8sLabelSelector(scopeRules.GetNamespaceLabelSelectors())
@@ -126,8 +123,8 @@ func convertRulesToSelectors(scopeRules *storage.SimpleAccessScope_Rules) (*sele
 	output.namespacesByLabel = namespaceSelectors
 
 	includedNamespaces := scopeRules.GetIncludedNamespaces()
-	output.namespacesByClusterID = make(map[string]map[string]bool)
-	output.namespacesByClusterName = make(map[string]set.StringSet, len(includedNamespaces))
+	output.namespacesByClusterID = make(map[string]set.StringSet)
+	output.namespacesByClusterName = make(map[string]set.StringSet)
 	for _, namespace := range includedNamespaces {
 		clusterID := namespace.GetClusterId()
 		clusterName := namespace.GetClusterName()

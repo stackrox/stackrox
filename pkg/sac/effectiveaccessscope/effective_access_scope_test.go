@@ -1347,9 +1347,7 @@ func TestSelectorsMatchCluster(t *testing.T) {
 		},
 		"cluster matched by ID is included": {
 			ruleSelector: &selectors{
-				clustersByID: map[string]bool{
-					clusterEarth.GetId(): true,
-				},
+				clustersByID: set.NewStringSet(clusterEarth.GetId()),
 			},
 			cluster:  clusterEarth,
 			expected: Included,
@@ -1411,10 +1409,8 @@ func TestSelectorsMatchNamespace(t *testing.T) {
 		},
 		"namespace matched by cluster ID is included": {
 			ruleSelectors: &selectors{
-				namespacesByClusterID: map[string]map[string]bool{
-					nsSkunkWorks.GetClusterId(): {
-						nsSkunkWorks.GetName(): true,
-					},
+				namespacesByClusterID: map[string]set.StringSet{
+					nsSkunkWorks.GetClusterId(): set.NewStringSet(nsSkunkWorks.GetName()),
 				},
 			},
 			namespace: nsSkunkWorks,
