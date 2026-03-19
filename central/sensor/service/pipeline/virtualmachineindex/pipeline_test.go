@@ -394,7 +394,7 @@ func (suite *PipelineTestSuite) TestRun_NoACKWhenCapabilityMissing() {
 	suite.Empty(injector.messages, "should not send ACK when SensorACKSupport is missing")
 }
 
-func (suite *PipelineTestSuite) TestRun_NoACKOnError() {
+func (suite *PipelineTestSuite) TestRun_NACKOnDBError() {
 	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
 	vmID := "vm-error"
 	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
@@ -414,7 +414,41 @@ func (suite *PipelineTestSuite) TestRun_NoACKOnError() {
 
 	err := suite.pipeline.Run(ctx, testClusterID, msg, injector)
 	suite.Error(err)
-	suite.Empty(injector.messages, "should not send ACK when pipeline errors")
+
+	suite.Require().Len(injector.messages, 1)
+	ack := injector.messages[0].GetSensorAck()
+	suite.Require().NotNil(ack)
+	suite.Equal(central.SensorACK_NACK, ack.GetAction())
+	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
+	suite.Equal(vmID, ack.GetResourceId())
+	suite.Equal(centralsensor.SensorACKReasonStorageFailed, ack.GetReason())
+}
+
+func (suite *PipelineTestSuite) TestRun_NACKOnEnrichmentError() {
+	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
+	vmID := "vm-enrich-fail"
+	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
+
+	suite.enricher.EXPECT().
+		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+		Return(errors.New("scanner unavailable"))
+
+	injector := &mockInjector{
+		capabilities: map[centralsensor.SensorCapability]bool{
+			centralsensor.SensorACKSupport: true,
+		},
+	}
+
+	err := suite.pipeline.Run(ctx, testClusterID, msg, injector)
+	suite.Error(err)
+
+	suite.Require().Len(injector.messages, 1)
+	ack := injector.messages[0].GetSensorAck()
+	suite.Require().NotNil(ack)
+	suite.Equal(central.SensorACK_NACK, ack.GetAction())
+	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
+	suite.Equal(vmID, ack.GetResourceId())
+	suite.Equal(centralsensor.SensorACKReasonEnrichmentFailed, ack.GetReason())
 }
 
 func TestSendSensorACK_NACK(t *testing.T) {
@@ -424,7 +458,7 @@ func TestSendSensorACK_NACK(t *testing.T) {
 		},
 	}
 
-	common.SendSensorACK(ctx, central.SensorACK_NACK, central.SensorACK_VM_INDEX_REPORT, "vm-nack", "rate limited", injector)
+	common.SendSensorACK(ctx, central.SensorACK_NACK, central.SensorACK_VM_INDEX_REPORT, "vm-nack", centralsensor.SensorACKReasonRateLimited, injector)
 
 	assert.Len(t, injector.messages, 1)
 	ack := injector.messages[0].GetSensorAck()
@@ -432,7 +466,7 @@ func TestSendSensorACK_NACK(t *testing.T) {
 	assert.Equal(t, central.SensorACK_NACK, ack.GetAction())
 	assert.Equal(t, central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
 	assert.Equal(t, "vm-nack", ack.GetResourceId())
-	assert.Equal(t, "rate limited", ack.GetReason())
+	assert.Equal(t, centralsensor.SensorACKReasonRateLimited, ack.GetReason())
 }
 
 func TestSendSensorACK_NilInjector(t *testing.T) {
@@ -464,7 +498,20 @@ func TestPipelineRun_DisabledFeature(t *testing.T) {
 	vmID := "vm-1"
 	msg := createVMIndexMessage(vmID, central.ResourceAction_CREATE_RESOURCE)
 
-	err := pipeline.Run(ctx, testClusterID, msg, nil)
+	injector := &mockInjector{
+		capabilities: map[centralsensor.SensorCapability]bool{
+			centralsensor.SensorACKSupport: true,
+		},
+	}
+
+	err := pipeline.Run(ctx, testClusterID, msg, injector)
 
 	assert.NoError(t, err)
+	assert.Len(t, injector.messages, 1, "should ACK to prevent retries when feature is disabled")
+	ack := injector.messages[0].GetSensorAck()
+	assert.NotNil(t, ack)
+	assert.Equal(t, central.SensorACK_ACK, ack.GetAction())
+	assert.Equal(t, central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
+	assert.Equal(t, vmID, ack.GetResourceId())
+	assert.Equal(t, centralsensor.SensorACKReasonFeatureDisabled, ack.GetReason())
 }
