@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
     Card,
     CardBody,
@@ -7,8 +6,9 @@ import {
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
+    Divider,
     EmptyState,
-    ExpandableSection,
+    Label,
     Stack,
     StackItem,
 } from '@patternfly/react-core';
@@ -20,45 +20,42 @@ type ContainerSecretsInfoProps = {
 };
 
 function ContainerSecretsInfo({ secrets }: ContainerSecretsInfoProps) {
-    const initialToggleValues = Array.from({ length: secrets.length }, () => true);
-    const [secretToggles, setSecretToggles] = useState(initialToggleValues);
-
-    function setToggleAtIndex(i: number) {
-        const newToggles = [...secretToggles];
-        newToggles[i] = !newToggles[i];
-
-        setSecretToggles(newToggles);
-    }
-
     return (
         <Card>
             <CardTitle>Secrets</CardTitle>
             <CardBody>
-                <Stack hasGutter>
-                    {secrets.length > 0 ? (
-                        secrets.map((secret, index) => (
+                {secrets.length > 0 ? (
+                    <Stack hasGutter>
+                        {secrets.map((secret, index) => (
                             <StackItem key={secret.name}>
-                                <ExpandableSection
-                                    toggleText={secret.name}
-                                    onToggle={() => setToggleAtIndex(index)}
-                                    isExpanded={secretToggles[index]}
-                                    className="pf-expandable-not-large"
-                                >
-                                    <DescriptionList isCompact className="pf-v6-u-p-md">
-                                        <DescriptionListGroup>
-                                            <DescriptionListTerm>Source</DescriptionListTerm>
-                                            <DescriptionListDescription>
-                                                {secret.path}
-                                            </DescriptionListDescription>
-                                        </DescriptionListGroup>
-                                    </DescriptionList>
-                                </ExpandableSection>
+                                <Stack hasGutter>
+                                    <StackItem>
+                                        <Label color="blue" isCompact>
+                                            {secret.name}
+                                        </Label>
+                                    </StackItem>
+                                    <StackItem>
+                                        <DescriptionList isCompact>
+                                            <DescriptionListGroup>
+                                                <DescriptionListTerm>Path</DescriptionListTerm>
+                                                <DescriptionListDescription>
+                                                    {secret.path}
+                                                </DescriptionListDescription>
+                                            </DescriptionListGroup>
+                                        </DescriptionList>
+                                    </StackItem>
+                                    {index < secrets.length - 1 && (
+                                        <StackItem>
+                                            <Divider />
+                                        </StackItem>
+                                    )}
+                                </Stack>
                             </StackItem>
-                        ))
-                    ) : (
-                        <EmptyState>No secrets</EmptyState>
-                    )}
-                </Stack>
+                        ))}
+                    </Stack>
+                ) : (
+                    <EmptyState>No secrets</EmptyState>
+                )}
             </CardBody>
         </Card>
     );
