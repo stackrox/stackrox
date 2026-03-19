@@ -72,7 +72,6 @@ var (
 		Name:      "process_indicators_removed_total",
 		Help:      "Total number of process indicators removed from the database across all reasons",
 	})
->>>>>>> 1945cff725 (X-Smart-Squash: Squashed 5 commits:)
 )
 
 func incrementPrunedProcessesMetric(num int, reason string) {
@@ -115,7 +114,6 @@ func recordProcessIndicatorsBatchAdded(indicators []*storage.ProcessIndicator) {
 		namespace := indicator.GetNamespace()
 
 		processUpsertedArgsSizeHistogram.Observe(float64(argsSizeChars))
-
 		processUpsertedArgsSizeTotal.WithLabelValues(clusterID, namespace).Add(float64(argsSizeChars))
 		processUpsertedCount.WithLabelValues(clusterID, namespace).Inc()
 	}
