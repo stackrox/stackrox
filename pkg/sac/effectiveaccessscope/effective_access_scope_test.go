@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	labelUtils "github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/labels"
@@ -1329,18 +1330,14 @@ func TestSelectorsMatchCluster(t *testing.T) {
 		},
 		"cluster matched by name (matching k8s syntax) is included": {
 			ruleSelector: &selectors{
-				clustersByName: map[string]bool{
-					clusterEarth.GetName(): true,
-				},
+				clustersByName: set.NewStringSet(clusterEarth.GetName()),
 			},
 			cluster:  clusterEarth,
 			expected: Included,
 		},
 		"cluster matched by name (NOT matching k8s syntax) is included": {
 			ruleSelector: &selectors{
-				clustersByName: map[string]bool{
-					clusterGiediPrime.GetName(): true,
-				},
+				clustersByName: set.NewStringSet(clusterGiediPrime.GetName()),
 			},
 			cluster:  clusterGiediPrime,
 			expected: Included,
@@ -1388,10 +1385,8 @@ func TestSelectorsMatchNamespace(t *testing.T) {
 		},
 		"namespace matched by cluster name is included": {
 			ruleSelectors: &selectors{
-				namespacesByClusterName: map[string]map[string]bool{
-					nsSkunkWorks.GetClusterName(): {
-						nsSkunkWorks.GetName(): true,
-					},
+				namespacesByClusterName: map[string]set.StringSet{
+					nsSkunkWorks.GetClusterName(): set.NewStringSet(nsSkunkWorks.GetName()),
 				},
 			},
 			namespace: nsSkunkWorks,
@@ -1433,7 +1428,7 @@ func TestScopeTreePopulateStateForCluster(t *testing.T) {
 	}{
 		"matching cluster is added to the scope tree if not existing": {
 			root:          newEffectiveAccessScopeTree(Excluded),
-			ruleSelectors: &selectors{clustersByName: map[string]bool{clusterEarth.GetName(): true}},
+			ruleSelectors: &selectors{clustersByName: set.NewStringSet(clusterEarth.GetName())},
 			cluster:       clusterEarth,
 			detail:        v1.ComputeEffectiveAccessScopeRequest_HIGH,
 			expected: &ScopeTree{
@@ -1468,7 +1463,7 @@ func TestScopeTreePopulateStateForCluster(t *testing.T) {
 					clusterEarth.GetId(): clusterEarth.GetName(),
 				},
 			},
-			ruleSelectors: &selectors{clustersByName: map[string]bool{clusterEarth.GetName(): true}},
+			ruleSelectors: &selectors{clustersByName: set.NewStringSet(clusterEarth.GetName())},
 			cluster:       clusterEarth,
 			detail:        v1.ComputeEffectiveAccessScopeRequest_MINIMAL,
 			expected: &ScopeTree{
@@ -1546,8 +1541,8 @@ func TestClusterScopeSubTreePopulateStateForNamespace(t *testing.T) {
 				Namespaces: make(map[string]*namespacesScopeSubTree),
 			},
 			ruleSelectors: &selectors{
-				namespacesByClusterName: map[string]map[string]bool{
-					nsJPL.GetClusterName(): {nsJPL.GetName(): true},
+				namespacesByClusterName: map[string]set.StringSet{
+					nsJPL.GetClusterName(): set.NewStringSet(nsJPL.GetName()),
 				},
 			},
 			namespace: nsJPL,

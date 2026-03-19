@@ -6,6 +6,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
@@ -63,10 +64,10 @@ func (n *namespacesScopeSubTree) copy() *namespacesScopeSubTree {
 }
 
 type selectors struct {
-	clustersByName  map[string]bool
+	clustersByName  set.StringSet
 	clustersByLabel []labels.Selector
 
-	namespacesByClusterName map[string]map[string]bool
+	namespacesByClusterName map[string]set.StringSet
 	namespacesByLabel       []labels.Selector
 }
 
@@ -76,7 +77,7 @@ func (s *selectors) matchCluster(cluster Cluster) scopeState {
 	}
 
 	clusterName := cluster.GetName()
-	if s.clustersByName != nil && s.clustersByName[clusterName] {
+	if s.clustersByName != nil && s.clustersByName.Contains(clusterName) {
 		return Included
 	}
 
@@ -436,14 +437,15 @@ func (cluster *clustersScopeSubTree) populateStateForNamespace(
 	cluster.Namespaces[namespaceName] = newNamespacesScopeSubTree(namespaceState, nodeAttributesForNamespace(namespace, detail))
 }
 
-func matchNamespaceByClusterKey(targetMap map[string]map[string]bool, clusterKey string, namespaceKey string) bool {
+func matchNamespaceByClusterKey(targetMap map[string]set.StringSet, clusterKey string, namespaceKey string) bool {
 	if targetMap == nil {
 		return false
 	}
 	if _, clusterFound := targetMap[clusterKey]; !clusterFound {
 		return false
 	}
-	return targetMap[clusterKey][namespaceKey]
+	clusterNamespaces := targetMap[clusterKey]
+	return clusterNamespaces.Contains(namespaceKey)
 }
 
 func newEffectiveAccessScopeTree(state scopeState) *ScopeTree {

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/labels"
 )
@@ -135,13 +136,10 @@ func TestConvertRulesToSelectors(t *testing.T) {
 				NamespaceLabelSelectors: nil,
 			},
 			expected: &selectors{
-				clustersByName: map[string]bool{
-					clusterName1: true,
-					clusterName2: true,
-				},
+				clustersByName:  set.NewStringSet(clusterName1, clusterName2),
 				clustersByLabel: make([]labels.Selector, 0),
-				namespacesByClusterName: map[string]map[string]bool{
-					clusterName1: {namespaceName1: true},
+				namespacesByClusterName: map[string]set.StringSet{
+					clusterName1: set.NewStringSet(namespaceName1),
 				},
 				namespacesByLabel: make([]labels.Selector, 0),
 			},
@@ -157,18 +155,16 @@ func TestConvertRulesToSelectors(t *testing.T) {
 
 func emptySelector() *selectors {
 	return &selectors{
-		clustersByName:          make(map[string]bool),
+		clustersByName:          set.NewStringSet(),
 		clustersByLabel:         make([]labels.Selector, 0),
-		namespacesByClusterName: make(map[string]map[string]bool),
+		namespacesByClusterName: make(map[string]set.StringSet),
 		namespacesByLabel:       make([]labels.Selector, 0),
 	}
 }
 
 func selectOnlyClustersByName(clusterNames []string) *selectors {
 	selector := emptySelector()
-	for _, clusterName := range clusterNames {
-		selector.clustersByName[clusterName] = true
-	}
+	selector.clustersByName.AddAll(clusterNames...)
 	return selector
 }
 
@@ -177,10 +173,7 @@ func selectNamespacesByCluster(
 ) *selectors {
 	selector := emptySelector()
 	for clusterName, clusterNamespaces := range namespacesByClusterName {
-		selector.namespacesByClusterName[clusterName] = make(map[string]bool)
-		for _, ns := range clusterNamespaces {
-			selector.namespacesByClusterName[clusterName][ns] = true
-		}
+		selector.namespacesByClusterName[clusterName] = set.NewStringSet(clusterNamespaces...)
 	}
 	return selector
 }

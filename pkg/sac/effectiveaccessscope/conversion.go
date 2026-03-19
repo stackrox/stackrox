@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 )
@@ -108,10 +109,7 @@ func convertRulesToSelectors(scopeRules *storage.SimpleAccessScope_Rules) (*sele
 	output.clustersByLabel = clusterSelectors
 
 	includedClusterNames := scopeRules.GetIncludedClusters()
-	output.clustersByName = make(map[string]bool, len(includedClusterNames))
-	for _, clusterName := range includedClusterNames {
-		output.clustersByName[clusterName] = true
-	}
+	output.clustersByName = set.NewStringSet(includedClusterNames...)
 
 	// Convert each selector to labels.Selector.
 	namespaceSelectors, namespaceSelectorErr := convertEachSetBasedLabelSelectorToK8sLabelSelector(scopeRules.GetNamespaceLabelSelectors())
@@ -121,7 +119,7 @@ func convertRulesToSelectors(scopeRules *storage.SimpleAccessScope_Rules) (*sele
 	output.namespacesByLabel = namespaceSelectors
 
 	includedNamespaces := scopeRules.GetIncludedNamespaces()
-	output.namespacesByClusterName = make(map[string]map[string]bool, len(includedNamespaces))
+	output.namespacesByClusterName = make(map[string]set.StringSet, len(includedNamespaces))
 	for _, namespace := range includedNamespaces {
 		clusterName := namespace.GetClusterName()
 		namespaceName := namespace.GetNamespaceName()
@@ -137,11 +135,12 @@ func convertRulesToSelectors(scopeRules *storage.SimpleAccessScope_Rules) (*sele
 	return output, nil
 }
 
-func addToNamespaceMap(targetMap map[string]map[string]bool, clusterKey string, namespaceKey string) {
+func addToNamespaceMap(targetMap map[string]set.StringSet, clusterKey string, namespaceKey string) {
 	if _, exists := targetMap[clusterKey]; !exists {
-		targetMap[clusterKey] = make(map[string]bool)
+		targetMap[clusterKey] = set.NewStringSet()
 	}
-	targetMap[clusterKey][namespaceKey] = true
+	clusterNamespaces := targetMap[clusterKey]
+	clusterNamespaces.Add(namespaceKey)
 }
 
 func convertEachSetBasedLabelSelectorToK8sLabelSelector(selectors []*storage.SetBasedLabelSelector) ([]labels.Selector, error) {
