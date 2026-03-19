@@ -85,7 +85,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "process_indicators_lineage_size_total",
-		Help:      "Total process lineage sizes in characters by cluster and namespace",
+		Help:      "Total upserted process lineage sizes in characters by cluster and namespace",
 	}, []string{"cluster", "namespace"})
 )
 
