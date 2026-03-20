@@ -80,4 +80,8 @@ func TestUpdateScannerConfigurationInfo_LocalScanningEnabledScannerV2WhenCentral
 
 	require.Equal(t, float64(1), testutil.ToFloat64(scannerConfigurationInfo.WithLabelValues("true", "v2", "true")))
 	require.Equal(t, 1, testutil.CollectAndCount(scannerConfigurationInfo))
+
+	require.Equal(t, float64(1), testutil.ToFloat64(imageIndexingRouteInfo.WithLabelValues("cluster_local", "local_scanner")))
+	require.Equal(t, float64(1), testutil.ToFloat64(imageIndexingRouteInfo.WithLabelValues("non_cluster_local", "central_scanner")))
+	require.Equal(t, 2, testutil.CollectAndCount(imageIndexingRouteInfo))
 }
