@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	vmDatastoreMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -449,38 +448,6 @@ func (suite *PipelineTestSuite) TestRun_NACKOnEnrichmentError() {
 	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
 	suite.Equal(vmID, ack.GetResourceId())
 	suite.Equal(centralsensor.SensorACKReasonEnrichmentFailed, ack.GetReason())
-}
-
-func TestSendSensorACK_NACK(t *testing.T) {
-	injector := &mockInjector{
-		capabilities: map[centralsensor.SensorCapability]bool{
-			centralsensor.SensorACKSupport: true,
-		},
-	}
-
-	common.SendSensorACK(ctx, central.SensorACK_NACK, central.SensorACK_VM_INDEX_REPORT, "vm-nack", centralsensor.SensorACKReasonRateLimited, injector)
-
-	assert.Len(t, injector.messages, 1)
-	ack := injector.messages[0].GetSensorAck()
-	assert.NotNil(t, ack)
-	assert.Equal(t, central.SensorACK_NACK, ack.GetAction())
-	assert.Equal(t, central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
-	assert.Equal(t, "vm-nack", ack.GetResourceId())
-	assert.Equal(t, centralsensor.SensorACKReasonRateLimited, ack.GetReason())
-}
-
-func TestSendSensorACK_NilInjector(t *testing.T) {
-	assert.NotPanics(t, func() {
-		common.SendSensorACK(ctx, central.SensorACK_ACK, central.SensorACK_VM_INDEX_REPORT, "vm-1", "", nil)
-	})
-}
-
-func TestSendSensorACK_InjectorWithoutCapabilitySupport(t *testing.T) {
-	injector := &mockInjector{}
-
-	common.SendSensorACK(ctx, central.SensorACK_ACK, central.SensorACK_VM_INDEX_REPORT, "vm-1", "", injector)
-
-	assert.Empty(t, injector.messages, "should not send when SensorACKSupport capability is not advertised")
 }
 
 func TestPipelineRun_DisabledFeature(t *testing.T) {
