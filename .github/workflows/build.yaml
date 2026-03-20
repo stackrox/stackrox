@@ -59,12 +59,12 @@ jobs:
           matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
 
           # build_and_push_operator is now a single job with loops instead of matrix
+          # It builds all brandings and architectures, and creates manifests inline
           # matrix="$(jq '.build_and_push_operator.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           # matrix="$(jq '.build_and_push_operator.arch += ["amd64", "arm64"]' <<< "$matrix")"
-
-          matrix="$(jq '.push_operator_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
-          # Hardcode archs since build_and_push_operator is no longer a matrix job
-          matrix="$(jq '.push_operator_multiarch_manifests.archs = ["amd64,arm64"]' <<< "$matrix")"
+          # push_operator_multiarch_manifests job merged into build_and_push_operator
+          # matrix="$(jq '.push_operator_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
+          # matrix="$(jq '.push_operator_multiarch_manifests.archs = ["amd64,arm64"]' <<< "$matrix")"
 
           matrix="$(jq '.scan_images_with_roxctl.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.scan_images_with_roxctl.image += ["central-db", "collector", "fact", "main", "roxctl", "scanner", "scanner-db", "scanner-db-slim", "scanner-slim", "stackrox-operator"]' <<< "$matrix")"
@@ -806,61 +806,15 @@ jobs:
               echo "Operator image push completed successfully for $branding $arch"
             done
 
-            echo "Completed builds for branding: $branding"
+            # Create and push multi-arch manifest for this branding
+            echo "  ----- Creating multi-arch manifest for $branding -----"
+            ARCH_CSV=$(echo "$ARCHS" | tr ' ' ',')
+            push_operator_manifest_lists "$push_context" "$branding" "$ARCH_CSV"
+
+            echo "Completed builds and manifest for branding: $branding"
           done
 
-          echo "All operator images built and pushed successfully"
-
-  push-operator-manifests:
-    runs-on: ubuntu-latest
-    needs:
-    - define-job-matrix
-    - build-and-push-operator
-    # This step will run even if some of the build-and-push-matrix steps failed.
-    # By following this approach as much of the build matrix as possible is
-    # completed despite transient issues e.g. docker pull timeouts. In this way
-    # some e2e jobs that require some part of the build matrix can still
-    # proceed.
-    if: ${{ !cancelled() }}
-    strategy:
-      # Supports image builds (see Setup build env):
-      # RHACS_BRANDING
-      # STACKROX_BRANDING
-      fail-fast: false
-      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_operator_multiarch_manifests }}
-    env:
-      ROX_PRODUCT_BRANDING: ${{ matrix.name }}
-      QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-      QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-      QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
-      QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
-      QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
-      QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
-        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
-
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - uses: ./.github/actions/handle-tagged-build
-
-    - name: Push operator manifest lists
-      # Skip for external contributions.
-      if: |
-        github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-      run: |
-        source ./scripts/ci/lib.sh
-        echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-        push_context=""
-        if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-          push_context="merge-to-master"
-        fi
-        push_operator_manifest_lists "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" ${{ matrix.archs }}
+          echo "All operator images and manifests built and pushed successfully"
 
   scan-go-binaries:
     if: |
