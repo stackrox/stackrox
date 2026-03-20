@@ -75,7 +75,7 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/heimdalr/dag v1.5.0
 	github.com/helm/helm-mapkubeapis v0.6.1
-	github.com/heroku/docker-registry-client v0.2.0
+	github.com/heroku/docker-registry-client v0.0.0-20211012143308-9463674c8930
 	github.com/jackc/pgx/v5 v5.8.0
 	github.com/jeremywohl/flatten v1.0.1
 	github.com/joshdk/go-junit v1.0.0
