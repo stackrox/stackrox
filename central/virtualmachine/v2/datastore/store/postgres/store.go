@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"runtime/debug"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -456,7 +457,13 @@ func (s *storeImpl) insertScan(ctx context.Context, tx *postgres.Tx, scan *stora
 	return err
 }
 
-func (s *storeImpl) copyFromComponents(ctx context.Context, tx *postgres.Tx, components []*storage.VirtualMachineComponentV2) error {
+func (s *storeImpl) copyFromComponents(ctx context.Context, tx *postgres.Tx, components []*storage.VirtualMachineComponentV2) (retErr error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Errorf("VM v2 store: panic in copyFromComponents: %v\nStack:\n%s", r, debug.Stack())
+			retErr = errors.Errorf("panic in copyFromComponents: %v", r)
+		}
+	}()
 	if len(components) == 0 {
 		return nil
 	}
