@@ -431,6 +431,4 @@ func init() {
 		scannerConfigurationInfo,
 		imageIndexingRouteInfo,
 	)
-
-	UpdateScannerConfigurationInfo()
 }
