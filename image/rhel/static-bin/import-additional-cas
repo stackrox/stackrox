@@ -26,7 +26,11 @@ copy_existing /etc/pki/injected-ca-trust
 
 echo "Updating CA trust"
 # Though /etc/pki/ca-trust/extracted is the default output, update-ca-trust
-# will create the necessary directories if the `--output` flag is used.
+# will create the necessary directories with the required permissions if the `--output` flag is used.
+# See https://bugzilla.redhat.com/show_bug.cgi?id=2241240 for background.
+#
+# tl,dr: update-ca-trust extract, when giving the `--output` flag behaves differently with respect
+# to filesystem permissions and this is the behaviour we need for containerized environments.
 update-ca-trust extract --output /etc/pki/ca-trust/extracted
 
 echo "Done setting up CA trust store in container"
