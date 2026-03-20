@@ -126,12 +126,12 @@ func (f *fullStoreImpl) GetContainerImageViews(ctx context.Context, q *v1.Query)
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
-	q.Selects = []*v1.QuerySelect{
+	cloned := q.CloneVT()
+	cloned.Selects = []*v1.QuerySelect{
 		pkgSearch.NewQuerySelect(pkgSearch.ImageID).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.ImageSHA).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.ClusterID).Distinct().Proto(),
 	}
-	q.GroupBy = &v1.QueryGroupBy{
+	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{pkgSearch.ImageID.String(), pkgSearch.ImageSHA.String()},
 	}
 
@@ -139,7 +139,7 @@ func (f *fullStoreImpl) GetContainerImageViews(ctx context.Context, q *v1.Query)
 	defer cancel()
 
 	var results []*views.ContainerImageView
-	err := pgSearch.RunSelectRequestForSchemaFn(queryCtx, f.db, pkgSchema.DeploymentsSchema, q, func(response *views.ContainerImageView) error {
+	err := pgSearch.RunSelectRequestForSchemaFn(queryCtx, f.db, pkgSchema.DeploymentsSchema, cloned, func(response *views.ContainerImageView) error {
 		results = append(results, response)
 		return nil
 	})
