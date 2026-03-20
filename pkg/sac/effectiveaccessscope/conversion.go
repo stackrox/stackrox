@@ -98,6 +98,9 @@ func sortScopesInEffectiveAccessScope(msg *storage.EffectiveAccessScope) {
 //   - converts all label selectors to standard ones with matching support.
 func convertRulesToSelectors(scopeRules *storage.SimpleAccessScope_Rules) (*selectors, error) {
 	output := &selectors{}
+	if scopeRules == nil {
+		return output, nil
+	}
 
 	// Convert each selector to labels.Selector.
 	clusterSelectors, clusterSelectorErr := convertEachSetBasedLabelSelectorToK8sLabelSelector(scopeRules.GetClusterLabelSelectors())

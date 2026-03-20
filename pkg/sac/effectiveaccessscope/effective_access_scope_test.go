@@ -1363,7 +1363,7 @@ func TestSelectorsMatchNamespace(t *testing.T) {
 			namespace: nsAtreides,
 			expected:  Included,
 		},
-		"namespace NOT matched by label is included": {
+		"namespace NOT matched by label is excluded": {
 			ruleSelectors: &selectors{
 				namespacesByLabel: []labels.Selector{
 					labels.NewSelector().Add(*focusOnMelangeRequirement),

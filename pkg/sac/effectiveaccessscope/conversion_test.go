@@ -22,7 +22,7 @@ func TestConvertRulesToSelectors(t *testing.T) {
 	for name, tc := range map[string]struct {
 		rules *storage.SimpleAccessScope_Rules
 	}{
-		"bad label selection rules triggger an error": {
+		"bad label cluster selection rules trigger an error": {
 			rules: &storage.SimpleAccessScope_Rules{
 				ClusterLabelSelectors: []*storage.SetBasedLabelSelector{
 					{
@@ -32,6 +32,21 @@ func TestConvertRulesToSelectors(t *testing.T) {
 								Op:  storage.SetBasedLabelSelector_IN,
 								// The clusterName2 value is not a valid label value as it contains the '=' character.
 								Values: []string{clusterName2},
+							},
+						},
+					},
+				},
+			},
+		},
+		"bad label namespace selection rules trigger an error": {
+			rules: &storage.SimpleAccessScope_Rules{
+				NamespaceLabelSelectors: []*storage.SetBasedLabelSelector{
+					{
+						Requirements: []*storage.SetBasedLabelSelector_Requirement{
+							{
+								Key:    "",
+								Op:     storage.SetBasedLabelSelector_IN,
+								Values: []string{"some-value"},
 							},
 						},
 					},
@@ -53,7 +68,7 @@ func TestConvertRulesToSelectors(t *testing.T) {
 	}{
 		"nil rules result in an empty selector": {
 			rules:    nil,
-			expected: emptySelector(),
+			expected: &selectors{},
 		},
 		"empty ruleset results in an empty selector": {
 			rules:    &storage.SimpleAccessScope_Rules{},
