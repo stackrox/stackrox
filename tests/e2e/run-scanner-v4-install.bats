@@ -446,8 +446,8 @@ export -f collect_analysis_data
     if [[ "$ORCHESTRATOR_FLAVOR" == "openshift" ]]; then
         echo "Running on openshift"
 
-        docker run --rm quay.io/rhacs-eng/roxie:v0.1.1 version
-        docker run -v "$KUBECONFIG":/kubeconfig:U --rm quay.io/rhacs-eng/roxie:v0.1.1 env
+        podman run --rm quay.io/rhacs-eng/roxie:v0.1.1 version
+        podman run -v "$KUBECONFIG":/kubeconfig:U --rm quay.io/rhacs-eng/roxie:v0.1.1 env
     else
         echo "Skipping, not on openshift"
     fi
