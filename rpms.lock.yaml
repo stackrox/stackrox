@@ -403,6 +403,13 @@ arches:
     name: openldap
     evr: 2.6.8-4.el9
     sourcerpm: openldap-2.6.8-4.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/o/openssl-3.5.1-7.el9_7.aarch64.rpm
+    repoid: rhel-9-for-aarch64-baseos-rpms
+    size: 1541274
+    checksum: sha256:fa672afb8e31cda4d155929f0e84efba28a925134fd3edacf822802c04e35b8d
+    name: openssl
+    evr: 1:3.5.1-7.el9_7
+    sourcerpm: openssl-3.5.1-7.el9_7.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/o/openssl-fips-provider-3.0.7-8.el9.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
     size: 9366
@@ -508,13 +515,13 @@ arches:
     name: sqlite-libs
     evr: 3.34.1-9.el9_7
     sourcerpm: sqlite-3.34.1-9.el9_7.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/t/tzdata-2025c-1.el9.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/t/tzdata-2026a-1.el9.noarch.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
-    size: 925360
-    checksum: sha256:1de77872c3c896e801dc1e28ab01218026ea812cc03999d65a886a4a0afc5797
+    size: 933237
+    checksum: sha256:90bc7252dcef87507a6dc097763894d264544b42c77ce67696192db2bcc8cd07
     name: tzdata
-    evr: 2025c-1.el9
-    sourcerpm: tzdata-2025c-1.el9.src.rpm
+    evr: 2026a-1.el9
+    sourcerpm: tzdata-2026a-1.el9.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/os/Packages/x/xz-libs-5.2.5-8.el9_0.aarch64.rpm
     repoid: rhel-9-for-aarch64-baseos-rpms
     size: 94569
@@ -884,12 +891,12 @@ arches:
     checksum: sha256:1d89566fe2e33bbd86fe1d024e3dbb7e800aef138f8d8d99ab65b15a6f6c2c5a
     name: sqlite
     evr: 3.34.1-9.el9_7
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/t/tzdata-2025c-1.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/t/tzdata-2026a-1.el9.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
-    size: 915004
-    checksum: sha256:8803c8f30f6c0fdc1e4ea91c13b17290a8038dbdde7d30b1fe3cb5716237a160
+    size: 926120
+    checksum: sha256:ea2ccdcff55d1c69f2a9a1b6eabade4fca1af23703c2baefaa1e3f6b8f74bc1b
     name: tzdata
-    evr: 2025c-1.el9
+    evr: 2026a-1.el9
   - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/baseos/source/SRPMS/Packages/u/util-linux-2.37.4-21.el9_7.src.rpm
     repoid: rhel-9-for-aarch64-baseos-source-rpms
     size: 6285412
@@ -909,10 +916,10 @@ arches:
     name: zlib
     evr: 1.2.11-40.el9
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/repodata/501f11690413edbdc2161af1901bc06cd3127f6120b5a397ac36aa8fc0c5240e-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/aarch64/appstream/os/repodata/b01fb0a5f6041de7fd2965f2830f9d97044a12df93f9c3c4c63d48451d65b0ad-modules.yaml.gz
     repoid: rhel-9-for-aarch64-appstream-rpms
     size: 43533
-    checksum: sha256:501f11690413edbdc2161af1901bc06cd3127f6120b5a397ac36aa8fc0c5240e
+    checksum: sha256:b01fb0a5f6041de7fd2965f2830f9d97044a12df93f9c3c4c63d48451d65b0ad
 - arch: ppc64le
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/Packages/g/gawk-all-langpacks-5.1.0-6.el9.ppc64le.rpm
@@ -1314,6 +1321,13 @@ arches:
     name: openldap
     evr: 2.6.8-4.el9
     sourcerpm: openldap-2.6.8-4.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/o/openssl-3.5.1-7.el9_7.ppc64le.rpm
+    repoid: rhel-9-for-ppc64le-baseos-rpms
+    size: 1566615
+    checksum: sha256:c5a5284070d6d182a4c93283039a327bf02efd41ab7ab4a748971421773ba605
+    name: openssl
+    evr: 1:3.5.1-7.el9_7
+    sourcerpm: openssl-3.5.1-7.el9_7.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/o/openssl-fips-provider-3.0.7-8.el9.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
     size: 9390
@@ -1419,13 +1433,13 @@ arches:
     name: sqlite-libs
     evr: 3.34.1-9.el9_7
     sourcerpm: sqlite-3.34.1-9.el9_7.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/t/tzdata-2025c-1.el9.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/t/tzdata-2026a-1.el9.noarch.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
-    size: 925360
-    checksum: sha256:1de77872c3c896e801dc1e28ab01218026ea812cc03999d65a886a4a0afc5797
+    size: 933237
+    checksum: sha256:90bc7252dcef87507a6dc097763894d264544b42c77ce67696192db2bcc8cd07
     name: tzdata
-    evr: 2025c-1.el9
-    sourcerpm: tzdata-2025c-1.el9.src.rpm
+    evr: 2026a-1.el9
+    sourcerpm: tzdata-2026a-1.el9.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/os/Packages/x/xz-libs-5.2.5-8.el9_0.ppc64le.rpm
     repoid: rhel-9-for-ppc64le-baseos-rpms
     size: 120233
@@ -1795,12 +1809,12 @@ arches:
     checksum: sha256:1d89566fe2e33bbd86fe1d024e3dbb7e800aef138f8d8d99ab65b15a6f6c2c5a
     name: sqlite
     evr: 3.34.1-9.el9_7
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/t/tzdata-2025c-1.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/t/tzdata-2026a-1.el9.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
-    size: 915004
-    checksum: sha256:8803c8f30f6c0fdc1e4ea91c13b17290a8038dbdde7d30b1fe3cb5716237a160
+    size: 926120
+    checksum: sha256:ea2ccdcff55d1c69f2a9a1b6eabade4fca1af23703c2baefaa1e3f6b8f74bc1b
     name: tzdata
-    evr: 2025c-1.el9
+    evr: 2026a-1.el9
   - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/baseos/source/SRPMS/Packages/u/util-linux-2.37.4-21.el9_7.src.rpm
     repoid: rhel-9-for-ppc64le-baseos-source-rpms
     size: 6285412
@@ -1820,10 +1834,10 @@ arches:
     name: zlib
     evr: 1.2.11-40.el9
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/repodata/102cd95aeb0dcb89e1f7ffd2eea413ec58086033b13c742b63fdcafc6b7e19f6-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/ppc64le/appstream/os/repodata/04032c239e78ae852bb334abe7224258db37dadddbb137afdac682c1fb99d76e-modules.yaml.gz
     repoid: rhel-9-for-ppc64le-appstream-rpms
     size: 40714
-    checksum: sha256:102cd95aeb0dcb89e1f7ffd2eea413ec58086033b13c742b63fdcafc6b7e19f6
+    checksum: sha256:04032c239e78ae852bb334abe7224258db37dadddbb137afdac682c1fb99d76e
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/Packages/g/gawk-all-langpacks-5.1.0-6.el9.s390x.rpm
@@ -2225,6 +2239,13 @@ arches:
     name: openldap
     evr: 2.6.8-4.el9
     sourcerpm: openldap-2.6.8-4.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/o/openssl-3.5.1-7.el9_7.s390x.rpm
+    repoid: rhel-9-for-s390x-baseos-rpms
+    size: 1548995
+    checksum: sha256:12d540f2ad34e2c202d47d3edff129acc324012a3946ef57cb1a5db8aad544a2
+    name: openssl
+    evr: 1:3.5.1-7.el9_7
+    sourcerpm: openssl-3.5.1-7.el9_7.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/o/openssl-fips-provider-3.0.7-8.el9.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
     size: 9381
@@ -2330,13 +2351,13 @@ arches:
     name: sqlite-libs
     evr: 3.34.1-9.el9_7
     sourcerpm: sqlite-3.34.1-9.el9_7.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/t/tzdata-2025c-1.el9.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/t/tzdata-2026a-1.el9.noarch.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
-    size: 925360
-    checksum: sha256:1de77872c3c896e801dc1e28ab01218026ea812cc03999d65a886a4a0afc5797
+    size: 933237
+    checksum: sha256:90bc7252dcef87507a6dc097763894d264544b42c77ce67696192db2bcc8cd07
     name: tzdata
-    evr: 2025c-1.el9
-    sourcerpm: tzdata-2025c-1.el9.src.rpm
+    evr: 2026a-1.el9
+    sourcerpm: tzdata-2026a-1.el9.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/os/Packages/x/xz-libs-5.2.5-8.el9_0.s390x.rpm
     repoid: rhel-9-for-s390x-baseos-rpms
     size: 96039
@@ -2706,12 +2727,12 @@ arches:
     checksum: sha256:1d89566fe2e33bbd86fe1d024e3dbb7e800aef138f8d8d99ab65b15a6f6c2c5a
     name: sqlite
     evr: 3.34.1-9.el9_7
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/t/tzdata-2025c-1.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/t/tzdata-2026a-1.el9.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
-    size: 915004
-    checksum: sha256:8803c8f30f6c0fdc1e4ea91c13b17290a8038dbdde7d30b1fe3cb5716237a160
+    size: 926120
+    checksum: sha256:ea2ccdcff55d1c69f2a9a1b6eabade4fca1af23703c2baefaa1e3f6b8f74bc1b
     name: tzdata
-    evr: 2025c-1.el9
+    evr: 2026a-1.el9
   - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/baseos/source/SRPMS/Packages/u/util-linux-2.37.4-21.el9_7.src.rpm
     repoid: rhel-9-for-s390x-baseos-source-rpms
     size: 6285412
@@ -2731,10 +2752,10 @@ arches:
     name: zlib
     evr: 1.2.11-40.el9
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/repodata/25a539c645f1745aeacc054ec99f4a0da2a1a03dda0df8a0b1153bcec87c522a-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/s390x/appstream/os/repodata/dc519ec2ac397f4549c8c225211e9b169393d18cb567bd4e84c365ceb380256f-modules.yaml.gz
     repoid: rhel-9-for-s390x-appstream-rpms
     size: 42385
-    checksum: sha256:25a539c645f1745aeacc054ec99f4a0da2a1a03dda0df8a0b1153bcec87c522a
+    checksum: sha256:dc519ec2ac397f4549c8c225211e9b169393d18cb567bd4e84c365ceb380256f
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/g/gawk-all-langpacks-5.1.0-6.el9.x86_64.rpm
@@ -3136,6 +3157,13 @@ arches:
     name: openldap
     evr: 2.6.8-4.el9
     sourcerpm: openldap-2.6.8-4.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/o/openssl-3.5.1-7.el9_7.x86_64.rpm
+    repoid: rhel-9-for-x86_64-baseos-rpms
+    size: 1565197
+    checksum: sha256:efc3eb2f303047d5244a0f717a13615820d0de977c62d58bbe6d04ce35df8c6e
+    name: openssl
+    evr: 1:3.5.1-7.el9_7
+    sourcerpm: openssl-3.5.1-7.el9_7.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/o/openssl-fips-provider-3.0.7-8.el9.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
     size: 9402
@@ -3241,13 +3269,13 @@ arches:
     name: sqlite-libs
     evr: 3.34.1-9.el9_7
     sourcerpm: sqlite-3.34.1-9.el9_7.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/t/tzdata-2025c-1.el9.noarch.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/t/tzdata-2026a-1.el9.noarch.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
-    size: 925360
-    checksum: sha256:1de77872c3c896e801dc1e28ab01218026ea812cc03999d65a886a4a0afc5797
+    size: 933237
+    checksum: sha256:90bc7252dcef87507a6dc097763894d264544b42c77ce67696192db2bcc8cd07
     name: tzdata
-    evr: 2025c-1.el9
-    sourcerpm: tzdata-2025c-1.el9.src.rpm
+    evr: 2026a-1.el9
+    sourcerpm: tzdata-2026a-1.el9.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/os/Packages/x/xz-libs-5.2.5-8.el9_0.x86_64.rpm
     repoid: rhel-9-for-x86_64-baseos-rpms
     size: 96649
@@ -3617,12 +3645,12 @@ arches:
     checksum: sha256:1d89566fe2e33bbd86fe1d024e3dbb7e800aef138f8d8d99ab65b15a6f6c2c5a
     name: sqlite
     evr: 3.34.1-9.el9_7
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/t/tzdata-2025c-1.el9.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/t/tzdata-2026a-1.el9.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
-    size: 915004
-    checksum: sha256:8803c8f30f6c0fdc1e4ea91c13b17290a8038dbdde7d30b1fe3cb5716237a160
+    size: 926120
+    checksum: sha256:ea2ccdcff55d1c69f2a9a1b6eabade4fca1af23703c2baefaa1e3f6b8f74bc1b
     name: tzdata
-    evr: 2025c-1.el9
+    evr: 2026a-1.el9
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/baseos/source/SRPMS/Packages/u/util-linux-2.37.4-21.el9_7.src.rpm
     repoid: rhel-9-for-x86_64-baseos-source-rpms
     size: 6285412
@@ -3642,7 +3670,7 @@ arches:
     name: zlib
     evr: 1.2.11-40.el9
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/repodata/9b572d2328daa06bdeb0a487963e1b1eaac59ad256e95df54dbdc9103d37d5e9-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/repodata/fc1d52c8a75a935b79826891bdcd04795740c527e0715d99982c043c56071592-modules.yaml.gz
     repoid: rhel-9-for-x86_64-appstream-rpms
     size: 44284
-    checksum: sha256:9b572d2328daa06bdeb0a487963e1b1eaac59ad256e95df54dbdc9103d37d5e9
+    checksum: sha256:fc1d52c8a75a935b79826891bdcd04795740c527e0715d99982c043c56071592
