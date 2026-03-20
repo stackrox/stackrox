@@ -120,9 +120,7 @@ function RequestCVEsTable({
                 <Table variant="compact">
                     <Thead noWrap>
                         <Tr>
-                            <Th>
-                                <span className="pf-v6-screen-reader">Row expansion</span>
-                            </Th>
+                            <Th screenReaderText="Row expansion" />
                             <Th sort={getSortParams('CVE')}>CVE</Th>
                             <Th
                                 sort={getSortParams(

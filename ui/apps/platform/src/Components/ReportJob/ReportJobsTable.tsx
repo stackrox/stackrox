@@ -60,17 +60,13 @@ function ReportJobsTable<T extends Snapshot>({
         <Table aria-label="Jobs table" variant="compact">
             <Thead>
                 <Tr>
-                    <Th>
-                        <span className="pf-v6-screen-reader">Row expansion</span>
-                    </Th>
+                    <Th screenReaderText="Row expansion" />
                     <Th width={25} sort={getSortParams('Compliance Report Completed Time')}>
                         Completed
                     </Th>
                     <Th>Status</Th>
                     <Th>Requester</Th>
-                    <Th>
-                        <span className="pf-v6-screen-reader">Row actions</span>
-                    </Th>
+                    <Th screenReaderText="Row actions" />
                 </Tr>
             </Thead>
             <TbodyUnified

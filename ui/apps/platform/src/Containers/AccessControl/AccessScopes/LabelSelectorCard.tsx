@@ -201,9 +201,7 @@ function LabelSelectorCard({
                             <Thead>
                                 <Tr>
                                     <Th width={40}>Key</Th>
-                                    <Th>
-                                        <span className="pf-v6-screen-reader">Operator</span>
-                                    </Th>
+                                    <Th screenReaderText="Operator" />
                                     <Th width={40}>Values</Th>
                                     {isLabelSelectorActive && <Th modifier="fitContent">Action</Th>}
                                 </Tr>
