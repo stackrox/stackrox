@@ -1,6 +1,9 @@
 package v1tov2storage
 
 import (
+	"strconv"
+	"strings"
+
 	"github.com/stackrox/rox/central/virtualmachine/v2/datastore/store/common"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -147,7 +150,7 @@ func highestFixedBy(vulns []*storage.VirtualMachineVulnerability) string {
 	var highest string
 	for _, v := range vulns {
 		if fb := v.GetFixedBy(); fb != "" {
-			if highest == "" || fb > highest {
+			if highest == "" || compareVersionSegments(fb, highest) > 0 {
 				highest = fb
 			}
 		}
@@ -155,18 +158,56 @@ func highestFixedBy(vulns []*storage.VirtualMachineVulnerability) string {
 	return highest
 }
 
+// compareVersionSegments compares two version strings by splitting on "." and
+// comparing each segment numerically. Non-numeric segments fall back to
+// lexicographic comparison. Returns <0, 0, or >0.
+func compareVersionSegments(a, b string) int {
+	partsA := strings.Split(a, ".")
+	partsB := strings.Split(b, ".")
+	n := len(partsA)
+	if len(partsB) > n {
+		n = len(partsB)
+	}
+	for i := 0; i < n; i++ {
+		var sa, sb string
+		if i < len(partsA) {
+			sa = partsA[i]
+		}
+		if i < len(partsB) {
+			sb = partsB[i]
+		}
+		na, errA := strconv.Atoi(sa)
+		nb, errB := strconv.Atoi(sb)
+		if errA == nil && errB == nil {
+			if na != nb {
+				return na - nb
+			}
+			continue
+		}
+		if sa != sb {
+			if sa < sb {
+				return -1
+			}
+			return 1
+		}
+	}
+	return 0
+}
+
 // preferredCvssVersion determines the preferred CVSS score version from the
-// vulnerability's cvss_metrics.
+// vulnerability's cvss_metrics. V3 is preferred over V2.
 func preferredCvssVersion(cveInfo *storage.VirtualMachineCVEInfo) storage.CvssScoreVersion {
+	hasV2 := false
 	for _, score := range cveInfo.GetCvssMetrics() {
 		if score.GetCvssv3() != nil {
 			return storage.CvssScoreVersion_V3
 		}
-	}
-	for _, score := range cveInfo.GetCvssMetrics() {
 		if score.GetCvssv2() != nil {
-			return storage.CvssScoreVersion_V2
+			hasV2 = true
 		}
+	}
+	if hasV2 {
+		return storage.CvssScoreVersion_V2
 	}
 	return storage.CvssScoreVersion_UNKNOWN_VERSION
 }

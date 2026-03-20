@@ -149,6 +149,33 @@ func TestScanPartsFromV1Scan_WithComponentsAndVulns(t *testing.T) {
 	protoassert.SlicesEqual(t, scan.GetComponents(), parts.SourceComponents)
 }
 
+func TestCompareVersionSegments(t *testing.T) {
+	tests := []struct {
+		a, b string
+		want int
+	}{
+		{"1.0.0", "1.0.0", 0},
+		{"1.0.0", "2.0.0", -1},
+		{"2.0.0", "1.0.0", 1},
+		{"1.9.10", "1.10.0", -1},
+		{"1.10.0", "1.9.10", 1},
+		{"1.0", "1.0.0", -1},
+		{"3.0.8", "3.0.7", 1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.a+"_vs_"+tt.b, func(t *testing.T) {
+			got := compareVersionSegments(tt.a, tt.b)
+			if tt.want < 0 {
+				assert.Negative(t, got)
+			} else if tt.want > 0 {
+				assert.Positive(t, got)
+			} else {
+				assert.Zero(t, got)
+			}
+		})
+	}
+}
+
 func TestHighestFixedBy(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -181,6 +208,14 @@ func TestHighestFixedBy(t *testing.T) {
 				{SetFixedBy: &storage.VirtualMachineVulnerability_FixedBy{FixedBy: "1.5.0"}},
 			},
 			expected: "2.0.0",
+		},
+		{
+			name: "numeric comparison not lexicographic",
+			vulns: []*storage.VirtualMachineVulnerability{
+				{SetFixedBy: &storage.VirtualMachineVulnerability_FixedBy{FixedBy: "1.9.10"}},
+				{SetFixedBy: &storage.VirtualMachineVulnerability_FixedBy{FixedBy: "1.10.0"}},
+			},
+			expected: "1.10.0",
 		},
 	}
 	for _, tt := range tests {

@@ -477,6 +477,44 @@ func (s *VMStoreTestSuite) TestGetMany() {
 	protoassert.SlicesEqual(s.T(), []*storage.VirtualMachineV2{vm1, vm2}, results)
 }
 
+// region EnsureVMExists tests
+
+func (s *VMStoreTestSuite) TestEnsureVMExists_New() {
+	vmID := uuid.NewV4().String()
+	clusterID := uuid.NewV4().String()
+
+	s.NoError(s.store.EnsureVMExists(s.ctx, vmID, clusterID))
+
+	got, exists, err := s.store.Get(s.ctx, vmID)
+	s.NoError(err)
+	s.True(exists)
+	s.Equal(vmID, got.GetId())
+	s.Equal(clusterID, got.GetClusterId())
+}
+
+func (s *VMStoreTestSuite) TestEnsureVMExists_DoesNotClobber() {
+	vm := s.newVM()
+	s.NoError(s.store.UpsertVM(s.ctx, vm))
+
+	// EnsureVMExists with the same ID should not overwrite existing data.
+	s.NoError(s.store.EnsureVMExists(s.ctx, vm.GetId(), vm.GetClusterId()))
+
+	got, exists, err := s.store.Get(s.ctx, vm.GetId())
+	s.NoError(err)
+	s.True(exists)
+	s.Equal(vm.GetName(), got.GetName(), "EnsureVMExists should not clobber existing VM name")
+	s.Equal(vm.GetGuestOs(), got.GetGuestOs(), "EnsureVMExists should not clobber existing GuestOs")
+	s.Equal(vm.GetState(), got.GetState(), "EnsureVMExists should not clobber existing State")
+}
+
+func (s *VMStoreTestSuite) TestEnsureVMExists_InvalidIDs() {
+	s.Error(s.store.EnsureVMExists(s.ctx, "", uuid.NewV4().String()))
+	s.Error(s.store.EnsureVMExists(s.ctx, uuid.NewV4().String(), ""))
+	s.Error(s.store.EnsureVMExists(s.ctx, "not-a-uuid", uuid.NewV4().String()))
+}
+
+// endregion EnsureVMExists tests
+
 // endregion Read operation tests
 
 // region Helpers
