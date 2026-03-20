@@ -1577,8 +1577,8 @@ func TestClusterScopeSubTreePopulateStateForNamespace(t *testing.T) {
 				},
 			},
 			ruleSelectors: &selectors{
-				namespacesByClusterName: map[string]map[string]bool{
-					nsJPL.GetClusterName(): {nsJPL.GetName(): true},
+				namespacesByClusterName: map[string]set.StringSet{
+					nsJPL.GetClusterName(): set.NewStringSet(nsJPL.GetName()),
 				},
 			},
 			namespace: nsJPL,
