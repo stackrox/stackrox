@@ -30,14 +30,16 @@ func ScanPartsFromV1Scan(vmID string, scan *storage.VirtualMachineScan) common.V
 		fixedBy := highestFixedBy(comp.GetVulnerabilities())
 
 		componentV2 := &storage.VirtualMachineComponentV2{
-			Id:         componentID,
-			VmScanId:   scanID,
-			Name:       comp.GetName(),
-			Version:    comp.GetVersion(),
-			Source:     comp.GetSource(),
-			SetTopCvss: topCvssFromComponent(comp),
-			FixedBy:    fixedBy,
-			CveCount:   int32(len(comp.GetVulnerabilities())),
+			Id:       componentID,
+			VmScanId: scanID,
+			Name:     comp.GetName(),
+			Version:  comp.GetVersion(),
+			Source:   comp.GetSource(),
+			FixedBy:  fixedBy,
+			CveCount: int32(len(comp.GetVulnerabilities())),
+		}
+		if cvss := comp.GetTopCvss(); cvss != 0 {
+			componentV2.SetTopCvss = &storage.VirtualMachineComponentV2_TopCvss{TopCvss: cvss}
 		}
 		components = append(components, componentV2)
 
@@ -137,15 +139,6 @@ func convertVulnerability(vmID, componentID string, vuln *storage.VirtualMachine
 	}
 
 	return cveV2
-}
-
-func topCvssFromComponent(comp *storage.EmbeddedVirtualMachineScanComponent) *storage.VirtualMachineComponentV2_TopCvss {
-	if comp.GetTopCvss() == 0 {
-		return nil
-	}
-	return &storage.VirtualMachineComponentV2_TopCvss{
-		TopCvss: comp.GetTopCvss(),
-	}
 }
 
 // highestFixedBy returns the highest fixed_by version string across all vulns,

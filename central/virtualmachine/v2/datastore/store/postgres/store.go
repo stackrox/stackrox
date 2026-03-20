@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"runtime/debug"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -110,6 +109,48 @@ func (s *storeImpl) upsertVM(ctx context.Context, vm *storage.VirtualMachineV2) 
 		}
 		return tx.Commit(ctx)
 	})
+}
+
+func (s *storeImpl) EnsureVMExists(ctx context.Context, vmID, clusterID string) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "VirtualMachineV2EnsureExists")
+
+	id := pgutils.NilOrUUID(vmID)
+	if id == nil {
+		return errors.New("VM ID is empty or not a valid UUID")
+	}
+	clusterUUID := pgutils.NilOrUUID(clusterID)
+	if clusterUUID == nil {
+		return errors.New("cluster ID is empty or not a valid UUID")
+	}
+
+	iTime := time.Now()
+	vm := &storage.VirtualMachineV2{
+		Id:          vmID,
+		ClusterId:   clusterID,
+		LastUpdated: protocompat.ConvertTimeToTimestampOrNil(&iTime),
+	}
+	serialized, err := vm.MarshalVT()
+	if err != nil {
+		return err
+	}
+
+	const stmt = "INSERT INTO " + vmTable +
+		" (Id, Name, Namespace, ClusterId, ClusterName, GuestOs, State, LastUpdated, serialized)" +
+		" VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)" +
+		" ON CONFLICT(Id) DO NOTHING"
+
+	_, err = s.db.Exec(ctx, stmt,
+		id,
+		vm.GetName(),
+		vm.GetNamespace(),
+		clusterUUID,
+		vm.GetClusterName(),
+		vm.GetGuestOs(),
+		vm.GetState(),
+		protocompat.NilOrTime(vm.GetLastUpdated()),
+		serialized,
+	)
+	return err
 }
 
 func hashVM(vm *storage.VirtualMachineV2) (uint64, error) {
@@ -325,18 +366,15 @@ func (s *storeImpl) updateScanTime(ctx context.Context, tx *postgres.Tx, scanID 
 
 func (s *storeImpl) fullScanReplace(ctx context.Context, tx *postgres.Tx, vmID string, parts common.VMScanParts, iTime time.Time) error {
 	// Build CVE time map from incoming CVEs.
-	log.Infof("VM v2 store: fullScanReplace step 1: building CVE time map for VM %s (%d CVEs)", vmID, len(parts.CVEs))
 	cveTimeMap := buildCVETimeMap(parts.CVEs, iTime)
 
 	// Query existing CVE times.
-	log.Infof("VM v2 store: fullScanReplace step 2: querying existing CVE times for VM %s", vmID)
 	existingTimes, err := s.getExistingCVETimes(ctx, tx, vmID)
 	if err != nil {
 		return err
 	}
 
 	// Merge: keep oldest created_at per CVE.
-	log.Infof("VM v2 store: fullScanReplace step 3: merging %d existing CVE times for VM %s", len(existingTimes), vmID)
 	for cve, existingTime := range existingTimes {
 		if incoming, ok := cveTimeMap[cve]; ok {
 			if existingTime.Before(incoming) {
@@ -346,7 +384,6 @@ func (s *storeImpl) fullScanReplace(ctx context.Context, tx *postgres.Tx, vmID s
 	}
 
 	// Apply merged timestamps to incoming CVE objects.
-	log.Infof("VM v2 store: fullScanReplace step 4: applying merged timestamps to %d CVEs for VM %s", len(parts.CVEs), vmID)
 	for _, cve := range parts.CVEs {
 		cveName := cve.GetCveBaseInfo().GetCve()
 		if t, ok := cveTimeMap[cveName]; ok {
@@ -358,25 +395,21 @@ func (s *storeImpl) fullScanReplace(ctx context.Context, tx *postgres.Tx, vmID s
 	}
 
 	// Delete old scan (cascade deletes components + CVEs).
-	log.Infof("VM v2 store: fullScanReplace step 5: deleting old scan for VM %s", vmID)
 	if _, err := tx.Exec(ctx, "DELETE FROM "+scanTable+" WHERE VmV2Id = $1", pgutils.NilOrUUID(vmID)); err != nil {
 		return errors.Wrap(err, "deleting old scan")
 	}
 
 	// Insert new scan row.
-	log.Infof("VM v2 store: fullScanReplace step 6: inserting scan %s for VM %s", parts.Scan.GetId(), vmID)
 	if err := s.insertScan(ctx, tx, parts.Scan); err != nil {
 		return err
 	}
 
 	// COPY FROM components (batched).
-	log.Infof("VM v2 store: fullScanReplace step 7: COPY %d components for VM %s", len(parts.Components), vmID)
 	if err := s.copyFromComponents(ctx, tx, parts.Components); err != nil {
 		return err
 	}
 
 	// COPY FROM CVEs (batched).
-	log.Infof("VM v2 store: fullScanReplace step 8: COPY %d CVEs for VM %s", len(parts.CVEs), vmID)
 	return s.copyFromCVEs(ctx, tx, parts.CVEs)
 }
 
@@ -457,13 +490,7 @@ func (s *storeImpl) insertScan(ctx context.Context, tx *postgres.Tx, scan *stora
 	return err
 }
 
-func (s *storeImpl) copyFromComponents(ctx context.Context, tx *postgres.Tx, components []*storage.VirtualMachineComponentV2) (retErr error) {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Errorf("VM v2 store: panic in copyFromComponents: %v\nStack:\n%s", r, debug.Stack())
-			retErr = errors.Errorf("panic in copyFromComponents: %v", r)
-		}
-	}()
+func (s *storeImpl) copyFromComponents(ctx context.Context, tx *postgres.Tx, components []*storage.VirtualMachineComponentV2) error {
 	if len(components) == 0 {
 		return nil
 	}
