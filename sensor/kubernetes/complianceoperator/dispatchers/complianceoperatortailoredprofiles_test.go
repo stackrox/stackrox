@@ -7,6 +7,8 @@ import (
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -78,6 +80,7 @@ func toUnstructured(t *testing.T, tp *v1alpha1.TailoredProfile) *unstructured.Un
 // - effective rules = base rules - disabled rules + enabled rules
 // - labels, annotations, description parsed from tailored profile
 func TestProcessEvent_ExtendsProfile(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2TailoredProfiles})
 	baseProfile := &v1alpha1.Profile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ocp4-cis",
@@ -162,6 +165,7 @@ func TestProcessEvent_ExtendsProfile(t *testing.T) {
 // TestProcessEvent_StoresTailoredProfileMetadata tests that all metadata fields are stored
 // from the tailored profile itself, rather than from the base profile it extends.
 func TestProcessEvent_StoresTailoredProfileMetadata(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2TailoredProfiles})
 	tp := &v1alpha1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "tp-from-scratch",
@@ -204,6 +208,7 @@ func TestProcessEvent_StoresTailoredProfileMetadata(t *testing.T) {
 // TestProcessEvent_FromScratch tests that TPs without Extends work: only EnableRules are included,
 // with no base profile rules.
 func TestProcessEvent_FromScratch(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2TailoredProfiles})
 	tp := &v1alpha1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "tp-from-scratch",
@@ -243,6 +248,7 @@ func TestProcessEvent_FromScratch(t *testing.T) {
 
 // TestProcessEvent_NoStatusID tests that non-ready TPs (no Status.ID) are skipped
 func TestProcessEvent_NoStatusID(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2TailoredProfiles})
 	tp := &v1alpha1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "pending-profile",
@@ -266,6 +272,7 @@ func TestProcessEvent_NoStatusID(t *testing.T) {
 
 // TestProcessEvent_BaseProfileNotFound tests that TPs with missing base profile are skipped
 func TestProcessEvent_BaseProfileNotFound(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2TailoredProfiles})
 	tp := &v1alpha1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "orphan-profile",
@@ -285,4 +292,64 @@ func TestProcessEvent_BaseProfileNotFound(t *testing.T) {
 	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
 
 	assert.Nil(t, event)
+}
+
+// TestProcessEvent_NoCentralCapability tests that no events are dispatched when Central
+// does not advertise ComplianceV2TailoredProfiles.
+func TestProcessEvent_NoCentralCapability(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{})
+
+	tp := &v1alpha1.TailoredProfile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ocp4-cis-tailored",
+			Namespace: "openshift-compliance",
+			UID:       "tp-uid",
+		},
+		Spec: v1alpha1.TailoredProfileSpec{
+			EnableRules: []v1alpha1.RuleReferenceSpec{{Name: "some-rule"}},
+		},
+		Status: v1alpha1.TailoredProfileStatus{
+			ID:    "xccdf_compliance.openshift.io_profile_ocp4-cis-tailored",
+			State: "READY",
+		},
+	}
+
+	dispatcher := NewTailoredProfileDispatcher(newMockProfileLister())
+	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
+
+	assert.Nil(t, event)
+}
+
+// TestProcessEvent_V2EventHasTailoredProfileKind tests that when both ComplianceV2TailoredProfiles
+// and ComplianceV2Integrations are present, the V2 event carries OperatorKind TAILORED_PROFILE.
+func TestProcessEvent_V2EventHasTailoredProfileKind(t *testing.T) {
+	centralcaps.Set([]centralsensor.CentralCapability{
+		centralsensor.ComplianceV2TailoredProfiles,
+		centralsensor.ComplianceV2Integrations,
+	})
+
+	tp := &v1alpha1.TailoredProfile{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "ocp4-cis-tailored",
+			Namespace: "openshift-compliance",
+			UID:       "tp-uid",
+		},
+		Spec: v1alpha1.TailoredProfileSpec{
+			EnableRules: []v1alpha1.RuleReferenceSpec{{Name: "some-rule"}},
+		},
+		Status: v1alpha1.TailoredProfileStatus{
+			ID:    "xccdf_compliance.openshift.io_profile_ocp4-cis-tailored",
+			State: "READY",
+		},
+	}
+
+	dispatcher := NewTailoredProfileDispatcher(newMockProfileLister())
+	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
+
+	require.NotNil(t, event)
+	require.Len(t, event.ForwardMessages, 2) // V1 + V2
+
+	v2Profile := event.ForwardMessages[1].GetComplianceOperatorProfileV2()
+	require.NotNil(t, v2Profile)
+	assert.Equal(t, central.ComplianceOperatorProfileV2_TAILORED_PROFILE, v2Profile.GetOperatorKind())
 }
