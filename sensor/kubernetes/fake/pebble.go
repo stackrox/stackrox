@@ -20,6 +20,7 @@ const (
 	rolesPrefix          = "roles"
 	rolebindingsPrefix   = "rolebindings"
 	servicePrefix        = "services"
+	secretPrefix         = "secrets"
 	networkPolicyPrefix  = "networkpolicies"
 )
 
