@@ -467,6 +467,61 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 			hasError: false,
 		},
 		{
+			desc:      "namespace included by name but wrong cluster name does not include anything",
+			scopeDesc: `namespace: "Giedi=Prime::Atreides" => { }`,
+			scopeStr:  "",
+			scopeJSON: `{}`,
+			scope: &storage.SimpleAccessScope{
+				Id:   accessScopeID,
+				Name: accessScopeName,
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+						{
+							ClusterName:   "Giedi=Prime",
+							NamespaceName: "Atreides",
+						},
+					},
+				},
+			},
+			expected: &ScopeTree{
+				State:           Excluded,
+				clusterIDToName: clusterIDs,
+				Clusters: map[string]*clustersScopeSubTree{
+					"Earth": {
+						State: Excluded,
+						Namespaces: namespacesTree(
+							excluded(nsSkunkWorks),
+							excluded(nsFraunhofer),
+							excluded(nsCERN),
+							excluded(nsJPL),
+						),
+						Attributes: earthAttributes,
+					},
+					"Arrakis": {
+						State: Excluded,
+						Namespaces: namespacesTree(
+							excluded(nsAtreides),
+							excluded(nsHarkonnen),
+							excluded(nsSpacingGuild),
+							excluded(nsBeneGesserit),
+							excluded(nsFremen),
+						),
+						Attributes: arrakisAttributes,
+					},
+					"Giedi=Prime": {
+						State: Excluded,
+						Namespaces: namespacesTree(
+							excluded(nsHarkonnenAtHome),
+						),
+						Attributes: giediPrimeAttributes,
+					},
+					"Not Found": notFoundCluster,
+				},
+			},
+			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
+			hasError: false,
+		},
+		{
 			desc:      "namespace included by name does not include anything else",
 			scopeDesc: `namespace: "Arrakis::Atreides" => { "Arrakis::Atreides" }`,
 			scopeStr:  "Arrakis::Atreides",
@@ -501,6 +556,61 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						State: Partial,
 						Namespaces: namespacesTree(
 							included(nsAtreides),
+							excluded(nsHarkonnen),
+							excluded(nsSpacingGuild),
+							excluded(nsBeneGesserit),
+							excluded(nsFremen),
+						),
+						Attributes: arrakisAttributes,
+					},
+					"Giedi=Prime": {
+						State: Excluded,
+						Namespaces: namespacesTree(
+							excluded(nsHarkonnenAtHome),
+						),
+						Attributes: giediPrimeAttributes,
+					},
+					"Not Found": notFoundCluster,
+				},
+			},
+			detail:   v1.ComputeEffectiveAccessScopeRequest_HIGH,
+			hasError: false,
+		},
+		{
+			desc:      "namespace included by name but wrong cluster ID does not include anything",
+			scopeDesc: `namespace: "Giedi=Prime::Atreides" => { }`,
+			scopeStr:  "",
+			scopeJSON: `{}`,
+			scope: &storage.SimpleAccessScope{
+				Id:   accessScopeID,
+				Name: accessScopeName,
+				Rules: &storage.SimpleAccessScope_Rules{
+					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+						{
+							ClusterId:     "planet.giedi=prime",
+							NamespaceName: "Atreides",
+						},
+					},
+				},
+			},
+			expected: &ScopeTree{
+				State:           Excluded,
+				clusterIDToName: clusterIDs,
+				Clusters: map[string]*clustersScopeSubTree{
+					"Earth": {
+						State: Excluded,
+						Namespaces: namespacesTree(
+							excluded(nsSkunkWorks),
+							excluded(nsFraunhofer),
+							excluded(nsCERN),
+							excluded(nsJPL),
+						),
+						Attributes: earthAttributes,
+					},
+					"Arrakis": {
+						State: Excluded,
+						Namespaces: namespacesTree(
+							excluded(nsAtreides),
 							excluded(nsHarkonnen),
 							excluded(nsSpacingGuild),
 							excluded(nsBeneGesserit),
