@@ -188,7 +188,7 @@ jobs:
       uses: test-summary/action@v2
       if: always()
       with:
-        paths: ${{ env.ARTIFACT_DIR }}/**/*.xml
+        paths: ${{ env.ARTIFACT_DIR }}**/*.xml
         show: all
 
     - name: Report junit failures in jira
