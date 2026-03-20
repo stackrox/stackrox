@@ -129,12 +129,12 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		log.Infof("VM v2 pipeline: enriched VM %s with %d components, %s scan OS; upserting VM record",
 			vm.GetId(), len(vm.GetScan().GetComponents()), vm.GetScan().GetOperatingSystem())
 
-		// Upsert minimal VM record to satisfy FK constraint.
-		vmV2 := &storage.VirtualMachineV2{Id: vm.GetId(), ClusterId: clusterID}
-		if err := p.vmV2Store.UpsertVirtualMachine(ctx, vmV2); err != nil {
-			return errors.Wrapf(err, "failed to upsert VM v2 %s to datastore", index.GetId())
+		// Insert minimal VM record only when missing to satisfy FK constraint
+		// without clobbering richer VM metadata from the VM pipeline.
+		if err := p.vmV2Store.EnsureVirtualMachineExists(ctx, vm.GetId(), clusterID); err != nil {
+			return errors.Wrapf(err, "failed to ensure VM v2 %s exists in datastore", index.GetId())
 		}
-		log.Infof("VM v2 pipeline: upserted VM record %s; converting and upserting scan", vm.GetId())
+		log.Infof("VM v2 pipeline: ensured VM record %s exists; converting and upserting scan", vm.GetId())
 
 		// Convert v1 scan to v2 parts and upsert.
 		scanParts := v1tov2storage.ScanPartsFromV1Scan(vm.GetId(), vm.GetScan())

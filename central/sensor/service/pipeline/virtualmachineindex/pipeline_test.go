@@ -570,7 +570,7 @@ func TestPipelineRun_DisabledFeature(t *testing.T) {
 }
 
 func TestPipelineRunV2(t *testing.T) {
-	t.Run("v2 upserts VM and scan after enrichment", func(t *testing.T) {
+	t.Run("v2 ensures VM exists and upserts scan after enrichment", func(t *testing.T) {
 		t.Setenv(features.VirtualMachines.EnvVar(), "true")
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -594,10 +594,10 @@ func TestPipelineRunV2(t *testing.T) {
 			Return(nil)
 
 		mockV2Store.EXPECT().
-			UpsertVirtualMachine(gomock.Any(), gomock.Any()).
-			Do(func(_ context.Context, vm *storage.VirtualMachineV2) {
-				assert.Equal(t, vmID, vm.GetId())
-				assert.Equal(t, testClusterID, vm.GetClusterId())
+			EnsureVirtualMachineExists(gomock.Any(), vmID, testClusterID).
+			Do(func(_ context.Context, gotVMID, gotClusterID string) {
+				assert.Equal(t, vmID, gotVMID)
+				assert.Equal(t, testClusterID, gotClusterID)
 			}).
 			Return(nil)
 
@@ -612,7 +612,7 @@ func TestPipelineRunV2(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("v2 upsert VM error propagates", func(t *testing.T) {
+	t.Run("v2 ensure VM exists error propagates", func(t *testing.T) {
 		t.Setenv(features.VirtualMachines.EnvVar(), "true")
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -637,7 +637,7 @@ func TestPipelineRunV2(t *testing.T) {
 
 		expectedErr := errors.New("upsert error")
 		mockV2Store.EXPECT().
-			UpsertVirtualMachine(gomock.Any(), gomock.Any()).
+			EnsureVirtualMachineExists(gomock.Any(), vmID, testClusterID).
 			Return(expectedErr)
 
 		err := pipeline.Run(ctx, testClusterID, msg, nil)
@@ -669,7 +669,7 @@ func TestPipelineRunV2(t *testing.T) {
 			Return(nil)
 
 		mockV2Store.EXPECT().
-			UpsertVirtualMachine(gomock.Any(), gomock.Any()).
+			EnsureVirtualMachineExists(gomock.Any(), vmID, testClusterID).
 			Return(nil)
 
 		expectedErr := errors.New("scan upsert error")
@@ -707,7 +707,7 @@ func TestPipelineRunV2(t *testing.T) {
 				vm.Scan = &storage.VirtualMachineScan{}
 			}).
 			Return(nil)
-		mockV2Store.EXPECT().UpsertVirtualMachine(gomock.Any(), gomock.Any()).Return(nil)
+		mockV2Store.EXPECT().EnsureVirtualMachineExists(gomock.Any(), vmID, testClusterID).Return(nil)
 		mockV2Store.EXPECT().UpsertScan(gomock.Any(), vmID, gomock.Any()).Return(nil)
 
 		err := pipeline.Run(ctx, testClusterID, msg, nil)

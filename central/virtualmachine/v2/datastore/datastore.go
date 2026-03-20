@@ -24,6 +24,9 @@ type DataStore interface {
 	// UpsertVirtualMachine upserts a VM. The store performs hash-based change
 	// detection to avoid unnecessary writes.
 	UpsertVirtualMachine(ctx context.Context, vm *storage.VirtualMachineV2) error
+	// EnsureVirtualMachineExists inserts a minimal VM row if it does not exist.
+	// Existing VM rows are left unchanged.
+	EnsureVirtualMachineExists(ctx context.Context, vmID, clusterID string) error
 
 	// UpsertScan upserts scan data (scan, components, CVEs) for a VM.
 	// Hash-based change detection avoids unnecessary writes. CVE created_at

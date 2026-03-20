@@ -56,6 +56,18 @@ func (ds *datastoreImpl) UpsertVirtualMachine(ctx context.Context, vm *storage.V
 	return ds.store.UpsertVM(ctx, vm)
 }
 
+func (ds *datastoreImpl) EnsureVirtualMachineExists(ctx context.Context, vmID, clusterID string) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachineV2", "EnsureVirtualMachineExists")
+
+	if vmID == "" {
+		return errors.New("cannot ensure virtual machine without an id")
+	}
+	if clusterID == "" {
+		return errors.New("cannot ensure virtual machine without a cluster id")
+	}
+	return ds.store.EnsureVMExists(ctx, vmID, clusterID)
+}
+
 func (ds *datastoreImpl) UpsertScan(ctx context.Context, vmID string, parts common.VMScanParts) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachineV2", "UpsertScan")
 

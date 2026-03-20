@@ -18,6 +18,9 @@ type Store interface {
 	// or timestamp-only update is performed.
 	// NOTE: Mutates vm in-place (LastUpdated, Hash).
 	UpsertVM(ctx context.Context, vm *storage.VirtualMachineV2) error
+	// EnsureVMExists inserts a minimal VM row if it does not exist.
+	// Existing VM rows are left unchanged.
+	EnsureVMExists(ctx context.Context, vmID, clusterID string) error
 
 	// UpsertScan upserts scan data (scan, components, CVEs) for a VM.
 	// Hash-comparison determines whether a full replace or scan_time-only
