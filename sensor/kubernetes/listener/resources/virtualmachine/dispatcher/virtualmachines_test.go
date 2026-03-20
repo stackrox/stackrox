@@ -272,12 +272,8 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 			action: central.ResourceAction_CREATE_RESOURCE,
 			obj:    toUnstructured(newVirtualMachine(vmUID, vmName, vmNamespace, v1.VirtualMachineStatusStopped)),
 			expectFn: func() {
-				// Allow store calls so the test fails on the nil assertion, not on an
-				// unexpected mock call. At 4.9.0 (no guard) the dispatcher reaches the
-				// store; on the fixed code the guard returns nil before any store call.
-				s.store.EXPECT().AddOrUpdate(gomock.Any()).MaxTimes(1).Return(
-					&virtualmachine.Info{ID: vmUID, Name: vmName, Namespace: vmNamespace},
-				)
+				// Guarded path must not emit an event nor touch the store.
+				s.store.EXPECT().AddOrUpdate(gomock.Any()).Times(0)
 				centralcaps.Set(nil)
 			},
 			expectedMsg: nil,
@@ -286,12 +282,8 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 			action: central.ResourceAction_CREATE_RESOURCE,
 			obj:    toUnstructured(newVirtualMachine(vmUID, vmName, vmNamespace, v1.VirtualMachineStatusStopped)),
 			expectFn: func() {
-				// Allow store calls so the test fails on the nil assertion, not on an
-				// unexpected mock call. At 4.9.0 (no guard) the dispatcher reaches the
-				// store; on the fixed code the guard returns nil before any store call.
-				s.store.EXPECT().AddOrUpdate(gomock.Any()).MaxTimes(1).Return(
-					&virtualmachine.Info{ID: vmUID, Name: vmName, Namespace: vmNamespace},
-				)
+				// Guarded path must not emit an event nor touch the store.
+				s.store.EXPECT().AddOrUpdate(gomock.Any()).Times(0)
 				s.T().Setenv(features.VirtualMachines.EnvVar(), "false")
 			},
 			expectedMsg: nil,

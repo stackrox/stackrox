@@ -375,12 +375,9 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 			action: central.ResourceAction_CREATE_RESOURCE,
 			obj:    toUnstructured(newVirtualMachineInstance(vmiUID, vmiName, vmiNamespace, ownerUID, nil, v1.Scheduled)),
 			expectFn: func() {
-				// Pre-populate the store so ownerReceived=true; without the guard
-				// (4.9.0) the dispatcher then returns a non-nil event, failing the
-				// nil assertion. On fixed code the guard returns nil before any
-				// store call — MaxTimes(1) means zero calls is also acceptable.
-				s.store.EXPECT().Has(gomock.Any()).MaxTimes(1).Return(true)
-				s.store.EXPECT().UpdateStateOrCreate(gomock.Any()).MaxTimes(1)
+				// Guarded path must not emit an event nor touch the store.
+				s.store.EXPECT().Has(gomock.Any()).Times(0)
+				s.store.EXPECT().UpdateStateOrCreate(gomock.Any()).Times(0)
 				centralcaps.Set(nil)
 			},
 			expectedMsg: nil,
@@ -389,12 +386,9 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 			action: central.ResourceAction_CREATE_RESOURCE,
 			obj:    toUnstructured(newVirtualMachineInstance(vmiUID, vmiName, vmiNamespace, ownerUID, nil, v1.Scheduled)),
 			expectFn: func() {
-				// Pre-populate the store so ownerReceived=true; without the guard
-				// (4.9.0) the dispatcher then returns a non-nil event, failing the
-				// nil assertion. On fixed code the guard returns nil before any
-				// store call — MaxTimes(1) means zero calls is also acceptable.
-				s.store.EXPECT().Has(gomock.Any()).MaxTimes(1).Return(true)
-				s.store.EXPECT().UpdateStateOrCreate(gomock.Any()).MaxTimes(1)
+				// Guarded path must not emit an event nor touch the store.
+				s.store.EXPECT().Has(gomock.Any()).Times(0)
+				s.store.EXPECT().UpdateStateOrCreate(gomock.Any()).Times(0)
 				s.T().Setenv(features.VirtualMachines.EnvVar(), "false")
 			},
 			expectedMsg: nil,
