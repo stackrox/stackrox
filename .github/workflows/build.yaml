@@ -709,27 +709,29 @@ jobs:
           echo "archs=${ARCHS}" >> "$GITHUB_OUTPUT"
           echo "Will build for architectures: ${ARCHS}"
 
-      - name: Download amd64 binaries
-        uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: go-binaries-build-amd64-default
+      - name: Download and organize architecture binaries
+        run: |
+          mkdir -p binaries
 
-      - name: Download arm64 binaries
-        uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: go-binaries-build-arm64-default
+          # Download amd64
+          gh run download ${{ github.run_id }} -n go-binaries-build-amd64-default -D binaries/amd64
 
-      - name: Download ppc64le binaries
-        if: contains(steps.determine-archs.outputs.archs, 'ppc64le')
-        uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: go-binaries-build-ppc64le-default
+          # Download arm64
+          gh run download ${{ github.run_id }} -n go-binaries-build-arm64-default -D binaries/arm64
 
-      - name: Download s390x binaries
-        if: contains(steps.determine-archs.outputs.archs, 's390x')
-        uses: ./.github/actions/download-artifact-with-retry
-        with:
-          name: go-binaries-build-s390x-default
+          # Download ppc64le if needed
+          if [[ "${{ steps.determine-archs.outputs.archs }}" == *"ppc64le"* ]]; then
+            gh run download ${{ github.run_id }} -n go-binaries-build-ppc64le-default -D binaries/ppc64le
+          fi
+
+          # Download s390x if needed
+          if [[ "${{ steps.determine-archs.outputs.archs }}" == *"s390x"* ]]; then
+            gh run download ${{ github.run_id }} -n go-binaries-build-s390x-default -D binaries/s390x
+          fi
+
+          ls -la binaries/
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@v4
@@ -777,8 +779,8 @@ jobs:
             for arch in $ARCHS; do
               echo "  ----- Building for arch: $arch -----"
 
-              # Unpack binary for this architecture
-              tar xvzf "go-binaries-build-${arch}-default.tgz"
+              # Unpack binary for this architecture from downloaded directory
+              tar xvzf "binaries/${arch}/go-binaries-build.tgz"
 
               # Build operator image
               GOARCH=$arch retry 6 true make -C operator/ docker-build
