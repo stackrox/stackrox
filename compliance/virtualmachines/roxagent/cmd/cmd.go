@@ -27,6 +27,9 @@ func RootCmd(ctx context.Context) *cobra.Command {
 	cmd.Flags().BoolVar(&cfg.DaemonMode, "daemon", false,
 		"Run in daemon mode. Sends index reports continuously.",
 	)
+	cmd.Flags().BoolVar(&cfg.Debug, "debug", false,
+		"Enable debug logging for claircore and repository scanner diagnostics.",
+	)
 
 	// Shortening this interval results in more frequent scans and therefore more load,
 	// which, assuming the throughput continues to be limited by scanning capacity,
@@ -65,6 +68,9 @@ func RootCmd(ctx context.Context) *cobra.Command {
 	cmd.RunE = func(cmd *cobra.Command, _ []string) error {
 		if err := validateDaemonConfig(cfg); err != nil {
 			return err
+		}
+		if cfg.Debug {
+			index.ConfigureClaircoreDebugLogging()
 		}
 
 		client := &vsock.Client{

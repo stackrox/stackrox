@@ -2,12 +2,15 @@ package index
 
 import (
 	"context"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
@@ -68,15 +71,17 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 	osVersion := data.GetOsVersion()
 	activationStatus := data.GetActivationStatus()
 	dnfMetadataStatus := data.GetDnfMetadataStatus()
-	log.Infof("VM discovered data: detected_os=%s, os_version=%q, activation_status=%s, dnf_metadata_status=%s",
-		detectedOS.String(), osVersion, activationStatus.String(), dnfMetadataStatus.String())
+	dnfStatus := formatDnfStatusFlags(data.GetDnfStatus())
+	log.Infof("VM discovered data: detected_os=%s, os_version=%q, activation_status=%s, dnf_status=[%s]",
+		detectedOS.String(), osVersion, activationStatus.String(), dnfStatus)
 
-	// Record metric for VM discovered data for cusomer data debugging purposes.
+	// Record metric for VM discovered data for customer data debugging purposes.
 	metrics.VMDiscoveredData.With(prometheus.Labels{
 		"detected_os":         detectedOS.String(),
 		"activation_status":   activationStatus.String(),
 		"dnf_metadata_status": dnfMetadataStatus.String(),
 	}).Inc()
+	recordDnfStatusMetrics(data.GetDnfStatus())
 
 	metrics.IndexReportsReceived.Inc()
 	timeoutCtx, cancel := context.WithTimeout(ctx, indexReportSendTimeout)
@@ -89,4 +94,26 @@ func (s *serviceImpl) UpsertVirtualMachineIndexReport(ctx context.Context, req *
 	return &sensor.UpsertVirtualMachineIndexReportResponse{
 		Success: true,
 	}, nil
+}
+
+func formatDnfStatusFlags(flags []v1.DnfStatusFlag) string {
+	if len(flags) == 0 {
+		return "none"
+	}
+	names := make([]string, 0, len(flags))
+	for _, f := range flags {
+		names = append(names, f.String())
+	}
+	slices.Sort(names)
+	return strings.Join(names, ", ")
+}
+
+func recordDnfStatusMetrics(flags []v1.DnfStatusFlag) {
+	if len(flags) == 0 {
+		metrics.VMDiscoveredDataDNFStatus.WithLabelValues("none").Inc()
+		return
+	}
+	for _, f := range flags {
+		metrics.VMDiscoveredDataDNFStatus.WithLabelValues(f.String()).Inc()
+	}
 }

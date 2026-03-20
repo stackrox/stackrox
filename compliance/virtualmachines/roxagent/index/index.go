@@ -60,10 +60,12 @@ func RunSingle(ctx context.Context, cfg *common.Config, client *vsock.Client) er
 }
 
 func runIndexer(ctx context.Context, cfg *common.Config) (*v4.IndexReport, error) {
+	httpClient := &http.Client{Transport: proxy.RoundTripper()}
+
 	indexerCfg := index.NodeIndexerConfig{
 		HostPath: cfg.IndexHostPath,
 		// Client used to fetch the repo to cpe mapping json.
-		Client: &http.Client{Transport: proxy.RoundTripper()},
+		Client: httpClient,
 		// URL where to get the repo to cpe mapping json from.
 		// In ACS, we fetch it internally from the cluster (to prevent Collector from accessing the Internet):
 		// "https://sensor.stackrox.svc:443/scanner/definitions?file=repo2cpe"
@@ -73,10 +75,23 @@ func runIndexer(ctx context.Context, cfg *common.Config) (*v4.IndexReport, error
 		PackageDBFilter: "",
 	}
 
+	log.Infof("Indexer config: HostPath=%q, Repo2CPEMappingURL=%q, Timeout=%v",
+		indexerCfg.HostPath, indexerCfg.Repo2CPEMappingURL, indexerCfg.Timeout)
+
+	// This may slow the indexing process down by 1-2 seconds, but the diagnostics are invaluable for debugging.
+	logFilesystemDiagnostics(indexerCfg.HostPath)
+	if cfg.Debug {
+		fetchRepo2CPEMappingForDiagnostics(ctx, indexerCfg.Repo2CPEMappingURL, indexerCfg.Timeout, httpClient)
+	}
+
+	log.Info("Running node indexer...")
 	report, err := index.NewNodeIndexer(indexerCfg).IndexNode(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	logIndexReportDiagnostics(report, cfg.Debug)
+
 	return report, nil
 }
 
