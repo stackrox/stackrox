@@ -56,6 +56,9 @@ func (s *virtualMachineInstanceSuite) SetupSubTest() {
 
 func (s *virtualMachineInstanceSuite) TearDownSubTest() {
 	s.mockCtrl.Finish()
+	// Reset global capability state to prevent test pollution.
+	// If not reset, subsequent tests may incorrectly assume capabilities are present/absent,
+	// leading to false negatives that could hide regressions.
 	centralcaps.Set(nil)
 }
 
@@ -372,7 +375,27 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 			action: central.ResourceAction_CREATE_RESOURCE,
 			obj:    toUnstructured(newVirtualMachineInstance(vmiUID, vmiName, vmiNamespace, ownerUID, nil, v1.Scheduled)),
 			expectFn: func() {
+				// Pre-populate the store so ownerReceived=true; without the guard
+				// (4.9.0) the dispatcher then returns a non-nil event, failing the
+				// nil assertion. On fixed code the guard returns nil before any
+				// store call — MaxTimes(1) means zero calls is also acceptable.
+				s.store.EXPECT().Has(gomock.Any()).MaxTimes(1).Return(true)
+				s.store.EXPECT().UpdateStateOrCreate(gomock.Any()).MaxTimes(1)
 				centralcaps.Set(nil)
+			},
+			expectedMsg: nil,
+		},
+		"feature flag disabled": {
+			action: central.ResourceAction_CREATE_RESOURCE,
+			obj:    toUnstructured(newVirtualMachineInstance(vmiUID, vmiName, vmiNamespace, ownerUID, nil, v1.Scheduled)),
+			expectFn: func() {
+				// Pre-populate the store so ownerReceived=true; without the guard
+				// (4.9.0) the dispatcher then returns a non-nil event, failing the
+				// nil assertion. On fixed code the guard returns nil before any
+				// store call — MaxTimes(1) means zero calls is also acceptable.
+				s.store.EXPECT().Has(gomock.Any()).MaxTimes(1).Return(true)
+				s.store.EXPECT().UpdateStateOrCreate(gomock.Any()).MaxTimes(1)
+				s.T().Setenv(features.VirtualMachines.EnvVar(), "false")
 			},
 			expectedMsg: nil,
 		},
