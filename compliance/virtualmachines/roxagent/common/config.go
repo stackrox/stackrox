@@ -4,6 +4,7 @@ import "time"
 
 type Config struct {
 	DaemonMode            bool
+	Debug                 bool
 	IndexHostPath         string
 	IndexInterval         time.Duration
 	MaxInitialReportDelay time.Duration
