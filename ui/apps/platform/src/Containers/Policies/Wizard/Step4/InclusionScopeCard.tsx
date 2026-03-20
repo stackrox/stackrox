@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent, ReactElement } from 'react';
-import { Flex, Form, FormGroup, Radio, TextInput } from '@patternfly/react-core';
+import { Flex, Form, FormGroup, Popover, Radio, TextInput } from '@patternfly/react-core';
+import { HelpIcon } from '@patternfly/react-icons';
 
 import TypeaheadSelect from 'Components/TypeaheadSelect/TypeaheadSelect';
 import type { TypeaheadSelectOption } from 'Components/TypeaheadSelect/TypeaheadSelect';
@@ -18,6 +19,7 @@ type InclusionScopeCardProps = {
     handleChange: (event: FormEvent<HTMLInputElement>, value: string) => void;
     setFieldValue: (field: string, value: unknown, shouldValidate?: boolean) => void;
     onDelete: () => void;
+    hasAuditLogEventSource?: boolean;
 };
 
 function InclusionScopeCard({
@@ -27,6 +29,7 @@ function InclusionScopeCard({
     handleChange,
     setFieldValue,
     onDelete,
+    hasAuditLogEventSource = false,
 }: InclusionScopeCardProps): ReactElement {
     const scopePath = `scope[${index}]`;
     const [clusterMode, setClusterMode] = useState<Mode>(scope.clusterLabel ? 'label' : 'name');
@@ -60,7 +63,7 @@ function InclusionScopeCard({
     }
 
     return (
-        <PolicyScopeCardBase title="Inclusion scope" onDelete={onDelete}>
+        <PolicyScopeCardBase title="Inclusion" onDelete={onDelete}>
             <Form>
                 <FormGroup label="Cluster" role="radiogroup">
                     <Flex direction={{ default: 'row' }}>
@@ -112,7 +115,24 @@ function InclusionScopeCard({
                         </Flex>
                     )}
                 </FormGroup>
-                <FormGroup label="Namespace" role="radiogroup">
+                <FormGroup
+                    label="Namespace"
+                    role="radiogroup"
+                    labelHelp={
+                        <Popover
+                            aria-label="Namespace help"
+                            bodyContent="Supports RE2 regular expression syntax for matching namespaces."
+                        >
+                            <button
+                                type="button"
+                                aria-label="More info for namespace field"
+                                className="pf-v6-c-form__group-label-help"
+                            >
+                                <HelpIcon />
+                            </button>
+                        </Popover>
+                    }
+                >
                     <Flex direction={{ default: 'row' }}>
                         <Radio
                             id={`scope-${index}-namespace-by-name`}
@@ -159,7 +179,23 @@ function InclusionScopeCard({
                         </Flex>
                     )}
                 </FormGroup>
-                <FormGroup label="Deployment">
+                <FormGroup
+                    label="Deployment"
+                    labelHelp={
+                        <Popover
+                            aria-label="Deployment label help"
+                            bodyContent="Supports RE2 regular expression syntax for matching deployment labels."
+                        >
+                            <button
+                                type="button"
+                                aria-label="More info for deployment label field"
+                                className="pf-v6-c-form__group-label-help"
+                            >
+                                <HelpIcon />
+                            </button>
+                        </Popover>
+                    }
+                >
                     <Flex direction={{ default: 'row' }} flexWrap={{ default: 'nowrap' }}>
                         <TextInput
                             aria-label="Deployment label key"
@@ -168,6 +204,7 @@ function InclusionScopeCard({
                             placeholder="Label key"
                             type="text"
                             value={scope.label?.key ?? ''}
+                            isDisabled={hasAuditLogEventSource}
                         />
                         <TextInput
                             aria-label="Deployment label value"
@@ -176,6 +213,7 @@ function InclusionScopeCard({
                             placeholder="Label value"
                             type="text"
                             value={scope.label?.value ?? ''}
+                            isDisabled={hasAuditLogEventSource}
                         />
                     </Flex>
                 </FormGroup>

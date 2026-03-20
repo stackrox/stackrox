@@ -40,6 +40,8 @@ import PolicyScopeForm from './Step4/PolicyScopeForm';
 import PolicyActionsForm from './Step5/PolicyActionsForm';
 import ReviewPolicyForm from './Step6/ReviewPolicyForm';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
+
 import './PolicyWizard.css';
 
 type PolicyWizardProps = {
@@ -49,6 +51,7 @@ type PolicyWizardProps = {
 
 function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
     const navigate = useNavigate();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const [stepId, setStepId] = useState<number | string>(POLICY_DEFINITION_DETAILS_ID);
     const [isValidOnServer, setIsValidOnServer] = useState(false);
     const [policyErrorMessage, setPolicyErrorMessage] = useState('');
@@ -227,7 +230,11 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                             isExpandable
                             steps={[
                                 <WizardStep
-                                    name="Scope"
+                                    name={
+                                        isFeatureFlagEnabled('ROX_LABEL_BASED_POLICY_SCOPING')
+                                            ? 'Resources'
+                                            : 'Scope'
+                                    }
                                     id={POLICY_BEHAVIOR_SCOPE_ID}
                                     key={POLICY_BEHAVIOR_SCOPE_ID}
                                     body={{ hasNoPadding: true }}
