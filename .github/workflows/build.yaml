@@ -58,11 +58,13 @@ jobs:
 
           matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
 
-          matrix="$(jq '.build_and_push_operator.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_operator.arch += ["amd64", "arm64"]' <<< "$matrix")"
+          # build_and_push_operator is now a single job with loops instead of matrix
+          # matrix="$(jq '.build_and_push_operator.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
+          # matrix="$(jq '.build_and_push_operator.arch += ["amd64", "arm64"]' <<< "$matrix")"
 
           matrix="$(jq '.push_operator_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.push_operator_multiarch_manifests.archs = [.build_and_push_operator.arch | join(",")]' <<< "$matrix")"
+          # Hardcode archs since build_and_push_operator is no longer a matrix job
+          matrix="$(jq '.push_operator_multiarch_manifests.archs = ["amd64,arm64"]' <<< "$matrix")"
 
           matrix="$(jq '.scan_images_with_roxctl.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.scan_images_with_roxctl.image += ["central-db", "collector", "fact", "main", "roxctl", "scanner", "scanner-db", "scanner-db-slim", "scanner-slim", "stackrox-operator"]' <<< "$matrix")"
@@ -664,11 +666,7 @@ jobs:
       - define-job-matrix
       - pre-build-go-binaries
       - pre-build-operator-bundle
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
     env:
-      ROX_PRODUCT_BRANDING: ${{ matrix.name }}
       ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: true
       QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
       QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
@@ -696,40 +694,42 @@ jobs:
         if: contains(github.event.pull_request.labels.*.name, 'ci-release-build')
         run: echo "GOTAGS=release" >> "$GITHUB_ENV"
 
-      - name: Setup Go RHACS build environment
-        if: matrix.name == 'RHACS_BRANDING'
-        run: echo "QUAY_ORG=rhacs-eng" >> "$GITHUB_ENV"
-
-      - name: Setup Go StackRox build environment
-        if: matrix.name == 'STACKROX_BRANDING'
-        run: echo "QUAY_ORG=stackrox-io" >> "$GITHUB_ENV"
-
-      - name: Docker login
-        # Skip for external contributions.
-        if: |
-          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+      - name: Determine architectures to build
+        id: determine-archs
         run: |
-          ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
+          # Base architectures for PRs
+          ARCHS="amd64 arm64"
 
-      - uses: ./.github/actions/download-artifact-with-retry
+          # Add all architectures if not in PR or has ci-build-all-arch label
+          if [[ "${{ github.event_name }}" != "pull_request" ]] || \
+             ${{ contains(github.event.pull_request.labels.*.name, 'ci-build-all-arch') }}; then
+            ARCHS="amd64 arm64 ppc64le s390x"
+          fi
+
+          echo "archs=${ARCHS}" >> "$GITHUB_OUTPUT"
+          echo "Will build for architectures: ${ARCHS}"
+
+      - name: Download amd64 binaries
+        uses: ./.github/actions/download-artifact-with-retry
         with:
-          name: go-binaries-build-${{ matrix.arch }}-default
+          name: go-binaries-build-amd64-default
 
-      - name: Unpack operator binary
-        run: |
-          tar xvzf go-binaries-build.tgz
+      - name: Download arm64 binaries
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: go-binaries-build-arm64-default
 
-      - name: Use operator tag from bundle job
-        id: operator-tag
-        run: |
-          TAG="${{ needs.pre-build-operator-bundle.outputs.operator-tag }}"
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "image=quay.io/${{ env.QUAY_ORG }}/stackrox-operator:${TAG}" >> "$GITHUB_OUTPUT"
+      - name: Download ppc64le binaries
+        if: contains(steps.determine-archs.outputs.archs, 'ppc64le')
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: go-binaries-build-ppc64le-default
 
-      - name: Build Operator image
-        run: |
-          # Build operator image with pre-built binary
-          GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ docker-build
+      - name: Download s390x binaries
+        if: contains(steps.determine-archs.outputs.archs, 's390x')
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: go-binaries-build-s390x-default
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@v4
@@ -740,30 +740,74 @@ jobs:
           username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
           password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
 
-      - name: Set up QEMU
-        if: matrix.arch != 'amd64'
-        uses: docker/setup-qemu-action@v4
-
-      - name: Check that Operator image is runnable
-        run: docker run --rm --platform linux/${{ matrix.arch }} "quay.io/${QUAY_ORG}/stackrox-operator:$(make --quiet --no-print-directory -C operator tag)" --help
-
-      - name: Push image
-        # Skip for external contributions.
+      - name: Build and push operator images for all brandings and architectures
+        # Skip for external contributions
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-            source ./scripts/ci/lib.sh
-            echo "Will determine context from: ${{ github.event_name }} & ${{ github.ref_name }}"
-            push_context=""
-            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-              push_context="merge-to-master"
+          source ./scripts/ci/lib.sh
+
+          # Determine push context
+          push_context=""
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
+            push_context="merge-to-master"
+          fi
+
+          # Get architectures
+          ARCHS="${{ steps.determine-archs.outputs.archs }}"
+
+          # Loop through brandings
+          for branding in RHACS_BRANDING STACKROX_BRANDING; do
+            export ROX_PRODUCT_BRANDING="$branding"
+            echo "========================================="
+            echo "Building for branding: $branding"
+            echo "========================================="
+
+            # Set QUAY_ORG based on branding
+            if [[ "$branding" == "RHACS_BRANDING" ]]; then
+              export QUAY_ORG="rhacs-eng"
+            else
+              export QUAY_ORG="stackrox-io"
             fi
-            echo "Starting operator image push for context: \"$push_context\", branding: \"${{ env.ROX_PRODUCT_BRANDING }}\", arch: \"${{ matrix.arch }}\""
-            if ! push_operator_image "$push_context" "${{ env.ROX_PRODUCT_BRANDING }}" "${{ matrix.arch }}"; then
-              echo "ERROR: push_operator_image failed" >&2
-              exit 1
-            fi
-            echo "Operator image push completed successfully"
+
+            # Docker login for this registry
+            registry_rw_login "quay.io/${QUAY_ORG}"
+
+            # Loop through architectures
+            for arch in $ARCHS; do
+              echo "  ----- Building for arch: $arch -----"
+
+              # Unpack binary for this architecture
+              tar xvzf "go-binaries-build-${arch}-default.tgz"
+
+              # Build operator image
+              GOARCH=$arch retry 6 true make -C operator/ docker-build
+
+              # Check image is runnable (only for amd64 and arm64 to save time)
+              if [[ "$arch" == "amd64" ]] || [[ "$arch" == "arm64" ]]; then
+                if [[ "$arch" == "arm64" ]]; then
+                  # Set up QEMU for ARM64 testing on amd64 runners
+                  docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+                fi
+
+                TAG="$(make --quiet --no-print-directory -C operator tag)"
+                echo "Testing image: quay.io/${QUAY_ORG}/stackrox-operator:${TAG}"
+                docker run --rm --platform linux/$arch "quay.io/${QUAY_ORG}/stackrox-operator:${TAG}" --help
+              fi
+
+              # Push architecture-specific image
+              echo "Starting operator image push for context: \"$push_context\", branding: \"$branding\", arch: \"$arch\""
+              if ! push_operator_image "$push_context" "$branding" "$arch"; then
+                echo "ERROR: push_operator_image failed" >&2
+                exit 1
+              fi
+              echo "Operator image push completed successfully for $branding $arch"
+            done
+
+            echo "Completed builds for branding: $branding"
+          done
+
+          echo "All operator images built and pushed successfully"
 
   push-operator-manifests:
     runs-on: ubuntu-latest
