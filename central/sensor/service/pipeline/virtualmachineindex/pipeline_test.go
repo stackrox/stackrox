@@ -450,6 +450,83 @@ func (suite *PipelineTestSuite) TestRun_NACKOnEnrichmentError() {
 	suite.Equal(centralsensor.SensorACKReasonEnrichmentFailed, ack.GetReason())
 }
 
+func (suite *PipelineTestSuite) TestRun_NACKOnMissingClusterID() {
+	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
+	vmID := "vm-no-cluster"
+	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
+
+	injector := &mockInjector{
+		capabilities: map[centralsensor.SensorCapability]bool{
+			centralsensor.SensorACKSupport: true,
+		},
+	}
+
+	err := suite.pipeline.Run(ctx, "", msg, injector)
+	suite.ErrorContains(err, "missing cluster ID")
+
+	suite.Require().Len(injector.messages, 1)
+	ack := injector.messages[0].GetSensorAck()
+	suite.Require().NotNil(ack)
+	suite.Equal(central.SensorACK_NACK, ack.GetAction())
+	suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
+	suite.Equal(vmID, ack.GetResourceId())
+	suite.Equal(centralsensor.SensorACKReasonMissingClusterID, ack.GetReason())
+}
+
+func (suite *PipelineTestSuite) TestRun_NACKOnMissingScannerIndexPayload() {
+	suite.T().Setenv(features.VirtualMachines.EnvVar(), "true")
+	tests := []struct {
+		name  string
+		index *v1.IndexReport
+	}{
+		{
+			name:  "nil Index",
+			index: nil,
+		},
+		{
+			name:  "Index without Scanner V4 payload",
+			index: &v1.IndexReport{},
+		},
+	}
+
+	for _, tt := range tests {
+		suite.Run(tt.name, func() {
+			vmID := "vm-missing-payload-" + tt.name
+			msg := &central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_Event{
+					Event: &central.SensorEvent{
+						Id:     vmID,
+						Action: central.ResourceAction_SYNC_RESOURCE,
+						Resource: &central.SensorEvent_VirtualMachineIndexReport{
+							VirtualMachineIndexReport: &v1.IndexReportEvent{
+								Id:    vmID,
+								Index: tt.index,
+							},
+						},
+					},
+				},
+			}
+
+			injector := &mockInjector{
+				capabilities: map[centralsensor.SensorCapability]bool{
+					centralsensor.SensorACKSupport: true,
+				},
+			}
+
+			err := suite.pipeline.Run(ctx, testClusterID, msg, injector)
+			suite.ErrorContains(err, "missing Scanner V4 index data")
+
+			suite.Require().Len(injector.messages, 1)
+			ack := injector.messages[0].GetSensorAck()
+			suite.Require().NotNil(ack)
+			suite.Equal(central.SensorACK_NACK, ack.GetAction())
+			suite.Equal(central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
+			suite.Equal(vmID, ack.GetResourceId())
+			suite.Equal(centralsensor.SensorACKReasonMissingScanData, ack.GetReason())
+		})
+	}
+}
+
 func TestPipelineRun_DisabledFeature(t *testing.T) {
 	t.Setenv(features.VirtualMachines.EnvVar(), "false")
 	ctrl := gomock.NewController(t)
