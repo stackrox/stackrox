@@ -999,7 +999,6 @@ module.exports = [
             'src/services/instance.js', // JavaScript
             'src/services/serverErrorHandler.js', // JavaScript
             'src/*', // JavaScript
-            'src/sorters/sorters.js', // rewrite
             'src/test-utils/**', // JavaScript
             'src/utils/URLGenerator.js', // deprecated
             'src/utils/URLService.js', // deprecated
@@ -1012,7 +1011,6 @@ module.exports = [
             'src/utils/getEntityName.js', // deprecated
             'src/utils/getPaginatedList.js', // move into Containers/Risk/EventTimeline
             'src/utils/gqlLoading.js', // deferred
-            'src/utils/mathUtils.js', // rewrite
             'src/utils/pdfUtils.js', // deprecated
             'src/utils/permissionRuleGroupUtils.js', // deferred
             'src/utils/queryMap.js', // deprecated
