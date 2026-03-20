@@ -324,15 +324,18 @@ func (s *storeImpl) updateScanTime(ctx context.Context, tx *postgres.Tx, scanID 
 
 func (s *storeImpl) fullScanReplace(ctx context.Context, tx *postgres.Tx, vmID string, parts common.VMScanParts, iTime time.Time) error {
 	// Build CVE time map from incoming CVEs.
+	log.Infof("VM v2 store: fullScanReplace step 1: building CVE time map for VM %s (%d CVEs)", vmID, len(parts.CVEs))
 	cveTimeMap := buildCVETimeMap(parts.CVEs, iTime)
 
 	// Query existing CVE times.
+	log.Infof("VM v2 store: fullScanReplace step 2: querying existing CVE times for VM %s", vmID)
 	existingTimes, err := s.getExistingCVETimes(ctx, tx, vmID)
 	if err != nil {
 		return err
 	}
 
 	// Merge: keep oldest created_at per CVE.
+	log.Infof("VM v2 store: fullScanReplace step 3: merging %d existing CVE times for VM %s", len(existingTimes), vmID)
 	for cve, existingTime := range existingTimes {
 		if incoming, ok := cveTimeMap[cve]; ok {
 			if existingTime.Before(incoming) {
@@ -342,6 +345,7 @@ func (s *storeImpl) fullScanReplace(ctx context.Context, tx *postgres.Tx, vmID s
 	}
 
 	// Apply merged timestamps to incoming CVE objects.
+	log.Infof("VM v2 store: fullScanReplace step 4: applying merged timestamps to %d CVEs for VM %s", len(parts.CVEs), vmID)
 	for _, cve := range parts.CVEs {
 		cveName := cve.GetCveBaseInfo().GetCve()
 		if t, ok := cveTimeMap[cveName]; ok {
@@ -353,21 +357,25 @@ func (s *storeImpl) fullScanReplace(ctx context.Context, tx *postgres.Tx, vmID s
 	}
 
 	// Delete old scan (cascade deletes components + CVEs).
+	log.Infof("VM v2 store: fullScanReplace step 5: deleting old scan for VM %s", vmID)
 	if _, err := tx.Exec(ctx, "DELETE FROM "+scanTable+" WHERE VmV2Id = $1", pgutils.NilOrUUID(vmID)); err != nil {
 		return errors.Wrap(err, "deleting old scan")
 	}
 
 	// Insert new scan row.
+	log.Infof("VM v2 store: fullScanReplace step 6: inserting scan %s for VM %s", parts.Scan.GetId(), vmID)
 	if err := s.insertScan(ctx, tx, parts.Scan); err != nil {
 		return err
 	}
 
 	// COPY FROM components (batched).
+	log.Infof("VM v2 store: fullScanReplace step 7: COPY %d components for VM %s", len(parts.Components), vmID)
 	if err := s.copyFromComponents(ctx, tx, parts.Components); err != nil {
 		return err
 	}
 
 	// COPY FROM CVEs (batched).
+	log.Infof("VM v2 store: fullScanReplace step 8: COPY %d CVEs for VM %s", len(parts.CVEs), vmID)
 	return s.copyFromCVEs(ctx, tx, parts.CVEs)
 }
 
