@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom-v5-compat';
 import { Button, Page } from '@patternfly/react-core';
 import { OutlinedCommentsIcon } from '@patternfly/react-icons';
 
+import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
 import LoadingSection from 'Components/PatternFly/LoadingSection';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
@@ -109,14 +110,16 @@ function MainPage(): ReactElement {
                         />
                     }
                 >
-                    <HorizontalSubnav
-                        hasReadAccess={hasReadAccess}
-                        isFeatureFlagEnabled={isFeatureFlagEnabled}
-                    />
-                    <Body
-                        hasReadAccess={hasReadAccess}
-                        isFeatureFlagEnabled={isFeatureFlagEnabled}
-                    />
+                    <ErrorBoundary>
+                        <HorizontalSubnav
+                            hasReadAccess={hasReadAccess}
+                            isFeatureFlagEnabled={isFeatureFlagEnabled}
+                        />
+                        <Body
+                            hasReadAccess={hasReadAccess}
+                            isFeatureFlagEnabled={isFeatureFlagEnabled}
+                        />
+                    </ErrorBoundary>
                 </Page>
             </div>
             <footer>
