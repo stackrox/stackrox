@@ -14,13 +14,13 @@ import { entityComponentDefaultProps, entityComponentPropTypes } from 'constants
 import CVETable from 'Containers/Images/CVETable';
 import searchContext from 'Containers/searchContext';
 import { getDateTime } from 'utils/dateUtils';
-import getSubListFromEntity from 'utils/getSubListFromEntity';
 import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
 
 import { getConfigMgmtCountQuery } from '../ConfigMgmt.utils';
 import EntityList from '../List/EntityList';
 import TableWidget from './widgets/TableWidget';
+import getSubListFromEntity from './getSubListFromEntity';
 
 const ConfigManagementEntityImage = ({
     id,

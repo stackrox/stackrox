@@ -16,7 +16,7 @@ function getSubListFromEntity(entityData, entityType) {
         return [];
     }
     const field = getSubfieldName(entityType);
-    return entityData[field] || [];
+    return entityData[field] ?? [];
 }
 
 export default getSubListFromEntity;
