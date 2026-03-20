@@ -93,7 +93,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         // Splunk needs to be restarted after TA installation
         log.info "Restarting Splunk to apply settings and TA"
         postToSplunk(splunkDeployment.splunkPortForward.getLocalPort(), "/services/server/control/restart", [:])
-        waitForSplunkBoot(splunkDeployment.splunkPortForward.getLocalPort())
+        waitForSplunkRestart(splunkDeployment.splunkPortForward.getLocalPort())
 
         log.info("Configuring Stackrox TA")
         def tokenResp = ApiTokenService.generateToken("splunk-token-${splunkDeployment.uid}", "Analyst")

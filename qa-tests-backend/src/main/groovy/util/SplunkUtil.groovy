@@ -206,6 +206,23 @@ class SplunkUtil {
         return new SplunkDeployment(uid, collectorSvc, splunkPortForward, syslogSvc, deployment)
     }
 
+    static void waitForSplunkRestart(int port) {
+        waitForSplunkBoot(port)
+        // After the health check passes, verify that the TA's UCC REST handlers are registered.
+        // The health check can pass before the TA is fully initialised after a restart.
+        log.info("Waiting for TA REST handlers to be available...")
+        withRetry(30, 10) {
+            def response = given().auth()
+                    .basic("admin", SPLUNK_ADMIN_PASSWORD)
+                    .relaxedHTTPSValidation()
+                    .param("output_mode", "json")
+                    .get("https://127.0.0.1:${port}/servicesNS/nobody/TA-stackrox/TA_stackrox_stackrox_violations")
+            assert response.statusCode() == 200 :
+                    "TA REST handlers not yet available: ${response.statusCode()}"
+            log.info("TA REST handlers are available")
+        }
+    }
+
     static void waitForSplunkBoot(int port) {
         log.info("Waiting for Splunk to boot...")
         Response response = null
