@@ -427,13 +427,13 @@ const rules = {
             };
         },
     },
-    'no-span-pf-v6-screen-reader': {
+    'no-span-pf-v6-u-screen-reader': {
         // Prevent work-around before PatternFly 5.3 supported screenReaderText prop of Th element.
         meta: {
             type: 'problem',
             docs: {
                 description:
-                    'Replace pf-v6-screen-reader as className of span with screenReaderText prop in Th element',
+                    'Replace pf-v6-u-screen-reader as className of span with screenReaderText prop in Th element',
             },
             schema: [],
         },
@@ -445,13 +445,13 @@ const rules = {
                             node.attributes.some(
                                 (attribute) =>
                                     attribute.name?.name === 'className' &&
-                                    attribute.value?.value === 'pf-v6-screen-reader'
+                                    attribute.value?.value === 'pf-v6-u-screen-reader'
                             )
                         ) {
                             context.report({
                                 node,
                                 message:
-                                    'Replace pf-v6-screen-reader as className of span with screenReaderText prop in Th element',
+                                    'Replace pf-v6-u-screen-reader as className of span with screenReaderText prop in Th element',
                             });
                         }
                     }
