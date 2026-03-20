@@ -95,5 +95,5 @@ const (
 
 	// ComplianceV2TailoredProfiles identifies the capability of Central to handle
 	// tailored profile tracking and scan configurations referencing tailored profiles.
-	ComplianceV2TailoredProfiles CentralCapability = "ComplianceV2TailoredProfiles"
+	ComplianceV2TailoredProfiles = "ComplianceV2TailoredProfiles"
 )
