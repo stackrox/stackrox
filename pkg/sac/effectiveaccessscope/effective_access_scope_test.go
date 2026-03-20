@@ -99,34 +99,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				State:           Excluded,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*clustersScopeSubTree{
-					"Earth": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsSkunkWorks),
-							excluded(nsFraunhofer),
-							excluded(nsCERN),
-							excluded(nsJPL),
-						),
-						Attributes: earthAttributes,
-					},
-					"Arrakis": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsAtreides),
-							excluded(nsHarkonnen),
-							excluded(nsSpacingGuild),
-							excluded(nsBeneGesserit),
-							excluded(nsFremen),
-						),
-						Attributes: arrakisAttributes,
-					},
-					"Giedi=Prime": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsHarkonnenAtHome),
-						),
-						Attributes: giediPrimeAttributes,
-					},
+					"Earth": earthFullyExcluded(),
+					"Arrakis": arrakisFullyExcluded(),
+					"Giedi=Prime": giediPrimeFullyExcluded(),
 					"Not Found": notFoundCluster,
 				},
 			},
@@ -146,34 +121,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				State:           Excluded,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*clustersScopeSubTree{
-					"Earth": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsSkunkWorks),
-							excluded(nsFraunhofer),
-							excluded(nsCERN),
-							excluded(nsJPL),
-						),
-						Attributes: earthAttributes,
-					},
-					"Arrakis": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsAtreides),
-							excluded(nsHarkonnen),
-							excluded(nsSpacingGuild),
-							excluded(nsBeneGesserit),
-							excluded(nsFremen),
-						),
-						Attributes: arrakisAttributes,
-					},
-					"Giedi=Prime": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsHarkonnenAtHome),
-						),
-						Attributes: giediPrimeAttributes,
-					},
+					"Earth": earthFullyExcluded(),
+					"Arrakis": arrakisFullyExcluded(),
+					"Giedi=Prime": giediPrimeFullyExcluded(),
 					"Not Found": notFoundCluster,
 				},
 			},
@@ -199,34 +149,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				State:           Excluded,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*clustersScopeSubTree{
-					"Earth": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsSkunkWorks),
-							excluded(nsFraunhofer),
-							excluded(nsCERN),
-							excluded(nsJPL),
-						),
-						Attributes: earthAttributes,
-					},
-					"Arrakis": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsAtreides),
-							excluded(nsHarkonnen),
-							excluded(nsSpacingGuild),
-							excluded(nsBeneGesserit),
-							excluded(nsFremen),
-						),
-						Attributes: arrakisAttributes,
-					},
-					"Giedi=Prime": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsHarkonnenAtHome),
-						),
-						Attributes: giediPrimeAttributes,
-					},
+					"Earth": earthFullyExcluded(),
+					"Arrakis": arrakisFullyExcluded(),
+					"Giedi=Prime": giediPrimeFullyExcluded(),
 					"Not Found": notFoundCluster,
 				},
 			},
@@ -249,34 +174,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				State:           Partial,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*clustersScopeSubTree{
-					"Earth": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsSkunkWorks),
-							excluded(nsFraunhofer),
-							excluded(nsCERN),
-							excluded(nsJPL),
-						),
-						Attributes: earthAttributes,
-					},
-					"Arrakis": {
-						State: Included,
-						Namespaces: namespacesTree(
-							included(nsAtreides),
-							included(nsHarkonnen),
-							included(nsSpacingGuild),
-							included(nsBeneGesserit),
-							included(nsFremen),
-						),
-						Attributes: arrakisAttributes,
-					},
-					"Giedi=Prime": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsHarkonnenAtHome),
-						),
-						Attributes: giediPrimeAttributes,
-					},
+					"Earth": earthFullyExcluded(),
+					"Arrakis": arrakisFullyIncluded(),
+					"Giedi=Prime": giediPrimeFullyExcluded(),
 					"Not Found": notFoundCluster,
 				},
 			},
@@ -299,34 +199,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				State:           Partial,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*clustersScopeSubTree{
-					"Earth": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsSkunkWorks),
-							excluded(nsFraunhofer),
-							excluded(nsCERN),
-							excluded(nsJPL),
-						),
-						Attributes: earthAttributes,
-					},
-					"Arrakis": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsAtreides),
-							excluded(nsHarkonnen),
-							excluded(nsSpacingGuild),
-							excluded(nsBeneGesserit),
-							excluded(nsFremen),
-						),
-						Attributes: arrakisAttributes,
-					},
-					"Giedi=Prime": {
-						State: Included,
-						Namespaces: namespacesTree(
-							included(nsHarkonnenAtHome),
-						),
-						Attributes: giediPrimeAttributes,
-					},
+					"Earth": earthFullyExcluded(),
+					"Arrakis": arrakisFullyExcluded(),
+					"Giedi=Prime": giediPrimeFullyIncluded(),
 					"Not Found": notFoundCluster,
 				},
 			},
@@ -374,34 +249,9 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				State:           Partial,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*clustersScopeSubTree{
-					"Earth": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsSkunkWorks),
-							excluded(nsFraunhofer),
-							excluded(nsCERN),
-							excluded(nsJPL),
-						),
-						Attributes: earthAttributes,
-					},
-					"Arrakis": {
-						State: Included,
-						Namespaces: namespacesTree(
-							included(nsAtreides),
-							included(nsHarkonnen),
-							included(nsSpacingGuild),
-							included(nsBeneGesserit),
-							included(nsFremen),
-						),
-						Attributes: arrakisAttributes,
-					},
-					"Giedi=Prime": {
-						State: Included,
-						Namespaces: namespacesTree(
-							included(nsHarkonnenAtHome),
-						),
-						Attributes: giediPrimeAttributes,
-					},
+					"Earth": earthFullyExcluded(),
+					"Arrakis": arrakisFullyIncluded(),
+					"Giedi=Prime": giediPrimeFullyIncluded(),
 					"Not Found": notFoundCluster,
 				},
 			},
@@ -429,16 +279,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				State:           Partial,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*clustersScopeSubTree{
-					"Earth": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsSkunkWorks),
-							excluded(nsFraunhofer),
-							excluded(nsCERN),
-							excluded(nsJPL),
-						),
-						Attributes: earthAttributes,
-					},
+					"Earth": earthFullyExcluded(),
 					"Arrakis": {
 						State: Partial,
 						Namespaces: namespacesTree(
@@ -450,13 +291,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Attributes: arrakisAttributes,
 					},
-					"Giedi=Prime": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsHarkonnenAtHome),
-						),
-						Attributes: giediPrimeAttributes,
-					},
+					"Giedi=Prime": giediPrimeFullyExcluded(),
 					"Not Found": notFoundCluster,
 				},
 			},
@@ -539,16 +374,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				State:           Partial,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*clustersScopeSubTree{
-					"Earth": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsSkunkWorks),
-							excluded(nsFraunhofer),
-							excluded(nsCERN),
-							excluded(nsJPL),
-						),
-						Attributes: earthAttributes,
-					},
+					"Earth": earthFullyExcluded(),
 					"Arrakis": {
 						State: Partial,
 						Namespaces: namespacesTree(
@@ -560,13 +386,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Attributes: arrakisAttributes,
 					},
-					"Giedi=Prime": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsHarkonnenAtHome),
-						),
-						Attributes: giediPrimeAttributes,
-					},
+					"Giedi=Prime": giediPrimeFullyExcluded(),
 					"Not Found": notFoundCluster,
 				},
 			},
@@ -644,16 +464,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 				State:           Partial,
 				clusterIDToName: clusterIDs,
 				Clusters: map[string]*clustersScopeSubTree{
-					"Earth": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsSkunkWorks),
-							excluded(nsFraunhofer),
-							excluded(nsCERN),
-							excluded(nsJPL),
-						),
-						Attributes: earthAttributes,
-					},
+					"Earth": earthFullyExcluded(),
 					"Arrakis": {
 						State: Partial,
 						Namespaces: namespacesTree(
@@ -715,13 +526,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Attributes: arrakisAttributes,
 					},
-					"Giedi=Prime": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsHarkonnenAtHome),
-						),
-						Attributes: giediPrimeAttributes,
-					},
+					"Giedi=Prime": giediPrimeFullyExcluded(),
 					"Not Found": notFoundCluster,
 				},
 			},
@@ -772,13 +577,7 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Attributes: arrakisAttributes,
 					},
-					"Giedi=Prime": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsHarkonnenAtHome),
-						),
-						Attributes: giediPrimeAttributes,
-					},
+					"Giedi=Prime": giediPrimeFullyExcluded(),
 					"Not Found": notFoundCluster,
 				},
 			},
@@ -819,24 +618,8 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Attributes: earthAttributes,
 					},
-					"Arrakis": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsAtreides),
-							excluded(nsHarkonnen),
-							excluded(nsSpacingGuild),
-							excluded(nsBeneGesserit),
-							excluded(nsFremen),
-						),
-						Attributes: arrakisAttributes,
-					},
-					"Giedi=Prime": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsHarkonnenAtHome),
-						),
-						Attributes: giediPrimeAttributes,
-					},
+					"Arrakis": arrakisFullyExcluded(),
+					"Giedi=Prime": giediPrimeFullyExcluded(),
 					"Not Found": notFoundCluster,
 				},
 			},
@@ -878,24 +661,8 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Attributes: earthAttributes,
 					},
-					"Arrakis": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsAtreides),
-							excluded(nsHarkonnen),
-							excluded(nsSpacingGuild),
-							excluded(nsBeneGesserit),
-							excluded(nsFremen),
-						),
-						Attributes: arrakisAttributes,
-					},
-					"Giedi=Prime": {
-						State: Excluded,
-						Namespaces: namespacesTree(
-							excluded(nsHarkonnenAtHome),
-						),
-						Attributes: giediPrimeAttributes,
-					},
+					"Arrakis": arrakisFullyExcluded(),
+					"Giedi=Prime": giediPrimeFullyExcluded(),
 					"Not Found": notFoundCluster,
 				},
 			},
@@ -935,24 +702,8 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 						),
 						Attributes: earthAttributes,
 					},
-					"Arrakis": {
-						State: Included,
-						Namespaces: namespacesTree(
-							included(nsAtreides),
-							included(nsHarkonnen),
-							included(nsSpacingGuild),
-							included(nsBeneGesserit),
-							included(nsFremen),
-						),
-						Attributes: arrakisAttributes,
-					},
-					"Giedi=Prime": {
-						State: Included,
-						Namespaces: namespacesTree(
-							included(nsHarkonnenAtHome),
-						),
-						Attributes: giediPrimeAttributes,
-					},
+					"Arrakis": arrakisFullyIncluded(),
+					"Giedi=Prime": giediPrimeFullyIncluded(),
 					"Not Found": notFoundCluster,
 				},
 			},

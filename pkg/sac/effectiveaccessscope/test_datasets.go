@@ -587,6 +587,67 @@ func TestTreeTwoClustersFullyIncluded(_ *testing.T) *ScopeTree {
 
 // Helper functions
 
+func earthFullyExcluded() *clustersScopeSubTree {
+	return &clustersScopeSubTree{
+		State: Excluded,
+		Namespaces: namespacesTree(
+			excluded(nsSkunkWorks),
+			excluded(nsFraunhofer),
+			excluded(nsCERN),
+			excluded(nsJPL),
+		),
+		Attributes: earthAttributes,
+	}
+}
+
+func arrakisFullyExcluded() *clustersScopeSubTree {
+	return &clustersScopeSubTree{
+		State: Excluded,
+		Namespaces: namespacesTree(
+			excluded(nsAtreides),
+			excluded(nsHarkonnen),
+			excluded(nsSpacingGuild),
+			excluded(nsBeneGesserit),
+			excluded(nsFremen),
+		),
+		Attributes: arrakisAttributes,
+	}
+}
+
+func giediPrimeFullyExcluded() *clustersScopeSubTree {
+	return &clustersScopeSubTree{
+		State: Excluded,
+		Namespaces: namespacesTree(
+			excluded(nsHarkonnenAtHome),
+		),
+		Attributes: giediPrimeAttributes,
+	}
+}
+
+func arrakisFullyIncluded() *clustersScopeSubTree {
+	return &clustersScopeSubTree{
+		State: Included,
+		Namespaces: namespacesTree(
+			included(nsAtreides),
+			included(nsHarkonnen),
+			included(nsSpacingGuild),
+			included(nsBeneGesserit),
+			included(nsFremen),
+		),
+		Attributes: arrakisAttributes,
+	}
+}
+
+func giediPrimeFullyIncluded() *clustersScopeSubTree {
+	return &clustersScopeSubTree{
+		State: Included,
+		Namespaces: namespacesTree(
+			included(nsHarkonnenAtHome),
+		),
+		Attributes: giediPrimeAttributes,
+	}
+}
+
 func namespacesTree(namespaces ...*namespacesScopeSubTree) map[string]*namespacesScopeSubTree {
 	m := map[string]*namespacesScopeSubTree{}
 	for _, n := range namespaces {
