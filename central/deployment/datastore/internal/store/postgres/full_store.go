@@ -130,6 +130,7 @@ func (f *fullStoreImpl) GetContainerImageViews(ctx context.Context, q *v1.Query)
 	cloned.Selects = []*v1.QuerySelect{
 		pkgSearch.NewQuerySelect(pkgSearch.ImageID).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.ImageSHA).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ClusterID).Distinct().Proto(),
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{pkgSearch.ImageID.String(), pkgSearch.ImageSHA.String()},
