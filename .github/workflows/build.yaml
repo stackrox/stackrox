@@ -748,74 +748,10 @@ jobs:
         if: |
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
-          source ./scripts/ci/lib.sh
-
-          # Determine push context
-          push_context=""
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
-            push_context="merge-to-master"
-          fi
-
-          # Get architectures as array
-          read -ra ARCHS <<< "${{ steps.determine-archs.outputs.archs }}"
-
-          # Loop through brandings
-          for branding in RHACS_BRANDING STACKROX_BRANDING; do
-            export ROX_PRODUCT_BRANDING="$branding"
-            echo "========================================="
-            echo "Building for branding: $branding"
-            echo "========================================="
-
-            # Set QUAY_ORG based on branding
-            if [[ "$branding" == "RHACS_BRANDING" ]]; then
-              export QUAY_ORG="rhacs-eng"
-            else
-              export QUAY_ORG="stackrox-io"
-            fi
-
-            # Docker login for this registry
-            registry_rw_login "quay.io/${QUAY_ORG}"
-
-            # Loop through architectures
-            for arch in "${ARCHS[@]}"; do
-              echo "  ----- Building for arch: $arch -----"
-
-              # Unpack binary for this architecture from downloaded directory
-              tar xvzf "binaries/${arch}/go-binaries-build.tgz"
-
-              # Build operator image
-              GOARCH=$arch retry 6 true make -C operator/ docker-build
-
-              # Check image is runnable (only for amd64 and arm64 to save time)
-              if [[ "$arch" == "amd64" ]] || [[ "$arch" == "arm64" ]]; then
-                if [[ "$arch" == "arm64" ]]; then
-                  # Set up QEMU for ARM64 testing on amd64 runners
-                  docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-                fi
-
-                TAG="$(make --quiet --no-print-directory -C operator tag)"
-                echo "Testing image: quay.io/${QUAY_ORG}/stackrox-operator:${TAG}"
-                docker run --rm --platform linux/$arch "quay.io/${QUAY_ORG}/stackrox-operator:${TAG}" --help
-              fi
-
-              # Push architecture-specific image
-              echo "Starting operator image push for context: \"$push_context\", branding: \"$branding\", arch: \"$arch\""
-              if ! push_operator_image "$push_context" "$branding" "$arch"; then
-                echo "ERROR: push_operator_image failed" >&2
-                exit 1
-              fi
-              echo "Operator image push completed successfully for $branding $arch"
-            done
-
-            # Create and push multi-arch manifest for this branding
-            echo "  ----- Creating multi-arch manifest for $branding -----"
-            ARCH_CSV=$(IFS=,; echo "${ARCHS[*]}")
-            push_operator_manifest_lists "$push_context" "$branding" "$ARCH_CSV"
-
-            echo "Completed builds and manifest for branding: $branding"
-          done
-
-          echo "All operator images and manifests built and pushed successfully"
+          ./scripts/ci/build-and-push-operator.sh \
+            "${{ github.event_name }}" \
+            "${{ github.ref_name }}" \
+            "${{ steps.determine-archs.outputs.archs }}"
 
   scan-go-binaries:
     if: |
