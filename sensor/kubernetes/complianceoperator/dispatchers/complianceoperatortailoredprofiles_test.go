@@ -80,8 +80,6 @@ func toUnstructured(t *testing.T, tp *v1alpha1.TailoredProfile) *unstructured.Un
 // - effective rules = base rules - disabled rules + enabled rules
 // - labels, annotations, description parsed from tailored profile
 func TestProcessEvent_ExtendsProfile(t *testing.T) {
-	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2TailoredProfiles})
-	t.Cleanup(func() { centralcaps.Set(nil) })
 	baseProfile := &v1alpha1.Profile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "ocp4-cis",
@@ -166,8 +164,6 @@ func TestProcessEvent_ExtendsProfile(t *testing.T) {
 // TestProcessEvent_StoresTailoredProfileMetadata tests that all metadata fields are stored
 // from the tailored profile itself, rather than from the base profile it extends.
 func TestProcessEvent_StoresTailoredProfileMetadata(t *testing.T) {
-	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2TailoredProfiles})
-	t.Cleanup(func() { centralcaps.Set(nil) })
 	tp := &v1alpha1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "tp-from-scratch",
@@ -210,8 +206,6 @@ func TestProcessEvent_StoresTailoredProfileMetadata(t *testing.T) {
 // TestProcessEvent_FromScratch tests that TPs without Extends work: only EnableRules are included,
 // with no base profile rules.
 func TestProcessEvent_FromScratch(t *testing.T) {
-	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2TailoredProfiles})
-	t.Cleanup(func() { centralcaps.Set(nil) })
 	tp := &v1alpha1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "tp-from-scratch",
@@ -251,8 +245,6 @@ func TestProcessEvent_FromScratch(t *testing.T) {
 
 // TestProcessEvent_NoStatusID tests that non-ready TPs (no Status.ID) are skipped
 func TestProcessEvent_NoStatusID(t *testing.T) {
-	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2TailoredProfiles})
-	t.Cleanup(func() { centralcaps.Set(nil) })
 	tp := &v1alpha1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "pending-profile",
@@ -276,8 +268,6 @@ func TestProcessEvent_NoStatusID(t *testing.T) {
 
 // TestProcessEvent_BaseProfileNotFound tests that TPs with missing base profile are skipped
 func TestProcessEvent_BaseProfileNotFound(t *testing.T) {
-	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2TailoredProfiles})
-	t.Cleanup(func() { centralcaps.Set(nil) })
 	tp := &v1alpha1.TailoredProfile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "orphan-profile",
@@ -299,10 +289,12 @@ func TestProcessEvent_BaseProfileNotFound(t *testing.T) {
 	assert.Nil(t, event)
 }
 
-// TestProcessEvent_NoCentralCapability tests that no events are dispatched when Central
-// does not advertise ComplianceV2TailoredProfiles.
-func TestProcessEvent_NoCentralCapability(t *testing.T) {
-	centralcaps.Set([]centralsensor.CentralCapability{})
+// TestProcessEvent_NoV2CentralCapability tests that the V1 event is still dispatched when
+// ComplianceV2TailoredProfiles is absent, but no V2 event is sent.
+// V1 compliance already supported tailored profiles, so dropping V1 events would be a regression.
+func TestProcessEvent_NoV2CentralCapability(t *testing.T) {
+	// ComplianceV2Integrations present, ComplianceV2TailoredProfiles absent.
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations})
 	t.Cleanup(func() { centralcaps.Set(nil) })
 
 	tp := &v1alpha1.TailoredProfile{
@@ -323,13 +315,15 @@ func TestProcessEvent_NoCentralCapability(t *testing.T) {
 	dispatcher := NewTailoredProfileDispatcher(newMockProfileLister())
 	event := dispatcher.ProcessEvent(toUnstructured(t, tp), nil, central.ResourceAction_CREATE_RESOURCE)
 
-	assert.Nil(t, event)
+	require.NotNil(t, event)
+	require.Len(t, event.ForwardMessages, 1) // V1 only, no V2
+	assert.NotNil(t, event.ForwardMessages[0].GetComplianceOperatorProfile())
 }
 
 // TestProcessEvent_V2EventHasTailoredProfileKind tests that when both ComplianceV2TailoredProfiles
 // and ComplianceV2Integrations are present, the V2 event carries OperatorKind TAILORED_PROFILE.
 func TestProcessEvent_V2EventHasTailoredProfileKind(t *testing.T) {
-	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2TailoredProfiles, centralsensor.ComplianceV2Integrations})
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations, centralsensor.ComplianceV2TailoredProfiles})
 	t.Cleanup(func() { centralcaps.Set(nil) })
 
 	tp := &v1alpha1.TailoredProfile{
