@@ -1616,7 +1616,7 @@ handle_nightly_binary_version_mismatch() {
 }
 
 store_qa_test_results() {
-    if ! is_OPENSHIFT_CI; then
+    if ! is_CI; then
         return
     fi
 
@@ -1642,7 +1642,7 @@ store_test_results() {
         die "missing args. usage: store_test_results <from> <to>"
     fi
 
-    if ! is_OPENSHIFT_CI; then
+    if ! is_CI; then
         return
     fi
 
