@@ -168,7 +168,7 @@ class SplunkUtil {
                     new Deployment()
                             .setNamespace(namespace)
                             .setName(deploymentName)
-                            .setImage("docker.io/splunk/splunk:9.4.6")
+                            .setImage("quay.io/rhacs-eng/qa:splunk-ta-test-2.0.4-25-gee0d42c")
                             .addPort(8000)
                             .addPort(8088)
                             .addPort(8089)
@@ -206,10 +206,10 @@ class SplunkUtil {
         return new SplunkDeployment(uid, collectorSvc, splunkPortForward, syslogSvc, deployment)
     }
 
-    static void waitForSplunkRestart(int port) {
+    static void waitForSplunkReady(int port) {
         waitForSplunkBoot(port)
         // After the health check passes, verify that the TA's UCC REST handlers are registered.
-        // The health check can pass before the TA is fully initialised after a restart.
+        // The health check can pass before the TA is fully initialised.
         log.info("Waiting for TA REST handlers to be available...")
         withRetry(30, 10) {
             def response = given().auth()

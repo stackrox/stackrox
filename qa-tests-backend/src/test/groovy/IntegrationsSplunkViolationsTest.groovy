@@ -2,9 +2,7 @@ import static util.Helpers.withRetry
 import static util.SplunkUtil.SPLUNK_ADMIN_PASSWORD
 import static util.SplunkUtil.postToSplunk
 import static util.SplunkUtil.tearDownSplunk
-import static util.SplunkUtil.waitForSplunkBoot
-
-import java.nio.file.Paths
+import static util.SplunkUtil.waitForSplunkReady
 
 import io.restassured.path.json.JsonPath
 import io.restassured.response.Response
@@ -28,74 +26,33 @@ import spock.lang.Tag
 // ROX-14228 skipping tests for 1st release on power & z
 @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
 class IntegrationsSplunkViolationsTest extends BaseSpecification {
-    private static final String ASSETS_DIR = Paths.get(
-            System.getProperty("user.dir"), "artifacts", "splunk-violations-test")
-    private static final String PATH_TO_SPLUNK_TA_SPL = Paths.get(ASSETS_DIR,
-    "TA-stackrox-2.0.5.spl")
-    // CIM downloaded from https://classic.splunkbase.splunk.com/app/1621/
-    private static final String PATH_TO_CIM_TA_TGZ = Paths.get(ASSETS_DIR,
-    "splunk-common-information-model-cim_511.tgz")
-    private static final String STACKROX_REMOTE_LOCATION = "/tmp/stackrox.spl"
-    private static final String CIM_REMOTE_LOCATION = "/tmp/cim.tgz"
     private static final String TEST_NAMESPACE = Constants.SPLUNK_TEST_NAMESPACE
     private static final String SPLUNK_INPUT_NAME = "stackrox-violations-input"
     private static final String SPLUNK_TA_CONVERSION_JOB_NAME =
             "Threat - Create Notable from RHACS Alert - Rule"
 
-    private SplunkDeployment splunkDeployment
+    private static SplunkDeployment splunkDeployment
 
     def setupSpec() {
         orchestrator.deleteNamespace(TEST_NAMESPACE)
-
         orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
         addStackroxImagePullSecret(orchestrator, TEST_NAMESPACE)
+
+        splunkDeployment = SplunkUtil.createSplunk(orchestrator, TEST_NAMESPACE)
+        waitForSplunkReady(splunkDeployment.splunkPortForward.getLocalPort())
     }
 
     def cleanupSpec() {
-        orchestrator.deleteNamespace(TEST_NAMESPACE)
-    }
-
-    def setup() {
-        splunkDeployment = SplunkUtil.createSplunk(orchestrator, TEST_NAMESPACE)
-        waitForSplunkBoot(splunkDeployment.splunkPortForward.getLocalPort())
-    }
-
-    def cleanup() {
         if (splunkDeployment) {
             tearDownSplunk(orchestrator, splunkDeployment)
         }
+        orchestrator.deleteNamespace(TEST_NAMESPACE)
     }
 
     private void configureSplunkTA(SplunkUtil.SplunkDeployment splunkDeployment, String centralHost) {
-        log.info "Starting Splunk TA configuration"
-        def podName = orchestrator
-                .getPods(TEST_NAMESPACE, splunkDeployment.deployment.getName())
-                .get(0)
-                .getMetadata()
-                .getName()
+        log.info "Configuring Stackrox TA"
         int port = splunkDeployment.splunkPortForward.getLocalPort()
 
-        log.info "Copying TA and CIM app files to splunk pod"
-        orchestrator.copyFileToPod(PATH_TO_SPLUNK_TA_SPL, TEST_NAMESPACE, podName, STACKROX_REMOTE_LOCATION)
-        orchestrator.copyFileToPod(PATH_TO_CIM_TA_TGZ, TEST_NAMESPACE, podName, CIM_REMOTE_LOCATION)
-        log.info "Installing TA"
-        postToSplunk(port, "/services/apps/local",
-                ["name": STACKROX_REMOTE_LOCATION, "filename": "true"])
-        log.info "Installing CIM app"
-        postToSplunk(port, "/services/apps/local",
-                ["name": CIM_REMOTE_LOCATION, "filename": "true"])
-        // fix minimum free disk space parameter
-        // default value is 5Gb and CircleCI free disk space is less than that
-        // that can prevent data from being indexed
-        orchestrator.execInContainer(splunkDeployment.deployment,
-                "sudo /opt/splunk/bin/splunk set minfreemb 200 -auth admin:${SPLUNK_ADMIN_PASSWORD}"
-        )
-        // Splunk needs to be restarted after TA installation
-        log.info "Restarting Splunk to apply settings and TA"
-        postToSplunk(splunkDeployment.splunkPortForward.getLocalPort(), "/services/server/control/restart", [:])
-        waitForSplunkRestart(splunkDeployment.splunkPortForward.getLocalPort())
-
-        log.info("Configuring Stackrox TA")
         def tokenResp = ApiTokenService.generateToken("splunk-token-${splunkDeployment.uid}", "Analyst")
         postToSplunk(port, "/servicesNS/nobody/TA-stackrox/configs/conf-ta_stackrox_settings/additional_parameters",
                 ["central_endpoint": "${centralHost}:443",
