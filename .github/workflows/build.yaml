@@ -712,6 +712,7 @@ jobs:
       - name: Download and organize architecture binaries
         run: |
           mkdir -p binaries
+          ARCHS="${{ steps.determine-archs.outputs.archs }}"
 
           # Download amd64
           gh run download ${{ github.run_id }} -n go-binaries-build-amd64-default -D binaries/amd64
@@ -720,12 +721,12 @@ jobs:
           gh run download ${{ github.run_id }} -n go-binaries-build-arm64-default -D binaries/arm64
 
           # Download ppc64le if needed
-          if [[ "${{ steps.determine-archs.outputs.archs }}" == *"ppc64le"* ]]; then
+          if [[ "$ARCHS" == *"ppc64le"* ]]; then
             gh run download ${{ github.run_id }} -n go-binaries-build-ppc64le-default -D binaries/ppc64le
           fi
 
           # Download s390x if needed
-          if [[ "${{ steps.determine-archs.outputs.archs }}" == *"s390x"* ]]; then
+          if [[ "$ARCHS" == *"s390x"* ]]; then
             gh run download ${{ github.run_id }} -n go-binaries-build-s390x-default -D binaries/s390x
           fi
 
@@ -755,8 +756,8 @@ jobs:
             push_context="merge-to-master"
           fi
 
-          # Get architectures
-          ARCHS="${{ steps.determine-archs.outputs.archs }}"
+          # Get architectures as array
+          read -ra ARCHS <<< "${{ steps.determine-archs.outputs.archs }}"
 
           # Loop through brandings
           for branding in RHACS_BRANDING STACKROX_BRANDING; do
@@ -776,7 +777,7 @@ jobs:
             registry_rw_login "quay.io/${QUAY_ORG}"
 
             # Loop through architectures
-            for arch in $ARCHS; do
+            for arch in "${ARCHS[@]}"; do
               echo "  ----- Building for arch: $arch -----"
 
               # Unpack binary for this architecture from downloaded directory
@@ -808,7 +809,7 @@ jobs:
 
             # Create and push multi-arch manifest for this branding
             echo "  ----- Creating multi-arch manifest for $branding -----"
-            ARCH_CSV=$(echo "$ARCHS" | tr ' ' ',')
+            ARCH_CSV=$(IFS=,; echo "${ARCHS[*]}")
             push_operator_manifest_lists "$push_context" "$branding" "$ARCH_CSV"
 
             echo "Completed builds and manifest for branding: $branding"
