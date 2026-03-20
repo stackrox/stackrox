@@ -289,9 +289,8 @@ func TestProcessEvent_BaseProfileNotFound(t *testing.T) {
 	assert.Nil(t, event)
 }
 
-// TestProcessEvent_NoV2CentralCapability tests that the V1 event is still dispatched when
-// ComplianceV2TailoredProfiles is absent, but no V2 event is sent.
-// V1 compliance already supported tailored profiles, so dropping V1 events would be a regression.
+// TestProcessEvent_NoV2CentralCapability tests that when ComplianceV2TailoredProfiles is absent we only send the
+// Compliance V1 event
 func TestProcessEvent_NoV2CentralCapability(t *testing.T) {
 	// ComplianceV2Integrations present, ComplianceV2TailoredProfiles absent.
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations})
@@ -321,7 +320,8 @@ func TestProcessEvent_NoV2CentralCapability(t *testing.T) {
 }
 
 // TestProcessEvent_V2EventHasTailoredProfileKind tests that when both ComplianceV2TailoredProfiles
-// and ComplianceV2Integrations are present, the V2 event carries OperatorKind TAILORED_PROFILE.
+// and ComplianceV2Integrations capabilities are present we send both V1 and V2 events and the V2 event carries
+// OperatorKind TAILORED_PROFILE.
 func TestProcessEvent_V2EventHasTailoredProfileKind(t *testing.T) {
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations, centralsensor.ComplianceV2TailoredProfiles})
 	t.Cleanup(func() { centralcaps.Set(nil) })
