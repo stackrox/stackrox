@@ -132,6 +132,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		// Insert minimal VM record only when missing to satisfy FK constraint
 		// without clobbering richer VM metadata from the VM pipeline.
 		if err := p.vmV2Store.EnsureVirtualMachineExists(ctx, vm.GetId(), clusterID); err != nil {
+			sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonStorageFailed, injector)
 			return errors.Wrapf(err, "failed to ensure VM v2 %s exists in datastore", index.GetId())
 		}
 		log.Infof("VM v2 pipeline: ensured VM record %s exists; converting and upserting scan", vm.GetId())
@@ -142,11 +143,13 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 			vm.GetId(), scanParts.Scan.GetId(), len(scanParts.Components), len(scanParts.CVEs))
 
 		if err := p.vmV2Store.UpsertScan(ctx, vm.GetId(), scanParts); err != nil {
+			sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonStorageFailed, injector)
 			return errors.Wrapf(err, "failed to upsert VM v2 scan %s to datastore", index.GetId())
 		}
 		log.Infof("VM v2 pipeline: successfully stored scan for VM %s", vm.GetId())
 	} else {
 		if err := p.vmDatastore.UpdateVirtualMachineScan(ctx, vm.GetId(), vm.GetScan()); err != nil {
+			sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonStorageFailed, injector)
 			return errors.Wrapf(err, "failed to upsert VM %s to datastore", index.GetId())
 		}
 		log.Debugf("Successfully enriched and stored VM %s with %d components",

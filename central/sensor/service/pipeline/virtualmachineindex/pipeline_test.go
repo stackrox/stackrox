@@ -358,6 +358,9 @@ func (suite *PipelineTestSuite) TestRun_SendsACKOnSuccess() {
 
 	suite.enricher.EXPECT().
 		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+		Do(func(vm *storage.VirtualMachine, _ *v4.IndexReport) {
+			vm.Scan = &storage.VirtualMachineScan{}
+		}).
 		Return(nil)
 	suite.vmDatastore.EXPECT().
 		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
@@ -388,6 +391,9 @@ func (suite *PipelineTestSuite) TestRun_NoACKWhenCapabilityMissing() {
 
 	suite.enricher.EXPECT().
 		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+		Do(func(vm *storage.VirtualMachine, _ *v4.IndexReport) {
+			vm.Scan = &storage.VirtualMachineScan{}
+		}).
 		Return(nil)
 	suite.vmDatastore.EXPECT().
 		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
@@ -409,6 +415,9 @@ func (suite *PipelineTestSuite) TestRun_NACKOnDBError() {
 
 	suite.enricher.EXPECT().
 		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+		Do(func(vm *storage.VirtualMachine, _ *v4.IndexReport) {
+			vm.Scan = &storage.VirtualMachineScan{}
+		}).
 		Return(nil)
 	suite.vmDatastore.EXPECT().
 		UpdateVirtualMachineScan(ctx, vmID, gomock.Any()).
@@ -422,6 +431,7 @@ func (suite *PipelineTestSuite) TestRun_NACKOnDBError() {
 
 	err := suite.pipeline.Run(ctx, testClusterID, msg, injector)
 	suite.Error(err)
+	suite.Contains(err.Error(), "db error")
 
 	suite.Require().Len(injector.messages, 1)
 	ack := injector.messages[0].GetSensorAck()
@@ -612,7 +622,7 @@ func TestPipelineRunV2(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("v2 ensure VM exists error propagates", func(t *testing.T) {
+	t.Run("v2 ensure VM exists error sends NACK", func(t *testing.T) {
 		t.Setenv(features.VirtualMachines.EnvVar(), "true")
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -640,12 +650,25 @@ func TestPipelineRunV2(t *testing.T) {
 			EnsureVirtualMachineExists(gomock.Any(), vmID, testClusterID).
 			Return(expectedErr)
 
-		err := pipeline.Run(ctx, testClusterID, msg, nil)
+		injector := &mockInjector{
+			capabilities: map[centralsensor.SensorCapability]bool{
+				centralsensor.SensorACKSupport: true,
+			},
+		}
+
+		err := pipeline.Run(ctx, testClusterID, msg, injector)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "upsert error")
+
+		assert.Len(t, injector.messages, 1)
+		ack := injector.messages[0].GetSensorAck()
+		assert.NotNil(t, ack)
+		assert.Equal(t, central.SensorACK_NACK, ack.GetAction())
+		assert.Equal(t, central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
+		assert.Equal(t, centralsensor.SensorACKReasonStorageFailed, ack.GetReason())
 	})
 
-	t.Run("v2 scan upsert error propagates", func(t *testing.T) {
+	t.Run("v2 scan upsert error sends NACK", func(t *testing.T) {
 		t.Setenv(features.VirtualMachines.EnvVar(), "true")
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -677,9 +700,22 @@ func TestPipelineRunV2(t *testing.T) {
 			UpsertScan(gomock.Any(), vmID, gomock.Any()).
 			Return(expectedErr)
 
-		err := pipeline.Run(ctx, testClusterID, msg, nil)
+		injector := &mockInjector{
+			capabilities: map[centralsensor.SensorCapability]bool{
+				centralsensor.SensorACKSupport: true,
+			},
+		}
+
+		err := pipeline.Run(ctx, testClusterID, msg, injector)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "scan upsert error")
+
+		assert.Len(t, injector.messages, 1)
+		ack := injector.messages[0].GetSensorAck()
+		assert.NotNil(t, ack)
+		assert.Equal(t, central.SensorACK_NACK, ack.GetAction())
+		assert.Equal(t, central.SensorACK_VM_INDEX_REPORT, ack.GetMessageType())
+		assert.Equal(t, centralsensor.SensorACKReasonStorageFailed, ack.GetReason())
 	})
 
 	t.Run("v1 store is not called when v2 store is non-nil", func(t *testing.T) {
