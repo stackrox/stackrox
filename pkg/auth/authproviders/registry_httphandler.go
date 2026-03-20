@@ -191,7 +191,7 @@ func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request
 // TokenRefreshResponse holds the HTTP response from the token refresh endpoint.
 type TokenRefreshResponse struct {
 	Token  string    `json:"token,omitempty"`
-	Expiry time.Time `json:"expiry,omitempty"`
+	Expiry time.Time `json:"expiry,omitzero"`
 }
 
 func (r *registryImpl) tokenRefreshEndpoint(req *http.Request) (interface{}, error) {
