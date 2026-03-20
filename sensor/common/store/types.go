@@ -1,6 +1,8 @@
 package store
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/deduperkey"
@@ -33,6 +35,14 @@ type DeploymentStore interface {
 type PodStore interface {
 	GetAll() []*storage.Pod
 	GetByName(podName, namespace string) *storage.Pod
+}
+
+// NamespaceStore provides functionality to fetch all namespaces from underlying store.
+//
+//go:generate mockgen-wrapper
+type NamespaceStore interface {
+	GetAll() []*storage.NamespaceMetadata
+	GetNamespaceLabels(ctx context.Context, clusterID string, namespaceName string) (map[string]string, error)
 }
 
 // NetworkPolicyStore provides functionality to find matching Network Policies given a deployment

@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	central "github.com/stackrox/rox/generated/internalapi/central"
@@ -239,6 +240,59 @@ func (m *MockPodStore) GetByName(podName, namespace string) *storage.Pod {
 func (mr *MockPodStoreMockRecorder) GetByName(podName, namespace any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByName", reflect.TypeOf((*MockPodStore)(nil).GetByName), podName, namespace)
+}
+
+// MockNamespaceStore is a mock of NamespaceStore interface.
+type MockNamespaceStore struct {
+	ctrl     *gomock.Controller
+	recorder *MockNamespaceStoreMockRecorder
+	isgomock struct{}
+}
+
+// MockNamespaceStoreMockRecorder is the mock recorder for MockNamespaceStore.
+type MockNamespaceStoreMockRecorder struct {
+	mock *MockNamespaceStore
+}
+
+// NewMockNamespaceStore creates a new mock instance.
+func NewMockNamespaceStore(ctrl *gomock.Controller) *MockNamespaceStore {
+	mock := &MockNamespaceStore{ctrl: ctrl}
+	mock.recorder = &MockNamespaceStoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockNamespaceStore) EXPECT() *MockNamespaceStoreMockRecorder {
+	return m.recorder
+}
+
+// GetAll mocks base method.
+func (m *MockNamespaceStore) GetAll() []*storage.NamespaceMetadata {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAll")
+	ret0, _ := ret[0].([]*storage.NamespaceMetadata)
+	return ret0
+}
+
+// GetAll indicates an expected call of GetAll.
+func (mr *MockNamespaceStoreMockRecorder) GetAll() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockNamespaceStore)(nil).GetAll))
+}
+
+// GetNamespaceLabels mocks base method.
+func (m *MockNamespaceStore) GetNamespaceLabels(ctx context.Context, clusterID, namespaceName string) (map[string]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNamespaceLabels", ctx, clusterID, namespaceName)
+	ret0, _ := ret[0].(map[string]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNamespaceLabels indicates an expected call of GetNamespaceLabels.
+func (mr *MockNamespaceStoreMockRecorder) GetNamespaceLabels(ctx, clusterID, namespaceName any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespaceLabels", reflect.TypeOf((*MockNamespaceStore)(nil).GetNamespaceLabels), ctx, clusterID, namespaceName)
 }
 
 // MockNetworkPolicyStore is a mock of NetworkPolicyStore interface.

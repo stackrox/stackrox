@@ -1,9 +1,11 @@
 package resources
 
 import (
+	"context"
+
+	"github.com/stackrox/rox/pkg/clusterlabels"
 	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
-	"github.com/stackrox/rox/sensor/common/clusterlabels"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
@@ -161,4 +163,19 @@ func (p *StoreProvider) VirtualMachines() *vmStore.VirtualMachineStore {
 // ClusterLabels returns the cluster labels store
 func (p *StoreProvider) ClusterLabels() *clusterlabels.Store {
 	return p.clusterLabelsStore
+}
+
+// Namespaces returns the namespace store
+func (p *StoreProvider) Namespaces() store.NamespaceStore {
+	return p.nsStore
+}
+
+// GetClusterLabels implements scopecomp.ClusterLabelProvider interface.
+func (p *StoreProvider) GetClusterLabels(_ context.Context, _ string) (map[string]string, error) {
+	return p.clusterLabelsStore.Get(), nil
+}
+
+// GetNamespaceLabels implements scopecomp.NamespaceLabelProvider interface.
+func (p *StoreProvider) GetNamespaceLabels(ctx context.Context, clusterID string, namespaceName string) (map[string]string, error) {
+	return p.nsStore.GetNamespaceLabels(ctx, clusterID, namespaceName)
 }
