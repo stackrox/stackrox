@@ -944,9 +944,6 @@ module.exports = [
             'src/Components/**', // research
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/ConfigManagement/**', // deferred
-            'src/Containers/Docs/ApiPage.jsx', // rewrite
-            'src/Containers/Docs/ApiPageV2.jsx', // rewrite
-            'src/Containers/Docs/SwaggerBrowser.jsx', // rewrite
             'src/Containers/Images/**', // deprecated
             'src/Containers/Login/LoginPage.jsx', // rewrite pending PatternFly 6
             'src/Containers/Login/TestLoginResultsPage.jsx', // rewrite pending PatternFly 6
