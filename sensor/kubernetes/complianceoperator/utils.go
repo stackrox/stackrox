@@ -38,11 +38,14 @@ func profileKindToString(kind central.ComplianceOperatorProfileV2_OperatorKind) 
 	}
 }
 
-func validateScanSettingBindingProfileRefs(request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) error {
-	for _, ref := range request.GetProfileRefs() {
+func validateScanSettingBindingProfileRefs(scanSettings *central.ApplyComplianceScanConfigRequest_BaseScanSettings) error {
+	if scanSettings == nil {
+		return nil
+	}
+	for _, ref := range scanSettings.GetProfileRefs() {
 		k := ref.GetKind()
 		if k != central.ComplianceOperatorProfileV2_PROFILE && k != central.ComplianceOperatorProfileV2_TAILORED_PROFILE {
-			err := errors.Errorf("invalid profile ref %q: unsupported operator kind %v", ref.GetName(), k)
+			err := errors.Errorf("profile ref %q has unsupported operator kind %v", ref.GetName(), k)
 			log.Error(err)
 			return err
 		}
@@ -51,9 +54,12 @@ func validateScanSettingBindingProfileRefs(request *central.ApplyComplianceScanC
 }
 
 func buildScanSettingBindingProfileRefs(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) []v1alpha1.NamedObjectReference {
-	profileRefs := make([]v1alpha1.NamedObjectReference, 0, len(request.GetProfiles()))
+	// Profiles may be provided via request.ProfileRefs, where each reference contains a profile name and its kind, or
+	// via the legacy request.Profiles, which only contains a slice of profile names. When both are present, ProfileRefs
+	// take precedence.
 	if refs := request.GetProfileRefs(); len(refs) > 0 {
 		// New Central: kind is provided directly — no k8s API call needed.
+		profileRefs := make([]v1alpha1.NamedObjectReference, 0, len(refs))
 		for _, ref := range refs {
 			profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
 				Name:     ref.GetName(),
@@ -66,6 +72,7 @@ func buildScanSettingBindingProfileRefs(namespace string, request *central.Apply
 	}
 
 	// Legacy: old Central without profile_refs — default to Profile kind.
+	profileRefs := make([]v1alpha1.NamedObjectReference, 0, len(request.GetProfiles()))
 	for _, profile := range request.GetProfiles() {
 		profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
 			Name:     profile,

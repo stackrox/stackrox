@@ -289,7 +289,7 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 	for _, p := range returnedProfiles {
 		k := p.GetOperatorKind()
 		if k != storage.ComplianceOperatorProfileV2_PROFILE && k != storage.ComplianceOperatorProfileV2_TAILORED_PROFILE {
-			return nil, errors.Errorf("scan configuration %q: profile %q has unsupported operator kind %v", scanRequest.GetScanConfigName(), p.GetName(), k)
+			return nil, errors.Errorf("profile %q has unsupported operator kind %v (scan configuration %q)", p.GetName(), k, scanRequest.GetScanConfigName())
 		}
 	}
 
