@@ -104,6 +104,16 @@ var IndexReportEnqueueBlockedTotal = prometheus.NewCounter(
 	},
 )
 
+// IndexReportsForUnknownVMCID counts index reports that did not resolve to a VM in the store.
+var IndexReportsForUnknownVMCID = prometheus.NewCounter(
+	prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "virtual_machine_index_reports_unknown_vm_vsock_cid_total",
+		Help:      "Total number of virtual machine index reports referencing an vsock ID of a VM that is unknown to Sensor",
+	},
+)
+
 // VMDiscoveredData is a counter for VM discovered data grouped by detected OS and status values.
 var VMDiscoveredData = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
@@ -134,6 +144,7 @@ func init() {
 		IndexReportProcessingDurationMilliseconds,
 		IndexReportBlockingEnqueueDurationMilliseconds,
 		IndexReportEnqueueBlockedTotal,
+		IndexReportsForUnknownVMCID,
 		VMDiscoveredData,
 		IndexReportAcksReceived,
 	)

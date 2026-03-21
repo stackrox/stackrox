@@ -24,6 +24,7 @@ type virtualMachineStore interface {
 	Remove(id virtualmachine.VMID)
 	UpdateStateOrCreate(vm *virtualmachine.Info)
 	ClearState(id virtualmachine.VMID)
+	GetDiscoveredFacts(id virtualmachine.VMID) map[string]string
 }
 
 type VirtualMachineInstanceDispatcher struct {
@@ -111,5 +112,5 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 	}
 
 	// Send an Update event for the VirtualMachine that handles this instance
-	return component.NewEvent(createEvent(central.ResourceAction_UPDATE_RESOURCE, d.clusterID, vm))
+	return component.NewEvent(createEvent(central.ResourceAction_UPDATE_RESOURCE, d.clusterID, vm, d.store))
 }

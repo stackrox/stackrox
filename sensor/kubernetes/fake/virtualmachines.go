@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/fixtures/vmindexreport"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -385,7 +386,13 @@ func (w *WorkloadManager) sendOneIndexReport(
 		return
 	}
 
-	if err := w.vmIndexReportHandler.Send(ctx, report); err != nil {
+	fakeDiscoveredData := &v1.DiscoveredData{
+		DetectedOs:        v1.DetectedOS_RHEL,
+		OsVersion:         fmt.Sprintf("9.%d", vsockCID%5),
+		ActivationStatus:  v1.ActivationStatus(vsockCID%2 + 1),
+		DnfMetadataStatus: v1.DnfMetadataStatus(vsockCID%2 + 1),
+	}
+	if err := w.vmIndexReportHandler.Send(ctx, report, fakeDiscoveredData); err != nil {
 		// Don't log errors during shutdown
 		if ctx.Err() == nil {
 			log.Debugf("Failed to send index report for VM %d: %v", vsockCID, err)

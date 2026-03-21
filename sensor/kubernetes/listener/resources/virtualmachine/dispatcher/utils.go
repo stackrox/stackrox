@@ -1,8 +1,6 @@
 package dispatcher
 
 import (
-	"strings"
-
 	"github.com/stackrox/rox/generated/internalapi/central"
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/virtualmachine"
@@ -11,65 +9,37 @@ import (
 )
 
 func getVirtualMachineOwnerReference(owners []metav1.OwnerReference) (*metav1.OwnerReference, bool) {
-	for _, ref := range owners {
+	for i := range owners {
 		// There should be only one VirtualMachine OwnerReference
 		// VirtualMachines and VirtualMachineInstances map 1:1
-		if ref.Kind == virtualmachine.VirtualMachine.Kind {
-			return &ref, true
+		if owners[i].Kind == virtualmachine.VirtualMachine.Kind {
+			return &owners[i], true
 		}
 	}
 	return nil, false
 }
 
 func getVirtualMachineState(vm *sensorVirtualMachine.Info) virtualMachineV1.VirtualMachine_State {
-	if vm == nil {
-		return virtualMachineV1.VirtualMachine_UNKNOWN
-	}
-	if vm.Running {
-		return virtualMachineV1.VirtualMachine_RUNNING
-	}
-	return virtualMachineV1.VirtualMachine_STOPPED
+	return sensorVirtualMachine.StateFromInfo(vm)
 }
 
 func getVirtualMachineVSockCID(vm *sensorVirtualMachine.Info) (int32, bool) {
-	if vm == nil {
-		return int32(0), false
-	}
-	if vm.VSOCKCID == nil {
-		return int32(0), false
-	}
-	return int32(*vm.VSOCKCID), true
+	return sensorVirtualMachine.VSockCIDFromInfo(vm)
 }
 
-func getFacts(vm *sensorVirtualMachine.Info) map[string]string {
-	facts := map[string]string{
-		GuestOSKey: UnknownGuestOS,
-	}
-	if vm.GuestOS != "" {
-		facts[GuestOSKey] = vm.GuestOS
-	}
-	if vm.Description != "" {
-		facts[DescriptionKey] = vm.Description
-	}
-	if vm.NodeName != "" {
-		facts[NodeNameKey] = vm.NodeName
-	}
-	if len(vm.IPAddresses) > 0 {
-		facts[IPAddressesKey] = strings.Join(vm.IPAddresses, ", ")
-	}
-	if len(vm.ActivePods) > 0 {
-		facts[ActivePodsKey] = strings.Join(vm.ActivePods, ", ")
-	}
-	if len(vm.BootOrder) > 0 {
-		facts[BootOrderKey] = strings.Join(vm.BootOrder, ", ")
-	}
-	if len(vm.CDRomDisks) > 0 {
-		facts[CDRomDisksKey] = strings.Join(vm.CDRomDisks, ", ")
-	}
-	return facts
+type discoveredFactsStore interface {
+	GetDiscoveredFacts(id sensorVirtualMachine.VMID) map[string]string
 }
 
-func createEvent(action central.ResourceAction, clusterID string, vm *sensorVirtualMachine.Info) *central.SensorEvent {
+func getFacts(vm *sensorVirtualMachine.Info, discoveredStore discoveredFactsStore) map[string]string {
+	var discoveredFacts map[string]string
+	if discoveredStore != nil {
+		discoveredFacts = discoveredStore.GetDiscoveredFacts(vm.ID)
+	}
+	return sensorVirtualMachine.BuildFacts(vm, discoveredFacts)
+}
+
+func createEvent(action central.ResourceAction, clusterID string, vm *sensorVirtualMachine.Info, discoveredStore discoveredFactsStore) *central.SensorEvent {
 	if vm == nil {
 		return nil
 	}
@@ -86,7 +56,7 @@ func createEvent(action central.ResourceAction, clusterID string, vm *sensorVirt
 				VsockCid:    vSockCID,
 				VsockCidSet: vSockCIDSet,
 				State:       getVirtualMachineState(vm),
-				Facts:       getFacts(vm),
+				Facts:       getFacts(vm, discoveredStore),
 			},
 		},
 	}
