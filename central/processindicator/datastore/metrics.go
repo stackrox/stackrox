@@ -42,7 +42,7 @@ var (
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "process_upserted_args_size",
 		Help:      "Distribution of process argument sizes in characters for upserted indicators",
-		Buckets:   []float64{0, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536},
+		Buckets:   []float64{0, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536},
 	})
 
 	processUpsertedArgsSizeTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
