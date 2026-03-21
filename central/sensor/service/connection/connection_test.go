@@ -61,6 +61,26 @@ var (
 				},
 			},
 		},
+		{
+			ScanConfigName: "TestConfigWithRefs",
+			Profiles: []*storage.ComplianceOperatorScanConfigurationV2_ProfileName{
+				{ProfileName: "ocp4-cis"},
+				{ProfileName: "ocp4-cis-tailored"},
+			},
+			ProfileRefs: []*storage.ComplianceOperatorScanConfigurationV2_ProfileReference{
+				{Name: "ocp4-cis", Kind: storage.ComplianceOperatorProfileV2_PROFILE},
+				{Name: "ocp4-cis-tailored", Kind: storage.ComplianceOperatorProfileV2_TAILORED_PROFILE},
+			},
+			Schedule: &storage.Schedule{
+				IntervalType: storage.Schedule_DAILY,
+				Hour:         1,
+				Minute:       2, Interval: &storage.Schedule_DaysOfWeek_{
+					DaysOfWeek: &storage.Schedule_DaysOfWeek{
+						Days: []int32{1},
+					},
+				},
+			},
+		},
 	}
 )
 
@@ -144,10 +164,18 @@ func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
 				return slice.GetScanConfigName() == sc.GetUpdateScan().GetScanSettings().GetScanName()
 			})
 			s.Require().NotEqual(-1, idx)
-			s.Assert().Equal(scanConfigs[idx].GetScanConfigName(), sc.GetUpdateScan().GetScanSettings().GetScanName())
-			cron, err := schedule.ConvertToCronTab(scanConfigs[idx].GetSchedule())
+			stored := scanConfigs[idx]
+			settings := sc.GetUpdateScan().GetScanSettings()
+			s.Assert().Equal(stored.GetScanConfigName(), settings.GetScanName())
+			cron, err := schedule.ConvertToCronTab(stored.GetSchedule())
 			s.Require().NoError(err)
 			s.Assert().Equal(cron, sc.GetUpdateScan().GetCron())
+			// profile_refs must be forwarded with correct kinds
+			s.Require().Len(settings.GetProfileRefs(), len(stored.GetProfileRefs()))
+			for i, ref := range settings.GetProfileRefs() {
+				s.Assert().Equal(stored.GetProfileRefs()[i].GetName(), ref.GetName())
+				s.Assert().Equal(central.ComplianceOperatorProfileV2_OperatorKind(stored.GetProfileRefs()[i].GetKind()), ref.GetKind())
+			}
 		}
 	}
 }
