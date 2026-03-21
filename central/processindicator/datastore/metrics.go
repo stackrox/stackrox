@@ -59,18 +59,18 @@ var (
 		Help:      "Number of process indicators upserted by cluster and namespace",
 	}, []string{"cluster", "namespace"})
 
-	processIndicatorsLineageSizeHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+	processUpsertedLineageSizeHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "process_indicators_lineage_size",
+		Name:      "process_upserted_lineage_size",
 		Help:      "Distribution of process lineage sizes in characters for upserted indicators",
 		Buckets:   []float64{0, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536},
 	})
 
-	processIndicatorsLineageSizeTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+	processUpsertedLineageSizeTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "process_indicators_lineage_size_total",
+		Name:      "process_upserted_lineage_size_total",
 		Help:      "Total upserted process lineage sizes in characters by cluster and namespace",
 	}, []string{"cluster", "namespace"})
 
@@ -154,8 +154,8 @@ func recordProcessIndicatorsBatchAdded(indicators []*storage.ProcessIndicator) {
 		processUpsertedArgsSizeHistogram.Observe(float64(argsSizeChars))
 		processUpsertedArgsSizeTotal.WithLabelValues(clusterID, namespace).Add(float64(argsSizeChars))
 		processUpsertedCount.WithLabelValues(clusterID, namespace).Inc()
-		processIndicatorsLineageSizeHistogram.Observe(float64(lineageSizeChars))
-		processIndicatorsLineageSizeTotal.WithLabelValues(clusterID, namespace).Add(float64(lineageSizeChars))
+		processUpsertedLineageSizeHistogram.Observe(float64(lineageSizeChars))
+		processUpsertedLineageSizeTotal.WithLabelValues(clusterID, namespace).Add(float64(lineageSizeChars))
 	}
 }
 
@@ -166,8 +166,8 @@ func init() {
 		processUpsertedArgsSizeHistogram,
 		processUpsertedArgsSizeTotal,
 		processUpsertedCount,
-		processIndicatorsLineageSizeHistogram,
-		processIndicatorsLineageSizeTotal,
+		processUpsertedLineageSizeHistogram,
+		processUpsertedLineageSizeTotal,
 		processIndicatorsRemoved,
 		processIndicatorsRemovedTotal,
 	)
