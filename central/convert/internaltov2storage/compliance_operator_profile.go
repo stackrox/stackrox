@@ -36,6 +36,19 @@ func ComplianceOperatorProfileV2(internalMsg *central.ComplianceOperatorProfileV
 	}
 }
 
+// StorageToCentralProfileKind converts a storage profile OperatorKind to the internal API
+// equivalent for sending to Sensor (e.g. when building scan config sync messages).
+func StorageToCentralProfileKind(kind storage.ComplianceOperatorProfileV2_OperatorKind) central.ComplianceOperatorProfileV2_OperatorKind {
+	switch kind {
+	case storage.ComplianceOperatorProfileV2_PROFILE:
+		return central.ComplianceOperatorProfileV2_PROFILE
+	case storage.ComplianceOperatorProfileV2_TAILORED_PROFILE:
+		return central.ComplianceOperatorProfileV2_TAILORED_PROFILE
+	default:
+		return central.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED
+	}
+}
+
 func centralToStorageProfileKind(kind central.ComplianceOperatorProfileV2_OperatorKind) storage.ComplianceOperatorProfileV2_OperatorKind {
 	switch kind {
 	case central.ComplianceOperatorProfileV2_PROFILE:
