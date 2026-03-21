@@ -1645,6 +1645,10 @@ store_test_results() {
     if ! is_CI; then
         return
     fi
+    if [[ -z "${ARTIFACT_DIR:-}" ]]; then
+        >&2 echo "WARNING: ARTIFACT_DIR is not set, skipping store_test_results"
+        return
+    fi
 
     local from="$1"
     local to="$2"
