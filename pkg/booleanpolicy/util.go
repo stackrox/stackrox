@@ -15,45 +15,6 @@ func ContainsOneOf(policy *storage.Policy, fieldType RuntimeFieldType) bool {
 	return false
 }
 
-// SectionContainsFileAccessOnly returns true if the section contains at least one field
-// that is FileAccess but NOT also Process (i.e., exclusively FileAccess).
-func SectionContainsFileAccessOnly(section *storage.PolicySection) bool {
-	for _, group := range section.GetPolicyGroups() {
-		fieldName := group.GetFieldName()
-		metadata := FieldMetadataSingleton().fieldsToQB[fieldName]
-		if metadata == nil {
-			continue
-		}
-
-		isProcess := false
-		isFileAccess := false
-		for _, fieldType := range metadata.fieldTypes {
-			if fieldType == Process {
-				isProcess = true
-			}
-			if fieldType == FileAccess {
-				isFileAccess = true
-			}
-		}
-
-		if isFileAccess && !isProcess {
-			return true
-		}
-	}
-	return false
-}
-
-// ContainsFileAccessOnly returns whether the policy contains at least one field that is FileAccess
-// but NOT also Process (i.e., exclusively FileAccess).
-func ContainsFileAccessOnly(policy *storage.Policy) bool {
-	for _, section := range policy.GetPolicySections() {
-		if SectionContainsFileAccessOnly(section) {
-			return true
-		}
-	}
-	return false
-}
-
 // HasDiscreteEventSource returns whether the policy contains only fields that
 // match the specified event source
 func HasDiscreteEventSource(policy *storage.Policy, eventSource storage.EventSource) bool {
@@ -133,34 +94,47 @@ func ContainsValueWithFieldName(policy *storage.Policy, fieldName string) bool {
 
 }
 
-// processAndFileAccessInSameSection checks that if a policy contains both Process and FileAccess fields,
-// every section with Process must also have FileAccess. FileAccess-only sections are allowed.
-func processAndFileAccessInSameSection(policy *storage.Policy) bool {
-	hasProcess := ContainsOneOf(policy, Process)
-	hasFileAccess := ContainsFileAccessOnly(policy)
-
-	if !hasProcess || !hasFileAccess {
-		return true
-	}
+// validateProcessAndFileAccessSections checks that a policy cannot have both:
+// - A section with only process fields, AND
+// - A section with file access fields
+//
+// Valid combinations:
+// - Process-only sections (when no FileAccess fields exist in the policy)
+// - FileAccess-only sections
+// - Sections with both Process AND FileAccess fields
+// - Mix of FileAccess-only sections and Process+FileAccess sections
+func validateProcessAndFileAccessSections(policy *storage.Policy) bool {
+	hasProcessOnlySection := false
+	hasFileAccessSection := false
 
 	for _, section := range policy.GetPolicySections() {
-		if SectionContainsFieldOfType(section, Process) &&
-			!SectionContainsFileAccessOnly(section) {
-			return false
+		hasProcess := SectionContainsFieldOfType(section, Process)
+		hasFileAccess := SectionContainsFieldOfType(section, FileAccess)
+
+		if hasProcess && !hasFileAccess {
+			hasProcessOnlySection = true
+		}
+		if hasFileAccess {
+			hasFileAccessSection = true
 		}
 	}
 
-	return true
+	return !(hasProcessOnlySection && hasFileAccessSection)
 }
 
 // ContainsValidRuntimeFieldCategorySections checks that policy sections only contain
-// compatible runtime field types (as defined by runtimeFieldTypeGroups).
+// compatible runtime field types.
+//
+// Rules:
+// 1. Process and FileAccess fields can be mixed (they're in the same compatibility group)
+// 2. A policy cannot have BOTH a process-only section AND a file access section
+// 3. Only one runtime category allowed per policy (Process/FileAccess count as one category)
 func ContainsValidRuntimeFieldCategorySections(policy *storage.Policy) bool {
 	if len(policy.GetPolicySections()) == 0 {
 		return false
 	}
 
-	if !processAndFileAccessInSameSection(policy) {
+	if !validateProcessAndFileAccessSections(policy) {
 		return false
 	}
 
@@ -171,8 +145,6 @@ func ContainsValidRuntimeFieldCategorySections(policy *storage.Policy) bool {
 		KubeEvent:   KubeEvent,
 	}
 
-	// Check policy-wide: only one runtime category group allowed across all sections.
-	// Process and FileAccess count as one group since FileAccess events contain process information.
 	groupsSeen := set.NewStringSet()
 	for _, section := range policy.GetPolicySections() {
 		for _, group := range section.GetPolicyGroups() {
@@ -188,7 +160,6 @@ func ContainsValidRuntimeFieldCategorySections(policy *storage.Policy) bool {
 		}
 	}
 
-	// A section can only contain fields from one compatibility group
 	return groupsSeen.Cardinality() <= 1
 }
 

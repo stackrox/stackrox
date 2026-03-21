@@ -184,14 +184,11 @@ func (cp *compiledPolicy) setAuditLogEventMatcher(policy *storage.Policy) error 
 	return nil
 }
 
-// setProcessEventMatcher builds a matcher for process events coming from collector.
-// Process events are standalone events that don't contain file access information.
-// When a policy contains both Process and FileAccess fields in the same section, that section
-// is handled by the file access matcher instead (via setFileAccessEventMatcher).
 func (cp *compiledPolicy) setProcessEventMatcher(policy *storage.Policy) error {
 	filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
+		// Only include sections that have Process fields but NO FileAccess fields
 		return booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.Process) &&
-			!booleanpolicy.SectionContainsFileAccessOnly(section)
+			!booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.FileAccess)
 	})
 	if len(filtered.GetPolicySections()) > 0 {
 		cp.hasProcessSection = true
@@ -235,11 +232,8 @@ func (cp *compiledPolicy) setNetworkFlowEventMatcher(policy *storage.Policy) err
 }
 
 func (cp *compiledPolicy) setFileAccessEventMatcher(policy *storage.Policy) error {
-	// Only create a file access matcher if there are FileAccess-only fields (like FilePath, FileOperation).
-	// Process fields (like ProcessName) that are also tagged with FileAccess should not trigger
-	// file access matcher creation on their own.
 	filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
-		return booleanpolicy.SectionContainsFileAccessOnly(section)
+		return booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.FileAccess)
 	})
 	if len(filtered.GetPolicySections()) > 0 {
 		cp.hasFileAccessSection = true
