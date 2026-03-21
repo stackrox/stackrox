@@ -82,7 +82,7 @@ func TestValidateScanSettingBindingProfileRefsFailsOnInvalid(t *testing.T) {
 		},
 	}
 
-	err := validateScanSettingBindingProfileRefs(req)
+	err := validateScanSettingBindingProfiles(req)
 	if err == nil {
 		t.Fatalf("expected error for invalid profile refs")
 	}

@@ -38,9 +38,12 @@ func profileKindToString(kind central.ComplianceOperatorProfileV2_OperatorKind) 
 	}
 }
 
-func validateScanSettingBindingProfileRefs(scanSettings *central.ApplyComplianceScanConfigRequest_BaseScanSettings) error {
+func validateScanSettingBindingProfiles(scanSettings *central.ApplyComplianceScanConfigRequest_BaseScanSettings) error {
 	if scanSettings == nil {
 		return nil
+	}
+	if len(scanSettings.GetProfiles()) == 0 && len(scanSettings.GetProfileRefs()) == 0 {
+		return errors.New("compliance profiles not specified")
 	}
 	for _, ref := range scanSettings.GetProfileRefs() {
 		k := ref.GetKind()
@@ -170,7 +173,7 @@ func updateScanSettingFromCentralRequest(scanSetting *v1alpha1.ScanSetting, requ
 }
 
 func updateScanSettingBindingFromCentralRequest(scanSettingBinding *v1alpha1.ScanSettingBinding, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) (*v1alpha1.ScanSettingBinding, error) {
-	if err := validateScanSettingBindingProfileRefs(request); err != nil {
+	if err := validateScanSettingBindingProfiles(request); err != nil {
 		return nil, err
 	}
 	profileRefs := buildScanSettingBindingProfileRefs(scanSettingBinding.GetNamespace(), request)
@@ -189,17 +192,14 @@ func validateApplyScheduledScanConfigRequest(req *central.ApplyComplianceScanCon
 	if req.GetScanSettings().GetScanName() == "" {
 		errList.AddStrings("no name provided for the scan")
 	}
-	if len(req.GetScanSettings().GetProfiles()) == 0 {
-		errList.AddStrings("compliance profiles not specified")
+	if err := validateScanSettingBindingProfiles(req.GetScanSettings()); err != nil {
+		errList.AddError(err)
 	}
 	if req.GetCron() != "" {
 		cron := gronx.New()
 		if !cron.IsValid(req.GetCron()) {
 			errList.AddStrings("schedule is not valid")
 		}
-	}
-	if err := validateScanSettingBindingProfileRefs(req.GetScanSettings()); err != nil {
-		errList.AddError(err)
 	}
 	return errList.ToError()
 }
@@ -212,17 +212,14 @@ func validateUpdateScheduledScanConfigRequest(req *central.ApplyComplianceScanCo
 	if req.GetScanSettings().GetScanName() == "" {
 		errList.AddStrings("no name provided for the scan")
 	}
-	if len(req.GetScanSettings().GetProfiles()) == 0 {
-		errList.AddStrings("compliance profiles not specified")
+	if err := validateScanSettingBindingProfiles(req.GetScanSettings()); err != nil {
+		errList.AddError(err)
 	}
 	if req.GetCron() != "" {
 		cron := gronx.New()
 		if !cron.IsValid(req.GetCron()) {
 			errList.AddStrings("schedule is not valid")
 		}
-	}
-	if err := validateScanSettingBindingProfileRefs(req.GetScanSettings()); err != nil {
-		errList.AddError(err)
 	}
 	return errList.ToError()
 }
