@@ -32,8 +32,8 @@ type DataStore interface {
 	GetProcessIndicators(ctx context.Context, ids []string) ([]*storage.ProcessIndicator, bool, error)
 	AddProcessIndicators(context.Context, ...*storage.ProcessIndicator) error
 	RemoveProcessIndicatorsByPod(ctx context.Context, id string) error
-	RemoveProcessIndicators(ctx context.Context, ids []string) error
-	PruneProcessIndicators(ctx context.Context, ids []string) (int, error)
+	RemoveProcessIndicators(ctx context.Context, ids []string, reason string) error
+	PruneProcessIndicators(ctx context.Context, ids []string, reason string) (int, error)
 
 	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storage.ProcessIndicator) error) error
 

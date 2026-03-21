@@ -756,7 +756,7 @@ func (suite *ProcessBaselineEvaluatorIntegrationTestSuite) TestComplexWorkflow()
 	suite.True(persistedResult.GetBaselineStatuses()[0].GetAnomalousProcessesExecuted())
 
 	// Remove the anomalous process
-	err = suite.indicatorsDatastore.RemoveProcessIndicators(suite.ctx, []string{processIndicator.GetId()})
+	err = suite.indicatorsDatastore.RemoveProcessIndicators(suite.ctx, []string{processIndicator.GetId()}, indicatorDatastore.RemovalReasonProcessFilter)
 	suite.NoError(err)
 
 	// Should now show no anomalous processes
