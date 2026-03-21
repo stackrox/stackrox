@@ -66,9 +66,7 @@ function AuthProvidersList({ authProviders }: AuthProvidersListProps): ReactElem
                         <Th width={15}>Type</Th>
                         <Th width={20}>Minimum access role</Th>
                         <Th width={25}>Assigned rules</Th>
-                        <Th width={10}>
-                            <span className="pf-v6-screen-reader">Row actions</span>
-                        </Th>
+                        <Th width={10} screenReaderText="Row actions" />
                     </Tr>
                 </Thead>
                 <Tbody>

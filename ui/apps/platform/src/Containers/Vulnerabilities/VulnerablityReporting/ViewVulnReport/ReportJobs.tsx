@@ -200,17 +200,13 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                 <Table aria-label="Simple table" variant="compact">
                     <Thead>
                         <Tr>
-                            <Th>
-                                <span className="pf-v6-screen-reader">Row expansion</span>
-                            </Th>
+                            <Th screenReaderText="Row expansion" />
                             <Th width={25} sort={getSortParams('Report Completion Time')}>
                                 Completed
                             </Th>
                             <Th width={25}>Status</Th>
                             <Th width={50}>Requester</Th>
-                            <Th>
-                                <span className="pf-v6-screen-reader">Row actions</span>
-                            </Th>
+                            <Th screenReaderText="Row actions" />
                         </Tr>
                     </Thead>
                     {reportSnapshots.length === 0 && (
