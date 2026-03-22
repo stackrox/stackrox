@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Card,
     CardBody,
@@ -27,13 +27,21 @@ import {
     hasEnforcementActionForLifecycleStage,
 } from '../../policies.utils';
 
-function PolicyEnforcementForm() {
+type PolicyEnforcementFormProps = {
+    setIsActionsStepValid: (isValid: boolean) => void;
+};
+
+function PolicyEnforcementForm({ setIsActionsStepValid }: PolicyEnforcementFormProps) {
     const { setFieldValue, values } = useFormikContext<ClientPolicy>();
 
     const hasEnforcementActions =
         values.enforcementActions?.length > 0 &&
         !values.enforcementActions?.includes('UNSET_ENFORCEMENT');
     const [showEnforcement, setShowEnforcement] = useState(hasEnforcementActions);
+
+    useEffect(() => {
+        setIsActionsStepValid(!showEnforcement || hasEnforcementActions);
+    }, [showEnforcement, hasEnforcementActions, setIsActionsStepValid]);
 
     function onChangeEnforcementActions(lifecycleStage: LifecycleStage, isChecked: boolean) {
         const { enforcementActions } = values;
@@ -107,6 +115,13 @@ function PolicyEnforcementForm() {
                         Based on the fields selected in your policy configuration, you may choose to
                         apply enforcement at the following stages.
                     </div>
+                    {!hasEnforcementActions && (
+                        <HelperText className="pf-v6-u-mb-md">
+                            <HelperTextItem variant="error">
+                                At least one enforcement action must be selected
+                            </HelperTextItem>
+                        </HelperText>
+                    )}
                     <Grid hasGutter>
                         <GridItem span={4}>
                             <Card className="pf-v6-u-h-100 policy-enforcement-card">

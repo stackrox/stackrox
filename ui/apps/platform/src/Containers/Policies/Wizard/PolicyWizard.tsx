@@ -51,6 +51,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
     const navigate = useNavigate();
     const [stepId, setStepId] = useState<number | string>(POLICY_DEFINITION_DETAILS_ID);
     const [isValidOnServer, setIsValidOnServer] = useState(false);
+    const [isActionsStepValid, setIsActionsStepValid] = useState(true);
     const [policyErrorMessage, setPolicyErrorMessage] = useState('');
     const [isBadRequest, setIsBadRequest] = useState(false);
     const [hasActiveViolations, setHasActiveViolations] = useState(false);
@@ -227,9 +228,13 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                                     id={POLICY_BEHAVIOR_ACTIONS_ID}
                                     key={POLICY_BEHAVIOR_ACTIONS_ID}
                                     body={{ hasNoPadding: true }}
-                                    footer={{ isNextDisabled: !isValidOnClient }}
+                                    footer={{
+                                        isNextDisabled: !isValidOnClient || !isActionsStepValid,
+                                    }}
                                 >
-                                    <PolicyActionsForm />
+                                    <PolicyActionsForm
+                                        setIsActionsStepValid={setIsActionsStepValid}
+                                    />
                                 </WizardStep>,
                             ]}
                         />

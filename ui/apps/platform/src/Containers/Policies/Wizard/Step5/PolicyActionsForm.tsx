@@ -16,7 +16,11 @@ import type { ClientPolicy } from 'types/policy.proto';
 import PolicyEnforcementForm from './PolicyEnforcementForm';
 import NotifiersForm from './NotifiersForm';
 
-function PolicyActionsForm() {
+type PolicyActionsFormProps = {
+    setIsActionsStepValid: (isValid: boolean) => void;
+};
+
+function PolicyActionsForm({ setIsActionsStepValid }: PolicyActionsFormProps) {
     const { setFieldValue, values }: FormikContextType<ClientPolicy> = useFormikContext();
     const isEnforcementDisabled =
         values.eventSource === 'AUDIT_LOG_EVENT' || values.eventSource === 'NODE_EVENT';
@@ -85,7 +89,7 @@ function PolicyActionsForm() {
                     </FlexItem>
                 </Flex>
                 <FlexItem>
-                    <PolicyEnforcementForm />
+                    <PolicyEnforcementForm setIsActionsStepValid={setIsActionsStepValid} />
                 </FlexItem>
             </Flex>
             <Divider component="div" />
