@@ -4,11 +4,10 @@ import { DownloadIcon } from '@patternfly/react-icons';
 import { CheckCircle } from 'react-feather';
 import { ClipLoader } from 'react-spinners';
 
-import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import type { ClusterManagerType } from 'types/cluster.proto';
 import useAnalytics, { LEGACY_CLUSTER_DOWNLOAD_YAML } from 'hooks/useAnalytics';
-import useMetadata from 'hooks/useMetadata';
-import { getVersionedDocs } from 'utils/versioning';
+
+import InstallMethodDeprecationAlert from './Components/InstallMethodDeprecationAlert';
 
 export type ClusterDeploymentProps = {
     clusterCheckedIn: boolean;
@@ -30,7 +29,6 @@ function ClusterDeployment({
     managerType,
 }: ClusterDeploymentProps): ReactElement {
     const { analyticsTrack } = useAnalytics();
-    const { version } = useMetadata();
 
     let managerTypeTitle = 'Dynamic configurations are automatically applied';
     let managerTypeText =
@@ -54,34 +52,7 @@ function ClusterDeployment({
             {managerType !== 'MANAGER_TYPE_KUBERNETES_OPERATOR' && (
                 <Flex direction={{ default: 'column' }}>
                     <FlexItem spacer={{ default: 'spacerLg' }}>
-                        <Alert title="Deprecation notice" component="p" variant="warning" isInline>
-                            <Content component="p">
-                                The legacy manifest bundle installation method is deprecated since
-                                version 4.11 and will be removed in 5.1.
-                            </Content>
-                            <Content component="p">
-                                Use the Kubernetes operator to install secured cluster services instead.
-                                {version && (
-                                    <>
-                                        {' '}
-                                        See{' '}
-                                        <ExternalLink>
-                                            <a
-                                                href={getVersionedDocs(
-                                                    version,
-                                                    'installing/installing-rhacs-on-red-hat-openshift#install-secured-cluster-ocp'
-                                                )}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                            >
-                                                operator installation documentation
-                                            </a>
-                                        </ExternalLink>
-                                        .
-                                    </>
-                                )}
-                            </Content>
-                        </Alert>
+                        <InstallMethodDeprecationAlert deprecationMessage="The legacy manifest bundle installation method is deprecated since version 4.11 and will be removed in 5.1." />
                     </FlexItem>
                     <Title headingLevel="h2">Download manifest bundle</Title>
                     <Flex

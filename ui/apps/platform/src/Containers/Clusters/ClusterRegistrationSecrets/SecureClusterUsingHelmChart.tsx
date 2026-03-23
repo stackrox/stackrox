@@ -1,22 +1,19 @@
 import type { ReactElement } from 'react';
 import {
-    Alert,
     ClipboardCopy,
     ClipboardCopyButton,
     CodeBlock,
     CodeBlockAction,
     CodeBlockCode,
-    Content,
     Flex,
     FlexItem,
     List,
     ListItem,
     Title,
 } from '@patternfly/react-core';
-import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import useClipboardCopy from 'hooks/useClipboardCopy';
-import useMetadata from 'hooks/useMetadata';
-import { getVersionedDocs } from 'utils/versioning';
+
+import InstallMethodDeprecationAlert from '../Components/InstallMethodDeprecationAlert';
 
 const codeBlock = [
     'helm install -n stackrox --create-namespace \\',
@@ -35,7 +32,6 @@ export type SecureClusterUsingHelmChartProps = {
 function SecureClusterUsingHelmChart({
     headingLevel,
 }: SecureClusterUsingHelmChartProps): ReactElement {
-    const { version } = useMetadata();
     const subHeadingLevel = headingLevel === 'h2' ? 'h3' : 'h4';
     const { wasCopied, copyToClipboard } = useClipboardCopy();
 
@@ -55,34 +51,14 @@ function SecureClusterUsingHelmChart({
     return (
         <Flex direction={{ default: 'column' }}>
             <FlexItem spacer={{ default: 'spacerLg' }}>
-                <Alert title="Deprecation notice" component="p" variant="warning" isInline>
-                    <Content component="p">
-                        The <strong>rhacs/secured-cluster-services</strong> Helm chart is deprecated
-                        since version 4.11 and will be removed in 5.1.
-                    </Content>
-                    <Content component="p">
-                        Use the Kubernetes operator to install secured cluster services instead.
-                        {version && (
-                            <>
-                                {' '}
-                                See{' '}
-                                <ExternalLink>
-                                    <a
-                                        href={getVersionedDocs(
-                                            version,
-                                            'installing/installing-rhacs-on-red-hat-openshift#install-secured-cluster-ocp'
-                                        )}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        operator installation documentation
-                                    </a>
-                                </ExternalLink>
-                                .
-                            </>
-                        )}
-                    </Content>
-                </Alert>
+                <InstallMethodDeprecationAlert
+                    deprecationMessage={
+                        <>
+                            The <strong>rhacs/secured-cluster-services</strong> Helm chart is
+                            deprecated since version 4.11 and will be removed in 5.1.
+                        </>
+                    }
+                />
             </FlexItem>
             <Title headingLevel={subHeadingLevel}>Prerequisites</Title>
             <List component="ul">
