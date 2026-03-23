@@ -1,14 +1,6 @@
-ARG RPMS_REGISTRY=registry.access.redhat.com
-ARG RPMS_BASE_IMAGE=ubi8
-ARG RPMS_BASE_TAG=latest
-
-ARG BASE_REGISTRY=registry.access.redhat.com
-ARG BASE_IMAGE=ubi8-micro
-ARG BASE_TAG=latest
-
+FROM registry.access.redhat.com/ubi8:latest AS ubi-base
 FROM registry.access.redhat.com/ubi8/ubi-micro:latest AS ubi-micro-base
-
-FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS downloads
+FROM ubi-base AS downloads
 
 ARG DEBUG_BUILD=no
 
@@ -30,10 +22,8 @@ FROM ubi-base AS package_installer
 # Copy ubi-micro base to preserve rpmdb
 COPY --from=ubi-micro-base / /out/
 
-# Install packages not in ubi-micro (bash and coreutils-single already present)
 RUN dnf install -y \
         --installroot=/out/ \
-        --setopt=reposdir=/etc/yum.repos.d \
         --releasever=8 \
         --setopt=install_weak_deps=0 \
         --nodocs \
@@ -47,7 +37,6 @@ COPY signatures/RPM-GPG-KEY-CentOS-Official /tmp/
 RUN rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
     dnf install -y \
         --installroot=/out/ \
-        --setopt=reposdir=/etc/yum.repos.d \
         --releasever=8 \
         --setopt=install_weak_deps=0 \
         --nodocs \

@@ -37,46 +37,43 @@ RUN mkdir -p image/rhel/docs/api/v1 && \
 RUN make copy-go-binaries-to-image-dir
 
 
-FROM registry.access.redhat.com/ubi8/ubi-micro:latest AS ubi-micro-base
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:093a704be0eaef9bb52d9bc0219c67ee9db13c2e797da400ddb5d5ae6849fa10 AS ubi-micro-base
 
-FROM registry.access.redhat.com/ubi8/ubi:latest AS package_installer
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:6ed9f6f637fe731d93ec60c065dbced79273f1e0b5f512951f2c0b0baedb16ad AS package_installer
 
 ARG PG_VERSION
 
 # Copy ubi-micro base to preserve rpmdb
 COPY --from=ubi-micro-base / /out/
 
-# Install packages not in ubi-micro (bash and coreutils-single already present)
+# Install packages directly to /out/ using --installroot
 # Note: --setopt=reposdir=/etc/yum.repos.d instructs dnf to use repo configurations pointing to RPMs
 # prefetched by Hermeto/Cachi2, instead of installroot's default UBI repos.
-RUN dnf install -y \
-        --installroot=/out/ \
-        --setopt=reposdir=/etc/yum.repos.d \
-        --releasever=8 \
-        --setopt=install_weak_deps=0 \
-        --nodocs \
-        findutils \
-        util-linux \
-        ca-certificates \
-        openssl && \
-    dnf module enable -y \
-        --installroot=/out/ \
-        --setopt=reposdir=/etc/yum.repos.d \
-        --releasever=8 \
-        postgresql:${PG_VERSION} && \
+RUN dnf module enable -y \
+         --installroot=/out/ \
+         --setopt=reposdir=/etc/yum.repos.d \
+         --releasever=8 \
+         postgresql:${PG_VERSION} && \
     dnf install -y \
         --installroot=/out/ \
         --setopt=reposdir=/etc/yum.repos.d \
         --releasever=8 \
         --setopt=install_weak_deps=0 \
         --nodocs \
-        postgresql && \
+        ca-certificates \
+        findutils \
+        openssl \
+        postgresql  \
+        util-linux && \
     dnf --installroot=/out/ clean all && \
     rm -rf /out/var/cache/dnf /out/var/cache/yum
 
 # Setup stackrox directories with correct ownership
 RUN mkdir -p /out/stackrox && \
-    mkdir -p /out/etc/pki/ca-trust/source/anchors /out/etc/ssl && \
+    mkdir -p /out/etc/pki/ca-tr
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:093a704be0eaef9bb52d9bc0219c67ee9db13c2e797da400ddb5d5ae6849fa10 AS ubi-micro-base
+
+FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:6ed9f6f637fe731d93ec60c065dbced79273f1e0b5f512951f2c0b0baedb16ad AS package_installerust/source/anchors /out/etc/ssl && \
     mkdir -p /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox && \
     chown -R 4000:4000 /out/etc/pki/ca-trust /out/etc/ssl /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox /out/tmp
 
