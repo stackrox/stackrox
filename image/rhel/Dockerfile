@@ -19,14 +19,13 @@ RUN /download.sh
 # Prepare stackrox-data using ubi8 (has zip utility)
 FROM ubi-base AS stackrox_data
 
-RUN dnf install -y zip && dnf clean all
+RUN dnf install -y zip
 
 WORKDIR /
 COPY fetch-stackrox-data.sh .
 RUN mkdir /stackrox-data && /fetch-stackrox-data.sh /stackrox-data
 
-# Install all runtime dependencies to /out/
-FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS package_installer
+FROM ubi-base AS package_installer
 
 # Copy ubi-micro base to preserve rpmdb
 COPY --from=ubi-micro-base / /out/
@@ -40,9 +39,7 @@ RUN dnf install -y \
         --nodocs \
         findutils \
         util-linux \
-        ca-certificates && \
-    dnf --installroot=/out/ clean all && \
-    rm -rf /out/var/cache/dnf /out/var/cache/yum
+        ca-certificates
 
 # Copy PostgreSQL RPMs and install to /out/
 COPY --from=downloads /output/rpms/ /tmp/
@@ -57,7 +54,7 @@ RUN rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
         /tmp/postgres-libs.rpm \
         /tmp/postgres.rpm && \
     dnf --installroot=/out/ clean all && \
-    rm -rf /tmp/*.rpm /tmp/RPM-GPG-KEY-CentOS-Official /out/var/cache/dnf /out/var/cache/yum
+    rm -rf /out/var/cache/dnf /out/var/cache/yum
 
 # Setup stackrox directories with correct ownership
 RUN mkdir -p /out/stackrox && \
@@ -65,11 +62,10 @@ RUN mkdir -p /out/stackrox && \
     mkdir -p /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox && \
     chown -R 4000:4000 /out/etc/pki/ca-trust /out/etc/ssl /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox /out/tmp
 
-# Copy static binaries and run save-dir-contents in chroot
-COPY static-bin /out/stackrox/
+COPY static-bin/* /out/stackrox/
 RUN chroot /out /stackrox/save-dir-contents /etc/pki/ca-trust /etc/ssl
 
-FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG}
+FROM ubi-micro-base
 
 ARG LABEL_VERSION
 ARG LABEL_RELEASE
@@ -95,7 +91,6 @@ ENV PATH="/stackrox:$PATH" \
 # Copy all dependencies and binaries from package_installer
 COPY --from=package_installer /out/ /
 
-# Copy Go binaries (already at /stackrox from downloads stage)
 COPY --from=downloads /output/go/ /go/
 
 COPY --from=stackrox_data /stackrox-data /stackrox/static-data
