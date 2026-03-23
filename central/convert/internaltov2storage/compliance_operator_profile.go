@@ -44,6 +44,11 @@ func StorageToCentralProfileKind(kind storage.ComplianceOperatorProfileV2_Operat
 		return central.ComplianceOperatorProfileV2_PROFILE
 	case storage.ComplianceOperatorProfileV2_TAILORED_PROFILE:
 		return central.ComplianceOperatorProfileV2_TAILORED_PROFILE
+	case storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
+		// ROX-31229: Profiles stored by older Central versions may have UNSPECIFIED kind.
+		// These are always regular profiles; treat as PROFILE. Mirrors centralToStorageProfileKind.
+		// This fallback can be removed once Central versions that pre-date kind tracking are not supported.
+		return central.ComplianceOperatorProfileV2_PROFILE
 	default:
 		return central.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED
 	}

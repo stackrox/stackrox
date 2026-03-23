@@ -51,7 +51,7 @@ func TestBuildScanSettingBindingProfileRefsFromProfileRefs(t *testing.T) {
 	req := &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
 		ScanName: "scan",
 		Profiles: []string{"legacy"},
-		ProfileRefs: []*central.ApplyComplianceScanConfigRequest_ProfileReference{
+		ProfileRefs: []*central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference{
 			{Name: "ocp4-cis", Kind: central.ComplianceOperatorProfileV2_PROFILE},
 			{Name: "ocp4-cis-tailored", Kind: central.ComplianceOperatorProfileV2_TAILORED_PROFILE},
 		},
@@ -75,7 +75,7 @@ func TestValidateScanSettingBindingProfileRefsFailsOnInvalid(t *testing.T) {
 	req := &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
 		ScanName: "scan",
 		Profiles: []string{"legacy"},
-		ProfileRefs: []*central.ApplyComplianceScanConfigRequest_ProfileReference{
+		ProfileRefs: []*central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference{
 			{Name: "good", Kind: central.ComplianceOperatorProfileV2_PROFILE},
 			{Name: "bad", Kind: central.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED},
 			{Name: "unknown", Kind: central.ComplianceOperatorProfileV2_OperatorKind(999)},

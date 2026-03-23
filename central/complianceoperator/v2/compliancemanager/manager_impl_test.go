@@ -546,9 +546,42 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequestSendsProfileRefsW
 	suite.Require().NotNil(config)
 }
 
-// TestProcessScanRequestRejectsUnsupportedProfileKind ensures Central rejects the request (no persist, no send)
-// when any profile has unsupported operator kind, symmetric with Sensor validation.
-func (suite *complianceManagerTestSuite) TestProcessScanRequestRejectsUnsupportedProfileKind() {
+// TestProcessScanRequestUnspecifiedKindFallsBackToProfile ensures that a profile with
+// OPERATOR_KIND_UNSPECIFIED in the DB (stored by older Central before kind tracking) is
+// treated as PROFILE and the scan config is sent successfully.
+func (suite *complianceManagerTestSuite) TestProcessScanRequestUnspecifiedKindFallsBackToProfile() {
+	ctx := suite.testContexts[testutils.UnrestrictedReadWriteCtx]
+	req := getTestRecNoIDValidProfile()
+
+	suite.scanConfigDS.EXPECT().GetScanConfigurationByName(gomock.Any(), mockScanName).Return(nil, nil).Times(1)
+	suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	suite.profileDS.EXPECT().SearchProfiles(ctx, gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{
+		getTestProfileWithKind("ocp4-cis", "1.0.0", "platform", "ocp4", testconsts.Cluster1, 1, storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED),
+		getTestProfileWithKind("rhcos4-cis", "1.0.0", "node", "rhcos4", testconsts.Cluster1, 1, storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED),
+	}, nil).Times(1)
+	suite.scanConfigDS.EXPECT().UpsertScanConfiguration(ctx, gomock.Any()).Return(nil).Times(1)
+	suite.connectionMgr.EXPECT().SendMessage(testconsts.Cluster1, gomock.Any()).DoAndReturn(
+		func(_ string, msg *central.MsgToSensor) error {
+			refs := msg.GetComplianceRequest().GetApplyScanConfig().GetScheduledScan().GetScanSettings().GetProfileRefs()
+			suite.Require().Len(refs, 2)
+			for _, ref := range refs {
+				suite.Equal(central.ComplianceOperatorProfileV2_PROFILE, ref.GetKind(),
+					"profile %q with UNSPECIFIED storage kind should be sent as PROFILE", ref.GetName())
+			}
+			return nil
+		},
+	).Times(1)
+	suite.clusterDatastore.EXPECT().GetClusterName(gomock.Any(), gomock.Any()).Return("test_cluster", true, nil).Times(1)
+	suite.scanConfigDS.EXPECT().UpdateClusterStatus(ctx, gomock.Any(), testconsts.Cluster1, "", "test_cluster")
+
+	config, err := suite.manager.ProcessScanRequest(ctx, req, []string{testconsts.Cluster1})
+	suite.Require().NoError(err)
+	suite.Require().NotNil(config)
+}
+
+// TestProcessScanRequestRejectsUnknownProfileKind ensures Central rejects the request (no persist,
+// no send) when a profile has a truly unknown operator kind (not UNSPECIFIED, PROFILE, or TAILORED_PROFILE).
+func (suite *complianceManagerTestSuite) TestProcessScanRequestRejectsUnknownProfileKind() {
 	ctx := suite.testContexts[testutils.UnrestrictedReadWriteCtx]
 	req := getTestRecNoIDValidProfile()
 
@@ -556,7 +589,7 @@ func (suite *complianceManagerTestSuite) TestProcessScanRequestRejectsUnsupporte
 	suite.scanConfigDS.EXPECT().ScanConfigurationProfileExists(ctx, gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	suite.profileDS.EXPECT().SearchProfiles(ctx, gomock.Any()).Return([]*storage.ComplianceOperatorProfileV2{
 		getTestProfileWithKind("ocp4-cis", "1.0.0", "platform", "ocp4", testconsts.Cluster1, 1, storage.ComplianceOperatorProfileV2_PROFILE),
-		getTestProfileWithKind("bad-profile", "1.0.0", "node", "ocp4", testconsts.Cluster1, 1, storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED),
+		getTestProfileWithKind("bad-profile", "1.0.0", "node", "ocp4", testconsts.Cluster1, 1, storage.ComplianceOperatorProfileV2_OperatorKind(999)),
 	}, nil).Times(1)
 	// No UpsertScanConfiguration, no SendMessage — we fail before that.
 
