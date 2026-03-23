@@ -86,6 +86,21 @@ func (mr *MockStoreMockRecorder) DeleteStaleEdges(ctx, componentID, keepCVEIDs a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteStaleEdges", reflect.TypeOf((*MockStore)(nil).DeleteStaleEdges), ctx, componentID, keepCVEIDs)
 }
 
+// Exists mocks base method.
+func (m *MockStore) Exists(ctx context.Context, id string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Exists", ctx, id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Exists indicates an expected call of Exists.
+func (mr *MockStoreMockRecorder) Exists(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockStore)(nil).Exists), ctx, id)
+}
+
 // GetAllReferencedCVEs mocks base method.
 func (m *MockStore) GetAllReferencedCVEs(ctx context.Context) ([]*store.CVERow, error) {
 	m.ctrl.T.Helper()
@@ -114,6 +129,21 @@ func (m *MockStore) GetCVEsForImage(ctx context.Context, imageID string) ([]*sto
 func (mr *MockStoreMockRecorder) GetCVEsForImage(ctx, imageID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCVEsForImage", reflect.TypeOf((*MockStore)(nil).GetCVEsForImage), ctx, imageID)
+}
+
+// GetIDs mocks base method.
+func (m *MockStore) GetIDs(ctx context.Context) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIDs", ctx)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetIDs indicates an expected call of GetIDs.
+func (mr *MockStoreMockRecorder) GetIDs(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIDs", reflect.TypeOf((*MockStore)(nil).GetIDs), ctx)
 }
 
 // UpsertCVE mocks base method.

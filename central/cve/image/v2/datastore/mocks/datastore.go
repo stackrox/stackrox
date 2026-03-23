@@ -88,6 +88,21 @@ func (mr *MockDataStoreMockRecorder) DeleteStaleEdges(ctx, componentID, keepCVEI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteStaleEdges", reflect.TypeOf((*MockDataStore)(nil).DeleteStaleEdges), ctx, componentID, keepCVEIDs)
 }
 
+// Exists mocks base method.
+func (m *MockDataStore) Exists(ctx context.Context, id string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Exists", ctx, id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Exists indicates an expected call of Exists.
+func (mr *MockDataStoreMockRecorder) Exists(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockDataStore)(nil).Exists), ctx, id)
+}
+
 // GetAllReferencedCVEs mocks base method.
 func (m *MockDataStore) GetAllReferencedCVEs(ctx context.Context) ([]*store.CVERow, error) {
 	m.ctrl.T.Helper()
