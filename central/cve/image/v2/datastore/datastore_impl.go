@@ -39,6 +39,11 @@ func (ds *datastoreImpl) GetBatch(_ context.Context, _ []string) ([]*storage.Ima
 	return nil, nil
 }
 
+// Exists returns true if a CVE row with the given UUID exists in the cves table.
+func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
+	return ds.storage.Exists(ctx, id)
+}
+
 // UpsertCVE inserts a CVE row if it doesn't exist (two-phase: insert then fetch).
 // Returns the UUID of the CVE row (whether newly inserted or pre-existing).
 func (ds *datastoreImpl) UpsertCVE(ctx context.Context, cveRow *store.CVERow) (string, error) {

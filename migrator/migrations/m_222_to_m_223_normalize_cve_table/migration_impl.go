@@ -49,8 +49,8 @@ CREATE TABLE IF NOT EXISTS component_cve_edges (
 	createComponentCVEEdgesCVEIndex       = `CREATE INDEX IF NOT EXISTS comp_cve_edges_cve_idx ON component_cve_edges (cve_id)`
 
 	// Drop old tables.
-	dropImageCVEsV2Table    = `DROP TABLE IF EXISTS image_cves_v2`
-	dropImageCVEInfosTable  = `DROP TABLE IF EXISTS image_cve_infos`
+	dropImageCVEsV2Table   = `DROP TABLE IF EXISTS image_cves_v2`
+	dropImageCVEInfosTable = `DROP TABLE IF EXISTS image_cve_infos`
 )
 
 func migrate(database *types.Databases) error {

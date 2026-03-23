@@ -9,7 +9,7 @@ import (
 
 // CVERow represents a row in the cves table.
 type CVERow struct {
-	ID           string     // UUID; populated after UpsertCVE.
+	ID           string // UUID; populated after UpsertCVE.
 	CVEName      string
 	Source       string
 	Severity     string
@@ -27,12 +27,12 @@ type CVERow struct {
 
 // EdgeRow represents a row in the component_cve_edges table.
 type EdgeRow struct {
-	ID                    string     // UUID; may be empty (DB assigns).
-	ComponentID           string     // TEXT FK to image_component_v2.id.
-	CveID                 string     // UUID FK to cves.id.
+	ID                    string // UUID; may be empty (DB assigns).
+	ComponentID           string // TEXT FK to image_component_v2.id.
+	CveID                 string // UUID FK to cves.id.
 	IsFixable             bool
 	FixedBy               *string
-	State                 string     // OBSERVED | DEFERRED | FALSE_POSITIVE.
+	State                 string // OBSERVED | DEFERRED | FALSE_POSITIVE.
 	FirstSystemOccurrence time.Time
 	FixAvailableAt        *time.Time
 }
@@ -68,4 +68,10 @@ type Store interface {
 	// The query parameter is accepted for interface compatibility but is currently ignored;
 	// all CVEs are counted regardless of filter criteria.
 	Count(ctx context.Context, q *v1.Query) (int, error)
+
+	// Exists returns true if a CVE row with the given UUID exists in the cves table.
+	Exists(ctx context.Context, id string) (bool, error)
+
+	// GetIDs returns the UUIDs of all rows in the cves table.
+	GetIDs(ctx context.Context) ([]string, error)
 }

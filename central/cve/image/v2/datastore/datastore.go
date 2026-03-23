@@ -37,6 +37,9 @@ type DataStore interface {
 	// NOTE: returns empty results — see Search note above.
 	GetBatch(ctx context.Context, ids []string) ([]*storage.ImageCVEV2, error)
 
+	// Exists returns true if a CVE row with the given UUID exists in the cves table.
+	Exists(ctx context.Context, id string) (bool, error)
+
 	// UpsertCVE inserts a CVE row if it doesn't exist (two-phase: insert then fetch).
 	// Returns the UUID of the CVE row (whether newly inserted or pre-existing).
 	UpsertCVE(ctx context.Context, cveRow *store.CVERow) (string, error)

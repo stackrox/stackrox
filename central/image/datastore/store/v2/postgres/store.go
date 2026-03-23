@@ -419,9 +419,9 @@ func (s *storeImpl) upsertCVEsToNormalizedTables(
 // based on its CVSS metrics, preferring NVD > RED_HAT > OSV > UNKNOWN.
 func primarySourceFromImageCVE(cveV2 *storage.ImageCVEV2) string {
 	priority := map[storage.Source]int{
-		storage.Source_SOURCE_NVD:      3,
-		storage.Source_SOURCE_RED_HAT:  2,
-		storage.Source_SOURCE_OSV:      1,
+		storage.Source_SOURCE_NVD:     3,
+		storage.Source_SOURCE_RED_HAT: 2,
+		storage.Source_SOURCE_OSV:     1,
 	}
 	best := storage.Source_SOURCE_UNKNOWN
 	bestPrio := -1

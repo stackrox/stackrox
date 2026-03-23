@@ -50,6 +50,14 @@ func (s *testStore) Count(_ context.Context, _ *v1.Query) (int, error) {
 	panic("not implemented")
 }
 
+func (s *testStore) Exists(_ context.Context, _ string) (bool, error) {
+	panic("not implemented")
+}
+
+func (s *testStore) GetIDs(_ context.Context) ([]string, error) {
+	panic("not implemented")
+}
+
 func TestRunOnce_MultiplePartialBatches(t *testing.T) {
 	// Test with multiple batches where the second batch is partial.
 	ts := &testStore{

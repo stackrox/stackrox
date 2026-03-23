@@ -207,6 +207,35 @@ func (s *storeImpl) Count(ctx context.Context, _ *v1.Query) (int, error) {
 	return count, nil
 }
 
+// Exists returns true if a CVE row with the given UUID exists in the cves table.
+func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
+	var exists bool
+	err := s.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM cves WHERE id = $1)", id).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("checking CVE existence: %w", err)
+	}
+	return exists, nil
+}
+
+// GetIDs returns the UUIDs of all rows in the cves table.
+func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
+	rows, err := s.db.Query(ctx, "SELECT id FROM cves")
+	if err != nil {
+		return nil, fmt.Errorf("querying CVE IDs: %w", err)
+	}
+	defer rows.Close()
+
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("scanning CVE ID: %w", err)
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
 // scanCVERow scans a single CVE row from pgx.Rows.
 func scanCVERow(rows pgx.Rows) (*store.CVERow, error) {
 	cve := &store.CVERow{}
