@@ -2,5 +2,16 @@
   "base": {
     "name": "master-base/gualvare/fix-compliance-custom-rules-gotchas",
     "hash": "620b2c36f46bb5c1c4c6fc01e21b36e60089b0e5"
+  },
+  "upstream": {
+    "branch": "master-base/gualvare/ROX-31227-only-schedule-equivalent-tps"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 19545,
+        "gqlID": "PR_kwDOGd6UEM7Mtv5g"
+      }
+    }
   }
 }
