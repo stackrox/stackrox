@@ -13,13 +13,12 @@ type datastoreImpl struct {
 	storage store.Store
 }
 
-// Search implements search.Searcher. Returns empty results because the legacy
-// image_cves_v2 table has been replaced by the normalized cves table.
-func (ds *datastoreImpl) Search(_ context.Context, _ *v1.Query) ([]pkgSearch.Result, error) {
-	return nil, nil
+// Search implements search.Searcher using the generated search framework.
+func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
+	return ds.storage.Search(ctx, q)
 }
 
-// Count returns the number of rows in the cves table.
+// Count returns the number of rows in the cves table matching the query.
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return ds.storage.Count(ctx, q)
 }
@@ -44,16 +43,15 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return ds.storage.Exists(ctx, id)
 }
 
-// UpsertCVE inserts a CVE row if it doesn't exist (two-phase: insert then fetch).
-// Returns the UUID of the CVE row (whether newly inserted or pre-existing).
-func (ds *datastoreImpl) UpsertCVE(ctx context.Context, cveRow *store.CVERow) (string, error) {
-	return ds.storage.UpsertCVE(ctx, cveRow)
+// Upsert inserts or updates a NormalizedCVE row.
+func (ds *datastoreImpl) Upsert(ctx context.Context, cve *storage.NormalizedCVE) error {
+	return ds.storage.Upsert(ctx, cve)
 }
 
 // UpsertEdge inserts or updates a component_cve_edges row.
 // first_system_occurrence is preserved on conflict (not updated).
-// is_fixable and fixed_by are refreshed on conflict.
-func (ds *datastoreImpl) UpsertEdge(ctx context.Context, edge *store.EdgeRow) error {
+// is_fixable, fixed_by, and fix_available_at are refreshed on conflict.
+func (ds *datastoreImpl) UpsertEdge(ctx context.Context, edge *storage.NormalizedComponentCVEEdge) error {
 	return ds.storage.UpsertEdge(ctx, edge)
 }
 
@@ -64,17 +62,17 @@ func (ds *datastoreImpl) DeleteStaleEdges(ctx context.Context, componentID strin
 }
 
 // GetCVEsForImage returns all CVEs for a given image (joined through component_cve_edges and image_component_v2).
-func (ds *datastoreImpl) GetCVEsForImage(ctx context.Context, imageID string) ([]*store.CVERow, error) {
+func (ds *datastoreImpl) GetCVEsForImage(ctx context.Context, imageID string) ([]*storage.NormalizedCVE, error) {
 	return ds.storage.GetCVEsForImage(ctx, imageID)
 }
 
 // GetAllReferencedCVEs returns all CVEs referenced by at least one component_cve_edges row.
-func (ds *datastoreImpl) GetAllReferencedCVEs(ctx context.Context) ([]*store.CVERow, error) {
+func (ds *datastoreImpl) GetAllReferencedCVEs(ctx context.Context) ([]*storage.NormalizedCVE, error) {
 	return ds.storage.GetAllReferencedCVEs(ctx)
 }
 
 // DeleteOrphanedCVEsBatch deletes up to batchSize CVEs with no referencing edges.
-// Returns number of rows deleted.
+// Returns the number of rows deleted.
 func (ds *datastoreImpl) DeleteOrphanedCVEsBatch(ctx context.Context, batchSize int) (int64, error) {
 	return ds.storage.DeleteOrphanedCVEsBatch(ctx, batchSize)
 }

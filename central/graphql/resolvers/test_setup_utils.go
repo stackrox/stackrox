@@ -175,7 +175,7 @@ func CreateTestImageComponentV2Datastore(_ testing.TB, testDB *pgtest.TestPostgr
 
 // CreateTestImageCVEV2Datastore creates imageCVE datastore for testing
 func CreateTestImageCVEV2Datastore(_ testing.TB, testDB *pgtest.TestPostgres) imageCVEV2DS.DataStore {
-	storage := imageCVEV2Postgres.New(testDB.DB)
+	storage := imageCVEV2Postgres.NewCombined(testDB.DB)
 	datastore := imageCVEV2DS.New(storage)
 
 	return datastore

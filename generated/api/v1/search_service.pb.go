@@ -107,6 +107,7 @@ const (
 	SearchCategory_VIRTUAL_MACHINE_COMPONENTS_V2      SearchCategory = 82
 	SearchCategory_VIRTUAL_MACHINE_VULNERABILITIES_V2 SearchCategory = 83
 	SearchCategory_IMAGE_CVE_INFOS                    SearchCategory = 84
+	SearchCategory_NORMALIZED_CVES                    SearchCategory = 85
 )
 
 // Enum value maps for SearchCategory.
@@ -193,6 +194,7 @@ var (
 		82: "VIRTUAL_MACHINE_COMPONENTS_V2",
 		83: "VIRTUAL_MACHINE_VULNERABILITIES_V2",
 		84: "IMAGE_CVE_INFOS",
+		85: "NORMALIZED_CVES",
 	}
 	SearchCategory_value = map[string]int32{
 		"SEARCH_UNSET":                       0,
@@ -276,6 +278,7 @@ var (
 		"VIRTUAL_MACHINE_COMPONENTS_V2":      82,
 		"VIRTUAL_MACHINE_VULNERABILITIES_V2": 83,
 		"IMAGE_CVE_INFOS":                    84,
+		"NORMALIZED_CVES":                    85,
 	}
 )
 

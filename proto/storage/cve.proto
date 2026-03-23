@@ -349,33 +349,33 @@ message ImageCVEInfo {
 // This table is append-only; rows are never updated, only inserted via ON CONFLICT DO NOTHING.
 // The content_hash is SHA256 of (cve_name \x00 source \x00 severity \x00 cvss_v3_formatted \x00 summary).
 message NormalizedCVE {
-  // id is a UUID primary key stable for foreign key references.
+  // id is a UUID primary key stable for foreign key references. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
   string id = 1;
-  // cve_name is the CVE identifier, e.g. CVE-2021-44228.
+  // cve_name is the CVE identifier, e.g. CVE-2021-44228. // @gotags: search:"CVE" sql:"index=btree"
   string cve_name = 2;
-  // source is the advisory organization: OSV, NVD, RED_HAT, or UNKNOWN.
+  // source is the advisory organization: OSV, NVD, RED_HAT, or UNKNOWN. // @gotags: search:"CVE Source" sql:"index=btree"
   string source = 3;
-  // severity is one of CRITICAL, HIGH, MEDIUM, LOW, UNKNOWN.
+  // severity is one of CRITICAL, HIGH, MEDIUM, LOW, UNKNOWN. // @gotags: search:"Severity" sql:"index=btree"
   string severity = 4;
-  // cvss_v2 is the CVSS v2 score.
+  // cvss_v2 is the CVSS v2 score. // @gotags: search:"CVSS V2"
   float cvss_v2 = 5;
-  // cvss_v3 is the CVSS v3 score.
+  // cvss_v3 is the CVSS v3 score. // @gotags: search:"CVSS"
   float cvss_v3 = 6;
-  // nvd_cvss_v3 is the NVD CVSS v3 score when source != NVD.
+  // nvd_cvss_v3 is the NVD CVSS v3 score when source != NVD. // @gotags: search:"NVD CVSS"
   float nvd_cvss_v3 = 7;
   // summary is a human-readable description of the vulnerability.
   string summary = 8;
   // link is the reference URL for the CVE.
   string link = 9;
-  // published_on is when the CVE was published.
+  // published_on is when the CVE was published. // @gotags: search:"CVE Published On"
   google.protobuf.Timestamp published_on = 10;
   // advisory_name is the first advisory name encountered (informational only; not part of uniqueness key).
   string advisory_name = 11;
   // advisory_link is the URL for the advisory.
   string advisory_link = 12;
-  // content_hash is SHA256(cve_name\x00source\x00severity\x00cvss_v3\x00summary).
+  // content_hash is SHA256(cve_name\x00source\x00severity\x00cvss_v3\x00summary). // @gotags: sql:"index=btree"
   string content_hash = 13;
-  // created_at is when this CVE row was first inserted.
+  // created_at is when this CVE row was first inserted. // @gotags: search:"CVE Created Time"
   google.protobuf.Timestamp created_at = 14;
 }
 

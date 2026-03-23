@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS cves (
     advisory_link   TEXT,
     content_hash    TEXT NOT NULL,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    serialized      BYTEA,
     UNIQUE (cve_name, source, content_hash)
 )`
 

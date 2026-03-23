@@ -4,18 +4,20 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
 
 // testStore is a minimal implementation of the Store interface for testing.
+// Only DeleteOrphanedCVEsBatch has real behavior; all other methods panic.
 type testStore struct {
 	calls   int
 	results []int64
 }
 
-// DeleteOrphanedCVEsBatch is the only method we need to implement for the test.
+// DeleteOrphanedCVEsBatch is the only method exercised by the GC manager.
 func (s *testStore) DeleteOrphanedCVEsBatch(ctx context.Context, batchSize int) (int64, error) {
 	if s.calls >= len(s.results) {
 		return 0, nil
@@ -25,24 +27,21 @@ func (s *testStore) DeleteOrphanedCVEsBatch(ctx context.Context, batchSize int) 
 	return result, nil
 }
 
-// Unused Store methods (panics to ensure they're not called).
-func (s *testStore) UpsertCVE(ctx context.Context, cveRow *store.CVERow) (string, error) {
+// Generated CRUD methods (not used by GC, panic to catch accidental calls).
+
+func (s *testStore) Upsert(_ context.Context, _ *storage.NormalizedCVE) error {
 	panic("not implemented")
 }
 
-func (s *testStore) UpsertEdge(ctx context.Context, edge *store.EdgeRow) error {
+func (s *testStore) UpsertMany(_ context.Context, _ []*storage.NormalizedCVE) error {
 	panic("not implemented")
 }
 
-func (s *testStore) DeleteStaleEdges(ctx context.Context, componentID string, keepCVEIDs []string) error {
+func (s *testStore) Delete(_ context.Context, _ string) error {
 	panic("not implemented")
 }
 
-func (s *testStore) GetCVEsForImage(ctx context.Context, imageID string) ([]*store.CVERow, error) {
-	panic("not implemented")
-}
-
-func (s *testStore) GetAllReferencedCVEs(ctx context.Context) ([]*store.CVERow, error) {
+func (s *testStore) DeleteMany(_ context.Context, _ []string) error {
 	panic("not implemented")
 }
 
@@ -54,7 +53,41 @@ func (s *testStore) Exists(_ context.Context, _ string) (bool, error) {
 	panic("not implemented")
 }
 
+func (s *testStore) Search(_ context.Context, _ *v1.Query) ([]search.Result, error) {
+	panic("not implemented")
+}
+
+func (s *testStore) Get(_ context.Context, _ string) (*storage.NormalizedCVE, bool, error) {
+	panic("not implemented")
+}
+
+func (s *testStore) GetMany(_ context.Context, _ []string) ([]*storage.NormalizedCVE, []int, error) {
+	panic("not implemented")
+}
+
 func (s *testStore) GetIDs(_ context.Context) ([]string, error) {
+	panic("not implemented")
+}
+
+func (s *testStore) Walk(_ context.Context, _ func(*storage.NormalizedCVE) error) error {
+	panic("not implemented")
+}
+
+// Custom edge methods (not used by GC, panic to catch accidental calls).
+
+func (s *testStore) UpsertEdge(_ context.Context, _ *storage.NormalizedComponentCVEEdge) error {
+	panic("not implemented")
+}
+
+func (s *testStore) DeleteStaleEdges(_ context.Context, _ string, _ []string) error {
+	panic("not implemented")
+}
+
+func (s *testStore) GetCVEsForImage(_ context.Context, _ string) ([]*storage.NormalizedCVE, error) {
+	panic("not implemented")
+}
+
+func (s *testStore) GetAllReferencedCVEs(_ context.Context) ([]*storage.NormalizedCVE, error) {
 	panic("not implemented")
 }
 

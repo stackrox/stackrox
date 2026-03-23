@@ -13,7 +13,6 @@ import (
 	context "context"
 	reflect "reflect"
 
-	store "github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
@@ -104,10 +103,10 @@ func (mr *MockDataStoreMockRecorder) Exists(ctx, id any) *gomock.Call {
 }
 
 // GetAllReferencedCVEs mocks base method.
-func (m *MockDataStore) GetAllReferencedCVEs(ctx context.Context) ([]*store.CVERow, error) {
+func (m *MockDataStore) GetAllReferencedCVEs(ctx context.Context) ([]*storage.NormalizedCVE, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllReferencedCVEs", ctx)
-	ret0, _ := ret[0].([]*store.CVERow)
+	ret0, _ := ret[0].([]*storage.NormalizedCVE)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -134,10 +133,10 @@ func (mr *MockDataStoreMockRecorder) GetBatch(ctx, ids any) *gomock.Call {
 }
 
 // GetCVEsForImage mocks base method.
-func (m *MockDataStore) GetCVEsForImage(ctx context.Context, imageID string) ([]*store.CVERow, error) {
+func (m *MockDataStore) GetCVEsForImage(ctx context.Context, imageID string) ([]*storage.NormalizedCVE, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCVEsForImage", ctx, imageID)
-	ret0, _ := ret[0].([]*store.CVERow)
+	ret0, _ := ret[0].([]*storage.NormalizedCVE)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -193,23 +192,22 @@ func (mr *MockDataStoreMockRecorder) SearchRawImageCVEs(ctx, q any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawImageCVEs", reflect.TypeOf((*MockDataStore)(nil).SearchRawImageCVEs), ctx, q)
 }
 
-// UpsertCVE mocks base method.
-func (m *MockDataStore) UpsertCVE(ctx context.Context, cveRow *store.CVERow) (string, error) {
+// Upsert mocks base method.
+func (m *MockDataStore) Upsert(ctx context.Context, cve *storage.NormalizedCVE) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertCVE", ctx, cveRow)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "Upsert", ctx, cve)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// UpsertCVE indicates an expected call of UpsertCVE.
-func (mr *MockDataStoreMockRecorder) UpsertCVE(ctx, cveRow any) *gomock.Call {
+// Upsert indicates an expected call of Upsert.
+func (mr *MockDataStoreMockRecorder) Upsert(ctx, cve any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertCVE", reflect.TypeOf((*MockDataStore)(nil).UpsertCVE), ctx, cveRow)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockDataStore)(nil).Upsert), ctx, cve)
 }
 
 // UpsertEdge mocks base method.
-func (m *MockDataStore) UpsertEdge(ctx context.Context, edge *store.EdgeRow) error {
+func (m *MockDataStore) UpsertEdge(ctx context.Context, edge *storage.NormalizedComponentCVEEdge) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertEdge", ctx, edge)
 	ret0, _ := ret[0].(error)

@@ -9,7 +9,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/hashstructure"
 	convertutils "github.com/stackrox/rox/central/cve/converter/utils"
-	cvev2store "github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	cvev2pgstore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/imagev2/datastore/store"
 	"github.com/stackrox/rox/central/imagev2/datastore/store/common"
@@ -319,14 +318,14 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 }
 
 // upsertCVEsToNormalizedTables inserts CVEs into the normalized cves and component_cve_edges tables.
-// This replaces the old copyFromImageComponentV2Cves bulk insert into image_cves_v2.
+// CVE IDs are derived deterministically from the content hash so ON CONFLICT(id) is idempotent.
 func (s *storeImpl) upsertCVEsToNormalizedTables(
 	ctx context.Context,
 	cvesV2 []*storage.ImageCVEV2,
 	iTimestamp *timestamppb.Timestamp,
 	cveTimeMap map[string]*timestamppb.Timestamp,
 ) error {
-	cveStore := cvev2pgstore.New(s.db)
+	cveStore := cvev2pgstore.NewCombined(s.db)
 
 	// Group CVEs by component ID to track which CVEs belong to each component.
 	componentCVEMap := make(map[string][]string)
@@ -341,68 +340,60 @@ func (s *storeImpl) upsertCVEsToNormalizedTables(
 		source := primarySourceFromImageCVE(cveV2)
 		severity := convertutils.SeverityToString(cveV2.GetSeverity())
 
-		// Compute content hash.
+		// Compute content hash and derive deterministic UUID.
 		contentHash := convertutils.ComputeCVEContentHash(
 			cveV2.GetCveBaseInfo().GetCve(), source, severity, cvssV3, cveV2.GetCveBaseInfo().GetSummary(),
 		)
+		cveID := convertutils.DeterministicCVEID(contentHash)
 
-		// Build CVERow.
-		cveRow := &cvev2store.CVERow{
-			CVEName:     cveV2.GetCveBaseInfo().GetCve(),
-			Source:      source,
-			Severity:    severity,
-			ContentHash: contentHash,
-			Summary:     stringPtr(cveV2.GetCveBaseInfo().GetSummary()),
-			Link:        stringPtr(cveV2.GetCveBaseInfo().GetLink()),
+		// Build NormalizedCVE proto.
+		normalizedCVE := &storage.NormalizedCVE{
+			Id:           cveID,
+			CveName:      cveV2.GetCveBaseInfo().GetCve(),
+			Source:       source,
+			Severity:     severity,
+			CvssV3:       cvssV3,
+			NvdCvssV3:    cveV2.GetNvdcvss(),
+			Summary:      cveV2.GetCveBaseInfo().GetSummary(),
+			Link:         cveV2.GetCveBaseInfo().GetLink(),
+			PublishedOn:  cveV2.GetCveBaseInfo().GetPublishedOn(),
+			AdvisoryName: cveV2.GetAdvisory().GetName(),
+			AdvisoryLink: cveV2.GetAdvisory().GetLink(),
+			ContentHash:  contentHash,
+			CreatedAt:    cveV2.GetCveBaseInfo().GetCreatedAt(),
 		}
-		if cvssV3 > 0 {
-			cveRow.CvssV3 = float32Ptr(cvssV3)
-		}
-		if v2 := cveV2.GetCveBaseInfo().GetCvssV2(); v2 != nil && v2.GetScore() > 0 {
-			cveRow.CvssV2 = float32Ptr(v2.GetScore())
-		}
-		// Set NVD CVSS V3 if available.
-		if cveV2.GetNvdcvss() > 0 {
-			cveRow.NvdCvssV3 = float32Ptr(cveV2.GetNvdcvss())
-		}
-		if pub := cveV2.GetCveBaseInfo().GetPublishedOn(); pub != nil {
-			t := pub.AsTime()
-			cveRow.PublishedOn = &t
-		}
-		if adv := cveV2.GetAdvisory(); adv != nil {
-			cveRow.AdvisoryName = stringPtr(adv.GetName())
-			cveRow.AdvisoryLink = stringPtr(adv.GetLink())
+		if v2 := cveV2.GetCveBaseInfo().GetCvssV2(); v2 != nil {
+			normalizedCVE.CvssV2 = v2.GetScore()
 		}
 
-		// Upsert CVE row.
-		cveID, err := cveStore.UpsertCVE(ctx, cveRow)
-		if err != nil {
-			return errors.Wrapf(err, "upserting CVE %q for component %q", cveV2.GetCveBaseInfo().GetCve(), cveV2.GetComponentId())
+		// Single-phase upsert: same content_hash → same cveID → idempotent ON CONFLICT(id) DO UPDATE.
+		if err := cveStore.Upsert(ctx, normalizedCVE); err != nil {
+			return errors.Wrapf(err, "upserting NormalizedCVE %q for component %q", cveV2.GetCveBaseInfo().GetCve(), cveV2.GetComponentId())
 		}
 
 		// Track this CVE for the component.
 		componentCVEMap[cveV2.GetComponentId()] = append(componentCVEMap[cveV2.GetComponentId()], cveID)
 
-		// Build EdgeRow.
-		edge := &cvev2store.EdgeRow{
-			ComponentID: cveV2.GetComponentId(),
-			CveID:       cveID,
-			IsFixable:   cveV2.GetIsFixable(),
-			FixedBy:     stringPtr(cveV2.GetFixedBy()),
-			State:       cveV2.GetState().String(),
-		}
-		// Use the cveTimeMap for FirstSystemOccurrence if available.
+		// Determine first_system_occurrence timestamp.
+		var firstSysOccurrence *timestamppb.Timestamp
 		cveName := cveV2.GetCveBaseInfo().GetCve()
 		if cveTime, ok := cveTimeMap[cveName]; ok && cveTime != nil {
-			edge.FirstSystemOccurrence = cveTime.AsTime()
+			firstSysOccurrence = cveTime
 		} else if createdAt := cveV2.GetCveBaseInfo().GetCreatedAt(); createdAt != nil {
-			edge.FirstSystemOccurrence = createdAt.AsTime()
+			firstSysOccurrence = createdAt
 		} else {
-			edge.FirstSystemOccurrence = iTimestamp.AsTime()
+			firstSysOccurrence = iTimestamp
 		}
-		if fav := cveV2.GetFixAvailableTimestamp(); fav != nil {
-			t := fav.AsTime()
-			edge.FixAvailableAt = &t
+
+		// Build NormalizedComponentCVEEdge proto.
+		edge := &storage.NormalizedComponentCVEEdge{
+			ComponentId:           cveV2.GetComponentId(),
+			CveId:                 cveID,
+			IsFixable:             cveV2.GetIsFixable(),
+			FixedBy:               cveV2.GetFixedBy(),
+			State:                 cveV2.GetState().String(),
+			FirstSystemOccurrence: firstSysOccurrence,
+			FixAvailableAt:        cveV2.GetFixAvailableTimestamp(),
 		}
 
 		// Upsert edge.

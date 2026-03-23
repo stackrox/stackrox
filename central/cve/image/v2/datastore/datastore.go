@@ -17,12 +17,9 @@ import (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	// Search implements search.Searcher for the search framework.
-	// NOTE: returns empty results — image_cves_v2 table has been replaced by the
-	// normalized cves + component_cve_edges tables. Update callers to use GetCVEsForImage.
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
 
-	// Count implements search.Searcher for the search framework.
-	// NOTE: returns 0 — see Search note above.
+	// Count returns the number of rows in the cves table matching the query.
 	Count(ctx context.Context, q *v1.Query) (int, error)
 
 	// SearchImageCVEs returns search results for the legacy image CVE query path.
@@ -40,27 +37,26 @@ type DataStore interface {
 	// Exists returns true if a CVE row with the given UUID exists in the cves table.
 	Exists(ctx context.Context, id string) (bool, error)
 
-	// UpsertCVE inserts a CVE row if it doesn't exist (two-phase: insert then fetch).
-	// Returns the UUID of the CVE row (whether newly inserted or pre-existing).
-	UpsertCVE(ctx context.Context, cveRow *store.CVERow) (string, error)
+	// Upsert inserts or updates a NormalizedCVE row.
+	Upsert(ctx context.Context, cve *storage.NormalizedCVE) error
 
 	// UpsertEdge inserts or updates a component_cve_edges row.
 	// first_system_occurrence is preserved on conflict (not updated).
-	// is_fixable and fixed_by are refreshed on conflict.
-	UpsertEdge(ctx context.Context, edge *store.EdgeRow) error
+	// is_fixable, fixed_by, and fix_available_at are refreshed on conflict.
+	UpsertEdge(ctx context.Context, edge *storage.NormalizedComponentCVEEdge) error
 
 	// DeleteStaleEdges removes edges for a component whose cve_id is NOT in keepCVEIDs.
 	// If keepCVEIDs is empty, all edges for the component are deleted.
 	DeleteStaleEdges(ctx context.Context, componentID string, keepCVEIDs []string) error
 
 	// GetCVEsForImage returns all CVEs for a given image (joined through component_cve_edges and image_component_v2).
-	GetCVEsForImage(ctx context.Context, imageID string) ([]*store.CVERow, error)
+	GetCVEsForImage(ctx context.Context, imageID string) ([]*storage.NormalizedCVE, error)
 
 	// GetAllReferencedCVEs returns all CVEs referenced by at least one component_cve_edges row.
-	GetAllReferencedCVEs(ctx context.Context) ([]*store.CVERow, error)
+	GetAllReferencedCVEs(ctx context.Context) ([]*storage.NormalizedCVE, error)
 
 	// DeleteOrphanedCVEsBatch deletes up to batchSize CVEs with no referencing edges.
-	// Returns number of rows deleted.
+	// Returns the number of rows deleted.
 	DeleteOrphanedCVEsBatch(ctx context.Context, batchSize int) (int64, error)
 }
 
@@ -74,6 +70,6 @@ func New(storage store.Store) DataStore {
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
-	dbstore := pgStore.New(pool)
+	dbstore := pgStore.NewCombined(pool)
 	return New(dbstore)
 }

@@ -8,7 +8,18 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/uuid"
 )
+
+// cveV1Namespace is a stable UUID namespace for deterministic NormalizedCVE IDs.
+var cveV1Namespace = uuid.NewV5FromNonUUIDs("stackrox", "normalized-cve-v1")
+
+// DeterministicCVEID derives a stable UUID for a NormalizedCVE from its content_hash.
+// The same content_hash always produces the same UUID, making ON CONFLICT(id) DO UPDATE idempotent.
+// A new content_hash produces a new UUID, inserting a new row.
+func DeterministicCVEID(contentHash string) string {
+	return uuid.NewV5(cveV1Namespace, contentHash).String()
+}
 
 // ImageCVEV2ToEmbeddedVulnerability coverts a `*storage.ImageCVEV2` to an `*storage.EmbeddedVulnerability`.
 func ImageCVEV2ToEmbeddedVulnerability(vuln *storage.ImageCVEV2) *storage.EmbeddedVulnerability {

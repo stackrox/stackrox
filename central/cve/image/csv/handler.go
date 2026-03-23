@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	csvCommon "github.com/stackrox/rox/central/cve/common/csv"
 	cveDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -249,16 +250,16 @@ func GetNormalizedCVEsForCSV(ctx context.Context) ([][]string, error) {
 
 	for _, c := range cveRows {
 		row := []string{
-			c.CVEName,
-			c.Source,
-			c.Severity,
-			formatFloat32Ptr(c.CvssV2),
-			formatFloat32Ptr(c.CvssV3),
-			formatFloat32Ptr(c.NvdCvssV3),
-			derefString(c.Summary),
-			derefString(c.Link),
-			formatTimePtr(c.PublishedOn),
-			derefString(c.AdvisoryName),
+			c.GetCveName(),
+			c.GetSource(),
+			c.GetSeverity(),
+			formatFloat32(c.GetCvssV2()),
+			formatFloat32(c.GetCvssV3()),
+			formatFloat32(c.GetNvdCvssV3()),
+			c.GetSummary(),
+			c.GetLink(),
+			formatTimestamp(c.GetPublishedOn()),
+			c.GetAdvisoryName(),
 		}
 		rows = append(rows, row)
 	}
@@ -279,37 +280,30 @@ func GetCVEsForImageCSV(ctx context.Context, imageID string) ([][]string, error)
 	}
 	for _, c := range cveRows {
 		row := []string{
-			c.CVEName, c.Source, c.Severity,
-			formatFloat32Ptr(c.CvssV2),
-			formatFloat32Ptr(c.CvssV3),
-			formatFloat32Ptr(c.NvdCvssV3),
-			derefString(c.Summary),
-			derefString(c.Link),
-			formatTimePtr(c.PublishedOn),
-			derefString(c.AdvisoryName),
+			c.GetCveName(), c.GetSource(), c.GetSeverity(),
+			formatFloat32(c.GetCvssV2()),
+			formatFloat32(c.GetCvssV3()),
+			formatFloat32(c.GetNvdCvssV3()),
+			c.GetSummary(),
+			c.GetLink(),
+			formatTimestamp(c.GetPublishedOn()),
+			c.GetAdvisoryName(),
 		}
 		rows = append(rows, row)
 	}
 	return rows, nil
 }
 
-func formatFloat32Ptr(f *float32) string {
-	if f == nil {
+func formatFloat32(f float32) string {
+	if f == 0 {
 		return ""
 	}
-	return fmt.Sprintf("%.2f", *f)
+	return fmt.Sprintf("%.2f", f)
 }
 
-func derefString(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
-
-func formatTimePtr(t *time.Time) string {
+func formatTimestamp(t *timestamppb.Timestamp) string {
 	if t == nil {
 		return ""
 	}
-	return t.Format(time.RFC3339)
+	return t.AsTime().Format(time.RFC3339)
 }

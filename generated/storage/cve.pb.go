@@ -2433,34 +2433,34 @@ func (x *ImageCVEInfo) GetCve() string {
 // The content_hash is SHA256 of (cve_name \x00 source \x00 severity \x00 cvss_v3_formatted \x00 summary).
 type NormalizedCVE struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// id is a UUID primary key stable for foreign key references.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// cve_name is the CVE identifier, e.g. CVE-2021-44228.
-	CveName string `protobuf:"bytes,2,opt,name=cve_name,json=cveName,proto3" json:"cve_name,omitempty"`
-	// source is the advisory organization: OSV, NVD, RED_HAT, or UNKNOWN.
-	Source string `protobuf:"bytes,3,opt,name=source,proto3" json:"source,omitempty"`
-	// severity is one of CRITICAL, HIGH, MEDIUM, LOW, UNKNOWN.
-	Severity string `protobuf:"bytes,4,opt,name=severity,proto3" json:"severity,omitempty"`
-	// cvss_v2 is the CVSS v2 score.
-	CvssV2 float32 `protobuf:"fixed32,5,opt,name=cvss_v2,json=cvssV2,proto3" json:"cvss_v2,omitempty"`
-	// cvss_v3 is the CVSS v3 score.
-	CvssV3 float32 `protobuf:"fixed32,6,opt,name=cvss_v3,json=cvssV3,proto3" json:"cvss_v3,omitempty"`
-	// nvd_cvss_v3 is the NVD CVSS v3 score when source != NVD.
-	NvdCvssV3 float32 `protobuf:"fixed32,7,opt,name=nvd_cvss_v3,json=nvdCvssV3,proto3" json:"nvd_cvss_v3,omitempty"`
+	// id is a UUID primary key stable for foreign key references. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"`
+	// cve_name is the CVE identifier, e.g. CVE-2021-44228. // @gotags: search:"CVE" sql:"index=btree"
+	CveName string `protobuf:"bytes,2,opt,name=cve_name,json=cveName,proto3" json:"cve_name,omitempty" search:"CVE" sql:"index=btree"`
+	// source is the advisory organization: OSV, NVD, RED_HAT, or UNKNOWN. // @gotags: search:"CVE Source" sql:"index=btree"
+	Source string `protobuf:"bytes,3,opt,name=source,proto3" json:"source,omitempty" search:"CVE Source" sql:"index=btree"`
+	// severity is one of CRITICAL, HIGH, MEDIUM, LOW, UNKNOWN. // @gotags: search:"Severity" sql:"index=btree"
+	Severity string `protobuf:"bytes,4,opt,name=severity,proto3" json:"severity,omitempty" search:"Severity" sql:"index=btree"`
+	// cvss_v2 is the CVSS v2 score. // @gotags: search:"CVSS V2"
+	CvssV2 float32 `protobuf:"fixed32,5,opt,name=cvss_v2,json=cvssV2,proto3" json:"cvss_v2,omitempty" search:"CVSS V2"`
+	// cvss_v3 is the CVSS v3 score. // @gotags: search:"CVSS"
+	CvssV3 float32 `protobuf:"fixed32,6,opt,name=cvss_v3,json=cvssV3,proto3" json:"cvss_v3,omitempty" search:"CVSS"`
+	// nvd_cvss_v3 is the NVD CVSS v3 score when source != NVD. // @gotags: search:"NVD CVSS"
+	NvdCvssV3 float32 `protobuf:"fixed32,7,opt,name=nvd_cvss_v3,json=nvdCvssV3,proto3" json:"nvd_cvss_v3,omitempty" search:"NVD CVSS"`
 	// summary is a human-readable description of the vulnerability.
 	Summary string `protobuf:"bytes,8,opt,name=summary,proto3" json:"summary,omitempty"`
 	// link is the reference URL for the CVE.
 	Link string `protobuf:"bytes,9,opt,name=link,proto3" json:"link,omitempty"`
-	// published_on is when the CVE was published.
-	PublishedOn *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=published_on,json=publishedOn,proto3" json:"published_on,omitempty"`
+	// published_on is when the CVE was published. // @gotags: search:"CVE Published On"
+	PublishedOn *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=published_on,json=publishedOn,proto3" json:"published_on,omitempty" search:"CVE Published On"`
 	// advisory_name is the first advisory name encountered (informational only; not part of uniqueness key).
 	AdvisoryName string `protobuf:"bytes,11,opt,name=advisory_name,json=advisoryName,proto3" json:"advisory_name,omitempty"`
 	// advisory_link is the URL for the advisory.
 	AdvisoryLink string `protobuf:"bytes,12,opt,name=advisory_link,json=advisoryLink,proto3" json:"advisory_link,omitempty"`
-	// content_hash is SHA256(cve_name\x00source\x00severity\x00cvss_v3\x00summary).
-	ContentHash string `protobuf:"bytes,13,opt,name=content_hash,json=contentHash,proto3" json:"content_hash,omitempty"`
-	// created_at is when this CVE row was first inserted.
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	// content_hash is SHA256(cve_name\x00source\x00severity\x00cvss_v3\x00summary). // @gotags: sql:"index=btree"
+	ContentHash string `protobuf:"bytes,13,opt,name=content_hash,json=contentHash,proto3" json:"content_hash,omitempty" sql:"index=btree"`
+	// created_at is when this CVE row was first inserted. // @gotags: search:"CVE Created Time"
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"CVE Created Time"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
