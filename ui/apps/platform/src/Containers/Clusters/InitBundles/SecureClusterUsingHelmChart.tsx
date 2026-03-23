@@ -63,6 +63,25 @@ function SecureClusterUsingHelmChart({
                     </Content>
                     <Content component="p">
                         Use the Kubernetes operator to install secured cluster services instead.
+                        {version && (
+                            <>
+                                {' '}
+                                See{' '}
+                                <ExternalLink>
+                                    <a
+                                        href={getVersionedDocs(
+                                            version,
+                                            'installing/installing-rhacs-on-red-hat-openshift#install-secured-cluster-ocp'
+                                        )}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        operator installation documentation
+                                    </a>
+                                </ExternalLink>
+                                .
+                            </>
+                        )}
                     </Content>
                 </Alert>
             </FlexItem>
