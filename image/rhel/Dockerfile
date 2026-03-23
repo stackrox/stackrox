@@ -17,7 +17,7 @@ COPY download.sh /download.sh
 RUN /download.sh
 
 # Prepare stackrox-data using ubi8 (has zip utility)
-FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS stackrox_data
+FROM ubi-base AS stackrox_data
 
 RUN dnf install -y zip && dnf clean all
 
