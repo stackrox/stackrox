@@ -273,6 +273,7 @@ func getCertExpiryStatus(identity authn.Identity) (*storage.ClusterCertExpirySta
 
 func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, serviceID *storage.ServiceIdentity) (*storage.Cluster, error) {
 	helmConfigInit := sensorHello.GetHelmManagedConfigInit()
+	log.Infof("HelmConfigInit %+v", helmConfigInit)
 
 	clusterIDFromCert := serviceID.GetId()
 	if helmConfigInit == nil && centralsensor.IsInitCertClusterID(clusterIDFromCert) {
