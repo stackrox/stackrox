@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "master-base/gualvare/fix-compliance-custom-rules-gotchas",
-    "hash": "620b2c36f46bb5c1c4c6fc01e21b36e60089b0e5"
+    "hash": "c921c4da35225e5989856cf2f24e2734dcfef6da"
   },
   "upstream": {
     "branch": "master-base/gualvare/ROX-31227-only-schedule-equivalent-tps"
