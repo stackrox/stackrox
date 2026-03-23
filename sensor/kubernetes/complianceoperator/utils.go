@@ -60,22 +60,21 @@ func buildScanSettingBindingProfileRefs(namespace string, request *central.Apply
 	// Profiles may be provided via request.ProfileRefs, where each reference contains a profile name and its kind, or
 	// via the legacy request.Profiles, which only contains a slice of profile names. When both are present, ProfileRefs
 	// take precedence.
-	if refs := request.GetProfileRefs(); len(refs) > 0 {
-		// New Central: kind is provided directly — no k8s API call needed.
-		profileRefs := make([]v1alpha1.NamedObjectReference, 0, len(refs))
-		for _, ref := range refs {
-			profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
-				Name:     ref.GetName(),
-				Kind:     profileKindToString(ref.GetKind()),
-				APIGroup: complianceoperator.GetGroupVersion().String(),
-			})
-		}
-		log.Debugf("Using %d profile_refs from Central for namespace %q", len(refs), namespace)
+	profileRefs := make([]v1alpha1.NamedObjectReference, 0, len(request.GetProfileRefs()))
+	for _, ref := range request.GetProfileRefs() {
+		profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
+			Name:     ref.GetName(),
+			Kind:     profileKindToString(ref.GetKind()),
+			APIGroup: complianceoperator.GetGroupVersion().String(),
+		})
+	}
+	if len(profileRefs) > 0 {
+		log.Debugf("Using %d profile_refs from Central for namespace %q", len(profileRefs), namespace)
 		return profileRefs
 	}
 
 	// Legacy: old Central without profile_refs — default to Profile kind.
-	profileRefs := make([]v1alpha1.NamedObjectReference, 0, len(request.GetProfiles()))
+	profileRefs = make([]v1alpha1.NamedObjectReference, 0, len(request.GetProfiles()))
 	for _, profile := range request.GetProfiles() {
 		profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
 			Name:     profile,
