@@ -65,7 +65,7 @@ func TestComplianceOperatorRule_ParentRuleAndRuleRefId(t *testing.T) {
 		assert.Equal(t, BuildNameRefID(clusterID, "kubelet-configure-tls-cert"), result.GetRuleRefId())
 	})
 
-	t.Run("custom rule derives parentRule from RuleId, ignoring absent annotation", func(t *testing.T) {
+	t.Run("custom rule derives parentRule from RuleId, ignoring RuleIDAnnotationKey annotation", func(t *testing.T) {
 		msg := &central.ComplianceOperatorRuleV2{
 			Id:           "custom-rule-uid",
 			RuleId:       "xccdf_org.example_rule_check_no_latest_tag",
