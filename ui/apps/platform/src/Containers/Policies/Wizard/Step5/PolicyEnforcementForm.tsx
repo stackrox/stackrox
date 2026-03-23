@@ -27,11 +27,7 @@ import {
     hasEnforcementActionForLifecycleStage,
 } from '../../policies.utils';
 
-type PolicyEnforcementFormProps = {
-    setIsActionsStepValid: (isValid: boolean) => void;
-};
-
-function PolicyEnforcementForm({ setIsActionsStepValid }: PolicyEnforcementFormProps) {
+function PolicyEnforcementForm() {
     const { setFieldValue, values } = useFormikContext<ClientPolicy>();
 
     const hasEnforcementActions =
@@ -40,20 +36,24 @@ function PolicyEnforcementForm({ setIsActionsStepValid }: PolicyEnforcementFormP
     const [showEnforcement, setShowEnforcement] = useState(hasEnforcementActions);
 
     useEffect(() => {
-        setIsActionsStepValid(!showEnforcement || hasEnforcementActions);
-    }, [showEnforcement, hasEnforcementActions, setIsActionsStepValid]);
+        if (!showEnforcement && values.enforcementActions?.includes('UNSET_ENFORCEMENT')) {
+            setFieldValue(
+                'enforcementActions',
+                values.enforcementActions.filter((a) => a !== 'UNSET_ENFORCEMENT')
+            );
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     function onChangeEnforcementActions(lifecycleStage: LifecycleStage, isChecked: boolean) {
         const { enforcementActions } = values;
+        const realActions = enforcementActions.filter((action) => action !== 'UNSET_ENFORCEMENT');
+        const updatedActions = isChecked
+            ? appendEnforcementActionsForAddedLifecycleStage(lifecycleStage, realActions)
+            : filterEnforcementActionsForRemovedLifecycleStage(lifecycleStage, realActions);
         setFieldValue(
             'enforcementActions',
-            isChecked
-                ? appendEnforcementActionsForAddedLifecycleStage(lifecycleStage, enforcementActions)
-                : filterEnforcementActionsForRemovedLifecycleStage(
-                      lifecycleStage,
-                      enforcementActions
-                  ),
-            false // do not validate, because code changes the value
+            updatedActions.length === 0 ? ['UNSET_ENFORCEMENT'] : updatedActions
         );
     }
 
@@ -88,7 +88,7 @@ function PolicyEnforcementForm({ setIsActionsStepValid }: PolicyEnforcementFormP
                         isDisabled={isEnforcementDisabled}
                         onChange={() => {
                             setShowEnforcement(false);
-                            setFieldValue('enforcementActions', [], false); // do not validate, because code changes the value
+                            setFieldValue('enforcementActions', []);
                         }}
                     />
                     <Radio
@@ -97,7 +97,12 @@ function PolicyEnforcementForm({ setIsActionsStepValid }: PolicyEnforcementFormP
                         id="policy-response-inform-enforce"
                         name="enforce"
                         isDisabled={isEnforcementDisabled}
-                        onChange={() => setShowEnforcement(true)}
+                        onChange={() => {
+                            setShowEnforcement(true);
+                            if (!hasEnforcementActions) {
+                                setFieldValue('enforcementActions', ['UNSET_ENFORCEMENT']);
+                            }
+                        }}
                     />
                 </Flex>
                 <FormHelperText>
