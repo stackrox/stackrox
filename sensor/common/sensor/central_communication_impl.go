@@ -169,6 +169,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 			log.Infof("Re-using cluster ID %s of previous run. If you see the connection to central failing, re-apply a new Helm configuration via 'helm upgrade', or delete the sensor pod.", cachedClusterID)
 		}
 
+		log.Infof("Set HelmManagedConfigInit %+v", helmManagedCfg)
 		sensorHello.HelmManagedConfigInit = helmManagedCfg
 	}
 
