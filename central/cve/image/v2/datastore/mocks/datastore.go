@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	store "github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
@@ -58,50 +59,78 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
-// Exists mocks base method.
-func (m *MockDataStore) Exists(ctx context.Context, id string) (bool, error) {
+// DeleteOrphanedCVEsBatch mocks base method.
+func (m *MockDataStore) DeleteOrphanedCVEsBatch(ctx context.Context, batchSize int) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Exists", ctx, id)
-	ret0, _ := ret[0].(bool)
+	ret := m.ctrl.Call(m, "DeleteOrphanedCVEsBatch", ctx, batchSize)
+	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Exists indicates an expected call of Exists.
-func (mr *MockDataStoreMockRecorder) Exists(ctx, id any) *gomock.Call {
+// DeleteOrphanedCVEsBatch indicates an expected call of DeleteOrphanedCVEsBatch.
+func (mr *MockDataStoreMockRecorder) DeleteOrphanedCVEsBatch(ctx, batchSize any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockDataStore)(nil).Exists), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteOrphanedCVEsBatch", reflect.TypeOf((*MockDataStore)(nil).DeleteOrphanedCVEsBatch), ctx, batchSize)
 }
 
-// Get mocks base method.
-func (m *MockDataStore) Get(ctx context.Context, id string) (*storage.ImageCVEV2, bool, error) {
+// DeleteStaleEdges mocks base method.
+func (m *MockDataStore) DeleteStaleEdges(ctx context.Context, componentID string, keepCVEIDs []string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", ctx, id)
-	ret0, _ := ret[0].(*storage.ImageCVEV2)
-	ret1, _ := ret[1].(bool)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret := m.ctrl.Call(m, "DeleteStaleEdges", ctx, componentID, keepCVEIDs)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// Get indicates an expected call of Get.
-func (mr *MockDataStoreMockRecorder) Get(ctx, id any) *gomock.Call {
+// DeleteStaleEdges indicates an expected call of DeleteStaleEdges.
+func (mr *MockDataStoreMockRecorder) DeleteStaleEdges(ctx, componentID, keepCVEIDs any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockDataStore)(nil).Get), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteStaleEdges", reflect.TypeOf((*MockDataStore)(nil).DeleteStaleEdges), ctx, componentID, keepCVEIDs)
+}
+
+// GetAllReferencedCVEs mocks base method.
+func (m *MockDataStore) GetAllReferencedCVEs(ctx context.Context) ([]*store.CVERow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllReferencedCVEs", ctx)
+	ret0, _ := ret[0].([]*store.CVERow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllReferencedCVEs indicates an expected call of GetAllReferencedCVEs.
+func (mr *MockDataStoreMockRecorder) GetAllReferencedCVEs(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllReferencedCVEs", reflect.TypeOf((*MockDataStore)(nil).GetAllReferencedCVEs), ctx)
 }
 
 // GetBatch mocks base method.
-func (m *MockDataStore) GetBatch(ctx context.Context, id []string) ([]*storage.ImageCVEV2, error) {
+func (m *MockDataStore) GetBatch(ctx context.Context, ids []string) ([]*storage.ImageCVEV2, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBatch", ctx, id)
+	ret := m.ctrl.Call(m, "GetBatch", ctx, ids)
 	ret0, _ := ret[0].([]*storage.ImageCVEV2)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetBatch indicates an expected call of GetBatch.
-func (mr *MockDataStoreMockRecorder) GetBatch(ctx, id any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) GetBatch(ctx, ids any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatch", reflect.TypeOf((*MockDataStore)(nil).GetBatch), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatch", reflect.TypeOf((*MockDataStore)(nil).GetBatch), ctx, ids)
+}
+
+// GetCVEsForImage mocks base method.
+func (m *MockDataStore) GetCVEsForImage(ctx context.Context, imageID string) ([]*store.CVERow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCVEsForImage", ctx, imageID)
+	ret0, _ := ret[0].([]*store.CVERow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCVEsForImage indicates an expected call of GetCVEsForImage.
+func (mr *MockDataStoreMockRecorder) GetCVEsForImage(ctx, imageID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCVEsForImage", reflect.TypeOf((*MockDataStore)(nil).GetCVEsForImage), ctx, imageID)
 }
 
 // Search mocks base method.
@@ -147,4 +176,33 @@ func (m *MockDataStore) SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([]
 func (mr *MockDataStoreMockRecorder) SearchRawImageCVEs(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawImageCVEs", reflect.TypeOf((*MockDataStore)(nil).SearchRawImageCVEs), ctx, q)
+}
+
+// UpsertCVE mocks base method.
+func (m *MockDataStore) UpsertCVE(ctx context.Context, cveRow *store.CVERow) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertCVE", ctx, cveRow)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpsertCVE indicates an expected call of UpsertCVE.
+func (mr *MockDataStoreMockRecorder) UpsertCVE(ctx, cveRow any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertCVE", reflect.TypeOf((*MockDataStore)(nil).UpsertCVE), ctx, cveRow)
+}
+
+// UpsertEdge mocks base method.
+func (m *MockDataStore) UpsertEdge(ctx context.Context, edge *store.EdgeRow) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertEdge", ctx, edge)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertEdge indicates an expected call of UpsertEdge.
+func (mr *MockDataStoreMockRecorder) UpsertEdge(ctx, edge any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertEdge", reflect.TypeOf((*MockDataStore)(nil).UpsertEdge), ctx, edge)
 }
