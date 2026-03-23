@@ -3,6 +3,8 @@ package store
 import (
 	"context"
 	"time"
+
+	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
 // CVERow represents a row in the cves table.
@@ -61,4 +63,9 @@ type Store interface {
 	// DeleteOrphanedCVEsBatch deletes up to batchSize CVEs with no referencing edges.
 	// Returns number of rows deleted.
 	DeleteOrphanedCVEsBatch(ctx context.Context, batchSize int) (int64, error)
+
+	// Count returns the number of rows in the cves table.
+	// The query parameter is accepted for interface compatibility but is currently ignored;
+	// all CVEs are counted regardless of filter criteria.
+	Count(ctx context.Context, q *v1.Query) (int, error)
 }

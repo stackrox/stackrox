@@ -19,10 +19,9 @@ func (ds *datastoreImpl) Search(_ context.Context, _ *v1.Query) ([]pkgSearch.Res
 	return nil, nil
 }
 
-// Count implements search.Searcher. Returns 0 because the legacy
-// image_cves_v2 table has been replaced by the normalized cves table.
-func (ds *datastoreImpl) Count(_ context.Context, _ *v1.Query) (int, error) {
-	return 0, nil
+// Count returns the number of rows in the cves table.
+func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return ds.storage.Count(ctx, q)
 }
 
 // SearchImageCVEs returns empty results. The legacy image_cves_v2 table has been replaced.

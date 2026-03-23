@@ -6,6 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 )
@@ -192,6 +193,18 @@ func (s *storeImpl) DeleteOrphanedCVEsBatch(ctx context.Context, batchSize int) 
 	}
 
 	return result.RowsAffected(), nil
+}
+
+// Count returns the total number of rows in the cves table.
+// The query parameter is accepted for interface compatibility but is ignored;
+// all CVEs are counted regardless of filter criteria.
+func (s *storeImpl) Count(ctx context.Context, _ *v1.Query) (int, error) {
+	var count int
+	err := s.db.QueryRow(ctx, "SELECT COUNT(*) FROM cves").Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("counting CVE rows: %w", err)
+	}
+	return count, nil
 }
 
 // scanCVERow scans a single CVE row from pgx.Rows.

@@ -8,7 +8,8 @@ import (
 	"testing"
 	"time"
 
-	cveStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
+	cveStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store"
+	cvev2pgstore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -50,7 +51,7 @@ func (s *ImagesStoreSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 
 	s.store = New(s.testDB.DB, false, concurrency.NewKeyFence())
-	s.cvePgStore = cveStore.New(s.testDB.DB)
+	s.cvePgStore = cvev2pgstore.New(s.testDB.DB)
 }
 
 func (s *ImagesStoreSuite) SetupTest() {

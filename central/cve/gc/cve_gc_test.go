@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,6 +43,10 @@ func (s *testStore) GetCVEsForImage(ctx context.Context, imageID string) ([]*sto
 }
 
 func (s *testStore) GetAllReferencedCVEs(ctx context.Context) ([]*store.CVERow, error) {
+	panic("not implemented")
+}
+
+func (s *testStore) Count(_ context.Context, _ *v1.Query) (int, error) {
 	panic("not implemented")
 }
 

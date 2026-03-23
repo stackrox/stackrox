@@ -9,8 +9,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/hashstructure"
 	convertutils "github.com/stackrox/rox/central/cve/converter/utils"
-	cvev2ds "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	cvev2store "github.com/stackrox/rox/central/cve/image/v2/datastore/store"
+	cvev2pgstore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/imagev2/datastore/store"
 	"github.com/stackrox/rox/central/imagev2/datastore/store/common"
 	"github.com/stackrox/rox/central/imagev2/views"
@@ -326,7 +326,7 @@ func (s *storeImpl) upsertCVEsToNormalizedTables(
 	iTimestamp *timestamppb.Timestamp,
 	cveTimeMap map[string]*timestamppb.Timestamp,
 ) error {
-	cveStore := cvev2ds.Singleton()
+	cveStore := cvev2pgstore.New(s.db)
 
 	// Group CVEs by component ID to track which CVEs belong to each component.
 	componentCVEMap := make(map[string][]string)
