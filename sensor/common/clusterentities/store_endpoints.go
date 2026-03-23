@@ -86,8 +86,7 @@ func (e *endpointsStore) RecordTick() bool {
 				status.recordTick()
 			}
 
-			reverseMap := e.reverseHistoricalEndpoints[deploymentID]
-			reverseMap[endpoint].recordTick()
+			e.reverseHistoricalEndpoints[deploymentID][endpoint].recordTick()
 			// Remove all historical entries that expired in this tick.
 			removed := e.removeFromHistoryIfExpired(deploymentID, endpoint)
 			removedPublic = removedPublic || removed && endpoint.IPAndPort.Address.IsPublic()
