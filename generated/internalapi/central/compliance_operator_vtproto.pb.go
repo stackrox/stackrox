@@ -127,11 +127,11 @@ func (m *SyncComplianceScanConfigRequest) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *ApplyComplianceScanConfigRequest_ProfileReference) CloneVT() *ApplyComplianceScanConfigRequest_ProfileReference {
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) CloneVT() *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference {
 	if m == nil {
-		return (*ApplyComplianceScanConfigRequest_ProfileReference)(nil)
+		return (*ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference)(nil)
 	}
-	r := new(ApplyComplianceScanConfigRequest_ProfileReference)
+	r := new(ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference)
 	r.Name = m.Name
 	r.Kind = m.Kind
 	if len(m.unknownFields) > 0 {
@@ -141,7 +141,7 @@ func (m *ApplyComplianceScanConfigRequest_ProfileReference) CloneVT() *ApplyComp
 	return r
 }
 
-func (m *ApplyComplianceScanConfigRequest_ProfileReference) CloneMessageVT() proto.Message {
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -162,7 +162,7 @@ func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) CloneVT() *ApplyComp
 		r.Profiles = tmpContainer
 	}
 	if rhs := m.ProfileRefs; rhs != nil {
-		tmpContainer := make([]*ApplyComplianceScanConfigRequest_ProfileReference, len(rhs))
+		tmpContainer := make([]*ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
@@ -1144,7 +1144,7 @@ func (this *SyncComplianceScanConfigRequest) EqualMessageVT(thatMsg proto.Messag
 	}
 	return this.EqualVT(that)
 }
-func (this *ApplyComplianceScanConfigRequest_ProfileReference) EqualVT(that *ApplyComplianceScanConfigRequest_ProfileReference) bool {
+func (this *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) EqualVT(that *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -1159,8 +1159,8 @@ func (this *ApplyComplianceScanConfigRequest_ProfileReference) EqualVT(that *App
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *ApplyComplianceScanConfigRequest_ProfileReference) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*ApplyComplianceScanConfigRequest_ProfileReference)
+func (this *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference)
 	if !ok {
 		return false
 	}
@@ -1206,10 +1206,10 @@ func (this *ApplyComplianceScanConfigRequest_BaseScanSettings) EqualVT(that *App
 		vy := that.ProfileRefs[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
-				p = &ApplyComplianceScanConfigRequest_ProfileReference{}
+				p = &ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference{}
 			}
 			if q == nil {
-				q = &ApplyComplianceScanConfigRequest_ProfileReference{}
+				q = &ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference{}
 			}
 			if !p.EqualVT(q) {
 				return false
@@ -2834,7 +2834,7 @@ func (m *SyncComplianceScanConfigRequest) MarshalToSizedBufferVT(dAtA []byte) (i
 	return len(dAtA) - i, nil
 }
 
-func (m *ApplyComplianceScanConfigRequest_ProfileReference) MarshalVT() (dAtA []byte, err error) {
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -2847,12 +2847,12 @@ func (m *ApplyComplianceScanConfigRequest_ProfileReference) MarshalVT() (dAtA []
 	return dAtA[:n], nil
 }
 
-func (m *ApplyComplianceScanConfigRequest_ProfileReference) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ApplyComplianceScanConfigRequest_ProfileReference) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -5257,7 +5257,7 @@ func (m *SyncComplianceScanConfigRequest) SizeVT() (n int) {
 	return n
 }
 
-func (m *ApplyComplianceScanConfigRequest_ProfileReference) SizeVT() (n int) {
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -6741,7 +6741,7 @@ func (m *SyncComplianceScanConfigRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ApplyComplianceScanConfigRequest_ProfileReference) UnmarshalVT(dAtA []byte) error {
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6764,10 +6764,10 @@ func (m *ApplyComplianceScanConfigRequest_ProfileReference) UnmarshalVT(dAtA []b
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ApplyComplianceScanConfigRequest_ProfileReference: wiretype end group for non-group")
+			return fmt.Errorf("proto: ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ApplyComplianceScanConfigRequest_ProfileReference: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -7077,7 +7077,7 @@ func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) UnmarshalVT(dAtA []b
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ProfileRefs = append(m.ProfileRefs, &ApplyComplianceScanConfigRequest_ProfileReference{})
+			m.ProfileRefs = append(m.ProfileRefs, &ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference{})
 			if err := m.ProfileRefs[len(m.ProfileRefs)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -13739,7 +13739,7 @@ func (m *SyncComplianceScanConfigRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ApplyComplianceScanConfigRequest_ProfileReference) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -13762,10 +13762,10 @@ func (m *ApplyComplianceScanConfigRequest_ProfileReference) UnmarshalVTUnsafe(dA
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ApplyComplianceScanConfigRequest_ProfileReference: wiretype end group for non-group")
+			return fmt.Errorf("proto: ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ApplyComplianceScanConfigRequest_ProfileReference: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -14091,7 +14091,7 @@ func (m *ApplyComplianceScanConfigRequest_BaseScanSettings) UnmarshalVTUnsafe(dA
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ProfileRefs = append(m.ProfileRefs, &ApplyComplianceScanConfigRequest_ProfileReference{})
+			m.ProfileRefs = append(m.ProfileRefs, &ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference{})
 			if err := m.ProfileRefs[len(m.ProfileRefs)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}

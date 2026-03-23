@@ -646,9 +646,9 @@ func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*centra
 		for _, profile := range scanConfig.GetProfiles() {
 			profiles = append(profiles, profile.GetProfileName())
 		}
-		var profileRefs []*central.ApplyComplianceScanConfigRequest_ProfileReference
+		var profileRefs []*central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference
 		for _, ref := range scanConfig.GetProfileRefs() {
-			profileRefs = append(profileRefs, &central.ApplyComplianceScanConfigRequest_ProfileReference{
+			profileRefs = append(profileRefs, &central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference{
 				Name: ref.GetName(),
 				Kind: internaltov2storage.StorageToCentralProfileKind(ref.GetKind()),
 			})

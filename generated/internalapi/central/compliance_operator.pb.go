@@ -1989,60 +1989,6 @@ func (x *ComplianceOperatorRemediationV2) GetEnforcementType() string {
 	return ""
 }
 
-// ProfileReference identifies a compliance profile by name and its kind (Profile or TailoredProfile).
-// New Central populates profile_refs in BaseScanSettings; Sensor prefers it over the legacy profiles field.
-type ApplyComplianceScanConfigRequest_ProfileReference struct {
-	state         protoimpl.MessageState                   `protogen:"open.v1"`
-	Name          string                                   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Kind          ComplianceOperatorProfileV2_OperatorKind `protobuf:"varint,2,opt,name=kind,proto3,enum=central.ComplianceOperatorProfileV2_OperatorKind" json:"kind,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ApplyComplianceScanConfigRequest_ProfileReference) Reset() {
-	*x = ApplyComplianceScanConfigRequest_ProfileReference{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[18]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ApplyComplianceScanConfigRequest_ProfileReference) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ApplyComplianceScanConfigRequest_ProfileReference) ProtoMessage() {}
-
-func (x *ApplyComplianceScanConfigRequest_ProfileReference) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[18]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ApplyComplianceScanConfigRequest_ProfileReference.ProtoReflect.Descriptor instead.
-func (*ApplyComplianceScanConfigRequest_ProfileReference) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{4, 0}
-}
-
-func (x *ApplyComplianceScanConfigRequest_ProfileReference) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *ApplyComplianceScanConfigRequest_ProfileReference) GetKind() ComplianceOperatorProfileV2_OperatorKind {
-	if x != nil {
-		return x.Kind
-	}
-	return ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED
-}
-
 type ApplyComplianceScanConfigRequest_BaseScanSettings struct {
 	state      protoimpl.MessageState `protogen:"open.v1"`
 	DbRecordId string                 `protobuf:"bytes,1,opt,name=db_record_id,json=dbRecordId,proto3" json:"db_record_id,omitempty"`
@@ -2057,14 +2003,14 @@ type ApplyComplianceScanConfigRequest_BaseScanSettings struct {
 	// profile_refs carries profile names together with their compliance operator kind.
 	// Populated by Central alongside the legacy profiles field.
 	// Sensor should prefer this field when non-empty, and fall back to profiles otherwise.
-	ProfileRefs   []*ApplyComplianceScanConfigRequest_ProfileReference `protobuf:"bytes,8,rep,name=profile_refs,json=profileRefs,proto3" json:"profile_refs,omitempty"`
+	ProfileRefs   []*ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference `protobuf:"bytes,8,rep,name=profile_refs,json=profileRefs,proto3" json:"profile_refs,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) Reset() {
 	*x = ApplyComplianceScanConfigRequest_BaseScanSettings{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[19]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2076,7 +2022,7 @@ func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) String() string {
 func (*ApplyComplianceScanConfigRequest_BaseScanSettings) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[19]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2089,7 +2035,7 @@ func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) ProtoReflect() proto
 
 // Deprecated: Use ApplyComplianceScanConfigRequest_BaseScanSettings.ProtoReflect.Descriptor instead.
 func (*ApplyComplianceScanConfigRequest_BaseScanSettings) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{4, 1}
+	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{4, 0}
 }
 
 func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) GetDbRecordId() string {
@@ -2141,7 +2087,7 @@ func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) GetAutoUpdateRemedia
 	return false
 }
 
-func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) GetProfileRefs() []*ApplyComplianceScanConfigRequest_ProfileReference {
+func (x *ApplyComplianceScanConfigRequest_BaseScanSettings) GetProfileRefs() []*ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference {
 	if x != nil {
 		return x.ProfileRefs
 	}
@@ -2157,7 +2103,7 @@ type ApplyComplianceScanConfigRequest_OneTimeScan struct {
 
 func (x *ApplyComplianceScanConfigRequest_OneTimeScan) Reset() {
 	*x = ApplyComplianceScanConfigRequest_OneTimeScan{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[20]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2169,7 +2115,7 @@ func (x *ApplyComplianceScanConfigRequest_OneTimeScan) String() string {
 func (*ApplyComplianceScanConfigRequest_OneTimeScan) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_OneTimeScan) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[20]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2182,7 +2128,7 @@ func (x *ApplyComplianceScanConfigRequest_OneTimeScan) ProtoReflect() protorefle
 
 // Deprecated: Use ApplyComplianceScanConfigRequest_OneTimeScan.ProtoReflect.Descriptor instead.
 func (*ApplyComplianceScanConfigRequest_OneTimeScan) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{4, 2}
+	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{4, 1}
 }
 
 func (x *ApplyComplianceScanConfigRequest_OneTimeScan) GetScanSettings() *ApplyComplianceScanConfigRequest_BaseScanSettings {
@@ -2202,7 +2148,7 @@ type ApplyComplianceScanConfigRequest_ScheduledScan struct {
 
 func (x *ApplyComplianceScanConfigRequest_ScheduledScan) Reset() {
 	*x = ApplyComplianceScanConfigRequest_ScheduledScan{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[21]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2214,7 +2160,7 @@ func (x *ApplyComplianceScanConfigRequest_ScheduledScan) String() string {
 func (*ApplyComplianceScanConfigRequest_ScheduledScan) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_ScheduledScan) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[21]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2227,7 +2173,7 @@ func (x *ApplyComplianceScanConfigRequest_ScheduledScan) ProtoReflect() protoref
 
 // Deprecated: Use ApplyComplianceScanConfigRequest_ScheduledScan.ProtoReflect.Descriptor instead.
 func (*ApplyComplianceScanConfigRequest_ScheduledScan) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{4, 3}
+	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{4, 2}
 }
 
 func (x *ApplyComplianceScanConfigRequest_ScheduledScan) GetScanSettings() *ApplyComplianceScanConfigRequest_BaseScanSettings {
@@ -2253,7 +2199,7 @@ type ApplyComplianceScanConfigRequest_RerunScheduledScan struct {
 
 func (x *ApplyComplianceScanConfigRequest_RerunScheduledScan) Reset() {
 	*x = ApplyComplianceScanConfigRequest_RerunScheduledScan{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[22]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2265,7 +2211,7 @@ func (x *ApplyComplianceScanConfigRequest_RerunScheduledScan) String() string {
 func (*ApplyComplianceScanConfigRequest_RerunScheduledScan) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_RerunScheduledScan) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[22]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2278,7 +2224,7 @@ func (x *ApplyComplianceScanConfigRequest_RerunScheduledScan) ProtoReflect() pro
 
 // Deprecated: Use ApplyComplianceScanConfigRequest_RerunScheduledScan.ProtoReflect.Descriptor instead.
 func (*ApplyComplianceScanConfigRequest_RerunScheduledScan) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{4, 4}
+	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{4, 3}
 }
 
 func (x *ApplyComplianceScanConfigRequest_RerunScheduledScan) GetScanName() string {
@@ -2297,7 +2243,7 @@ type ApplyComplianceScanConfigRequest_SuspendScheduledScan struct {
 
 func (x *ApplyComplianceScanConfigRequest_SuspendScheduledScan) Reset() {
 	*x = ApplyComplianceScanConfigRequest_SuspendScheduledScan{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[23]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2309,7 +2255,7 @@ func (x *ApplyComplianceScanConfigRequest_SuspendScheduledScan) String() string 
 func (*ApplyComplianceScanConfigRequest_SuspendScheduledScan) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_SuspendScheduledScan) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[23]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2322,7 +2268,7 @@ func (x *ApplyComplianceScanConfigRequest_SuspendScheduledScan) ProtoReflect() p
 
 // Deprecated: Use ApplyComplianceScanConfigRequest_SuspendScheduledScan.ProtoReflect.Descriptor instead.
 func (*ApplyComplianceScanConfigRequest_SuspendScheduledScan) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{4, 5}
+	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{4, 4}
 }
 
 func (x *ApplyComplianceScanConfigRequest_SuspendScheduledScan) GetScanName() string {
@@ -2341,7 +2287,7 @@ type ApplyComplianceScanConfigRequest_ResumeScheduledScan struct {
 
 func (x *ApplyComplianceScanConfigRequest_ResumeScheduledScan) Reset() {
 	*x = ApplyComplianceScanConfigRequest_ResumeScheduledScan{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[24]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2353,7 +2299,7 @@ func (x *ApplyComplianceScanConfigRequest_ResumeScheduledScan) String() string {
 func (*ApplyComplianceScanConfigRequest_ResumeScheduledScan) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_ResumeScheduledScan) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[24]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2366,7 +2312,7 @@ func (x *ApplyComplianceScanConfigRequest_ResumeScheduledScan) ProtoReflect() pr
 
 // Deprecated: Use ApplyComplianceScanConfigRequest_ResumeScheduledScan.ProtoReflect.Descriptor instead.
 func (*ApplyComplianceScanConfigRequest_ResumeScheduledScan) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{4, 6}
+	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{4, 5}
 }
 
 func (x *ApplyComplianceScanConfigRequest_ResumeScheduledScan) GetScanName() string {
@@ -2386,7 +2332,7 @@ type ApplyComplianceScanConfigRequest_UpdateScheduledScan struct {
 
 func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) Reset() {
 	*x = ApplyComplianceScanConfigRequest_UpdateScheduledScan{}
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[25]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2398,7 +2344,7 @@ func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) String() string {
 func (*ApplyComplianceScanConfigRequest_UpdateScheduledScan) ProtoMessage() {}
 
 func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[25]
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2411,7 +2357,7 @@ func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) ProtoReflect() pr
 
 // Deprecated: Use ApplyComplianceScanConfigRequest_UpdateScheduledScan.ProtoReflect.Descriptor instead.
 func (*ApplyComplianceScanConfigRequest_UpdateScheduledScan) Descriptor() ([]byte, []int) {
-	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{4, 7}
+	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{4, 6}
 }
 
 func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) GetScanSettings() *ApplyComplianceScanConfigRequest_BaseScanSettings {
@@ -2426,6 +2372,60 @@ func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) GetCron() string 
 		return x.Cron
 	}
 	return ""
+}
+
+// ProfileReference identifies a compliance profile by name and its kind (Profile or TailoredProfile).
+// New Central populates profile_refs; Sensor prefers it over the legacy profiles field.
+type ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference struct {
+	state         protoimpl.MessageState                   `protogen:"open.v1"`
+	Name          string                                   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Kind          ComplianceOperatorProfileV2_OperatorKind `protobuf:"varint,2,opt,name=kind,proto3,enum=central.ComplianceOperatorProfileV2_OperatorKind" json:"kind,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) Reset() {
+	*x = ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference{}
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) ProtoMessage() {}
+
+func (x *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_central_compliance_operator_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference.ProtoReflect.Descriptor instead.
+func (*ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) Descriptor() ([]byte, []int) {
+	return file_internalapi_central_compliance_operator_proto_rawDescGZIP(), []int{4, 0, 0}
+}
+
+func (x *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference) GetKind() ComplianceOperatorProfileV2_OperatorKind {
+	if x != nil {
+		return x.Kind
+	}
+	return ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED
 }
 
 type ComplianceResponse_EnableComplianceResponse struct {
@@ -2843,7 +2843,7 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\x18DisableComplianceRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"o\n" +
 	"\x1fSyncComplianceScanConfigRequest\x12L\n" +
-	"\fscan_configs\x18\x01 \x03(\v2).central.ApplyComplianceScanConfigRequestR\vscanConfigs\"\xdc\f\n" +
+	"\fscan_configs\x18\x01 \x03(\v2).central.ApplyComplianceScanConfigRequestR\vscanConfigs\"\xed\f\n" +
 	" ApplyComplianceScanConfigRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12`\n" +
 	"\x0escheduled_scan\x18\x03 \x01(\v27.central.ApplyComplianceScanConfigRequest.ScheduledScanH\x00R\rscheduledScan\x12]\n" +
@@ -2853,10 +2853,7 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\vresume_scan\x18\x06 \x01(\v2=.central.ApplyComplianceScanConfigRequest.ResumeScheduledScanH\x00R\n" +
 	"resumeScan\x12`\n" +
 	"\vupdate_scan\x18\a \x01(\v2=.central.ApplyComplianceScanConfigRequest.UpdateScheduledScanH\x00R\n" +
-	"updateScan\x1am\n" +
-	"\x10ProfileReference\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12E\n" +
-	"\x04kind\x18\x02 \x01(\x0e21.central.ComplianceOperatorProfileV2.OperatorKindR\x04kind\x1a\x98\x03\n" +
+	"updateScan\x1a\x98\x04\n" +
 	"\x10BaseScanSettings\x12 \n" +
 	"\fdb_record_id\x18\x01 \x01(\tR\n" +
 	"dbRecordId\x12\x1b\n" +
@@ -2865,8 +2862,11 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\x13show_not_applicable\x18\x04 \x01(\bR\x11showNotApplicable\x12(\n" +
 	"\x10strict_node_scan\x18\x05 \x01(\bR\x0estrictNodeScan\x126\n" +
 	"\x17auto_apply_remediations\x18\x06 \x01(\bR\x15autoApplyRemediations\x128\n" +
-	"\x18auto_update_remediations\x18\a \x01(\bR\x16autoUpdateRemediations\x12]\n" +
-	"\fprofile_refs\x18\b \x03(\v2:.central.ApplyComplianceScanConfigRequest.ProfileReferenceR\vprofileRefs\x1an\n" +
+	"\x18auto_update_remediations\x18\a \x01(\bR\x16autoUpdateRemediations\x12n\n" +
+	"\fprofile_refs\x18\b \x03(\v2K.central.ApplyComplianceScanConfigRequest.BaseScanSettings.ProfileReferenceR\vprofileRefs\x1am\n" +
+	"\x10ProfileReference\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12E\n" +
+	"\x04kind\x18\x02 \x01(\x0e21.central.ComplianceOperatorProfileV2.OperatorKindR\x04kind\x1an\n" +
 	"\vOneTimeScan\x12_\n" +
 	"\rscan_settings\x18\x01 \x01(\v2:.central.ApplyComplianceScanConfigRequest.BaseScanSettingsR\fscanSettings\x1a\x84\x01\n" +
 	"\rScheduledScan\x12_\n" +
@@ -3099,40 +3099,40 @@ func file_internalapi_central_compliance_operator_proto_rawDescGZIP() []byte {
 var file_internalapi_central_compliance_operator_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
 var file_internalapi_central_compliance_operator_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
 var file_internalapi_central_compliance_operator_proto_goTypes = []any{
-	(ComplianceOperatorRuleSeverity)(0),                           // 0: central.ComplianceOperatorRuleSeverity
-	(ComplianceOperatorCheckResultV2_CheckStatus)(0),              // 1: central.ComplianceOperatorCheckResultV2.CheckStatus
-	(ComplianceOperatorProfileV2_OperatorKind)(0),                 // 2: central.ComplianceOperatorProfileV2.OperatorKind
-	(ComplianceOperatorRuleV2_OperatorKind)(0),                    // 3: central.ComplianceOperatorRuleV2.OperatorKind
-	(*ComplianceOperatorInfo)(nil),                                // 4: central.ComplianceOperatorInfo
-	(*EnableComplianceRequest)(nil),                               // 5: central.EnableComplianceRequest
-	(*DisableComplianceRequest)(nil),                              // 6: central.DisableComplianceRequest
-	(*SyncComplianceScanConfigRequest)(nil),                       // 7: central.SyncComplianceScanConfigRequest
-	(*ApplyComplianceScanConfigRequest)(nil),                      // 8: central.ApplyComplianceScanConfigRequest
-	(*DeleteComplianceScanConfigRequest)(nil),                     // 9: central.DeleteComplianceScanConfigRequest
-	(*ComplianceRequest)(nil),                                     // 10: central.ComplianceRequest
-	(*ComplianceResponse)(nil),                                    // 11: central.ComplianceResponse
-	(*ComplianceOperatorCheckResultV2)(nil),                       // 12: central.ComplianceOperatorCheckResultV2
-	(*ComplianceOperatorProfileV2)(nil),                           // 13: central.ComplianceOperatorProfileV2
-	(*ComplianceOperatorRuleV2)(nil),                              // 14: central.ComplianceOperatorRuleV2
-	(*ComplianceOperatorScanV2)(nil),                              // 15: central.ComplianceOperatorScanV2
-	(*ComplianceOperatorScanStatusV2)(nil),                        // 16: central.ComplianceOperatorScanStatusV2
-	(*ComplianceOperatorScanSettingBindingV2)(nil),                // 17: central.ComplianceOperatorScanSettingBindingV2
-	(*ComplianceOperatorCondition)(nil),                           // 18: central.ComplianceOperatorCondition
-	(*ComplianceOperatorStatus)(nil),                              // 19: central.ComplianceOperatorStatus
-	(*ComplianceOperatorSuiteV2)(nil),                             // 20: central.ComplianceOperatorSuiteV2
-	(*ComplianceOperatorRemediationV2)(nil),                       // 21: central.ComplianceOperatorRemediationV2
-	(*ApplyComplianceScanConfigRequest_ProfileReference)(nil),     // 22: central.ApplyComplianceScanConfigRequest.ProfileReference
-	(*ApplyComplianceScanConfigRequest_BaseScanSettings)(nil),     // 23: central.ApplyComplianceScanConfigRequest.BaseScanSettings
-	(*ApplyComplianceScanConfigRequest_OneTimeScan)(nil),          // 24: central.ApplyComplianceScanConfigRequest.OneTimeScan
-	(*ApplyComplianceScanConfigRequest_ScheduledScan)(nil),        // 25: central.ApplyComplianceScanConfigRequest.ScheduledScan
-	(*ApplyComplianceScanConfigRequest_RerunScheduledScan)(nil),   // 26: central.ApplyComplianceScanConfigRequest.RerunScheduledScan
-	(*ApplyComplianceScanConfigRequest_SuspendScheduledScan)(nil), // 27: central.ApplyComplianceScanConfigRequest.SuspendScheduledScan
-	(*ApplyComplianceScanConfigRequest_ResumeScheduledScan)(nil),  // 28: central.ApplyComplianceScanConfigRequest.ResumeScheduledScan
-	(*ApplyComplianceScanConfigRequest_UpdateScheduledScan)(nil),  // 29: central.ApplyComplianceScanConfigRequest.UpdateScheduledScan
-	(*ComplianceResponse_EnableComplianceResponse)(nil),           // 30: central.ComplianceResponse.EnableComplianceResponse
-	(*ComplianceResponse_DisableComplianceResponse)(nil),          // 31: central.ComplianceResponse.DisableComplianceResponse
-	(*ComplianceResponse_ApplyComplianceScanConfigResponse)(nil),  // 32: central.ComplianceResponse.ApplyComplianceScanConfigResponse
-	(*ComplianceResponse_DeleteComplianceScanConfigResponse)(nil), // 33: central.ComplianceResponse.DeleteComplianceScanConfigResponse
+	(ComplianceOperatorRuleSeverity)(0),                                        // 0: central.ComplianceOperatorRuleSeverity
+	(ComplianceOperatorCheckResultV2_CheckStatus)(0),                           // 1: central.ComplianceOperatorCheckResultV2.CheckStatus
+	(ComplianceOperatorProfileV2_OperatorKind)(0),                              // 2: central.ComplianceOperatorProfileV2.OperatorKind
+	(ComplianceOperatorRuleV2_OperatorKind)(0),                                 // 3: central.ComplianceOperatorRuleV2.OperatorKind
+	(*ComplianceOperatorInfo)(nil),                                             // 4: central.ComplianceOperatorInfo
+	(*EnableComplianceRequest)(nil),                                            // 5: central.EnableComplianceRequest
+	(*DisableComplianceRequest)(nil),                                           // 6: central.DisableComplianceRequest
+	(*SyncComplianceScanConfigRequest)(nil),                                    // 7: central.SyncComplianceScanConfigRequest
+	(*ApplyComplianceScanConfigRequest)(nil),                                   // 8: central.ApplyComplianceScanConfigRequest
+	(*DeleteComplianceScanConfigRequest)(nil),                                  // 9: central.DeleteComplianceScanConfigRequest
+	(*ComplianceRequest)(nil),                                                  // 10: central.ComplianceRequest
+	(*ComplianceResponse)(nil),                                                 // 11: central.ComplianceResponse
+	(*ComplianceOperatorCheckResultV2)(nil),                                    // 12: central.ComplianceOperatorCheckResultV2
+	(*ComplianceOperatorProfileV2)(nil),                                        // 13: central.ComplianceOperatorProfileV2
+	(*ComplianceOperatorRuleV2)(nil),                                           // 14: central.ComplianceOperatorRuleV2
+	(*ComplianceOperatorScanV2)(nil),                                           // 15: central.ComplianceOperatorScanV2
+	(*ComplianceOperatorScanStatusV2)(nil),                                     // 16: central.ComplianceOperatorScanStatusV2
+	(*ComplianceOperatorScanSettingBindingV2)(nil),                             // 17: central.ComplianceOperatorScanSettingBindingV2
+	(*ComplianceOperatorCondition)(nil),                                        // 18: central.ComplianceOperatorCondition
+	(*ComplianceOperatorStatus)(nil),                                           // 19: central.ComplianceOperatorStatus
+	(*ComplianceOperatorSuiteV2)(nil),                                          // 20: central.ComplianceOperatorSuiteV2
+	(*ComplianceOperatorRemediationV2)(nil),                                    // 21: central.ComplianceOperatorRemediationV2
+	(*ApplyComplianceScanConfigRequest_BaseScanSettings)(nil),                  // 22: central.ApplyComplianceScanConfigRequest.BaseScanSettings
+	(*ApplyComplianceScanConfigRequest_OneTimeScan)(nil),                       // 23: central.ApplyComplianceScanConfigRequest.OneTimeScan
+	(*ApplyComplianceScanConfigRequest_ScheduledScan)(nil),                     // 24: central.ApplyComplianceScanConfigRequest.ScheduledScan
+	(*ApplyComplianceScanConfigRequest_RerunScheduledScan)(nil),                // 25: central.ApplyComplianceScanConfigRequest.RerunScheduledScan
+	(*ApplyComplianceScanConfigRequest_SuspendScheduledScan)(nil),              // 26: central.ApplyComplianceScanConfigRequest.SuspendScheduledScan
+	(*ApplyComplianceScanConfigRequest_ResumeScheduledScan)(nil),               // 27: central.ApplyComplianceScanConfigRequest.ResumeScheduledScan
+	(*ApplyComplianceScanConfigRequest_UpdateScheduledScan)(nil),               // 28: central.ApplyComplianceScanConfigRequest.UpdateScheduledScan
+	(*ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference)(nil), // 29: central.ApplyComplianceScanConfigRequest.BaseScanSettings.ProfileReference
+	(*ComplianceResponse_EnableComplianceResponse)(nil),                        // 30: central.ComplianceResponse.EnableComplianceResponse
+	(*ComplianceResponse_DisableComplianceResponse)(nil),                       // 31: central.ComplianceResponse.DisableComplianceResponse
+	(*ComplianceResponse_ApplyComplianceScanConfigResponse)(nil),               // 32: central.ComplianceResponse.ApplyComplianceScanConfigResponse
+	(*ComplianceResponse_DeleteComplianceScanConfigResponse)(nil),              // 33: central.ComplianceResponse.DeleteComplianceScanConfigResponse
 	nil,                                      // 34: central.ComplianceOperatorCheckResultV2.LabelsEntry
 	nil,                                      // 35: central.ComplianceOperatorCheckResultV2.AnnotationsEntry
 	nil,                                      // 36: central.ComplianceOperatorProfileV2.LabelsEntry
@@ -3149,11 +3149,11 @@ var file_internalapi_central_compliance_operator_proto_goTypes = []any{
 }
 var file_internalapi_central_compliance_operator_proto_depIdxs = []int32{
 	8,  // 0: central.SyncComplianceScanConfigRequest.scan_configs:type_name -> central.ApplyComplianceScanConfigRequest
-	25, // 1: central.ApplyComplianceScanConfigRequest.scheduled_scan:type_name -> central.ApplyComplianceScanConfigRequest.ScheduledScan
-	26, // 2: central.ApplyComplianceScanConfigRequest.rerun_scan:type_name -> central.ApplyComplianceScanConfigRequest.RerunScheduledScan
-	27, // 3: central.ApplyComplianceScanConfigRequest.suspend_scan:type_name -> central.ApplyComplianceScanConfigRequest.SuspendScheduledScan
-	28, // 4: central.ApplyComplianceScanConfigRequest.resume_scan:type_name -> central.ApplyComplianceScanConfigRequest.ResumeScheduledScan
-	29, // 5: central.ApplyComplianceScanConfigRequest.update_scan:type_name -> central.ApplyComplianceScanConfigRequest.UpdateScheduledScan
+	24, // 1: central.ApplyComplianceScanConfigRequest.scheduled_scan:type_name -> central.ApplyComplianceScanConfigRequest.ScheduledScan
+	25, // 2: central.ApplyComplianceScanConfigRequest.rerun_scan:type_name -> central.ApplyComplianceScanConfigRequest.RerunScheduledScan
+	26, // 3: central.ApplyComplianceScanConfigRequest.suspend_scan:type_name -> central.ApplyComplianceScanConfigRequest.SuspendScheduledScan
+	27, // 4: central.ApplyComplianceScanConfigRequest.resume_scan:type_name -> central.ApplyComplianceScanConfigRequest.ResumeScheduledScan
+	28, // 5: central.ApplyComplianceScanConfigRequest.update_scan:type_name -> central.ApplyComplianceScanConfigRequest.UpdateScheduledScan
 	5,  // 6: central.ComplianceRequest.enable_compliance:type_name -> central.EnableComplianceRequest
 	6,  // 7: central.ComplianceRequest.disable_compliance:type_name -> central.DisableComplianceRequest
 	8,  // 8: central.ComplianceRequest.apply_scan_config:type_name -> central.ApplyComplianceScanConfigRequest
@@ -3189,11 +3189,11 @@ var file_internalapi_central_compliance_operator_proto_depIdxs = []int32{
 	46, // 38: central.ComplianceOperatorCondition.last_transition_time:type_name -> google.protobuf.Timestamp
 	18, // 39: central.ComplianceOperatorStatus.conditions:type_name -> central.ComplianceOperatorCondition
 	19, // 40: central.ComplianceOperatorSuiteV2.status:type_name -> central.ComplianceOperatorStatus
-	2,  // 41: central.ApplyComplianceScanConfigRequest.ProfileReference.kind:type_name -> central.ComplianceOperatorProfileV2.OperatorKind
-	22, // 42: central.ApplyComplianceScanConfigRequest.BaseScanSettings.profile_refs:type_name -> central.ApplyComplianceScanConfigRequest.ProfileReference
-	23, // 43: central.ApplyComplianceScanConfigRequest.OneTimeScan.scan_settings:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings
-	23, // 44: central.ApplyComplianceScanConfigRequest.ScheduledScan.scan_settings:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings
-	23, // 45: central.ApplyComplianceScanConfigRequest.UpdateScheduledScan.scan_settings:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings
+	29, // 41: central.ApplyComplianceScanConfigRequest.BaseScanSettings.profile_refs:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings.ProfileReference
+	22, // 42: central.ApplyComplianceScanConfigRequest.OneTimeScan.scan_settings:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings
+	22, // 43: central.ApplyComplianceScanConfigRequest.ScheduledScan.scan_settings:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings
+	22, // 44: central.ApplyComplianceScanConfigRequest.UpdateScheduledScan.scan_settings:type_name -> central.ApplyComplianceScanConfigRequest.BaseScanSettings
+	2,  // 45: central.ApplyComplianceScanConfigRequest.BaseScanSettings.ProfileReference.kind:type_name -> central.ComplianceOperatorProfileV2.OperatorKind
 	46, // [46:46] is the sub-list for method output_type
 	46, // [46:46] is the sub-list for method input_type
 	46, // [46:46] is the sub-list for extension type_name

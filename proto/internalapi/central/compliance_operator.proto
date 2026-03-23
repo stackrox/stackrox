@@ -40,14 +40,14 @@ message SyncComplianceScanConfigRequest {
 
 // ApplyComplianceScanConfigRequest contains information about a compliance scan configuration to be applied to secured cluster.
 message ApplyComplianceScanConfigRequest {
-  // ProfileReference identifies a compliance profile by name and its kind (Profile or TailoredProfile).
-  // New Central populates profile_refs in BaseScanSettings; Sensor prefers it over the legacy profiles field.
-  message ProfileReference {
-    string name = 1;
-    ComplianceOperatorProfileV2.OperatorKind kind = 2;
-  }
-
   message BaseScanSettings {
+    // ProfileReference identifies a compliance profile by name and its kind (Profile or TailoredProfile).
+    // New Central populates profile_refs; Sensor prefers it over the legacy profiles field.
+    message ProfileReference {
+      string name = 1;
+      ComplianceOperatorProfileV2.OperatorKind kind = 2;
+    }
+
     string db_record_id = 1;
     string scan_name = 2;
     // Legacy field: profile names only, without kind information.

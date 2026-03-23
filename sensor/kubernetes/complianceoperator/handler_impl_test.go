@@ -412,7 +412,7 @@ func (s *HandlerTestSuite) TestProcessUpdateScheduledScanNewSuccess() {
 
 func (s *HandlerTestSuite) TestProcessApplyScheduledScanUsesProfileRefsKinds() {
 	msg := getTestScheduledScanRequestMsg("midnight", "* * * * *", "ocp4-cis-and-tailored")
-	msg.GetComplianceRequest().GetApplyScanConfig().GetScheduledScan().GetScanSettings().ProfileRefs = []*central.ApplyComplianceScanConfigRequest_ProfileReference{
+	msg.GetComplianceRequest().GetApplyScanConfig().GetScheduledScan().GetScanSettings().ProfileRefs = []*central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference{
 		{Name: "ocp4-cis", Kind: central.ComplianceOperatorProfileV2_PROFILE},
 		{Name: "ocp4-cis-tailored", Kind: central.ComplianceOperatorProfileV2_TAILORED_PROFILE},
 	}
@@ -432,7 +432,7 @@ func (s *HandlerTestSuite) TestProcessApplyScheduledScanUsesProfileRefsKinds() {
 
 func (s *HandlerTestSuite) TestProcessApplyScheduledScanFailsOnInvalidProfileRefs() {
 	msg := getTestScheduledScanRequestMsg("midnight", "* * * * *", "tailored-and-bad")
-	msg.GetComplianceRequest().GetApplyScanConfig().GetScheduledScan().GetScanSettings().ProfileRefs = []*central.ApplyComplianceScanConfigRequest_ProfileReference{
+	msg.GetComplianceRequest().GetApplyScanConfig().GetScheduledScan().GetScanSettings().ProfileRefs = []*central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference{
 		{Name: "good-tailored", Kind: central.ComplianceOperatorProfileV2_TAILORED_PROFILE},
 		{Name: "bad", Kind: central.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED},
 	}

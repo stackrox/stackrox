@@ -24,9 +24,9 @@ func TestStorageToCentralProfileKind(t *testing.T) {
 			expected: central.ComplianceOperatorProfileV2_TAILORED_PROFILE,
 		},
 		{
-			name:     "unspecified",
+			name:     "unspecified falls back to profile for backward compatibility",
 			input:    storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED,
-			expected: central.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED,
+			expected: central.ComplianceOperatorProfileV2_PROFILE,
 		},
 		{
 			name:     "unknown kind falls back to unspecified",

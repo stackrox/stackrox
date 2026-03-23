@@ -285,20 +285,26 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		return nil, errors.Errorf("Unable to find all profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
-	// Reject if any profile has unsupported operator kind (symmetric with Sensor: it would reject on receive).
+	// Validate profile kinds. UNSPECIFIED should not appear here because centralToStorageProfileKind
+	// normalises it to PROFILE at ingestion time, but we allow it through defensively —
+	// StorageToCentralProfileKind will map it to PROFILE. Truly unknown kinds are rejected.
 	for _, p := range returnedProfiles {
-		k := p.GetOperatorKind()
-		if k != storage.ComplianceOperatorProfileV2_PROFILE && k != storage.ComplianceOperatorProfileV2_TAILORED_PROFILE {
-			return nil, errors.Errorf("profile %q has unsupported operator kind %v (scan configuration %q)", p.GetName(), k, scanRequest.GetScanConfigName())
+		switch p.GetOperatorKind() {
+		case storage.ComplianceOperatorProfileV2_PROFILE, storage.ComplianceOperatorProfileV2_TAILORED_PROFILE:
+			// valid
+		case storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
+			log.Warnf("Profile %q in scan configuration %q has UNSPECIFIED operator kind; treating as PROFILE", p.GetName(), scanRequest.GetScanConfigName())
+		default:
+			return nil, errors.Errorf("profile %q has unsupported operator kind %v (scan configuration %q)", p.GetName(), p.GetOperatorKind(), scanRequest.GetScanConfigName())
 		}
 	}
 
 	// Build profile refs from the already-fetched profiles so Sensor can use the correct CO kind
 	// (Profile vs TailoredProfile) without needing to probe the k8s API.
-	profileRefs := make([]*central.ApplyComplianceScanConfigRequest_ProfileReference, 0, len(returnedProfiles))
+	profileRefs := make([]*central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference, 0, len(returnedProfiles))
 	storageProfileRefs := make([]*storage.ComplianceOperatorScanConfigurationV2_ProfileReference, 0, len(returnedProfiles))
 	for _, p := range returnedProfiles {
-		profileRefs = append(profileRefs, &central.ApplyComplianceScanConfigRequest_ProfileReference{
+		profileRefs = append(profileRefs, &central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference{
 			Name: p.GetName(),
 			Kind: internaltov2storage.StorageToCentralProfileKind(p.GetOperatorKind()),
 		})
