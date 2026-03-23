@@ -65,7 +65,7 @@ spec:
         - name: name
           value: slack-webhook-notification
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:69945a30c11387a766e3d0ae33991b68e865a290c09da1fea44f193d358926ba
+          value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:3eff579c511d6c5e846175920e8f184a87337e142bbc4c30107e76bda4a325cb
         - name: kind
           value: task
         resolver: bundles
@@ -79,7 +79,7 @@ spec:
         - name: name
           value: post-bigquery-metrics
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:728527ed22e3527c0b7fead4657d0e889d2506d32383351abdf93eb34b496a83
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:6d3297c7b231c086c8221087e4b315e422da4207823444a00faf411002523af0
         - name: kind
           value: task
         resolver: bundles
@@ -143,7 +143,7 @@ spec:
         - name: name
           value: git-clone-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:306b69e6db435ad4a7cf258b6219d9b998eb37da44f5e9ac882ac86a08109154
+          value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:2c388d28651457db60bb90287e7d8c3680303197196e4476878d98d81e8b6dc9
         - name: kind
           value: task
         resolver: bundles
@@ -162,7 +162,7 @@ spec:
         - name: name
           value: determine-image-tag
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:728527ed22e3527c0b7fead4657d0e889d2506d32383351abdf93eb34b496a83
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:6d3297c7b231c086c8221087e4b315e422da4207823444a00faf411002523af0
         - name: kind
           value: task
         resolver: bundles
@@ -176,7 +176,7 @@ spec:
         - name: name
           value: wait-for-image
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:728527ed22e3527c0b7fead4657d0e889d2506d32383351abdf93eb34b496a83
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:6d3297c7b231c086c8221087e4b315e422da4207823444a00faf411002523af0
         - name: kind
           value: task
         resolver: bundles
@@ -265,7 +265,7 @@ spec:
         - name: name
           value: create-snapshot-from-bundle
         - name: bundle
-          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:728527ed22e3527c0b7fead4657d0e889d2506d32383351abdf93eb34b496a83
+          value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:6d3297c7b231c086c8221087e4b315e422da4207823444a00faf411002523af0
         - name: kind
           value: task
         resolver: bundles

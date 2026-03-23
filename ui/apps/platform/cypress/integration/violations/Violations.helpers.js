@@ -7,7 +7,7 @@ import { readFileFromDownloads } from '../../helpers/file';
 export const alertsAlias = 'alerts';
 export const alertsCountAlias = 'alertscount';
 
-const routeMatcherMapForViolations = {
+export const routeMatcherMapForViolations = {
     [alertsAlias]: {
         method: 'GET',
         url: '/v1/alerts?query=*',

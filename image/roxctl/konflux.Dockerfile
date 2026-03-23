@@ -43,7 +43,7 @@ RUN dnf install -y \
     --setopt=install_weak_deps=False \
     --setopt=reposdir=/etc/yum.repos.d \
     --nodocs \
-    ca-certificates && \
+    ca-certificates openssl && \
     dnf clean all --installroot=/out/ && \
     rm -rf /out/var/cache/*
 

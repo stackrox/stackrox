@@ -63,9 +63,7 @@ export function FlowTable({
                         <Th>Entity</Th>
                         <Th>Direction</Th>
                         <Th>Port / protocol</Th>
-                        <Th>
-                            <span className="pf-v6-screen-reader">Row actions</span>
-                        </Th>
+                        <Th screenReaderText="Row actions" />
                     </Tr>
                 </Thead>
 

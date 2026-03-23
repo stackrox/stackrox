@@ -2,6 +2,7 @@ package fake
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -153,6 +154,7 @@ type WorkloadManager struct {
 	registeredHostConnections []manager.HostNetworkInfo
 	workload                  *Workload
 	originatorCache           *OriginatorCache
+	dockerSecretNamespaces    []string
 
 	// signals services
 	servicesInitialized  concurrency.Signal
@@ -311,7 +313,14 @@ func validateWorkload(workload *Workload) error {
 		return fmt.Errorf("incorrect probability value %.2f for 'openPortReuseProbability', "+
 			"rounding to %.2f", workload.NetworkWorkload.OpenPortReuseProbability, corrected)
 	}
-	// More validation checks can be added in the future
+	if workload.SecretWorkload.NumDockerCfgSecrets < 0 {
+		workload.SecretWorkload.NumDockerCfgSecrets = 0
+		return errors.New("negative numDockerCfgSecrets, clamped to 0")
+	}
+	if workload.SecretWorkload.NumOpaqueSecrets < 0 {
+		workload.SecretWorkload.NumOpaqueSecrets = 0
+		return errors.New("negative numOpaqueSecrets, clamped to 0")
+	}
 	return nil
 }
 
@@ -436,6 +445,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	}
 
 	objects = append(objects, w.getServices(w.workload.ServiceWorkload, w.getIDsForPrefix(servicePrefix))...)
+	objects = append(objects, w.getSecrets(w.workload.SecretWorkload, w.getIDsForPrefix(secretPrefix))...)
 	var npResources []*networkPolicyToBeManaged
 	networkPolicyIDs := w.getIDsForPrefix(networkPolicyPrefix)
 	for _, npWorkload := range w.workload.NetworkPolicyWorkload {
@@ -515,6 +525,11 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	for _, resource := range npResources {
 		w.wg.Add(1)
 		go w.manageNetworkPolicy(w.shutdownCtx, resource)
+	}
+
+	if sw := w.workload.SecretWorkload; sw.UpdateInterval > 0 {
+		w.wg.Add(1)
+		go w.manageSecrets(w.shutdownCtx, sw)
 	}
 
 	w.wg.Add(1)

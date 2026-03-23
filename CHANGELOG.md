@@ -18,8 +18,10 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
   roxctl's "central crs generate" supports specifying a maximum number of cluster registrations
   using the new parameter "--max-clusters".
 - ROX-24311: Detection and enforcement for pods/attach Kubernetes event.
+- ROX-33099: New Operator Helm Chart is now the only recommended way to install on non-OpenShift clusters.
 - ROX-33098 (Tech Preview): Effective path and Actual Path have been combined into a single File Path policy criterion.
 - ROX-33156 (Tech Preview): A new default policy category called "File Activity Monitoring" is now available.
+- ROX-33673: A new default policy has been added to detect missing egress NetworkPolicy associated with deployments. The policy is disabled by default.
 
 ### Removed Features
 

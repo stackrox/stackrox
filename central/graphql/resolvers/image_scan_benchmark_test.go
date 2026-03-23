@@ -3,9 +3,11 @@ package resolvers
 import (
 	"testing"
 
+	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/views/imagecomponentflat"
 	"github.com/stackrox/rox/central/views/imagecveflat"
 	imagesView "github.com/stackrox/rox/central/views/images"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -75,19 +77,36 @@ const (
 func BenchmarkImageResolver(b *testing.B) {
 	mockCtrl := gomock.NewController(b)
 	testDB := SetupTestPostgresConn(b)
-	resolver, schema := SetupTestResolver(b,
-		imagesView.NewImageView(testDB.DB),
-		CreateTestImageComponentV2Datastore(b, testDB, mockCtrl),
-		CreateTestImageCVEV2Datastore(b, testDB),
-		CreateTestImageV2Datastore(b, testDB, mockCtrl),
-		imagecveflat.NewCVEFlatView(testDB.DB),
-		imagecomponentflat.NewComponentFlatView(testDB.DB),
-	)
 	ctx := contextWithImagePerm(b, mockCtrl)
 
-	images := getTestImages(100)
-	for _, image := range images {
-		require.NoError(b, resolver.ImageDataStore.UpsertImage(ctx, image))
+	// TODO(ROX-30117): Remove conditional when FlattenImageData feature flag is removed.
+	var schema *graphql.Schema
+	if features.FlattenImageData.Enabled() {
+		resolver, s := SetupTestResolver(b,
+			imagesView.NewImageView(testDB.DB),
+			CreateTestImageComponentV2Datastore(b, testDB, mockCtrl),
+			CreateTestImageCVEV2Datastore(b, testDB),
+			CreateTestImageV2Datastore(b, testDB, mockCtrl),
+			imagecveflat.NewCVEFlatView(testDB.DB),
+			imagecomponentflat.NewComponentFlatView(testDB.DB),
+		)
+		schema = s
+		for _, image := range getTestImagesV2(100) {
+			require.NoError(b, resolver.ImageV2DataStore.UpsertImage(ctx, image))
+		}
+	} else {
+		resolver, s := SetupTestResolver(b,
+			imagesView.NewImageView(testDB.DB),
+			CreateTestImageComponentV2Datastore(b, testDB, mockCtrl),
+			CreateTestImageCVEV2Datastore(b, testDB),
+			CreateTestImageDatastore(b, testDB, mockCtrl),
+			imagecveflat.NewCVEFlatView(testDB.DB),
+			imagecomponentflat.NewComponentFlatView(testDB.DB),
+		)
+		schema = s
+		for _, image := range getTestImages(100) {
+			require.NoError(b, resolver.ImageDataStore.UpsertImage(ctx, image))
+		}
 	}
 
 	b.Run("GetImageComponentsInImageScanResolver", func(b *testing.B) {

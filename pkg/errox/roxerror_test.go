@@ -72,7 +72,7 @@ func TestCausedBy(t *testing.T) {
 		err := NotFound.CausedBy(cause)
 		assert.Equal(t, "not found: your fault", err.Error())
 		assert.ErrorIs(t, err, NotFound)
-		assert.NotErrorIs(t, err, cause)
+		assert.ErrorIs(t, err, cause)
 	}
 
 	{

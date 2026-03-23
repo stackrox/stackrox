@@ -197,7 +197,7 @@ jobs:
           cat pr-comment.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Add text report and links as PR comment
-        uses: mshick/add-pr-comment@v2
+        uses: mshick/add-pr-comment@v3
         with:
           message-id: performance-evaluation
           message-path: |

@@ -23,9 +23,8 @@ import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import { fetchAlert } from 'services/AlertsService';
 import { isDeploymentAlert, isNodeAlert, isResourceAlert } from 'types/alert.proto';
-import type { Alert } from 'types/alert.proto';
+import type { Alert, ViolationState } from 'types/alert.proto';
 import { getDateTime } from 'utils/dateUtils';
-import { VIOLATION_STATE_LABELS } from 'constants/violationStates';
 
 import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
 import DeploymentTabWithReadAccessForDeployment from './Deployment/DeploymentTabWithReadAccessForDeployment';
@@ -55,6 +54,13 @@ function getAlertEntityInfo(alert: Alert): { entityName: string; displayedResour
     }
     return { entityName: '', displayedResourceType: '' };
 }
+
+const violationStateLabels: Record<ViolationState, string> = {
+    ACTIVE: 'Active',
+    ATTEMPTED: 'Attempted',
+    RESOLVED: 'Resolved',
+    SNOOZED: 'Snoozed',
+} as const;
 
 function ViolationDetailsPage(): ReactElement {
     const isRouteEnabled = useIsRouteEnabled();
@@ -122,7 +128,7 @@ function ViolationDetailsPage(): ReactElement {
                 numLabels={2}
                 aria-label="Violation state and resolution"
             >
-                <Label>State: {VIOLATION_STATE_LABELS[alert.state]}</Label>
+                <Label>State: {violationStateLabels[alert.state]}</Label>
                 {alert.state === 'RESOLVED' && (
                     <Label>
                         Resolved on:{' '}
