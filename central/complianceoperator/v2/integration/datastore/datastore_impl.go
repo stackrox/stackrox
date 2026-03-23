@@ -57,7 +57,7 @@ func (ds *datastoreImpl) GetComplianceIntegrationsView(ctx context.Context, quer
 	}
 
 	var results []*IntegrationDetails
-	err = pgSearch.RunSelectRequestForSchemaFn[IntegrationDetails](ctx, ds.db, schema.ComplianceIntegrationsSchema, cloned, func(r *IntegrationDetails) error {
+	err := pgSearch.RunSelectRequestForSchemaFn[IntegrationDetails](ctx, ds.db, schema.ComplianceIntegrationsSchema, cloned, func(r *IntegrationDetails) error {
 		results = append(results, r)
 		return nil
 	})
