@@ -9,7 +9,6 @@ import (
 	ImageCVEDataStore "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -75,46 +74,33 @@ func (idl *imageCveV2LoaderImpl) FromID(ctx context.Context, id string) (*storag
 }
 
 // FromQuery loads a set of image cves that match a query.
-func (idl *imageCveV2LoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([]*storage.ImageCVEV2, error) {
-	results, err := idl.ds.Search(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	return idl.FromIDs(ctx, search.ResultsToIDs(results))
+// NOTE: image_cves_v2 table has been dropped by migration m_222_to_m_223.
+// CVE data is now stored in the normalized cves + component_cve_edges tables.
+// This loader returns empty results until the GraphQL layer is updated.
+func (idl *imageCveV2LoaderImpl) FromQuery(_ context.Context, _ *v1.Query) ([]*storage.ImageCVEV2, error) {
+	return nil, nil
 }
 
-func (idl *imageCveV2LoaderImpl) GetIDs(ctx context.Context, query *v1.Query) ([]string, error) {
-	results, err := idl.ds.Search(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	return search.ResultsToIDs(results), nil
+// GetIDs returns IDs matching a query.
+// NOTE: returns empty pending migration to normalized CVE table.
+func (idl *imageCveV2LoaderImpl) GetIDs(_ context.Context, _ *v1.Query) ([]string, error) {
+	return nil, nil
 }
 
-func (idl *imageCveV2LoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query) (int32, error) {
-	count, err := idl.ds.Count(ctx, query)
-	if err != nil {
-		return 0, err
-	}
-	return int32(count), nil
+// CountFromQuery returns count matching a query.
+// NOTE: returns 0 pending migration to normalized CVE table.
+func (idl *imageCveV2LoaderImpl) CountFromQuery(_ context.Context, _ *v1.Query) (int32, error) {
+	return 0, nil
 }
 
-func (idl *imageCveV2LoaderImpl) CountAll(ctx context.Context) (int32, error) {
-	count, err := idl.ds.Count(ctx, search.EmptyQuery())
-	return int32(count), err
+// CountAll returns total CVE count.
+// NOTE: returns 0 pending migration to normalized CVE table.
+func (idl *imageCveV2LoaderImpl) CountAll(_ context.Context) (int32, error) {
+	return 0, nil
 }
 
-func (idl *imageCveV2LoaderImpl) load(ctx context.Context, ids []string) ([]*storage.ImageCVEV2, error) {
+func (idl *imageCveV2LoaderImpl) load(_ context.Context, ids []string) ([]*storage.ImageCVEV2, error) {
 	cves, missing := idl.readAll(ids)
-	if len(missing) > 0 {
-		var err error
-		cves, err = idl.ds.GetBatch(ctx, collectMissing(ids, missing))
-		if err != nil {
-			return nil, err
-		}
-		idl.setAll(cves)
-		cves, missing = idl.readAll(ids)
-	}
 	if len(missing) > 0 {
 		missingIDs := make([]string, 0, len(missing))
 		for _, m := range missing {

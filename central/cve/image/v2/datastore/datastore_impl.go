@@ -4,10 +4,40 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 type datastoreImpl struct {
 	storage store.Store
+}
+
+// Search implements search.Searcher. Returns empty results because the legacy
+// image_cves_v2 table has been replaced by the normalized cves table.
+func (ds *datastoreImpl) Search(_ context.Context, _ *v1.Query) ([]pkgSearch.Result, error) {
+	return nil, nil
+}
+
+// Count implements search.Searcher. Returns 0 because the legacy
+// image_cves_v2 table has been replaced by the normalized cves table.
+func (ds *datastoreImpl) Count(_ context.Context, _ *v1.Query) (int, error) {
+	return 0, nil
+}
+
+// SearchImageCVEs returns empty results. The legacy image_cves_v2 table has been replaced.
+func (ds *datastoreImpl) SearchImageCVEs(_ context.Context, _ *v1.Query) ([]*v1.SearchResult, error) {
+	return nil, nil
+}
+
+// SearchRawImageCVEs returns empty results. The legacy image_cves_v2 table has been replaced.
+func (ds *datastoreImpl) SearchRawImageCVEs(_ context.Context, _ *v1.Query) ([]*storage.ImageCVEV2, error) {
+	return nil, nil
+}
+
+// GetBatch returns empty results. The legacy image_cves_v2 table has been replaced.
+func (ds *datastoreImpl) GetBatch(_ context.Context, _ []string) ([]*storage.ImageCVEV2, error) {
+	return nil, nil
 }
 
 // UpsertCVE inserts a CVE row if it doesn't exist (two-phase: insert then fetch).
