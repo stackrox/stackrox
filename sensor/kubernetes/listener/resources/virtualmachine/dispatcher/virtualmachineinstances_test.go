@@ -8,7 +8,7 @@ import (
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/virtualmachine"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	vmInfo "github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -113,7 +113,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), virtualmachine.UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -145,7 +145,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), virtualmachine.UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -169,7 +169,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), virtualmachine.UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -217,7 +217,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), virtualmachine.UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -253,7 +253,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), virtualmachine.UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -274,7 +274,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), virtualmachine.UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -310,7 +310,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						Namespace: vmiNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), virtualmachine.UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -363,7 +363,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 						VsockCid:    int32(vsockVal),
 						VsockCidSet: true,
 						State:       virtualMachineV1.VirtualMachine_RUNNING,
-						Facts:       getFactsForTest(s.T(), virtualmachine.UnknownGuestOS),
+						Facts:       getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -414,7 +414,7 @@ func newVirtualMachineInstanceWithOwnerKind(uid, name, namespace, owner, kind st
 }
 
 func newVirtualMachineInstance(uid, name, namespace, owner string, vsock *uint32, phase v1.VirtualMachineInstancePhase) *v1.VirtualMachineInstance {
-	return newVirtualMachineInstanceWithOwnerKind(uid, name, namespace, owner, virtualmachine.VirtualMachine.Kind, vsock, phase)
+	return newVirtualMachineInstanceWithOwnerKind(uid, name, namespace, owner, pkgVM.VirtualMachine.Kind, vsock, phase)
 }
 
 func toUnstructured(obj any) *unstructured.Unstructured {

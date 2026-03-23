@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/pkg/virtualmachine"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	sensorVirtualMachine "github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stretchr/testify/assert"
 )
@@ -116,13 +116,13 @@ func TestGetFacts(t *testing.T) {
 				CDRomDisks:  []string{"cd2", "cd1"},
 			},
 			expected: map[string]string{
-				virtualmachine.GuestOSKey:     "Red Hat Enterprise Linux",
-				virtualmachine.DescriptionKey: "test description",
-				virtualmachine.NodeNameKey:    "node-1",
-				virtualmachine.IPAddressesKey: "10.0.0.2, 10.0.0.1",
-				virtualmachine.ActivePodsKey:  "pod-2=node-b, pod-1=node-a",
-				virtualmachine.BootOrderKey:   "disk2=2, disk1=1",
-				virtualmachine.CDRomDisksKey:  "cd2, cd1",
+				pkgVM.GuestOSKey:     "Red Hat Enterprise Linux",
+				pkgVM.DescriptionKey: "test description",
+				pkgVM.NodeNameKey:    "node-1",
+				pkgVM.IPAddressesKey: "10.0.0.2, 10.0.0.1",
+				pkgVM.ActivePodsKey:  "pod-2=node-b, pod-1=node-a",
+				pkgVM.BootOrderKey:   "disk2=2, disk1=1",
+				pkgVM.CDRomDisksKey:  "cd2, cd1",
 			},
 		},
 		"should preserve boot order sequence": {
@@ -131,14 +131,14 @@ func TestGetFacts(t *testing.T) {
 				BootOrder: []string{"disk-b=1", "disk-a=1", "disk-c=2"},
 			},
 			expected: map[string]string{
-				virtualmachine.GuestOSKey:   "Red Hat Enterprise Linux",
-				virtualmachine.BootOrderKey: "disk-b=1, disk-a=1, disk-c=2",
+				pkgVM.GuestOSKey:   "Red Hat Enterprise Linux",
+				pkgVM.BootOrderKey: "disk-b=1, disk-a=1, disk-c=2",
 			},
 		},
 		"should return unknown guest os when optional data is missing": {
 			vm: &sensorVirtualMachine.Info{},
 			expected: map[string]string{
-				virtualmachine.GuestOSKey: virtualmachine.UnknownGuestOS,
+				pkgVM.GuestOSKey: pkgVM.UnknownGuestOS,
 			},
 		},
 	}
@@ -196,7 +196,7 @@ func TestCreateEvent(t *testing.T) {
 						VsockCid:    0,
 						VsockCidSet: false,
 						State:       virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:       getFactsForTest(t, virtualmachine.UnknownGuestOS),
+						Facts:       getFactsForTest(t, pkgVM.UnknownGuestOS),
 					},
 				},
 			},
@@ -226,7 +226,7 @@ func TestCreateEvent(t *testing.T) {
 						VsockCidSet: true,
 						State:       virtualMachineV1.VirtualMachine_RUNNING,
 						Facts: map[string]string{
-							virtualmachine.GuestOSKey: "Red Hat Enterprise Linux",
+							pkgVM.GuestOSKey: "Red Hat Enterprise Linux",
 						},
 					},
 				},
@@ -255,7 +255,7 @@ func TestCreateEvent(t *testing.T) {
 						VsockCid:    0,
 						VsockCidSet: false,
 						State:       virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:       getFactsForTest(t, virtualmachine.UnknownGuestOS),
+						Facts:       getFactsForTest(t, pkgVM.UnknownGuestOS),
 					},
 				},
 			},
@@ -285,7 +285,7 @@ func TestCreateEvent(t *testing.T) {
 						VsockCidSet: true,
 						State:       virtualMachineV1.VirtualMachine_RUNNING,
 						Facts: map[string]string{
-							virtualmachine.GuestOSKey: "Red Hat Enterprise Linux",
+							pkgVM.GuestOSKey: "Red Hat Enterprise Linux",
 						},
 					},
 				},
@@ -316,7 +316,7 @@ func TestCreateEvent(t *testing.T) {
 						VsockCidSet: true,
 						State:       virtualMachineV1.VirtualMachine_RUNNING,
 						Facts: map[string]string{
-							virtualmachine.GuestOSKey: "Red Hat Enterprise Linux",
+							pkgVM.GuestOSKey: "Red Hat Enterprise Linux",
 						},
 					},
 				},
@@ -345,7 +345,7 @@ func TestCreateEvent(t *testing.T) {
 						VsockCid:    0,
 						VsockCidSet: false,
 						State:       virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:       getFactsForTest(t, virtualmachine.UnknownGuestOS),
+						Facts:       getFactsForTest(t, pkgVM.UnknownGuestOS),
 					},
 				},
 			},
@@ -375,7 +375,7 @@ func TestCreateEvent(t *testing.T) {
 						VsockCidSet: true,
 						State:       virtualMachineV1.VirtualMachine_RUNNING,
 						Facts: map[string]string{
-							virtualmachine.GuestOSKey: "Red Hat Enterprise Linux",
+							pkgVM.GuestOSKey: "Red Hat Enterprise Linux",
 						},
 					},
 				},
@@ -392,6 +392,6 @@ func TestCreateEvent(t *testing.T) {
 
 func getFactsForTest(_ *testing.T, guestOS string) map[string]string {
 	return map[string]string{
-		virtualmachine.GuestOSKey: guestOS,
+		pkgVM.GuestOSKey: guestOS,
 	}
 }

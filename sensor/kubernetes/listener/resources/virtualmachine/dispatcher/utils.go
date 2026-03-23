@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
-	"github.com/stackrox/rox/pkg/virtualmachine"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	sensorVirtualMachine "github.com/stackrox/rox/sensor/common/virtualmachine"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -14,7 +14,7 @@ func getVirtualMachineOwnerReference(owners []metav1.OwnerReference) (*metav1.Ow
 	for _, ref := range owners {
 		// There should be only one VirtualMachine OwnerReference
 		// VirtualMachines and VirtualMachineInstances map 1:1
-		if ref.Kind == virtualmachine.VirtualMachine.Kind {
+		if ref.Kind == pkgVM.VirtualMachine.Kind {
 			return &ref, true
 		}
 	}
@@ -43,28 +43,28 @@ func getVirtualMachineVSockCID(vm *sensorVirtualMachine.Info) (int32, bool) {
 
 func getFacts(vm *sensorVirtualMachine.Info) map[string]string {
 	facts := map[string]string{
-		virtualmachine.GuestOSKey: virtualmachine.UnknownGuestOS,
+		pkgVM.GuestOSKey: pkgVM.UnknownGuestOS,
 	}
 	if vm.GuestOS != "" {
-		facts[virtualmachine.GuestOSKey] = vm.GuestOS
+		facts[pkgVM.GuestOSKey] = vm.GuestOS
 	}
 	if vm.Description != "" {
-		facts[virtualmachine.DescriptionKey] = vm.Description
+		facts[pkgVM.DescriptionKey] = vm.Description
 	}
 	if vm.NodeName != "" {
-		facts[virtualmachine.NodeNameKey] = vm.NodeName
+		facts[pkgVM.NodeNameKey] = vm.NodeName
 	}
 	if len(vm.IPAddresses) > 0 {
-		facts[virtualmachine.IPAddressesKey] = strings.Join(vm.IPAddresses, ", ")
+		facts[pkgVM.IPAddressesKey] = strings.Join(vm.IPAddresses, ", ")
 	}
 	if len(vm.ActivePods) > 0 {
-		facts[virtualmachine.ActivePodsKey] = strings.Join(vm.ActivePods, ", ")
+		facts[pkgVM.ActivePodsKey] = strings.Join(vm.ActivePods, ", ")
 	}
 	if len(vm.BootOrder) > 0 {
-		facts[virtualmachine.BootOrderKey] = strings.Join(vm.BootOrder, ", ")
+		facts[pkgVM.BootOrderKey] = strings.Join(vm.BootOrder, ", ")
 	}
 	if len(vm.CDRomDisks) > 0 {
-		facts[virtualmachine.CDRomDisksKey] = strings.Join(vm.CDRomDisks, ", ")
+		facts[pkgVM.CDRomDisksKey] = strings.Join(vm.CDRomDisks, ", ")
 	}
 	return facts
 }

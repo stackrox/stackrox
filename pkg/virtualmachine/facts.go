@@ -10,5 +10,7 @@ const (
 	NodeNameKey    = "nodeName"
 	BootOrderKey   = "bootOrder"
 	CDRomDisksKey  = "cdRomDisks"
+	// UnknownGuestOS is the user-facing default value for GuestOSKey when the
+	// guest OS has not been reported by the virtual machine instance.
 	UnknownGuestOS = "unknown"
 )
