@@ -85,7 +85,6 @@ func (e *endpointsStore) RecordTick() bool {
 			for _, status := range m2 {
 				status.recordTick()
 			}
-
 			e.reverseHistoricalEndpoints[deploymentID][endpoint].recordTick()
 			// Remove all historical entries that expired in this tick.
 			removed := e.removeFromHistoryIfExpired(deploymentID, endpoint)
