@@ -493,7 +493,8 @@ main-build-nodeps:
 		sensor/kubernetes \
 		sensor/upgrader \
 		compliance/virtualmachines/roxagent \
-		operator/stackrox-operator
+		operator/cmd
+	mv bin/linux_$(GOARCH)/cmd bin/linux_$(GOARCH)/stackrox-operator
 ifndef CI
 	CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
