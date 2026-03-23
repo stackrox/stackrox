@@ -1,6 +1,10 @@
 package utils
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
@@ -121,4 +125,53 @@ func EmbeddedVulnerabilityToImageCVEV2(imageID string, componentID string, index
 	}
 
 	return ret, nil
+}
+
+// ComputeCVEContentHash computes a SHA256 hash of the CVE content fields using
+// null-byte delimiters to prevent boundary-collision attacks.
+// The cvss_v3 score is formatted to 2 decimal places (e.g., "7.50"), or empty string if zero.
+// All other fields are UTF-8 strings.
+func ComputeCVEContentHash(cveName, source, severity string, cvssV3 float32, summary string) string {
+	var cvssV3Str string
+	if cvssV3 == 0.0 {
+		cvssV3Str = ""
+	} else {
+		cvssV3Str = fmt.Sprintf("%.2f", cvssV3)
+	}
+
+	input := cveName + "\x00" + source + "\x00" + severity + "\x00" + cvssV3Str + "\x00" + summary
+	hash := sha256.Sum256([]byte(input))
+	return hex.EncodeToString(hash[:])
+}
+
+// SourceToString converts a storage.Source enum to the canonical string used in
+// the CVE content hash and the cves.source column.
+func SourceToString(source storage.Source) string {
+	switch source {
+	case storage.Source_SOURCE_OSV:
+		return "OSV"
+	case storage.Source_SOURCE_NVD:
+		return "NVD"
+	case storage.Source_SOURCE_RED_HAT:
+		return "RED_HAT"
+	default:
+		return "UNKNOWN"
+	}
+}
+
+// SeverityToString converts a storage.VulnerabilitySeverity enum to the canonical
+// string used in the CVE content hash and the cves.severity column.
+func SeverityToString(severity storage.VulnerabilitySeverity) string {
+	switch severity {
+	case storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY:
+		return "CRITICAL"
+	case storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY:
+		return "HIGH"
+	case storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY:
+		return "MEDIUM"
+	case storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY:
+		return "LOW"
+	default:
+		return "UNKNOWN"
+	}
 }
