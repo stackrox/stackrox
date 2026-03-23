@@ -7,6 +7,7 @@ import (
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
+	pkgVM "github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -89,7 +90,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -122,7 +123,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -155,7 +156,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -176,7 +177,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						Namespace: vmNamespace,
 						ClusterId: clusterID,
 						State:     virtualMachineV1.VirtualMachine_STOPPED,
-						Facts:     getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:     getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -224,7 +225,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						State:       virtualMachineV1.VirtualMachine_RUNNING,
 						VsockCid:    int32(runningVSockCID),
 						VsockCidSet: true,
-						Facts:       getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:       getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),
@@ -260,7 +261,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 						State:       virtualMachineV1.VirtualMachine_RUNNING,
 						VsockCid:    int32(runningVSockCID),
 						VsockCidSet: true,
-						Facts:       getFactsForTest(s.T(), UnknownGuestOS),
+						Facts:       getFactsForTest(s.T(), pkgVM.UnknownGuestOS),
 					},
 				},
 			}),

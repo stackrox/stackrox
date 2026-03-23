@@ -43,28 +43,28 @@ func getVirtualMachineVSockCID(vm *sensorVirtualMachine.Info) (int32, bool) {
 
 func getFacts(vm *sensorVirtualMachine.Info) map[string]string {
 	facts := map[string]string{
-		GuestOSKey: UnknownGuestOS,
+		virtualmachine.GuestOSKey: virtualmachine.UnknownGuestOS,
 	}
 	if vm.GuestOS != "" {
-		facts[GuestOSKey] = vm.GuestOS
+		facts[virtualmachine.GuestOSKey] = vm.GuestOS
 	}
 	if vm.Description != "" {
-		facts[DescriptionKey] = vm.Description
+		facts[virtualmachine.DescriptionKey] = vm.Description
 	}
 	if vm.NodeName != "" {
-		facts[NodeNameKey] = vm.NodeName
+		facts[virtualmachine.NodeNameKey] = vm.NodeName
 	}
 	if len(vm.IPAddresses) > 0 {
-		facts[IPAddressesKey] = strings.Join(vm.IPAddresses, ", ")
+		facts[virtualmachine.IPAddressesKey] = strings.Join(vm.IPAddresses, ", ")
 	}
 	if len(vm.ActivePods) > 0 {
-		facts[ActivePodsKey] = strings.Join(vm.ActivePods, ", ")
+		facts[virtualmachine.ActivePodsKey] = strings.Join(vm.ActivePods, ", ")
 	}
 	if len(vm.BootOrder) > 0 {
-		facts[BootOrderKey] = strings.Join(vm.BootOrder, ", ")
+		facts[virtualmachine.BootOrderKey] = strings.Join(vm.BootOrder, ", ")
 	}
 	if len(vm.CDRomDisks) > 0 {
-		facts[CDRomDisksKey] = strings.Join(vm.CDRomDisks, ", ")
+		facts[virtualmachine.CDRomDisksKey] = strings.Join(vm.CDRomDisks, ", ")
 	}
 	return facts
 }
