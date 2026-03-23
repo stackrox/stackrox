@@ -43,9 +43,9 @@ func GetArray(vals chartutil.Values, path string) ([]any, error) {
 	return arr, nil
 }
 
-// SetValue sets a value at the given dot-separated path in vals.
+// CoalesceValue sets a value at the given dot-separated path in vals.
 // Creates intermediate maps as needed.
-func SetValue(vals chartutil.Values, path string, value any) error {
+func CoalesceValue(vals chartutil.Values, path string, value any) error {
 	update, err := helmUtil.ValuesForKVPair(path, value)
 	if err != nil {
 		return errors.Wrapf(err, "failed to build update for path %q", path)

@@ -82,10 +82,10 @@ func TestGetArray_MissingPath(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestSetValue_NewPath(t *testing.T) {
+func TestCoalesceValue_NewPath(t *testing.T) {
 	vals := chartutil.Values{}
 
-	err := SetValue(vals, "metadata.name", "test")
+	err := CoalesceValue(vals, "metadata.name", "test")
 	require.NoError(t, err)
 
 	result, err := GetString(vals, "metadata.name")
@@ -93,14 +93,14 @@ func TestSetValue_NewPath(t *testing.T) {
 	assert.Equal(t, "test", result)
 }
 
-func TestSetValue_OverwriteExisting(t *testing.T) {
+func TestCoalesceValue_OverwriteExisting(t *testing.T) {
 	vals := chartutil.Values{
 		"metadata": map[string]any{
 			"name": "old",
 		},
 	}
 
-	err := SetValue(vals, "metadata.name", "new")
+	err := CoalesceValue(vals, "metadata.name", "new")
 	require.NoError(t, err)
 
 	result, err := GetString(vals, "metadata.name")
@@ -108,10 +108,10 @@ func TestSetValue_OverwriteExisting(t *testing.T) {
 	assert.Equal(t, "new", result)
 }
 
-func TestSetValue_CreateIntermediateMaps(t *testing.T) {
+func TestCoalesceValue_CreateIntermediateMaps(t *testing.T) {
 	vals := chartutil.Values{}
 
-	err := SetValue(vals, "a.b.c.d", "value")
+	err := CoalesceValue(vals, "a.b.c.d", "value")
 	require.NoError(t, err)
 
 	result, err := GetString(vals, "a.b.c.d")
@@ -119,7 +119,7 @@ func TestSetValue_CreateIntermediateMaps(t *testing.T) {
 	assert.Equal(t, "value", result)
 }
 
-func TestSetValue_PreservesSiblings(t *testing.T) {
+func TestCoalesceValue_PreservesSiblings(t *testing.T) {
 	vals := chartutil.Values{
 		"metadata": map[string]any{
 			"name": "test",
@@ -129,7 +129,7 @@ func TestSetValue_PreservesSiblings(t *testing.T) {
 		},
 	}
 
-	err := SetValue(vals, "metadata.annotations.new", "added")
+	err := CoalesceValue(vals, "metadata.annotations.new", "added")
 	require.NoError(t, err)
 
 	// Verify existing value is preserved
@@ -157,7 +157,7 @@ func TestSetValue_DeepNesting(t *testing.T) {
 		},
 	}
 
-	err := SetValue(vals, "a.b.d", "new")
+	err := CoalesceValue(vals, "a.b.d", "new")
 	require.NoError(t, err)
 
 	// Verify original value preserved
@@ -171,7 +171,7 @@ func TestSetValue_DeepNesting(t *testing.T) {
 	assert.Equal(t, "new", new)
 }
 
-func TestSetValue_ThenRewriteStrings(t *testing.T) {
+func TestCoalesceValue_ThenRewriteStrings(t *testing.T) {
 	doc := chartutil.Values{
 		"metadata": map[string]any{
 			"name": "test",
@@ -182,7 +182,7 @@ func TestSetValue_ThenRewriteStrings(t *testing.T) {
 	}
 
 	// Step 1: SetValue to add a new field
-	err := SetValue(doc, "metadata.annotations.createdAt", "2024-01-01")
+	err := CoalesceValue(doc, "metadata.annotations.createdAt", "2024-01-01")
 	require.NoError(t, err)
 
 	// Debug: check type of metadata after SetValue

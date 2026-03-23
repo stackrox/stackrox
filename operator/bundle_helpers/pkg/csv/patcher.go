@@ -40,7 +40,7 @@ func GetRawName(doc chartutil.Values) (string, error) {
 // PatchCSV modifies the CSV document in-place according to options
 func PatchCSV(doc chartutil.Values, opts PatchOptions) error {
 	// Update createdAt timestamp
-	if err := values.SetValue(doc, "metadata.annotations.createdAt", time.Now().UTC().Format(time.RFC3339)); err != nil {
+	if err := values.CoalesceValue(doc, "metadata.annotations.createdAt", time.Now().UTC().Format(time.RFC3339)); err != nil {
 		return fmt.Errorf("failed to set createdAt: %w", err)
 	}
 
@@ -56,12 +56,12 @@ func PatchCSV(doc chartutil.Values, opts PatchOptions) error {
 	if err != nil {
 		return err
 	}
-	if err := values.SetValue(doc, "metadata.name", fmt.Sprintf("%s.v%s", rawName, opts.Version)); err != nil {
+	if err := values.CoalesceValue(doc, "metadata.name", fmt.Sprintf("%s.v%s", rawName, opts.Version)); err != nil {
 		return fmt.Errorf("failed to set metadata.name: %w", err)
 	}
 
 	// Update spec.version
-	if err := values.SetValue(doc, "spec.version", opts.Version); err != nil {
+	if err := values.CoalesceValue(doc, "spec.version", opts.Version); err != nil {
 		return fmt.Errorf("failed to set spec.version: %w", err)
 	}
 	spec, err := doc.Table("spec")
@@ -87,8 +87,8 @@ func PatchCSV(doc chartutil.Values, opts PatchOptions) error {
 		}
 	}
 
-	// Ensure metadata.labels is always a map; SetValue preserves any existing labels.
-	if err := values.SetValue(doc, "metadata.labels", map[string]any{}); err != nil {
+	// Ensure metadata.labels is always a map; CoalesceValue preserves any existing labels.
+	if err := values.CoalesceValue(doc, "metadata.labels", map[string]any{}); err != nil {
 		return fmt.Errorf("failed to initialize metadata.labels: %w", err)
 	}
 	// Add multi-arch labels
@@ -121,7 +121,7 @@ func PatchCSV(doc chartutil.Values, opts PatchOptions) error {
 
 	// Only set replaces if there is a replacement version
 	if replacedVersion != nil {
-		if err := values.SetValue(doc, "spec.replaces", fmt.Sprintf("%s.v%s", rawName, replacedVersion.String())); err != nil {
+		if err := values.CoalesceValue(doc, "spec.replaces", fmt.Sprintf("%s.v%s", rawName, replacedVersion.String())); err != nil {
 			return fmt.Errorf("failed to set spec.replaces: %w", err)
 		}
 	}
