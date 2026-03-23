@@ -309,7 +309,7 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		return nil, errors.Errorf("Unable to save scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
-	profileRefs := internaltov2storage.ScanConfigRefsToCentral(scanRequest.ProfileRefs)
+	profileRefs := internaltov2storage.ScanConfigRefsToCentral(scanRequest.GetProfileRefs())
 	for _, clusterID := range clusters {
 		// id for the request message to sensor
 		sensorRequestID := uuid.NewV4().String()
