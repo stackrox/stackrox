@@ -233,6 +233,39 @@ func (s *VirtualMachineV2DataStoreTestSuite) TestUpsertScan() {
 	s.Contains(err.Error(), "cannot upsert scan without a VM id")
 }
 
+func (s *VirtualMachineV2DataStoreTestSuite) TestEnsureVirtualMachineExists() {
+	vmID := uuid.NewTestUUID(1).String()
+	clusterID := uuid.NewV5FromNonUUIDs("cluster", "1").String()
+
+	// Creates a new minimal VM when it doesn't exist.
+	s.NoError(s.datastore.EnsureVirtualMachineExists(s.ctx, vmID, clusterID))
+
+	got, found, err := s.datastore.GetVirtualMachine(s.ctx, vmID)
+	s.NoError(err)
+	s.True(found)
+	s.Equal(vmID, got.GetId())
+	s.Equal(clusterID, got.GetClusterId())
+	s.Empty(got.GetName(), "minimal VM should have no name")
+
+	// Does NOT overwrite richer metadata on subsequent calls.
+	richVM := createTestVM(1)
+	richVM.Id = vmID
+	richVM.ClusterId = clusterID
+	s.NoError(s.datastore.UpsertVirtualMachine(s.ctx, richVM))
+
+	s.NoError(s.datastore.EnsureVirtualMachineExists(s.ctx, vmID, clusterID))
+
+	got, found, err = s.datastore.GetVirtualMachine(s.ctx, vmID)
+	s.NoError(err)
+	s.True(found)
+	s.Equal(richVM.GetName(), got.GetName(), "richer metadata must not be overwritten")
+
+	// Empty vmID returns an error.
+	err = s.datastore.EnsureVirtualMachineExists(s.ctx, "", clusterID)
+	s.Error(err)
+	s.Contains(err.Error(), "cannot ensure VM exists without an id")
+}
+
 // endregion Upsert tests
 
 // region Delete tests
