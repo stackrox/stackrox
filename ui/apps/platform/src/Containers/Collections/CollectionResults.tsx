@@ -2,18 +2,20 @@ import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import {
     Button,
+    Content,
     Divider,
     EmptyState,
     EmptyStateFooter,
-    EmptyStateHeader,
-    EmptyStateIcon,
     Flex,
     FlexItem,
+    PageSection,
     SearchInput,
     SelectOption,
     Skeleton,
-    Text,
     Title,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon, ListIcon, SyncAltIcon } from '@patternfly/react-icons';
 import ResourceIcon from 'Components/PatternFly/ResourceIcon';
@@ -27,13 +29,15 @@ import { parseConfigError } from './errorUtils';
 import type { CollectionConfigError } from './errorUtils';
 import type { SelectorEntityType } from './types';
 
+const COLLECTION_RESULTS_PAGE_SIZE = 20;
+
 function fetchMatchingDeployments(
     dryRunConfig: CollectionRequest,
     page: number,
     filterText: string,
     entity: SelectorEntityType
 ) {
-    const pageSize = 10;
+    const pageSize = COLLECTION_RESULTS_PAGE_SIZE;
     const query = { [entity]: filterText };
     const sortOption = {
         field: 'Deployment',
@@ -45,15 +49,15 @@ function fetchMatchingDeployments(
 
 function DeploymentSkeleton() {
     return (
-        <Flex className="pf-v5-u-mb-0">
+        <Flex className="pf-v6-u-mb-0">
             <FlexItem style={{ flex: '0 1 24px' }}>
                 <Skeleton />
             </FlexItem>
-            <FlexItem className="pf-v5-u-flex-grow-1">
-                <Skeleton className="pf-v5-u-mb-sm" fontSize="sm" />
+            <FlexItem className="pf-v6-u-flex-grow-1">
+                <Skeleton className="pf-v6-u-mb-sm" fontSize="sm" />
                 <Skeleton fontSize="sm" />
             </FlexItem>
-            <Divider component="div" className="pf-v5-u-mt-xs" />
+            <Divider component="div" className="pf-v6-u-mt-xs" />
         </Flex>
     );
 }
@@ -67,13 +71,13 @@ function DeploymentResult({ deployment }: { deployment: ListDeployment }) {
                 </FlexItem>
                 <FlexItem>
                     <div>{deployment.name}</div>
-                    <span className="pf-v5-u-color-300 pf-v5-u-font-size-xs">
+                    <span className="pf-v6-u-color-300 pf-v6-u-font-size-xs">
                         In &quot;{deployment.cluster} / {deployment.namespace}
                         &quot;
                     </span>
                 </FlexItem>
             </Flex>
-            <Divider className="pf-v5-u-mt-sm" />
+            <Divider className="pf-v6-u-mt-sm" />
         </>
     );
 }
@@ -108,7 +112,7 @@ function CollectionResults({
         isEndOfResults,
         isFetchingNextPage,
         isRefreshingResults,
-    } = usePaginatedQuery(queryFn, 10, {
+    } = usePaginatedQuery(queryFn, COLLECTION_RESULTS_PAGE_SIZE, {
         debounceRate: 800,
         manualFetch: true,
         dedupKeyFn: ({ id }) => id,
@@ -152,15 +156,7 @@ function CollectionResults({
 
     if (configError) {
         content = (
-            <EmptyState variant="xs">
-                <EmptyStateHeader
-                    icon={
-                        <EmptyStateIcon
-                            style={{ color: 'var(--pf-v5-global--danger-color--200)' }}
-                            icon={ExclamationCircleIcon}
-                        />
-                    }
-                />
+            <EmptyState icon={ExclamationCircleIcon} variant="xs">
                 <EmptyStateFooter>
                     <Flex
                         spaceItems={{ default: 'spaceItemsMd' }}
@@ -176,8 +172,7 @@ function CollectionResults({
         );
     } else if (!selectorRulesExist) {
         content = (
-            <EmptyState variant="xs">
-                <EmptyStateHeader icon={<EmptyStateIcon icon={ListIcon} />} />
+            <EmptyState icon={ListIcon} variant="xs">
                 <EmptyStateFooter>
                     <p>
                         Add selector rules or attach existing collections to view resource matches
@@ -187,11 +182,7 @@ function CollectionResults({
         );
     } else {
         content = (
-            <Flex
-                direction={{ default: 'column' }}
-                grow={{ default: 'grow' }}
-                className="pf-v5-u-mt-lg"
-            >
+            <Flex direction={{ default: 'column' }} grow={{ default: 'grow' }}>
                 {isRefreshingResults ? (
                     <>
                         {Array.from(Array(10).keys()).map((index: number) => (
@@ -205,21 +196,19 @@ function CollectionResults({
                                 <DeploymentResult key={deployment.id} deployment={deployment} />
                             ))
                         )}
-                        {!isEndOfResults ? (
-                            <Button
-                                variant="link"
-                                isInline
-                                className="pf-v5-u-text-align-center"
-                                isLoading={isFetchingNextPage}
-                                onClick={() => fetchNextPage(true)}
-                            >
-                                View more
-                            </Button>
-                        ) : (
-                            <span className="pf-v5-u-color-300 pf-v5-u-text-align-center pf-v5-u-font-size-sm">
-                                end of results
-                            </span>
-                        )}
+                        <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                            {!isEndOfResults ? (
+                                <Button
+                                    variant="link"
+                                    isLoading={isFetchingNextPage}
+                                    onClick={() => fetchNextPage(true)}
+                                >
+                                    View more
+                                </Button>
+                            ) : (
+                                <span className="pf-v6-u-color-300">end of results</span>
+                            )}
+                        </FlexItem>
                     </>
                 )}
             </Flex>
@@ -228,60 +217,65 @@ function CollectionResults({
 
     return (
         <>
-            <div className="pf-v5-u-p-lg pf-v5-u-display-flex pf-v5-u-align-items-center">
-                <div className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1">
-                    <Title headingLevel="h2">Collection results</Title>
-                    <Text>See a preview of current matches.</Text>
-                </div>
-                <Button
-                    variant="plain"
-                    onClick={refreshResults}
-                    title="Refresh results"
-                    isDisabled={isRefreshingResults}
-                >
-                    <SyncAltIcon />
-                </Button>
-                {headerContent}
-            </div>
+            <PageSection>
+                <Flex alignItems={{ default: 'alignItemsCenter' }}>
+                    <Flex direction={{ default: 'column' }} grow={{ default: 'grow' }}>
+                        <Title headingLevel="h2">Collection results</Title>
+                        <Content component="p">See a preview of current matches.</Content>
+                    </Flex>
+                    <FlexItem>
+                        <Button
+                            icon={<SyncAltIcon />}
+                            variant="plain"
+                            onClick={refreshResults}
+                            title="Refresh results"
+                            isDisabled={isRefreshingResults}
+                        />
+                    </FlexItem>
+                    {headerContent}
+                </Flex>
+            </PageSection>
             <Divider />
-            <div className="pf-v5-u-h-100 pf-v5-u-p-lg" style={{ overflow: 'auto' }}>
+            <PageSection style={{ overflow: 'auto' }}>
                 <Flex
-                    spaceItems={{ default: 'spaceItemsNone' }}
+                    spaceItems={{ default: 'spaceItemsMd' }}
                     alignItems={{ default: 'alignItemsStretch' }}
                     direction={{ default: 'column' }}
                 >
-                    <Flex spaceItems={{ default: 'spaceItemsNone' }}>
-                        <FlexItem>
-                            <SelectSingle
-                                id="entity-type-select"
-                                toggleAriaLabel="Select an entity type to filter the results by"
-                                value={selected}
-                                handleSelect={onRuleOptionSelect}
-                                isDisabled={false}
-                                isFullWidth={false}
-                            >
-                                <SelectOption value="Deployment">Deployment</SelectOption>
-                                <SelectOption value="Namespace">Namespace</SelectOption>
-                                <SelectOption value="Cluster">Cluster</SelectOption>
-                            </SelectSingle>
-                        </FlexItem>
-                        <div className="pf-v5-u-flex-grow-1 pf-v5-u-flex-basis-0">
-                            <SearchInput
-                                aria-label="Filter by name"
-                                placeholder="Filter by name"
-                                value={filterInput}
-                                onChange={onSearchInputChange}
-                                onSearch={() => setFilterValue(filterInput)}
-                                onClear={() => {
-                                    setFilterInput('');
-                                    setFilterValue('');
-                                }}
-                            />
-                        </div>
-                    </Flex>
+                    <Toolbar>
+                        <ToolbarContent rowWrap={{ default: 'nowrap' }}>
+                            <ToolbarItem>
+                                <SelectSingle
+                                    id="entity-type-select"
+                                    toggleAriaLabel="Select an entity type to filter the results by"
+                                    value={selected}
+                                    handleSelect={onRuleOptionSelect}
+                                    isDisabled={false}
+                                    isFullWidth={false}
+                                >
+                                    <SelectOption value="Deployment">Deployment</SelectOption>
+                                    <SelectOption value="Namespace">Namespace</SelectOption>
+                                    <SelectOption value="Cluster">Cluster</SelectOption>
+                                </SelectSingle>
+                            </ToolbarItem>
+                            <ToolbarItem>
+                                <SearchInput
+                                    aria-label="Filter by name"
+                                    placeholder="Filter by name"
+                                    value={filterInput}
+                                    onChange={onSearchInputChange}
+                                    onSearch={() => setFilterValue(filterInput)}
+                                    onClear={() => {
+                                        setFilterInput('');
+                                        setFilterValue('');
+                                    }}
+                                />
+                            </ToolbarItem>
+                        </ToolbarContent>
+                    </Toolbar>
                     {content}
                 </Flex>
-            </div>
+            </PageSection>
         </>
     );
 }

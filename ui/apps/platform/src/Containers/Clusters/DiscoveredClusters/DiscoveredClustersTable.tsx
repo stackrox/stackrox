@@ -40,7 +40,7 @@ function DiscoveredClustersTable({
     sourceNameMap,
 }: DiscoveredClustersTableProps): ReactElement {
     return (
-        <Table variant="compact" borders={false}>
+        <Table variant="compact">
             <Thead>
                 <Tr>
                     <Th width={25} sort={getSortParams(nameField)}>

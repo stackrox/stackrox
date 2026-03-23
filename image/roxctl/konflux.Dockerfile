@@ -26,15 +26,33 @@ RUN RACE=0 CGO_ENABLED=1 GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh 
     cp bin/linux_$(go env GOARCH)/roxctl image/bin/roxctl
 
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:5dc6ba426ccbeb3954ead6b015f36b4a2d22320e5b356b074198d08422464ed2
+FROM registry.access.redhat.com/ubi8/ubi-micro:latest@sha256:37552f11d3b39b3360f7be7c13f6a617e468f39be915cd4f8c8a8531ffc9d43d AS ubi-micro-base
 
-COPY --from=builder /go/src/github.com/stackrox/rox/app/image/bin/roxctl /usr/bin/roxctl
 
-RUN microdnf clean all && \
-    rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf /var/cache/dnf /var/cache/yum
+FROM registry.access.redhat.com/ubi8/ubi:latest@sha256:627867e53ad6846afba2dfbf5cef1d54c868a9025633ef0afd546278d4654eac AS package_installer
 
-COPY LICENSE /licenses/LICENSE
+# Copy ubi-micro base to /out/ to preserve its rpmdb
+COPY --from=ubi-micro-base / /out/
+
+# Install packages directly to /out/ using --installroot
+# Note: --setopt=reposdir=/etc/yum.repos.d instructs dnf to use repo configurations pointing to RPMs
+# prefetched by Hermeto/Cachi2, instead of installroot's default UBI repos.
+RUN dnf install -y \
+    --installroot=/out/ \
+    --releasever=8 \
+    --setopt=install_weak_deps=False \
+    --setopt=reposdir=/etc/yum.repos.d \
+    --nodocs \
+    ca-certificates openssl && \
+    dnf clean all --installroot=/out/ && \
+    rm -rf /out/var/cache/*
+
+COPY --from=builder /go/src/github.com/stackrox/rox/app/image/bin/roxctl /out/usr/bin/roxctl
+COPY LICENSE /out/licenses/LICENSE
+
+FROM ubi-micro-base
+
+COPY --from=package_installer /out/ /
 
 ARG BUILD_TAG
 

@@ -53,6 +53,10 @@ data:
         relabel_configs:
           - action: labelmap
             regex: __meta_kubernetes_node_label_(.+)
+{{- if .Values.cadvisorMetricRelabelConfigs }}
+        metric_relabel_configs:
+{{ toYaml .Values.cadvisorMetricRelabelConfigs | indent 10 }}
+{{- end }}
 
       - job_name: stackrox
         tls_config:

@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import {
     Button,
+    Content,
     Flex,
     Form,
     FormGroup,
     Tab,
     TabContent,
     Tabs,
-    Text,
     TextArea,
 } from '@patternfly/react-core';
 import { useFormik } from 'formik';
@@ -101,11 +101,11 @@ function ExceptionRequestForm({
         <>
             <Form
                 onSubmit={handleSubmit}
-                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"
+                className="pf-v6-u-display-flex pf-v6-u-flex-direction-column"
                 style={{ minHeight: 0 }}
             >
                 <Tabs
-                    className="pf-v5-u-flex-shrink-0"
+                    className="pf-v6-u-flex-shrink-0"
                     activeKey={activeKeyTab}
                     onSelect={(_, tab) => setActiveKeyTab(tab)}
                 >
@@ -114,14 +114,14 @@ function ExceptionRequestForm({
                 </Tabs>
                 <TabContent
                     id="options"
-                    className="pf-v5-u-flex-1"
+                    className="pf-v6-u-flex-1"
                     hidden={activeKeyTab !== 'options'}
                 >
                     <Flex
                         direction={{ default: 'column' }}
                         spaceItems={{ default: 'spaceItemsLg' }}
                     >
-                        <Text>{formHeaderText}</Text>
+                        <Content component="p">{formHeaderText}</Content>
                         {showExpiryField && <ExpiryField formik={formik} />}
                         {showScopeField && (
                             <ExceptionScopeField
@@ -145,7 +145,7 @@ function ExceptionRequestForm({
                 </TabContent>
                 <TabContent
                     id="cves"
-                    className="pf-v5-u-flex-1"
+                    className="pf-v6-u-flex-1"
                     hidden={activeKeyTab !== 'cves'}
                     style={{ overflowY: 'auto' }}
                 >

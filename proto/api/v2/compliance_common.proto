@@ -108,7 +108,7 @@ message ComplianceProfileCheckRequest {
   RawQuery query = 3;
 }
 
-// Next Tag: 8
+// Next Tag: 9
 message ComplianceProfileSummary {
   string name = 1;
   string product_type = 2;
@@ -117,4 +117,16 @@ message ComplianceProfileSummary {
   int32 rule_count = 5;
   string profile_version = 6;
   repeated ComplianceBenchmark standards = 7;
+  // OperatorKind is the kind of the Compliance Operator resource that this
+  // `ComplianceProfileSummary` was sourced from. ACS represents both Compliance
+  // Operator `Profiles` and `TailoredProfiles` as compliance profiles.
+  enum OperatorKind {
+    // The kind is unspecified.
+    OPERATOR_KIND_UNSPECIFIED = 0;
+    // The kind is `Profile`.
+    PROFILE = 1;
+    // The kind is `TailoredProfile`.
+    TAILORED_PROFILE = 2;
+  }
+  OperatorKind operator_kind = 8;
 }

@@ -205,19 +205,15 @@ function PoliciesTable({
             <PageSection isFilled id="policies-table">
                 <Toolbar>
                     <ToolbarContent>
-                        <ToolbarItem className="pf-v5-u-w-100">
-                            <CompoundSearchFilter
-                                config={searchFilterConfig}
-                                searchFilter={searchFilter}
-                                onSearch={(payload) => {
-                                    handleChangeSearchFilter(
-                                        updateSearchFilter(searchFilter, payload)
-                                    );
-                                }}
-                                defaultEntity={'Policy'}
-                            />
-                        </ToolbarItem>
-                        <ToolbarItem className="pf-v5-u-w-100">
+                        <CompoundSearchFilter
+                            config={searchFilterConfig}
+                            searchFilter={searchFilter}
+                            onSearch={(payload) => {
+                                handleChangeSearchFilter(updateSearchFilter(searchFilter, payload));
+                            }}
+                            defaultEntity={'Policy'}
+                        />
+                        <ToolbarItem className="pf-v6-u-w-100">
                             <CompoundSearchFilterLabels
                                 attributesSeparateFromConfig={[]}
                                 config={searchFilterConfig}
@@ -225,11 +221,7 @@ function PoliciesTable({
                                 searchFilter={searchFilter}
                             />
                         </ToolbarItem>
-                        <ToolbarGroup
-                            align={{ default: 'alignRight' }}
-                            spaceItems={{ default: 'spaceItemsSm' }}
-                            variant="button-group"
-                        >
+                        <ToolbarGroup align={{ default: 'alignEnd' }} variant="action-group">
                             {hasWriteAccessForPolicy && (
                                 <ToolbarItem>
                                     <MenuDropdown
@@ -319,26 +311,23 @@ function PoliciesTable({
                                     </Button>
                                 </Tooltip>
                             </ToolbarItem>
+                            <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
+                                <Pagination
+                                    isCompact
+                                    isDisabled
+                                    itemCount={policies.length}
+                                    page={1}
+                                    perPage={policies.length}
+                                />
+                            </ToolbarItem>
                         </ToolbarGroup>
-                        <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
-                            <Pagination
-                                isCompact
-                                isDisabled
-                                itemCount={policies.length}
-                                page={1}
-                                perPage={policies.length}
-                            />
-                        </ToolbarItem>
                     </ToolbarContent>
                 </Toolbar>
-                <Divider component="div" />
                 <div style={{ overflowX: 'auto' }}>
                     <Table isStickyHeader aria-label="Policies table" data-testid="policies-table">
                         <Thead>
                             <Tr>
-                                <Th>
-                                    <span className="pf-v5-screen-reader">Row expansion</span>
-                                </Th>
+                                <Th screenReaderText="Row expansion" />
                                 <Th
                                     select={{
                                         onSelect: onSelectAll,
@@ -390,9 +379,7 @@ function PoliciesTable({
                                 <Th modifier="wrap" sort={getSortParams('Lifecycle')}>
                                     Lifecycle
                                 </Th>
-                                <Th>
-                                    <span className="pf-v5-screen-reader">Row actions</span>
-                                </Th>
+                                <Th screenReaderText="Row actions" />
                             </Tr>
                         </Thead>
                         <TbodyUnified
@@ -475,15 +462,14 @@ function PoliciesTable({
                                         : [exportPolicyAction, saveAsCustomResourceActionItem];
                                     const rowIndex = rowIdToIndex[id];
                                     return (
-                                        <Tbody
-                                            key={id}
-                                            style={{
-                                                borderBottom:
-                                                    '1px solid var(--pf-v5-c-table--BorderColor)',
-                                            }}
-                                            isExpanded={isExpanded}
-                                        >
-                                            <Tr>
+                                        <Tbody key={id} isExpanded={isExpanded}>
+                                            <Tr
+                                                style={
+                                                    isExpanded
+                                                        ? { borderBottom: 'none' }
+                                                        : undefined
+                                                }
+                                            >
                                                 <Td
                                                     expand={{
                                                         rowIndex,
@@ -520,7 +506,7 @@ function PoliciesTable({
                                                                         key={
                                                                             notifierCountWithLabelString
                                                                         }
-                                                                        className="pf-v5-u-text-nowrap"
+                                                                        className="pf-v6-u-text-nowrap"
                                                                     >
                                                                         {
                                                                             notifierCountWithLabelString
@@ -538,7 +524,14 @@ function PoliciesTable({
                                                     {formatLifecycleStages(lifecycleStages)}
                                                 </Td>
                                                 <Td isActionCell>
-                                                    <ActionsColumn items={actionItems} />
+                                                    <ActionsColumn
+                                                        items={actionItems}
+                                                        popperProps={{
+                                                            position: 'end',
+                                                            appendTo:
+                                                                document.querySelector('main'),
+                                                        }}
+                                                    />
                                                 </Td>
                                             </Tr>
                                             <Tr isExpanded={isExpanded}>
@@ -607,7 +600,7 @@ function PoliciesTable({
                     <FlexItem>
                         <strong>Important</strong>: If you are committing the saved custom resource
                         to a source control repository, replace the policy name in the{' '}
-                        <code className="pf-v5-u-font-family-monospace">policyName</code> field to
+                        <code className="pf-v6-u-font-family-monospace">policyName</code> field to
                         avoid overwriting existing policies.
                     </FlexItem>
                 </Flex>

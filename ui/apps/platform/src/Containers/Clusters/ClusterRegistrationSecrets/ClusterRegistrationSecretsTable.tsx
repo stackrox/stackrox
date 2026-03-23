@@ -27,9 +27,7 @@ function ClusterRegistrationSecretsTable({
                     <Th>Created at</Th>
                     <Th>Expires at</Th>
                     {hasWriteAccessForClusterRegistrationSecrets && (
-                        <Th>
-                            <span className="pf-v5-screen-reader">Row actions</span>
-                        </Th>
+                        <Th screenReaderText="Row actions" />
                     )}
                 </Tr>
             </Thead>

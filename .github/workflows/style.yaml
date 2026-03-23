@@ -44,7 +44,7 @@ jobs:
     - name: Override GOTOOLCHAIN
       run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version-file: operator/bundle_helpers/.python-version
 
@@ -135,7 +135,7 @@ jobs:
       - name: Override GOTOOLCHAIN
         run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: ui/package.json
 

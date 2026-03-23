@@ -319,3 +319,8 @@ $ make uninstall
 
 The above targets use `kuttl` internally, so if something goes wrong you may find
 [this guide](tests/TROUBLESHOOTING_E2E_TESTS.md) useful.
+
+## Install the operator using Helm chart
+
+1. Generate a chart using `./hack/generate-chart.sh {opensource|development_build|rhacs}`
+2. Install the operator using for example: `helm install --create-namespace --namespace stackrox-operator-system stackrox-operator ./dist/chart`

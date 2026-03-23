@@ -1,6 +1,6 @@
 import scopeSelectors from '../../helpers/scopeSelectors';
 
-const clusterPageSelector = `#main-page-container:has('a.pf-v5-c-breadcrumb__link:contains("Clusters")')`;
+const clusterPageSelector = `#main-page-container:has('a.pf-v6-c-breadcrumb__link:contains("Clusters")')`;
 
 export const selectors = {
     clusters: {
@@ -8,7 +8,7 @@ export const selectors = {
         tableDataCell: '.rt-tr-group:not(.hidden) .rt-td:not(:first-child):not(.hidden)',
     },
     clusterForm: {
-        nameInput: `.pf-v5-c-form__group-label:contains("Cluster name") + .pf-v5-c-form__group-control input`,
+        nameInput: `.pf-v6-c-form__group-label:contains("Cluster name") + .pf-v6-c-form__group-control input`,
     },
     clusterHealth: scopeSelectors(clusterPageSelector, {
         clusterStatus: '[data-testid="clusterStatus"]',

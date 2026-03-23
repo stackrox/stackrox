@@ -15,7 +15,7 @@ import (
 type dummy struct {
 	Kind       string    `json:"kind,omitempty"`
 	APIVersion string    `json:"apiVersion,omitempty"`
-	Spec       DummySpec `json:"spec,omitempty"`
+	Spec       DummySpec `json:"spec,omitzero"`
 }
 
 type DummySpec struct {

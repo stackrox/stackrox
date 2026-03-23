@@ -3,11 +3,9 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
-    Divider,
     PageSection,
     Skeleton,
     Tab,
-    TabContent,
     Tabs,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
@@ -43,7 +41,6 @@ const clusterMetadataQuery = gql`
     }
 `;
 
-// TODO - Update for PF5
 function ClusterPage() {
     const { clusterId } = useParams() as { clusterId: string };
 
@@ -64,7 +61,7 @@ function ClusterPage() {
     return (
         <>
             <PageTitle title={`Platform CVEs - Cluster ${clusterName}`} />
-            <PageSection variant="light" className="pf-v5-u-py-md">
+            <PageSection type="breadcrumb">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={platformCvesClusterOverviewPath}>
                         Clusters
@@ -76,59 +73,48 @@ function ClusterPage() {
                     </BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
-            <Divider component="div" />
             {error ? (
-                <PageSection variant="light">
+                <PageSection hasBodyWrapper={false}>
                     <Bullseye>
                         <EmptyStateTemplate
                             title={getAxiosErrorMessage(error)}
                             headingLevel="h2"
                             icon={ExclamationCircleIcon}
-                            iconClassName="pf-v5-u-danger-color-100"
+                            status="danger"
                         />
                     </Bullseye>
                 </PageSection>
             ) : (
                 <>
-                    <PageSection variant="light">
+                    <PageSection hasBodyWrapper={false}>
                         <ClusterPageHeader data={data?.cluster} />
                     </PageSection>
-                    <PageSection padding={{ default: 'noPadding' }}>
+                    <PageSection type="tabs">
                         <Tabs
                             activeKey={activeTabKey}
                             onSelect={(e, key) => {
                                 setActiveTabKey(key);
                                 // pagination.setPage(1);
                             }}
-                            className="pf-v5-u-pl-md pf-v5-u-background-color-100"
+                            usePageInsets
+                            mountOnEnter
+                            unmountOnExit
                         >
                             <Tab
                                 eventKey={vulnTabKey}
                                 tabContentId={idVulnerabilities}
                                 title={vulnTabKey}
-                            />
+                            >
+                                <ClusterPageVulnerabilities clusterId={clusterId} />
+                            </Tab>
                             <Tab
                                 eventKey={detailTabKey}
                                 tabContentId={idDetails}
                                 title={detailTabKey}
-                            />
-                        </Tabs>
-                    </PageSection>
-                    <PageSection
-                        isFilled
-                        padding={{ default: 'noPadding' }}
-                        className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"
-                    >
-                        {activeTabKey === vulnTabKey && (
-                            <TabContent id={idVulnerabilities}>
-                                <ClusterPageVulnerabilities clusterId={clusterId} />
-                            </TabContent>
-                        )}
-                        {activeTabKey === detailTabKey && (
-                            <TabContent id={idDetails}>
+                            >
                                 <ClusterPageDetails clusterId={clusterId} />
-                            </TabContent>
-                        )}
+                            </Tab>
+                        </Tabs>
                     </PageSection>
                 </>
             )}

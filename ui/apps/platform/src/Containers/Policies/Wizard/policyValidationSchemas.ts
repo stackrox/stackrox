@@ -201,13 +201,13 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
                     (scope) =>
                         Boolean(
                             scope?.cluster.trim() ||
-                                scope?.clusterLabel?.key.trim() ||
-                                scope?.clusterLabel?.value.trim() ||
-                                scope?.namespace.trim() ||
-                                scope?.label?.key.trim() ||
-                                scope?.label?.value.trim() ||
-                                scope?.namespaceLabel?.key.trim() ||
-                                scope?.namespaceLabel?.value.trim()
+                            scope?.clusterLabel?.key.trim() ||
+                            scope?.clusterLabel?.value.trim() ||
+                            scope?.namespace.trim() ||
+                            scope?.label?.key.trim() ||
+                            scope?.label?.value.trim() ||
+                            scope?.namespaceLabel?.key.trim() ||
+                            scope?.namespaceLabel?.value.trim()
                         )
                 )
         )
@@ -232,10 +232,10 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
                     (value) =>
                         Boolean(
                             value?.name.trim() ||
-                                value?.scope?.cluster.trim() ||
-                                value?.scope?.namespace.trim() ||
-                                value?.scope?.label?.key.trim() ||
-                                value?.scope?.label?.value.trim()
+                            value?.scope?.cluster.trim() ||
+                            value?.scope?.namespace.trim() ||
+                            value?.scope?.label?.key.trim() ||
+                            value?.scope?.label?.value.trim()
                         )
                 )
         )

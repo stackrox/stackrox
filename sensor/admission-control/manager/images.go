@@ -28,6 +28,7 @@ type imageCacheEntry struct {
 
 func (m *manager) getCachedImage(img *storage.ContainerImage, s *state) *storage.Image {
 	if img.GetId() == "" {
+		observeCacheSkip()
 		return nil
 	}
 

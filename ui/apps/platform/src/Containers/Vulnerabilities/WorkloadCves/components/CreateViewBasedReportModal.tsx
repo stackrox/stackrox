@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Button, Flex, FlexItem, Modal } from '@patternfly/react-core';
+import { Alert, Button, Flex, FlexItem } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import { Link } from 'react-router-dom';
 
 import { runViewBasedReport } from 'services/ReportsService';
@@ -110,7 +111,7 @@ function CreateViewBasedReportModal({
                         variant="success"
                         isInline
                         title="Report generation started successfully"
-                        className="pf-v5-u-w-100"
+                        className="pf-v6-u-w-100"
                         component="p"
                     >
                         {message.reportID && (
@@ -149,7 +150,7 @@ function CreateViewBasedReportModal({
                         variant="danger"
                         isInline
                         title={message.value}
-                        className="pf-v5-u-w-100"
+                        className="pf-v6-u-w-100"
                         component="p"
                     />
                 )}

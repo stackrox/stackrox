@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const { execSync } = require('child_process');
 const { DefinePlugin } = require('webpack');
 const { ConsoleRemotePlugin } = require('@openshift-console/dynamic-plugin-sdk-webpack');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
@@ -7,6 +8,28 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const acsRootBaseUrl = '/acs';
 
 const isProd = process.env.NODE_ENV === 'production';
+
+/*
+ * Get the product version from the make tag command and convert it to valid semver format
+ * e.g., "4.11.x-363-gbff801aa00-dirty" -> "4.11.0-363-gbff801aa00-dirty"
+ * Note: replacing the .x with .0 is acceptable, as development will almost always be done
+ * against the upcoming '0' z-stream.
+ *
+ * Production builds will get a clean x.y.z version instead
+ */
+function getProductVersion() {
+    const repositoryRoot = path.resolve(__dirname, '../../..');
+    const rawVersion = execSync('make --no-print-directory tag', {
+        cwd: repositoryRoot,
+        encoding: 'utf-8',
+    }).trim();
+    const version = rawVersion.replace(/\.x/, '.0');
+
+    // eslint-disable-next-line no-console
+    console.warn(`Product version: ${version}`);
+
+    return version;
+}
 
 /*
  * Alias all top level directories and files under `/src/` so that we can import them in our code
@@ -96,7 +119,7 @@ const config = {
             validateSharedModules: false,
             pluginMetadata: {
                 name: 'advanced-cluster-security',
-                version: '0.0.1',
+                version: getProductVersion(),
                 displayName: 'Red Hat Advanced Cluster Security for OpenShift',
                 description: 'OCP Console Plugin for Advanced Cluster Security',
                 exposedModules: {

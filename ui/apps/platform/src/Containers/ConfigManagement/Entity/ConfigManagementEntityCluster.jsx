@@ -12,7 +12,6 @@ import Tab from 'Components/Tab';
 import { entityComponentDefaultProps, entityComponentPropTypes } from 'constants/entityPageProps';
 import searchContext from 'Containers/searchContext';
 import isGQLLoading from 'utils/gqlLoading';
-import getSubListFromEntity from 'utils/getSubListFromEntity';
 import queryService from 'utils/queryService';
 
 import { getConfigMgmtCountQuery } from '../ConfigMgmt.utils';
@@ -20,6 +19,7 @@ import EntityList from '../List/EntityList';
 import getControlsWithStatus from '../List/utilities/getControlsWithStatus';
 import NodesWithFailedControls from './widgets/NodesWithFailedControls';
 import DeploymentsWithFailedPolicies from './widgets/DeploymentsWithFailedPolicies';
+import getSubListFromEntity from './getSubListFromEntity';
 
 const ConfigManagementEntityCluster = ({
     id,

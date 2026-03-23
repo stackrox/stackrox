@@ -91,6 +91,8 @@
     --alert-900: hsla(4, 45%, 98%, 1);
 }
 
-.theme-dark input[type='checkbox'] {
-    filter: invert(0.3);
+/* SVG logo color overrides for dark theme */
+/* Default: Convert text elements to white while preserving brand colors and structural elements */
+.theme-dark svg .text {
+    fill: #FFFFFF !important;
 }

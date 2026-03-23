@@ -63,10 +63,10 @@ message EmbeddedVirtualMachineScanComponent {
   string name = 1;
   string version = 2;
   oneof set_top_cvss {
-    float top_cvss = 3;
+    float top_cvss = 3; // @gotags: hash:"ignore"
   }
-  float risk_score = 4;
-  repeated VirtualMachineVulnerability vulnerabilities = 5;
+  float risk_score = 4; // @gotags: hash:"ignore"
+  repeated VirtualMachineVulnerability vulnerabilities = 5; // @gotags: hash:"set"
   SourceType source = 6;
   enum Note {
     UNSPECIFIED = 0;
@@ -96,7 +96,7 @@ message VirtualMachineCVEInfo {
   // This indicates the timestamp when the cve was first published in the cve feeds.
   google.protobuf.Timestamp published_on = 4;
   // Time when the CVE was first seen in the system.
-  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp created_at = 5; // @gotags: hash:"ignore"
   google.protobuf.Timestamp last_modified = 6;
   repeated Reference references = 7;
 

@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -60,11 +61,6 @@ type imagePartsAsSlice struct {
 	cvesV2       []*storage.ImageCVEV2
 }
 
-type timeFields struct {
-	createdAt            time.Time
-	firstImageOccurrence time.Time
-}
-
 // TODO(ROX-28222): Refactor logic operating on other tables out and up to the datastore layer.
 
 // New returns a new Store instance using the provided sql instance.
@@ -88,33 +84,20 @@ func (s *storeImpl) insertIntoImages(
 	ctx context.Context,
 	tx *postgres.Tx, parts *imagePartsAsSlice,
 	metadataUpdated, scanUpdated bool,
-	iTime time.Time,
+	iTimestamp *timestamppb.Timestamp,
 ) error {
-	// First Image Occurrence and Created At are set based on the CVE itself, not the CVE ID
-	// within the image.  Since a CVE can occur multiple times within an image we can grab
-	// those times for the incoming data and set the times appropriately.  We will later go through the
+	// First Image Occurrence is set based on the CVE itself, not the CVE ID
+	// within the image. Since a CVE can occur multiple times within an image we can grab
+	// the FirstImageOccurrence for the incoming data and set it appropriately. We will later go through the
 	// existing CVEs to make further adjustments if necessary to make sure we do not overwrite
-	// the times of previous occurrences.
-	cveTimeMap := make(map[string]*timeFields)
+	// the FirstImageOccurrence of previous occurrences.
+	cveTimeMap := make(map[string]*timestamppb.Timestamp)
 	for _, cve := range parts.cvesV2 {
-		if val, ok := cveTimeMap[cve.GetCveBaseInfo().GetCve()]; ok {
-			if cve.GetCveBaseInfo().GetCreatedAt() != nil && val.createdAt.After(cve.GetCveBaseInfo().GetCreatedAt().AsTime()) {
-				val.createdAt = cve.GetCveBaseInfo().GetCreatedAt().AsTime()
-			}
-			if cve.GetFirstImageOccurrence() != nil && val.firstImageOccurrence.After(cve.GetFirstImageOccurrence().AsTime()) {
-				val.firstImageOccurrence = cve.GetFirstImageOccurrence().AsTime()
-			}
-		} else {
-			if cve.GetFirstImageOccurrence() == nil {
-				cve.FirstImageOccurrence = timestamppb.New(iTime)
-			}
-			if cve.GetCveBaseInfo().GetCreatedAt() == nil {
-				cve.GetCveBaseInfo().CreatedAt = timestamppb.New(iTime)
-			}
-			cveTimeMap[cve.GetCveBaseInfo().GetCve()] = &timeFields{
-				createdAt:            cve.GetCveBaseInfo().GetCreatedAt().AsTime(),
-				firstImageOccurrence: cve.GetFirstImageOccurrence().AsTime(),
-			}
+		if cve.GetFirstImageOccurrence() == nil {
+			cve.FirstImageOccurrence = iTimestamp
+		}
+		if val, ok := cveTimeMap[cve.GetCveBaseInfo().GetCve()]; !ok || protoutils.After(val, cve.GetFirstImageOccurrence()) {
+			cveTimeMap[cve.GetCveBaseInfo().GetCve()] = cve.GetFirstImageOccurrence()
 		}
 	}
 
@@ -142,16 +125,13 @@ func (s *storeImpl) insertIntoImages(
 		}
 	}
 
-	// Update CVE times based on existing CVEs
+	// Update FirstImageOccurrence based on existing CVEs to preserve earliest occurrence
 	for _, cve := range existingCVEs {
 		// If the existing CVE is not already in the map that implies it no longer exists for this image and
 		// the CVE will be removed.
 		if val, ok := cveTimeMap[cve.GetCve()]; ok {
-			if cve.GetFirstSystemOccurrence() != nil && val.createdAt.After(cve.GetFirstSystemOccurrence().AsTime()) {
-				val.createdAt = cve.GetFirstSystemOccurrence().AsTime()
-			}
-			if cve.GetFirstImageOccurrence() != nil && val.firstImageOccurrence.After(cve.GetFirstImageOccurrence().AsTime()) {
-				val.firstImageOccurrence = cve.GetFirstImageOccurrence().AsTime()
+			if cve.GetFirstImageOccurrence() != nil && protoutils.After(val, cve.GetFirstImageOccurrence()) {
+				cveTimeMap[cve.GetCve()] = cve.GetFirstImageOccurrence()
 			}
 		}
 	}
@@ -238,7 +218,7 @@ func (s *storeImpl) insertIntoImages(
 		return err
 	}
 
-	return copyFromImageComponentV2Cves(ctx, tx, iTime, cveTimeMap, parts.cvesV2...)
+	return copyFromImageComponentV2Cves(ctx, tx, iTimestamp, cveTimeMap, parts.cvesV2...)
 }
 
 func getPartsAsSlice(parts common.ImagePartsV2) *imagePartsAsSlice {
@@ -335,7 +315,7 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 	return nil
 }
 
-func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTime time.Time, cveTimeMap map[string]*timeFields, objs ...*storage.ImageCVEV2) error {
+func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTimestamp *timestamppb.Timestamp, cveTimeMap map[string]*timestamppb.Timestamp, objs ...*storage.ImageCVEV2) error {
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -365,17 +345,17 @@ func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTime ti
 	}
 
 	for idx, obj := range objs {
-		// If we have seen this CVE in the image already, set the times consistently.
-		if cveTimes := cveTimeMap[obj.GetCveBaseInfo().GetCve()]; cveTimes != nil {
-			obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&cveTimes.createdAt)
-			obj.FirstImageOccurrence = protocompat.ConvertTimeToTimestampOrNil(&cveTimes.firstImageOccurrence)
-		} else {
-			if obj.GetCveBaseInfo().GetCreatedAt() == nil {
-				obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
-			}
-			if obj.GetFirstImageOccurrence() == nil {
-				obj.FirstImageOccurrence = protocompat.ConvertTimeToTimestampOrNil(&iTime)
-			}
+		// If we have seen this CVE in the image already, preserve the earliest FirstImageOccurrence.
+		if cveTime, ok := cveTimeMap[obj.GetCveBaseInfo().GetCve()]; ok {
+			obj.FirstImageOccurrence = cveTime
+		}
+
+		// Final sanity Check
+		if obj.GetCveBaseInfo().GetCreatedAt() == nil {
+			obj.CveBaseInfo.CreatedAt = iTimestamp
+		}
+		if obj.GetFirstImageOccurrence() == nil {
+			obj.FirstImageOccurrence = iTimestamp
 		}
 
 		serialized, marshalErr := obj.MarshalVT()
@@ -480,10 +460,10 @@ func fillScanStatsFromExistingImage(oldImage *storage.ImageV2, image *storage.Im
 }
 
 func (s *storeImpl) upsert(ctx context.Context, obj *storage.ImageV2) error {
-	iTime := time.Now()
+	iTimestamp := protocompat.TimestampNow()
 
 	if !s.noUpdateTimestamps {
-		obj.LastUpdated = protocompat.ConvertTimeToTimestampOrNil(&iTime)
+		obj.LastUpdated = iTimestamp
 	}
 
 	oldImage, _, err := s.GetImageMetadata(ctx, obj.GetId())
@@ -542,7 +522,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.ImageV2) error {
 			return err
 		}
 
-		if err := s.insertIntoImages(ctx, tx, imageParts, metadataUpdated, scanUpdated, iTime); err != nil {
+		if err := s.insertIntoImages(ctx, tx, imageParts, metadataUpdated, scanUpdated, iTimestamp); err != nil {
 			if errTx := tx.Rollback(ctx); errTx != nil {
 				return errors.Wrapf(errTx, "rolling back transaction due to: %v", err)
 			}
@@ -723,9 +703,9 @@ func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string, imageIDF
 	return vulns, nil
 }
 
-// The purpose of this function is to get legacy CVEs for the given imageID so that we can migrate the CVE created and
-// first image occurrence timestamps to the new CVE data model. So we do not populate the fixedBy and vulnerability state
-// in the returned vulns as that information is not necessary for migrating the timestamps.
+// The purpose of this function is to get legacy CVEs for the given imageID so that we can migrate the
+// FirstImageOccurrence timestamp to the new CVE data model. So we do not populate the fixedBy and vulnerability state
+// in the returned vulns as that information is not necessary for migrating the timestamp.
 func getLegacyImageCVEs(ctx context.Context, tx *postgres.Tx, imageSha string) ([]*storage.EmbeddedVulnerability, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEs")
 

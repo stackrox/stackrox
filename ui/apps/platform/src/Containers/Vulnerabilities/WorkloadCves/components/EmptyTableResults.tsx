@@ -1,4 +1,4 @@
-import { Bullseye, Button, Text } from '@patternfly/react-core';
+import { Bullseye, Button, Content } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 import { Tbody, Td, Tr } from '@patternfly/react-table';
 
@@ -21,7 +21,7 @@ function EmptyTableResults({ colSpan }: EmptyTableResultsProps) {
                             headingLevel="h2"
                             icon={SearchIcon}
                         >
-                            <Text>Clear all filters and try again.</Text>
+                            <Content component="p">Clear all filters and try again.</Content>
                             <Button variant="link" onClick={() => setSearchFilter({})}>
                                 Clear filters
                             </Button>

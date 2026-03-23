@@ -110,23 +110,11 @@ const rules = {
                                             );
 
                                         // PatternFly adds screenReaderText prop of Th element.
-                                        // const hasValueAsScreenReaderText = (arg) =>
-                                        //     arg?.openingElement?.attributes?.some(
-                                        //         (attribute) =>
-                                        //             attribute.name?.name === 'screenReaderText' &&
-                                        //             attribute.value?.value === dataLabel
-                                        //     );
                                         const hasValueAsScreenReaderText = (arg) =>
-                                            arg?.children?.some(
-                                                (child) =>
-                                                    child.openingElement?.name?.name === 'span' &&
-                                                    child.openingElement.attributes?.some(
-                                                        (attribute) =>
-                                                            attribute.name?.name === 'className' &&
-                                                            attribute.value?.value ===
-                                                                'pf-v5-screen-reader'
-                                                    ) &&
-                                                    hasValueAsText(child)
+                                            arg?.openingElement?.attributes?.some(
+                                                (attribute) =>
+                                                    attribute.name?.name === 'screenReaderText' &&
+                                                    attribute.value?.value === dataLabel
                                             );
 
                                         const hasValue = (arg) =>
@@ -255,7 +243,7 @@ const rules = {
         },
         create(context) {
             const findErrorMessage = (value) => {
-                const versionExpected = '5';
+                const versionExpected = '6';
                 // Include capturing group for digits in each regular expression.
                 const pfRegExpArray = [
                     /^var\(--pf-v(\d+)-/, // variable inside var (at beginning of string)
@@ -432,6 +420,38 @@ const rules = {
                                 node,
                                 message:
                                     'Replace Variant enum member with corresponding string literal',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'no-span-pf-v6-u-screen-reader': {
+        // Prevent work-around before PatternFly 5.3 supported screenReaderText prop of Th element.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Replace pf-v6-u-screen-reader as className of span with screenReaderText prop in Th element',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (node.name?.name === 'span') {
+                        if (
+                            node.attributes.some(
+                                (attribute) =>
+                                    attribute.name?.name === 'className' &&
+                                    attribute.value?.value === 'pf-v6-u-screen-reader'
+                            )
+                        ) {
+                            context.report({
+                                node,
+                                message:
+                                    'Replace pf-v6-u-screen-reader as className of span with screenReaderText prop in Th element',
                             });
                         }
                     }

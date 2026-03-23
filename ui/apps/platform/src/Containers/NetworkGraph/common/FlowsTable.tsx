@@ -13,12 +13,11 @@ import {
 import type { IAction } from '@patternfly/react-table';
 import {
     Button,
+    Content,
+    ContentVariants,
     Flex,
     FlexItem,
     Icon,
-    Text,
-    TextContent,
-    TextVariants,
     Tooltip,
 } from '@patternfly/react-core';
 import {
@@ -75,9 +74,13 @@ function getBaselineSimulatedRowStyle(
 ): CSSProperties {
     let customStyle: CSSProperties;
     if (baselineSimulationDiffState === 'ADDED') {
-        customStyle = { backgroundColor: 'var(--pf-v5-global--palette--green-50)' };
+        customStyle = {
+            backgroundColor: 'var(--pf-t--color--green--10)',
+        };
     } else if (baselineSimulationDiffState === 'REMOVED') {
-        customStyle = { backgroundColor: 'var(--pf-v5-global--palette--red-50)' };
+        customStyle = {
+            backgroundColor: 'var(--pf-t--color--red--10)',
+        };
     } else {
         customStyle = {};
     }
@@ -103,9 +106,11 @@ function ExtraneousFlowsRow({
                         <FlexItem>
                             <div>+ {numExtraneousEgressFlows} allowed flows</div>
                             <div>
-                                <TextContent>
-                                    <Text component={TextVariants.small}>Across this cluster</Text>
-                                </TextContent>
+                                <Content>
+                                    <Content component={ContentVariants.small}>
+                                        Across this cluster
+                                    </Content>
+                                </Content>
                             </div>
                         </FlexItem>
                     </Flex>
@@ -121,13 +126,13 @@ function AnomalousIcon({ type }: { type: FlowEntityType }) {
     if (type === 'CIDR_BLOCK' || type === 'EXTERNAL_ENTITIES') {
         return (
             <Tooltip content={<div>Anomalous external flow</div>}>
-                <ExclamationCircleIcon className="pf-v5-u-danger-color-100" />
+                <ExclamationCircleIcon className="pf-v6-u-text-color-status-danger" />
             </Tooltip>
         );
     }
     return (
         <Tooltip content={<div>Anomalous internal flow</div>}>
-            <ExclamationTriangleIcon className="pf-v5-u-warning-color-100" />
+            <ExclamationTriangleIcon className="pf-v6-u-text-color-status-warning" />
         </Tooltip>
     );
 }
@@ -185,9 +190,7 @@ function FlowsTable({
         <Table aria-label={label} variant="compact">
             <Thead>
                 <Tr>
-                    <Th>
-                        <span className="pf-v5-screen-reader">Row expansion</span>
-                    </Th>
+                    <Th screenReaderText="Row expansion" />
                     {isEditable && (
                         <Th
                             select={{
@@ -200,11 +203,7 @@ function FlowsTable({
                     <Th>{columnNames.entity}</Th>
                     <Th modifier="nowrap">{columnNames.direction}</Th>
                     <Th modifier="nowrap">{columnNames.portAndProtocol}</Th>
-                    {isEditable && (
-                        <Th>
-                            <span className="pf-v5-screen-reader">Row actions</span>
-                        </Th>
-                    )}
+                    {isEditable && <Th screenReaderText="Row actions" />}
                 </Tr>
             </Thead>
             {flows.map((row, rowIndex) => {
@@ -272,14 +271,14 @@ function FlowsTable({
                                     {row.baselineSimulationDiffState === 'ADDED' && (
                                         <Tooltip content={<div>Baseline added</div>}>
                                             <Icon size="sm">
-                                                <PlusIcon className="pf-v5-u-success-color-200" />
+                                                <PlusIcon className="pf-v6-u-text-color-status-success" />
                                             </Icon>
                                         </Tooltip>
                                     )}
                                     {row.baselineSimulationDiffState === 'REMOVED' && (
                                         <Tooltip content={<div>Baseline removed</div>}>
                                             <Icon size="sm">
-                                                <MinusIcon className="pf-v5-u-danger-color-200" />
+                                                <MinusIcon className="pf-v6-u-text-color-status-danger" />
                                             </Icon>
                                         </Tooltip>
                                     )}
@@ -298,11 +297,11 @@ function FlowsTable({
                                             </Button>
                                         </div>
                                         <div>
-                                            <TextContent>
-                                                <Text component={TextVariants.small}>
+                                            <Content>
+                                                <Content component={ContentVariants.small}>
                                                     {getFlowSubtext(row)}
-                                                </Text>
-                                            </TextContent>
+                                                </Content>
+                                            </Content>
                                         </div>
                                     </FlexItem>
                                     {row.isAnomalous && (

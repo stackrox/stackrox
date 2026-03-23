@@ -15,6 +15,7 @@ import {
     FlexItem,
     PageSection,
     Spinner,
+    Split,
     Title,
     Tooltip,
     Truncate,
@@ -64,7 +65,7 @@ function CollectionsFormPage({
     pageAction,
 }: CollectionsFormPageProps) {
     const navigate = useNavigate();
-    const isXLargeScreen = useMediaQuery({ query: '(min-width: 1200px)' }); // --pf-v5-global--breakpoint--xl
+    const isXLargeScreen = useMediaQuery({ query: '(min-width: 75rem)' }); // --pf-t--global--breakpoint--xl
     const collectionId = pageAction.type !== 'create' ? pageAction.collectionId : undefined;
 
     const { analyticsTrack } = useAnalytics();
@@ -149,7 +150,7 @@ function CollectionsFormPage({
                         </Button>
                         {collectionErrorId === id ? (
                             <Tooltip content="This collection forms a loop with its parent and cannot be attached">
-                                <ExclamationCircleIcon color="var(--pf-v5-global--danger-color--100)" />
+                                <ExclamationCircleIcon color="var(--pf-t--global--icon--color--status--danger--default)" />
                             </Tooltip>
                         ) : null}
                     </Flex>
@@ -167,10 +168,13 @@ function CollectionsFormPage({
     if (error) {
         content = (
             <>
-                <Breadcrumb className="pf-v5-u-my-xs pf-v5-u-px-lg pf-v5-u-py-md">
-                    <BreadcrumbItemLink to={collectionsBasePath}>Collections</BreadcrumbItemLink>
-                </Breadcrumb>
-                <Divider component="div" />
+                <PageSection type="breadcrumb">
+                    <Breadcrumb>
+                        <BreadcrumbItemLink to={collectionsBasePath}>
+                            Collections
+                        </BreadcrumbItemLink>
+                    </Breadcrumb>
+                </PageSection>
                 <CollectionLoadError
                     title="There was an error loading this collection"
                     error={error}
@@ -217,74 +221,85 @@ function CollectionsFormPage({
                 getCollectionTableCells={getCollectionTableCells}
                 headerContent={
                     <>
-                        <Breadcrumb className="pf-v5-u-my-xs pf-v5-u-px-lg pf-v5-u-py-md">
-                            <BreadcrumbItemLink to={collectionsBasePath}>
-                                Collections
-                            </BreadcrumbItemLink>
-                            <BreadcrumbItem>{pageName}</BreadcrumbItem>
-                        </Breadcrumb>
-                        <Divider component="div" />
-                        <Flex
-                            className="pf-v5-u-p-lg"
-                            direction={{ default: 'column', md: 'row' }}
-                            alignItems={{ default: 'alignItemsFlexStart', md: 'alignItemsCenter' }}
-                        >
-                            <Title className="pf-v5-u-flex-grow-1" headingLevel="h1">
-                                {pageName}
-                            </Title>
-                            <FlexItem align={{ default: 'alignLeft', md: 'alignRight' }}>
-                                {pageAction.type === 'view' && hasWriteAccessForCollections && (
-                                    <>
-                                        <MenuDropdown toggleText="Actions" toggleVariant="primary">
-                                            <DropdownItem
-                                                key="Edit collection"
-                                                component="button"
-                                                onClick={() =>
-                                                    onEditCollection(pageAction.collectionId)
-                                                }
-                                            >
-                                                Edit collection
-                                            </DropdownItem>
-                                            <DropdownItem
-                                                key="Clone collection"
-                                                component="button"
-                                                onClick={() =>
-                                                    onCloneCollection(pageAction.collectionId)
-                                                }
-                                            >
-                                                Clone collection
-                                            </DropdownItem>
-                                            <Divider component="li" key="separator" />
-                                            <DropdownItem
-                                                key="Delete collection"
-                                                component="button"
-                                                onClick={() => setDeleteId(pageAction.collectionId)}
-                                            >
-                                                Delete collection
-                                            </DropdownItem>
-                                        </MenuDropdown>
-                                        <Divider
-                                            className="pf-v5-u-px-xs"
-                                            orientation={{ default: 'vertical' }}
-                                        />
-                                    </>
-                                )}
-                                {isDrawerOpen ? (
-                                    <Button variant="secondary" onClick={closeDrawer}>
-                                        Hide results
-                                    </Button>
-                                ) : (
-                                    <Button variant="secondary" onClick={openDrawer}>
-                                        Preview results
-                                    </Button>
-                                )}
-                            </FlexItem>
-                        </Flex>
+                        <PageSection type="breadcrumb">
+                            <Breadcrumb>
+                                <BreadcrumbItemLink to={collectionsBasePath}>
+                                    Collections
+                                </BreadcrumbItemLink>
+                                <BreadcrumbItem>{pageName}</BreadcrumbItem>
+                            </Breadcrumb>
+                        </PageSection>
+                        <PageSection>
+                            <Flex
+                                direction={{ default: 'column', md: 'row' }}
+                                alignItems={{
+                                    default: 'alignItemsFlexStart',
+                                    md: 'alignItemsCenter',
+                                }}
+                            >
+                                <Title headingLevel="h1">{pageName}</Title>
+                                <FlexItem align={{ default: 'alignLeft', md: 'alignRight' }}>
+                                    <Split hasGutter>
+                                        {pageAction.type === 'view' &&
+                                            hasWriteAccessForCollections && (
+                                                <>
+                                                    <MenuDropdown
+                                                        toggleText="Actions"
+                                                        toggleVariant="primary"
+                                                    >
+                                                        <DropdownItem
+                                                            key="Edit collection"
+                                                            component="button"
+                                                            onClick={() =>
+                                                                onEditCollection(
+                                                                    pageAction.collectionId
+                                                                )
+                                                            }
+                                                        >
+                                                            Edit collection
+                                                        </DropdownItem>
+                                                        <DropdownItem
+                                                            key="Clone collection"
+                                                            component="button"
+                                                            onClick={() =>
+                                                                onCloneCollection(
+                                                                    pageAction.collectionId
+                                                                )
+                                                            }
+                                                        >
+                                                            Clone collection
+                                                        </DropdownItem>
+                                                        <Divider component="li" key="separator" />
+                                                        <DropdownItem
+                                                            key="Delete collection"
+                                                            component="button"
+                                                            onClick={() =>
+                                                                setDeleteId(pageAction.collectionId)
+                                                            }
+                                                        >
+                                                            Delete collection
+                                                        </DropdownItem>
+                                                    </MenuDropdown>
+                                                </>
+                                            )}
+                                        {isDrawerOpen ? (
+                                            <Button variant="secondary" onClick={closeDrawer}>
+                                                Hide results
+                                            </Button>
+                                        ) : (
+                                            <Button variant="secondary" onClick={openDrawer}>
+                                                Preview results
+                                            </Button>
+                                        )}
+                                    </Split>
+                                </FlexItem>
+                            </Flex>
+                        </PageSection>
                         {/* This <div> gives us a reliable `ref` to use as a scroll target when an error occurs */}
                         <div ref={configErrorAlertElem}>
                             {configError && (
                                 <Alert
-                                    className="pf-v5-u-m-md"
+                                    className="pf-v6-u-m-md"
                                     title={configError.message}
                                     component="p"
                                     variant="danger"
@@ -304,7 +319,11 @@ function CollectionsFormPage({
     }
 
     return (
-        <PageSection className="pf-v5-u-h-100" padding={{ default: 'noPadding' }}>
+        <PageSection
+            hasBodyWrapper={false}
+            className="pf-v6-u-h-100"
+            padding={{ default: 'noPadding' }}
+        >
             <PageTitle title={getPageTitle(pageAction, data)} />
             {content}
             {modalCollectionId && (

@@ -22,6 +22,9 @@ persistence:
 
 nodeSelector: {}
 
+# Metric relabel configs for kubernetes-cadvisor job to filter out metrics
+cadvisorMetricRelabelConfigs: []
+
 kube-state-metrics:
   releaseNamespace: true
 
