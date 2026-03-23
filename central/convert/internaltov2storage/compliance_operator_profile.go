@@ -54,6 +54,33 @@ func StorageToCentralProfileKind(kind storage.ComplianceOperatorProfileV2_Operat
 	}
 }
 
+// ProfileV2ToScanConfigRefs extracts name and kind from a slice of stored profiles into
+// the scan configuration's ProfileReference storage type. Used when persisting profile_refs
+// alongside a scan config so the startup sync path has correct kinds on reconnect.
+func ProfileV2ToScanConfigRefs(profiles []*storage.ComplianceOperatorProfileV2) []*storage.ComplianceOperatorScanConfigurationV2_ProfileReference {
+	refs := make([]*storage.ComplianceOperatorScanConfigurationV2_ProfileReference, 0, len(profiles))
+	for _, p := range profiles {
+		refs = append(refs, &storage.ComplianceOperatorScanConfigurationV2_ProfileReference{
+			Name: p.GetName(),
+			Kind: p.GetOperatorKind(),
+		})
+	}
+	return refs
+}
+
+// ScanConfigRefsToCentral converts storage scan config ProfileReferences to the internal API
+// equivalent for scan config messages sent to Sensor.
+func ScanConfigRefsToCentral(refs []*storage.ComplianceOperatorScanConfigurationV2_ProfileReference) []*central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference {
+	centralRefs := make([]*central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference, 0, len(refs))
+	for _, ref := range refs {
+		centralRefs = append(centralRefs, &central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference{
+			Name: ref.GetName(),
+			Kind: StorageToCentralProfileKind(ref.GetKind()),
+		})
+	}
+	return centralRefs
+}
+
 func centralToStorageProfileKind(kind central.ComplianceOperatorProfileV2_OperatorKind) storage.ComplianceOperatorProfileV2_OperatorKind {
 	switch kind {
 	case central.ComplianceOperatorProfileV2_PROFILE:

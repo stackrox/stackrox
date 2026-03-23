@@ -299,21 +299,9 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		}
 	}
 
-	// Build profile refs (name + kind) - needed to support tailored profiles, a different resource kind in CO
-	profileRefs := make([]*central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference, 0, len(returnedProfiles))
-	storageProfileRefs := make([]*storage.ComplianceOperatorScanConfigurationV2_ProfileReference, 0, len(returnedProfiles))
-	for _, p := range returnedProfiles {
-		profileRefs = append(profileRefs, &central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference{
-			Name: p.GetName(),
-			Kind: internaltov2storage.StorageToCentralProfileKind(p.GetOperatorKind()),
-		})
-		storageProfileRefs = append(storageProfileRefs, &storage.ComplianceOperatorScanConfigurationV2_ProfileReference{
-			Name: p.GetName(),
-			Kind: p.GetOperatorKind(),
-		})
-	}
+	// Build profile refs (name + kind) - needed to support tailored profiles, a different resource kind in CO.
 	// Persist profile_refs so the startup sync path can forward correct kinds to Sensor on reconnect.
-	scanRequest.ProfileRefs = storageProfileRefs
+	scanRequest.ProfileRefs = internaltov2storage.ProfileV2ToScanConfigRefs(returnedProfiles)
 
 	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
 	if err != nil {
@@ -321,6 +309,7 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		return nil, errors.Errorf("Unable to save scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
+	profileRefs := internaltov2storage.ScanConfigRefsToCentral(scanRequest.ProfileRefs)
 	for _, clusterID := range clusters {
 		// id for the request message to sensor
 		sensorRequestID := uuid.NewV4().String()
