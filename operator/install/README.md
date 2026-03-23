@@ -11,13 +11,11 @@ we are planning to consolidate on just one: the operator.
 As the first step, in the 4.10 release we proved the simplest possible, _temporary_ way to install the community StackRox-branded operator.
 We hope this is useful to the community for getting to know the operator.
 
-**See [the document in the `release-4.10` branch for instructions](https://github.com/stackrox/stackrox/blob/release-4.10/operator/install/README.md) for the above.**
+**See [this document in the `release-4.10` branch for instructions](https://github.com/stackrox/stackrox/blob/release-4.10/operator/install/README.md) for the above.**
 
 ---
 
 **The following text describes the installation for the upcoming 4.11 release.**
-
-In release 4.11, we plan to provide a more customizable, powerful and unified way to install the operator.
 
 ## How to use it?
 
