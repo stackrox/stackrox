@@ -1,3 +1,6 @@
+# Worktrees
+.worktrees/
+
 # Deployment
 sensor*.zip
 tmp
