@@ -3,6 +3,7 @@ import { NavList } from '@patternfly/react-core';
 
 import {
     violationsFullViewPath,
+    violationsNodeViewPath,
     violationsPlatformViewPath,
     violationsUserWorkloadsViewPath,
 } from 'routePaths';
@@ -27,6 +28,7 @@ function ViolationsSubnav({
         hasSearchKeyValue(search, 'filteredWorkflowView', 'Applications view') ||
         hasSearchKeyValue(search, 'filteredWorkflowView', null);
     const isPlatformActive = hasSearchKeyValue(search, 'filteredWorkflowView', 'Platform view');
+    const isNodeActive = hasSearchKeyValue(search, 'filteredWorkflowView', 'Node view');
     const isFullViewActive = hasSearchKeyValue(search, 'filteredWorkflowView', 'Full view');
 
     return (
@@ -41,6 +43,7 @@ function ViolationsSubnav({
                 path={violationsPlatformViewPath}
                 content="Platform"
             />
+            <NavigationItem isActive={isNodeActive} path={violationsNodeViewPath} content="Nodes" />
             <NavigationItem
                 isActive={isFullViewActive}
                 path={violationsFullViewPath}
