@@ -40,9 +40,6 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
-
     - name: Go Integration Unit Tests
       run: ${{ matrix.gotags }} make integration-unit-tests
 
