@@ -22,7 +22,7 @@ function ViolationsSubnav({
     isFeatureFlagEnabled, // eslint-disable-line @typescript-eslint/no-unused-vars
 }: ViolationsSubnavProps) {
     const location = useLocation();
-    const search = location.search || '';
+    const search = location.search ?? '';
 
     const isUserWorkloadsActive =
         hasSearchKeyValue(search, 'filteredWorkflowView', 'Applications view') ||
