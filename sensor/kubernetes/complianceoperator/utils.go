@@ -171,16 +171,15 @@ func updateScanSettingFromCentralRequest(scanSetting *v1alpha1.ScanSetting, requ
 	return scanSetting
 }
 
-func updateScanSettingBindingFromCentralRequest(scanSettingBinding *v1alpha1.ScanSettingBinding, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) (*v1alpha1.ScanSettingBinding, error) {
-	if err := validateScanSettingBindingProfiles(request); err != nil {
-		return nil, err
-	}
+func updateScanSettingBindingFromCentralRequest(scanSettingBinding *v1alpha1.ScanSettingBinding, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) *v1alpha1.ScanSettingBinding {
+	// Validation is performed upstream in validateUpdateScheduledScanConfigRequest before
+	// this function is reached.
 	profileRefs := buildScanSettingBindingProfileRefs(scanSettingBinding.GetNamespace(), request)
 
 	// TODO:  Update additional fields as ACS capability expands
 	scanSettingBinding.Profiles = profileRefs
 
-	return scanSettingBinding, nil
+	return scanSettingBinding
 }
 
 func validateApplyScheduledScanConfigRequest(req *central.ApplyComplianceScanConfigRequest_ScheduledScan) error {
@@ -267,10 +266,5 @@ func updateScanSettingBindingFromUpdateRequest(obj *unstructured.Unstructured, r
 		return nil, errors.Wrap(err, "Could not convert unstructured to scan setting")
 	}
 
-	updatedScanSettingBinding, err := updateScanSettingBindingFromCentralRequest(&scanSettingBinding, req.GetScanSettings())
-	if err != nil {
-		return nil, err
-	}
-
-	return runtimeObjToUnstructured(updatedScanSettingBinding)
+	return runtimeObjToUnstructured(updateScanSettingBindingFromCentralRequest(&scanSettingBinding, req.GetScanSettings()))
 }
