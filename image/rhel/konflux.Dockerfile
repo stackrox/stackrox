@@ -80,7 +80,6 @@ RUN mkdir -p /out/stackrox && \
     mkdir -p /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox && \
     chown -R 4000:4000 /out/etc/pki/ca-trust /out/etc/ssl /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox /out/tmp
 
-# Copy static binaries and run save-dir-contents in chroot
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/static-bin/* /out/stackrox/
 RUN chroot /out /stackrox/save-dir-contents /etc/pki/ca-trust /etc/ssl
 
