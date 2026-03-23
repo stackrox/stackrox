@@ -286,7 +286,7 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 	}
 
 	// Validate profile kinds. UNSPECIFIED should not appear here because centralToStorageProfileKind
-	// normalises it to PROFILE at ingestion time, but we allow it through defensively —
+	// normalizes it to PROFILE at ingestion time, but we allow it through defensively —
 	// StorageToCentralProfileKind will map it to PROFILE. Truly unknown kinds are rejected.
 	for _, p := range returnedProfiles {
 		switch p.GetOperatorKind() {
@@ -299,8 +299,7 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		}
 	}
 
-	// Build profile refs from the already-fetched profiles so Sensor can use the correct CO kind
-	// (Profile vs TailoredProfile) without needing to probe the k8s API.
+	// Build profile refs (name + kind) - needed to support tailored profiles, a different resource kind in CO
 	profileRefs := make([]*central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference, 0, len(returnedProfiles))
 	storageProfileRefs := make([]*storage.ComplianceOperatorScanConfigurationV2_ProfileReference, 0, len(returnedProfiles))
 	for _, p := range returnedProfiles {
