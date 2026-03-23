@@ -2,5 +2,16 @@
   "base": {
     "name": "master-base/gualvare/fix-compliance-custom-rules-gotchas",
     "hash": "699451c2b4c2bb2eb4577d64604c20d7fdca2116"
+  },
+  "upstream": {
+    "branch": "stackrox-profile-equivalence"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 19544,
+        "gqlID": "PR_kwDOGd6UEM7Mtjs5"
+      }
+    }
   }
 }
