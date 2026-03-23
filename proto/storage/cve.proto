@@ -344,3 +344,58 @@ message ImageCVEInfo {
   google.protobuf.Timestamp first_system_occurrence = 3; // @gotags: search:"First System Occurrence Timestamp,hidden"
   string cve = 4; // @gotags: search:"CVE" sql:"index"
 }
+
+// NormalizedCVE stores a unique CVE record keyed by (cve_name, source, content_hash).
+// This table is append-only; rows are never updated, only inserted via ON CONFLICT DO NOTHING.
+// The content_hash is SHA256 of (cve_name \x00 source \x00 severity \x00 cvss_v3_formatted \x00 summary).
+message NormalizedCVE {
+  // id is a UUID primary key stable for foreign key references.
+  string id = 1;
+  // cve_name is the CVE identifier, e.g. CVE-2021-44228.
+  string cve_name = 2;
+  // source is the advisory organization: OSV, NVD, RED_HAT, or UNKNOWN.
+  string source = 3;
+  // severity is one of CRITICAL, HIGH, MEDIUM, LOW, UNKNOWN.
+  string severity = 4;
+  // cvss_v2 is the CVSS v2 score.
+  float cvss_v2 = 5;
+  // cvss_v3 is the CVSS v3 score.
+  float cvss_v3 = 6;
+  // nvd_cvss_v3 is the NVD CVSS v3 score when source != NVD.
+  float nvd_cvss_v3 = 7;
+  // summary is a human-readable description of the vulnerability.
+  string summary = 8;
+  // link is the reference URL for the CVE.
+  string link = 9;
+  // published_on is when the CVE was published.
+  google.protobuf.Timestamp published_on = 10;
+  // advisory_name is the first advisory name encountered (informational only; not part of uniqueness key).
+  string advisory_name = 11;
+  // advisory_link is the URL for the advisory.
+  string advisory_link = 12;
+  // content_hash is SHA256(cve_name\x00source\x00severity\x00cvss_v3\x00summary).
+  string content_hash = 13;
+  // created_at is when this CVE row was first inserted.
+  google.protobuf.Timestamp created_at = 14;
+}
+
+// ComponentCVEEdge links an image component to a CVE record.
+// The first_system_occurrence is set on initial insert and preserved on subsequent updates.
+message ComponentCVEEdge {
+  // id is a UUID primary key.
+  string id = 1;
+  // component_id is the TEXT foreign key referencing image_component_v2.id (a SHA256 hex string).
+  string component_id = 2;
+  // cve_id is the UUID foreign key referencing cves.id.
+  string cve_id = 3;
+  // is_fixable indicates whether a fix is available.
+  bool is_fixable = 4;
+  // fixed_by is the version that fixes this vulnerability.
+  string fixed_by = 5;
+  // state is the vulnerability state: OBSERVED, DEFERRED, or FALSE_POSITIVE.
+  string state = 6;
+  // first_system_occurrence is set on first insert; not updated on subsequent upserts.
+  google.protobuf.Timestamp first_system_occurrence = 7;
+  // fix_available_at records when a fix first became available.
+  google.protobuf.Timestamp fix_available_at = 8;
+}
