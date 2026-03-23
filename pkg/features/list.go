@@ -130,6 +130,9 @@ var (
 
 	// TailoredProfiles enables support for compliance tailored profiles
 	TailoredProfiles = registerFeature("Enable support for tailored profiles", "ROX_TAILORED_PROFILES")
+
+	// SensitiveFileActivity enables monitoring of sensitive files.
+	RuntimeDataControl = registerFeature("Enable fine grained runtime data collection", "ROX_RUNTIME_DATA_CONTROL", enabled)
 )
 
 // The following feature flags are related to Scanner V4.

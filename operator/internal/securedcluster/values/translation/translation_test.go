@@ -1041,6 +1041,41 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 			},
 		},
+		"runtime data control persistence enabled": {
+			args: args{
+				client: newDefaultFakeClient(t),
+				sc: platform.SecuredCluster{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
+					Spec: platform.SecuredClusterSpec{
+						ClusterName: ptr.To("test-cluster"),
+						RuntimeDataControl: &platform.RuntimeDataControlSpec{
+							Persistence: platform.RuntimeConfigEnabled.Pointer(),
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"clusterName":   "test-cluster",
+				"ca":            map[string]string{"cert": "ca central content"},
+				"createSecrets": false,
+				"scanner": map[string]interface{}{
+					"disable": false,
+				},
+				"sensor": map[string]interface{}{
+					"localImageScanning": map[string]string{
+						"enabled": "true",
+					},
+				},
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"runtimeDataControl": map[string]interface{}{
+					"persistence": true,
+				},
+			},
+		},
 	}
 
 	for name, tt := range tests {

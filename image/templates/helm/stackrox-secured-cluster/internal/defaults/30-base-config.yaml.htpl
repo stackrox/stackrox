@@ -124,6 +124,13 @@ network:
   enableNetworkPolicies: true
 
 enableOpenShiftMonitoring: false
+
+[<- if .FeatureFlags.ROX_RUNTIME_DATA_CONTROL >]
+runtimeDataControl:
+  persistence: true
+  excludeOpenshift: false
+  namespaceFilter: ""
+[<- end >]
 ---
 sensor:
   exposeMonitoring: {{ ._rox.exposeMonitoring }}
