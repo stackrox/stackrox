@@ -26,6 +26,23 @@ type imageCacheEntry struct {
 	timestamp time.Time
 }
 
+// getCachedImage looks up a previously enriched image in the two-level cache.
+//
+// Resolution order:
+//  1. Digest-based refs (Id non-empty): derive the imageCache key directly from the digest
+//     (or a V2 UUID5 when FlattenImageData is enabled).
+//  2. Tag-only refs (Id empty, e.g. "nginx:1.25"): consult the imageNameToImageCacheKey
+//     LRU, which maps full image names to their resolved imageCache keys. This map is
+//     populated by cacheImage after enrichment and avoids redundant fetches for the same
+//     tag across reviews.
+//  3. Tag-only refs with the name cache disabled: skip (no way to resolve without a digest).
+//
+// On imageCache miss or TTL expiry for a tag-only lookup, the stale name→key mapping is
+// removed so the next request triggers a fresh fetch.
+//
+// The observe flag controls whether cache metrics are emitted. It is false when called
+// from within the Coalescer callback (fetchImage) to avoid double-counting, since the
+// outer call in getAvailableImagesAndKickOffScans already records the metric.
 func (m *manager) getCachedImage(img *storage.ContainerImage, s *state, observe bool) *storage.Image {
 	emit := func(fn func()) {
 		if observe {
@@ -53,7 +70,9 @@ func (m *manager) getCachedImage(img *storage.ContainerImage, s *state, observe 
 
 	cachedImg, ok := m.imageCache.Get(id)
 	if !ok {
-		// Exit 1: imageCache entry was LRU-evicted; remove stale name mapping.
+		// imageCache entry was LRU-evicted. Clean up the name→key mapping only for
+		// tag-only refs (Id empty), since those are the only lookups that went through
+		// imageNameToImageCacheKey. Digest-based refs bypass the name map entirely.
 		if img.GetId() == "" {
 			m.imageNameToImageCacheKey.Remove(img.GetName().GetFullName())
 		}
@@ -62,7 +81,8 @@ func (m *manager) getCachedImage(img *storage.ContainerImage, s *state, observe 
 	}
 	if time.Since(cachedImg.timestamp) > imageCacheTTL {
 		m.imageCache.RemoveIf(id, func(entry imageCacheEntry) bool { return entry == cachedImg })
-		// Exit 2: imageCache entry TTL-expired; remove stale name mapping.
+		// imageCache entry TTL-expired. Same reasoning as above: only tag-only refs
+		// have a name→key mapping to invalidate.
 		if img.GetId() == "" {
 			m.imageNameToImageCacheKey.Remove(img.GetName().GetFullName())
 		}
