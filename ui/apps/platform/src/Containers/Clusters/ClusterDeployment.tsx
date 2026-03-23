@@ -49,6 +49,21 @@ function ClusterDeployment({
             )}
             {managerType !== 'MANAGER_TYPE_KUBERNETES_OPERATOR' && (
                 <>
+                    <Alert
+                        title="Deprecation notice"
+                        component="p"
+                        variant="warning"
+                        isInline
+                        className="pf-v6-u-mb-lg"
+                    >
+                        <Content component="p">
+                            The legacy manifest bundle installation method is deprecated since
+                            version 4.11 and will be removed in 5.1.
+                        </Content>
+                        <Content component="p">
+                            Use the Kubernetes operator to install secured cluster services instead.
+                        </Content>
+                    </Alert>
                     <Title headingLevel="h2">Download manifest bundle</Title>
                     <Flex
                         direction={{ default: 'column' }}

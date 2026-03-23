@@ -1,10 +1,12 @@
 import type { ReactElement } from 'react';
 import {
+    Alert,
     ClipboardCopy,
     ClipboardCopyButton,
     CodeBlock,
     CodeBlockAction,
     CodeBlockCode,
+    Content,
     Flex,
     List,
     ListItem,
@@ -52,6 +54,21 @@ function SecureClusterUsingHelmChart({
 
     return (
         <Flex direction={{ default: 'column' }}>
+            <Alert
+                title="Deprecation notice"
+                component="p"
+                variant="warning"
+                isInline
+                className="pf-v6-u-mb-lg"
+            >
+                <Content component="p">
+                    The <strong>rhacs/secured-cluster-services</strong> Helm chart is deprecated
+                    since version 4.11 and will be removed in 5.1.
+                </Content>
+                <Content component="p">
+                    Use the Kubernetes operator to install secured cluster services instead.
+                </Content>
+            </Alert>
             <Title headingLevel={headingLevel}>
                 Secure a cluster using Helm chart installation method
             </Title>
