@@ -5,42 +5,36 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/complianceoperator"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestProfileKindToString(t *testing.T) {
-	testCases := []struct {
-		name     string
+	testCases := map[string]struct {
 		kind     central.ComplianceOperatorProfileV2_OperatorKind
 		expected string
 	}{
-		{
-			name:     "profile",
+		"profile": {
 			kind:     central.ComplianceOperatorProfileV2_PROFILE,
 			expected: complianceoperator.Profile.Kind,
 		},
-		{
-			name:     "tailored profile",
+		"tailored profile": {
 			kind:     central.ComplianceOperatorProfileV2_TAILORED_PROFILE,
 			expected: complianceoperator.TailoredProfile.Kind,
 		},
-		{
-			name:     "unspecified",
+		"unspecified": {
 			kind:     central.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED,
 			expected: "",
 		},
-		{
-			name:     "unknown",
+		"unknown": {
 			kind:     central.ComplianceOperatorProfileV2_OperatorKind(999),
 			expected: "",
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			kind := profileKindToString(tc.kind)
-			if kind != tc.expected {
-				t.Fatalf("unexpected kind: got %q want %q", kind, tc.expected)
-			}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, profileKindToString(tc.kind))
 		})
 	}
 }
@@ -58,34 +52,41 @@ func TestBuildScanSettingBindingProfileRefsFromProfileRefs(t *testing.T) {
 	}
 
 	refs := buildScanSettingBindingProfileRefs("ns", req)
-	if len(refs) != 2 {
-		t.Fatalf("unexpected number of refs: got %d want 2", len(refs))
-	}
-	if refs[0].Name != "ocp4-cis" || refs[0].Kind != complianceoperator.Profile.Kind {
-		t.Fatalf("unexpected first ref: got %+v", refs[0])
-	}
-	if refs[1].Name != "ocp4-cis-tailored" || refs[1].Kind != complianceoperator.TailoredProfile.Kind {
-		t.Fatalf("unexpected second ref: got %+v", refs[1])
-	}
+	require.Len(t, refs, 2)
+	assert.Equal(t, "ocp4-cis", refs[0].Name)
+	assert.Equal(t, complianceoperator.Profile.Kind, refs[0].Kind)
+	assert.Equal(t, "ocp4-cis-tailored", refs[1].Name)
+	assert.Equal(t, complianceoperator.TailoredProfile.Kind, refs[1].Kind)
 }
 
-// TestValidateScanSettingBindingProfileRefsFailsOnInvalid ensures we fail on the first invalid
-// profile ref.
-func TestValidateScanSettingBindingProfileRefsFailsOnInvalid(t *testing.T) {
+// TestValidateScanSettingBindingProfileRefsFailsOnUnspecified ensures UNSPECIFIED kind is rejected.
+func TestValidateScanSettingBindingProfileRefsFailsOnUnspecified(t *testing.T) {
 	req := &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
 		ScanName: "scan",
-		Profiles: []string{"legacy"},
 		ProfileRefs: []*central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference{
 			{Name: "good", Kind: central.ComplianceOperatorProfileV2_PROFILE},
 			{Name: "bad", Kind: central.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED},
+		},
+	}
+
+	err := validateScanSettingBindingProfiles(req)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "bad")
+}
+
+// TestValidateScanSettingBindingProfileRefsFailsOnUnknown ensures a truly unknown kind is rejected.
+func TestValidateScanSettingBindingProfileRefsFailsOnUnknown(t *testing.T) {
+	req := &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
+		ScanName: "scan",
+		ProfileRefs: []*central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference{
+			{Name: "good", Kind: central.ComplianceOperatorProfileV2_PROFILE},
 			{Name: "unknown", Kind: central.ComplianceOperatorProfileV2_OperatorKind(999)},
 		},
 	}
 
 	err := validateScanSettingBindingProfiles(req)
-	if err == nil {
-		t.Fatalf("expected error for invalid profile refs")
-	}
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unknown")
 }
 
 // TestBuildScanSettingBindingProfileRefsLegacyFallback verifies backwards compatibility: when
@@ -98,15 +99,9 @@ func TestBuildScanSettingBindingProfileRefsLegacyFallback(t *testing.T) {
 	}
 
 	refs := buildScanSettingBindingProfileRefs("ns", req)
-	if len(refs) != 2 {
-		t.Fatalf("unexpected number of refs: got %d want 2", len(refs))
-	}
+	require.Len(t, refs, 2)
 	for i, name := range []string{"p1", "p2"} {
-		if refs[i].Name != name {
-			t.Fatalf("unexpected ref name at %d: got %q want %q", i, refs[i].Name, name)
-		}
-		if refs[i].Kind != complianceoperator.Profile.Kind {
-			t.Fatalf("unexpected ref kind at %d: got %q want %q", i, refs[i].Kind, complianceoperator.Profile.Kind)
-		}
+		assert.Equal(t, name, refs[i].Name)
+		assert.Equal(t, complianceoperator.Profile.Kind, refs[i].Kind)
 	}
 }
