@@ -107,7 +107,7 @@ function ProfileSelection({
                         />
                         <Td dataLabel="Profile">{name}</Td>
                         {isTailoredProfilesEnabled && (
-                            <Td dataLabel="Kind">
+                            <Td dataLabel="Type">
                                 {(operatorKind &&
                                     complianceProfileOperatorKindLabels[operatorKind]) ??
                                     '—'}
@@ -208,7 +208,7 @@ function ProfileSelection({
                                 <span className="pf-v6-screen-reader">Row expansion</span>
                             </Th>
                             <Th>Profile</Th>
-                            {isTailoredProfilesEnabled && <Th>Kind</Th>}
+                            {isTailoredProfilesEnabled && <Th>Type</Th>}
                             <Th>Rule set</Th>
                             <Th>Applicability</Th>
                             <Th>Version</Th>

@@ -9,6 +9,6 @@ export const SCAN_CONFIG_NAME_QUERY = 'Compliance Scan Config Name';
 export const complianceProfileOperatorKindLabels: Record<ComplianceProfileOperatorKind, string> =
     Object.freeze({
         OPERATOR_KIND_UNSPECIFIED: 'Unspecified',
-        PROFILE: 'Profile',
+        PROFILE: 'Built-in',
         TAILORED_PROFILE: 'Tailored',
     });
