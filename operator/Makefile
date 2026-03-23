@@ -264,6 +264,8 @@ test-integration: manifests generate fmt vet envtest ## Run go integration tests
 
 test-helm: ## Run operator helm chart tests.
 	$(MAKE) chart ROX_PRODUCT_BRANDING=RHACS_BRANDING  # tests assume the rhacs- prefix
+	head -n 999999 dist/install.yaml
+	head -n 999999 dist/chart/templates/manager/manager.yaml
 	go test -tags operator_helmtest -count=1 -v ./tests/chart/...
 
 .PHONY: validate-crs
