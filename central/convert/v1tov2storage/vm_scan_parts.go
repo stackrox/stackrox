@@ -32,8 +32,8 @@ func ScanPartsFromV1Scan(vmID string, scan *storage.VirtualMachineScan) *common.
 		for _, vuln := range comp.GetVulnerabilities() {
 			cve := convertVulnerability(vmID, componentID, vuln)
 			componentCVEs = append(componentCVEs, cve)
-			if cve.PreferredCvss > topCvss {
-				topCvss = cve.PreferredCvss
+			if cve.GetPreferredCvss() > topCvss {
+				topCvss = cve.GetPreferredCvss()
 			}
 		}
 
@@ -41,8 +41,8 @@ func ScanPartsFromV1Scan(vmID string, scan *storage.VirtualMachineScan) *common.
 
 		var compTopCvss float32
 		for _, c := range componentCVEs {
-			if c.PreferredCvss > compTopCvss {
-				compTopCvss = c.PreferredCvss
+			if c.GetPreferredCvss() > compTopCvss {
+				compTopCvss = c.GetPreferredCvss()
 			}
 		}
 
