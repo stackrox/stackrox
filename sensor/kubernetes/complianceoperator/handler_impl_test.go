@@ -444,6 +444,33 @@ func (s *HandlerTestSuite) TestProcessApplyScheduledScanFailsOnInvalidProfileRef
 	// Validation fails before we need the namespace (inside validateApplyScheduledScanConfigRequest).
 	actual := s.sendMessage(1, msg)
 	s.assert(expected, actual)
+
+	// No ScanSettingBinding should have been created.
+	_, err := s.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).
+		Namespace("ns").Get(context.Background(), "midnight", v1.GetOptions{})
+	s.Error(err, "ScanSettingBinding should not exist after validation failure")
+}
+
+// TestProcessApplyScheduledScanLegacyProfilesOnly verifies backward compatibility: when Central
+// sends only the legacy profiles field (no profile_refs), the SSB is created with Profile kind
+// for every entry.
+func (s *HandlerTestSuite) TestProcessApplyScheduledScanLegacyProfilesOnly() {
+	msg := getTestScheduledScanRequestMsg("midnight", "* * * * *", "ocp4-cis", "rhcos4-cis")
+	// Explicitly leave ProfileRefs empty to simulate old Central.
+	expected := expectedResponse{
+		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+
+	ssb := s.getScanSettingBinding("midnight")
+	s.Require().Len(ssb.Profiles, 2)
+	for _, ref := range ssb.Profiles {
+		s.Equal(complianceoperator.Profile.Kind, ref.Kind,
+			"legacy profiles should default to Profile kind, got %q for %q", ref.Kind, ref.Name)
+	}
 }
 
 func (s *HandlerTestSuite) sendMessage(times int, msg *central.MsgToSensor) *central.ComplianceResponse {
