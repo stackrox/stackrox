@@ -379,9 +379,10 @@ message NormalizedCVE {
   google.protobuf.Timestamp created_at = 14;
 }
 
-// ComponentCVEEdge links an image component to a CVE record.
+// NormalizedComponentCVEEdge links an image component to a NormalizedCVE record.
 // The first_system_occurrence is set on initial insert and preserved on subsequent updates.
-message ComponentCVEEdge {
+// This replaces the deprecated ComponentCVEEdge from relations.proto for the normalized CVE model.
+message NormalizedComponentCVEEdge {
   // id is a UUID primary key.
   string id = 1;
   // component_id is the TEXT foreign key referencing image_component_v2.id (a SHA256 hex string).

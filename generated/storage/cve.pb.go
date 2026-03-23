@@ -2428,6 +2428,282 @@ func (x *ImageCVEInfo) GetCve() string {
 	return ""
 }
 
+// NormalizedCVE stores a unique CVE record keyed by (cve_name, source, content_hash).
+// This table is append-only; rows are never updated, only inserted via ON CONFLICT DO NOTHING.
+// The content_hash is SHA256 of (cve_name \x00 source \x00 severity \x00 cvss_v3_formatted \x00 summary).
+type NormalizedCVE struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is a UUID primary key stable for foreign key references.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// cve_name is the CVE identifier, e.g. CVE-2021-44228.
+	CveName string `protobuf:"bytes,2,opt,name=cve_name,json=cveName,proto3" json:"cve_name,omitempty"`
+	// source is the advisory organization: OSV, NVD, RED_HAT, or UNKNOWN.
+	Source string `protobuf:"bytes,3,opt,name=source,proto3" json:"source,omitempty"`
+	// severity is one of CRITICAL, HIGH, MEDIUM, LOW, UNKNOWN.
+	Severity string `protobuf:"bytes,4,opt,name=severity,proto3" json:"severity,omitempty"`
+	// cvss_v2 is the CVSS v2 score.
+	CvssV2 float32 `protobuf:"fixed32,5,opt,name=cvss_v2,json=cvssV2,proto3" json:"cvss_v2,omitempty"`
+	// cvss_v3 is the CVSS v3 score.
+	CvssV3 float32 `protobuf:"fixed32,6,opt,name=cvss_v3,json=cvssV3,proto3" json:"cvss_v3,omitempty"`
+	// nvd_cvss_v3 is the NVD CVSS v3 score when source != NVD.
+	NvdCvssV3 float32 `protobuf:"fixed32,7,opt,name=nvd_cvss_v3,json=nvdCvssV3,proto3" json:"nvd_cvss_v3,omitempty"`
+	// summary is a human-readable description of the vulnerability.
+	Summary string `protobuf:"bytes,8,opt,name=summary,proto3" json:"summary,omitempty"`
+	// link is the reference URL for the CVE.
+	Link string `protobuf:"bytes,9,opt,name=link,proto3" json:"link,omitempty"`
+	// published_on is when the CVE was published.
+	PublishedOn *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=published_on,json=publishedOn,proto3" json:"published_on,omitempty"`
+	// advisory_name is the first advisory name encountered (informational only; not part of uniqueness key).
+	AdvisoryName string `protobuf:"bytes,11,opt,name=advisory_name,json=advisoryName,proto3" json:"advisory_name,omitempty"`
+	// advisory_link is the URL for the advisory.
+	AdvisoryLink string `protobuf:"bytes,12,opt,name=advisory_link,json=advisoryLink,proto3" json:"advisory_link,omitempty"`
+	// content_hash is SHA256(cve_name\x00source\x00severity\x00cvss_v3\x00summary).
+	ContentHash string `protobuf:"bytes,13,opt,name=content_hash,json=contentHash,proto3" json:"content_hash,omitempty"`
+	// created_at is when this CVE row was first inserted.
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NormalizedCVE) Reset() {
+	*x = NormalizedCVE{}
+	mi := &file_storage_cve_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NormalizedCVE) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NormalizedCVE) ProtoMessage() {}
+
+func (x *NormalizedCVE) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_cve_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NormalizedCVE.ProtoReflect.Descriptor instead.
+func (*NormalizedCVE) Descriptor() ([]byte, []int) {
+	return file_storage_cve_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *NormalizedCVE) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *NormalizedCVE) GetCveName() string {
+	if x != nil {
+		return x.CveName
+	}
+	return ""
+}
+
+func (x *NormalizedCVE) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *NormalizedCVE) GetSeverity() string {
+	if x != nil {
+		return x.Severity
+	}
+	return ""
+}
+
+func (x *NormalizedCVE) GetCvssV2() float32 {
+	if x != nil {
+		return x.CvssV2
+	}
+	return 0
+}
+
+func (x *NormalizedCVE) GetCvssV3() float32 {
+	if x != nil {
+		return x.CvssV3
+	}
+	return 0
+}
+
+func (x *NormalizedCVE) GetNvdCvssV3() float32 {
+	if x != nil {
+		return x.NvdCvssV3
+	}
+	return 0
+}
+
+func (x *NormalizedCVE) GetSummary() string {
+	if x != nil {
+		return x.Summary
+	}
+	return ""
+}
+
+func (x *NormalizedCVE) GetLink() string {
+	if x != nil {
+		return x.Link
+	}
+	return ""
+}
+
+func (x *NormalizedCVE) GetPublishedOn() *timestamppb.Timestamp {
+	if x != nil {
+		return x.PublishedOn
+	}
+	return nil
+}
+
+func (x *NormalizedCVE) GetAdvisoryName() string {
+	if x != nil {
+		return x.AdvisoryName
+	}
+	return ""
+}
+
+func (x *NormalizedCVE) GetAdvisoryLink() string {
+	if x != nil {
+		return x.AdvisoryLink
+	}
+	return ""
+}
+
+func (x *NormalizedCVE) GetContentHash() string {
+	if x != nil {
+		return x.ContentHash
+	}
+	return ""
+}
+
+func (x *NormalizedCVE) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+// NormalizedComponentCVEEdge links an image component to a NormalizedCVE record.
+// The first_system_occurrence is set on initial insert and preserved on subsequent updates.
+// This replaces the deprecated ComponentCVEEdge from relations.proto for the normalized CVE model.
+type NormalizedComponentCVEEdge struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is a UUID primary key.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// component_id is the TEXT foreign key referencing image_component_v2.id (a SHA256 hex string).
+	ComponentId string `protobuf:"bytes,2,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty"`
+	// cve_id is the UUID foreign key referencing cves.id.
+	CveId string `protobuf:"bytes,3,opt,name=cve_id,json=cveId,proto3" json:"cve_id,omitempty"`
+	// is_fixable indicates whether a fix is available.
+	IsFixable bool `protobuf:"varint,4,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty"`
+	// fixed_by is the version that fixes this vulnerability.
+	FixedBy string `protobuf:"bytes,5,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty"`
+	// state is the vulnerability state: OBSERVED, DEFERRED, or FALSE_POSITIVE.
+	State string `protobuf:"bytes,6,opt,name=state,proto3" json:"state,omitempty"`
+	// first_system_occurrence is set on first insert; not updated on subsequent upserts.
+	FirstSystemOccurrence *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=first_system_occurrence,json=firstSystemOccurrence,proto3" json:"first_system_occurrence,omitempty"`
+	// fix_available_at records when a fix first became available.
+	FixAvailableAt *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=fix_available_at,json=fixAvailableAt,proto3" json:"fix_available_at,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *NormalizedComponentCVEEdge) Reset() {
+	*x = NormalizedComponentCVEEdge{}
+	mi := &file_storage_cve_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NormalizedComponentCVEEdge) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NormalizedComponentCVEEdge) ProtoMessage() {}
+
+func (x *NormalizedComponentCVEEdge) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_cve_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NormalizedComponentCVEEdge.ProtoReflect.Descriptor instead.
+func (*NormalizedComponentCVEEdge) Descriptor() ([]byte, []int) {
+	return file_storage_cve_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *NormalizedComponentCVEEdge) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *NormalizedComponentCVEEdge) GetComponentId() string {
+	if x != nil {
+		return x.ComponentId
+	}
+	return ""
+}
+
+func (x *NormalizedComponentCVEEdge) GetCveId() string {
+	if x != nil {
+		return x.CveId
+	}
+	return ""
+}
+
+func (x *NormalizedComponentCVEEdge) GetIsFixable() bool {
+	if x != nil {
+		return x.IsFixable
+	}
+	return false
+}
+
+func (x *NormalizedComponentCVEEdge) GetFixedBy() string {
+	if x != nil {
+		return x.FixedBy
+	}
+	return ""
+}
+
+func (x *NormalizedComponentCVEEdge) GetState() string {
+	if x != nil {
+		return x.State
+	}
+	return ""
+}
+
+func (x *NormalizedComponentCVEEdge) GetFirstSystemOccurrence() *timestamppb.Timestamp {
+	if x != nil {
+		return x.FirstSystemOccurrence
+	}
+	return nil
+}
+
+func (x *NormalizedComponentCVEEdge) GetFixAvailableAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.FixAvailableAt
+	}
+	return nil
+}
+
 type CVE_DistroSpecific struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Severity      VulnerabilitySeverity  `protobuf:"varint,1,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty"`
@@ -2441,7 +2717,7 @@ type CVE_DistroSpecific struct {
 
 func (x *CVE_DistroSpecific) Reset() {
 	*x = CVE_DistroSpecific{}
-	mi := &file_storage_cve_proto_msgTypes[12]
+	mi := &file_storage_cve_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2453,7 +2729,7 @@ func (x *CVE_DistroSpecific) String() string {
 func (*CVE_DistroSpecific) ProtoMessage() {}
 
 func (x *CVE_DistroSpecific) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_cve_proto_msgTypes[12]
+	mi := &file_storage_cve_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2514,7 +2790,7 @@ type CVE_Reference struct {
 
 func (x *CVE_Reference) Reset() {
 	*x = CVE_Reference{}
-	mi := &file_storage_cve_proto_msgTypes[13]
+	mi := &file_storage_cve_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2526,7 +2802,7 @@ func (x *CVE_Reference) String() string {
 func (*CVE_Reference) ProtoMessage() {}
 
 func (x *CVE_Reference) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_cve_proto_msgTypes[13]
+	mi := &file_storage_cve_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2566,7 +2842,7 @@ type CVEInfo_Reference struct {
 
 func (x *CVEInfo_Reference) Reset() {
 	*x = CVEInfo_Reference{}
-	mi := &file_storage_cve_proto_msgTypes[15]
+	mi := &file_storage_cve_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2578,7 +2854,7 @@ func (x *CVEInfo_Reference) String() string {
 func (*CVEInfo_Reference) ProtoMessage() {}
 
 func (x *CVEInfo_Reference) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_cve_proto_msgTypes[15]
+	mi := &file_storage_cve_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2849,7 +3125,34 @@ const file_storage_cve_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12R\n" +
 	"\x17fix_available_timestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x15fixAvailableTimestamp\x12R\n" +
 	"\x17first_system_occurrence\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x15firstSystemOccurrence\x12\x10\n" +
-	"\x03cve\x18\x04 \x01(\tR\x03cve*D\n" +
+	"\x03cve\x18\x04 \x01(\tR\x03cve\"\xd5\x03\n" +
+	"\rNormalizedCVE\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
+	"\bcve_name\x18\x02 \x01(\tR\acveName\x12\x16\n" +
+	"\x06source\x18\x03 \x01(\tR\x06source\x12\x1a\n" +
+	"\bseverity\x18\x04 \x01(\tR\bseverity\x12\x17\n" +
+	"\acvss_v2\x18\x05 \x01(\x02R\x06cvssV2\x12\x17\n" +
+	"\acvss_v3\x18\x06 \x01(\x02R\x06cvssV3\x12\x1e\n" +
+	"\vnvd_cvss_v3\x18\a \x01(\x02R\tnvdCvssV3\x12\x18\n" +
+	"\asummary\x18\b \x01(\tR\asummary\x12\x12\n" +
+	"\x04link\x18\t \x01(\tR\x04link\x12=\n" +
+	"\fpublished_on\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\vpublishedOn\x12#\n" +
+	"\radvisory_name\x18\v \x01(\tR\fadvisoryName\x12#\n" +
+	"\radvisory_link\x18\f \x01(\tR\fadvisoryLink\x12!\n" +
+	"\fcontent_hash\x18\r \x01(\tR\vcontentHash\x129\n" +
+	"\n" +
+	"created_at\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xd0\x02\n" +
+	"\x1aNormalizedComponentCVEEdge\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12!\n" +
+	"\fcomponent_id\x18\x02 \x01(\tR\vcomponentId\x12\x15\n" +
+	"\x06cve_id\x18\x03 \x01(\tR\x05cveId\x12\x1d\n" +
+	"\n" +
+	"is_fixable\x18\x04 \x01(\bR\tisFixable\x12\x19\n" +
+	"\bfixed_by\x18\x05 \x01(\tR\afixedBy\x12\x14\n" +
+	"\x05state\x18\x06 \x01(\tR\x05state\x12R\n" +
+	"\x17first_system_occurrence\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\x15firstSystemOccurrence\x12D\n" +
+	"\x10fix_available_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\x0efixAvailableAt*D\n" +
 	"\x12VulnerabilityState\x12\f\n" +
 	"\bOBSERVED\x10\x00\x12\f\n" +
 	"\bDEFERRED\x10\x01\x12\x12\n" +
@@ -2886,90 +3189,92 @@ func file_storage_cve_proto_rawDescGZIP() []byte {
 }
 
 var file_storage_cve_proto_enumTypes = make([]protoimpl.EnumInfo, 19)
-var file_storage_cve_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_storage_cve_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_storage_cve_proto_goTypes = []any{
-	(VulnerabilityState)(0),       // 0: storage.VulnerabilityState
-	(VulnerabilitySeverity)(0),    // 1: storage.VulnerabilitySeverity
-	(Source)(0),                   // 2: storage.Source
-	(CvssScoreVersion)(0),         // 3: storage.CvssScoreVersion
-	(CVE_CVEType)(0),              // 4: storage.CVE.CVEType
-	(CVE_ScoreVersion)(0),         // 5: storage.CVE.ScoreVersion
-	(CVEInfo_ScoreVersion)(0),     // 6: storage.CVEInfo.ScoreVersion
-	(CVSSV2_Impact)(0),            // 7: storage.CVSSV2.Impact
-	(CVSSV2_AttackVector)(0),      // 8: storage.CVSSV2.AttackVector
-	(CVSSV2_AccessComplexity)(0),  // 9: storage.CVSSV2.AccessComplexity
-	(CVSSV2_Authentication)(0),    // 10: storage.CVSSV2.Authentication
-	(CVSSV2_Severity)(0),          // 11: storage.CVSSV2.Severity
-	(CVSSV3_Impact)(0),            // 12: storage.CVSSV3.Impact
-	(CVSSV3_AttackVector)(0),      // 13: storage.CVSSV3.AttackVector
-	(CVSSV3_Complexity)(0),        // 14: storage.CVSSV3.Complexity
-	(CVSSV3_Privileges)(0),        // 15: storage.CVSSV3.Privileges
-	(CVSSV3_UserInteraction)(0),   // 16: storage.CVSSV3.UserInteraction
-	(CVSSV3_Scope)(0),             // 17: storage.CVSSV3.Scope
-	(CVSSV3_Severity)(0),          // 18: storage.CVSSV3.Severity
-	(*EPSS)(nil),                  // 19: storage.EPSS
-	(*CVE)(nil),                   // 20: storage.CVE
-	(*CVEInfo)(nil),               // 21: storage.CVEInfo
-	(*Advisory)(nil),              // 22: storage.Advisory
-	(*ImageCVE)(nil),              // 23: storage.ImageCVE
-	(*ImageCVEV2)(nil),            // 24: storage.ImageCVEV2
-	(*NodeCVE)(nil),               // 25: storage.NodeCVE
-	(*ClusterCVE)(nil),            // 26: storage.ClusterCVE
-	(*CVSSScore)(nil),             // 27: storage.CVSSScore
-	(*CVSSV2)(nil),                // 28: storage.CVSSV2
-	(*CVSSV3)(nil),                // 29: storage.CVSSV3
-	(*ImageCVEInfo)(nil),          // 30: storage.ImageCVEInfo
-	(*CVE_DistroSpecific)(nil),    // 31: storage.CVE.DistroSpecific
-	(*CVE_Reference)(nil),         // 32: storage.CVE.Reference
-	nil,                           // 33: storage.CVE.DistroSpecificsEntry
-	(*CVEInfo_Reference)(nil),     // 34: storage.CVEInfo.Reference
-	(*timestamppb.Timestamp)(nil), // 35: google.protobuf.Timestamp
+	(VulnerabilityState)(0),            // 0: storage.VulnerabilityState
+	(VulnerabilitySeverity)(0),         // 1: storage.VulnerabilitySeverity
+	(Source)(0),                        // 2: storage.Source
+	(CvssScoreVersion)(0),              // 3: storage.CvssScoreVersion
+	(CVE_CVEType)(0),                   // 4: storage.CVE.CVEType
+	(CVE_ScoreVersion)(0),              // 5: storage.CVE.ScoreVersion
+	(CVEInfo_ScoreVersion)(0),          // 6: storage.CVEInfo.ScoreVersion
+	(CVSSV2_Impact)(0),                 // 7: storage.CVSSV2.Impact
+	(CVSSV2_AttackVector)(0),           // 8: storage.CVSSV2.AttackVector
+	(CVSSV2_AccessComplexity)(0),       // 9: storage.CVSSV2.AccessComplexity
+	(CVSSV2_Authentication)(0),         // 10: storage.CVSSV2.Authentication
+	(CVSSV2_Severity)(0),               // 11: storage.CVSSV2.Severity
+	(CVSSV3_Impact)(0),                 // 12: storage.CVSSV3.Impact
+	(CVSSV3_AttackVector)(0),           // 13: storage.CVSSV3.AttackVector
+	(CVSSV3_Complexity)(0),             // 14: storage.CVSSV3.Complexity
+	(CVSSV3_Privileges)(0),             // 15: storage.CVSSV3.Privileges
+	(CVSSV3_UserInteraction)(0),        // 16: storage.CVSSV3.UserInteraction
+	(CVSSV3_Scope)(0),                  // 17: storage.CVSSV3.Scope
+	(CVSSV3_Severity)(0),               // 18: storage.CVSSV3.Severity
+	(*EPSS)(nil),                       // 19: storage.EPSS
+	(*CVE)(nil),                        // 20: storage.CVE
+	(*CVEInfo)(nil),                    // 21: storage.CVEInfo
+	(*Advisory)(nil),                   // 22: storage.Advisory
+	(*ImageCVE)(nil),                   // 23: storage.ImageCVE
+	(*ImageCVEV2)(nil),                 // 24: storage.ImageCVEV2
+	(*NodeCVE)(nil),                    // 25: storage.NodeCVE
+	(*ClusterCVE)(nil),                 // 26: storage.ClusterCVE
+	(*CVSSScore)(nil),                  // 27: storage.CVSSScore
+	(*CVSSV2)(nil),                     // 28: storage.CVSSV2
+	(*CVSSV3)(nil),                     // 29: storage.CVSSV3
+	(*ImageCVEInfo)(nil),               // 30: storage.ImageCVEInfo
+	(*NormalizedCVE)(nil),              // 31: storage.NormalizedCVE
+	(*NormalizedComponentCVEEdge)(nil), // 32: storage.NormalizedComponentCVEEdge
+	(*CVE_DistroSpecific)(nil),         // 33: storage.CVE.DistroSpecific
+	(*CVE_Reference)(nil),              // 34: storage.CVE.Reference
+	nil,                                // 35: storage.CVE.DistroSpecificsEntry
+	(*CVEInfo_Reference)(nil),          // 36: storage.CVEInfo.Reference
+	(*timestamppb.Timestamp)(nil),      // 37: google.protobuf.Timestamp
 }
 var file_storage_cve_proto_depIdxs = []int32{
 	4,  // 0: storage.CVE.type:type_name -> storage.CVE.CVEType
 	4,  // 1: storage.CVE.types:type_name -> storage.CVE.CVEType
-	35, // 2: storage.CVE.published_on:type_name -> google.protobuf.Timestamp
-	35, // 3: storage.CVE.created_at:type_name -> google.protobuf.Timestamp
-	35, // 4: storage.CVE.last_modified:type_name -> google.protobuf.Timestamp
-	32, // 5: storage.CVE.references:type_name -> storage.CVE.Reference
+	37, // 2: storage.CVE.published_on:type_name -> google.protobuf.Timestamp
+	37, // 3: storage.CVE.created_at:type_name -> google.protobuf.Timestamp
+	37, // 4: storage.CVE.last_modified:type_name -> google.protobuf.Timestamp
+	34, // 5: storage.CVE.references:type_name -> storage.CVE.Reference
 	5,  // 6: storage.CVE.score_version:type_name -> storage.CVE.ScoreVersion
 	28, // 7: storage.CVE.cvss_v2:type_name -> storage.CVSSV2
 	29, // 8: storage.CVE.cvss_v3:type_name -> storage.CVSSV3
-	35, // 9: storage.CVE.suppress_activation:type_name -> google.protobuf.Timestamp
-	35, // 10: storage.CVE.suppress_expiry:type_name -> google.protobuf.Timestamp
-	33, // 11: storage.CVE.distro_specifics:type_name -> storage.CVE.DistroSpecificsEntry
+	37, // 9: storage.CVE.suppress_activation:type_name -> google.protobuf.Timestamp
+	37, // 10: storage.CVE.suppress_expiry:type_name -> google.protobuf.Timestamp
+	35, // 11: storage.CVE.distro_specifics:type_name -> storage.CVE.DistroSpecificsEntry
 	1,  // 12: storage.CVE.severity:type_name -> storage.VulnerabilitySeverity
-	35, // 13: storage.CVEInfo.published_on:type_name -> google.protobuf.Timestamp
-	35, // 14: storage.CVEInfo.created_at:type_name -> google.protobuf.Timestamp
-	35, // 15: storage.CVEInfo.last_modified:type_name -> google.protobuf.Timestamp
+	37, // 13: storage.CVEInfo.published_on:type_name -> google.protobuf.Timestamp
+	37, // 14: storage.CVEInfo.created_at:type_name -> google.protobuf.Timestamp
+	37, // 15: storage.CVEInfo.last_modified:type_name -> google.protobuf.Timestamp
 	6,  // 16: storage.CVEInfo.score_version:type_name -> storage.CVEInfo.ScoreVersion
 	28, // 17: storage.CVEInfo.cvss_v2:type_name -> storage.CVSSV2
 	29, // 18: storage.CVEInfo.cvss_v3:type_name -> storage.CVSSV3
-	34, // 19: storage.CVEInfo.references:type_name -> storage.CVEInfo.Reference
+	36, // 19: storage.CVEInfo.references:type_name -> storage.CVEInfo.Reference
 	27, // 20: storage.CVEInfo.cvss_metrics:type_name -> storage.CVSSScore
 	19, // 21: storage.CVEInfo.epss:type_name -> storage.EPSS
 	21, // 22: storage.ImageCVE.cve_base_info:type_name -> storage.CVEInfo
 	1,  // 23: storage.ImageCVE.severity:type_name -> storage.VulnerabilitySeverity
-	35, // 24: storage.ImageCVE.snooze_start:type_name -> google.protobuf.Timestamp
-	35, // 25: storage.ImageCVE.snooze_expiry:type_name -> google.protobuf.Timestamp
+	37, // 24: storage.ImageCVE.snooze_start:type_name -> google.protobuf.Timestamp
+	37, // 25: storage.ImageCVE.snooze_expiry:type_name -> google.protobuf.Timestamp
 	27, // 26: storage.ImageCVE.cvss_metrics:type_name -> storage.CVSSScore
 	3,  // 27: storage.ImageCVE.nvd_score_version:type_name -> storage.CvssScoreVersion
 	21, // 28: storage.ImageCVEV2.cve_base_info:type_name -> storage.CVEInfo
 	1,  // 29: storage.ImageCVEV2.severity:type_name -> storage.VulnerabilitySeverity
 	3,  // 30: storage.ImageCVEV2.nvd_score_version:type_name -> storage.CvssScoreVersion
-	35, // 31: storage.ImageCVEV2.first_image_occurrence:type_name -> google.protobuf.Timestamp
+	37, // 31: storage.ImageCVEV2.first_image_occurrence:type_name -> google.protobuf.Timestamp
 	0,  // 32: storage.ImageCVEV2.state:type_name -> storage.VulnerabilityState
 	22, // 33: storage.ImageCVEV2.advisory:type_name -> storage.Advisory
-	35, // 34: storage.ImageCVEV2.fix_available_timestamp:type_name -> google.protobuf.Timestamp
+	37, // 34: storage.ImageCVEV2.fix_available_timestamp:type_name -> google.protobuf.Timestamp
 	21, // 35: storage.NodeCVE.cve_base_info:type_name -> storage.CVEInfo
 	1,  // 36: storage.NodeCVE.severity:type_name -> storage.VulnerabilitySeverity
-	35, // 37: storage.NodeCVE.snooze_start:type_name -> google.protobuf.Timestamp
-	35, // 38: storage.NodeCVE.snooze_expiry:type_name -> google.protobuf.Timestamp
-	35, // 39: storage.NodeCVE.orphaned_time:type_name -> google.protobuf.Timestamp
+	37, // 37: storage.NodeCVE.snooze_start:type_name -> google.protobuf.Timestamp
+	37, // 38: storage.NodeCVE.snooze_expiry:type_name -> google.protobuf.Timestamp
+	37, // 39: storage.NodeCVE.orphaned_time:type_name -> google.protobuf.Timestamp
 	21, // 40: storage.ClusterCVE.cve_base_info:type_name -> storage.CVEInfo
 	1,  // 41: storage.ClusterCVE.severity:type_name -> storage.VulnerabilitySeverity
-	35, // 42: storage.ClusterCVE.snooze_start:type_name -> google.protobuf.Timestamp
-	35, // 43: storage.ClusterCVE.snooze_expiry:type_name -> google.protobuf.Timestamp
+	37, // 42: storage.ClusterCVE.snooze_start:type_name -> google.protobuf.Timestamp
+	37, // 43: storage.ClusterCVE.snooze_expiry:type_name -> google.protobuf.Timestamp
 	4,  // 44: storage.ClusterCVE.type:type_name -> storage.CVE.CVEType
 	2,  // 45: storage.CVSSScore.source:type_name -> storage.Source
 	28, // 46: storage.CVSSScore.cvssv2:type_name -> storage.CVSSV2
@@ -2990,18 +3295,22 @@ var file_storage_cve_proto_depIdxs = []int32{
 	12, // 61: storage.CVSSV3.integrity:type_name -> storage.CVSSV3.Impact
 	12, // 62: storage.CVSSV3.availability:type_name -> storage.CVSSV3.Impact
 	18, // 63: storage.CVSSV3.severity:type_name -> storage.CVSSV3.Severity
-	35, // 64: storage.ImageCVEInfo.fix_available_timestamp:type_name -> google.protobuf.Timestamp
-	35, // 65: storage.ImageCVEInfo.first_system_occurrence:type_name -> google.protobuf.Timestamp
-	1,  // 66: storage.CVE.DistroSpecific.severity:type_name -> storage.VulnerabilitySeverity
-	5,  // 67: storage.CVE.DistroSpecific.score_version:type_name -> storage.CVE.ScoreVersion
-	28, // 68: storage.CVE.DistroSpecific.cvss_v2:type_name -> storage.CVSSV2
-	29, // 69: storage.CVE.DistroSpecific.cvss_v3:type_name -> storage.CVSSV3
-	31, // 70: storage.CVE.DistroSpecificsEntry.value:type_name -> storage.CVE.DistroSpecific
-	71, // [71:71] is the sub-list for method output_type
-	71, // [71:71] is the sub-list for method input_type
-	71, // [71:71] is the sub-list for extension type_name
-	71, // [71:71] is the sub-list for extension extendee
-	0,  // [0:71] is the sub-list for field type_name
+	37, // 64: storage.ImageCVEInfo.fix_available_timestamp:type_name -> google.protobuf.Timestamp
+	37, // 65: storage.ImageCVEInfo.first_system_occurrence:type_name -> google.protobuf.Timestamp
+	37, // 66: storage.NormalizedCVE.published_on:type_name -> google.protobuf.Timestamp
+	37, // 67: storage.NormalizedCVE.created_at:type_name -> google.protobuf.Timestamp
+	37, // 68: storage.NormalizedComponentCVEEdge.first_system_occurrence:type_name -> google.protobuf.Timestamp
+	37, // 69: storage.NormalizedComponentCVEEdge.fix_available_at:type_name -> google.protobuf.Timestamp
+	1,  // 70: storage.CVE.DistroSpecific.severity:type_name -> storage.VulnerabilitySeverity
+	5,  // 71: storage.CVE.DistroSpecific.score_version:type_name -> storage.CVE.ScoreVersion
+	28, // 72: storage.CVE.DistroSpecific.cvss_v2:type_name -> storage.CVSSV2
+	29, // 73: storage.CVE.DistroSpecific.cvss_v3:type_name -> storage.CVSSV3
+	33, // 74: storage.CVE.DistroSpecificsEntry.value:type_name -> storage.CVE.DistroSpecific
+	75, // [75:75] is the sub-list for method output_type
+	75, // [75:75] is the sub-list for method input_type
+	75, // [75:75] is the sub-list for extension type_name
+	75, // [75:75] is the sub-list for extension extendee
+	0,  // [0:75] is the sub-list for field type_name
 }
 
 func init() { file_storage_cve_proto_init() }
@@ -3022,7 +3331,7 @@ func file_storage_cve_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_cve_proto_rawDesc), len(file_storage_cve_proto_rawDesc)),
 			NumEnums:      19,
-			NumMessages:   16,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
