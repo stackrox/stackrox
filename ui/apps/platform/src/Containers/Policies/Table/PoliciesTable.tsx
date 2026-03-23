@@ -327,9 +327,7 @@ function PoliciesTable({
                     <Table isStickyHeader aria-label="Policies table" data-testid="policies-table">
                         <Thead>
                             <Tr>
-                                <Th>
-                                    <span className="pf-v6-screen-reader">Row expansion</span>
-                                </Th>
+                                <Th screenReaderText="Row expansion" />
                                 <Th
                                     select={{
                                         onSelect: onSelectAll,
@@ -381,9 +379,7 @@ function PoliciesTable({
                                 <Th modifier="wrap" sort={getSortParams('Lifecycle')}>
                                     Lifecycle
                                 </Th>
-                                <Th>
-                                    <span className="pf-v6-screen-reader">Row actions</span>
-                                </Th>
+                                <Th screenReaderText="Row actions" />
                             </Tr>
                         </Thead>
                         <TbodyUnified

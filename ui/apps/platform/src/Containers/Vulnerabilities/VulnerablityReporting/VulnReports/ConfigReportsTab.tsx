@@ -291,11 +291,7 @@ function ConfigReportsTab() {
                                 >
                                     My last job status
                                 </HelpIconTh>
-                                {hasWriteAccessForReport && (
-                                    <Th>
-                                        <span className="pf-v6-screen-reader">Row actions</span>
-                                    </Th>
-                                )}
+                                {hasWriteAccessForReport && <Th screenReaderText="Row actions" />}
                             </Tr>
                         </Thead>
                         {reportConfigurations.length === 0 && isEmpty(searchFilter) && (

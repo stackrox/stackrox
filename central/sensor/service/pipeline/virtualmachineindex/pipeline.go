@@ -60,10 +60,22 @@ func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetEvent().GetVirtualMachineIndexReport() != nil
 }
 
+// sendVMIndexACK is a convenience wrapper around common.SendSensorACK for VM index reports.
+func sendVMIndexACK(ctx context.Context, resourceID, reason string, injector common.MessageInjector) {
+	common.SendSensorACK(ctx, central.SensorACK_ACK, central.SensorACK_VM_INDEX_REPORT, resourceID, reason, injector)
+}
+
+// sendVMIndexNACK is a convenience wrapper around common.SendSensorACK for VM index reports.
+func sendVMIndexNACK(ctx context.Context, resourceID, reason string, injector common.MessageInjector) {
+	common.SendSensorACK(ctx, central.SensorACK_NACK, central.SensorACK_VM_INDEX_REPORT, resourceID, reason, injector)
+}
+
 func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.VirtualMachineIndex)
 
 	if !features.VirtualMachines.Enabled() {
+		// ACK to prevent the sender from retrying when the feature is disabled on Central.
+		sendVMIndexACK(ctx, msg.GetEvent().GetVirtualMachineIndexReport().GetId(), centralsensor.SensorACKReasonFeatureDisabled, injector)
 		return nil
 	}
 	event := msg.GetEvent()
@@ -77,12 +89,14 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 			event.GetAction().String(),
 			central.ResourceAction_SYNC_RESOURCE.String(),
 		)
+		sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonUnsupportedAction, injector)
 		return nil
 	}
 
 	log.Debugf("Received virtual machine index report: %s", index.GetId())
 
 	if clusterID == "" {
+		sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonMissingClusterID, injector)
 		return errors.New("missing cluster ID in pipeline context")
 	}
 
@@ -92,22 +106,26 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	// Extract Scanner V4 index report from VM index report event
 	indexV4 := index.GetIndex().GetIndexV4()
 	if indexV4 == nil {
+		sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonMissingScanData, injector)
 		return errors.Errorf("VM index report %s missing Scanner V4 index data", index.GetId())
 	}
 
 	// Enrich VM with vulnerabilities
 	err := p.enricher.EnrichVirtualMachineWithVulnerabilities(vm, indexV4)
 	if err != nil {
+		sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonEnrichmentFailed, injector)
 		return errors.Wrapf(err, "failed to enrich VM %s with vulnerabilities", index.GetId())
 	}
 
 	// Store enriched VM
 	if err := p.vmDatastore.UpdateVirtualMachineScan(ctx, vm.GetId(), vm.GetScan()); err != nil {
+		sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonStorageFailed, injector)
 		return errors.Wrapf(err, "failed to upsert VM %s to datastore", index.GetId())
 	}
 
 	log.Debugf("Successfully enriched and stored VM %s with %d components",
 		vm.GetId(), len(vm.GetScan().GetComponents()))
 
+	sendVMIndexACK(ctx, index.GetId(), "", injector)
 	return nil
 }

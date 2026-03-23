@@ -140,11 +140,7 @@ function CVEsTable({
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
                     <Th>First discovered</Th>
-                    {canSelectRows && (
-                        <Th>
-                            <span className="pf-v6-screen-reader">Row actions</span>
-                        </Th>
-                    )}
+                    {canSelectRows && <Th screenReaderText="Row actions" />}
                 </Tr>
             </Thead>
             <TbodyUnified
