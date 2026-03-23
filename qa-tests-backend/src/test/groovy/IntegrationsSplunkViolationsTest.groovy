@@ -1,5 +1,4 @@
 import static util.Helpers.withRetry
-import static util.SplunkUtil.SPLUNK_ADMIN_PASSWORD
 import static util.SplunkUtil.postToSplunk
 import static util.SplunkUtil.tearDownSplunk
 import static util.SplunkUtil.waitForSplunkReady
@@ -31,7 +30,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
     private static final String SPLUNK_TA_CONVERSION_JOB_NAME =
             "Threat - Create Notable from RHACS Alert - Rule"
 
-    private static SplunkDeployment splunkDeployment
+    @spock.lang.Shared
+    private SplunkDeployment splunkDeployment
 
     def setupSpec() {
         orchestrator.deleteNamespace(TEST_NAMESPACE)
@@ -61,7 +61,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         // UCC-based TAs register inputs via custom REST handlers, not data/inputs/
         postToSplunk(port, "/servicesNS/nobody/TA-stackrox/TA_stackrox_stackrox_violations",
                 ["name": SPLUNK_INPUT_NAME, "interval": "5", "from_checkpoint": "2000-01-01T00:00:00.000Z",
-                 "index": "main"])
+                 "index": "main",])
     }
 
     @Tag("Integration")

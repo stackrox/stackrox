@@ -103,7 +103,8 @@ class SplunkUtil {
                     .param("output_mode", "json")
                     .get("https://127.0.0.1:${port}/services/search/jobs/${searchId}/events")
             assert response.statusCode() == 200 :
-                    "GET search results for ${searchId} failed with status ${response.statusCode()}: ${response.asString()}"
+                    "GET search results for ${searchId} failed with status " +
+                    "${response.statusCode()}: ${response.asString()}"
         }
         return response
     }
