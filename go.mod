@@ -48,7 +48,7 @@ require (
 	github.com/distribution/reference v0.6.0
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/facebookincubator/nvdtools v0.1.5
-	github.com/fatih/color v1.18.0
+	github.com/fatih/color v1.19.0
 	github.com/georgysavva/scany/v2 v2.1.4
 	github.com/go-jose/go-jose/v4 v4.1.3
 	github.com/go-logr/logr v1.4.3
