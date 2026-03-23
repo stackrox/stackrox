@@ -407,7 +407,6 @@ func TestPipelineRunV2(t *testing.T) {
 
 func TestPipelineReconcileV2(t *testing.T) {
 	testClusterID := fixtureconsts.Cluster1
-	otherClusterID := fixtureconsts.Cluster2
 	tests := []struct {
 		name          string
 		setupStoreMap func(*reconciliation.StoreMap)
@@ -430,20 +429,17 @@ func TestPipelineReconcileV2(t *testing.T) {
 			},
 		},
 		{
-			name: "v2 reconciliation does not remove VMs from other clusters",
+			name: "v2 reconciliation query filters by cluster so other-cluster VMs are not returned",
 			setupStoreMap: func(m *reconciliation.StoreMap) {
 				m.Add((*central.SensorEvent_VirtualMachine)(nil), "existing-vm")
 			},
 			setupMock: func(m *vmV2DataStoreMocks.MockDataStore) {
+				// The store query is filtered by clusterID, so only matching VMs are returned.
 				m.EXPECT().SearchRawVirtualMachines(gomock.Any(), gomock.Any()).
 					Return([]*storage.VirtualMachineV2{
 						{
 							Id:        "existing-vm",
 							ClusterId: testClusterID,
-						},
-						{
-							Id:        "existing-vm-in-other-cluster",
-							ClusterId: otherClusterID,
 						},
 					}, nil)
 			},

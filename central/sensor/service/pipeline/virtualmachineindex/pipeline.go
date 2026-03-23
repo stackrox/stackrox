@@ -12,6 +12,7 @@ import (
 	vmDatastore "github.com/stackrox/rox/central/virtualmachine/datastore"
 	vmV2DataStore "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
@@ -126,36 +127,42 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	}
 
 	if p.vmV2Store != nil {
-		log.Infof("VM v2 pipeline: enriched VM %s with %d components, %s scan OS; upserting VM record",
-			vm.GetId(), len(vm.GetScan().GetComponents()), vm.GetScan().GetOperatingSystem())
-
-		// Insert minimal VM record only when missing to satisfy FK constraint
-		// without clobbering richer VM metadata from the VM pipeline.
-		if err := p.vmV2Store.EnsureVirtualMachineExists(ctx, vm.GetId(), clusterID); err != nil {
-			sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonStorageFailed, injector)
-			return errors.Wrapf(err, "failed to ensure VM v2 %s exists in datastore", index.GetId())
-		}
-		log.Infof("VM v2 pipeline: ensured VM record %s exists; converting and upserting scan", vm.GetId())
-
-		// Convert v1 scan to v2 parts and upsert.
-		scanParts := v1tov2storage.ScanPartsFromV1Scan(vm.GetId(), vm.GetScan())
-		log.Infof("VM v2 pipeline: converted scan for VM %s: scan=%s, %d components, %d CVEs",
-			vm.GetId(), scanParts.Scan.GetId(), len(scanParts.Components), len(scanParts.CVEs))
-
-		if err := p.vmV2Store.UpsertScan(ctx, vm.GetId(), scanParts); err != nil {
-			sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonStorageFailed, injector)
-			return errors.Wrapf(err, "failed to upsert VM v2 scan %s to datastore", index.GetId())
-		}
-		log.Infof("VM v2 pipeline: successfully stored scan for VM %s", vm.GetId())
+		err = p.storeV2Scan(ctx, vm, clusterID, index, injector)
 	} else {
-		if err := p.vmDatastore.UpdateVirtualMachineScan(ctx, vm.GetId(), vm.GetScan()); err != nil {
-			sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonStorageFailed, injector)
-			return errors.Wrapf(err, "failed to upsert VM %s to datastore", index.GetId())
-		}
-		log.Debugf("Successfully enriched and stored VM %s with %d components",
-			vm.GetId(), len(vm.GetScan().GetComponents()))
+		err = p.storeV1Scan(ctx, vm, index, injector)
+	}
+	if err != nil {
+		return err
 	}
 
+	log.Debugf("Successfully enriched and stored VM %s with %d components",
+		vm.GetId(), len(vm.GetScan().GetComponents()))
 	sendVMIndexACK(ctx, index.GetId(), "", injector)
+	return nil
+}
+
+func (p *pipelineImpl) storeV1Scan(ctx context.Context, vm *storage.VirtualMachine, index *virtualMachineV1.IndexReportEvent, injector common.MessageInjector) error {
+	if err := p.vmDatastore.UpdateVirtualMachineScan(ctx, vm.GetId(), vm.GetScan()); err != nil {
+		sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonStorageFailed, injector)
+		return errors.Wrapf(err, "failed to upsert VM %s to datastore", index.GetId())
+	}
+	return nil
+}
+
+func (p *pipelineImpl) storeV2Scan(ctx context.Context, vm *storage.VirtualMachine, clusterID string, index *virtualMachineV1.IndexReportEvent, injector common.MessageInjector) error {
+	// Insert minimal VM record only when missing to satisfy FK constraint
+	// without clobbering richer VM metadata from the VM pipeline.
+	if err := p.vmV2Store.EnsureVirtualMachineExists(ctx, vm.GetId(), clusterID); err != nil {
+		sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonStorageFailed, injector)
+		return errors.Wrapf(err, "failed to ensure VM v2 %s exists in datastore", index.GetId())
+	}
+
+	// Convert v1 scan to v2 parts and upsert.
+	scanParts := v1tov2storage.ScanPartsFromV1Scan(vm.GetId(), vm.GetScan())
+
+	if err := p.vmV2Store.UpsertScan(ctx, vm.GetId(), scanParts); err != nil {
+		sendVMIndexNACK(ctx, index.GetId(), centralsensor.SensorACKReasonStorageFailed, injector)
+		return errors.Wrapf(err, "failed to upsert VM v2 scan %s to datastore", index.GetId())
+	}
 	return nil
 }

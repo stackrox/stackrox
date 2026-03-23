@@ -83,15 +83,14 @@ func (p *pipelineImpl) reconcileV1(ctx context.Context, clusterID string, storeM
 }
 
 func (p *pipelineImpl) reconcileV2(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
-	virtualMachines, err := p.vmV2Store.SearchRawVirtualMachines(ctx, search.EmptyQuery())
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	virtualMachines, err := p.vmV2Store.SearchRawVirtualMachines(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "retrieving virtual machines for reconciliation")
 	}
 	clusterVMIDs := set.NewStringSet()
 	for _, vm := range virtualMachines {
-		if vm.GetClusterId() == clusterID {
-			clusterVMIDs.Add(vm.GetId())
-		}
+		clusterVMIDs.Add(vm.GetId())
 	}
 
 	store := storeMap.Get((*central.SensorEvent_VirtualMachine)(nil))
