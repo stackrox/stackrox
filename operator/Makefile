@@ -263,7 +263,7 @@ test-integration: manifests generate fmt vet envtest ## Run go integration tests
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./tests/... -coverprofile cover-integration.out
 
 test-helm: ## Run operator helm chart tests.
-	$(MAKE) chart ROX_PRODUCT_BRANDING=RHACS_BRANDING  # tests assume the rhacs- prefix
+	ROX_PRODUCT_BRANDING=RHACS_BRANDING $(MAKE) chart # Setting the env var to produce the rhacs- flavor assumed by the subsequent test.
 	go test -tags operator_helmtest -count=1 -v ./tests/chart/...
 
 .PHONY: validate-crs
