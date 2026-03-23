@@ -49,6 +49,12 @@ jobs:
     - name: Go Operator Helm Tests
       run: ${{ matrix.gotags }} make -C operator/ test-helm
 
+    - uses: ./.github/actions/upload-artifact-with-retry
+      if: always()
+      with:
+        name: operator-dist
+        path: operator/dist
+
     - name: Generate junit report
       if: always()
       run: make generate-junit-reports
