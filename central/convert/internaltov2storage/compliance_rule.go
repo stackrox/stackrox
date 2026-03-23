@@ -65,11 +65,9 @@ func ComplianceOperatorRule(sensorData *central.ComplianceOperatorRuleV2, cluste
 	// For custom rules, CO does not set that annotation (CustomRule is a different CRD).
 	// CO derives the check result annotation from Spec.ID via IDToDNSFriendlyName, so we
 	// apply the same transformation here to produce a matching parentRule.
-	var parentRule string
+	parentRule := sensorData.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]
 	if sensorData.GetOperatorKind() == central.ComplianceOperatorRuleV2_CUSTOM_RULE {
 		parentRule = idToDNSFriendlyName(sensorData.GetRuleId())
-	} else {
-		parentRule = sensorData.GetAnnotations()[v1alpha1.RuleIDAnnotationKey]
 	}
 
 	return &storage.ComplianceOperatorRuleV2{

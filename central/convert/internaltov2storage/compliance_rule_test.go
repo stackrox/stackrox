@@ -21,6 +21,11 @@ func Test_idToDNSFriendlyName(t *testing.T) {
 			expected: "kubelet-configure-tls-cert",
 		},
 		{
+			name:     "ssgproject rule ID without content_ segment does not strip prefix",
+			input:    "xccdf_org.ssgproject.rule_abc",
+			expected: "xccdf-org.ssgproject.rule-abc",
+		},
+		{
 			name:     "custom rule ID with non-ssgproject prefix keeps prefix",
 			input:    "xccdf_org.example_rule_check_no_latest_tag",
 			expected: "xccdf-org.example-rule-check-no-latest-tag",
@@ -44,10 +49,12 @@ func TestComplianceOperatorRule_ParentRuleAndRuleRefId(t *testing.T) {
 	t.Run("regular rule uses annotation for parentRule", func(t *testing.T) {
 		msg := &central.ComplianceOperatorRuleV2{
 			Id:           "rule-uid",
-			RuleId:       "xccdf_org.ssgproject.content_rule_kubelet_configure_tls_cert",
+			RuleId:       "xccdf_org.ssgproject.content_rule_some_other_rule",
 			Name:         "kubelet-configure-tls-cert",
 			OperatorKind: central.ComplianceOperatorRuleV2_RULE,
 			Annotations: map[string]string{
+				// The annotation value differs from idToDNSFriendlyName(RuleId) to confirm
+				// that parentRule is read from the annotation, not derived from RuleId.
 				v1alpha1.RuleIDAnnotationKey: "kubelet-configure-tls-cert",
 			},
 		}
@@ -64,7 +71,11 @@ func TestComplianceOperatorRule_ParentRuleAndRuleRefId(t *testing.T) {
 			RuleId:       "xccdf_org.example_rule_check_no_latest_tag",
 			Name:         "check-no-latest-tag",
 			OperatorKind: central.ComplianceOperatorRuleV2_CUSTOM_RULE,
-			Annotations:  map[string]string{}, // no compliance.openshift.io/rule
+			Annotations: map[string]string{
+				// CustomRules do not have compliance.openshift.io/rule set by CO, but even
+				// if one were present it must be ignored: parentRule always comes from RuleId.
+				v1alpha1.RuleIDAnnotationKey: "some-ignored-annotation",
+			},
 		}
 
 		result := ComplianceOperatorRule(msg, clusterID)

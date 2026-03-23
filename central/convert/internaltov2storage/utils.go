@@ -27,8 +27,8 @@ func BuildNameRefID(clusterID string, name string) string {
 	return buildDeterministicID(clusterID, name)
 }
 
-// idToDNSFriendlyName mirrors compliance-operator's IDToDNSFriendlyName: it strips the
-// standard ssgproject XCCDF prefix (if present) then replaces underscores with hyphens.
+// idToDNSFriendlyName mirrors compliance-operator's IDToDNSFriendlyName (https://github.com/ComplianceAsCode/compliance-operator/blob/ae5d84d57ee9abb1a6e6692fdf093d54283b739e/pkg/utils/nameutils.go#L43):
+// it strips the standard ssgproject XCCDF prefix (if present) then replaces underscores with hyphens.
 // Used to derive parentRule for CustomRule objects, which carry their identifier in Spec.ID
 // rather than in the compliance.openshift.io/rule annotation.
 func idToDNSFriendlyName(id string) string {
