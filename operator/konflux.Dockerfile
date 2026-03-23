@@ -42,7 +42,7 @@ RUN dnf install -y \
 
 FROM ubi-micro-base
 
- ARG BUILD_TAG
+ARG BUILD_TAG
 
 LABEL \
     com.redhat.component="rhacs-operator-container" \
