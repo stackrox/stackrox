@@ -186,3 +186,20 @@ func SeverityToString(severity storage.VulnerabilitySeverity) string {
 		return "UNKNOWN"
 	}
 }
+
+// SeverityFromString converts the canonical severity string stored in the cves
+// table back to the storage.VulnerabilitySeverity enum.
+func SeverityFromString(s string) storage.VulnerabilitySeverity {
+	switch s {
+	case "CRITICAL":
+		return storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
+	case "HIGH":
+		return storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY
+	case "MEDIUM":
+		return storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY
+	case "LOW":
+		return storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY
+	default:
+		return storage.VulnerabilitySeverity_UNKNOWN_VULNERABILITY_SEVERITY
+	}
+}

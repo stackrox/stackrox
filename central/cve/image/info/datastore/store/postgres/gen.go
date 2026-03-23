@@ -1,3 +1,0 @@
-package postgres
-
-//go:generate pg-table-bindings-wrapper --type=storage.ImageCVEInfo --cached-store --no-copy-from --search-category IMAGE_CVE_INFOS

@@ -38,11 +38,3 @@ func IDToParts(id string) (string, string) {
 	}
 	return parts[0], ""
 }
-
-// ImageCVEInfoID creates a composite ID for ImageCVEInfo.
-// Format: cve#package#datasource (uses standard ID delimiter)
-// Example: "CVE-2021-1234#curl#debian-bookworm-updater::debian:12"
-// For Red Hat vulns, datasource will be empty string.
-func ImageCVEInfoID(cve, packageName, datasource string) string {
-	return pgSearch.IDFromPks([]string{cve, packageName, datasource})
-}
