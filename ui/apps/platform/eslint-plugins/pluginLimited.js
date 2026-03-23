@@ -415,6 +415,29 @@ const rules = {
             };
         },
     },
+    'no-non-deprecated-PropTypes': {
+        // Distinguish which files need replacement of prop-types dependency.
+        // Less of a rule than a tool to document technical investment.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Distinguish which files need replacement of prop-types dependency',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportDeclaration(node) {
+                    if (node.source?.value === 'prop-types') {
+                        context.report({
+                            node,
+                            message: 'Replace prop-types dependency in non-deprecated file',
+                        });
+                    }
+                },
+            };
+        },
+    },
     'no-qualified-name-react': {
         // React.Whatever is possible with default import.
         // For consistency and as prerequisite to replace default import with JSX transform.
