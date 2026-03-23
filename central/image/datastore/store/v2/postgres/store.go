@@ -10,6 +10,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/hashstructure"
 	convertutils "github.com/stackrox/rox/central/cve/converter/utils"
+	cvev2ds "github.com/stackrox/rox/central/cve/image/v2/datastore"
+	cvev2store "github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/image/views"
@@ -212,7 +214,8 @@ func (s *storeImpl) insertIntoImages(
 		return err
 	}
 
-	return copyFromImageComponentV2Cves(ctx, tx, iTime, cveTimeMap, parts.cvesV2...)
+	// Insert CVEs into the normalized cves and component_cve_edges tables.
+	return s.upsertCVEsToNormalizedTables(ctx, parts.cvesV2, iTime, cveTimeMap)
 }
 
 func getPartsAsSlice(parts common.ImageParts) *imagePartsAsSlice {
@@ -309,89 +312,142 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 	return nil
 }
 
-func copyFromImageComponentV2Cves(ctx context.Context, tx *postgres.Tx, iTime time.Time, cveTimeMap map[string]*timeFields, objs ...*storage.ImageCVEV2) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
-	}
-	inputRows := make([][]interface{}, 0, batchSize)
+// upsertCVEsToNormalizedTables inserts CVEs into the normalized cves and component_cve_edges tables.
+// This replaces the old copyFromImageComponentV2Cves bulk insert into image_cves_v2.
+func (s *storeImpl) upsertCVEsToNormalizedTables(
+	ctx context.Context,
+	cvesV2 []*storage.ImageCVEV2,
+	iTime time.Time,
+	cveTimeMap map[string]*timeFields,
+) error {
+	cveStore := cvev2ds.Singleton()
 
-	copyCols := []string{
-		"id",
-		"imageid",
-		"cvebaseinfo_cve",
-		"cvebaseinfo_publishedon",
-		"cvebaseinfo_createdat",
-		"cvebaseinfo_epss_epssprobability",
-		"cvss",
-		"severity",
-		"impactscore",
-		"nvdcvss",
-		"firstimageoccurrence",
-		"state",
-		"isfixable",
-		"fixedby",
-		"componentid",
-		"advisory_name",
-		"advisory_link",
-		"fixavailabletimestamp",
-		"serialized",
-	}
+	// Group CVEs by component ID to track which CVEs belong to each component.
+	componentCVEMap := make(map[string][]string)
+	for _, cveV2 := range cvesV2 {
+		// Extract CVSS V3 score.
+		var cvssV3 float32
+		if v3 := cveV2.GetCveBaseInfo().GetCvssV3(); v3 != nil {
+			cvssV3 = v3.GetScore()
+		}
 
-	for idx, obj := range objs {
-		// If we have seen this CVE in the image already, set the times consistently.
-		if cveTimes := cveTimeMap[obj.GetCveBaseInfo().GetCve()]; cveTimes != nil {
-			obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&cveTimes.createdAt)
-			obj.FirstImageOccurrence = protocompat.ConvertTimeToTimestampOrNil(&cveTimes.firstImageOccurrence)
+		// Determine primary source from CVSS metrics or datasource.
+		source := primarySourceFromImageCVE(cveV2)
+		severity := convertutils.SeverityToString(cveV2.GetSeverity())
+
+		// Compute content hash.
+		contentHash := convertutils.ComputeCVEContentHash(
+			cveV2.GetCveBaseInfo().GetCve(), source, severity, cvssV3, cveV2.GetCveBaseInfo().GetSummary(),
+		)
+
+		// Build CVERow.
+		cveRow := &cvev2store.CVERow{
+			CVEName:     cveV2.GetCveBaseInfo().GetCve(),
+			Source:      source,
+			Severity:    severity,
+			ContentHash: contentHash,
+			Summary:     stringPtr(cveV2.GetCveBaseInfo().GetSummary()),
+			Link:        stringPtr(cveV2.GetCveBaseInfo().GetLink()),
+		}
+		if cvssV3 > 0 {
+			cveRow.CvssV3 = float32Ptr(cvssV3)
+		}
+		if v2 := cveV2.GetCveBaseInfo().GetCvssV2(); v2 != nil && v2.GetScore() > 0 {
+			cveRow.CvssV2 = float32Ptr(v2.GetScore())
+		}
+		// Set NVD CVSS V3 if available.
+		if cveV2.GetNvdcvss() > 0 {
+			cveRow.NvdCvssV3 = float32Ptr(cveV2.GetNvdcvss())
+		}
+		if pub := cveV2.GetCveBaseInfo().GetPublishedOn(); pub != nil {
+			t := pub.AsTime()
+			cveRow.PublishedOn = &t
+		}
+		if adv := cveV2.GetAdvisory(); adv != nil {
+			cveRow.AdvisoryName = stringPtr(adv.GetName())
+			cveRow.AdvisoryLink = stringPtr(adv.GetLink())
+		}
+
+		// Upsert CVE row.
+		cveID, err := cveStore.UpsertCVE(ctx, cveRow)
+		if err != nil {
+			return errors.Wrapf(err, "upserting CVE %q for component %q", cveV2.GetCveBaseInfo().GetCve(), cveV2.GetComponentId())
+		}
+
+		// Track this CVE for the component.
+		componentCVEMap[cveV2.GetComponentId()] = append(componentCVEMap[cveV2.GetComponentId()], cveID)
+
+		// Build EdgeRow.
+		edge := &cvev2store.EdgeRow{
+			ComponentID: cveV2.GetComponentId(),
+			CveID:       cveID,
+			IsFixable:   cveV2.GetIsFixable(),
+			FixedBy:     stringPtr(cveV2.GetFixedBy()),
+			State:       cveV2.GetState().String(),
+		}
+		// Use the cveTimeMap for FirstSystemOccurrence if available.
+		cveName := cveV2.GetCveBaseInfo().GetCve()
+		if cveTime, ok := cveTimeMap[cveName]; ok && cveTime != nil {
+			edge.FirstSystemOccurrence = cveTime.createdAt
+		} else if createdAt := cveV2.GetCveBaseInfo().GetCreatedAt(); createdAt != nil {
+			edge.FirstSystemOccurrence = createdAt.AsTime()
 		} else {
-			if obj.GetCveBaseInfo().GetCreatedAt() == nil {
-				obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
-			}
-			if obj.GetFirstImageOccurrence() == nil {
-				obj.FirstImageOccurrence = protocompat.ConvertTimeToTimestampOrNil(&iTime)
-			}
+			edge.FirstSystemOccurrence = iTime
+		}
+		if fav := cveV2.GetFixAvailableTimestamp(); fav != nil {
+			t := fav.AsTime()
+			edge.FixAvailableAt = &t
 		}
 
-		serialized, marshalErr := obj.MarshalVT()
-		if marshalErr != nil {
-			return marshalErr
+		// Upsert edge.
+		if err := cveStore.UpsertEdge(ctx, edge); err != nil {
+			return errors.Wrapf(err, "upserting edge for component %q and CVE %q", cveV2.GetComponentId(), cveID)
 		}
+	}
 
-		inputRows = append(inputRows, []interface{}{
-			obj.GetId(),
-			obj.GetImageId(),
-			obj.GetCveBaseInfo().GetCve(),
-			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
-			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
-			obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
-			obj.GetCvss(),
-			obj.GetSeverity(),
-			obj.GetImpactScore(),
-			obj.GetNvdcvss(),
-			protocompat.NilOrTime(obj.GetFirstImageOccurrence()),
-			obj.GetState(),
-			obj.GetIsFixable(),
-			obj.GetFixedBy(),
-			obj.GetComponentId(),
-			obj.GetAdvisory().GetName(),
-			obj.GetAdvisory().GetLink(),
-			protocompat.NilOrTime(obj.GetFixAvailableTimestamp()),
-			serialized,
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{imageComponentsV2CVEsTable}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
+	// Delete stale edges for each component.
+	for componentID, newCVEIDs := range componentCVEMap {
+		if err := cveStore.DeleteStaleEdges(ctx, componentID, newCVEIDs); err != nil {
+			return errors.Wrapf(err, "deleting stale edges for component %q", componentID)
 		}
 	}
 
 	return nil
+}
+
+// primarySourceFromImageCVE returns the primary source string for an ImageCVEV2
+// based on its CVSS metrics, preferring NVD > RED_HAT > OSV > UNKNOWN.
+func primarySourceFromImageCVE(cveV2 *storage.ImageCVEV2) string {
+	priority := map[storage.Source]int{
+		storage.Source_SOURCE_NVD:      3,
+		storage.Source_SOURCE_RED_HAT:  2,
+		storage.Source_SOURCE_OSV:      1,
+	}
+	best := storage.Source_SOURCE_UNKNOWN
+	bestPrio := -1
+	for _, m := range cveV2.GetCveBaseInfo().GetCvssMetrics() {
+		if p := priority[m.GetSource()]; p > bestPrio {
+			best = m.GetSource()
+			bestPrio = p
+		}
+	}
+	return convertutils.SourceToString(best)
+}
+
+// stringPtr returns a pointer to a string, or nil if the string is empty.
+func stringPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+// float32Ptr returns a pointer to a float32, or nil if the value is zero.
+func float32Ptr(f float32) *float32 {
+	if f == 0 {
+		return nil
+	}
+	return &f
 }
 
 func (s *storeImpl) isUpdated(oldImage, image *storage.Image) (bool, bool, error) {
