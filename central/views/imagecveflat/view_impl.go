@@ -4,6 +4,9 @@ import (
 	"context"
 	"sort"
 
+	"github.com/pkg/errors"
+	cveDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
+	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -167,4 +170,10 @@ func (v *imageCVEFlatViewImpl) getFilteredCVEs(ctx context.Context, q *v1.Query)
 	}
 
 	return cveIDsToFilter, nil
+}
+
+// GetAllNormalizedCVEs returns all CVEs from the normalized cves table
+// that are referenced by at least one image component.
+func (v *imageCVEFlatViewImpl) GetAllNormalizedCVEs(ctx context.Context) ([]*store.CVERow, error) {
+	return cveDS.Singleton().GetAllReferencedCVEs(ctx)
 }
