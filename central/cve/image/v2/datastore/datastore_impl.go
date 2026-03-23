@@ -2,105 +2,45 @@ package datastore
 
 import (
 	"context"
-	"strings"
 
 	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
-	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 type datastoreImpl struct {
 	storage store.Store
 }
 
-func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
-	return ds.storage.Search(ctx, q)
+// UpsertCVE inserts a CVE row if it doesn't exist (two-phase: insert then fetch).
+// Returns the UUID of the CVE row (whether newly inserted or pre-existing).
+func (ds *datastoreImpl) UpsertCVE(ctx context.Context, cveRow *store.CVERow) (string, error) {
+	return ds.storage.UpsertCVE(ctx, cveRow)
 }
 
-func (ds *datastoreImpl) SearchImageCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	if q == nil {
-		q = pkgSearch.EmptyQuery()
-	}
-
-	// Clone the query and add select fields for SearchResult construction
-	clonedQuery := q.CloneVT()
-	selectSelects := []*v1.QuerySelect{
-		pkgSearch.NewQuerySelect(pkgSearch.CVE).Proto(),
-	}
-	clonedQuery.Selects = append(clonedQuery.GetSelects(), selectSelects...)
-
-	results, err := ds.storage.Search(ctx, clonedQuery)
-	if err != nil {
-		return nil, err
-	}
-	searchTag := strings.ToLower(pkgSearch.CVE.String())
-	for i := range results {
-		if results[i].FieldValues != nil {
-			if nameVal, ok := results[i].FieldValues[searchTag]; ok {
-				results[i].Name = nameVal
-			}
-		}
-	}
-
-	return pkgSearch.ResultsToSearchResultProtos(results, &ImageCVESearchResultConverter{}), nil
+// UpsertEdge inserts or updates a component_cve_edges row.
+// first_system_occurrence is preserved on conflict (not updated).
+// is_fixable and fixed_by are refreshed on conflict.
+func (ds *datastoreImpl) UpsertEdge(ctx context.Context, edge *store.EdgeRow) error {
+	return ds.storage.UpsertEdge(ctx, edge)
 }
 
-func (ds *datastoreImpl) SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([]*storage.ImageCVEV2, error) {
-	var cves []*storage.ImageCVEV2
-	err := ds.storage.GetByQueryFn(ctx, q, func(cve *storage.ImageCVEV2) error {
-		cves = append(cves, cve)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return cves, nil
+// DeleteStaleEdges removes edges for a component whose cve_id is NOT in keepCVEIDs.
+// If keepCVEIDs is empty, all edges for the component are deleted.
+func (ds *datastoreImpl) DeleteStaleEdges(ctx context.Context, componentID string, keepCVEIDs []string) error {
+	return ds.storage.DeleteStaleEdges(ctx, componentID, keepCVEIDs)
 }
 
-func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return ds.storage.Count(ctx, q)
+// GetCVEsForImage returns all CVEs for a given image (joined through component_cve_edges and image_component_v2).
+func (ds *datastoreImpl) GetCVEsForImage(ctx context.Context, imageID string) ([]*store.CVERow, error) {
+	return ds.storage.GetCVEsForImage(ctx, imageID)
 }
 
-func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageCVEV2, bool, error) {
-	cve, found, err := ds.storage.Get(ctx, id)
-	if err != nil || !found {
-		return nil, false, err
-	}
-	return cve, true, nil
+// GetAllReferencedCVEs returns all CVEs referenced by at least one component_cve_edges row.
+func (ds *datastoreImpl) GetAllReferencedCVEs(ctx context.Context) ([]*store.CVERow, error) {
+	return ds.storage.GetAllReferencedCVEs(ctx)
 }
 
-func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
-	found, err := ds.storage.Exists(ctx, id)
-	if err != nil || !found {
-		return false, err
-	}
-	return true, nil
-}
-
-func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage.ImageCVEV2, error) {
-	cves, _, err := ds.storage.GetMany(ctx, ids)
-	if err != nil {
-		return nil, err
-	}
-	return cves, nil
-}
-
-type ImageCVESearchResultConverter struct{}
-
-func (c *ImageCVESearchResultConverter) BuildName(result *pkgSearch.Result) string {
-	return result.Name
-}
-
-func (c *ImageCVESearchResultConverter) BuildLocation(result *pkgSearch.Result) string {
-	return ""
-}
-
-func (c *ImageCVESearchResultConverter) GetCategory() v1.SearchCategory {
-	return v1.SearchCategory_IMAGE_VULNERABILITIES_V2
-}
-
-func (c *ImageCVESearchResultConverter) GetScore(result *pkgSearch.Result) float64 {
-	return result.Score
+// DeleteOrphanedCVEsBatch deletes up to batchSize CVEs with no referencing edges.
+// Returns number of rows deleted.
+func (ds *datastoreImpl) DeleteOrphanedCVEsBatch(ctx context.Context, batchSize int) (int64, error) {
+	return ds.storage.DeleteOrphanedCVEsBatch(ctx, batchSize)
 }

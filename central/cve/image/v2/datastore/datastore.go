@@ -6,24 +6,35 @@ import (
 
 	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	pgStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
-	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is an intermediary to CVE storage.
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
-	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
-	SearchImageCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
-	SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([]*storage.ImageCVEV2, error)
+	// UpsertCVE inserts a CVE row if it doesn't exist (two-phase: insert then fetch).
+	// Returns the UUID of the CVE row (whether newly inserted or pre-existing).
+	UpsertCVE(ctx context.Context, cveRow *store.CVERow) (string, error)
 
-	Exists(ctx context.Context, id string) (bool, error)
-	Get(ctx context.Context, id string) (*storage.ImageCVEV2, bool, error)
-	Count(ctx context.Context, q *v1.Query) (int, error)
-	GetBatch(ctx context.Context, id []string) ([]*storage.ImageCVEV2, error)
+	// UpsertEdge inserts or updates a component_cve_edges row.
+	// first_system_occurrence is preserved on conflict (not updated).
+	// is_fixable and fixed_by are refreshed on conflict.
+	UpsertEdge(ctx context.Context, edge *store.EdgeRow) error
+
+	// DeleteStaleEdges removes edges for a component whose cve_id is NOT in keepCVEIDs.
+	// If keepCVEIDs is empty, all edges for the component are deleted.
+	DeleteStaleEdges(ctx context.Context, componentID string, keepCVEIDs []string) error
+
+	// GetCVEsForImage returns all CVEs for a given image (joined through component_cve_edges and image_component_v2).
+	GetCVEsForImage(ctx context.Context, imageID string) ([]*store.CVERow, error)
+
+	// GetAllReferencedCVEs returns all CVEs referenced by at least one component_cve_edges row.
+	GetAllReferencedCVEs(ctx context.Context) ([]*store.CVERow, error)
+
+	// DeleteOrphanedCVEsBatch deletes up to batchSize CVEs with no referencing edges.
+	// Returns number of rows deleted.
+	DeleteOrphanedCVEsBatch(ctx context.Context, batchSize int) (int64, error)
 }
 
 // New returns a new instance of a DataStore.
