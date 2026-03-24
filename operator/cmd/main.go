@@ -151,7 +151,7 @@ func run() error {
 		return errors.Wrap(err, "unable to create bootstrap client for TLS profile")
 	}
 
-	// TODO(ROX-32095): Remove once TLSAdherence is available in target OpenShift clusters.
+	// TODO(ROX-32095): Remove once TLSAdherence is set on target OpenShift clusters.
 	tlsprofile.SetAlwaysHonorTLSProfile()
 	tlsProfile, goTLSProfileSpec := tlsprofile.FetchProfile(context.Background(), bootstrapClient, setupLog)
 

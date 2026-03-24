@@ -6,6 +6,7 @@ import (
 	"github.com/go-logr/logr"
 	configv1 "github.com/openshift/api/config/v1"
 	tlspkg "github.com/openshift/controller-runtime-common/pkg/tls"
+	libgocrypto "github.com/openshift/library-go/pkg/crypto"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -67,30 +68,13 @@ func FetchProfile(ctx context.Context, c ctrlClient.Reader, log logr.Logger) (*T
 	}, &spec
 }
 
-// shouldHonorClusterTLSProfile determines whether the cluster TLS profile
-// should be enforced for a given TLSAdherencePolicy. Declared as a variable so
-// callers can override it before the TLSAdherence API is available in OpenShift
-// (see SetAlwaysHonorTLSProfile).
-//
-// TODO(ROX-32095): Replace with crypto.ShouldHonorClusterTLSProfile from
-// library-go when https://github.com/openshift/library-go/pull/2114 is merged
-// and available.
-var shouldHonorClusterTLSProfile = func(adherence configv1.TLSAdherencePolicy) bool {
-	switch adherence {
-	case configv1.TLSAdherencePolicyNoOpinion,
-		configv1.TLSAdherencePolicyLegacyAdheringComponentsOnly:
-		return false
-	default:
-		// Unknown values default to strict for forward compatibility, as
-		// specified by the enhancement and to default to the more secure behavior.
-		return true
-	}
-}
+var shouldHonorClusterTLSProfile = libgocrypto.ShouldHonorClusterTLSProfile
 
 // SetAlwaysHonorTLSProfile overrides the adherence check so that the cluster
 // TLS profile is always applied, regardless of the TLSAdherence field value.
 //
-// TODO(ROX-32095): Remove once the TLSAdherence API has landed in OpenShift.
+// This is a temporary workaround for testing on clusters where the
+// TLSAdherence field is not yet set appropriately.
 func SetAlwaysHonorTLSProfile() {
 	shouldHonorClusterTLSProfile = func(_ configv1.TLSAdherencePolicy) bool {
 		return true
