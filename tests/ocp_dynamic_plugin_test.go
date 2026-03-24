@@ -30,7 +30,6 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 const (
@@ -153,11 +152,8 @@ func setupProxyNetworkPolicy(t *testing.T, ctx context.Context, k8sClient kubern
 // setupSensorRoute creates a temporary OpenShift Route backed by the sensorProxyServiceName
 // Service and waits until the OCP router assigns a hostname. It returns the hostname assigned
 // by the router.
-func setupSensorRoute(t *testing.T, ctx context.Context, restCfg *rest.Config) string {
+func setupSensorRoute(t *testing.T, ctx context.Context, routeClient routeclient.Interface) string {
 	t.Helper()
-
-	rc, err := routeclient.NewForConfig(restCfg)
-	require.NoError(t, err, "creating OpenShift route client")
 
 	routeName := fmt.Sprintf("acs-ocp-e2e-%s", uuid.NewV4())
 
@@ -181,13 +177,13 @@ func setupSensorRoute(t *testing.T, ctx context.Context, restCfg *rest.Config) s
 	}
 
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
-		_, err := rc.RouteV1().Routes(testNamespace).Create(ctx, route, metaV1.CreateOptions{})
+		_, err := routeClient.RouteV1().Routes(testNamespace).Create(ctx, route, metaV1.CreateOptions{})
 		if err != nil && !k8sErrors.IsAlreadyExists(err) {
 			assert.NoError(c, err, "creating test Route %s in namespace %s", routeName, testNamespace)
 		}
 	}, retryTimeout, retryInterval)
 	t.Cleanup(func() {
-		if err := rc.RouteV1().Routes(testNamespace).Delete(
+		if err := routeClient.RouteV1().Routes(testNamespace).Delete(
 			context.Background(), routeName, metaV1.DeleteOptions{}); err != nil {
 			t.Logf("failed to delete Route %s: %v", routeName, err)
 		}
@@ -195,7 +191,7 @@ func setupSensorRoute(t *testing.T, ctx context.Context, restCfg *rest.Config) s
 
 	var routeHost string
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
-		r, err := rc.RouteV1().Routes(testNamespace).Get(ctx, routeName, metaV1.GetOptions{})
+		r, err := routeClient.RouteV1().Routes(testNamespace).Get(ctx, routeName, metaV1.GetOptions{})
 		require.NoError(c, err, "getting Route %s", routeName)
 		require.NotEmpty(c, r.Status.Ingress,
 			"Route %s has no ingress entries yet; waiting for OCP router to admit it", routeName)
@@ -209,13 +205,14 @@ func setupSensorRoute(t *testing.T, ctx context.Context, restCfg *rest.Config) s
 // proxy base URL.
 func setupSensorProxy(t *testing.T, ctx context.Context, k8sClient kubernetes.Interface) string {
 	t.Helper()
-	restCfg := getConfig(t)
 
 	// Allow OCP Router traffic to reach sensor port sensorProxyPort for the duration of this test.
 	setupProxyNetworkPolicy(t, ctx, k8sClient)
 
 	// Create a passthrough Route to sensor-proxy and wait for the router to assign a hostname.
-	routeHost := setupSensorRoute(t, ctx, restCfg)
+	routeClient, err := routeclient.NewForConfig(getConfig(t))
+	require.NoError(t, err, "creating OpenShift route client")
+	routeHost := setupSensorRoute(t, ctx, routeClient)
 
 	return fmt.Sprintf("https://%s/proxy/central", routeHost)
 }
