@@ -41,18 +41,23 @@ func init() {
 			imageOptionsMap,
 		),
 	)
+	imageCVEOptionsMap := schema.ImageCvesV2Schema.OptionsMap
+	if features.FlattenImageData.Enabled() {
+		// image_cves_v2 is replaced by the normalized cves table when FlattenImageData is enabled.
+		imageCVEOptionsMap = schema.CvesSchema.OptionsMap
+	}
 	ImageOnlyOptionsMap = search.Difference(
 		schema.ImagesSchema.OptionsMap,
 		search.CombineOptionsMaps(
 			schema.ImageComponentV2Schema.OptionsMap,
-			schema.ImageCvesV2Schema.OptionsMap,
+			imageCVEOptionsMap,
 		),
 	)
 	ImageV2OnlyOptionsMap = search.Difference(
 		schema.ImagesV2Schema.OptionsMap,
 		search.CombineOptionsMaps(
 			schema.ImageComponentV2Schema.OptionsMap,
-			schema.ImageCvesV2Schema.OptionsMap,
+			imageCVEOptionsMap,
 		),
 	)
 	NodeOnlyOptionsMap = search.Difference(

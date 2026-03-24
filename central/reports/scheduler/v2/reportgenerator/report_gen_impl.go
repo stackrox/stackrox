@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/features"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -520,6 +521,10 @@ func filterOnImageType(imageTypes []storage.VulnerabilityReportFilters_ImageType
 }
 
 func selectSchema() *walker.Schema {
+	if features.FlattenImageData.Enabled() {
+		// image_cves_v2 is replaced by the normalized cves table when FlattenImageData is enabled.
+		return pkgSchema.CvesSchema
+	}
 	return pkgSchema.ImageCvesV2Schema
 }
 
