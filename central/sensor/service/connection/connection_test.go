@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
+	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	"github.com/stackrox/rox/central/hash/manager/mocks"
 	clusterMgrMock "github.com/stackrox/rox/central/sensor/service/common/mocks"
 	pipelineMock "github.com/stackrox/rox/central/sensor/service/pipeline/mocks"
