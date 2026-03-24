@@ -1038,7 +1038,6 @@ module.exports = [
             'src/Containers/Login/LoginPage.jsx', // rewrite in TypeScript
             'src/Containers/Login/TestLoginResultsPage.jsx', // rewrite in TypeScript
             'src/Containers/MainPage/Header/UserMenu.tsx', // rewritten in TypeScript
-            'src/Containers/Policies/Modal/KeepBothSection.tsx', // rewritten in TypeScript
             'src/Containers/Risk/EventTimeline/**', // deprecated
             'src/Containers/Risk/Process/Binaries.jsx', // rewrite in TypeScript?
             'src/Containers/Risk/Process/BinaryCollapsible.jsx', // rewrite in TypeScript?
