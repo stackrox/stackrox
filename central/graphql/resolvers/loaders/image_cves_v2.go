@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/cve/converter/v2"
 	ImageCVEDataStore "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,8 +24,9 @@ func init() {
 // NewImageCVEV2Loader creates a new loader for image cve data.
 func NewImageCVEV2Loader(ds ImageCVEDataStore.DataStore) ImageCVEV2Loader {
 	return &imageCveV2LoaderImpl{
-		loaded: make(map[string]*storage.ImageCVEV2),
-		ds:     ds,
+		loaded:    make(map[string]*storage.ImageCVEV2),
+		ds:        ds,
+		converter: converter.NewImageCVEConverter(),
 	}
 }
 
@@ -49,10 +51,10 @@ type ImageCVEV2Loader interface {
 
 // imageCveV2LoaderImpl implements the ImageCVELoader interface.
 type imageCveV2LoaderImpl struct {
-	lock   sync.RWMutex
-	loaded map[string]*storage.ImageCVEV2
-
-	ds ImageCVEDataStore.DataStore
+	lock      sync.RWMutex
+	loaded    map[string]*storage.ImageCVEV2
+	ds        ImageCVEDataStore.DataStore
+	converter converter.ImageCVEConverter
 }
 
 // FromIDs loads a set of image cves from a set of ids.
@@ -73,33 +75,63 @@ func (idl *imageCveV2LoaderImpl) FromID(ctx context.Context, id string) (*storag
 	return cves[0], nil
 }
 
-// FromQuery loads a set of image cves that match a query.
-// NOTE: image_cves_v2 table has been dropped by migration m_222_to_m_223.
-// CVE data is now stored in the normalized cves + component_cve_edges tables.
-// This loader returns empty results until the GraphQL layer is updated.
-func (idl *imageCveV2LoaderImpl) FromQuery(_ context.Context, _ *v1.Query) ([]*storage.ImageCVEV2, error) {
-	return nil, nil
+// FromQuery loads CVEs matching a query, synthesized from NormalizedCVE.
+func (idl *imageCveV2LoaderImpl) FromQuery(ctx context.Context, q *v1.Query) ([]*storage.ImageCVEV2, error) {
+	// Use datastore's SearchRawImageCVEs which handles conversion.
+	cves, err := idl.ds.SearchRawImageCVEs(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	// Cache loaded CVEs.
+	idl.lock.Lock()
+	defer idl.lock.Unlock()
+	for _, cve := range cves {
+		idl.loaded[cve.GetId()] = cve
+	}
+
+	return cves, nil
 }
 
 // GetIDs returns IDs matching a query.
-// NOTE: returns empty pending migration to normalized CVE table.
-func (idl *imageCveV2LoaderImpl) GetIDs(_ context.Context, _ *v1.Query) ([]string, error) {
-	return nil, nil
+// Note: Uses Search() method which exists in DataStore from storage layer.
+func (idl *imageCveV2LoaderImpl) GetIDs(ctx context.Context, q *v1.Query) ([]string, error) {
+	results, err := idl.ds.Search(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]string, 0, len(results))
+	for _, r := range results {
+		ids = append(ids, r.ID)
+	}
+	return ids, nil
 }
 
 // CountFromQuery returns count matching a query.
-// NOTE: returns 0 pending migration to normalized CVE table.
-func (idl *imageCveV2LoaderImpl) CountFromQuery(_ context.Context, _ *v1.Query) (int32, error) {
-	return 0, nil
+func (idl *imageCveV2LoaderImpl) CountFromQuery(ctx context.Context, q *v1.Query) (int32, error) {
+	count, err := idl.ds.Count(ctx, q)
+	if err != nil {
+		return 0, err
+	}
+	return int32(count), nil
 }
 
 // CountAll returns total CVE count.
-// NOTE: returns 0 pending migration to normalized CVE table.
-func (idl *imageCveV2LoaderImpl) CountAll(_ context.Context) (int32, error) {
-	return 0, nil
+func (idl *imageCveV2LoaderImpl) CountAll(ctx context.Context) (int32, error) {
+	// Empty query matches all CVEs.
+	count, err := idl.ds.Count(ctx, &v1.Query{})
+	if err != nil {
+		return 0, err
+	}
+	return int32(count), nil
 }
 
 func (idl *imageCveV2LoaderImpl) load(_ context.Context, ids []string) ([]*storage.ImageCVEV2, error) {
+	// Load missing CVEs using GetBatch.
+	// Note: GetBatch currently returns empty without component context.
+	// This maintains backward compatibility during migration.
+	// TODO: Update callers to use GetCVEsForImage() for proper CVE+edge data.
 	cves, missing := idl.readAll(ids)
 	if len(missing) > 0 {
 		missingIDs := make([]string, 0, len(missing))
