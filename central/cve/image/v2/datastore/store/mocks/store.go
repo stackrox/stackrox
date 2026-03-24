@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	store "github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
@@ -161,6 +162,22 @@ func (mr *MockStoreMockRecorder) GetAllReferencedCVEs(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllReferencedCVEs", reflect.TypeOf((*MockStore)(nil).GetAllReferencedCVEs), ctx)
 }
 
+// GetCVEWithEdge mocks base method.
+func (m *MockStore) GetCVEWithEdge(ctx context.Context, cveID, componentID string) (*store.CVEEdgePair, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCVEWithEdge", ctx, cveID, componentID)
+	ret0, _ := ret[0].(*store.CVEEdgePair)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetCVEWithEdge indicates an expected call of GetCVEWithEdge.
+func (mr *MockStoreMockRecorder) GetCVEWithEdge(ctx, cveID, componentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCVEWithEdge", reflect.TypeOf((*MockStore)(nil).GetCVEWithEdge), ctx, cveID, componentID)
+}
+
 // GetCVEsForImage mocks base method.
 func (m *MockStore) GetCVEsForImage(ctx context.Context, imageID string) ([]*storage.NormalizedCVE, error) {
 	m.ctrl.T.Helper()
@@ -174,6 +191,21 @@ func (m *MockStore) GetCVEsForImage(ctx context.Context, imageID string) ([]*sto
 func (mr *MockStoreMockRecorder) GetCVEsForImage(ctx, imageID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCVEsForImage", reflect.TypeOf((*MockStore)(nil).GetCVEsForImage), ctx, imageID)
+}
+
+// GetCVEsWithEdges mocks base method.
+func (m *MockStore) GetCVEsWithEdges(ctx context.Context, imageID string) ([]store.CVEEdgePair, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCVEsWithEdges", ctx, imageID)
+	ret0, _ := ret[0].([]store.CVEEdgePair)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCVEsWithEdges indicates an expected call of GetCVEsWithEdges.
+func (mr *MockStoreMockRecorder) GetCVEsWithEdges(ctx, imageID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCVEsWithEdges", reflect.TypeOf((*MockStore)(nil).GetCVEsWithEdges), ctx, imageID)
 }
 
 // GetIDs mocks base method.

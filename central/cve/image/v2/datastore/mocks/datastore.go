@@ -102,6 +102,22 @@ func (mr *MockDataStoreMockRecorder) Exists(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockDataStore)(nil).Exists), ctx, id)
 }
 
+// Get mocks base method.
+func (m *MockDataStore) Get(ctx context.Context, id string) (*storage.NormalizedCVE, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", ctx, id)
+	ret0, _ := ret[0].(*storage.NormalizedCVE)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockDataStoreMockRecorder) Get(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockDataStore)(nil).Get), ctx, id)
+}
+
 // GetAllReferencedCVEs mocks base method.
 func (m *MockDataStore) GetAllReferencedCVEs(ctx context.Context) ([]*storage.NormalizedCVE, error) {
 	m.ctrl.T.Helper()
