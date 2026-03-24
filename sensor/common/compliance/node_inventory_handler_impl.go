@@ -10,6 +10,7 @@ import (
 	"github.com/quay/claircore/indexer/controller"
 	"github.com/quay/claircore/pkg/rhctag"
 	"github.com/quay/claircore/rhel/rhcc"
+	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"

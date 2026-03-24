@@ -120,11 +120,6 @@ func toNodeDist(ctx context.Context, r io.Reader) (*NodeDistribution, error) {
 		}
 	}
 
-	// Dynamic CPE Generation for OpenShift
-	if d.OpenShiftVersion != "" {
-		d.CPE = guessOpenShiftCPE(d)
-	}
-
 	return d, nil
 }
 
