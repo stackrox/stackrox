@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	converter "github.com/stackrox/rox/central/cve/converter/v2"
 	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	pgStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -67,7 +68,8 @@ type DataStore interface {
 // New returns a new instance of a DataStore.
 func New(storage store.Store) DataStore {
 	ds := &datastoreImpl{
-		storage: storage,
+		storage:   storage,
+		converter: converter.NewImageCVEConverter(),
 	}
 	return ds
 }
