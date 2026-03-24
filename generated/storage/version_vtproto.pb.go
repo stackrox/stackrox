@@ -31,7 +31,6 @@ func (m *Version) CloneVT() *Version {
 	r.Version = m.Version
 	r.LastPersisted = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastPersisted).CloneVT())
 	r.MinSeqNum = m.MinSeqNum
-	r.RollbackSeqNum = m.RollbackSeqNum
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -59,9 +58,6 @@ func (this *Version) EqualVT(that *Version) bool {
 		return false
 	}
 	if this.MinSeqNum != that.MinSeqNum {
-		return false
-	}
-	if this.RollbackSeqNum != that.RollbackSeqNum {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -103,11 +99,6 @@ func (m *Version) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
-	}
-	if m.RollbackSeqNum != 0 {
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RollbackSeqNum))
-		i--
-		dAtA[i] = 0x28
 	}
 	if m.MinSeqNum != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.MinSeqNum))
@@ -158,9 +149,6 @@ func (m *Version) SizeVT() (n int) {
 	}
 	if m.MinSeqNum != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.MinSeqNum))
-	}
-	if m.RollbackSeqNum != 0 {
-		n += 1 + protohelpers.SizeOfVarint(uint64(m.RollbackSeqNum))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -297,25 +285,6 @@ func (m *Version) UnmarshalVT(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.MinSeqNum |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 5:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RollbackSeqNum", wireType)
-			}
-			m.RollbackSeqNum = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.RollbackSeqNum |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -477,25 +446,6 @@ func (m *Version) UnmarshalVTUnsafe(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.MinSeqNum |= int32(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 5:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field RollbackSeqNum", wireType)
-			}
-			m.RollbackSeqNum = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.RollbackSeqNum |= int32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

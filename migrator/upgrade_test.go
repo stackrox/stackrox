@@ -58,8 +58,9 @@ func (s *UpgradeSuite) setDBVersion(seqNum int, version string) {
 	}, false)
 }
 
-func (s *UpgradeSuite) TestLockNotAcquired_OldPodWritesRollbackMarker() {
-	// Simulate: DB is at higher version, and the lock is held by another instance.
+func (s *UpgradeSuite) TestLockNotAcquired_OldPodProceeds() {
+	// DB is at higher version, and the lock is held by another instance.
+	// Old pod should proceed without error and without modifying the DB.
 	currSeqNum := pkgMigrations.CurrentDBVersionSeqNum()
 	s.setDBVersion(currSeqNum+5, "4.10.0")
 
@@ -72,53 +73,25 @@ func (s *UpgradeSuite) TestLockNotAcquired_OldPodWritesRollbackMarker() {
 	err = upgradeAcquireLock(s.pool, s.gormDB, s.source)
 	s.Require().NoError(err)
 
-	// Verify marker was written by re-reading the version.
+	// DB version should remain unchanged.
 	ver, err := migVer.ReadVersionGormDB(s.ctx, s.gormDB)
 	s.Require().NoError(err)
-	s.Require().NotZero(ver.RollbackSeqNum)
-	s.Require().Equal(currSeqNum, ver.RollbackSeqNum)
+	s.Require().Equal(currSeqNum+5, ver.SeqNum)
 }
 
-func (s *UpgradeSuite) TestCheckAndResetRollbackMarker() {
-	// Simulate: A previous upgrade failed. DB is at seqnum 218, rollback marker is 215.
-	s.setDBVersion(218, "4.10.0")
-	err := migVer.WriteRollbackSeqNum(s.gormDB, 215)
-	s.Require().NoError(err)
-
-	// Read the version — marker should be 215.
-	ver, err := migVer.ReadVersionGormDB(s.ctx, s.gormDB)
-	s.Require().NoError(err)
-	s.Require().NotZero(ver.RollbackSeqNum)
-	s.Require().Equal(215, ver.RollbackSeqNum)
-	s.Require().Equal(218, ver.SeqNum)
-
-	checkAndResetRollbackMarker(s.ctx, s.gormDB, ver)
-	// The check should set SeqNum to the RollbackSeqNum and remove the marker
-	verAfter, err := migVer.ReadVersionGormDB(s.ctx, s.gormDB)
-	s.Require().NoError(err)
-	s.Assert().Zero(verAfter.RollbackSeqNum)
-	s.Assert().Equal(215, verAfter.SeqNum)
-	// Make sure other fields are not wiped by the reset
-	s.Assert().Equal(ver.MainVersion, verAfter.MainVersion)
-	s.Assert().Equal(ver.MinimumSeqNum, verAfter.MinimumSeqNum)
-}
-
-func (s *UpgradeSuite) TestLockAcquired_OldPod_ResetSeqAndRollback() {
+func (s *UpgradeSuite) TestLockAcquired_OldPodOverwritesSeqNum() {
 	// DB is ahead of this binary, lock can be acquired.
-	// Old version should reset SeqNum to it's current SeqNum and remove rollback markers.
+	// Old version should overwrite SeqNum to its current SeqNum.
 	curSeqNum := pkgMigrations.CurrentDBVersionSeqNum()
 	futureSeqNum := curSeqNum + 10
 	s.setDBVersion(futureSeqNum, "99.0.0")
-	err := migVer.WriteRollbackSeqNum(s.gormDB, curSeqNum)
-	s.Require().NoError(err)
 
-	err = upgradeAcquireLock(s.pool, s.gormDB, s.source)
+	err := upgradeAcquireLock(s.pool, s.gormDB, s.source)
 	s.Require().NoError(err)
 
 	afterUpgrade, err := migVer.ReadVersionGormDB(s.ctx, s.gormDB)
 	s.Require().NoError(err)
 	s.Require().Equal(curSeqNum, afterUpgrade.SeqNum)
-	s.Require().Equal(0, afterUpgrade.RollbackSeqNum)
 }
 
 func (s *UpgradeSuite) TestFreshInstall() {
@@ -126,7 +99,6 @@ func (s *UpgradeSuite) TestFreshInstall() {
 	s.Require().NoError(err)
 	s.Require().Equal(0, ver.SeqNum)
 	s.Require().Equal("0", ver.MainVersion)
-	s.Require().Zero(ver.RollbackSeqNum)
 
 	err = upgradeAcquireLock(s.pool, s.gormDB, s.source)
 	s.Require().NoError(err)
@@ -134,14 +106,12 @@ func (s *UpgradeSuite) TestFreshInstall() {
 	afterUpgrade, err := migVer.ReadVersionGormDB(s.ctx, s.gormDB)
 	s.Require().NoError(err)
 	currSeqNum := pkgMigrations.CurrentDBVersionSeqNum()
-	s.Require().Equal(currSeqNum, afterUpgrade.SeqNum,
-		"fresh install should not be treated as rollback")
-	s.Require().Equal(0, afterUpgrade.RollbackSeqNum)
+	s.Require().Equal(currSeqNum, afterUpgrade.SeqNum)
 }
 
-func (s *UpgradeSuite) TestNewPodUpgrade_NoRollbackMarker() {
+func (s *UpgradeSuite) TestNewPodUpgrade() {
 	// Old pod is running at current seqnum. New pod starts, acquires lock,
-	// upgrades successfully. No rollback marker should be set.
+	// upgrades successfully.
 	currSeqNum := pkgMigrations.CurrentDBVersionSeqNum()
 	s.setDBVersion(currSeqNum, "4.9.0")
 
@@ -151,59 +121,19 @@ func (s *UpgradeSuite) TestNewPodUpgrade_NoRollbackMarker() {
 	ver, err := migVer.ReadVersionGormDB(s.ctx, s.gormDB)
 	s.Require().NoError(err)
 	s.Require().Equal(currSeqNum, ver.SeqNum)
-	s.Require().Zero(ver.RollbackSeqNum, "no rollback marker should be set after successful upgrade")
 }
 
-func (s *UpgradeSuite) TestNewPodUpgrade_ClearsRollbackMarker() {
-	// A previous upgrade failed, leaving a rollback marker. New pod starts,
-	// acquires lock, resets seqnum to marker, runs migrations, and clears marker.
+func (s *UpgradeSuite) TestLockNotAcquired_NewPodFailsFast() {
+	// DB is at lower version, and the lock is held by another instance.
+	// New pod should fail fast.
 	currSeqNum := pkgMigrations.CurrentDBVersionSeqNum()
-	s.setDBVersion(currSeqNum+5, "4.10.0")
-	err := migVer.WriteRollbackSeqNum(s.gormDB, currSeqNum)
-	s.Require().NoError(err)
+	s.setDBVersion(currSeqNum-1, "4.8.0")
 
-	ver, err := migVer.ReadVersionGormDB(s.ctx, s.gormDB)
+	acquired, release, err := lock.TryAcquireMigrationLock(s.ctx, s.pool)
 	s.Require().NoError(err)
-	s.Require().Equal(currSeqNum, ver.RollbackSeqNum)
+	s.Require().True(acquired)
+	defer release()
 
 	err = upgradeAcquireLock(s.pool, s.gormDB, s.source)
-	s.Require().NoError(err)
-
-	verAfter, err := migVer.ReadVersionGormDB(s.ctx, s.gormDB)
-	s.Require().NoError(err)
-	s.Require().Zero(verAfter.RollbackSeqNum,
-		"rollback marker should be cleared after successful upgrade")
-	s.Require().Equal(currSeqNum, verAfter.SeqNum,
-		"seqnum should match current binary version after upgrade")
-}
-
-func (s *UpgradeSuite) TestWriteRollbackMarker_LowestWins() {
-	s.setDBVersion(pkgMigrations.CurrentDBVersionSeqNum(), "4.10.0")
-
-	// First write: 215
-	err := migVer.WriteRollbackSeqNum(s.gormDB, 215)
-	s.Require().NoError(err)
-
-	ver, err := migVer.ReadVersionGormDB(s.ctx, s.gormDB)
-	s.Require().NoError(err)
-	s.Require().NotZero(ver.RollbackSeqNum)
-	s.Require().Equal(215, ver.RollbackSeqNum)
-
-	// Second write with a higher value: should NOT overwrite.
-	err = migVer.WriteRollbackSeqNum(s.gormDB, 220)
-	s.Require().NoError(err)
-
-	ver, err = migVer.ReadVersionGormDB(s.ctx, s.gormDB)
-	s.Require().NoError(err)
-	s.Require().NotZero(ver.RollbackSeqNum)
-	s.Require().Equal(215, ver.RollbackSeqNum, "lower marker should be preserved")
-
-	// Third write with a lower value: should overwrite.
-	err = migVer.WriteRollbackSeqNum(s.gormDB, 210)
-	s.Require().NoError(err)
-
-	ver, err = migVer.ReadVersionGormDB(s.ctx, s.gormDB)
-	s.Require().NoError(err)
-	s.Require().NotZero(ver.RollbackSeqNum)
-	s.Require().Equal(210, ver.RollbackSeqNum, "even lower marker should win")
+	s.Require().Error(err)
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	versionStorage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/lock"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/postgreshelper"
@@ -67,18 +66,14 @@ func upgradeAcquireLock(pgPool postgres.DB, gormDB *gorm.DB, dbClone string) err
 
 	switch {
 	case currSeqNum > ver.SeqNum:
-		// This is a new version pod trying to upgrade the DB
+		// This is a new version pod trying to upgrade the DB.
 		// Fail fast, to restart the container and try acquiring lock again.
 		return errors.Errorf("failed to upgrade DB from %d to %d, could not acquire migration lock.", ver.SeqNum, currSeqNum)
 	case currSeqNum < ver.SeqNum:
-		// This is the old pod during a rolling upgrade. Write a rollback marker,
-		// so the next lock holder can reset the seqnum if the upgrade fails.
-		log.WriteToStderrf("Writing rollback marker to %d and proceeding without migrations.", currSeqNum)
-		if err := migVer.WriteRollbackSeqNum(gormDB, currSeqNum); err != nil {
-			return errors.Wrap(err, "failed to write rollback marker")
-		}
+		// This is the old pod during a rolling upgrade. It is backward compatible,
+		// so it can proceed without running migrations.
+		log.WriteToStderrf("Old version pod proceeding without migrations (DB seqnum %d > binary seqnum %d).", ver.SeqNum, currSeqNum)
 	default:
-		// DB version matches current version, but couldn't acquire lock
 		log.WriteToStderrf("DB version matches current version, skipping migrations.")
 	}
 
@@ -86,8 +81,7 @@ func upgradeAcquireLock(pgPool postgres.DB, gormDB *gorm.DB, dbClone string) err
 }
 
 // upgradeWithLock runs migrations and schema application while holding the
-// advisory lock. It checks the rollback marker and honors it if a rollback
-// occurred while the lock was not held.
+// advisory lock.
 func upgradeWithLock(ctx context.Context, pgPool postgres.DB, gormDB *gorm.DB, dbClone string) error {
 	// Re-read the version after acquiring the lock. Another instance may have
 	// completed migrations between the first read and the acquisition of the lock.
@@ -106,8 +100,6 @@ func upgradeWithLock(ctx context.Context, pgPool postgres.DB, gormDB *gorm.DB, d
 	}
 	log.WriteToStderrf("version for %q is %v", dbClone, ver)
 
-	checkAndResetRollbackMarker(ctx, gormDB, ver)
-
 	databases := &types.Databases{
 		GormDB:     gormDB,
 		PostgresDB: pgPool,
@@ -119,22 +111,4 @@ func upgradeWithLock(ctx context.Context, pgPool postgres.DB, gormDB *gorm.DB, d
 
 	pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
 	return nil
-}
-
-func checkAndResetRollbackMarker(ctx context.Context, gormDB *gorm.DB, dbVer *pkgMigrations.MigrationVersion) {
-	if dbVer.RollbackSeqNum != 0 && dbVer.SeqNum > dbVer.RollbackSeqNum {
-		// restart of a old version pod happened while a migration was in progress:
-		// the old pod wrote a marker for deferred rollback before it exited.
-		log.WriteToStderrf("Rollback marker found: rollbackSeqNum = %d, dbSeqNum = %d. "+
-			"Resetting DB version to marker.", dbVer.RollbackSeqNum, dbVer.SeqNum)
-
-		startMigFromVer := &versionStorage.Version{
-			SeqNum:         int32(dbVer.RollbackSeqNum),
-			Version:        dbVer.MainVersion,
-			MinSeqNum:      int32(dbVer.MinimumSeqNum),
-			RollbackSeqNum: 0,
-		}
-
-		migVer.SetVersionGormDB(ctx, gormDB, startMigFromVer, false)
-	}
 }

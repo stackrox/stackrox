@@ -13,11 +13,10 @@ import (
 // ConvertVersionFromProto converts a `*storage.Version` to Gorm model
 func ConvertVersionFromProto(obj *storage.Version) (*schema.Versions, error) {
 	model := &schema.Versions{
-		Version:        obj.GetVersion(),
-		SeqNum:         obj.GetSeqNum(),
-		MinSeqNum:      obj.GetMinSeqNum(),
-		LastPersisted:  protocompat.NilOrTime(obj.GetLastPersisted()),
-		RollbackSeqNum: obj.GetRollbackSeqNum(),
+		Version:       obj.GetVersion(),
+		SeqNum:        obj.GetSeqNum(),
+		MinSeqNum:     obj.GetMinSeqNum(),
+		LastPersisted: protocompat.NilOrTime(obj.GetLastPersisted()),
 	}
 	return model, nil
 }
@@ -36,10 +35,9 @@ func ConvertVersionToProto(m *schema.Versions) (*storage.Version, error) {
 	}
 
 	msg = storage.Version{
-		Version:        m.Version,
-		SeqNum:         m.SeqNum,
-		MinSeqNum:      m.MinSeqNum,
-		RollbackSeqNum: m.RollbackSeqNum,
+		Version:   m.Version,
+		SeqNum:    m.SeqNum,
+		MinSeqNum: m.MinSeqNum,
 	}
 
 	if m.LastPersisted != nil {

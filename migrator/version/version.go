@@ -53,7 +53,6 @@ func ReadVersionGormDB(ctx context.Context, db *gorm.DB) (*migrations.MigrationV
 	ver.SeqNum = int(protoVersion.GetSeqNum())
 	ver.MinimumSeqNum = int(protoVersion.GetMinSeqNum())
 	ver.LastPersisted = timestamp.FromProtobuf(protoVersion.GetLastPersisted()).GoTime()
-	ver.RollbackSeqNum = int(protoVersion.GetRollbackSeqNum())
 	return &ver, nil
 }
 
@@ -65,9 +64,9 @@ func UpdateVersionPostgres(ctx context.Context, db postgres.DB, updatedVersion *
 			return err
 		}
 
-		_, err = db.Exec(ctx, "INSERT INTO versions (seqnum, version, minseqnum, lastpersisted, rollbackseqnum) VALUES($1, $2, $3, $4, $5)",
+		_, err = db.Exec(ctx, "INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)",
 			updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(),
-			protocompat.NilOrTime(updatedVersion.GetLastPersisted()), updatedVersion.GetRollbackSeqNum())
+			protocompat.NilOrTime(updatedVersion.GetLastPersisted()))
 		return err
 	})
 	utils.Must(errors.Wrap(err, "failed to write migration version"))
@@ -97,9 +96,9 @@ func SetVersionGormDB(ctx context.Context, db *gorm.DB, updatedVersion *storage.
 				return err
 			}
 
-			result = tx.Exec("INSERT INTO versions (seqnum, version, minseqnum, lastpersisted, rollbackseqnum) VALUES($1, $2, $3, $4, $5)",
+			result = tx.Exec("INSERT INTO versions (seqnum, version, minseqnum, lastpersisted) VALUES($1, $2, $3, $4)",
 				updatedVersion.GetSeqNum(), updatedVersion.GetVersion(), updatedVersion.GetMinSeqNum(),
-				protocompat.NilOrTime(updatedVersion.GetLastPersisted()), updatedVersion.GetRollbackSeqNum())
+				protocompat.NilOrTime(updatedVersion.GetLastPersisted()))
 			return result.Error
 		})
 	})
