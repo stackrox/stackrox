@@ -1,0 +1,3269 @@
+
+schema {
+	query: Query
+	mutation: Mutation
+}
+
+type Query {
+	aggregatedResults(groupBy:[ComplianceAggregation_Scope!],unit:ComplianceAggregation_Scope!,where:String,collapseBy:ComplianceAggregation_Scope): ComplianceAggregation_Response!
+	cluster(id: ID!): Cluster
+	clusterCount(query: String): Int!
+	clusterHealthCounter(query: String): ClusterHealthCounter!
+	clusterVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ClusterVulnerability!]!
+	clusterVulnerability(id: ID): ClusterVulnerability
+	clusterVulnerabilityCount(query: String): Int!
+	clusters(query: String, pagination: Pagination): [Cluster!]!
+	complianceClusterCount(query: String): Int!
+	complianceClusters(query: String, pagination: Pagination): [ScopeObject!]!
+	complianceControl(id:ID!): ComplianceControl
+	complianceControlGroup(id:ID!): ComplianceControlGroup
+	complianceDeploymentCount(query: String): Int!
+	complianceNamespaceCount(query: String): Int!
+	complianceNodeCount(query: String): Int!
+	complianceRecentRuns(clusterId:ID, standardId:ID, since:Time): [ComplianceRun!]!
+	complianceRun(id:ID!): ComplianceRun
+	complianceRunStatuses(ids: [ID!], latest: Boolean): GetComplianceRunStatusesResponse!
+	complianceStandard(id:ID!): ComplianceStandardMetadata
+	complianceStandards(query: String): [ComplianceStandardMetadata!]!
+	deployment(id: ID): Deployment
+	deploymentCount(query: String): Int!
+	deployments(query: String, pagination: Pagination): [Deployment!]!
+	deploymentsWithMostSevereViolations(query: String, pagination: Pagination): [DeploymentsWithMostSevereViolations!]!
+	executedControlCount(query: String): Int!
+	executedControls(query: String): [ComplianceControlWithControlStatus!]!
+	fullImage(id: ID!): Image
+	fullImageV2(id: ID!): ImageV2
+	globalSearch(categories: [SearchCategory!], query: String!): [SearchResult!]!
+	group(authProviderId: String, key: String, value: String, id: String): Group
+	groupedContainerInstances(query: String): [ContainerNameGroup!]!
+	groups: [Group!]!
+	image(id: ID!): Image
+	imageCVE(cve: String, subfieldScopeQuery: String): ImageCVECore
+	imageCVECount(query: String): Int!
+	imageCVEs(query: String, pagination: Pagination): [ImageCVECore!]!
+	imageComponent(id: ID): ImageComponent
+	imageComponentCount(query: String): Int!
+	imageComponents(query: String, scopeQuery: String, pagination: Pagination): [ImageComponent!]!
+	imageCount(query: String): Int!
+	imageV2(id: ID!): ImageV2
+	imageV2Count(query: String): Int!
+	imageV2s(query: String, pagination: Pagination): [ImageV2!]!
+	imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!
+	imageVulnerability(id: ID): ImageVulnerability
+	imageVulnerabilityCount(query: String): Int!
+	images(query: String, pagination: Pagination): [Image!]!
+	istioClusterVulnerabilities(query: String, pagination: Pagination): [ClusterVulnerability!]!
+	istioClusterVulnerability(id: ID): ClusterVulnerability
+	istioClusterVulnerabilityCount(query: String): Int!
+	k8sClusterVulnerabilities(query: String, pagination: Pagination): [ClusterVulnerability!]!
+	k8sClusterVulnerability(id: ID): ClusterVulnerability
+	k8sClusterVulnerabilityCount(query: String): Int!
+	k8sRole(id: ID!): K8SRole
+	k8sRoleCount(query: String): Int!
+	k8sRoles(query: String, pagination: Pagination): [K8SRole!]!
+	myPermissions: GetPermissionsResponse
+	namespace(id: ID!): Namespace
+	namespaceByClusterIDAndName(clusterID: ID!, name: String!): Namespace
+	namespaceCount(query: String): Int!
+	namespaces(query: String, pagination: Pagination): [Namespace!]!
+	node(id:ID!): Node
+	nodeCVE(cve: String, subfieldScopeQuery: String): NodeCVECore
+	nodeCVECount(query: String): Int!
+	nodeCVECountBySeverity(query: String): ResourceCountByCVESeverity!
+	nodeCVEs(query: String, pagination: Pagination): [NodeCVECore!]!
+	nodeComponent(id: ID): NodeComponent
+	nodeComponentCount(query: String): Int!
+	nodeComponents(query: String, scopeQuery: String, pagination: Pagination): [NodeComponent!]!
+	nodeCount(query: String): Int!
+	nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability!]!
+	nodeVulnerability(id: ID): NodeVulnerability
+	nodeVulnerabilityCount(query: String): Int!
+	nodes(query: String, pagination: Pagination): [Node!]!
+	notifier(id: ID!): Notifier
+	notifiers: [Notifier!]!
+	openShiftClusterVulnerabilities(query: String, pagination: Pagination): [ClusterVulnerability!]!
+	openShiftClusterVulnerability(id: ID): ClusterVulnerability
+	openShiftClusterVulnerabilityCount(query: String): Int!
+	permissionSet(id: ID): PermissionSet
+	permissionSets: [PermissionSet!]!
+	platformCVE(cveID: String, subfieldScopeQuery: String): PlatformCVECore
+	platformCVECount(query: String): Int!
+	platformCVEs(query: String, pagination: Pagination): [PlatformCVECore!]!
+	pod(id: ID): Pod
+	podCount(query: String): Int!
+	pods(query: String, pagination: Pagination): [Pod!]!
+	policies(query: String, pagination: Pagination): [Policy!]!
+	policy(id: ID): Policy
+	policyCount(query: String): Int!
+	role(id: ID): Role
+	roles: [Role!]!
+	searchAutocomplete(categories: [SearchCategory!], query: String!): [String!]!
+	searchOptions(categories: [SearchCategory!]): [String!]!
+	secret(id:ID!): Secret
+	secretCount(query: String): Int!
+	secrets(query: String, pagination: Pagination): [Secret!]!
+	serviceAccount(id: ID!): ServiceAccount
+	serviceAccountCount(query: String): Int!
+	serviceAccounts(query: String, pagination: Pagination): [ServiceAccount!]!
+	simpleAccessScope(id: ID): SimpleAccessScope
+	simpleAccessScopes: [SimpleAccessScope!]!
+	subject(id: ID): Subject
+	subjectCount(query: String): Int!
+	subjects(query: String, pagination: Pagination): [Subject!]!
+	token(id:ID!): TokenMetadata
+	tokens(revoked:Boolean): [TokenMetadata!]!
+	violation(id: ID!): Alert
+	violationCount(query: String): Int!
+	violations(query: String, pagination: Pagination): [Alert!]!
+	vulnerabilityRequest(id: ID!): VulnerabilityRequest
+	vulnerabilityRequests(query: String, requestIDSelector: String, pagination: Pagination): [VulnerabilityRequest!]!
+	vulnerabilityRequestsCount(query: String): Int!
+}
+
+type Mutation {
+	approveVulnerabilityRequest(requestID: ID!, comment: String!): VulnerabilityRequest!
+	complianceTriggerRuns(clusterId:ID!,standardId:ID!): [ComplianceRun!]!
+	deferVulnerability(request: DeferVulnRequest!): VulnerabilityRequest!
+	deleteVulnerabilityRequest(requestID: ID!): Boolean!
+	denyVulnerabilityRequest(requestID: ID!, comment: String!): VulnerabilityRequest!
+	markVulnerabilityFalsePositive(request: FalsePositiveVulnRequest!): VulnerabilityRequest!
+	undoVulnerabilityRequest(requestID: ID!): VulnerabilityRequest!
+	updateVulnerabilityRequest(requestID: ID!, comment: String!, expiry: VulnReqExpiry!): VulnerabilityRequest!
+}
+
+type AWSProviderMetadata {
+	accountId: String!
+}
+
+type AWSSecurityHub {
+	accountId: String!
+	credentials: AWSSecurityHub_Credentials
+	region: String!
+}
+
+type AWSSecurityHub_Credentials {
+	accessKeyId: String!
+	secretAccessKey: String!
+	stsEnabled: Boolean!
+}
+
+
+enum Access {
+    NO_ACCESS
+    READ_ACCESS
+    READ_WRITE_ACCESS
+}
+
+type AdmissionControlHealthInfo {
+	statusErrors: [String!]!
+}
+
+type AdmissionControllerConfig {
+	disableBypass: Boolean!
+	enabled: Boolean!
+	enforceOnUpdates: Boolean!
+	scanInline: Boolean!
+	timeoutSeconds: Int!
+}
+
+type Advisory {
+	link: String!
+	name: String!
+}
+
+input AggregateBy {
+	aggregateFunc: String
+	distinct: Boolean
+}
+
+type Alert {
+	clusterId: String!
+	clusterName: String!
+	deployment: Alert_Deployment
+	enforcement: Alert_Enforcement
+	entityType: Alert_EntityType!
+	firstOccurred: Time
+	id: ID!
+	image: ContainerImage
+	lifecycleStage: LifecycleStage!
+	namespace: String!
+	namespaceId: String!
+	node: Alert_Node
+	platformComponent: Boolean!
+	policy: Policy
+	processViolation: Alert_ProcessViolation
+	resolvedAt: Time
+	resource: Alert_Resource
+	state: ViolationState!
+	time: Time
+	violations: [Alert_Violation]!
+	entity: AlertEntity
+	unusedVarSink(query: String): Int
+}
+
+union AlertEntity = Alert_Deployment | ContainerImage | Alert_Resource | Alert_Node
+
+type Alert_Deployment {
+	annotations: [Label!]!
+	clusterId: String!
+	clusterName: String!
+	containers: [Alert_Deployment_Container]!
+	id: ID!
+	inactive: Boolean!
+	labels: [Label!]!
+	name: String!
+	namespace: String!
+	namespaceId: String!
+	type: String!
+}
+
+type Alert_Deployment_Container {
+	image: ContainerImage
+	name: String!
+}
+
+type Alert_Enforcement {
+	action: EnforcementAction!
+	message: String!
+}
+
+
+enum Alert_EntityType {
+    UNSET
+    DEPLOYMENT
+    CONTAINER_IMAGE
+    RESOURCE
+    NODE
+}
+
+type Alert_Node {
+	clusterId: String!
+	clusterName: String!
+	id: ID!
+	name: String!
+}
+
+type Alert_ProcessViolation {
+	message: String!
+	processes: [ProcessIndicator]!
+}
+
+type Alert_Resource {
+	clusterId: String!
+	clusterName: String!
+	name: String!
+	namespace: String!
+	namespaceId: String!
+	resourceType: Alert_Resource_ResourceType!
+}
+
+
+enum Alert_Resource_ResourceType {
+    UNKNOWN
+    SECRETS
+    CONFIGMAPS
+    CLUSTER_ROLES
+    CLUSTER_ROLE_BINDINGS
+    NETWORK_POLICIES
+    SECURITY_CONTEXT_CONSTRAINTS
+    EGRESS_FIREWALLS
+}
+
+type Alert_Violation {
+	fileAccess: FileAccess
+	keyValueAttrs: Alert_Violation_KeyValueAttrs
+	message: String!
+	networkFlowInfo: Alert_Violation_NetworkFlowInfo
+	time: Time
+	type: Alert_Violation_Type!
+	messageAttributes: Alert_ViolationMessageAttributes
+}
+
+union Alert_ViolationMessageAttributes = Alert_Violation_KeyValueAttrs | Alert_Violation_NetworkFlowInfo | FileAccess
+
+type Alert_Violation_KeyValueAttrs {
+	attrs: [Alert_Violation_KeyValueAttrs_KeyValueAttr]!
+}
+
+type Alert_Violation_KeyValueAttrs_KeyValueAttr {
+	key: String!
+	value: String!
+}
+
+type Alert_Violation_NetworkFlowInfo {
+	destination: Alert_Violation_NetworkFlowInfo_Entity
+	protocol: L4Protocol!
+	source: Alert_Violation_NetworkFlowInfo_Entity
+}
+
+type Alert_Violation_NetworkFlowInfo_Entity {
+	deploymentNamespace: String!
+	deploymentType: String!
+	entityType: NetworkEntityInfo_Type!
+	name: String!
+	port: Int!
+}
+
+
+enum Alert_Violation_Type {
+    GENERIC
+    K8S_EVENT
+    NETWORK_FLOW
+    NETWORK_POLICY
+    FILE_ACCESS
+}
+
+type AutoLockProcessBaselinesConfig {
+	enabled: Boolean!
+}
+
+type AzureProviderMetadata {
+	subscriptionId: String!
+}
+
+type BaseImage {
+	imageSha: String!
+	names: [String!]!
+	created: Time
+}
+
+
+enum BooleanOperator {
+    OR
+    AND
+}
+
+type CSCC {
+	serviceAccount: String!
+	sourceId: String!
+	wifEnabled: Boolean!
+}
+
+type CVE {
+	createdAt: Time
+	id: ID!
+	impactScore: Float!
+	lastModified: Time
+	link: String!
+	publishedOn: Time
+	references: [CVE_Reference]!
+	scoreVersion: CVE_ScoreVersion!
+	severity: VulnerabilitySeverity!
+	summary: String!
+	suppressActivation: Time
+	suppressExpiry: Time
+	suppressed: Boolean!
+	type: CVE_CVEType!
+	types: [CVE_CVEType!]!
+}
+
+type CVEInfo {
+	createdAt: Time
+	cve: String!
+	cvssMetrics: [CVSSScore]!
+	cvssV2: CVSSV2
+	cvssV3: CVSSV3
+	epss: EPSS
+	lastModified: Time
+	link: String!
+	publishedOn: Time
+	references: [CVEInfo_Reference]!
+	scoreVersion: CVEInfo_ScoreVersion!
+	summary: String!
+}
+
+type CVEInfo_Reference {
+	tags: [String!]!
+	uRI: String!
+}
+
+
+enum CVEInfo_ScoreVersion {
+    V2
+    V3
+    UNKNOWN
+}
+
+
+enum CVE_CVEType {
+    UNKNOWN_CVE
+    IMAGE_CVE
+    K8S_CVE
+    ISTIO_CVE
+    NODE_CVE
+    OPENSHIFT_CVE
+}
+
+type CVE_Reference {
+	tags: [String!]!
+	uRI: String!
+}
+
+
+enum CVE_ScoreVersion {
+    V2
+    V3
+    UNKNOWN
+}
+
+type CVSSScore {
+	cvssv2: CVSSV2
+	cvssv3: CVSSV3
+	source: Source!
+	url: String!
+	cvssScore: CVSSScoreCvssScore
+}
+
+union CVSSScoreCvssScore = CVSSV2 | CVSSV3
+
+type CVSSV2 {
+	accessComplexity: CVSSV2_AccessComplexity!
+	attackVector: CVSSV2_AttackVector!
+	authentication: CVSSV2_Authentication!
+	availability: CVSSV2_Impact!
+	confidentiality: CVSSV2_Impact!
+	exploitabilityScore: Float!
+	impactScore: Float!
+	integrity: CVSSV2_Impact!
+	score: Float!
+	severity: CVSSV2_Severity!
+	vector: String!
+}
+
+
+enum CVSSV2_AccessComplexity {
+    ACCESS_HIGH
+    ACCESS_MEDIUM
+    ACCESS_LOW
+}
+
+
+enum CVSSV2_AttackVector {
+    ATTACK_LOCAL
+    ATTACK_ADJACENT
+    ATTACK_NETWORK
+}
+
+
+enum CVSSV2_Authentication {
+    AUTH_MULTIPLE
+    AUTH_SINGLE
+    AUTH_NONE
+}
+
+
+enum CVSSV2_Impact {
+    IMPACT_NONE
+    IMPACT_PARTIAL
+    IMPACT_COMPLETE
+}
+
+
+enum CVSSV2_Severity {
+    UNKNOWN
+    LOW
+    MEDIUM
+    HIGH
+}
+
+type CVSSV3 {
+	attackComplexity: CVSSV3_Complexity!
+	attackVector: CVSSV3_AttackVector!
+	availability: CVSSV3_Impact!
+	confidentiality: CVSSV3_Impact!
+	exploitabilityScore: Float!
+	impactScore: Float!
+	integrity: CVSSV3_Impact!
+	privilegesRequired: CVSSV3_Privileges!
+	scope: CVSSV3_Scope!
+	score: Float!
+	severity: CVSSV3_Severity!
+	userInteraction: CVSSV3_UserInteraction!
+	vector: String!
+}
+
+
+enum CVSSV3_AttackVector {
+    ATTACK_LOCAL
+    ATTACK_ADJACENT
+    ATTACK_NETWORK
+    ATTACK_PHYSICAL
+}
+
+
+enum CVSSV3_Complexity {
+    COMPLEXITY_LOW
+    COMPLEXITY_HIGH
+}
+
+
+enum CVSSV3_Impact {
+    IMPACT_NONE
+    IMPACT_LOW
+    IMPACT_HIGH
+}
+
+
+enum CVSSV3_Privileges {
+    PRIVILEGE_NONE
+    PRIVILEGE_LOW
+    PRIVILEGE_HIGH
+}
+
+
+enum CVSSV3_Scope {
+    UNCHANGED
+    CHANGED
+}
+
+
+enum CVSSV3_Severity {
+    UNKNOWN
+    NONE
+    LOW
+    MEDIUM
+    HIGH
+    CRITICAL
+}
+
+
+enum CVSSV3_UserInteraction {
+    UI_NONE
+    UI_REQUIRED
+}
+
+type Cert {
+	algorithm: String!
+	endDate: Time
+	issuer: CertName
+	sans: [String!]!
+	startDate: Time
+	subject: CertName
+}
+
+type CertName {
+	commonName: String!
+	country: String!
+	locality: String!
+	names: [String!]!
+	organization: String!
+	organizationUnit: String!
+	postalCode: String!
+	province: String!
+	streetAddress: String!
+}
+
+type Cluster {
+	admissionController: Boolean!
+	admissionControllerEvents: Boolean!
+	admissionControllerFailOnError: Boolean!
+	admissionControllerUpdates: Boolean!
+	centralApiEndpoint: String!
+	collectionMethod: CollectionMethod!
+	collectorImage: String!
+	dynamicConfig: DynamicClusterConfig
+	healthStatus: ClusterHealthStatus
+	helmConfig: CompleteClusterConfig
+	id: ID!
+	initBundleId: String!
+	labels: [Label!]!
+	mainImage: String!
+	managedBy: ManagerType!
+	mostRecentSensorId: SensorDeploymentIdentification
+	name: String!
+	priority: Int!
+	runtimeSupport: Boolean!
+	sensorCapabilities: [String!]!
+	slimCollector: Boolean!
+	status: ClusterStatus
+	tolerationsConfig: TolerationsConfig
+	type: ClusterType!
+	alertCount(query: String): Int!
+	alerts(query: String, pagination: Pagination): [Alert!]!
+	clusterVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ClusterVulnerability!]!
+	clusterVulnerabilityCount(query: String): Int!
+	clusterVulnerabilityCounter(query: String): VulnerabilityCounter!
+	complianceControlCount(query: String): ComplianceControlCount!
+	complianceResults(query: String): [ControlResult!]!
+	controlStatus(query: String): String!
+	controls(query: String): [ComplianceControl!]!
+	deploymentCount(query: String): Int!
+	deployments(query: String, pagination: Pagination): [Deployment!]!
+	failingControls(query: String): [ComplianceControl!]!
+	failingPolicyCounter(query: String): PolicyCounter
+	imageComponentCount(query: String): Int!
+	imageComponents(query: String, pagination: Pagination): [ImageComponent!]!
+	imageCount(query: String): Int!
+	imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!
+	imageVulnerabilityCount(query: String): Int!
+	imageVulnerabilityCounter(query: String): VulnerabilityCounter!
+	images(query: String, pagination: Pagination): [Image!]!
+	isGKECluster: Boolean!
+	isOpenShiftCluster: Boolean!
+	istioClusterVulnerabilities(query: String, pagination: Pagination): [ClusterVulnerability!]!
+	istioClusterVulnerabilityCount(query: String): Int!
+	istioEnabled: Boolean!
+	k8sClusterVulnerabilities(query: String, pagination: Pagination): [ClusterVulnerability!]!
+	k8sClusterVulnerabilityCount(query: String): Int!
+	k8sRole(role: ID!): K8SRole
+	k8sRoleCount(query: String): Int!
+	k8sRoles(query: String, pagination: Pagination): [K8SRole!]!
+	latestViolation(query: String): Time
+	namespace(name: String!): Namespace
+	namespaceCount(query: String): Int!
+	namespaces(query: String, pagination: Pagination): [Namespace!]!
+	node(node: ID!): Node
+	nodeComponentCount(query: String): Int!
+	nodeComponents(query: String, pagination: Pagination): [NodeComponent!]!
+	nodeCount(query: String): Int!
+	nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability!]!
+	nodeVulnerabilityCount(query: String): Int!
+	nodeVulnerabilityCounter(query: String): VulnerabilityCounter!
+	nodes(query: String, pagination: Pagination): [Node!]!
+	openShiftClusterVulnerabilities(query: String, pagination: Pagination): [ClusterVulnerability!]!
+	openShiftClusterVulnerabilityCount(query: String): Int!
+	passingControls(query: String): [ComplianceControl!]!
+	platformCVECountByFixability(query: String): PlatformCVECountByFixability!
+	platformCVECountByType(query: String): PlatformCVECountByType!
+	plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!
+	plottedNodeVulnerabilities(query: String): PlottedNodeVulnerabilities!
+	policies(query: String, pagination: Pagination): [Policy!]!
+	policyCount(query: String): Int!
+	policyStatus(query: String): PolicyStatus!
+	risk: Risk
+	secretCount(query: String): Int!
+	secrets(query: String, pagination: Pagination): [Secret!]!
+	serviceAccount(sa: ID!): ServiceAccount
+	serviceAccountCount(query: String): Int!
+	serviceAccounts(query: String, pagination: Pagination): [ServiceAccount!]!
+	subject(name: String!): Subject
+	subjectCount(query: String): Int!
+	subjects(query: String, pagination: Pagination): [Subject!]!
+	unusedVarSink(query: String): Int
+}
+
+type ClusterCVE {
+	cveBaseInfo: CVEInfo
+	cvss: Float!
+	id: ID!
+	impactScore: Float!
+	severity: VulnerabilitySeverity!
+	snoozeExpiry: Time
+	snoozeStart: Time
+	snoozed: Boolean!
+	type: CVE_CVEType!
+}
+
+type ClusterCertExpiryStatus {
+	sensorCertExpiry: Time
+	sensorCertNotBefore: Time
+}
+
+type ClusterCountByType {
+	generic: Int!
+	kubernetes: Int!
+	openshift: Int!
+	openshift4: Int!
+}
+
+type ClusterHealthCounter {
+	total: Int!
+	uninitialized: Int!
+	healthy: Int!
+	degraded: Int!
+	unhealthy: Int!
+}
+
+type ClusterHealthStatus {
+	admissionControlHealthInfo: AdmissionControlHealthInfo
+	admissionControlHealthStatus: ClusterHealthStatus_HealthStatusLabel!
+	collectorHealthInfo: CollectorHealthInfo
+	collectorHealthStatus: ClusterHealthStatus_HealthStatusLabel!
+	healthInfoComplete: Boolean!
+	id: ID!
+	lastContact: Time
+	overallHealthStatus: ClusterHealthStatus_HealthStatusLabel!
+	scannerHealthInfo: ScannerHealthInfo
+	scannerHealthStatus: ClusterHealthStatus_HealthStatusLabel!
+	sensorHealthStatus: ClusterHealthStatus_HealthStatusLabel!
+}
+
+
+enum ClusterHealthStatus_HealthStatusLabel {
+    UNINITIALIZED
+    UNAVAILABLE
+    UNHEALTHY
+    DEGRADED
+    HEALTHY
+}
+
+type ClusterMetadata {
+	id: ID!
+	name: String!
+	type: ClusterMetadata_Type!
+}
+
+
+enum ClusterMetadata_Type {
+    UNSPECIFIED
+    AKS
+    ARO
+    EKS
+    GKE
+    OCP
+    OSD
+    ROSA
+}
+
+type ClusterStatus {
+	certExpiryStatus: ClusterCertExpiryStatus
+	orchestratorMetadata: OrchestratorMetadata
+	providerMetadata: ProviderMetadata
+	sensorVersion: String!
+	upgradeStatus: ClusterUpgradeStatus
+}
+
+
+enum ClusterType {
+    GENERIC_CLUSTER
+    KUBERNETES_CLUSTER
+    OPENSHIFT_CLUSTER
+    OPENSHIFT4_CLUSTER
+}
+
+type ClusterUpgradeStatus {
+	mostRecentProcess: ClusterUpgradeStatus_UpgradeProcessStatus
+	upgradability: ClusterUpgradeStatus_Upgradability!
+	upgradabilityStatusReason: String!
+}
+
+
+enum ClusterUpgradeStatus_Upgradability {
+    UNSET
+    UP_TO_DATE
+    MANUAL_UPGRADE_REQUIRED
+    AUTO_UPGRADE_POSSIBLE
+    SENSOR_VERSION_HIGHER
+}
+
+type ClusterUpgradeStatus_UpgradeProcessStatus {
+	active: Boolean!
+	id: ID!
+	initiatedAt: Time
+	progress: UpgradeProgress
+	targetVersion: String!
+	type: ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType!
+	upgraderImage: String!
+}
+
+
+enum ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType {
+    UPGRADE
+    CERT_ROTATION
+}
+
+type ClusterVulnerability {
+	createdAt: Time
+	cve: String!
+	cveBaseInfo: CVEInfo
+	cvss: Float!
+	envImpact: Float!
+	fixedByVersion: String!
+	id: ID!
+	impactScore: Float!
+	isFixable(query: String): Boolean!
+	lastModified: Time
+	lastScanned: Time
+	link: String!
+	publishedOn: Time
+	scoreVersion: String!
+	severity: String!
+	summary: String!
+	suppressActivation: Time
+	suppressExpiry: Time
+	suppressed: Boolean!
+	unusedVarSink(query: String): Int
+	vectors: EmbeddedVulnerabilityVectors
+	clusterCount(query: String): Int!
+	clusters(query: String, pagination: Pagination): [Cluster!]!
+	vulnerabilityType: String!
+	vulnerabilityTypes: [String!]!
+}
+
+
+enum CollectionMethod {
+    UNSET_COLLECTION
+    NO_COLLECTION
+    KERNEL_MODULE
+    EBPF
+    CORE_BPF
+}
+
+type CollectorHealthInfo {
+	statusErrors: [String!]!
+	version: String!
+}
+
+type CompleteClusterConfig {
+	clusterLabels: [Label!]!
+	configFingerprint: String!
+	dynamicConfig: DynamicClusterConfig
+	staticConfig: StaticClusterConfig
+}
+
+type ComplianceAggregation_AggregationKey {
+	id: ID!
+	scope: ComplianceAggregation_Scope!
+}
+
+type ComplianceAggregation_Response {
+	errorMessage: String!
+	results: [ComplianceAggregation_Result]!
+	sources: [ComplianceAggregation_Source]!
+}
+
+type ComplianceAggregation_Result {
+	aggregationKeys: [ComplianceAggregation_AggregationKey]!
+	numFailing: Int!
+	numPassing: Int!
+	numSkipped: Int!
+	unit: ComplianceAggregation_Scope!
+	keys: [ComplianceDomainKey!]!
+}
+
+
+enum ComplianceAggregation_Scope {
+    UNKNOWN
+    STANDARD
+    CLUSTER
+    CATEGORY
+    CONTROL
+    NAMESPACE
+    NODE
+    DEPLOYMENT
+    CHECK
+}
+
+type ComplianceAggregation_Source {
+	clusterId: String!
+	failedRuns: [ComplianceRunMetadata]!
+	standardId: String!
+	successfulRun: ComplianceRunMetadata
+}
+
+type ComplianceControl {
+	description: String!
+	groupId: String!
+	id: ID!
+	implemented: Boolean!
+	interpretationText: String!
+	name: String!
+	standardId: String!
+	complianceControlEntities(clusterID: ID!): [Node!]!
+	complianceControlFailingNodes(query: String): [Node!]!
+	complianceControlNodeCount(query: String): ComplianceControlNodeCount
+	complianceControlNodes(query: String): [Node!]!
+	complianceControlPassingNodes(query: String): [Node!]!
+	complianceResults(query: String): [ControlResult!]!
+}
+
+type ComplianceControlCount {
+	failingCount: Int!
+	passingCount: Int!
+	unknownCount: Int!
+}
+
+type ComplianceControlGroup {
+	description: String!
+	id: ID!
+	name: String!
+	numImplementedChecks: Int!
+	standardId: String!
+}
+
+type ComplianceControlNodeCount {
+	failingCount: Int!
+	passingCount: Int!
+	unknownCount: Int!
+}
+
+type ComplianceControlResult {
+	controlId: String!
+	resource: ComplianceResource
+	value: ComplianceResultValue
+}
+
+type ComplianceControlWithControlStatus {
+	complianceControl: ComplianceControl!
+	controlStatus: String!
+}
+
+union ComplianceDomainKey = ComplianceStandardMetadata | ComplianceControlGroup | ComplianceControl | ComplianceDomain_Cluster | ComplianceDomain_Deployment | ComplianceDomain_Node | Namespace
+
+type ComplianceDomain_Cluster {
+	id: ID!
+	name: String!
+}
+
+type ComplianceDomain_Deployment {
+	clusterId: String!
+	clusterName: String!
+	id: ID!
+	name: String!
+	namespace: String!
+	namespaceId: String!
+	type: String!
+}
+
+type ComplianceDomain_Node {
+	clusterId: String!
+	clusterName: String!
+	id: ID!
+	name: String!
+}
+
+type ComplianceResource {
+	cluster: ComplianceResource_ClusterName
+	deployment: ComplianceResource_DeploymentName
+	image: ImageName
+	node: ComplianceResource_NodeName
+	resource: ComplianceResourceResource
+}
+
+union ComplianceResourceResource = ComplianceResource_ClusterName | ComplianceResource_DeploymentName | ComplianceResource_NodeName | ImageName
+
+type ComplianceResource_ClusterName {
+	id: ID!
+	name: String!
+}
+
+type ComplianceResource_DeploymentName {
+	cluster: ComplianceResource_ClusterName
+	id: ID!
+	name: String!
+	namespace: String!
+}
+
+type ComplianceResource_NodeName {
+	cluster: ComplianceResource_ClusterName
+	id: ID!
+	name: String!
+}
+
+type ComplianceResultValue {
+	evidence: [ComplianceResultValue_Evidence]!
+	overallState: ComplianceState!
+}
+
+type ComplianceResultValue_Evidence {
+	message: String!
+	messageId: Int!
+	state: ComplianceState!
+}
+
+type ComplianceRun {
+	clusterId: String!
+	errorMessage: String!
+	finishTime: Time
+	id: ID!
+	standardId: String!
+	startTime: Time
+	state: ComplianceRun_State!
+}
+
+type ComplianceRunMetadata {
+	clusterId: String!
+	domainId: String!
+	errorMessage: String!
+	finishTimestamp: Time
+	runId: String!
+	standardId: String!
+	startTimestamp: Time
+	success: Boolean!
+}
+
+
+enum ComplianceRun_State {
+    INVALID
+    READY
+    STARTED
+    WAIT_FOR_DATA
+    EVALUTING_CHECKS
+    FINISHED
+}
+
+type ComplianceStandard {
+	controls: [ComplianceControl]!
+	groups: [ComplianceControlGroup]!
+	metadata: ComplianceStandardMetadata
+}
+
+type ComplianceStandardMetadata {
+	description: String!
+	dynamic: Boolean!
+	hideScanResults: Boolean!
+	id: ID!
+	name: String!
+	numImplementedChecks: Int!
+	scopes: [ComplianceStandardMetadata_Scope!]!
+	complianceResults(query: String): [ControlResult!]!
+	controls: [ComplianceControl!]!
+	groups: [ComplianceControlGroup!]!
+}
+
+
+enum ComplianceStandardMetadata_Scope {
+    UNSET
+    CLUSTER
+    NAMESPACE
+    DEPLOYMENT
+    NODE
+}
+
+
+enum ComplianceState {
+    COMPLIANCE_STATE_UNKNOWN
+    COMPLIANCE_STATE_SKIP
+    COMPLIANCE_STATE_NOTE
+    COMPLIANCE_STATE_SUCCESS
+    COMPLIANCE_STATE_FAILURE
+    COMPLIANCE_STATE_ERROR
+}
+
+type Container {
+	config: ContainerConfig
+	id: ID!
+	image: ContainerImage
+	livenessProbe: LivenessProbe
+	name: String!
+	ports: [PortConfig]!
+	readinessProbe: ReadinessProbe
+	resources: Resources
+	secrets: [EmbeddedSecret]!
+	securityContext: SecurityContext
+	volumes: [Volume]!
+}
+
+type ContainerConfig {
+	appArmorProfile: String!
+	args: [String!]!
+	command: [String!]!
+	directory: String!
+	env: [ContainerConfig_EnvironmentConfig]!
+	uid: Int!
+	user: String!
+}
+
+type ContainerConfig_EnvironmentConfig {
+	envVarSource: ContainerConfig_EnvironmentConfig_EnvVarSource!
+	key: String!
+	value: String!
+}
+
+
+enum ContainerConfig_EnvironmentConfig_EnvVarSource {
+    UNSET
+    RAW
+    SECRET_KEY
+    CONFIG_MAP_KEY
+    FIELD
+    RESOURCE_FIELD
+    UNKNOWN
+}
+
+type ContainerImage {
+	id: ID!
+	idV2: String!
+	isClusterLocal: Boolean!
+	name: ImageName
+	notPullable: Boolean!
+}
+
+type ContainerInstance {
+	containerIps: [String!]!
+	containerName: String!
+	containingPodId: String!
+	exitCode: Int!
+	finished: Time
+	imageDigest: String!
+	instanceId: ContainerInstanceID
+	started: Time
+	terminationReason: String!
+}
+
+type ContainerInstanceID {
+	containerRuntime: ContainerRuntime!
+	id: ID!
+	node: String!
+}
+
+type ContainerNameGroup {
+	id: ID!
+	name: String!
+	podId: String!
+	startTime: Time
+	containerInstances: [ContainerInstance!]!
+	events: [DeploymentEvent!]!
+}
+
+type ContainerRestartEvent implements DeploymentEvent {
+	id: ID!
+	name: String!
+	timestamp: Time
+}
+
+
+enum ContainerRuntime {
+    UNKNOWN_CONTAINER_RUNTIME
+    DOCKER_CONTAINER_RUNTIME
+    CRIO_CONTAINER_RUNTIME
+}
+
+type ContainerRuntimeInfo {
+	type: ContainerRuntime!
+	version: String!
+}
+
+type ContainerTerminationEvent implements DeploymentEvent {
+	id: ID!
+	name: String!
+	timestamp: Time
+	exitCode: Int!
+	reason: String!
+}
+
+type ControlResult {
+	resource: Resource
+	control: ComplianceControl
+	value: ComplianceResultValue
+}
+
+type CosignSignature {
+	bug: Boolean!
+}
+
+
+enum CvssScoreVersion {
+    UNKNOWN_VERSION
+    V2
+    V3
+}
+
+type DataSource {
+	id: ID!
+	mirror: String!
+	name: String!
+}
+
+input DeferVulnRequest {
+	comment: String
+	cve: String
+	expiresOn: Time
+	expiresWhenFixed: Boolean
+	scope: VulnReqScope
+}
+
+type DeferralRequest {
+	expiresOn: Time
+	expiresWhenFixed: Boolean!
+}
+
+type Deployment {
+	annotations: [Label!]!
+	automountServiceAccountToken: Boolean!
+	clusterId: String!
+	clusterName: String!
+	containers: [Container]!
+	created: Time
+	hostIpc: Boolean!
+	hostNetwork: Boolean!
+	hostPid: Boolean!
+	id: ID!
+	imagePullSecrets: [String!]!
+	inactive: Boolean!
+	labelSelector: LabelSelector
+	labels: [Label!]!
+	name: String!
+	namespace: String!
+	namespaceId: String!
+	orchestratorComponent: Boolean!
+	platformComponent: Boolean!
+	podLabels: [Label!]!
+	ports: [PortConfig]!
+	priority: Int!
+	replicas: Int!
+	riskScore: Float!
+	runtimeClass: String!
+	serviceAccount: String!
+	serviceAccountPermissionLevel: PermissionLevel!
+	stateTimestamp: Int!
+	tolerations: [Toleration]!
+	type: String!
+	cluster: Cluster
+	complianceResults(query: String): [ControlResult!]!
+	containerRestartCount: Int!
+	containerTerminationCount: Int!
+	deployAlertCount(query: String): Int!
+	deployAlerts(query: String, pagination: Pagination): [Alert!]!
+	failingPolicies(query: String, pagination: Pagination): [Policy!]!
+	failingPolicyCount(query: String): Int!
+	failingPolicyCounter(query: String): PolicyCounter
+	failingRuntimePolicyCount(query: String): Int!
+	groupedProcesses: [ProcessNameGroup!]!
+	imageCVECountBySeverity(query: String): ResourceCountByCVESeverity!
+	imageComponentCount(query: String): Int!
+	imageComponents(query: String, pagination: Pagination): [ImageComponent!]!
+	imageCount(query: String): Int!
+	imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!
+	imageVulnerabilityCount(query: String): Int!
+	imageVulnerabilityCounter(query: String): VulnerabilityCounter!
+	images(query: String, pagination: Pagination): [Image!]!
+	latestViolation(query: String): Time
+	namespaceObject: Namespace
+	plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!
+	podCount: Int!
+	policies(query: String, pagination: Pagination): [Policy!]!
+	policyCount(query: String): Int!
+	policyStatus(query: String) : String!
+	processActivityCount: Int!
+	secretCount(query: String): Int!
+	secrets(query: String, pagination: Pagination): [Secret!]!
+	serviceAccountID: String!
+	serviceAccountObject: ServiceAccount
+	unusedVarSink(query: String): Int
+}
+
+interface DeploymentEvent {
+    id: ID!
+    name: String!
+    timestamp: Time
+}
+
+type DeploymentsWithMostSevereViolations {
+	id: ID!
+	name: String!
+	namespace: String!
+	clusterName: String!
+	failingPolicySeverityCounts: PolicyCounter!
+}
+
+type DynamicClusterConfig {
+	admissionControllerConfig: AdmissionControllerConfig
+	autoLockProcessBaselinesConfig: AutoLockProcessBaselinesConfig
+	disableAuditLogs: Boolean!
+	registryOverride: String!
+}
+
+type EPSS {
+	epssPercentile: Float!
+	epssProbability: Float!
+}
+
+type Email {
+	allowUnauthenticatedSmtp: Boolean!
+	disableTLS: Boolean!
+	from: String!
+	hostnameHeloEhlo: String!
+	password: String!
+	sender: String!
+	server: String!
+	skipTLSVerify: Boolean!
+	startTLSAuthMethod: Email_AuthMethod!
+	username: String!
+}
+
+
+enum Email_AuthMethod {
+    DISABLED
+    PLAIN
+    LOGIN
+}
+
+type EmbeddedImageScanComponent {
+	deploymentCount(query: String, scopeQuery: String): Int!
+	deployments(query: String, scopeQuery: String, pagination: Pagination): [Deployment!]!
+	fixedIn: String!
+	id: ID!
+	imageCount(query: String, scopeQuery: String): Int!
+	images(query: String, scopeQuery: String, pagination: Pagination): [Image!]!
+	lastScanned: Time
+	layerIndex: Int
+	license: License
+	location(query: String): String!
+	name: String!
+	nodeCount(query: String, scopeQuery: String): Int!
+	nodes(query: String, scopeQuery: String, pagination: Pagination): [Node!]!
+	priority: Int!
+	riskScore: Float!
+	source: String!
+	topVuln: EmbeddedVulnerability
+	version: String!
+	vulnCount(query: String, scopeQuery: String): Int!
+	vulnCounter(query: String): VulnerabilityCounter!
+	vulns(query: String, scopeQuery: String, pagination: Pagination): [EmbeddedVulnerability]!
+	unusedVarSink(query: String): Int
+}
+
+type EmbeddedImageScanComponent_Executable {
+	dependencies: [String!]!
+	path: String!
+}
+
+type EmbeddedNodeScanComponent {
+	id: ID!
+	name: String!
+	version: String!
+	topVuln: EmbeddedVulnerability
+	vulns(query: String, pagination: Pagination): [EmbeddedVulnerability]!
+	vulnCount(query: String): Int!
+	vulnCounter(query: String): VulnerabilityCounter!
+	lastScanned: Time
+	priority: Int!
+	riskScore: Float!
+	unusedVarSink(query: String): Int
+}
+
+type EmbeddedSecret {
+	name: String!
+	path: String!
+}
+
+type EmbeddedVulnerability {
+	id: ID!
+	cve: String!
+	cvss: Float!
+	scoreVersion: String!
+	vectors: EmbeddedVulnerabilityVectors
+	link: String!
+	summary: String!
+	fixedByVersion: String!
+	isFixable(query: String): Boolean!
+	lastScanned: Time
+	createdAt: Time
+	discoveredAtImage(query: String): Time
+	images(query: String, pagination: Pagination): [Image!]!
+	imageCount(query: String): Int!
+	deployments(query: String, pagination: Pagination): [Deployment!]!
+	deploymentCount(query: String): Int!
+	nodes(query: String, pagination: Pagination): [Node!]!
+	nodeCount(query: String): Int!
+	envImpact: Float!
+	severity: String!
+	publishedOn: Time
+	lastModified: Time
+	impactScore: Float!
+	vulnerabilityType: String!
+	vulnerabilityTypes: [String!]!
+	suppressed: Boolean!
+	suppressActivation: Time
+	suppressExpiry: Time
+	vulnerabilityState: String!
+	effectiveVulnerabilityRequest: VulnerabilityRequest
+}
+
+union EmbeddedVulnerabilityVectors = CVSSV2 | CVSSV3
+
+
+enum EmbeddedVulnerability_ScoreVersion {
+    V2
+    V3
+}
+
+
+enum EmbeddedVulnerability_VulnerabilityType {
+    UNKNOWN_VULNERABILITY
+    IMAGE_VULNERABILITY
+    K8S_VULNERABILITY
+    ISTIO_VULNERABILITY
+    NODE_VULNERABILITY
+    OPENSHIFT_VULNERABILITY
+}
+
+
+enum EnforcementAction {
+    UNSET_ENFORCEMENT
+    SCALE_TO_ZERO_ENFORCEMENT
+    UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT
+    KILL_POD_ENFORCEMENT
+    FAIL_BUILD_ENFORCEMENT
+    FAIL_KUBE_REQUEST_ENFORCEMENT
+    FAIL_DEPLOYMENT_CREATE_ENFORCEMENT
+    FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT
+}
+
+
+enum EventSource {
+    NOT_APPLICABLE
+    DEPLOYMENT_EVENT
+    AUDIT_LOG_EVENT
+    NODE_EVENT
+}
+
+type Exclusion {
+	deployment: Exclusion_Deployment
+	expiration: Time
+	image: Exclusion_Image
+	name: String!
+}
+
+type Exclusion_Deployment {
+	name: String!
+	scope: Scope
+}
+
+type Exclusion_Image {
+	name: String!
+}
+
+type FalsePositiveRequest {
+	bug: Boolean!
+}
+
+input FalsePositiveVulnRequest {
+	comment: String
+	cve: String
+	scope: VulnReqScope
+}
+
+type FileAccess {
+	file: FileAccess_File
+	hostname: String!
+	moved: FileAccess_File
+	operation: FileAccess_Operation!
+	process: ProcessIndicator
+	timestamp: Time
+}
+
+type FileAccess_File {
+	actualPath: String!
+	effectivePath: String!
+	meta: FileAccess_FileMetadata
+}
+
+type FileAccess_FileMetadata {
+	gid: Int!
+	group: String!
+	mode: Int!
+	uid: Int!
+	username: String!
+}
+
+
+enum FileAccess_Operation {
+    CREATE
+    UNLINK
+    RENAME
+    PERMISSION_CHANGE
+    OWNERSHIP_CHANGE
+    OPEN
+}
+
+type GenerateTokenResponse {
+	metadata: TokenMetadata
+	token: String!
+}
+
+type Generic {
+	auditLoggingEnabled: Boolean!
+	caCert: String!
+	endpoint: String!
+	extraFields: [KeyValuePair]!
+	headers: [KeyValuePair]!
+	password: String!
+	skipTLSVerify: Boolean!
+	username: String!
+}
+
+type GetComplianceRunStatusesResponse {
+	invalidRunIds: [String!]!
+	runs: [ComplianceRun]!
+}
+
+type GetPermissionsResponse {
+	resourceToAccess: [Label!]!
+}
+
+type GoogleProviderMetadata {
+	clusterName: String!
+	project: String!
+}
+
+type Group {
+	props: GroupProperties
+	roleName: String!
+}
+
+type GroupProperties {
+	authProviderId: String!
+	id: ID!
+	key: String!
+	traits: Traits
+	value: String!
+}
+
+type Image {
+	id: ID!
+	isClusterLocal: Boolean!
+	lastUpdated: Time
+	metadata: ImageMetadata
+	name: ImageName
+	names: [ImageName]!
+	notPullable: Boolean!
+	notes: [Image_Note!]!
+	priority: Int!
+	riskScore: Float!
+	signature: ImageSignature
+	signatureVerificationData: ImageSignatureVerificationData
+	baseImage: BaseImage
+	dataSource: DataSource
+	deploymentCount(query: String): Int!
+	deployments(query: String, pagination: Pagination): [Deployment!]!
+	imageCVECountBySeverity(query: String): ResourceCountByCVESeverity!
+	imageComponentCount(query: String): Int!
+	imageComponents(query: String, pagination: Pagination): [ImageComponent!]!
+	imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability]!
+	imageVulnerabilityCount(query: String): Int!
+	imageVulnerabilityCounter(query: String): VulnerabilityCounter!
+	operatingSystem: String!
+	plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!
+	scan: ImageScan
+	scanNotes: [ImageScan_Note!]!
+	scanTime: Time
+	scannerVersion: String!
+	signatureCount: Int!
+	topImageVulnerability(query: String): ImageVulnerability
+	unusedVarSink(query: String): Int
+	watchStatus: ImageWatchStatus!
+}
+
+type ImageCVECore {
+	affectedImageCount: Int!
+	affectedImageCountBySeverity: ResourceCountByCVESeverity!
+	cve: String!
+	deployments(pagination: Pagination): [Deployment!]!
+	distroTuples: [ImageVulnerability!]!
+	firstDiscoveredInSystem: Time
+	exceptionCount(requestStatus: [String]): Int!
+	images(pagination: Pagination): [Image!]!
+	topCVSS: Float!
+	publishedOn: Time
+	topNvdCVSS: Float!
+}
+
+type ImageCVEV2 {
+	componentId: String!
+	cveBaseInfo: CVEInfo
+	cvss: Float!
+	firstImageOccurrence: Time
+	id: ID!
+	imageId: String!
+	impactScore: Float!
+	nvdScoreVersion: CvssScoreVersion!
+	nvdcvss: Float!
+	operatingSystem: String!
+	severity: VulnerabilitySeverity!
+	state: VulnerabilityState!
+}
+
+type ImageComponent {
+	deploymentCount(query: String, scopeQuery: String): Int!
+	deployments(query: String, scopeQuery: String, pagination: Pagination): [Deployment!]!
+	fixedBy: String!
+	inBaseImageLayer: Boolean!
+	id: ID!
+	imageCount(query: String, scopeQuery: String): Int!
+	images(query: String, scopeQuery: String, pagination: Pagination): [Image!]!
+	imageVulnerabilityCount(query: String, scopeQuery: String): Int!
+	imageVulnerabilityCounter(query: String): VulnerabilityCounter!
+	imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability]!
+	lastScanned: Time
+	layerIndex: Int
+	license: License
+	location(query: String): String!
+	name: String!
+	operatingSystem: String!
+	plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!
+	priority: Int!
+	riskScore: Float!
+	source: SourceType!
+	topImageVulnerability: ImageVulnerability
+	unusedVarSink(query: String): Int
+	version: String!
+	fixedIn: String! @deprecated(reason: "use 'fixedBy'")
+}
+
+type ImageComponentV2 {
+	architecture: String!
+	fixedBy: String!
+	inBaseImageLayer: Boolean!
+	id: ID!
+	imageId: String!
+	name: String!
+	operatingSystem: String!
+	priority: Int!
+	riskScore: Float!
+	source: SourceType!
+	version: String!
+}
+
+type ImageLayer {
+	author: String!
+	created: Time
+	empty: Boolean!
+	instruction: String!
+	value: String!
+}
+
+type ImageMetadata {
+	dataSource: DataSource
+	layerShas: [String!]!
+	v1: V1Metadata
+	v2: V2Metadata
+}
+
+type ImageName {
+	fullName: String!
+	registry: String!
+	remote: String!
+	tag: String!
+}
+
+type ImagePullSecret {
+	registries: [ImagePullSecret_Registry]!
+}
+
+type ImagePullSecret_Registry {
+	name: String!
+	username: String!
+}
+
+type ImageScan {
+	dataSource: DataSource
+	notes: [ImageScan_Note!]!
+	operatingSystem: String!
+	scanTime: Time
+	scannerVersion: String!
+	imageComponentCount(query: String): Int!
+	imageComponents(query: String, pagination: Pagination): [ImageComponent!]!
+}
+
+
+enum ImageScan_Note {
+    UNSET
+    OS_UNAVAILABLE
+    PARTIAL_SCAN_DATA
+    OS_CVES_UNAVAILABLE
+    OS_CVES_STALE
+    LANGUAGE_CVES_UNAVAILABLE
+    CERTIFIED_RHEL_SCAN_UNAVAILABLE
+}
+
+type ImageSignature {
+	fetched: Time
+	signatures: [Signature]!
+}
+
+type ImageSignatureVerificationData {
+	results: [ImageSignatureVerificationResult]!
+}
+
+type ImageSignatureVerificationResult {
+	description: String!
+	status: ImageSignatureVerificationResult_Status!
+	verificationTime: Time
+	verifiedImageReferences: [String!]!
+	verifierId: String!
+	verifierName: String!
+}
+
+
+enum ImageSignatureVerificationResult_Status {
+    UNSET
+    VERIFIED
+    FAILED_VERIFICATION
+    INVALID_SIGNATURE_ALGO
+    CORRUPTED_SIGNATURE
+    GENERIC_ERROR
+}
+
+type ImageV2 {
+	digest: String!
+	id: ID!
+	isClusterLocal: Boolean!
+	lastUpdated: Time
+	metadata: ImageMetadata
+	name: ImageName
+	notPullable: Boolean!
+	notes: [ImageV2_Note!]!
+	priority: Int!
+	riskScore: Float!
+	signature: ImageSignature
+	signatureVerificationData: ImageSignatureVerificationData
+	topCvss: Float!
+	baseImage: BaseImage
+	dataSource: DataSource
+	deploymentCount(query: String): Int!
+	deployments(query: String, pagination: Pagination): [Deployment!]!
+	imageCVECountBySeverity(query: String): ResourceCountByCVESeverity!
+	imageComponentCount(query: String): Int!
+	imageComponents(query: String, pagination: Pagination): [ImageComponent!]!
+	imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability]!
+	imageVulnerabilityCount(query: String): Int!
+	imageVulnerabilityCounter(query: String): VulnerabilityCounter!
+	operatingSystem: String!
+	plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!
+	scan: ImageScan
+	scanNotes: [ImageScan_Note!]!
+	scanTime: Time
+	scannerVersion: String!
+	signatureCount: Int!
+	topImageVulnerability(query: String): ImageVulnerability
+	unusedVarSink(query: String): Int
+	watchStatus: ImageWatchStatus!
+}
+
+
+enum ImageV2WatchStatus {
+    UNKNOWN
+    NOT_WATCHED
+    WATCHED
+}
+
+
+enum ImageV2_Note {
+    MISSING_METADATA
+    MISSING_SCAN_DATA
+    MISSING_SIGNATURE
+    MISSING_SIGNATURE_VERIFICATION_DATA
+}
+
+type ImageV2_ScanStats {
+	componentCount: Int!
+	criticalCveCount: Int!
+	cveCount: Int!
+	fixableCriticalCveCount: Int!
+	fixableCveCount: Int!
+	fixableImportantCveCount: Int!
+	fixableLowCveCount: Int!
+	fixableModerateCveCount: Int!
+	fixableUnknownCveCount: Int!
+	importantCveCount: Int!
+	lowCveCount: Int!
+	moderateCveCount: Int!
+	unknownCveCount: Int!
+}
+
+type ImageVulnerability {
+	createdAt: Time
+	cve: String!
+	cveBaseInfo: CVEInfo
+	cvss: Float!
+	envImpact: Float!
+	fixedByVersion: String!
+	id: ID!
+	impactScore: Float!
+	isFixable(query: String): Boolean!
+	lastModified: Time
+	lastScanned: Time
+	link: String!
+	publishedOn: Time
+	scoreVersion: String!
+	severity: String!
+	summary: String!
+	suppressActivation: Time
+	suppressExpiry: Time
+	suppressed: Boolean!
+	unusedVarSink(query: String): Int
+	vectors: EmbeddedVulnerabilityVectors
+	advisory: Advisory
+	deploymentCount(query: String): Int!
+	deployments(query: String, pagination: Pagination): [Deployment!]!
+	discoveredAtImage(query: String): Time
+	effectiveVulnerabilityRequest: VulnerabilityRequest
+	exceptionCount(requestStatus: [String]): Int!
+	imageComponentCount(query: String): Int!
+	imageComponents(query: String, pagination: Pagination): [ImageComponent!]!
+	imageCount(query: String): Int!
+	images(query: String, pagination: Pagination): [Image!]!
+	operatingSystem: String!
+	vulnerabilityState: String!
+	nvdCvss: Float!
+	nvdScoreVersion: String!
+}
+
+
+enum ImageWatchStatus {
+    UNKNOWN
+    NOT_WATCHED
+    WATCHED
+}
+
+
+enum Image_Note {
+    MISSING_METADATA
+    MISSING_SCAN_DATA
+    MISSING_SIGNATURE
+    MISSING_SIGNATURE_VERIFICATION_DATA
+}
+
+type Jira {
+	defaultFieldsJson: String!
+	disablePriority: Boolean!
+	issueType: String!
+	password: String!
+	priorityMappings: [Jira_PriorityMapping]!
+	url: String!
+	username: String!
+}
+
+type Jira_PriorityMapping {
+	priorityName: String!
+	severity: Severity!
+}
+
+type K8SRole {
+	annotations: [Label!]!
+	clusterId: String!
+	clusterName: String!
+	clusterRole: Boolean!
+	createdAt: Time
+	id: ID!
+	labels: [Label!]!
+	name: String!
+	namespace: String!
+	rules: [PolicyRule]!
+	cluster: Cluster!
+	resources: [String!]!
+	roleNamespace: Namespace
+	serviceAccountCount(query: String): Int!
+	serviceAccounts(query: String, pagination: Pagination): [ServiceAccount!]!
+	subjectCount(query: String): Int!
+	subjects(query: String, pagination: Pagination): [Subject!]!
+	type: String!
+	urls: [String!]!
+	verbs: [String!]!
+}
+
+type K8SRoleBinding {
+	annotations: [Label!]!
+	clusterId: String!
+	clusterName: String!
+	clusterRole: Boolean!
+	createdAt: Time
+	id: ID!
+	labels: [Label!]!
+	name: String!
+	namespace: String!
+	roleId: String!
+	subjects: [Subject]!
+}
+
+type KeyValuePair {
+	key: String!
+	value: String!
+}
+
+
+enum L4Protocol {
+    L4_PROTOCOL_UNKNOWN
+    L4_PROTOCOL_TCP
+    L4_PROTOCOL_UDP
+    L4_PROTOCOL_ICMP
+    L4_PROTOCOL_RAW
+    L4_PROTOCOL_SCTP
+    L4_PROTOCOL_ANY
+}
+
+type Label {
+	key: String!
+	value: String!
+}
+
+type LabelSelector {
+	matchLabels: [Label!]!
+	requirements: [LabelSelector_Requirement]!
+}
+
+
+enum LabelSelector_Operator {
+    UNKNOWN
+    IN
+    NOT_IN
+    EXISTS
+    NOT_EXISTS
+}
+
+type LabelSelector_Requirement {
+	key: String!
+	op: LabelSelector_Operator!
+	values: [String!]!
+}
+
+type License {
+	name: String!
+	type: String!
+	url: String!
+}
+
+
+enum LifecycleStage {
+    DEPLOY
+    BUILD
+    RUNTIME
+}
+
+
+enum ListAlert_ResourceType {
+    DEPLOYMENT
+    SECRETS
+    CONFIGMAPS
+    CLUSTER_ROLES
+    CLUSTER_ROLE_BINDINGS
+    NETWORK_POLICIES
+    SECURITY_CONTEXT_CONSTRAINTS
+    EGRESS_FIREWALLS
+}
+
+type LivenessProbe {
+	defined: Boolean!
+}
+
+
+enum ManagerType {
+    MANAGER_TYPE_UNKNOWN
+    MANAGER_TYPE_MANUAL
+    MANAGER_TYPE_HELM_CHART
+    MANAGER_TYPE_KUBERNETES_OPERATOR
+}
+
+type Metadata {
+	buildFlavor: String!
+	licenseStatus: Metadata_LicenseStatus!
+	releaseBuild: Boolean!
+	version: String!
+}
+
+
+enum Metadata_LicenseStatus {
+    NONE
+    INVALID
+    EXPIRED
+    RESTARTING
+    VALID
+}
+
+type MicrosoftSentinel {
+	alertDcrConfig: MicrosoftSentinel_DataCollectionRuleConfig
+	applicationClientId: String!
+	auditLogDcrConfig: MicrosoftSentinel_DataCollectionRuleConfig
+	clientCertAuthConfig: MicrosoftSentinel_ClientCertAuthConfig
+	directoryTenantId: String!
+	logIngestionEndpoint: String!
+	secret: String!
+	wifEnabled: Boolean!
+}
+
+type MicrosoftSentinel_ClientCertAuthConfig {
+	clientCert: String!
+	privateKey: String!
+}
+
+type MicrosoftSentinel_DataCollectionRuleConfig {
+	dataCollectionRuleId: String!
+	enabled: Boolean!
+	streamName: String!
+}
+
+type MitreAttackVector {
+	tactic: MitreTactic
+	techniques: [MitreTechnique]!
+}
+
+type MitreTactic {
+	description: String!
+	id: ID!
+	name: String!
+}
+
+type MitreTechnique {
+	description: String!
+	id: ID!
+	name: String!
+}
+
+type Namespace {
+	metadata: NamespaceMetadata
+	numDeployments: Int!
+	numNetworkPolicies: Int!
+	numSecrets: Int!
+	cluster: Cluster!
+	complianceResults(query: String): [ControlResult!]!
+	deploymentCount(query: String): Int!
+	deployments(query: String, pagination: Pagination): [Deployment!]!
+	failingPolicyCounter(query: String): PolicyCounter
+	imageComponentCount(query: String): Int!
+	imageComponents(query: String, pagination: Pagination): [ImageComponent!]!
+	imageCount(query: String): Int!
+	imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!
+	imageVulnerabilityCount(query: String): Int!
+	imageVulnerabilityCounter(query: String): VulnerabilityCounter!
+	images(query: String, pagination: Pagination): [Image!]!
+	k8sRoleCount(query: String): Int!
+	k8sRoles(query: String, pagination: Pagination): [K8SRole!]!
+	latestViolation(query: String): Time
+	networkPolicyCount(query: String): Int!
+	plottedImageVulnerabilities(query: String): PlottedImageVulnerabilities!
+	policies(query: String, pagination: Pagination): [Policy!]!
+	policyCount(query: String): Int!
+	policyStatus(query: String): PolicyStatus!
+	policyStatusOnly(query: String): String!
+	risk: Risk
+	secretCount(query: String): Int!
+	secrets(query: String, pagination: Pagination): [Secret!]!
+	serviceAccountCount(query: String): Int!
+	serviceAccounts(query: String, pagination: Pagination): [ServiceAccount!]!
+	subjectCount(query: String): Int!
+	subjects(query: String, pagination: Pagination): [Subject!]!
+	unusedVarSink(query: String): Int
+}
+
+type NamespaceMetadata {
+	annotations: [Label!]!
+	clusterId: String!
+	clusterName: String!
+	creationTime: Time
+	id: ID!
+	labels: [Label!]!
+	name: String!
+	priority: Int!
+}
+
+type NetworkEntityInfo {
+	deployment: NetworkEntityInfo_Deployment
+	externalSource: NetworkEntityInfo_ExternalSource
+	id: ID!
+	type: NetworkEntityInfo_Type!
+	desc: NetworkEntityInfoDesc
+}
+
+union NetworkEntityInfoDesc = NetworkEntityInfo_Deployment | NetworkEntityInfo_ExternalSource
+
+type NetworkEntityInfo_Deployment {
+	cluster: String!
+	listenPorts: [NetworkEntityInfo_Deployment_ListenPort]!
+	name: String!
+	namespace: String!
+}
+
+type NetworkEntityInfo_Deployment_ListenPort {
+	l4Protocol: L4Protocol!
+	port: Int!
+}
+
+type NetworkEntityInfo_ExternalSource {
+	default: Boolean!
+	discovered: Boolean!
+	name: String!
+}
+
+
+enum NetworkEntityInfo_Type {
+    UNKNOWN_TYPE
+    DEPLOYMENT
+    INTERNET
+    LISTEN_ENDPOINT
+    EXTERNAL_SOURCE
+    INTERNAL_ENTITIES
+}
+
+type NetworkFlow {
+	clusterId: String!
+	lastSeenTimestamp: Time
+	props: NetworkFlowProperties
+	updatedAt: Time
+}
+
+type NetworkFlowProperties {
+	dstEntity: NetworkEntityInfo
+	dstPort: Int!
+	l4Protocol: L4Protocol!
+	srcEntity: NetworkEntityInfo
+}
+
+type Node {
+	annotations: [Label!]!
+	clusterId: String!
+	clusterName: String!
+	containerRuntime: ContainerRuntimeInfo
+	containerRuntimeVersion: String!
+	externalIpAddresses: [String!]!
+	id: ID!
+	internalIpAddresses: [String!]!
+	joinedAt: Time
+	k8SUpdated: Time
+	kernelVersion: String!
+	kubeProxyVersion: String!
+	kubeletVersion: String!
+	labels: [Label!]!
+	lastUpdated: Time
+	name: String!
+	notes: [Node_Note!]!
+	operatingSystem: String!
+	osImage: String!
+	priority: Int!
+	riskScore: Float!
+	taints: [Taint]!
+	cluster: Cluster!
+	complianceResults(query: String): [ControlResult!]!
+	controlStatus(query: String): String!
+	controls(query: String): [ComplianceControl!]!
+	failingControls(query: String): [ComplianceControl!]!
+	nodeCVECountBySeverity(query: String): ResourceCountByCVESeverity!
+	nodeComplianceControlCount(query: String) : ComplianceControlCount!
+	nodeComponentCount(query: String): Int!
+	nodeComponents(query: String, pagination: Pagination): [NodeComponent!]!
+	nodeStatus(query: String): String!
+	nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability]!
+	nodeVulnerabilityCount(query: String): Int!
+	nodeVulnerabilityCounter(query: String): VulnerabilityCounter!
+	passingControls(query: String): [ComplianceControl!]!
+	plottedNodeVulnerabilities(query: String): PlottedNodeVulnerabilities!
+	scan: NodeScan
+	scanNotes: [NodeScan_Note!]!
+	scanTime: Time
+	topNodeVulnerability(query: String): NodeVulnerability
+	unusedVarSink(query: String): Int
+}
+
+type NodeCVE {
+	cveBaseInfo: CVEInfo
+	cvss: Float!
+	id: ID!
+	impactScore: Float!
+	operatingSystem: String!
+	orphaned: Boolean!
+	orphanedTime: Time
+	severity: VulnerabilitySeverity!
+	snoozeExpiry: Time
+	snoozeStart: Time
+	snoozed: Boolean!
+}
+
+type NodeCVECore {
+	affectedNodeCount: Int!
+	affectedNodeCountBySeverity: ResourceCountByCVESeverity!
+	cve: String!
+	distroTuples: [NodeVulnerability!]!
+	firstDiscoveredInSystem: Time
+	nodes(pagination: Pagination): [Node!]!
+	operatingSystemCount: Int!
+	topCVSS: Float!
+}
+
+type NodeComponent {
+	id: ID!
+	name: String!
+	operatingSystem: String!
+	priority: Int!
+	riskScore: Float!
+	version: String!
+	fixedIn: String!
+	lastScanned: Time
+	location(query: String): String!
+	nodeCount(query: String, scopeQuery: String): Int!
+	nodeVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [NodeVulnerability]!
+	nodeVulnerabilityCount(query: String, scopeQuery: String): Int!
+	nodeVulnerabilityCounter(query: String): VulnerabilityCounter!
+	nodes(query: String, scopeQuery: String, pagination: Pagination): [Node!]!
+	plottedNodeVulnerabilities(query: String): PlottedNodeVulnerabilities!
+	source: String!
+	topNodeVulnerability: NodeVulnerability
+	unusedVarSink(query: String): Int
+}
+
+type NodeScan {
+	notes: [NodeScan_Note!]!
+	operatingSystem: String!
+	scanTime: Time
+	scannerVersion: NodeScan_Scanner!
+	componentCount(query: String): Int! @deprecated(reason: "use 'nodeComponentCount'")
+	components(query: String, pagination: Pagination): [EmbeddedNodeScanComponent!]! @deprecated(reason: "use 'nodeComponents'")
+	nodeComponentCount(query: String): Int!
+	nodeComponents(query: String, pagination: Pagination): [NodeComponent!]!
+}
+
+
+enum NodeScan_Note {
+    UNSET
+    UNSUPPORTED
+    KERNEL_UNSUPPORTED
+    CERTIFIED_RHEL_CVES_UNAVAILABLE
+}
+
+
+enum NodeScan_Scanner {
+    SCANNER
+    SCANNER_V4
+}
+
+type NodeVulnerability {
+	createdAt: Time
+	cve: String!
+	cveBaseInfo: CVEInfo
+	cvss: Float!
+	envImpact: Float!
+	fixedByVersion: String!
+	id: ID!
+	impactScore: Float!
+	isFixable(query: String): Boolean!
+	lastModified: Time
+	lastScanned: Time
+	link: String!
+	publishedOn: Time
+	scoreVersion: String!
+	severity: String!
+	summary: String!
+	suppressActivation: Time
+	suppressExpiry: Time
+	suppressed: Boolean!
+	unusedVarSink(query: String): Int
+	vectors: EmbeddedVulnerabilityVectors
+	nodeComponentCount(query: String): Int!
+	nodeComponents(query: String, pagination: Pagination): [NodeComponent!]!
+	nodeCount(query: String): Int!
+	nodes(query: String, pagination: Pagination): [Node!]!
+	operatingSystem: String!
+}
+
+
+enum Node_Note {
+    MISSING_SCAN_DATA
+}
+
+type Notifier {
+	awsSecurityHub: AWSSecurityHub
+	cscc: CSCC
+	email: Email
+	generic: Generic
+	id: ID!
+	jira: Jira
+	labelDefault: String!
+	labelKey: String!
+	microsoftSentinel: MicrosoftSentinel
+	name: String!
+	notifierSecret: String!
+	pagerduty: PagerDuty
+	splunk: Splunk
+	sumologic: SumoLogic
+	syslog: Syslog
+	traits: Traits
+	type: String!
+	uiEndpoint: String!
+	config: NotifierConfig
+}
+
+union NotifierConfig = Jira | Email | CSCC | Splunk | PagerDuty | Generic | SumoLogic | AWSSecurityHub | Syslog | MicrosoftSentinel
+
+type OrchestratorMetadata {
+	apiVersions: [String!]!
+	buildDate: Time
+	version: String!
+	openshiftVersion: String!
+}
+
+type PagerDuty {
+	apiKey: String!
+}
+
+input Pagination {
+	limit: Int
+	offset: Int
+	sortOption: SortOption
+	sortOptions: [SortOption]
+}
+
+
+enum PermissionLevel {
+    UNSET
+    NONE
+    DEFAULT
+    ELEVATED_IN_NAMESPACE
+    ELEVATED_CLUSTER_WIDE
+    CLUSTER_ADMIN
+}
+
+type PermissionSet {
+	description: String!
+	id: ID!
+	name: String!
+	traits: Traits
+	resourceToAccess: [Label!]!
+}
+
+type PlatformCVECore {
+	clusterCountByType: ClusterCountByType!
+	clusterCount: Int!
+	clusters(pagination: Pagination): [Cluster!]!
+	clusterVulnerability: ClusterVulnerability!
+	cve: String!
+	cveType: String!
+	cvss: Float!
+	firstDiscoveredTime: Time
+	id: ID!
+	isFixable(query: String): Boolean!
+}
+
+type PlatformCVECountByFixability {
+	total: Int!
+	fixable: Int!
+}
+
+type PlatformCVECountByType {
+	kubernetes: Int!
+	openshift: Int!
+	istio: Int!
+}
+
+type PlottedImageVulnerabilities {
+	basicImageVulnerabilityCounter: VulnerabilityCounter!
+	imageVulnerabilities(pagination: Pagination): [ImageVulnerability]!
+}
+
+type PlottedNodeVulnerabilities {
+	basicNodeVulnerabilityCounter: VulnerabilityCounter!
+	nodeVulnerabilities(pagination: Pagination): [NodeVulnerability]!
+}
+
+type Pod {
+	clusterId: String!
+	deploymentId: String!
+	id: ID!
+	liveInstances: [ContainerInstance]!
+	name: String!
+	namespace: String!
+	started: Time
+	terminatedInstances: [Pod_ContainerInstanceList]!
+	containerCount: Int!
+	events: [DeploymentEvent!]!
+}
+
+type Pod_ContainerInstanceList {
+	instances: [ContainerInstance]!
+}
+
+type Policy {
+	categories: [String!]!
+	criteriaLocked: Boolean!
+	description: String!
+	disabled: Boolean!
+	enforcementActions: [EnforcementAction!]!
+	eventSource: EventSource!
+	exclusions: [Exclusion]!
+	id: ID!
+	isDefault: Boolean!
+	lastUpdated: Time
+	lifecycleStages: [LifecycleStage!]!
+	mitreAttackVectors: [Policy_MitreAttackVectors]!
+	mitreVectorsLocked: Boolean!
+	name: String!
+	notifiers: [String!]!
+	policySections: [PolicySection]!
+	policyVersion: String!
+	rationale: String!
+	remediation: String!
+	sORTEnforcement: Boolean!
+	sORTLifecycleStage: String!
+	sORTName: String!
+	scope: [Scope]!
+	severity: Severity!
+	source: PolicySource!
+	alertCount(query: String): Int!
+	alerts(query: String, pagination: Pagination): [Alert!]!
+	deploymentCount(query: String): Int!
+	deployments(query: String, pagination: Pagination): [Deployment!]!
+	failingDeploymentCount(query: String): Int!
+	failingDeployments(query: String, pagination: Pagination): [Deployment!]!
+	fullMitreAttackVectors: [MitreAttackVector!]!
+	latestViolation(query: String): Time
+	policyStatus(query: String): String!
+	unusedVarSink(query: String): Int
+}
+
+type PolicyCounter {
+	total: Int!
+	low: Int!
+	medium: Int!
+	high: Int!
+	critical: Int!
+}
+
+type PolicyGroup {
+	booleanOperator: BooleanOperator!
+	fieldName: String!
+	negate: Boolean!
+	values: [PolicyValue]!
+}
+
+type PolicyRule {
+	apiGroups: [String!]!
+	nonResourceUrls: [String!]!
+	resourceNames: [String!]!
+	resources: [String!]!
+	verbs: [String!]!
+}
+
+type PolicySection {
+	policyGroups: [PolicyGroup]!
+	sectionName: String!
+}
+
+
+enum PolicySource {
+    IMPERATIVE
+    DECLARATIVE
+}
+
+type PolicyStatus {
+	status: String!
+	failingPolicies: [Policy!]!
+}
+
+type PolicyValue {
+	value: String!
+}
+
+type PolicyViolationEvent implements DeploymentEvent {
+	id: ID!
+	name: String!
+	timestamp: Time
+}
+
+type Policy_MitreAttackVectors {
+	tactic: String!
+	techniques: [String!]!
+}
+
+type PortConfig {
+	containerPort: Int!
+	exposedPort: Int!
+	exposure: PortConfig_ExposureLevel!
+	exposureInfos: [PortConfig_ExposureInfo]!
+	name: String!
+	protocol: String!
+}
+
+type PortConfig_ExposureInfo {
+	externalHostnames: [String!]!
+	externalIps: [String!]!
+	level: PortConfig_ExposureLevel!
+	nodePort: Int!
+	serviceClusterIp: String!
+	serviceId: String!
+	serviceName: String!
+	servicePort: Int!
+}
+
+
+enum PortConfig_ExposureLevel {
+    UNSET
+    EXTERNAL
+    NODE
+    INTERNAL
+    HOST
+    ROUTE
+}
+
+type ProcessActivityEvent implements DeploymentEvent {
+	id: ID!
+	name: String!
+	timestamp: Time
+	args: String!
+	uid: Int!
+	parentName: String
+	parentUid: Int!
+	inBaseline: Boolean!
+}
+
+type ProcessGroup {
+	args: String!
+	signals: [ProcessIndicator]!
+}
+
+type ProcessIndicator {
+	clusterId: String!
+	containerName: String!
+	containerStartTime: Time
+	deploymentId: String!
+	id: ID!
+	imageId: String!
+	namespace: String!
+	podId: String!
+	podUid: String!
+	signal: ProcessSignal
+}
+
+type ProcessNameGroup {
+	groups: [ProcessGroup]!
+	name: String!
+	timesExecuted: Int!
+}
+
+input ProcessNoteKey {
+	args: String!
+	containerName: String!
+	deploymentID: String!
+	execFilePath: String!
+}
+
+type ProcessSignal {
+	args: String!
+	containerId: String!
+	execFilePath: String!
+	gid: Int!
+	id: ID!
+	lineage: [String!]!
+	lineageInfo: [ProcessSignal_LineageInfo]!
+	name: String!
+	pid: Int!
+	scraped: Boolean!
+	time: Time
+	uid: Int!
+}
+
+type ProcessSignal_LineageInfo {
+	parentExecFilePath: String!
+	parentUid: Int!
+}
+
+type ProviderMetadata {
+	aws: AWSProviderMetadata
+	azure: AzureProviderMetadata
+	cluster: ClusterMetadata
+	google: GoogleProviderMetadata
+	region: String!
+	verified: Boolean!
+	zone: String!
+	provider: ProviderMetadataProvider
+}
+
+union ProviderMetadataProvider = GoogleProviderMetadata | AWSProviderMetadata | AzureProviderMetadata
+
+type ReadinessProbe {
+	defined: Boolean!
+}
+
+type RequestComment {
+	createdAt: Time
+	id: ID!
+	message: String!
+	user: SlimUser
+}
+
+union Resource = ComplianceDomain_Deployment | ComplianceDomain_Cluster | ComplianceDomain_Node
+
+type ResourceCountByCVESeverity {
+	critical: ResourceCountByFixability!
+	important: ResourceCountByFixability!
+	moderate: ResourceCountByFixability!
+	low: ResourceCountByFixability!
+	unknown: ResourceCountByFixability!
+}
+
+type ResourceCountByFixability {
+	total: Int!
+	fixable: Int!
+}
+
+type Resources {
+	cpuCoresLimit: Float!
+	cpuCoresRequest: Float!
+	memoryMbLimit: Float!
+	memoryMbRequest: Float!
+}
+
+type Risk {
+	id: ID!
+	results: [Risk_Result]!
+	score: Float!
+	subject: RiskSubject
+}
+
+type RiskSubject {
+	clusterId: String!
+	id: ID!
+	namespace: String!
+	type: RiskSubjectType!
+}
+
+
+enum RiskSubjectType {
+    UNKNOWN
+    DEPLOYMENT
+    NAMESPACE
+    CLUSTER
+    NODE
+    NODE_COMPONENT
+    IMAGE
+    IMAGE_COMPONENT
+    SERVICEACCOUNT
+}
+
+type Risk_Result {
+	factors: [Risk_Result_Factor]!
+	name: String!
+	score: Float!
+}
+
+type Risk_Result_Factor {
+	message: String!
+	url: String!
+}
+
+type Role {
+	accessScopeId: String!
+	description: String!
+	globalAccess: Access!
+	name: String!
+	permissionSetId: String!
+	traits: Traits
+	resourceToAccess: [Label!]!
+}
+
+type ScannerHealthInfo {
+	statusErrors: [String!]!
+}
+
+type Scope {
+	cluster: String!
+	clusterLabel: Scope_Label
+	label: Scope_Label
+	namespace: String!
+	namespaceLabel: Scope_Label
+}
+
+type ScopeObject {
+	id: ID!
+	name: String!
+}
+
+type Scope_Label {
+	key: String!
+	value: String!
+}
+
+type ScopedPermissions {
+	scope: String!
+	permissions: [StringListEntry!]!
+}
+
+
+enum SearchCategory {
+    SEARCH_UNSET
+    ALERTS
+    IMAGES
+    IMAGE_COMPONENTS
+    IMAGE_VULN_EDGE
+    IMAGE_COMPONENT_EDGE
+    POLICIES
+    DEPLOYMENTS
+    PODS
+    SECRETS
+    PROCESS_INDICATORS
+    COMPLIANCE
+    CLUSTERS
+    NAMESPACES
+    NODES
+    NODE_COMPONENTS
+    NODE_VULN_EDGE
+    NODE_COMPONENT_EDGE
+    NODE_COMPONENT_CVE_EDGE
+    COMPLIANCE_STANDARD
+    COMPLIANCE_CONTROL_GROUP
+    COMPLIANCE_CONTROL
+    SERVICE_ACCOUNTS
+    ROLES
+    ROLEBINDINGS
+    REPORT_CONFIGURATIONS
+    PROCESS_BASELINES
+    SUBJECTS
+    RISKS
+    VULNERABILITIES
+    CLUSTER_VULNERABILITIES
+    IMAGE_VULNERABILITIES
+    NODE_VULNERABILITIES
+    COMPONENT_VULN_EDGE
+    CLUSTER_VULN_EDGE
+    NETWORK_ENTITY
+    VULN_REQUEST
+    NETWORK_BASELINE
+    NETWORK_POLICIES
+    PROCESS_BASELINE_RESULTS
+    COMPLIANCE_METADATA
+    COMPLIANCE_RESULTS
+    COMPLIANCE_DOMAIN
+    CLUSTER_HEALTH
+    POLICY_CATEGORIES
+    IMAGE_INTEGRATIONS
+    COLLECTIONS
+    POLICY_CATEGORY_EDGE
+    PROCESS_LISTENING_ON_PORT
+    API_TOKEN
+    REPORT_METADATA
+    REPORT_SNAPSHOT
+    COMPLIANCE_INTEGRATIONS
+    COMPLIANCE_SCAN_CONFIG
+    COMPLIANCE_SCAN
+    COMPLIANCE_CHECK_RESULTS
+    BLOB
+    ADMINISTRATION_EVENTS
+    COMPLIANCE_SCAN_CONFIG_STATUS
+    ADMINISTRATION_USAGE
+    COMPLIANCE_PROFILES
+    COMPLIANCE_RULES
+    COMPLIANCE_SCAN_SETTING_BINDINGS
+    COMPLIANCE_SUITES
+    CLOUD_SOURCES
+    DISCOVERED_CLUSTERS
+    COMPLIANCE_REMEDIATIONS
+    COMPLIANCE_BENCHMARKS
+    AUTH_PROVIDERS
+    COMPLIANCE_REPORT_SNAPSHOT
+    IMAGE_COMPONENTS_V2
+    IMAGE_VULNERABILITIES_V2
+    IMAGES_V2
+    VIRTUAL_MACHINES
+    BASE_IMAGES
+    BASE_IMAGE_LAYERS
+}
+
+type SearchResult {
+	category: SearchCategory!
+	id: ID!
+	location: String!
+	name: String!
+	score: Float!
+}
+
+type Secret {
+	annotations: [Label!]!
+	clusterId: String!
+	clusterName: String!
+	createdAt: Time
+	files: [SecretDataFile]!
+	id: ID!
+	labels: [Label!]!
+	name: String!
+	namespace: String!
+	relationship: SecretRelationship
+	type: String!
+	deploymentCount(query: String): Int!
+	deployments(query: String, pagination: Pagination): [Deployment!]!
+}
+
+type SecretContainerRelationship {
+	id: ID!
+	path: String!
+}
+
+type SecretDataFile {
+	cert: Cert
+	imagePullSecret: ImagePullSecret
+	name: String!
+	type: SecretType!
+	metadata: SecretDataFileMetadata
+}
+
+union SecretDataFileMetadata = Cert | ImagePullSecret
+
+type SecretDeploymentRelationship {
+	id: ID!
+	name: String!
+}
+
+type SecretRelationship {
+	containerRelationships: [SecretContainerRelationship]!
+	deploymentRelationships: [SecretDeploymentRelationship]!
+	id: ID!
+}
+
+
+enum SecretType {
+    UNDETERMINED
+    PUBLIC_CERTIFICATE
+    CERTIFICATE_REQUEST
+    PRIVACY_ENHANCED_MESSAGE
+    OPENSSH_PRIVATE_KEY
+    PGP_PRIVATE_KEY
+    EC_PRIVATE_KEY
+    RSA_PRIVATE_KEY
+    DSA_PRIVATE_KEY
+    CERT_PRIVATE_KEY
+    ENCRYPTED_PRIVATE_KEY
+    IMAGE_PULL_SECRET
+}
+
+type SecurityContext {
+	addCapabilities: [String!]!
+	allowPrivilegeEscalation: Boolean!
+	dropCapabilities: [String!]!
+	privileged: Boolean!
+	readOnlyRootFilesystem: Boolean!
+	seccompProfile: SecurityContext_SeccompProfile
+	selinux: SecurityContext_SELinux
+}
+
+type SecurityContext_SELinux {
+	level: String!
+	role: String!
+	type: String!
+	user: String!
+}
+
+type SecurityContext_SeccompProfile {
+	localhostProfile: String!
+	type: SecurityContext_SeccompProfile_ProfileType!
+}
+
+
+enum SecurityContext_SeccompProfile_ProfileType {
+    UNCONFINED
+    RUNTIME_DEFAULT
+    LOCALHOST
+}
+
+type SensorDeploymentIdentification {
+	appNamespace: String!
+	appNamespaceId: String!
+	appServiceaccountId: String!
+	defaultNamespaceId: String!
+	k8SNodeName: String!
+	systemNamespaceId: String!
+}
+
+type ServiceAccount {
+	annotations: [Label!]!
+	automountToken: Boolean!
+	clusterId: String!
+	clusterName: String!
+	createdAt: Time
+	id: ID!
+	imagePullSecrets: [String!]!
+	labels: [Label!]!
+	name: String!
+	namespace: String!
+	secrets: [String!]!
+	cluster: Cluster!
+	clusterAdmin: Boolean!
+	deploymentCount(query: String): Int!
+	deployments(query: String, pagination: Pagination): [Deployment!]!
+	imagePullSecretCount: Int!
+	imagePullSecretObjects(query: String): [Secret!]!
+	k8sRoleCount(query: String): Int!
+	k8sRoles(query: String, pagination: Pagination): [K8SRole!]!
+	saNamespace: Namespace!
+	scopedPermissions: [ScopedPermissions!]!
+}
+
+type SetBasedLabelSelector {
+	requirements: [SetBasedLabelSelector_Requirement]!
+}
+
+
+enum SetBasedLabelSelector_Operator {
+    UNKNOWN
+    IN
+    NOT_IN
+    EXISTS
+    NOT_EXISTS
+}
+
+type SetBasedLabelSelector_Requirement {
+	key: String!
+	op: SetBasedLabelSelector_Operator!
+	values: [String!]!
+}
+
+
+enum Severity {
+    UNSET_SEVERITY
+    LOW_SEVERITY
+    MEDIUM_SEVERITY
+    HIGH_SEVERITY
+    CRITICAL_SEVERITY
+}
+
+type Signature {
+	cosign: CosignSignature
+	signature: SignatureSignature
+}
+
+union SignatureSignature = CosignSignature
+
+type SimpleAccessScope {
+	description: String!
+	id: ID!
+	name: String!
+	rules: SimpleAccessScope_Rules
+	traits: Traits
+}
+
+type SimpleAccessScope_Rules {
+	clusterLabelSelectors: [SetBasedLabelSelector]!
+	includedClusters: [String!]!
+	includedNamespaces: [SimpleAccessScope_Rules_Namespace]!
+	namespaceLabelSelectors: [SetBasedLabelSelector]!
+}
+
+type SimpleAccessScope_Rules_Namespace {
+	clusterName: String!
+	namespaceName: String!
+}
+
+type SlimUser {
+	id: ID!
+	name: String!
+}
+
+input SortOption {
+	aggregateBy: AggregateBy
+	field: String
+	reversed: Boolean
+}
+
+
+enum Source {
+    SOURCE_UNKNOWN
+    SOURCE_RED_HAT
+    SOURCE_OSV
+    SOURCE_NVD
+}
+
+
+enum SourceType {
+    OS
+    PYTHON
+    JAVA
+    RUBY
+    NODEJS
+    GO
+    DOTNETCORERUNTIME
+    INFRASTRUCTURE
+}
+
+type Splunk {
+	auditLoggingEnabled: Boolean!
+	httpEndpoint: String!
+	httpToken: String!
+	insecure: Boolean!
+	sourceTypes: [Label!]!
+	truncate: Int!
+}
+
+type StaticClusterConfig {
+	admissionController: Boolean!
+	admissionControllerEvents: Boolean!
+	admissionControllerFailOnError: Boolean!
+	admissionControllerUpdates: Boolean!
+	centralApiEndpoint: String!
+	collectionMethod: CollectionMethod!
+	collectorImage: String!
+	mainImage: String!
+	slimCollector: Boolean!
+	tolerationsConfig: TolerationsConfig
+	type: ClusterType!
+}
+
+type StringListEntry {
+	key: String!
+	values: [String!]!
+}
+
+type Subject {
+	clusterId: String!
+	clusterName: String!
+	id: ID!
+	kind: SubjectKind!
+	name: String!
+	namespace: String!
+	clusterAdmin: Boolean!
+	k8sRoleCount(query: String): Int!
+	k8sRoles(query: String, pagination: Pagination): [K8SRole!]!
+	scopedPermissions: [ScopedPermissions!]!
+	type: String!
+}
+
+
+enum SubjectKind {
+    UNSET_KIND
+    SERVICE_ACCOUNT
+    USER
+    GROUP
+}
+
+type SumoLogic {
+	httpSourceAddress: String!
+	skipTLSVerify: Boolean!
+}
+
+type Syslog {
+	extraFields: [KeyValuePair]!
+	localFacility: Syslog_LocalFacility!
+	maxMessageSize: Int!
+	messageFormat: Syslog_MessageFormat!
+	tcpConfig: Syslog_TCPConfig
+	endpoint: SyslogEndpoint
+}
+
+union SyslogEndpoint = Syslog_TCPConfig
+
+
+enum Syslog_LocalFacility {
+    LOCAL0
+    LOCAL1
+    LOCAL2
+    LOCAL3
+    LOCAL4
+    LOCAL5
+    LOCAL6
+    LOCAL7
+}
+
+
+enum Syslog_MessageFormat {
+    LEGACY
+    CEF
+}
+
+type Syslog_TCPConfig {
+	hostname: String!
+	port: Int!
+	skipTlsVerify: Boolean!
+	useTls: Boolean!
+}
+
+type Taint {
+	key: String!
+	taintEffect: TaintEffect!
+	value: String!
+}
+
+
+enum TaintEffect {
+    UNKNOWN_TAINT_EFFECT
+    NO_SCHEDULE_TAINT_EFFECT
+    PREFER_NO_SCHEDULE_TAINT_EFFECT
+    NO_EXECUTE_TAINT_EFFECT
+}
+
+type TokenMetadata {
+	expiration: Time
+	id: ID!
+	issuedAt: Time
+	name: String!
+	revoked: Boolean!
+	role: String!
+	roles: [String!]!
+}
+
+type Toleration {
+	key: String!
+	operator: Toleration_Operator!
+	taintEffect: TaintEffect!
+	value: String!
+}
+
+
+enum Toleration_Operator {
+    TOLERATION_OPERATION_UNKNOWN
+    TOLERATION_OPERATOR_EXISTS
+    TOLERATION_OPERATOR_EQUAL
+}
+
+type TolerationsConfig {
+	disabled: Boolean!
+}
+
+type Traits {
+	expiresAt: Time
+	mutabilityMode: Traits_MutabilityMode!
+	origin: Traits_Origin!
+	visibility: Traits_Visibility!
+}
+
+
+enum Traits_MutabilityMode {
+    ALLOW_MUTATE
+    ALLOW_MUTATE_FORCED
+}
+
+
+enum Traits_Origin {
+    IMPERATIVE
+    DEFAULT
+    DECLARATIVE
+    DECLARATIVE_ORPHANED
+    EPHEMERAL
+}
+
+
+enum Traits_Visibility {
+    VISIBLE
+    HIDDEN
+}
+
+type UpgradeProgress {
+	since: Time
+	upgradeState: UpgradeProgress_UpgradeState!
+	upgradeStatusDetail: String!
+}
+
+
+enum UpgradeProgress_UpgradeState {
+    UPGRADE_INITIALIZING
+    UPGRADER_LAUNCHING
+    UPGRADER_LAUNCHED
+    PRE_FLIGHT_CHECKS_COMPLETE
+    UPGRADE_OPERATIONS_DONE
+    UPGRADE_COMPLETE
+    UPGRADE_INITIALIZATION_ERROR
+    PRE_FLIGHT_CHECKS_FAILED
+    UPGRADE_ERROR_ROLLING_BACK
+    UPGRADE_ERROR_ROLLED_BACK
+    UPGRADE_ERROR_ROLLBACK_FAILED
+    UPGRADE_ERROR_UNKNOWN
+    UPGRADE_TIMED_OUT
+}
+
+type V1Metadata {
+	author: String!
+	command: [String!]!
+	created: Time
+	digest: String!
+	entrypoint: [String!]!
+	labels: [Label!]!
+	layers: [ImageLayer]!
+	user: String!
+	volumes: [String!]!
+}
+
+type V2Metadata {
+	digest: String!
+}
+
+
+enum ViolationState {
+    ACTIVE
+    RESOLVED
+    ATTEMPTED
+}
+
+type Volume {
+	destination: String!
+	mountPropagation: Volume_MountPropagation!
+	name: String!
+	readOnly: Boolean!
+	source: String!
+	type: String!
+}
+
+
+enum Volume_MountPropagation {
+    NONE
+    HOST_TO_CONTAINER
+    BIDIRECTIONAL
+}
+
+input VulnReqExpiry {
+	expiresOn: Time
+	expiresWhenFixed: Boolean
+}
+
+input VulnReqGlobalScope {
+	images: VulnReqImageScope
+}
+
+input VulnReqImageScope {
+	registry: String
+	remote: String
+	tag: String
+}
+
+input VulnReqScope {
+	globalScope: VulnReqGlobalScope
+	imageScope: VulnReqImageScope
+}
+
+type VulnerabilityCounter {
+	all: VulnerabilityFixableCounterResolver!
+	low: VulnerabilityFixableCounterResolver!
+	moderate: VulnerabilityFixableCounterResolver!
+	important: VulnerabilityFixableCounterResolver!
+	critical: VulnerabilityFixableCounterResolver!
+}
+
+type VulnerabilityFixableCounterResolver {
+	total: Int!
+	fixable: Int!
+}
+
+type VulnerabilityRequest {
+	id: ID!
+	targetState: String!
+	status: String!
+	expired: Boolean!
+	requestor: SlimUser
+	approvers: [SlimUser!]!
+	createdAt: Time
+	LastUpdated: Time
+	comments: [RequestComment!]!
+	scope: VulnerabilityRequest_Scope
+	deferralReq: DeferralRequest
+	falsePositiveReq: FalsePositiveRequest
+	updatedDeferralReq: DeferralRequest
+	cves: VulnerabilityRequest_CVEs
+	deploymentCount(query: String): Int!
+	imageCount(query: String): Int!
+	deployments(query: String, pagination: Pagination): [Deployment!]!
+	images(query: String, pagination: Pagination): [Image!]!
+}
+
+type VulnerabilityRequest_CVEs {
+	cves: [String!]!
+}
+
+type VulnerabilityRequest_Scope {
+	globalScope: VulnerabilityRequest_Scope_Global
+	imageScope: VulnerabilityRequest_Scope_Image
+	info: VulnerabilityRequest_ScopeInfo
+}
+
+union VulnerabilityRequest_ScopeInfo = VulnerabilityRequest_Scope_Image | VulnerabilityRequest_Scope_Global
+
+type VulnerabilityRequest_Scope_Global {
+	bug: Boolean!
+}
+
+type VulnerabilityRequest_Scope_Image {
+	registry: String!
+	remote: String!
+	tag: String!
+}
+
+
+enum VulnerabilitySeverity {
+    UNKNOWN_VULNERABILITY_SEVERITY
+    LOW_VULNERABILITY_SEVERITY
+    MODERATE_VULNERABILITY_SEVERITY
+    IMPORTANT_VULNERABILITY_SEVERITY
+    CRITICAL_VULNERABILITY_SEVERITY
+}
+
+
+enum VulnerabilityState {
+    OBSERVED
+    DEFERRED
+    FALSE_POSITIVE
+}
+
+scalar Time
+

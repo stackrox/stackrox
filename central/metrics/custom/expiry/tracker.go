@@ -13,7 +13,7 @@ import (
 func New(s service.Service) *tracker.TrackerBase[*finding] {
 	return tracker.MakeTrackerBase(
 		"cert_exp",
-		"certificate expiry",
+		"hours before certificate expires",
 		LazyLabels,
 		func(ctx context.Context, _ tracker.MetricDescriptors) tracker.FindingErrorSequence[*finding] {
 			return track(ctx, s)
