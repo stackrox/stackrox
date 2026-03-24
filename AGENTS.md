@@ -174,7 +174,7 @@ When working on specific areas, refer to these detailed guides:
 - Shell scripts are checked with shellcheck
 - UI code uses TypeScript with React conventions
 - All generated code should not be manually edited
-- Table-driven are defined as maps with the test name as the key.
+- Table-driven tests are defined as maps with the test name as the key.
 - Tests use `assert` or `require` provided by github.com/stretchr/testify.
 
 ### Development Workflow
