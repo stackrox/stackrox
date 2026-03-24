@@ -175,7 +175,7 @@ When working on specific areas, refer to these detailed guides:
 - UI code uses TypeScript with React conventions
 - All generated code should not be manually edited
 - Table-driven tests are defined as maps with the test name as the key.
-- Tests use `assert` or `require` provided by github.com/stretchr/testify.
+- Tests use `assert` or `require` provided by `github.com/stretchr/testify`.
 
 ### Development Workflow
 1. Use `make install-dev-tools` to set up development environment
