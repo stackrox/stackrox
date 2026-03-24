@@ -438,6 +438,57 @@ const rules = {
             };
         },
     },
+    'no-non-deprecated-connect': {
+        // Distinguish which files need replacement of connect function.
+        // Less of a rule than a tool to document technical investment.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Distinguish which files need replacement of connect function',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportDeclaration(node) {
+                    if (
+                        node.source?.value === 'react-redux' &&
+                        node.specifiers?.some((specifier) => specifier.imported?.name === 'connect')
+                    ) {
+                        context.report({
+                            node,
+                            message:
+                                'Replace connect function in non-deprecated file with useSelector hook',
+                        });
+                    }
+                },
+            };
+        },
+    },
+    'no-non-deprecated-reselect': {
+        // Distinguish which files need replacement of reselect dependency.
+        // Less of a rule than a tool to document technical investment.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Distinguish which files need replacement of reselect dependency',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportDeclaration(node) {
+                    if (node.source?.value === 'reselect') {
+                        context.report({
+                            node,
+                            message:
+                                'Replace createStructuredSelector function from reselect dependency in non-deprecated file with useSelector hook',
+                        });
+                    }
+                },
+            };
+        },
+    },
     'no-qualified-name-react': {
         // React.Whatever is possible with default import.
         // For consistency and as prerequisite to replace default import with JSX transform.
