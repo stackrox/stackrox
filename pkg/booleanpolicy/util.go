@@ -148,9 +148,9 @@ func ContainsValidRuntimeFieldCategorySections(policy *storage.Policy) bool {
 	groupsSeen := set.NewStringSet()
 	for _, section := range policy.GetPolicySections() {
 		for kind, category := range runtimeFieldTypeMap {
-		    if SectionContainsFieldOfType(section, kind) {
-		        groupsSeen.Add(string(category))
-		    }
+			if SectionContainsFieldOfType(section, kind) {
+				groupsSeen.Add(string(category))
+			}
 		}
 	}
 

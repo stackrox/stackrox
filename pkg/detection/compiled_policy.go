@@ -260,27 +260,27 @@ func (cp *compiledPolicy) setNodeEventMatcher(policy *storage.Policy) error {
 }
 
 func (cp *compiledPolicy) exactlyOneRuntimeMatcherDefined() bool {
-        var numMatchers int
-        if cp.deploymentWithProcessMatcher != nil {
-                numMatchers++
-        }
-        if cp.kubeEventsMatcher != nil {
-                numMatchers++
-        }
-        if cp.deploymentWithNetworkFlowMatcher != nil {
-                numMatchers++
-        }
-        if cp.deploymentWithFileAccessMatcher != nil {
-                numMatchers++
-        }
-        if cp.auditLogEventMatcher != nil {
-                numMatchers++
-        }
-        if cp.nodeMatcher != nil {
-                numMatchers++
-        }
+	var numMatchers int
+	if cp.deploymentWithProcessMatcher != nil {
+		numMatchers++
+	}
+	if cp.kubeEventsMatcher != nil {
+		numMatchers++
+	}
+	if cp.deploymentWithNetworkFlowMatcher != nil {
+		numMatchers++
+	}
+	if cp.deploymentWithFileAccessMatcher != nil {
+		numMatchers++
+	}
+	if cp.auditLogEventMatcher != nil {
+		numMatchers++
+	}
+	if cp.nodeMatcher != nil {
+		numMatchers++
+	}
 
-        return numMatchers == 1
+	return numMatchers == 1
 }
 
 // Top level compiled Policy.
