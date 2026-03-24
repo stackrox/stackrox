@@ -10,34 +10,29 @@ import (
 )
 
 func Test_idToDNSFriendlyName(t *testing.T) {
-	cases := []struct {
-		name     string
+	cases := map[string]struct {
 		input    string
 		expected string
 	}{
-		{
-			name:     "ssgproject rule ID strips prefix",
+		"ssgproject rule ID strips prefix": {
 			input:    "xccdf_org.ssgproject.content_rule_kubelet_configure_tls_cert",
 			expected: "kubelet-configure-tls-cert",
 		},
-		{
-			name:     "ssgproject rule ID without content_ segment does not strip prefix",
+		"ssgproject rule ID without content_ segment does not strip prefix": {
 			input:    "xccdf_org.ssgproject.rule_abc",
 			expected: "xccdf-org.ssgproject.rule-abc",
 		},
-		{
-			name:     "custom rule ID with non-ssgproject prefix keeps prefix",
+		"custom rule ID with non-ssgproject prefix keeps prefix": {
 			input:    "xccdf_org.example_rule_check_no_latest_tag",
 			expected: "xccdf-org.example-rule-check-no-latest-tag",
 		},
-		{
-			name:     "already lowercase, no underscores",
+		"already lowercase, no underscores": {
 			input:    "some-rule",
 			expected: "some-rule",
 		},
 	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
 			assert.Equal(t, tc.expected, idToDNSFriendlyName(tc.input))
 		})
 	}
