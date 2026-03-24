@@ -1938,7 +1938,7 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\x15SearchOptionsResponse\x12\x18\n" +
 	"\aoptions\x18\x01 \x03(\tR\aoptions\".\n" +
 	"\x14AutocompleteResponse\x12\x16\n" +
-	"\x06values\x18\x01 \x03(\tR\x06values*\xc6\x0e\n" +
+	"\x06values\x18\x01 \x03(\tR\x06values*\xdb\x0e\n" +
 	"\x0eSearchCategory\x12\x10\n" +
 	"\fSEARCH_UNSET\x10\x00\x12\n" +
 	"\n" +
@@ -2025,7 +2025,8 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\x18VIRTUAL_MACHINE_SCANS_V2\x10Q\x12!\n" +
 	"\x1dVIRTUAL_MACHINE_COMPONENTS_V2\x10R\x12&\n" +
 	"\"VIRTUAL_MACHINE_VULNERABILITIES_V2\x10S\x12\x13\n" +
-	"\x0fIMAGE_CVE_INFOS\x10T\"\x04\b\x1e\x10\x1e\"\x04\b;\x10;\"\x04\b@\x10@*~\n" +
+	"\x0fIMAGE_CVE_INFOS\x10T\x12\x13\n" +
+	"\x0fNORMALIZED_CVES\x10U\"\x04\b\x1e\x10\x1e\"\x04\b;\x10;\"\x04\b@\x10@*~\n" +
 	"\x0eSearchDataType\x12\x0f\n" +
 	"\vSEARCH_BOOL\x10\x00\x12\x12\n" +
 	"\x0eSEARCH_NUMERIC\x10\x01\x12\x11\n" +

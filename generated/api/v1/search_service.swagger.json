@@ -128,7 +128,8 @@
                 "VIRTUAL_MACHINE_SCANS_V2",
                 "VIRTUAL_MACHINE_COMPONENTS_V2",
                 "VIRTUAL_MACHINE_VULNERABILITIES_V2",
-                "IMAGE_CVE_INFOS"
+                "IMAGE_CVE_INFOS",
+                "NORMALIZED_CVES"
               ]
             },
             "collectionFormat": "multi"
@@ -251,7 +252,8 @@
                 "VIRTUAL_MACHINE_SCANS_V2",
                 "VIRTUAL_MACHINE_COMPONENTS_V2",
                 "VIRTUAL_MACHINE_VULNERABILITIES_V2",
-                "IMAGE_CVE_INFOS"
+                "IMAGE_CVE_INFOS",
+                "NORMALIZED_CVES"
               ]
             },
             "collectionFormat": "multi"
@@ -368,7 +370,8 @@
                 "VIRTUAL_MACHINE_SCANS_V2",
                 "VIRTUAL_MACHINE_COMPONENTS_V2",
                 "VIRTUAL_MACHINE_VULNERABILITIES_V2",
-                "IMAGE_CVE_INFOS"
+                "IMAGE_CVE_INFOS",
+                "NORMALIZED_CVES"
               ]
             },
             "collectionFormat": "multi"
@@ -528,7 +531,8 @@
         "VIRTUAL_MACHINE_SCANS_V2",
         "VIRTUAL_MACHINE_COMPONENTS_V2",
         "VIRTUAL_MACHINE_VULNERABILITIES_V2",
-        "IMAGE_CVE_INFOS"
+        "IMAGE_CVE_INFOS",
+        "NORMALIZED_CVES"
       ],
       "default": "SEARCH_UNSET",
       "title": "Next available tag: 85"
