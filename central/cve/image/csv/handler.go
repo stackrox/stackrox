@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	csvCommon "github.com/stackrox/rox/central/cve/common/csv"
 	cveDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -23,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/parser"
 	"github.com/stackrox/rox/pkg/sync"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (

@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	parentStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // EdgeStore provides custom SQL operations for the component_cve_edges table.
