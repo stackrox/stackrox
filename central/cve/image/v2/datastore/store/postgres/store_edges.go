@@ -2,9 +2,11 @@ package postgres
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"time"
 
+	"github.com/jackc/pgx/v5"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	parentStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -156,13 +158,123 @@ func (s *edgeStoreImpl) DeleteOrphanedCVEsBatch(ctx context.Context, batchSize i
 }
 
 // GetCVEsWithEdges retrieves CVEs and their component edges for an image.
-func (s *edgeStoreImpl) GetCVEsWithEdges(_ context.Context, _ string) ([]parentStore.CVEEdgePair, error) {
-	// TODO(Phase 1, Task 2): Implement joined query: cves JOIN component_cve_edges JOIN image_component_v2.
-	return nil, errors.New("GetCVEsWithEdges not yet implemented - Task 2")
+func (s *edgeStoreImpl) GetCVEsWithEdges(ctx context.Context, imageID string) ([]parentStore.CVEEdgePair, error) {
+	querySQL := `
+		SELECT
+			c.serialized as cve_data,
+			e.component_id,
+			e.cve_id,
+			e.is_fixable,
+			e.fixed_by,
+			e.state,
+			e.first_system_occurrence,
+			e.fix_available_at
+		FROM cves c
+		JOIN component_cve_edges e ON c.id = e.cve_id
+		JOIN ` + pkgSchema.ImageComponentV2TableName + ` ic ON e.component_id = ic.id
+		WHERE ic.imageidv2 = $1
+		ORDER BY c.cve_name, e.component_id
+	`
+
+	rows, err := s.db.Query(ctx, querySQL, imageID)
+	if err != nil {
+		return nil, fmt.Errorf("querying CVE+edge pairs for image: %w", err)
+	}
+	defer rows.Close()
+
+	var pairs []parentStore.CVEEdgePair
+	for rows.Next() {
+		var cve storage.NormalizedCVE
+		var edge storage.NormalizedComponentCVEEdge
+		var cveData []byte
+		var firstSysOcc, fixAvailAt *time.Time
+
+		err := rows.Scan(
+			&cveData,
+			&edge.ComponentId,
+			&edge.CveId,
+			&edge.IsFixable,
+			&edge.FixedBy,
+			&edge.State,
+			&firstSysOcc,
+			&fixAvailAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scanning CVE+edge row: %w", err)
+		}
+
+		if err := cve.UnmarshalVT(cveData); err != nil {
+			return nil, fmt.Errorf("unmarshaling CVE: %w", err)
+		}
+
+		if firstSysOcc != nil {
+			edge.FirstSystemOccurrence = timestamppb.New(*firstSysOcc)
+		}
+		if fixAvailAt != nil {
+			edge.FixAvailableAt = timestamppb.New(*fixAvailAt)
+		}
+
+		pairs = append(pairs, parentStore.CVEEdgePair{CVE: &cve, Edge: &edge})
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterating CVE+edge rows: %w", err)
+	}
+
+	return pairs, nil
 }
 
 // GetCVEWithEdge retrieves a single CVE by ID along with its edge for a component.
-func (s *edgeStoreImpl) GetCVEWithEdge(_ context.Context, _, _ string) (*parentStore.CVEEdgePair, bool, error) {
-	// TODO(Phase 1, Task 2): Implement single CVE+edge lookup.
-	return nil, false, errors.New("GetCVEWithEdge not yet implemented - Task 2")
+func (s *edgeStoreImpl) GetCVEWithEdge(ctx context.Context, cveID string, componentID string) (*parentStore.CVEEdgePair, bool, error) {
+	querySQL := `
+		SELECT
+			c.serialized as cve_data,
+			e.component_id,
+			e.cve_id,
+			e.is_fixable,
+			e.fixed_by,
+			e.state,
+			e.first_system_occurrence,
+			e.fix_available_at
+		FROM cves c
+		JOIN component_cve_edges e ON c.id = e.cve_id
+		WHERE c.id = $1 AND e.component_id = $2
+	`
+
+	row := s.db.QueryRow(ctx, querySQL, cveID, componentID)
+
+	var cve storage.NormalizedCVE
+	var edge storage.NormalizedComponentCVEEdge
+	var cveData []byte
+	var firstSysOcc, fixAvailAt *time.Time
+
+	err := row.Scan(
+		&cveData,
+		&edge.ComponentId,
+		&edge.CveId,
+		&edge.IsFixable,
+		&edge.FixedBy,
+		&edge.State,
+		&firstSysOcc,
+		&fixAvailAt,
+	)
+	if err == pgx.ErrNoRows {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, fmt.Errorf("querying CVE+edge: %w", err)
+	}
+
+	if err := cve.UnmarshalVT(cveData); err != nil {
+		return nil, false, fmt.Errorf("unmarshaling CVE: %w", err)
+	}
+
+	if firstSysOcc != nil {
+		edge.FirstSystemOccurrence = timestamppb.New(*firstSysOcc)
+	}
+	if fixAvailAt != nil {
+		edge.FixAvailableAt = timestamppb.New(*fixAvailAt)
+	}
+
+	return &parentStore.CVEEdgePair{CVE: &cve, Edge: &edge}, true, nil
 }
