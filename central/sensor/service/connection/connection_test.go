@@ -174,7 +174,7 @@ func (s *testSuite) TestSendsScanConfigurationMsgOnRun() {
 			s.Require().Len(settings.GetProfileRefs(), len(stored.GetProfileRefs()))
 			for i, ref := range settings.GetProfileRefs() {
 				s.Assert().Equal(stored.GetProfileRefs()[i].GetName(), ref.GetName())
-				s.Assert().Equal(central.ComplianceOperatorProfileV2_OperatorKind(stored.GetProfileRefs()[i].GetKind()), ref.GetKind())
+				s.Assert().Equal(internaltov2storage.StorageToCentralProfileKind(stored.GetProfileRefs()[i].GetKind()), ref.GetKind())
 			}
 		}
 	}
