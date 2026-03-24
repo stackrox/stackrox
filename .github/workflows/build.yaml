@@ -349,7 +349,7 @@ jobs:
           TAG=$(make -C operator --quiet --no-print-directory tag)
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
-      - name: Build and Push Operator Bundle
+      - name: Build and Push Operator Bundle and Index
         env:
           ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: true
           ROX_PRODUCT_BRANDING: RHACS_BRANDING
