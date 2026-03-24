@@ -19133,11 +19133,6 @@
                 "id": 4,
                 "name": "min_seq_num",
                 "type": "int32"
-              },
-              {
-                "id": 5,
-                "name": "rollback_seq_num",
-                "type": "int32"
               }
             ]
           }
