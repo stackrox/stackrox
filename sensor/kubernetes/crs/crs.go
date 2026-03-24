@@ -213,9 +213,18 @@ func centralHandshake(ctx context.Context, k8sClient kubernetes.Interface, centr
 
 	hdr := metautils.MD(rawHdr)
 	if hdr.Get(centralsensor.SensorHelloMetadataKey) != "true" {
+		// Central did not acknowledge the SensorHello header during CRS-based registration.
+		// This can happen when:
+		// 1. The cluster registration secret (CRS) has been revoked on Central.
+		// 2. Central does not support CRS-based cluster registration.
+		// Try to receive from the stream to get the actual error from Central (e.g., auth rejection).
+		if _, recvErr := stream.Recv(); recvErr != nil {
+			log.Errorf("Central rejected the CRS-based connection: %v", recvErr)
+			return nil, errors.Wrap(recvErr, "central rejected the CRS-based connection")
+		}
 		log.Error("Central did not send the SensorHello metadata key after connection attempt using a cluster registration secret.")
-		log.Error("Possible reason: central does not support CRS-based cluster registration.")
-		return nil, errors.New("central headers are missing the SensorHello metadata key ")
+		log.Error("Possible reasons: (1) the cluster registration secret (CRS) has been revoked in Central, (2) central does not support CRS-based cluster registration.")
+		return nil, errors.New("central headers are missing the SensorHello metadata key")
 	}
 
 	err = stream.Send(&central.MsgFromSensor{Msg: &central.MsgFromSensor_Hello{Hello: sensorHello}})

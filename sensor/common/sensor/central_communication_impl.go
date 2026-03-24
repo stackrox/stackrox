@@ -217,8 +217,17 @@ func (s *centralCommunicationImpl) hello(stream central.SensorService_Communicat
 	}
 
 	if metautils.MD(rawHdr).Get(centralsensor.SensorHelloMetadataKey) != "true" {
+		// Central did not acknowledge the SensorHello header. This can happen when:
+		// 1. The init bundle or CRS used by this sensor has been revoked on Central.
+		// 2. A networking or TLS issue prevents Central from receiving sensor's certificate.
+		// Try to receive from the stream to get the actual error from Central (e.g., auth rejection).
+		if _, recvErr := stream.Recv(); recvErr != nil {
+			return errors.Wrap(recvErr, "central rejected the sensor connection")
+		}
 		return errors.New("central did not acknowledge SensorHello," +
-			" likely due to a networking or TLS configuration issue" +
+			" possible causes: (1) the init bundle or cluster registration secret (CRS) used" +
+			" by this sensor has been revoked in Central," +
+			" (2) a networking or TLS configuration issue" +
 			" (e.g., re-encrypt routes or TLS termination)" +
 			" preventing central from receiving sensor's TLS certificate")
 	}

@@ -342,6 +342,62 @@ func (c *centralCommunicationSuite) Test_FailuresWaitingForDeduperState() {
 	}
 }
 
+func (c *centralCommunicationSuite) Test_HelloRejectedByCentral() {
+	testCases := map[string]struct {
+		headerMD     metadata.MD
+		headerErr    error
+		recvErr      error
+		expectSubstr string
+	}{
+		"header error from central": {
+			headerErr:    status.Error(codes.Unauthenticated, "not authenticated"),
+			expectSubstr: "receiving headers from central",
+		},
+		"missing SensorHello key with auth rejection": {
+			headerMD:     metadata.MD{},
+			recvErr:      status.Error(codes.PermissionDenied, "not authorized"),
+			expectSubstr: "central rejected the sensor connection",
+		},
+		"missing SensorHello key with unauthenticated error": {
+			headerMD:     metadata.MD{},
+			recvErr:      status.Error(codes.Unauthenticated, "init bundle is revoked"),
+			expectSubstr: "central rejected the sensor connection",
+		},
+		"missing SensorHello key without recv error": {
+			headerMD:     metadata.MD{},
+			expectSubstr: "possible causes",
+		},
+	}
+	for name, tc := range testCases {
+		c.Run(name, func() {
+			_, closeFn := c.createCentralCommunication(false)
+			defer closeFn()
+
+			c.mockService.client.EXPECT().Header().Return(tc.headerMD, tc.headerErr)
+			if tc.headerErr == nil && tc.recvErr != nil {
+				c.mockService.client.EXPECT().Recv().Return(nil, tc.recvErr)
+			} else if tc.headerErr == nil && tc.recvErr == nil {
+				c.mockService.client.EXPECT().Recv().Return(&central.MsgToSensor{}, nil)
+			}
+			c.mockService.client.EXPECT().CloseSend().AnyTimes()
+
+			reachable := concurrency.Flag{}
+			syncDone := concurrency.NewSignal()
+			c.comm.Start(c.mockService, &reachable, &syncDone, c.mockHandler, c.mockDetector)
+			c.T().Cleanup(c.comm.Stop)
+			c.mockService.connected.Wait()
+
+			c.Assert().Eventually(func() bool {
+				return c.comm.Stopped().IsDone()
+			}, 5*time.Second, 50*time.Millisecond, "communication should have stopped")
+
+			err := c.comm.Stopped().Err()
+			c.Assert().Error(err)
+			c.Assert().Contains(err.Error(), tc.expectSubstr)
+		})
+	}
+}
+
 type messagesMatcher struct {
 	messagesToMatch map[string]*central.MsgFromSensor
 	cmpFn           func(x, y *central.MsgFromSensor) bool
