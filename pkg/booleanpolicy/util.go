@@ -2,6 +2,7 @@ package booleanpolicy
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // ContainsOneOf returns whether the policy contains at least one group with a field of specified type.
@@ -93,34 +94,67 @@ func ContainsValueWithFieldName(policy *storage.Policy, fieldName string) bool {
 
 }
 
-// ContainsDiscreteRuntimeFieldCategorySections returns false if the policy groups
-// contain combination of process and kubernetes events fields.
-func ContainsDiscreteRuntimeFieldCategorySections(policy *storage.Policy) bool {
+// validateProcessAndFileAccessSections checks that a policy cannot have both:
+// - A section with only process fields, AND
+// - A section with file access fields
+//
+// Valid combinations:
+// - Process-only sections (when no FileAccess fields exist in the policy)
+// - FileAccess-only sections
+// - Sections with both Process AND FileAccess fields
+// - Mix of FileAccess-only sections and Process+FileAccess sections
+func validateProcessAndFileAccessSections(policy *storage.Policy) bool {
+	hasProcessOnlySection := false
+	hasFileAccessSection := false
+
+	for _, section := range policy.GetPolicySections() {
+		hasProcess := SectionContainsFieldOfType(section, Process)
+		hasFileAccess := SectionContainsFieldOfType(section, FileAccess)
+
+		if hasProcess && !hasFileAccess {
+			hasProcessOnlySection = true
+		}
+		if hasFileAccess {
+			hasFileAccessSection = true
+		}
+	}
+
+	return !(hasProcessOnlySection && hasFileAccessSection)
+}
+
+// ContainsValidRuntimeFieldCategorySections checks that policy sections only contain
+// compatible runtime field types.
+//
+// Rules:
+// 1. Process and FileAccess fields can be mixed (they're in the same compatibility group)
+// 2. A policy cannot have BOTH a process-only section AND a file access section
+// 3. Only one runtime category allowed per policy (Process/FileAccess count as one category)
+func ContainsValidRuntimeFieldCategorySections(policy *storage.Policy) bool {
 	if len(policy.GetPolicySections()) == 0 {
 		return false
 	}
 
+	if !validateProcessAndFileAccessSections(policy) {
+		return false
+	}
+
+	var runtimeFieldTypeMap = map[RuntimeFieldType]RuntimeFieldType{
+		Process:     Process,
+		FileAccess:  Process, // FileAccess events contain process information
+		NetworkFlow: NetworkFlow,
+		KubeEvent:   KubeEvent,
+	}
+
+	groupsSeen := set.NewStringSet()
 	for _, section := range policy.GetPolicySections() {
-		var numRuntimeCategories int
-		if SectionContainsFieldOfType(section, KubeEvent) {
-			numRuntimeCategories++
-		}
-		if SectionContainsFieldOfType(section, Process) {
-			numRuntimeCategories++
-		}
-		if SectionContainsFieldOfType(section, NetworkFlow) {
-			numRuntimeCategories++
-		}
-		// TODO(ROX-30807): update to support a combination of FileAccess and Process
-		// fields.
-		if SectionContainsFieldOfType(section, FileAccess) {
-			numRuntimeCategories++
-		}
-		if numRuntimeCategories > 1 {
-			return false
+		for kind, category := range runtimeFieldTypeMap {
+			if SectionContainsFieldOfType(section, kind) {
+				groupsSeen.Add(string(category))
+			}
 		}
 	}
-	return true
+
+	return groupsSeen.Cardinality() <= 1
 }
 
 // SectionContainsFieldOfType returns true if the policy section contains at least one field

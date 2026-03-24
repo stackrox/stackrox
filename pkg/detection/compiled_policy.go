@@ -64,10 +64,9 @@ func newCompiledPolicy(policy *storage.Policy, clusterLabelProvider scopecomp.Cl
 		if err := compiled.setRuntimeMatchers(policy); err != nil {
 			return nil, err
 		}
-		// There should be exactly one defined
 		if !compiled.exactlyOneRuntimeMatcherDefined() {
-			return nil, errors.Errorf("incorrect sections for a runtime policy %q. Section must have exactly "+
-				"one runtime constraint from either process, or kubernetes event category, or network baseline.", policy.GetName())
+			return nil, errors.Errorf("incorrect sections for a runtime policy %q. Section must have "+
+				"compatible runtime constraints.", policy.GetName())
 		}
 
 		// set predicates
@@ -186,7 +185,9 @@ func (cp *compiledPolicy) setAuditLogEventMatcher(policy *storage.Policy) error 
 
 func (cp *compiledPolicy) setProcessEventMatcher(policy *storage.Policy) error {
 	filtered := booleanpolicy.FilterPolicySections(policy, func(section *storage.PolicySection) bool {
-		return booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.Process)
+		// Only include sections that have Process fields but NO FileAccess fields
+		return booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.Process) &&
+			!booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.FileAccess)
 	})
 	if len(filtered.GetPolicySections()) > 0 {
 		cp.hasProcessSection = true

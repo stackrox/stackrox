@@ -113,7 +113,7 @@ func BuildKubeEventMatcher(p *storage.Policy, options ...ValidateOption) (KubeEv
 		}
 
 		// Conjunction of process fields and events fields is not supported.
-		if !ContainsDiscreteRuntimeFieldCategorySections(p) {
+		if !ContainsValidRuntimeFieldCategorySections(p) {
 			return nil, errors.New("a run time policy section must not contain both process and kubernetes event constraints")
 		}
 
@@ -169,7 +169,7 @@ func BuildDeploymentWithProcessMatcher(p *storage.Policy, options ...ValidateOpt
 		}
 
 		// Conjunction of process fields and events fields is not supported.
-		if !ContainsDiscreteRuntimeFieldCategorySections(p) {
+		if !ContainsValidRuntimeFieldCategorySections(p) {
 			return nil, errors.New("a run time policy section must not contain both process and kubernetes event constraints")
 		}
 
@@ -216,7 +216,7 @@ func BuildDeploymentWithNetworkFlowMatcher(p *storage.Policy, options ...Validat
 		}
 
 		// Conjunction of process fields and events fields is not supported.
-		if !ContainsDiscreteRuntimeFieldCategorySections(p) {
+		if !ContainsValidRuntimeFieldCategorySections(p) {
 			return nil, errors.New("a run time policy section must not contain both process and kubernetes event constraints")
 		}
 
@@ -256,7 +256,7 @@ func BuildDeploymentWithFileAccessMatcher(p *storage.Policy, options ...Validate
 		}
 
 		// Conjunction of process fields and events fields is not supported.
-		if !ContainsDiscreteRuntimeFieldCategorySections(p) {
+		if !ContainsValidRuntimeFieldCategorySections(p) {
 			return nil, errors.New("a runtime policy section must contain only a single runtime event constraint")
 		}
 
