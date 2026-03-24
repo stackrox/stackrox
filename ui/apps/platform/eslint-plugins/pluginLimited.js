@@ -390,6 +390,30 @@ const rules = {
             };
         },
     },
+    'no-non-deprecated-Component': {
+        // Distinguish which files need replacement of Component.
+        // Less of a rule than a tool to document technical investment.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Distinguish which files need replacement of Component',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ClassDeclaration(node) {
+                    if (node.superClass?.name === 'Component') {
+                        context.report({
+                            node,
+                            message:
+                                'Replace Component in non-deprecated file with function component',
+                        });
+                    }
+                },
+            };
+        },
+    },
     'no-non-deprecated-JavaScript': {
         // Distinguish which JavaScript files need rewrite in TypeScript.
         // Less of a rule than a tool to document technical investment.

@@ -26,6 +26,7 @@ type State =
           errorInfo: ErrorInfo;
       };
 
+/* eslint-disable limited/no-non-deprecated-Component */
 class ErrorBoundary extends Component<Props, State> {
     constructor(props: Props) {
         super(props);
@@ -94,6 +95,7 @@ class ErrorBoundary extends Component<Props, State> {
         return this.props.children;
     }
 }
+/* eslint-enable limited/no-non-deprecated-Component */
 
 function ErrorBoundaryWrapper({ children }: { children: ReactNode }) {
     const location = useLocation();
