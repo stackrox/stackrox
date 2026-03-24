@@ -51,7 +51,7 @@ func (s *ImagesStoreSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 
 	s.store = New(s.testDB.DB, false, concurrency.NewKeyFence())
-	s.cvePgStore = cvev2pgstore.NewCombined(s.testDB.DB)
+	s.cvePgStore = cvev2pgstore.New(s.testDB.DB)
 }
 
 func (s *ImagesStoreSuite) SetupTest() {

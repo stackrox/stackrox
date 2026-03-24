@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
-	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/image/datastore/keyfence"
 	pgStoreV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
@@ -67,8 +66,7 @@ func (s *ImageFlatPostgresDataStoreTestSuite) SetupTest() {
 	componentStorage := imageComponentPostgres.New(s.db)
 	s.componentDataStore = imageComponentDS.New(componentStorage, s.mockRisk, ranking.NewRanker())
 
-	cveStorage := imageCVEPostgres.NewCombined(s.db)
-	s.cveDataStore = imageCVEDS.New(cveStorage)
+	s.cveDataStore = imageCVEDS.GetTestPostgresDataStore(s.T(), s.db)
 }
 
 func (s *ImageFlatPostgresDataStoreTestSuite) TearDownTest() {

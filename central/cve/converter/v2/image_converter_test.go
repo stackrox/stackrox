@@ -3,7 +3,6 @@ package converter
 import (
 	"testing"
 
-	store "github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -268,50 +267,51 @@ func TestToImageCVEV2Batch(t *testing.T) {
 	publishedOn := timestamppb.Now()
 	createdAt := timestamppb.Now()
 
-	pairs := []store.CVEEdgePair{
+	cves := []*storage.NormalizedCVE{
 		{
-			CVE: &storage.NormalizedCVE{
-				Id:          "cve-uuid-1",
-				CveName:     "CVE-2021-1234",
-				Severity:    "CRITICAL",
-				CvssV3:      9.0,
-				PublishedOn: publishedOn,
-				CreatedAt:   createdAt,
-			},
-			Edge: &storage.NormalizedComponentCVEEdge{
-				ComponentId: "component-1",
-				CveId:       "cve-uuid-1",
-				IsFixable:   true,
-				FixedBy:     "1.0.0",
-			},
+			Id:          "cve-uuid-1",
+			CveName:     "CVE-2021-1234",
+			Severity:    "CRITICAL",
+			CvssV3:      9.0,
+			PublishedOn: publishedOn,
+			CreatedAt:   createdAt,
 		},
 		{
-			CVE: &storage.NormalizedCVE{
-				Id:          "cve-uuid-2",
-				CveName:     "CVE-2021-5678",
-				Severity:    "HIGH",
-				CvssV3:      7.5,
-				PublishedOn: publishedOn,
-				CreatedAt:   createdAt,
-			},
-			Edge: &storage.NormalizedComponentCVEEdge{
-				ComponentId: "component-2",
-				CveId:       "cve-uuid-2",
-				IsFixable:   false,
-			},
+			Id:          "cve-uuid-2",
+			CveName:     "CVE-2021-5678",
+			Severity:    "HIGH",
+			CvssV3:      7.5,
+			PublishedOn: publishedOn,
+			CreatedAt:   createdAt,
 		},
+		nil, // Nil CVE should be skipped.
 		{
-			CVE:  nil, // Nil CVE should be skipped.
-			Edge: &storage.NormalizedComponentCVEEdge{},
-		},
-		{
-			CVE:  &storage.NormalizedCVE{Id: "cve-uuid-3"},
-			Edge: nil, // Nil Edge should be skipped.
+			Id:          "cve-uuid-3",
+			CveName:     "CVE-2021-9999",
+			Severity:    "LOW",
+			PublishedOn: publishedOn,
+			CreatedAt:   createdAt,
 		},
 	}
 
+	edges := []*storage.NormalizedComponentCVEEdge{
+		{
+			ComponentId: "component-1",
+			CveId:       "cve-uuid-1",
+			IsFixable:   true,
+			FixedBy:     "1.0.0",
+		},
+		{
+			ComponentId: "component-2",
+			CveId:       "cve-uuid-2",
+			IsFixable:   false,
+		},
+		{}, // This will pair with nil CVE and be skipped.
+		nil, // Nil Edge should be skipped.
+	}
+
 	converter := NewImageCVEConverter()
-	results := converter.ToImageCVEV2Batch(pairs)
+	results := converter.ToImageCVEV2Batch(cves, edges)
 
 	// Should only return 2 valid results (skip nils).
 	require.Len(t, results, 2)
@@ -332,9 +332,9 @@ func TestToImageCVEV2Batch_EmptyInput(t *testing.T) {
 	converter := NewImageCVEConverter()
 
 	// Test empty slice.
-	results := converter.ToImageCVEV2Batch(nil)
+	results := converter.ToImageCVEV2Batch(nil, nil)
 	assert.Empty(t, results, "Should return empty slice for nil input")
 
-	results = converter.ToImageCVEV2Batch([]store.CVEEdgePair{})
+	results = converter.ToImageCVEV2Batch([]*storage.NormalizedCVE{}, []*storage.NormalizedComponentCVEEdge{})
 	assert.Empty(t, results, "Should return empty slice for empty input")
 }
