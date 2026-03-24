@@ -58,14 +58,6 @@ jobs:
 
           matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
 
-          # build_and_push_operator is now a single job with loops instead of matrix
-          # It builds all brandings and architectures, and creates manifests inline
-          # matrix="$(jq '.build_and_push_operator.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
-          # matrix="$(jq '.build_and_push_operator.arch += ["amd64", "arm64"]' <<< "$matrix")"
-          # push_operator_multiarch_manifests job merged into build_and_push_operator
-          # matrix="$(jq '.push_operator_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
-          # matrix="$(jq '.push_operator_multiarch_manifests.archs = ["amd64,arm64"]' <<< "$matrix")"
-
           matrix="$(jq '.scan_images_with_roxctl.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
           matrix="$(jq '.scan_images_with_roxctl.image += ["central-db", "collector", "fact", "main", "roxctl", "scanner", "scanner-db", "scanner-db-slim", "scanner-slim", "stackrox-operator"]' <<< "$matrix")"
           # TODO(ROX-27191): remove the exclusion once there's a community operator.
@@ -301,8 +293,6 @@ jobs:
 
   pre-build-operator-bundle:
     runs-on: ubuntu-latest
-    outputs:
-      operator-tag: ${{ steps.operator-tag.outputs.tag }}
     env:
       QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
       QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
@@ -342,12 +332,6 @@ jobs:
           github.event_name == 'push' || !github.event.pull_request.head.repo.fork
         run: |
           ./scripts/ci/lib.sh registry_rw_login "quay.io/${QUAY_ORG}"
-
-      - name: Determine operator image tag
-        id: operator-tag
-        run: |
-          TAG=$(make -C operator --quiet --no-print-directory tag)
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Build and Push Operator Bundle and Index
         env:
@@ -709,30 +693,34 @@ jobs:
           echo "archs=${ARCHS}" >> "$GITHUB_OUTPUT"
           echo "Will build for architectures: ${ARCHS}"
 
-      - name: Download and organize architecture binaries
-        run: |
-          mkdir -p binaries
-          ARCHS="${{ steps.determine-archs.outputs.archs }}"
+      - name: Download amd64 binaries
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: go-binaries-build-amd64-default
+          path: binaries/amd64
 
-          # Download amd64
-          gh run download ${{ github.run_id }} -n go-binaries-build-amd64-default -D binaries/amd64
+      - name: Download arm64 binaries
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: go-binaries-build-arm64-default
+          path: binaries/arm64
 
-          # Download arm64
-          gh run download ${{ github.run_id }} -n go-binaries-build-arm64-default -D binaries/arm64
+      - name: Download ppc64le binaries
+        if: contains(steps.determine-archs.outputs.archs, 'ppc64le')
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: go-binaries-build-ppc64le-default
+          path: binaries/ppc64le
 
-          # Download ppc64le if needed
-          if [[ "$ARCHS" == *"ppc64le"* ]]; then
-            gh run download ${{ github.run_id }} -n go-binaries-build-ppc64le-default -D binaries/ppc64le
-          fi
+      - name: Download s390x binaries
+        if: contains(steps.determine-archs.outputs.archs, 's390x')
+        uses: ./.github/actions/download-artifact-with-retry
+        with:
+          name: go-binaries-build-s390x-default
+          path: binaries/s390x
 
-          # Download s390x if needed
-          if [[ "$ARCHS" == *"s390x"* ]]; then
-            gh run download ${{ github.run_id }} -n go-binaries-build-s390x-default -D binaries/s390x
-          fi
-
-          ls -la binaries/
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: List downloaded binaries
+        run: ls -la binaries/
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@v4
