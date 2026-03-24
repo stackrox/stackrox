@@ -336,23 +336,9 @@ chart: kubebuilder manifests ## Generate a helm chart with all necessary resourc
 build: manifests generate fmt vet ## Build operator local binary.
 	../scripts/go-build-file.sh ./cmd/main.go bin/manager
 
-.PHONY: smuggled-status-sh
-smuggled-status-sh:
-	$(SILENT)( \
-		`# status.sh file is used by scripts/go-build.sh which we try to run in the docker container.` \
-		`# status.sh needs git repo, make and Makefile and who knows what else but its actual output is simple.` \
-		`# Here we grab the output and create a new build/status.sh from it. That file will be copied into the` \
-		`# container and used there without having to bring all dependencies.` \
-		set -euxo pipefail ;\
-		smuggled_status_sh="$(PROJECT_DIR)/build/status.sh" ;\
-		mkdir -p "$(PROJECT_DIR)/build" ;\
-		cd "$(PROJECT_DIR)/.." ;\
-		echo "#!/bin/sh" > "$${smuggled_status_sh}" ;\
-		./status.sh | awk '{print "echo \"" $$0 "\""}' >> "$${smuggled_status_sh}" ;\
-		chmod +x "$${smuggled_status_sh}" ;\
-		`# Verify that the resulting status.sh is actually runnable` \
-		"$${smuggled_status_sh}" ;\
-	)
+
+# Version tag passed to Docker builds for go-tool.sh version generation.
+OPERATOR_BUILD_TAG ?= $(shell cd .. && make --quiet --no-print-directory tag)
 
 # Force re-building the file to make sure the current environment is correctly reflected.
 .PHONY: build/Dockerfile.gen
@@ -361,10 +347,11 @@ build/Dockerfile.gen: Dockerfile
 	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g; s,$${BUILD_IMAGE_VERSION},$(shell sed 's/\s*\#.*//' ../BUILD_IMAGE_VERSION),' < $< > $@
 
 .PHONY: docker-build
-docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with the operator.
+docker-build: build/Dockerfile.gen ## Build docker image with the operator.
 	BUILDKIT_PROGRESS=plain ../scripts/docker-build.sh \
 		-t ${IMG} \
 		$(if $(GOARCH),--build-arg TARGET_ARCH=$(GOARCH)) \
+		--build-arg BUILD_TAG=$(OPERATOR_BUILD_TAG) \
 		-f $< \
 		..
 
@@ -567,11 +554,11 @@ docker-push-index: ## Push docker image with the index.
 # To properly provided solutions that supports more than one platform you should use this option.
 PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
 .PHONY: docker-buildx
-docker-buildx: smuggled-status-sh test build/Dockerfile.gen ## Build and push docker image for the manager for cross-platform support
+docker-buildx: test build/Dockerfile.gen ## Build and push docker image for the manager for cross-platform support
 	# copy existing Dockerfile and insert --platform=${BUILDPLATFORM} into Dockerfile.cross, and preserve the original Dockerfile
 	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' build/Dockerfile.gen > build/Dockerfile.cross
 	- docker buildx create --name project-v3-builder
 	docker buildx use project-v3-builder
-	- docker buildx build --platform=$(PLATFORMS) --push --tag ${IMG} -f build/Dockerfile.cross ..
+	- docker buildx build --platform=$(PLATFORMS) --push --tag ${IMG} --build-arg BUILD_TAG=$(OPERATOR_BUILD_TAG) -f build/Dockerfile.cross ..
 	- docker buildx rm project-v3-builder
 	rm build/Dockerfile.cross

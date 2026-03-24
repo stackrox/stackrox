@@ -44,10 +44,14 @@ COPY generated/ generated/
 
 # Copy scripts/go-build.sh and dependencies.
 COPY scripts/ scripts/
-COPY operator/build/status.sh status.sh
 
-# This creates a git repo in workdir so that `git grep` command in build.sh can succeed and actually find //XDef-s.
-RUN git init && git add .
+# Copy version data files needed by go-tool.sh.
+COPY *VERSION ./
+
+# go-tool.sh needs BUILD_TAG to generate version info when there's no .git
+# directory. The Makefile sets this via --build-arg from `make tag`.
+ARG BUILD_TAG
+ENV BUILD_TAG=${BUILD_TAG}
 
 # We've been historically building operator without CGO both upstream and downstream.
 ENV CGO_ENABLED=0
