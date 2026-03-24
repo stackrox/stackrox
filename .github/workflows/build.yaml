@@ -241,7 +241,7 @@ jobs:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
         with:
-          key-suffix: ${{ matrix.name }}
+          key-suffix: ${{ matrix.name == 'race-condition-debug' && 'race' || '' }}
 
       - name: PR labels
         uses: joerick/pr-labels-action@v1.0.9
@@ -664,8 +664,6 @@ jobs:
         env:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
-        with:
-          key-suffix: ${{ matrix.name }}
 
       - name: Resolve mods for protos
         run: go mod tidy
