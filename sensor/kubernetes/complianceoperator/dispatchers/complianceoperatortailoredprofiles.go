@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"slices"
+	"strings"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -172,5 +173,26 @@ func computeProfileEquivalenceHash(name, namespace, description, title string, r
 		_, _ = h.Write([]byte(r))
 		_, _ = h.Write([]byte{0})
 	}
-	return hex.EncodeToString(h.Sum(nil))
+	hash := hex.EncodeToString(h.Sum(nil))
+	// Example output:
+	//
+	//   Tailored profile "ocp4-cis-custom" equivalence hash computed with the following fields:
+	//     name        = "ocp4-cis-custom"
+	//     namespace   = "openshift-compliance"
+	//     title       = "CIS OpenShift 4 Benchmark (tailored)"
+	//     description = "My custom tailored profile"
+	//     rules (3)   =
+	//       - api_server_anonymous_auth
+	//       - api_server_audit_log_maxage
+	//       - api_server_audit_log_maxbackup
+	//   Resulting hash: a3f7c2d9e1b4f8a06c5d2e7b3f9a1c4d8e2b5f7a0c3d6e9b2f5a8c1d4e7b0f3
+	log.Debugf("Tailored profile %q equivalence hash computed with the following fields:"+
+		"\n  name        = %q"+
+		"\n  namespace   = %q"+
+		"\n  title       = %q"+
+		"\n  description = %q"+
+		"\n  rules (%d)  =\n    - %s"+
+		"\nResulting hash: %s",
+		name, name, namespace, title, description, len(sorted), strings.Join(sorted, "\n    - "), hash)
+	return hash
 }
