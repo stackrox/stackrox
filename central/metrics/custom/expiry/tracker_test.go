@@ -12,11 +12,11 @@ import (
 	"google.golang.org/grpc"
 )
 
+var errTest = errors.New("test")
+
 type mockService struct {
 	err error
 }
-
-var errTest = errors.New("test")
 
 func (ms *mockService) AuthFuncOverride(context.Context, string) (context.Context, error) {
 	panic("unimplemented")
