@@ -97,7 +97,7 @@ func applyYAMLResources(t *testing.T, ctx context.Context) {
 	}
 	ocRun(ctx, "apply", "--wait", "-n", testNamespace, "-f", "-")
 	t.Cleanup(func() {
-		ocRun(context.Background(), "delete", "--ignore-not-found", "-n", testNamespace, "-f", "-")
+		ocRun(context.Background(), "delete", "--wait", "--ignore-not-found", "-n", testNamespace, "-f", "-")
 	})
 }
 
