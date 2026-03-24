@@ -174,6 +174,8 @@ When working on specific areas, refer to these detailed guides:
 - Shell scripts are checked with shellcheck
 - UI code uses TypeScript with React conventions
 - All generated code should not be manually edited
+- Table-driven are defined as maps with the test name as the key.
+- Tests use `assert` or `require` provided by github.com/stretchr/testify.
 
 ### Development Workflow
 1. Use `make install-dev-tools` to set up development environment
@@ -194,3 +196,5 @@ When working on specific areas, refer to these detailed guides:
 - Use `docker run --rm --env POSTGRES_USER="$USER" --env POSTGRES_HOST_AUTH_METHOD=trust --publish 5432:5432 docker.io/library/postgres:15` for test setup
 - Integration tests in `/qa-tests-backend/` use Groovy/Spock framework
 - Tests marked with `//go:build sql_integration` require database connectivity
+
+
