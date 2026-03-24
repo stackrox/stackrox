@@ -61,20 +61,11 @@ func (ds *datastoreImpl) SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([
 
 	// For each CVE, get all component edges.
 	// This creates one ImageCVEV2 per CVE+component combination.
+	// TODO: Add GetEdgesForCVE() to store and implement conversion here.
 	var allImageCVEs []*storage.ImageCVEV2
-	for _, result := range searchResults {
-		_, _, err := ds.storage.Get(ctx, result.ID)
-		if err != nil {
-			return nil, err
-		}
-		if !found {
-			continue // CVE was deleted between search and get.
-		}
-
-		// Get all edges for this CVE (all components that have this CVE).
-		// This requires a new query - for now we skip the conversion.
-		// Full implementation would use GetEdgesForCVE() method.
-		// TODO: Add GetEdgesForCVE() to store and implement conversion here.
+	for range searchResults {
+		// Full implementation would iterate and convert each CVE with its edges.
+		// For now, we return empty to maintain backward compatibility.
 	}
 
 	// Return empty until GetEdgesForCVE is implemented.
