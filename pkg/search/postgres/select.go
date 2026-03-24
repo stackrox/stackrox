@@ -77,6 +77,43 @@ func newDBScanAPI(opts ...dbscan.APIOption) *dbscan.API {
 	return api
 }
 
+// RunSelectOneForSchema executes a select request against the database for given schema and returns a single result.
+// The input query must explicitly specify select fields. Returns nil if no results are found.
+func RunSelectOneForSchema[T any](ctx context.Context, db postgres.DB, schema *walker.Schema, q *v1.Query) (*T, error) {
+	var query *query
+	var err error
+	// Add this to be safe and convert panics to errors,
+	// since we do a lot of casting and other operations that could potentially panic in this code.
+	// Panics are expected ONLY in the event of a programming error, all foreseeable errors are handled
+	// the usual way.
+	defer func() {
+		if r := recover(); r != nil {
+			if query != nil {
+				log.Errorf("Query issue: %s: %v", query.AsSQL(), r)
+			} else {
+				log.Errorf("Unexpected error running search request: %v", r)
+			}
+			debug.PrintStack()
+			err = fmt.Errorf("unexpected error running search request: %v", r)
+		}
+	}()
+
+	// Extract array fields from destination type T to automatically detect child table aggregation
+	arrayFields := getArrayFieldsFromType[T]()
+
+	query, err = standardizeSelectQueryAndPopulatePath(ctx, q, schema, SELECT, arrayFields)
+	if err != nil {
+		return nil, err
+	}
+	// A nil-query implies no results.
+	if query == nil {
+		return nil, nil
+	}
+	return pgutils.Retry2(ctx, func() (*T, error) {
+		return retryableRunSelectOneForSchema[T](ctx, db, query)
+	})
+}
+
 // RunSelectRequestForSchema executes a select request against the database for given schema. The input query must
 // explicitly specify select fields.
 //
@@ -199,6 +236,26 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 		return nil, err
 	}
 	return parsedQuery, nil
+}
+
+func retryableRunSelectOneForSchema[T any](ctx context.Context, db postgres.DB, query *query) (*T, error) {
+	if len(query.SelectedFields) == 0 {
+		return nil, errors.New("select fields required for select query")
+	}
+
+	queryStr := query.AsSQL()
+
+	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error executing query %s", queryStr)
+	}
+	defer rows.Close()
+
+	var row T
+	if err := scanAPI.ScanOne(&row, rows); err != nil {
+		return nil, errors.Wrap(err, "error scanning rows")
+	}
+	return &row, pgutils.ErrNilIfNoRows(err)
 }
 
 func retryableRunSelectRequestForSchemaFn[T any](ctx context.Context, db postgres.DB, query *query, fn func(*T) error) error {
