@@ -572,8 +572,13 @@ type ComplianceOperatorProfileV2 struct {
 	ClusterId      string                                   `protobuf:"bytes,14,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`            // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
 	ProfileRefId   string                                   `protobuf:"bytes,15,opt,name=profile_ref_id,json=profileRefId,proto3" json:"profile_ref_id,omitempty" search:"Profile Ref ID,hidden" sql:"type(uuid)"` // @gotags: search:"Profile Ref ID,hidden" sql:"type(uuid)"
 	OperatorKind   ComplianceOperatorProfileV2_OperatorKind `protobuf:"varint,16,opt,name=operator_kind,json=operatorKind,proto3,enum=storage.ComplianceOperatorProfileV2_OperatorKind" json:"operator_kind,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// equivalence_hash is computed by sensor for tailored profiles and persisted as-is by Central.
+	// It encodes the effective content of the profile (name, namespace, description, title, sorted
+	// rule names) so Central can determine cross-cluster equivalence without additional DB columns.
+	// Empty for out-of-box profiles.
+	EquivalenceHash string `protobuf:"bytes,17,opt,name=equivalence_hash,json=equivalenceHash,proto3" json:"equivalence_hash,omitempty"` // Next tag: 18.
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorProfileV2) Reset() {
@@ -716,6 +721,13 @@ func (x *ComplianceOperatorProfileV2) GetOperatorKind() ComplianceOperatorProfil
 		return x.OperatorKind
 	}
 	return ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED
+}
+
+func (x *ComplianceOperatorProfileV2) GetEquivalenceHash() string {
+	if x != nil {
+		return x.EquivalenceHash
+	}
+	return ""
 }
 
 // Next tag: 19
@@ -3016,7 +3028,7 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\vProfileShim\x12\x1d\n" +
 	"\n" +
 	"profile_id\x18\x01 \x01(\tR\tprofileId\x12$\n" +
-	"\x0eprofile_ref_id\x18\x02 \x01(\tR\fprofileRefId\"\xa5\a\n" +
+	"\x0eprofile_ref_id\x18\x02 \x01(\tR\fprofileRefId\"\xd0\a\n" +
 	"\x1bComplianceOperatorProfileV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -3036,7 +3048,8 @@ const file_storage_compliance_operator_v2_proto_rawDesc = "" +
 	"\n" +
 	"cluster_id\x18\x0e \x01(\tR\tclusterId\x12$\n" +
 	"\x0eprofile_ref_id\x18\x0f \x01(\tR\fprofileRefId\x12V\n" +
-	"\roperator_kind\x18\x10 \x01(\x0e21.storage.ComplianceOperatorProfileV2.OperatorKindR\foperatorKind\x1a9\n" +
+	"\roperator_kind\x18\x10 \x01(\x0e21.storage.ComplianceOperatorProfileV2.OperatorKindR\foperatorKind\x12)\n" +
+	"\x10equivalence_hash\x18\x11 \x01(\tR\x0fequivalenceHash\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +

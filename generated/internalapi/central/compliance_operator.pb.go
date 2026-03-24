@@ -1118,7 +1118,7 @@ func (x *ComplianceOperatorCheckResultV2) GetWarnings() []string {
 }
 
 // ComplianceOperatorProfileV2 is a message from Sensor (to Central) representing a compliance check profile.
-// Next tag: 12.
+// Next tag: 13.
 type ComplianceOperatorProfileV2 struct {
 	state          protoimpl.MessageState                   `protogen:"open.v1"`
 	Id             string                                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -1132,8 +1132,14 @@ type ComplianceOperatorProfileV2 struct {
 	Title          string                                   `protobuf:"bytes,9,opt,name=title,proto3" json:"title,omitempty"`
 	Values         []string                                 `protobuf:"bytes,10,rep,name=values,proto3" json:"values,omitempty"`
 	OperatorKind   ComplianceOperatorProfileV2_OperatorKind `protobuf:"varint,11,opt,name=operator_kind,json=operatorKind,proto3,enum=central.ComplianceOperatorProfileV2_OperatorKind" json:"operator_kind,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// equivalence_hash is set by sensor for tailored profiles; it identifies the effective
+	// content of the profile (name, namespace, description, title, sorted rule names) so that
+	// Central can determine whether the same tailored profile name is content-equivalent
+	// across multiple clusters. Left empty for out-of-box (non-tailored) profiles.
+	// Next tag: 13.
+	EquivalenceHash string `protobuf:"bytes,12,opt,name=equivalence_hash,json=equivalenceHash,proto3" json:"equivalence_hash,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorProfileV2) Reset() {
@@ -1241,6 +1247,13 @@ func (x *ComplianceOperatorProfileV2) GetOperatorKind() ComplianceOperatorProfil
 		return x.OperatorKind
 	}
 	return ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED
+}
+
+func (x *ComplianceOperatorProfileV2) GetEquivalenceHash() string {
+	if x != nil {
+		return x.EquivalenceHash
+	}
+	return ""
 }
 
 // ComplianceOperatorRuleV2 is a message from Sensor (to Central) representing a compliance check rule.
@@ -2951,7 +2964,7 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\n" +
 	"\x06MANUAL\x10\x05\x12\x12\n" +
 	"\x0eNOT_APPLICABLE\x10\x06\x12\x10\n" +
-	"\fINCONSISTENT\x10\aJ\x04\b\f\x10\rJ\x04\b\r\x10\x0e\"\x87\x06\n" +
+	"\fINCONSISTENT\x10\aJ\x04\b\f\x10\rJ\x04\b\r\x10\x0e\"\xb2\x06\n" +
 	"\x1bComplianceOperatorProfileV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1d\n" +
 	"\n" +
@@ -2965,7 +2978,8 @@ const file_internalapi_central_compliance_operator_proto_rawDesc = "" +
 	"\x05title\x18\t \x01(\tR\x05title\x12\x16\n" +
 	"\x06values\x18\n" +
 	" \x03(\tR\x06values\x12V\n" +
-	"\roperator_kind\x18\v \x01(\x0e21.central.ComplianceOperatorProfileV2.OperatorKindR\foperatorKind\x1a9\n" +
+	"\roperator_kind\x18\v \x01(\x0e21.central.ComplianceOperatorProfileV2.OperatorKindR\foperatorKind\x12)\n" +
+	"\x10equivalence_hash\x18\f \x01(\tR\x0fequivalenceHash\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +

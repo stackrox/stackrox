@@ -1,6 +1,10 @@
 package dispatchers
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"slices"
+
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -125,9 +129,19 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 			OperatorKind: central.ComplianceOperatorProfileV2_TAILORED_PROFILE,
 		}
 
+		var ruleNames []string
 		for _, rule := range protoProfile.GetRules() {
 			protoProfileV2.Rules = append(protoProfileV2.Rules, &central.ComplianceOperatorProfileV2_Rule{RuleName: rule.GetName()})
+			ruleNames = append(ruleNames, rule.GetName())
 		}
+
+		protoProfileV2.EquivalenceHash = computeProfileEquivalenceHash(
+			tailoredProfile.GetName(),
+			tailoredProfile.GetNamespace(),
+			tailoredProfile.Spec.Description,
+			tailoredProfile.Spec.Title,
+			ruleNames,
+		)
 
 		events = append(events, &central.SensorEvent{
 			Id:     protoProfileV2.GetId(),
@@ -139,4 +153,24 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 	}
 
 	return component.NewEvent(events...)
+}
+
+// computeProfileEquivalenceHash returns a SHA-256 hex digest that identifies whether two
+// profiles with the same name carry equivalent content. Fields are NUL-separated to prevent
+// collisions between adjacent values; rule names are sorted for order independence.
+func computeProfileEquivalenceHash(name, namespace, description, title string, ruleNames []string) string {
+	sorted := make([]string, len(ruleNames))
+	copy(sorted, ruleNames)
+	slices.Sort(sorted)
+
+	h := sha256.New()
+	for _, s := range []string{name, namespace, description, title} {
+		_, _ = h.Write([]byte(s))
+		_, _ = h.Write([]byte{0})
+	}
+	for _, r := range sorted {
+		_, _ = h.Write([]byte(r))
+		_, _ = h.Write([]byte{0})
+	}
+	return hex.EncodeToString(h.Sum(nil))
 }
