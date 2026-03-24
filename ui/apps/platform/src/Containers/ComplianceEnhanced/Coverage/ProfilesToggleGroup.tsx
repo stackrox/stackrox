@@ -1,44 +1,52 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { PageSection, Tab, Tabs, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 
 import type { ComplianceProfileSummary } from 'services/ComplianceCommon';
 
 const NON_STANDARD_TAB = 'Other';
-
-// Extract unique standards from profiles and add 'Other' standard if there are profiles with no standards
-function getUniqueStandards(profiles: ComplianceProfileSummary[]): string[] {
-    const standards = new Set(
-        profiles.flatMap((profile) => profile.standards.map((standard) => standard.shortName))
-    );
-
-    const standardsArray = Array.from(standards).sort();
-
-    if (profiles.some((profile) => profile.standards.length === 0)) {
-        standardsArray.push(NON_STANDARD_TAB);
-    }
-
-    return standardsArray;
-}
-
-function getInitialStandard(profiles: ComplianceProfileSummary[], profileName: string): string {
-    const profile = profiles.find((profile) => profile.name === profileName);
-    if (profile && profile.standards.length > 0) {
-        return profile.standards[0].shortName;
-    }
-    return NON_STANDARD_TAB;
-}
-
-function isStandardInProfile(
-    standardShortName: string,
-    profile: ComplianceProfileSummary
-): boolean {
-    return (
-        profile.standards.some((standard) => standard.shortName === standardShortName) ||
-        (standardShortName === NON_STANDARD_TAB && profile.standards.length === 0)
-    );
-}
-
+const TAILORED_PROFILES_TAB = 'Tailored Profiles';
 const tabContentId = 'profiles-toggle-group';
+
+// Profiles usually have one entry in standards[], but return the first non-empty shortName if there are several.
+function getFirstStandardShortName(profile: ComplianceProfileSummary): string | undefined {
+    return profile.standards.find((standard) => standard.shortName.length > 0)?.shortName;
+}
+
+// Tailored profiles use their own tab; all other kinds use the first standard shortName or Other.
+function getProfileTab(profile: ComplianceProfileSummary): string {
+    if (profile.operatorKind === 'TAILORED_PROFILE') {
+        return TAILORED_PROFILES_TAB;
+    }
+
+    return getFirstStandardShortName(profile) ?? NON_STANDARD_TAB;
+}
+
+// Builds the list of tabs: sorted benchmark tabs, then Tailored and Other only when the profile list needs them
+function getStandardTabs(profiles: ComplianceProfileSummary[]): string[] {
+    const uniqueStandardShortNames = new Set<string>();
+    let isTailoredTabApplicable = false;
+    let isOtherTabApplicable = false;
+
+    profiles.forEach((profile) => {
+        if (profile.operatorKind === 'TAILORED_PROFILE') {
+            isTailoredTabApplicable = true;
+            return;
+        }
+
+        const standardShortName = getFirstStandardShortName(profile);
+        if (standardShortName) {
+            uniqueStandardShortNames.add(standardShortName);
+        } else {
+            isOtherTabApplicable = true;
+        }
+    });
+
+    return [
+        ...Array.from(uniqueStandardShortNames).sort(),
+        ...(isTailoredTabApplicable ? [TAILORED_PROFILES_TAB] : []),
+        ...(isOtherTabApplicable ? [NON_STANDARD_TAB] : []),
+    ];
+}
 
 type ProfilesToggleGroupProps = {
     profileName: string;
@@ -51,44 +59,39 @@ function ProfilesToggleGroup({
     profiles,
     handleToggleChange,
 }: ProfilesToggleGroupProps) {
-    const uniqueStandards = useMemo(() => getUniqueStandards(profiles), [profiles]);
-    const initialStandard = useMemo(
-        () => getInitialStandard(profiles, profileName),
-        [profileName, profiles]
+    const standardTabs = useMemo(() => getStandardTabs(profiles), [profiles]);
+    const selectedProfile = useMemo(
+        () => profiles.find((profile) => profile.name === profileName),
+        [profiles, profileName]
     );
 
-    const [selectedStandard, setSelectedStandard] = useState(initialStandard);
+    const selectedStandard = useMemo(() => {
+        if (selectedProfile) {
+            return getProfileTab(selectedProfile);
+        }
+        return standardTabs[0];
+    }, [selectedProfile, standardTabs]);
 
     useEffect(() => {
-        // Sets the selected standard based on the profile name in the URL.
-        // Currently picks the first standard found since no profile should have multiple standards, however
-        // if this changes in the future, we'll want to find all matches and only update selectedStandard if the
-        // current selectedStandard doesn't exist in the match
-        if (profileName && profiles.some((profile) => profile.name === profileName)) {
-            const standardShortName =
-                profiles.find((profile) => profile.name === profileName)?.standards[0]?.shortName ||
-                NON_STANDARD_TAB;
-            setSelectedStandard(standardShortName);
-        } else {
-            if (profiles[0]?.name) {
-                // useful when scan schedule filter changes and current profile is not in the list
-                handleToggleChange(profiles[0].name);
-            }
+        // URL profileName is not in the list of profiles from the response (e.g. scan config filter changed)
+        // then jump to first list entry
+        if (!selectedProfile && profiles[0]?.name) {
+            handleToggleChange(profiles[0].name);
         }
-    }, [profileName, profiles, handleToggleChange]);
+    }, [selectedProfile, profiles, handleToggleChange]);
 
-    function handleStandardSelection(standardShortName) {
-        setSelectedStandard(standardShortName);
-        const firstProfileInStandard = profiles.find((profile) =>
-            isStandardInProfile(standardShortName, profile)
+    function handleStandardSelection(standardShortName: string) {
+        const firstProfileInStandard = profiles.find(
+            (profile) => getProfileTab(profile) === standardShortName
         );
+
         if (firstProfileInStandard) {
             handleToggleChange(firstProfileInStandard.name);
         }
     }
 
     const filteredProfiles: ComplianceProfileSummary[] = useMemo(() => {
-        return profiles.filter((profile) => isStandardInProfile(selectedStandard, profile));
+        return profiles.filter((profile) => getProfileTab(profile) === selectedStandard);
     }, [profiles, selectedStandard]);
 
     return (
@@ -97,11 +100,11 @@ function ProfilesToggleGroup({
                 <Tabs
                     activeKey={selectedStandard}
                     onSelect={(_e, key) => {
-                        handleStandardSelection(key);
+                        handleStandardSelection(String(key));
                     }}
                     isBox
                 >
-                    {Array.from(uniqueStandards).map((standardShortName) => (
+                    {standardTabs.map((standardShortName) => (
                         <Tab
                             key={standardShortName}
                             eventKey={standardShortName}
