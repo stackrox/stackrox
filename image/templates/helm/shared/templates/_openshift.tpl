@@ -28,7 +28,11 @@
   {{- $normalizedUserSpecifiedOpenShift = int $normalizedUserSpecifiedOpenShift -}}
 {{- end -}}
 {{- if kindIs "float64" $normalizedUserSpecifiedOpenShift -}}
-  {{/* YAML numeric values are often parsed as float64. */}}
+  {{/* YAML numeric values are sometimes parsed as float64... */}}
+  {{- $normalizedUserSpecifiedOpenShift = int $normalizedUserSpecifiedOpenShift -}}
+{{- end -}}
+{{- if kindIs "int64" $normalizedUserSpecifiedOpenShift -}}
+  {{/* ... and sometimes as int64 (e.g. when doing helm --set env.openshift="4"). */}}
   {{- $normalizedUserSpecifiedOpenShift = int $normalizedUserSpecifiedOpenShift -}}
 {{- end -}}
 
@@ -40,7 +44,7 @@
   {{/* env.openshift=true,false. */}}
 {{- else -}}
   {{/* This indicates that the original user setting $env.openshift is bogus -- normalization didn't help us. */}}
-  {{- include "srox.fail" (printf "Invalid user setting for env.openshift=%v: Either un-set to rely on auto-sensing or set to an OpenShift version (3 or 4) or to a boolean" $normalizedUserSpecifiedOpenShift) -}}
+  {{- include "srox.fail" (printf "Invalid user setting for env.openshift=%v (%T): Either un-set to rely on auto-sensing or set to an OpenShift version (3 or 4) or to a boolean" $normalizedUserSpecifiedOpenShift $normalizedUserSpecifiedOpenShift) -}}
 {{- end -}}
 
 {{/* $normalizedUserSpecifiedOpenShift is now nil (unset), 3, 4, false or true. */}}
