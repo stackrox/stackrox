@@ -68,11 +68,14 @@ message ComplianceOperatorProfileV2 {
     TAILORED_PROFILE = 2;
   }
   OperatorKind operator_kind = 16;
+  // equivalence_hash identifies whether two profiles with the same name carry equivalent
+  // content across clusters. Central uses it to enforce content consistency before
+  // creating multi-cluster scan configurations.
+  string equivalence_hash = 17; // Next tag: 18.
 }
 
 // Next tag: 19
-message ComplianceOperatorRuleV2 {
-  string id = 1; // @gotags: sql:"pk"
+message ComplianceOperatorRuleV2 {  string id = 1; // @gotags: sql:"pk"
   string rule_id = 2;
   string name = 3; // @gotags: search:"Compliance Rule Name,hidden"
   string rule_type = 4; // @gotags: search:"Compliance Rule Type,hidden"

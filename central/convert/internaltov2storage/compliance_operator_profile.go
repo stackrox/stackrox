@@ -18,21 +18,22 @@ func ComplianceOperatorProfileV2(internalMsg *central.ComplianceOperatorProfileV
 	productType := internalMsg.GetAnnotations()[v1alpha1.ProductTypeAnnotation]
 
 	return &storage.ComplianceOperatorProfileV2{
-		Id:             internalMsg.GetId(),
-		ProfileId:      internalMsg.GetProfileId(),
-		Name:           internalMsg.GetName(),
-		ProfileVersion: internalMsg.GetProfileVersion(),
-		ProductType:    productType,
-		Labels:         internalMsg.GetLabels(),
-		Annotations:    internalMsg.GetAnnotations(),
-		Description:    internalMsg.GetDescription(),
-		Rules:          rules,
-		Product:        internalMsg.GetAnnotations()[v1alpha1.ProductAnnotation],
-		Title:          internalMsg.GetTitle(),
-		Values:         internalMsg.GetValues(),
-		ClusterId:      clusterID,
-		ProfileRefId:   BuildProfileRefID(clusterID, internalMsg.GetProfileId(), productType),
-		OperatorKind:   centralToStorageProfileKind(internalMsg.GetOperatorKind()),
+		Id:              internalMsg.GetId(),
+		ProfileId:       internalMsg.GetProfileId(),
+		Name:            internalMsg.GetName(),
+		ProfileVersion:  internalMsg.GetProfileVersion(),
+		ProductType:     productType,
+		Labels:          internalMsg.GetLabels(),
+		Annotations:     internalMsg.GetAnnotations(),
+		Description:     internalMsg.GetDescription(),
+		Rules:           rules,
+		Product:         internalMsg.GetAnnotations()[v1alpha1.ProductAnnotation],
+		Title:           internalMsg.GetTitle(),
+		Values:          internalMsg.GetValues(),
+		ClusterId:       clusterID,
+		ProfileRefId:    BuildProfileRefID(clusterID, internalMsg.GetProfileId(), productType),
+		OperatorKind:    centralToStorageProfileKind(internalMsg.GetOperatorKind()),
+		EquivalenceHash: internalMsg.GetEquivalenceHash(),
 	}
 }
 
