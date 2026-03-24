@@ -63,7 +63,7 @@ func (ds *datastoreImpl) SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([
 	// This creates one ImageCVEV2 per CVE+component combination.
 	var allImageCVEs []*storage.ImageCVEV2
 	for _, result := range searchResults {
-		_, found, err := ds.storage.Get(ctx, result.ID)
+		_, _, err := ds.storage.Get(ctx, result.ID)
 		if err != nil {
 			return nil, err
 		}

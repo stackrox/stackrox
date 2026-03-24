@@ -43,7 +43,6 @@ const (
 var (
 	log    = logging.LoggerForModule()
 	schema = pkgSchema.ImagesSchema
-
 )
 
 type imagePartsAsSlice struct {
@@ -51,7 +50,6 @@ type imagePartsAsSlice struct {
 	componentsV2 []*storage.ImageComponentV2
 	cvesV2       []*storage.ImageCVEV2
 }
-
 
 // TODO(ROX-28222): Refactor logic operating on other tables out and up to the datastore layer.
 
