@@ -42,6 +42,8 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        key-suffix: ${{ matrix.gotags }}
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-unit-tests
@@ -123,6 +125,8 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        key-suffix: ${{ matrix.gotags }}
 
     - name: Is Postgres ready
       run: pg_isready -h 127.0.0.1

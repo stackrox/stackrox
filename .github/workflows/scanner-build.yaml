@@ -103,6 +103,8 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        key-suffix: ${{ matrix.name }}
 
     - uses: ./.github/actions/handle-tagged-build
 
