@@ -1,5 +1,12 @@
-FROM registry.access.redhat.com/ubi8:latest AS ubi-base
-FROM registry.access.redhat.com/ubi8/ubi-micro:latest AS ubi-micro-base
+ARG RPMS_REGISTRY=registry.access.redhat.com
+ARG RPMS_BASE_IMAGE=ubi9
+ARG RPMS_BASE_TAG=latest
+ARG BASE_REGISTRY=registry.access.redhat.com
+ARG BASE_IMAGE=ubi9-micro
+ARG BASE_TAG=latest
+
+FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS ubi-base
+FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS ubi-micro-base
 FROM ubi-base AS downloads
 
 ARG DEBUG_BUILD=no
@@ -8,7 +15,7 @@ WORKDIR /
 COPY download.sh /download.sh
 RUN /download.sh
 
-# Prepare stackrox-data using ubi8 (has zip utility)
+# Prepare stackrox-data using ubi9 (has zip utility)
 FROM ubi-base AS stackrox_data
 
 RUN dnf install -y zip
@@ -24,7 +31,7 @@ COPY --from=ubi-micro-base / /out/
 
 RUN dnf install -y \
         --installroot=/out/ \
-        --releasever=8 \
+        --releasever=9 \
         --setopt=install_weak_deps=0 \
         --nodocs \
         findutils \
@@ -36,7 +43,7 @@ COPY signatures/RPM-GPG-KEY-CentOS-Official /tmp/
 RUN rpm --import /tmp/RPM-GPG-KEY-CentOS-Official && \
     dnf install -y \
         --installroot=/out/ \
-        --releasever=8 \
+        --releasever=9 \
         --setopt=install_weak_deps=0 \
         --nodocs \
         /tmp/postgres-libs.rpm \

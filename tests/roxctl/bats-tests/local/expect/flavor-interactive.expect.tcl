@@ -47,7 +47,7 @@ expect "Whether to enable telemetry*:" { send "\n" }
 
 # The central-db image to use (default: "docker.io/stackrox/central-db:2.21.0-15-g448f2dc8fa"):
 # The central-db image to use (default: "quay.io/stackrox-io/central-db:3.67.x-296-g56df6a892d"):
-# The central-db image to use (default: "registry.redhat.io/advanced-cluster-security/rhacs-central-db-rhel8:3.68.x-30-g516b4e7a6c-dirty"):
+# The central-db image to use (default: "registry.redhat.io/advanced-cluster-security/rhacs-central-db-rhel9:3.68.x-30-g516b4e7a6c-dirty"):
 expect {
   default {
     send_user "\nFATAL: No question about central-db image\n"
@@ -63,7 +63,7 @@ expect {
     send "\n"
   }
   # Special case for RHACS to avoid writing a regexp in TCL
-  "The central-db * (default: \"$registry/rhacs-central-db-rhel8:*\"):" {
+  "The central-db * (default: \"$registry/rhacs-central-db-rhel9:*\"):" {
     send_user "roxctl suggests correct registry for central-db"
     send "\n"
   }
@@ -74,7 +74,7 @@ expect "The method of exposing Central*:*: " { send "none\n" }
 
 # The main image to use (default: "docker.io/stackrox/main:3.67.x-296-g56df6a892d"):
 # The main image to use (default: "quay.io/stackrox-io/main:3.67.x-296-g56df6a892d")
-# The main image to use (default: "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8:3.68.x-30-g516b4e7a6c-dirty"):
+# The main image to use (default: "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel9:3.68.x-30-g516b4e7a6c-dirty"):
 expect {
   default {
     send_user "\nFATAL: No question about main image\n"
@@ -90,7 +90,7 @@ expect {
     send "\n"
   }
   # Special case for RHACS to avoid writing a regexp in TCL
-  "The main * (default: \"$registry/rhacs-main-rhel8:*\"):" {
+  "The main * (default: \"$registry/rhacs-main-rhel9:*\"):" {
     send_user "roxctl suggests correct registry for main"
     send "\n"
   }
@@ -102,7 +102,7 @@ expect "Istio version when deploying into an Istio-enabled cluster*:" { send "\n
 
 # The scanner-db image to use (default: "docker.io/stackrox/scanner-db:2.21.0-15-g448f2dc8fa"):
 # The scanner-db image to use (default: "quay.io/stackrox-io/scanner-db:3.67.x-296-g56df6a892d"):
-# The scanner-db image to use (default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8:3.68.x-30-g516b4e7a6c-dirty"):
+# The scanner-db image to use (default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel9:3.68.x-30-g516b4e7a6c-dirty"):
 expect {
   default {
     send_user "\nFATAL: No question about scanner-db image\n"
@@ -118,7 +118,7 @@ expect {
     send "\n"
   }
   # Special case for RHACS to avoid writing a regexp in TCL
-  "The scanner-db * (default: \"$registry/rhacs-scanner-db-rhel8:*\"):" {
+  "The scanner-db * (default: \"$registry/rhacs-scanner-db-rhel9:*\"):" {
     send_user "roxctl suggests correct registry for scanner-db"
     send "\n"
   }
@@ -142,7 +142,7 @@ expect {
     send "\n"
   }
   # Special case for RHACS to avoid writing a regexp in TCL
-  "The scanner * (default: \"$registry/rhacs-scanner-rhel8:*\"):" {
+  "The scanner * (default: \"$registry/rhacs-scanner-rhel9:*\"):" {
     send_user "roxctl suggests correct registry for scanner"
     send "\n"
   }
@@ -164,7 +164,7 @@ expect {
     send "\n"
   }
   # Special case for RHACS to avoid writing a regexp in TCL
-  "The scanner-v4-db * (default: \"$registry/rhacs-scanner-v4-db-rhel8:*\"):" {
+  "The scanner-v4-db * (default: \"$registry/rhacs-scanner-v4-db-rhel9:*\"):" {
     send_user "roxctl suggests correct registry for scanner-v4-db"
     send "\n"
   }
@@ -188,7 +188,7 @@ expect {
     send "\n"
   }
   # Special case for RHACS to avoid writing a regexp in TCL
-  "The scanner-v4 * (default: \"$registry/rhacs-scanner-v4-rhel8:*\"):" {
+  "The scanner-v4 * (default: \"$registry/rhacs-scanner-v4-rhel9:*\"):" {
     send_user "roxctl suggests correct registry for scanner-v4"
     send "\n"
   }

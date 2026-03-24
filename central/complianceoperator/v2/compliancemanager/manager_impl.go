@@ -285,17 +285,36 @@ func (m *managerImpl) processRequestToSensor(ctx context.Context, scanRequest *s
 		return nil, errors.Errorf("Unable to find all profiles for scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
+	// Validate profile kinds. UNSPECIFIED should not appear here because centralToStorageProfileKind
+	// normalizes it to PROFILE at ingestion time, but we allow it through defensively —
+	// StorageToCentralProfileKind will map it to PROFILE. Truly unknown kinds are rejected.
+	for _, p := range returnedProfiles {
+		switch p.GetOperatorKind() {
+		case storage.ComplianceOperatorProfileV2_PROFILE, storage.ComplianceOperatorProfileV2_TAILORED_PROFILE:
+			// valid
+		case storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
+			log.Warnf("Profile %q in scan configuration %q has UNSPECIFIED operator kind; treating as PROFILE", p.GetName(), scanRequest.GetScanConfigName())
+		default:
+			return nil, errors.Errorf("profile %q has unsupported operator kind %v (scan configuration %q)", p.GetName(), p.GetOperatorKind(), scanRequest.GetScanConfigName())
+		}
+	}
+
+	// Build profile refs (name + kind) - needed to support tailored profiles, a different resource kind in CO.
+	// Persist profile_refs so the startup sync path can forward correct kinds to Sensor on reconnect.
+	scanRequest.ProfileRefs = internaltov2storage.ProfileV2ToScanConfigRefs(returnedProfiles)
+
 	err = m.scanSettingDS.UpsertScanConfiguration(ctx, scanRequest)
 	if err != nil {
 		log.Error(err)
 		return nil, errors.Errorf("Unable to save scan configuration named %q.", scanRequest.GetScanConfigName())
 	}
 
+	profileRefs := internaltov2storage.ScanConfigRefsToCentral(scanRequest.GetProfileRefs())
 	for _, clusterID := range clusters {
 		// id for the request message to sensor
 		sensorRequestID := uuid.NewV4().String()
 
-		sensorMessage := buildScanConfigSensorMsg(sensorRequestID, cron, profiles, scanRequest.GetScanConfigName(), createScanRequest)
+		sensorMessage := buildScanConfigSensorMsg(sensorRequestID, cron, profiles, profileRefs, scanRequest.GetScanConfigName(), createScanRequest)
 		err := m.sensorConnMgr.SendMessage(clusterID, sensorMessage)
 		var status string
 		if err != nil {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	compScanSetting "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
+	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	delegatedRegistryConfigConvert "github.com/stackrox/rox/central/delegatedregistryconfig/convert"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/util/imageintegration"
 	hashManager "github.com/stackrox/rox/central/hash/manager"
@@ -645,6 +646,7 @@ func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*centra
 		for _, profile := range scanConfig.GetProfiles() {
 			profiles = append(profiles, profile.GetProfileName())
 		}
+		profileRefs := internaltov2storage.ScanConfigRefsToCentral(scanConfig.GetProfileRefs())
 		cron, err := schedule.ConvertToCronTab(scanConfig.GetSchedule())
 		if err != nil {
 			return nil, err
@@ -655,6 +657,7 @@ func (c *sensorConnection) getScanConfigurationMsg(ctx context.Context) (*centra
 					ScanSettings: &central.ApplyComplianceScanConfigRequest_BaseScanSettings{
 						ScanName:               scanConfig.GetScanConfigName(),
 						Profiles:               profiles,
+						ProfileRefs:            profileRefs,
 						StrictNodeScan:         scanConfig.GetStrictNodeScan(),
 						AutoApplyRemediations:  scanConfig.GetAutoApplyRemediations(),
 						AutoUpdateRemediations: scanConfig.GetAutoUpdateRemediations(),

@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# TODO(ROX-33603): change to rhel9 when it's time
-readonly downstream_image="registry.redhat.io/advanced-cluster-security/rhacs-rhel8-operator"
+readonly downstream_image="registry.redhat.io/advanced-cluster-security/rhacs-rhel9-operator"
 operator_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 
 function usage() {

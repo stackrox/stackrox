@@ -1,7 +1,7 @@
 ARG PG_VERSION=15
 
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.25@sha256:aa03597ee8c7594ffecef5cbb6a0f059d362259d2a41225617b27ec912a3d0d3 AS go-builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.25@sha256:bd531796aacb86e4f97443797262680fbf36ca048717c00b6f4248465e1a7c0c AS go-builder
 
 RUN dnf -y install --allowerasing jq
 
@@ -52,12 +52,12 @@ COPY --from=ubi-micro-base / /out/
 RUN dnf module enable -y \
          --installroot=/out/ \
          --setopt=reposdir=/etc/yum.repos.d \
-         --releasever=8 \
+         --releasever=9 \
          postgresql:${PG_VERSION} && \
     dnf install -y \
         --installroot=/out/ \
         --setopt=reposdir=/etc/yum.repos.d \
-        --releasever=8 \
+        --releasever=9 \
         --setopt=install_weak_deps=0 \
         --nodocs \
         ca-certificates \
@@ -70,10 +70,7 @@ RUN dnf module enable -y \
 
 # Setup stackrox directories with correct ownership
 RUN mkdir -p /out/stackrox && \
-    mkdir -p /out/etc/pki/ca-tr
-FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:093a704be0eaef9bb52d9bc0219c67ee9db13c2e797da400ddb5d5ae6849fa10 AS ubi-micro-base
-
-FROM registry.access.redhat.com/ubi9/ubi:latest@sha256:6ed9f6f637fe731d93ec60c065dbced79273f1e0b5f512951f2c0b0baedb16ad AS package_installerust/source/anchors /out/etc/ssl && \
+    mkdir -p /out/etc/pki/ca-trust/source/anchors /out/etc/ssl && \
     mkdir -p /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox && \
     chown -R 4000:4000 /out/etc/pki/ca-trust /out/etc/ssl /out/var/lib/stackrox /out/var/log/stackrox /out/var/cache/stackrox /out/tmp
 
@@ -81,7 +78,7 @@ COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/static-bin
 RUN chroot /out /stackrox/save-dir-contents /etc/pki/ca-trust /etc/ssl
 
 
-FROM registry.access.redhat.com/ubi9/nodejs-20:latest@sha256:c3afeb6716306b239d0f1bc3c567bd899cb102cf70b6dd48b9a11e7339482f3f AS ui-builder
+FROM registry.access.redhat.com/ubi9/nodejs-20:latest@sha256:ad30ca76c555dafd2c0c772f8a12aae41cadc767c9654761c6fb706fd1659920 AS ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -103,7 +100,7 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM registry.access.redhat.com/ubi8/ubi-micro:latest@sha256:37552f11d3b39b3360f7be7c13f6a617e468f39be915cd4f8c8a8531ffc9d43d
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest@sha256:093a704be0eaef9bb52d9bc0219c67ee9db13c2e797da400ddb5d5ae6849fa10
 
 COPY --from=package_installer /out/ /
 
@@ -134,7 +131,7 @@ LABEL \
     io.k8s.display-name="main" \
     io.openshift.tags="rhacs,main,stackrox" \
     maintainer="Red Hat, Inc." \
-    name="advanced-cluster-security/rhacs-main-rhel8" \
+    name="advanced-cluster-security/rhacs-main-rhel9" \
     # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
     source-location="https://github.com/stackrox/stackrox" \
     summary="Main Image for Red Hat Advanced Cluster Security for Kubernetes" \

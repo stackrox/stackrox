@@ -195,12 +195,12 @@ spec:
         value: |
           [
             {
-              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-central-db-rhel8",
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-central-db-rhel9",
               "internalRepo": "quay.io/rhacs-eng/release-central-db",
               "component": "central-db"
             },
             {
-              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-collector-rhel8",
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-collector-rhel9",
               "internalRepo": "quay.io/rhacs-eng/release-collector",
               "component": "collector"
             },
@@ -210,7 +210,7 @@ spec:
               "component": "fact"
             },
             {
-              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8",
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel9",
               "internalRepo": "quay.io/rhacs-eng/release-main",
               "component": "main"
             },
@@ -220,42 +220,42 @@ spec:
               "component": "operator-bundle"
             },
             {
-              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-rhel8-operator",
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-rhel9-operator",
               "internalRepo": "quay.io/rhacs-eng/release-operator",
               "component": "operator"
             },
             {
-              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-roxctl-rhel8",
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-roxctl-rhel9",
               "internalRepo": "quay.io/rhacs-eng/release-roxctl",
               "component": "roxctl"
             },
             {
-              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8",
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel9",
               "internalRepo": "quay.io/rhacs-eng/release-scanner-db",
               "component": "scanner-db"
             },
             {
-              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-slim-rhel8",
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-slim-rhel9",
               "internalRepo": "quay.io/rhacs-eng/release-scanner-db-slim",
               "component": "scanner-db-slim"
             },
             {
-              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8",
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel9",
               "internalRepo": "quay.io/rhacs-eng/release-scanner",
               "component": "scanner"
             },
             {
-              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-slim-rhel8",
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-slim-rhel9",
               "internalRepo": "quay.io/rhacs-eng/release-scanner-slim",
               "component": "scanner-slim"
             },
             {
-              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-db-rhel8",
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-db-rhel9",
               "internalRepo": "quay.io/rhacs-eng/release-scanner-v4-db",
               "component": "scanner-v4-db"
             },
             {
-              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-rhel8",
+              "externalRepo": "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-rhel9",
               "internalRepo": "quay.io/rhacs-eng/release-scanner-v4",
               "component": "scanner-v4"
             }

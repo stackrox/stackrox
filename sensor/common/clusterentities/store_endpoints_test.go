@@ -248,6 +248,44 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastEndpoints() {
 				},
 			},
 		},
+		"IP changing owner with memory disabled should not retain previous deployment in history": {
+			numTicksToRemember: 0,
+			entityUpdates: map[int][]eUpdate{
+				0: {
+					{
+						deploymentID: "depl1",
+						containerID:  "pod1",
+						ipAddr:       "10.0.0.1",
+						port:         80,
+						portName:     "http",
+						incremental:  true,
+					},
+				},
+				2: {
+					{
+						deploymentID: "depl2",
+						containerID:  "pod2",
+						ipAddr:       "10.0.0.1",
+						port:         80,
+						portName:     "http",
+						incremental:  false, // overwrite
+					},
+				},
+			},
+			operationAfterTick: map[int]operation{},
+			lookupResultsAfterTick: map[int][]expectation{
+				0: {expectDeployment80("10.0.0.1", "depl1", "http", theMap)},
+				1: {expectDeployment80("10.0.0.1", "depl1", "http", theMap)},
+				2: {
+					expectDeployment80("10.0.0.1", "depl1", "http", nowhere),
+					expectDeployment80("10.0.0.1", "depl2", "http", theMap),
+				},
+				3: {
+					expectDeployment80("10.0.0.1", "depl1", "http", nowhere),
+					expectDeployment80("10.0.0.1", "depl2", "http", theMap),
+				},
+			},
+		},
 	}
 	for name, tCase := range cases {
 		s.Run(name, func() {
@@ -326,4 +364,25 @@ func buildExpectation(ip, deplID, portName string, location whereThingIsStored, 
 			PortNames:      []string{portName},
 		},
 	}
+}
+
+func (s *ClusterEntitiesStoreTestSuite) TestEndpointTakeoverFastPathDoesNotPolluteReverseHistory() {
+	store := NewStore(5, nil, true)
+
+	ep1 := buildEndpoint("10.0.0.1", 80)
+	ep2 := buildEndpoint("10.0.0.2", 80)
+
+	deplA := &EntityData{}
+	deplA.AddEndpoint(ep1, EndpointTargetInfo{ContainerPort: 80, PortName: "http"})
+	deplA.AddEndpoint(ep2, EndpointTargetInfo{ContainerPort: 80, PortName: "http"})
+	store.Apply(map[string]*EntityData{"deplA": deplA}, true)
+
+	deplB := &EntityData{}
+	deplB.AddEndpoint(ep1, EndpointTargetInfo{ContainerPort: 80, PortName: "http"})
+	store.Apply(map[string]*EntityData{"deplB": deplB}, true)
+
+	reverseHistDeplA, ok := store.endpointsStore.reverseHistoricalEndpoints["deplA"]
+	s.True(ok, "deplA should have history entry after endpoint takeover")
+	s.Contains(reverseHistDeplA, ep1, "taken-over endpoint must be historical for previous owner")
+	s.NotContains(reverseHistDeplA, ep2, "unrelated endpoint must not be marked historical during single-endpoint takeover")
 }
