@@ -70,7 +70,7 @@ func (s *ImageV2DataStoreTestSuite) SetupTest() {
 	componentStorage := imageComponentPostgres.New(s.testDB.DB)
 	s.componentDataStore = imageComponentDS.New(componentStorage, s.mockRisk, ranking.NewRanker())
 
-	cveStorage := imageCVEPostgres.New(s.testDB.DB)
+	cveStorage := imageCVEPostgres.NewCombined(s.testDB.DB)
 	s.cveDataStore = imageCVEDS.New(cveStorage)
 
 	var err error

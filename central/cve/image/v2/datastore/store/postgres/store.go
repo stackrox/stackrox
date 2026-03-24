@@ -36,7 +36,7 @@ type (
 	callback  = func(obj *storeType) error
 )
 
-// Store is the interface to interact with the storage for storage.NormalizedCVE.
+// Store is the interface to interact with the storage for storage.NormalizedCVE
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
@@ -51,7 +51,7 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)
-	// Deprecated: use GetByQueryFn instead.
+	// Deprecated: use GetByQueryFn instead
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
 	GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
@@ -91,14 +91,8 @@ func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
 }
 
-func nilOrFloat32(v float32) interface{} {
-	if v == 0 {
-		return nil
-	}
-	return v
-}
-
 func insertIntoCves(batch *pgx.Batch, obj *storage.NormalizedCVE) error {
+
 	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
@@ -110,20 +104,15 @@ func insertIntoCves(batch *pgx.Batch, obj *storage.NormalizedCVE) error {
 		obj.GetCveName(),
 		obj.GetSource(),
 		obj.GetSeverity(),
-		nilOrFloat32(obj.GetCvssV2()),
-		nilOrFloat32(obj.GetCvssV3()),
-		nilOrFloat32(obj.GetNvdCvssV3()),
-		obj.GetSummary(),
-		obj.GetLink(),
+		obj.GetCvssV2(),
+		obj.GetCvssV3(),
+		obj.GetNvdCvssV3(),
 		protocompat.NilOrTime(obj.GetPublishedOn()),
-		obj.GetAdvisoryName(),
-		obj.GetAdvisoryLink(),
-		obj.GetContentHash(),
 		protocompat.NilOrTime(obj.GetCreatedAt()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO cves (id, cve_name, source, severity, cvss_v2, cvss_v3, nvd_cvss_v3, summary, link, published_on, advisory_name, advisory_link, content_hash, created_at, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, cve_name = EXCLUDED.cve_name, source = EXCLUDED.source, severity = EXCLUDED.severity, cvss_v2 = EXCLUDED.cvss_v2, cvss_v3 = EXCLUDED.cvss_v3, nvd_cvss_v3 = EXCLUDED.nvd_cvss_v3, summary = EXCLUDED.summary, link = EXCLUDED.link, published_on = EXCLUDED.published_on, advisory_name = EXCLUDED.advisory_name, advisory_link = EXCLUDED.advisory_link, content_hash = EXCLUDED.content_hash, created_at = EXCLUDED.created_at, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO cves (Id, CveName, Source, Severity, CvssV2, CvssV3, NvdCvssV3, PublishedOn, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CveName = EXCLUDED.CveName, Source = EXCLUDED.Source, Severity = EXCLUDED.Severity, CvssV2 = EXCLUDED.CvssV2, CvssV3 = EXCLUDED.CvssV3, NvdCvssV3 = EXCLUDED.NvdCvssV3, PublishedOn = EXCLUDED.PublishedOn, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -131,19 +120,14 @@ func insertIntoCves(batch *pgx.Batch, obj *storage.NormalizedCVE) error {
 
 var copyColsCves = []string{
 	"id",
-	"cve_name",
+	"cvename",
 	"source",
 	"severity",
-	"cvss_v2",
-	"cvss_v3",
-	"nvd_cvss_v3",
-	"summary",
-	"link",
-	"published_on",
-	"advisory_name",
-	"advisory_link",
-	"content_hash",
-	"created_at",
+	"cvssv2",
+	"cvssv3",
+	"nvdcvssv3",
+	"publishedon",
+	"createdat",
 	"serialized",
 }
 
@@ -182,15 +166,10 @@ func copyFromCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, objs
 			obj.GetCveName(),
 			obj.GetSource(),
 			obj.GetSeverity(),
-			nilOrFloat32(obj.GetCvssV2()),
-			nilOrFloat32(obj.GetCvssV3()),
-			nilOrFloat32(obj.GetNvdCvssV3()),
-			obj.GetSummary(),
-			obj.GetLink(),
+			obj.GetCvssV2(),
+			obj.GetCvssV3(),
+			obj.GetNvdCvssV3(),
 			protocompat.NilOrTime(obj.GetPublishedOn()),
-			obj.GetAdvisoryName(),
-			obj.GetAdvisoryLink(),
-			obj.GetContentHash(),
 			protocompat.NilOrTime(obj.GetCreatedAt()),
 			serialized,
 		}, nil

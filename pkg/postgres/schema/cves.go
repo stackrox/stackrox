@@ -47,19 +47,14 @@ const (
 
 // Cves holds the Gorm model for Postgres table `cves`.
 type Cves struct {
-	ID           string     `gorm:"column:id;type:uuid;primaryKey;default:gen_random_uuid()"`
-	CveName      string     `gorm:"column:cve_name;type:text;not null;index:cves_cvename,type:btree"`
-	Source       string     `gorm:"column:source;type:text;not null;index:cves_source,type:btree"`
-	Severity     string     `gorm:"column:severity;type:text;not null;index:cves_severity,type:btree"`
-	CvssV2       *float32   `gorm:"column:cvss_v2;type:real"`
-	CvssV3       *float32   `gorm:"column:cvss_v3;type:real"`
-	NvdCvssV3    *float32   `gorm:"column:nvd_cvss_v3;type:real"`
-	Summary      *string    `gorm:"column:summary;type:text"`
-	Link         *string    `gorm:"column:link;type:text"`
-	PublishedOn  *time.Time `gorm:"column:published_on;type:timestamp"`
-	AdvisoryName *string    `gorm:"column:advisory_name;type:text"`
-	AdvisoryLink *string    `gorm:"column:advisory_link;type:text"`
-	ContentHash  string     `gorm:"column:content_hash;type:text;not null;index:cves_contenthash,type:btree"`
-	CreatedAt    *time.Time `gorm:"column:created_at;type:timestamp"`
-	Serialized   []byte     `gorm:"column:serialized;type:bytea"`
+	ID          string     `gorm:"column:id;type:varchar;primaryKey"`
+	CveName     string     `gorm:"column:cvename;type:varchar;index:cves_cvename,type:btree"`
+	Source      string     `gorm:"column:source;type:varchar;index:cves_source,type:btree"`
+	Severity    string     `gorm:"column:severity;type:varchar;index:cves_severity,type:btree"`
+	CvssV2      float32    `gorm:"column:cvssv2;type:numeric"`
+	CvssV3      float32    `gorm:"column:cvssv3;type:numeric"`
+	NvdCvssV3   float32    `gorm:"column:nvdcvssv3;type:numeric"`
+	PublishedOn *time.Time `gorm:"column:publishedon;type:timestamp"`
+	CreatedAt   *time.Time `gorm:"column:createdat;type:timestamp"`
+	Serialized  []byte     `gorm:"column:serialized;type:bytea"`
 }
