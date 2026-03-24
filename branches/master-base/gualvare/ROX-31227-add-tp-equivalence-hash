@@ -2,5 +2,16 @@
   "base": {
     "name": "master-base/gualvare/fix-compliance-custom-rules-gotchas",
     "hash": "f9bb40689d5d5a2c91dd4cf6379d59a2256cd82e"
+  },
+  "upstream": {
+    "branch": "master-base/gualvare/ROX-31227-add-tp-equivalence-hash"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 19561,
+        "gqlID": "PR_kwDOGd6UEM7M7Orz"
+      }
+    }
   }
 }
