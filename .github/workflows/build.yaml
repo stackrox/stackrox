@@ -209,6 +209,8 @@ jobs:
         env:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
+        with:
+          key-suffix: ${{ matrix.name }}
 
       - uses: ./.github/actions/handle-tagged-build
 
@@ -633,6 +635,8 @@ jobs:
         env:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
+        with:
+          key-suffix: ${{ matrix.name }}
 
       - uses: ./.github/actions/handle-tagged-build
 
