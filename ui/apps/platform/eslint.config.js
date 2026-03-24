@@ -1026,6 +1026,40 @@ module.exports = [
         },
     },
     {
+        files: ['src/**/*.{js,jsx,ts,tsx}'],
+        // Overlaps with preceding non-deprecated rule.
+        ignores: [
+            'src/Components/**', // most or all deprecated
+            'src/constants/entityPageProps.js', // deprecated
+            'src/constants/reduxFormPropTypes.js', // deprecated
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/ConfigManagement/**', // deprecated
+            'src/Containers/Images/**', // deprecated
+            'src/Containers/Login/LoginPage.jsx', // rewrite in TypeScript
+            'src/Containers/Login/TestLoginResultsPage.jsx', // rewrite in TypeScript
+            'src/Containers/MainPage/Header/UserMenu.tsx', // rewritten in TypeScript
+            'src/Containers/Policies/Modal/KeepBothSection.tsx', // rewritten in TypeScript
+            'src/Containers/Risk/EventTimeline/**', // deprecated
+            'src/Containers/Risk/Process/Binaries.jsx', // rewrite in TypeScript?
+            'src/Containers/Risk/Process/BinaryCollapsible.jsx', // rewrite in TypeScript?
+            'src/Containers/Risk/Process/Signal.jsx', // rewrite in TypeScript?
+            'src/Containers/Risk/KeyValuePairs.jsx', // rewrite in TypeScript?
+            'src/Containers/User/UserPage.jsx', // rewrite in TypeScript
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Workflow//**', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/no-non-deprecated-PropTypes': 'error',
+        },
+    },
+    {
         files: ['*.js', 'tailwind-plugins/*.js'], // non-product files
 
         languageOptions: {
