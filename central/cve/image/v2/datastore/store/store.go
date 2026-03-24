@@ -8,6 +8,13 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
+// CVEEdgePair holds a NormalizedCVE and its related component edge.
+// Used by converters to transform normalized data to ImageCVEV2 format.
+type CVEEdgePair struct {
+	CVE  *storage.NormalizedCVE
+	Edge *storage.NormalizedComponentCVEEdge
+}
+
 // Store provides storage functionality for normalized CVEs.
 //
 //go:generate mockgen-wrapper
@@ -25,6 +32,15 @@ type Store interface {
 	GetMany(ctx context.Context, ids []string) ([]*storage.NormalizedCVE, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 	Walk(ctx context.Context, fn func(*storage.NormalizedCVE) error) error
+
+	// GetCVEsWithEdges retrieves CVEs and their component edges for an image.
+	// Joins cves → component_cve_edges → image_component_v2 tables.
+	// Returns pairs that can be converted to ImageCVEV2.
+	GetCVEsWithEdges(ctx context.Context, imageID string) ([]CVEEdgePair, error)
+
+	// GetCVEWithEdge retrieves a single CVE by ID along with its edge for a component.
+	// Returns (pair, found, error) where found=false means CVE or edge doesn't exist.
+	GetCVEWithEdge(ctx context.Context, cveID string, componentID string) (*CVEEdgePair, bool, error)
 
 	// Custom edge SQL (not generated):
 

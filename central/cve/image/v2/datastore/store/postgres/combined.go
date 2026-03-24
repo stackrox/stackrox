@@ -48,3 +48,13 @@ func (c *combinedStore) GetAllReferencedCVEs(ctx context.Context) ([]*storage.No
 func (c *combinedStore) DeleteOrphanedCVEsBatch(ctx context.Context, batchSize int) (int64, error) {
 	return c.edges.DeleteOrphanedCVEsBatch(ctx, batchSize)
 }
+
+// GetCVEsWithEdges delegates to the edge store.
+func (c *combinedStore) GetCVEsWithEdges(ctx context.Context, imageID string) ([]storeParent.CVEEdgePair, error) {
+	return c.edges.GetCVEsWithEdges(ctx, imageID)
+}
+
+// GetCVEWithEdge delegates to the edge store.
+func (c *combinedStore) GetCVEWithEdge(ctx context.Context, cveID string, componentID string) (*storeParent.CVEEdgePair, bool, error) {
+	return c.edges.GetCVEWithEdge(ctx, cveID, componentID)
+}

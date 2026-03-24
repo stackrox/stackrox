@@ -2,8 +2,10 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	parentStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -31,6 +33,12 @@ type EdgeStore interface {
 	// DeleteOrphanedCVEsBatch deletes up to batchSize CVEs with no referencing edges.
 	// Returns the number of rows deleted.
 	DeleteOrphanedCVEsBatch(ctx context.Context, batchSize int) (int64, error)
+
+	// GetCVEsWithEdges retrieves CVEs and their component edges for an image.
+	GetCVEsWithEdges(ctx context.Context, imageID string) ([]parentStore.CVEEdgePair, error)
+
+	// GetCVEWithEdge retrieves a single CVE by ID along with its edge for a component.
+	GetCVEWithEdge(ctx context.Context, cveID string, componentID string) (*parentStore.CVEEdgePair, bool, error)
 }
 
 type edgeStoreImpl struct {
@@ -145,4 +153,16 @@ func (s *edgeStoreImpl) DeleteOrphanedCVEsBatch(ctx context.Context, batchSize i
 	}
 
 	return result.RowsAffected(), nil
+}
+
+// GetCVEsWithEdges retrieves CVEs and their component edges for an image.
+func (s *edgeStoreImpl) GetCVEsWithEdges(_ context.Context, _ string) ([]parentStore.CVEEdgePair, error) {
+	// TODO(Phase 1, Task 2): Implement joined query: cves JOIN component_cve_edges JOIN image_component_v2.
+	return nil, errors.New("GetCVEsWithEdges not yet implemented - Task 2")
+}
+
+// GetCVEWithEdge retrieves a single CVE by ID along with its edge for a component.
+func (s *edgeStoreImpl) GetCVEWithEdge(_ context.Context, _, _ string) (*parentStore.CVEEdgePair, bool, error) {
+	// TODO(Phase 1, Task 2): Implement single CVE+edge lookup.
+	return nil, false, errors.New("GetCVEWithEdge not yet implemented - Task 2")
 }
