@@ -617,9 +617,13 @@ func (m *managerImpl) validateTailoredProfilesEquivalence(
 	for _, name := range tailoredProfileNames {
 		instances := byName[name]
 		if len(instances) != len(clusters) {
+			log.Warnf("Scan configuration %q rejected: tailored profile %q is present on %d of %d selected clusters",
+				scanConfigName, name, len(instances), len(clusters))
 			return errors.Errorf("scan configuration %q: tailored profile %q is not present on all selected clusters", scanConfigName, name)
 		}
 		if !profileDatastore.TailoredProfilesEquivalent(instances) {
+			log.Warnf("Scan configuration %q rejected: tailored profile %q has different content across clusters (equivalence hash mismatch). "+
+				"Deploy an identical tailored profile on all clusters before creating a multi-cluster scan.", scanConfigName, name)
 			return errors.Errorf("scan configuration %q: tailored profile %q has different content across clusters; "+
 				"ensure the same tailored profile is deployed on every cluster before creating a multi-cluster scan", scanConfigName, name)
 		}
