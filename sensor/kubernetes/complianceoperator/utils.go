@@ -49,7 +49,6 @@ func validateScanSettingBindingProfiles(scanSettings *central.ApplyComplianceSca
 		k := ref.GetKind()
 		if k != central.ComplianceOperatorProfileV2_PROFILE && k != central.ComplianceOperatorProfileV2_TAILORED_PROFILE {
 			err := errors.Errorf("profile ref %q has unsupported operator kind %v", ref.GetName(), k)
-			log.Error(err)
 			return err
 		}
 	}
