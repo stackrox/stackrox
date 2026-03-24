@@ -209,6 +209,7 @@ linters:
         path: roxctl/common/io/io\.go # io.go will by default use os.Stdin/os.StdErr.
     paths:
       - pkg/complianceoperator/api
+      - scripts/compliance-operator-importer
       - third_party$
       - builtin$
       - examples$
@@ -223,6 +224,7 @@ formatters:
     generated: lax
     paths:
       - pkg/complianceoperator/api
+      - scripts/compliance-operator-importer
       - third_party$
       - builtin$
       - examples$

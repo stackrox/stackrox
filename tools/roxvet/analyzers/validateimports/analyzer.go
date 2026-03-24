@@ -386,6 +386,12 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
+	// Skip packages that belong to a different Go module entirely (e.g. sub-modules
+	// in the repository whose import path does not start with the rox module prefix).
+	// validateimports only enforces cross-package import rules within the rox module.
+	if !strings.HasPrefix(pass.Pkg.Path(), roxPrefix) {
+		return nil, nil
+	}
 	root, valid, err := getRoot(pass.Pkg.Path())
 	if err != nil {
 		pass.Reportf(token.NoPos, "couldn't find valid root: %v", err)
