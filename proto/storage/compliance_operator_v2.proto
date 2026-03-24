@@ -132,7 +132,7 @@ message ComplianceOperatorScanConfigurationV2 {
   // profile_refs persists profile name + kind alongside the legacy profiles field.
   // Stored in the serialized blob only (not indexed); populated on create/update so the
   // startup sync path can forward correct kinds to Sensor on reconnect.
-  repeated ProfileReference profile_refs = 18; // @gotags: sql:"-"
+  repeated ProfileReference profile_refs = 18;
   repeated NodeRole node_roles = 9;
   // Will be configurable via env var
   bool strict_node_scan = 10;

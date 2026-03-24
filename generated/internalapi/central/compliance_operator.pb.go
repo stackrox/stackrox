@@ -2374,8 +2374,6 @@ func (x *ApplyComplianceScanConfigRequest_UpdateScheduledScan) GetCron() string 
 	return ""
 }
 
-// ProfileReference identifies a compliance profile by name and its kind (Profile or TailoredProfile).
-// New Central populates profile_refs; Sensor prefers it over the legacy profiles field.
 type ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference struct {
 	state         protoimpl.MessageState                   `protogen:"open.v1"`
 	Name          string                                   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`

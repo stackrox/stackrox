@@ -976,7 +976,7 @@ type ComplianceOperatorScanConfigurationV2 struct {
 	// profile_refs persists profile name + kind alongside the legacy profiles field.
 	// Stored in the serialized blob only (not indexed); populated on create/update so the
 	// startup sync path can forward correct kinds to Sensor on reconnect.
-	ProfileRefs []*ComplianceOperatorScanConfigurationV2_ProfileReference `protobuf:"bytes,18,rep,name=profile_refs,json=profileRefs,proto3" json:"profile_refs,omitempty" sql:"-"` // @gotags: sql:"-"
+	ProfileRefs []*ComplianceOperatorScanConfigurationV2_ProfileReference `protobuf:"bytes,18,rep,name=profile_refs,json=profileRefs,proto3" json:"profile_refs,omitempty"`
 	NodeRoles   []NodeRole                                                `protobuf:"varint,9,rep,packed,name=node_roles,json=nodeRoles,proto3,enum=storage.NodeRole" json:"node_roles,omitempty"`
 	// Will be configurable via env var
 	StrictNodeScan bool `protobuf:"varint,10,opt,name=strict_node_scan,json=strictNodeScan,proto3" json:"strict_node_scan,omitempty"`
