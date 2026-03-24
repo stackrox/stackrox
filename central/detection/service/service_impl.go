@@ -52,7 +52,6 @@ import (
 	"github.com/stackrox/rox/pkg/notifier"
 	resourcesConv "github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
@@ -484,23 +483,10 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		log.Warnf("Deployment YAMLs failed to parse: %v", errs)
 	}
 
-	// Populate cluster and namespace IDs on all deployments for label-based scope matching
+	// Populate cluster ID on all deployments for label-based scope matching
 	for _, d := range deployments {
 		if eCtx.ClusterID != "" {
 			d.ClusterId = eCtx.ClusterID
-			// Look up the real namespace UUID from the datastore
-			query := search.NewQueryBuilder().
-				AddExactMatches(search.ClusterID, eCtx.ClusterID).
-				AddExactMatches(search.Namespace, d.GetNamespace()).
-				ProtoQuery()
-			namespaces, err := s.namespaces.SearchNamespaces(ctx, query)
-			if err != nil {
-				log.Warnf("Failed to look up namespace %s in cluster %s: %v", d.GetNamespace(), eCtx.ClusterID, err)
-			} else if len(namespaces) == 0 {
-				log.Warnf("Namespace %s not found in cluster %s - label-based scope matching will not work", d.GetNamespace(), eCtx.ClusterID)
-			} else {
-				d.NamespaceId = namespaces[0].GetId()
-			}
 		}
 	}
 

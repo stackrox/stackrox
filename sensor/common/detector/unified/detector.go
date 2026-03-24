@@ -29,7 +29,7 @@ type Detector interface {
 
 // NewDetector returns a new detector.
 func NewDetector() Detector {
-	// TODO(ROX-33188): Wire cluster and namespace label providers from Sensor's in-memory stores.
+	// TODO: Wire cluster and namespace label providers from Sensor's in-memory stores.
 	// For now, passing nil providers means policies with cluster_label/namespace_label scopes will
 	// fail closed (not match) in Sensor policy evaluation.
 	return &detectorImpl{

@@ -29,7 +29,7 @@ type DataStore interface {
 	GetAllNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
 	GetNamespacesForSAC() ([]effectiveaccessscope.Namespace, error)
 	GetManyNamespaces(ctx context.Context, id []string) ([]*storage.NamespaceMetadata, error)
-	GetNamespaceLabels(ctx context.Context, namespaceID string) (map[string]string, error)
+	GetNamespaceLabels(ctx context.Context, clusterID string, namespaceName string) (map[string]string, error)
 
 	AddNamespace(context.Context, *storage.NamespaceMetadata) error
 	UpdateNamespace(context.Context, *storage.NamespaceMetadata) error
@@ -273,15 +273,20 @@ func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadat
 }
 
 // GetNamespaceLabels returns the labels for the specified namespace.
-func (b *datastoreImpl) GetNamespaceLabels(ctx context.Context, namespaceID string) (map[string]string, error) {
-	namespace, exists, err := b.GetNamespace(ctx, namespaceID)
+func (b *datastoreImpl) GetNamespaceLabels(ctx context.Context, clusterID string, namespaceName string) (map[string]string, error) {
+	q := search.NewQueryBuilder().
+		AddExactMatches(search.Namespace, namespaceName).
+		AddExactMatches(search.ClusterID, clusterID).
+		ProtoQuery()
+
+	namespaces, err := b.SearchNamespaces(ctx, q)
 	if err != nil {
 		return nil, err
 	}
-	if !exists {
+	if len(namespaces) == 0 {
 		return nil, nil
 	}
-	return namespace.GetLabels(), nil
+	return namespaces[0].GetLabels(), nil
 }
 
 // NamespaceSearchResultConverter implements search.SearchResultConverter for namespace search results.
