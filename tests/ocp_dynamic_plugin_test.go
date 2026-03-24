@@ -3,45 +3,39 @@
 package tests
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
+	"os/exec"
 	"strings"
 	"testing"
 	"time"
 
-	routev1 "github.com/openshift/api/route/v1"
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	routeclient "github.com/openshift/client-go/route/clientset/versioned"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	authv1 "k8s.io/api/authentication/v1"
-	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 )
+
+//go:embed testdata/ocp_plugin_resources.yaml
+var ocpPluginResourcesYAML []byte
 
 const (
 	// retryTimeout is the maximum duration allowed for a network call to eventually succeed.
 	retryTimeout = 60 * time.Second
 	// retryInterval is the polling interval between successive retry attempts.
 	retryInterval = 5 * time.Second
-
-	// sensorProxyServiceName is the Kubernetes Service name for the Sensor proxy.
-	sensorProxyServiceName = "sensor-proxy"
-	// sensorProxyPort is the TCP port Sensor exposes for the OCP console plugin proxy.
-	sensorProxyPort = 9444
 
 	// deploymentsGraphQLQuery requests deployment name and namespace filtered to apps/v1
 	// Deployments so the results can be compared against the Kubernetes API listing.
@@ -59,23 +53,19 @@ type graphQLDeploymentsResponse struct {
 }
 
 // testNamespace is the namespace used for all test resources and scoping assertions.
-// It can be overridden with the ACS_E2E_TEST_NAMESPACE environment variable.
-var testNamespace = func() string {
-	if ns := os.Getenv("ACS_E2E_TEST_NAMESPACE"); ns != "" {
-		return ns
-	}
-	return "stackrox"
-}()
+const testNamespace = "stackrox"
 
-// newInsecureHTTPClient creates an HTTP client that skips TLS verification.
-// This is required when connecting to Sensor's proxy, which presents a Service CA signed cert.
+// newInsecureHTTPClient creates a retryable HTTP client that skips TLS verification.
+// TLS verification is skipped because Sensor's proxy presents a Service CA signed cert.
+// Logger is silenced to avoid polluting test output with retry attempt messages.
 func newInsecureHTTPClient() *http.Client {
-	return &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-		Timeout: 30 * time.Second,
+	retryClient := retryablehttp.NewClient()
+	retryClient.HTTPClient.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
+	retryClient.HTTPClient.Timeout = 30 * time.Second
+	retryClient.Logger = nil
+	return retryClient.StandardClient()
 }
 
 // doHTTPRequest creates and executes an HTTP request, returning the response.
@@ -95,254 +85,50 @@ func doHTTPRequest(t require.TestingT, ctx context.Context, client *http.Client,
 	return resp
 }
 
-// setupProxyNetworkPolicy creates a temporary NetworkPolicy that allows the OpenShift
-// Router (in openshift-ingress namespace) to reach the sensor-proxy port sensorProxyPort.
-// This is required because the production NetworkPolicy restricts that port to
-// openshift-console/console pods only; E2E tests access the proxy via an OCP Route,
-// which routes through the openshift-ingress namespace.
-func setupProxyNetworkPolicy(t *testing.T, ctx context.Context, k8sClient kubernetes.Interface) {
+// applyYAMLResources applies the embedded prerequisite manifests via `oc apply` and
+// registers a cleanup that removes them with `oc delete --ignore-not-found`.
+func applyYAMLResources(t *testing.T, ctx context.Context) {
 	t.Helper()
-	policyName := fmt.Sprintf("acs-ocp-e2e-%s", uuid.NewV4())
-
-	policy := &networkingv1.NetworkPolicy{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      policyName,
-			Namespace: testNamespace,
-		},
-		Spec: networkingv1.NetworkPolicySpec{
-			PodSelector: metaV1.LabelSelector{
-				MatchLabels: map[string]string{"app": "sensor"},
-			},
-			PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeIngress},
-			Ingress: []networkingv1.NetworkPolicyIngressRule{
-				{
-					From: []networkingv1.NetworkPolicyPeer{
-						{
-							NamespaceSelector: &metaV1.LabelSelector{
-								MatchLabels: map[string]string{
-									"kubernetes.io/metadata.name": "openshift-ingress",
-								},
-							},
-						},
-					},
-					Ports: []networkingv1.NetworkPolicyPort{
-						{
-							Protocol: pointers.Pointer(corev1.ProtocolTCP),
-							Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: sensorProxyPort},
-						},
-					},
-				},
-			},
-		},
+	ocRun := func(ctx context.Context, args ...string) {
+		cmd := exec.CommandContext(ctx, "oc", args...)
+		cmd.Stdin = bytes.NewReader(ocpPluginResourcesYAML)
+		out, err := cmd.CombinedOutput()
+		require.NoError(t, err, "oc %s: %s", strings.Join(args, " "), string(out))
 	}
-	require.EventuallyWithT(t, func(c *assert.CollectT) {
-		_, err := k8sClient.NetworkingV1().NetworkPolicies(testNamespace).Create(ctx, policy, metaV1.CreateOptions{})
-		if err != nil && !k8sErrors.IsAlreadyExists(err) {
-			assert.NoError(c, err, "creating temporary E2E NetworkPolicy %s", policyName)
-		}
-	}, retryTimeout, retryInterval)
+	ocRun(ctx, "apply", "--wait", "-n", testNamespace, "-f", "-")
 	t.Cleanup(func() {
-		if err := k8sClient.NetworkingV1().NetworkPolicies(testNamespace).Delete(
-			context.Background(), policyName, metaV1.DeleteOptions{}); err != nil {
-			t.Logf("failed to delete NetworkPolicy %s: %v", policyName, err)
-		}
+		ocRun(context.Background(), "delete", "--ignore-not-found", "-n", testNamespace, "-f", "-")
 	})
 }
 
-// setupSensorRoute creates a temporary OpenShift Route backed by the sensorProxyServiceName
-// Service and waits until the OCP router assigns a hostname. It returns the hostname assigned
-// by the router.
-func setupSensorRoute(t *testing.T, ctx context.Context, routeClient routeclient.Interface) string {
+// waitForRouteHost polls until the OCP router assigns a hostname to the named Route.
+func waitForRouteHost(t *testing.T, ctx context.Context, rc routeclient.Interface, routeName string) string {
 	t.Helper()
-
-	routeName := fmt.Sprintf("acs-ocp-e2e-%s", uuid.NewV4())
-
-	route := &routev1.Route{
-		ObjectMeta: metaV1.ObjectMeta{
-			Name:      routeName,
-			Namespace: testNamespace,
-		},
-		Spec: routev1.RouteSpec{
-			To: routev1.RouteTargetReference{
-				Kind: "Service",
-				Name: sensorProxyServiceName,
-			},
-			Port: &routev1.RoutePort{
-				TargetPort: intstr.FromString("https"),
-			},
-			TLS: &routev1.TLSConfig{
-				Termination: routev1.TLSTerminationPassthrough,
-			},
-		},
-	}
-
+	var host string
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
-		_, err := routeClient.RouteV1().Routes(testNamespace).Create(ctx, route, metaV1.CreateOptions{})
-		if err != nil && !k8sErrors.IsAlreadyExists(err) {
-			assert.NoError(c, err, "creating test Route %s in namespace %s", routeName, testNamespace)
-		}
-	}, retryTimeout, retryInterval)
-	t.Cleanup(func() {
-		if err := routeClient.RouteV1().Routes(testNamespace).Delete(
-			context.Background(), routeName, metaV1.DeleteOptions{}); err != nil {
-			t.Logf("failed to delete Route %s: %v", routeName, err)
-		}
-	})
-
-	var routeHost string
-	require.EventuallyWithT(t, func(c *assert.CollectT) {
-		r, err := routeClient.RouteV1().Routes(testNamespace).Get(ctx, routeName, metaV1.GetOptions{})
+		r, err := rc.RouteV1().Routes(testNamespace).Get(ctx, routeName, metaV1.GetOptions{})
 		require.NoError(c, err, "getting Route %s", routeName)
 		require.NotEmpty(c, r.Status.Ingress,
 			"Route %s has no ingress entries yet; waiting for OCP router to admit it", routeName)
-		routeHost = r.Status.Ingress[0].Host
+		host = r.Status.Ingress[0].Host
 	}, retryTimeout, retryInterval)
-
-	return routeHost
+	return host
 }
 
-// setupSensorProxy creates a temporary OCP Route to the sensor-proxy Service and returns the
-// proxy base URL.
-func setupSensorProxy(t *testing.T, ctx context.Context, k8sClient kubernetes.Interface) string {
+// requestToken creates and returns a short-lived token for the named ServiceAccount.
+func requestToken(t *testing.T, ctx context.Context, k8sClient kubernetes.Interface, namespace, saName string) string {
 	t.Helper()
-
-	// Allow OCP Router traffic to reach sensor port sensorProxyPort for the duration of this test.
-	setupProxyNetworkPolicy(t, ctx, k8sClient)
-
-	// Create a passthrough Route to sensor-proxy and wait for the router to assign a hostname.
-	routeClient, err := routeclient.NewForConfig(getConfig(t))
-	require.NoError(t, err, "creating OpenShift route client")
-	routeHost := setupSensorRoute(t, ctx, routeClient)
-
-	return fmt.Sprintf("https://%s/proxy/central", routeHost)
-}
-
-// createServiceAccountAndToken creates a ServiceAccount in the given namespace, retries
-// setupBindings (if non-nil) via EventuallyWithT to attach any required RBAC, then requests
-// and returns a short-lived token. Callers must register RBAC resource cleanup with t.Cleanup
-// before invoking this function, so that cleanup is registered exactly once regardless of
-// how many retry attempts setupBindings requires.
-func createServiceAccountAndToken(
-	t *testing.T,
-	ctx context.Context,
-	k8sClient kubernetes.Interface,
-	namespace, saName string,
-	setupBindings func(c *assert.CollectT),
-) string {
-	t.Helper()
-
-	require.EventuallyWithT(t, func(c *assert.CollectT) {
-		_, err := k8sClient.CoreV1().ServiceAccounts(namespace).Create(ctx, &corev1.ServiceAccount{
-			ObjectMeta: metaV1.ObjectMeta{
-				Name:      saName,
-				Namespace: namespace,
-			},
-		}, metaV1.CreateOptions{})
-		if err != nil && !k8sErrors.IsAlreadyExists(err) {
-			assert.NoError(c, err, "creating ServiceAccount %s in namespace %s", saName, namespace)
-		}
-	}, retryTimeout, retryInterval)
-	t.Cleanup(func() {
-		if err := k8sClient.CoreV1().ServiceAccounts(namespace).Delete(
-			context.Background(), saName, metaV1.DeleteOptions{}); err != nil {
-			t.Logf("failed to delete ServiceAccount %s/%s: %v", namespace, saName, err)
-		}
-	})
-
-	if setupBindings != nil {
-		require.EventuallyWithT(t, setupBindings, retryTimeout, retryInterval)
-	}
-
 	var token string
 	require.EventuallyWithT(t, func(c *assert.CollectT) {
-		tokenResp, err := k8sClient.CoreV1().ServiceAccounts(namespace).CreateToken(
+		resp, err := k8sClient.CoreV1().ServiceAccounts(namespace).CreateToken(
 			ctx, saName,
-			&authv1.TokenRequest{
-				Spec: authv1.TokenRequestSpec{
-					ExpirationSeconds: pointers.Int64(600),
-				},
-			},
+			&authv1.TokenRequest{Spec: authv1.TokenRequestSpec{ExpirationSeconds: pointers.Int64(600)}},
 			metaV1.CreateOptions{},
 		)
-		require.NoError(c, err, "creating token for ServiceAccount %s in namespace %s", saName, namespace)
-		token = tokenResp.Status.Token
+		require.NoError(c, err, "creating token for ServiceAccount %s/%s", namespace, saName)
+		token = resp.Status.Token
 	}, retryTimeout, retryInterval)
 	return token
-}
-
-// setupNoScopeToken creates a ServiceAccount with no RBAC bindings in the given namespace and
-// returns a short-lived token for it. Use this when the caller only needs a valid token that
-// passes TokenReview without granting any list permissions.
-func setupNoScopeToken(t *testing.T, ctx context.Context, k8sClient kubernetes.Interface, namespace, saName string) string {
-	t.Helper()
-	return createServiceAccountAndToken(t, ctx, k8sClient, namespace, saName, nil)
-}
-
-// setupNamespaceScopeToken creates a ServiceAccount named saName with view permissions in the
-// given namespace and returns a short-lived token for it.
-func setupNamespaceScopeToken(t *testing.T, ctx context.Context, k8sClient kubernetes.Interface, namespace, saName string) string {
-	t.Helper()
-	rbName := saName + "-view"
-	t.Cleanup(func() {
-		if err := k8sClient.RbacV1().RoleBindings(namespace).Delete(
-			context.Background(), rbName, metaV1.DeleteOptions{}); err != nil {
-			t.Logf("failed to delete RoleBinding %s/%s: %v", namespace, rbName, err)
-		}
-	})
-	return createServiceAccountAndToken(t, ctx, k8sClient, namespace, saName, func(c *assert.CollectT) {
-		_, err := k8sClient.RbacV1().RoleBindings(namespace).Create(ctx, &rbacv1.RoleBinding{
-			ObjectMeta: metaV1.ObjectMeta{
-				Name:      rbName,
-				Namespace: namespace,
-			},
-			RoleRef: rbacv1.RoleRef{
-				APIGroup: "rbac.authorization.k8s.io",
-				Kind:     "ClusterRole",
-				Name:     "view",
-			},
-			Subjects: []rbacv1.Subject{
-				{
-					Kind:      "ServiceAccount",
-					Name:      saName,
-					Namespace: namespace,
-				},
-			},
-		}, metaV1.CreateOptions{})
-		if err != nil && !k8sErrors.IsAlreadyExists(err) {
-			assert.NoError(c, err, "creating RoleBinding %s for ServiceAccount %s in namespace %s", rbName, saName, namespace)
-		}
-	})
-}
-
-// setupClusterScopeToken creates a ServiceAccount named saName with cluster-wide view permissions
-// via a ClusterRoleBinding and returns a short-lived token for it.
-func setupClusterScopeToken(t *testing.T, ctx context.Context, k8sClient kubernetes.Interface, namespace, saName string) string {
-	t.Helper()
-	clusterRBName := saName + "-view-cluster"
-	t.Cleanup(func() {
-		if err := k8sClient.RbacV1().ClusterRoleBindings().Delete(
-			context.Background(), clusterRBName, metaV1.DeleteOptions{}); err != nil {
-			t.Logf("failed to delete ClusterRoleBinding %s: %v", clusterRBName, err)
-		}
-	})
-	return createServiceAccountAndToken(t, ctx, k8sClient, namespace, saName, func(c *assert.CollectT) {
-		_, err := k8sClient.RbacV1().ClusterRoleBindings().Create(ctx, &rbacv1.ClusterRoleBinding{
-			ObjectMeta: metaV1.ObjectMeta{Name: clusterRBName},
-			RoleRef: rbacv1.RoleRef{
-				APIGroup: "rbac.authorization.k8s.io",
-				Kind:     "ClusterRole",
-				Name:     "view",
-			},
-			Subjects: []rbacv1.Subject{{
-				Kind:      "ServiceAccount",
-				Name:      saName,
-				Namespace: namespace,
-			}},
-		}, metaV1.CreateOptions{})
-		if err != nil && !k8sErrors.IsAlreadyExists(err) {
-			assert.NoError(c, err, "creating ClusterRoleBinding %s", clusterRBName)
-		}
-	})
 }
 
 // OCPPluginSuite shares one sensor-proxy setup and one set of test ServiceAccounts across
@@ -369,13 +155,20 @@ func (s *OCPPluginSuite) SetupSuite() {
 	s.ctx = context.Background()
 	s.client = newInsecureHTTPClient()
 	s.k8sClient = createK8sClient(s.T())
-	s.proxyBaseURL = setupSensorProxy(s.T(), s.ctx, s.k8sClient)
 
-	// Three dedicated SAs for namespace-scoping tests, one per scenario, so each subtest
-	// exercises an independent principal with exactly the permissions it requires.
-	s.noScopeToken = setupNoScopeToken(s.T(), s.ctx, s.k8sClient, testNamespace, "acs-plugin-test-noscope-sa")
-	s.nsScopeToken = setupNamespaceScopeToken(s.T(), s.ctx, s.k8sClient, testNamespace, "acs-plugin-test-ns-sa")
-	s.clusterScopeToken = setupClusterScopeToken(s.T(), s.ctx, s.k8sClient, testNamespace, "acs-plugin-test-cluster-sa")
+	rc, err := routeclient.NewForConfig(getConfig(s.T()))
+	require.NoError(s.T(), err, "creating OpenShift route client")
+
+	// Phase 1: apply all prerequisite resources defined in testdata/ocp_plugin_resources.yaml.
+	applyYAMLResources(s.T(), s.ctx)
+
+	// Phase 2: extract values that require reading back from the API.
+	routeHost := waitForRouteHost(s.T(), s.ctx, rc, "acs-ocp-e2e-proxy-route")
+	s.proxyBaseURL = fmt.Sprintf("https://%s/proxy/central", routeHost)
+
+	s.noScopeToken = requestToken(s.T(), s.ctx, s.k8sClient, testNamespace, "acs-plugin-test-noscope-sa")
+	s.nsScopeToken = requestToken(s.T(), s.ctx, s.k8sClient, testNamespace, "acs-plugin-test-ns-sa")
+	s.clusterScopeToken = requestToken(s.T(), s.ctx, s.k8sClient, testNamespace, "acs-plugin-test-cluster-sa")
 }
 
 // TestProxyPathEnforcement verifies the Sensor proxy's allowlist enforcement:
@@ -447,6 +240,7 @@ func (s *OCPPluginSuite) TestPluginManifest() {
 		require.Equal(c, http.StatusOK, resp.StatusCode, "plugin manifest endpoint must return 200")
 		assert.Contains(c, resp.Header.Get("Content-Type"), "application/json",
 			"plugin manifest should be served as application/json")
+
 		bodyBytes, err := io.ReadAll(resp.Body)
 		require.NoError(c, err, "reading plugin manifest response body")
 		var manifest map[string]interface{}

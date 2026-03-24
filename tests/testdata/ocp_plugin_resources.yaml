@@ -1,0 +1,76 @@
+# OCP plugin E2E test prerequisite resources.
+# All resources use fixed names (no UUIDs) since E2E test runs are serialized;
+# AlreadyExists on create and NotFound on delete are both treated as success.
+# Namespaced resources omit metadata.namespace; the Go loader sets it to "stackrox".
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: acs-ocp-e2e-proxy-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: sensor
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-ingress
+    ports:
+    - protocol: TCP
+      port: 9444
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: acs-ocp-e2e-proxy-route
+spec:
+  to:
+    kind: Service
+    name: sensor-proxy
+  port:
+    targetPort: https
+  tls:
+    termination: Passthrough
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: acs-plugin-test-noscope-sa
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: acs-plugin-test-ns-sa
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: acs-plugin-test-cluster-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: acs-plugin-test-ns-sa-view
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- kind: ServiceAccount
+  name: acs-plugin-test-ns-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: acs-plugin-test-cluster-sa-view-cluster
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- kind: ServiceAccount
+  name: acs-plugin-test-cluster-sa
+  namespace: stackrox
