@@ -3,7 +3,6 @@ package converter
 import (
 	"strings"
 
-	store "github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
@@ -17,7 +16,8 @@ type ImageCVEConverter interface {
 
 	// ToImageCVEV2Batch converts multiple CVE-Edge pairs to ImageCVEV2 objects.
 	// Skips any pairs with nil CVE or Edge.
-	ToImageCVEV2Batch(pairs []store.CVEEdgePair) []*storage.ImageCVEV2
+	// The pairs parameter should contain CVE and Edge from the datastore.CVEEdgePair type.
+	ToImageCVEV2Batch(cves []*storage.NormalizedCVE, edges []*storage.NormalizedComponentCVEEdge) []*storage.ImageCVEV2
 }
 
 // imageConverterImpl implements ImageCVEConverter.
@@ -82,14 +82,21 @@ func (c *imageConverterImpl) ToImageCVEV2(cve *storage.NormalizedCVE, edge *stor
 }
 
 // ToImageCVEV2Batch converts multiple CVE-Edge pairs to ImageCVEV2 objects.
-func (c *imageConverterImpl) ToImageCVEV2Batch(pairs []store.CVEEdgePair) []*storage.ImageCVEV2 {
-	if len(pairs) == 0 {
+// CVEs and edges should be in matching order.
+func (c *imageConverterImpl) ToImageCVEV2Batch(cves []*storage.NormalizedCVE, edges []*storage.NormalizedComponentCVEEdge) []*storage.ImageCVEV2 {
+	if len(cves) == 0 || len(edges) == 0 {
 		return nil
 	}
 
-	results := make([]*storage.ImageCVEV2, 0, len(pairs))
-	for _, pair := range pairs {
-		if converted := c.ToImageCVEV2(pair.CVE, pair.Edge); converted != nil {
+	// Use the minimum length to avoid index out of bounds.
+	minLen := len(cves)
+	if len(edges) < minLen {
+		minLen = len(edges)
+	}
+
+	results := make([]*storage.ImageCVEV2, 0, minLen)
+	for i := 0; i < minLen; i++ {
+		if converted := c.ToImageCVEV2(cves[i], edges[i]); converted != nil {
 			results = append(results, converted)
 		}
 	}

@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
+	"github.com/stackrox/rox/central/cve/image/v2/datastore"
 	"github.com/stackrox/rox/pkg/logging"
 	"gopkg.in/robfig/cron.v2"
 )
@@ -27,12 +27,12 @@ var (
 
 // Manager runs periodic CVE garbage collection.
 type Manager struct {
-	store store.Store
+	datastore datastore.DataStore
 }
 
 // New returns a new GC Manager.
-func New(s store.Store) *Manager {
-	return &Manager{store: s}
+func New(ds datastore.DataStore) *Manager {
+	return &Manager{datastore: ds}
 }
 
 // RunOnce executes one full GC sweep, deleting orphaned CVE rows in batches.
@@ -41,7 +41,7 @@ func New(s store.Store) *Manager {
 func (m *Manager) RunOnce(ctx context.Context) (int64, error) {
 	var totalDeleted int64
 	for i := 0; i < gcMaxBatches; i++ {
-		n, err := m.store.DeleteOrphanedCVEsBatch(ctx, gcBatchSize)
+		n, err := m.datastore.DeleteOrphanedCVEsBatch(ctx, gcBatchSize)
 		if err != nil {
 			return totalDeleted, errors.Wrap(err, "CVE GC batch deletion failed")
 		}

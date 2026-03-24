@@ -108,6 +108,7 @@ const (
 	SearchCategory_VIRTUAL_MACHINE_VULNERABILITIES_V2 SearchCategory = 83
 	SearchCategory_IMAGE_CVE_INFOS                    SearchCategory = 84
 	SearchCategory_NORMALIZED_CVES                    SearchCategory = 85
+	SearchCategory_IMAGE_COMPONENT_CVE_EDGE           SearchCategory = 86
 )
 
 // Enum value maps for SearchCategory.
@@ -195,6 +196,7 @@ var (
 		83: "VIRTUAL_MACHINE_VULNERABILITIES_V2",
 		84: "IMAGE_CVE_INFOS",
 		85: "NORMALIZED_CVES",
+		86: "IMAGE_COMPONENT_CVE_EDGE",
 	}
 	SearchCategory_value = map[string]int32{
 		"SEARCH_UNSET":                       0,
@@ -279,6 +281,7 @@ var (
 		"VIRTUAL_MACHINE_VULNERABILITIES_V2": 83,
 		"IMAGE_CVE_INFOS":                    84,
 		"NORMALIZED_CVES":                    85,
+		"IMAGE_COMPONENT_CVE_EDGE":           86,
 	}
 )
 
@@ -1938,7 +1941,7 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\x15SearchOptionsResponse\x12\x18\n" +
 	"\aoptions\x18\x01 \x03(\tR\aoptions\".\n" +
 	"\x14AutocompleteResponse\x12\x16\n" +
-	"\x06values\x18\x01 \x03(\tR\x06values*\xdb\x0e\n" +
+	"\x06values\x18\x01 \x03(\tR\x06values*\xf9\x0e\n" +
 	"\x0eSearchCategory\x12\x10\n" +
 	"\fSEARCH_UNSET\x10\x00\x12\n" +
 	"\n" +
@@ -2026,7 +2029,8 @@ const file_api_v1_search_service_proto_rawDesc = "" +
 	"\x1dVIRTUAL_MACHINE_COMPONENTS_V2\x10R\x12&\n" +
 	"\"VIRTUAL_MACHINE_VULNERABILITIES_V2\x10S\x12\x13\n" +
 	"\x0fIMAGE_CVE_INFOS\x10T\x12\x13\n" +
-	"\x0fNORMALIZED_CVES\x10U\"\x04\b\x1e\x10\x1e\"\x04\b;\x10;\"\x04\b@\x10@*~\n" +
+	"\x0fNORMALIZED_CVES\x10U\x12\x1c\n" +
+	"\x18IMAGE_COMPONENT_CVE_EDGE\x10V\"\x04\b\x1e\x10\x1e\"\x04\b;\x10;\"\x04\b@\x10@*~\n" +
 	"\x0eSearchDataType\x12\x0f\n" +
 	"\vSEARCH_BOOL\x10\x00\x12\x12\n" +
 	"\x0eSEARCH_NUMERIC\x10\x01\x12\x11\n" +

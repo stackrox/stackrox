@@ -5,13 +5,22 @@ import (
 	"testing"
 
 	converter "github.com/stackrox/rox/central/cve/converter/v2"
-	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
-	pgStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
+	edgeStorePkg "github.com/stackrox/rox/central/cve/image/componentcveedge/datastore/store/postgres"
+	cveStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store"
+	cveStorePkg "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
+	componentStorePkg "github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
+
+// CVEEdgePair holds a NormalizedCVE and its related component edge.
+// Used by converters to transform normalized data to ImageCVEV2 format.
+type CVEEdgePair struct {
+	CVE  *storage.NormalizedCVE
+	Edge *storage.NormalizedComponentCVEEdge
+}
 
 // DataStore is an intermediary to CVE storage.
 //
@@ -66,16 +75,26 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store) DataStore {
+// The datastore composes three stores: CVEs, component CVE edges, and image components.
+// Joint operations (e.g. GetCVEsForImage) fetch from multiple stores and combine results in Go code.
+func New(
+	cveStoreInst cveStore.Store,
+	edgeStoreInst edgeStorePkg.Store,
+	componentStoreInst componentStorePkg.Store,
+) DataStore {
 	ds := &datastoreImpl{
-		storage:   storage,
-		converter: converter.NewImageCVEConverter(),
+		cveStore:       cveStoreInst,
+		edgeStore:      edgeStoreInst,
+		componentStore: componentStoreInst,
+		converter:      converter.NewImageCVEConverter(),
 	}
 	return ds
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
-	dbstore := pgStore.NewCombined(pool)
-	return New(dbstore)
+	cveStoreInst := cveStorePkg.New(pool)
+	edgeStoreInst := edgeStorePkg.New(pool)
+	componentStoreInst := componentStorePkg.New(pool)
+	return New(cveStoreInst, edgeStoreInst, componentStoreInst)
 }

@@ -384,17 +384,17 @@ message NormalizedCVE {
 // This replaces the deprecated ComponentCVEEdge from relations.proto for the normalized CVE model.
 message NormalizedComponentCVEEdge {
   // id is a UUID primary key.
-  string id = 1;
+  string id = 1; // @gotags: sql:"pk,id"
   // component_id is the TEXT foreign key referencing image_component_v2.id (a SHA256 hex string).
-  string component_id = 2;
+  string component_id = 2; // @gotags: search:"Component ID" sql:"fk(ImageComponentV2:id),index=hash"
   // cve_id is the UUID foreign key referencing cves.id.
-  string cve_id = 3;
+  string cve_id = 3; // @gotags: search:"CVE" sql:"fk(NormalizedCVE:id),no-fk-constraint,index=hash"
   // is_fixable indicates whether a fix is available.
-  bool is_fixable = 4;
+  bool is_fixable = 4; // @gotags: search:"Fixable"
   // fixed_by is the version that fixes this vulnerability.
-  string fixed_by = 5;
+  string fixed_by = 5; // @gotags: search:"Fixed By,hidden"
   // state is the vulnerability state: OBSERVED, DEFERRED, or FALSE_POSITIVE.
-  string state = 6;
+  string state = 6; // @gotags: search:"Vulnerability State"
   // first_system_occurrence is set on first insert; not updated on subsequent upserts.
   google.protobuf.Timestamp first_system_occurrence = 7;
   // fix_available_at records when a fix first became available.

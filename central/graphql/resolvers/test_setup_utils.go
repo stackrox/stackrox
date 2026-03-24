@@ -13,7 +13,6 @@ import (
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	clusterCVEPostgres "github.com/stackrox/rox/central/cve/cluster/datastore/store/postgres"
 	imageCVEV2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
-	imageCVEV2Postgres "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	nodeCVEPostgres "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
@@ -175,10 +174,7 @@ func CreateTestImageComponentV2Datastore(_ testing.TB, testDB *pgtest.TestPostgr
 
 // CreateTestImageCVEV2Datastore creates imageCVE datastore for testing
 func CreateTestImageCVEV2Datastore(_ testing.TB, testDB *pgtest.TestPostgres) imageCVEV2DS.DataStore {
-	storage := imageCVEV2Postgres.NewCombined(testDB.DB)
-	datastore := imageCVEV2DS.New(storage)
-
-	return datastore
+	return imageCVEV2DS.GetTestPostgresDataStore(nil, testDB.DB)
 }
 
 // CreateTestDeploymentDatastore creates deployment datastore for testing

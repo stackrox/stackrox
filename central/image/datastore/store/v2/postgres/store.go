@@ -10,7 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/hashstructure"
 	convertutils "github.com/stackrox/rox/central/cve/converter/utils"
-	cvev2pgstore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
+	cvev2datastore "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/image/views"
@@ -253,7 +253,8 @@ func (s *storeImpl) upsertCVEsToNormalizedTables(
 	cvesV2 []*storage.ImageCVEV2,
 	iTime time.Time,
 ) error {
-	cveStore := cvev2pgstore.NewCombined(s.db)
+	// Create the composite datastore with all three stores.
+	cveDatastore := cvev2datastore.GetTestPostgresDataStore(nil, s.db)
 
 	// Group CVEs by component ID to track which CVEs belong to each component.
 	componentCVEMap := make(map[string][]string)
@@ -295,7 +296,7 @@ func (s *storeImpl) upsertCVEsToNormalizedTables(
 		}
 
 		// Single-phase upsert: same content_hash → same cveID → idempotent ON CONFLICT(id) DO UPDATE.
-		if err := cveStore.Upsert(ctx, normalizedCVE); err != nil {
+		if err := cveDatastore.Upsert(ctx, normalizedCVE); err != nil {
 			return errors.Wrapf(err, "upserting NormalizedCVE %q for component %q", cveV2.GetCveBaseInfo().GetCve(), cveV2.GetComponentId())
 		}
 
@@ -321,14 +322,14 @@ func (s *storeImpl) upsertCVEsToNormalizedTables(
 		}
 
 		// Upsert edge.
-		if err := cveStore.UpsertEdge(ctx, edge); err != nil {
+		if err := cveDatastore.UpsertEdge(ctx, edge); err != nil {
 			return errors.Wrapf(err, "upserting edge for component %q and CVE %q", cveV2.GetComponentId(), cveID)
 		}
 	}
 
 	// Delete stale edges for each component.
 	for componentID, newCVEIDs := range componentCVEMap {
-		if err := cveStore.DeleteStaleEdges(ctx, componentID, newCVEIDs); err != nil {
+		if err := cveDatastore.DeleteStaleEdges(ctx, componentID, newCVEIDs); err != nil {
 			return errors.Wrapf(err, "deleting stale edges for component %q", componentID)
 		}
 	}

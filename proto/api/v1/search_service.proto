@@ -96,6 +96,7 @@ enum SearchCategory {
   VIRTUAL_MACHINE_VULNERABILITIES_V2 = 83;
   IMAGE_CVE_INFOS = 84;
   NORMALIZED_CVES = 85;
+  IMAGE_COMPONENT_CVE_EDGE = 86;
 }
 
 enum SearchDataType {

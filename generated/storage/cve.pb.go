@@ -2599,17 +2599,17 @@ func (x *NormalizedCVE) GetCreatedAt() *timestamppb.Timestamp {
 type NormalizedComponentCVEEdge struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// id is a UUID primary key.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"` // @gotags: sql:"pk,id"
 	// component_id is the TEXT foreign key referencing image_component_v2.id (a SHA256 hex string).
-	ComponentId string `protobuf:"bytes,2,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty"`
+	ComponentId string `protobuf:"bytes,2,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty" search:"Component ID" sql:"fk(ImageComponentV2:id),index=hash"` // @gotags: search:"Component ID" sql:"fk(ImageComponentV2:id),index=hash"
 	// cve_id is the UUID foreign key referencing cves.id.
-	CveId string `protobuf:"bytes,3,opt,name=cve_id,json=cveId,proto3" json:"cve_id,omitempty"`
+	CveId string `protobuf:"bytes,3,opt,name=cve_id,json=cveId,proto3" json:"cve_id,omitempty" search:"CVE" sql:"fk(NormalizedCVE:id),no-fk-constraint,index=hash"` // @gotags: search:"CVE" sql:"fk(NormalizedCVE:id),no-fk-constraint,index=hash"
 	// is_fixable indicates whether a fix is available.
-	IsFixable bool `protobuf:"varint,4,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty"`
+	IsFixable bool `protobuf:"varint,4,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Fixable"` // @gotags: search:"Fixable"
 	// fixed_by is the version that fixes this vulnerability.
-	FixedBy string `protobuf:"bytes,5,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty"`
+	FixedBy string `protobuf:"bytes,5,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty" search:"Fixed By,hidden"` // @gotags: search:"Fixed By,hidden"
 	// state is the vulnerability state: OBSERVED, DEFERRED, or FALSE_POSITIVE.
-	State string `protobuf:"bytes,6,opt,name=state,proto3" json:"state,omitempty"`
+	State string `protobuf:"bytes,6,opt,name=state,proto3" json:"state,omitempty" search:"Vulnerability State"` // @gotags: search:"Vulnerability State"
 	// first_system_occurrence is set on first insert; not updated on subsequent upserts.
 	FirstSystemOccurrence *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=first_system_occurrence,json=firstSystemOccurrence,proto3" json:"first_system_occurrence,omitempty"`
 	// fix_available_at records when a fix first became available.

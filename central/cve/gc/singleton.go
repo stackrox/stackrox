@@ -3,7 +3,7 @@ package gc
 import (
 	"sync"
 
-	cvev2store "github.com/stackrox/rox/central/cve/image/v2/datastore/store"
+	cvev2datastore "github.com/stackrox/rox/central/cve/image/v2/datastore"
 )
 
 var (
@@ -11,11 +11,11 @@ var (
 	manager *Manager
 )
 
-// Singleton returns the singleton GC manager, initialized with the given store.
+// Singleton returns the singleton GC manager, initialized with the given datastore.
 // The first call initializes it; subsequent calls return the cached instance.
-func Singleton(s cvev2store.Store) *Manager {
+func Singleton(ds cvev2datastore.DataStore) *Manager {
 	once.Do(func() {
-		manager = New(s)
+		manager = New(ds)
 	})
 	return manager
 }
