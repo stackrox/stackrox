@@ -179,7 +179,7 @@ func (s *ImagesV2StoreSuite) TestNVDCVSS() {
 	imageCve, _, err := s.cvePgStore.Get(s.ctx, id)
 	s.Require().NoError(err)
 	s.Require().NotEmpty(imageCve)
-	s.Equal(float32(10), imageCve.GetNvdcvss())
+	s.Equal(float32(10), imageCve.GetNvdCvssV3())
 	s.Require().NotEmpty(imageCve.GetCveBaseInfo().GetCvssMetrics())
 	protoassert.Equal(s.T(), nvdCvss, imageCve.GetCveBaseInfo().GetCvssMetrics()[0])
 }
