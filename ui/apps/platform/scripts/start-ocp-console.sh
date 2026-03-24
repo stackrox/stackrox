@@ -5,22 +5,34 @@ set -euo pipefail
 CONSOLE_IMAGE=${CONSOLE_IMAGE:="quay.io/openshift/origin-console:latest"}
 CONSOLE_PORT=${CONSOLE_PORT:=9000}
 CONSOLE_IMAGE_PLATFORM=${CONSOLE_IMAGE_PLATFORM:="linux/amd64"}
-
-# The ACS backend service URL that will receive the console's proxied requests.
-ACS_API_SERVICE_URL=${ACS_API_SERVICE_URL:=https://$(oc -n stackrox get route central -o jsonpath='{.spec.host}')}
-
-# Whether to inject the OCP auth token into the ACS backend service.
-ACS_INJECT_OCP_AUTH_TOKEN=${ACS_INJECT_OCP_AUTH_TOKEN:=true}
-
-# The base path to append onto the console proxy base URL. When following a true path via the sensor-proxy, default to `proxy/central`.
-ACS_PROXY_BASE_PATH=${ACS_PROXY_BASE_PATH:="/proxy/central"}
-ACS_PROXY_BASE_PATH="${ACS_PROXY_BASE_PATH%/}" # Remove trailing slash if present, we will add it back when constructing the proxy URL.
+SENSOR_PROXY_NAMESPACE=${SENSOR_PROXY_NAMESPACE:="stackrox"}
+SENSOR_PROXY_EXPIRY_HOURS=${SENSOR_PROXY_EXPIRY_HOURS:=8}
 
 # Plugin metadata is declared in package.json
 PLUGIN_NAME="advanced-cluster-security"
 
-echo "Starting local OpenShift console using ACS API Service URL: $ACS_API_SERVICE_URL"
-echo "Injecting OCP auth token: $ACS_INJECT_OCP_AUTH_TOKEN"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Expose sensor-proxy via LoadBalancer
+echo "Exposing sensor-proxy via LoadBalancer..."
+"$SCRIPT_DIR/expose-sensor-proxy.sh" "$SENSOR_PROXY_NAMESPACE" "$SENSOR_PROXY_EXPIRY_HOURS"
+
+# Get the external IP directly from the LoadBalancer service
+EXTERNAL_IP=$(oc -n "$SENSOR_PROXY_NAMESPACE" get service sensor-proxy-dev-lb -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null)
+
+if [ -z "$EXTERNAL_IP" ]; then
+    echo "Error: Failed to get external IP from LoadBalancer service"
+    echo "Check service status: oc -n $SENSOR_PROXY_NAMESPACE get service sensor-proxy-dev-lb"
+    exit 1
+fi
+
+echo ""
+echo "Using sensor-proxy at: $EXTERNAL_IP"
+
+# Construct the ACS API Service URL using the external IP
+ACS_API_SERVICE_URL="https://${EXTERNAL_IP}"
+
+echo "ACS API Service URL: $ACS_API_SERVICE_URL"
 
 export BRIDGE_USER_AUTH="disabled"
 export BRIDGE_K8S_MODE="off-cluster"
@@ -44,7 +56,7 @@ if [ -n "$GITOPS_HOSTNAME" ]; then
     export BRIDGE_K8S_MODE_OFF_CLUSTER_GITOPS="https://$GITOPS_HOSTNAME"
 fi
 
-export BRIDGE_PLUGIN_PROXY='{"services":[{"consoleAPIPath":"/api/proxy/plugin/advanced-cluster-security/api-service'$ACS_PROXY_BASE_PATH'/","endpoint":"'$ACS_API_SERVICE_URL'", "authorize":'$ACS_INJECT_OCP_AUTH_TOKEN'}]}'
+export BRIDGE_PLUGIN_PROXY='{"services":[{"consoleAPIPath":"/api/proxy/plugin/advanced-cluster-security/api-service/","endpoint":"'$ACS_API_SERVICE_URL'", "authorize":true}]}'
 
 
 echo "API Server: $BRIDGE_K8S_MODE_OFF_CLUSTER_ENDPOINT"
@@ -52,7 +64,7 @@ echo "Console Image: $CONSOLE_IMAGE"
 echo "Console URL: http://localhost:${CONSOLE_PORT}"
 echo "Console Platform: $CONSOLE_IMAGE_PLATFORM"
 
-# Prefer podman if installed. Otherwise, fall back to docker.
+# Run console container with appropriate configuration
 if [ -x "$(command -v podman)" ]; then
     if [ "$(uname -s)" = "Linux" ]; then
         # Use host networking on Linux since host.containers.internal is unreachable in some environments.
