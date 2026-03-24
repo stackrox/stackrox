@@ -3,8 +3,8 @@ package datastore
 import (
 	edgeStorePkg "github.com/stackrox/rox/central/cve/image/componentcveedge/datastore/store/postgres"
 	cveStorePkg "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
-	componentStorePkg "github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
+	componentStorePkg "github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
