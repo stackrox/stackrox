@@ -213,20 +213,35 @@ func stopSensorAndWorkload(workloadManager *fake.WorkloadManager, sensor *common
 }
 
 func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, writeMemProfile bool, dumpCentralOutput bool, outfile string, outputFormat string, cancelFunc context.CancelFunc, sensor *commonSensor.Sensor, workloadManager *fake.WorkloadManager, pipeline sensor.ProcessPipelineHandle) {
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-	<-ctx.Done()
-	// We cancel the creation of Events
-	cancelFunc()
-	if writeMemProfile {
-		writeMemoryProfile()
+	sigCh := make(chan os.Signal, 2)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(sigCh)
+
+	firstSignal := <-sigCh
+	log.Printf("Received %s, starting graceful shutdown (press Ctrl-C again to force exit)", firstSignal)
+
+	gracefulDone := make(chan struct{})
+	go func() {
+		defer close(gracefulDone)
+		// We cancel the creation of Events
+		cancelFunc()
+		if writeMemProfile {
+			writeMemoryProfile()
+		}
+		stopSensorAndWorkload(workloadManager, sensor, pipeline)
+		pprof.StopCPUProfile()
+		if fakeCentral != nil && dumpCentralOutput {
+			fakeCentral.DumpAllMessages(startTime, time.Now(), outfile, outputFormat)
+		}
+	}()
+
+	select {
+	case secondSignal := <-sigCh:
+		log.Printf("Received %s during graceful shutdown, exiting immediately", secondSignal)
+		os.Exit(130)
+	case <-gracefulDone:
+		os.Exit(0)
 	}
-	stopSensorAndWorkload(workloadManager, sensor, pipeline)
-	pprof.StopCPUProfile()
-	if fakeCentral != nil && dumpCentralOutput {
-		fakeCentral.DumpAllMessages(startTime, time.Now(), outfile, outputFormat)
-	}
-	os.Exit(0)
 }
 
 // local-sensor adds three new flags to sensor:
@@ -406,6 +421,10 @@ func main() {
 	go s.Start()
 	go registerHostKillSignals(startTime, spyCentral, !localConfig.NoMemProfile, !localConfig.SkipCentralOutput, localConfig.CentralOutput, localConfig.OutputFormat, cancelFunc, s, workloadManager, processPipeline)
 
+	if workloadManager != nil {
+		startCentralCrashCycle(ctx, workloadManager.CentralConnectionCrashCycle(), s)
+	}
+
 	if spyCentral != nil {
 		spyCentral.ConnectionStarted.Wait()
 	}
@@ -474,7 +493,7 @@ func setupCentralWithRealConnection(cli client.Interface, localConfig localSenso
 	return centralConnFactory, centralCertLoader
 }
 
-func setupCentralWithFakeConnection(localConfig localSensorConfig) (centralclient.CentralConnectionFactory, centralclient.CertLoader, *centralDebug.FakeService) {
+func createFakeCentralService(localConfig localSensorConfig) *centralDebug.FakeService {
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CERT_FILE", "tools/local-sensor/certs/cert.pem"))
 	utils.CrashOnError(os.Setenv("ROX_MTLS_KEY_FILE", "tools/local-sensor/certs/key.pem"))
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", "tools/local-sensor/certs/caCert.pem"))
@@ -506,9 +525,37 @@ func setupCentralWithFakeConnection(localConfig localSensorConfig) (centralclien
 		})
 	}
 
+	fakeCentral.SetMessageRecording(!localConfig.SkipCentralOutput)
+	return fakeCentral
+}
+
+func setupCentralWithFakeConnection(localConfig localSensorConfig) (centralclient.CentralConnectionFactory, centralclient.CertLoader, *centralDebug.FakeService) {
+	fakeCentral := createFakeCentralService(localConfig)
 	conn, spyCentral, shutdownFakeServer := createConnectionAndStartServer(fakeCentral)
 	fakeCentral.OnShutdown(shutdownFakeServer)
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
 	return fakeConnectionFactory, centralclient.EmptyCertLoader(), spyCentral
+}
+
+func startCentralCrashCycle(ctx context.Context, cycle time.Duration, sensor *commonSensor.Sensor) {
+	if cycle <= 0 || sensor == nil {
+		return
+	}
+
+	log.Printf("Enabled Central connection crash cycle every %s", cycle)
+
+	go func() {
+		ticker := time.NewTicker(cycle)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				log.Printf("Triggering Central connection crash cycle")
+				sensor.TriggerOnlineOfflineTransition("local-sensor centralConnectionCrashCycle")
+			}
+		}
+	}()
 }

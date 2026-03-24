@@ -316,14 +316,7 @@ func (s *Sensor) Start() {
 			return
 		}
 
-		s.centralCommunicationLock.Lock()
-		defer s.centralCommunicationLock.Unlock()
-		if s.centralCommunication == nil {
-			log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
-			return
-		}
-		log.Infof("Connection restart requested: %s", message.Text)
-		s.centralCommunication.Stop()
+		s.RequestCentralConnectionRestart(message.Text)
 	})
 	if err != nil {
 		log.Warnf("Failed to register subscription to sensor internal message: %q", err)
@@ -384,6 +377,28 @@ func (s *Sensor) Stop() {
 	}
 
 	log.Info("Sensor shutdown complete")
+}
+
+// RequestCentralConnectionRestart forces the current Sensor<->Central communication stream to stop.
+// The existing retry logic will establish a new connection and drive Online/Offline transitions.
+func (s *Sensor) RequestCentralConnectionRestart(reason string) {
+	s.centralCommunicationLock.Lock()
+	defer s.centralCommunicationLock.Unlock()
+
+	if s.centralCommunication == nil {
+		log.Warnf("Sensor connection was not yet established when a restart was requested. Reason: %s", reason)
+		return
+	}
+	log.Infof("Connection restart requested: %s", reason)
+	s.centralCommunication.Stop()
+}
+
+// TriggerOnlineOfflineTransition emits an offline->online state transition without forcing
+// transport reconnection. This is useful for local debugging of component state handling.
+func (s *Sensor) TriggerOnlineOfflineTransition(reason string) {
+	log.Infof("Synthetic online/offline transition requested: %s", reason)
+	s.changeState(common.SensorComponentEventOfflineMode)
+	s.changeState(common.SensorComponentEventCentralReachable)
 }
 
 func (s *Sensor) changeState(state common.SensorComponentEvent) {

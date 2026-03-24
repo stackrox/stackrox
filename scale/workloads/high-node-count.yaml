@@ -1,0 +1,42 @@
+numNamespaces: 5
+matchLabels: true
+
+centralConnectionCrashCycle: 10m
+
+nodeWorkload:
+  numNodes: 600
+
+serviceWorkload:
+  numClusterIPs: 10
+  numNodePorts: 10
+  numLoadBalancers: 0
+
+deploymentWorkload:
+  - deploymentType: Deployment
+    numDeployments: 2000
+    numLabels: 2
+    randomLabels: false
+    podWorkload:
+      numPods: 4
+      numContainers: 1
+      lifecycleDuration: 4m
+      containerWorkload:
+        numImages: 1
+      processWorkload:
+        processInterval: 0s
+        alertRate: 0
+        activeProcesses: false
+    updateInterval: 5m
+    lifecycleDuration: 8m
+    numLifecycles: 0
+
+networkPolicyWorkload: []
+
+networkWorkload:
+  flowInterval: 0s
+  batchSize: 0
+
+rbacWorkload:
+  numRoles: 5
+  numBindings: 5
+  numServiceAccounts: 5

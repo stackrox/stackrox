@@ -118,14 +118,15 @@ type VirtualMachineWorkload struct {
 
 // Workload is the definition of a scale workload
 type Workload struct {
-	DeploymentWorkload     []DeploymentWorkload    `yaml:"deploymentWorkload"`
-	NetworkPolicyWorkload  []NetworkPolicyWorkload `yaml:"networkPolicyWorkload"`
-	NodeWorkload           NodeWorkload            `yaml:"nodeWorkload"`
-	NetworkWorkload        NetworkWorkload         `yaml:"networkWorkload"`
-	RBACWorkload           RBACWorkload            `yaml:"rbacWorkload"`
-	ServiceWorkload        ServiceWorkload         `yaml:"serviceWorkload"`
-	SecretWorkload         SecretWorkload          `yaml:"secretWorkload"`
-	VirtualMachineWorkload VirtualMachineWorkload  `yaml:"virtualMachineWorkload"`
-	NumNamespaces          int                     `yaml:"numNamespaces"`
-	MatchLabels            bool                    `yaml:"matchLabels"`
+	DeploymentWorkload          []DeploymentWorkload    `yaml:"deploymentWorkload"`
+	NetworkPolicyWorkload       []NetworkPolicyWorkload `yaml:"networkPolicyWorkload"`
+	NodeWorkload                NodeWorkload            `yaml:"nodeWorkload"`
+	NetworkWorkload             NetworkWorkload         `yaml:"networkWorkload"`
+	RBACWorkload                RBACWorkload            `yaml:"rbacWorkload"`
+	ServiceWorkload             ServiceWorkload         `yaml:"serviceWorkload"`
+	SecretWorkload              SecretWorkload          `yaml:"secretWorkload"`
+	VirtualMachineWorkload      VirtualMachineWorkload  `yaml:"virtualMachineWorkload"`
+	CentralConnectionCrashCycle time.Duration           `yaml:"centralConnectionCrashCycle"`
+	NumNamespaces               int                     `yaml:"numNamespaces"`
+	MatchLabels                 bool                    `yaml:"matchLabels"`
 }

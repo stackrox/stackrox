@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/metrics"
 )
@@ -37,6 +39,14 @@ var (
 		Name:      "ips_having_multiple_containers_total",
 		Help:      "Count how many times a single IP was assigned to more than one container",
 	}, []string{"ip"})
+
+	storeLockHeldDurationSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "clusterentities_store_lock_held_duration_seconds",
+		Help:      "Duration for which cluster entities store mutexes are held",
+		Buckets:   []float64{0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 2, 5, 10, 30, 60, 120},
+	}, []string{"store", "operation"})
 )
 
 // UpdateNumberOfContainerIDs updates the metric tracking the number of containers stored in-memory store
@@ -62,9 +72,16 @@ func ObserveManyDeploymentsSharingSingleIP(ip string) {
 	ipsHavingMultipleContainers.WithLabelValues(ip).Inc()
 }
 
+// ObserveStoreLockHeldDurationWithOperation records how long a store mutex was held
+// for the given high-level operation.
+func ObserveStoreLockHeldDurationWithOperation(store, operation string, duration time.Duration) {
+	storeLockHeldDurationSeconds.WithLabelValues(store, operation).Observe(duration.Seconds())
+}
+
 func init() {
 	prometheus.MustRegister(containersStored)
 	prometheus.MustRegister(ipsStored)
 	prometheus.MustRegister(endpointsStored)
 	prometheus.MustRegister(ipsHavingMultipleContainers)
+	prometheus.MustRegister(storeLockHeldDurationSeconds)
 }

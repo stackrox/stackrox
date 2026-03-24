@@ -352,13 +352,26 @@ func (e *Store) currentlyStoredPublicIPs() set.Set[net.IPAddress] {
 	return s
 }
 
+func logStoreRecordTickDuration(storeName string, duration time.Duration) {
+	if duration < time.Second {
+		log.Debugf("%s took %s", storeName, duration)
+	} else {
+		log.Infof("%s took %s; this can happen during larger update bursts and is not necessarily an error", storeName, duration)
+	}
+}
+
 // RecordTick records the information that a unit of time (1 tick) has passed
 func (e *Store) RecordTick() {
 	e.track("Tick")
 	// Avoid or-statements like "a.RecordTick() || b.RecordTick()"
 	// because there is no guarantee that b.RecordTick() will be called.
+	podTickStart := time.Now()
 	removedPubIP := e.podIPsStore.RecordTick()
+	logStoreRecordTickDuration("podIPsStore.RecordTick", time.Since(podTickStart))
+
+	endpointsTickStart := time.Now()
 	removedEpWithPubIP := e.endpointsStore.RecordTick()
+	logStoreRecordTickDuration("endpointsStore.RecordTick", time.Since(endpointsTickStart))
 	if removedPubIP || removedEpWithPubIP {
 		// If there are any public IPs expiring in this tick, then we need to update the listeners.
 		e.updatePublicIPRefs(e.currentlyStoredPublicIPs())

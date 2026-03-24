@@ -340,6 +340,26 @@ var (
 		Name:      "informer_sync_duration_ms",
 		Help:      "Time in milliseconds each informer has spent syncing. While the informer is still pending, this value is updated periodically and keeps increasing. Once the informer completes its initial sync, the value is set to the final sync duration and stops changing. Labeled by informer name (e.g., Deployments, Pods). A value that keeps growing indicates a stuck informer.",
 	}, []string{"informer"})
+
+	// informerInitialObjectPopulationDurationSeconds tracks post-sync startup work per informer:
+	// how long Sensor waits for PopulateInitialObjects to finish processing the initial snapshot
+	// loaded from the informer's indexer.
+	//
+	// This is different from informerSyncDurationMs:
+	//   - informerSyncDurationMs measures informer cache sync time (registration -> HasSynced true).
+	//   - informerInitialObjectPopulationDurationSeconds measures the subsequent handoff/processing
+	//     phase (after cache sync -> PopulateInitialObjects completion).
+	//   - Therefore, informerInitialObjectPopulationDurationSeconds does NOT include any time already
+	//     counted in informerSyncDurationMs; the two metrics represent consecutive, non-overlapping phases.
+	informerInitialObjectPopulationDurationSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "informer_initial_object_population_duration_seconds",
+		Help: "Time in seconds spent processing and dispatching the initial object snapshot after informer cache sync. " +
+			"Measured per informer from PopulateInitialObjects start until completion. " +
+			"High values indicate slow initial object processing, which can delay full listener readiness.",
+		Buckets: prometheus.DefBuckets,
+	}, []string{"informer"})
 )
 
 // IncrementEntityNotFound increments an instance of entity not found
@@ -541,4 +561,9 @@ func ObserveInformerSyncDuration(informerName string, duration time.Duration) {
 // clearing stale per-informer entries from a previous tracker lifecycle.
 func ResetInformerSyncDuration() {
 	informerSyncDurationMs.Reset()
+}
+
+// ObserveInformerInitialObjectPopulationDuration records how long initial object population took for an informer.
+func ObserveInformerInitialObjectPopulationDuration(informerName string, duration time.Duration) {
+	informerInitialObjectPopulationDurationSeconds.WithLabelValues(informerName).Observe(duration.Seconds())
 }

@@ -251,6 +251,14 @@ func (w *WorkloadManager) Client() client.Interface {
 	return w.client
 }
 
+// CentralConnectionCrashCycle returns how often local-sensor should crash fake Central.
+func (w *WorkloadManager) CentralConnectionCrashCycle() time.Duration {
+	if w == nil || w.workload == nil {
+		return 0
+	}
+	return w.workload.CentralConnectionCrashCycle
+}
+
 // NewWorkloadManager returns a fake kubernetes client interface that will be managed with the passed Workload
 func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	data, err := os.ReadFile(config.workloadFile)
@@ -307,6 +315,10 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 }
 
 func validateWorkload(workload *Workload) error {
+	if workload.CentralConnectionCrashCycle < 0 {
+		workload.CentralConnectionCrashCycle = 0
+		return errors.New("negative centralConnectionCrashCycle, clamped to 0")
+	}
 	if workload.NetworkWorkload.OpenPortReuseProbability < 0.0 || workload.NetworkWorkload.OpenPortReuseProbability > 1.0 {
 		corrected := math.Min(1.0, math.Max(0.0, workload.NetworkWorkload.OpenPortReuseProbability))
 		workload.NetworkWorkload.OpenPortReuseProbability = corrected
