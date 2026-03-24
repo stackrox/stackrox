@@ -212,7 +212,8 @@ func (e *endpointsStore) removeFromHistoryIfExpired(deploymentID string, ep net.
 	return false
 }
 
-// moveToHistory is a convenience function that removes data from the current map and adds it to history
+// moveToHistory is a convenience function that removes data from the current map and adds it to history.
+// If history is disabled, it just deletes the data from the current map.
 func (e *endpointsStore) moveToHistory(deploymentID string, ep net.NumericEndpoint) {
 	if e.historyEnabled() {
 		e.addToHistory(deploymentID, ep)
