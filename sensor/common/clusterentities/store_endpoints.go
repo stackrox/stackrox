@@ -254,7 +254,18 @@ func (e *endpointsStore) deleteFromCurrent(deploymentID string, ep net.NumericEn
 	}
 }
 
-// addToHistory adds endpoint data to the history, but does not remove it from the current map
+// addToHistory records history for one <deployment, endpoint> pair in linear time relative
+// to the endpoint's target-info cardinality.
+//
+// Complexity:
+//   - O(T) for one call, where T = number of EndpointTargetInfo entries for this endpoint.
+//   - During purge of a deployment with M endpoints, total work scales as O(sum(T_i)) plus O(M)
+//     reverse-map updates, avoiding any M-by-M scan.
+//
+// This routine is performance-critical for large clusters with many nodes and NodePort/LoadBalancer
+// service expansions, where endpoint cardinality can become very high. Its complexity directly
+// impacts how long endpointsStore mutex is held during Apply(), and therefore affects Sensor
+// throughput and event pipeline latency.
 func (e *endpointsStore) addToHistory(deploymentID string, ep net.NumericEndpoint) {
 	// Prepare maps if empty
 	if _, ok := e.historicalEndpoints[ep]; !ok {
@@ -270,9 +281,7 @@ func (e *endpointsStore) addToHistory(deploymentID string, ep net.NumericEndpoin
 	if _, ok := e.reverseHistoricalEndpoints[deploymentID]; !ok {
 		e.reverseHistoricalEndpoints[deploymentID] = make(map[net.NumericEndpoint]*entityStatus)
 	}
-	for numEp := range e.reverseEndpointMap[deploymentID] {
-		e.reverseHistoricalEndpoints[deploymentID][numEp] = newHistoricalEntity(e.memorySize)
-	}
+	e.reverseHistoricalEndpoints[deploymentID][ep] = newHistoricalEntity(e.memorySize)
 }
 
 func (e *endpointsStore) String() string {
