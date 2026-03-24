@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestStorageToCentralProfileKind(t *testing.T) {
@@ -38,9 +39,7 @@ func TestStorageToCentralProfileKind(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			actual := StorageToCentralProfileKind(tc.input)
-			if actual != tc.expected {
-				t.Fatalf("unexpected mapping: got %v want %v", actual, tc.expected)
-			}
+			assert.Equal(t, tc.expected, actual)
 		})
 	}
 }
