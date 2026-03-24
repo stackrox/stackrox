@@ -9,7 +9,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/hashstructure"
 	convertutils "github.com/stackrox/rox/central/cve/converter/utils"
-	cvev2datastore "github.com/stackrox/rox/central/cve/image/v2/datastore"
+	edgeStore "github.com/stackrox/rox/central/cve/image/componentcveedge/datastore/store/postgres"
+	cveStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/imagev2/datastore/store"
 	"github.com/stackrox/rox/central/imagev2/datastore/store/common"
 	"github.com/stackrox/rox/central/imagev2/views"
@@ -60,6 +61,8 @@ func New(db postgres.DB, noUpdateTimestamps bool, keyFence concurrency.KeyFence)
 		db:                 db,
 		noUpdateTimestamps: noUpdateTimestamps,
 		keyFence:           keyFence,
+		cveStore:           cveStore.New(db),
+		edgeStore:          edgeStore.New(db),
 	}
 }
 
@@ -67,6 +70,8 @@ type storeImpl struct {
 	db                 postgres.DB
 	noUpdateTimestamps bool
 	keyFence           concurrency.KeyFence
+	cveStore           cveStore.Store
+	edgeStore          edgeStore.Store
 }
 
 // TODO(ROX-29941): Add scoping to all queries
@@ -267,10 +272,13 @@ func (s *storeImpl) upsertCVEsToNormalizedTables(
 	cvesV2 []*storage.ImageCVEV2,
 	iTimestamp *timestamppb.Timestamp,
 ) error {
-	cveDatastore := cvev2datastore.GetTestPostgresDataStore(nil, s.db)
+	// Collect CVEs and edges to upsert.
+	normalizedCVEs := make([]*storage.NormalizedCVE, 0, len(cvesV2))
+	edges := make([]*storage.NormalizedComponentCVEEdge, 0, len(cvesV2))
 
 	// Group CVEs by component ID to track which CVEs belong to each component.
 	componentCVEMap := make(map[string][]string)
+
 	for _, cveV2 := range cvesV2 {
 		// Extract CVSS V3 score.
 		var cvssV3 float32
@@ -307,11 +315,7 @@ func (s *storeImpl) upsertCVEsToNormalizedTables(
 		if v2 := cveV2.GetCveBaseInfo().GetCvssV2(); v2 != nil {
 			normalizedCVE.CvssV2 = v2.GetScore()
 		}
-
-		// Single-phase upsert: same content_hash → same cveID → idempotent ON CONFLICT(id) DO UPDATE.
-		if err := cveDatastore.Upsert(ctx, normalizedCVE); err != nil {
-			return errors.Wrapf(err, "upserting NormalizedCVE %q for component %q", cveV2.GetCveBaseInfo().GetCve(), cveV2.GetComponentId())
-		}
+		normalizedCVEs = append(normalizedCVEs, normalizedCVE)
 
 		// Track this CVE for the component.
 		componentCVEMap[cveV2.GetComponentId()] = append(componentCVEMap[cveV2.GetComponentId()], cveID)
@@ -324,7 +328,9 @@ func (s *storeImpl) upsertCVEsToNormalizedTables(
 		}
 
 		// Build NormalizedComponentCVEEdge proto.
+		// Generate a composite ID for the edge.
 		edge := &storage.NormalizedComponentCVEEdge{
+			Id:                    cveID + "#" + cveV2.GetComponentId(),
 			ComponentId:           cveV2.GetComponentId(),
 			CveId:                 cveID,
 			IsFixable:             cveV2.GetIsFixable(),
@@ -333,17 +339,55 @@ func (s *storeImpl) upsertCVEsToNormalizedTables(
 			FirstSystemOccurrence: firstSysOccurrence,
 			FixAvailableAt:        cveV2.GetFixAvailableTimestamp(),
 		}
+		edges = append(edges, edge)
+	}
 
-		// Upsert edge.
-		if err := cveDatastore.UpsertEdge(ctx, edge); err != nil {
-			return errors.Wrapf(err, "upserting edge for component %q and CVE %q", cveV2.GetComponentId(), cveID)
+	// Batch upsert all CVEs.
+	if len(normalizedCVEs) > 0 {
+		if err := s.cveStore.UpsertMany(ctx, normalizedCVEs); err != nil {
+			return errors.Wrap(err, "batch upserting NormalizedCVEs")
+		}
+	}
+
+	// Batch upsert all edges.
+	if len(edges) > 0 {
+		if err := s.edgeStore.UpsertMany(ctx, edges); err != nil {
+			return errors.Wrap(err, "batch upserting edges")
 		}
 	}
 
 	// Delete stale edges for each component.
+	// For each component, delete edges that aren't in the new CVE list.
 	for componentID, newCVEIDs := range componentCVEMap {
-		if err := cveDatastore.DeleteStaleEdges(ctx, componentID, newCVEIDs); err != nil {
-			return errors.Wrapf(err, "deleting stale edges for component %q", componentID)
+		// Build a query to find all edges for this component that aren't in newCVEIDs.
+		// Then delete those edges.
+		// Note: This requires walking all edges for the component and checking against newCVEIDs.
+		var edgesToDelete []string
+		err := s.edgeStore.Walk(ctx, func(edge *storage.NormalizedComponentCVEEdge) error {
+			if edge.GetComponentId() != componentID {
+				return nil
+			}
+			// Check if this edge's CVE is in the new list.
+			found := false
+			for _, cveID := range newCVEIDs {
+				if edge.GetCveId() == cveID {
+					found = true
+					break
+				}
+			}
+			if !found {
+				edgesToDelete = append(edgesToDelete, edge.GetId())
+			}
+			return nil
+		})
+		if err != nil {
+			return errors.Wrapf(err, "walking edges for component %q to find stale edges", componentID)
+		}
+
+		if len(edgesToDelete) > 0 {
+			if err := s.edgeStore.DeleteMany(ctx, edgesToDelete); err != nil {
+				return errors.Wrapf(err, "deleting stale edges for component %q", componentID)
+			}
 		}
 	}
 
