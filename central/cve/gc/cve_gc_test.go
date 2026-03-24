@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -88,6 +89,14 @@ func (s *testStore) GetCVEsForImage(_ context.Context, _ string) ([]*storage.Nor
 }
 
 func (s *testStore) GetAllReferencedCVEs(_ context.Context) ([]*storage.NormalizedCVE, error) {
+	panic("not implemented")
+}
+
+func (s *testStore) GetCVEsWithEdges(_ context.Context, _ string) ([]store.CVEEdgePair, error) {
+	panic("not implemented")
+}
+
+func (s *testStore) GetCVEWithEdge(_ context.Context, _ string, _ string) (*store.CVEEdgePair, bool, error) {
 	panic("not implemented")
 }
 
