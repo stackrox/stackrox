@@ -57,6 +57,7 @@ describe('policyCriteriaValidators', () => {
                 };
                 const error = validator.validate(section, context);
 
+                /* eslint-disable vitest/no-conditional-expect */
                 if (name === 'Kubernetes Resource') {
                     expect(error).toContain('Kubernetes API verb');
                     expect(error).not.toContain('Kubernetes resource type');
@@ -67,6 +68,7 @@ describe('policyCriteriaValidators', () => {
                     expect(error).toContain('Kubernetes API verb');
                     expect(error).toContain('Kubernetes resource type');
                 }
+                /* eslint-enable vitest/no-conditional-expect */
             });
         });
 

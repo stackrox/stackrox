@@ -37,9 +37,7 @@ function WatchedImagesTable({
                     <Thead noWrap>
                         <Tr>
                             <Th>Image</Th>
-                            <Th>
-                                <span className="pf-v6-screen-reader">Row action</span>
-                            </Th>
+                            <Th screenReaderText="Row action" />
                         </Tr>
                     </Thead>
                     <Tbody>

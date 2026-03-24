@@ -1,7 +1,8 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:5dc6ba426ccbeb3954ead6b015f36b4a2d22320e5b356b074198d08422464ed2 AS builder
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest@sha256:69f5c9886ecb19b23e88275a5cd904c47dd982dfa370fbbd0c356d7b1047ef68 AS builder
 
 # This installs both PyYAML and Python.
-RUN microdnf -y install python3.12-pyyaml
+# The alternatives command ensures that the python3 command points to the installed Python 3.12, which is required by the bundle generation scripts.
+RUN microdnf -y install python3.12-pyyaml && alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
 
 COPY . /stackrox
 WORKDIR /stackrox/operator

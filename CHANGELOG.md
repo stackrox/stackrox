@@ -18,8 +18,10 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
   roxctl's "central crs generate" supports specifying a maximum number of cluster registrations
   using the new parameter "--max-clusters".
 - ROX-24311: Detection and enforcement for pods/attach Kubernetes event.
+- ROX-33099: New Operator Helm Chart is now the only recommended way to install on non-OpenShift clusters.
 - ROX-33098 (Tech Preview): Effective path and Actual Path have been combined into a single File Path policy criterion.
 - ROX-33156 (Tech Preview): A new default policy category called "File Activity Monitoring" is now available.
+- ROX-33673: A new default policy has been added to detect missing egress NetworkPolicy associated with deployments. The policy is disabled by default.
 
 ### Removed Features
 
@@ -39,6 +41,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-31738: Added the `spec.customize.deploymentDefaults` field to Central and SecuredCluster CRDs, for configuring global default scheduling constraints for Deployments. This was previously possible on a per-component basis.
 - ROX-30094, ROX-30610, ROX-30740: Add new namespaces to Layered Products default config regex.
 - ROX-31960, ROX-32449: include and exclude filters for custom metrics.
+- ROX-33603: Switch to UBI9/rhel9 base images.
 - ROX-30641: Added a new policy criteria "Days Since CVE Fix Was Available".
 - ROX-32630: The OpenShift console plugin integrates the ACS vulnerability management view into OpenShift console. It is enabled by default for operator-deployed secured clusters.
 - Tech preview: operator-based installation available for community StackRox build. More information in [a separate README file](operator/install/README.md).

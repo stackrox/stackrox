@@ -9,6 +9,22 @@ import (
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 )
 
+// DeploymentIDResult is a lightweight projection of alert data containing only
+// the deployment ID. Used by failingDeployments to avoid deserializing full
+// alert protobuf blobs when only the deployment ID is needed.
+// DeploymentID is a pointer to handle NULL values from resource/image alerts.
+type DeploymentIDResult struct {
+	DeploymentID *string `db:"deployment_id"`
+}
+
+// GetDeploymentID returns the deployment ID, or an empty string if NULL.
+func (d *DeploymentIDResult) GetDeploymentID() string {
+	if d.DeploymentID == nil {
+		return ""
+	}
+	return *d.DeploymentID
+}
+
 // PolicyNameAndSeverity is a lightweight projection of alert data containing only
 // the policy name and severity. Used by risk scoring to avoid deserializing full
 // alert protobuf blobs when only these two fields are needed.

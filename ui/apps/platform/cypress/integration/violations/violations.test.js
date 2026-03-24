@@ -7,11 +7,14 @@ import {
     callbackForPairOfDescendingPolicySeverityValuesFromElements,
 } from '../../helpers/sort';
 
+import { visit } from '../../helpers/visit';
+
 import {
     clickDeploymentTabWithFixture,
     exportAndWaitForNetworkPolicyYaml,
     interactAndWaitForNetworkPoliciesResponse,
     interactAndWaitForViolationsResponses,
+    routeMatcherMapForViolations,
     selectFilteredWorkflowView,
     visitViolationFromTableWithFixture,
     visitViolationWithFixture,
@@ -274,6 +277,56 @@ describe('Violations', () => {
             const queryString = interception.request.query.query;
 
             expect(queryString).to.contain('Violation State:RESOLVED');
+        });
+    });
+
+    describe('Node view', () => {
+        const tabsSelector = '[aria-label="Violation state tabs"]';
+        const attemptedTab = `${tabsSelector} button[role="tab"]:contains("Attempted")`;
+        const activeTab = `${tabsSelector} button[role="tab"]:contains("Active")`;
+        const resolvedTab = `${tabsSelector} button[role="tab"]:contains("Resolved")`;
+
+        it('should hide the Attempted tab and keep Active and Resolved tabs', () => {
+            visitViolations();
+
+            // Attempted tab should be visible in the default view
+            cy.get(attemptedTab).should('exist');
+
+            interactAndWaitForViolationsResponses(() => {
+                selectFilteredWorkflowView('Nodes');
+            });
+
+            // Attempted tab should be hidden, but Active and Resolved remain
+            cy.get(attemptedTab).should('not.exist');
+            cy.get(activeTab).should('exist');
+            cy.get(resolvedTab).should('exist');
+        });
+
+        it('should restore the Attempted tab when switching away from Node view', () => {
+            visitViolations();
+
+            interactAndWaitForViolationsResponses(() => {
+                selectFilteredWorkflowView('Nodes');
+            });
+
+            cy.get(attemptedTab).should('not.exist');
+
+            interactAndWaitForViolationsResponses(() => {
+                selectFilteredWorkflowView('All Violations');
+            });
+
+            cy.get(attemptedTab).should('exist');
+        });
+
+        it('should reset to Active tab when visiting Node view with Attempted in the URL', () => {
+            visit(
+                '/main/violations?filteredWorkflowView=Node+view&violationState=ATTEMPTED',
+                routeMatcherMapForViolations
+            );
+
+            cy.get(`h1:contains("Node violations")`);
+            cy.get(attemptedTab).should('not.exist');
+            cy.get(activeTab).should('have.attr', 'aria-selected', 'true');
         });
     });
 });

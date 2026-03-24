@@ -2,10 +2,10 @@ import { getPercentage } from './mathUtils';
 
 describe('mathUtils', () => {
     describe('getPercentage', () => {
-        it('should return 0 when total not present', () => {
+        it('should return 0 when total is 0', () => {
             const number = 42;
 
-            const percentage = getPercentage(number);
+            const percentage = getPercentage(number, 0);
 
             expect(percentage).toEqual(0);
         });

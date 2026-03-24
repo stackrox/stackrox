@@ -18,13 +18,12 @@ import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternf
 import { SearchIcon } from '@patternfly/react-icons';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSelection from 'hooks/useTableSelection';
 import type { ComplianceProfileSummary } from 'services/ComplianceCommon';
 
+import { complianceProfileOperatorKindLabels } from '../../compliance.constants';
 import type { ScanConfigFormValues } from '../compliance.scanConfigs.utils';
-
-// file can be deleted after switching to PF5, more details in the css file
-import './ProfileSelection.css';
 
 export type ProfileSelectionProps = {
     alertRef: RefObject<HTMLDivElement>;
@@ -37,6 +36,9 @@ function ProfileSelection({
     profiles,
     isFetchingProfiles,
 }: ProfileSelectionProps): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isTailoredProfilesEnabled = isFeatureFlagEnabled('ROX_TAILORED_PROFILES');
+
     const {
         setFieldValue,
         setTouched,
@@ -78,10 +80,14 @@ function ProfileSelection({
     };
 
     const isProfileExpanded = (name: string) => expandedProfileNames.includes(name);
+    const totalColumns = isTailoredProfilesEnabled ? 7 : 6;
 
     function renderTableContent() {
         return profiles?.map(
-            ({ description, name, productType, ruleCount, title, profileVersion }, rowIndex) => (
+            (
+                { description, name, productType, ruleCount, title, profileVersion, operatorKind },
+                rowIndex
+            ) => (
                 <Tbody isExpanded={isProfileExpanded(name)} key={name}>
                     <Tr>
                         <Td
@@ -100,13 +106,19 @@ function ProfileSelection({
                             }}
                         />
                         <Td dataLabel="Profile">{name}</Td>
+                        {isTailoredProfilesEnabled && (
+                            <Td dataLabel="Type">
+                                {(operatorKind &&
+                                    complianceProfileOperatorKindLabels[operatorKind]) ??
+                                    '—'}
+                            </Td>
+                        )}
                         <Td dataLabel="Rule set">{ruleCount}</Td>
                         <Td dataLabel="Applicability">{productType}</Td>
                         <Td dataLabel="Version">{profileVersion || '-'}</Td>
                     </Tr>
                     <Tr isExpanded={isProfileExpanded(name)}>
-                        <Td colSpan={2}></Td>
-                        <Td dataLabel="Profile details" colSpan={4}>
+                        <Td dataLabel="Profile details" colSpan={totalColumns}>
                             <ExpandableRowContent>
                                 <Content component="p" className="pf-v6-u-font-weight-bold">
                                     {title}
@@ -125,7 +137,7 @@ function ProfileSelection({
         return (
             <Tbody>
                 <Tr>
-                    <Td colSpan={6}>
+                    <Td colSpan={totalColumns}>
                         <Bullseye>
                             <Spinner />
                         </Bullseye>
@@ -139,7 +151,7 @@ function ProfileSelection({
         return (
             <Tbody>
                 <Tr>
-                    <Td colSpan={6}>
+                    <Td colSpan={totalColumns}>
                         <Bullseye>
                             <EmptyStateTemplate
                                 title="No profiles"
@@ -189,13 +201,10 @@ function ProfileSelection({
                 <Table>
                     <Thead noWrap>
                         <Tr>
-                            <Th>
-                                <span className="pf-v6-screen-reader">Row selection</span>
-                            </Th>
-                            <Th>
-                                <span className="pf-v6-screen-reader">Row expansion</span>
-                            </Th>
+                            <Th screenReaderText="Row selection" />
+                            <Th screenReaderText="Row expansion" />
                             <Th>Profile</Th>
+                            {isTailoredProfilesEnabled && <Th>Type</Th>}
                             <Th>Rule set</Th>
                             <Th>Applicability</Th>
                             <Th>Version</Th>

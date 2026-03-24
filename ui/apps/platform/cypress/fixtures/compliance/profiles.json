@@ -7,7 +7,8 @@
             "title": "BSI IT-Grundschutz (Basic Protection) Building Block SYS.1.6 and APP.4.4",
             "ruleCount": 86,
             "profileVersion": "2022",
-            "standards": []
+            "standards": [],
+            "operatorKind": "PROFILE"
         },
         {
             "name": "CYPRESS-ocp4-bsi-node",
@@ -16,7 +17,8 @@
             "title": "BSI IT-Grundschutz (Basic Protection) Building Block SYS.1.6 and APP.4.4",
             "ruleCount": 19,
             "profileVersion": "2022",
-            "standards": []
+            "standards": [],
+            "operatorKind": "TAILORED_PROFILE"
         }
     ],
     "totalCount": 2

@@ -50,6 +50,9 @@ func (s *virtualMachineSuite) SetupSubTest() {
 
 func (s *virtualMachineSuite) TearDownSubTest() {
 	s.mockCtrl.Finish()
+	// Reset global capability state to prevent test pollution.
+	// If not reset, subsequent tests may incorrectly assume capabilities are present/absent,
+	// leading to false negatives that could hide regressions.
 	centralcaps.Set(nil)
 }
 
@@ -269,7 +272,19 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 			action: central.ResourceAction_CREATE_RESOURCE,
 			obj:    toUnstructured(newVirtualMachine(vmUID, vmName, vmNamespace, v1.VirtualMachineStatusStopped)),
 			expectFn: func() {
+				// Guarded path must not emit an event nor touch the store.
+				s.store.EXPECT().AddOrUpdate(gomock.Any()).Times(0)
 				centralcaps.Set(nil)
+			},
+			expectedMsg: nil,
+		},
+		"feature flag disabled": {
+			action: central.ResourceAction_CREATE_RESOURCE,
+			obj:    toUnstructured(newVirtualMachine(vmUID, vmName, vmNamespace, v1.VirtualMachineStatusStopped)),
+			expectFn: func() {
+				// Guarded path must not emit an event nor touch the store.
+				s.store.EXPECT().AddOrUpdate(gomock.Any()).Times(0)
+				s.T().Setenv(features.VirtualMachines.EnvVar(), "false")
 			},
 			expectedMsg: nil,
 		},

@@ -9,13 +9,12 @@ export default function ExpandRowTh(props: ThProps) {
     return (
         <Th
             {...props}
+            screenReaderText="Row expansion"
             style={{
                 // Setting a defined width here prevents column shift when the table is in a loading state
                 width: `calc(${expandButtonWidth} + ${expandButtonPaddingX} + ${firstTableCellPadding})`,
                 ...props.style,
             }}
-        >
-            <span className="pf-v6-screen-reader">Row expansion</span>
-        </Th>
+        />
     );
 }

@@ -14,13 +14,13 @@ import { entityComponentDefaultProps, entityComponentPropTypes } from 'constants
 import searchContext from 'Containers/searchContext';
 import { formatLifecycleStages } from 'Containers/Policies/policies.utils';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
-import getSubListFromEntity from 'utils/getSubListFromEntity';
 import isGQLLoading from 'utils/gqlLoading';
 import queryService from 'utils/queryService';
 import { policiesBasePath } from 'routePaths';
 
 import { getConfigMgmtCountQuery } from '../../ConfigMgmt.utils';
 import EntityList from '../../List/EntityList';
+import getSubListFromEntity from '../getSubListFromEntity';
 import PolicyFindings from './PolicyFindings';
 
 const ConfigManagementEntityPolicy = ({

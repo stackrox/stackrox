@@ -9,8 +9,9 @@ packages:
 - postgresql
 # builder stage in operator/konflux.bundle.Dockerfile
 - python3.12-pyyaml
-# package_installer stages in image/roxctl/konflux.Dockerfile
+# package_installer stage in operator/konflux.Dockerfile and image/roxctl/konflux.Dockerfile
 - ca-certificates
+- openssl
 moduleEnable:
 # final stage in image/rhel/konflux.Dockerfile
 - postgresql:15
