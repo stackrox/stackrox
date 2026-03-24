@@ -44,16 +44,18 @@ const (
 	// sensorProxyPort is the TCP port Sensor exposes for the OCP console plugin proxy.
 	sensorProxyPort = 9444
 
-	// deploymentsGraphQLQuery requests deployment IDs filtered to apps/v1 Deployments
-	// so the count matches the Kubernetes API listing.
-	deploymentsGraphQLQuery = `{"query":"{deployments(query:\"Deployment Type:Deployment\"){id}}"}`
+	// deploymentsGraphQLQuery requests deployment name and namespace filtered to apps/v1
+	// Deployments so the results can be compared against the Kubernetes API listing.
+	deploymentsGraphQLQuery = `{"query":"{deployments(query:\"Deployment Type:Deployment\"){name namespace}}"}`
 )
 
 // graphQLDeploymentsResponse is the response structure for the deployments GraphQL query.
-// Only the id field is requested, so each element is an empty struct; only the count matters.
 type graphQLDeploymentsResponse struct {
 	Data struct {
-		Deployments []struct{} `json:"deployments"`
+		Deployments []struct {
+			Name      string `json:"name"`
+			Namespace string `json:"namespace"`
+		} `json:"deployments"`
 	} `json:"data"`
 }
 
@@ -141,8 +143,10 @@ func setupProxyNetworkPolicy(t *testing.T, ctx context.Context, k8sClient kubern
 		}
 	}, retryTimeout, retryInterval)
 	t.Cleanup(func() {
-		_ = k8sClient.NetworkingV1().NetworkPolicies(testNamespace).Delete(
-			context.Background(), policyName, metaV1.DeleteOptions{})
+		if err := k8sClient.NetworkingV1().NetworkPolicies(testNamespace).Delete(
+			context.Background(), policyName, metaV1.DeleteOptions{}); err != nil {
+			t.Logf("failed to delete NetworkPolicy %s: %v", policyName, err)
+		}
 	})
 }
 
@@ -183,7 +187,10 @@ func setupSensorRoute(t *testing.T, ctx context.Context, restCfg *rest.Config) s
 		}
 	}, retryTimeout, retryInterval)
 	t.Cleanup(func() {
-		_ = rc.RouteV1().Routes(testNamespace).Delete(context.Background(), routeName, metaV1.DeleteOptions{})
+		if err := rc.RouteV1().Routes(testNamespace).Delete(
+			context.Background(), routeName, metaV1.DeleteOptions{}); err != nil {
+			t.Logf("failed to delete Route %s: %v", routeName, err)
+		}
 	})
 
 	var routeHost string
@@ -239,7 +246,10 @@ func createServiceAccountAndToken(
 		}
 	}, retryTimeout, retryInterval)
 	t.Cleanup(func() {
-		_ = k8sClient.CoreV1().ServiceAccounts(namespace).Delete(context.Background(), saName, metaV1.DeleteOptions{})
+		if err := k8sClient.CoreV1().ServiceAccounts(namespace).Delete(
+			context.Background(), saName, metaV1.DeleteOptions{}); err != nil {
+			t.Logf("failed to delete ServiceAccount %s/%s: %v", namespace, saName, err)
+		}
 	})
 
 	if setupBindings != nil {
@@ -277,7 +287,10 @@ func setupNamespaceScopeToken(t *testing.T, ctx context.Context, k8sClient kuber
 	t.Helper()
 	rbName := saName + "-view"
 	t.Cleanup(func() {
-		_ = k8sClient.RbacV1().RoleBindings(namespace).Delete(context.Background(), rbName, metaV1.DeleteOptions{})
+		if err := k8sClient.RbacV1().RoleBindings(namespace).Delete(
+			context.Background(), rbName, metaV1.DeleteOptions{}); err != nil {
+			t.Logf("failed to delete RoleBinding %s/%s: %v", namespace, rbName, err)
+		}
 	})
 	return createServiceAccountAndToken(t, ctx, k8sClient, namespace, saName, func(c *assert.CollectT) {
 		_, err := k8sClient.RbacV1().RoleBindings(namespace).Create(ctx, &rbacv1.RoleBinding{
@@ -310,8 +323,10 @@ func setupClusterScopeToken(t *testing.T, ctx context.Context, k8sClient kuberne
 	t.Helper()
 	clusterRBName := saName + "-view-cluster"
 	t.Cleanup(func() {
-		_ = k8sClient.RbacV1().ClusterRoleBindings().Delete(
-			context.Background(), clusterRBName, metaV1.DeleteOptions{})
+		if err := k8sClient.RbacV1().ClusterRoleBindings().Delete(
+			context.Background(), clusterRBName, metaV1.DeleteOptions{}); err != nil {
+			t.Logf("failed to delete ClusterRoleBinding %s: %v", clusterRBName, err)
+		}
 	})
 	return createServiceAccountAndToken(t, ctx, k8sClient, namespace, saName, func(c *assert.CollectT) {
 		_, err := k8sClient.RbacV1().ClusterRoleBindings().Create(ctx, &rbacv1.ClusterRoleBinding{
@@ -447,45 +462,26 @@ func (s *OCPPluginSuite) TestPluginManifest() {
 // TestProxyRequiresAuthentication verifies that the Sensor proxy returns 401 Unauthorized
 // when requests arrive without a bearer token or with an invalid one.
 func (s *OCPPluginSuite) TestProxyRequiresAuthentication() {
-	s.T().Run("NoAuthorizationHeader", func(t *testing.T) {
-		require.EventuallyWithT(t, func(c *assert.CollectT) {
-			resp := doHTTPRequest(c, s.ctx, s.client, http.MethodGet, s.proxyBaseURL+"/v1/metadata", nil, nil)
-			defer utils.IgnoreError(resp.Body.Close)
-			assert.Equal(c, http.StatusUnauthorized, resp.StatusCode,
-				"proxy should return 401 when no Authorization header is provided")
-		}, retryTimeout, retryInterval)
-	})
+	testCases := []struct {
+		name    string
+		headers map[string]string
+	}{
+		{name: "NoAuthorizationHeader", headers: nil},
+		{name: "InvalidBearerToken", headers: map[string]string{"Authorization": "Bearer this-token-will-fail-tokenreview"}},
+		{name: "UnsupportedScheme", headers: map[string]string{"Authorization": "Token abc"}},
+		{name: "BearerWithoutToken", headers: map[string]string{"Authorization": "Bearer"}},
+	}
 
-	s.T().Run("InvalidBearerToken", func(t *testing.T) {
-		require.EventuallyWithT(t, func(c *assert.CollectT) {
-			headers := map[string]string{"Authorization": "Bearer this-token-will-fail-tokenreview"}
-			resp := doHTTPRequest(c, s.ctx, s.client, http.MethodGet, s.proxyBaseURL+"/v1/metadata", headers, nil)
-			defer utils.IgnoreError(resp.Body.Close)
-			assert.Equal(c, http.StatusUnauthorized, resp.StatusCode,
-				"proxy should return 401 when the bearer token fails Kubernetes TokenReview")
-		}, retryTimeout, retryInterval)
-	})
-
-	s.T().Run("MalformedOrUnsupportedAuthorizationHeader", func(t *testing.T) {
-		t.Run("UnsupportedScheme", func(t *testing.T) {
+	for _, tc := range testCases {
+		s.T().Run(tc.name, func(t *testing.T) {
 			require.EventuallyWithT(t, func(c *assert.CollectT) {
-				headers := map[string]string{"Authorization": "Token abc"}
-				resp := doHTTPRequest(c, s.ctx, s.client, http.MethodGet, s.proxyBaseURL+"/v1/metadata", headers, nil)
+				resp := doHTTPRequest(c, s.ctx, s.client, http.MethodGet, s.proxyBaseURL+"/v1/metadata", tc.headers, nil)
 				defer utils.IgnoreError(resp.Body.Close)
 				assert.Equal(c, http.StatusUnauthorized, resp.StatusCode,
-					"proxy should return 401 for an unsupported authorization scheme")
+					"proxy should return 401 for auth case %q", tc.name)
 			}, retryTimeout, retryInterval)
 		})
-		t.Run("BearerWithoutToken", func(t *testing.T) {
-			require.EventuallyWithT(t, func(c *assert.CollectT) {
-				headers := map[string]string{"Authorization": "Bearer"}
-				resp := doHTTPRequest(c, s.ctx, s.client, http.MethodGet, s.proxyBaseURL+"/v1/metadata", headers, nil)
-				defer utils.IgnoreError(resp.Body.Close)
-				assert.Equal(c, http.StatusUnauthorized, resp.StatusCode,
-					"proxy should return 401 when Bearer scheme has no token")
-			}, retryTimeout, retryInterval)
-		})
-	})
+	}
 }
 
 // TestProxyNamespaceScoping verifies the ACS-AUTH-NAMESPACE-SCOPE header mechanism.
@@ -516,7 +512,7 @@ func (s *OCPPluginSuite) TestProxyNamespaceScoping() {
 		// With ACS-AUTH-NAMESPACE-SCOPE set to a namespace where the SA has view permissions,
 		// the SubjectAccessReview should pass and the proxy should return the deployments in
 		// that namespace.
-		// Filter to apps/v1/Deployment only so the count matches the K8s API listing.
+		// Filter to apps/v1/Deployment only so the names match the K8s API listing.
 		headers := map[string]string{
 			"Authorization":            "Bearer " + s.nsScopeToken,
 			"ACS-AUTH-NAMESPACE-SCOPE": testNamespace,
@@ -533,8 +529,17 @@ func (s *OCPPluginSuite) TestProxyNamespaceScoping() {
 				"proxy should allow request when SA has view permissions in the scoped namespace %s", testNamespace)
 			var result graphQLDeploymentsResponse
 			require.NoError(c, json.NewDecoder(resp.Body).Decode(&result), "decoding GraphQL response")
-			assert.Len(c, result.Data.Deployments, len(k8sList.Items),
-				"proxy should return %d deployments for namespace %s", len(k8sList.Items), testNamespace)
+
+			graphQLNames := make([]string, len(result.Data.Deployments))
+			for i, d := range result.Data.Deployments {
+				graphQLNames[i] = d.Name
+			}
+			k8sNames := make([]string, len(k8sList.Items))
+			for i, d := range k8sList.Items {
+				k8sNames[i] = d.Name
+			}
+			assert.ElementsMatch(c, k8sNames, graphQLNames,
+				"proxy should return the same deployments as Kubernetes for namespace %s", testNamespace)
 		}, retryTimeout, retryInterval)
 	})
 
@@ -563,7 +568,7 @@ func (s *OCPPluginSuite) TestProxyNamespaceScoping() {
 	s.T().Run("ClusterWideScope", func(t *testing.T) {
 		// The wildcard scope (*) triggers a SAR for cluster-wide list permissions.
 		// The SA has a ClusterRoleBinding so the SAR passes and the proxy returns 200.
-		// Filter to apps/v1/Deployment only so the count matches the K8s API listing.
+		// Filter to apps/v1/Deployment only so the names match the K8s API listing.
 		headers := map[string]string{
 			"Authorization":            "Bearer " + s.clusterScopeToken,
 			"ACS-AUTH-NAMESPACE-SCOPE": "*",
@@ -580,8 +585,18 @@ func (s *OCPPluginSuite) TestProxyNamespaceScoping() {
 				"proxy should allow cluster-wide request when SA has cluster-wide view permissions")
 			var result graphQLDeploymentsResponse
 			require.NoError(c, json.NewDecoder(resp.Body).Decode(&result), "decoding GraphQL response")
-			assert.Len(c, result.Data.Deployments, len(k8sList.Items),
-				"proxy should return %d deployments cluster-wide", len(k8sList.Items))
+
+			// Use namespace/name pairs to uniquely identify deployments across namespaces.
+			graphQLPairs := make([]string, len(result.Data.Deployments))
+			for i, d := range result.Data.Deployments {
+				graphQLPairs[i] = d.Namespace + "/" + d.Name
+			}
+			k8sPairs := make([]string, len(k8sList.Items))
+			for i, d := range k8sList.Items {
+				k8sPairs[i] = d.Namespace + "/" + d.Name
+			}
+			assert.ElementsMatch(c, k8sPairs, graphQLPairs,
+				"proxy should return the same deployments as Kubernetes cluster-wide")
 		}, retryTimeout, retryInterval)
 	})
 }
