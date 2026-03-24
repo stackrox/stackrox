@@ -43,6 +43,11 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	return ds.storage.Exists(ctx, id)
 }
 
+// Get retrieves a single NormalizedCVE by ID with SAC enforcement.
+func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.NormalizedCVE, bool, error) {
+	return ds.storage.Get(ctx, id)
+}
+
 // Upsert inserts or updates a NormalizedCVE row.
 func (ds *datastoreImpl) Upsert(ctx context.Context, cve *storage.NormalizedCVE) error {
 	return ds.storage.Upsert(ctx, cve)

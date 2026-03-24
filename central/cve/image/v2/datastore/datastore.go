@@ -37,6 +37,10 @@ type DataStore interface {
 	// Exists returns true if a CVE row with the given UUID exists in the cves table.
 	Exists(ctx context.Context, id string) (bool, error)
 
+	// Get retrieves a single NormalizedCVE by ID with SAC enforcement.
+	// Returns (cve, found, error) where found=false means CVE doesn't exist or access denied.
+	Get(ctx context.Context, id string) (*storage.NormalizedCVE, bool, error)
+
 	// Upsert inserts or updates a NormalizedCVE row.
 	Upsert(ctx context.Context, cve *storage.NormalizedCVE) error
 
