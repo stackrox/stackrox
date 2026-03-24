@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
     Card,
     CardBody,
@@ -34,16 +34,6 @@ function PolicyEnforcementForm() {
         values.enforcementActions?.length > 0 &&
         !values.enforcementActions?.includes('UNSET_ENFORCEMENT');
     const [showEnforcement, setShowEnforcement] = useState(hasEnforcementActions);
-
-    useEffect(() => {
-        if (!showEnforcement && values.enforcementActions?.includes('UNSET_ENFORCEMENT')) {
-            setFieldValue(
-                'enforcementActions',
-                values.enforcementActions.filter((a) => a !== 'UNSET_ENFORCEMENT')
-            );
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
 
     function onChangeEnforcementActions(lifecycleStage: LifecycleStage, isChecked: boolean) {
         const { enforcementActions } = values;
