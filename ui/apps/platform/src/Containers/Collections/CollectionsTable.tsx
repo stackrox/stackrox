@@ -134,11 +134,7 @@ function CollectionsTable({
                             Collection
                         </Th>
                         <Th modifier="wrap">Description</Th>
-                        {hasWriteAccess && (
-                            <Th>
-                                <span className="pf-v6-screen-reader">Row actions</span>
-                            </Th>
-                        )}
+                        {hasWriteAccess && <Th screenReaderText="Row actions" />}
                     </Tr>
                 </Thead>
                 <TbodyUnified

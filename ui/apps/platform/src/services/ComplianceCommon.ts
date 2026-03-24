@@ -69,6 +69,14 @@ export type ComplianceBenchmark = {
     shortName: string;
 };
 
+export const complianceProfileOperatorKindValues = [
+    'OPERATOR_KIND_UNSPECIFIED',
+    'PROFILE',
+    'TAILORED_PROFILE',
+] as const;
+
+export type ComplianceProfileOperatorKind = (typeof complianceProfileOperatorKindValues)[number];
+
 export type ComplianceProfileSummary = {
     name: string;
     productType: string;
@@ -77,6 +85,7 @@ export type ComplianceProfileSummary = {
     ruleCount: number;
     profileVersion: string;
     standards: ComplianceBenchmark[];
+    operatorKind?: ComplianceProfileOperatorKind;
 };
 
 /*

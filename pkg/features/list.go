@@ -127,6 +127,9 @@ var (
 
 	// VirtualMachinesEnhancedDataModel enables usage of the enhanced and more flexible data model
 	VirtualMachinesEnhancedDataModel = registerFeature("Enables virtual machine enhanced data model", "ROX_VIRTUAL_MACHINES_ENHANCED_DATA_MODEL")
+
+	// TailoredProfiles enables support for compliance tailored profiles
+	TailoredProfiles = registerFeature("Enable support for tailored profiles", "ROX_TAILORED_PROFILES")
 )
 
 // The following feature flags are related to Scanner V4.

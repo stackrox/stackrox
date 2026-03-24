@@ -1,19 +1,11 @@
-import flattenObject from 'utils/flattenObject';
-
-const flattenObjectProperties = (a, b, key) => {
-    const aValue = { ...flattenObject(a) }[key];
-    const bValue = { ...flattenObject(b) }[key];
-    return { aValue, bValue };
-};
-
 /**
  * Sort Severity
- * @param a
- * @param b
+ * @param {string} a
+ * @param {string} b
  * @returns {number}
  */
 
-const sortSeverity = (a, b) => {
+export const sortSeverity = (a: string, b: string) => {
     const map = {
         Low: 'LOW_SEVERITY',
         Medium: 'MEDIUM_SEVERITY',
@@ -21,8 +13,8 @@ const sortSeverity = (a, b) => {
         Critical: 'CRITICAL_SEVERITY',
     };
     const priorityArray = ['CRITICAL_SEVERITY', 'HIGH_SEVERITY', 'MEDIUM_SEVERITY', 'LOW_SEVERITY'];
-    const firstSeverity = map[a] || a;
-    const secondSeverity = map[b] || b;
+    const firstSeverity = map[a] ?? a;
+    const secondSeverity = map[b] ?? b;
 
     const firstPrio = priorityArray.indexOf(firstSeverity);
     const secPrio = priorityArray.indexOf(secondSeverity);
@@ -31,20 +23,20 @@ const sortSeverity = (a, b) => {
 
 /**
  * Sort Status
- * @param a
- * @param b
+ * @param {string} a
+ * @param {string} b
  * @returns {number}
  */
 
-const sortStatus = (a, b) => {
+export const sortStatus = (a: string, b: string) => {
     const map = {
         Pass: 'PASS',
         NA: 'N/A',
         Fail: 'FAIL',
     };
     const priorityArray = ['FAIL', 'PASS', 'N/A'];
-    const firstSeverity = map[a] || a;
-    const secondSeverity = map[b] || b;
+    const firstSeverity = map[a] ?? a;
+    const secondSeverity = map[b] ?? b;
 
     const firstPrio = priorityArray.indexOf(firstSeverity);
     const secPrio = priorityArray.indexOf(secondSeverity);
@@ -55,7 +47,7 @@ const sortStatus = (a, b) => {
  * Sort Values (Numbers or Strings)
  * @returns {number}
  */
-const sortValue = (a, b) => {
+export const sortValue = (a: number | string | undefined, b: number | string | undefined) => {
     if (a === undefined) {
         return -1;
     }
@@ -86,15 +78,15 @@ const sortValue = (a, b) => {
  * Sort Version (Numbers or Strings)
  * @returns {number}
  */
-const sortVersion = (a, b) => {
+export const sortVersion = (a: number | string | undefined, b: number | string | undefined) => {
     if (a === undefined) {
         return -1;
     }
     if (b === undefined) {
         return 1;
     }
-    const aSplit = a.split('.');
-    const bSplit = b.split('.');
+    const aSplit = String(a).split('.');
+    const bSplit = String(b).split('.');
 
     const length = Math.min(aSplit.length, bSplit.length);
     for (let i = 0; i < length; i += 1) {
@@ -117,52 +109,10 @@ const sortVersion = (a, b) => {
 };
 
 /**
- * Sort Numbers by property name
- * @param key
- * @returns {number}
- */
-const sortNumberByKey = (key) => (a, b) => {
-    const { aValue, bValue } = flattenObjectProperties(a, b, key);
-    return sortValue(aValue, bValue);
-};
-
-/**
- * Sort Lifecycle
- * @param a
- * @param b
- * @returns {string}
- */
-
-const sortLifecycle = (a, b) => {
-    const aValue = a[0];
-    const bValue = b[0];
-    return sortValue(aValue, bValue);
-};
-
-/**
- * Sort Dates
- * @returns {date}
- */
-const sortDate = (a, b) => {
-    const aDate = a && new Date(a);
-    const bDate = b && new Date(b);
-    if (aDate === bDate) {
-        return 0;
-    }
-    if (aDate === undefined) {
-        return -1;
-    }
-    if (bDate === undefined) {
-        return 1;
-    }
-    return aDate - bDate;
-};
-
-/**
  * Sort by array length
  * @returns {number}
  */
-const sortValueByLength = (a, b) => {
+export const sortValueByLength = (a: string[] | undefined, b: string[] | undefined) => {
     if (a === undefined) {
         return -1;
     }
@@ -182,37 +132,6 @@ const sortValueByLength = (a, b) => {
 };
 
 /**
- * Sort by ASCII, respects case
- */
-
-/**
- * [sortAscii description]
- *
- * @param   {string}   a  first item to compare
- * @param   {string}  b  second item to compare
- *
- * @return  {number}     negative if a sorts before b, positive if b sorts before a, 0 if equal
- */
-function sortAscii(a, b) {
-    // NOTE: we are not doing the expected comparison
-    //   a.localeCompare(b, 'en', { sensitivity: 'case' })
-    // because that is case-insensitive, even with that given option
-    //   which merely makes each letter sort A first, then a, but does not
-    //   sort A-Z before a-z
-    if (a < b) {
-        return -1;
-    }
-    if (a > b) {
-        return 1;
-    }
-    return 0;
-}
-
-/**
- * Case insensitive version of sortAscii
- */
-
-/**
  * [sortAsciiCaseInsensitive description]
  *
  * @param   {string}   a  first item to compare
@@ -220,19 +139,6 @@ function sortAscii(a, b) {
  *
  * @return  {number}     negative if a sorts before b, positive if b sorts before a, 0 if equal
  */
-function sortAsciiCaseInsensitive(a, b) {
+export function sortAsciiCaseInsensitive(a: string, b: string) {
     return a.localeCompare(b, 'en', { sensitivity: 'base' });
 }
-
-export {
-    sortSeverity,
-    sortValue,
-    sortStatus,
-    sortVersion,
-    sortNumberByKey,
-    sortLifecycle,
-    sortDate,
-    sortValueByLength,
-    sortAscii,
-    sortAsciiCaseInsensitive,
-};

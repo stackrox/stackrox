@@ -113,7 +113,7 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 		},
 	}
 
-	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
+	if centralcaps.Has(centralsensor.ComplianceV2TailoredProfiles) {
 		protoProfileV2 := &central.ComplianceOperatorProfileV2{
 			Id:           protoProfile.GetId(),
 			ProfileId:    protoProfile.GetProfileId(),
