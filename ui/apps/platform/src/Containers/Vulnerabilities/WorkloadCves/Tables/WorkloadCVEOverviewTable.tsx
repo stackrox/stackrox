@@ -300,10 +300,10 @@ function WorkloadCVEOverviewTable({
                     >
                         Request details
                     </TooltipTh>
-                    {/* eslint-disable-next-line generic/Th-defaultColumns */}
-                    <Th className={getVisibilityClass('rowActions')}>
-                        <span className="pf-v6-screen-reader">Row actions</span>
-                    </Th>
+                    <Th
+                        className={getVisibilityClass('rowActions')}
+                        screenReaderText="Row actions"
+                    />
                 </Tr>
             </Thead>
             <TbodyUnified

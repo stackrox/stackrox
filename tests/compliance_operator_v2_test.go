@@ -125,14 +125,28 @@ func waitForComplianceSuiteToComplete(t *testing.T, client dynclient.Client, sui
 		callCtx, callCancel := context.WithTimeout(ctx, interval)
 		defer callCancel()
 
-		var suite complianceoperatorv1.ComplianceSuite
+		// Assert that ScanSetting and ScanSettingBinding have been created.
+		var scanSetting complianceoperatorv1.ScanSetting
 		err := client.Get(callCtx,
-			types.NamespacedName{Name: suiteName, Namespace: "openshift-compliance"},
+			types.NamespacedName{Name: suiteName, Namespace: coNamespaceV2},
+			&scanSetting,
+		)
+		assert.NoErrorf(c, err, "failed to get ScanSetting %s", suiteName)
+
+		var scanSettingBinding complianceoperatorv1.ScanSettingBinding
+		err = client.Get(callCtx,
+			types.NamespacedName{Name: suiteName, Namespace: coNamespaceV2},
+			&scanSettingBinding,
+		)
+		assert.NoErrorf(c, err, "failed to get ScanSettingBinding %s", suiteName)
+
+		var suite complianceoperatorv1.ComplianceSuite
+		err = client.Get(callCtx,
+			types.NamespacedName{Name: suiteName, Namespace: coNamespaceV2},
 			&suite,
 		)
-		require.NoError(c, err, "failed to get ComplianceSuite %s", suiteName)
-
-		require.Equal(c, complianceoperatorv1.PhaseDone, suite.Status.Phase,
+		assert.NoErrorf(c, err, "failed to get ComplianceSuite %s", suiteName)
+		require.Equalf(c, complianceoperatorv1.PhaseDone, suite.Status.Phase,
 			"ComplianceSuite %s not DONE (current phase is %q)", suiteName, suite.Status.Phase)
 	}, timeout, interval)
 	t.Logf("ComplianceSuite %s has reached DONE phase", suiteName)
@@ -177,7 +191,7 @@ func assertResourceDoesNotExist[T any, PT interface {
 func assertScanSetting(ctx context.Context, t testutils.T, client dynclient.Client, name, namespace string, scanConfig *v2.ComplianceScanConfiguration) {
 	scanSetting := &complianceoperatorv1.ScanSetting{}
 	err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, scanSetting)
-	require.NoError(t, err, "ScanSetting %s/%s does not exist", namespace, name)
+	require.NoErrorf(t, err, "ScanSetting %s/%s does not exist", namespace, name)
 
 	cron, err := schedule.ConvertToCronTab(service.ConvertV2ScheduleToProto(scanConfig.GetScanConfig().GetScanSchedule()))
 	require.NoError(t, err)
@@ -192,7 +206,7 @@ func assertScanSetting(ctx context.Context, t testutils.T, client dynclient.Clie
 func assertScanSettingBinding(ctx context.Context, t testutils.T, client dynclient.Client, name, namespace string, scanConfig *v2.ComplianceScanConfiguration) {
 	scanSettingBinding := &complianceoperatorv1.ScanSettingBinding{}
 	err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, scanSettingBinding)
-	require.NoError(t, err, "ScanSettingBinding %s/%s does not exist", namespace, name)
+	require.NoErrorf(t, err, "ScanSettingBinding %s/%s does not exist", namespace, name)
 
 	assert.Equal(t, scanConfig.GetScanName(), scanSettingBinding.GetName())
 	for _, profile := range scanSettingBinding.Profiles {
@@ -698,7 +712,7 @@ func TestComplianceV2ComplianceObjectMetadata(t *testing.T) {
 			types.NamespacedName{Name: testName, Namespace: "openshift-compliance"},
 			&scanSetting,
 		)
-		require.NoError(c, err, "failed to get ScanSetting %s", testName)
+		require.NoErrorf(c, err, "failed to get ScanSetting %s", testName)
 	}, defaultTimeout, defaultInterval)
 
 	assert.Contains(t, scanSetting.Labels, "app.kubernetes.io/name")
@@ -708,7 +722,7 @@ func TestComplianceV2ComplianceObjectMetadata(t *testing.T) {
 
 	var scanSettingBinding complianceoperatorv1.ScanSetting
 	err = dynClient.Get(context.TODO(), types.NamespacedName{Name: testName, Namespace: "openshift-compliance"}, &scanSettingBinding)
-	require.NoError(t, err, "failed to get ScanSettingBinding %s", testName)
+	require.NoErrorf(t, err, "failed to get ScanSettingBinding %s", testName)
 	assert.Contains(t, scanSettingBinding.Labels, "app.kubernetes.io/name")
 	assert.Equal(t, scanSettingBinding.Labels["app.kubernetes.io/name"], "stackrox")
 	assert.Contains(t, scanSettingBinding.Annotations, "owner")
@@ -768,7 +782,7 @@ func TestComplianceV2ScheduleRescan(t *testing.T) {
 
 	// Invoke a rescan
 	_, err = client.RunComplianceScanConfiguration(context.TODO(), &v2.ResourceByID{Id: scanConfig.GetId()})
-	require.NoError(t, err, "failed to rerun scan schedule %s", scanConfigName)
+	require.NoErrorf(t, err, "failed to rerun scan schedule %s", scanConfigName)
 
 	// Assert the scan is rerunning on the cluster using the Compliance Operator CRDs
 	waitForComplianceSuiteToComplete(t, dynClient, scanConfig.GetScanName(), waitForDoneInterval, waitForDoneTimeout)

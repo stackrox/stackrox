@@ -56,7 +56,6 @@ import type { RouteKey } from 'routePaths';
 
 import PageNotFound from 'Components/PageNotFound';
 import PageTitle from 'Components/PageTitle';
-import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
 import usePermissions from 'hooks/usePermissions';
 import type { HasReadAccess } from 'hooks/usePermissions';
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
@@ -333,32 +332,28 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
 
     return (
         <div id="BodyRoutes">
-            <ErrorBoundary>
-                <Routes>
-                    <Route path="/" element={<Navigate to={dashboardPath} replace />} />
-                    <Route path={mainPath} element={<Navigate to={dashboardPath} replace />} />
-                    {/* Make sure the following Redirect element works after react-router-dom upgrade */}
-                    <Route path={deprecatedPoliciesPath} element={<DeprecatedPoliciesRedirect />} />
-                    <Route
-                        // all prior workload-cves routes must redirect to the new path.
-                        path={`${vulnerabilitiesWorkloadCvesPath}/*`}
-                        // Since all subpaths and query parameters must be retained, we need to do
-                        // a search and replace of the subpath we are redirecting, which is accomplished
-                        // by using the WorkloadCvesRedirect component.
-                        element={<WorkloadCvesRedirect />}
-                    />
-                    {Object.keys(routeComponentMap)
-                        .filter((routeKey) => isRouteEnabled(routePredicates, routeKey as RouteKey))
-                        .map((routeKey) => {
-                            const { component: Component, path } = routeComponentMap[routeKey];
-                            return (
-                                <Route key={routeKey} path={`${path}/*`} element={<Component />} />
-                            );
-                        })}
-                    <Route path="*" element={<NotFoundPage />} />
-                </Routes>
-                {hasWriteAccessForInviting && showInviteModal && <InviteUsersModal />}
-            </ErrorBoundary>
+            <Routes>
+                <Route path="/" element={<Navigate to={dashboardPath} replace />} />
+                <Route path={mainPath} element={<Navigate to={dashboardPath} replace />} />
+                {/* Make sure the following Redirect element works after react-router-dom upgrade */}
+                <Route path={deprecatedPoliciesPath} element={<DeprecatedPoliciesRedirect />} />
+                <Route
+                    // all prior workload-cves routes must redirect to the new path.
+                    path={`${vulnerabilitiesWorkloadCvesPath}/*`}
+                    // Since all subpaths and query parameters must be retained, we need to do
+                    // a search and replace of the subpath we are redirecting, which is accomplished
+                    // by using the WorkloadCvesRedirect component.
+                    element={<WorkloadCvesRedirect />}
+                />
+                {Object.keys(routeComponentMap)
+                    .filter((routeKey) => isRouteEnabled(routePredicates, routeKey as RouteKey))
+                    .map((routeKey) => {
+                        const { component: Component, path } = routeComponentMap[routeKey];
+                        return <Route key={routeKey} path={`${path}/*`} element={<Component />} />;
+                    })}
+                <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+            {hasWriteAccessForInviting && showInviteModal && <InviteUsersModal />}
         </div>
     );
 }

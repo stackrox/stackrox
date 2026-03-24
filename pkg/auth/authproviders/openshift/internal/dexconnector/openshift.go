@@ -71,7 +71,7 @@ var _ RefreshConnector = (*openshiftConnector)(nil)
 
 type user struct {
 	k8sapi.TypeMeta   `json:",inline"`
-	k8sapi.ObjectMeta `json:"metadata,omitempty"`
+	k8sapi.ObjectMeta `json:"metadata,omitzero"`
 	Identities        []string `json:"identities" protobuf:"bytes,3,rep,name=identities"`
 	FullName          string   `json:"fullName,omitempty" protobuf:"bytes,2,opt,name=fullName"`
 	Groups            []string `json:"groups" protobuf:"bytes,4,rep,name=groups"`

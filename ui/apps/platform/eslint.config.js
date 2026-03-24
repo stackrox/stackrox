@@ -944,9 +944,6 @@ module.exports = [
             'src/Components/**', // research
             'src/Containers/Compliance/**', // deprecated
             'src/Containers/ConfigManagement/**', // deferred
-            'src/Containers/Docs/ApiPage.jsx', // rewrite
-            'src/Containers/Docs/ApiPageV2.jsx', // rewrite
-            'src/Containers/Docs/SwaggerBrowser.jsx', // rewrite
             'src/Containers/Images/**', // deprecated
             'src/Containers/Login/LoginPage.jsx', // rewrite pending PatternFly 6
             'src/Containers/Login/TestLoginResultsPage.jsx', // rewrite pending PatternFly 6
@@ -999,7 +996,6 @@ module.exports = [
             'src/services/instance.js', // JavaScript
             'src/services/serverErrorHandler.js', // JavaScript
             'src/*', // JavaScript
-            'src/sorters/sorters.js', // rewrite
             'src/test-utils/**', // JavaScript
             'src/utils/URLGenerator.js', // deprecated
             'src/utils/URLService.js', // deprecated
@@ -1012,7 +1008,6 @@ module.exports = [
             'src/utils/getEntityName.js', // deprecated
             'src/utils/getPaginatedList.js', // move into Containers/Risk/EventTimeline
             'src/utils/gqlLoading.js', // deferred
-            'src/utils/mathUtils.js', // rewrite
             'src/utils/pdfUtils.js', // deprecated
             'src/utils/permissionRuleGroupUtils.js', // deferred
             'src/utils/queryMap.js', // deprecated

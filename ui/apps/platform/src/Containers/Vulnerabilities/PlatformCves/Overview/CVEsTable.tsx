@@ -124,11 +124,7 @@ function CVEsTable({
                         Affected clusters
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
-                    {canSelectRows && (
-                        <Th>
-                            <span className="pf-v6-screen-reader">Row actions</span>
-                        </Th>
-                    )}
+                    {canSelectRows && <Th screenReaderText="Row actions" />}
                 </Tr>
             </Thead>
             <TbodyUnified
