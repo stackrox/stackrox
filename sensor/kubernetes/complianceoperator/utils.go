@@ -24,6 +24,67 @@ var (
 // convertFunction signature of the convert functions
 type convertFunction func(string, *central.ApplyComplianceScanConfigRequest_BaseScanSettings, string) runtime.Object
 
+// profileKindToString maps an OperatorKind proto enum to the compliance operator Kind string.
+func profileKindToString(kind central.ComplianceOperatorProfileV2_OperatorKind) string {
+	switch kind {
+	case central.ComplianceOperatorProfileV2_PROFILE:
+		return complianceoperator.Profile.Kind
+	case central.ComplianceOperatorProfileV2_TAILORED_PROFILE:
+		return complianceoperator.TailoredProfile.Kind
+	case central.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
+		return ""
+	default:
+		return ""
+	}
+}
+
+func validateScanSettingBindingProfiles(scanSettings *central.ApplyComplianceScanConfigRequest_BaseScanSettings) error {
+	if scanSettings == nil {
+		return nil
+	}
+	if len(scanSettings.GetProfiles()) == 0 && len(scanSettings.GetProfileRefs()) == 0 {
+		return errors.New("compliance profiles not specified")
+	}
+	for _, ref := range scanSettings.GetProfileRefs() {
+		k := ref.GetKind()
+		if k != central.ComplianceOperatorProfileV2_PROFILE && k != central.ComplianceOperatorProfileV2_TAILORED_PROFILE {
+			err := errors.Errorf("profile ref %q has unsupported operator kind %v", ref.GetName(), k)
+			return err
+		}
+	}
+	return nil
+}
+
+func buildScanSettingBindingProfileRefs(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) []v1alpha1.NamedObjectReference {
+	// Profiles may be provided via request.ProfileRefs, where each reference contains a profile name and its kind, or
+	// via the legacy request.Profiles, which only contains a slice of profile names. When both are present, ProfileRefs
+	// take precedence.
+	profileRefs := make([]v1alpha1.NamedObjectReference, 0, len(request.GetProfileRefs()))
+	for _, ref := range request.GetProfileRefs() {
+		profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
+			Name:     ref.GetName(),
+			Kind:     profileKindToString(ref.GetKind()),
+			APIGroup: complianceoperator.GetGroupVersion().String(),
+		})
+	}
+	if len(profileRefs) > 0 {
+		log.Debugf("Using %d profile_refs from Central for namespace %q", len(profileRefs), namespace)
+		return profileRefs
+	}
+
+	// Legacy: old Central without profile_refs — default to Profile kind.
+	profileRefs = make([]v1alpha1.NamedObjectReference, 0, len(request.GetProfiles()))
+	for _, profile := range request.GetProfiles() {
+		profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
+			Name:     profile,
+			Kind:     complianceoperator.Profile.Kind,
+			APIGroup: complianceoperator.GetGroupVersion().String(),
+		})
+	}
+	log.Debugf("Using legacy profiles (%d) for namespace %q", len(request.GetProfiles()), namespace)
+	return profileRefs
+}
+
 // updateFunction signature of the update functions
 type updateFunction func(*unstructured.Unstructured, *central.ApplyComplianceScanConfigRequest_UpdateScheduledScan) (*unstructured.Unstructured, error)
 
@@ -69,14 +130,7 @@ func convertCentralRequestToScanSetting(namespace string, request *central.Apply
 }
 
 func convertCentralRequestToScanSettingBinding(namespace string, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings, _ string) runtime.Object {
-	profileRefs := make([]v1alpha1.NamedObjectReference, 0, len(request.GetProfiles()))
-	for _, profile := range request.GetProfiles() {
-		profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
-			Name:     profile,
-			Kind:     complianceoperator.Profile.Kind,
-			APIGroup: complianceoperator.GetGroupVersion().String(),
-		})
-	}
+	profileRefs := buildScanSettingBindingProfileRefs(namespace, request)
 
 	return &v1alpha1.ScanSettingBinding{
 		TypeMeta: v1.TypeMeta{
@@ -117,14 +171,9 @@ func updateScanSettingFromCentralRequest(scanSetting *v1alpha1.ScanSetting, requ
 }
 
 func updateScanSettingBindingFromCentralRequest(scanSettingBinding *v1alpha1.ScanSettingBinding, request *central.ApplyComplianceScanConfigRequest_BaseScanSettings) *v1alpha1.ScanSettingBinding {
-	profileRefs := make([]v1alpha1.NamedObjectReference, 0, len(request.GetProfiles()))
-	for _, profile := range request.GetProfiles() {
-		profileRefs = append(profileRefs, v1alpha1.NamedObjectReference{
-			Name:     profile,
-			Kind:     complianceoperator.Profile.Kind,
-			APIGroup: complianceoperator.GetGroupVersion().String(),
-		})
-	}
+	// Validation is performed upstream in validateUpdateScheduledScanConfigRequest before
+	// this function is reached.
+	profileRefs := buildScanSettingBindingProfileRefs(scanSettingBinding.GetNamespace(), request)
 
 	// TODO:  Update additional fields as ACS capability expands
 	scanSettingBinding.Profiles = profileRefs
@@ -140,8 +189,8 @@ func validateApplyScheduledScanConfigRequest(req *central.ApplyComplianceScanCon
 	if req.GetScanSettings().GetScanName() == "" {
 		errList.AddStrings("no name provided for the scan")
 	}
-	if len(req.GetScanSettings().GetProfiles()) == 0 {
-		errList.AddStrings("compliance profiles not specified")
+	if err := validateScanSettingBindingProfiles(req.GetScanSettings()); err != nil {
+		errList.AddError(err)
 	}
 	if req.GetCron() != "" {
 		cron := gronx.New()
@@ -160,8 +209,8 @@ func validateUpdateScheduledScanConfigRequest(req *central.ApplyComplianceScanCo
 	if req.GetScanSettings().GetScanName() == "" {
 		errList.AddStrings("no name provided for the scan")
 	}
-	if len(req.GetScanSettings().GetProfiles()) == 0 {
-		errList.AddStrings("compliance profiles not specified")
+	if err := validateScanSettingBindingProfiles(req.GetScanSettings()); err != nil {
+		errList.AddError(err)
 	}
 	if req.GetCron() != "" {
 		cron := gronx.New()

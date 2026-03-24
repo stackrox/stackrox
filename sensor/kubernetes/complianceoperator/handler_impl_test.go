@@ -410,6 +410,69 @@ func (s *HandlerTestSuite) TestProcessUpdateScheduledScanNewSuccess() {
 	s.assert(expected, actual)
 }
 
+func (s *HandlerTestSuite) TestProcessApplyScheduledScanUsesProfileRefsKinds() {
+	msg := getTestScheduledScanRequestMsg("midnight", "* * * * *", "ocp4-cis-and-tailored")
+	msg.GetComplianceRequest().GetApplyScanConfig().GetScheduledScan().GetScanSettings().ProfileRefs = []*central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference{
+		{Name: "ocp4-cis", Kind: central.ComplianceOperatorProfileV2_PROFILE},
+		{Name: "ocp4-cis-tailored", Kind: central.ComplianceOperatorProfileV2_TAILORED_PROFILE},
+	}
+	expected := expectedResponse{
+		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+
+	ssb := s.getScanSettingBinding("midnight")
+	s.Require().Len(ssb.Profiles, 2)
+	s.Equal(complianceoperator.Profile.Kind, ssb.Profiles[0].Kind)
+	s.Equal(complianceoperator.TailoredProfile.Kind, ssb.Profiles[1].Kind)
+}
+
+func (s *HandlerTestSuite) TestProcessApplyScheduledScanFailsOnInvalidProfileRefs() {
+	msg := getTestScheduledScanRequestMsg("midnight", "* * * * *", "tailored-and-bad")
+	msg.GetComplianceRequest().GetApplyScanConfig().GetScheduledScan().GetScanSettings().ProfileRefs = []*central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference{
+		{Name: "good-tailored", Kind: central.ComplianceOperatorProfileV2_TAILORED_PROFILE},
+		{Name: "bad", Kind: central.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED},
+	}
+	expected := expectedResponse{
+		id:        msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+		errSubstr: "unsupported operator kind",
+	}
+
+	// Validation fails before we need the namespace (inside validateApplyScheduledScanConfigRequest).
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+
+	// No ScanSettingBinding should have been created.
+	_, err := s.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).
+		Namespace("ns").Get(context.Background(), "midnight", v1.GetOptions{})
+	s.Error(err, "ScanSettingBinding should not exist after validation failure")
+}
+
+// TestProcessApplyScheduledScanLegacyProfilesOnly verifies backward compatibility: when Central
+// sends only the legacy profiles field (no profile_refs), the SSB is created with Profile kind
+// for every entry.
+func (s *HandlerTestSuite) TestProcessApplyScheduledScanLegacyProfilesOnly() {
+	msg := getTestScheduledScanRequestMsg("midnight", "* * * * *", "ocp4-cis", "rhcos4-cis")
+	// Explicitly leave ProfileRefs empty to simulate old Central.
+	expected := expectedResponse{
+		id: msg.GetComplianceRequest().GetApplyScanConfig().GetId(),
+	}
+
+	s.statusInfo.EXPECT().GetNamespace().Return("ns")
+	actual := s.sendMessage(1, msg)
+	s.assert(expected, actual)
+
+	ssb := s.getScanSettingBinding("midnight")
+	s.Require().Len(ssb.Profiles, 2)
+	for _, ref := range ssb.Profiles {
+		s.Equal(complianceoperator.Profile.Kind, ref.Kind,
+			"legacy profiles should default to Profile kind, got %q for %q", ref.Kind, ref.Name)
+	}
+}
+
 func (s *HandlerTestSuite) sendMessage(times int, msg *central.MsgToSensor) *central.ComplianceResponse {
 	timer := time.NewTimer(responseTimeout)
 	var ret *central.ComplianceResponse
@@ -425,6 +488,16 @@ func (s *HandlerTestSuite) sendMessage(times int, msg *central.MsgToSensor) *cen
 		}
 	}
 	return ret
+}
+
+func (s *HandlerTestSuite) getScanSettingBinding(name string) *v1alpha1.ScanSettingBinding {
+	obj, err := s.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).
+		Namespace("ns").Get(context.Background(), name, v1.GetOptions{})
+	s.Require().NoError(err)
+	var ssb v1alpha1.ScanSettingBinding
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, &ssb)
+	s.Require().NoError(err)
+	return &ssb
 }
 
 func (s *HandlerTestSuite) assert(expected expectedResponse, actual *central.ComplianceResponse) {
