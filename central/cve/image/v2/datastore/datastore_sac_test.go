@@ -345,15 +345,15 @@ func (s *cveV2DataStoreSACTestSuite) TestSACImageCVEGetSingleScopeOnly() {
 	cvss := targetCVE.GetCvss()
 	s.runImageTest("TestSACImageCVEGetSingleScopeOnly", func(c cveTestCase) {
 		testCtx := s.imageTestContexts[c.contextKey]
-		imageCVE, found, err := s.imageCVEStore.Get(testCtx, cveID)
+		normalizedCVE, found, err := s.imageCVEStore.Get(testCtx, cveID)
 		s.NoError(err)
 		s.Equal(c.expectedCVEFound[cveID], found)
 		if c.expectedCVEFound[cveID] {
-			s.Require().NotNil(imageCVE)
-			s.Equal(cveName, imageCVE.GetCveBaseInfo().GetCve())
-			s.Equal(cvss, imageCVE.GetCvss())
+			s.Require().NotNil(normalizedCVE)
+			s.Equal(cveName, normalizedCVE.GetCveName())
+			s.Equal(cvss, normalizedCVE.GetCvssV3())
 		} else {
-			s.Nil(imageCVE)
+			s.Nil(normalizedCVE)
 		}
 	})
 }
