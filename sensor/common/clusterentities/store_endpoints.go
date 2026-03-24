@@ -121,11 +121,7 @@ func (e *endpointsStore) purgeNoLock(deploymentID string) {
 	// so let's make a temporary copy.
 	endpointsSet := e.reverseEndpointMap[deploymentID]
 	for ep := range endpointsSet {
-		if e.historyEnabled() {
-			e.moveToHistory(deploymentID, ep)
-		} else {
-			e.deleteFromCurrent(deploymentID, ep)
-		}
+		e.moveToHistory(deploymentID, ep)
 	}
 }
 
@@ -218,7 +214,9 @@ func (e *endpointsStore) removeFromHistoryIfExpired(deploymentID string, ep net.
 
 // moveToHistory is a convenience function that removes data from the current map and adds it to history
 func (e *endpointsStore) moveToHistory(deploymentID string, ep net.NumericEndpoint) {
-	e.addToHistory(deploymentID, ep)
+	if e.historyEnabled() {
+		e.addToHistory(deploymentID, ep)
+	}
 	e.deleteFromCurrent(deploymentID, ep)
 }
 
