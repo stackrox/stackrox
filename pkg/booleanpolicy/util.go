@@ -147,16 +147,10 @@ func ContainsValidRuntimeFieldCategorySections(policy *storage.Policy) bool {
 
 	groupsSeen := set.NewStringSet()
 	for _, section := range policy.GetPolicySections() {
-		for _, group := range section.GetPolicyGroups() {
-			metadata := FieldMetadataSingleton().fieldsToQB[group.GetFieldName()]
-			if metadata == nil {
-				continue
-			}
-			for _, fieldType := range metadata.fieldTypes {
-				if fieldTypeGroup, ok := runtimeFieldTypeMap[fieldType]; ok {
-					groupsSeen.Add(string(fieldTypeGroup))
-				}
-			}
+		for kind, category := range runtimeFieldTypeMap {
+		    if SectionContainsFieldOfType(section, kind) {
+		        groupsSeen.Add(string(category))
+		    }
 		}
 	}
 
