@@ -103,11 +103,12 @@ func parseScanSettingBinding(obj map[string]interface{}) (ScanSettingBinding, er
 	name, _ := meta["name"].(string)
 	namespace, _ := meta["namespace"].(string)
 
-	spec, _ := obj["spec"].(map[string]interface{})
+	// profiles and settingsRef are top-level fields in the ScanSettingBinding
+	// resource (not nested under spec). spec is always empty in practice.
 
 	// Parse profiles list into []NamedObjectReference.
 	var profiles []NamedObjectReference
-	if rawProfiles, ok := spec["profiles"].([]interface{}); ok {
+	if rawProfiles, ok := obj["profiles"].([]interface{}); ok {
 		for _, rp := range rawProfiles {
 			pm, ok := rp.(map[string]interface{})
 			if !ok {
@@ -123,7 +124,7 @@ func parseScanSettingBinding(obj map[string]interface{}) (ScanSettingBinding, er
 
 	// Parse settingsRef as a NamedObjectReference.
 	var settingsRef *NamedObjectReference
-	if sr, ok := spec["settingsRef"].(map[string]interface{}); ok {
+	if sr, ok := obj["settingsRef"].(map[string]interface{}); ok {
 		settingsRef = &NamedObjectReference{
 			Name:     stringField(sr, "name"),
 			Kind:     stringField(sr, "kind"),
@@ -157,11 +158,8 @@ func parseScanSetting(obj map[string]interface{}) (*ScanSetting, error) {
 	name, _ := meta["name"].(string)
 	namespace, _ := meta["namespace"].(string)
 
-	// Schedule is nested under complianceSuiteSettings.schedule.
-	schedule := ""
-	if css, ok := obj["complianceSuiteSettings"].(map[string]interface{}); ok {
-		schedule, _ = css["schedule"].(string)
-	}
+	// schedule is a top-level field in the ScanSetting resource.
+	schedule, _ := obj["schedule"].(string)
 
 	if name == "" {
 		return nil, errors.New("ScanSetting has no name")
