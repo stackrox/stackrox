@@ -44,5 +44,5 @@ def enable_sfa_for_ocp():
         if m and int(m.group("major")) >= 4 and int(m.group("minor")) >= 16:
             os.environ["SFA_AGENT"] = "true"
             log_print("Enabled SFA agent for OCP", ocp_variant)
-    except Exception as ex:
+    except (ValueError, TypeError, AttributeError) as ex:
         log_print(f"Could not identify OCP version, SFA is disabled: {ex}")

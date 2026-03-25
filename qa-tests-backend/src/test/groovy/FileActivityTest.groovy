@@ -4,6 +4,8 @@ import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.storage.AlertOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 
+import groovy.transform.CompileStatic
+import objects.Deployment
 import org.junit.Assume
 
 import common.Constants
@@ -24,7 +26,11 @@ class FileActivityTest extends BaseSpecification {
             "204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad"
 
     @Shared
-    private objects.Deployment testDeployment
+    private final Deployment testDeployment = new Deployment()
+            .setName("fa-test-${RUN_ID}")
+            .setImage(TEST_IMAGE)
+            .setCommand(["sh", "-c", "sleep 3600"])
+            .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
 
     def setupSpec() {
         Assume.assumeTrue(
@@ -34,20 +40,12 @@ class FileActivityTest extends BaseSpecification {
 
         patchFactEnv()
 
-        testDeployment = new objects.Deployment()
-                .setName("fa-test-${RUN_ID}")
-                .setImage(TEST_IMAGE)
-                .setCommand(["sh", "-c", "sleep 3600"])
-                .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
-
         orchestrator.createDeployment(testDeployment)
         assert Services.waitForDeployment(testDeployment)
     }
 
     def cleanupSpec() {
-        if (testDeployment) {
-            orchestrator.deleteDeployment(testDeployment)
-        }
+        orchestrator.deleteDeployment(testDeployment)
     }
 
     @Tag("BAT")
@@ -115,6 +113,8 @@ class FileActivityTest extends BaseSpecification {
 
         when:
         "a file is created on the host via chroot"
+        // sudo is needed to trigger a node-level file event; without it the
+        // access is attributed to the container and no node alert fires.
         assert orchestrator.execInContainer(hostDeployment, "chroot /host sudo touch ${path}")
 
         then:
@@ -137,40 +137,30 @@ class FileActivityTest extends BaseSpecification {
         }
     }
 
+    @CompileStatic
     private void patchFactEnv() {
         log.info "Setting FACT_PATHS and FACT_JSON on collector DaemonSet"
 
-        waitForTrue(2, 20) {
-            orchestrator.updateDaemonSetEnv(
-                    Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
-                    "FACT_PATHS", "/tmp/**/*")
-            orchestrator.updateDaemonSetEnv(
-                    Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
-                    "FACT_JSON", "true")
+        orchestrator.updateDaemonSetEnv(
+                Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
+                "FACT_PATHS", "/tmp/**/*")
+        orchestrator.updateDaemonSetEnv(
+                Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
+                "FACT_JSON", "true")
 
-            try {
-                log.info "Waiting for collector DS to pick up FACT env vars"
-                waitForTrue(20, 10) {
-                    orchestrator.daemonSetEnvVarUpdated(
-                            Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
-                            "FACT_PATHS", "/tmp/**/*") &&
-                    orchestrator.daemonSetEnvVarUpdated(
-                            Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
-                            "FACT_JSON", "true")
-                }
-
-                log.info "Waiting for collector DS to be ready"
-                waitForTrue(20, 10) {
-                    orchestrator.daemonSetReady(Constants.STACKROX_NAMESPACE, COLLECTOR_DS)
-                }
-            } catch (Exception ignored) {
-                log.info "Unable to bring collector DS to desired state"
-                return false
-            }
-            return true
+        log.info "Waiting for collector DS to pick up FACT env vars and be ready"
+        waitForTrue(20, 10) {
+            orchestrator.daemonSetEnvVarUpdated(
+                    Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
+                    "FACT_PATHS", "/tmp/**/*") &&
+            orchestrator.daemonSetEnvVarUpdated(
+                    Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
+                    "FACT_JSON", "true") &&
+            orchestrator.daemonSetReady(Constants.STACKROX_NAMESPACE, COLLECTOR_DS)
         }
     }
 
+    @CompileStatic
     private static PolicyOuterClass.Policy createFileActivityPolicy(
             String name, String path, PolicyOuterClass.EventSource eventSource, String... operations) {
         def groups = [
