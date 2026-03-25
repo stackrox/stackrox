@@ -17,11 +17,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TODO(ROX-30117): Remove this benchmark when FlattenImageData feature flag is removed.
 // BenchmarkWalkComparison benchmarks both Walk functions for comparison
 func BenchmarkWalkComparison(b *testing.B) {
-	if features.FlattenImageData.Enabled() {
-		b.Skip("Skipping benchmark - FlattenImageData is enabled.")
+	if !features.FlattenImageData.Enabled() {
+		b.Skip("Skipping benchmark - FlattenImageData is disabled.")
 	}
 	ctx := sac.WithAllAccess(context.Background())
 	testDB := pgtest.ForT(b)
@@ -30,9 +29,9 @@ func BenchmarkWalkComparison(b *testing.B) {
 
 	// Setup: Insert test images
 	numImages := 100
-	images := make([]*storage.Image, 0, numImages)
+	images := make([]*storage.ImageV2, 0, numImages)
 	for i := 0; i < numImages; i++ {
-		img := fixtures.GetImageWithUniqueComponents(5)
+		img := fixtures.GetImageV2WithUniqueComponents(5)
 		img.Id = fmt.Sprintf("%d", i)
 		images = append(images, img)
 	}
@@ -44,7 +43,7 @@ func BenchmarkWalkComparison(b *testing.B) {
 	b.Run("WalkByQuery", func(b *testing.B) {
 		for b.Loop() {
 			count := 0
-			err := store.WalkByQuery(ctx, search.EmptyQuery(), func(image *storage.Image) error {
+			err := store.WalkByQuery(ctx, search.EmptyQuery(), func(image *storage.ImageV2) error {
 				count++
 				return nil
 			})
@@ -55,7 +54,7 @@ func BenchmarkWalkComparison(b *testing.B) {
 	b.Run("WalkMetadataByQuery", func(b *testing.B) {
 		for b.Loop() {
 			count := 0
-			err := store.WalkMetadataByQuery(ctx, search.EmptyQuery(), func(image *storage.Image) error {
+			err := store.WalkMetadataByQuery(ctx, search.EmptyQuery(), func(image *storage.ImageV2) error {
 				count++
 				return nil
 			})
