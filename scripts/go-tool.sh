@@ -12,43 +12,56 @@ die() {
 }
 
 RACE="${RACE:-false}"
+REPO_ROOT="${SCRIPT_DIR}/.."
 
-x_defs=()
-x_def_errors=()
+if [[ "$TOOL" == "test" ]]; then
+	# Use fixed version strings for tests. Stable ldflags = stable link ActionIDs
+	# = Go test cache hits across commits. Tests don't need real version info.
+	VERSION_PKG="github.com/stackrox/rox/pkg/version/internal"
+	x_defs=(
+		-X "\"${VERSION_PKG}.MainVersion=0.0.0-test\""
+		-X "\"${VERSION_PKG}.CollectorVersion=0.0.0\""
+		-X "\"${VERSION_PKG}.ScannerVersion=0.0.0\""
+		-X "\"${VERSION_PKG}.FactVersion=0.0.0\""
+	)
+else
+	x_defs=()
+	x_def_errors=()
 
-while read -r line || [[ -n "$line" ]]; do
-	if [[ "$line" =~ ^[[:space:]]*$ ]]; then
-		continue
-	elif [[ "$line" =~ ^([^[:space:]]+)[[:space:]]+(.*)[[:space:]]*$ ]]; then
-		var="${BASH_REMATCH[1]}"
-		def="${BASH_REMATCH[2]}"
-		eval "status_${var}=$(printf '%q' "$def")"
-	else
-		die "Malformed status.sh output line ${line}"
+	while read -r line || [[ -n "$line" ]]; do
+		if [[ "$line" =~ ^[[:space:]]*$ ]]; then
+			continue
+		elif [[ "$line" =~ ^([^[:space:]]+)[[:space:]]+(.*)[[:space:]]*$ ]]; then
+			var="${BASH_REMATCH[1]}"
+			def="${BASH_REMATCH[2]}"
+			eval "status_${var}=$(printf '%q' "$def")"
+		else
+			die "Malformed status.sh output line ${line}"
+		fi
+	done < <(cd "${REPO_ROOT}"; ./status.sh)
+
+	while read -r line || [[ -n "$line" ]]; do
+		if [[ "$line" =~ ^[[:space:]]*$ ]]; then
+			continue
+		elif [[ "$line" =~ ^([^:]+):([[:digit:]]+):[[:space:]]*(var[[:space:]]+)?([^[:space:]]+)[[:space:]].*//XDef:([^[:space:]]+)[[:space:]]*$ ]]; then
+			go_file="${BASH_REMATCH[1]}"
+			go_line="${BASH_REMATCH[2]}"
+			go_var="${BASH_REMATCH[4]}"
+			status_var="${BASH_REMATCH[5]}"
+
+			varname="status_${status_var}"
+			[[ -n "${!varname}" ]] || x_def_errors+=(
+				"Variable ${go_var} defined in ${go_file}:${go_line} references status var ${status_var} that is not part of the status.sh output"
+			)
+			go_package="$(cd "${REPO_ROOT}"; go list -e "./$(dirname "$go_file")")"
+
+			x_defs+=(-X "\"${go_package}.${go_var}=${!varname}\"")
+		fi
+	done < <(git -C "${REPO_ROOT}" grep -n '//XDef:' -- '*.go')
+	if [[ "${#x_def_errors[@]}" -gt 0 ]]; then
+		printf >&2 "%s\n" "${x_def_errors[@]}"
+		exit 1
 	fi
-done < <(cd "${SCRIPT_DIR}/.."; ./status.sh)
-
-while read -r line || [[ -n "$line" ]]; do
-	if [[ "$line" =~ ^[[:space:]]*$ ]]; then
-		continue
-	elif [[ "$line" =~ ^([^:]+):([[:digit:]]+):[[:space:]]*(var[[:space:]]+)?([^[:space:]]+)[[:space:]].*//XDef:([^[:space:]]+)[[:space:]]*$ ]]; then
-		go_file="${BASH_REMATCH[1]}"
-		go_line="${BASH_REMATCH[2]}"
-		go_var="${BASH_REMATCH[4]}"
-		status_var="${BASH_REMATCH[5]}"
-
-		varname="status_${status_var}"
-		[[ -n "${!varname}" ]] || x_def_errors+=(
-			"Variable ${go_var} defined in ${go_file}:${go_line} references status var ${status_var} that is not part of the status.sh output"
-		)
-		go_package="$(cd "${SCRIPT_DIR}/.."; go list -e "./$(dirname "$go_file")")"
-
-		x_defs+=(-X "\"${go_package}.${go_var}=${!varname}\"")
-	fi
-done < <(git -C "${SCRIPT_DIR}/.." grep -n '//XDef:' -- '*.go')
-if [[ "${#x_def_errors[@]}" -gt 0 ]]; then
-	printf >&2 "%s\n" "${x_def_errors[@]}"
-	exit 1
 fi
 
 ldflags=("${x_defs[@]}")
