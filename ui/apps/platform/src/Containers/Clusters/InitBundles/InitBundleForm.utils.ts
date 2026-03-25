@@ -2,14 +2,14 @@ import FileSaver from 'file-saver';
 
 import type { GenerateClusterInitBundleResponse } from 'services/ClustersService';
 
-export const installationOptions: Record<string, string> = {
+export const installationOptions = {
     Operator: 'Operator (recommended)',
     Helm: 'Helm chart',
 } as const;
 
 export type InstallationKey = keyof typeof installationOptions;
 
-export const platformOptions: Record<string, string> = {
+export const platformOptions = {
     OpenShift: 'OpenShift',
     EKS: 'EKS',
     AKS: 'AKS',
