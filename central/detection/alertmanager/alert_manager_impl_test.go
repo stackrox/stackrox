@@ -1053,17 +1053,28 @@ func (suite *AlertManagerTestSuite) TestAlertAndNotifyTombstoned_NoNotifications
 }
 
 // TestAlertAndNotifyTombstoned_OnlyActiveAndAttempted verifies that RESOLVED alerts are
-// excluded from the tombstone transition because the datastore query filters by state.
+// excluded from the tombstone transition. The datastore returns only a RESOLVED alert,
+// which the query filter would exclude — so UpsertAlert must never be called.
 func (suite *AlertManagerTestSuite) TestAlertAndNotifyTombstoned_OnlyActiveAndAttempted() {
 	const deploymentID = "dep-tombstone-3"
 
-	// The datastore returns an empty slice when the query finds no ACTIVE/ATTEMPTED alerts.
-	// This simulates a deployment that already has all-resolved alerts.
+	// The query in AlertAndNotifyTombstoned filters for ACTIVE and ATTEMPTED states only.
+	// Simulate the datastore correctly excluding a RESOLVED alert by returning empty.
+	// This verifies that the method relies on the query filter and does not process alerts
+	// that are already in a terminal state.
 	suite.alertsMock.EXPECT().
 		SearchRawAlerts(suite.ctx, gomock.Any(), false).
-		Return([]*storage.Alert{}, nil)
+		DoAndReturn(func(_ context.Context, q *v1.Query, _ bool) ([]*storage.Alert, error) {
+			// Verify the query contains ACTIVE and ATTEMPTED state filters, confirming
+			// that RESOLVED alerts would be excluded at the query layer.
+			rawQuery := q.String()
+			suite.Contains(rawQuery, storage.ViolationState_ACTIVE.String())
+			suite.Contains(rawQuery, storage.ViolationState_ATTEMPTED.String())
+			// Return empty: simulates a deployment with only RESOLVED alerts.
+			return []*storage.Alert{}, nil
+		})
 
-	// UpsertAlert must NOT be called when there are no alerts to tombstone.
+	// UpsertAlert must NOT be called when no alerts pass the state filter.
 	suite.alertsMock.EXPECT().UpsertAlert(gomock.Any(), gomock.Any()).Times(0)
 
 	err := suite.alertManager.AlertAndNotifyTombstoned(suite.ctx, deploymentID)
