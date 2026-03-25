@@ -664,6 +664,8 @@ jobs:
         env:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
+        with:
+          key-suffix: ${{ matrix.name }}
 
       - name: Resolve mods for protos
         run: go mod tidy
