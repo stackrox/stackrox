@@ -5,8 +5,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/stackrox/rox/deploy/charts/monitoring/dashboards/generator"
 )
 
 func writeJSON(dir string, filename string, data map[string]any) error {
@@ -28,6 +31,10 @@ func main() {
 		outDir = os.Args[1]
 	}
 	fmt.Printf("Dashboard output directory: %s\n", outDir)
-	// Dashboard generation calls will be added here per task.
-	fmt.Println("No dashboards defined yet. Dashboard generation will be added in subsequent tasks.")
+
+	// Level 1
+	l1 := generator.L1Overview()
+	if err := writeJSON(outDir, "stackrox-overview.json", l1.Generate()); err != nil {
+		log.Fatal(err)
+	}
 }
