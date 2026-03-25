@@ -29,7 +29,7 @@ jobs:
     outputs:
       matrix: ${{ steps.define-job-matrix.outputs.matrix }}
       main-tag: ${{ steps.main-tag.outputs.tag }}
-      short-commit: ${{ steps.short-commit.outputs.sha }}
+      short-commit: ${{ steps.short-commit.outputs.shortcommit }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -47,8 +47,8 @@ jobs:
       - name: Compute short commit
         id: short-commit
         run: |
-          SHORT_SHA=$(make --quiet --no-print-directory shortcommit)
-          echo "sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          SHORTCOMMIT=$(make --quiet --no-print-directory shortcommit)
+          echo "shortcommit=${SHORTCOMMIT}" >> "$GITHUB_OUTPUT"
 
       - name: Define the matrix for build jobs
         id: define-job-matrix
