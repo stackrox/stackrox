@@ -77,7 +77,7 @@ runs:
     # Registered AFTER cache steps so the post-step runs BEFORE cache save
     # (GHA runs post-steps in reverse registration order).
     - name: Trim stale GOCACHE entries (post-step)
-      uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
+      uses: gacts/run-and-post-run@81b6ce503cde93862cec047c54652e45c5dca991 # v1.4.0
       with:
         post: >
           set +e;

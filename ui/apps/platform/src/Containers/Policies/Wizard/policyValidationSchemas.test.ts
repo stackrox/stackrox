@@ -1,6 +1,6 @@
 import { initialExcludedDeployment, initialScope } from '../policies.utils';
 import type { WizardPolicyStep4 } from '../policies.utils';
-import { validationSchemaStep4 } from './policyValidationSchemas';
+import { validationSchemaStep4, validationSchemaStep5 } from './policyValidationSchemas';
 
 // const options = { strict: true };
 
@@ -438,5 +438,31 @@ describe('Step 4', () => {
                 validationSchemaStep4.validateSync(value);
             }).toThrow();
         });
+    });
+});
+
+describe('Step 5 (Actions) - enforcement validation', () => {
+    it('passes with empty enforcementActions (Inform mode)', () => {
+        const value = { enforcementActions: [] };
+        expect(validationSchemaStep5.validateSync(value)).toEqual(value);
+    });
+
+    it('passes with real enforcement actions (Inform and enforce with selection)', () => {
+        const value = { enforcementActions: ['FAIL_BUILD_ENFORCEMENT'] };
+        expect(validationSchemaStep5.validateSync(value)).toEqual(value);
+    });
+
+    it('passes with multiple real enforcement actions', () => {
+        const value = {
+            enforcementActions: ['FAIL_BUILD_ENFORCEMENT', 'SCALE_TO_ZERO_ENFORCEMENT'],
+        };
+        expect(validationSchemaStep5.validateSync(value)).toEqual(value);
+    });
+
+    it('throws with only UNSET_ENFORCEMENT (Inform and enforce, no selection)', () => {
+        const value = { enforcementActions: ['UNSET_ENFORCEMENT'] };
+        expect(() => {
+            validationSchemaStep5.validateSync(value);
+        }).toThrow('At least one enforcement action must be selected when enforcement is enabled');
     });
 });

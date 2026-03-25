@@ -54,8 +54,16 @@ const validationSchema: yup.ObjectSchema<InitBundleFormValues> = yup.object().sh
             'Name can have only the following characters: letters, digits, period, underscore, hyphen (but no spaces)'
         )
         .required('Bundle name is required'),
-    installation: yup.string().trim().required(), // Select
-    platform: yup.string().trim().required(), // Radio
+    installation: yup
+        .string<InstallationKey>()
+        .trim()
+        .oneOf(Object.keys(installationOptions) as InstallationKey[])
+        .required(),
+    platform: yup
+        .string<PlatformKey>()
+        .trim()
+        .oneOf(Object.keys(platformOptions) as PlatformKey[])
+        .required(),
 });
 
 function InitBundleForm(): ReactElement {
@@ -68,7 +76,6 @@ function InitBundleForm(): ReactElement {
         isSubmitting,
         isValid,
         setFieldValue,
-        setValues,
         submitForm,
         touched,
         values,
@@ -103,12 +110,8 @@ function InitBundleForm(): ReactElement {
         return setFieldValue(event.target.id, value);
     }
 
-    function onChangePlatform(value) {
-        return setValues({
-            installation: value === 'OpenShift' ? 'Operator' : 'Helm',
-            name: values.name, // redundant but function requires all values
-            platform: value,
-        });
+    function onChangePlatform(value: string) {
+        return setFieldValue('platform', value);
     }
 
     function onSelectInstallation(_id: string, value: string) {
@@ -171,21 +174,16 @@ function InitBundleForm(): ReactElement {
                                 id="installation"
                                 value={values.installation}
                                 handleSelect={onSelectInstallation}
-                                isDisabled={values.platform !== 'OpenShift'}
                                 toggleAriaLabel="Installation method menu toggle"
                                 aria-label="Select an installation method"
                             >
-                                {Object.entries(installationOptions)
-                                    .filter(
-                                        ([installationKey]) =>
-                                            values.platform === 'OpenShift' ||
-                                            installationKey !== 'Operator'
-                                    )
-                                    .map(([installationKey, installationLabel]) => (
+                                {Object.entries(installationOptions).map(
+                                    ([installationKey, installationLabel]) => (
                                         <SelectOption key={installationKey} value={installationKey}>
                                             {installationLabel}
                                         </SelectOption>
-                                    ))}
+                                    )
+                                )}
                             </SelectSingle>
                             <FormHelperText>
                                 <HelperText>

@@ -37,15 +37,13 @@ function PolicyEnforcementForm() {
 
     function onChangeEnforcementActions(lifecycleStage: LifecycleStage, isChecked: boolean) {
         const { enforcementActions } = values;
+        const realActions = enforcementActions.filter((action) => action !== 'UNSET_ENFORCEMENT');
+        const updatedActions = isChecked
+            ? appendEnforcementActionsForAddedLifecycleStage(lifecycleStage, realActions)
+            : filterEnforcementActionsForRemovedLifecycleStage(lifecycleStage, realActions);
         setFieldValue(
             'enforcementActions',
-            isChecked
-                ? appendEnforcementActionsForAddedLifecycleStage(lifecycleStage, enforcementActions)
-                : filterEnforcementActionsForRemovedLifecycleStage(
-                      lifecycleStage,
-                      enforcementActions
-                  ),
-            false // do not validate, because code changes the value
+            updatedActions.length === 0 ? ['UNSET_ENFORCEMENT'] : updatedActions
         );
     }
 
@@ -80,7 +78,7 @@ function PolicyEnforcementForm() {
                         isDisabled={isEnforcementDisabled}
                         onChange={() => {
                             setShowEnforcement(false);
-                            setFieldValue('enforcementActions', [], false); // do not validate, because code changes the value
+                            setFieldValue('enforcementActions', []);
                         }}
                     />
                     <Radio
@@ -89,7 +87,12 @@ function PolicyEnforcementForm() {
                         id="policy-response-inform-enforce"
                         name="enforce"
                         isDisabled={isEnforcementDisabled}
-                        onChange={() => setShowEnforcement(true)}
+                        onChange={() => {
+                            setShowEnforcement(true);
+                            if (!hasEnforcementActions) {
+                                setFieldValue('enforcementActions', ['UNSET_ENFORCEMENT']);
+                            }
+                        }}
                     />
                 </Flex>
                 <FormHelperText>
@@ -107,6 +110,13 @@ function PolicyEnforcementForm() {
                         Based on the fields selected in your policy configuration, you may choose to
                         apply enforcement at the following stages.
                     </div>
+                    {!hasEnforcementActions && (
+                        <HelperText className="pf-v6-u-mb-md">
+                            <HelperTextItem variant="error">
+                                At least one enforcement action must be selected
+                            </HelperTextItem>
+                        </HelperText>
+                    )}
                     <Grid hasGutter>
                         <GridItem span={4}>
                             <Card className="pf-v6-u-h-100 policy-enforcement-card">
