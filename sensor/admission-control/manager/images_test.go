@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -27,13 +28,19 @@ func (s *ImageCacheTestSuite) SetupSuite() {
 	})
 	require.NoError(s.T(), err)
 
+	nameCache, err := lru.New[string, string](imageNameCacheSize)
+	require.NoError(s.T(), err)
+
 	s.manager = &manager{
-		imageCache: cache,
+		imageCache:               cache,
+		imageNameToImageCacheKey: nameCache,
+		imageNameCacheEnabled:    true,
 	}
 }
 
 func (s *ImageCacheTestSuite) SetupTest() {
 	s.manager.imageCache.Purge()
+	s.manager.imageNameToImageCacheKey.Purge()
 }
 
 func createTestState(flattenImageData bool) *state {
@@ -154,7 +161,7 @@ func (s *ImageCacheTestSuite) TestGetCachedImage() {
 				})
 			}
 
-			result := s.manager.getCachedImage(tt.containerImage, tt.state)
+			result := s.manager.getCachedImage(tt.containerImage, tt.state, true)
 
 			if tt.expectFound {
 				s.NotNil(result)
@@ -220,7 +227,7 @@ func (s *ImageCacheTestSuite) TestCacheImage() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			s.manager.cacheImage(tt.image, tt.state)
+			s.manager.cacheImage(tt.image, tt.image.GetName().GetFullName(), tt.state)
 
 			if tt.shouldCache {
 				var expectedKey string

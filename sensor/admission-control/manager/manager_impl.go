@@ -5,12 +5,14 @@ import (
 	"sync/atomic"
 	"time"
 
+	lru "github.com/hashicorp/golang-lru/v2"
 	pkgErr "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyfields"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/coalescer"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/detection/deploytime"
@@ -72,16 +74,39 @@ func (s *state) clusterID() string {
 	return clusterID
 }
 
+func (s *state) admissionTimeoutCtx() (context.Context, context.CancelFunc) {
+	timeout := s.GetClusterConfig().GetAdmissionControllerConfig().GetTimeoutSeconds()
+	return context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+}
+
 func (s *state) activeForOperation(op admission.Operation) bool {
 	_, active := s.enforcedOps[op]
 	return active
 }
+
+const (
+	// imageNameCacheSize is the maximum number of entries in the image name-to-cache-key
+	// LRU. Each entry maps a full image name (e.g. "docker.io/library/nginx:1.25") to its
+	// resolved cache key in imageCache. 8192 covers large clusters with aggressive CI/CD
+	// while bounding memory to ~1.6MB. Dead entries (old tags never referenced again) are
+	// naturally evicted by LRU pressure from new entries.
+	imageNameCacheSize = 8192
+)
 
 type manager struct {
 	stopper concurrency.Stopper
 
 	client     sensor.ImageServiceClient
 	imageCache sizeboundedcache.Cache[string, imageCacheEntry]
+	// imageNameToImageCacheKey resolves image full names (e.g. "docker.io/library/nginx:1.25")
+	// to their cache keys in imageCache. This is needed because admission requests for CREATE/UPDATE
+	// operations only contain image names (no digest/ID), so imageKey() returns the full name as the
+	// cache key. After a scan, the cache stores the result under the image's resolved digest. Without this
+	// map, subsequent requests for the same image by name would miss the cache and trigger redundant scans.
+	// Bounded by imageNameCacheSize to prevent unbounded growth during long-lived Sensor sessions.
+	imageNameToImageCacheKey *lru.Cache[string, string]
+	imageNameCacheEnabled    bool
+	imageFetchGroup          *coalescer.Coalescer[*storage.Image]
 
 	depClient        sensor.DeploymentServiceClient
 	resourceUpdatesC chan *sensor.AdmCtrlUpdateResourceRequest
@@ -108,10 +133,13 @@ type manager struct {
 }
 
 // NewManager creates a new manager
-func NewManager(namespace string, maxImageCacheSize int64, imageServiceClient sensor.ImageServiceClient, deploymentServiceClient sensor.DeploymentServiceClient) *manager {
+func NewManager(namespace string, maxImageCacheSize int64, imageNameCacheEnabled bool, imageServiceClient sensor.ImageServiceClient, deploymentServiceClient sensor.DeploymentServiceClient) *manager {
 	cache, err := sizeboundedcache.New(maxImageCacheSize, 2*size.MB, func(key string, value imageCacheEntry) int64 {
 		return int64(len(key) + value.SizeVT())
 	})
+	utils.CrashOnError(err)
+
+	nameCache, err := lru.New[string, string](imageNameCacheSize)
 	utils.CrashOnError(err)
 
 	podStore := resources.NewPodStore()
@@ -123,8 +151,11 @@ func NewManager(namespace string, maxImageCacheSize int64, imageServiceClient se
 		stopper:        concurrency.NewStopper(),
 		syncC:          make(chan *concurrency.Signal),
 
-		client:     imageServiceClient,
-		imageCache: cache,
+		client:                   imageServiceClient,
+		imageCache:               cache,
+		imageNameToImageCacheKey: nameCache,
+		imageNameCacheEnabled:    imageNameCacheEnabled,
+		imageFetchGroup:          coalescer.New[*storage.Image](),
 
 		alertsC: make(chan []*storage.Alert),
 
@@ -346,6 +377,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 
 	if newSettings.GetCacheVersion() != m.cacheVersion {
 		m.imageCache.Purge()
+		m.imageNameToImageCacheKey.Purge()
 		m.cacheVersion = newSettings.GetCacheVersion()
 	}
 
