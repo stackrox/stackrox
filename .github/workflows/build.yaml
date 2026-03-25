@@ -306,7 +306,7 @@ jobs:
           path: |
             image/rhel/docs
 
-  pre-build-operator-bundle:
+  build-operator-bundle:
     runs-on: ubuntu-latest
     env:
       QUAY_ORG: rhacs-eng
@@ -890,7 +890,7 @@ jobs:
       - pre-build-cli
       - pre-build-go-binaries
       - pre-build-docs
-      - pre-build-operator-bundle
+      - build-operator-bundle
       - build-and-push-main
       - build-and-push-operator
       - scan-images-with-roxctl
