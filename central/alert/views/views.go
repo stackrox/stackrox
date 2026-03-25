@@ -185,3 +185,86 @@ func buildSelectCountBySeverity(filterName string, severity storage.Severity) *v
 				ProtoQuery(),
 		).Proto()
 }
+
+// AlertMatcher provides the fields needed to match alerts by policy and entity
+// without deserializing full protobuf blobs. Both AlertMatchKey (lightweight
+// DB projection) and *storage.Alert (via an adapter) can implement this.
+type AlertMatcher interface {
+	GetId() string
+	GetPolicyId() string
+	GetState() storage.ViolationState
+	GetLifecycleStage() storage.LifecycleStage
+	HasDeployment() bool
+	GetDeploymentId() string
+	IsDeploymentInactive() bool
+	HasResource() bool
+	GetResourceType() storage.Alert_Resource_ResourceType
+	GetResourceName() string
+	HasNode() bool
+	GetNodeId() string
+	GetNodeName() string
+	GetClusterId() string
+	GetNamespace() string
+}
+
+// AlertMatchKey is a lightweight projection of alert data containing only the
+// fields needed by mergeManyAlerts to match incoming alerts against previous
+// alerts and determine resolution/inactive status. Avoids TOAST I/O by
+// reading only inline columns.
+type AlertMatchKey struct {
+	ID                 string `db:"alert_id"`
+	PolicyID           string `db:"policy_id"`
+	State              int    `db:"violation_state"`
+	LifecycleStage     int    `db:"lifecycle_stage"`
+	DeploymentID       string `db:"deployment_id"`
+	DeploymentInactive bool   `db:"inactive_deployment"`
+	ResourceType       int    `db:"resource_type"`
+	ResourceName       string `db:"resource"`
+	ClusterID          string `db:"cluster_id"`
+	Namespace          string `db:"namespace"`
+	NodeID             string `db:"node_id"`
+	NodeName           string `db:"node"`
+}
+
+func (k *AlertMatchKey) GetId() string                    { return k.ID }
+func (k *AlertMatchKey) GetPolicyId() string              { return k.PolicyID }
+func (k *AlertMatchKey) GetState() storage.ViolationState { return storage.ViolationState(k.State) }
+func (k *AlertMatchKey) GetLifecycleStage() storage.LifecycleStage {
+	return storage.LifecycleStage(k.LifecycleStage)
+}
+func (k *AlertMatchKey) HasDeployment() bool        { return k.DeploymentID != "" }
+func (k *AlertMatchKey) GetDeploymentId() string    { return k.DeploymentID }
+func (k *AlertMatchKey) IsDeploymentInactive() bool { return k.DeploymentInactive }
+func (k *AlertMatchKey) HasResource() bool          { return k.ResourceName != "" }
+func (k *AlertMatchKey) GetResourceType() storage.Alert_Resource_ResourceType {
+	return storage.Alert_Resource_ResourceType(k.ResourceType)
+}
+func (k *AlertMatchKey) GetResourceName() string { return k.ResourceName }
+func (k *AlertMatchKey) HasNode() bool           { return k.NodeID != "" }
+func (k *AlertMatchKey) GetNodeId() string       { return k.NodeID }
+func (k *AlertMatchKey) GetNodeName() string     { return k.NodeName }
+func (k *AlertMatchKey) GetClusterId() string    { return k.ClusterID }
+func (k *AlertMatchKey) GetNamespace() string    { return k.Namespace }
+
+// WithAlertMatchKeyQuery augments a query with SELECT on the 12 inline columns
+// needed for alert matching: alert_id, policy_id, violation_state, lifecycle_stage,
+// deployment_id, inactive_deployment, resource_type, resource, cluster_id,
+// namespace, node_id, and node.
+func WithAlertMatchKeyQuery(q *v1.Query) *v1.Query {
+	cloned := q.CloneVT()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.AlertID).Proto(),
+		search.NewQuerySelect(search.PolicyID).Proto(),
+		search.NewQuerySelect(search.ViolationState).Proto(),
+		search.NewQuerySelect(search.LifecycleStage).Proto(),
+		search.NewQuerySelect(search.DeploymentID).Proto(),
+		search.NewQuerySelect(search.Inactive).Proto(),
+		search.NewQuerySelect(search.ResourceType).Proto(),
+		search.NewQuerySelect(search.ResourceName).Proto(),
+		search.NewQuerySelect(search.ClusterID).Proto(),
+		search.NewQuerySelect(search.Namespace).Proto(),
+		search.NewQuerySelect(search.NodeID).Proto(),
+		search.NewQuerySelect(search.Node).Proto(),
+	}
+	return cloned
+}
