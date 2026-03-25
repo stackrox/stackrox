@@ -28,24 +28,6 @@ type endpointsStore struct {
 	reverseHistoricalEndpoints map[string]map[net.NumericEndpoint]*entityStatus
 }
 
-type unlocker interface {
-	Unlock()
-}
-
-type runlocker interface {
-	RUnlock()
-}
-
-func unlockWithMetric(mu unlocker, start time.Time, store, operation string) {
-	metrics.ObserveStoreLockHeldDurationWithOperation(store, operation, time.Since(start))
-	mu.Unlock()
-}
-
-func runlockWithMetric(mu runlocker, start time.Time, store, operation string) {
-	metrics.ObserveStoreLockHeldDurationWithOperation(store, operation, time.Since(start))
-	mu.RUnlock()
-}
-
 func newEndpointsStoreWithMemory(numTicks uint16) *endpointsStore {
 	store := &endpointsStore{memorySize: numTicks}
 	store.mutex.Lock()
