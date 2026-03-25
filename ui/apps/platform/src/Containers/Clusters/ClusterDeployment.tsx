@@ -48,16 +48,19 @@ function ClusterDeployment({
                 </Alert>
             )}
             {managerType !== 'MANAGER_TYPE_KUBERNETES_OPERATOR' && (
-                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
-                    <Alert title="Deprecation notice" component="p" variant="warning" isInline>
-                        <Content component="p">
-                            The legacy manifest bundle installation method is deprecated since
-                            version 4.9 and will be removed in 5.1.
-                        </Content>
-                        <Content component="p">
-                            Use the Kubernetes operator to install secured cluster services instead.
-                        </Content>
-                    </Alert>
+                <Flex direction={{ default: 'column' }}>
+                    <FlexItem spacer={{ default: 'spacerLg' }}>
+                        <Alert title="Deprecation notice" component="p" variant="warning" isInline>
+                            <Content component="p">
+                                The legacy manifest bundle installation method is deprecated since
+                                version 4.9 and will be removed in 5.1.
+                            </Content>
+                            <Content component="p">
+                                Use the Kubernetes operator to install secured cluster services
+                                instead.
+                            </Content>
+                        </Alert>
+                    </FlexItem>
                     <Title headingLevel="h2">Download manifest bundle</Title>
                     <Flex
                         direction={{ default: 'column' }}
