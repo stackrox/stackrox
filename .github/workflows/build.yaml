@@ -29,6 +29,7 @@ jobs:
     outputs:
       matrix: ${{ steps.define-job-matrix.outputs.matrix }}
       main-tag: ${{ steps.main-tag.outputs.tag }}
+      short-commit: ${{ steps.short-commit.outputs.sha }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -42,6 +43,12 @@ jobs:
         run: |
           TAG=$(make --quiet --no-print-directory tag)
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute short commit
+        id: short-commit
+        run: |
+          SHORT_SHA=$(make --quiet --no-print-directory shortcommit)
+          echo "sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
 
       - name: Define the matrix for build jobs
         id: define-job-matrix
@@ -191,6 +198,9 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
     needs: define-job-matrix
     runs-on: ubuntu-latest
+    env:
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.main-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -370,7 +380,8 @@ jobs:
     env:
       GO_BINARIES_BUILD_ARTIFACT: ""
       ROX_PRODUCT_BRANDING: ""
-      TAG: ${{ needs.define-job-matrix.outputs.main-tag }}
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.main-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -555,7 +566,8 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_main_multiarch_manifests }}
     env:
       ROX_PRODUCT_BRANDING: ""
-      TAG: ${{ needs.define-job-matrix.outputs.main-tag }}
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.main-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -653,7 +665,8 @@ jobs:
       - pre-build-go-binaries
     env:
       ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: true
-      TAG: ${{ needs.define-job-matrix.outputs.main-tag }}
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.main-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
       QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
       QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -841,7 +854,8 @@ jobs:
 
       - name: Scan images for vulnerabilities
         env:
-          TAG: ${{ needs.define-job-matrix.outputs.main-tag }}
+          BUILD_TAG: ${{ needs.define-job-matrix.outputs.main-tag }}
+          SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
         run: |
           release_tag="$(make --quiet --no-print-directory tag)"
           if [[ "${{ matrix.image }}" =~ "operator" ]]; then
