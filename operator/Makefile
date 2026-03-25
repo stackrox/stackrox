@@ -576,19 +576,7 @@ docker-push-index: ## Push docker image with the index.
 # To properly provided solutions that supports more than one platform you should use this option.
 PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
 .PHONY: docker-buildx
-docker-buildx: ## Build and push docker image for the manager for cross-platform support
-	@echo "Note: docker-buildx with pre-built binaries requires binaries for all platforms to be built first"
-	@echo "Building for platforms: $(PLATFORMS)"
-	$(SILENT)if [ "$$CI" = "true" ] && [ -f "../bin/linux_amd64/stackrox-operator" ]; then \
-		echo "Using pre-built binaries for multi-platform build (CI mode)"; \
-		$(MAKE) docker-buildx-prebuilt; \
-	else \
-		echo "Building binaries inside Docker for multi-platform build"; \
-		$(MAKE) docker-buildx-full; \
-	fi
-
-.PHONY: docker-buildx-full
-docker-buildx-full: smuggled-status-sh test build/Dockerfile.gen ## Build and push docker image with full build (legacy)
+docker-buildx: smuggled-status-sh test build/Dockerfile.gen ## Build and push docker image for the manager for cross-platform support
 	# copy existing Dockerfile and insert --platform=${BUILDPLATFORM} into Dockerfile.cross, and preserve the original Dockerfile
 	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' build/Dockerfile.gen > build/Dockerfile.cross
 	- docker buildx create --name project-v3-builder
@@ -596,10 +584,3 @@ docker-buildx-full: smuggled-status-sh test build/Dockerfile.gen ## Build and pu
 	- docker buildx build --platform=$(PLATFORMS) --push --tag ${IMG} -f build/Dockerfile.cross ..
 	- docker buildx rm project-v3-builder
 	rm build/Dockerfile.cross
-
-.PHONY: docker-buildx-prebuilt
-docker-buildx-prebuilt: test prebuilt.Dockerfile ## Build and push docker image with pre-built binaries
-	- docker buildx create --name project-v3-builder
-	docker buildx use project-v3-builder
-	- docker buildx build --platform=$(PLATFORMS) --push --tag ${IMG} --build-arg ROX_IMAGE_FLAVOR=$(ROX_IMAGE_FLAVOR) -f prebuilt.Dockerfile ..
-	- docker buildx rm project-v3-builder
