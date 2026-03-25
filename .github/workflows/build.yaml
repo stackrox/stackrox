@@ -28,12 +28,27 @@ jobs:
   define-job-matrix:
     outputs:
       matrix: ${{ steps.define-job-matrix.outputs.matrix }}
+      build-tag: ${{ steps.build-tag.outputs.tag }}
+      short-commit: ${{ steps.short-commit.outputs.shortcommit }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - name: Compute build tag
+        id: build-tag
+        run: |
+          TAG=$(make --quiet --no-print-directory tag)
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute short commit
+        id: short-commit
+        run: |
+          SHORTCOMMIT=$(make --quiet --no-print-directory shortcommit)
+          echo "shortcommit=${SHORTCOMMIT}" >> "$GITHUB_OUTPUT"
 
       - name: Define the matrix for build jobs
         id: define-job-matrix
@@ -189,6 +204,9 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
     needs: define-job-matrix
     runs-on: ubuntu-latest
+    env:
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -198,7 +216,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -321,6 +338,8 @@ jobs:
     env:
       GO_BINARIES_BUILD_ARTIFACT: ""
       ROX_PRODUCT_BRANDING: ""
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -369,7 +388,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -505,6 +523,8 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_main_multiarch_manifests }}
     env:
       ROX_PRODUCT_BRANDING: ""
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -545,7 +565,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -616,11 +635,12 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -759,6 +779,8 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_operator_multiarch_manifests }}
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+      SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -775,7 +797,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -875,7 +896,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -896,6 +916,9 @@ jobs:
           central-token: ${{ env.ROX_API_TOKEN }}
 
       - name: Scan images for vulnerabilities
+        env:
+          BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
+          SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
         run: |
           release_tag="$(make --quiet --no-print-directory tag)"
           if [[ "${{ matrix.image }}" =~ "operator" ]]; then
