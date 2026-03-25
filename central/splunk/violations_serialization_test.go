@@ -5,6 +5,7 @@ package splunk
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -23,6 +24,12 @@ import (
 var (
 	violationTime      = time.Date(2024, time.June, 14, 20, 00, 00, 0, time.UTC)
 	violationTimestamp = protocompat.ConvertTimeToTimestampOrNil(&violationTime)
+
+	//go:embed testdata/generic_violation.json
+	expectedGenericViolation string
+
+	//go:embed testdata/file_access_violation.json
+	expectedFileAccessViolation string
 )
 
 func TestViolationSerialization(t *testing.T) {
@@ -42,21 +49,16 @@ func (s *violationSerializationTestSuite) SetupTest() {
 	s.alertStore = alertStore
 }
 
-func (s *violationSerializationTestSuite) TestViolationSerialization() {
+func (s *violationSerializationTestSuite) queryViolations(alert *storage.Alert) string {
 	ctx := sac.WithAllAccess(context.Background())
 
-	// Inject alert
-	alert := fixtures.GetSerializationTestAlert()
-	alert.Time = violationTimestamp
 	err := s.alertStore.UpsertAlert(ctx, alert)
 	s.Require().NoError(err)
 
-	// Serve with the target function
 	handler := newViolationsHandler(s.alertStore, defaultPaginationSettings)
 	server := httptest.NewServer(wrapHandler(ctx, handler))
 	defer server.Close()
 
-	// Query server
 	client := server.Client()
 	client.Timeout = 5 * time.Second
 	requestBody := bytes.NewBufferString("")
@@ -66,60 +68,21 @@ func (s *violationSerializationTestSuite) TestViolationSerialization() {
 	resp, err := client.Do(req)
 	s.Require().NoError(err)
 
-	// Validate response
-	respBody := resp.Body
-	defer func() { s.NoError(respBody.Close()) }()
+	defer func() { s.NoError(resp.Body.Close()) }()
 
-	expectedViolationResponse := `{
-	"newCheckpoint": "2024-06-26T22:00:00Z",
-	"violations": [
-		{
-			"alertInfo": {
-				"alertId": "aeaaaaaa-bbbb-4011-0000-111111111111"
-			},
-			"deploymentInfo": {},
-			"violationInfo": {
-				"containerName": "nginx",
-				"podId": "nginx",
-				"violationId": "f073c9f5-c766-5dc4-b7cb-aa8ac8f2d445",
-				"violationMessage": "This is a kube event violation",
-				"violationMessageAttributes": [
-					{
-						"key": "pod",
-						"value": "nginx"
-					},
-					{
-						"key": "container",
-						"value": "nginx"
-					}
-				],
-				"violationTime": "2024-06-14T20:00:00Z",
-				"violationType": "GENERIC"
-			}
-		},
-		{
-			"alertInfo": {
-				"alertId": "aeaaaaaa-bbbb-4011-0000-111111111111"
-			},
-			"deploymentInfo": {},
-			"violationInfo": {
-				"violationId": "aeaaaaaa-bbbb-4011-0000-111111111111",
-				"violationMessage": "Deployment is affected by 'CVE-2017-15670'",
-				"violationTime": "2024-06-14T20:00:00Z",
-				"violationType": "GENERIC"
-			}
-		}
-	]
-}`
+	respBodyData, err := io.ReadAll(resp.Body)
+	s.Require().NoError(err)
+	return string(respBodyData)
+}
 
-	respBodyData, err := io.ReadAll(respBody)
-	s.NoError(err)
-	s.JSONEq(expectedViolationResponse, string(respBodyData))
+func (s *violationSerializationTestSuite) TestViolationSerialization() {
+	alert := fixtures.GetSerializationTestAlert()
+	alert.Time = violationTimestamp
+
+	s.JSONEq(expectedGenericViolation, s.queryViolations(alert))
 }
 
 func (s *violationSerializationTestSuite) TestFileAccessViolationSerialization() {
-	ctx := sac.WithAllAccess(context.Background())
-
 	alert := &storage.Alert{
 		Id: "fa1eacce-0000-4000-a000-000000000001",
 		Policy: &storage.Policy{
@@ -183,42 +146,7 @@ func (s *violationSerializationTestSuite) TestFileAccessViolationSerialization()
 		Time: violationTimestamp,
 	}
 
-	err := s.alertStore.UpsertAlert(ctx, alert)
-	s.Require().NoError(err)
-
-	handler := newViolationsHandler(s.alertStore, defaultPaginationSettings)
-	server := httptest.NewServer(wrapHandler(ctx, handler))
-	defer server.Close()
-
-	client := server.Client()
-	client.Timeout = 5 * time.Second
-	requestBody := bytes.NewBufferString("")
-	queryString := "?from_checkpoint=2000-01-01T00:00:00Z__2024-06-26T22:00:00Z"
-	req, reqErr := http.NewRequest(http.MethodPost, server.URL+queryString, requestBody)
-	s.Require().NoError(reqErr)
-	resp, err := client.Do(req)
-	s.Require().NoError(err)
-
-	respBody := resp.Body
-	defer func() { s.NoError(respBody.Close()) }()
-
-	respBodyData, err := io.ReadAll(respBody)
-	s.NoError(err)
-
-	// Verify key fields are present in the JSON response
-	respStr := string(respBodyData)
-	s.Contains(respStr, `"violationType":"FILE_ACCESS"`)
-	s.Contains(respStr, `"fileAccessInfo"`)
-	s.Contains(respStr, `"effectivePath":"/etc/passwd"`)
-	s.Contains(respStr, `"actualPath":"/rootfs/etc/passwd"`)
-	s.Contains(respStr, `"operation":"OPEN"`)
-	s.Contains(respStr, `"hostname":"node-1"`)
-	s.Contains(respStr, `"fileUsername":"root"`)
-	s.Contains(respStr, `"fileGroup":"root"`)
-	// Process info should come from the FileAccess.process
-	s.Contains(respStr, `"processInfo"`)
-	s.Contains(respStr, `"processName":"vi"`)
-	s.Contains(respStr, `"execFilePath":"/usr/bin/vi"`)
+	s.JSONEq(expectedFileAccessViolation, s.queryViolations(alert))
 }
 
 func wrapHandler(ctx context.Context, handler http.HandlerFunc) http.HandlerFunc {

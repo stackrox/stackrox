@@ -168,13 +168,12 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         and:
         "we search for file access violations in Splunk"
         def port = splunkDeployment.splunkPortForward.getLocalPort()
-        List<Map<String, String>> results = Collections.emptyList()
+        List<Map<String, String>> results = []
         withRetry(40, 15) {
             def searchId = SplunkUtil.createSearch(port, "search sourcetype=stackrox-violations")
             Response response = SplunkUtil.getSearchResults(port, searchId)
             assert response != null
             results = response.getBody().jsonPath().getList("results")
-            assert !results.isEmpty()
             assert results.any { isViolationOfType(it, "FILE_ACCESS") }
         }
 
@@ -184,15 +183,18 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         assert !fileAccessResults.isEmpty()
 
         for (result in fileAccessResults) {
+            // Splunk results are flat maps of extracted/CIM fields; nested violation
+            // structure (fileAccessInfo, processInfo, etc.) is only in _raw as a JSON string
             def originalEvent = new JsonPath(result.get("_raw"))
             def fileAccessInfo = originalEvent.getMap("fileAccessInfo") ?: [:]
 
-            // fileAccessInfo should be populated in the raw event
-            assert fileAccessInfo.get("operation") != null
-            assert fileAccessInfo.get("hostname") != null
-            assert coalesce(
-                    fileAccessInfo.get("effectivePath"),
-                    fileAccessInfo.get("actualPath")) != null
+            verifyAll {
+                fileAccessInfo.get("operation") != null
+                fileAccessInfo.get("hostname") != null
+                coalesce(
+                        fileAccessInfo.get("effectivePath"),
+                        fileAccessInfo.get("actualPath")) != null
+            }
         }
 
         cleanup:
@@ -203,24 +205,14 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
 
     private void patchFactEnv() {
         log.info "Setting FACT_PATHS on collector DaemonSet"
-        waitForTrue(2, 20) {
+        waitForTrue(20, 20) {
             orchestrator.updateDaemonSetEnv(
                     Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
                     "FACT_PATHS", "/tmp/**/*")
-            try {
-                waitForTrue(20, 10) {
-                    orchestrator.daemonSetEnvVarUpdated(
-                            Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
-                            "FACT_PATHS", "/tmp/**/*")
-                }
-                waitForTrue(20, 10) {
-                    orchestrator.daemonSetReady(Constants.STACKROX_NAMESPACE, COLLECTOR_DS)
-                }
-            } catch (Exception ignored) {
-                log.info "Unable to bring collector DS to desired state"
-                return false
-            }
-            return true
+            orchestrator.daemonSetEnvVarUpdated(
+                    Constants.STACKROX_NAMESPACE, COLLECTOR_DS, FACT_CONTAINER,
+                    "FACT_PATHS", "/tmp/**/*")
+            orchestrator.daemonSetReady(Constants.STACKROX_NAMESPACE, COLLECTOR_DS)
         }
     }
 

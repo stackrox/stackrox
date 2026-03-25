@@ -343,9 +343,7 @@ func getNonProcessViolationTime(fromAlert *storage.Alert, fromViolation *storage
 	timestamp := fromViolation.GetTime()
 	if timestamp == nil {
 		// File access violations store time on the FileAccess message
-		if fa := fromViolation.GetFileAccess(); fa != nil {
-			timestamp = fa.GetTimestamp()
-		}
+		timestamp = fromViolation.GetFileAccess().GetTimestamp()
 	}
 	if timestamp == nil {
 		// Use alert timestamp as a fallback in case violation timestamp wasn't provided.

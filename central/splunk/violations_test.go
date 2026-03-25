@@ -906,26 +906,28 @@ func (s *violationsTestSuite) TestFileAccessAlert() {
 	}
 
 	// First violation: OPEN on /etc/passwd
-	s.Equal("2021-08-10T14:30:00.123456789Z", s.extr(vs[0], ".violationInfo.violationTime"))
-	s.Equal("OPEN", s.extr(vs[0], ".fileAccessInfo.operation"))
-	s.Equal("/etc/passwd", s.extr(vs[0], ".fileAccessInfo.effectivePath"))
-	s.Equal("/rootfs/etc/passwd", s.extr(vs[0], ".fileAccessInfo.actualPath"))
-	s.Equal("vi", s.extr(vs[0], ".processInfo.processName"))
+	openViolation := vs[0]
+	s.Equal("2021-08-10T14:30:00.123456789Z", s.extr(openViolation, ".violationInfo.violationTime"))
+	s.Equal("OPEN", s.extr(openViolation, ".fileAccessInfo.operation"))
+	s.Equal("/etc/passwd", s.extr(openViolation, ".fileAccessInfo.effectivePath"))
+	s.Equal("/rootfs/etc/passwd", s.extr(openViolation, ".fileAccessInfo.actualPath"))
+	s.Equal("vi", s.extr(openViolation, ".processInfo.processName"))
 	// File metadata
-	s.Equal(float64(0), s.extr(vs[0], ".fileAccessInfo.fileUid"))
-	s.Equal(float64(0), s.extr(vs[0], ".fileAccessInfo.fileGid"))
-	s.Equal(float64(0644), s.extr(vs[0], ".fileAccessInfo.fileMode"))
-	s.Equal("root", s.extr(vs[0], ".fileAccessInfo.fileUsername"))
-	s.Equal("root", s.extr(vs[0], ".fileAccessInfo.fileGroup"))
+	s.Equal(float64(0), s.extr(openViolation, ".fileAccessInfo.fileUid"))
+	s.Equal(float64(0), s.extr(openViolation, ".fileAccessInfo.fileGid"))
+	s.Equal(float64(0644), s.extr(openViolation, ".fileAccessInfo.fileMode"))
+	s.Equal("root", s.extr(openViolation, ".fileAccessInfo.fileUsername"))
+	s.Equal("root", s.extr(openViolation, ".fileAccessInfo.fileGroup"))
 
 	// Second violation: RENAME
-	s.Equal("2021-08-10T14:31:00.987654321Z", s.extr(vs[1], ".violationInfo.violationTime"))
-	s.Equal("RENAME", s.extr(vs[1], ".fileAccessInfo.operation"))
-	s.Equal("/var/log/app.log", s.extr(vs[1], ".fileAccessInfo.effectivePath"))
-	s.Equal("mv", s.extr(vs[1], ".processInfo.processName"))
+	renameViolation := vs[1]
+	s.Equal("2021-08-10T14:31:00.987654321Z", s.extr(renameViolation, ".violationInfo.violationTime"))
+	s.Equal("RENAME", s.extr(renameViolation, ".fileAccessInfo.operation"))
+	s.Equal("/var/log/app.log", s.extr(renameViolation, ".fileAccessInfo.effectivePath"))
+	s.Equal("mv", s.extr(renameViolation, ".processInfo.processName"))
 	// Rename destination paths
-	s.Equal("/var/log/app.log.bak", s.extr(vs[1], ".fileAccessInfo.movedEffectivePath"))
-	s.Equal("/rootfs/var/log/app.log.bak", s.extr(vs[1], ".fileAccessInfo.movedActualPath"))
+	s.Equal("/var/log/app.log.bak", s.extr(renameViolation, ".fileAccessInfo.movedEffectivePath"))
+	s.Equal("/rootfs/var/log/app.log.bak", s.extr(renameViolation, ".fileAccessInfo.movedActualPath"))
 }
 
 func (s *violationsTestSuite) TestViolationIdsAreDistinct() {
