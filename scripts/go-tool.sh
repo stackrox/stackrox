@@ -62,13 +62,19 @@ if [[ "${CGO_ENABLED}" != 0 ]]; then
 fi
 
 function invoke_go() {
-  tool="$1"
+  local tool="${1:?"invoke_go tool argument required"}"
   shift
+  local args=()
+  local CGO_ENABLED
+
+  args+=(-buildvcs=false)
+  args+=(-ldflags="${ldflags[*]}")
+  args+=(-tags "$(tr , ' ' <<<"$GOTAGS")")
   if [[ "$RACE" == "true" ]]; then
-    CGO_ENABLED=1 go "$tool" -race -buildvcs=false -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" "$@"
-  else
-    go "$tool" -buildvcs=false -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" "$@"
+    export CGO_ENABLED=1
+    args+=(-race)
   fi
+  go "$tool" "${args[@]}" "$@"
 }
 
 function go_build() (
