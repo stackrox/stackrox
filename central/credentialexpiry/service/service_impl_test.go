@@ -87,8 +87,8 @@ func TestGetScannerV4CertExpiry(t *testing.T) {
 	errorExpiryFunc := genGetExpiryFunc(nil)
 
 	allScannerConfigs := map[mtls.Subject]*tls.Config{
-		mtls.ScannerV4IndexerSubject: {},
-		mtls.ScannerV4MatcherSubject: {},
+		mtls.ScannerV4IndexerSubject: {MinVersion: tls.VersionTLS12},
+		mtls.ScannerV4MatcherSubject: {MinVersion: tls.VersionTLS12},
 	}
 
 	noScannerConfigs := map[mtls.Subject]*tls.Config{}

@@ -272,7 +272,7 @@ func (r *Registry) buildTransport() http.RoundTripper {
 	)
 	if r.cfg.Insecure {
 		transport = proxy.RoundTripper(
-			proxy.WithTLSConfig(&tls.Config{InsecureSkipVerify: true}),
+			proxy.WithTLSConfig(&tls.Config{InsecureSkipVerify: true}), //#nosec G402 -- InsecureSkipVerify is user-configurable for registry
 			proxy.WithDialTimeout(env.RegistryDialerTimeout.DurationSetting()),
 			proxy.WithResponseHeaderTimeout(env.RegistryResponseTimeout.DurationSetting()),
 		)

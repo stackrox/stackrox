@@ -170,6 +170,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_ErrorHandling() {
 			if testCase.ServerTLSCertificate != nil {
 				ts.TLS = &tls.Config{
 					Certificates: []tls.Certificate{*testCase.ServerTLSCertificate},
+					MinVersion:   tls.VersionTLS12,
 				}
 			}
 
@@ -212,6 +213,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_GetCertificate() {
 
 	ts.TLS = &tls.Config{
 		Certificates: []tls.Certificate{*t.newSelfSignedCertificate("StackRox Certificate Authority")},
+		MinVersion:   tls.VersionTLS12,
 	}
 
 	ts.StartTLS()
@@ -410,7 +412,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_SecondaryCA() {
 				})
 			}))
 
-			ts.TLS = &tls.Config{Certificates: []tls.Certificate{*primaryCA}}
+			ts.TLS = &tls.Config{Certificates: []tls.Certificate{*primaryCA}, MinVersion: tls.VersionTLS12}
 			ts.StartTLS()
 			defer ts.Close()
 

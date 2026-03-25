@@ -88,7 +88,7 @@ func getDefaultClient() (*http.Client, error) {
 		}
 		defaultClient = &http.Client{
 			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
+				TLSClientConfig: &tls.Config{ //#nosec G402 -- in-cluster communication with mTLS certificates
 					// TODO: Should this always be set to true...?
 					InsecureSkipVerify: true,
 					Certificates:       []tls.Certificate{clientCert},

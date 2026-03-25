@@ -105,7 +105,7 @@ func (s *tcpSender) dialWithRetry() (net.Conn, error) {
 	tcpDialFunc := proxy.AwareDialContext
 	// If we're using TLS upgrade to a TLS dialFunc
 	if s.useTLS {
-		tlsConfig := &tls.Config{InsecureSkipVerify: s.skipTLSVerify}
+		tlsConfig := &tls.Config{InsecureSkipVerify: s.skipTLSVerify} //#nosec G402 -- InsecureSkipVerify is user-configurable for syslog
 		tcpDialFunc = func(ctx context.Context, addr string) (net.Conn, error) {
 			return proxy.AwareDialContextTLS(ctx, addr, tlsConfig)
 		}

@@ -75,7 +75,8 @@ func transportWithAdditionalCA(caFile string) *http.Transport {
 
 	return &http.Transport{
 		TLSClientConfig: &tls.Config{
-			RootCAs: rootCAs,
+			RootCAs:    rootCAs,
+			MinVersion: tls.VersionTLS12,
 		},
 		Proxy: proxy.FromConfig(),
 	}

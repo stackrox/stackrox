@@ -67,7 +67,7 @@ func newScanner(integration *storage.ImageIntegration) (*clair, error) {
 	client := &http.Client{
 		Timeout: requestTimeout,
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
+			TLSClientConfig: &tls.Config{ //#nosec G402 -- InsecureSkipVerify is user-configurable for Clair scanner
 				InsecureSkipVerify: config.GetInsecure(),
 			},
 			Proxy: proxy.FromConfig(),

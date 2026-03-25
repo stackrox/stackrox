@@ -75,7 +75,7 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 		// No need to specify a context for HTTP requests, as the client specifies a request timeout.
 		Timeout: requestTimeout,
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
+			TLSClientConfig: &tls.Config{ //#nosec G402 -- InsecureSkipVerify is user-configurable for ClairV4 scanner
 				InsecureSkipVerify: cfg.GetInsecure(),
 			},
 			Proxy: proxy.FromConfig(),

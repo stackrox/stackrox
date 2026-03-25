@@ -17,7 +17,7 @@ import (
 
 func TestInternalCert(t *testing.T) {
 
-	tlsConf := &tls.Config{
+	tlsConf := &tls.Config{ //#nosec G402 -- test code
 		InsecureSkipVerify: true,
 		ServerName:         "central.stackrox",
 	}
@@ -51,6 +51,7 @@ func TestCustomCert(t *testing.T) {
 		InsecureSkipVerify: false,
 		ServerName:         centralCN,
 		RootCAs:            trustPool,
+		MinVersion:         tls.VersionTLS12,
 	}
 
 	conn, err := tls.Dial("tcp", centralgrpc.RoxAPIEndpoint(t), tlsConf)

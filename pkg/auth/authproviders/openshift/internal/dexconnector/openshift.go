@@ -163,7 +163,7 @@ func (c *openshiftConnector) validateOAuth2Endpoints(trustedCertPool *x509.CertP
 		return errors.Wrap(err, "creating unique endpoints")
 	}
 
-	tlsConfig := &tls.Config{RootCAs: trustedCertPool}
+	tlsConfig := &tls.Config{RootCAs: trustedCertPool, MinVersion: tls.VersionTLS12}
 
 	for _, endpoint := range endpoints {
 		if err := validateEndpoint(endpoint, tlsConfig); err != nil {
@@ -332,7 +332,7 @@ func (c *openshiftConnector) user(ctx context.Context, client *http.Client) (u u
 func newHTTPClient(certPool *x509.CertPool) (*http.Client, error) {
 	return &http.Client{
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{RootCAs: certPool},
+			TLSClientConfig: &tls.Config{RootCAs: certPool, MinVersion: tls.VersionTLS12},
 			Proxy:           proxy.FromConfig(),
 			DialContext: (&net.Dialer{
 				Timeout:   30 * time.Second,

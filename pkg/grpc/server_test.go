@@ -115,7 +115,7 @@ func (a *APIServerSuite) Test_TwoTestsStartingAPIs() {
 }
 
 func (a *APIServerSuite) Test_CustomAPI() {
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //#nosec G402 -- test code
 
 	a.Run("fetch data from /test", func() {
 		testPort := testutils.GetFreeTestPort()
@@ -236,7 +236,7 @@ func (a *APIServerSuite) Test_GRPC_Server_Error_Response() {
 	url := fmt.Sprintf("https://localhost:%d/v1/ping", testPort)
 	jsonPayload := `{"code":3, "details":[], "error":"missing argument: invalid arguments", "message":"missing argument: invalid arguments"}`
 
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //#nosec G402 -- test code
 
 	api := newAPIForTest(a.T(), defaultConf(testPort))
 	grpcServiceHandler := &pingServiceTestErrorImpl{}

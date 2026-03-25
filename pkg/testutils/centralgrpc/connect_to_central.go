@@ -190,7 +190,7 @@ func grpcConnectionToCentral(t testutils.T, optsFuncs ...func(options *clientcon
 // the hostname and scheme part of the URL may be omitted.
 func HTTPClientForCentral(t testutils.T) *http.Client {
 	baseTransport := &http.Transport{
-		TLSClientConfig: &tls.Config{
+		TLSClientConfig: &tls.Config{ //#nosec G402 -- test utility for connecting to central
 			InsecureSkipVerify: true,
 		},
 	}

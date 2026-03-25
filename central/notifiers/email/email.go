@@ -518,7 +518,7 @@ func (e *email) startTLSConn(dialCtx context.Context) (conn net.Conn, auth smtp.
 }
 
 func (e *email) tlsConfig() *tls.Config {
-	return &tls.Config{
+	return &tls.Config{ //#nosec G402 -- InsecureSkipVerify is user-configurable for email notifier
 		ServerName:         e.smtpServer.host,
 		InsecureSkipVerify: e.config.GetSkipTLSVerify(),
 	}

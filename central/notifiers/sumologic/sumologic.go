@@ -100,7 +100,7 @@ func newSumoLogic(notifier *storage.Notifier) (*sumologic, error) {
 		client: &http.Client{
 			Timeout: timeout,
 			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
+				TLSClientConfig: &tls.Config{ //#nosec G402 -- InsecureSkipVerify is user-configurable for SumoLogic
 					InsecureSkipVerify: sumoConf.GetSkipTLSVerify(),
 				},
 				Proxy: proxy.FromConfig(),

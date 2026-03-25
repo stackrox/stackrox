@@ -57,7 +57,7 @@ func (s *pingServiceTestImpl) Ping(context.Context, *v1.Empty) (*v1.PongMessage,
 }
 
 func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //#nosec G402 -- test code
 
 	tests := []struct {
 		name       string

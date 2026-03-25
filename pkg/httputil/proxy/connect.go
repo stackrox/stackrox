@@ -72,7 +72,7 @@ func dialWithConnectProxy(ctx context.Context, proxyURL *url.URL, address string
 	}()
 
 	if proxyURL.Scheme == "https" {
-		rawConn = tls.Client(rawConn, &tls.Config{})
+		rawConn = tls.Client(rawConn, &tls.Config{MinVersion: tls.VersionTLS12})
 	}
 
 	// Note: the URL in the next line only matters for making sure we sent a correct `Host:` header.

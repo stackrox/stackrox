@@ -154,6 +154,7 @@ func TestTransportWithAdditonalCA(t *testing.T) {
 
 	tlsServ.TLS = &tls.Config{
 		Certificates: []tls.Certificate{generateTestServerCert(t, ca)},
+		MinVersion:   tls.VersionTLS12,
 	}
 
 	tlsServ.StartTLS()

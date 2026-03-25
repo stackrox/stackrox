@@ -72,6 +72,7 @@ func (s *nodeIndexerSuite) createTestServer(tlsEnabled bool) *httptest.Server {
 			Certificates: []tls.Certificate{serverCert},
 			ClientAuth:   tls.RequireAndVerifyClientCert,
 			ClientCAs:    caCertPool,
+			MinVersion:   tls.VersionTLS12,
 		}
 		server.StartTLS()
 	}

@@ -32,6 +32,7 @@ func NewCentralHTTPTestServer(t *testing.T) *httptest.Server {
 	server := httptest.NewUnstartedServer(handler)
 	server.TLS = &tls.Config{
 		Certificates: []tls.Certificate{issuedCertToTLSCertificate(t, serverCert)},
+		MinVersion:   tls.VersionTLS12,
 	}
 	server.StartTLS()
 	return server
@@ -61,7 +62,7 @@ func NewHTTPTestClient(t *testing.T, serviceType storage.ServiceType) *http.Clie
 	clientCert := issuedCertToTLSCertificate(t, issuedCert)
 
 	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{
+		TLSClientConfig: &tls.Config{ //#nosec G402 -- test helper using self-signed certs
 			InsecureSkipVerify: true,
 			Certificates:       []tls.Certificate{clientCert},
 		},

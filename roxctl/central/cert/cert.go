@@ -66,7 +66,7 @@ func (cmd *centralCertCommand) certs() error {
 
 	// Connect to the given server. We're not expecting the endpoint be
 	// trusted, but force the user to use insecure mode if needed.
-	config := tls.Config{
+	config := tls.Config{ //#nosec G402 -- InsecureSkipVerify is intentionally user-configurable
 		InsecureSkipVerify: skipTLSValidation(),
 		ServerName:         serverName,
 	}

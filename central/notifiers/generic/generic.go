@@ -144,7 +144,7 @@ func newGeneric(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec,
 		client: &http.Client{
 			Timeout: timeout,
 			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
+				TLSClientConfig: &tls.Config{ //#nosec G402 -- InsecureSkipVerify is user-configurable for generic webhook
 					InsecureSkipVerify: conf.GetSkipTLSVerify(),
 					RootCAs:            rootCAs,
 				},

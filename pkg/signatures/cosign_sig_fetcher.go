@@ -49,7 +49,7 @@ var insecureDefaultTransport *http.Transport
 
 func init() {
 	insecureDefaultTransport = gcrRemote.DefaultTransport.(*http.Transport).Clone()
-	insecureDefaultTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	insecureDefaultTransport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //#nosec G402 -- intentional for insecure registry connections
 }
 
 // FetchSignatures implements the SignatureFetcher interface.
