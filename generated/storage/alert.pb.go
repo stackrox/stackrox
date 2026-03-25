@@ -25,9 +25,10 @@ const (
 type ViolationState int32
 
 const (
-	ViolationState_ACTIVE    ViolationState = 0
-	ViolationState_RESOLVED  ViolationState = 2
-	ViolationState_ATTEMPTED ViolationState = 3
+	ViolationState_ACTIVE     ViolationState = 0
+	ViolationState_RESOLVED   ViolationState = 2
+	ViolationState_ATTEMPTED  ViolationState = 3
+	ViolationState_TOMBSTONED ViolationState = 4
 )
 
 // Enum value maps for ViolationState.
@@ -36,11 +37,13 @@ var (
 		0: "ACTIVE",
 		2: "RESOLVED",
 		3: "ATTEMPTED",
+		4: "TOMBSTONED",
 	}
 	ViolationState_value = map[string]int32{
-		"ACTIVE":    0,
-		"RESOLVED":  2,
-		"ATTEMPTED": 3,
+		"ACTIVE":     0,
+		"RESOLVED":   2,
+		"ATTEMPTED":  3,
+		"TOMBSTONED": 4,
 	}
 )
 
