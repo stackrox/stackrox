@@ -112,7 +112,7 @@ func insertIntoCves(batch *pgx.Batch, obj *storage.NormalizedCVE) error {
 		serialized,
 	}
 
-	finalStr := "INSERT INTO cves (id, cvename, source, severity, cvssv2, cvssv3, nvdcvssv3, publishedon, createdat, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(id) DO UPDATE SET id = EXCLUDED.id, cvename = EXCLUDED.cvename, source = EXCLUDED.source, severity = EXCLUDED.severity, cvssv2 = EXCLUDED.cvssv2, cvssv3 = EXCLUDED.cvssv3, nvdcvssv3 = EXCLUDED.nvdcvssv3, publishedon = EXCLUDED.publishedon, createdat = EXCLUDED.createdat, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO cves (Id, CveName, Source, Severity, CvssV2, CvssV3, NvdCvssV3, PublishedOn, CreatedAt, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CveName = EXCLUDED.CveName, Source = EXCLUDED.Source, Severity = EXCLUDED.Severity, CvssV2 = EXCLUDED.CvssV2, CvssV3 = EXCLUDED.CvssV3, NvdCvssV3 = EXCLUDED.NvdCvssV3, PublishedOn = EXCLUDED.PublishedOn, CreatedAt = EXCLUDED.CreatedAt, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
