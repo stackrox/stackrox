@@ -48,7 +48,7 @@ build_operator_image() {
     tar xzf "binaries/${arch}/go-binaries-build.tgz"
 
     info "Building operator image"
-    GOARCH="${arch}" retry 6 true make -C operator/ docker-build
+    GOARCH="${arch}" retry 6 true make -C operator/ docker-build-prebuilt
 
     github_endgroup
 }
@@ -86,10 +86,6 @@ build_and_push_branding() {
 
     # Build and push each architecture
     for arch in "${archs[@]}"; do
-        local tag
-        tag="$(make --quiet --no-print-directory -C operator tag)"
-        local image="${registry}/stackrox-operator:${tag}"
-
         build_operator_image "${branding}" "${arch}"
         push_operator_image_for_arch "${push_context}" "${branding}" "${arch}"
     done
@@ -116,10 +112,6 @@ main() {
     info "Starting operator build and push workflow"
     info "Event: ${github_event_name}, Ref: ${github_ref_name}"
     info "Architectures: ${archs_string}"
-
-    # Source CI library for push functions
-    # shellcheck source=../../scripts/ci/lib.sh
-    source "${SCRIPTS_ROOT}/scripts/ci/lib.sh"
 
     # Determine push context
     local push_context=""

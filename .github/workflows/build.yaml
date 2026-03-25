@@ -858,7 +858,7 @@ jobs:
           release_tag="$(make --quiet --no-print-directory tag)"
           if [[ "${{ matrix.image }}" =~ "operator" ]]; then
             release_tag="$(make -C operator --quiet --no-print-directory tag)"
-
+          fi
 
           registry="$(./scripts/ci/lib.sh registry_from_branding "${{ matrix.name }}")"
 
