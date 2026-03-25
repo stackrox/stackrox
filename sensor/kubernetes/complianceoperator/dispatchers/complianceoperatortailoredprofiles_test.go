@@ -268,13 +268,16 @@ func TestProcessEvent_NoStatusID(t *testing.T) {
 
 // TestProcessEvent_EquivalenceHash verifies that the V2 event carries a non-empty
 // equivalence_hash derived from the tailored profile's effective content, and that
-// changing any input field (name, namespace, description, title, rules) produces a
+// changing any input field (name, namespace, description, title, rules, setValues) produces a
 // different hash.
 func TestProcessEvent_EquivalenceHash(t *testing.T) {
-	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.ComplianceV2Integrations})
+	centralcaps.Set([]centralsensor.CentralCapability{
+		centralsensor.ComplianceV2Integrations,
+		centralsensor.ComplianceV2TailoredProfiles,
+	})
 	t.Cleanup(func() { centralcaps.Set(nil) })
 
-	makeTP := func(name, ns, desc, title string, enableRules []string) *v1alpha1.TailoredProfile {
+	makeTP := func(name, ns, desc, title string, enableRules []string, setValues []v1alpha1.VariableValueSpec) *v1alpha1.TailoredProfile {
 		tp := &v1alpha1.TailoredProfile{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
@@ -284,6 +287,7 @@ func TestProcessEvent_EquivalenceHash(t *testing.T) {
 			Spec: v1alpha1.TailoredProfileSpec{
 				Description: desc,
 				Title:       title,
+				SetValues:   slices.Clone(setValues),
 			},
 			Status: v1alpha1.TailoredProfileStatus{
 				ID:    "xccdf_compliance.openshift.io_profile_" + name,
@@ -308,25 +312,46 @@ func TestProcessEvent_EquivalenceHash(t *testing.T) {
 		return v2.GetEquivalenceHash()
 	}
 
-	base := makeTP("my-tp", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-b"})
+	base := makeTP("my-tp", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-b"}, nil)
 	baseHash := getV2Hash(t, base)
 	assert.Len(t, baseHash, 64, "hash should be hex-encoded SHA-256")
 
 	// Expected value: same inputs must produce same hash as the standalone function.
-	expected := computeProfileEquivalenceHash("my-tp", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-b"})
+	expected := computeProfileEquivalenceHash("my-tp", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-b"}, nil)
 	assert.Equal(t, expected, baseHash)
 
 	// Each field change must produce a different hash.
-	assert.NotEqual(t, baseHash, getV2Hash(t, makeTP("other-name", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-b"})), "name change")
-	assert.NotEqual(t, baseHash, getV2Hash(t, makeTP("my-tp", "other-ns", "desc", "title", []string{"rule-a", "rule-b"})), "namespace change")
-	assert.NotEqual(t, baseHash, getV2Hash(t, makeTP("my-tp", "openshift-compliance", "other-desc", "title", []string{"rule-a", "rule-b"})), "description change")
-	assert.NotEqual(t, baseHash, getV2Hash(t, makeTP("my-tp", "openshift-compliance", "desc", "other-title", []string{"rule-a", "rule-b"})), "title change")
-	assert.NotEqual(t, baseHash, getV2Hash(t, makeTP("my-tp", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-c"})), "rule change")
+	assert.NotEqual(t, baseHash, getV2Hash(t, makeTP("other-name", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-b"}, nil)), "name change")
+	assert.NotEqual(t, baseHash, getV2Hash(t, makeTP("my-tp", "other-ns", "desc", "title", []string{"rule-a", "rule-b"}, nil)), "namespace change")
+	assert.NotEqual(t, baseHash, getV2Hash(t, makeTP("my-tp", "openshift-compliance", "other-desc", "title", []string{"rule-a", "rule-b"}, nil)), "description change")
+	assert.NotEqual(t, baseHash, getV2Hash(t, makeTP("my-tp", "openshift-compliance", "desc", "other-title", []string{"rule-a", "rule-b"}, nil)), "title change")
+	assert.NotEqual(t, baseHash, getV2Hash(t, makeTP("my-tp", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-c"}, nil)), "rule change")
+	v1 := v1alpha1.VariableValueSpec{Name: "var-foo", Rationale: "r1", Value: "x"}
+	v2 := v1alpha1.VariableValueSpec{Name: "var-foo", Rationale: "r1", Value: "y"}
+	assert.NotEqual(t, baseHash, getV2Hash(t, makeTP("my-tp", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-b"}, []v1alpha1.VariableValueSpec{v1})), "setValues change")
 
 	// Rule order must not affect the hash.
-	h1 := getV2Hash(t, makeTP("my-tp", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-b"}))
-	h2 := getV2Hash(t, makeTP("my-tp", "openshift-compliance", "desc", "title", []string{"rule-b", "rule-a"}))
+	h1 := getV2Hash(t, makeTP("my-tp", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-b"}, nil))
+	h2 := getV2Hash(t, makeTP("my-tp", "openshift-compliance", "desc", "title", []string{"rule-b", "rule-a"}, nil))
 	assert.Equal(t, h1, h2, "rule order should not affect hash")
+
+	// setValues order must not affect the hash.
+	svA := v1alpha1.VariableValueSpec{Name: "var-a", Rationale: "ra", Value: "va"}
+	svB := v1alpha1.VariableValueSpec{Name: "var-b", Rationale: "rb", Value: "vb"}
+	hashAB := getV2Hash(t, makeTP("my-tp", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-b"}, []v1alpha1.VariableValueSpec{svA, svB}))
+	hashBA := getV2Hash(t, makeTP("my-tp", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-b"}, []v1alpha1.VariableValueSpec{svB, svA}))
+	assert.Equal(t, hashAB, hashBA, "setValues order should not affect hash")
+
+	// Distinct setValues must change the hash.
+	assert.NotEqual(t, hashAB, getV2Hash(t, makeTP("my-tp", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-b"}, []v1alpha1.VariableValueSpec{svA})))
+	assert.NotEqual(t, hashAB, getV2Hash(t, makeTP("my-tp", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-b"}, []v1alpha1.VariableValueSpec{
+		svA, svB, {Name: "var-a", Rationale: "other", Value: "va"},
+	})))
+	assert.NotEqual(t, hashAB, getV2Hash(t, makeTP("my-tp", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-b"}, []v1alpha1.VariableValueSpec{
+		svA, svB, {Name: "var-a", Rationale: "ra", Value: "other"},
+	})))
+
+	assert.NotEqual(t, hashAB, getV2Hash(t, makeTP("my-tp", "openshift-compliance", "desc", "title", []string{"rule-a", "rule-b"}, []v1alpha1.VariableValueSpec{svA, v2})))
 }
 
 // TestProcessEvent_NonTailoredProfileNoHash verifies that non-tailored profiles do not set an equivalence hash.
