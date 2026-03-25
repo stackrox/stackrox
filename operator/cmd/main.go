@@ -69,6 +69,7 @@ const (
 	envSecuredClusterReconcilerEnabled       = "SECURED_CLUSTER_RECONCILER_ENABLED"
 	envCentralStatusControllerEnabled        = "CENTRAL_STATUS_CONTROLLER_ENABLED"
 	envSecuredClusterStatusControllerEnabled = "SECURED_CLUSTER_STATUS_CONTROLLER_ENABLED"
+	envForceOpenShiftTLSProfile              = "FORCE_OPENSHIFT_TLS_PROFILE"
 )
 
 var (
@@ -96,6 +97,10 @@ var (
 	centralStatusControllerEnabled = env.RegisterBooleanSetting(envCentralStatusControllerEnabled, true)
 	// securedClusterStatusControllerEnabled enables registering secured-cluster status controller if set to true otherwise skips it
 	securedClusterStatusControllerEnabled = env.RegisterBooleanSetting(envSecuredClusterStatusControllerEnabled, true)
+	// forceOpenShiftTLSProfile, if set to true, causes the Operator to enforce the cluster-wide TLS profile
+	// from apiserver.config.openshift.io/cluster regardless of the spec.tlsAdherence field. This is useful on clusters
+	// where the field is not yet supported but TLS profile enforcement is desired.
+	forceOpenShiftTLSProfile = env.RegisterBooleanSetting(envForceOpenShiftTLSProfile, false)
 )
 
 func init() {
@@ -151,9 +156,7 @@ func run() error {
 		return errors.Wrap(err, "unable to create bootstrap client for TLS profile")
 	}
 
-	// TODO(ROX-32095): Remove once TLSAdherence is set on target OpenShift clusters.
-	tlsprofile.SetAlwaysHonorTLSProfile()
-	tlsProfile, goTLSProfileSpec := tlsprofile.FetchProfile(context.Background(), bootstrapClient, setupLog)
+	tlsProfile, goTLSProfileSpec := tlsprofile.FetchProfile(context.Background(), bootstrapClient, setupLog, forceOpenShiftTLSProfile.BooleanSetting())
 
 	var tlsOpts []func(c *tls.Config)
 	if goTLSProfileSpec != nil {

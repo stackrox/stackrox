@@ -36,7 +36,10 @@ type TLSProfile struct {
 //
 // Both return values are nil when no profile should be applied (non-OpenShift
 // cluster, or TLS adherence not set to strict).
-func FetchProfile(ctx context.Context, c ctrlClient.Reader, log logr.Logger) (*TLSProfile, *configv1.TLSProfileSpec) {
+//
+// When forceProfile is true, the cluster TLS profile is enforced regardless
+// of the spec.tlsAdherence field.
+func FetchProfile(ctx context.Context, c ctrlClient.Reader, log logr.Logger, forceProfile bool) (*TLSProfile, *configv1.TLSProfileSpec) {
 	apiServer := &configv1.APIServer{}
 	if err := c.Get(ctx, types.NamespacedName{Name: apiserverClusterName}, apiServer); err != nil {
 		if !k8serrors.IsNotFound(err) {
@@ -45,7 +48,8 @@ func FetchProfile(ctx context.Context, c ctrlClient.Reader, log logr.Logger) (*T
 		return nil, nil
 	}
 
-	if !shouldHonorClusterTLSProfile(apiServer.Spec.TLSAdherence) {
+	honorProfile := forceProfile || libgocrypto.ShouldHonorClusterTLSProfile(apiServer.Spec.TLSAdherence)
+	if !honorProfile {
 		return nil, nil
 	}
 
@@ -66,17 +70,4 @@ func FetchProfile(ctx context.Context, c ctrlClient.Reader, log logr.Logger) (*T
 		CipherSuites:   convertCiphersToIANA(spec.Ciphers),
 		OpenSSLCiphers: convertCiphersToOpenSSL(spec.Ciphers),
 	}, &spec
-}
-
-var shouldHonorClusterTLSProfile = libgocrypto.ShouldHonorClusterTLSProfile
-
-// SetAlwaysHonorTLSProfile overrides the adherence check so that the cluster
-// TLS profile is always applied, regardless of the TLSAdherence field value.
-//
-// This is a temporary workaround for testing on clusters where the
-// TLSAdherence field is not yet set appropriately.
-func SetAlwaysHonorTLSProfile() {
-	shouldHonorClusterTLSProfile = func(_ configv1.TLSAdherencePolicy) bool {
-		return true
-	}
 }

@@ -27,10 +27,10 @@ func fakeClientWithAPIServer(apiServer *configv1.APIServer) ctrlClient.Client {
 	return fake.NewClientBuilder().WithScheme(configv1Scheme()).WithObjects(apiServer).Build()
 }
 
-// fetchProfile is a test helper that calls FetchProfile and returns
-// just the TLSProfile (discarding the TLSProfileSpec).
+// fetchProfile is a test helper that calls FetchProfile with force=false
+// and returns just the TLSProfile (discarding the TLSProfileSpec).
 func fetchProfile(c ctrlClient.Reader) *TLSProfile {
-	profile, _ := FetchProfile(context.Background(), c, logr.Discard())
+	profile, _ := FetchProfile(context.Background(), c, logr.Discard(), false)
 	return profile
 }
 
@@ -93,7 +93,7 @@ func TestFetchProfile_StrictWithIntermediateProfile(t *testing.T) {
 		},
 	}
 
-	profile, spec := FetchProfile(context.Background(), fakeClientWithAPIServer(apiServer), logr.Discard())
+	profile, spec := FetchProfile(context.Background(), fakeClientWithAPIServer(apiServer), logr.Discard(), false)
 	require.NotNil(t, profile)
 	require.NotNil(t, spec)
 	assert.Equal(t, "TLSv1.2", profile.MinVersion)
