@@ -493,7 +493,9 @@ func (ds *datastoreImpl) TombstoneDeployment(ctx context.Context, clusterID, dep
 		if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
 			return errors.Wrapf(err, "upserting tombstoned deployment %s", deploymentID)
 		}
-		// Add to deleted cache to deduplicate future calls.
+		// Add to cache after successful upsert to prevent premature deduplication
+		// if the upsert fails. Unlike RemoveDeployment, we must ensure the tombstone
+		// record is committed before marking the deployment as deleted.
 		if ds.deletedDeploymentCache != nil {
 			ds.deletedDeploymentCache.Add(deploymentID)
 		}
@@ -504,6 +506,14 @@ func (ds *datastoreImpl) TombstoneDeployment(ctx context.Context, clusterID, dep
 // SearchTombstonedDeployments returns tombstoned deployments matching the query,
 // bypassing the default filter that excludes tombstoned records.
 func (ds *datastoreImpl) SearchTombstonedDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "SearchTombstonedDeployments")
+
+	if ok, err := deploymentsSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, nil
+	}
+
 	if q == nil {
 		q = pkgSearch.EmptyQuery()
 	}

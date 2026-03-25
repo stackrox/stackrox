@@ -125,6 +125,7 @@ func (d *alertManagerImpl) AlertAndNotifyTombstoned(ctx context.Context, deploym
 		AddExactMatches(search.ViolationState,
 			storage.ViolationState_ACTIVE.String(),
 			storage.ViolationState_ATTEMPTED.String())
+	// Pass false to avoid eagerly loading violation details, which are not needed here.
 	existingAlerts, err := d.alerts.SearchRawAlerts(ctx, qb.ProtoQuery(), false)
 	if err != nil {
 		return err
