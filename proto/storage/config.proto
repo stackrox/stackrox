@@ -102,6 +102,7 @@ message PrometheusMetrics {
 }
 
 // TombstoneRetentionConfig controls how long soft-deleted deployment records are retained.
+// next available tag: 2
 message TombstoneRetentionConfig {
   // retention_duration_days is the number of days tombstoned deployments are kept.
   // Set to 0 to disable tombstoning (immediate hard-delete, preserving existing behavior).

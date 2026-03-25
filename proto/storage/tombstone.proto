@@ -16,7 +16,7 @@ message Tombstone {
   // @gotags: search:"Tombstone Deleted At,hidden"
   google.protobuf.Timestamp deleted_at = 1;
   // expires_at is the time after which the resource will be permanently purged by the GC.
-  // Pre-computed as deleted_at + configured TTL.
+  // This value is pre-computed as deleted_at plus the configured TTL.
   // @gotags: search:"Tombstone Expires At,hidden"
   google.protobuf.Timestamp expires_at = 2;
 }

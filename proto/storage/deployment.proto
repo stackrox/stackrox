@@ -53,7 +53,7 @@ message Deployment {
 
   bool platform_component = 35; // @gotags: search:"Platform Component"
 
-  // tombstone, if set, marks the deployment as soft-deleted but retained for audit.
+  // The tombstone, if set, marks the deployment as soft-deleted but retained for audit.
   // A nil tombstone indicates an active deployment.
   Tombstone tombstone = 36;
 }
