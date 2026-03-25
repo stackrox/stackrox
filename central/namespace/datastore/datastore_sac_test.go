@@ -123,6 +123,38 @@ func (s *namespaceDatastoreSACSuite) TestGetNamespace() {
 	}
 }
 
+func (s *namespaceDatastoreSACSuite) TestGetNamespaceLabels() {
+	// Remove data injected in SetupTest to avoid collisions with (cluster, namespace) lookup
+	for _, id := range s.testNamespaceIDs {
+		s.deleteNamespace(id)
+	}
+	s.testNamespaceIDs = s.testNamespaceIDs[:0]
+
+	testLabels := map[string]string{"env": "test", "team": "backend"}
+	namespace := fixtures.GetScopedNamespace(uuid.NewV4().String(), testconsts.Cluster2,
+		testconsts.NamespaceB)
+	namespace.Labels = testLabels
+	err := s.datastore.AddNamespace(s.testContexts[testutils.UnrestrictedReadWriteCtx], namespace)
+	s.Require().NoError(err)
+	s.testNamespaceIDs = append(s.testNamespaceIDs, namespace.GetId())
+
+	cases := testutils.GenericNamespaceSACGetTestCases(s.T())
+
+	for name, c := range cases {
+		s.Run(name, func() {
+			ctx := s.testContexts[c.ScopeKey]
+			labels, err := s.datastore.GetNamespaceLabels(ctx, namespace.GetClusterId(), namespace.GetName())
+			s.Require().NoError(err)
+			if c.ExpectedFound {
+				s.Require().NotNil(labels)
+				s.Equal(testLabels, labels)
+			} else {
+				s.Nil(labels)
+			}
+		})
+	}
+}
+
 func (s *namespaceDatastoreSACSuite) TestGetNamespaces() {
 	// Remove data injected in SetupTest.
 	for _, id := range s.testNamespaceIDs {

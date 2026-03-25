@@ -278,7 +278,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		return // no update
 	}
 
-	// TODO(ROX-33188): Wire cluster and namespace label providers.
+	// TODO: Wire cluster and namespace label providers.
 	// For now, passing nil providers means policies with cluster_label/namespace_label scopes will
 	// fail closed (not match) in admission control.
 	allK8sEventPolicies := detection.NewPolicySet(nil, nil)

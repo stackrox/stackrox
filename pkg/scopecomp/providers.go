@@ -9,7 +9,7 @@ type ClusterLabelProvider interface {
 	GetClusterLabels(ctx context.Context, clusterID string) (map[string]string, error)
 }
 
-// NamespaceLabelProvider provides namespace labels for a given namespace ID.
+// NamespaceLabelProvider provides namespace labels for a given cluster ID and namespace name.
 type NamespaceLabelProvider interface {
-	GetNamespaceLabels(ctx context.Context, namespaceID string) (map[string]string, error)
+	GetNamespaceLabels(ctx context.Context, clusterID string, namespaceName string) (map[string]string, error)
 }
