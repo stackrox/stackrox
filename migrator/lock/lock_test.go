@@ -64,13 +64,14 @@ func (s *AdvisoryLockSuite) TestMutualExclusion() {
 	s.Require().NoError(err)
 	s.Require().True(acquired)
 	s.Require().NotNil(release)
-	defer release()
 
 	// TryAcquire  should fail because lock already held by other connection.
 	acquired2, release2, err := TryAcquireMigrationLock(s.ctx, s.pool)
 	s.Require().NoError(err)
 	s.Require().False(acquired2)
 	s.Require().Nil(release2)
+
+	release()
 }
 
 func (s *AdvisoryLockSuite) TestReleaseAllowsReacquire() {

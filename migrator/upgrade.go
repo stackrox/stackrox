@@ -95,7 +95,7 @@ func upgradeWithLock(ctx context.Context, pgPool postgres.DB, gormDB *gorm.DB, d
 	if ver.SeqNum == 0 && ver.MainVersion == "0" {
 		log.WriteToStderr("Fresh install of the database. There is no data to migrate...")
 		pkgSchema.ApplyAllSchemas(context.Background(), gormDB)
-		migVer.SetCurrentVersionGormDB(ctx, gormDB)
+		migVer.SetCurrentVersion(ctx, gormDB)
 		return nil
 	}
 	log.WriteToStderrf("version for %q is %v", dbClone, ver)

@@ -45,9 +45,6 @@ func init() {
 func Run(databases *types.Databases) error {
 	log.WriteToStderrf("In runner.Run")
 
-	// If Rocks and Bolt are passed into this function when Postgres is enabled, that means
-	// we are in a state where we need to migrate Rocks to Postgres.  In this case the Rocks
-	// sequence number will be returned and used to drive the migrations
 	dbSeqNum, err := getCurrentSeqNum(databases)
 	if err != nil {
 		return errors.Wrap(err, "getting current seq num")
@@ -75,8 +72,7 @@ func Run(databases *types.Databases) error {
 	return UpdateToCurrentVersion(databases)
 }
 
-// UpdateToCurrentVersion updates the stored version to the current binary
-// version without running any migrations.
+// UpdateToCurrentVersion updates the stored version to the current binary version
 func UpdateToCurrentVersion(databases *types.Databases) error {
 	currentVersion := &versionStorage.Version{
 		SeqNum:        int32(pkgMigrations.CurrentDBVersionSeqNum()),
