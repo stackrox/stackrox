@@ -116,13 +116,16 @@ class SplunkUtil {
         return response
     }
 
-    static String createSearch(int port, String search = "search") {
+    static String createSearch(int port, String search = "search", String earliestTime = null) {
         Response response = null
         withRetry(6, 15) {
-            response = splunkAdminRequest()
+            RequestSpecification req = splunkAdminRequest()
                     .formParam("search", search)
                     .formParam("output_mode", "json")
-                    .post("https://127.0.0.1:" + port + "/services/search/jobs")
+            if (earliestTime != null) {
+                req.formParam("earliest_time", earliestTime)
+            }
+            response = req.post("https://127.0.0.1:" + port + "/services/search/jobs")
             // Splunk REST API returns 201 for search job creation
             assert response.statusCode() == 201 :
                     "POST search jobs failed with status " + response.statusCode() + ": " + response.asString()

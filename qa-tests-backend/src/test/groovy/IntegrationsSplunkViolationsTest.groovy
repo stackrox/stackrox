@@ -91,9 +91,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             assert !results.isEmpty()
             hasNetworkViolation = results.any { isNetworkViolation(it) }
             hasProcessViolation = results.any { isProcessViolation(it) }
-            log.debug "Violations currently indexed in Splunk: \n${results}"
-            log.info "Current Splunk index contains " +
-                    "any Network Violation: ${hasNetworkViolation} and any Process Violation: ${hasProcessViolation}"
+            log.info "Found ${results.size()} violations in Splunk — " +
+                    "Network: ${hasNetworkViolation}, Process: ${hasProcessViolation}"
             assert hasNetworkViolation && hasProcessViolation
         }
 
@@ -110,9 +109,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         boolean hasNetworkAlert = false
         boolean hasProcessAlert = false
         withRetry(40, 15) {
-            // Hint: If this produces no results, evaluate expanding the earliest_time, e.g. to -15m.
-            // This can be done by expanding `createSearch` with a new parameter.
-            def vSearchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts")
+            def vSearchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts", "-30m")
             Response vResponse = SplunkUtil.getSearchResults(port, vSearchId)
             // We should have at least one violation in the response
             assert vResponse != null
@@ -120,9 +117,8 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             assert !alerts.isEmpty()
             hasNetworkAlert = alerts.any { isNetworkViolation(it) }
             hasProcessAlert = alerts.any { isProcessViolation(it) }
-            log.debug "Alerts currently indexed in Splunk: \n${alerts}"
-            log.info "Current Splunk index contains " +
-                    "any Network Alert: ${hasNetworkAlert} and any Process Alert: ${hasProcessAlert}"
+            log.info "Found ${alerts.size()} alerts in Splunk — " +
+                    "Network: ${hasNetworkAlert}, Process: ${hasProcessAlert}"
             assert hasNetworkAlert && hasProcessAlert
         }
 
