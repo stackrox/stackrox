@@ -361,17 +361,7 @@ build/Dockerfile.gen: Dockerfile
 	sed -e 's,$${ROX_IMAGE_FLAVOR},$(ROX_IMAGE_FLAVOR),g; s,$${BUILD_IMAGE_VERSION},$(shell sed 's/\s*\#.*//' ../BUILD_IMAGE_VERSION),' < $< > $@
 
 .PHONY: docker-build
-docker-build: ## Build docker image with the operator.
-	$(SILENT)if [ "$$CI" = "true" ] && ([ -f "../bin/linux_$(GOARCH)/stackrox-operator" ] || [ -f "bin/linux_$(GOARCH)/stackrox-operator" ]); then \
-		echo "Using pre-built binary (CI mode)"; \
-		$(MAKE) docker-build-prebuilt; \
-	else \
-		echo "Building binary inside Docker"; \
-		$(MAKE) docker-build-full; \
-	fi
-
-.PHONY: docker-build-full
-docker-build-full: build/Dockerfile.gen smuggled-status-sh ## Build docker image with the operator (build binary inside Docker).
+docker-build: build/Dockerfile.gen smuggled-status-sh ## Build docker image with the operator (build binary inside Docker).
 	BUILDKIT_PROGRESS=plain ../scripts/docker-build.sh \
 		-t ${IMG} \
 		$(if $(GOARCH),--build-arg TARGET_ARCH=$(GOARCH)) \
