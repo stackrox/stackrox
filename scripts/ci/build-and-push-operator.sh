@@ -18,8 +18,7 @@ set -euo pipefail
 #   Required:
 #     - QUAY_RHACS_ENG_RW_USERNAME, QUAY_RHACS_ENG_RW_PASSWORD
 #     - QUAY_STACKROX_IO_RW_USERNAME, QUAY_STACKROX_IO_RW_PASSWORD
-#   Optional:
-#     - ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS (default: true)
+
 
 SCRIPTS_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 # shellcheck source=../../scripts/ci/lib.sh
@@ -79,21 +78,17 @@ build_and_push_branding() {
     export ROX_PRODUCT_BRANDING="${branding}"
 
     # Set registry based on branding
-    local quay_org
-    if [[ "${branding}" == "RHACS_BRANDING" ]]; then
-        quay_org="rhacs-eng"
-    else
-        quay_org="stackrox-io"
-    fi
+    local registry
+    registry="$(registry_from_branding "${branding}")"
 
-    info "Docker login to quay.io/${quay_org}"
-    registry_rw_login "quay.io/${quay_org}"
+    info "Docker login to ${registry}"
+    registry_rw_login "${registry}"
 
     # Build and push each architecture
     for arch in "${archs[@]}"; do
         local tag
         tag="$(make --quiet --no-print-directory -C operator tag)"
-        local image="quay.io/${quay_org}/stackrox-operator:${tag}"
+        local image="${registry}/stackrox-operator:${tag}"
 
         build_operator_image "${branding}" "${arch}"
         push_operator_image_for_arch "${push_context}" "${branding}" "${arch}"
