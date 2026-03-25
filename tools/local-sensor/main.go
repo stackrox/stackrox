@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"path"
 	"runtime"
+	"runtime/debug"
 	"runtime/pprof"
 	"syscall"
 	"time"
@@ -222,6 +223,18 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 
 	gracefulDone := make(chan struct{})
 	go func() {
+		defer close(gracefulDone)
+		// Recover must be deferred after close so it runs first (LIFO).
+		// Without this, a panic during shutdown would close the channel during
+		// unwinding, letting the parent goroutine call os.Exit(0) and masking
+		// the panic with a clean exit code.
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Fprintf(os.Stderr, "panic during graceful shutdown: %v\n", r)
+				debug.PrintStack()
+				os.Exit(1)
+			}
+		}()
 		cancelFunc()
 		if writeMemProfile {
 			writeMemoryProfile()
@@ -231,7 +244,6 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 		if fakeCentral != nil && dumpCentralOutput {
 			fakeCentral.DumpAllMessages(startTime, time.Now(), outfile, outputFormat)
 		}
-		close(gracefulDone)
 	}()
 
 	select {
