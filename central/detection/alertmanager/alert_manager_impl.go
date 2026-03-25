@@ -53,13 +53,14 @@ func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*
 	alertAndNotifyIncomingCount.Observe(float64(len(currentAlerts)))
 
 	// Merge the old and the new alerts.
-	newAlerts, updatedAlerts, toBeResolvedAlerts, err := d.mergeManyAlerts(ctx, currentAlerts, oldAlertFilters...)
+	newAlerts, updatedAlerts, toBeResolvedIDs, resolvedDeploymentIDs, err := d.mergeManyAlerts(ctx, currentAlerts, oldAlertFilters...)
 	if err != nil {
 		return nil, err
 	}
 
 	// If any of the alerts are for a deployment, detect if the deployment itself is modified
-	modifiedDeployments := getDeploymentIDsFromAlerts(newAlerts, updatedAlerts, toBeResolvedAlerts)
+	modifiedDeployments := getDeploymentIDsFromAlerts(newAlerts, updatedAlerts)
+	modifiedDeployments = modifiedDeployments.Union(resolvedDeploymentIDs)
 
 	// Mark any old alerts no longer generated as resolved, and insert new alerts.
 	err = d.notifyAndUpdateBatch(ctx, newAlerts)
@@ -70,7 +71,7 @@ func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*
 	if err != nil {
 		return nil, err
 	}
-	err = d.markAlertsResolved(ctx, toBeResolvedAlerts)
+	err = d.markAlertsResolvedByIDs(ctx, toBeResolvedIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -105,16 +106,12 @@ func (d *alertManagerImpl) updateBatch(ctx context.Context, alertsToMark []*stor
 	return errList.ToError()
 }
 
-// markAlertsResolved marks all input alerts resolved in the input datastore.
-func (d *alertManagerImpl) markAlertsResolved(ctx context.Context, alertsToMark []*storage.Alert) error {
-	if len(alertsToMark) == 0 {
+// markAlertsResolvedByIDs marks alerts with the given IDs as resolved.
+func (d *alertManagerImpl) markAlertsResolvedByIDs(ctx context.Context, ids []string) error {
+	if len(ids) == 0 {
 		return nil
 	}
 
-	ids := make([]string, 0, len(alertsToMark))
-	for _, alert := range alertsToMark {
-		ids = append(ids, alert.GetId())
-	}
 	resolvedAlerts, err := d.alerts.MarkAlertsResolvedBatch(ctx, ids...)
 	if err != nil {
 		return err
@@ -375,13 +372,17 @@ func mergeAlerts(old, newAlert *storage.Alert) *storage.Alert {
 	return newAlert
 }
 
-// mergeManyAlerts merges two alerts.
+// mergeManyAlerts uses a two-phase fetch to match incoming alerts against
+// previous alerts. Phase 1 fetches lightweight AlertMatchKey structs (inline
+// columns only, no TOAST I/O). Phase 2 fetches full alert blobs only for
+// the small fraction that actually matched and need merging.
 func (d *alertManagerImpl) mergeManyAlerts(
 	ctx context.Context,
 	incomingAlerts []*storage.Alert,
 	oldAlertFilters ...AlertFilterOption,
-) (newAlerts, updatedAlerts, toBeResolvedAlerts []*storage.Alert, err error) {
+) (newAlerts, updatedAlerts []*storage.Alert, toBeResolvedIDs []string, resolvedDeploymentIDs set.StringSet, err error) {
 	defer observeDurationMs(mergeManyAlertsDuration)()
+	resolvedDeploymentIDs = set.NewStringSet()
 
 	qb := search.NewQueryBuilder().AddExactMatches(
 		search.ViolationState,
@@ -390,14 +391,22 @@ func (d *alertManagerImpl) mergeManyAlerts(
 	for _, filter := range oldAlertFilters {
 		filter.apply(qb)
 	}
-	previousAlerts, err := d.alerts.SearchRawAlerts(ctx, qb.ProtoQuery(), true)
+
+	// Phase 1: fetch lightweight match keys instead of full alert blobs.
+	previousKeys, err := d.alerts.SearchAlertMatchKeys(ctx, qb.ProtoQuery(), true)
 	if err != nil {
-		err = errors.Wrapf(err, "couldn't load previous alerts (query was %s)", qb.Query())
+		err = errors.Wrapf(err, "couldn't load previous alert keys (query was %s)", qb.Query())
 		return
 	}
-	mergeManyAlertsPreviousCount.Observe(float64(len(previousAlerts)))
+	mergeManyAlertsPreviousCount.Observe(float64(len(previousKeys)))
 
-	// Merge any alerts that have new and old alerts.
+	// Match incoming alerts against previous keys, collecting merge candidates.
+	type mergeCandidate struct {
+		incoming *storage.Alert
+		oldKeyID string
+	}
+	var mergeCandidates []mergeCandidate
+
 	for _, alert := range incomingAlerts {
 		if pkgAlert.IsDeployTimeAttemptedAlert(alert) {
 			// `alert.time` is the latest violation time.
@@ -406,17 +415,47 @@ func (d *alertManagerImpl) mergeManyAlerts(
 			continue
 		}
 
-		if matchingOld := findAlert(alert, previousAlerts); matchingOld != nil {
-			mergedAlert := mergeAlerts(matchingOld, alert)
-			if mergedAlert != matchingOld && !mergedAlert.EqualVT(matchingOld) {
-				updatedAlerts = append(updatedAlerts, mergedAlert)
-			}
+		if matchingKey := findMatchingKey(alert, previousKeys); matchingKey != nil {
+			mergeCandidates = append(mergeCandidates, mergeCandidate{incoming: alert, oldKeyID: matchingKey.GetId()})
 			continue
 		}
 
 		// `alert.time` is the latest violation time.
 		alert.FirstOccurred = alert.GetTime()
 		newAlerts = append(newAlerts, alert)
+	}
+
+	// Phase 2: fetch full alerts only for matched keys, then merge.
+	if len(mergeCandidates) > 0 {
+		// Collect unique old IDs and batch-fetch.
+		oldAlertsByID := make(map[string]*storage.Alert, len(mergeCandidates))
+		for _, mc := range mergeCandidates {
+			oldAlertsByID[mc.oldKeyID] = nil // deduplicate
+		}
+		for id := range oldAlertsByID {
+			oldAlert, exists, getErr := d.alerts.GetAlert(ctx, id)
+			if getErr != nil {
+				err = errors.Wrapf(getErr, "failed to fetch alert %s for merge", id)
+				return
+			}
+			if exists {
+				oldAlertsByID[id] = oldAlert
+			}
+		}
+
+		for _, mc := range mergeCandidates {
+			matchingOld := oldAlertsByID[mc.oldKeyID]
+			if matchingOld == nil {
+				// Alert was deleted between Phase 1 and Phase 2; treat as new.
+				mc.incoming.FirstOccurred = mc.incoming.GetTime()
+				newAlerts = append(newAlerts, mc.incoming)
+				continue
+			}
+			mergedAlert := mergeAlerts(matchingOld, mc.incoming)
+			if !mergedAlert.EqualVT(matchingOld) {
+				updatedAlerts = append(updatedAlerts, mergedAlert)
+			}
+		}
 	}
 
 	// Get the deployments that are currently being removed as part of this alert update.
@@ -427,32 +466,44 @@ func (d *alertManagerImpl) mergeManyAlerts(
 		}
 	}
 
-	// Find any old alerts no longer being produced.
-	for _, previousAlert := range previousAlerts {
-		if d.shouldMarkAlertResolved(alertAdapter{previousAlert}, incomingAlerts, oldAlertFilters...) {
-			toBeResolvedAlerts = append(toBeResolvedAlerts, previousAlert)
+	// Find old alerts no longer being produced, and identify inactive deployments.
+	var needInactiveIDs []string
+	for _, key := range previousKeys {
+		if d.shouldMarkAlertResolved(key, incomingAlerts, oldAlertFilters...) {
+			toBeResolvedIDs = append(toBeResolvedIDs, key.GetId())
+			if key.HasDeployment() {
+				resolvedDeploymentIDs.Add(key.GetDeploymentId())
+			}
 		}
 
-		if previousAlert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME ||
-			previousAlert.GetState() == storage.ViolationState_ATTEMPTED {
-			// If we are in the context of a deployment removal, then mark the deployment as inactive without going to the
-			// store -- this is because the alert processing related to the deployment removal (ie, this code) runs
-			// _before_ the deployment is actually deleted, which means we will incorrectly mark the deployment as active
-			// if we check the store.
-			// If we're not in the context of a deployment removal, then just check whether the deployment is inactive
-			// in the store and use that.
-			if deployment := previousAlert.GetDeployment(); deployment != nil {
-				depID := deployment.GetId()
+		if key.GetLifecycleStage() == storage.LifecycleStage_RUNTIME ||
+			key.GetState() == storage.ViolationState_ATTEMPTED {
+			if key.HasDeployment() && !key.IsDeploymentInactive() {
+				depID := key.GetDeploymentId()
 				if deploymentsBeingRemoved.Contains(depID) || d.runtimeDetector.DeploymentInactive(depID) {
-					if deployment := previousAlert.GetDeployment(); deployment != nil && !deployment.GetInactive() {
-						deployment.Inactive = true
-						updatedAlerts = append(updatedAlerts, previousAlert)
-					}
+					needInactiveIDs = append(needInactiveIDs, key.GetId())
 				}
 			}
 		}
 	}
-	recordAlertOutcomes(len(newAlerts), len(updatedAlerts), len(toBeResolvedAlerts))
+
+	// Batch-fetch and mutate alerts that need deployment marked inactive.
+	for _, id := range needInactiveIDs {
+		fullAlert, exists, getErr := d.alerts.GetAlert(ctx, id)
+		if getErr != nil {
+			err = errors.Wrapf(getErr, "failed to fetch alert %s for inactive marking", id)
+			return
+		}
+		if !exists {
+			continue
+		}
+		if deployment := fullAlert.GetDeployment(); deployment != nil && !deployment.GetInactive() {
+			deployment.Inactive = true
+			updatedAlerts = append(updatedAlerts, fullAlert)
+		}
+	}
+
+	recordAlertOutcomes(len(newAlerts), len(updatedAlerts), len(toBeResolvedIDs))
 	return
 }
 

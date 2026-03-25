@@ -8,6 +8,7 @@ import (
 	"time"
 
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
+	alertviews "github.com/stackrox/rox/central/alert/views"
 	"github.com/stackrox/rox/central/detection"
 	runtimeDetectorMocks "github.com/stackrox/rox/central/detection/runtime/mocks"
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
@@ -48,6 +49,61 @@ var (
 	yesterdayFileAccessViolation  = getFileAccess(yesterday)
 	twoDaysAgoFileAccessViolation = getFileAccess(twoDaysAgo)
 )
+
+// alertToMatchKey converts a *storage.Alert to an *alertviews.AlertMatchKey,
+// extracting the fields the same way the alertAdapter does in the impl file.
+func alertToMatchKey(a *storage.Alert) *alertviews.AlertMatchKey {
+	key := &alertviews.AlertMatchKey{
+		ID:             a.GetId(),
+		PolicyID:       a.GetPolicy().GetId(),
+		State:          int(a.GetState()),
+		LifecycleStage: int(a.GetLifecycleStage()),
+	}
+
+	// Deployment fields
+	if dep := a.GetDeployment(); dep != nil {
+		key.DeploymentID = dep.GetId()
+		key.DeploymentInactive = dep.GetInactive()
+	}
+
+	// Resource fields
+	if res := a.GetResource(); res != nil {
+		key.ResourceType = int(res.GetResourceType())
+		key.ResourceName = res.GetName()
+		key.ClusterID = res.GetClusterId()
+		key.Namespace = res.GetNamespace()
+	}
+
+	// Node fields
+	if node := a.GetNode(); node != nil {
+		key.NodeID = node.GetId()
+		key.NodeName = node.GetName()
+		if key.ClusterID == "" {
+			key.ClusterID = node.GetClusterId()
+		}
+	}
+
+	// Top-level cluster ID fallback (for deployment alerts)
+	if key.ClusterID == "" {
+		key.ClusterID = a.GetClusterId()
+	}
+
+	// Top-level namespace fallback (for deployment alerts)
+	if key.Namespace == "" {
+		key.Namespace = a.GetNamespace()
+	}
+
+	return key
+}
+
+// alertsToMatchKeys converts a slice of *storage.Alert to a slice of *alertviews.AlertMatchKey.
+func alertsToMatchKeys(alerts []*storage.Alert) []*alertviews.AlertMatchKey {
+	keys := make([]*alertviews.AlertMatchKey, len(alerts))
+	for i, alert := range alerts {
+		keys[i] = alertToMatchKey(alert)
+	}
+	return keys
+}
 
 func getKubeEventViolation(msg string, violationTime time.Time) *storage.Alert_Violation {
 	return &storage.Alert_Violation{
@@ -229,7 +285,7 @@ func (suite *AlertManagerTestSuite) TestNotifyAndUpdateBatch() {
 }
 
 func (suite *AlertManagerTestSuite) TestGetAlertsByPolicy() {
-	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, testutils.PredMatcher("query for violation state, policy", queryHasFields(search.ViolationState, search.PolicyID)), true).Return(([]*storage.Alert)(nil), nil)
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, testutils.PredMatcher("query for violation state, policy", queryHasFields(search.ViolationState, search.PolicyID)), true).Return(([]*alertviews.AlertMatchKey)(nil), nil)
 
 	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, nil, WithPolicyID("pid"))
 	suite.False(modified.Cardinality() > 0)
@@ -237,7 +293,7 @@ func (suite *AlertManagerTestSuite) TestGetAlertsByPolicy() {
 }
 
 func (suite *AlertManagerTestSuite) TestGetAlertsByDeployment() {
-	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, testutils.PredMatcher("query for violation state, deployment", queryHasFields(search.ViolationState, search.DeploymentID)), true).Return(([]*storage.Alert)(nil), nil)
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, testutils.PredMatcher("query for violation state, deployment", queryHasFields(search.ViolationState, search.DeploymentID)), true).Return(([]*alertviews.AlertMatchKey)(nil), nil)
 
 	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, nil, WithDeploymentID("did", false))
 	suite.False(modified.Cardinality() > 0)
@@ -245,9 +301,9 @@ func (suite *AlertManagerTestSuite) TestGetAlertsByDeployment() {
 }
 
 func (suite *AlertManagerTestSuite) TestGetAlertsByClusterAndResource() {
-	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx,
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx,
 		testutils.PredMatcher("query for violation state, cluster id and resource type", queryHasFields(search.ViolationState, search.ClusterID, search.ResourceType)), true,
-	).Return(([]*storage.Alert)(nil), nil)
+	).Return(([]*alertviews.AlertMatchKey)(nil), nil)
 
 	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, nil, WithLifecycleStage(storage.LifecycleStage_RUNTIME), WithClusterID("cid"), WithNamespace("nn"), WithResource("rn", storage.Alert_Resource_SECRETS))
 	suite.False(modified.Cardinality() > 0)
@@ -257,8 +313,13 @@ func (suite *AlertManagerTestSuite) TestGetAlertsByClusterAndResource() {
 func (suite *AlertManagerTestSuite) TestOnUpdatesWhenAlertsDoNotChange() {
 	alerts := getAlerts()
 
-	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), true).Return(alerts, nil)
-	// No updates should be attempted
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).Return(alertsToMatchKeys(alerts), nil)
+
+	// Mock GetAlert for each matching alert (they match exactly so mergeAlerts returns the old alert unchanged)
+	for _, alert := range alerts {
+		suite.alertsMock.EXPECT().GetAlert(suite.ctx, alert.GetId()).Return(alert, true, nil)
+	}
+	// No updates should be attempted because the merged alerts equal the old alerts
 
 	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, alerts)
 	suite.False(modified.Cardinality() > 0)
@@ -268,12 +329,16 @@ func (suite *AlertManagerTestSuite) TestOnUpdatesWhenAlertsDoNotChange() {
 func (suite *AlertManagerTestSuite) TestMarksOldAlertsResolved() {
 	alerts := getAlerts()
 
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).Return(alertsToMatchKeys(alerts), nil)
+
+	// Mock GetAlert for the alerts that match (alerts[1] and alerts[2])
+	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[1].GetId()).Return(alerts[1], true, nil)
+	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[2].GetId()).Return(alerts[2], true, nil)
+
+	// Unchanged alerts should not be updated (they match exactly so mergeAlerts returns old == new).
+
+	// Alert 0 should be marked as resolved and we should get a notification for it.
 	suite.alertsMock.EXPECT().MarkAlertsResolvedBatch(suite.ctx, alerts[0].GetId()).Return([]*storage.Alert{alerts[0]}, nil)
-
-	// Unchanged alerts should not be updated.
-
-	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), true).Return(alerts, nil)
-	// We should get a notification for the new alert.
 	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), alerts[0]).Return()
 
 	// Make one of the alerts not appear in the current alerts.
@@ -285,14 +350,16 @@ func (suite *AlertManagerTestSuite) TestMarksOldAlertsResolved() {
 func (suite *AlertManagerTestSuite) TestSendsNotificationsForNewAlerts() {
 	alerts := getAlerts()
 
-	// Only the new alert will be updated.
-	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, alerts[0]).Return(nil)
-
-	// We should get a notification for the new alert.
-	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), alerts[0]).Return()
-
 	// Make one of the alerts not appear in the previous alerts.
-	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), true).Return(alerts[1:], nil)
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).Return(alertsToMatchKeys(alerts[1:]), nil)
+
+	// Mock GetAlert for the alerts that match (alerts[1] and alerts[2])
+	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[1].GetId()).Return(alerts[1], true, nil)
+	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[2].GetId()).Return(alerts[2], true, nil)
+
+	// Only the new alert (alerts[0]) will be notified and upserted.
+	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), alerts[0]).Return()
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, alerts[0]).Return(nil)
 
 	modified, err := suite.alertManager.AlertAndNotify(suite.ctx, alerts)
 	suite.True(modified.Cardinality() > 0)
@@ -309,7 +376,7 @@ func (suite *AlertManagerTestSuite) TestNewResourceAlertIsAdded() {
 	// We should get a notification for the new alert.
 	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
 
-	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), true).Return(alerts, nil)
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).Return(alertsToMatchKeys(alerts), nil)
 
 	// Add all the policies from the old alerts so that they aren't marked as stale
 	for _, a := range alerts {
@@ -330,13 +397,16 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlerts() {
 	expectedMergedAlert := newAlert.CloneVT()
 	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].GetViolations()...)
 
+	// Mock GetAlert to fetch the full alert for merging
+	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[0].GetId()).Return(alerts[0], true, nil)
+
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
 
 	// Updated alert should notify
 	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
 
-	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), true).Return(alerts, nil)
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).Return(alertsToMatchKeys(alerts), nil)
 
 	// Add all the policies from the old alerts so that they aren't marked as stale
 	for _, a := range alerts {
@@ -358,12 +428,15 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsNoNotify() {
 	expectedMergedAlert := newAlert.CloneVT()
 	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].GetViolations()...)
 
+	// Mock GetAlert to fetch the full alert for merging
+	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[0].GetId()).Return(alerts[0], true, nil)
+
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
 
 	// Updated alert should not notify
 
-	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), true).Return(alerts, nil)
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).Return(alertsToMatchKeys(alerts), nil)
 
 	// Add all the policies from the old alerts so that they aren't marked as stale
 	for _, a := range alerts {
@@ -383,6 +456,9 @@ func (suite *AlertManagerTestSuite) TestMergeMultipleResourceAlerts() {
 	newAlert2 := alerts[0].CloneVT()
 	newAlert2.Violations[0].Message = "new-violation-2"
 
+	// Mock GetAlert to fetch the full alert for merging (called once - batched by unique ID)
+	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[0].GetId()).Return(alerts[0], true, nil)
+
 	// There will be two calls to Upsert
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, gomock.Any()).Return(nil)
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, gomock.Any()).Return(nil)
@@ -391,7 +467,7 @@ func (suite *AlertManagerTestSuite) TestMergeMultipleResourceAlerts() {
 	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
 	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert2).Return()
 
-	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), true).Return(alerts, nil)
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).Return(alertsToMatchKeys(alerts), nil)
 
 	// Add all the policies from the old alerts so that they aren't marked as stale
 	for _, a := range alerts {
@@ -416,6 +492,9 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].GetViolations()...)
 	expectedMergedAlert.Violations = expectedMergedAlert.GetViolations()[:maxRunTimeViolationsPerAlert]
 
+	// Mock GetAlert to fetch the full alert for merging
+	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[0].GetId()).Return(alerts[0], true, nil)
+
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
 
@@ -424,7 +503,7 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 		suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
 	}
 
-	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), true).Return(alerts, nil)
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).Return(alertsToMatchKeys(alerts), nil)
 
 	// Add all the policies from the old alerts so that they aren't marked as stale
 	for _, a := range alerts {
@@ -450,12 +529,15 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].GetViolations()...)
 	expectedMergedAlert.Violations = expectedMergedAlert.GetViolations()[:maxRunTimeViolationsPerAlert]
 
+	// Mock GetAlert to fetch the full alert for merging
+	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[0].GetId()).Return(alerts[0], true, nil)
+
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
 
 	// Updated alert should not notify
 
-	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), true).Return(alerts, nil)
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).Return(alertsToMatchKeys(alerts), nil)
 
 	// Add all the policies from the old alerts so that they aren't marked as stale
 	for _, a := range alerts {
@@ -479,13 +561,16 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolation
 
 	expectedMergedAlert := newAlert.CloneVT()
 
+	// Mock GetAlert to fetch the full alert for merging
+	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[0].GetId()).Return(alerts[0], true, nil)
+
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
 
 	// Updated alert should notify if set to
 	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
 
-	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), true).Return(alerts, nil)
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).Return(alertsToMatchKeys(alerts), nil)
 
 	// Add all the policies from the old alerts so that they aren't marked as stale
 	for _, a := range alerts {
@@ -510,12 +595,15 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolation
 
 	expectedMergedAlert := newAlert.CloneVT()
 
+	// Mock GetAlert to fetch the full alert for merging
+	suite.alertsMock.EXPECT().GetAlert(suite.ctx, alerts[0].GetId()).Return(alerts[0], true, nil)
+
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
 
 	// Updated alert should not notify
 
-	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), true).Return(alerts, nil)
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).Return(alertsToMatchKeys(alerts), nil)
 
 	// Add all the policies from the old alerts so that they aren't marked as stale
 	for _, a := range alerts {
@@ -538,7 +626,7 @@ func (suite *AlertManagerTestSuite) TestOldResourceAlertAreMarkedAsResolvedWhenP
 	// We should get a notifications for new alert
 	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), newAlert).Return()
 
-	suite.alertsMock.EXPECT().SearchRawAlerts(suite.ctx, gomock.Any(), true).Return(alerts, nil)
+	suite.alertsMock.EXPECT().SearchAlertMatchKeys(suite.ctx, gomock.Any(), true).Return(alertsToMatchKeys(alerts), nil)
 
 	// Don't add any policies to simulate policies being deleted
 	suite.runtimeDetectorMock.EXPECT().PolicySet().Return(suite.policySet).AnyTimes()
@@ -1019,6 +1107,7 @@ func getAlerts() []*storage.Alert {
 func getDeployments() []*storage.Alert_Deployment {
 	return []*storage.Alert_Deployment{
 		{
+			Id:   "deployment1",
 			Name: "deployment1",
 			Containers: []*storage.Alert_Deployment_Container{
 				{
@@ -1032,6 +1121,7 @@ func getDeployments() []*storage.Alert_Deployment {
 			},
 		},
 		{
+			Id:   "deployment2",
 			Name: "deployment2",
 			Containers: []*storage.Alert_Deployment_Container{
 				{
@@ -1045,6 +1135,7 @@ func getDeployments() []*storage.Alert_Deployment {
 			},
 		},
 		{
+			Id:   "deployment3",
 			Name: "deployment3",
 			Containers: []*storage.Alert_Deployment_Container{
 				{
