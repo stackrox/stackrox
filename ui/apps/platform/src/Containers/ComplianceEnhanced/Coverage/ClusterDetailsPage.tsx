@@ -41,7 +41,7 @@ import { createScanConfigFilter, isScanConfigurationDisabled } from './complianc
 import ScanConfigurationSelect from './components/ScanConfigurationSelect';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
-import ProfilesToggleGroup from './ProfilesToggleGroup';
+import ProfilesToggleGroup from './ProfilesToggleGroup/ProfilesToggleGroup';
 
 function ClusterDetailsPage() {
     const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =

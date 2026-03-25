@@ -3,50 +3,9 @@ import { PageSection, Tab, Tabs, ToggleGroup, ToggleGroupItem } from '@patternfl
 
 import type { ComplianceProfileSummary } from 'services/ComplianceCommon';
 
-const NON_STANDARD_TAB = 'Other';
-const TAILORED_PROFILES_TAB = 'Tailored Profiles';
+import { getProfileTab, getStandardTabs } from './ProfilesToggleGroup.utils';
+
 const tabContentId = 'profiles-toggle-group';
-
-// Profiles usually have one entry in standards[], but return the first non-empty shortName if there are several.
-function getFirstStandardShortName(profile: ComplianceProfileSummary): string | undefined {
-    return profile.standards.find((standard) => standard.shortName.length > 0)?.shortName;
-}
-
-// Tailored profiles use their own tab; all other kinds use the first standard shortName or Other.
-function getProfileTab(profile: ComplianceProfileSummary): string {
-    if (profile.operatorKind === 'TAILORED_PROFILE') {
-        return TAILORED_PROFILES_TAB;
-    }
-
-    return getFirstStandardShortName(profile) ?? NON_STANDARD_TAB;
-}
-
-// Builds the list of tabs: sorted benchmark tabs, then Tailored and Other only when the profile list needs them
-function getStandardTabs(profiles: ComplianceProfileSummary[]): string[] {
-    const uniqueStandardShortNames = new Set<string>();
-    let isTailoredTabApplicable = false;
-    let isOtherTabApplicable = false;
-
-    profiles.forEach((profile) => {
-        if (profile.operatorKind === 'TAILORED_PROFILE') {
-            isTailoredTabApplicable = true;
-            return;
-        }
-
-        const standardShortName = getFirstStandardShortName(profile);
-        if (standardShortName) {
-            uniqueStandardShortNames.add(standardShortName);
-        } else {
-            isOtherTabApplicable = true;
-        }
-    });
-
-    return [
-        ...Array.from(uniqueStandardShortNames).sort(),
-        ...(isTailoredTabApplicable ? [TAILORED_PROFILES_TAB] : []),
-        ...(isOtherTabApplicable ? [NON_STANDARD_TAB] : []),
-    ];
-}
 
 type ProfilesToggleGroupProps = {
     profileName: string;
@@ -98,7 +57,7 @@ function ProfilesToggleGroup({
         <>
             <PageSection type="tabs">
                 <Tabs
-                    activeKey={selectedStandard}
+                    activeKey={selectedStandard ?? ''}
                     onSelect={(_e, key) => {
                         handleStandardSelection(String(key));
                     }}

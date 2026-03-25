@@ -36,7 +36,7 @@ import ProfileStatsWidget from './components/ProfileStatsWidget';
 import ScanConfigurationSelect from './components/ScanConfigurationSelect';
 import CoveragesPageHeader from './CoveragesPageHeader';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
-import ProfilesToggleGroup from './ProfilesToggleGroup';
+import ProfilesToggleGroup from './ProfilesToggleGroup/ProfilesToggleGroup';
 import ProfileChecksPage from './ProfileChecksPage';
 import ProfileClustersPage from './ProfileClustersPage';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
