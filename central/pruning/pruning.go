@@ -221,6 +221,7 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	if env.OrphanedCVEsKeepAlive.BooleanSetting() {
 		g.pruneOrphanedNodeCVEs()
 	}
+	g.pruneTombstonedDeployments()
 
 	log.Info("[Pruning] Finished garbage collection cycle")
 }
@@ -1229,6 +1230,79 @@ func (g *garbageCollectorImpl) removeExpiredDynamicRBACObjects() {
 		log.Infof("[Expired objects pruning] Removed %d roles, %d permission sets, %d access scopes",
 			expiredRoleCount, expiredPSCount, expiredASCount)
 	}
+}
+
+// pruneTombstonedDeployments hard-deletes tombstoned deployments whose TTL has expired.
+// The expiry timestamp (tombstone_expires_at) is pre-computed at soft-delete time, so
+// the pruner simply queries for records where that timestamp is in the past.
+// For each expired deployment the associated TOMBSTONED alerts are resolved first to
+// maintain referential consistency, and only after that the deployment record is removed.
+func (g *garbageCollectorImpl) pruneTombstonedDeployments() {
+	if !features.DeploymentTombstones.Enabled() {
+		return
+	}
+
+	defer metrics.SetPruningDuration(time.Now(), "TombstonedDeployments")
+
+	// AddDays(TombstoneExpiresAt, 0) generates the predicate "tombstone_expires_at < now()".
+	// NULL values (active deployments) never satisfy the comparison and are excluded naturally.
+	q := search.NewQueryBuilder().
+		AddDays(search.TombstoneExpiresAt, 0).
+		ProtoQuery()
+
+	expired, err := g.deployments.SearchTombstonedDeployments(pruningCtx, q)
+	if err != nil {
+		log.Errorf("[Tombstone pruning] Error searching for expired tombstoned deployments: %v", err)
+		return
+	}
+
+	if len(expired) == 0 {
+		log.Debug("[Tombstone pruning] No expired tombstoned deployments found.")
+		return
+	}
+
+	log.Infof("[Tombstone pruning] Found %d expired tombstoned deployment(s). Pruning...", len(expired))
+
+	for _, deployment := range expired {
+		deploymentID := deployment.GetId()
+		clusterID := deployment.GetClusterId()
+
+		// Resolve all TOMBSTONED alerts associated with this deployment before hard-deleting
+		// the deployment record. This preserves a clean alert history and prevents
+		// orphaned alerts from appearing after the deployment is removed.
+		tombstonedAlertsQuery := search.NewQueryBuilder().
+			AddExactMatches(search.DeploymentID, deploymentID).
+			AddExactMatches(search.ViolationState, storage.ViolationState_TOMBSTONED.String()).
+			ProtoQuery()
+
+		var tombstonedAlertIDs []string
+		walkErr := g.alerts.WalkByQuery(pruningCtx, tombstonedAlertsQuery, func(alert *storage.Alert) error {
+			tombstonedAlertIDs = append(tombstonedAlertIDs, alert.GetId())
+			return nil
+		})
+		if walkErr != nil {
+			log.Errorf("[Tombstone pruning] Error fetching TOMBSTONED alerts for deployment %s: %v — skipping deployment", deploymentID, walkErr)
+			continue
+		}
+
+		if len(tombstonedAlertIDs) > 0 {
+			if _, resolveErr := g.alerts.MarkAlertsResolvedBatch(pruningCtx, tombstonedAlertIDs...); resolveErr != nil {
+				log.Errorf("[Tombstone pruning] Error resolving TOMBSTONED alerts for deployment %s: %v — skipping deployment", deploymentID, resolveErr)
+				continue
+			}
+			log.Debugf("[Tombstone pruning] Resolved %d TOMBSTONED alert(s) for deployment %s", len(tombstonedAlertIDs), deploymentID)
+		}
+
+		// Hard-delete the deployment only after its alerts have been resolved.
+		if removeErr := g.deployments.RemoveDeployment(pruningCtx, clusterID, deploymentID); removeErr != nil {
+			log.Errorf("[Tombstone pruning] Error removing expired tombstoned deployment %s (cluster %s): %v", deploymentID, clusterID, removeErr)
+			continue
+		}
+
+		log.Debugf("[Tombstone pruning] Hard-deleted expired tombstoned deployment %s (cluster %s)", deploymentID, clusterID)
+	}
+
+	log.Infof("[Tombstone pruning] Finished pruning %d expired tombstoned deployment(s).", len(expired))
 }
 
 func (g *garbageCollectorImpl) Stop() {
