@@ -291,7 +291,7 @@ func (m *managerImpl) addBaseline(deploymentID string) []*storage.ProcessBaselin
 	query := search.NewQueryBuilder().
 		AddExactMatches(search.DeploymentID, deploymentID).
 		ProtoQuery()
-	_ = m.processesDataStore.GetByQueryFn(lifecycleMgrCtx, query, fn)
+	utils.Should(m.processesDataStore.GetByQueryFn(lifecycleMgrCtx, query, fn))
 
 	return m.processBaselineMap(baselineMap)
 }
