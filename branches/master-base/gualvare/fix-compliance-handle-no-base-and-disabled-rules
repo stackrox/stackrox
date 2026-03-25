@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "master",
-    "hash": "6dd9ac66f2ee03788e9ce9a4c6d3b78a791ffa44"
+    "hash": "d5df47775b5251d727cfcd9893f3827af2f0965f"
   },
   "upstream": {
     "branch": "master-base/gualvare/fix-compliance-handle-no-base-and-disabled-rules"
