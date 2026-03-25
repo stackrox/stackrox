@@ -557,9 +557,12 @@ type PrivateConfig struct {
 	AdministrationEventsConfig          *AdministrationEventsConfig           `protobuf:"bytes,8,opt,name=administration_events_config,json=administrationEventsConfig,proto3" json:"administration_events_config,omitempty"`
 	// This field defines groups of custom Prometheus metrics to be exposed by the
 	// backend on the API endpoint.
-	Metrics       *PrometheusMetrics `protobuf:"bytes,9,opt,name=metrics,proto3" json:"metrics,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Metrics *PrometheusMetrics `protobuf:"bytes,9,opt,name=metrics,proto3" json:"metrics,omitempty"`
+	// TombstoneRetentionConfig controls how long soft-deleted deployment records are retained.
+	// Pre-generation stub: will be replaced when make proto-generated-srcs runs.
+	TombstoneRetentionConfig *TombstoneRetentionConfig `protobuf:"bytes,10,opt,name=tombstone_retention_config,json=tombstoneRetentionConfig,proto3" json:"tombstone_retention_config,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *PrivateConfig) Reset() {
@@ -664,6 +667,31 @@ func (x *PrivateConfig) GetMetrics() *PrometheusMetrics {
 		return x.Metrics
 	}
 	return nil
+}
+
+// GetTombstoneRetentionConfig returns the tombstone retention configuration.
+// Pre-generation stub: will be replaced when make proto-generated-srcs runs.
+func (x *PrivateConfig) GetTombstoneRetentionConfig() *TombstoneRetentionConfig {
+	if x != nil {
+		return x.TombstoneRetentionConfig
+	}
+	return nil
+}
+
+// TombstoneRetentionConfig controls how long soft-deleted deployment records are retained.
+// Pre-generation stub: will be replaced when make proto-generated-srcs runs.
+type TombstoneRetentionConfig struct {
+	// RetentionDurationDays is the number of days tombstoned deployments are kept.
+	// Set to 0 to disable tombstoning (immediate hard-delete, preserving existing behavior).
+	RetentionDurationDays int32 `protobuf:"varint,1,opt,name=retention_duration_days,json=retentionDurationDays,proto3" json:"retention_duration_days,omitempty"`
+}
+
+// GetRetentionDurationDays returns the number of days tombstoned deployments are kept.
+func (x *TombstoneRetentionConfig) GetRetentionDurationDays() int32 {
+	if x != nil {
+		return x.RetentionDurationDays
+	}
+	return 0
 }
 
 type isPrivateConfig_AlertRetention interface {

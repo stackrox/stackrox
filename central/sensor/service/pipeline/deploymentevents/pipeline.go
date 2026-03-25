@@ -2,8 +2,10 @@ package deploymentevents
 
 import (
 	"context"
+	"time"
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentutils "github.com/stackrox/rox/central/deployment/utils"
 	"github.com/stackrox/rox/central/detection/lifecycle"
@@ -20,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
@@ -122,22 +125,50 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	return err
 }
 
-// Run runs the pipeline template on the input and returns the output.
+// runRemovePipeline handles the removal of a deployment, routing through the tombstone
+// soft-delete path when the DeploymentTombstones feature is enabled and a TTL is configured,
+// or falling back to hard-delete (original behavior) otherwise.
 func (s *pipelineImpl) runRemovePipeline(ctx context.Context, deploymentID, clusterID string, isReconciliation bool) error {
-	// If we're in reconciliation, manage the alert lifecycle.
-	// Otherwise, this will get handled in the alerts pipeline since sensor sends the deployment
-	// remove event over there.
-	// Doing it here can cause a race while handling it in the alert pipeline ensures it will be done sequentially.
-	// For reconciliation, though, we're not going to receive that message from sensor, so we do it here.
+	if features.DeploymentTombstones.Enabled() {
+		ttlDays := s.getTombstoneTTL(ctx)
+		if ttlDays > 0 {
+			// Tombstone path: transition alert state and soft-delete the deployment.
+			// For reconciliation the alerts pipeline won't fire, so always call here.
+			// For live removes the alerts pipeline is guarded to skip DeploymentRemoved
+			// when tombstoning is active, so calling DeploymentTombstoned here is safe.
+			if err := s.lifecycleManager.DeploymentTombstoned(deploymentID); err != nil {
+				return err
+			}
+
+			// Clean up network baselines before the soft-delete so that a failed
+			// baseline cleanup cannot leave stale edges after the deployment is gone.
+			if err := s.networkBaselines.ProcessDeploymentDelete(deploymentID); err != nil {
+				return err
+			}
+
+			expiresAt := time.Now().Add(time.Duration(ttlDays) * 24 * time.Hour)
+			if err := s.deployments.TombstoneDeployment(ctx, clusterID, deploymentID, expiresAt); err != nil {
+				return err
+			}
+
+			s.graphEvaluator.IncrementEpoch(clusterID)
+			return nil
+		}
+	}
+
+	// Hard-delete path (original behavior).
+	// If we're in reconciliation, manage the alert lifecycle here because sensor does not
+	// send a separate remove event for reconciled deployments. For live removes the alerts
+	// pipeline handles this sequentially to avoid a race.
 	if isReconciliation {
 		if err := s.lifecycleManager.DeploymentRemoved(deploymentID); err != nil {
 			return err
 		}
 	}
 
-	// Before removing the deployment, clean up all the network baselines that had an edge to this deployment
-	// Otherwise if deployment delete succeeded but baseline clean up failed, we may never have chance to
-	// clean up these baselines
+	// Before removing the deployment, clean up all the network baselines that had an edge
+	// to this deployment. Doing this first ensures baselines are not left stale if the
+	// deployment removal succeeds but the baseline cleanup does not run.
 	if err := s.networkBaselines.ProcessDeploymentDelete(deploymentID); err != nil {
 		return err
 	}
@@ -149,6 +180,26 @@ func (s *pipelineImpl) runRemovePipeline(ctx context.Context, deploymentID, clus
 
 	s.graphEvaluator.IncrementEpoch(clusterID)
 	return nil
+}
+
+// getTombstoneTTL reads the tombstone retention duration from the system configuration.
+// It returns the configured TTL in days, or DefaultTombstoneRetentionDays if the config
+// cannot be read or has no explicit value set.
+func (s *pipelineImpl) getTombstoneTTL(ctx context.Context) int32 {
+	// Use elevated access because reading global system config is an admin-level operation
+	// that must not be filtered by the sensor-facing request context's SAC scope.
+	cfgCtx := sac.WithAllAccess(ctx)
+	pvtConfig, err := configDatastore.Singleton().GetPrivateConfig(cfgCtx)
+	if err != nil || pvtConfig == nil {
+		log.Warnf("Failed to read private config for tombstone TTL, using default %d days: %v",
+			configDatastore.DefaultTombstoneRetentionDays, err)
+		return configDatastore.DefaultTombstoneRetentionDays
+	}
+	ttl := pvtConfig.GetTombstoneRetentionConfig().GetRetentionDurationDays()
+	if ttl == 0 {
+		return configDatastore.DefaultTombstoneRetentionDays
+	}
+	return ttl
 }
 
 func compareMap(m1, m2 map[string]string) bool {
