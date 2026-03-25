@@ -132,7 +132,7 @@ var (
 	TailoredProfiles = registerFeature("Enable support for tailored profiles", "ROX_TAILORED_PROFILES")
 
 	// DeploymentTombstones enables soft-deletion of deployments for audit purposes.
-	DeploymentTombstones = registerFeature("Deployment Tombstones", "ROX_DEPLOYMENT_TOMBSTONES")
+	DeploymentTombstones = registerFeature("Enable soft-deletion (tombstoning) of deployments for compliance audit", "ROX_DEPLOYMENT_TOMBSTONES")
 )
 
 // The following feature flags are related to Scanner V4.

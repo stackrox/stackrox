@@ -38,8 +38,7 @@ const (
 	DefaultDownloadableReportGlobalRetentionBytes = 500 * 1024 * 1024
 	// DefaultAdministrationEventsRetention is the number of days to retain administration events.
 	DefaultAdministrationEventsRetention = 4
-	// DefaultTombstoneRetentionDays is the number of days tombstoned deployments are retained
-	// before hard-deletion, when no explicit config is provided.
+	// DefaultTombstoneRetentionDays is the number of days to retain soft-deleted (tombstoned) deployments before hard-deletion.
 	DefaultTombstoneRetentionDays = 30
 	// PlatformComponentSystemRuleName is the name of the system defined rule for matching openshift and kube workloads
 	PlatformComponentSystemRuleName = "system rule"

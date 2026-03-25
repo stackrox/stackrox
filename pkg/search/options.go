@@ -202,9 +202,10 @@ var (
 	TaintValue                    = newFieldLabel("Taint Value")
 	TolerationKey                 = newFieldLabel("Toleration Key")
 	TolerationValue               = newFieldLabel("Toleration Value")
-	TolerationEffect              = newFieldLabel("Taint Effect")
-	TombstoneDeletedAt            = newFieldLabel("Tombstone Deleted At")
-	TombstoneExpiresAt            = newFieldLabel("Tombstone Expires At")
+	TolerationEffect = newFieldLabel("Taint Effect")
+	// Tombstone search fields.
+	TombstoneDeletedAt = newFieldLabel("Tombstone Deleted At")
+	TombstoneExpiresAt = newFieldLabel("Tombstone Expires At")
 
 	AlertID        = newFieldLabel("Alert ID")
 	Violation      = newFieldLabel("Violation")
