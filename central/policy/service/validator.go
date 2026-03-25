@@ -474,12 +474,10 @@ func (s *policyValidator) validateNodeEventPolicy(policy *storage.Policy) error 
 		return errors.New("Node event policies must contain only node fields")
 	}
 
-	if booleanpolicy.ContainsOneOf(policy, booleanpolicy.Process) {
-		for _, section := range policy.GetPolicySections() {
-			if booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.Process) &&
-				!booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.FileAccess) {
-				return errors.New("Node event policies with process criteria must include file access criteria in the same section")
-			}
+	for _, section := range policy.GetPolicySections() {
+		if booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.Process) &&
+			!booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.FileAccess) {
+			return errors.New("Node event policies with process criteria must include file access criteria in the same section")
 		}
 	}
 
