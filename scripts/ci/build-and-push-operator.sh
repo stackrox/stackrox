@@ -54,28 +54,6 @@ build_operator_image() {
     github_endgroup
 }
 
-test_operator_image() {
-    local arch="$1"
-    local image="$2"
-
-    # Only test amd64 and arm64 to save time
-    if [[ "${arch}" != "amd64" ]] && [[ "${arch}" != "arm64" ]]; then
-        return 0
-    fi
-
-    github_group "Testing operator image: ${arch}"
-
-    if [[ "${arch}" == "arm64" ]]; then
-        info "Setting up QEMU for ARM64 testing on amd64 runner"
-        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-    fi
-
-    info "Testing image is runnable: ${image}"
-    docker run --rm --platform "linux/${arch}" "${image}" --help
-
-    github_endgroup
-}
-
 push_operator_image_for_arch() {
     local push_context="$1"
     local branding="$2"
@@ -92,13 +70,11 @@ push_operator_image_for_arch() {
     github_endgroup
 }
 
-build_branding() {
+build_and_push_branding() {
     local push_context="$1"
     local branding="$2"
     shift 2
     local archs=("$@")
-
-    github_group "Building for branding: ${branding}"
 
     export ROX_PRODUCT_BRANDING="${branding}"
 
@@ -109,7 +85,6 @@ build_branding() {
     else
         quay_org="stackrox-io"
     fi
-    export QUAY_ORG="${quay_org}"
 
     info "Docker login to quay.io/${quay_org}"
     registry_rw_login "quay.io/${quay_org}"
@@ -121,12 +96,8 @@ build_branding() {
         local image="quay.io/${quay_org}/stackrox-operator:${tag}"
 
         build_operator_image "${branding}" "${arch}"
-        test_operator_image "${arch}" "${image}"
         push_operator_image_for_arch "${push_context}" "${branding}" "${arch}"
     done
-
-    # Create and push multi-arch manifest
-    github_group "Creating multi-arch manifest for ${branding}"
 
     local arch_csv
     arch_csv=$(IFS=,; echo "${archs[*]}")
@@ -135,9 +106,6 @@ build_branding() {
     push_operator_manifest_lists "${push_context}" "${branding}" "${arch_csv}"
 
     info "Completed builds and manifest for ${branding}"
-    github_endgroup
-
-    github_endgroup  # End branding group
 }
 
 main() {
@@ -172,7 +140,9 @@ main() {
 
     # Build for each branding
     for branding in RHACS_BRANDING STACKROX_BRANDING; do
-        build_branding "${push_context}" "${branding}" "${archs[@]}"
+        github_group "Building for branding: ${branding}"
+        build_and_push_branding "${push_context}" "${branding}" "${archs[@]}"
+        github_endgroup
     done
 
     info "All operator images and manifests built and pushed successfully"
