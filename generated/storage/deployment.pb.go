@@ -274,6 +274,10 @@ type Deployment struct {
 	StateTimestamp                int64                  `protobuf:"varint,27,opt,name=state_timestamp,json=stateTimestamp,proto3" json:"state_timestamp,omitempty" hash:"ignore" sensorhash:"ignore"`                                                                               // Internal use only @gotags: hash:"ignore" sensorhash:"ignore"
 	RiskScore                     float32                `protobuf:"fixed32,29,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"`                                                                                             // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"
 	PlatformComponent             bool                   `protobuf:"varint,35,opt,name=platform_component,json=platformComponent,proto3" json:"platform_component,omitempty" search:"Platform Component"`                                                                      // @gotags: search:"Platform Component"
+	// Tombstone marks the deployment as soft-deleted but retained for audit.
+	// A nil tombstone indicates an active deployment.
+	// Field 36 matches the proto definition in storage/deployment.proto.
+	Tombstone *Tombstone `protobuf:"bytes,36,opt,name=tombstone,proto3" json:"tombstone,omitempty"` // @gotags: search:"-"
 	unknownFields                 protoimpl.UnknownFields
 	sizeCache                     protoimpl.SizeCache
 }
@@ -523,6 +527,14 @@ func (x *Deployment) GetPlatformComponent() bool {
 		return x.PlatformComponent
 	}
 	return false
+}
+
+// GetTombstone returns the tombstone if the deployment is soft-deleted, or nil for active deployments.
+func (x *Deployment) GetTombstone() *Tombstone {
+	if x != nil {
+		return x.Tombstone
+	}
+	return nil
 }
 
 // Next tag: 13

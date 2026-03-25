@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"time"
 
 	"github.com/stackrox/rox/central/deployment/cache"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/store"
@@ -41,6 +42,14 @@ type DataStore interface {
 	UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error
 
 	RemoveDeployment(ctx context.Context, clusterID, id string) error
+
+	// TombstoneDeployment soft-deletes a deployment by setting tombstone fields,
+	// retaining it for audit until the configured TTL expires.
+	TombstoneDeployment(ctx context.Context, clusterID, deploymentID string, expiresAt time.Time) error
+
+	// SearchTombstonedDeployments returns tombstoned deployments matching the query,
+	// bypassing the default filter that excludes tombstoned records.
+	SearchTombstonedDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error)
 
 	GetImagesForDeployment(ctx context.Context, deployment *storage.Deployment) ([]*storage.Image, error)
 	GetDeploymentIDs(ctx context.Context) ([]string, error)

@@ -32,11 +32,17 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
 	deploymentsSAC = sac.ForResource(resources.Deployment)
 )
+
+// excludeTombstonedFilter returns a query that excludes soft-deleted deployments.
+func excludeTombstonedFilter() *v1.Query {
+	return pkgSearch.NewQueryBuilder().AddNullField(pkgSearch.TombstoneDeletedAt).ProtoQuery()
+}
 
 type datastoreImpl struct {
 	deploymentStore deploymentStore.Store
@@ -134,12 +140,18 @@ func (ds *datastoreImpl) initializeRanker() {
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
-	return ds.deploymentStore.Search(ctx, q)
+	if q == nil {
+		q = pkgSearch.EmptyQuery()
+	}
+	return ds.deploymentStore.Search(ctx, pkgSearch.ConjunctionQuery(excludeTombstonedFilter(), q))
 }
 
-// Count returns the number of search results from the query
+// Count returns the number of search results from the query.
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return ds.deploymentStore.Count(ctx, q)
+	if q == nil {
+		q = pkgSearch.EmptyQuery()
+	}
+	return ds.deploymentStore.Count(ctx, pkgSearch.ConjunctionQuery(excludeTombstonedFilter(), q))
 }
 
 func (ds *datastoreImpl) ListDeployment(ctx context.Context, id string) (*storage.ListDeployment, bool, error) {
@@ -158,7 +170,10 @@ func (ds *datastoreImpl) ListDeployment(ctx context.Context, id string) (*storag
 func (ds *datastoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "SearchListDeployments")
 
-	listDeployments, err := ds.deploymentStore.SearchListDeployments(ctx, q)
+	if q == nil {
+		q = pkgSearch.EmptyQuery()
+	}
+	listDeployments, err := ds.deploymentStore.SearchListDeployments(ctx, pkgSearch.ConjunctionQuery(excludeTombstonedFilter(), q))
 	if err != nil {
 		return nil, err
 	}
@@ -167,14 +182,16 @@ func (ds *datastoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query)
 	return listDeployments, nil
 }
 
-// SearchDeployments
+// SearchDeployments returns search results for deployments matching the query.
 func (ds *datastoreImpl) SearchDeployments(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "SearchDeployments")
 	if q == nil {
 		q = pkgSearch.EmptyQuery()
 	}
-	// Clone the query and add select fields for SearchResult construction
-	clonedQuery := q.CloneVT()
+	// Apply the tombstone exclusion filter before constructing the select query.
+	filteredQ := pkgSearch.ConjunctionQuery(excludeTombstonedFilter(), q)
+	// Clone the filtered query and add select fields for SearchResult construction.
+	clonedQuery := filteredQ.CloneVT()
 	selectSelects := []*v1.QuerySelect{
 		pkgSearch.NewQuerySelect(pkgSearch.DeploymentName).Proto(),
 		pkgSearch.NewQuerySelect(pkgSearch.Cluster).Proto(),
@@ -196,12 +213,15 @@ func (ds *datastoreImpl) SearchDeployments(ctx context.Context, q *v1.Query) ([]
 	return pkgSearch.ResultsToSearchResultProtos(results, &DeploymentSearchResultConverter{}), nil
 }
 
-// SearchRawDeployments
+// SearchRawDeployments returns full deployment objects matching the query.
 func (ds *datastoreImpl) SearchRawDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "SearchRawDeployments")
 
+	if q == nil {
+		q = pkgSearch.EmptyQuery()
+	}
 	var deployments []*storage.Deployment
-	err := ds.deploymentStore.WalkByQuery(ctx, q, func(deployment *storage.Deployment) error {
+	err := ds.deploymentStore.WalkByQuery(ctx, pkgSearch.ConjunctionQuery(excludeTombstonedFilter(), q), func(deployment *storage.Deployment) error {
 		deployments = append(deployments, deployment)
 		return nil
 	})
@@ -254,11 +274,14 @@ func (ds *datastoreImpl) CountDeployments(ctx context.Context) (int, error) {
 }
 
 func (ds *datastoreImpl) WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.Deployment) error) error {
+	if query == nil {
+		query = pkgSearch.EmptyQuery()
+	}
 	wrappedFn := func(deployment *storage.Deployment) error {
 		ds.updateDeploymentPriority(deployment)
 		return fn(deployment)
 	}
-	return ds.deploymentStore.WalkByQuery(ctx, query, wrappedFn)
+	return ds.deploymentStore.WalkByQuery(ctx, pkgSearch.ConjunctionQuery(excludeTombstonedFilter(), query), wrappedFn)
 }
 
 // UpsertDeployment inserts a deployment into deploymentStore
@@ -320,12 +343,20 @@ func (ds *datastoreImpl) mergeCronJobs(ctx context.Context, deployment *storage.
 	return nil
 }
 
-// upsertDeployment inserts a deployment into deploymentStore
+// upsertDeployment inserts a deployment into deploymentStore.
 func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *storage.Deployment) error {
 	if ok, err := deploymentsSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
+	}
+
+	// Resurrection: if the incoming deployment is currently tombstoned, clear the tombstone.
+	// This can happen when sensor reconnects and re-sends state for a deployment that was
+	// soft-deleted during downtime.
+	if existingDep, found, err := ds.deploymentStore.Get(ctx, deployment.GetId()); err == nil && found && existingDep.GetTombstone() != nil {
+		log.Warnf("Resurrecting tombstoned deployment %s (name: %s) — clearing tombstone fields", deployment.GetId(), deployment.GetName())
+		deployment.Tombstone = nil
 	}
 
 	// Update deployment with latest risk score
@@ -351,25 +382,12 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 	return nil
 }
 
-// RemoveDeployment removes an alert from the deploymentStore
-func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id string) error {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "RemoveDeployment")
-
-	if ok, err := deploymentsSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-	// Dedupe the removed deployments. This can happen because Pods have many completion states
-	// and we may receive multiple Remove calls
-	if ds.deletedDeploymentCache != nil {
-		if ds.deletedDeploymentCache.Contains(id) {
-			return nil
-		}
-		ds.deletedDeploymentCache.Add(id)
-	}
-	// Though the filter is updated upon pod update,
-	// We still want to ensure it is properly cleared when the deployment is deleted.
+// removeOperationalData cleans up all operational side-effects associated with a deployment.
+// It removes risk scores, process baselines, and network flows. This is called both by
+// RemoveDeployment (hard delete) and TombstoneDeployment (soft delete).
+func (ds *datastoreImpl) removeOperationalData(ctx context.Context, id, clusterID string) error {
+	// Though the filter is updated upon pod update, we still want to ensure it is properly
+	// cleared when the deployment is deleted.
 	ds.processFilter.Delete(id)
 
 	errorList := errorhelpers.NewErrorList("deleting related objects of deployments")
@@ -397,8 +415,34 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 		errorList.AddError(err)
 	}
 
-	// Delete should be last to ensure that the above is always cleaned up even in the case of crash
-	err = ds.keyedMutex.DoStatusWithLock(id, func() error {
+	return errorList.ToError()
+}
+
+// RemoveDeployment removes a deployment from the deploymentStore.
+func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id string) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "RemoveDeployment")
+
+	if ok, err := deploymentsSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+	// Dedupe the removed deployments. This can happen because Pods have many completion states
+	// and we may receive multiple Remove calls.
+	if ds.deletedDeploymentCache != nil {
+		if ds.deletedDeploymentCache.Contains(id) {
+			return nil
+		}
+		ds.deletedDeploymentCache.Add(id)
+	}
+
+	errorList := errorhelpers.NewErrorList("deleting related objects of deployments")
+	if err := ds.removeOperationalData(ctx, id, clusterID); err != nil {
+		errorList.AddError(err)
+	}
+
+	// Delete should be last to ensure that the above is always cleaned up even in the case of crash.
+	err := ds.keyedMutex.DoStatusWithLock(id, func() error {
 		if err := ds.deploymentStore.Delete(ctx, id); err != nil {
 			return err
 		}
@@ -409,6 +453,66 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	}
 
 	return errorList.ToError()
+}
+
+// TombstoneDeployment soft-deletes a deployment by setting tombstone fields,
+// retaining it for audit until the configured TTL expires.
+func (ds *datastoreImpl) TombstoneDeployment(ctx context.Context, clusterID, deploymentID string, expiresAt time.Time) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "TombstoneDeployment")
+
+	if ok, err := deploymentsSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	// Deduplicate: if already cached as deleted, skip.
+	if ds.deletedDeploymentCache != nil && ds.deletedDeploymentCache.Contains(deploymentID) {
+		return nil
+	}
+
+	// Clean up operational data immediately (same as RemoveDeployment, minus the actual DB delete).
+	if err := ds.removeOperationalData(ctx, deploymentID, clusterID); err != nil {
+		return err
+	}
+
+	// Soft-delete: fetch, set tombstone fields, then upsert.
+	return ds.keyedMutex.DoStatusWithLock(deploymentID, func() error {
+		deployment, found, err := ds.deploymentStore.Get(ctx, deploymentID)
+		if err != nil {
+			return err
+		}
+		if !found {
+			return nil
+		}
+		now := time.Now()
+		deployment.Tombstone = &storage.Tombstone{
+			DeletedAt: timestamppb.New(now),
+			ExpiresAt: timestamppb.New(expiresAt),
+		}
+		if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
+			return errors.Wrapf(err, "upserting tombstoned deployment %s", deploymentID)
+		}
+		// Add to deleted cache to deduplicate future calls.
+		if ds.deletedDeploymentCache != nil {
+			ds.deletedDeploymentCache.Add(deploymentID)
+		}
+		return nil
+	})
+}
+
+// SearchTombstonedDeployments returns tombstoned deployments matching the query,
+// bypassing the default filter that excludes tombstoned records.
+func (ds *datastoreImpl) SearchTombstonedDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error) {
+	if q == nil {
+		q = pkgSearch.EmptyQuery()
+	}
+	var deployments []*storage.Deployment
+	err := ds.deploymentStore.WalkByQuery(ctx, q, func(deployment *storage.Deployment) error {
+		deployments = append(deployments, deployment)
+		return nil
+	})
+	return deployments, err
 }
 
 // TODO: ROX-30948 Make this return []*storage.ImageV2

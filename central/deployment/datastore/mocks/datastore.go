@@ -12,6 +12,7 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	views "github.com/stackrox/rox/central/deployment/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -266,4 +267,33 @@ func (m *MockDataStore) WalkByQuery(ctx context.Context, query *v1.Query, fn fun
 func (mr *MockDataStoreMockRecorder) WalkByQuery(ctx, query, fn any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkByQuery", reflect.TypeOf((*MockDataStore)(nil).WalkByQuery), ctx, query, fn)
+}
+
+// TombstoneDeployment mocks base method.
+func (m *MockDataStore) TombstoneDeployment(ctx context.Context, clusterID, deploymentID string, expiresAt time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TombstoneDeployment", ctx, clusterID, deploymentID, expiresAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TombstoneDeployment indicates an expected call of TombstoneDeployment.
+func (mr *MockDataStoreMockRecorder) TombstoneDeployment(ctx, clusterID, deploymentID, expiresAt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TombstoneDeployment", reflect.TypeOf((*MockDataStore)(nil).TombstoneDeployment), ctx, clusterID, deploymentID, expiresAt)
+}
+
+// SearchTombstonedDeployments mocks base method.
+func (m *MockDataStore) SearchTombstonedDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchTombstonedDeployments", ctx, q)
+	ret0, _ := ret[0].([]*storage.Deployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchTombstonedDeployments indicates an expected call of SearchTombstonedDeployments.
+func (mr *MockDataStoreMockRecorder) SearchTombstonedDeployments(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchTombstonedDeployments", reflect.TypeOf((*MockDataStore)(nil).SearchTombstonedDeployments), ctx, q)
 }
