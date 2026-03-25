@@ -538,6 +538,7 @@ func getSelectsWatchedImages() []*v1.QuerySelect {
 		search.NewQuerySelect(search.EPSSProbablity).Proto(),
 		search.NewQuerySelect(search.AdvisoryName).Proto(),
 		search.NewQuerySelect(search.AdvisoryLink).Proto(),
+		search.NewQuerySelect(search.ComponentVersion).Proto(),
 	}
 	return ret
 }
@@ -546,6 +547,7 @@ func getSelectsDeployedImages() []*v1.QuerySelect {
 	ret := []*v1.QuerySelect{
 		search.NewQuerySelect(search.ImageName).Proto(),
 		search.NewQuerySelect(search.Component).Proto(),
+		search.NewQuerySelect(search.ComponentVersion).Proto(),
 		search.NewQuerySelect(search.CVEID).Proto(),
 		search.NewQuerySelect(search.CVE).Proto(),
 		search.NewQuerySelect(search.Fixable).Proto(),
@@ -560,6 +562,7 @@ func getSelectsDeployedImages() []*v1.QuerySelect {
 		search.NewQuerySelect(search.EPSSProbablity).Proto(),
 		search.NewQuerySelect(search.AdvisoryName).Proto(),
 		search.NewQuerySelect(search.AdvisoryLink).Proto(),
+		search.NewQuerySelect(search.ComponentVersion).Proto(),
 	}
 	return ret
 }

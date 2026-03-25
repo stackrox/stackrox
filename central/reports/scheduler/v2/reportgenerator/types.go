@@ -44,7 +44,8 @@ type ImageCVEQueryResponse struct {
 	AdvisoryName      *string                        `db:"advisory_name"`
 	AdvisoryLink      *string                        `db:"advisory_link"`
 
-	Link string
+	Link             string
+	ComponentVersion *string `db:"component_version"`
 }
 
 func (res *ImageCVEQueryResponse) GetCluster() string {
@@ -80,6 +81,13 @@ func (res *ImageCVEQueryResponse) GetComponent() string {
 		return ""
 	}
 	return *res.Component
+}
+
+func (res *ImageCVEQueryResponse) GetComponentVersion() string {
+	if res.ComponentVersion == nil {
+		return ""
+	}
+	return *res.ComponentVersion
 }
 
 func (res *ImageCVEQueryResponse) GetCVEID() string {
