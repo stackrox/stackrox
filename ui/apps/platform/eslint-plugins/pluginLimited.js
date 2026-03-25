@@ -204,6 +204,57 @@ const rules = {
     // If your rule only disallows something, prefix it with no.
     // However, we can write forbid instead of disallow as the verb in description and message.
 
+    'no-PatternFly-utility-layout': {
+        // Identify files for potential replacement of utility layout.
+        // Less of a rule than a tool to document technical investment.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Identify files for potential replacement of utility layout',
+            },
+            schema: [],
+        },
+        create(context) {
+            // Omit 0 value because fewer occurrences and in case it is more needed that word values like lg.
+            const utilityRegExp = /^pf-v\d+-u-(m|mb|ml|mr|mt|mx|my|p|pb|pl|pr|pt|px|py)-[^0]/;
+            const message = 'Evaluate pro and con of element prop versus utility class for layout';
+
+            return {
+                JSXAttribute(node) {
+                    if (node.name?.name === 'className') {
+                        if (typeof node.value?.value === 'string') {
+                            if (
+                                node.value.value.split(' ').some((item) => utilityRegExp.test(item))
+                            ) {
+                                context.report({
+                                    node,
+                                    message,
+                                });
+                            }
+                        } else if (
+                            Array.isArray(node.value?.expression?.quasis) &&
+                            node.value.expression.quasis.every(
+                                (quasi) => typeof quasi.value?.cooked === 'string'
+                            )
+                        ) {
+                            if (
+                                node.value.expression.quasis.some((quasi) =>
+                                    quasi.value.cooked
+                                        .split(' ')
+                                        .some((item) => utilityRegExp.test(item))
+                                )
+                            ) {
+                                context.report({
+                                    node,
+                                    message,
+                                });
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
     'no-Tailwind': {
         // Forbid Tailwind classes outside legacy folders.
         // See ignores array in eslint.config.js file.
