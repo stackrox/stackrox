@@ -59,8 +59,8 @@ function SecureClusterUsingHelmChart({
                 <InstallMethodDeprecationAlert
                     deprecationMessage={
                         <>
-                            The <strong>rhacs/secured-cluster-services</strong> Helm chart is deprecated
-                            since version 4.11 and will be removed in 5.1.
+                            The <strong>rhacs/secured-cluster-services</strong> Helm chart is
+                            deprecated since version 4.11 and will be removed in 5.1.
                         </>
                     }
                 />
