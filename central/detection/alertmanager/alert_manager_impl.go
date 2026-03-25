@@ -104,6 +104,34 @@ func (d *alertManagerImpl) updateBatch(ctx context.Context, alertsToMark []*stor
 	return errList.ToError()
 }
 
+// markAlertsTombstoned transitions all input alerts to TOMBSTONED state without sending notifications.
+func (d *alertManagerImpl) markAlertsTombstoned(ctx context.Context, alertsToMark []*storage.Alert) error {
+	if len(alertsToMark) == 0 {
+		return nil
+	}
+	errList := errorhelpers.NewErrorList("Error tombstoning alerts: ")
+	for _, alert := range alertsToMark {
+		alert.State = storage.ViolationState_TOMBSTONED
+		errList.AddError(d.alerts.UpsertAlert(ctx, alert))
+	}
+	return errList.ToError()
+}
+
+// AlertAndNotifyTombstoned transitions all active alerts for the given deployment to TOMBSTONED state.
+// No notifications are sent; tombstoning is not a policy event.
+func (d *alertManagerImpl) AlertAndNotifyTombstoned(ctx context.Context, deploymentID string) error {
+	qb := search.NewQueryBuilder().
+		AddExactMatches(search.DeploymentID, deploymentID).
+		AddExactMatches(search.ViolationState,
+			storage.ViolationState_ACTIVE.String(),
+			storage.ViolationState_ATTEMPTED.String())
+	existingAlerts, err := d.alerts.SearchRawAlerts(ctx, qb.ProtoQuery(), false)
+	if err != nil {
+		return err
+	}
+	return d.markAlertsTombstoned(ctx, existingAlerts)
+}
+
 // markAlertsResolved marks all input alerts resolved in the input datastore.
 func (d *alertManagerImpl) markAlertsResolved(ctx context.Context, alertsToMark []*storage.Alert) error {
 	if len(alertsToMark) == 0 {

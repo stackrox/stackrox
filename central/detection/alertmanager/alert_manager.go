@@ -19,6 +19,10 @@ type AlertManager interface {
 	// that have been produced, and takes care of the logic of marking alerts no longer being produced as resolved,
 	// notifying of new alerts, and updating the timestamp of updated alerts.
 	AlertAndNotify(ctx context.Context, alerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (modifiedDeployments set.StringSet, err error)
+
+	// AlertAndNotifyTombstoned transitions active alerts for a deployment to TOMBSTONED state.
+	// Unlike AlertAndNotify, this method does not send notifications.
+	AlertAndNotifyTombstoned(ctx context.Context, deploymentID string) error
 }
 
 // New returns a new instance of AlertManager. You should just use the singleton instance instead.
