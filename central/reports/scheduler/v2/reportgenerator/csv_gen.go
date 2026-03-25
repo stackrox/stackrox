@@ -65,6 +65,8 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string, repor
 		} else {
 			addOptionalColumnstoRow(reportFilters, &row, csvWriter, r)
 		}
+		//add component version column to reports
+		csvWriter.AppendToValue(&row, r.GetComponentVersion())
 		csvWriter.AddValue(row)
 	}
 
