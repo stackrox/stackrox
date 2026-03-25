@@ -155,7 +155,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         def processGid = processInfo.get("processGid")
         def expectedUser = processUid == null || processGid == null
                 ? "unknown" : processUid + ":" + processGid
-        assert result.get("user") == expectedUser
+        verifyRequiredResultKey(result, "user", expectedUser)
 
         // severity
         String severity = coalesce(extractNestedString(originalEvent, "policyInfo.policySeverity"), "unknown")

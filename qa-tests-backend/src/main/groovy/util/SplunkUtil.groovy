@@ -5,10 +5,12 @@ import static util.Helpers.withRetry
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import groovy.transform.CompileStatic
 import groovy.transform.TupleConstructor
 import groovy.util.logging.Slf4j
 import io.fabric8.kubernetes.client.LocalPortForward
 import io.restassured.response.Response
+import io.restassured.specification.RequestSpecification
 import orchestratormanager.Kubernetes
 
 import objects.Deployment
@@ -25,6 +27,7 @@ import objects.SplunkSearch
 import org.junit.AssumptionViolatedException
 
 @Slf4j
+@CompileStatic
 class SplunkUtil {
     public static final String SPLUNK_ADMIN_PASSWORD = "helloworld"
     private static final Gson GSON = new GsonBuilder().create()
@@ -37,11 +40,17 @@ class SplunkUtil {
         // See https://github.com/splunk/splunk-ansible/issues/349
         "SPLUNK_LAUNCH_CONF": "OPTIMISTIC_ABOUT_FILE_LOCKING=1",]
 
+    private static RequestSpecification splunkAdminRequest() {
+        given()
+            .auth().basic("admin", SPLUNK_ADMIN_PASSWORD)
+            .relaxedHTTPSValidation()
+    }
+
     static List<SplunkAlert> getSplunkAlerts(int port, String searchId) {
         Response response = getSearchResults(port, searchId)
         SplunkAlerts alerts = GSON.fromJson(response.asString(), SplunkAlerts)
 
-        def returnAlerts = []
+        List<SplunkAlert> returnAlerts = []
         for (SplunkAlertRaw raw : alerts.results) {
             returnAlerts.add(GSON.fromJson(raw._raw, SplunkAlert))
         }
@@ -52,7 +61,7 @@ class SplunkUtil {
         Response response = getSearchResults(port, searchId)
         // Not actually SplunkAlerts, just a list of response strings.
         SplunkAlerts responseItems = GSON.fromJson(response.asString(), SplunkAlerts)
-        def syslogStrings = []
+        List<String> syslogStrings = []
         for (SplunkAlertRaw raw : responseItems.results) {
             syslogStrings.add(raw._raw)
         }
@@ -61,10 +70,9 @@ class SplunkUtil {
 
     static List<SplunkAlert> waitForSplunkAlerts(int port, String search = "search") {
         log.info("Waiting for data to arrive in Splunk for search query: " + search)
-        List results = []
+        List<SplunkAlert> results = []
         withRetry(40, 15) {
-            def searchId
-            searchId = createSearch(port, search)
+            String searchId = createSearch(port, search)
             results = getSplunkAlerts(port, searchId)
             assert results.size() > 0
         }
@@ -74,12 +82,12 @@ class SplunkUtil {
 
     static List<String> waitForSplunkSyslog(int port, int timeoutSeconds) {
         int intervalSeconds = 3
-        int iterations = timeoutSeconds / intervalSeconds
-        List results = []
+        int iterations = (int) (timeoutSeconds / intervalSeconds)
+        List<String> results = []
         Exception exception = null
         Timer t = new Timer(iterations, intervalSeconds)
         while (results.size() == 0 && t.IsValid()) {
-            def searchId = null
+            String searchId = null
             try {
                 searchId = createSearch(port, "search source=\"yeet syslogs\"")
                 exception = null
@@ -98,13 +106,12 @@ class SplunkUtil {
     static Response getSearchResults(int port, String searchId) {
         Response response = null
         withRetry(20, 3) {
-            response = given().auth()
-                    .basic("admin", SPLUNK_ADMIN_PASSWORD)
+            response = splunkAdminRequest()
                     .param("output_mode", "json")
-                    .get("https://127.0.0.1:${port}/services/search/jobs/${searchId}/events")
+                    .get("https://127.0.0.1:" + port + "/services/search/jobs/" + searchId + "/events")
             assert response.statusCode() == 200 :
-                    "GET search results for ${searchId} failed with status " +
-                    "${response.statusCode()}: ${response.asString()}"
+                    "GET search results for " + searchId + " failed with status " +
+                    response.statusCode() + ": " + response.asString()
         }
         return response
     }
@@ -112,24 +119,22 @@ class SplunkUtil {
     static String createSearch(int port, String search = "search") {
         Response response = null
         withRetry(6, 15) {
-            response = given()
-                    .auth()
-                    .basic("admin", SPLUNK_ADMIN_PASSWORD)
+            response = splunkAdminRequest()
                     .formParam("search", search)
                     .formParam("output_mode", "json")
-                    .post("https://127.0.0.1:${port}/services/search/jobs")
+                    .post("https://127.0.0.1:" + port + "/services/search/jobs")
             // Splunk REST API returns 201 for search job creation
             assert response.statusCode() == 201 :
-                    "POST search jobs failed with status ${response.statusCode()}: ${response.asString()}"
+                    "POST search jobs failed with status " + response.statusCode() + ": " + response.asString()
         }
 
-        log.debug response?.asString()
-        def searchId = GSON.fromJson(response?.asString(), SplunkSearch)?.sid
+        log.debug(response?.asString())
+        String searchId = GSON.fromJson(response?.asString(), SplunkSearch)?.sid
         if (searchId == null) {
-            log.debug "Failed to generate new search. SearchId is null..."
+            log.debug("Failed to generate new search. SearchId is null...")
             throw new AssumptionViolatedException("Failed to create new Splunk search!")
         } else {
-            log.debug "New Search created: ${searchId}"
+            log.debug("New Search created: " + searchId)
             return searchId
         }
     }
@@ -138,13 +143,12 @@ class SplunkUtil {
         Response response = null
         withRetry(20, 15) {
             log.info("Attempting to create new HEC ingest token")
-            response =  given().auth()
-                .basic("admin", SPLUNK_ADMIN_PASSWORD)
+            response = splunkAdminRequest()
                 .formParam("name", tokenName)
                 .formParam("output_mode", "json")
-                .post("https://127.0.0.1:${port}/servicesNS/nobody/search/data/inputs/http")
+                .post("https://127.0.0.1:" + port + "/servicesNS/nobody/search/data/inputs/http")
         }
-        def hec = unmarshalHEC(response?.asString())
+        String hec = unmarshalHEC(response?.asString())
         assert hec.size() == 36 // Splunk has a unified token format based on a hash-like
         return hec
     }
@@ -158,8 +162,8 @@ class SplunkUtil {
     }
 
     static SplunkDeployment createSplunk(Kubernetes orchestrator, String namespace) {
-        def uid = UUID.randomUUID()
-        def deploymentName = "splunk-${uid}"
+        UUID uid = UUID.randomUUID()
+        String deploymentName = "splunk-" + uid
         Deployment deployment
         Service collectorSvc
         Service syslogSvc
@@ -178,13 +182,13 @@ class SplunkUtil {
                             .addLabel("app", deploymentName)
             orchestrator.createDeployment(deployment)
 
-            collectorSvc = new Service("splunk-collector-${uid}", namespace)
+            collectorSvc = new Service("splunk-collector-" + uid, namespace)
                     .addLabel("app", deploymentName)
                     .addPort(8088, "TCP")
                     .setType(Service.Type.CLUSTERIP)
             orchestrator.createService(collectorSvc)
 
-            syslogSvc = new Service("splunk-syslog-${uid}", namespace)
+            syslogSvc = new Service("splunk-syslog-" + uid, namespace)
                     .addLabel("app", deploymentName)
                     .addPort(514, "TCP")
                     .setType(Service.Type.CLUSTERIP)
@@ -213,13 +217,13 @@ class SplunkUtil {
         // The health check can pass before the TA is fully initialised.
         log.info("Waiting for TA REST handlers to be available...")
         withRetry(30, 10) {
-            def response = given().auth()
-                    .basic("admin", SPLUNK_ADMIN_PASSWORD)
-                    .relaxedHTTPSValidation()
+            splunkAdminRequest()
                     .param("output_mode", "json")
-                    .get("https://127.0.0.1:${port}/servicesNS/nobody/TA-stackrox/TA_stackrox_stackrox_violations")
-            assert response.statusCode() == 200 :
-                    "TA REST handlers not yet available: ${response.statusCode()}"
+                    .get("https://127.0.0.1:" + port +
+                            "/servicesNS/nobody/TA-stackrox/TA_stackrox_stackrox_violations")
+                    .then()
+                    .statusCode(200)
+                    .log().ifValidationFails()
             log.info("TA REST handlers are available")
         }
     }
@@ -228,10 +232,9 @@ class SplunkUtil {
         log.info("Waiting for Splunk to boot...")
         Response response = null
         withRetry(30, 10) {
-            response = given().auth()
-                    .basic("admin", SPLUNK_ADMIN_PASSWORD)
+            response = splunkAdminRequest()
                     .param("output_mode", "json")
-                    .get("https://127.0.0.1:${port}/services/server/health/splunkd/details")
+                    .get("https://127.0.0.1:" + port + "/services/server/health/splunkd/details")
             assert response != null
             log.debug("Splunkd status: \n" + response?.asString())
             SplunkHealthResults results = GSON.fromJson(response?.asString(), SplunkHealthResults)
@@ -249,7 +252,7 @@ class SplunkUtil {
     }
 
     static void tearDownSplunk(Kubernetes orchestrator, SplunkDeployment splunkDeployment) {
-        def imagePullSecrets = splunkDeployment.deployment.getImagePullSecret()
+        List<String> imagePullSecrets = splunkDeployment.deployment.getImagePullSecret()
         for (String secret : imagePullSecrets) {
             orchestrator.deleteSecret(secret, splunkDeployment.deployment.namespace)
         }
@@ -260,13 +263,12 @@ class SplunkUtil {
 
     static void postToSplunk(int port, String path, Map<String, String> parameters) {
         withRetry(20, 30) {
-            def response = given().auth().basic("admin", SPLUNK_ADMIN_PASSWORD)
-                    .relaxedHTTPSValidation()
+            Response response = splunkAdminRequest()
                     .params(parameters)
-                    .post("https://localhost:${port}${path}")
+                    .post("https://127.0.0.1:" + port + path)
             // Splunk REST API returns 200 for updates, 201 for resource creation
             assert response.statusCode() == 200 || response.statusCode() == 201 :
-                    "POST ${path} failed with status ${response.statusCode()}: ${response.asString()}"
+                    "POST " + path + " failed with status " + response.statusCode() + ": " + response.asString()
         }
     }
 
