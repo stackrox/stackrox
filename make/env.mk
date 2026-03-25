@@ -47,11 +47,13 @@ endif
 TAG := # make sure tag is never injectable as an env var
 RELEASE_GOTAGS := release
 
-# Use a release go -tag when CI is targeting a tag
+# Use a release go -tag when CI is targeting a release tag (not development tags with .x)
 ifdef CI
 ifneq ($(BUILD_TAG),)
+ifeq ($(findstring .x,$(BUILD_TAG)),)
 # Preserve existing GOTAGS and append release tags
 GOTAGS := $(if $(GOTAGS),$(GOTAGS)$(comma))$(RELEASE_GOTAGS)
+endif
 endif
 endif
 
