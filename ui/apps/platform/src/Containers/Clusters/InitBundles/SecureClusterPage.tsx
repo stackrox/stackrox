@@ -61,7 +61,7 @@ function SecureClusterPage(): ReactElement {
                     </Tab>
                     <Tab
                         eventKey={helmChartTab}
-                        title={<TabTitleText>{helmChartTab}</TabTitleText>}
+                        title={<TabTitleText>Helm chart (deprecated)</TabTitleText>}
                         tabContentId={helmChartTab}
                     >
                         <PageSection>

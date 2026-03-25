@@ -48,14 +48,8 @@ function SecureClusterUsingHelmChart({
     );
 
     return (
-        <Flex direction={{ default: 'column' }}>
-            <Alert
-                title="Deprecation notice"
-                component="p"
-                variant="warning"
-                isInline
-                className="pf-v6-u-mb-lg"
-            >
+        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
+            <Alert title="Deprecation notice" component="p" variant="warning" isInline>
                 <Content component="p">
                     The <strong>rhacs/secured-cluster-services</strong> Helm chart is deprecated
                     since version 4.11 and will be removed in 5.1.
