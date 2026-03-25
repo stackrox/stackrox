@@ -37,4 +37,10 @@ func main() {
 	if err := writeJSON(outDir, "stackrox-overview.json", l1.Generate()); err != nil {
 		log.Fatal(err)
 	}
+
+	// Level 2
+	l2 := generator.L2CentralInternals()
+	if err := writeJSON(outDir, "central-internals.json", l2.Generate()); err != nil {
+		log.Fatal(err)
+	}
 }
