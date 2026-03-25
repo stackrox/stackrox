@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	protocols  = [...]string{"TCP", "UDP", "SCTP"}
-	ipFamilies = [...]string{"IPv4", "IPv6"}
+	protocols          = [...]string{"TCP", "UDP", "SCTP"}
+	ipFamilies         = [...]string{"IPv4", "IPv6"}
 	nextNodePort int32 = 30000
 )
 

@@ -32,9 +32,18 @@ type unlocker interface {
 	Unlock()
 }
 
+type runlocker interface {
+	RUnlock()
+}
+
 func unlockWithMetric(mu unlocker, start time.Time, store, operation string) {
 	metrics.ObserveStoreLockHeldDurationWithOperation(store, operation, time.Since(start))
 	mu.Unlock()
+}
+
+func runlockWithMetric(mu runlocker, start time.Time, store, operation string) {
+	metrics.ObserveStoreLockHeldDurationWithOperation(store, operation, time.Since(start))
+	mu.RUnlock()
 }
 
 func newEndpointsStoreWithMemory(numTicks uint16) *endpointsStore {
@@ -177,7 +186,7 @@ type netAddrLookupper interface {
 
 func (e *endpointsStore) lookupEndpoint(endpoint net.NumericEndpoint, netLookup netAddrLookupper) (current, historical, ipLookup, ipLookupHistorical []LookupResult) {
 	e.mutex.RLock()
-	defer unlockWithMetric(&e.mutex, time.Now(), "endpoints", "lookup_endpoint")
+	defer runlockWithMetric(&e.mutex, time.Now(), "endpoints", "lookup_endpoint")
 	// Phase 1: Search in the current map
 	current = doLookupEndpoint(endpoint, e.endpointMap)
 	// Phase 2: Search in the historical map
@@ -294,7 +303,7 @@ func (e *endpointsStore) addToHistory(deploymentID string, ep net.NumericEndpoin
 
 func (e *endpointsStore) String() string {
 	e.mutex.RLock()
-	defer unlockWithMetric(&e.mutex, time.Now(), "endpoints", "string")
+	defer runlockWithMetric(&e.mutex, time.Now(), "endpoints", "string")
 	currentStr := "map is empty"
 	if len(e.endpointMap) > 0 {
 		fragments1 := make([]string, 0, len(e.endpointMap))
