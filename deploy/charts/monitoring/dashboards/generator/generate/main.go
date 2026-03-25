@@ -54,4 +54,12 @@ func main() {
 	if err := writeJSON(outDir, "central-vuln-enrichment.json", l3ve.Generate()); err != nil {
 		log.Fatal(err)
 	}
+
+	// Level 3 Stubs (8 remaining dashboards)
+	for _, stub := range generator.L3Stubs() {
+		filename := stub.UID + ".json"
+		if err := writeJSON(outDir, filename, stub.Generate()); err != nil {
+			log.Fatal(err)
+		}
+	}
 }
