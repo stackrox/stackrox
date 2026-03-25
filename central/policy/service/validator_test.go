@@ -1121,7 +1121,6 @@ func (s *PolicyValidatorTestSuite) TestValidateNodeEventSource() {
 					fieldnames.FilePath:    "/var/log/audit.log",
 					fieldnames.ProcessName: "suspicious-binary",
 				}),
-			errExpected: false,
 		},
 		{
 			description: "Node policy with File Path and invalid container fields",
