@@ -175,6 +175,8 @@ jobs:
           path: cli-build.tgz
 
   pre-build-go-binaries:
+    outputs:
+      main-tag: ${{ steps.main-tag.outputs.tag }}
     strategy:
       # Supports three go binary builds:
       # default - built with environment defaults (see handle-tagged-build & env.mk)
@@ -194,6 +196,13 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - name: Compute main tag
+        id: main-tag
+        if: matrix.arch == 'amd64' && matrix.name == 'default'
+        run: |
+          TAG=$(make --quiet --no-print-directory tag)
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -363,6 +372,7 @@ jobs:
     env:
       GO_BINARIES_BUILD_ARTIFACT: ""
       ROX_PRODUCT_BRANDING: ""
+      TAG: ${{ needs.pre-build-go-binaries.outputs.main-tag }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -411,7 +421,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -531,6 +541,7 @@ jobs:
     needs:
     - define-job-matrix
     - build-and-push-main
+    - pre-build-go-binaries
     # This step will run even if some of the build-and-push-matrix steps failed.
     # By following this approach as much of the build matrix as possible is
     # completed despite transient issues e.g. docker pull timeouts. In this way
@@ -547,6 +558,7 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_main_multiarch_manifests }}
     env:
       ROX_PRODUCT_BRANDING: ""
+      TAG: ${{ needs.pre-build-go-binaries.outputs.main-tag }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -587,7 +599,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        fetch-depth: 0
+        fetch-depth: 1
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
@@ -645,6 +657,7 @@ jobs:
       - pre-build-go-binaries
     env:
       ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: true
+      TAG: ${{ needs.pre-build-go-binaries.outputs.main-tag }}
       QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
       QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
       QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -654,7 +667,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -799,6 +812,7 @@ jobs:
       - build-and-push-main
       - build-and-push-operator
       - push-main-manifests
+      - pre-build-go-binaries
     name: Check images for vulnerabilities
     runs-on: ubuntu-latest
     permissions:
@@ -812,7 +826,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
@@ -833,6 +847,8 @@ jobs:
           central-token: ${{ env.ROX_API_TOKEN }}
 
       - name: Scan images for vulnerabilities
+        env:
+          TAG: ${{ needs.pre-build-go-binaries.outputs.main-tag }}
         run: |
           release_tag="$(make --quiet --no-print-directory tag)"
           if [[ "${{ matrix.image }}" =~ "operator" ]]; then
