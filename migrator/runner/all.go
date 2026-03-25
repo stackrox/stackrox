@@ -15,4 +15,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_219_to_m_220_network_flow_index_to_btree"
 	_ "github.com/stackrox/rox/migrator/migrations/m_220_to_m_221_add_deployment_hash_column"
 	_ "github.com/stackrox/rox/migrator/migrations/m_221_to_m_222_remove_v1_report_configs"
+	_ "github.com/stackrox/rox/migrator/migrations/m_222_to_m_223_add_deployment_tombstone"
 )
