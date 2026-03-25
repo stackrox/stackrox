@@ -10,26 +10,36 @@ import (
 )
 
 // SetupTLSProfileWatcher registers a controller that watches the
-// apiserver.config.openshift.io/cluster resource. When the TLS profile
-// changes, it cancels ctx, causing the Operator process to exit and be
-// restarted by Kubernetes with the new TLS configuration applied to its
-// metrics server and the updated profile propagated to managed workloads.
+// apiserver.config.openshift.io/cluster resource. When the TLS profile or
+// adherence policy changes, it cancels ctx, causing the Operator process to
+// exit and be restarted by Kubernetes with the new TLS configuration applied
+// to its metrics server and the updated profile propagated to managed workloads.
 //
-// initialProfile is the TLS profile spec already fetched at startup via
-// FetchProfile. If nil, no watcher is set up (non-OpenShift / legacy mode).
-func SetupTLSProfileWatcher(mgr ctrl.Manager, initialProfile *configv1.TLSProfileSpec, cancel context.CancelFunc) error {
-	if initialProfile == nil {
-		return nil
+// The caller is responsible for only calling this on OpenShift clusters
+func SetupTLSProfileWatcher(mgr ctrl.Manager, clusterTLS *ClusterTLSProfile, cancel context.CancelFunc) error {
+	var initialSpec configv1.TLSProfileSpec
+	if clusterTLS.ProfileSpec != nil {
+		initialSpec = *clusterTLS.ProfileSpec
 	}
 
+	logger := mgr.GetLogger()
 	watcher := &tlspkg.SecurityProfileWatcher{
-		Client:                mgr.GetClient(),
-		InitialTLSProfileSpec: *initialProfile,
+		Client:                    mgr.GetClient(),
+		InitialTLSProfileSpec:     initialSpec,
+		InitialTLSAdherencePolicy: clusterTLS.Adherence,
 		OnProfileChange: func(_ context.Context, oldSpec, newSpec configv1.TLSProfileSpec) {
-			mgr.GetLogger().Info(
+			logger.Info(
 				"cluster TLS profile changed, restarting Operator to apply new settings",
 				"oldMinTLSVersion", oldSpec.MinTLSVersion,
 				"newMinTLSVersion", newSpec.MinTLSVersion,
+			)
+			cancel()
+		},
+		OnAdherencePolicyChange: func(_ context.Context, oldPolicy, newPolicy configv1.TLSAdherencePolicy) {
+			logger.Info(
+				"cluster TLS adherence policy changed, restarting Operator to apply new settings",
+				"oldPolicy", oldPolicy,
+				"newPolicy", newPolicy,
 			)
 			cancel()
 		},

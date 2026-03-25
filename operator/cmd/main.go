@@ -156,11 +156,12 @@ func run() error {
 		return errors.Wrap(err, "unable to create bootstrap client for TLS profile")
 	}
 
-	tlsProfile, goTLSProfileSpec := tlsprofile.FetchProfile(context.Background(), bootstrapClient, setupLog, forceOpenShiftTLSProfile.BooleanSetting())
+	clusterTLSProfile := tlsprofile.FetchProfile(context.Background(), bootstrapClient)
+	workloadTLSProfile := tlsprofile.ConvertProfile(clusterTLSProfile, forceOpenShiftTLSProfile.BooleanSetting())
 
 	var tlsOpts []func(c *tls.Config)
-	if goTLSProfileSpec != nil {
-		tlsConfigFn, unsupported := tlspkg.NewTLSConfigFromProfile(*goTLSProfileSpec)
+	if workloadTLSProfile != nil && clusterTLSProfile.ProfileSpec != nil {
+		tlsConfigFn, unsupported := tlspkg.NewTLSConfigFromProfile(*clusterTLSProfile.ProfileSpec)
 		if len(unsupported) > 0 {
 			setupLog.Info("some ciphers from cluster TLS profile are not supported by Go, skipping them", "ciphers", unsupported)
 		}
@@ -246,7 +247,7 @@ func run() error {
 	//+kubebuilder:scaffold:builder
 
 	if centralReconcilerEnabled.BooleanSetting() {
-		if err = centralReconciler.RegisterNewReconciler(mgr, centralLabelSelector, tlsProfile); err != nil {
+		if err = centralReconciler.RegisterNewReconciler(mgr, centralLabelSelector, workloadTLSProfile); err != nil {
 			return errors.Wrap(err, "unable to set up Central reconciler")
 		}
 
@@ -264,7 +265,7 @@ func run() error {
 	}
 
 	if securedClusterReconcilerEnabled.BooleanSetting() {
-		if err = securedClusterReconciler.RegisterNewReconciler(mgr, securedClusterLabelSelector, tlsProfile); err != nil {
+		if err = securedClusterReconciler.RegisterNewReconciler(mgr, securedClusterLabelSelector, workloadTLSProfile); err != nil {
 			return errors.Wrap(err, "unable to set up SecuredCluster reconciler")
 		}
 
@@ -293,8 +294,10 @@ func run() error {
 	ctx, cancel := context.WithCancel(ctrl.SetupSignalHandler())
 	defer cancel()
 
-	if err = tlsprofile.SetupTLSProfileWatcher(mgr, goTLSProfileSpec, cancel); err != nil {
-		return errors.Wrap(err, "unable to set up TLS profile watcher")
+	if clusterTLSProfile != nil {
+		if err = tlsprofile.SetupTLSProfileWatcher(mgr, clusterTLSProfile, cancel); err != nil {
+			return errors.Wrap(err, "unable to set up TLS profile watcher")
+		}
 	}
 
 	setupLog.Info("starting manager")

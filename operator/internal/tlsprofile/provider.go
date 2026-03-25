@@ -3,17 +3,29 @@ package tlsprofile
 import (
 	"context"
 
-	"github.com/go-logr/logr"
 	configv1 "github.com/openshift/api/config/v1"
 	tlspkg "github.com/openshift/controller-runtime-common/pkg/tls"
 	libgocrypto "github.com/openshift/library-go/pkg/crypto"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var log = ctrl.Log.WithName("tlsprofile")
+
 // apiserverClusterName is the singleton name of the APIServer cluster config resource.
 const apiserverClusterName = "cluster"
+
+// ClusterTLSProfile holds the TLS profile settings read from the
+// apiserver.config.openshift.io/cluster resource. A nil *ClusterTLSProfile
+// means the Operator is not running on OpenShift.
+type ClusterTLSProfile struct {
+	// ProfileSpec is the concrete TLS profile spec (ciphers + min version).
+	ProfileSpec *configv1.TLSProfileSpec
+	// Adherence is the current TLS adherence policy from the APIServer resource.
+	Adherence configv1.TLSAdherencePolicy
+}
 
 // TLSProfile holds the parsed TLS profile settings in all formats needed
 // by the various ACS components.
@@ -30,44 +42,57 @@ type TLSProfile struct {
 }
 
 // FetchProfile reads the cluster TLS profile from the APIServer resource.
-// It returns:
-//   - the TLSProfile for environment variable injection into managed workloads
-//   - the raw TLSProfileSpec for configuring Go TLS directly
 //
-// Both return values are nil when no profile should be applied (non-OpenShift
-// cluster, or TLS adherence not set to strict).
-//
-// When forceProfile is true, the cluster TLS profile is enforced regardless
-// of the spec.tlsAdherence field.
-func FetchProfile(ctx context.Context, c ctrlClient.Reader, log logr.Logger, forceProfile bool) (*TLSProfile, *configv1.TLSProfileSpec) {
+// Returns nil on non-OpenShift clusters (APIServer resource absent).
+// On OpenShift, ProfileSpec and Adherence are populated so the watcher can
+// detect changes even when enforcement is not active yet.
+func FetchProfile(ctx context.Context, c ctrlClient.Reader) *ClusterTLSProfile {
 	apiServer := &configv1.APIServer{}
 	if err := c.Get(ctx, types.NamespacedName{Name: apiserverClusterName}, apiServer); err != nil {
 		if !k8serrors.IsNotFound(err) {
 			log.Error(err, "failed to read APIServer cluster config, using TLS defaults")
 		}
-		return nil, nil
+		return nil
 	}
 
-	honorProfile := forceProfile || libgocrypto.ShouldHonorClusterTLSProfile(apiServer.Spec.TLSAdherence)
-	if !honorProfile {
-		return nil, nil
-	}
-
+	adherence := apiServer.Spec.TLSAdherence
 	spec, err := tlspkg.GetTLSProfileSpec(apiServer.Spec.TLSSecurityProfile)
 	if err != nil {
 		log.Error(err, "failed to resolve TLS profile spec, using TLS defaults")
-		return nil, nil
+		return &ClusterTLSProfile{Adherence: adherence}
 	}
 
-	minVersion, err := convertMinVersion(spec.MinTLSVersion)
-	if err != nil {
-		log.Error(err, "unsupported TLS version in cluster profile, using TLS defaults")
-		return nil, nil
+	return &ClusterTLSProfile{ProfileSpec: &spec, Adherence: adherence}
+}
+
+// ConvertProfile converts a ClusterTLSProfile to a TLSProfile for environment
+// variable injection into managed workloads.
+//
+// Returns nil when:
+//   - clusterTLS is nil (not on OpenShift)
+//   - ProfileSpec is nil
+//   - forceProfile is false and the adherence policy does not require honoring
+//     the cluster TLS profile
+func ConvertProfile(clusterTLS *ClusterTLSProfile, forceProfile bool) *TLSProfile {
+	if clusterTLS == nil || clusterTLS.ProfileSpec == nil {
+		return nil
+	}
+
+	honorProfile := forceProfile || libgocrypto.ShouldHonorClusterTLSProfile(clusterTLS.Adherence)
+	if !honorProfile {
+		return nil
+	}
+
+	minVersion, known := convertMinVersion(clusterTLS.ProfileSpec.MinTLSVersion)
+	if !known {
+		log.Info("unsupported TLS version in cluster profile, clamping to highest known version",
+			"requestedVersion", clusterTLS.ProfileSpec.MinTLSVersion,
+			"clampedVersion", minVersion)
 	}
 
 	return &TLSProfile{
 		MinVersion:     minVersion,
-		CipherSuites:   convertCiphersToIANA(spec.Ciphers),
-		OpenSSLCiphers: convertCiphersToOpenSSL(spec.Ciphers),
-	}, &spec
+		CipherSuites:   convertCiphersToIANA(clusterTLS.ProfileSpec.Ciphers),
+		OpenSSLCiphers: convertCiphersToOpenSSL(clusterTLS.ProfileSpec.Ciphers),
+	}
 }

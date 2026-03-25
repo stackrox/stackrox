@@ -1,7 +1,6 @@
 package tlsprofile
 
 import (
-	"fmt"
 	"strings"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -29,11 +28,17 @@ var tls13Ciphers = map[string]bool{
 	"TLS_CHACHA20_POLY1305_SHA256": true,
 }
 
-func convertMinVersion(apiVersion configv1.TLSProtocolVersion) (string, error) {
+// maxKnownVersion is the highest TLS version ACS currently understands. When
+// the cluster profile requests a newer unknown version, we clamp to this rather
+// than falling back to the minimum, preserving the admin's intent of stricter
+// security.
+const maxKnownVersion = "TLSv1.3"
+
+func convertMinVersion(apiVersion configv1.TLSProtocolVersion) (string, bool) {
 	if v, ok := versionToOpenSSL[apiVersion]; ok {
-		return v, nil
+		return v, true
 	}
-	return "", fmt.Errorf("unsupported TLS version %q", apiVersion)
+	return maxKnownVersion, false
 }
 
 // convertCiphersToIANA converts OpenSSL cipher names (as provided by the

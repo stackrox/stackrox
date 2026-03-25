@@ -5,33 +5,28 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestConvertMinVersion(t *testing.T) {
-	tests := []struct {
-		input   configv1.TLSProtocolVersion
-		want    string
-		wantErr bool
+	tests := map[string]struct {
+		input     configv1.TLSProtocolVersion
+		want      string
+		wantKnown bool
 	}{
-		{configv1.VersionTLS10, "TLSv1.0", false},
-		{configv1.VersionTLS11, "TLSv1.1", false},
-		{configv1.VersionTLS12, "TLSv1.2", false},
-		{configv1.VersionTLS13, "TLSv1.3", false},
-		// These are in library-go's format; only the configv1 constants are valid.
-		{"TLSv1.2", "", true},
-		{"1.2", "", true},
-		{"", "", true},
+		"TLS 1.0":                      {configv1.VersionTLS10, "TLSv1.0", true},
+		"TLS 1.1":                      {configv1.VersionTLS11, "TLSv1.1", true},
+		"TLS 1.2":                      {configv1.VersionTLS12, "TLSv1.2", true},
+		"TLS 1.3":                      {configv1.VersionTLS13, "TLSv1.3", true},
+		"unknown clamps to TLS 1.3":    {"VersionTLS14", maxKnownVersion, false},
+		"library-go format is invalid": {"TLSv1.2", maxKnownVersion, false},
+		"short format is invalid":      {"1.2", maxKnownVersion, false},
+		"empty is invalid":             {"", maxKnownVersion, false},
 	}
 
-	for _, tt := range tests {
-		t.Run(string(tt.input), func(t *testing.T) {
-			got, err := convertMinVersion(tt.input)
-			if tt.wantErr {
-				assert.Error(t, err)
-				return
-			}
-			require.NoError(t, err)
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, known := convertMinVersion(tt.input)
+			assert.Equal(t, tt.wantKnown, known)
 			assert.Equal(t, tt.want, got)
 		})
 	}
