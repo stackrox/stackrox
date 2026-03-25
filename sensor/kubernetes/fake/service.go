@@ -23,6 +23,9 @@ func getRandPort() uint32 {
 	return rand.Uint32() % 63556
 }
 
+// getUniqueNodePort returns successive ports in the Kubernetes NodePort range
+// [30000, 32767]. The counter wraps around after 2768 allocations, which matches
+// the real-cluster ceiling for this range.
 func getUniqueNodePort() int32 {
 	port := nextNodePort
 	nextNodePort++
