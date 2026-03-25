@@ -1275,23 +1275,29 @@ func (g *garbageCollectorImpl) pruneTombstonedDeployments() {
 			AddExactMatches(search.ViolationState, storage.ViolationState_TOMBSTONED.String()).
 			ProtoQuery()
 
+		pruneCtxWithTimeout, pruneCancel := contextutil.ContextWithTimeoutIfNotExists(pruningCtx, pruningTimeout)
+
 		var tombstonedAlertIDs []string
-		walkErr := g.alerts.WalkByQuery(pruningCtx, tombstonedAlertsQuery, func(alert *storage.Alert) error {
+		walkErr := g.alerts.WalkByQuery(pruneCtxWithTimeout, tombstonedAlertsQuery, func(alert *storage.Alert) error {
 			tombstonedAlertIDs = append(tombstonedAlertIDs, alert.GetId())
 			return nil
 		})
 		if walkErr != nil {
+			pruneCancel()
 			log.Errorf("[Tombstone pruning] Error fetching TOMBSTONED alerts for deployment %s: %v — skipping deployment", deploymentID, walkErr)
 			continue
 		}
 
 		if len(tombstonedAlertIDs) > 0 {
-			if _, resolveErr := g.alerts.MarkAlertsResolvedBatch(pruningCtx, tombstonedAlertIDs...); resolveErr != nil {
+			if _, resolveErr := g.alerts.MarkAlertsResolvedBatch(pruneCtxWithTimeout, tombstonedAlertIDs...); resolveErr != nil {
+				pruneCancel()
 				log.Errorf("[Tombstone pruning] Error resolving TOMBSTONED alerts for deployment %s: %v — skipping deployment", deploymentID, resolveErr)
 				continue
 			}
 			log.Debugf("[Tombstone pruning] Resolved %d TOMBSTONED alert(s) for deployment %s", len(tombstonedAlertIDs), deploymentID)
 		}
+
+		pruneCancel()
 
 		// Hard-delete the deployment only after its alerts have been resolved.
 		if removeErr := g.deployments.RemoveDeployment(pruningCtx, clusterID, deploymentID); removeErr != nil {
