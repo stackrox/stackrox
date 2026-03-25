@@ -183,15 +183,15 @@ class SplunkUtil {
             orchestrator.createDeployment(deployment)
 
             collectorSvc = new Service("splunk-collector-" + uid, namespace)
-                    .addLabel("app", deploymentName)
-                    .addPort(8088, "TCP")
-                    .setType(Service.Type.CLUSTERIP)
+            collectorSvc.addLabel("app", deploymentName)
+            collectorSvc.addPort(8088, "TCP")
+            collectorSvc.setType(Service.Type.CLUSTERIP)
             orchestrator.createService(collectorSvc)
 
             syslogSvc = new Service("splunk-syslog-" + uid, namespace)
-                    .addLabel("app", deploymentName)
-                    .addPort(514, "TCP")
-                    .setType(Service.Type.CLUSTERIP)
+            syslogSvc.addLabel("app", deploymentName)
+            syslogSvc.addPort(514, "TCP")
+            syslogSvc.setType(Service.Type.CLUSTERIP)
             orchestrator.createService(syslogSvc)
 
             splunkPortForward = orchestrator.createPortForward(8089, deployment)
