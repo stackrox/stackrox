@@ -1,6 +1,4 @@
 // Package acs provides an HTTP client for the ACS compliance scan configuration API.
-//
-// create-only: PUT is never called in Phase 1
 package acs
 
 import (
@@ -19,7 +17,6 @@ import (
 )
 
 // client is the concrete implementation of models.ACSClient.
-// It issues only GET and POST requests. No PUT method exists in Phase 1.
 type client struct {
 	httpClient *http.Client
 	baseURL    string
@@ -33,8 +30,6 @@ type client struct {
 // Authentication:
 //   - token mode:  "Authorization: Bearer <token>" (token resolved from cfg.TokenEnv)
 //   - basic mode: HTTP Basic auth (cfg.Username + password from cfg.PasswordEnv)
-//
-// create-only: PUT is never called in Phase 1
 func NewClient(cfg *models.Config) (models.ACSClient, error) {
 	tlsCfg, err := buildTLSConfig(cfg)
 	if err != nil {
@@ -86,16 +81,12 @@ func buildTLSConfig(cfg *models.Config) (*tls.Config, error) {
 func (c *client) addAuth(req *http.Request) error {
 	switch c.cfg.AuthMode {
 	case models.AuthModeBasic:
-		password := os.Getenv(c.cfg.PasswordEnv)
+		password := os.Getenv("ROX_ADMIN_PASSWORD")
 		req.SetBasicAuth(c.cfg.Username, password)
 	default: // token mode
-		tokenEnv := c.cfg.TokenEnv
-		if tokenEnv == "" {
-			tokenEnv = "ACS_API_TOKEN"
-		}
-		token := os.Getenv(tokenEnv)
+		token := os.Getenv("ROX_API_TOKEN")
 		if token == "" {
-			return fmt.Errorf("acs: token env var %q is empty", tokenEnv)
+			return errors.New("acs: ROX_API_TOKEN is empty")
 		}
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
@@ -180,10 +171,7 @@ type complianceScanConfigurationResponse struct {
 // CreateScanConfiguration sends POST /v2/compliance/scan/configurations and returns
 // the ID of the newly created configuration.
 //
-// IMPORTANT: This method MUST use POST only. No PUT is called anywhere in Phase 1.
-// Implements IMP-IDEM-001, IMP-IDEM-003.
-//
-// create-only: PUT is never called in Phase 1
+// Implements IMP-IDEM-001.
 func (c *client) CreateScanConfiguration(ctx context.Context, payload models.ACSCreatePayload) (string, error) {
 	body, err := json.Marshal(payload)
 	if err != nil {
@@ -191,7 +179,6 @@ func (c *client) CreateScanConfiguration(ctx context.Context, payload models.ACS
 	}
 
 	url := c.baseURL + "/v2/compliance/scan/configurations"
-	// POST only - never PUT - create-only Phase 1
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		return "", fmt.Errorf("acs: create request: %w", err)
@@ -222,7 +209,104 @@ func (c *client) CreateScanConfiguration(ctx context.Context, payload models.ACS
 	return created.ID, nil
 }
 
-// HTTPError is returned by CreateScanConfiguration when the server responds with
+// UpdateScanConfiguration sends PUT /v2/compliance/scan/configurations/{id} to update
+// an existing scan configuration.
+//
+// Implements IMP-IDEM-008.
+func (c *client) UpdateScanConfiguration(ctx context.Context, id string, payload models.ACSCreatePayload) error {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("acs: marshalling update payload: %w", err)
+	}
+
+	url := c.baseURL + "/v2/compliance/scan/configurations/" + id
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("acs: update request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	if err := c.addAuth(req); err != nil {
+		return err
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("acs: update scan configuration: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		return &HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("PUT /v2/compliance/scan/configurations/%s returned HTTP %d", id, resp.StatusCode)}
+	}
+
+	return nil
+}
+
+// clusterStatus is used to parse the status field from a cluster response.
+type clusterStatus struct {
+	ProviderMetadata struct {
+		Cluster struct {
+			ID string `json:"id"` // OpenShift cluster ID or other provider cluster ID
+		} `json:"cluster"`
+	} `json:"providerMetadata"`
+}
+
+// clusterResponse represents a single cluster in the ACS API response.
+type clusterResponse struct {
+	ID     string        `json:"id"`
+	Name   string        `json:"name"`
+	Status clusterStatus `json:"status"`
+}
+
+// clustersListResponse matches GET /v1/clusters.
+type clustersListResponse struct {
+	Clusters []clusterResponse `json:"clusters"`
+}
+
+// ListClusters returns all clusters managed by ACS by calling:
+//
+//	GET /v1/clusters
+//
+// Used for cluster ID discovery (IMP-MAP-017, IMP-MAP-018, IMP-MAP-007).
+func (c *client) ListClusters(ctx context.Context) ([]models.ACSClusterInfo, error) {
+	url := c.baseURL + "/v1/clusters"
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("acs: list clusters request: %w", err)
+	}
+	req.Header.Set("Accept", "application/json")
+	if err := c.addAuth(req); err != nil {
+		return nil, err
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("acs: list clusters: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("acs: list clusters: HTTP %d", resp.StatusCode)
+	}
+
+	var listResp clustersListResponse
+	if err := json.NewDecoder(resp.Body).Decode(&listResp); err != nil {
+		return nil, fmt.Errorf("acs: decoding clusters response: %w", err)
+	}
+
+	result := make([]models.ACSClusterInfo, 0, len(listResp.Clusters))
+	for _, c := range listResp.Clusters {
+		result = append(result, models.ACSClusterInfo{
+			ID:                c.ID,
+			Name:              c.Name,
+			ProviderClusterID: c.Status.ProviderMetadata.Cluster.ID,
+		})
+	}
+	return result, nil
+}
+
+// HTTPError is returned by CreateScanConfiguration and UpdateScanConfiguration when the server responds with
 // a non-success HTTP status. The reconciler uses StatusCode() to decide whether
 // to retry (transient: 429,502,503,504) or abort (non-transient: 400,401,403,404).
 type HTTPError struct {

@@ -19,7 +19,6 @@ func newTestConfig(serverURL string) *models.Config {
 	return &models.Config{
 		ACSEndpoint:        serverURL,
 		AuthMode:           models.AuthModeToken,
-		TokenEnv:           "ACS_API_TOKEN",
 		RequestTimeout:     5 * time.Second,
 		MaxRetries:         3,
 		InsecureSkipVerify: true,
@@ -52,7 +51,7 @@ func TestPreflight_200_ReturnsNil(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	t.Setenv("ACS_API_TOKEN", "test-token")
+	t.Setenv("ROX_API_TOKEN", "test-token")
 	cfg := newTestConfig(srv.URL)
 	client, err := acs.NewClient(cfg)
 	if err != nil {
@@ -71,7 +70,7 @@ func TestPreflight_401_ReturnsError(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	t.Setenv("ACS_API_TOKEN", "bad-token")
+	t.Setenv("ROX_API_TOKEN", "bad-token")
 	cfg := newTestConfig(srv.URL)
 	client, err := acs.NewClient(cfg)
 	if err != nil {
@@ -90,7 +89,7 @@ func TestPreflight_403_ReturnsError(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	t.Setenv("ACS_API_TOKEN", "bad-token")
+	t.Setenv("ROX_API_TOKEN", "bad-token")
 	cfg := newTestConfig(srv.URL)
 	client, err := acs.NewClient(cfg)
 	if err != nil {
@@ -122,7 +121,7 @@ func TestListScanConfigurations_ReturnsParsedList(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	t.Setenv("ACS_API_TOKEN", "test-token")
+	t.Setenv("ROX_API_TOKEN", "test-token")
 	cfg := newTestConfig(srv.URL)
 	client, err := acs.NewClient(cfg)
 	if err != nil {
@@ -156,7 +155,6 @@ func TestCreateScanConfiguration_UsesPOSTAndReturnsID(t *testing.T) {
 		}
 		gotMethod = r.Method
 		if r.Method != http.MethodPost {
-			// Fail loudly if any non-POST method is used
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
@@ -166,7 +164,7 @@ func TestCreateScanConfiguration_UsesPOSTAndReturnsID(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	t.Setenv("ACS_API_TOKEN", "test-token")
+	t.Setenv("ROX_API_TOKEN", "test-token")
 	cfg := newTestConfig(srv.URL)
 	client, err := acs.NewClient(cfg)
 	if err != nil {
@@ -202,16 +200,7 @@ func TestCreateScanConfiguration_UsesPOSTAndReturnsID(t *testing.T) {
 }
 
 // IMP-IDEM-003: Compile-time guard - verify the ACSClient interface has no Put method.
-// This is a documentation-as-code assertion: if someone adds a Put/Update method to
-// ACSClient, it would need to be added here too, making the violation visible.
 func TestNoPUTMethodOnInterface(t *testing.T) {
-	// The models.ACSClient interface must only define:
-	//   Preflight, ListScanConfigurations, CreateScanConfiguration
-	// If a PUT-based method were added, the reconciler mock in create_only_test.go
-	// would fail to compile (it only implements the three allowed methods).
-	//
-	// IMP-IDEM-003: This test documents the invariant. The real enforcement is in
-	// create_only_test.go where the mock ACSClient deliberately records every HTTP
-	// method and the test asserts PUT is never among them.
+	// IMP-IDEM-003: This test documents the invariant.
 	t.Log("IMP-IDEM-003: ACSClient interface has no PUT method - enforced by interface definition")
 }

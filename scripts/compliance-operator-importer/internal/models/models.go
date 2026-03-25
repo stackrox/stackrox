@@ -15,21 +15,25 @@ const (
 
 // Config holds all resolved configuration for a single importer run.
 type Config struct {
-	ACSEndpoint        string
-	AuthMode           AuthMode
-	TokenEnv           string // env var name, default "ACS_API_TOKEN"
-	Username           string
-	PasswordEnv        string // env var name, default "ACS_PASSWORD"
-	KubeContext        string // empty = use current context
-	CONamespace        string // empty when COAllNamespaces=true
-	COAllNamespaces    bool
-	ACSClusterID       string
-	DryRun             bool
-	ReportJSON         string
-	RequestTimeout     time.Duration
-	MaxRetries         int
-	CACertFile         string
-	InsecureSkipVerify bool
+	ACSEndpoint           string   // from --endpoint or ROX_ENDPOINT
+	AuthMode              AuthMode // auto-inferred from env vars (ROX_API_TOKEN / ROX_ADMIN_PASSWORD)
+	Username              string   // from --username or ROX_ADMIN_USER (default "admin")
+	CONamespace           string   // empty when COAllNamespaces=true
+	COAllNamespaces       bool
+	ACSClusterID          string // resolved from --cluster UUID or auto-discovered
+	ClusterNameLookup     string // non-UUID --cluster value for runtime resolution via ACS API
+	DryRun                bool
+	ReportJSON            string
+	RequestTimeout        time.Duration
+	MaxRetries            int
+	CACertFile            string
+	InsecureSkipVerify    bool
+	OverwriteExisting     bool
+	AutoDiscoverClusterID bool // set by validate() when no --cluster in single-cluster mode
+	// Multi-cluster mode fields
+	Kubeconfigs      []string // repeatable --kubeconfig paths
+	Kubecontexts     []string // repeatable --kubecontext names
+	ClusterOverrides []string // repeatable --cluster ctx=acs-name-or-uuid
 }
 
 // Severity classifies how severe a Problem is.
@@ -96,8 +100,8 @@ type ACSBaseScanConfig struct {
 	Description  string       `json:"description"`
 }
 
-// ACSCreatePayload is the request body for POST /v2/compliance/scan/configurations.
-// Phase 1 is create-only; no PUT is ever issued.
+// ACSCreatePayload is the request body for POST /v2/compliance/scan/configurations
+// and PUT /v2/compliance/scan/configurations/{id}.
 type ACSCreatePayload struct {
 	ScanName   string            `json:"scanName"`
 	ScanConfig ACSBaseScanConfig `json:"scanConfig"`
@@ -128,6 +132,7 @@ type ReportMeta struct {
 type ReportCounts struct {
 	Discovered int `json:"discovered"`
 	Create     int `json:"create"`
+	Update     int `json:"update"`
 	Skip       int `json:"skip"`
 	Failed     int `json:"failed"`
 }
@@ -157,10 +162,18 @@ type Report struct {
 	Problems []Problem    `json:"problems"`
 }
 
+// ACSClusterInfo represents a cluster managed by ACS.
+type ACSClusterInfo struct {
+	ID                string // ACS cluster UUID
+	Name              string // cluster display name
+	ProviderClusterID string // from status.providerMetadata.cluster.id (e.g. OpenShift cluster ID)
+}
+
 // ACSClient is the interface for ACS API operations.
-// Phase 1 is create-only; no PUT method is defined.
 type ACSClient interface {
 	Preflight(ctx context.Context) error
 	ListScanConfigurations(ctx context.Context) ([]ACSConfigSummary, error)
 	CreateScanConfiguration(ctx context.Context, payload ACSCreatePayload) (string, error)
+	UpdateScanConfiguration(ctx context.Context, id string, payload ACSCreatePayload) error
+	ListClusters(ctx context.Context) ([]ACSClusterInfo, error)
 }

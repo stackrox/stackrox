@@ -31,15 +31,20 @@ func (b *Builder) RecordItem(item models.ReportItem) {
 // Build constructs the final Report from all recorded items and the supplied
 // problems list.
 //
-// IMP-CLI-021: sets meta.mode = "create-only", meta.timestamp to current UTC
+// IMP-CLI-021: sets meta.mode based on cfg.OverwriteExisting, meta.timestamp to current UTC
 // RFC3339, meta.dryRun from cfg, meta.namespaceScope from cfg.
 // IMP-CLI-021: computes counts from items actions.
 func (b *Builder) Build(problems []models.Problem) models.Report {
+	mode := "create-only"
+	if b.cfg.OverwriteExisting {
+		mode = "create-or-update"
+	}
+
 	meta := models.ReportMeta{
 		Timestamp:      time.Now().UTC().Format(time.RFC3339),
 		DryRun:         b.cfg.DryRun,
 		NamespaceScope: namespaceScope(b.cfg),
-		Mode:           "create-only",
+		Mode:           mode,
 	}
 
 	counts := models.ReportCounts{
@@ -49,6 +54,8 @@ func (b *Builder) Build(problems []models.Problem) models.Report {
 		switch it.Action {
 		case "create":
 			counts.Create++
+		case "update":
+			counts.Update++
 		case "skip":
 			counts.Skip++
 		case "fail":

@@ -46,6 +46,17 @@ func (m *mockACSClient) CreateScanConfiguration(_ context.Context, _ models.ACSC
 	return id, nil
 }
 
+func (m *mockACSClient) UpdateScanConfiguration(_ context.Context, _ string, _ models.ACSCreatePayload) error {
+	// For now, this is a no-op in run tests since we focus on create-only mode.
+	// Update-specific tests are in reconcile_test.go.
+	return nil
+}
+
+func (m *mockACSClient) ListClusters(_ context.Context) ([]models.ACSClusterInfo, error) {
+	// Not used in run tests, return empty list
+	return []models.ACSClusterInfo{}, nil
+}
+
 // Compile-time check: mockACSClient satisfies models.ACSClient.
 var _ models.ACSClient = (*mockACSClient)(nil)
 
@@ -176,8 +187,8 @@ func TestIMP_CLI_018_ListACSConfigsFatalExitOne(t *testing.T) {
 	if code != run.ExitFatalError {
 		t.Errorf("IMP-CLI-018: expected exit code %d (fatal), got %d", run.ExitFatalError, code)
 	}
-	if !strings.Contains(output, "FATAL") {
-		t.Errorf("IMP-CLI-018: expected FATAL message in output, got: %q", output)
+	if !strings.Contains(output, "✗") {
+		t.Errorf("IMP-CLI-018: expected failure marker in output, got: %q", output)
 	}
 }
 
@@ -193,8 +204,8 @@ func TestIMP_CLI_018_ListBindingsFatalExitOne(t *testing.T) {
 	if code != run.ExitFatalError {
 		t.Errorf("IMP-CLI-018: expected exit code %d (fatal), got %d", run.ExitFatalError, code)
 	}
-	if !strings.Contains(output, "FATAL") {
-		t.Errorf("IMP-CLI-018: expected FATAL message in output, got: %q", output)
+	if !strings.Contains(output, "✗") {
+		t.Errorf("IMP-CLI-018: expected failure marker in output, got: %q", output)
 	}
 }
 
@@ -306,10 +317,10 @@ func TestIMP_CLI_020_ConsoleSummaryIncludesAllCounters(t *testing.T) {
 	_, output := runWithCapture(t, baseConfig(), acsClient, coClient)
 
 	requiredPhrases := []string{
-		"Discovered:",
-		"Created:",
-		"Skipped:",
-		"Failed:",
+		"discovered:",
+		"created:",
+		"skipped:",
+		"failed:",
 	}
 	for _, phrase := range requiredPhrases {
 		if !strings.Contains(output, phrase) {
@@ -332,8 +343,8 @@ func TestIMP_CLI_020_DryRunLabelInSummary(t *testing.T) {
 
 	_, output := runWithCapture(t, cfg, &mockACSClient{}, coClient)
 
-	if !strings.Contains(output, "dry-run: yes") {
-		t.Errorf("IMP-CLI-020: expected 'dry-run: yes' in output, got:\n%s", output)
+	if !strings.Contains(output, "dry-run") {
+		t.Errorf("IMP-CLI-020: expected 'dry-run' in output, got:\n%s", output)
 	}
 }
 
@@ -350,8 +361,8 @@ func TestIMP_CLI_020_NonDryRunLabelInSummary(t *testing.T) {
 
 	_, output := runWithCapture(t, cfg, &mockACSClient{}, coClient)
 
-	if !strings.Contains(output, "dry-run: no") {
-		t.Errorf("IMP-CLI-020: expected 'dry-run: no' in output, got:\n%s", output)
+	if !strings.Contains(output, "live") {
+		t.Errorf("IMP-CLI-020: expected 'live' in output, got:\n%s", output)
 	}
 }
 
@@ -376,17 +387,17 @@ func TestIMP_CLI_020_CorrectCountsInSummary(t *testing.T) {
 
 	_, output := runWithCapture(t, baseConfig(), acsClient, coClient)
 
-	if !strings.Contains(output, "Discovered:  3") {
-		t.Errorf("IMP-CLI-020: expected 'Discovered:  3' in output, got:\n%s", output)
+	if !strings.Contains(output, "discovered: 3") {
+		t.Errorf("IMP-CLI-020: expected 'discovered: 3' in output, got:\n%s", output)
 	}
-	if !strings.Contains(output, "Created:     2") {
-		t.Errorf("IMP-CLI-020: expected 'Created:     2' in output, got:\n%s", output)
+	if !strings.Contains(output, "created: 2") {
+		t.Errorf("IMP-CLI-020: expected 'created: 2' in output, got:\n%s", output)
 	}
-	if !strings.Contains(output, "Skipped:     1") {
-		t.Errorf("IMP-CLI-020: expected 'Skipped:     1' in output, got:\n%s", output)
+	if !strings.Contains(output, "skipped: 1") {
+		t.Errorf("IMP-CLI-020: expected 'skipped: 1' in output, got:\n%s", output)
 	}
-	if !strings.Contains(output, "Failed:      0") {
-		t.Errorf("IMP-CLI-020: expected 'Failed:      0' in output, got:\n%s", output)
+	if !strings.Contains(output, "failed: 0") {
+		t.Errorf("IMP-CLI-020: expected 'failed: 0' in output, got:\n%s", output)
 	}
 }
 
@@ -415,9 +426,9 @@ func TestIMP_ERR_004_APIErrorRecordedAsProblem(t *testing.T) {
 	if code != run.ExitPartialError {
 		t.Errorf("IMP-ERR-004: expected exit code %d (partial), got %d", run.ExitPartialError, code)
 	}
-	// Console summary must show 1 failed (IMP-CLI-020).
-	if !strings.Contains(output, "Failed:      1") {
-		t.Errorf("IMP-ERR-004: expected 'Failed:      1' in output, got:\n%s", output)
+	// Console summary must show 1 failed.
+	if !strings.Contains(output, "failed: 1") {
+		t.Errorf("IMP-ERR-004: expected 'failed: 1' in output, got:\n%s", output)
 	}
 }
 
@@ -447,11 +458,11 @@ func TestIMP_ERR_004_MissingScanSettingRecordedAsProblem(t *testing.T) {
 	if code != run.ExitPartialError {
 		t.Errorf("IMP-ERR-004: expected exit code %d (partial), got %d", run.ExitPartialError, code)
 	}
-	if !strings.Contains(output, "Failed:      1") {
-		t.Errorf("IMP-ERR-004: expected 'Failed:      1' in output, got:\n%s", output)
+	if !strings.Contains(output, "failed: 1") {
+		t.Errorf("IMP-ERR-004: expected 'failed: 1' in output, got:\n%s", output)
 	}
-	if !strings.Contains(output, "Created:     1") {
-		t.Errorf("IMP-ERR-004: expected 'Created:     1' in output, got:\n%s", output)
+	if !strings.Contains(output, "created: 1") {
+		t.Errorf("IMP-ERR-004: expected 'created: 1' in output, got:\n%s", output)
 	}
 }
 
@@ -515,7 +526,7 @@ func TestIMP_CLI_007_DryRunReportedAsCreate(t *testing.T) {
 
 	_, output := runWithCapture(t, cfg, acsClient, coClient)
 
-	if !strings.Contains(output, "Created:     1") {
-		t.Errorf("IMP-CLI-007: expected 'Created:     1' (planned) in dry-run output, got:\n%s", output)
+	if !strings.Contains(output, "created: 1") {
+		t.Errorf("IMP-CLI-007: expected 'created: 1' (planned) in dry-run output, got:\n%s", output)
 	}
 }

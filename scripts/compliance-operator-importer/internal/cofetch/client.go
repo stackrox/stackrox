@@ -32,15 +32,11 @@ type k8sClient struct {
 	namespace string // empty string means all namespaces
 }
 
-// NewClient creates a COClient using the kube context specified in cfg.
-// If cfg.KubeContext is empty the current context is used.
+// NewClient creates a COClient using the current kubeconfig context.
 // If cfg.COAllNamespaces is true, resources are listed across all namespaces.
 func NewClient(cfg *models.Config) (COClient, error) {
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
 	overrides := &clientcmd.ConfigOverrides{}
-	if cfg.KubeContext != "" {
-		overrides.CurrentContext = cfg.KubeContext
-	}
 
 	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, overrides)
 	restConfig, err := kubeConfig.ClientConfig()
@@ -55,6 +51,59 @@ func NewClient(cfg *models.Config) (COClient, error) {
 
 	ns := cfg.CONamespace
 	if cfg.COAllNamespaces {
+		ns = ""
+	}
+
+	return &k8sClient{
+		dynamic:   dynClient,
+		namespace: ns,
+	}, nil
+}
+
+// NewClientForKubeconfig creates a COClient from a specific kubeconfig file.
+func NewClientForKubeconfig(kubeconfigPath string, namespace string, allNamespaces bool) (COClient, error) {
+	loadingRules := &clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeconfigPath}
+	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, &clientcmd.ConfigOverrides{})
+
+	restConfig, err := kubeConfig.ClientConfig()
+	if err != nil {
+		return nil, fmt.Errorf("build kubeconfig from %q: %w", kubeconfigPath, err)
+	}
+
+	dynClient, err := dynamic.NewForConfig(restConfig)
+	if err != nil {
+		return nil, fmt.Errorf("create dynamic client from %q: %w", kubeconfigPath, err)
+	}
+
+	ns := namespace
+	if allNamespaces {
+		ns = ""
+	}
+
+	return &k8sClient{
+		dynamic:   dynClient,
+		namespace: ns,
+	}, nil
+}
+
+// NewClientForContext creates a COClient for a specific context in the active kubeconfig.
+func NewClientForContext(contextName string, namespace string, allNamespaces bool) (COClient, error) {
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	overrides := &clientcmd.ConfigOverrides{CurrentContext: contextName}
+	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, overrides)
+
+	restConfig, err := kubeConfig.ClientConfig()
+	if err != nil {
+		return nil, fmt.Errorf("build kubeconfig for context %q: %w", contextName, err)
+	}
+
+	dynClient, err := dynamic.NewForConfig(restConfig)
+	if err != nil {
+		return nil, fmt.Errorf("create dynamic client for context %q: %w", contextName, err)
+	}
+
+	ns := namespace
+	if allNamespaces {
 		ns = ""
 	}
 

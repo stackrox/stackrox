@@ -1,6 +1,5 @@
-// Package reconcile implements the create-only reconciliation loop.
-//
-// create-only: PUT is never called in Phase 1
+// Package reconcile implements the reconciliation loop that can either create-only
+// or create-or-update scan configurations based on the overwriteExisting setting.
 package reconcile
 
 import (
@@ -40,69 +39,137 @@ type Action struct {
 	Problem         *models.Problem
 }
 
-// Reconciler implements the create-only reconciliation loop.
-// It never calls PUT. Existing scan names are skipped with a conflict problem.
-//
-// create-only: PUT is never called in Phase 1
+// Reconciler implements the reconciliation loop.
+// When overwriteExisting=false, existing scan names are skipped with a conflict problem.
+// When overwriteExisting=true, existing scan names are updated via PUT.
 type Reconciler struct {
-	client     models.ACSClient
-	maxRetries int
-	dryRun     bool
+	client            models.ACSClient
+	maxRetries        int
+	dryRun            bool
+	overwriteExisting bool
 }
 
 // NewReconciler creates a Reconciler.
 //
-//   - client:     ACS API client (POST-only; no PUT anywhere)
-//   - maxRetries: maximum total attempts for a single create (must be >= 1)
-//   - dryRun:     when true, no POST is issued; planned actions are still recorded
-func NewReconciler(client models.ACSClient, maxRetries int, dryRun bool) *Reconciler {
+//   - client:            ACS API client supporting both POST and PUT operations
+//   - maxRetries:        maximum total attempts for a single create/update (must be >= 1)
+//   - dryRun:            when true, no POST/PUT is issued; planned actions are still recorded
+//   - overwriteExisting: when true, existing configs are updated via PUT instead of skipped
+func NewReconciler(client models.ACSClient, maxRetries int, dryRun bool, overwriteExisting bool) *Reconciler {
 	if maxRetries < 1 {
 		maxRetries = 1
 	}
 	return &Reconciler{
-		client:     client,
-		maxRetries: maxRetries,
-		dryRun:     dryRun,
+		client:            client,
+		maxRetries:        maxRetries,
+		dryRun:            dryRun,
+		overwriteExisting: overwriteExisting,
 	}
 }
 
-// Apply tries to create the scan config if scanName is not already in existingNames.
+// Apply tries to create or update the scan config based on whether scanName exists in existingNames.
 //
 // Behaviour:
-//   - If dryRun=true: records planned action, no POST is issued.     (IMP-IDEM-004, IMP-IDEM-006)
-//   - If scanName exists: skip + conflict problem.                    (IMP-IDEM-002, IMP-IDEM-003)
+//   - If dryRun=true: records planned action, no POST/PUT is issued.     (IMP-IDEM-004, IMP-IDEM-006)
+//   - If scanName exists and overwriteExisting=false: skip + conflict problem. (IMP-IDEM-002, IMP-IDEM-003)
+//   - If scanName exists and overwriteExisting=true: update via PUT. (IMP-IDEM-008)
+//   - If scanName not exists: create via POST regardless of overwriteExisting. (IMP-IDEM-009)
 //   - Transient failures (429,502,503,504): retry with exponential backoff. (IMP-ERR-001)
 //   - Non-transient failures (400,401,403,404): record as fail immediately. (IMP-ERR-002)
 //
 // Exponential backoff: base=500ms, doubles each retry; up to maxRetries total attempts.
 // Attempts count is always recorded in the returned Action.
 //
-// create-only: PUT is never called in Phase 1
+// existingNames maps scanName -> configID so we know the ID for PUT operations.
 func (r *Reconciler) Apply(
 	ctx context.Context,
 	payload models.ACSCreatePayload,
 	source models.ReportItemSource,
-	existingNames map[string]bool,
+	existingNames map[string]string,
 ) Action {
 	action := Action{Source: source}
 
-	// IMP-IDEM-002: existing name => skip with conflict problem
-	// IMP-IDEM-003: no PUT is attempted for existing configs
-	if existingNames[payload.ScanName] {
-		problem := &models.Problem{
-			Severity:    models.SeverityWarning,
-			Category:    models.CategoryConflict,
-			ResourceRef: resourceRef(source),
-			Description: fmt.Sprintf("scan configuration %q already exists in ACS and will not be updated (create-only mode)", payload.ScanName),
-			FixHint:     fmt.Sprintf("Remove the existing ACS scan configuration named %q before re-running, or rename the ScanSettingBinding to use a different name.", payload.ScanName),
-			Skipped:     true,
+	existingID, nameExists := existingNames[payload.ScanName]
+
+	// Handle existing name based on overwriteExisting setting
+	if nameExists {
+		if !r.overwriteExisting {
+			// IMP-IDEM-002: existing name and overwriteExisting=false => skip with conflict problem
+			// IMP-IDEM-003: no PUT is attempted when overwriteExisting=false
+			problem := &models.Problem{
+				Severity:    models.SeverityWarning,
+				Category:    models.CategoryConflict,
+				ResourceRef: resourceRef(source),
+				Description: fmt.Sprintf("scan configuration %q already exists in ACS and will not be updated (create-only mode)", payload.ScanName),
+				FixHint:     fmt.Sprintf("Remove the existing ACS scan configuration named %q before re-running, or use --overwrite-existing flag, or rename the ScanSettingBinding to use a different name.", payload.ScanName),
+				Skipped:     true,
+			}
+			action.ActionType = "skip"
+			action.Reason = fmt.Sprintf("scan configuration %q already exists in ACS", payload.ScanName)
+			action.Problem = problem
+			return action
 		}
-		action.ActionType = "skip"
-		action.Reason = fmt.Sprintf("scan configuration %q already exists in ACS", payload.ScanName)
-		action.Problem = problem
+
+		// IMP-IDEM-008: overwriteExisting=true and name exists => update via PUT
+		if r.dryRun {
+			action.ActionType = "update"
+			action.ACSScanConfigID = existingID
+			action.Reason = "dry-run: would PUT /v2/compliance/scan/configurations/" + existingID
+			action.Attempts = 0
+			return action
+		}
+
+		// Perform update with retry logic
+		var (
+			lastErr error
+			delay   = 500 * time.Millisecond
+		)
+
+		for attempt := 1; attempt <= r.maxRetries; attempt++ {
+			action.Attempts = attempt
+
+			lastErr = r.client.UpdateScanConfiguration(ctx, existingID, payload)
+			if lastErr == nil {
+				action.ActionType = "update"
+				action.ACSScanConfigID = existingID
+				action.Reason = "scan configuration updated successfully"
+				return action
+			}
+
+			// Check if the error is transient (eligible for retry)
+			if sc, ok := asStatusCoder(lastErr); ok {
+				code := sc.StatusCode()
+				if !transientStatusCodes[code] {
+					// Non-transient: fail immediately, no more attempts
+					action.ActionType = "fail"
+					action.Reason = fmt.Sprintf("non-transient HTTP %d error updating scan configuration", code)
+					action.Err = lastErr
+					return action
+				}
+			}
+
+			// Do not sleep after the last attempt
+			if attempt < r.maxRetries {
+				select {
+				case <-ctx.Done():
+					action.ActionType = "fail"
+					action.Reason = "context cancelled during retry backoff"
+					action.Err = ctx.Err()
+					return action
+				case <-time.After(delay):
+				}
+				delay *= 2
+			}
+		}
+
+		// Exhausted all retries for update
+		action.ActionType = "fail"
+		action.Reason = fmt.Sprintf("failed to update after %d attempt(s): %v", action.Attempts, lastErr)
+		action.Err = lastErr
 		return action
 	}
 
+	// IMP-IDEM-009: name not exists => create via POST regardless of overwriteExisting flag
 	// IMP-IDEM-004: dry-run => record planned action, do not POST
 	// IMP-IDEM-006: planned action "create" is still recorded
 	if r.dryRun {

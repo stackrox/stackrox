@@ -20,7 +20,7 @@ const preflightPath = "/v2/compliance/scan/configurations?pagination.limit=1"
 
 // Run performs preflight checks in order:
 //  1. Verify endpoint uses https:// (IMP-CLI-013).
-//  2. Verify auth material is non-empty for the configured mode (IMP-CLI-014).
+//  2. Verify auth material is non-empty for the inferred mode (IMP-CLI-014).
 //  3. Probe GET /v2/compliance/scan/configurations?pagination.limit=1 (IMP-CLI-015).
 //  4. HTTP 401/403 => fail-fast with a remediation message (IMP-CLI-016).
 //
@@ -29,8 +29,8 @@ func Run(ctx context.Context, cfg *models.Config) error {
 	// IMP-CLI-013: endpoint must be https://.
 	if !strings.HasPrefix(cfg.ACSEndpoint, "https://") {
 		return fmt.Errorf(
-			"preflight failed: endpoint %q must start with https:// (IMP-CLI-013)\n"+
-				"Fix: use --acs-endpoint https://<host>",
+			"preflight failed: endpoint %q must start with https://\n"+
+				"Fix: use --endpoint https://<host>",
 			cfg.ACSEndpoint,
 		)
 	}
@@ -57,7 +57,7 @@ func Run(ctx context.Context, cfg *models.Config) error {
 	if err != nil {
 		return fmt.Errorf(
 			"preflight failed: could not reach ACS at %s: %w\n"+
-				"Fix: check network connectivity and that --acs-endpoint is correct",
+				"Fix: check network connectivity and that --endpoint is correct",
 			cfg.ACSEndpoint, err,
 		)
 	}
@@ -70,12 +70,12 @@ func Run(ctx context.Context, cfg *models.Config) error {
 		return nil
 	case http.StatusUnauthorized:
 		return errors.New(
-			"preflight failed: ACS returned 401 Unauthorized (IMP-CLI-016)\n" +
+			"preflight failed: ACS returned 401 Unauthorized\n" +
 				"Fix: verify your ACS API token or credentials are correct and not expired",
 		)
 	case http.StatusForbidden:
 		return errors.New(
-			"preflight failed: ACS returned 403 Forbidden (IMP-CLI-016)\n" +
+			"preflight failed: ACS returned 403 Forbidden\n" +
 				"Fix: ensure your ACS user has the 'Compliance' permission set with at least read access",
 		)
 	default:
@@ -87,32 +87,28 @@ func Run(ctx context.Context, cfg *models.Config) error {
 	}
 }
 
-// checkAuthMaterial validates that the auth credentials for the configured
+// checkAuthMaterial validates that the auth credentials for the inferred
 // mode are non-empty (IMP-CLI-014).
 func checkAuthMaterial(cfg *models.Config) error {
 	switch cfg.AuthMode {
 	case models.AuthModeToken:
-		token := os.Getenv(cfg.TokenEnv)
-		if token == "" {
-			return fmt.Errorf(
-				"preflight failed: token auth mode requires a non-empty token in env var %q (IMP-CLI-014)\n"+
-					"Fix: set %s=<your-api-token>",
-				cfg.TokenEnv, cfg.TokenEnv,
+		if os.Getenv("ROX_API_TOKEN") == "" {
+			return errors.New(
+				"preflight failed: token auth mode requires a non-empty ROX_API_TOKEN\n" +
+					"Fix: export ROX_API_TOKEN=<your-api-token>",
 			)
 		}
 	case models.AuthModeBasic:
 		if cfg.Username == "" {
 			return errors.New(
-				"preflight failed: basic auth mode requires a non-empty username (IMP-CLI-014)\n" +
-					"Fix: pass --acs-username=<user> or set ACS_USERNAME=<user>",
+				"preflight failed: basic auth mode requires a non-empty username\n" +
+					"Fix: pass --username=<user> or set ROX_ADMIN_USER=<user>",
 			)
 		}
-		password := os.Getenv(cfg.PasswordEnv)
-		if password == "" {
-			return fmt.Errorf(
-				"preflight failed: basic auth mode requires a non-empty password in env var %q (IMP-CLI-014)\n"+
-					"Fix: set %s=<your-password>",
-				cfg.PasswordEnv, cfg.PasswordEnv,
+		if os.Getenv("ROX_ADMIN_PASSWORD") == "" {
+			return errors.New(
+				"preflight failed: basic auth mode requires a non-empty ROX_ADMIN_PASSWORD\n" +
+					"Fix: export ROX_ADMIN_PASSWORD=<your-password>",
 			)
 		}
 	}
@@ -148,10 +144,10 @@ func buildHTTPClient(cfg *models.Config) (*http.Client, error) {
 func addAuthHeader(req *http.Request, cfg *models.Config) {
 	switch cfg.AuthMode {
 	case models.AuthModeToken:
-		token := os.Getenv(cfg.TokenEnv)
+		token := os.Getenv("ROX_API_TOKEN")
 		req.Header.Set("Authorization", "Bearer "+token)
 	case models.AuthModeBasic:
-		password := os.Getenv(cfg.PasswordEnv)
+		password := os.Getenv("ROX_ADMIN_PASSWORD")
 		creds := base64.StdEncoding.EncodeToString([]byte(cfg.Username + ":" + password))
 		req.Header.Set("Authorization", "Basic "+creds)
 	}

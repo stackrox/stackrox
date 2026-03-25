@@ -17,18 +17,19 @@ import (
 
 // mockACSClient is a test double that records every call and allows the caller
 // to inject per-call responses via the nextResponses queue.
-//
-// IMP-IDEM-003: The mock only implements POST (via CreateScanConfiguration).
-// There is no Put/Update method. If one were added to ACSClient, this struct
-// would fail to compile unless the method were added here too, making the
-// violation immediately visible.
 type mockACSClient struct {
 	// createResponses is consumed in order; each entry is either nil (success)
 	// or an error. Use statusError to encode HTTP status codes.
 	createResponses []error
 
+	// updateResponses is consumed in order for PUT calls.
+	updateResponses []error
+
 	// callCount tracks total calls to CreateScanConfiguration.
 	callCount atomic.Int32
+
+	// updateCallCount tracks total calls to UpdateScanConfiguration.
+	updateCallCount atomic.Int32
 
 	// recordedIDCounter is used to return unique IDs on success.
 	idCounter atomic.Int32
@@ -63,6 +64,21 @@ func (m *mockACSClient) CreateScanConfiguration(_ context.Context, _ models.ACSC
 	return id, nil
 }
 
+func (m *mockACSClient) UpdateScanConfiguration(_ context.Context, _ string, _ models.ACSCreatePayload) error {
+	idx := int(m.updateCallCount.Add(1)) - 1
+	if idx < len(m.updateResponses) {
+		if err := m.updateResponses[idx]; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *mockACSClient) ListClusters(_ context.Context) ([]models.ACSClusterInfo, error) {
+	// Not used in reconcile tests, return empty list
+	return []models.ACSClusterInfo{}, nil
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -93,9 +109,9 @@ func defaultPayload(scanName string) models.ACSCreatePayload {
 // IMP-IDEM-001: non-existing name => POST called, action="create"
 func TestApply_IMP_IDEM_001_NewName_CreatesConfig(t *testing.T) {
 	mock := &mockACSClient{}
-	r := reconcile.NewReconciler(mock, 3, false)
+	r := reconcile.NewReconciler(mock, 3, false, false)
 
-	action := r.Apply(context.Background(), defaultPayload("new-scan"), defaultSource(), map[string]bool{})
+	action := r.Apply(context.Background(), defaultPayload("new-scan"), defaultSource(), map[string]string{})
 
 	if action.ActionType != "create" {
 		t.Errorf("IMP-IDEM-001: expected action 'create', got %q", action.ActionType)
@@ -114,9 +130,9 @@ func TestApply_IMP_IDEM_001_NewName_CreatesConfig(t *testing.T) {
 // IMP-IDEM-002: existing name => action="skip", Problem.Category=conflict, FixHint non-empty
 func TestApply_IMP_IDEM_002_ExistingName_SkipsWithConflictProblem(t *testing.T) {
 	mock := &mockACSClient{}
-	r := reconcile.NewReconciler(mock, 3, false)
+	r := reconcile.NewReconciler(mock, 3, false, false)
 
-	existing := map[string]bool{"cis-weekly": true}
+	existing := map[string]string{"cis-weekly": "existing-id-123"}
 	action := r.Apply(context.Background(), defaultPayload("cis-weekly"), defaultSource(), existing)
 
 	if action.ActionType != "skip" {
@@ -140,47 +156,61 @@ func TestApply_IMP_IDEM_002_ExistingName_SkipsWithConflictProblem(t *testing.T) 
 	}
 }
 
-// IMP-IDEM-003: verify no PUT ever called (mock records method; ACSClient has no Put)
-func TestApply_IMP_IDEM_003_NeverCallsPUT(t *testing.T) {
-	// The mockACSClient deliberately has no Put/Update method.
-	// It only satisfies models.ACSClient which defines:
-	//   Preflight, ListScanConfigurations, CreateScanConfiguration (POST only).
-	// If a PUT-based method existed in the interface, the mock would fail to compile.
+// IMP-IDEM-003: verify no PUT called when overwriteExisting=false (default mode)
+func TestApply_IMP_IDEM_003_DefaultMode_NoPUT(t *testing.T) {
 	mock := &mockACSClient{}
-	r := reconcile.NewReconciler(mock, 3, false)
+	r := reconcile.NewReconciler(mock, 3, false, false) // overwriteExisting=false
 
 	// Run multiple scenarios - none should trigger a PUT
 	for _, scanName := range []string{"new-scan-1", "new-scan-2"} {
-		_ = r.Apply(context.Background(), defaultPayload(scanName), defaultSource(), map[string]bool{})
+		_ = r.Apply(context.Background(), defaultPayload(scanName), defaultSource(), map[string]string{})
 	}
 	// existing name - should skip, not PUT
-	_ = r.Apply(context.Background(), defaultPayload("existing"), defaultSource(), map[string]bool{"existing": true})
+	_ = r.Apply(context.Background(), defaultPayload("existing"), defaultSource(), map[string]string{"existing": "existing-id"})
 
-	// The mock only has CreateScanConfiguration (POST). callCount reflects POST calls only.
-	// 2 creates + 1 skip = 2 POST calls total (no PUT possible).
+	// 2 creates + 1 skip = 2 POST calls total, 0 PUT calls
 	if mock.callCount.Load() != 2 {
-		t.Errorf("IMP-IDEM-003: expected exactly 2 POST calls (2 creates, 0 PUT), got %d", mock.callCount.Load())
+		t.Errorf("IMP-IDEM-003: expected exactly 2 POST calls (2 creates), got %d", mock.callCount.Load())
+	}
+	if mock.updateCallCount.Load() != 0 {
+		t.Errorf("IMP-IDEM-003: expected 0 PUT calls when overwriteExisting=false, got %d", mock.updateCallCount.Load())
 	}
 }
 
 // IMP-IDEM-004: dryRun=true => no POST
 func TestApply_IMP_IDEM_004_DryRun_NoPost(t *testing.T) {
 	mock := &mockACSClient{}
-	r := reconcile.NewReconciler(mock, 3, true) // dryRun=true
+	r := reconcile.NewReconciler(mock, 3, true, false) // dryRun=true
 
-	_ = r.Apply(context.Background(), defaultPayload("new-scan"), defaultSource(), map[string]bool{})
+	_ = r.Apply(context.Background(), defaultPayload("new-scan"), defaultSource(), map[string]string{})
 
 	if mock.callCount.Load() != 0 {
 		t.Errorf("IMP-IDEM-004: expected 0 POST calls in dry-run mode, got %d", mock.callCount.Load())
 	}
 }
 
+// IMP-IDEM-005: dryRun=true => no PUT (even with overwriteExisting=true)
+func TestApply_IMP_IDEM_005_DryRun_NoPut(t *testing.T) {
+	mock := &mockACSClient{}
+	r := reconcile.NewReconciler(mock, 3, true, true) // dryRun=true, overwriteExisting=true
+
+	existing := map[string]string{"existing-scan": "existing-id"}
+	_ = r.Apply(context.Background(), defaultPayload("existing-scan"), defaultSource(), existing)
+
+	if mock.updateCallCount.Load() != 0 {
+		t.Errorf("IMP-IDEM-005: expected 0 PUT calls in dry-run mode, got %d", mock.updateCallCount.Load())
+	}
+	if mock.callCount.Load() != 0 {
+		t.Errorf("IMP-IDEM-005: expected 0 POST calls in dry-run mode, got %d", mock.callCount.Load())
+	}
+}
+
 // IMP-IDEM-006: dryRun => action="create" still recorded as planned
 func TestApply_IMP_IDEM_006_DryRun_PlannedCreateRecorded(t *testing.T) {
 	mock := &mockACSClient{}
-	r := reconcile.NewReconciler(mock, 3, true) // dryRun=true
+	r := reconcile.NewReconciler(mock, 3, true, false) // dryRun=true
 
-	action := r.Apply(context.Background(), defaultPayload("new-scan"), defaultSource(), map[string]bool{})
+	action := r.Apply(context.Background(), defaultPayload("new-scan"), defaultSource(), map[string]string{})
 
 	if action.ActionType != "create" {
 		t.Errorf("IMP-IDEM-006: dry-run planned action should be 'create', got %q", action.ActionType)
@@ -190,9 +220,9 @@ func TestApply_IMP_IDEM_006_DryRun_PlannedCreateRecorded(t *testing.T) {
 // IMP-IDEM-007: dryRun => problems still populated for problematic resources
 func TestApply_IMP_IDEM_007_DryRun_ProblemsStillPopulated(t *testing.T) {
 	mock := &mockACSClient{}
-	r := reconcile.NewReconciler(mock, 3, true) // dryRun=true
+	r := reconcile.NewReconciler(mock, 3, true, false) // dryRun=true
 
-	existing := map[string]bool{"cis-weekly": true}
+	existing := map[string]string{"cis-weekly": "existing-id-123"}
 	action := r.Apply(context.Background(), defaultPayload("cis-weekly"), defaultSource(), existing)
 
 	if action.Problem == nil {
@@ -212,9 +242,9 @@ func TestApply_IMP_ERR_001_Retry429_ThenSuccess(t *testing.T) {
 			nil, // 3rd attempt succeeds
 		},
 	}
-	r := reconcile.NewReconciler(mock, 5, false)
+	r := reconcile.NewReconciler(mock, 5, false, false)
 
-	action := r.Apply(context.Background(), defaultPayload("new-scan"), defaultSource(), map[string]bool{})
+	action := r.Apply(context.Background(), defaultPayload("new-scan"), defaultSource(), map[string]string{})
 
 	if action.ActionType != "create" {
 		t.Errorf("IMP-ERR-001: expected action 'create' after retry success, got %q", action.ActionType)
@@ -239,9 +269,9 @@ func TestApply_IMP_ERR_001_Retry5xx_ThenSuccess(t *testing.T) {
 					nil, // 3rd succeeds
 				},
 			}
-			r := reconcile.NewReconciler(mock, 5, false)
+			r := reconcile.NewReconciler(mock, 5, false, false)
 
-			action := r.Apply(context.Background(), defaultPayload("new-scan"), defaultSource(), map[string]bool{})
+			action := r.Apply(context.Background(), defaultPayload("new-scan"), defaultSource(), map[string]string{})
 
 			if action.ActionType != "create" {
 				t.Errorf("IMP-ERR-001: HTTP %d - expected 'create', got %q", code, action.ActionType)
@@ -263,9 +293,9 @@ func TestApply_IMP_ERR_002_NonTransient400_NoRetry(t *testing.T) {
 					&statusError{code: code},
 				},
 			}
-			r := reconcile.NewReconciler(mock, 5, false)
+			r := reconcile.NewReconciler(mock, 5, false, false)
 
-			action := r.Apply(context.Background(), defaultPayload("new-scan"), defaultSource(), map[string]bool{})
+			action := r.Apply(context.Background(), defaultPayload("new-scan"), defaultSource(), map[string]string{})
 
 			if action.ActionType != "fail" {
 				t.Errorf("IMP-ERR-002: HTTP %d - expected action 'fail', got %q", code, action.ActionType)
@@ -322,3 +352,52 @@ func errorIs(err error, code int) bool {
 
 // keep errorIs in use
 var _ = errorIs
+
+// IMP-IDEM-008: overwriteExisting=true, name exists => PUT called, action="update"
+func TestApply_IMP_IDEM_008_OverwriteExisting_Updates(t *testing.T) {
+	mock := &mockACSClient{}
+	r := reconcile.NewReconciler(mock, 3, false, true) // overwriteExisting=true
+
+	existing := map[string]string{"cis-weekly": "existing-config-id-789"}
+	action := r.Apply(context.Background(), defaultPayload("cis-weekly"), defaultSource(), existing)
+
+	if action.ActionType != "update" {
+		t.Errorf("IMP-IDEM-008: expected action 'update', got %q", action.ActionType)
+	}
+	if action.ACSScanConfigID != "existing-config-id-789" {
+		t.Errorf("IMP-IDEM-008: expected existing ID preserved, got %q", action.ACSScanConfigID)
+	}
+	if action.Err != nil {
+		t.Errorf("IMP-IDEM-008: unexpected error: %v", action.Err)
+	}
+	if mock.updateCallCount.Load() != 1 {
+		t.Errorf("IMP-IDEM-008: expected 1 PUT call, got %d", mock.updateCallCount.Load())
+	}
+	if mock.callCount.Load() != 0 {
+		t.Errorf("IMP-IDEM-008: expected 0 POST calls, got %d", mock.callCount.Load())
+	}
+}
+
+// IMP-IDEM-009: overwriteExisting=true, name not exists => POST called, action="create"
+func TestApply_IMP_IDEM_009_OverwriteExisting_Creates(t *testing.T) {
+	mock := &mockACSClient{}
+	r := reconcile.NewReconciler(mock, 3, false, true) // overwriteExisting=true
+
+	action := r.Apply(context.Background(), defaultPayload("new-scan"), defaultSource(), map[string]string{})
+
+	if action.ActionType != "create" {
+		t.Errorf("IMP-IDEM-009: expected action 'create', got %q", action.ActionType)
+	}
+	if action.ACSScanConfigID == "" {
+		t.Error("IMP-IDEM-009: expected non-empty ACSScanConfigID after create")
+	}
+	if action.Err != nil {
+		t.Errorf("IMP-IDEM-009: unexpected error: %v", action.Err)
+	}
+	if mock.callCount.Load() != 1 {
+		t.Errorf("IMP-IDEM-009: expected 1 POST call, got %d", mock.callCount.Load())
+	}
+	if mock.updateCallCount.Load() != 0 {
+		t.Errorf("IMP-IDEM-009: expected 0 PUT calls, got %d", mock.updateCallCount.Load())
+	}
+}

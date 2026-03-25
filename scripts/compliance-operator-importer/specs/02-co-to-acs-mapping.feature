@@ -47,12 +47,81 @@ Feature: Map Compliance Operator scheduled scan resources to ACS scan configurat
     And payload.scanConfig.description SHOULD include settings reference context                                              # IMP-MAP-006
 
   @mapping @clusters
-  Scenario: Use single destination ACS cluster ID
-    Given importer flag --acs-cluster-id is "cluster-a"
-    When the importer builds the destination payload
-    Then payload.clusters MUST equal:
-      | value     |
-      | cluster-a |                                                    # IMP-MAP-007
+  Scenario: Auto-discover ACS cluster ID from admission-control ConfigMap
+    Given kubecontext "ctx-a" points to a secured cluster
+    And ConfigMap "admission-control" in namespace "stackrox" has data key "cluster-id" = "uuid-a"
+    When the importer resolves the ACS cluster ID for "ctx-a"
+    Then the resolved ACS cluster ID MUST be "uuid-a"                  # IMP-MAP-016
+
+  @mapping @clusters
+  Scenario: Fallback to OpenShift ClusterVersion for cluster matching
+    Given kubecontext "ctx-b" points to an OpenShift cluster
+    And ConfigMap "admission-control" is not readable
+    And ClusterVersion "version" has spec.clusterID "ocp-uuid-b"
+    And ACS cluster list contains a cluster with providerMetadata.cluster.id "ocp-uuid-b" and ACS ID "acs-uuid-b"
+    When the importer resolves the ACS cluster ID for "ctx-b"
+    Then the resolved ACS cluster ID MUST be "acs-uuid-b"              # IMP-MAP-017
+
+  @mapping @clusters
+  Scenario: Fallback to helm-effective-cluster-name for cluster matching
+    Given kubecontext "ctx-c" points to a cluster
+    And ConfigMap "admission-control" is not readable
+    And ClusterVersion is not available
+    And Secret "helm-effective-cluster-name" has data key "cluster-name" = "my-cluster"
+    And ACS cluster list contains a cluster named "my-cluster" with ACS ID "acs-uuid-c"
+    When the importer resolves the ACS cluster ID for "ctx-c"
+    Then the resolved ACS cluster ID MUST be "acs-uuid-c"              # IMP-MAP-018
+
+  @mapping @clusters
+  Scenario: Manual override via --cluster flag (context=name form)
+    Given importer flag --cluster is "ctx-a=my-acs-cluster"
+    And ACS cluster list contains a cluster named "my-acs-cluster" with ACS ID "acs-uuid-a"
+    When the importer resolves the ACS cluster ID for "ctx-a"
+    Then the resolved ACS cluster ID MUST be "acs-uuid-a"              # IMP-MAP-007
+
+  @mapping @clusters
+  Scenario: Single-cluster shorthand via --cluster with name
+    Given importer flag --cluster is "my-acs-cluster" (no = separator)
+    And ACS cluster list contains a cluster named "my-acs-cluster" with ACS ID "acs-uuid-a"
+    When the importer resolves the ACS cluster ID
+    Then the resolved ACS cluster ID MUST be "acs-uuid-a"              # IMP-MAP-022
+
+  @mapping @clusters
+  Scenario: Single-cluster shorthand via --cluster with UUID
+    Given importer flag --cluster is "acs-uuid-a" (no = separator, valid UUID)
+    When the importer resolves the ACS cluster ID
+    Then the resolved ACS cluster ID MUST be "acs-uuid-a" (used directly)  # IMP-MAP-023
+
+  @mapping @clusters @multicluster
+  Scenario: Merge SSBs with same name across clusters
+    Given kubecontext "ctx-a" has ScanSettingBinding "cis-weekly" with profiles ["ocp4-cis"] and schedule "0 2 * * 0"
+    And kubecontext "ctx-b" has ScanSettingBinding "cis-weekly" with profiles ["ocp4-cis"] and schedule "0 2 * * 0"
+    And ctx-a resolves to ACS cluster ID "uuid-a"
+    And ctx-b resolves to ACS cluster ID "uuid-b"
+    When the importer merges SSBs across clusters
+    Then one ACS scan config MUST be created with scanName "cis-weekly" # IMP-MAP-019
+    And payload.clusters MUST equal:
+      | value  |
+      | uuid-a |
+      | uuid-b |                                                       # IMP-MAP-021
+
+  @mapping @clusters @multicluster @error
+  Scenario: Error when same-name SSBs have mismatched profiles
+    Given kubecontext "ctx-a" has ScanSettingBinding "cis-weekly" with profiles ["ocp4-cis"]
+    And kubecontext "ctx-b" has ScanSettingBinding "cis-weekly" with profiles ["ocp4-cis", "ocp4-moderate"]
+    When the importer merges SSBs across clusters
+    Then "cis-weekly" MUST be marked failed                            # IMP-MAP-020
+    And problems list MUST include category "mapping"
+    And problem description MUST mention profile mismatch across clusters
+
+  @mapping @clusters @multicluster @error
+  Scenario: Error when same-name SSBs have mismatched schedules
+    Given kubecontext "ctx-a" has ScanSettingBinding "cis-weekly" with schedule "0 2 * * 0"
+    And kubecontext "ctx-b" has ScanSettingBinding "cis-weekly" with schedule "0 3 * * 1"
+    When the importer merges SSBs across clusters
+    Then "cis-weekly" MUST be marked failed                            # IMP-MAP-020
+    And problems list MUST include category "mapping"
+    And problem description MUST mention schedule mismatch across clusters
 
   @validation @mapping
   Scenario: Missing ScanSetting reference fails only that binding

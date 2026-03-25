@@ -6,19 +6,20 @@ This document is the acceptance test contract for real-cluster validation.
 
 - `kubectl`, `curl`, `jq` installed.
 - Logged into target cluster containing Compliance Operator resources.
-- ACS endpoint reachable from runner.
+- Central endpoint reachable from runner.
 - Importer binary built locally.
 
 Set environment:
 
 ```bash
-export ACS_ENDPOINT="https://central.stackrox.example.com:443"
-export ACS_API_TOKEN="<token>"
-export ACS_USERNAME="<username>"
-export ACS_PASSWORD="<password>"
+export ROX_ENDPOINT="https://central.stackrox.example.com:443"
+export ROX_API_TOKEN="<token>"
+export ROX_ADMIN_USER="admin"
+export ROX_ADMIN_PASSWORD="<password>"
 export CO_NAMESPACE="openshift-compliance"
 export IMPORTER_BIN="./bin/co-acs-scan-importer"
-export ACS_CLUSTER_ID="<acs-cluster-id>"
+# For multi-cluster: merge kubeconfigs
+export KUBECONFIG="~/.kube/config:~/.kube/config-secured-cluster"
 ```
 
 ## Acceptance checks
@@ -42,15 +43,15 @@ Pass condition:
 
 ### A2 - ACS auth preflight
 
-- **IMP-ACC-002**: ACS token and endpoint MUST pass read probe.
+- **IMP-ACC-002**: token and endpoint MUST pass read probe.
 - **IMP-ACC-013**: optional basic-auth mode MUST pass read probe in local/dev environments.
 
 Command:
 
 ```bash
 curl -ksS \
-  -H "Authorization: Bearer ${ACS_API_TOKEN}" \
-  "${ACS_ENDPOINT}/v2/compliance/scan/configurations?pagination.limit=1" | jq .
+  -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "${ROX_ENDPOINT}/v2/compliance/scan/configurations?pagination.limit=1" | jq .
 ```
 
 Pass condition:
@@ -61,22 +62,19 @@ Optional local/dev basic-auth probe:
 
 ```bash
 curl -ksS \
-  -u "${ACS_USERNAME}:${ACS_PASSWORD}" \
-  "${ACS_ENDPOINT}/v2/compliance/scan/configurations?pagination.limit=1" | jq .
+  -u "${ROX_ADMIN_USER}:${ROX_ADMIN_PASSWORD}" \
+  "${ROX_ENDPOINT}/v2/compliance/scan/configurations?pagination.limit=1" | jq .
 ```
 
 ### A3 - Dry-run side-effect safety
 
 - **IMP-ACC-003**: dry-run MUST produce no writes.
 
-Command:
+Command (auto-discovery mode):
 
 ```bash
 "${IMPORTER_BIN}" \
-  --acs-endpoint "${ACS_ENDPOINT}" \
-  --acs-token-env ACS_API_TOKEN \
-  --co-namespace "${CO_NAMESPACE}" \
-  --acs-cluster-id "${ACS_CLUSTER_ID}" \
+  --endpoint "${ROX_ENDPOINT}" \
   --dry-run \
   --report-json "/tmp/co-acs-import-dryrun.json"
 ```
@@ -88,18 +86,15 @@ Pass conditions:
 - actions listed as planned only (no applied create/update markers),
 - `problems[]` is present and contains `description` + `fixHint` for each problematic resource.
 
-### A4 - Apply creates expected configs (create-only)
+### A4 - Apply creates expected configs
 
 - **IMP-ACC-004**: apply mode MUST create missing target ACS configs.
 
-Command:
+Command (auto-discovery mode):
 
 ```bash
 "${IMPORTER_BIN}" \
-  --acs-endpoint "${ACS_ENDPOINT}" \
-  --acs-token-env ACS_API_TOKEN \
-  --co-namespace "${CO_NAMESPACE}" \
-  --acs-cluster-id "${ACS_CLUSTER_ID}" \
+  --endpoint "${ROX_ENDPOINT}" \
   --report-json "/tmp/co-acs-import-apply.json"
 ```
 
@@ -107,8 +102,8 @@ Verify:
 
 ```bash
 curl -ksS \
-  -H "Authorization: Bearer ${ACS_API_TOKEN}" \
-  "${ACS_ENDPOINT}/v2/compliance/scan/configurations?pagination.limit=200" | \
+  -H "Authorization: Bearer ${ROX_API_TOKEN}" \
+  "${ROX_ENDPOINT}/v2/compliance/scan/configurations?pagination.limit=200" | \
   jq '.configurations[] | {id, scanName, profiles: .scanConfig.profiles, description: .scanConfig.description}'
 ```
 
@@ -125,10 +120,7 @@ Command:
 
 ```bash
 "${IMPORTER_BIN}" \
-  --acs-endpoint "${ACS_ENDPOINT}" \
-  --acs-token-env ACS_API_TOKEN \
-  --co-namespace "${CO_NAMESPACE}" \
-  --acs-cluster-id "${ACS_CLUSTER_ID}" \
+  --endpoint "${ROX_ENDPOINT}" \
   --report-json "/tmp/co-acs-import-second-run.json"
 ```
 
@@ -137,15 +129,34 @@ Pass conditions:
 - report shows skip actions for already-existing scan names,
 - no net changes in ACS list output.
 
-### A6 - Existing config behavior (create-only)
+### A6 - Existing config behavior
 
-- **IMP-ACC-006**: existing scan names MUST be skipped and recorded in `problems[]`.
+- **IMP-ACC-006**: without `--overwrite-existing`, existing scan names MUST be skipped
+  and recorded in `problems[]`.
+- **IMP-ACC-014**: with `--overwrite-existing`, existing scan names MUST be updated via PUT.
 
-Procedure:
+Procedure (create-only):
 
 1. Manually modify one imported ACS scan config (name unchanged).
-2. Re-run importer.
+2. Re-run importer without `--overwrite-existing`.
 3. Verify that modified existing config is not updated and is captured as skipped conflict.
+
+Procedure (overwrite):
+
+1. Re-run importer with `--overwrite-existing`.
+2. Verify that the modified config is updated back to the imported state.
+
+### A8 - Multi-cluster merge
+
+- **IMP-ACC-015**: when the same SSB name exists on multiple source clusters with matching
+  profiles and schedule, importer MUST create one scan config targeting all resolved cluster IDs.
+- **IMP-ACC-016**: when the same SSB name exists on multiple source clusters with different
+  profiles or schedule, importer MUST error for that SSB name.
+
+### A9 - Auto-discovery
+
+- **IMP-ACC-017**: importer MUST auto-discover the ACS cluster ID from the admission-control
+  ConfigMap's `cluster-id` key when no `--cluster` override is given.
 
 ### A7 - Failure paths
 

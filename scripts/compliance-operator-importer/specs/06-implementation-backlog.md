@@ -137,34 +137,155 @@ Centralize error handling/reporting and enforce run outcomes.
 
 - "Implement Slice D with tests first for IMP-CLI-017..022 and IMP-ERR-001..004. Ensure problem list and exit code semantics exactly match spec."
 
-## Slice E - End-to-end acceptance and tooling
+## Slice E - Multi-cluster support and auto-discovery
 
 ### E Goal
 
-Make real-cluster validation repeatable and scriptable.
+Support multiple source clusters, auto-discover ACS cluster IDs, merge SSBs across clusters.
 
 ### E Requirement IDs
 
-- `IMP-ACC-001..012`
+- `IMP-CLI-003` (updated), `IMP-CLI-005` (updated), `IMP-CLI-027`
+- `IMP-MAP-016..021`
+- `IMP-ACC-015..017`
 
 ### E Implementation targets (suggested)
+
+- `scripts/compliance-operator-importer/internal/config/config.go` (new flags)
+- `scripts/compliance-operator-importer/internal/discover/discover.go` (new package: ACS cluster ID auto-discovery)
+- `scripts/compliance-operator-importer/internal/cofetch/client.go` (multi-context support)
+- `scripts/compliance-operator-importer/internal/merge/merge.go` (new package: SSB merging + mismatch detection)
+- `scripts/compliance-operator-importer/internal/run/run.go` (orchestrate multi-cluster flow)
+
+### E Tests to add
+
+- `internal/discover/discover_test.go`
+- `internal/merge/merge_test.go`
+- `internal/config/config_test.go` (new flag tests)
+- `internal/run/run_test.go` (multi-cluster integration)
+
+### E Acceptance signal
+
+- Auto-discovery resolves ACS cluster IDs from admission-control ConfigMap on real clusters.
+- SSBs with same name across clusters produce one merged scan config.
+- SSBs with same name but different profiles/schedule produce an error.
+
+### E Agent prompt seed
+
+- "Implement Slice E: multi-cluster support. Add --kubecontext (repeatable), auto-discover ACS cluster ID via admission-control ConfigMap (fallback: ClusterVersion, helm-effective-cluster-name), merge SSBs by name across clusters, error on profile/schedule mismatch."
+
+## Slice F - Overwrite-existing mode (PUT support)
+
+### F Goal
+
+Allow importer to update existing ACS scan configs instead of skipping them.
+
+### F Requirement IDs
+
+- `IMP-CLI-027`, `IMP-IDEM-008..009`, `IMP-ACC-014`
+
+### F Implementation targets (suggested)
+
+- `scripts/compliance-operator-importer/internal/models/models.go` (add UpdateScanConfiguration to ACSClient interface)
+- `scripts/compliance-operator-importer/internal/acs/client.go` (implement PUT)
+- `scripts/compliance-operator-importer/internal/reconcile/create_only.go` (rename to reconciler.go, add update path)
+- `scripts/compliance-operator-importer/internal/config/config.go` (--overwrite-existing flag)
+
+### F Tests to add
+
+- `internal/reconcile/reconciler_test.go` (update path tests)
+- `internal/acs/client_test.go` (PUT tests)
+
+### F Acceptance signal
+
+- With `--overwrite-existing`, existing scan configs are updated via PUT.
+- Without the flag, behavior is unchanged (skip + conflict problem).
+
+### F Agent prompt seed
+
+- "Implement Slice F: --overwrite-existing flag. Add PUT to ACS client, update reconciler to call PUT when flag is set and scanName exists. Add UpdateScanConfiguration and DeleteScanConfiguration to ACSClient interface."
+
+## Slice G - End-to-end acceptance and tooling
+
+### G Goal
+
+Make real-cluster validation repeatable and scriptable.
+
+### G Requirement IDs
+
+- `IMP-ACC-001..017`
+
+### G Implementation targets (suggested)
 
 - `scripts/compliance-operator-importer/hack/acceptance-run.sh`
 - `scripts/compliance-operator-importer/hack/check-report.sh`
 
-### E Tests/checks to add
+### G Tests/checks to add
 
 - lightweight script tests where practical.
 - documented manual acceptance evidence for cluster runs.
 
-### E Acceptance signal
+### G Acceptance signal
 
 - all commands/checks in `specs/04-validation-and-acceptance.md` are reproducible.
-- include at least one real-cluster proof run against a live ACS endpoint (for example localhost:8443) with artifact output.
+- include at least one real-cluster proof run against a live ACS endpoint with artifact output.
+- multi-cluster and overwrite scenarios tested against real clusters.
 
-### E Agent prompt seed
+### G Agent prompt seed
 
-- "Implement Slice E automation helpers for IMP-ACC-001..012 and produce run artifacts paths for dry-run/apply/second-run checks."
+- "Implement Slice G automation helpers for IMP-ACC-001..017 and produce run artifacts paths for dry-run/apply/second-run/multi-cluster/overwrite checks."
+
+## Slice H - UX alignment with roxctl conventions
+
+### H Goal
+
+Rename all flags and env vars to match roxctl conventions. Remove unnecessary
+indirection flags. Simplify auth inference and endpoint handling.
+
+### H Requirement IDs
+
+- `IMP-CLI-001` (updated: `--endpoint` / `ROX_ENDPOINT`, auto-prepend `https://`)
+- `IMP-CLI-002` (updated: auto-infer auth from env vars, no `--auth-mode`)
+- `IMP-CLI-005` (updated: unified `--cluster` flag accepting UUID, name, or ctx=value)
+- `IMP-CLI-013` (updated: bare hostnames get `https://` prepended)
+- `IMP-CLI-023` (removed: `--auth-mode`)
+- `IMP-CLI-024` (updated: `--username` / `ROX_ADMIN_USER`, default `admin`; password from `ROX_ADMIN_PASSWORD`)
+- `IMP-CLI-025` (updated: ambiguous = both token+password set)
+- `IMP-CLI-026` (removed: auth mode inferred)
+- `IMP-MAP-022..023` (new: `--cluster` single-value shorthand with name or UUID)
+
+### H Changes summary
+
+| Old | New | Notes |
+|-----|-----|-------|
+| `--acs-endpoint` / `ACS_ENDPOINT` | `--endpoint` / `ROX_ENDPOINT` | aligned with roxctl |
+| `--acs-auth-mode` | (removed) | auto-inferred |
+| `--acs-token-env` | (removed) | always reads `ROX_API_TOKEN` |
+| `--acs-password-env` | (removed) | always reads `ROX_ADMIN_PASSWORD` |
+| `--acs-username` / `ACS_USERNAME` | `--username` / `ROX_ADMIN_USER` (default `admin`) | aligned with roxctl |
+| `--acs-cluster-id` | `--cluster` (UUID, name, or ctx=value) | unified |
+| `--source-kubecontext` | (removed) | redundant with `--kubecontext` |
+
+### H Implementation targets
+
+- `internal/config/config.go` (flag renames, auth inference, endpoint normalization)
+- `internal/models/models.go` (remove AuthMode, TokenEnv, PasswordEnv fields)
+- `internal/preflight/preflight.go` (auth inference)
+- `internal/acs/client.go` (read from fixed env vars)
+- `internal/run/cluster_source.go` (unified `--cluster` parsing)
+- `cmd/importer/main.go`
+
+### H Tests to update
+
+- `internal/config/config_test.go`
+- `internal/config/config_multicluster_test.go`
+- `internal/preflight/preflight_test.go`
+- `internal/acs/client_test.go`
+- `internal/run/run_test.go`
+
+### H Agent prompt seed
+
+- "Implement Slice H: rename all ACS-prefixed flags/env vars to roxctl conventions per the table above. Remove --auth-mode, --token-env, --password-env, --source-kubecontext. Auto-infer auth from env vars. Auto-prepend https:// for bare hostnames. Unify --cluster to accept UUID, name, or ctx=value."
 
 ## Cross-slice conventions
 
@@ -172,16 +293,19 @@ Make real-cluster validation repeatable and scriptable.
 - Keep mapping logic side-effect free where possible.
 - Wrap external clients (k8s/ACS) behind interfaces for deterministic tests.
 - Never mutate CO resources.
-- Keep create-only invariant explicit (guard rail test that fails on any `PUT` path).
+- Guard rail test: without `--overwrite-existing`, no `PUT` is ever sent.
 - Verify behavior with real-world examples early and often, not only mocked tests.
 - Capture smoke-test commands and outputs in PR notes for traceability.
 
 ## Suggested execution order and ownership
 
-1. Slice A (platform/entrypoint)
-2. Slice B (domain mapping)
-3. Slice C (ACS reconciliation)
-4. Slice D (reporting + run orchestration)
-5. Slice E (acceptance automation)
+1. Slice A (platform/entrypoint) -- DONE
+2. Slice B (domain mapping) -- DONE
+3. Slice C (ACS reconciliation) -- DONE
+4. Slice D (reporting + run orchestration) -- DONE
+5. Slice E (multi-cluster + auto-discovery)
+6. Slice F (overwrite-existing / PUT support)
+7. Slice G (acceptance automation)
 
+Slices E and F are independent and can be implemented in parallel.
 One agent per slice is ideal; if sequential, complete one slice fully before next.

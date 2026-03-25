@@ -11,12 +11,12 @@ import (
 	"github.com/stackrox/co-acs-importer/internal/models"
 )
 
-// minimalTokenConfig returns a Config wired to the given server URL and token.
-func minimalTokenConfig(serverURL, token string) *models.Config {
+// minimalTokenConfig returns a Config wired to the given server URL in token mode.
+// Caller must set ROX_API_TOKEN env var.
+func minimalTokenConfig(serverURL string) *models.Config {
 	return &models.Config{
 		ACSEndpoint:    serverURL,
 		AuthMode:       models.AuthModeToken,
-		TokenEnv:       "TEST_ACS_TOKEN",
 		RequestTimeout: 5 * time.Second,
 	}
 }
@@ -33,10 +33,9 @@ func TestIMP_CLI_015_200ResponseNoError(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	t.Setenv("TEST_ACS_TOKEN", "validtoken")
+	t.Setenv("ROX_API_TOKEN", "validtoken")
 
-	cfg := minimalTokenConfig(srv.URL, "validtoken")
-	// Use the test server's TLS client directly by trusting its certificate.
+	cfg := minimalTokenConfig(srv.URL)
 	cfg.InsecureSkipVerify = true
 
 	err := Run(context.Background(), cfg)
@@ -53,9 +52,9 @@ func TestIMP_CLI_016_401ReturnsRemediationError(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	t.Setenv("TEST_ACS_TOKEN", "badtoken")
+	t.Setenv("ROX_API_TOKEN", "badtoken")
 
-	cfg := minimalTokenConfig(srv.URL, "badtoken")
+	cfg := minimalTokenConfig(srv.URL)
 	cfg.InsecureSkipVerify = true
 
 	err := Run(context.Background(), cfg)
@@ -66,7 +65,6 @@ func TestIMP_CLI_016_401ReturnsRemediationError(t *testing.T) {
 	if !strings.Contains(strings.ToLower(msg), "unauthorized") && !strings.Contains(strings.ToLower(msg), "401") {
 		t.Errorf("expected 'unauthorized' or '401' in error message, got: %q", msg)
 	}
-	// Must include a remediation hint.
 	if !strings.Contains(strings.ToLower(msg), "fix:") {
 		t.Errorf("expected remediation hint (Fix:) in error message, got: %q", msg)
 	}
@@ -80,9 +78,9 @@ func TestIMP_CLI_016_403ReturnsRemediationError(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	t.Setenv("TEST_ACS_TOKEN", "insufficienttoken")
+	t.Setenv("ROX_API_TOKEN", "insufficienttoken")
 
-	cfg := minimalTokenConfig(srv.URL, "insufficienttoken")
+	cfg := minimalTokenConfig(srv.URL)
 	cfg.InsecureSkipVerify = true
 
 	err := Run(context.Background(), cfg)
@@ -101,12 +99,11 @@ func TestIMP_CLI_016_403ReturnsRemediationError(t *testing.T) {
 // TestIMP_CLI_013_NonHTTPSEndpointRejected verifies that a non-https endpoint
 // is rejected before any network call is made (IMP-CLI-013).
 func TestIMP_CLI_013_NonHTTPSEndpointRejected(t *testing.T) {
-	t.Setenv("TEST_ACS_TOKEN", "tok")
+	t.Setenv("ROX_API_TOKEN", "tok")
 
 	cfg := &models.Config{
 		ACSEndpoint:    "http://central.example.com",
 		AuthMode:       models.AuthModeToken,
-		TokenEnv:       "TEST_ACS_TOKEN",
 		RequestTimeout: 5 * time.Second,
 	}
 
@@ -122,13 +119,11 @@ func TestIMP_CLI_013_NonHTTPSEndpointRejected(t *testing.T) {
 // TestIMP_CLI_014_EmptyTokenRejected verifies that an empty token in token
 // mode is caught before any HTTP request (IMP-CLI-014).
 func TestIMP_CLI_014_EmptyTokenRejected(t *testing.T) {
-	// Do not set the token env var.
-	t.Setenv("TEST_ACS_TOKEN", "")
+	t.Setenv("ROX_API_TOKEN", "")
 
 	cfg := &models.Config{
 		ACSEndpoint:    "https://central.example.com",
 		AuthMode:       models.AuthModeToken,
-		TokenEnv:       "TEST_ACS_TOKEN",
 		RequestTimeout: 5 * time.Second,
 	}
 
@@ -144,13 +139,12 @@ func TestIMP_CLI_014_EmptyTokenRejected(t *testing.T) {
 // TestIMP_CLI_014_BasicModeEmptyPasswordRejected verifies that basic mode with
 // an empty password is rejected before any HTTP request (IMP-CLI-014).
 func TestIMP_CLI_014_BasicModeEmptyPasswordRejected(t *testing.T) {
-	t.Setenv("ACS_PASSWORD", "")
+	t.Setenv("ROX_ADMIN_PASSWORD", "")
 
 	cfg := &models.Config{
 		ACSEndpoint:    "https://central.example.com",
 		AuthMode:       models.AuthModeBasic,
 		Username:       "admin",
-		PasswordEnv:    "ACS_PASSWORD",
 		RequestTimeout: 5 * time.Second,
 	}
 
@@ -170,9 +164,9 @@ func TestIMP_CLI_015_ProbesCorrectPath(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	t.Setenv("TEST_ACS_TOKEN", "tok")
+	t.Setenv("ROX_API_TOKEN", "tok")
 
-	cfg := minimalTokenConfig(srv.URL, "tok")
+	cfg := minimalTokenConfig(srv.URL)
 	cfg.InsecureSkipVerify = true
 
 	if err := Run(context.Background(), cfg); err != nil {
@@ -195,9 +189,9 @@ func TestIMP_CLI_015_BearerTokenSentInHeader(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	t.Setenv("TEST_ACS_TOKEN", "my-secret-token")
+	t.Setenv("ROX_API_TOKEN", "my-secret-token")
 
-	cfg := minimalTokenConfig(srv.URL, "my-secret-token")
+	cfg := minimalTokenConfig(srv.URL)
 	cfg.InsecureSkipVerify = true
 
 	if err := Run(context.Background(), cfg); err != nil {

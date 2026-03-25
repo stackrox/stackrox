@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/co-acs-importer/internal/problems"
 	"github.com/stackrox/co-acs-importer/internal/reconcile"
 	"github.com/stackrox/co-acs-importer/internal/report"
+	"github.com/stackrox/co-acs-importer/internal/status"
 )
 
 // Exit code constants (IMP-CLI-017..019, IMP-ERR-003).
@@ -29,7 +30,8 @@ type Runner struct {
 	cfg       *models.Config
 	acsClient models.ACSClient
 	coClient  cofetch.COClient
-	out       io.Writer // injectable; defaults to os.Stdout
+	out       io.Writer       // injectable; defaults to os.Stdout
+	status    *status.Printer // stage-by-stage progress output
 }
 
 // NewRunner creates a Runner ready to execute, writing console output to os.Stdout.
@@ -39,6 +41,7 @@ func NewRunner(cfg *models.Config, acsClient models.ACSClient, coClient cofetch.
 		acsClient: acsClient,
 		coClient:  coClient,
 		out:       os.Stdout,
+		status:    status.New(),
 	}
 }
 
@@ -47,11 +50,12 @@ func NewRunner(cfg *models.Config, acsClient models.ACSClient, coClient cofetch.
 func (r *Runner) WithOutput(w io.Writer) *Runner {
 	cp := *r
 	cp.out = w
+	cp.status = status.NewWithWriter(w)
 	return &cp
 }
 
 // printf is a convenience wrapper so callers don't need to handle format errors.
-func (r *Runner) printf(format string, args ...interface{}) {
+func (r *Runner) printf(format string, args ...any) {
 	fmt.Fprintf(r.out, format, args...) //nolint:errcheck // best-effort console output
 }
 
@@ -70,36 +74,36 @@ func (r *Runner) Run(ctx context.Context) int {
 	builder := report.NewBuilder(r.cfg)
 
 	// Step 1: list existing ACS scan configs to populate the deduplication set.
-	// Failure here is fatal (IMP-CLI-018): we cannot safely proceed without
-	// knowing which names already exist.
+	r.status.Stage("Inventory", "listing existing ACS scan configurations")
 	summaries, err := r.acsClient.ListScanConfigurations(ctx)
 	if err != nil {
-		r.printf("FATAL: failed to list ACS scan configurations: %v\n", err)
+		r.status.Failf("failed to list ACS scan configurations: %v", err)
 		return ExitFatalError
 	}
-	existingNames := make(map[string]bool, len(summaries))
+	existingNames := make(map[string]string, len(summaries))
 	for _, s := range summaries {
-		existingNames[s.ScanName] = true
+		existingNames[s.ScanName] = s.ID
 	}
+	r.status.OKf("found %d existing scan configurations", len(summaries))
 
 	// Step 2: discover CO ScanSettingBindings.
-	// Failure here is also fatal (IMP-CLI-018).
+	r.status.Stage("Scan", "listing ScanSettingBindings from cluster")
 	bindings, err := r.coClient.ListScanSettingBindings(ctx)
 	if err != nil {
-		r.printf("FATAL: failed to list ScanSettingBindings: %v\n", err)
+		r.status.Failf("failed to list ScanSettingBindings: %v", err)
 		return ExitFatalError
 	}
+	r.status.OKf("found %d ScanSettingBindings", len(bindings))
 
 	// maxRetries defaults to 1 (single attempt) when cfg.MaxRetries is zero.
 	maxRetries := r.cfg.MaxRetries
 	if maxRetries < 1 {
 		maxRetries = 1
 	}
-	rec := reconcile.NewReconciler(r.acsClient, maxRetries, r.cfg.DryRun)
+	rec := reconcile.NewReconciler(r.acsClient, maxRetries, r.cfg.DryRun, r.cfg.OverwriteExisting)
 
 	// Step 3: process each binding independently.
-	// Per-binding failures skip that binding and record a problem; other bindings
-	// continue processing (IMP-CLI-022, IMP-MAP-011).
+	r.status.Stage("Reconcile", "applying scan configurations to ACS")
 	for _, binding := range bindings {
 		r.processBinding(ctx, binding, existingNames, rec, collector, builder)
 	}
@@ -107,21 +111,25 @@ func (r *Runner) Run(ctx context.Context) int {
 	// Step 4: build the final report.
 	finalReport := builder.Build(collector.All())
 
-	// Step 5: write JSON report when requested (IMP-CLI-021).
+	// Step 5: write JSON report when requested.
 	if r.cfg.ReportJSON != "" {
+		r.status.Stage("Report", "writing JSON report")
 		if err := builder.WriteJSON(r.cfg.ReportJSON, finalReport); err != nil {
-			r.printf("WARNING: failed to write JSON report to %q: %v\n", r.cfg.ReportJSON, err)
+			r.status.Warnf("failed to write JSON report to %q: %v", r.cfg.ReportJSON, err)
+		} else {
+			r.status.OKf("report written to %s", r.cfg.ReportJSON)
 		}
 	}
 
-	// Step 6: print console summary (IMP-CLI-020).
+	// Step 6: print console summary.
+	r.printf("\n")
 	r.printSummary(finalReport)
 
-	// Step 7: determine exit code (IMP-CLI-017..019, IMP-ERR-003).
+	// Step 7: determine exit code.
 	if finalReport.Counts.Failed > 0 || collector.HasErrors() {
-		return ExitPartialError // IMP-CLI-019
+		return ExitPartialError
 	}
-	return ExitSuccess // IMP-CLI-017
+	return ExitSuccess
 }
 
 // processBinding handles a single ScanSettingBinding: fetches its ScanSetting,
@@ -130,7 +138,7 @@ func (r *Runner) Run(ctx context.Context) int {
 func (r *Runner) processBinding(
 	ctx context.Context,
 	binding cofetch.ScanSettingBinding,
-	existingNames map[string]bool,
+	existingNames map[string]string,
 	rec *reconcile.Reconciler,
 	collector *problems.Collector,
 	builder *report.Builder,
@@ -145,9 +153,10 @@ func (r *Runner) processBinding(
 		ScanSettingName: binding.ScanSettingName,
 	}
 
-	// Fetch the referenced ScanSetting (IMP-MAP-008..010).
+	// Fetch the referenced ScanSetting.
 	ss, err := r.coClient.GetScanSetting(ctx, binding.Namespace, binding.ScanSettingName)
 	if err != nil {
+		r.status.Failf("%s → ScanSetting %q not found", binding.Name, binding.ScanSettingName)
 		collector.Add(models.Problem{
 			Severity:    models.SeverityError,
 			Category:    models.CategoryInput,
@@ -165,10 +174,10 @@ func (r *Runner) processBinding(
 		return
 	}
 
-	// Map the CO resources to an ACS create payload (IMP-MAP-001..015).
+	// Map the CO resources to an ACS create payload.
 	result := mapping.MapBinding(binding, ss, r.cfg)
 	if result.Problem != nil {
-		// IMP-MAP-012..015: mapping problem => skip + record.
+		r.status.Failf("%s → mapping error: %s", binding.Name, result.Problem.Description)
 		collector.Add(*result.Problem)
 		builder.RecordItem(models.ReportItem{
 			Source: source,
@@ -179,8 +188,19 @@ func (r *Runner) processBinding(
 		return
 	}
 
-	// Reconcile: create or skip (IMP-IDEM-001..007, IMP-ERR-001..004).
+	// Reconcile: create, update, or skip.
 	action := rec.Apply(ctx, *result.Payload, source, existingNames)
+
+	switch action.ActionType {
+	case "create":
+		r.status.OKf("%s → created", binding.Name)
+	case "update":
+		r.status.OKf("%s → updated", binding.Name)
+	case "skip":
+		r.status.Detailf("%s → skipped (already exists)", binding.Name)
+	case "fail":
+		r.status.Failf("%s → %s", binding.Name, action.Reason)
+	}
 
 	item := models.ReportItem{
 		Source:          action.Source,
@@ -199,15 +219,12 @@ func (r *Runner) processBinding(
 	}
 }
 
-// printSummary writes the console summary to the configured output (IMP-CLI-020).
+// printSummary writes the console summary to the configured output.
 func (r *Runner) printSummary(rep models.Report) {
-	dryRunLabel := "no"
+	mode := "live"
 	if r.cfg.DryRun {
-		dryRunLabel = "yes"
+		mode = "dry-run"
 	}
-	r.printf("CO->ACS importer summary [dry-run: %s]:\n", dryRunLabel)
-	r.printf("  Discovered:  %d bindings\n", rep.Counts.Discovered)
-	r.printf("  Created:     %d\n", rep.Counts.Create)
-	r.printf("  Skipped:     %d\n", rep.Counts.Skip)
-	r.printf("  Failed:      %d\n", rep.Counts.Failed)
+	r.status.Stagef("Done", "%s | discovered: %d, created: %d, updated: %d, skipped: %d, failed: %d",
+		mode, rep.Counts.Discovered, rep.Counts.Create, rep.Counts.Update, rep.Counts.Skip, rep.Counts.Failed)
 }
