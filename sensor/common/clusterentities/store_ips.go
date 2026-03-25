@@ -74,6 +74,7 @@ func (e *podIPsStore) updateMetricsNoLock() {
 func (e *podIPsStore) RecordTick() bool {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
+	defer e.updateMetricsNoLock()
 	removedPublic := false
 	for ip, m := range e.historicalIPs {
 		for deploymentID, status := range m {

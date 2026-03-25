@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/set"
@@ -65,7 +66,7 @@ func (e *containerIDsStore) historyEnabled() bool {
 // RecordTick records a tick
 func (e *containerIDsStore) RecordTick() {
 	e.mutex.Lock()
-	defer e.mutex.Unlock()
+	defer unlockWithMetric(&e.mutex, time.Now(), "container_ids", "record_tick")
 	for id, metaMap := range e.historicalContainerIDs {
 		for metadata, status := range metaMap {
 			status.recordTick()
@@ -73,11 +74,14 @@ func (e *containerIDsStore) RecordTick() {
 			e.removeFromHistoryIfExpired(id, metadata)
 		}
 	}
+	// RecordTick can shrink historicalContainerIDs even without Apply/resetMaps calls.
+	// Refresh gauges here so metrics mirror in-memory state after expirations.
+	e.updateMetricsNoLock()
 }
 
 func (e *containerIDsStore) Apply(updates map[string]*EntityData, incremental bool) []ContainerMetadata {
 	e.mutex.Lock()
-	defer e.mutex.Unlock()
+	defer unlockWithMetric(&e.mutex, time.Now(), "container_ids", "apply")
 	var metadata []ContainerMetadata
 	if !incremental {
 		for deploymentID := range updates {
