@@ -142,6 +142,7 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 			tailoredProfile.Spec.Description,
 			tailoredProfile.Spec.Title,
 			ruleNames,
+			tailoredProfile.Spec.SetValues,
 		)
 
 		events = append(events, &central.SensorEvent{
@@ -158,7 +159,8 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 
 // computeProfileEquivalenceHash returns a SHA-256 hex digest that identifies whether two
 // profiles with the same name carry equivalent content. Fields are NUL-separated to prevent
-// collisions between adjacent values; rule names are sorted for order independence.
+// collisions between adjacent values; rule names and setValues entries are sorted for order
+// independence.
 //
 // IMPORTANT — rolling-upgrade impact: changing the inputs or serialization of this function
 // changes the hash for every tailored profile. During a rolling sensor upgrade, clusters
@@ -167,19 +169,36 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 // config creation/update until all sensors converge to the new version.
 // Remediation: set ROX_COMPLIANCE_SKIP_TAILORED_PROFILE_EQUIVALENCE_CHECK=true on Central
 // while sensor versions are mixed, then disable it once all sensors are upgraded.
-func computeProfileEquivalenceHash(name, namespace, description, title string, ruleNames []string) string {
-	sorted := make([]string, len(ruleNames))
-	copy(sorted, ruleNames)
-	slices.Sort(sorted)
+func computeProfileEquivalenceHash(name, namespace, description, title string, ruleNames []string, setValues []v1alpha1.VariableValueSpec) string {
+	sortedRules := make([]string, len(ruleNames))
+	copy(sortedRules, ruleNames)
+	slices.Sort(sortedRules)
+
+	sortedVals := slices.Clone(setValues)
+	slices.SortFunc(sortedVals, func(a, b v1alpha1.VariableValueSpec) int {
+		if c := strings.Compare(a.Name, b.Name); c != 0 {
+			return c
+		}
+		if c := strings.Compare(a.Rationale, b.Rationale); c != 0 {
+			return c
+		}
+		return strings.Compare(a.Value, b.Value)
+	})
 
 	h := sha256.New()
 	for _, s := range []string{name, namespace, description, title} {
 		_, _ = h.Write([]byte(s))
 		_, _ = h.Write([]byte{0})
 	}
-	for _, r := range sorted {
+	for _, r := range sortedRules {
 		_, _ = h.Write([]byte(r))
 		_, _ = h.Write([]byte{0})
+	}
+	for _, v := range sortedVals {
+		for _, s := range []string{v.Name, v.Rationale, v.Value} {
+			_, _ = h.Write([]byte(s))
+			_, _ = h.Write([]byte{0})
+		}
 	}
 	hash := hex.EncodeToString(h.Sum(nil))
 	// Example output:
@@ -193,14 +212,23 @@ func computeProfileEquivalenceHash(name, namespace, description, title string, r
 	//       - api_server_anonymous_auth
 	//       - api_server_audit_log_maxage
 	//       - api_server_audit_log_maxbackup
+	//     setValues (1) =
+	//       - var-some-name=value (rationale: because)
 	//   Resulting hash: a3f7c2d9e1b4f8a06c5d2e7b3f9a1c4d8e2b5f7a0c3d6e9b2f5a8c1d4e7b0f3
+	setValLines := make([]string, 0, len(sortedVals))
+	for _, v := range sortedVals {
+		setValLines = append(setValLines, v.Name+"="+v.Value+" (rationale: "+v.Rationale+")")
+	}
 	log.Debugf("Tailored profile %q equivalence hash computed with the following fields:"+
-		"\n  name        = %q"+
-		"\n  namespace   = %q"+
-		"\n  title       = %q"+
-		"\n  description = %q"+
-		"\n  rules (%d)  =\n    - %s"+
+		"\n  name          = %q"+
+		"\n  namespace     = %q"+
+		"\n  title         = %q"+
+		"\n  description   = %q"+
+		"\n  rules (%d)    =\n    - %s"+
+		"\n  setValues (%d) =\n    - %s"+
 		"\nResulting hash: %s",
-		name, name, namespace, title, description, len(sorted), strings.Join(sorted, "\n    - "), hash)
+		name, name, namespace, title, description,
+		len(sortedRules), strings.Join(sortedRules, "\n    - "),
+		len(sortedVals), strings.Join(setValLines, "\n    - "), hash)
 	return hash
 }
