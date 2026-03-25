@@ -64,6 +64,7 @@ func NewPipeline(
 		deployments:      deployments,
 		clusters:         clusters,
 		networkBaselines: networkBaselines,
+		configStore:      configDatastore.Singleton(),
 
 		reprocessor: reprocessor,
 	}
@@ -79,6 +80,7 @@ type pipelineImpl struct {
 	clusters         clusterDataStore.DataStore
 	networkBaselines networkBaselineManager.Manager
 	reprocessor      reprocessor.Loop
+	configStore      configDatastore.DataStore
 
 	graphEvaluator graph.Evaluator
 }
@@ -189,7 +191,7 @@ func (s *pipelineImpl) getTombstoneTTL(ctx context.Context) int32 {
 	// Use elevated access because reading global system config is an admin-level operation
 	// that must not be filtered by the sensor-facing request context's SAC scope.
 	cfgCtx := sac.WithAllAccess(ctx)
-	pvtConfig, err := configDatastore.Singleton().GetPrivateConfig(cfgCtx)
+	pvtConfig, err := s.configStore.GetPrivateConfig(cfgCtx)
 	if err != nil || pvtConfig == nil {
 		log.Warnf("Failed to read private config for tombstone TTL, using default %d days: %v",
 			configDatastore.DefaultTombstoneRetentionDays, err)

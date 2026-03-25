@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	configMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
@@ -12,6 +13,7 @@ import (
 	reprocessorMocks "github.com/stackrox/rox/central/reprocessor/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -30,6 +32,7 @@ type PipelineTestSuite struct {
 	manager          *lifecycleMocks.MockManager
 	graphEvaluator   *graphMocks.MockEvaluator
 	reprocessor      *reprocessorMocks.MockLoop
+	configStore      *configMocks.MockDataStore
 	pipeline         *pipelineImpl
 
 	mockCtrl *gomock.Controller
@@ -44,14 +47,21 @@ func (suite *PipelineTestSuite) SetupTest() {
 	suite.manager = lifecycleMocks.NewMockManager(suite.mockCtrl)
 	suite.graphEvaluator = graphMocks.NewMockEvaluator(suite.mockCtrl)
 	suite.reprocessor = reprocessorMocks.NewMockLoop(suite.mockCtrl)
-	suite.pipeline =
-		NewPipeline(
-			suite.clusters,
-			suite.deployments,
-			suite.manager,
-			suite.graphEvaluator,
-			suite.reprocessor,
-			suite.networkBaselines).(*pipelineImpl)
+	suite.configStore = configMocks.NewMockDataStore(suite.mockCtrl)
+
+	// Construct the pipeline directly to avoid triggering configDatastore.Singleton()
+	// during test setup, which requires a live database connection.
+	suite.pipeline = &pipelineImpl{
+		validateInput:     newValidateInput(),
+		clusterEnrichment: newClusterEnrichment(suite.clusters),
+		lifecycleManager:  suite.manager,
+		graphEvaluator:    suite.graphEvaluator,
+		deployments:       suite.deployments,
+		clusters:          suite.clusters,
+		networkBaselines:  suite.networkBaselines,
+		reprocessor:       suite.reprocessor,
+		configStore:       suite.configStore,
+	}
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
@@ -136,6 +146,57 @@ func (suite *PipelineTestSuite) TestAlertRemovalOnReconciliation() {
 	suite.networkBaselines.EXPECT().ProcessDeploymentDelete(deployment.GetId()).Return(nil)
 
 	suite.NoError(suite.pipeline.runRemovePipeline(context.Background(), deployment.GetId(), deployment.GetClusterId(), true))
+}
+
+// TestRunRemovePipeline_TombstonePathWhenFlagEnabledAndTTLPositive verifies that
+// runRemovePipeline calls TombstoneDeployment (not RemoveDeployment) when the
+// DeploymentTombstones feature flag is enabled and a positive TTL is configured.
+func (suite *PipelineTestSuite) TestRunRemovePipeline_TombstonePathWhenFlagEnabledAndTTLPositive() {
+	suite.T().Setenv(features.DeploymentTombstones.EnvVar(), "true")
+
+	deployment := fixtures.GetDeployment()
+
+	// Config store returns a private config with a positive TTL.
+	suite.configStore.EXPECT().
+		GetPrivateConfig(gomock.Any()).
+		Return(&storage.PrivateConfig{
+			TombstoneRetentionConfig: &storage.TombstoneRetentionConfig{
+				RetentionDurationDays: 30,
+			},
+		}, nil)
+
+	// Tombstone path: these three calls must happen.
+	suite.manager.EXPECT().DeploymentTombstoned(deployment.GetId()).Return(nil)
+	suite.networkBaselines.EXPECT().ProcessDeploymentDelete(deployment.GetId()).Return(nil)
+	suite.deployments.EXPECT().TombstoneDeployment(gomock.Any(), deployment.GetClusterId(), deployment.GetId(), gomock.Any()).Return(nil)
+	suite.graphEvaluator.EXPECT().IncrementEpoch(deployment.GetClusterId())
+
+	// Hard-delete path must NOT be triggered.
+	suite.deployments.EXPECT().RemoveDeployment(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+
+	err := suite.pipeline.runRemovePipeline(context.Background(), deployment.GetId(), deployment.GetClusterId(), false)
+	suite.NoError(err)
+}
+
+// TestRunRemovePipeline_HardDeleteWhenFlagDisabled verifies that runRemovePipeline
+// falls back to the original RemoveDeployment hard-delete when the DeploymentTombstones
+// feature flag is disabled, preserving existing behavior.
+func (suite *PipelineTestSuite) TestRunRemovePipeline_HardDeleteWhenFlagDisabled() {
+	suite.T().Setenv(features.DeploymentTombstones.EnvVar(), "false")
+
+	deployment := fixtures.GetDeployment()
+
+	// Hard-delete path: these three calls must happen.
+	suite.networkBaselines.EXPECT().ProcessDeploymentDelete(deployment.GetId()).Return(nil)
+	suite.deployments.EXPECT().RemoveDeployment(context.Background(), deployment.GetClusterId(), deployment.GetId()).Return(nil)
+	suite.graphEvaluator.EXPECT().IncrementEpoch(deployment.GetClusterId())
+
+	// Tombstone path must NOT be triggered.
+	suite.deployments.EXPECT().TombstoneDeployment(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	suite.manager.EXPECT().DeploymentTombstoned(gomock.Any()).Times(0)
+
+	err := suite.pipeline.runRemovePipeline(context.Background(), deployment.GetId(), deployment.GetClusterId(), false)
+	suite.NoError(err)
 }
 
 func (suite *PipelineTestSuite) TestValidateImages() {

@@ -231,6 +231,22 @@ func (suite *ManagerTestSuite) TestHandleNodeAlerts() {
 	suite.NoError(err)
 }
 
+// TestDeploymentTombstoned verifies that DeploymentTombstoned calls AlertAndNotifyTombstoned
+// on the alert manager and removes the deployment from the observation queue.
+func (suite *ManagerTestSuite) TestDeploymentTombstoned() {
+	const deploymentID = "dep-to-tombstone"
+
+	suite.alertManager.EXPECT().
+		AlertAndNotifyTombstoned(gomock.Any(), deploymentID).
+		Return(nil)
+
+	suite.deploymentObservationQueue.EXPECT().
+		RemoveDeployment(deploymentID)
+
+	err := suite.manager.DeploymentTombstoned(deploymentID)
+	suite.NoError(err)
+}
+
 func TestFilterOutDisabledPolicies(t *testing.T) {
 	alert1 := fixtures.GetAlertWithID("1")
 	alert1.Policy.Id = "1"

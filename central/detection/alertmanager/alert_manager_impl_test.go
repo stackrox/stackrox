@@ -987,6 +987,89 @@ func TestFindAlert(t *testing.T) {
 	}
 }
 
+// TestAlertAndNotifyTombstoned_TransitionsActiveAlerts verifies that AlertAndNotifyTombstoned
+// sets the state of ACTIVE and ATTEMPTED alerts for a deployment to TOMBSTONED.
+func (suite *AlertManagerTestSuite) TestAlertAndNotifyTombstoned_TransitionsActiveAlerts() {
+	const deploymentID = "dep-tombstone-1"
+
+	activeAlert := &storage.Alert{
+		Id:    "alert-active",
+		State: storage.ViolationState_ACTIVE,
+		Entity: &storage.Alert_Deployment_{
+			Deployment: &storage.Alert_Deployment{Id: deploymentID},
+		},
+	}
+	attemptedAlert := &storage.Alert{
+		Id:    "alert-attempted",
+		State: storage.ViolationState_ATTEMPTED,
+		Entity: &storage.Alert_Deployment_{
+			Deployment: &storage.Alert_Deployment{Id: deploymentID},
+		},
+	}
+
+	suite.alertsMock.EXPECT().
+		SearchRawAlerts(suite.ctx, gomock.Any(), false).
+		Return([]*storage.Alert{activeAlert, attemptedAlert}, nil)
+
+	// Both alerts must be persisted with TOMBSTONED state.
+	suite.alertsMock.EXPECT().
+		UpsertAlert(suite.ctx, gomock.Any()).
+		DoAndReturn(func(_ context.Context, a *storage.Alert) error {
+			suite.Equal(storage.ViolationState_TOMBSTONED, a.GetState(),
+				"expected alert %s to be TOMBSTONED", a.GetId())
+			return nil
+		}).Times(2)
+
+	err := suite.alertManager.AlertAndNotifyTombstoned(suite.ctx, deploymentID)
+	suite.NoError(err)
+}
+
+// TestAlertAndNotifyTombstoned_NoNotificationsFired verifies that the notifier is never
+// called when tombstoning alerts, because tombstoning is not a user-visible policy event.
+func (suite *AlertManagerTestSuite) TestAlertAndNotifyTombstoned_NoNotificationsFired() {
+	const deploymentID = "dep-tombstone-2"
+
+	activeAlert := &storage.Alert{
+		Id:    "alert-active-2",
+		State: storage.ViolationState_ACTIVE,
+		Entity: &storage.Alert_Deployment_{
+			Deployment: &storage.Alert_Deployment{Id: deploymentID},
+		},
+	}
+
+	suite.alertsMock.EXPECT().
+		SearchRawAlerts(suite.ctx, gomock.Any(), false).
+		Return([]*storage.Alert{activeAlert}, nil)
+
+	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, gomock.Any()).Return(nil)
+
+	// The notifier must never be called during tombstoning.
+	// gomock will fail the test if ProcessAlert is called an unexpected number of times,
+	// so registering zero expected calls is sufficient to enforce this.
+	suite.notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).Times(0)
+
+	err := suite.alertManager.AlertAndNotifyTombstoned(suite.ctx, deploymentID)
+	suite.NoError(err)
+}
+
+// TestAlertAndNotifyTombstoned_OnlyActiveAndAttempted verifies that RESOLVED alerts are
+// excluded from the tombstone transition because the datastore query filters by state.
+func (suite *AlertManagerTestSuite) TestAlertAndNotifyTombstoned_OnlyActiveAndAttempted() {
+	const deploymentID = "dep-tombstone-3"
+
+	// The datastore returns an empty slice when the query finds no ACTIVE/ATTEMPTED alerts.
+	// This simulates a deployment that already has all-resolved alerts.
+	suite.alertsMock.EXPECT().
+		SearchRawAlerts(suite.ctx, gomock.Any(), false).
+		Return([]*storage.Alert{}, nil)
+
+	// UpsertAlert must NOT be called when there are no alerts to tombstone.
+	suite.alertsMock.EXPECT().UpsertAlert(gomock.Any(), gomock.Any()).Times(0)
+
+	err := suite.alertManager.AlertAndNotifyTombstoned(suite.ctx, deploymentID)
+	suite.NoError(err)
+}
+
 //////////////////////////////////////
 // TEST DATA
 ///////////////////////////////////////
