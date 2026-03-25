@@ -59,8 +59,6 @@ jobs:
             "pre_build_go_binaries": { "name":[], "arch":[] },
             "build_and_push_main": { "name":[], "arch":[] },
             "push_main_multiarch_manifests": { "name":[] },
-            "build_and_push_operator": { "name":[], "arch":[] },
-            "push_operator_multiarch_manifests": { "name":[] },
             "scan_images_with_roxctl": { "name":[], "image":[], "exclude":[] }
           }'
 
