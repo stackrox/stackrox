@@ -318,14 +318,7 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 		case <-m.stopper.Flow().StopRequested():
 			return
 		case <-tickerC:
-			enrichStart := time.Now()
 			m.enrichAndSend()
-			enrichDuration := time.Since(enrichStart)
-			if enrichDuration < time.Second {
-				log.Debugf("networkflow tick: finished enrichAndSend in %s; calling clusterentities RecordTick", enrichDuration)
-			} else {
-				log.Warnf("networkflow tick: enrichAndSend took %s; this can happen during larger update bursts and is not necessarily an error", enrichDuration)
-			}
 			// Measuring number of calls to `enrichAndSend` (ticks) for remembering historical endpoints
 			m.clusterEntities.RecordTick()
 		}
