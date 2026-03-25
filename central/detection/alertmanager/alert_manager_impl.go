@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	alertviews "github.com/stackrox/rox/central/alert/views"
 	"github.com/stackrox/rox/central/detection/runtime"
 	"github.com/stackrox/rox/generated/storage"
 	pkgAlert "github.com/stackrox/rox/pkg/alert"
@@ -428,7 +429,7 @@ func (d *alertManagerImpl) mergeManyAlerts(
 
 	// Find any old alerts no longer being produced.
 	for _, previousAlert := range previousAlerts {
-		if d.shouldMarkAlertResolved(previousAlert, incomingAlerts, oldAlertFilters...) {
+		if d.shouldMarkAlertResolved(alertAdapter{previousAlert}, incomingAlerts, oldAlertFilters...) {
 			toBeResolvedAlerts = append(toBeResolvedAlerts, previousAlert)
 		}
 
@@ -455,26 +456,29 @@ func (d *alertManagerImpl) mergeManyAlerts(
 	return
 }
 
-func (d *alertManagerImpl) shouldMarkAlertResolved(oldAlert *storage.Alert, incomingAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) bool {
-	oldAndNew := []*storage.Alert{oldAlert}
-	oldAndNew = append(oldAndNew, incomingAlerts...)
+func (d *alertManagerImpl) shouldMarkAlertResolved(old alertviews.AlertMatcher, incomingAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) bool {
 	// Do not mark any attempted alerts as stale. All attempted alerts must be resolved by users.
-	if pkgAlert.AnyAttemptedAlert(oldAndNew...) {
+	if old.GetState() == storage.ViolationState_ATTEMPTED {
 		return false
+	}
+	for _, incoming := range incomingAlerts {
+		if incoming.GetState() == storage.ViolationState_ATTEMPTED {
+			return false
+		}
 	}
 
 	// If the alert is still being produced, don't mark it stale.
-	if matchingNew := findAlert(oldAlert, incomingAlerts); matchingNew != nil {
+	if matchingNew := findMatchingAlert(old, incomingAlerts); matchingNew != nil {
 		return false
 	}
 
 	// Only runtime alerts should not be marked stale when they are no longer produced.
 	// (Deploy time alerts should disappear along with deployments, for example.)
-	if oldAlert.GetLifecycleStage() != storage.LifecycleStage_RUNTIME {
+	if old.GetLifecycleStage() != storage.LifecycleStage_RUNTIME {
 		return true
 	}
 
-	if !d.runtimeDetector.PolicySet().Exists(oldAlert.GetPolicy().GetId()) {
+	if !d.runtimeDetector.PolicySet().Exists(old.GetPolicyId()) {
 		return true
 	}
 
@@ -491,47 +495,95 @@ func (d *alertManagerImpl) shouldMarkAlertResolved(oldAlert *storage.Alert, inco
 	}
 
 	// Some other policies were updated, we don't want to mark this alert stale in response.
-	if !specifiedPolicyIDs.Contains(oldAlert.GetPolicy().GetId()) {
+	if !specifiedPolicyIDs.Contains(old.GetPolicyId()) {
 		return false
 	}
 
 	// If the deployment is excluded from the scope of the policy now, we should mark the alert stale, otherwise we will keep it around.
-	return d.runtimeDetector.DeploymentWhitelistedForPolicy(oldAlert.GetDeployment().GetId(), oldAlert.GetPolicy().GetId())
+	return d.runtimeDetector.DeploymentWhitelistedForPolicy(old.GetDeploymentId(), old.GetPolicyId())
+}
+
+// alertAdapter wraps *storage.Alert to satisfy the AlertMatcher interface.
+type alertAdapter struct{ a *storage.Alert }
+
+func (w alertAdapter) GetId() string                             { return w.a.GetId() }
+func (w alertAdapter) GetPolicyId() string                       { return w.a.GetPolicy().GetId() }
+func (w alertAdapter) GetState() storage.ViolationState          { return w.a.GetState() }
+func (w alertAdapter) GetLifecycleStage() storage.LifecycleStage { return w.a.GetLifecycleStage() }
+func (w alertAdapter) HasDeployment() bool                       { return w.a.GetDeployment() != nil }
+func (w alertAdapter) GetDeploymentId() string                   { return w.a.GetDeployment().GetId() }
+func (w alertAdapter) IsDeploymentInactive() bool                { return w.a.GetDeployment().GetInactive() }
+func (w alertAdapter) HasResource() bool                         { return w.a.GetResource() != nil }
+func (w alertAdapter) GetResourceType() storage.Alert_Resource_ResourceType {
+	return w.a.GetResource().GetResourceType()
+}
+func (w alertAdapter) GetResourceName() string { return w.a.GetResource().GetName() }
+func (w alertAdapter) HasNode() bool           { return w.a.GetNode() != nil }
+func (w alertAdapter) GetNodeId() string       { return w.a.GetNode().GetId() }
+func (w alertAdapter) GetNodeName() string     { return w.a.GetNode().GetName() }
+
+// GetClusterId returns the entity-specific cluster ID to match the original
+// comparison behavior. Resource and node alerts store the cluster ID on their
+// sub-objects; the top-level Alert.ClusterId is a denormalized copy that may
+// not be set in unit test fixtures.
+func (w alertAdapter) GetClusterId() string {
+	if r := w.a.GetResource(); r != nil {
+		return r.GetClusterId()
+	}
+	if n := w.a.GetNode(); n != nil {
+		return n.GetClusterId()
+	}
+	return w.a.GetClusterId()
+}
+
+// GetNamespace returns the entity-specific namespace. Resource alerts store the
+// namespace on Alert_Resource; deployment alerts use the top-level field.
+func (w alertAdapter) GetNamespace() string {
+	if r := w.a.GetResource(); r != nil {
+		return r.GetNamespace()
+	}
+	return w.a.GetNamespace()
 }
 
 func findAlert(toFind *storage.Alert, alerts []*storage.Alert) *storage.Alert {
+	return findMatchingAlert(alertAdapter{toFind}, alerts)
+}
+
+func findMatchingAlert(toFind alertviews.AlertMatcher, alerts []*storage.Alert) *storage.Alert {
 	for _, alert := range alerts {
-		if alertsAreForSamePolicyAndEntity(alert, toFind) {
+		if alertsAreForSamePolicyAndEntity(toFind, alertAdapter{alert}) {
 			return alert
 		}
 	}
 	return nil
 }
 
-func alertsAreForSamePolicyAndEntity(a1, a2 *storage.Alert) bool {
-	if a1.GetPolicy().GetId() != a2.GetPolicy().GetId() || a1.GetState() != a2.GetState() {
+func findMatchingKey(toFind *storage.Alert, keys []*alertviews.AlertMatchKey) *alertviews.AlertMatchKey {
+	wrapper := alertAdapter{toFind}
+	for _, key := range keys {
+		if alertsAreForSamePolicyAndEntity(wrapper, key) {
+			return key
+		}
+	}
+	return nil
+}
+
+func alertsAreForSamePolicyAndEntity(a1, a2 alertviews.AlertMatcher) bool {
+	if a1.GetPolicyId() != a2.GetPolicyId() || a1.GetState() != a2.GetState() {
 		return false
 	}
 
-	if a1.GetDeployment() != nil && a2.GetDeployment() != nil {
-		return a1.GetDeployment().GetId() == a2.GetDeployment().GetId()
-	} else if a1.GetResource() != nil && a2.GetResource() != nil {
-		return alertsAreForSameResource(a1.GetResource(), a2.GetResource())
-	} else if a1.GetNode() != nil && a2.GetNode() != nil {
-		return alertsAreForSameNode(a1.GetNode(), a2.GetNode())
+	if a1.HasDeployment() && a2.HasDeployment() {
+		return a1.GetDeploymentId() == a2.GetDeploymentId()
+	} else if a1.HasResource() && a2.HasResource() {
+		return a1.GetResourceType() == a2.GetResourceType() &&
+			a1.GetResourceName() == a2.GetResourceName() &&
+			a1.GetClusterId() == a2.GetClusterId() &&
+			a1.GetNamespace() == a2.GetNamespace()
+	} else if a1.HasNode() && a2.HasNode() {
+		return a1.GetNodeId() == a2.GetNodeId() &&
+			a1.GetNodeName() == a2.GetNodeName() &&
+			a1.GetClusterId() == a2.GetClusterId()
 	}
 	return false
-}
-
-func alertsAreForSameResource(a1, a2 *storage.Alert_Resource) bool {
-	return a1.GetResourceType() == a2.GetResourceType() &&
-		a1.GetName() == a2.GetName() &&
-		a1.GetClusterId() == a2.GetClusterId() &&
-		a1.GetNamespace() == a2.GetNamespace()
-}
-
-func alertsAreForSameNode(a1, a2 *storage.Alert_Node) bool {
-	return a1.GetId() == a2.GetId() &&
-		a1.GetName() == a2.GetName() &&
-		a1.GetClusterId() == a2.GetClusterId()
 }
