@@ -197,16 +197,16 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
       - name: Compute main tag
         id: main-tag
         if: matrix.arch == 'amd64' && matrix.name == 'default'
         run: |
           TAG=$(make --quiet --no-print-directory tag)
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-
-      - uses: ./.github/actions/job-preamble
-        with:
-          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Cache Go dependencies
         env:
