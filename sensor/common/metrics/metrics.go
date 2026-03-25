@@ -358,7 +358,11 @@ var (
 		Help: "Time in seconds spent processing and dispatching the initial object snapshot after informer cache sync. " +
 			"Measured per informer from PopulateInitialObjects start until completion. " +
 			"High values indicate slow initial object processing, which can delay full listener readiness.",
-		Buckets: prometheus.DefBuckets,
+		Buckets: []float64{
+			0.1, 0.25, 0.5, // sub-second startup
+			1, 2.5, 5, 10, // common expected range
+			30, 60, 120, 300, // slow / pathological cases up to 5 minutes
+		},
 	}, []string{"informer"})
 )
 
