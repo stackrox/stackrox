@@ -91,3 +91,27 @@ data:
 {{ .Files.Get "dashboards/enrichment-endpoints.json" | indent 4 }}
   enrichment-updatecomputer.json: |-
 {{ .Files.Get "dashboards/enrichment-updatecomputer.json" | indent 4 }}
+  stackrox-overview.json: |-
+{{ .Files.Get "dashboards/stackrox-overview.json" | indent 4 }}
+  central-internals.json: |-
+{{ .Files.Get "dashboards/central-internals.json" | indent 4 }}
+  central-sensor-ingestion.json: |-
+{{ .Files.Get "dashboards/central-sensor-ingestion.json" | indent 4 }}
+  central-vuln-enrichment.json: |-
+{{ .Files.Get "dashboards/central-vuln-enrichment.json" | indent 4 }}
+  central-deployment-processing.json: |-
+{{ .Files.Get "dashboards/central-deployment-processing.json" | indent 4 }}
+  central-detection-alerts.json: |-
+{{ .Files.Get "dashboards/central-detection-alerts.json" | indent 4 }}
+  central-risk-calculation.json: |-
+{{ .Files.Get "dashboards/central-risk-calculation.json" | indent 4 }}
+  central-background-reprocessing.json: |-
+{{ .Files.Get "dashboards/central-background-reprocessing.json" | indent 4 }}
+  central-pruning-gc.json: |-
+{{ .Files.Get "dashboards/central-pruning-gc.json" | indent 4 }}
+  central-network-analysis.json: |-
+{{ .Files.Get "dashboards/central-network-analysis.json" | indent 4 }}
+  central-report-generation.json: |-
+{{ .Files.Get "dashboards/central-report-generation.json" | indent 4 }}
+  central-api-ui.json: |-
+{{ .Files.Get "dashboards/central-api-ui.json" | indent 4 }}
