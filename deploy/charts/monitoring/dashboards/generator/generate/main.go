@@ -49,4 +49,9 @@ func main() {
 	if err := writeJSON(outDir, "central-sensor-ingestion.json", l3si.Generate()); err != nil {
 		log.Fatal(err)
 	}
+
+	l3ve := generator.L3VulnEnrichment()
+	if err := writeJSON(outDir, "central-vuln-enrichment.json", l3ve.Generate()); err != nil {
+		log.Fatal(err)
+	}
 }
