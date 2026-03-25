@@ -28,7 +28,7 @@ jobs:
   define-job-matrix:
     outputs:
       matrix: ${{ steps.define-job-matrix.outputs.matrix }}
-      main-tag: ${{ steps.main-tag.outputs.tag }}
+      build-tag: ${{ steps.build-tag.outputs.tag }}
       short-commit: ${{ steps.short-commit.outputs.shortcommit }}
     runs-on: ubuntu-latest
     steps:
@@ -38,8 +38,8 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - name: Compute main tag
-        id: main-tag
+      - name: Compute build tag
+        id: build-tag
         run: |
           TAG=$(make --quiet --no-print-directory tag)
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
@@ -199,7 +199,7 @@ jobs:
     needs: define-job-matrix
     runs-on: ubuntu-latest
     env:
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.main-tag }}
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
@@ -380,7 +380,7 @@ jobs:
     env:
       GO_BINARIES_BUILD_ARTIFACT: ""
       ROX_PRODUCT_BRANDING: ""
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.main-tag }}
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
@@ -566,7 +566,7 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).push_main_multiarch_manifests }}
     env:
       ROX_PRODUCT_BRANDING: ""
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.main-tag }}
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
@@ -665,7 +665,7 @@ jobs:
       - pre-build-go-binaries
     env:
       ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: true
-      BUILD_TAG: ${{ needs.define-job-matrix.outputs.main-tag }}
+      BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
       QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
@@ -854,7 +854,7 @@ jobs:
 
       - name: Scan images for vulnerabilities
         env:
-          BUILD_TAG: ${{ needs.define-job-matrix.outputs.main-tag }}
+          BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
           SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
         run: |
           release_tag="$(make --quiet --no-print-directory tag)"
