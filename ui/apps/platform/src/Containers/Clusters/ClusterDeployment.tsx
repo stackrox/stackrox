@@ -52,7 +52,7 @@ function ClusterDeployment({
             {managerType !== 'MANAGER_TYPE_KUBERNETES_OPERATOR' && (
                 <Flex direction={{ default: 'column' }}>
                     <FlexItem spacer={{ default: 'spacerLg' }}>
-                        <InstallMethodDeprecationAlert deprecationMessage="The legacy manifest bundle installation method is deprecated since version 4.11 and will be removed in 5.1." />
+                        <InstallMethodDeprecationAlert deprecationMessage="The legacy manifest bundle installation method is deprecated since version 4.9 and will be removed in 5.1." />
                     </FlexItem>
                     <Title headingLevel="h2">Download manifest bundle</Title>
                     <Flex
