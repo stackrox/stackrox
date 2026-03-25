@@ -101,7 +101,7 @@ class FileActivityTest extends BaseSpecification {
 
         and:
         "a privileged deployment that can exec on the host"
-        def hostDeployment = new objects.Deployment()
+        def hostDeployment = new Deployment()
                 .setName("fa-host-${RUN_ID}")
                 .setImage("quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1")
                 .setCommand(["sh", "-c", "sleep 3600"])
