@@ -274,7 +274,7 @@ message SecurityContext {
   bool allow_privilege_escalation = 7; // @gotags: policy:"Allow Privilege Escalation"
 }
 
-// Next available tag: 9
+// Next available tag: 10
 message ListDeployment {
   string id = 1;
   uint64 hash = 8;
@@ -284,4 +284,6 @@ message ListDeployment {
   string namespace = 5;
   google.protobuf.Timestamp created = 6;
   int64 priority = 7;
+  // tombstone_deleted_at, if set, indicates this is a soft-deleted deployment retained for audit.
+  google.protobuf.Timestamp tombstone_deleted_at = 9;
 }

@@ -1589,19 +1589,20 @@ func (x *SecurityContext) GetAllowPrivilegeEscalation() bool {
 	return false
 }
 
-// Next available tag: 9
+// Next available tag: 10
 type ListDeployment struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Hash          uint64                 `protobuf:"varint,8,opt,name=hash,proto3" json:"hash,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Cluster       string                 `protobuf:"bytes,3,opt,name=cluster,proto3" json:"cluster,omitempty"`
-	ClusterId     string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Namespace     string                 `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Created       *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created,proto3" json:"created,omitempty"`
-	Priority      int64                  `protobuf:"varint,7,opt,name=priority,proto3" json:"priority,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Hash               uint64                 `protobuf:"varint,8,opt,name=hash,proto3" json:"hash,omitempty"`
+	Name               string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Cluster            string                 `protobuf:"bytes,3,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	ClusterId          string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	Namespace          string                 `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	Created            *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created,proto3" json:"created,omitempty"`
+	Priority           int64                  `protobuf:"varint,7,opt,name=priority,proto3" json:"priority,omitempty"`
+	TombstoneDeletedAt *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=tombstone_deleted_at,json=tombstoneDeletedAt,proto3" json:"tombstone_deleted_at,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *ListDeployment) Reset() {
@@ -1688,6 +1689,13 @@ func (x *ListDeployment) GetPriority() int64 {
 		return x.Priority
 	}
 	return 0
+}
+
+func (x *ListDeployment) GetTombstoneDeletedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.TombstoneDeletedAt
+	}
+	return nil
 }
 
 type Pod_ContainerInstanceList struct {
