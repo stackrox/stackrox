@@ -179,7 +179,7 @@ func applyEquivalenceFilter(names []string, byName map[string][]*storage.Complia
 			filtered = append(filtered, name)
 		} else {
 			log.Warnf("Tailored profile %q excluded from profile picker: content differs across clusters (equivalence hash mismatch). "+
-				"Deploy an identical tailored profile on all clusters to make it schedulable.", name)
+				"Deploy an identical tailored profile on all clusters to make it schedulable. Alternatively, enable ROX_COMPLIANCE_SKIP_TAILORED_PROFILE_EQUIVALENCE_HASH to skip equivalence checks.", name)
 		}
 	}
 	return filtered
