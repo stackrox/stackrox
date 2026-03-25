@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	protocols  = [...]string{"TCP", "UDP", "SCTP"}
-	ipFamilies = [...]string{"IPv4", "IPv6"}
+	protocols          = [...]string{"TCP", "UDP", "SCTP"}
+	ipFamilies         = [...]string{"IPv4", "IPv6"}
+	nextNodePort int32 = 30000
 )
 
 func getRandProtocol() string {
@@ -20,6 +21,15 @@ func getRandProtocol() string {
 
 func getRandPort() uint32 {
 	return rand.Uint32() % 63556
+}
+
+func getUniqueNodePort() int32 {
+	port := nextNodePort
+	nextNodePort++
+	if nextNodePort > 32767 {
+		nextNodePort = 30000
+	}
+	return port
 }
 
 func getIPFamily() string {
@@ -77,7 +87,7 @@ func getNodePort(id string, lblPool *labelsPoolPerNamespace) *v1.Service {
 						Type:   intstr.Int,
 						IntVal: int32(getRandPort()),
 					},
-					NodePort: int32(getRandPort()),
+					NodePort: getUniqueNodePort(),
 				},
 			},
 			ClusterIP:  clusterIP,
@@ -111,7 +121,7 @@ func getLoadBalancer(id string, lblPool *labelsPoolPerNamespace) *v1.Service {
 						Type:   intstr.Int,
 						IntVal: int32(getRandPort()),
 					},
-					NodePort: int32(getRandPort()),
+					NodePort: getUniqueNodePort(),
 				},
 			},
 			ClusterIP:                     clusterIP,

@@ -53,11 +53,11 @@ func (w *WorkloadManager) getNodes(workload NodeWorkload, ids []string) []*corev
 			Status: corev1.NodeStatus{
 				Addresses: []corev1.NodeAddress{
 					{
-						Address: "10.138.28.6",
+						Address: fmt.Sprintf("10.%d.%d.%d", 128+(i/(256*256))%128, (i/256)%256, i%256),
 						Type:    "InternalIP",
 					},
 					{
-						Address: "35.185.217.58",
+						Address: fmt.Sprintf("35.%d.%d.%d", 128+(i/(256*256))%128, (i/256)%256, i%256),
 						Type:    "ExternalIP",
 					},
 					{
