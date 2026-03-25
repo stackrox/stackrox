@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/central/ranking"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
@@ -22,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/sorted"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 //go:generate mockgen-wrapper
@@ -293,8 +293,7 @@ func (b *datastoreImpl) GetNamespaceLabels(ctx context.Context, clusterID string
 		return nil, nil
 	}
 	if len(namespaces) > 1 {
-		// This shouldn't happen - namespace names are unique within a cluster
-		return nil, errox.InvariantViolation.Newf("found %d namespaces for cluster %q and name %q", len(namespaces), clusterID, namespaceName)
+		utils.Should(errors.Errorf("found %d namespaces for cluster %q and name %q", len(namespaces), clusterID, namespaceName))
 	}
 	return namespaces[0].GetLabels(), nil
 }
