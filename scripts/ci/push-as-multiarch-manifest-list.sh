@@ -18,10 +18,11 @@ image_list=()
 for arch in "${architectures[@]}"
 do
     arch_image="${image}-${arch}"
-    docker pull "${arch_image}"
     image_list+=("$arch_image")
 done
 
+# Images are already pushed to the registry by prior build steps.
+# No need to pull them — docker manifest create references them remotely.
 docker manifest create "$image" "${image_list[@]}"
 
 # Try pushing manifest a few times for the case when quay.io has issues
