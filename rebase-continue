@@ -1,11 +1,3 @@
 {
-  "continuations": [
-    {
-      "command": [
-        "stack",
-        "restack"
-      ],
-      "branch": "master-base/gualvare/ROX-31227-add-tp-equivalence-hash"
-    }
-  ]
+  "continuations": null
 }
