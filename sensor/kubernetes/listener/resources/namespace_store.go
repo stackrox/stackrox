@@ -62,3 +62,15 @@ func (n *namespaceStore) GetNamespaceLabels(_ context.Context, _ string, namespa
 	}
 	return metadata.GetLabels(), nil
 }
+
+// GetAll returns all namespace metadata.
+func (n *namespaceStore) GetAll() []*storage.NamespaceMetadata {
+	n.lock.RLock()
+	defer n.lock.RUnlock()
+
+	var ret []*storage.NamespaceMetadata
+	for _, ns := range n.namespaces {
+		ret = append(ret, ns)
+	}
+	return ret
+}

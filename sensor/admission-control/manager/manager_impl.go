@@ -178,6 +178,24 @@ func (m *manager) SettingsStream() concurrency.ReadOnlyValueStream[*sensor.Admis
 	return m.settingsStream
 }
 
+// GetClusterLabels implements scopecomp.ClusterLabelProvider interface.
+func (m *manager) GetClusterLabels(_ context.Context, _ string) (map[string]string, error) {
+	state := m.currentState()
+	if state == nil || state.GetClusterLabels() == nil {
+		return nil, nil
+	}
+	return state.GetClusterLabels().GetLabels(), nil
+}
+
+// GetNamespaceLabels implements scopecomp.NamespaceLabelProvider interface.
+func (m *manager) GetNamespaceLabels(ctx context.Context, clusterID string, namespaceName string) (map[string]string, error) {
+	labels, err := m.namespaces.GetNamespaceLabels(ctx, clusterID, namespaceName)
+	if err != nil {
+		return nil, pkgErr.Wrapf(err, "getting namespace labels for %q", namespaceName)
+	}
+	return labels, nil
+}
+
 func (m *manager) IsReady() bool {
 	return m.currentState() != nil
 }
@@ -278,11 +296,9 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 		return // no update
 	}
 
-	// TODO: Wire cluster and namespace label providers.
-	// For now, passing nil providers means policies with cluster_label/namespace_label scopes will
-	// fail closed (not match) in admission control.
-	allK8sEventPolicies := detection.NewPolicySet(nil, nil)
-	deployFieldK8sEventPolicies, k8sEventOnlyPolicies := detection.NewPolicySet(nil, nil), detection.NewPolicySet(nil, nil)
+	// Manager implements both ClusterLabelProvider and NamespaceLabelProvider interfaces.
+	allK8sEventPolicies := detection.NewPolicySet(m, m)
+	deployFieldK8sEventPolicies, k8sEventOnlyPolicies := detection.NewPolicySet(m, m), detection.NewPolicySet(m, m)
 	for _, policy := range newSettings.GetRuntimePolicies().GetPolicies() {
 		if policyfields.AlertsOnMissingEnrichment(policy) && !newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline() {
 			log.Warn(errors.ImageScanUnavailableMsg(policy))
@@ -308,8 +324,9 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 	enforceOnCreates := newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnabled()
 	enforceOnUpdates := newSettings.GetClusterConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates()
 
-	specOnlyPolicies := detection.NewPolicySet(nil, nil)
-	enrichmentRequiredPolicies := detection.NewPolicySet(nil, nil)
+	// Manager implements both ClusterLabelProvider and NamespaceLabelProvider interfaces.
+	specOnlyPolicies := detection.NewPolicySet(m, m)
+	enrichmentRequiredPolicies := detection.NewPolicySet(m, m)
 	if enforceOnCreates || enforceOnUpdates {
 		for _, policy := range newSettings.GetEnforcedDeployTimePolicies().GetPolicies() {
 			if policyfields.AlertsOnMissingEnrichment(policy) &&
@@ -317,7 +334,7 @@ func (m *manager) ProcessNewSettings(newSettings *sensor.AdmissionControlSetting
 				log.Warn(errors.ImageScanUnavailableMsg(policy))
 				continue
 			}
-			compiled, err := detection.CompilePolicy(policy, nil, nil)
+			compiled, err := detection.CompilePolicy(policy, m, m)
 			if err != nil {
 				log.Errorf("Unable to compile policy %q (%s): %v", policy.GetName(), policy.GetId(), err)
 				continue

@@ -96,6 +96,11 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 		return nil, errors.Wrap(err, "reading run-time policies from configmap")
 	}
 
+	clusterLabels, err := decompressAndUnmarshalClusterLabels(cm.BinaryData[admissioncontrol.ClusterLabelsGZDataKey])
+	if err != nil {
+		return nil, errors.Wrap(err, "reading cluster labels from configmap")
+	}
+
 	configGZData := cm.BinaryData[admissioncontrol.ConfigGZDataKey]
 	configData, err := gziputil.Decompress(configGZData)
 	if err != nil {
@@ -119,6 +124,7 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 		CacheVersion:               cacheVersion,
 		CentralEndpoint:            centralEndpoint,
 		ClusterId:                  clusterID,
+		ClusterLabels:              clusterLabels,
 	}
 
 	return settings, nil
