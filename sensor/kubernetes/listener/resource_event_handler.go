@@ -530,7 +530,6 @@ func handle(
 		return nil
 	}())
 	handlerImpl := &resourceEventHandlerImpl{
-		name:             name,
 		context:          ctx,
 		eventLock:        eventLock,
 		dispatcher:       dispatcher,
