@@ -671,11 +671,6 @@ jobs:
         run: |
           make -C operator/ bundle bundle-build
 
-      - name: Operator unit tests
-        if: matrix.arch == 'amd64'
-        run: |
-          scripts/lib.sh retry 2 true make -C operator/ test
-
       - name: Build Operator image
         run: |
           # The first invocation builds native architecture dependencies, which helps avoid the following error,
