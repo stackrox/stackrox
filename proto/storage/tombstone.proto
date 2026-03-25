@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+// Tombstone marks a resource as soft-deleted but retained for compliance/audit purposes.
+// A nil tombstone indicates the resource is active.
+// This message is designed to be embedded in resource messages (e.g., Deployment),
+// analogous to how Traits is embedded.
+message Tombstone {
+  // deleted_at is the time the resource was soft-deleted.
+  // @gotags: search:"Tombstone Deleted At,hidden"
+  google.protobuf.Timestamp deleted_at = 1;
+  // expires_at is the time after which the resource will be permanently purged by the GC.
+  // Pre-computed as deleted_at + configured TTL.
+  // @gotags: search:"Tombstone Expires At,hidden"
+  google.protobuf.Timestamp expires_at = 2;
+}

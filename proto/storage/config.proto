@@ -101,7 +101,14 @@ message PrometheusMetrics {
   Group node_vulnerabilities = 3;
 }
 
-// next available tag: 10
+// TombstoneRetentionConfig controls how long soft-deleted deployment records are retained.
+message TombstoneRetentionConfig {
+  // retention_duration_days is the number of days tombstoned deployments are kept.
+  // Set to 0 to disable tombstoning (immediate hard-delete, preserving existing behavior).
+  int32 retention_duration_days = 1;
+}
+
+// next available tag: 11
 message PrivateConfig {
   oneof alert_retention {
     // will be deprecated after migration is ready
@@ -120,6 +127,8 @@ message PrivateConfig {
   // This field defines groups of custom Prometheus metrics to be exposed by the
   // backend on the API endpoint.
   PrometheusMetrics metrics = 9;
+
+  TombstoneRetentionConfig tombstone_retention_config = 10;
 }
 
 message PlatformComponentConfig {
