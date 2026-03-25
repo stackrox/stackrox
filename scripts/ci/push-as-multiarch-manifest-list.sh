@@ -18,7 +18,7 @@ image_list=()
 for arch in "${architectures[@]}"
 do
     arch_image="${image}-${arch}"
-    docker pull "${arch_image}"
+    # No pull needed - docker manifest create works with remote references
     image_list+=("$arch_image")
 done
 
