@@ -43,4 +43,10 @@ func main() {
 	if err := writeJSON(outDir, "central-internals.json", l2.Generate()); err != nil {
 		log.Fatal(err)
 	}
+
+	// Level 3
+	l3si := generator.L3SensorIngestion()
+	if err := writeJSON(outDir, "central-sensor-ingestion.json", l3si.Generate()); err != nil {
+		log.Fatal(err)
+	}
 }
