@@ -14,9 +14,7 @@ import (
 
 var errTest = errors.New("test")
 
-type mockService struct {
-	err error
-}
+type mockService struct{}
 
 func (ms *mockService) AuthFuncOverride(context.Context, string) (context.Context, error) {
 	panic("unimplemented")
