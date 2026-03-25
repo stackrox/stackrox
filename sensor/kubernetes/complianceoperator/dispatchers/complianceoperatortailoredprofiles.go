@@ -159,6 +159,14 @@ func (c *TailoredProfileDispatcher) ProcessEvent(obj, _ interface{}, action cent
 // computeProfileEquivalenceHash returns a SHA-256 hex digest that identifies whether two
 // profiles with the same name carry equivalent content. Fields are NUL-separated to prevent
 // collisions between adjacent values; rule names are sorted for order independence.
+//
+// IMPORTANT — rolling-upgrade impact: changing the inputs or serialization of this function
+// changes the hash for every tailored profile. During a rolling sensor upgrade, clusters
+// running different sensor versions will produce different hashes for the same TP, causing
+// those TPs to be filtered out of the multi-cluster profile picker and rejected from scan
+// config creation/update until all sensors converge to the new version.
+// Remediation: set ROX_COMPLIANCE_SKIP_TAILORED_PROFILE_EQUIVALENCE_CHECK=true on Central
+// while sensor versions are mixed, then disable it once all sensors are upgraded.
 func computeProfileEquivalenceHash(name, namespace, description, title string, ruleNames []string) string {
 	sorted := make([]string, len(ruleNames))
 	copy(sorted, ruleNames)
