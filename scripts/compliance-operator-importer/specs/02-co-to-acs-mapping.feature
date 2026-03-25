@@ -33,7 +33,7 @@ Feature: Map Compliance Operator scheduled scan resources to ACS scan configurat
 
   @mapping @schedule
   Scenario: Convert ScanSetting schedule into ACS schedule
-    Given ScanSetting "daily-scan" has complianceSuiteSettings.schedule "0 0 * * *"
+    Given ScanSetting "daily-scan" has schedule "0 0 * * *"
     And ScanSettingBinding "daily-cis" references "daily-scan"
     When the importer maps schedule fields
     Then payload.scanConfig.oneTimeScan MUST be false                  # IMP-MAP-003
@@ -65,7 +65,7 @@ Feature: Map Compliance Operator scheduled scan resources to ACS scan configurat
 
   @mapping @schedule @problems
   Scenario: Invalid schedule is collected as problem and skipped
-    Given ScanSetting "bad-schedule" has complianceSuiteSettings.schedule "every day at noon"
+    Given ScanSetting "bad-schedule" has schedule "every day at noon"
     And ScanSettingBinding "broken-schedule-binding" references "bad-schedule"
     When the importer maps schedule fields
     Then "broken-schedule-binding" MUST be skipped                       # IMP-MAP-012

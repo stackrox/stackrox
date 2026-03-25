@@ -38,7 +38,7 @@ This document freezes Phase 1 behavior. Any deviation requires updating this fil
    - Basic mode uses username/password inputs and the same preflight endpoint checks.
 
 8. **Profile kind fallback**
-   - Missing `ScanSettingBinding.spec.profiles[].kind` defaults to `Profile`.
+   - Missing `ScanSettingBinding.profiles[].kind` defaults to `Profile` (profiles is a top-level field, not under spec).
 
 9. **Schedule conversion**
    - Convert valid CO cron to ACS schedule fields.
