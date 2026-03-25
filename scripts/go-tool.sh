@@ -67,12 +67,12 @@ function invoke_go() {
   local args=()
   local CGO_ENABLED
 
-  args+=(-buildvcs=false)
+  args+=("-buildvcs=false")
   args+=(-ldflags="${ldflags[*]}")
   args+=(-tags "$(tr , ' ' <<<"$GOTAGS")")
   if [[ "$RACE" == "true" ]]; then
     export CGO_ENABLED=1
-    args+=(-race)
+    args+=("-race")
   fi
   go "$tool" "${args[@]}" "$@"
 }
