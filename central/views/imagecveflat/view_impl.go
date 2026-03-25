@@ -4,7 +4,6 @@ import (
 	"context"
 	"sort"
 
-	"github.com/pkg/errors"
 	cveDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/common"
