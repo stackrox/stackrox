@@ -213,20 +213,34 @@ func stopSensorAndWorkload(workloadManager *fake.WorkloadManager, sensor *common
 }
 
 func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, writeMemProfile bool, dumpCentralOutput bool, outfile string, outputFormat string, cancelFunc context.CancelFunc, sensor *commonSensor.Sensor, workloadManager *fake.WorkloadManager, pipeline sensor.ProcessPipelineHandle) {
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-	<-ctx.Done()
-	// We cancel the creation of Events
-	cancelFunc()
-	if writeMemProfile {
-		writeMemoryProfile()
+	sigCh := make(chan os.Signal, 2)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(sigCh)
+
+	firstSignal := <-sigCh
+	log.Printf("Received %s, starting graceful shutdown (press Ctrl-C again to force exit)", firstSignal)
+
+	gracefulDone := make(chan struct{})
+	go func() {
+		cancelFunc()
+		if writeMemProfile {
+			writeMemoryProfile()
+		}
+		stopSensorAndWorkload(workloadManager, sensor, pipeline)
+		pprof.StopCPUProfile()
+		if fakeCentral != nil && dumpCentralOutput {
+			fakeCentral.DumpAllMessages(startTime, time.Now(), outfile, outputFormat)
+		}
+		close(gracefulDone)
+	}()
+
+	select {
+	case secondSignal := <-sigCh:
+		log.Printf("Received %s during graceful shutdown, exiting immediately", secondSignal)
+		os.Exit(130)
+	case <-gracefulDone:
+		os.Exit(0)
 	}
-	stopSensorAndWorkload(workloadManager, sensor, pipeline)
-	pprof.StopCPUProfile()
-	if fakeCentral != nil && dumpCentralOutput {
-		fakeCentral.DumpAllMessages(startTime, time.Now(), outfile, outputFormat)
-	}
-	os.Exit(0)
 }
 
 // local-sensor adds three new flags to sensor:
