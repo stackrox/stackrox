@@ -32,6 +32,8 @@ quay.io/rhacs-eng/qa-multi-arch:nginx-1-17-1
 quay.io/rhacs-eng/qa-multi-arch:nginx-1-19-alpine
 quay.io/rhacs-eng/qa-multi-arch:nginx-1.12
 quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1
+quay.io/rhacs-eng/qa-multi-arch:nginx-2.0.3
+quay.io/rhacs-eng/qa-multi-arch:nginx-3.21-1
 quay.io/rhacs-eng/qa-multi-arch:nginx-latest
 quay.io/rhacs-eng/qa-multi-arch:nginx-unprivileged-1.25.2
 quay.io/rhacs-eng/qa-multi-arch:perl-5-32-1
