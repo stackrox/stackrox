@@ -28,10 +28,10 @@ var tls13Ciphers = map[string]bool{
 	"TLS_CHACHA20_POLY1305_SHA256": true,
 }
 
-// maxKnownVersion is the highest TLS version ACS currently understands. When
-// the cluster profile requests a newer unknown version, we clamp to this rather
-// than falling back to the minimum, preserving the admin's intent of stricter
-// security.
+// maxKnownVersion is the highest TLS version the Operator currently understands.
+// When the cluster profile requests a newer unknown version, we clamp to this so that
+// we do not accidentally lower the security posture when the cluster admin's intent is
+// to enforce a stricter profile.
 const maxKnownVersion = "TLSv1.3"
 
 func convertMinVersion(apiVersion configv1.TLSProtocolVersion) (string, bool) {
@@ -44,17 +44,20 @@ func convertMinVersion(apiVersion configv1.TLSProtocolVersion) (string, bool) {
 // convertCiphersToIANA converts OpenSSL cipher names (as provided by the
 // OpenShift TLS profile API) to a comma-separated IANA string for
 // ROX_TLS_CIPHER_SUITES. TLS 1.3 ciphers and ciphers unknown to library-go
-// are skipped (they are handled separately by Go).
+// are skipped.
 func convertCiphersToIANA(opensslCiphers []string) string {
 	tls12Only := filterTLS13(opensslCiphers)
 	iana := libgocrypto.OpenSSLToIANACipherSuites(tls12Only)
+	if len(iana) < len(tls12Only) {
+		log.Info("some ciphers from cluster TLS profile have no IANA equivalent and were dropped",
+			"inputCount", len(tls12Only), "outputCount", len(iana))
+	}
 	return strings.Join(iana, ",")
 }
 
 // convertCiphersToOpenSSL produces a colon-separated OpenSSL cipher string
 // for ROX_OPENSSL_TLS_CIPHER_SUITES. TLS 1.3 ciphers are excluded because
-// OpenSSL and PostgreSQL configure them separately. The input is already in
-// OpenSSL format from the API, so this is essentially a filter + join.
+// OpenSSL and PostgreSQL configure them separately.
 func convertCiphersToOpenSSL(opensslCiphers []string) string {
 	return strings.Join(filterTLS13(opensslCiphers), ":")
 }
