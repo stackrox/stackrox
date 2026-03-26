@@ -217,19 +217,12 @@ func (s *centralCommunicationImpl) hello(stream central.SensorService_Communicat
 	}
 
 	if metautils.MD(rawHdr).Get(centralsensor.SensorHelloMetadataKey) != "true" {
-		// Probe for the actual server-side error.
-		if _, recvErr := stream.Recv(); recvErr != nil {
-			if st, ok := status.FromError(recvErr); ok && st.Code() == codes.Unauthenticated {
-				return errors.Errorf("central rejected the connection, possibly because"+
-					" the init bundle credentials have been revoked in central."+
-					" Check central logs for details. Server message: %s", st.Message())
-			}
-			return errors.Wrap(recvErr, "central rejected the connection")
-		}
-		return errors.New("central did not acknowledge SensorHello," +
-			" likely due to a networking or TLS configuration issue" +
-			" (e.g., re-encrypt routes or TLS termination)" +
-			" preventing central from receiving sensor's TLS certificate")
+		return ProbeStreamForConnectionError(stream,
+			"the init bundle credentials",
+			"central did not acknowledge SensorHello,"+
+				" likely due to a networking or TLS configuration issue"+
+				" (e.g., re-encrypt routes or TLS termination)"+
+				" preventing central from receiving sensor's TLS certificate")
 	}
 
 	var centralHello *central.CentralHello
