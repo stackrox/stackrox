@@ -2,7 +2,7 @@ import { getFilteredSecurityContextMap } from './securityContextUtils';
 
 describe('securityContextUtils', () => {
     describe('getFilteredSecurityContextMap', () => {
-        it('should return an empty Map when there all security context values are falsy', () => {
+        it('should return an empty array when there all security context values are falsy', () => {
             const securityContext = {
                 privileged: false,
                 selinux: null,
@@ -15,10 +15,10 @@ describe('securityContextUtils', () => {
 
             const filteredValues = getFilteredSecurityContextMap(securityContext);
 
-            expect(filteredValues.size).toEqual(0);
+            expect(filteredValues.length).toEqual(0);
         });
 
-        it('should return a Map of only those security context values which are set', () => {
+        it('should return an array of only those security context values which are set', () => {
             const securityContext = {
                 privileged: false,
                 selinux: null,
@@ -31,13 +31,10 @@ describe('securityContextUtils', () => {
 
             const filteredValues = getFilteredSecurityContextMap(securityContext);
 
-            const expectedMap = new Map();
-            expectedMap.set('readOnlyRootFilesystem', 'true');
-
-            expect(filteredValues).toEqual(expectedMap);
+            expect(filteredValues).toEqual([['Read Only Root Filesystem', 'true']]);
         });
 
-        it('should return a Map which includes array and object security context values which are set', () => {
+        it('should return an array which includes array and object security context values which are set', () => {
             const securityContext = {
                 privileged: false,
                 selinux: {
@@ -55,15 +52,11 @@ describe('securityContextUtils', () => {
 
             const filteredValues = getFilteredSecurityContextMap(securityContext);
 
-            const expectedMap = new Map();
-            expectedMap.set('readOnlyRootFilesystem', 'true');
-            expectedMap.set(
-                'selinux',
-                '{"user":"","role":"","type":"container_runtime_t","level":""}'
-            );
-            expectedMap.set('dropCapabilities', 'NET_RAW,CAP_SYS_TIME');
-
-            expect(filteredValues).toEqual(expectedMap);
+            expect(filteredValues).toEqual([
+                ['Drop Capabilities', 'NET_RAW,CAP_SYS_TIME'],
+                ['Read Only Root Filesystem', 'true'],
+                ['Selinux', '{"user":"","role":"","type":"container_runtime_t","level":""}'],
+            ]);
         });
     });
 });
