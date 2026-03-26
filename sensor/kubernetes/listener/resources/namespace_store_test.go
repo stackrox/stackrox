@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -108,9 +109,9 @@ func TestNamespaceStore_GetAll(t *testing.T) {
 		namespaceMap[ns.Name] = ns
 	}
 
-	assert.Equal(t, ns1, namespaceMap["namespace-1"])
-	assert.Equal(t, ns2, namespaceMap["namespace-2"])
-	assert.Equal(t, ns3, namespaceMap["namespace-3"])
+	protoassert.Equal(t, ns1, namespaceMap["namespace-1"])
+	protoassert.Equal(t, ns2, namespaceMap["namespace-2"])
+	protoassert.Equal(t, ns3, namespaceMap["namespace-3"])
 
 	// Remove one and verify GetAll reflects the change
 	store.removeNamespace(ns2)
@@ -122,7 +123,7 @@ func TestNamespaceStore_GetAll(t *testing.T) {
 		namespaceMap[ns.Name] = ns
 	}
 
-	assert.Equal(t, ns1, namespaceMap["namespace-1"])
-	assert.Equal(t, ns3, namespaceMap["namespace-3"])
+	protoassert.Equal(t, ns1, namespaceMap["namespace-1"])
+	protoassert.Equal(t, ns3, namespaceMap["namespace-3"])
 	assert.Nil(t, namespaceMap["namespace-2"])
 }
