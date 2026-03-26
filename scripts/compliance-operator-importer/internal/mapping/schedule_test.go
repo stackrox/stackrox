@@ -25,8 +25,8 @@ func TestIMP_MAP_003_IMP_MAP_004_DailySchedule(t *testing.T) {
 	if got.Minute != 0 {
 		t.Errorf("Minute: want 0, got %d", got.Minute)
 	}
-	if got.Weekly != nil {
-		t.Errorf("Weekly: want nil for DAILY, got %+v", got.Weekly)
+	if got.DaysOfWeek != nil {
+		t.Errorf("DaysOfWeek: want nil for DAILY, got %+v", got.DaysOfWeek)
 	}
 	if got.DaysOfMonth != nil {
 		t.Errorf("DaysOfMonth: want nil for DAILY, got %+v", got.DaysOfMonth)
@@ -67,11 +67,11 @@ func TestIMP_MAP_003_IMP_MAP_004_WeeklySchedule(t *testing.T) {
 	if got.Minute != 0 {
 		t.Errorf("Minute: want 0, got %d", got.Minute)
 	}
-	if got.Weekly == nil {
-		t.Fatal("Weekly: want non-nil for WEEKLY schedule")
+	if got.DaysOfWeek == nil {
+		t.Fatal("DaysOfWeek: want non-nil for WEEKLY schedule")
 	}
-	if got.Weekly.Day != 0 {
-		t.Errorf("Weekly.Day: want 0 (Sunday), got %d", got.Weekly.Day)
+	if len(got.DaysOfWeek.Days) != 1 || got.DaysOfWeek.Days[0] != 0 {
+		t.Errorf("DaysOfWeek.Days: want [0] (Sunday), got %v", got.DaysOfWeek.Days)
 	}
 }
 
@@ -84,11 +84,11 @@ func TestIMP_MAP_003_IMP_MAP_004_WeeklyScheduleSaturday(t *testing.T) {
 	if got.IntervalType != "WEEKLY" {
 		t.Errorf("IntervalType: want WEEKLY, got %q", got.IntervalType)
 	}
-	if got.Weekly == nil {
-		t.Fatal("Weekly: want non-nil")
+	if got.DaysOfWeek == nil {
+		t.Fatal("DaysOfWeek: want non-nil for WEEKLY schedule")
 	}
-	if got.Weekly.Day != 6 {
-		t.Errorf("Weekly.Day: want 6 (Saturday), got %d", got.Weekly.Day)
+	if len(got.DaysOfWeek.Days) != 1 || got.DaysOfWeek.Days[0] != 6 {
+		t.Errorf("DaysOfWeek.Days: want [6] (Saturday), got %v", got.DaysOfWeek.Days)
 	}
 }
 

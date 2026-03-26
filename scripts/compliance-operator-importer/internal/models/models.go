@@ -63,21 +63,16 @@ type Problem struct {
 }
 
 // ACSSchedule is the schedule portion of an ACS scan configuration.
+// Fields map to the v2.Schedule proto message in proto/api/v2/common.proto.
 type ACSSchedule struct {
 	IntervalType string          `json:"intervalType,omitempty"`
 	Hour         int32           `json:"hour"`
 	Minute       int32           `json:"minute"`
-	Weekly       *ACSWeekly      `json:"weekly,omitempty"`
 	DaysOfWeek   *ACSDaysOfWeek  `json:"daysOfWeek,omitempty"`
 	DaysOfMonth  *ACSDaysOfMonth `json:"daysOfMonth,omitempty"`
 }
 
-// ACSWeekly holds the day-of-week for a weekly ACS schedule.
-type ACSWeekly struct {
-	Day int32 `json:"day"`
-}
-
-// ACSDaysOfWeek holds multiple days for a multi-day-of-week ACS schedule.
+// ACSDaysOfWeek holds days for a weekly ACS schedule (Sunday=0 .. Saturday=6).
 type ACSDaysOfWeek struct {
 	Days []int32 `json:"days"`
 }

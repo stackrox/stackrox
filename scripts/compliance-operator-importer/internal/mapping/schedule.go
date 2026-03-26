@@ -94,7 +94,7 @@ func ConvertCronToACSSchedule(cron string) (*models.ACSSchedule, error) {
 			IntervalType: "WEEKLY",
 			Hour:         hourVal,
 			Minute:       minVal,
-			Weekly:       &models.ACSWeekly{Day: dowVal},
+			DaysOfWeek:   &models.ACSDaysOfWeek{Days: []int32{dowVal}},
 		}, nil
 
 	default:
