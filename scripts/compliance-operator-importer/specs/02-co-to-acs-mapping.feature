@@ -39,6 +39,25 @@ Feature: Map Compliance Operator scheduled scan resources to ACS scan configurat
     Then payload.scanConfig.oneTimeScan MUST be false                  # IMP-MAP-003
     And payload.scanConfig.scanSchedule MUST be present                # IMP-MAP-004
 
+  @mapping @schedule @wire-format
+  Scenario Outline: Schedule JSON wire format matches ACS API proto
+    Given ScanSetting "sched" has schedule "<cron>"
+    And ScanSettingBinding "binding" references "sched"
+    When the importer builds the ACS payload and serializes it to JSON
+    Then the JSON scanSchedule object MUST contain only fields defined in proto/api/v2/common.proto Schedule:
+      intervalType, hour, minute, daysOfWeek, daysOfMonth               # IMP-MAP-004a
+    And the JSON scanSchedule.intervalType MUST be "<intervalType>"
+    And for WEEKLY: scanSchedule.daysOfWeek.days MUST be present        # IMP-MAP-004b
+    And for MONTHLY: scanSchedule.daysOfMonth.days MUST be present      # IMP-MAP-004c
+    And the full payload JSON field names MUST match ComplianceScanConfiguration proto:
+      id, scanName, scanConfig, clusters                                # IMP-MAP-004d
+
+    Examples:
+      | cron         | intervalType |
+      | 0 2 * * *    | DAILY        |
+      | 0 2 * * 0    | WEEKLY       |
+      | 0 2 1 * *    | MONTHLY      |
+
   @mapping @description
   Scenario: Build helpful description without ownership marker
     Given ScanSettingBinding "cis-weekly" in namespace "openshift-compliance"
@@ -100,8 +119,9 @@ Feature: Map Compliance Operator scheduled scan resources to ACS scan configurat
     And kubecontext "ctx-b" has ScanSettingBinding "cis-weekly" with profiles ["ocp4-cis", "ocp4-moderate"]
     When the importer merges SSBs across clusters
     Then "cis-weekly" MUST be marked failed                            # IMP-MAP-020
-    And problems list MUST include category "mapping"
-    And problem description MUST mention profile mismatch across clusters
+    And problems list MUST include category "conflict"
+    And problem description MUST mention mismatch across clusters
+    And the console MUST print a warning with the conflict reason       # IMP-MAP-020a
 
   @mapping @clusters @multicluster @error
   Scenario: Error when same-name SSBs have mismatched schedules
@@ -109,8 +129,9 @@ Feature: Map Compliance Operator scheduled scan resources to ACS scan configurat
     And kubecontext "ctx-b" has ScanSettingBinding "cis-weekly" with schedule "0 3 * * 1"
     When the importer merges SSBs across clusters
     Then "cis-weekly" MUST be marked failed                            # IMP-MAP-020
-    And problems list MUST include category "mapping"
-    And problem description MUST mention schedule mismatch across clusters
+    And problems list MUST include category "conflict"
+    And problem description MUST mention mismatch across clusters
+    And the console MUST print a warning with the conflict reason       # IMP-MAP-020a
 
   @validation @mapping
   Scenario: Missing ScanSetting reference fails only that binding
@@ -120,6 +141,55 @@ Feature: Map Compliance Operator scheduled scan resources to ACS scan configurat
     And problems list MUST include an entry for "broken-binding"        # IMP-MAP-009
     And that problem entry MUST include a fix hint                       # IMP-MAP-010
     And other valid bindings MUST still be processed                     # IMP-MAP-011
+
+  @mapping @adopt
+  Scenario: Adopt SSB after successful ACS scan config creation
+    Given ScanSettingBinding "cis-weekly" in namespace "openshift-compliance"
+    And the SSB references ScanSetting "my-old-setting"
+    And the importer successfully creates ACS scan config "cis-weekly"
+    And ACS creates ScanSetting "cis-weekly" on the cluster
+    When the importer runs the adoption step
+    Then SSB "cis-weekly" settingsRef.name MUST be patched to "cis-weekly"  # IMP-ADOPT-001
+    And the importer MUST log an info message about the adoption            # IMP-ADOPT-002
+
+  @mapping @adopt
+  Scenario: Skip adoption when SSB already references the correct ScanSetting
+    Given ScanSettingBinding "cis-weekly" in namespace "openshift-compliance"
+    And the SSB references ScanSetting "cis-weekly"
+    And the importer successfully creates ACS scan config "cis-weekly"
+    When the importer runs the adoption step
+    Then SSB "cis-weekly" settingsRef.name MUST NOT be modified             # IMP-ADOPT-003
+
+  @mapping @adopt @timeout
+  Scenario: Adoption warns on timeout waiting for ScanSetting
+    Given ScanSettingBinding "cis-weekly" in namespace "openshift-compliance"
+    And the SSB references ScanSetting "my-old-setting"
+    And the importer successfully creates ACS scan config "cis-weekly"
+    And ACS has NOT yet created ScanSetting "cis-weekly" on the cluster
+    When the adoption poll times out
+    Then the importer MUST log a warning                                    # IMP-ADOPT-004
+    And the SSB MUST NOT be modified                                        # IMP-ADOPT-005
+    And the importer MUST NOT exit with an error                            # IMP-ADOPT-006
+
+  @mapping @adopt @multicluster
+  Scenario: Adoption patches SSBs independently per cluster
+    Given kubecontext "ctx-a" has SSB "cis-weekly" referencing ScanSetting "setting-a"
+    And kubecontext "ctx-b" has SSB "cis-weekly" referencing ScanSetting "setting-b"
+    And the importer creates one ACS scan config "cis-weekly" for both clusters
+    And ACS creates ScanSetting "cis-weekly" on both clusters
+    When the importer runs the adoption step
+    Then SSB "cis-weekly" on ctx-a MUST be patched to reference "cis-weekly" # IMP-ADOPT-007
+    And SSB "cis-weekly" on ctx-b MUST be patched to reference "cis-weekly"  # IMP-ADOPT-007
+
+  @mapping @adopt @multicluster @partial
+  Scenario: Partial adoption succeeds when one cluster times out
+    Given kubecontext "ctx-a" has SSB "cis-weekly" referencing ScanSetting "setting-a"
+    And kubecontext "ctx-b" has SSB "cis-weekly" referencing ScanSetting "setting-b"
+    And ACS creates ScanSetting "cis-weekly" on ctx-a but NOT on ctx-b
+    When the importer runs the adoption step
+    Then SSB "cis-weekly" on ctx-a MUST be patched                          # IMP-ADOPT-008
+    And the importer MUST warn about ctx-b timeout                          # IMP-ADOPT-008
+    And the importer MUST NOT exit with an error                            # IMP-ADOPT-006
 
   @mapping @schedule @problems
   Scenario: Invalid schedule is collected as problem and skipped
