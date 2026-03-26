@@ -106,7 +106,7 @@ func TestNamespaceStore_GetAll(t *testing.T) {
 	// Verify all namespaces are present (order not guaranteed)
 	namespaceMap := make(map[string]*storage.NamespaceMetadata)
 	for _, ns := range namespaces {
-		namespaceMap[ns.Name] = ns
+		namespaceMap[ns.GetName()] = ns
 	}
 
 	protoassert.Equal(t, ns1, namespaceMap["namespace-1"])
@@ -120,7 +120,7 @@ func TestNamespaceStore_GetAll(t *testing.T) {
 
 	namespaceMap = make(map[string]*storage.NamespaceMetadata)
 	for _, ns := range namespaces {
-		namespaceMap[ns.Name] = ns
+		namespaceMap[ns.GetName()] = ns
 	}
 
 	protoassert.Equal(t, ns1, namespaceMap["namespace-1"])
