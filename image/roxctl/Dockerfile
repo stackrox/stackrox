@@ -13,7 +13,7 @@ RUN dnf install -y \
     --nodocs \
     ca-certificates && \
     dnf clean all --installroot=/out/ && \
-    rm -rf /out/var/cache/*
+    rm -rf /out/var/cache/dnf /out/var/cache/yum
 
 COPY ./roxctl-linux /out/usr/bin/roxctl
 
