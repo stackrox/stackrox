@@ -125,7 +125,7 @@ type Deployments struct {
 	RiskScore                     float32                 `gorm:"column:riskscore;type:numeric;index:deployments_riskscore,type:btree"`
 	PlatformComponent             bool                    `gorm:"column:platformcomponent;type:bool"`
 	TombstoneDeletedAt            *time.Time              `gorm:"column:tombstone_deletedat;type:timestamp"`
-	TombstoneExpiresAt            *time.Time              `gorm:"column:tombstone_expiresat;type:timestamp;index:deployments_tombstone_expiresat,type:btree"`
+	TombstoneExpiresAt            *time.Time              `gorm:"column:tombstone_expiresat;type:timestamp"`
 	Serialized                    []byte                  `gorm:"column:serialized;type:bytea"`
 }
 
