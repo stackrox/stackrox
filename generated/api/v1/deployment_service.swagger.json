@@ -869,9 +869,13 @@
         },
         "platformComponent": {
           "type": "boolean"
+        },
+        "tombstone": {
+          "$ref": "#/definitions/storageTombstone",
+          "description": "The tombstone, if set, marks the deployment as soft-deleted but retained for audit.\nA nil tombstone indicates an active deployment."
         }
       },
-      "title": "Next available tag: 36"
+      "title": "Next available tag: 37"
     },
     "storageEmbeddedSecret": {
       "type": "object",
@@ -962,9 +966,14 @@
         "priority": {
           "type": "string",
           "format": "int64"
+        },
+        "tombstoneDeletedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "tombstone_deleted_at, if set, indicates this is a soft-deleted deployment retained for audit."
         }
       },
-      "title": "Next available tag: 9"
+      "title": "Next available tag: 10"
     },
     "storageLivenessProbe": {
       "type": "object",
@@ -1168,6 +1177,22 @@
         "TOLERATION_OPERATOR_EQUAL"
       ],
       "default": "TOLERATION_OPERATION_UNKNOWN"
+    },
+    "storageTombstone": {
+      "type": "object",
+      "properties": {
+        "deletedAt": {
+          "type": "string",
+          "format": "date-time",
+          "title": "deleted_at is the time the resource was soft-deleted."
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "title": "expires_at is the time after which the resource will be permanently purged by the GC.\nThis value is pre-computed as deleted_at plus the configured TTL."
+        }
+      },
+      "description": "Tombstone marks a resource as soft-deleted but retained for compliance/audit purposes.\nA nil tombstone indicates the resource is active.\nThis message is designed to be embedded in resource messages (e.g., Deployment),\nanalogous to how Traits is embedded."
     },
     "storageVolume": {
       "type": "object",

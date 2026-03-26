@@ -25,9 +25,11 @@ const (
 type ViolationState int32
 
 const (
-	ViolationState_ACTIVE     ViolationState = 0
-	ViolationState_RESOLVED   ViolationState = 2
-	ViolationState_ATTEMPTED  ViolationState = 3
+	ViolationState_ACTIVE    ViolationState = 0
+	ViolationState_RESOLVED  ViolationState = 2
+	ViolationState_ATTEMPTED ViolationState = 3
+	// TOMBSTONED indicates the alert's deployment was deleted but retained.
+	// TOMBSTONED alerts are not notified; they transition to RESOLVED at TTL expiry.
 	ViolationState_TOMBSTONED ViolationState = 4
 )
 
@@ -2128,12 +2130,14 @@ const file_storage_alert_proto_rawDesc = "" +
 	"cluster_id\x18\x06 \x01(\tB\x02\x18\x01R\tclusterId\x12\x1a\n" +
 	"\binactive\x18\a \x01(\bR\binactive\x12%\n" +
 	"\fnamespace_id\x18\b \x01(\tB\x02\x18\x01R\vnamespaceId\x12'\n" +
-	"\x0fdeployment_type\x18\t \x01(\tR\x0edeploymentTypeJ\x04\b\x03\x10\x04*H\n" +
+	"\x0fdeployment_type\x18\t \x01(\tR\x0edeploymentTypeJ\x04\b\x03\x10\x04*X\n" +
 	"\x0eViolationState\x12\n" +
 	"\n" +
 	"\x06ACTIVE\x10\x00\x12\f\n" +
 	"\bRESOLVED\x10\x02\x12\r\n" +
-	"\tATTEMPTED\x10\x03\"\x04\b\x01\x10\x01*\aSNOOZEDB.\n" +
+	"\tATTEMPTED\x10\x03\x12\x0e\n" +
+	"\n" +
+	"TOMBSTONED\x10\x04\"\x04\b\x01\x10\x01*\aSNOOZEDB.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (

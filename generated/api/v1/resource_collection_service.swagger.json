@@ -503,9 +503,14 @@
         "priority": {
           "type": "string",
           "format": "int64"
+        },
+        "tombstoneDeletedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "tombstone_deleted_at, if set, indicates this is a soft-deleted deployment retained for audit."
         }
       },
-      "title": "Next available tag: 9"
+      "title": "Next available tag: 10"
     },
     "storageMatchType": {
       "type": "string",

@@ -957,9 +957,13 @@
         },
         "platformComponent": {
           "type": "boolean"
+        },
+        "tombstone": {
+          "$ref": "#/definitions/storageTombstone",
+          "description": "The tombstone, if set, marks the deployment as soft-deleted but retained for audit.\nA nil tombstone indicates an active deployment."
         }
       },
-      "title": "Next available tag: 36"
+      "title": "Next available tag: 37"
     },
     "storageEmbeddedSecret": {
       "type": "object",
@@ -1636,14 +1640,32 @@
       ],
       "default": "TOLERATION_OPERATION_UNKNOWN"
     },
+    "storageTombstone": {
+      "type": "object",
+      "properties": {
+        "deletedAt": {
+          "type": "string",
+          "format": "date-time",
+          "title": "deleted_at is the time the resource was soft-deleted."
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "title": "expires_at is the time after which the resource will be permanently purged by the GC.\nThis value is pre-computed as deleted_at plus the configured TTL."
+        }
+      },
+      "description": "Tombstone marks a resource as soft-deleted but retained for compliance/audit purposes.\nA nil tombstone indicates the resource is active.\nThis message is designed to be embedded in resource messages (e.g., Deployment),\nanalogous to how Traits is embedded."
+    },
     "storageViolationState": {
       "type": "string",
       "enum": [
         "ACTIVE",
         "RESOLVED",
-        "ATTEMPTED"
+        "ATTEMPTED",
+        "TOMBSTONED"
       ],
-      "default": "ACTIVE"
+      "default": "ACTIVE",
+      "description": " - TOMBSTONED: TOMBSTONED indicates the alert's deployment was deleted but retained.\nTOMBSTONED alerts are not notified; they transition to RESOLVED at TTL expiry."
     },
     "storageVolume": {
       "type": "object",

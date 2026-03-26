@@ -511,9 +511,12 @@
         "metrics": {
           "$ref": "#/definitions/storagePrometheusMetrics",
           "description": "This field defines groups of custom Prometheus metrics to be exposed by the\nbackend on the API endpoint."
+        },
+        "tombstoneRetentionConfig": {
+          "$ref": "#/definitions/storageTombstoneRetentionConfig"
         }
       },
-      "title": "next available tag: 10"
+      "title": "next available tag: 11"
     },
     "storagePrometheusMetrics": {
       "type": "object",
@@ -576,6 +579,17 @@
           "format": "date-time"
         }
       }
+    },
+    "storageTombstoneRetentionConfig": {
+      "type": "object",
+      "properties": {
+        "retentionDurationDays": {
+          "type": "integer",
+          "format": "int32",
+          "description": "retention_duration_days is the number of days tombstoned deployments are kept.\nSet to 0 to disable tombstoning (immediate hard-delete, preserving existing behavior)."
+        }
+      },
+      "title": "TombstoneRetentionConfig controls how long soft-deleted deployment records are retained.\nnext available tag: 2"
     },
     "storageVulnerabilityExceptionConfig": {
       "type": "object",

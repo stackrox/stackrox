@@ -240,7 +240,7 @@ func (SecurityContext_SeccompProfile_ProfileType) EnumDescriptor() ([]byte, []in
 	return file_storage_deployment_proto_rawDescGZIP(), []int{13, 1, 0}
 }
 
-// Next available tag: 36
+// Next available tag: 37
 type Deployment struct {
 	state                         protoimpl.MessageState `protogen:"open.v1"`
 	Id                            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Deployment ID,hidden" sql:"pk,type(uuid)"`                                                                                                           // @gotags: search:"Deployment ID,hidden" sql:"pk,type(uuid)"
@@ -274,12 +274,11 @@ type Deployment struct {
 	StateTimestamp                int64                  `protobuf:"varint,27,opt,name=state_timestamp,json=stateTimestamp,proto3" json:"state_timestamp,omitempty" hash:"ignore" sensorhash:"ignore"`                                                                               // Internal use only @gotags: hash:"ignore" sensorhash:"ignore"
 	RiskScore                     float32                `protobuf:"fixed32,29,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"`                                                                                             // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"
 	PlatformComponent             bool                   `protobuf:"varint,35,opt,name=platform_component,json=platformComponent,proto3" json:"platform_component,omitempty" search:"Platform Component"`                                                                      // @gotags: search:"Platform Component"
-	// Tombstone marks the deployment as soft-deleted but retained for audit.
+	// The tombstone, if set, marks the deployment as soft-deleted but retained for audit.
 	// A nil tombstone indicates an active deployment.
-	// Field 36 matches the proto definition in storage/deployment.proto.
-	Tombstone *Tombstone `protobuf:"bytes,36,opt,name=tombstone,proto3" json:"tombstone,omitempty"` // @gotags: search:"-"
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	Tombstone     *Tombstone `protobuf:"bytes,36,opt,name=tombstone,proto3" json:"tombstone,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Deployment) Reset() {
@@ -529,7 +528,6 @@ func (x *Deployment) GetPlatformComponent() bool {
 	return false
 }
 
-// GetTombstone returns the tombstone if the deployment is soft-deleted, or nil for active deployments.
 func (x *Deployment) GetTombstone() *Tombstone {
 	if x != nil {
 		return x.Tombstone
@@ -1591,15 +1589,16 @@ func (x *SecurityContext) GetAllowPrivilegeEscalation() bool {
 
 // Next available tag: 10
 type ListDeployment struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Hash               uint64                 `protobuf:"varint,8,opt,name=hash,proto3" json:"hash,omitempty"`
-	Name               string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Cluster            string                 `protobuf:"bytes,3,opt,name=cluster,proto3" json:"cluster,omitempty"`
-	ClusterId          string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Namespace          string                 `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Created            *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created,proto3" json:"created,omitempty"`
-	Priority           int64                  `protobuf:"varint,7,opt,name=priority,proto3" json:"priority,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Id        string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Hash      uint64                 `protobuf:"varint,8,opt,name=hash,proto3" json:"hash,omitempty"`
+	Name      string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Cluster   string                 `protobuf:"bytes,3,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	ClusterId string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	Namespace string                 `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	Created   *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created,proto3" json:"created,omitempty"`
+	Priority  int64                  `protobuf:"varint,7,opt,name=priority,proto3" json:"priority,omitempty"`
+	// tombstone_deleted_at, if set, indicates this is a soft-deleted deployment retained for audit.
 	TombstoneDeletedAt *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=tombstone_deleted_at,json=tombstoneDeletedAt,proto3" json:"tombstone_deleted_at,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
@@ -2030,7 +2029,7 @@ var File_storage_deployment_proto protoreflect.FileDescriptor
 
 const file_storage_deployment_proto_rawDesc = "" +
 	"\n" +
-	"\x18storage/deployment.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/container_runtime.proto\x1a\x13storage/image.proto\x1a\x14storage/labels.proto\x1a\x12storage/rbac.proto\x1a\x14storage/taints.proto\"\xf6\v\n" +
+	"\x18storage/deployment.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1fstorage/container_runtime.proto\x1a\x13storage/image.proto\x1a\x14storage/labels.proto\x1a\x12storage/rbac.proto\x1a\x14storage/taints.proto\x1a\x17storage/tombstone.proto\"\xa8\f\n" +
 	"\n" +
 	"Deployment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -2069,7 +2068,8 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\x0fstate_timestamp\x18\x1b \x01(\x03R\x0estateTimestamp\x12\x1d\n" +
 	"\n" +
 	"risk_score\x18\x1d \x01(\x02R\triskScore\x12-\n" +
-	"\x12platform_component\x18# \x01(\bR\x11platformComponent\x1a9\n" +
+	"\x12platform_component\x18# \x01(\bR\x11platformComponent\x120\n" +
+	"\ttombstone\x18$ \x01(\v2\x12.storage.TombstoneR\ttombstone\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a<\n" +
@@ -2219,7 +2219,7 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"\n" +
 	"UNCONFINED\x10\x00\x12\x13\n" +
 	"\x0fRUNTIME_DEFAULT\x10\x01\x12\r\n" +
-	"\tLOCALHOST\x10\x02\"\xf1\x01\n" +
+	"\tLOCALHOST\x10\x02\"\xbf\x02\n" +
 	"\x0eListDeployment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04hash\x18\b \x01(\x04R\x04hash\x12\x12\n" +
@@ -2229,7 +2229,8 @@ const file_storage_deployment_proto_rawDesc = "" +
 	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12\x1c\n" +
 	"\tnamespace\x18\x05 \x01(\tR\tnamespace\x124\n" +
 	"\acreated\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12\x1a\n" +
-	"\bpriority\x18\a \x01(\x03R\bpriorityB.\n" +
+	"\bpriority\x18\a \x01(\x03R\bpriority\x12L\n" +
+	"\x14tombstone_deleted_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\x12tombstoneDeletedAtB.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
@@ -2278,8 +2279,9 @@ var file_storage_deployment_proto_goTypes = []any{
 	(*timestamppb.Timestamp)(nil),                       // 28: google.protobuf.Timestamp
 	(PermissionLevel)(0),                                // 29: storage.PermissionLevel
 	(*Toleration)(nil),                                  // 30: storage.Toleration
-	(*ImageName)(nil),                                   // 31: storage.ImageName
-	(ContainerRuntime)(0),                               // 32: storage.ContainerRuntime
+	(*Tombstone)(nil),                                   // 31: storage.Tombstone
+	(*ImageName)(nil),                                   // 32: storage.ImageName
+	(ContainerRuntime)(0),                               // 33: storage.ContainerRuntime
 }
 var file_storage_deployment_proto_depIdxs = []int32{
 	19, // 0: storage.Deployment.labels:type_name -> storage.Deployment.LabelsEntry
@@ -2291,39 +2293,41 @@ var file_storage_deployment_proto_depIdxs = []int32{
 	29, // 6: storage.Deployment.service_account_permission_level:type_name -> storage.PermissionLevel
 	30, // 7: storage.Deployment.tolerations:type_name -> storage.Toleration
 	15, // 8: storage.Deployment.ports:type_name -> storage.PortConfig
-	31, // 9: storage.ContainerImage.name:type_name -> storage.ImageName
-	16, // 10: storage.Container.config:type_name -> storage.ContainerConfig
-	5,  // 11: storage.Container.image:type_name -> storage.ContainerImage
-	17, // 12: storage.Container.security_context:type_name -> storage.SecurityContext
-	8,  // 13: storage.Container.volumes:type_name -> storage.Volume
-	15, // 14: storage.Container.ports:type_name -> storage.PortConfig
-	14, // 15: storage.Container.secrets:type_name -> storage.EmbeddedSecret
-	7,  // 16: storage.Container.resources:type_name -> storage.Resources
-	9,  // 17: storage.Container.liveness_probe:type_name -> storage.LivenessProbe
-	10, // 18: storage.Container.readiness_probe:type_name -> storage.ReadinessProbe
-	0,  // 19: storage.Volume.mount_propagation:type_name -> storage.Volume.MountPropagation
-	12, // 20: storage.Pod.live_instances:type_name -> storage.ContainerInstance
-	22, // 21: storage.Pod.terminated_instances:type_name -> storage.Pod.ContainerInstanceList
-	28, // 22: storage.Pod.started:type_name -> google.protobuf.Timestamp
-	13, // 23: storage.ContainerInstance.instance_id:type_name -> storage.ContainerInstanceID
-	28, // 24: storage.ContainerInstance.started:type_name -> google.protobuf.Timestamp
-	28, // 25: storage.ContainerInstance.finished:type_name -> google.protobuf.Timestamp
-	32, // 26: storage.ContainerInstanceID.container_runtime:type_name -> storage.ContainerRuntime
-	1,  // 27: storage.PortConfig.exposure:type_name -> storage.PortConfig.ExposureLevel
-	23, // 28: storage.PortConfig.exposure_infos:type_name -> storage.PortConfig.ExposureInfo
-	24, // 29: storage.ContainerConfig.env:type_name -> storage.ContainerConfig.EnvironmentConfig
-	25, // 30: storage.SecurityContext.selinux:type_name -> storage.SecurityContext.SELinux
-	26, // 31: storage.SecurityContext.seccomp_profile:type_name -> storage.SecurityContext.SeccompProfile
-	28, // 32: storage.ListDeployment.created:type_name -> google.protobuf.Timestamp
-	12, // 33: storage.Pod.ContainerInstanceList.instances:type_name -> storage.ContainerInstance
-	1,  // 34: storage.PortConfig.ExposureInfo.level:type_name -> storage.PortConfig.ExposureLevel
-	2,  // 35: storage.ContainerConfig.EnvironmentConfig.env_var_source:type_name -> storage.ContainerConfig.EnvironmentConfig.EnvVarSource
-	3,  // 36: storage.SecurityContext.SeccompProfile.type:type_name -> storage.SecurityContext.SeccompProfile.ProfileType
-	37, // [37:37] is the sub-list for method output_type
-	37, // [37:37] is the sub-list for method input_type
-	37, // [37:37] is the sub-list for extension type_name
-	37, // [37:37] is the sub-list for extension extendee
-	0,  // [0:37] is the sub-list for field type_name
+	31, // 9: storage.Deployment.tombstone:type_name -> storage.Tombstone
+	32, // 10: storage.ContainerImage.name:type_name -> storage.ImageName
+	16, // 11: storage.Container.config:type_name -> storage.ContainerConfig
+	5,  // 12: storage.Container.image:type_name -> storage.ContainerImage
+	17, // 13: storage.Container.security_context:type_name -> storage.SecurityContext
+	8,  // 14: storage.Container.volumes:type_name -> storage.Volume
+	15, // 15: storage.Container.ports:type_name -> storage.PortConfig
+	14, // 16: storage.Container.secrets:type_name -> storage.EmbeddedSecret
+	7,  // 17: storage.Container.resources:type_name -> storage.Resources
+	9,  // 18: storage.Container.liveness_probe:type_name -> storage.LivenessProbe
+	10, // 19: storage.Container.readiness_probe:type_name -> storage.ReadinessProbe
+	0,  // 20: storage.Volume.mount_propagation:type_name -> storage.Volume.MountPropagation
+	12, // 21: storage.Pod.live_instances:type_name -> storage.ContainerInstance
+	22, // 22: storage.Pod.terminated_instances:type_name -> storage.Pod.ContainerInstanceList
+	28, // 23: storage.Pod.started:type_name -> google.protobuf.Timestamp
+	13, // 24: storage.ContainerInstance.instance_id:type_name -> storage.ContainerInstanceID
+	28, // 25: storage.ContainerInstance.started:type_name -> google.protobuf.Timestamp
+	28, // 26: storage.ContainerInstance.finished:type_name -> google.protobuf.Timestamp
+	33, // 27: storage.ContainerInstanceID.container_runtime:type_name -> storage.ContainerRuntime
+	1,  // 28: storage.PortConfig.exposure:type_name -> storage.PortConfig.ExposureLevel
+	23, // 29: storage.PortConfig.exposure_infos:type_name -> storage.PortConfig.ExposureInfo
+	24, // 30: storage.ContainerConfig.env:type_name -> storage.ContainerConfig.EnvironmentConfig
+	25, // 31: storage.SecurityContext.selinux:type_name -> storage.SecurityContext.SELinux
+	26, // 32: storage.SecurityContext.seccomp_profile:type_name -> storage.SecurityContext.SeccompProfile
+	28, // 33: storage.ListDeployment.created:type_name -> google.protobuf.Timestamp
+	28, // 34: storage.ListDeployment.tombstone_deleted_at:type_name -> google.protobuf.Timestamp
+	12, // 35: storage.Pod.ContainerInstanceList.instances:type_name -> storage.ContainerInstance
+	1,  // 36: storage.PortConfig.ExposureInfo.level:type_name -> storage.PortConfig.ExposureLevel
+	2,  // 37: storage.ContainerConfig.EnvironmentConfig.env_var_source:type_name -> storage.ContainerConfig.EnvironmentConfig.EnvVarSource
+	3,  // 38: storage.SecurityContext.SeccompProfile.type:type_name -> storage.SecurityContext.SeccompProfile.ProfileType
+	39, // [39:39] is the sub-list for method output_type
+	39, // [39:39] is the sub-list for method input_type
+	39, // [39:39] is the sub-list for extension type_name
+	39, // [39:39] is the sub-list for extension extendee
+	0,  // [0:39] is the sub-list for field type_name
 }
 
 func init() { file_storage_deployment_proto_init() }
@@ -2336,6 +2340,7 @@ func file_storage_deployment_proto_init() {
 	file_storage_labels_proto_init()
 	file_storage_rbac_proto_init()
 	file_storage_taints_proto_init()
+	file_storage_tombstone_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
