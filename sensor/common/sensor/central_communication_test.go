@@ -160,19 +160,6 @@ func (c *centralCommunicationSuite) Test_HelloMissingSensorHelloKey() {
 	}
 }
 
-func (c *centralCommunicationSuite) Test_CommunicateWithAutoSensedEncodingAuthError() {
-	_, closeFn := c.createCentralCommunication(false)
-	defer closeFn()
-
-	authErr := status.Error(codes.Unauthenticated, "credentials not found: init bundle is revoked")
-	c.mockService.client.EXPECT().Header().Return(nil, authErr)
-
-	_, err := CommunicateWithAutoSensedEncoding(context.Background(), c.mockService)
-
-	c.Require().Error(err)
-	c.Assert().Contains(err.Error(), "credentials may be revoked")
-}
-
 func (c *centralCommunicationSuite) Test_StopCentralCommunication() {
 	goleak.AssertNoGoroutineLeaks(c.T())
 

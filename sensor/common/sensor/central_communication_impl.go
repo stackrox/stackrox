@@ -105,9 +105,6 @@ func CommunicateWithAutoSensedEncoding(ctx context.Context, client central.Senso
 				opts = nil
 				continue
 			}
-			if st, ok := status.FromError(err); ok && st.Code() == codes.Unauthenticated {
-				return nil, errors.Wrap(err, "central rejected the connection (credentials may be revoked)")
-			}
 			return nil, errors.Wrap(err, "receiving initial metadata")
 		}
 
@@ -220,10 +217,7 @@ func (s *centralCommunicationImpl) hello(stream central.SensorService_Communicat
 	}
 
 	if metautils.MD(rawHdr).Get(centralsensor.SensorHelloMetadataKey) != "true" {
-		// Probe for the actual server-side error. When central's auth interceptor rejects
-		// the connection (e.g., due to revoked credentials), the Communicate handler never
-		// runs, so the SensorHello metadata key is never echoed back. The actual error is
-		// available via Recv().
+		// Probe for the actual server-side error.
 		if _, recvErr := stream.Recv(); recvErr != nil {
 			if st, ok := status.FromError(recvErr); ok && st.Code() == codes.Unauthenticated {
 				return errors.Errorf("central rejected the connection, possibly because"+

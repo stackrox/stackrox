@@ -215,10 +215,7 @@ func centralHandshake(ctx context.Context, k8sClient kubernetes.Interface, centr
 
 	hdr := metautils.MD(rawHdr)
 	if hdr.Get(centralsensor.SensorHelloMetadataKey) != "true" {
-		// Probe for the actual server-side error via Recv(). When central's auth
-		// interceptor rejects the connection (e.g., due to revoked credentials),
-		// the Communicate handler never runs, so the SensorHello metadata key is
-		// never echoed back.
+		// Probe for the actual server-side error via Recv()
 		if _, recvErr := stream.Recv(); recvErr != nil {
 			if st, ok := status.FromError(recvErr); ok && st.Code() == codes.Unauthenticated {
 				return nil, errors.Errorf("central rejected the connection, possibly because the cluster registration secret"+
