@@ -1,10 +1,10 @@
 package resources
 
 import (
-	"github.com/stackrox/rox/pkg/clusterlabels"
 	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/pkg/scopecomp"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/clusterlabels"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
