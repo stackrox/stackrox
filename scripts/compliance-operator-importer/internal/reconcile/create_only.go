@@ -142,7 +142,7 @@ func (r *Reconciler) Apply(
 				if !transientStatusCodes[code] {
 					// Non-transient: fail immediately, no more attempts
 					action.ActionType = "fail"
-					action.Reason = fmt.Sprintf("non-transient HTTP %d error updating scan configuration", code)
+					action.Reason = fmt.Sprintf("non-transient HTTP %d error updating scan configuration: %v", code, lastErr)
 					action.Err = lastErr
 					return action
 				}
@@ -205,7 +205,7 @@ func (r *Reconciler) Apply(
 			if !transientStatusCodes[code] {
 				// Non-transient: fail immediately, no more attempts
 				action.ActionType = "fail"
-				action.Reason = fmt.Sprintf("non-transient HTTP %d error creating scan configuration", code)
+				action.Reason = fmt.Sprintf("non-transient HTTP %d error creating scan configuration: %v", code, lastErr)
 				action.Err = lastErr
 				return action
 			}

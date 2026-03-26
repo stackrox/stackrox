@@ -79,6 +79,7 @@ func (r *Runner) RunMultiCluster(ctx context.Context, sources []ClusterSource) i
 			// Fetch the ScanSetting.
 			ss, err := source.COClient.GetScanSetting(ctx, binding.Namespace, binding.ScanSettingName)
 			if err != nil {
+				r.status.Warnf("%s → ScanSetting %q not found on cluster %s: %v", binding.Name, binding.ScanSettingName, source.Label, err)
 				collector.Add(models.Problem{
 					Severity:    models.SeverityError,
 					Category:    models.CategoryInput,
@@ -97,6 +98,7 @@ func (r *Runner) RunMultiCluster(ctx context.Context, sources []ClusterSource) i
 
 			result := mapping.MapBinding(binding, ss, &tempCfg)
 			if result.Problem != nil {
+				r.status.Warnf("%s → mapping error: %s", binding.Name, result.Problem.Description)
 				collector.Add(*result.Problem)
 				continue
 			}
@@ -157,7 +159,11 @@ func (r *Runner) RunMultiCluster(ctx context.Context, sources []ClusterSource) i
 		case "skip":
 			r.status.Detailf("%s → skipped (already exists)", merged.Name)
 		case "fail":
-			r.status.Failf("%s → %s", merged.Name, action.Reason)
+			if action.Err != nil {
+				r.status.Failf("%s → %s", merged.Name, action.Err)
+			} else {
+				r.status.Failf("%s → %s", merged.Name, action.Reason)
+			}
 		}
 
 		item := models.ReportItem{
