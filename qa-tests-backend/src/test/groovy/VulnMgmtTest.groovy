@@ -1,5 +1,6 @@
 import io.stackrox.proto.storage.Cve.VulnerabilitySeverity
 
+import org.junit.Assume
 import services.GraphQLService
 import services.ImageService
 
@@ -10,17 +11,14 @@ import spock.lang.Unroll
 @Tag("PZ")
 class VulnMgmtTest extends BaseSpecification {
     static final private String RHEL_IMAGE_DIGEST =
-            "sha256:481960439934084fb041431f27cb98b89666e1a0daaeb2078bcbe1209790368c"
+            "sha256:a3fb564e8be461d5bf8344996eb3ef6eb24a4b8c9333053fe4f3e782657591d3"
     static final private String RHEL_IMAGE =
-            "quay.io/rhacs-eng/qa:ansibleplaybookbundle-"+
-            "-gluster-s3object-apb-"+
-            "-481960439934084fb041431f27cb98b89666e1a0daaeb2078bcbe1209790368c"
+            "quay.io/rhacs-eng/qa:ubi9-9.7-1769417801-amd64"
 
     static final private String UBUNTU_IMAGE_DIGEST =
-            "sha256:74ee7a5d7a7172090162b1b5f8022b3b403b9f4ac677d325209c56483452f417"
+            "sha256:c9672795a48854502d9dc0f1b719ac36dd99259a2f8ce425904a5cb4ae0d60d2"
     static final private String UBUNTU_IMAGE =
-            "quay.io/rhacs-eng/qa:barchart-"+
-            "-dockerup--ce6c28c63fa9a043214f4cccf036990dbd2bb0e47820af015de8dfb5dc68dd9a"
+            "quay.io/rhacs-eng/qa:ubuntu-22.04-amd64"
 
     private static final EMBEDDED_IMAGE_QUERY = """
     query getImage(\$id: ID!, \$query: String) {
@@ -171,11 +169,13 @@ query getComponentId(\$imageId: ID!, \$componentQuery: String) {
     }
 
     @Unroll
-    def "Verify severities and CVSS #imageDigest #component #severity #cvss"() {
+    def "Verify severities and CVSS #cve #imageDigest #component #severity #cvss"() {
         when:
+        Assume.assumeTrue(scannerV4Enabled == v4)
+
         def gqlService = new GraphQLService()
 
-        def query="CVE:CVE-2019-13012"
+        def query = "CVE:${cve}"
 
         // Fetch the component ID dynamically since IDs now include image ID and index
         def componentID = getComponentIDForImage(gqlService, imageDigest, component)
@@ -230,10 +230,15 @@ query getComponentId(\$imageId: ID!, \$componentQuery: String) {
 
         where:
         "Data inputs are: "
-        imageDigest | component | severity | cvss
-        RHEL_IMAGE_DIGEST   | "glib2" |
-                VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY | 4.4
-        UBUNTU_IMAGE_DIGEST | "glib2.0" |
-                VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY | 7.5
+        // When v4 = true, run when Scanner V4 is enabled, otherwise run with StackRox scanner.
+        imageDigest | component | cve | severity | cvss | v4
+        RHEL_IMAGE_DIGEST   | "python3" | "CVE-2025-11468" |
+                VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY | 4.5 | false
+        RHEL_IMAGE_DIGEST   | "python3" | "CVE-2025-11468" |
+                VulnerabilitySeverity.MODERATE_VULNERABILITY_SEVERITY | 4.5 | true
+        UBUNTU_IMAGE_DIGEST | "gnupg2" | "CVE-2022-3219" |
+                VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY | 3.3 | false
+        UBUNTU_IMAGE_DIGEST | "gpgv"   | "CVE-2022-3219" |
+                VulnerabilitySeverity.LOW_VULNERABILITY_SEVERITY | 3.3 | true
     }
 }
