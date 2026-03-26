@@ -12,11 +12,16 @@ option java_package = "io.stackrox.proto.api.v1";
 // CloudSource is an integration which provides a source for discovered
 // clusters.
 message CloudSource {
+  // id is the unique identifier of the cloud source, assigned on creation.
   string id = 1;
+  // name is a human-readable label for the cloud source.
   string name = 2;
+  // Type identifies which cloud provider or manager the source connects to.
   enum Type {
     TYPE_UNSPECIFIED = 0;
+    // TYPE_PALADIN_CLOUD connects to the Paladin Cloud API for cluster discovery.
     TYPE_PALADIN_CLOUD = 1;
+    // TYPE_OCM connects to the Red Hat OpenShift Cluster Manager for cluster discovery.
     TYPE_OCM = 2;
   }
   Type type = 3;
@@ -29,8 +34,11 @@ message CloudSource {
     // Used for client authentication in combination with client_id.
     string client_secret = 3; // @gotags: scrub:"always"
   }
+  // credentials holds the authentication material for the cloud source endpoint.
   Credentials credentials = 4;
 
+  // skip_test_integration, when true, skips connectivity verification when creating
+  // or updating this cloud source.
   bool skip_test_integration = 5;
 
   oneof Config {
@@ -68,14 +76,17 @@ message CountCloudSourcesRequest {
 }
 
 message CountCloudSourcesResponse {
+  // count is the total number of cloud sources matching the request filter.
   int32 count = 1;
 }
 
 message GetCloudSourceRequest {
+  // id is the unique identifier of the cloud source to retrieve.
   string id = 1;
 }
 
 message GetCloudSourceResponse {
+  // cloud_source is the requested cloud source configuration.
   CloudSource cloud_source = 1;
 }
 
@@ -88,18 +99,24 @@ message ListCloudSourcesRequest {
 }
 
 message ListCloudSourcesResponse {
+  // cloud_sources contains the matching cloud source configurations, sorted by
+  // name in ascending order.
   repeated CloudSource cloud_sources = 1;
 }
 
 message CreateCloudSourceRequest {
+  // cloud_source contains the configuration for the new cloud source.
+  // The id field must be empty.
   CloudSource cloud_source = 1;
 }
 
 message CreateCloudSourceResponse {
+  // cloud_source is the created cloud source with its assigned id.
   CloudSource cloud_source = 1;
 }
 
 message UpdateCloudSourceRequest {
+  // cloud_source contains the updated configuration. The id field must be set.
   CloudSource cloud_source = 1;
   // If true, cloud_source must include valid credentials.
   // If false, the resource must already exist and
@@ -108,10 +125,12 @@ message UpdateCloudSourceRequest {
 }
 
 message DeleteCloudSourceRequest {
+  // id is the unique identifier of the cloud source to delete.
   string id = 1;
 }
 
 message TestCloudSourceRequest {
+  // cloud_source contains the configuration to test.
   CloudSource cloud_source = 1;
   // If true, cloud_source must include valid credentials.
   // If false, the resource must already exist and
@@ -119,23 +138,50 @@ message TestCloudSourceRequest {
   bool update_credentials = 2;
 }
 
+// CloudSourcesService manages cloud source integrations that provide cluster
+// discovery from external cloud providers and managers (Paladin Cloud, OCM).
+//
+// Cloud sources are periodically polled by Central to discover clusters that
+// are not yet secured by StackRox. When a cloud source is created or updated,
+// Central short-circuits its polling loop to apply the latest configuration
+// immediately.
+//
+// Credentials are reconciled using the update_credentials flag: when false,
+// the existing stored credentials are used and credential fields in the
+// request are ignored.
+//
+// Authentication: read operations require the Integration resource with View
+// access. Write and test operations require the Integration resource with
+// Modify access.
 service CloudSourcesService {
-  // CountCloudSources returns the number of cloud sources after filtering by requested fields.
+  // CountCloudSources returns the number of cloud sources matching the given
+  // filter. Supports filtering by name or type.
   rpc CountCloudSources(CountCloudSourcesRequest) returns (CountCloudSourcesResponse) {
     option (google.api.http) = {get: "/v1/count/cloud-sources"};
   }
 
-  // GetCloudSource retrieves a cloud source by ID.
+  // GetCloudSource retrieves a single cloud source by ID.
+  //
+  // Returns NOT_FOUND if no cloud source with the given ID exists.
+  // Returns INVALID_ARGUMENT if the ID is empty.
   rpc GetCloudSource(GetCloudSourceRequest) returns (GetCloudSourceResponse) {
     option (google.api.http) = {get: "/v1/cloud-sources/{id}"};
   }
 
-  // ListCloudSources returns the list of cloud sources after filtered by requested fields.
+  // ListCloudSources returns all cloud sources matching the given filter,
+  // sorted by name. Supports pagination via the pagination field (max 1000
+  // results per page).
   rpc ListCloudSources(ListCloudSourcesRequest) returns (ListCloudSourcesResponse) {
     option (google.api.http) = {get: "/v1/cloud-sources"};
   }
 
-  // CreateCloudSource creates a cloud source.
+  // CreateCloudSource creates a new cloud source.
+  //
+  // The cloud_source.id field must be empty. Unless skip_test_integration is
+  // true, the cloud source is tested for connectivity before being persisted.
+  //
+  // Returns INVALID_ARGUMENT if id is set, if the cloud source is empty, or
+  // if the connectivity test fails.
   rpc CreateCloudSource(CreateCloudSourceRequest) returns (CreateCloudSourceResponse) {
     option (google.api.http) = {
       post: "/v1/cloud-sources"
@@ -143,7 +189,15 @@ service CloudSourcesService {
     };
   }
 
-  // UpdateCloudSource creates or replaces a cloud source.
+  // UpdateCloudSource replaces an existing cloud source configuration.
+  //
+  // When update_credentials is false, credentials in the request are ignored
+  // and the stored credentials are used instead (the resource must already
+  // exist). Unless skip_test_integration is true, connectivity is verified
+  // before the update is persisted.
+  //
+  // Returns INVALID_ARGUMENT if the cloud source is empty, if credential
+  // reconciliation fails, or if the connectivity test fails.
   rpc UpdateCloudSource(UpdateCloudSourceRequest) returns (Empty) {
     option (google.api.http) = {
       put: "/v1/cloud-sources/{cloud_source.id}"
@@ -151,12 +205,22 @@ service CloudSourcesService {
     };
   }
 
-  // DeleteCloudSource removes a cloud source.
+  // DeleteCloudSource removes the cloud source with the given ID.
+  //
+  // Returns INVALID_ARGUMENT if the ID is empty.
   rpc DeleteCloudSource(DeleteCloudSourceRequest) returns (Empty) {
     option (google.api.http) = {delete: "/v1/cloud-sources/{id}"};
   }
 
-  // TestCloudSource tests a cloud source.
+  // TestCloudSource verifies connectivity for the given cloud source
+  // configuration using a short timeout (8 seconds) and no retries.
+  //
+  // When update_credentials is false, the stored credentials for the existing
+  // cloud source are used. When update_credentials is true, the credentials in
+  // the request are used directly.
+  //
+  // Returns INVALID_ARGUMENT if the cloud source is empty, if credential
+  // reconciliation fails, or if the connectivity test fails.
   rpc TestCloudSource(TestCloudSourceRequest) returns (Empty) {
     option (google.api.http) = {
       post: "/v1/cloud-sources/test"

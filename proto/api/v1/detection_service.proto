@@ -9,14 +9,25 @@ import "storage/deployment.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// BuildDetectionRequest is the request message for DetectBuildTime.
 message BuildDetectionRequest {
   oneof Resource {
+    // image is a fully-populated container image object to check.
     storage.ContainerImage image = 1;
+    // image_name is a container image reference string (e.g. "nginx:latest").
+    // Used when the full image object is not available. Mutually exclusive with image.
     string image_name = 3;
   }
+  // no_external_metadata disables fetching vulnerability and metadata from external registries
+  // and scanners. Detection runs against previously cached data only. Mutually exclusive with force.
   bool no_external_metadata = 2;
+  // send_notifications triggers configured notification integrations for each generated alert.
   bool send_notifications = 4;
+  // force forces re-fetching image metadata from external sources even if cached data exists.
+  // Mutually exclusive with no_external_metadata.
   bool force = 6;
+  // policy_categories restricts detection to policies belonging to the specified categories.
+  // Returns INVALID_ARGUMENT if any category does not match any existing policy category.
   repeated string policy_categories = 5;
   // Cluster to delegate scan to, may be the cluster's name or ID.
   string cluster = 7;
@@ -26,58 +37,109 @@ message BuildDetectionRequest {
   string namespace = 8;
 }
 
+// BuildDetectionResponse is the response message for DetectBuildTime.
 message BuildDetectionResponse {
+  // alerts contains all policy violations found for the given image.
   repeated storage.Alert alerts = 1;
 }
 
+// DeployDetectionRequest is the request message for DetectDeployTime.
 message DeployDetectionRequest {
   oneof Resource {
+    // deployment is the deployment object to evaluate against deploy-time policies.
     storage.Deployment deployment = 1;
   }
+  // no_external_metadata disables fetching external image metadata. Detection runs on cached data only.
   bool no_external_metadata = 2;
+  // enforcement_only limits detection to policies that have deploy-time enforcement actions configured
+  // (scale-to-zero or unsatisfiable node constraint). When no enforcement policies exist, returns empty results.
   bool enforcement_only = 3;
+  // cluster_id is the ID of the cluster the deployment belongs to. Used to resolve cluster name
+  // and scope label-based policy matching.
   string cluster_id = 4;
 }
 
+// DeployYAMLDetectionRequest is the request message for DetectDeployTimeFromYAML.
 message DeployYAMLDetectionRequest {
+  // yaml contains one or more Kubernetes workload manifests in YAML format (multi-document YAML is supported).
   string yaml = 1;
+  // no_external_metadata disables fetching external image metadata. Detection runs on cached data only.
   bool no_external_metadata = 2;
+  // enforcement_only limits detection to policies that have deploy-time enforcement actions configured.
   bool enforcement_only = 3;
+  // force forces re-fetching image metadata from external sources even if cached data exists.
+  // Mutually exclusive with no_external_metadata.
   bool force = 5;
+  // policy_categories restricts detection to policies belonging to the specified categories.
+  // Returns INVALID_ARGUMENT if any category does not match any existing policy category.
   repeated string policy_categories = 4;
   // Cluster to delegate scan to, may be the cluster's name or ID.
   string cluster = 6;
+  // namespace is the Kubernetes namespace used as context when resolving pull secrets for delegated scans.
+  // Defaults to "default" if not specified.
   string namespace = 7;
 }
 
+// DeployDetectionResponse is the response message for DetectDeployTime and DetectDeployTimeFromYAML.
 message DeployDetectionResponse {
+  // Run holds detection results for a single workload resource.
   message Run {
+    // name is the Kubernetes resource name of the workload.
     string name = 1;
+    // type is the Kubernetes resource kind (e.g. "Deployment", "DaemonSet").
     string type = 2;
+    // alerts contains all policy violations found for this workload.
     repeated storage.Alert alerts = 3;
   }
 
+  // runs contains one entry per workload resource evaluated.
   repeated Run runs = 1;
   // The reference will be in the format: namespace/name[<group>/<version>, Kind=<kind>].
+  // ignored_object_refs lists YAML resources that were skipped because their schema is not registered
+  // (e.g. custom resources). Each entry uses the format: namespace/name[group/version, Kind=kind].
   repeated string ignored_object_refs = 2;
+  // remarks contains per-deployment contextual information such as permission level and applied
+  // network policies. Only populated when a cluster is specified in the request.
   repeated DeployDetectionRemark remarks = 3;
 }
 
+// DeployDetectionRemark contains contextual Kubernetes information for a single deployment,
+// enriched from the target cluster when a cluster is specified in the request.
 message DeployDetectionRemark {
+  // name is the Kubernetes resource name of the deployment.
   string name = 1;
+  // permission_level is the service account permission level for the deployment
+  // (e.g. "CLUSTER_ADMIN", "ELEVATED_IN_NAMESPACE").
   string permission_level = 2;
+  // applied_network_policies lists the names of Kubernetes NetworkPolicy objects
+  // that apply to this deployment in its namespace.
   repeated string applied_network_policies = 3;
 }
 
+// ResultAggregation is a helper message for the roxctl JSON report.
+// jsonpb can only serialize protobuf messages, so this wraps alerts and remarks together.
 // This is a helper message for the roxctl JSON report, as jsonpb can only serialize protobuf messages
 message ResultAggregation {
   repeated storage.Alert alerts = 1;
   repeated DeployDetectionRemark remarks = 2;
 }
 
-// DetectionService APIs can be used to check for build and deploy time policy violations.
+// DetectionService evaluates images and deployments against build-time and deploy-time security policies.
+//
+// Build-time detection checks a container image against policies that apply during the CI/CD pipeline.
+// Deploy-time detection checks Kubernetes workload manifests against policies that apply at deployment.
+//
+// DetectBuildTime and DetectDeployTimeFromYAML require read access to the Detection resource.
+// DetectDeployTime requires modify access to the Detection resource (also callable by Sensor).
 service DetectionService {
-  // DetectBuildTime checks if any images violate build time policies.
+  // DetectBuildTime checks a container image against all active build-time policies.
+  //
+  // The image can be specified as a full storage.ContainerImage object or as an image name string.
+  // If a cluster is specified, the image scan is delegated to that cluster's scanner using the
+  // cluster's pull secrets to access private registries.
+  //
+  // Returns INVALID_ARGUMENT if neither image nor image_name is specified, if force and
+  // no_external_metadata are both set, or if a specified policy_category does not match any policy.
   rpc DetectBuildTime(BuildDetectionRequest) returns (BuildDetectionResponse) {
     option (google.api.http) = {
       post: "/v1/detect/build"
@@ -85,7 +147,13 @@ service DetectionService {
     };
   }
 
-  // DetectDeployTime checks if any deployments violate deploy time policies.
+  // DetectDeployTime checks a single deployment object against all active deploy-time policies.
+  //
+  // Enriches the deployment's container images with vulnerability data before running detection.
+  // When enforcement_only is true, only evaluates policies with deploy-time enforcement actions
+  // (scale-to-zero or unsatisfiable node constraint); returns empty results if no such policies exist.
+  //
+  // Returns INVALID_ARGUMENT if the deployment is nil or if the specified cluster_id does not exist.
   rpc DetectDeployTime(DeployDetectionRequest) returns (DeployDetectionResponse) {
     option (google.api.http) = {
       post: "/v1/detect/deploy"
@@ -93,7 +161,16 @@ service DetectionService {
     };
   }
 
-  // DetectDeployTimeFromYAML checks if the given deployment yaml violates any deploy time policies.
+  // DetectDeployTimeFromYAML checks Kubernetes workload manifests in YAML format against deploy-time policies.
+  //
+  // Parses one or more Kubernetes resource manifests from the yaml field (multi-document YAML supported).
+  // Non-deployment resources (e.g. ConfigMaps) and unrecognized resource types are skipped and reported
+  // in ignored_object_refs. When a cluster is specified, enriches deployments with live cluster data
+  // (service account permissions, applied network policies) via the connected Sensor.
+  //
+  // Returns INVALID_ARGUMENT if the yaml field is empty, if the YAML cannot be parsed, or if every
+  // deployment in the YAML fails to parse. Returns INVALID_ARGUMENT if the specified cluster is not found
+  // or its Sensor connection is not ready.
   rpc DetectDeployTimeFromYAML(DeployYAMLDetectionRequest) returns (DeployDetectionResponse) {
     option (google.api.http) = {
       post: "/v1/detect/deploy/yaml"

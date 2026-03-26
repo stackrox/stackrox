@@ -12,138 +12,276 @@ import "storage/policy.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// DryRunResponse contains the results of evaluating a policy against current
+// deployments without persisting or enforcing the policy.
 message DryRunResponse {
+  // Alert represents a single deployment that would violate the policy.
   message Alert {
+    // deployment is the name of the deployment that would violate the policy.
     string deployment = 1;
+    // violations is the list of human-readable violation messages for this deployment.
     repeated string violations = 2;
   }
+  // alerts lists each deployment that would violate the policy, along with
+  // the specific violation messages for each.
   repeated Alert alerts = 1;
 }
 
+// JobId identifies an asynchronous dry-run job.
 message JobId {
+  // job_id is the opaque identifier returned by SubmitDryRunPolicyJob.
   string job_id = 1;
 }
 
+// DryRunJobStatusResponse reports the current state of an async dry-run job.
 message DryRunJobStatusResponse {
+  // pending is true if the job is still running and result is not yet available.
   bool pending = 1;
+  // result is populated once pending is false and contains the dry-run output.
   DryRunResponse result = 2;
 }
 
+// PolicyCategoriesResponse holds the distinct set of policy categories in use.
 message PolicyCategoriesResponse {
+  // categories is the sorted list of all category names assigned to at least one policy.
   repeated string categories = 1;
 }
 
+// EnableDisablePolicyNotificationRequest enables or disables specific notifiers on a policy.
 message EnableDisablePolicyNotificationRequest {
+  // policy_id is the UUID of the policy to update.
   string policy_id = 1;
+  // notifier_ids is the list of notifier UUIDs to enable or disable.
   repeated string notifier_ids = 2;
+  // disable controls the direction: if true, the specified notifiers are removed
+  // from the policy; if false, they are added.
   bool disable = 3;
 }
 
+// ListPoliciesResponse contains a lightweight summary of each matching policy.
 message ListPoliciesResponse {
+  // policies is the list of matching policies in ListPolicy (summary) form.
   repeated storage.ListPolicy policies = 1;
 }
 
+// PostPolicyRequest carries the policy to create and optional validation settings.
 message PostPolicyRequest {
+  // policy is the full policy definition to create. The id field must be empty;
+  // Central assigns the ID on creation and returns the populated policy.
   storage.Policy policy = 1;
+  // enable_strict_validation enables additional validation rules, such as
+  // restrictions on environment variable source values. Use this when
+  // importing policies from external sources to ensure stricter correctness.
   bool enable_strict_validation = 2;
 }
 
+// PatchPolicyRequest is used to make partial updates to a policy, currently
+// limited to toggling the enabled/disabled state.
 message PatchPolicyRequest {
+  // id is the UUID of the policy to patch.
   string id = 1;
   oneof set_disabled {
+    // disabled sets whether the policy is enabled (false) or disabled (true).
+    // When disabled, the policy does not fire alerts or enforce actions.
     bool disabled = 2;
   }
 }
 
+// ExportPoliciesRequest selects a set of policies to export by ID.
 message ExportPoliciesRequest {
+  // policy_ids is the list of UUIDs of the policies to export.
+  // All IDs must exist; if any are missing the request returns INVALID_ARGUMENT.
   repeated string policy_ids = 1;
 }
 
+// PolicyError carries a human-readable error message for a single policy operation.
 message PolicyError {
+  // error is the human-readable description of what went wrong.
   string error = 1;
 }
 
+// PolicyOperationError associates a policy ID with the error that occurred
+// when operating on that policy.
 message PolicyOperationError {
+  // policy_id is the UUID of the policy that caused the error.
   string policy_id = 1;
+  // error describes what went wrong for this policy.
   PolicyError error = 2;
 }
 
+// PolicyOperationErrorList is a collection of per-policy errors, used as gRPC
+// status detail when a batch operation partially fails.
 message PolicyOperationErrorList {
   repeated PolicyOperationError errors = 1;
 }
 
+// PolicyFromSearchRequest converts a StackRox search query string into a draft policy.
 message PolicyFromSearchRequest {
+  // search_params is a StackRox search query string
+  // (e.g. "Image Registry:docker.io+CVE:CVE-2021-44228").
+  // Search terms that cannot be represented as policy criteria are reported
+  // in the response's altered_search_terms field.
   string search_params = 1;
 }
 
+// ImportPoliciesMetadata controls how conflicts are resolved during import.
 message ImportPoliciesMetadata {
+  // overwrite controls conflict resolution: if true, an imported policy whose
+  // name or ID already exists in Central will replace the existing policy.
+  // If false, a conflict causes that policy's import to fail.
   bool overwrite = 1;
 }
 
+// ImportPoliciesRequest submits one or more policies for import into Central.
 message ImportPoliciesRequest {
+  // metadata controls import behavior such as overwrite semantics.
   ImportPoliciesMetadata metadata = 1;
+  // policies is the list of policy definitions to import.
   repeated storage.Policy policies = 2;
 }
 
+// ImportPolicyError describes why a single policy failed to import.
 message ImportPolicyError {
+  // message is a human-readable summary of the error.
   string message = 1;
+  // type is a machine-readable error category (e.g. "duplicate_name", "validation_error").
   string type = 2;
   oneof metadata {
+    // duplicate_name is set when the import failed because a policy with
+    // the same name already exists and overwrite was not requested.
     string duplicate_name = 3;
+    // validation_error is set when the policy failed schema or semantic validation.
     string validation_error = 4;
   }
 }
 
+// ImportPolicyResponse reports the outcome for a single policy in an import batch.
 message ImportPolicyResponse {
+  // succeeded is true when the policy was imported without errors.
   bool succeeded = 1;
+  // policy is the policy as it was processed (post-validation, with internal
+  // fields stripped). Returned whether or not the import succeeded.
   storage.Policy policy = 2;
+  // errors lists all errors encountered for this policy. Non-empty only when
+  // succeeded is false.
   repeated ImportPolicyError errors = 3;
 }
 
+// ImportPoliciesResponse reports the overall outcome of an import batch.
 message ImportPoliciesResponse {
+  // responses contains one entry per submitted policy, in the same order.
   repeated ImportPolicyResponse responses = 1;
+  // all_succeeded is true only when every policy in the batch was imported
+  // successfully. Use this as a quick summary check.
   bool all_succeeded = 2;
 }
 
+// PolicyFromSearchResponse contains a draft policy built from a search query,
+// along with metadata about search terms that could not be converted.
 message PolicyFromSearchResponse {
+  // policy is the draft policy generated from the search parameters.
+  // It is not persisted; use PostPolicy to save it.
   storage.Policy policy = 1;
+  // altered_search_terms lists search field names that were dropped or
+  // partially converted because they have no direct policy criteria equivalent.
   repeated string altered_search_terms = 2;
+  // has_nested_fields indicates whether any generated policy criteria use
+  // nested field evaluation, which may affect how violations are detected.
   bool has_nested_fields = 3;
 }
 
+// GetPolicyMitreVectorsRequest identifies a policy and controls whether to
+// include the full policy object in the response.
 message GetPolicyMitreVectorsRequest {
   message Options {
     // If set to true, policy is excluded from the response.
     bool exclude_policy = 1;
   }
 
+  // id is the UUID of the policy whose MITRE ATT&CK vectors to retrieve.
   string id = 1;
+  // options controls which fields appear in the response.
   Options options = 2;
 }
 
+// GetPolicyMitreVectorsResponse returns a policy and its expanded MITRE ATT&CK vectors.
 message GetPolicyMitreVectorsResponse {
+  // policy is the full policy object. Omitted if options.exclude_policy is true.
   storage.Policy policy = 1;
+  // vectors is the list of MITRE ATT&CK tactic/technique pairs associated with
+  // the policy, expanded from the policy's mitre_attack_vectors field using the
+  // MITRE ATT&CK knowledge base.
   repeated storage.MitreAttackVector vectors = 2;
 }
 
-// PolicyService APIs can be used to manage policies.
+// PolicyService manages security policies that define violation criteria and
+// enforcement actions for workloads running in monitored clusters.
+//
+// Policies are evaluated against deployments at one or more lifecycle stages
+// (BUILD, DEPLOY, RUNTIME). When a deployment violates an active policy,
+// Central creates an alert and optionally enforces the policy (e.g. scaling
+// the deployment to zero or blocking the Kubernetes admission request).
+//
+// Key concepts:
+//   - Dry-run: evaluate a policy against current deployments without saving or
+//     enforcing it. Runtime-stage policies are excluded from dry-run results
+//     because they are detected through the process event pipeline, not the
+//     deployment snapshot evaluated here.
+//   - Enable/disable: a disabled policy is stored but does not fire alerts or
+//     trigger enforcement. Default policies (is_default=true) can be disabled
+//     but not deleted.
+//   - Import/export: policies can be exported as JSON and imported into another
+//     Central instance. Internal sort fields are stripped on export. On import,
+//     conflicts can be resolved by setting overwrite=true in the metadata.
+//   - PolicyFromSearch: converts a StackRox alert search query into a draft
+//     policy for use as a starting point; the draft is not persisted.
+//
+// Authentication: read operations require View permission on WorkflowAdministration.
+// Write operations (create, update, delete, import, dry-run) require Modify
+// permission on WorkflowAdministration.
 service PolicyService {
-  // GetPolicy returns the requested policy by ID.
+  // GetPolicy returns the full policy definition for the given ID.
+  //
+  // Returns INVALID_ARGUMENT if the ID is empty.
+  // Returns NOT_FOUND if no policy with that ID exists.
   rpc GetPolicy(ResourceByID) returns (storage.Policy) {
     option (google.api.http) = {get: "/v1/policies/{id}"};
   }
 
-  // GetMitreVectorsForPolicy returns the requested policy by ID.
+  // GetPolicyMitreVectors returns the MITRE ATT&CK tactic and technique vectors
+  // associated with the policy identified by the given ID.
+  //
+  // The vectors are expanded from the policy's stored mitre_attack_vectors using
+  // the MITRE ATT&CK knowledge base. Set options.exclude_policy to omit the
+  // full policy object from the response and return only the vectors.
+  //
+  // Returns NOT_FOUND if no policy with that ID exists.
   rpc GetPolicyMitreVectors(GetPolicyMitreVectorsRequest) returns (GetPolicyMitreVectorsResponse) {
     option (google.api.http) = {get: "/v1/policies/{id}/mitrevectors"};
   }
 
-  // ListPolicies returns the list of policies.
+  // ListPolicies returns a paginated, filterable summary list of policies.
+  //
+  // Accepts a StackRox search query (e.g. "Severity:HIGH+Disabled:false").
+  // Returns up to 1000 policies per request. Results include summary fields
+  // only (id, name, description, severity, disabled, lifecycle_stages, etc.);
+  // use GetPolicy to retrieve the full policy definition including criteria.
+  //
+  // Returns INVALID_ARGUMENT if the query syntax is malformed.
   rpc ListPolicies(RawQuery) returns (ListPoliciesResponse) {
     option (google.api.http) = {get: "/v1/policies"};
   }
 
-  // PostPolicy creates a new policy.
+  // PostPolicy creates a new policy and activates it immediately.
+  //
+  // The policy.id field must be empty; Central assigns a UUID on creation and
+  // returns the full policy with the assigned ID. After creation the policy is
+  // added to the active detection engine and synced to all connected Sensors.
+  //
+  // Set enable_strict_validation to apply additional validation rules (e.g.
+  // restrictions on environment variable source values) beyond the defaults.
+  //
+  // Returns INVALID_ARGUMENT if the policy definition is invalid or if id is non-empty.
   rpc PostPolicy(PostPolicyRequest) returns (storage.Policy) {
     option (google.api.http) = {
       post: "/v1/policies"
@@ -151,7 +289,14 @@ service PolicyService {
     };
   }
 
-  // PutPolicy modifies an existing policy.
+  // PutPolicy replaces an existing policy with the supplied definition.
+  //
+  // The full policy object must be supplied, including all fields that should
+  // be retained. Unlike PatchPolicy, this is not a partial update. After the
+  // update the policy is re-added to the detection engine and synced to Sensors.
+  //
+  // Returns INVALID_ARGUMENT if the policy definition is invalid.
+  // Returns NOT_FOUND if no policy with the given ID exists.
   rpc PutPolicy(storage.Policy) returns (Empty) {
     option (google.api.http) = {
       put: "/v1/policies/{id}"
@@ -159,7 +304,16 @@ service PolicyService {
     };
   }
 
-  // PatchPolicy edits an existing policy.
+  // PatchPolicy applies a partial update to an existing policy.
+  //
+  // Currently supports toggling the disabled state only. To enable a policy,
+  // set disabled=false; to disable it, set disabled=true. A disabled policy
+  // remains stored but does not fire alerts or enforce actions.
+  //
+  // Internally calls PutPolicy after applying the patch, so the full
+  // policy re-sync with Sensors is triggered.
+  //
+  // Returns NOT_FOUND if no policy with the given ID exists.
   rpc PatchPolicy(PatchPolicyRequest) returns (Empty) {
     option (google.api.http) = {
       patch: "/v1/policies/{id}"
@@ -167,12 +321,27 @@ service PolicyService {
     };
   }
 
-  // DeletePolicy removes a policy by ID.
+  // DeletePolicy permanently removes a custom policy by ID.
+  //
+  // Default policies (is_default=true) cannot be deleted; use PatchPolicy to
+  // disable them instead. Deleting an already-absent policy is idempotent and
+  // returns success. After deletion the policy is removed from the detection
+  // engine and the change is synced to all connected Sensors.
+  //
+  // Returns INVALID_ARGUMENT if the ID is empty or if the policy is a default policy.
   rpc DeletePolicy(ResourceByID) returns (Empty) {
     option (google.api.http) = {delete: "/v1/policies/{id}"};
   }
 
-  // EnableDisablePolicyNotification enables or disables notifications for a policy by ID.
+  // EnableDisablePolicyNotification adds or removes notifiers from a policy.
+  //
+  // When disable=false, the listed notifier IDs are added to the policy's
+  // notifier list. Notifiers that are already present are silently skipped.
+  // When disable=true, the listed notifier IDs are removed from the policy's
+  // notifier list. IDs not currently attached are silently skipped.
+  //
+  // Returns INVALID_ARGUMENT if policy_id or notifier_ids are empty (for enable).
+  // Returns NOT_FOUND if the policy does not exist.
   rpc EnableDisablePolicyNotification(EnableDisablePolicyNotificationRequest) returns (Empty) {
     option (google.api.http) = {
       patch: "/v1/policies/{policy_id}/notifiers"
@@ -180,12 +349,31 @@ service PolicyService {
     };
   }
 
-  // ReassessPolicies reevaluates all the policies.
+  // ReassessPolicies triggers immediate re-enrichment of all deployments and
+  // re-evaluation of all active policies against the updated data.
+  //
+  // This invalidates cached image scan metadata and signals the reprocessor
+  // loop to run immediately rather than waiting for the next scheduled cycle.
+  // Use this after updating integrations or policies to force timely re-detection.
   rpc ReassessPolicies(Empty) returns (Empty) {
     option (google.api.http) = {post: "/v1/policies/reassess"};
   }
 
-  // DryRunPolicy evaluates the given policy and returns any alerts without creating the policy.
+  // DryRunPolicy evaluates a policy against all current deployments and returns
+  // the list of would-be violations, without saving or enforcing the policy.
+  //
+  // Only DEPLOY and BUILD lifecycle stages are evaluated; RUNTIME policies are
+  // excluded because runtime detection runs through the process event pipeline,
+  // not the deployment snapshot. Up to 8 deployments are evaluated in parallel.
+  //
+  // The returned alerts list each deployment name and the associated violation
+  // messages. No alerts are created, no enforcement actions are taken, and the
+  // policy is not persisted.
+  //
+  // For large environments, prefer the async SubmitDryRunPolicyJob / QueryDryRunJobStatus
+  // workflow to avoid request timeouts.
+  //
+  // Returns INVALID_ARGUMENT if the policy definition fails validation.
   rpc DryRunPolicy(storage.Policy) returns (DryRunResponse) {
     option (google.api.http) = {
       post: "/v1/policies/dryrun"
@@ -193,6 +381,14 @@ service PolicyService {
     };
   }
 
+  // SubmitDryRunPolicyJob enqueues an asynchronous dry-run evaluation job and
+  // returns a job ID that can be polled with QueryDryRunJobStatus.
+  //
+  // Use this for large environments where a synchronous DryRunPolicy call may
+  // time out. The job is scoped to the submitting user; other users cannot
+  // query or cancel it.
+  //
+  // Returns INVALID_ARGUMENT if the policy definition fails validation.
   rpc SubmitDryRunPolicyJob(storage.Policy) returns (JobId) {
     option (google.api.http) = {
       post: "/v1/policies/dryrunjob"
@@ -200,20 +396,42 @@ service PolicyService {
     };
   }
 
+  // QueryDryRunJobStatus returns the current status of an asynchronous dry-run job.
+  //
+  // While the job is running, pending=true and result is not set. Once complete,
+  // pending=false and result contains the dry-run output.
+  //
+  // Only the user who submitted the job can query its status.
+  //
+  // Returns NOT_FOUND (via the job manager) if the job ID is unknown.
   rpc QueryDryRunJobStatus(JobId) returns (DryRunJobStatusResponse) {
     option (google.api.http) = {get: "/v1/policies/dryrunjob/{job_id}"};
   }
 
+  // CancelDryRunJob cancels a running asynchronous dry-run job.
+  //
+  // Only the user who submitted the job can cancel it.
+  //
+  // Returns INVALID_ARGUMENT if the job ID is unknown or the job cannot be cancelled.
   rpc CancelDryRunJob(JobId) returns (Empty) {
     option (google.api.http) = {delete: "/v1/policies/dryrunjob/{job_id}"};
   }
 
-  // GetPolicyCategories returns the policy categories.
+  // GetPolicyCategories returns the sorted list of all distinct category names
+  // currently assigned to at least one policy in Central.
   rpc GetPolicyCategories(Empty) returns (PolicyCategoriesResponse) {
     option (google.api.http) = {get: "/v1/policyCategories"};
   }
 
-  // ExportPolicies takes a list of policy IDs and returns either the entire list of policies or an error message
+  // ExportPolicies serializes the requested policies for transfer to another
+  // Central instance via ImportPolicies.
+  //
+  // Internal sort fields (SORT_name, SORT_lifecycleStage, SORT_enforcement) are
+  // stripped from exported policies. All supplied IDs must refer to existing
+  // policies; if any ID is missing the entire request fails.
+  //
+  // Returns INVALID_ARGUMENT with error details (PolicyOperationErrorList) if
+  // any of the requested policy IDs cannot be found.
   rpc ExportPolicies(ExportPoliciesRequest) returns (storage.ExportPoliciesResponse) {
     option (google.api.http) = {
       post: "/v1/policies/export"
@@ -221,6 +439,15 @@ service PolicyService {
     };
   }
 
+  // PolicyFromSearch converts a StackRox search query string into a draft policy
+  // definition that can be reviewed and then saved with PostPolicy.
+  //
+  // Search terms that have no direct policy criteria equivalent (e.g. free-text
+  // fields) are listed in the response's altered_search_terms. Cluster, namespace,
+  // and deployment-label search terms are converted to policy scopes rather than
+  // policy criteria. The resulting policy is not persisted.
+  //
+  // Returns INVALID_ARGUMENT if the search string is empty or cannot be parsed.
   rpc PolicyFromSearch(PolicyFromSearchRequest) returns (PolicyFromSearchResponse) {
     option (google.api.http) = {
       post: "/v1/policies/from-search"
@@ -228,7 +455,21 @@ service PolicyService {
     };
   }
 
-  // ImportPolicies accepts a list of Policies and returns a list of the policies which could not be imported
+  // ImportPolicies imports a batch of policies exported from another Central instance.
+  //
+  // Each policy is validated independently. Valid policies are upserted; invalid
+  // ones are reported in the per-policy errors without affecting the rest of the
+  // batch. When metadata.overwrite=true, an existing policy with the same name or
+  // ID is replaced; otherwise a conflict causes that policy's import to fail with
+  // a duplicate_name error.
+  //
+  // After a successful import, each imported policy is added to the detection engine
+  // and synced to all connected Sensors. Internal sort fields are stripped from
+  // returned policies.
+  //
+  // The response includes one ImportPolicyResponse per submitted policy plus the
+  // all_succeeded summary flag. A partial failure does not return a gRPC error;
+  // inspect each response's succeeded field and errors list instead.
   rpc ImportPolicies(ImportPoliciesRequest) returns (ImportPoliciesResponse) {
     option (google.api.http) = {
       post: "/v1/policies/import"

@@ -12,52 +12,81 @@ option java_package = "io.stackrox.proto.api.v2";
 
 // ComplianceScanStatsShim models statistics of checks for a given scan configuration
 message ComplianceScanStatsShim {
+  // scan_name is the name of the scan configuration these stats are for.
   string scan_name = 1;
+  // check_stats lists the count of checks by status (PASS, FAIL, ERROR, etc.).
   repeated ComplianceCheckStatusCount check_stats = 2;
+  // last_scan is when the most recent scan for this configuration completed.
   google.protobuf.Timestamp last_scan = 3;
+  // scan_config_id is the ID of the scan configuration.
   string scan_config_id = 4;
 }
 
 // ComplianceProfileScanStats provides scan stats overview based on profile
 message ComplianceProfileScanStats {
+  // check_stats lists the count of checks by status (PASS, FAIL, ERROR, etc.) for this profile.
   repeated ComplianceCheckStatusCount check_stats = 1;
+  // profile_name is the name of the compliance profile these stats are for.
   string profile_name = 2;
+  // title is the human-readable display name of the profile.
   string title = 3;
+  // version is the version string of the profile (e.g. "1.4.0").
   string version = 4;
+  // benchmarks lists the compliance frameworks (e.g. CIS, NIST) this profile maps to.
   repeated ComplianceBenchmark benchmarks = 5;
 }
 
 // ComplianceClusterScanStats provides scan stats overview based on cluster
 message ComplianceClusterScanStats {
+  // scan_stats contains the check status counts and scan metadata for this cluster/scan pair.
   ComplianceScanStatsShim scan_stats = 1;
+  // cluster identifies the cluster these stats are for.
   ComplianceScanCluster cluster = 2;
 }
 
+// ComplianceScanClusterRequest filters stats to a specific cluster with an optional query.
 message ComplianceScanClusterRequest {
+  // cluster_id is required; the cluster to retrieve stats for.
   string cluster_id = 1;
+  // query further filters results using StackRox search syntax. Supports pagination.
   RawQuery query = 2;
 }
 
 // ListComplianceProfileScanStatsResponse provides stats for the profiles within the scans
 message ListComplianceProfileScanStatsResponse {
+  // scan_stats lists per-profile check status counts.
   repeated ComplianceProfileScanStats scan_stats = 1;
+  // total_count is the total number of distinct profiles matching the query, before pagination.
   int32 total_count = 2;
 }
 
 // ListComplianceClusterProfileStatsResponse provides stats for the profiles within the scans
 message ListComplianceClusterProfileStatsResponse {
+  // scan_stats lists per-profile check status counts for the requested cluster.
   repeated ComplianceProfileScanStats scan_stats = 1;
+  // cluster_id identifies the cluster these stats are scoped to.
   string cluster_id = 2;
+  // cluster_name is the human-readable name of the cluster.
   string cluster_name = 3;
+  // total_count is the total number of distinct profiles matching the query, before pagination.
   int32 total_count = 4;
 }
 
 // ListComplianceClusterScanStatsResponse provides stats for the clusters within the scans
 message ListComplianceClusterScanStatsResponse {
+  // scan_stats lists per-scan-configuration check status counts for the requested cluster.
   repeated ComplianceClusterScanStats scan_stats = 1;
+  // total_count is the total number of scan configurations matching the query, before pagination.
   int32 total_count = 2;
 }
 
+// ComplianceResultsStatsService provides aggregated statistics over compliance scan results.
+//
+// This service answers questions like "how many checks pass/fail per profile?" or
+// "what is the overall compliance posture of a cluster?" without returning individual
+// check result details. Statistics are grouped by profile, cluster, or check name.
+//
+// Authentication: all endpoints require View access to both the Compliance and Cluster resources.
 service ComplianceResultsStatsService {
   // GetComplianceProfileStats lists current scan stats grouped by profile
   // Optional RawQuery query fields can be combined.
@@ -65,6 +94,11 @@ service ComplianceResultsStatsService {
   // - scan: id(s) of the compliance scan
   // - cluster: id(s) of the cluster
   // - profile: id(s) of the profile
+  //
+  // Returns check status counts for the specified profile across all clusters.
+  // The profile_name field is required. Supports pagination.
+  //
+  // Returns INVALID_ARGUMENT if profile_name is empty or the query is malformed.
   rpc GetComplianceProfileStats(ComplianceProfileResultsRequest) returns (ListComplianceProfileScanStatsResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/stats/profiles/{profile_name}"};
   }
@@ -75,21 +109,43 @@ service ComplianceResultsStatsService {
   // - scan: id(s) of the compliance scan
   // - cluster: id(s) of the cluster
   // - profile: id(s) of the profile
+  //
+  // Returns check status counts for all profiles matching the query, across all clusters.
+  // Supports pagination; total_count reflects distinct profile names.
+  //
+  // Returns INVALID_ARGUMENT if the query is malformed.
   rpc GetComplianceProfilesStats(RawQuery) returns (ListComplianceProfileScanStatsResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/stats/profiles"};
   }
 
-  // GetComplianceProfilesClusterStats lists cluster stats grouped by profile
+  // GetComplianceProfilesClusterStats lists cluster stats grouped by profile.
+  //
+  // Returns check status counts per profile for the specified cluster.
+  // The cluster_id field is required; returns INVALID_ARGUMENT if the cluster is not found.
+  // Supports pagination; total_count reflects distinct profile names.
+  //
+  // Returns INVALID_ARGUMENT if cluster_id is empty or the cluster does not exist.
   rpc GetComplianceProfilesClusterStats(ComplianceScanClusterRequest) returns (ListComplianceClusterProfileStatsResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/stats/profiles/clusters/{cluster_id}"};
   }
 
-  // GetComplianceProfileCheckStats lists current stats for a specific cluster check
+  // GetComplianceProfileCheckStats lists current stats for a specific cluster check.
+  //
+  // Returns per-cluster check status counts for a specific check within a profile.
+  // Both profile_name and check_name are required. Supports pagination.
+  //
+  // Returns INVALID_ARGUMENT if profile_name or check_name is empty.
   rpc GetComplianceProfileCheckStats(ComplianceProfileCheckRequest) returns (ListComplianceProfileResults) {
     option (google.api.http) = {get: "/v2/compliance/scan/stats/profiles/{profile_name}/checks/{check_name}"};
   }
 
-  // GetComplianceClusterScanStats lists the current scan stats for a cluster for each scan configuration
+  // GetComplianceClusterScanStats lists the current scan stats for a cluster for each scan configuration.
+  //
+  // Returns check status counts per scan configuration for the specified cluster.
+  // The cluster_id field is required. The scan_config_id is resolved from the scan configuration name.
+  // Supports pagination; total_count reflects distinct scan configuration names.
+  //
+  // Returns INVALID_ARGUMENT if cluster_id is empty.
   rpc GetComplianceClusterScanStats(ComplianceScanClusterRequest) returns (ListComplianceClusterScanStatsResponse) {
     option (google.api.http) = {get: "/v2/compliance/stats/configurations/clusters/{cluster_id}"};
   }
@@ -99,6 +155,13 @@ service ComplianceResultsStatsService {
     option (google.api.http) = {get: "/v2/compliance/scan/stats/overall/cluster"};
   }
 
+  // GetComplianceClusterStats lists overall compliance check stats per cluster for a given profile.
+  //
+  // Returns pass/fail/error counts per cluster filtered to the specified profile.
+  // Also includes Compliance Operator integration status errors per cluster.
+  // The profile_name field is required. Supports pagination.
+  //
+  // Returns INVALID_ARGUMENT if profile_name is empty or the query is malformed.
   rpc GetComplianceClusterStats(ComplianceProfileResultsRequest) returns (ListComplianceClusterOverallStatsResponse) {
     option (google.api.http) = {get: "/v2/compliance/scan/stats/profiles/{profile_name}/clusters"};
   }

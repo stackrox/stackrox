@@ -9,17 +9,23 @@ import "storage/group.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// GetGroupsRequest filters groups by their properties. All specified fields are ANDed.
+// Omitting a field disables that filter; omitting all fields returns all groups.
 message GetGroupsRequest {
   oneof auth_provider_id_opt {
+    // auth_provider_id filters groups to those belonging to the specified auth provider.
     string auth_provider_id = 1;
   }
   oneof key_opt {
+    // key filters groups by the attribute key used for membership matching (e.g. "groups").
     string key = 2;
   }
   oneof value_opt {
+    // value filters groups by the attribute value used for membership matching.
     string value = 3;
   }
   oneof id_opt {
+    // id filters groups by their unique group ID.
     string id = 4;
   }
 }
@@ -27,6 +33,7 @@ message GetGroupsRequest {
 // API for updating Groups and getting users.
 // Next Available Tag: 2
 message GetGroupsResponse {
+  // groups is the list of groups matching the request filter.
   repeated storage.Group groups = 1;
 }
 
@@ -43,34 +50,70 @@ message GroupBatchUpdateRequest {
   // Required groups are the groups we want to mutate the previous groups into.
   repeated storage.Group required_groups = 2;
 
+  // force bypasses immutability checks enforced by object traits (e.g. declarative-origin groups).
   bool force = 3;
 }
 
+// DeleteGroupRequest identifies a group to delete by its properties.
 message DeleteGroupRequest {
   // We copy over parameters from storage.GroupProperties for seamless HTTP API migration.
+  // auth_provider_id identifies the auth provider the group belongs to.
   string auth_provider_id = 1;
+  // key is the attribute key of the group properties to match.
   string key = 2;
+  // value is the attribute value of the group properties to match.
   string value = 3;
+  // id is the unique identifier of the group to delete.
   string id = 4;
 
+  // force bypasses immutability checks enforced by object traits (e.g. declarative-origin groups).
   bool force = 5;
 }
 
+// UpdateGroupRequest carries the group definition to update and an optional force flag.
 message UpdateGroupRequest {
+  // group is the updated group definition. The group ID must be set and must match an existing group.
   storage.Group group = 1;
 
+  // force bypasses immutability checks enforced by object traits (e.g. declarative-origin groups).
   bool force = 2;
 }
 
+// GroupService manages group-to-role mappings that drive role assignment for authenticated users.
+//
+// A group maps an (auth_provider_id, attribute_key, attribute_value) triple to a role.
+// When a user authenticates, their identity provider attributes are matched against all groups
+// for the corresponding auth provider; matching groups determine the roles assigned to the user.
+// Groups without a key/value pair act as a default role for all users of the auth provider.
+//
+// Authentication requirements:
+// - GetGroups, GetGroup: require read access to the Access resource.
+// - BatchUpdate, CreateGroup, UpdateGroup, DeleteGroup: require write access to the Access resource.
 service GroupService {
+  // GetGroups returns all groups, optionally filtered by auth provider ID, attribute key,
+  // attribute value, and/or group ID.
+  //
+  // All specified filters are ANDed. Omitting all filters returns all groups.
+  // Requires read access to the Access resource.
   rpc GetGroups(GetGroupsRequest) returns (GetGroupsResponse) {
     option (google.api.http) = {get: "/v1/groups"};
   }
 
+  // GetGroup returns the single group matching the given group properties.
+  //
+  // Returns NOT_FOUND if no group matches the specified properties.
+  // Requires read access to the Access resource.
   rpc GetGroup(storage.GroupProperties) returns (storage.Group) {
     option (google.api.http) = {get: "/v1/group"};
   }
 
+  // BatchUpdate applies an atomic diff between previous_groups and required_groups in a single transaction.
+  //
+  // Groups in previous_groups but not required_groups are deleted.
+  // Groups in both are updated if they differ.
+  // Groups in required_groups without an ID are added (duplicates by (props, role) are deduplicated).
+  // Returns INVALID_ARGUMENT if any group fails validation.
+  // Requires write access to the Access resource.
   rpc BatchUpdate(GroupBatchUpdateRequest) returns (Empty) {
     option (google.api.http) = {
       post: "/v1/groupsbatch"
@@ -78,6 +121,9 @@ service GroupService {
     };
   }
 
+  // CreateGroup creates a new group mapping an auth provider attribute triple to a role.
+  //
+  // Requires write access to the Access resource.
   rpc CreateGroup(storage.Group) returns (Empty) {
     option (google.api.http) = {
       post: "/v1/groups"
@@ -85,6 +131,11 @@ service GroupService {
     };
   }
 
+  // UpdateGroup replaces the role assigned by an existing group.
+  //
+  // The group.props.id must be set and must match an existing group.
+  // Returns INVALID_ARGUMENT if validation fails or the group does not exist.
+  // Requires write access to the Access resource.
   rpc UpdateGroup(UpdateGroupRequest) returns (Empty) {
     option (google.api.http) = {
       put: "/v1/groups"
@@ -92,6 +143,9 @@ service GroupService {
     };
   }
 
+  // DeleteGroup removes the group identified by the given properties.
+  //
+  // Requires write access to the Access resource.
   rpc DeleteGroup(DeleteGroupRequest) returns (Empty) {
     option (google.api.http) = {delete: "/v1/groups"};
   }

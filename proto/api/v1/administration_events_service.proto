@@ -127,18 +127,37 @@ message ListAdministrationEventsResponse {
   repeated AdministrationEvent events = 1;
 }
 
+// AdministrationEventService provides read-only access to Central's administration events.
+//
+// Administration events are system-generated records of asynchronous background operations
+// that affect platform health, such as image scan failures or integration errors. They are
+// surfaced in Central's system health view and support filtering by level, type, domain,
+// resource type, and time range.
+//
+// All endpoints require read access to the Administration resource.
 service AdministrationEventService {
-  // CountAdministrationEvents returns the number of events after filtering by requested fields.
+  // CountAdministrationEvents returns the number of events matching the given filter.
+  //
+  // The filter supports time range (from/until), domain, resource type, event type, and level.
+  // All specified filters are ANDed. Requires read access to the Administration resource.
   rpc CountAdministrationEvents(CountAdministrationEventsRequest) returns (CountAdministrationEventsResponse) {
     option (google.api.http) = {get: "/v1/count/administration/events"};
   }
 
-  // GetAdministrationEvent retrieves an event by ID.
+  // GetAdministrationEvent returns the administration event with the given ID.
+  //
+  // Requires read access to the Administration resource.
   rpc GetAdministrationEvent(ResourceByID) returns (GetAdministrationEventResponse) {
     option (google.api.http) = {get: "/v1/administration/events/{id}"};
   }
 
-  // ListAdministrationEvents returns the list of events after filtered by requested fields.
+  // ListAdministrationEvents returns a paginated list of administration events matching the given filter.
+  //
+  // Results are sorted by last update time descending (most recent first) by default.
+  // The maximum page size is 1000 events.
+  // Filters support time range (from/until based on creation time), domain, resource type,
+  // event type, and level. All specified filters are ANDed.
+  // Requires read access to the Administration resource.
   rpc ListAdministrationEvents(ListAdministrationEventsRequest) returns (ListAdministrationEventsResponse) {
     option (google.api.http) = {get: "/v1/administration/events"};
   }

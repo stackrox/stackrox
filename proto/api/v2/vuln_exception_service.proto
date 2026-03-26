@@ -14,10 +14,17 @@ option java_package = "io.stackrox.proto.api.v2";
 
 //// begin request and response messages
 
+// Comment represents a user comment on a vulnerability exception request.
+// Comments are required for all request actions (create, approve, deny, update)
+// and provide an audit trail for the exception lifecycle.
 message Comment {
+  // Unique identifier for the comment.
   string id = 1;
+  // The comment text. Required for all request actions.
   string message = 2;
+  // User who created the comment.
   SlimUser user = 3;
+  // Timestamp when the comment was created.
   google.protobuf.Timestamp created_at = 4;
 }
 
@@ -49,25 +56,36 @@ message ExceptionExpiry {
   google.protobuf.Timestamp expires_on = 2;
 }
 
+// DeferralRequest holds the expiry configuration for a deferral exception.
 message DeferralRequest {
+  // REQUIRED. Expiry configuration for the deferral.
   ExceptionExpiry expiry = 1;
 }
 
+// FalsePositiveRequest marks vulnerabilities as false positive. False-positive
+// exceptions are permanent and have no expiry configuration.
 message FalsePositiveRequest {}
 
-// Next available tag: 16
 // VulnerabilityException represents a vulnerability exception such as deferral and false-positive.
+// Exceptions suppress specific CVEs from policy evaluation and risk scoring.
+// Next available tag: 16
 message VulnerabilityException {
+  // Scope defines where the exception is enforced.
   message Scope {
+    // Image identifies a specific container image by registry, repository, and tag.
     message Image {
+      // Container registry (e.g., "docker.io", "quay.io").
       string registry = 1;
+      // Image repository name (e.g., "library/nginx").
       string remote = 2;
+      // Image tag (e.g., "latest", "1.25").
       string tag = 3;
     }
 
-    // This field can be used to apply the exception to selected images.
+    // Applies the exception to a specific container image.
     Image image_scope = 1;
   }
+  // Unique identifier for the exception (auto-generated).
   string id = 1;
   // Auto-generated display name of the exception.
   string name = 2;
@@ -113,14 +131,18 @@ message FalsePositiveUpdate {
   repeated string cves = 1;
 }
 
+// GetVulnerabilityExceptionResponse wraps a single vulnerability exception.
 message GetVulnerabilityExceptionResponse {
   VulnerabilityException exception = 1;
 }
 
+// ListVulnerabilityExceptionsResponse wraps the list of vulnerability exceptions.
 message ListVulnerabilityExceptionsResponse {
   repeated VulnerabilityException exceptions = 1;
 }
 
+// CreateDeferVulnerabilityExceptionRequest contains the fields needed to create
+// a deferral exception. All fields are required.
 // next available tag: 6
 message CreateDeferVulnerabilityExceptionRequest {
   // REQUIRED. The CVEs to which the exception should be applied.
@@ -133,10 +155,13 @@ message CreateDeferVulnerabilityExceptionRequest {
   ExceptionExpiry exception_expiry = 4;
 }
 
+// CreateDeferVulnerabilityExceptionResponse wraps the newly created deferral exception.
 message CreateDeferVulnerabilityExceptionResponse {
   VulnerabilityException exception = 1;
 }
 
+// CreateFalsePositiveVulnerabilityExceptionRequest contains the fields needed
+// to create a false-positive exception. All fields are required.
 message CreateFalsePositiveVulnerabilityExceptionRequest {
   // REQUIRED. The CVEs to which the exception should be applied.
   repeated string cves = 1;
@@ -146,10 +171,13 @@ message CreateFalsePositiveVulnerabilityExceptionRequest {
   string comment = 3;
 }
 
+// CreateFalsePositiveVulnerabilityExceptionResponse wraps the newly created false-positive exception.
 message CreateFalsePositiveVulnerabilityExceptionResponse {
   VulnerabilityException exception = 1;
 }
 
+// ApproveVulnerabilityExceptionRequest identifies the exception to approve and
+// requires a comment explaining the approval rationale.
 message ApproveVulnerabilityExceptionRequest {
   // REQUIRED. The ID of vulnerability exception to be approved.
   string id = 1;
@@ -157,10 +185,13 @@ message ApproveVulnerabilityExceptionRequest {
   string comment = 2;
 }
 
+// ApproveVulnerabilityExceptionResponse wraps the approved exception.
 message ApproveVulnerabilityExceptionResponse {
   VulnerabilityException exception = 1;
 }
 
+// DenyVulnerabilityExceptionRequest identifies the exception to deny and
+// requires a comment explaining the denial rationale.
 message DenyVulnerabilityExceptionRequest {
   // REQUIRED. The ID of vulnerability exception to be denied.
   string id = 1;
@@ -168,10 +199,13 @@ message DenyVulnerabilityExceptionRequest {
   string comment = 2;
 }
 
+// DenyVulnerabilityExceptionResponse wraps the denied exception.
 message DenyVulnerabilityExceptionResponse {
   VulnerabilityException exception = 1;
 }
 
+// UpdateVulnerabilityExceptionRequest modifies an existing exception.
+// Exactly one of deferral_update or false_positive_update must be set.
 message UpdateVulnerabilityExceptionRequest {
   // REQUIRED. The ID of vulnerability exception to be updated.
   string id = 1;
@@ -186,17 +220,31 @@ message UpdateVulnerabilityExceptionRequest {
   }
 }
 
+// UpdateVulnerabilityExceptionResponse wraps the updated exception.
 message UpdateVulnerabilityExceptionResponse {
   VulnerabilityException exception = 1;
 }
 
+// CancelVulnerabilityExceptionResponse wraps the cancelled exception.
 message CancelVulnerabilityExceptionResponse {
   VulnerabilityException exception = 1;
 }
 
 //// end request and response messages
 
-// VulnerabilityExceptionService APIs can be used to manage create and manage vulnerability exceptions.
+// VulnerabilityExceptionService manages vulnerability exceptions (deferrals
+// and false positives) that suppress specific CVEs from policy evaluation.
+//
+// Exception lifecycle:
+//   1. A user creates a deferral or false-positive exception (PENDING state).
+//   2. An approver approves or denies the exception.
+//   3. Approved exceptions suppress the specified CVEs from policy and risk evaluation.
+//   4. Exceptions can be updated, cancelled, or deleted.
+//   5. Expired/denied/cancelled exceptions are garbage-collected per the
+//      retention configuration (see GET /v1/config/).
+//
+// Permissions: requires Vulnerability Management Exception (VulnerabilityManagementRequests)
+// access. Approvers need the approver permission in addition to the base permission.
 service VulnerabilityExceptionService {
   // GetVulnerabilityException returns the vulnerability exception with specified ID.
   rpc GetVulnerabilityException(ResourceByID) returns (GetVulnerabilityExceptionResponse) {

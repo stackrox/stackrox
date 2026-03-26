@@ -12,90 +12,171 @@ import "storage/resource_collection.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// ListCollectionSelectorsResponse is the response message for ListCollectionSelectors.
 message ListCollectionSelectorsResponse {
+  // selectors is the list of supported field selector labels (e.g. "Cluster", "Namespace", "Deployment Label").
   repeated string selectors = 1;
 }
 
+// GetCollectionRequest is the request message for GetCollection.
 message GetCollectionRequest {
+  // id is the UUID of the collection to retrieve.
   string id = 1;
+  // options controls whether matching deployments are included in the response.
   CollectionDeploymentMatchOptions options = 2;
 }
 
+// CollectionDeploymentMatchOptions controls whether the response includes matching deployments.
 message CollectionDeploymentMatchOptions {
+  // with_matches, when true, resolves the collection's selectors and returns all deployments that match.
   bool with_matches = 1;
+  // filter_query is an optional search query to further filter the matched deployments.
+  // Uses StackRox search syntax (e.g. "Namespace:production"). Only used when with_matches is true.
   RawQuery filter_query = 2;
 }
 
+// GetCollectionResponse is the response message for GetCollection.
 message GetCollectionResponse {
+  // collection is the requested resource collection.
   storage.ResourceCollection collection = 1;
+  // deployments contains deployments matching the collection's selectors, populated only when
+  // CollectionDeploymentMatchOptions.with_matches is true.
   repeated storage.ListDeployment deployments = 2;
 }
 
+// GetCollectionCountRequest is the request message for GetCollectionCount.
 message GetCollectionCountRequest {
+  // query is an optional search query to filter collections before counting.
+  // Uses StackRox search syntax. Matches all collections if empty.
   RawQuery query = 1;
 }
 
+// GetCollectionCountResponse is the response message for GetCollectionCount.
 message GetCollectionCountResponse {
+  // count is the number of collections matching the query.
   int32 count = 1;
 }
 
+// CreateCollectionRequest is the request message for CreateCollection.
 message CreateCollectionRequest {
+  // name is the display name for the new collection. Must be non-empty after trimming whitespace.
   string name = 1;
+  // description is an optional human-readable explanation of the collection's purpose.
   string description = 2;
+  // resource_selectors define the rules that match deployments into this collection.
+  // At least one resource selector or embedded collection ID must be provided.
   repeated storage.ResourceSelector resource_selectors = 3;
+  // embedded_collection_ids are IDs of existing collections whose members are included in this collection.
+  // At least one resource selector or embedded collection ID must be provided.
   repeated string embedded_collection_ids = 4;
 }
 
+// CreateCollectionResponse is the response message for CreateCollection.
 message CreateCollectionResponse {
+  // collection is the newly created resource collection with its assigned ID.
   storage.ResourceCollection collection = 1;
 }
 
+// UpdateCollectionRequest is the request message for UpdateCollection.
 message UpdateCollectionRequest {
+  // id is the UUID of the collection to update.
   string id = 1;
+  // name is the new display name for the collection. Must be non-empty after trimming whitespace.
   string name = 2;
+  // description is the new human-readable explanation of the collection's purpose.
   string description = 3;
+  // resource_selectors replaces the current set of rules that match deployments into this collection.
   repeated storage.ResourceSelector resource_selectors = 4;
+  // embedded_collection_ids replaces the current set of embedded collection references.
   repeated string embedded_collection_ids = 5;
 }
 
+// UpdateCollectionResponse is the response message for UpdateCollection.
 message UpdateCollectionResponse {
+  // collection is the updated resource collection.
   storage.ResourceCollection collection = 1;
 }
 
+// DryRunCollectionRequest is the request message for DryRunCollection.
 message DryRunCollectionRequest {
+  // name is the display name of the collection being dry-run.
   string name = 1;
+  // id is the UUID of an existing collection; set when dry-running an update to an existing collection.
+  // Leave empty when simulating a new collection.
   string id = 2; // set if dryrun on existing collections
+  // description is the description for the collection being dry-run.
   string description = 3;
+  // resource_selectors define the rules to evaluate for this dry run.
   repeated storage.ResourceSelector resource_selectors = 4;
+  // embedded_collection_ids are IDs of collections to include in this dry run.
   repeated string embedded_collection_ids = 5;
+  // options controls whether matching deployments are returned in the response.
   CollectionDeploymentMatchOptions options = 6;
 }
 
+// DryRunCollectionResponse is the response message for DryRunCollection.
 message DryRunCollectionResponse {
+  // deployments contains deployments that would match the collection without persisting it.
+  // Only populated when CollectionDeploymentMatchOptions.with_matches is true.
   repeated storage.ListDeployment deployments = 1;
 }
 
+// ListCollectionsRequest is the request message for ListCollections.
 message ListCollectionsRequest {
+  // query is an optional search query to filter collections.
+  // Uses StackRox search syntax. Matches all collections if empty.
+  // Results are paginated with a default page size of 1000, sorted by collection name.
   RawQuery query = 1;
 }
 
+// ListCollectionsResponse is the response message for ListCollections.
 message ListCollectionsResponse {
+  // collections is the list of resource collections matching the query, sorted by name ascending.
   repeated storage.ResourceCollection collections = 1;
 }
 
+// CollectionService manages resource collections used to group deployments for scoping reports and policies.
+//
+// A resource collection is a named set of rules (selectors) that dynamically match Kubernetes deployments
+// based on cluster, namespace, deployment name, or label criteria. Collections can embed other collections
+// to form hierarchies. They are used as scopes for vulnerability reports and other workflow automation.
+//
+// Authentication: read operations require View access to the WorkflowAdministration resource.
+// Write operations (Create, Update, Delete, DryRun) require Modify access to WorkflowAdministration.
 service CollectionService {
+  // ListCollectionSelectors returns all supported field labels that can be used in resource selectors.
+  //
+  // Supported selectors include fields such as "Cluster", "Namespace", and "Deployment Label".
+  // Requires read access to the WorkflowAdministration resource.
   rpc ListCollectionSelectors(Empty) returns (ListCollectionSelectorsResponse) {
     option (google.api.http) = {get: "/v1/collections/selectors"};
   }
 
+  // GetCollection returns a single collection by ID.
+  //
+  // When CollectionDeploymentMatchOptions.with_matches is true, also resolves and returns the
+  // deployments currently matched by the collection's selectors, optionally further filtered
+  // by filter_query.
+  //
+  // Returns INVALID_ARGUMENT if id is empty.
+  // Returns NOT_FOUND if no collection with the given ID exists.
   rpc GetCollection(GetCollectionRequest) returns (GetCollectionResponse) {
     option (google.api.http) = {get: "/v1/collections/{id}"};
   }
 
+  // GetCollectionCount returns the count of collections matching the optional query.
+  //
+  // Matches all collections if the query is empty.
   rpc GetCollectionCount(GetCollectionCountRequest) returns (GetCollectionCountResponse) {
     option (google.api.http) = {get: "/v1/collectionscount"};
   }
 
+  // CreateCollection creates a new resource collection.
+  //
+  // The collection name must be non-empty after whitespace trimming. At least one resource selector
+  // or embedded collection ID must be provided. The caller's identity is recorded as the creator.
+  //
+  // Returns INVALID_ARGUMENT if the name is empty, or if no selectors or embedded collections are provided.
   rpc CreateCollection(CreateCollectionRequest) returns (CreateCollectionResponse) {
     option (google.api.http) = {
       post: "/v1/collections"
@@ -103,6 +184,12 @@ service CollectionService {
     };
   }
 
+  // UpdateCollection updates an existing collection's name, description, selectors, and embedded collections.
+  //
+  // Replaces the full set of selectors and embedded collection references.
+  // The caller's identity is recorded as the last updater.
+  //
+  // Returns INVALID_ARGUMENT if id is empty, the name is empty, or no selectors or embedded collections are provided.
   rpc UpdateCollection(UpdateCollectionRequest) returns (UpdateCollectionResponse) {
     option (google.api.http) = {
       patch: "/v1/collections/{id}"
@@ -110,14 +197,30 @@ service CollectionService {
     };
   }
 
+  // ListCollections returns all collections matching the optional search query.
+  //
+  // Results are sorted by collection name ascending. Pagination is controlled by the query's
+  // pagination field with a default page size of 1000.
   rpc ListCollections(ListCollectionsRequest) returns (ListCollectionsResponse) {
     option (google.api.http) = {get: "/v1/collections"};
   }
 
+  // DeleteCollection removes a collection permanently.
+  //
+  // Returns INVALID_ARGUMENT if id is empty.
+  // Returns a conflict error if the collection is referenced by another collection or by a
+  // vulnerability report configuration.
   rpc DeleteCollection(ResourceByID) returns (Empty) {
     option (google.api.http) = {delete: "/v1/collections/{id}"};
   }
 
+  // DryRunCollection simulates creating or updating a collection without persisting it.
+  //
+  // Validates the collection definition and, when options.with_matches is true, resolves and
+  // returns the deployments that would match. Set id to simulate an update to an existing
+  // collection; leave id empty to simulate a new collection.
+  //
+  // Returns INVALID_ARGUMENT if the collection definition is invalid (empty name, no selectors).
   rpc DryRunCollection(DryRunCollectionRequest) returns (DryRunCollectionResponse) {
     option (google.api.http) = {
       post: "/v1/collections/dryrun"

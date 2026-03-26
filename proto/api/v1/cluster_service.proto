@@ -10,64 +10,130 @@ import "storage/cluster.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
+// DeploymentFormat specifies the format used to generate Secured Cluster deployment manifests.
 enum DeploymentFormat {
+  // KUBECTL generates raw Kubernetes manifests applied with kubectl.
   KUBECTL = 0;
+  // HELM generates a Helm chart for deployment.
   HELM = 1;
+  // HELM_VALUES generates only the values file for an existing Helm chart installation.
   HELM_VALUES = 2;
 }
 
+// LoadBalancerType controls how the Sensor on the Secured Cluster exposes itself for external connectivity.
 enum LoadBalancerType {
+  // NONE uses cluster-internal networking only.
   NONE = 0;
+  // LOAD_BALANCER provisions a cloud load balancer (e.g. AWS ELB).
   LOAD_BALANCER = 1;
+  // NODE_PORT exposes the service on each node's IP at a static port.
   NODE_PORT = 2;
+  // ROUTE creates an OpenShift Route (OpenShift clusters only).
   ROUTE = 3;
 }
 
 // next available tag: 3
 message DecommissionedClusterRetentionInfo {
   oneof RetentionInfo {
-    // indicates whether a cluster is protected from deletion
+    // is_excluded indicates whether a cluster is protected from automatic deletion
+    // due to a matching label in the decommissioned cluster retention configuration.
     bool is_excluded = 1;
-    // days after which cluster will be deleted if sensor health remains UNHEALTHY
+    // days_until_deletion is the number of days remaining before Central automatically
+    // deletes this cluster if its sensor health remains UNHEALTHY. Only present when
+    // retention is configured and the cluster is not excluded.
     int32 days_until_deletion = 2;
   }
 }
 
+// ClusterResponse wraps a single cluster with optional decommissioning retention information.
+// The retention info is only populated when the cluster's sensor health is UNHEALTHY and
+// the system decommissioned-cluster retention policy is enabled.
 message ClusterResponse {
   storage.Cluster cluster = 1;
+  // cluster_retention_info describes automatic-deletion scheduling for this cluster.
+  // Only present when sensor health is UNHEALTHY and a retention policy is configured.
   DecommissionedClusterRetentionInfo cluster_retention_info = 2;
 }
 
+// ClusterDefaultsResponse contains environment-level defaults used when registering new Secured Clusters.
 message ClusterDefaultsResponse {
+  // main_image_repository is the default container image repository for the main StackRox component,
+  // derived from the Central deployment's image flavor environment variable.
   string main_image_repository = 1;
+  // collector_image_repository is the default container image repository for the Collector DaemonSet,
+  // derived from the Central deployment's image flavor environment variable.
   string collector_image_repository = 2;
+  // kernel_support_available indicates whether eBPF/kernel probe sources are reachable from Central,
+  // which determines the runtime collection methods available to Secured Clusters.
   bool kernel_support_available = 3;
 }
 
+// ClustersList is the response for listing multiple Secured Clusters.
 message ClustersList {
   repeated storage.Cluster clusters = 1;
-  // Maps 'UNHEALTHY' clusters' IDs to their retention info
+  // cluster_id_to_retention_info maps UNHEALTHY cluster IDs to their decommission retention info.
+  // Only clusters whose sensor health status is UNHEALTHY and for which a retention policy is
+  // configured will appear in this map.
   map<string, DecommissionedClusterRetentionInfo> cluster_id_to_retention_info = 2;
 }
 
+// GetClustersRequest is the request message for listing Secured Clusters.
 message GetClustersRequest {
+  // query filters clusters using StackRox search syntax.
+  // Example: "Cluster:production" or "Cluster Status:UNHEALTHY".
+  // If empty, all clusters visible to the caller are returned.
   string query = 1;
 }
 
+// KernelSupportAvailableResponse is deprecated. Use ClusterDefaultsResponse instead.
 message KernelSupportAvailableResponse {
   option deprecated = true;
   bool kernel_support_available = 1;
 }
 
+// ClustersService manages the registration and lifecycle of Secured Clusters monitored by Central.
+//
+// In StackRox, "Secured Clusters" are Kubernetes or OpenShift clusters where Sensor, Collector,
+// and (optionally) the Admission Controller are deployed. They are distinct from the "management
+// cluster" where Central itself runs. This service provides CRUD operations over Secured Cluster
+// records, as well as environment defaults used when generating cluster deployment manifests.
+//
+// Cluster health is aggregated by Central from periodic Sensor heartbeats and reflects the
+// status of individual components (Sensor, Collector, Admission Controller, and optionally a
+// local Scanner). An UNHEALTHY sensor health status triggers decommissioning retention tracking.
+//
+// Authentication: read operations (GetClusters, GetCluster, GetClusterDefaultValues) require
+// read access to the Cluster resource. Write operations (PostCluster, PutCluster, DeleteCluster)
+// require modify access to the Cluster resource.
 service ClustersService {
+  // GetClusters returns all Secured Clusters visible to the caller, optionally filtered by query.
+  //
+  // Clusters can be filtered using StackRox search query syntax (e.g. "Cluster:prod",
+  // "Sensor Status:HEALTHY"). An empty query returns all clusters. The response includes
+  // decommission retention info for any UNHEALTHY clusters if a retention policy is configured.
+  //
+  // Returns INVALID_ARGUMENT if the query syntax is malformed.
   rpc GetClusters(GetClustersRequest) returns (ClustersList) {
     option (google.api.http) = {get: "/v1/clusters"};
   }
 
+  // GetCluster returns the Secured Cluster with the given ID, including decommission retention info
+  // if the cluster's sensor health is UNHEALTHY and a retention policy is configured.
+  //
+  // Returns NOT_FOUND if no cluster with the given ID exists.
+  // Returns INVALID_ARGUMENT if the ID is empty.
   rpc GetCluster(ResourceByID) returns (ClusterResponse) {
     option (google.api.http) = {get: "/v1/clusters/{id}"};
   }
 
+  // PostCluster registers a new Secured Cluster with Central.
+  //
+  // The request body must be a storage.Cluster with the id field left empty; Central assigns
+  // the ID upon creation. After creation, the cluster record must be used to generate Sensor
+  // deployment manifests (Helm chart or kubectl manifests) which are applied to the target cluster.
+  // Sensor then connects back to Central and begins populating health status and runtime data.
+  //
+  // Returns INVALID_ARGUMENT if the id field is non-empty.
   rpc PostCluster(storage.Cluster) returns (ClusterResponse) {
     option (google.api.http) = {
       post: "/v1/clusters"
@@ -75,6 +141,14 @@ service ClustersService {
     };
   }
 
+  // PutCluster updates an existing Secured Cluster record.
+  //
+  // The request body must be a storage.Cluster with a non-empty id field identifying the cluster
+  // to update. Dynamic configuration fields (e.g. admission controller config, registry override)
+  // are propagated to Sensor over the gRPC connection without requiring a Sensor restart. Static
+  // configuration changes (e.g. collection method, image references) take effect on next Sensor restart.
+  //
+  // Returns INVALID_ARGUMENT if the id field is empty.
   rpc PutCluster(storage.Cluster) returns (ClusterResponse) {
     option (google.api.http) = {
       put: "/v1/clusters/{id}"
@@ -82,6 +156,13 @@ service ClustersService {
     };
   }
 
+  // DeleteCluster removes a Secured Cluster record from Central and initiates cleanup of
+  // associated data (network graph, alerts, deployments, etc.) asynchronously.
+  //
+  // This does NOT uninstall Sensor or other StackRox components from the target cluster.
+  // Sensor will attempt to reconnect after deletion and the cluster can be re-registered.
+  //
+  // Returns INVALID_ARGUMENT if the id field is empty.
   rpc DeleteCluster(ResourceByID) returns (Empty) {
     option (google.api.http) = {delete: "/v1/clusters/{id}"};
   }
@@ -92,6 +173,11 @@ service ClustersService {
     option (google.api.http) = {get: "/v1/clusters-env/kernel-support-available"};
   }
 
+  // GetClusterDefaultValues returns environment-level defaults used when creating a new Secured Cluster.
+  //
+  // Returns the default image repositories for the main StackRox component and Collector,
+  // and whether kernel probe support (eBPF/CORE_BPF collection) is available from this Central.
+  // These values are derived from Central's deployment configuration and probe source availability.
   rpc GetClusterDefaultValues(Empty) returns (ClusterDefaultsResponse) {
     option (google.api.http) = {get: "/v1/cluster-defaults"};
   }
