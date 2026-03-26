@@ -32,15 +32,70 @@ const (
 // ClustersServiceClient is the client API for ClustersService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ClustersService manages the registration and lifecycle of Secured Clusters monitored by Central.
+//
+// In StackRox, "Secured Clusters" are Kubernetes or OpenShift clusters where Sensor, Collector,
+// and (optionally) the Admission Controller are deployed. They are distinct from the "management
+// cluster" where Central itself runs. This service provides CRUD operations over Secured Cluster
+// records, as well as environment defaults used when generating cluster deployment manifests.
+//
+// Cluster health is aggregated by Central from periodic Sensor heartbeats and reflects the
+// status of individual components (Sensor, Collector, Admission Controller, and optionally a
+// local Scanner). An UNHEALTHY sensor health status triggers decommissioning retention tracking.
+//
+// Authentication: read operations (GetClusters, GetCluster, GetClusterDefaultValues) require
+// read access to the Cluster resource. Write operations (PostCluster, PutCluster, DeleteCluster)
+// require modify access to the Cluster resource.
 type ClustersServiceClient interface {
+	// GetClusters returns all Secured Clusters visible to the caller, optionally filtered by query.
+	//
+	// Clusters can be filtered using StackRox search query syntax (e.g. "Cluster:prod",
+	// "Sensor Status:HEALTHY"). An empty query returns all clusters. The response includes
+	// decommission retention info for any UNHEALTHY clusters if a retention policy is configured.
+	//
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	GetClusters(ctx context.Context, in *GetClustersRequest, opts ...grpc.CallOption) (*ClustersList, error)
+	// GetCluster returns the Secured Cluster with the given ID, including decommission retention info
+	// if the cluster's sensor health is UNHEALTHY and a retention policy is configured.
+	//
+	// Returns NOT_FOUND if no cluster with the given ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	GetCluster(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ClusterResponse, error)
+	// PostCluster registers a new Secured Cluster with Central.
+	//
+	// The request body must be a storage.Cluster with the id field left empty; Central assigns
+	// the ID upon creation. After creation, the cluster record must be used to generate Sensor
+	// deployment manifests (Helm chart or kubectl manifests) which are applied to the target cluster.
+	// Sensor then connects back to Central and begins populating health status and runtime data.
+	//
+	// Returns INVALID_ARGUMENT if the id field is non-empty.
 	PostCluster(ctx context.Context, in *storage.Cluster, opts ...grpc.CallOption) (*ClusterResponse, error)
+	// PutCluster updates an existing Secured Cluster record.
+	//
+	// The request body must be a storage.Cluster with a non-empty id field identifying the cluster
+	// to update. Dynamic configuration fields (e.g. admission controller config, registry override)
+	// are propagated to Sensor over the gRPC connection without requiring a Sensor restart. Static
+	// configuration changes (e.g. collection method, image references) take effect on next Sensor restart.
+	//
+	// Returns INVALID_ARGUMENT if the id field is empty.
 	PutCluster(ctx context.Context, in *storage.Cluster, opts ...grpc.CallOption) (*ClusterResponse, error)
+	// DeleteCluster removes a Secured Cluster record from Central and initiates cleanup of
+	// associated data (network graph, alerts, deployments, etc.) asynchronously.
+	//
+	// This does NOT uninstall Sensor or other StackRox components from the target cluster.
+	// Sensor will attempt to reconnect after deletion and the cluster can be re-registered.
+	//
+	// Returns INVALID_ARGUMENT if the id field is empty.
 	DeleteCluster(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 	// Deprecated: Do not use.
 	// GetKernelSupportAvailable is deprecated in favor of GetClusterDefaultValues.
 	GetKernelSupportAvailable(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*KernelSupportAvailableResponse, error)
+	// GetClusterDefaultValues returns environment-level defaults used when creating a new Secured Cluster.
+	//
+	// Returns the default image repositories for the main StackRox component and Collector,
+	// and whether kernel probe support (eBPF/CORE_BPF collection) is available from this Central.
+	// These values are derived from Central's deployment configuration and probe source availability.
 	GetClusterDefaultValues(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ClusterDefaultsResponse, error)
 }
 
@@ -126,15 +181,70 @@ func (c *clustersServiceClient) GetClusterDefaultValues(ctx context.Context, in 
 // ClustersServiceServer is the server API for ClustersService service.
 // All implementations should embed UnimplementedClustersServiceServer
 // for forward compatibility.
+//
+// ClustersService manages the registration and lifecycle of Secured Clusters monitored by Central.
+//
+// In StackRox, "Secured Clusters" are Kubernetes or OpenShift clusters where Sensor, Collector,
+// and (optionally) the Admission Controller are deployed. They are distinct from the "management
+// cluster" where Central itself runs. This service provides CRUD operations over Secured Cluster
+// records, as well as environment defaults used when generating cluster deployment manifests.
+//
+// Cluster health is aggregated by Central from periodic Sensor heartbeats and reflects the
+// status of individual components (Sensor, Collector, Admission Controller, and optionally a
+// local Scanner). An UNHEALTHY sensor health status triggers decommissioning retention tracking.
+//
+// Authentication: read operations (GetClusters, GetCluster, GetClusterDefaultValues) require
+// read access to the Cluster resource. Write operations (PostCluster, PutCluster, DeleteCluster)
+// require modify access to the Cluster resource.
 type ClustersServiceServer interface {
+	// GetClusters returns all Secured Clusters visible to the caller, optionally filtered by query.
+	//
+	// Clusters can be filtered using StackRox search query syntax (e.g. "Cluster:prod",
+	// "Sensor Status:HEALTHY"). An empty query returns all clusters. The response includes
+	// decommission retention info for any UNHEALTHY clusters if a retention policy is configured.
+	//
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	GetClusters(context.Context, *GetClustersRequest) (*ClustersList, error)
+	// GetCluster returns the Secured Cluster with the given ID, including decommission retention info
+	// if the cluster's sensor health is UNHEALTHY and a retention policy is configured.
+	//
+	// Returns NOT_FOUND if no cluster with the given ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	GetCluster(context.Context, *ResourceByID) (*ClusterResponse, error)
+	// PostCluster registers a new Secured Cluster with Central.
+	//
+	// The request body must be a storage.Cluster with the id field left empty; Central assigns
+	// the ID upon creation. After creation, the cluster record must be used to generate Sensor
+	// deployment manifests (Helm chart or kubectl manifests) which are applied to the target cluster.
+	// Sensor then connects back to Central and begins populating health status and runtime data.
+	//
+	// Returns INVALID_ARGUMENT if the id field is non-empty.
 	PostCluster(context.Context, *storage.Cluster) (*ClusterResponse, error)
+	// PutCluster updates an existing Secured Cluster record.
+	//
+	// The request body must be a storage.Cluster with a non-empty id field identifying the cluster
+	// to update. Dynamic configuration fields (e.g. admission controller config, registry override)
+	// are propagated to Sensor over the gRPC connection without requiring a Sensor restart. Static
+	// configuration changes (e.g. collection method, image references) take effect on next Sensor restart.
+	//
+	// Returns INVALID_ARGUMENT if the id field is empty.
 	PutCluster(context.Context, *storage.Cluster) (*ClusterResponse, error)
+	// DeleteCluster removes a Secured Cluster record from Central and initiates cleanup of
+	// associated data (network graph, alerts, deployments, etc.) asynchronously.
+	//
+	// This does NOT uninstall Sensor or other StackRox components from the target cluster.
+	// Sensor will attempt to reconnect after deletion and the cluster can be re-registered.
+	//
+	// Returns INVALID_ARGUMENT if the id field is empty.
 	DeleteCluster(context.Context, *ResourceByID) (*Empty, error)
 	// Deprecated: Do not use.
 	// GetKernelSupportAvailable is deprecated in favor of GetClusterDefaultValues.
 	GetKernelSupportAvailable(context.Context, *Empty) (*KernelSupportAvailableResponse, error)
+	// GetClusterDefaultValues returns environment-level defaults used when creating a new Secured Cluster.
+	//
+	// Returns the default image repositories for the main StackRox component and Collector,
+	// and whether kernel probe support (eBPF/CORE_BPF collection) is available from this Central.
+	// These values are derived from Central's deployment configuration and probe source availability.
 	GetClusterDefaultValues(context.Context, *Empty) (*ClusterDefaultsResponse, error)
 }
 

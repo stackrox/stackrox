@@ -18,7 +18,8 @@
   "paths": {
     "/v1/policycategories": {
       "get": {
-        "summary": "GetPolicyCategories returns the list of policy categories",
+        "summary": "GetPolicyCategories returns the list of policy categories matching the optional query.",
+        "description": "Uses StackRox search syntax. Returns all categories if the query is empty.\nReturns INVALID_ARGUMENT if the query syntax is malformed.",
         "operationId": "PolicyCategoryService_GetPolicyCategories",
         "responses": {
           "200": {
@@ -37,6 +38,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -92,7 +94,8 @@
         ]
       },
       "post": {
-        "summary": "PostPolicyCategory creates a new policy category",
+        "summary": "PostPolicyCategory creates a new custom policy category.",
+        "description": "The category name must be between 5 and 128 characters and must not contain newlines or\ndollar signs. Returns the created category with its assigned ID.\n\nReturns INVALID_ARGUMENT if the request is empty or the name fails validation.",
         "operationId": "PolicyCategoryService_PostPolicyCategory",
         "responses": {
           "200": {
@@ -111,6 +114,7 @@
         "parameters": [
           {
             "name": "policyCategory",
+            "description": "policyCategory is the category to create. The name must be between 5 and 128 characters\nand must not contain newlines or dollar signs.",
             "in": "body",
             "required": true,
             "schema": {
@@ -124,6 +128,7 @@
       },
       "put": {
         "summary": "RenamePolicyCategory renames the given policy category.",
+        "description": "The new name must be between 5 and 128 characters and must not contain newlines or dollar signs.\nReturns the updated category.\n\nReturns INVALID_ARGUMENT if the new name fails validation.\nReturns NOT_FOUND if no category with the given ID exists.",
         "operationId": "PolicyCategoryService_RenamePolicyCategory",
         "responses": {
           "200": {
@@ -142,6 +147,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "RenamePolicyCategoryRequest is the request message for RenamePolicyCategory.",
             "in": "body",
             "required": true,
             "schema": {
@@ -156,7 +162,8 @@
     },
     "/v1/policycategories/{id}": {
       "get": {
-        "summary": "GetPolicyCategory returns the requested policy category by ID.",
+        "summary": "GetPolicyCategory returns a single policy category by ID.",
+        "description": "Returns INVALID_ARGUMENT if id is empty.\nReturns NOT_FOUND if no category with the given ID exists.",
         "operationId": "PolicyCategoryService_GetPolicyCategory",
         "responses": {
           "200": {
@@ -185,7 +192,8 @@
         ]
       },
       "delete": {
-        "summary": "DeletePolicyCategory removes the given policy category.",
+        "summary": "DeletePolicyCategory removes the given policy category permanently.",
+        "description": "Default (built-in) categories cannot be deleted. Custom categories used by active policies\nare unlinked from those policies on deletion.\n\nReturns NOT_FOUND if no category with the given ID exists.",
         "operationId": "PolicyCategoryService_DeletePolicyCategory",
         "responses": {
           "200": {
@@ -204,6 +212,7 @@
         "parameters": [
           {
             "name": "id",
+            "description": "id is the UUID of the policy category to delete.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -278,9 +287,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1PolicyCategory"
-          }
+          },
+          "description": "categories is the list of policy categories matching the query."
         }
-      }
+      },
+      "description": "GetPolicyCategoriesResponse is the response message for GetPolicyCategories."
     },
     "v1Pagination": {
       "type": "object",
@@ -310,26 +321,33 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "id is the unique identifier for this policy category."
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name is the human-readable display name for this category.\nMust be between 5 and 128 characters and must not contain newlines or dollar signs."
         },
         "isDefault": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "isDefault indicates that this category is a built-in StackRox category and cannot be deleted."
         }
-      }
+      },
+      "description": "PolicyCategory represents a named grouping for security policies."
     },
     "v1RenamePolicyCategoryRequest": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "id is the UUID of the policy category to rename."
         },
         "newCategoryName": {
-          "type": "string"
+          "type": "string",
+          "description": "new_category_name is the new name for the category. Must be between 5 and 128 characters\nand must not contain newlines or dollar signs."
         }
-      }
+      },
+      "description": "RenamePolicyCategoryRequest is the request message for RenamePolicyCategory."
     },
     "v1SortOption": {
       "type": "object",

@@ -25,8 +25,22 @@ const (
 // ComplianceRuleServiceClient is the client API for ComplianceRuleService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ComplianceRuleService provides access to individual compliance rules sourced from the Compliance Operator.
+//
+// Rules define the specific checks evaluated during a compliance scan. Each rule
+// maps to one or more compliance controls (e.g. CIS, NIST) and includes remediation
+// instructions, rationale, and severity information.
+//
+// Authentication: all endpoints require View access to both the Compliance and Cluster resources.
 type ComplianceRuleServiceClient interface {
-	// GetComplianceRule returns rule matching given request
+	// GetComplianceRule returns rule matching given request.
+	//
+	// Looks up the rule by name and returns its full definition including severity,
+	// description, rationale, fix instructions, and mapped compliance standards.
+	// Returns the first matching rule if multiple exist; returns nil if none are found.
+	//
+	// Returns INVALID_ARGUMENT if rule_name is empty or the query is malformed.
 	GetComplianceRule(ctx context.Context, in *RuleRequest, opts ...grpc.CallOption) (*ComplianceRule, error)
 }
 
@@ -51,8 +65,22 @@ func (c *complianceRuleServiceClient) GetComplianceRule(ctx context.Context, in 
 // ComplianceRuleServiceServer is the server API for ComplianceRuleService service.
 // All implementations should embed UnimplementedComplianceRuleServiceServer
 // for forward compatibility.
+//
+// ComplianceRuleService provides access to individual compliance rules sourced from the Compliance Operator.
+//
+// Rules define the specific checks evaluated during a compliance scan. Each rule
+// maps to one or more compliance controls (e.g. CIS, NIST) and includes remediation
+// instructions, rationale, and severity information.
+//
+// Authentication: all endpoints require View access to both the Compliance and Cluster resources.
 type ComplianceRuleServiceServer interface {
-	// GetComplianceRule returns rule matching given request
+	// GetComplianceRule returns rule matching given request.
+	//
+	// Looks up the rule by name and returns its full definition including severity,
+	// description, rationale, fix instructions, and mapped compliance standards.
+	// Returns the first matching rule if multiple exist; returns nil if none are found.
+	//
+	// Returns INVALID_ARGUMENT if rule_name is empty or the query is malformed.
 	GetComplianceRule(context.Context, *RuleRequest) (*ComplianceRule, error)
 }
 

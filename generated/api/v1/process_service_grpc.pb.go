@@ -29,15 +29,46 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// ProcessService APIs can be used to list processes executed in deployments.
+// ProcessService provides APIs for inspecting processes executed within
+// deployments on secured clusters.
+//
+// Process indicators are signals emitted by Sensor when a new process is
+// observed running inside a container. This service allows querying raw
+// process counts and listing process observations grouped by name and
+// argument for a given deployment.
+//
+// Authentication: all endpoints require View access to the DeploymentExtension
+// resource.
 type ProcessServiceClient interface {
-	// CountProcesses returns the count of processes.
+	// CountProcesses returns the count of process indicators matching the given query.
+	//
+	// Accepts StackRox search query syntax (e.g. "Deployment:frontend+Namespace:prod").
+	// Matches all process indicators if the query is empty.
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	CountProcesses(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountProcessesResponse, error)
-	// GetProcessesByDeployment returns the processes executed in the given deployment.
+	// GetProcessesByDeployment returns all raw process indicators observed in
+	// the given deployment.
+	//
+	// Returns NOT_FOUND if the deployment does not exist.
+	// Returns INVALID_ARGUMENT if deployment_id is empty.
 	GetProcessesByDeployment(ctx context.Context, in *GetProcessesByDeploymentRequest, opts ...grpc.CallOption) (*GetProcessesResponse, error)
-	// GetGroupedProcessByDeployment returns all the processes executed grouped by deployment.
+	// GetGroupedProcessByDeployment returns all processes observed in the given
+	// deployment, grouped by executable path and argument string.
+	//
+	// Each ProcessNameGroup contains the number of distinct containers in which
+	// the process was observed and the individual signal observations per argument
+	// set, sorted by argument string. Results are sorted by executable path.
+	//
+	// Returns INVALID_ARGUMENT if deployment_id is empty.
 	GetGroupedProcessByDeployment(ctx context.Context, in *GetProcessesByDeploymentRequest, opts ...grpc.CallOption) (*GetGroupedProcessesResponse, error)
-	// GetGroupedProcessByDeploymentAndContainer returns all the processes executed grouped by deployment and container.
+	// GetGroupedProcessByDeploymentAndContainer returns all processes observed
+	// in the given deployment grouped by both executable path and container name.
+	//
+	// Each group is additionally annotated with a suspicious flag that is true
+	// when the process is not in the locked process baseline for that container,
+	// indicating it may be unexpected behavior.
+	//
+	// Returns INVALID_ARGUMENT if deployment_id is empty.
 	GetGroupedProcessByDeploymentAndContainer(ctx context.Context, in *GetProcessesByDeploymentRequest, opts ...grpc.CallOption) (*GetGroupedProcessesWithContainerResponse, error)
 }
 
@@ -93,15 +124,46 @@ func (c *processServiceClient) GetGroupedProcessByDeploymentAndContainer(ctx con
 // All implementations should embed UnimplementedProcessServiceServer
 // for forward compatibility.
 //
-// ProcessService APIs can be used to list processes executed in deployments.
+// ProcessService provides APIs for inspecting processes executed within
+// deployments on secured clusters.
+//
+// Process indicators are signals emitted by Sensor when a new process is
+// observed running inside a container. This service allows querying raw
+// process counts and listing process observations grouped by name and
+// argument for a given deployment.
+//
+// Authentication: all endpoints require View access to the DeploymentExtension
+// resource.
 type ProcessServiceServer interface {
-	// CountProcesses returns the count of processes.
+	// CountProcesses returns the count of process indicators matching the given query.
+	//
+	// Accepts StackRox search query syntax (e.g. "Deployment:frontend+Namespace:prod").
+	// Matches all process indicators if the query is empty.
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	CountProcesses(context.Context, *RawQuery) (*CountProcessesResponse, error)
-	// GetProcessesByDeployment returns the processes executed in the given deployment.
+	// GetProcessesByDeployment returns all raw process indicators observed in
+	// the given deployment.
+	//
+	// Returns NOT_FOUND if the deployment does not exist.
+	// Returns INVALID_ARGUMENT if deployment_id is empty.
 	GetProcessesByDeployment(context.Context, *GetProcessesByDeploymentRequest) (*GetProcessesResponse, error)
-	// GetGroupedProcessByDeployment returns all the processes executed grouped by deployment.
+	// GetGroupedProcessByDeployment returns all processes observed in the given
+	// deployment, grouped by executable path and argument string.
+	//
+	// Each ProcessNameGroup contains the number of distinct containers in which
+	// the process was observed and the individual signal observations per argument
+	// set, sorted by argument string. Results are sorted by executable path.
+	//
+	// Returns INVALID_ARGUMENT if deployment_id is empty.
 	GetGroupedProcessByDeployment(context.Context, *GetProcessesByDeploymentRequest) (*GetGroupedProcessesResponse, error)
-	// GetGroupedProcessByDeploymentAndContainer returns all the processes executed grouped by deployment and container.
+	// GetGroupedProcessByDeploymentAndContainer returns all processes observed
+	// in the given deployment grouped by both executable path and container name.
+	//
+	// Each group is additionally annotated with a suspicious flag that is true
+	// when the process is not in the locked process baseline for that container,
+	// indicating it may be unexpected behavior.
+	//
+	// Returns INVALID_ARGUMENT if deployment_id is empty.
 	GetGroupedProcessByDeploymentAndContainer(context.Context, *GetProcessesByDeploymentRequest) (*GetGroupedProcessesWithContainerResponse, error)
 }
 

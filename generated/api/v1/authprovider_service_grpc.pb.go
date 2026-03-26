@@ -34,15 +34,81 @@ const (
 // AuthProviderServiceClient is the client API for AuthProviderService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// AuthProviderService manages identity provider (IdP) integrations used for authenticating
+// users into the ACS platform.
+//
+// Auth providers represent external IdPs (OIDC, SAML, OpenShift OAuth, IAP, User PKI).
+// The built-in "basic" auth provider cannot be created, modified, or deleted via this API.
+//
+// Authentication requirements:
+// - ListAvailableProviderTypes, GetLoginAuthProviders, ExchangeToken: anonymous (used during login flow).
+// - GetAuthProvider, GetAuthProviders: require read access to the Access resource.
+// - PostAuthProvider, UpdateAuthProvider, PutAuthProvider, DeleteAuthProvider: require write access to the Access resource.
 type AuthProviderServiceClient interface {
+	// ListAvailableProviderTypes returns the auth provider types that can be created on this installation.
+	//
+	// The list is derived from registered backend factories. The built-in "basic" provider type
+	// is excluded. Results are sorted alphabetically by type name.
+	// This endpoint is publicly accessible (no authentication required).
 	ListAvailableProviderTypes(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*AvailableProviderTypesResponse, error)
+	// GetAuthProvider returns the auth provider with the given ID.
+	//
+	// Returns NOT_FOUND if no provider with the specified ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty.
+	// Requires read access to the Access resource.
 	GetAuthProvider(ctx context.Context, in *GetAuthProviderRequest, opts ...grpc.CallOption) (*storage.AuthProvider, error)
+	// GetLoginAuthProviders returns the minimal auth provider information needed to render the login screen.
+	//
+	// Only returns enabled, visible providers that have a registered backend factory.
+	// Results are sorted by name; the built-in basic provider appears last.
+	// This endpoint is publicly accessible (no authentication required).
 	GetLoginAuthProviders(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetLoginAuthProvidersResponse, error)
+	// GetAuthProviders returns all auth providers, optionally filtered by name and/or type.
+	//
+	// Both filters are optional and exact-match. Results are sorted by name;
+	// the built-in basic provider appears last.
+	// Requires read access to the Access resource.
 	GetAuthProviders(ctx context.Context, in *GetAuthProvidersRequest, opts ...grpc.CallOption) (*GetAuthProvidersResponse, error)
+	// PostAuthProvider creates a new auth provider.
+	//
+	// The provider.id and provider.login_url fields must be empty; they are assigned by the server.
+	// The provider.name must be non-empty. The built-in "basic" provider type cannot be created.
+	// Returns INVALID_ARGUMENT if validation fails.
+	// Requires write access to the Access resource.
 	PostAuthProvider(ctx context.Context, in *PostAuthProviderRequest, opts ...grpc.CallOption) (*storage.AuthProvider, error)
+	// UpdateAuthProvider partially updates an existing auth provider's name or enabled status.
+	//
+	// Only the name and enabled fields can be modified via this endpoint. For full replacement,
+	// use PutAuthProvider. The built-in "basic" provider cannot be modified.
+	// Returns NOT_FOUND if no provider with the specified ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty or validation fails.
+	// Requires write access to the Access resource.
 	UpdateAuthProvider(ctx context.Context, in *UpdateAuthProviderRequest, opts ...grpc.CallOption) (*storage.AuthProvider, error)
+	// PutAuthProvider fully replaces an existing auth provider.
+	//
+	// The request body must include the full provider definition including id.
+	// Config fields omitted from the request are merged from the existing provider.
+	// The built-in "basic" provider cannot be modified.
+	// Returns NOT_FOUND if no provider with the specified ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty or validation fails.
+	// Requires write access to the Access resource.
 	PutAuthProvider(ctx context.Context, in *storage.AuthProvider, opts ...grpc.CallOption) (*storage.AuthProvider, error)
+	// DeleteAuthProvider removes an auth provider and all its associated group mappings.
+	//
+	// The built-in "basic" provider cannot be deleted.
+	// When force is false, deletion is blocked if the provider has associated group mappings.
+	// Returns NOT_FOUND if no provider with the specified ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty.
+	// Requires write access to the Access resource.
 	DeleteAuthProvider(ctx context.Context, in *DeleteByIDWithForce, opts ...grpc.CallOption) (*Empty, error)
+	// ExchangeToken exchanges an external identity provider token for a Central access token.
+	//
+	// Used as part of the browser login flow after an OAuth/OIDC callback. The external_token,
+	// type, and state from the IdP callback are submitted here. On success a Central JWT is returned.
+	// When state contains an internal test-mode marker, the response returns the resolved user auth
+	// status instead of a token, allowing preview of role assignments without issuing a credential.
+	// This endpoint is publicly accessible (no authentication required).
 	ExchangeToken(ctx context.Context, in *ExchangeTokenRequest, opts ...grpc.CallOption) (*ExchangeTokenResponse, error)
 }
 
@@ -147,15 +213,81 @@ func (c *authProviderServiceClient) ExchangeToken(ctx context.Context, in *Excha
 // AuthProviderServiceServer is the server API for AuthProviderService service.
 // All implementations should embed UnimplementedAuthProviderServiceServer
 // for forward compatibility.
+//
+// AuthProviderService manages identity provider (IdP) integrations used for authenticating
+// users into the ACS platform.
+//
+// Auth providers represent external IdPs (OIDC, SAML, OpenShift OAuth, IAP, User PKI).
+// The built-in "basic" auth provider cannot be created, modified, or deleted via this API.
+//
+// Authentication requirements:
+// - ListAvailableProviderTypes, GetLoginAuthProviders, ExchangeToken: anonymous (used during login flow).
+// - GetAuthProvider, GetAuthProviders: require read access to the Access resource.
+// - PostAuthProvider, UpdateAuthProvider, PutAuthProvider, DeleteAuthProvider: require write access to the Access resource.
 type AuthProviderServiceServer interface {
+	// ListAvailableProviderTypes returns the auth provider types that can be created on this installation.
+	//
+	// The list is derived from registered backend factories. The built-in "basic" provider type
+	// is excluded. Results are sorted alphabetically by type name.
+	// This endpoint is publicly accessible (no authentication required).
 	ListAvailableProviderTypes(context.Context, *Empty) (*AvailableProviderTypesResponse, error)
+	// GetAuthProvider returns the auth provider with the given ID.
+	//
+	// Returns NOT_FOUND if no provider with the specified ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty.
+	// Requires read access to the Access resource.
 	GetAuthProvider(context.Context, *GetAuthProviderRequest) (*storage.AuthProvider, error)
+	// GetLoginAuthProviders returns the minimal auth provider information needed to render the login screen.
+	//
+	// Only returns enabled, visible providers that have a registered backend factory.
+	// Results are sorted by name; the built-in basic provider appears last.
+	// This endpoint is publicly accessible (no authentication required).
 	GetLoginAuthProviders(context.Context, *Empty) (*GetLoginAuthProvidersResponse, error)
+	// GetAuthProviders returns all auth providers, optionally filtered by name and/or type.
+	//
+	// Both filters are optional and exact-match. Results are sorted by name;
+	// the built-in basic provider appears last.
+	// Requires read access to the Access resource.
 	GetAuthProviders(context.Context, *GetAuthProvidersRequest) (*GetAuthProvidersResponse, error)
+	// PostAuthProvider creates a new auth provider.
+	//
+	// The provider.id and provider.login_url fields must be empty; they are assigned by the server.
+	// The provider.name must be non-empty. The built-in "basic" provider type cannot be created.
+	// Returns INVALID_ARGUMENT if validation fails.
+	// Requires write access to the Access resource.
 	PostAuthProvider(context.Context, *PostAuthProviderRequest) (*storage.AuthProvider, error)
+	// UpdateAuthProvider partially updates an existing auth provider's name or enabled status.
+	//
+	// Only the name and enabled fields can be modified via this endpoint. For full replacement,
+	// use PutAuthProvider. The built-in "basic" provider cannot be modified.
+	// Returns NOT_FOUND if no provider with the specified ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty or validation fails.
+	// Requires write access to the Access resource.
 	UpdateAuthProvider(context.Context, *UpdateAuthProviderRequest) (*storage.AuthProvider, error)
+	// PutAuthProvider fully replaces an existing auth provider.
+	//
+	// The request body must include the full provider definition including id.
+	// Config fields omitted from the request are merged from the existing provider.
+	// The built-in "basic" provider cannot be modified.
+	// Returns NOT_FOUND if no provider with the specified ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty or validation fails.
+	// Requires write access to the Access resource.
 	PutAuthProvider(context.Context, *storage.AuthProvider) (*storage.AuthProvider, error)
+	// DeleteAuthProvider removes an auth provider and all its associated group mappings.
+	//
+	// The built-in "basic" provider cannot be deleted.
+	// When force is false, deletion is blocked if the provider has associated group mappings.
+	// Returns NOT_FOUND if no provider with the specified ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty.
+	// Requires write access to the Access resource.
 	DeleteAuthProvider(context.Context, *DeleteByIDWithForce) (*Empty, error)
+	// ExchangeToken exchanges an external identity provider token for a Central access token.
+	//
+	// Used as part of the browser login flow after an OAuth/OIDC callback. The external_token,
+	// type, and state from the IdP callback are submitted here. On success a Central JWT is returned.
+	// When state contains an internal test-mode marker, the response returns the resolved user auth
+	// status instead of a token, allowing preview of role assignments without issuing a credential.
+	// This endpoint is publicly accessible (no authentication required).
 	ExchangeToken(context.Context, *ExchangeTokenRequest) (*ExchangeTokenResponse, error)
 }
 

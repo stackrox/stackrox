@@ -25,11 +25,16 @@ const (
 
 // ClusterCheckStatus groups the result of the check by cluster
 type ClusterCheckStatus struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Cluster       *ComplianceScanCluster `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
-	Status        ComplianceCheckStatus  `protobuf:"varint,2,opt,name=status,proto3,enum=v2.ComplianceCheckStatus" json:"status,omitempty"`
-	CreatedTime   *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
-	CheckUid      string                 `protobuf:"bytes,4,opt,name=check_uid,json=checkUid,proto3" json:"check_uid,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster identifies the cluster where this check result was recorded.
+	Cluster *ComplianceScanCluster `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	// status is the pass/fail/error outcome of this check on the cluster.
+	Status ComplianceCheckStatus `protobuf:"varint,2,opt,name=status,proto3,enum=v2.ComplianceCheckStatus" json:"status,omitempty"`
+	// created_time is when this check result was first recorded.
+	CreatedTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
+	// check_uid is the unique identifier assigned by the Compliance Operator to this result.
+	CheckUid string `protobuf:"bytes,4,opt,name=check_uid,json=checkUid,proto3" json:"check_uid,omitempty"`
+	// last_scan_time is the time the most recent scan that produced this result completed.
 	LastScanTime  *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_scan_time,json=lastScanTime,proto3" json:"last_scan_time,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -102,20 +107,29 @@ func (x *ClusterCheckStatus) GetLastScanTime() *timestamppb.Timestamp {
 
 // ComplianceCheckResult details of an instance of a compliance check result
 type ComplianceCheckResult struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CheckId       string                 `protobuf:"bytes,1,opt,name=check_id,json=checkId,proto3" json:"check_id,omitempty"`
-	CheckName     string                 `protobuf:"bytes,2,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
-	CheckUid      string                 `protobuf:"bytes,3,opt,name=check_uid,json=checkUid,proto3" json:"check_uid,omitempty"`
-	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	Instructions  string                 `protobuf:"bytes,5,opt,name=instructions,proto3" json:"instructions,omitempty"`
-	Rationale     string                 `protobuf:"bytes,8,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	ValuesUsed    []string               `protobuf:"bytes,9,rep,name=valuesUsed,proto3" json:"valuesUsed,omitempty"`
-	Warnings      []string               `protobuf:"bytes,10,rep,name=warnings,proto3" json:"warnings,omitempty"`
-	Status        ComplianceCheckStatus  `protobuf:"varint,11,opt,name=status,proto3,enum=v2.ComplianceCheckStatus" json:"status,omitempty"`
-	RuleName      string                 `protobuf:"bytes,12,opt,name=rule_name,json=ruleName,proto3" json:"rule_name,omitempty"`
-	Labels        map[string]string      `protobuf:"bytes,13,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Annotations   map[string]string      `protobuf:"bytes,14,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Controls      []*ComplianceControl   `protobuf:"bytes,15,rep,name=controls,proto3" json:"controls,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	CheckId   string                 `protobuf:"bytes,1,opt,name=check_id,json=checkId,proto3" json:"check_id,omitempty"`
+	CheckName string                 `protobuf:"bytes,2,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
+	// check_uid is the unique identifier assigned by the Compliance Operator to this result.
+	CheckUid string `protobuf:"bytes,3,opt,name=check_uid,json=checkUid,proto3" json:"check_uid,omitempty"`
+	// description explains what the check validates.
+	Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	// instructions describes remediation steps when the check fails.
+	Instructions string `protobuf:"bytes,5,opt,name=instructions,proto3" json:"instructions,omitempty"`
+	// rationale explains why this check is important.
+	Rationale string `protobuf:"bytes,8,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	// valuesUsed lists the variable values applied when this check was evaluated.
+	ValuesUsed []string `protobuf:"bytes,9,rep,name=valuesUsed,proto3" json:"valuesUsed,omitempty"`
+	// warnings contains any non-fatal warnings generated during check evaluation.
+	Warnings []string `protobuf:"bytes,10,rep,name=warnings,proto3" json:"warnings,omitempty"`
+	// status is the pass/fail/error outcome of this check.
+	Status ComplianceCheckStatus `protobuf:"varint,11,opt,name=status,proto3,enum=v2.ComplianceCheckStatus" json:"status,omitempty"`
+	// rule_name is the name of the Compliance Operator rule that produced this result.
+	RuleName    string            `protobuf:"bytes,12,opt,name=rule_name,json=ruleName,proto3" json:"rule_name,omitempty"`
+	Labels      map[string]string `protobuf:"bytes,13,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Annotations map[string]string `protobuf:"bytes,14,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// controls lists the compliance framework controls (e.g. CIS, NIST) this check maps to.
+	Controls      []*ComplianceControl `protobuf:"bytes,15,rep,name=controls,proto3" json:"controls,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -241,9 +255,12 @@ func (x *ComplianceCheckResult) GetControls() []*ComplianceControl {
 	return nil
 }
 
+// ComplianceCheckData associates a check result with its cluster and scan context.
 type ComplianceCheckData struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ClusterId     string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// cluster_id identifies the cluster where this check was evaluated.
+	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// scan_name identifies the compliance scan configuration that produced this result.
 	ScanName      string                 `protobuf:"bytes,2,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty"`
 	Result        *ComplianceCheckResult `protobuf:"bytes,3,opt,name=result,proto3" json:"result,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -303,18 +320,25 @@ func (x *ComplianceCheckData) GetResult() *ComplianceCheckResult {
 
 // ComplianceClusterCheckStatus provides the status of a compliance check result across clusters
 type ComplianceClusterCheckStatus struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CheckId       string                 `protobuf:"bytes,1,opt,name=check_id,json=checkId,proto3" json:"check_id,omitempty"`
-	CheckName     string                 `protobuf:"bytes,2,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
-	Clusters      []*ClusterCheckStatus  `protobuf:"bytes,3,rep,name=clusters,proto3" json:"clusters,omitempty"`
-	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	Instructions  string                 `protobuf:"bytes,5,opt,name=instructions,proto3" json:"instructions,omitempty"`
-	Rationale     string                 `protobuf:"bytes,8,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	ValuesUsed    []string               `protobuf:"bytes,9,rep,name=valuesUsed,proto3" json:"valuesUsed,omitempty"`
-	Warnings      []string               `protobuf:"bytes,10,rep,name=warnings,proto3" json:"warnings,omitempty"`
-	Labels        map[string]string      `protobuf:"bytes,11,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Annotations   map[string]string      `protobuf:"bytes,12,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Controls      []*ComplianceControl   `protobuf:"bytes,13,rep,name=controls,proto3" json:"controls,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	CheckId   string                 `protobuf:"bytes,1,opt,name=check_id,json=checkId,proto3" json:"check_id,omitempty"`
+	CheckName string                 `protobuf:"bytes,2,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
+	// clusters lists the per-cluster status of this check.
+	Clusters []*ClusterCheckStatus `protobuf:"bytes,3,rep,name=clusters,proto3" json:"clusters,omitempty"`
+	// description explains what the check validates.
+	Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	// instructions describes remediation steps when the check fails.
+	Instructions string `protobuf:"bytes,5,opt,name=instructions,proto3" json:"instructions,omitempty"`
+	// rationale explains why this check is important.
+	Rationale string `protobuf:"bytes,8,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	// valuesUsed lists the variable values applied when this check was evaluated.
+	ValuesUsed []string `protobuf:"bytes,9,rep,name=valuesUsed,proto3" json:"valuesUsed,omitempty"`
+	// warnings contains any non-fatal warnings generated during check evaluation.
+	Warnings    []string          `protobuf:"bytes,10,rep,name=warnings,proto3" json:"warnings,omitempty"`
+	Labels      map[string]string `protobuf:"bytes,11,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Annotations map[string]string `protobuf:"bytes,12,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// controls lists the compliance framework controls this check maps to.
+	Controls      []*ComplianceControl `protobuf:"bytes,13,rep,name=controls,proto3" json:"controls,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -428,11 +452,15 @@ func (x *ComplianceClusterCheckStatus) GetControls() []*ComplianceControl {
 
 // ComplianceScanResult provides the results of a scan
 type ComplianceScanResult struct {
-	state         protoimpl.MessageState          `protogen:"open.v1"`
-	ScanName      string                          `protobuf:"bytes,1,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty"`
-	ProfileName   string                          `protobuf:"bytes,2,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
-	CheckResults  []*ComplianceClusterCheckStatus `protobuf:"bytes,3,rep,name=check_results,json=checkResults,proto3" json:"check_results,omitempty"`
-	ScanConfigId  string                          `protobuf:"bytes,4,opt,name=scan_config_id,json=scanConfigId,proto3" json:"scan_config_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// scan_name is the name of the scan configuration that produced these results.
+	ScanName string `protobuf:"bytes,1,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty"`
+	// profile_name is the compliance profile that was applied during the scan.
+	ProfileName string `protobuf:"bytes,2,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
+	// check_results contains the per-check cross-cluster status for this scan.
+	CheckResults []*ComplianceClusterCheckStatus `protobuf:"bytes,3,rep,name=check_results,json=checkResults,proto3" json:"check_results,omitempty"`
+	// scan_config_id is the ID of the scan configuration that produced these results.
+	ScanConfigId  string `protobuf:"bytes,4,opt,name=scan_config_id,json=scanConfigId,proto3" json:"scan_config_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -542,9 +570,10 @@ func (x *ListComplianceScanResultsResponse) GetScanResults() []*ComplianceScanRe
 
 // ListComplianceResultsResponse provides the complete scan results
 type ListComplianceResultsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ScanResults   []*ComplianceCheckData `protobuf:"bytes,1,rep,name=scan_results,json=scanResults,proto3" json:"scan_results,omitempty"`
-	TotalCount    int32                  `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	ScanResults []*ComplianceCheckData `protobuf:"bytes,1,rep,name=scan_results,json=scanResults,proto3" json:"scan_results,omitempty"`
+	// total_count is the total number of check results matching the query, before pagination.
+	TotalCount    int32 `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -595,12 +624,17 @@ func (x *ListComplianceResultsResponse) GetTotalCount() int32 {
 
 // ListComplianceCheckClusterResponse provides stats per cluster
 type ListComplianceCheckClusterResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CheckResults  []*ClusterCheckStatus  `protobuf:"bytes,1,rep,name=check_results,json=checkResults,proto3" json:"check_results,omitempty"`
-	ProfileName   string                 `protobuf:"bytes,2,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
-	CheckName     string                 `protobuf:"bytes,3,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
-	TotalCount    int32                  `protobuf:"varint,4,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
-	Controls      []*ComplianceControl   `protobuf:"bytes,5,rep,name=controls,proto3" json:"controls,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// check_results lists the per-cluster status for this check.
+	CheckResults []*ClusterCheckStatus `protobuf:"bytes,1,rep,name=check_results,json=checkResults,proto3" json:"check_results,omitempty"`
+	// profile_name is the profile that defines this check.
+	ProfileName string `protobuf:"bytes,2,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
+	// check_name is the name of the check being summarized.
+	CheckName string `protobuf:"bytes,3,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
+	// total_count is the total number of cluster results, before pagination.
+	TotalCount int32 `protobuf:"varint,4,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	// controls lists the compliance framework controls this check maps to.
+	Controls      []*ComplianceControl `protobuf:"bytes,5,rep,name=controls,proto3" json:"controls,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -670,13 +704,18 @@ func (x *ListComplianceCheckClusterResponse) GetControls() []*ComplianceControl 
 	return nil
 }
 
+// ListComplianceCheckResultResponse provides check results for a profile on a single cluster.
 type ListComplianceCheckResultResponse struct {
-	state         protoimpl.MessageState   `protogen:"open.v1"`
-	CheckResults  []*ComplianceCheckResult `protobuf:"bytes,1,rep,name=check_results,json=checkResults,proto3" json:"check_results,omitempty"`
-	ProfileName   string                   `protobuf:"bytes,2,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
-	ClusterId     string                   `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	TotalCount    int32                    `protobuf:"varint,4,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
-	LastScanTime  *timestamppb.Timestamp   `protobuf:"bytes,5,opt,name=last_scan_time,json=lastScanTime,proto3" json:"last_scan_time,omitempty"`
+	state        protoimpl.MessageState   `protogen:"open.v1"`
+	CheckResults []*ComplianceCheckResult `protobuf:"bytes,1,rep,name=check_results,json=checkResults,proto3" json:"check_results,omitempty"`
+	// profile_name is the profile applied during the scan.
+	ProfileName string `protobuf:"bytes,2,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
+	// cluster_id identifies the cluster these results are from.
+	ClusterId string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// total_count is the total number of check results, before pagination.
+	TotalCount int32 `protobuf:"varint,4,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	// last_scan_time is the time the most recent scan completed on this cluster.
+	LastScanTime  *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_scan_time,json=lastScanTime,proto3" json:"last_scan_time,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -746,12 +785,15 @@ func (x *ListComplianceCheckResultResponse) GetLastScanTime() *timestamppb.Times
 	return nil
 }
 
+// ComplianceScanResultsRequest filters results to a specific scan configuration.
 type ComplianceScanResultsRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	ScanConfigName string                 `protobuf:"bytes,1,opt,name=scan_config_name,json=scanConfigName,proto3" json:"scan_config_name,omitempty"`
-	Query          *RawQuery              `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// scan_config_name is required; identifies the scan configuration to retrieve results for.
+	ScanConfigName string `protobuf:"bytes,1,opt,name=scan_config_name,json=scanConfigName,proto3" json:"scan_config_name,omitempty"`
+	// query further filters results using StackRox search syntax. Supports pagination.
+	Query         *RawQuery `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceScanResultsRequest) Reset() {
@@ -798,11 +840,15 @@ func (x *ComplianceScanResultsRequest) GetQuery() *RawQuery {
 	return nil
 }
 
+// ComplianceProfileClusterRequest filters check results to a specific profile and cluster.
 type ComplianceProfileClusterRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ProfileName   string                 `protobuf:"bytes,1,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
-	ClusterId     string                 `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Query         *RawQuery              `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// profile_name is required; the compliance profile to retrieve results for.
+	ProfileName string `protobuf:"bytes,1,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
+	// cluster_id is required; the cluster to retrieve results from.
+	ClusterId string `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	// query further filters results using StackRox search syntax. Supports pagination.
+	Query         *RawQuery `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -858,11 +904,15 @@ func (x *ComplianceProfileClusterRequest) GetQuery() *RawQuery {
 	return nil
 }
 
+// ComplianceCheckDetailRequest filters check detail to a specific profile and check name.
 type ComplianceCheckDetailRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ProfileName   string                 `protobuf:"bytes,1,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
-	CheckName     string                 `protobuf:"bytes,2,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
-	Query         *RawQuery              `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// profile_name is required; the compliance profile this check belongs to.
+	ProfileName string `protobuf:"bytes,1,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
+	// check_name is required; the name of the check to retrieve details for.
+	CheckName string `protobuf:"bytes,2,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
+	// query further filters results using StackRox search syntax.
+	Query         *RawQuery `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

@@ -33,22 +33,79 @@ const (
 // NotifierServiceClient is the client API for NotifierService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// NotifierService manages external notification integrations used to alert on
+// policy violations (e.g. Slack, PagerDuty, email, Splunk, JIRA, Syslog).
+//
+// Notifiers are triggered by Central when an alert fires. Each notifier has a
+// type (e.g. "slack", "email") and a configuration specific to that type.
+// Secrets (tokens, passwords) are scrubbed from read responses.
+//
+// Authentication: read operations require the Integration resource with View
+// access. Write and test operations require the Integration resource with
+// Modify access.
 type NotifierServiceClient interface {
-	// GetNotifier returns the notifier configuration given its ID.
+	// GetNotifier returns the notifier configuration with the given ID.
+	//
+	// Sensitive credential fields are replaced with a placeholder in the response.
+	// Returns NOT_FOUND if no notifier with the given ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	GetNotifier(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.Notifier, error)
 	// GetNotifiers returns all notifier configurations.
+	//
+	// Sensitive credential fields are replaced with a placeholder in each
+	// returned notifier. The response is not paginated.
 	GetNotifiers(ctx context.Context, in *GetNotifiersRequest, opts ...grpc.CallOption) (*GetNotifiersResponse, error)
-	// PutNotifier modifies a given notifier, without using stored credential reconciliation.
+	// PutNotifier replaces an existing notifier configuration, treating all
+	// credential fields in the request as authoritative (no stored credential
+	// reconciliation). Prefer UpdateNotifier for password-preserving updates.
+	//
+	// Returns INVALID_ARGUMENT if validation fails (missing name, type, or UI
+	// endpoint, or invalid endpoint configuration).
 	PutNotifier(ctx context.Context, in *storage.Notifier, opts ...grpc.CallOption) (*Empty, error)
-	// PostNotifier creates a notifier configuration.
+	// PostNotifier creates a new notifier configuration.
+	//
+	// The id field must be empty; a new ID is assigned and returned. Credentials
+	// must be provided in full. The notifier is validated and its connectivity
+	// is verified before it is persisted.
+	//
+	// Returns INVALID_ARGUMENT if the id field is set, if required fields are
+	// missing, or if validation or connectivity checks fail.
 	PostNotifier(ctx context.Context, in *storage.Notifier, opts ...grpc.CallOption) (*storage.Notifier, error)
-	// TestNotifier checks if a notifier is correctly configured.
+	// TestNotifier verifies that the given notifier configuration is reachable
+	// and correctly set up, treating all credential fields as authoritative
+	// (no stored credential reconciliation).
+	//
+	// Returns INVALID_ARGUMENT if validation fails or if the notifier cannot
+	// be contacted successfully.
 	TestNotifier(ctx context.Context, in *storage.Notifier, opts ...grpc.CallOption) (*Empty, error)
-	// DeleteNotifier removes a notifier configuration given its ID.
+	// DeleteNotifier removes a notifier configuration with the given ID.
+	//
+	// Returns FAILED_PRECONDITION if the notifier is still referenced by one
+	// or more policies (check policies before deletion or use force=true).
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	DeleteNotifier(ctx context.Context, in *DeleteNotifierRequest, opts ...grpc.CallOption) (*Empty, error)
-	// UpdateNotifier modifies a given notifier, with optional stored credential reconciliation.
+	// UpdateNotifier modifies an existing notifier configuration with optional
+	// stored credential reconciliation.
+	//
+	// When update_password is false, credential fields in the request are
+	// ignored and the stored credentials are preserved. When update_password
+	// is true, credential fields in the request replace stored credentials.
+	//
+	// Returns INVALID_ARGUMENT if validation fails.
+	// Returns NOT_FOUND if update_password is false and no notifier with the
+	// given ID exists.
 	UpdateNotifier(ctx context.Context, in *UpdateNotifierRequest, opts ...grpc.CallOption) (*Empty, error)
-	// TestUpdatedNotifier checks if the given notifier is correctly configured, with optional stored credential reconciliation.
+	// TestUpdatedNotifier verifies that the given notifier configuration is
+	// reachable with optional stored credential reconciliation.
+	//
+	// When update_password is false, credential fields in the request are
+	// replaced with the stored credentials before the test is performed.
+	// When update_password is true, the provided credentials are used directly.
+	//
+	// Returns INVALID_ARGUMENT if the notifier cannot be contacted or validation
+	// fails. Returns NOT_FOUND if update_password is false and the notifier does
+	// not exist.
 	TestUpdatedNotifier(ctx context.Context, in *UpdateNotifierRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -143,22 +200,79 @@ func (c *notifierServiceClient) TestUpdatedNotifier(ctx context.Context, in *Upd
 // NotifierServiceServer is the server API for NotifierService service.
 // All implementations should embed UnimplementedNotifierServiceServer
 // for forward compatibility.
+//
+// NotifierService manages external notification integrations used to alert on
+// policy violations (e.g. Slack, PagerDuty, email, Splunk, JIRA, Syslog).
+//
+// Notifiers are triggered by Central when an alert fires. Each notifier has a
+// type (e.g. "slack", "email") and a configuration specific to that type.
+// Secrets (tokens, passwords) are scrubbed from read responses.
+//
+// Authentication: read operations require the Integration resource with View
+// access. Write and test operations require the Integration resource with
+// Modify access.
 type NotifierServiceServer interface {
-	// GetNotifier returns the notifier configuration given its ID.
+	// GetNotifier returns the notifier configuration with the given ID.
+	//
+	// Sensitive credential fields are replaced with a placeholder in the response.
+	// Returns NOT_FOUND if no notifier with the given ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	GetNotifier(context.Context, *ResourceByID) (*storage.Notifier, error)
 	// GetNotifiers returns all notifier configurations.
+	//
+	// Sensitive credential fields are replaced with a placeholder in each
+	// returned notifier. The response is not paginated.
 	GetNotifiers(context.Context, *GetNotifiersRequest) (*GetNotifiersResponse, error)
-	// PutNotifier modifies a given notifier, without using stored credential reconciliation.
+	// PutNotifier replaces an existing notifier configuration, treating all
+	// credential fields in the request as authoritative (no stored credential
+	// reconciliation). Prefer UpdateNotifier for password-preserving updates.
+	//
+	// Returns INVALID_ARGUMENT if validation fails (missing name, type, or UI
+	// endpoint, or invalid endpoint configuration).
 	PutNotifier(context.Context, *storage.Notifier) (*Empty, error)
-	// PostNotifier creates a notifier configuration.
+	// PostNotifier creates a new notifier configuration.
+	//
+	// The id field must be empty; a new ID is assigned and returned. Credentials
+	// must be provided in full. The notifier is validated and its connectivity
+	// is verified before it is persisted.
+	//
+	// Returns INVALID_ARGUMENT if the id field is set, if required fields are
+	// missing, or if validation or connectivity checks fail.
 	PostNotifier(context.Context, *storage.Notifier) (*storage.Notifier, error)
-	// TestNotifier checks if a notifier is correctly configured.
+	// TestNotifier verifies that the given notifier configuration is reachable
+	// and correctly set up, treating all credential fields as authoritative
+	// (no stored credential reconciliation).
+	//
+	// Returns INVALID_ARGUMENT if validation fails or if the notifier cannot
+	// be contacted successfully.
 	TestNotifier(context.Context, *storage.Notifier) (*Empty, error)
-	// DeleteNotifier removes a notifier configuration given its ID.
+	// DeleteNotifier removes a notifier configuration with the given ID.
+	//
+	// Returns FAILED_PRECONDITION if the notifier is still referenced by one
+	// or more policies (check policies before deletion or use force=true).
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	DeleteNotifier(context.Context, *DeleteNotifierRequest) (*Empty, error)
-	// UpdateNotifier modifies a given notifier, with optional stored credential reconciliation.
+	// UpdateNotifier modifies an existing notifier configuration with optional
+	// stored credential reconciliation.
+	//
+	// When update_password is false, credential fields in the request are
+	// ignored and the stored credentials are preserved. When update_password
+	// is true, credential fields in the request replace stored credentials.
+	//
+	// Returns INVALID_ARGUMENT if validation fails.
+	// Returns NOT_FOUND if update_password is false and no notifier with the
+	// given ID exists.
 	UpdateNotifier(context.Context, *UpdateNotifierRequest) (*Empty, error)
-	// TestUpdatedNotifier checks if the given notifier is correctly configured, with optional stored credential reconciliation.
+	// TestUpdatedNotifier verifies that the given notifier configuration is
+	// reachable with optional stored credential reconciliation.
+	//
+	// When update_password is false, credential fields in the request are
+	// replaced with the stored credentials before the test is performed.
+	// When update_password is true, the provided credentials are used directly.
+	//
+	// Returns INVALID_ARGUMENT if the notifier cannot be contacted or validation
+	// fails. Returns NOT_FOUND if update_password is false and the notifier does
+	// not exist.
 	TestUpdatedNotifier(context.Context, *UpdateNotifierRequest) (*Empty, error)
 }
 

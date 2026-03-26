@@ -18,6 +18,8 @@
   "paths": {
     "/v1/report/run/{id}": {
       "post": {
+        "summary": "RunReport queues an on-demand execution of the report configuration with the given ID.",
+        "description": "The report is queued for asynchronous generation and delivered to the configured\nemail recipients once complete. The call returns immediately after the report is\nenqueued; it does not wait for generation to finish.\n\nOnly v1 report configurations are accepted. Passing a v2 configuration ID returns\nINVALID_ARGUMENT.\n\nReturns NOT_FOUND if no report configuration with the given ID exists.\nReturns INVALID_ARGUMENT if the configuration belongs to reporting version 2.0.",
         "operationId": "ReportService_RunReport",
         "responses": {
           "200": {

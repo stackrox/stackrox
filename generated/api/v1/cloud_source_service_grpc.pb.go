@@ -31,20 +31,66 @@ const (
 // CloudSourcesServiceClient is the client API for CloudSourcesService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// CloudSourcesService manages cloud source integrations that provide cluster
+// discovery from external cloud providers and managers (Paladin Cloud, OCM).
+//
+// Cloud sources are periodically polled by Central to discover clusters that
+// are not yet secured by StackRox. When a cloud source is created or updated,
+// Central short-circuits its polling loop to apply the latest configuration
+// immediately.
+//
+// Credentials are reconciled using the update_credentials flag: when false,
+// the existing stored credentials are used and credential fields in the
+// request are ignored.
+//
+// Authentication: read operations require the Integration resource with View
+// access. Write and test operations require the Integration resource with
+// Modify access.
 type CloudSourcesServiceClient interface {
-	// CountCloudSources returns the number of cloud sources after filtering by requested fields.
+	// CountCloudSources returns the number of cloud sources matching the given
+	// filter. Supports filtering by name or type.
 	CountCloudSources(ctx context.Context, in *CountCloudSourcesRequest, opts ...grpc.CallOption) (*CountCloudSourcesResponse, error)
-	// GetCloudSource retrieves a cloud source by ID.
+	// GetCloudSource retrieves a single cloud source by ID.
+	//
+	// Returns NOT_FOUND if no cloud source with the given ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	GetCloudSource(ctx context.Context, in *GetCloudSourceRequest, opts ...grpc.CallOption) (*GetCloudSourceResponse, error)
-	// ListCloudSources returns the list of cloud sources after filtered by requested fields.
+	// ListCloudSources returns all cloud sources matching the given filter,
+	// sorted by name. Supports pagination via the pagination field (max 1000
+	// results per page).
 	ListCloudSources(ctx context.Context, in *ListCloudSourcesRequest, opts ...grpc.CallOption) (*ListCloudSourcesResponse, error)
-	// CreateCloudSource creates a cloud source.
+	// CreateCloudSource creates a new cloud source.
+	//
+	// The cloud_source.id field must be empty. Unless skip_test_integration is
+	// true, the cloud source is tested for connectivity before being persisted.
+	//
+	// Returns INVALID_ARGUMENT if id is set, if the cloud source is empty, or
+	// if the connectivity test fails.
 	CreateCloudSource(ctx context.Context, in *CreateCloudSourceRequest, opts ...grpc.CallOption) (*CreateCloudSourceResponse, error)
-	// UpdateCloudSource creates or replaces a cloud source.
+	// UpdateCloudSource replaces an existing cloud source configuration.
+	//
+	// When update_credentials is false, credentials in the request are ignored
+	// and the stored credentials are used instead (the resource must already
+	// exist). Unless skip_test_integration is true, connectivity is verified
+	// before the update is persisted.
+	//
+	// Returns INVALID_ARGUMENT if the cloud source is empty, if credential
+	// reconciliation fails, or if the connectivity test fails.
 	UpdateCloudSource(ctx context.Context, in *UpdateCloudSourceRequest, opts ...grpc.CallOption) (*Empty, error)
-	// DeleteCloudSource removes a cloud source.
+	// DeleteCloudSource removes the cloud source with the given ID.
+	//
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	DeleteCloudSource(ctx context.Context, in *DeleteCloudSourceRequest, opts ...grpc.CallOption) (*Empty, error)
-	// TestCloudSource tests a cloud source.
+	// TestCloudSource verifies connectivity for the given cloud source
+	// configuration using a short timeout (8 seconds) and no retries.
+	//
+	// When update_credentials is false, the stored credentials for the existing
+	// cloud source are used. When update_credentials is true, the credentials in
+	// the request are used directly.
+	//
+	// Returns INVALID_ARGUMENT if the cloud source is empty, if credential
+	// reconciliation fails, or if the connectivity test fails.
 	TestCloudSource(ctx context.Context, in *TestCloudSourceRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -129,20 +175,66 @@ func (c *cloudSourcesServiceClient) TestCloudSource(ctx context.Context, in *Tes
 // CloudSourcesServiceServer is the server API for CloudSourcesService service.
 // All implementations should embed UnimplementedCloudSourcesServiceServer
 // for forward compatibility.
+//
+// CloudSourcesService manages cloud source integrations that provide cluster
+// discovery from external cloud providers and managers (Paladin Cloud, OCM).
+//
+// Cloud sources are periodically polled by Central to discover clusters that
+// are not yet secured by StackRox. When a cloud source is created or updated,
+// Central short-circuits its polling loop to apply the latest configuration
+// immediately.
+//
+// Credentials are reconciled using the update_credentials flag: when false,
+// the existing stored credentials are used and credential fields in the
+// request are ignored.
+//
+// Authentication: read operations require the Integration resource with View
+// access. Write and test operations require the Integration resource with
+// Modify access.
 type CloudSourcesServiceServer interface {
-	// CountCloudSources returns the number of cloud sources after filtering by requested fields.
+	// CountCloudSources returns the number of cloud sources matching the given
+	// filter. Supports filtering by name or type.
 	CountCloudSources(context.Context, *CountCloudSourcesRequest) (*CountCloudSourcesResponse, error)
-	// GetCloudSource retrieves a cloud source by ID.
+	// GetCloudSource retrieves a single cloud source by ID.
+	//
+	// Returns NOT_FOUND if no cloud source with the given ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	GetCloudSource(context.Context, *GetCloudSourceRequest) (*GetCloudSourceResponse, error)
-	// ListCloudSources returns the list of cloud sources after filtered by requested fields.
+	// ListCloudSources returns all cloud sources matching the given filter,
+	// sorted by name. Supports pagination via the pagination field (max 1000
+	// results per page).
 	ListCloudSources(context.Context, *ListCloudSourcesRequest) (*ListCloudSourcesResponse, error)
-	// CreateCloudSource creates a cloud source.
+	// CreateCloudSource creates a new cloud source.
+	//
+	// The cloud_source.id field must be empty. Unless skip_test_integration is
+	// true, the cloud source is tested for connectivity before being persisted.
+	//
+	// Returns INVALID_ARGUMENT if id is set, if the cloud source is empty, or
+	// if the connectivity test fails.
 	CreateCloudSource(context.Context, *CreateCloudSourceRequest) (*CreateCloudSourceResponse, error)
-	// UpdateCloudSource creates or replaces a cloud source.
+	// UpdateCloudSource replaces an existing cloud source configuration.
+	//
+	// When update_credentials is false, credentials in the request are ignored
+	// and the stored credentials are used instead (the resource must already
+	// exist). Unless skip_test_integration is true, connectivity is verified
+	// before the update is persisted.
+	//
+	// Returns INVALID_ARGUMENT if the cloud source is empty, if credential
+	// reconciliation fails, or if the connectivity test fails.
 	UpdateCloudSource(context.Context, *UpdateCloudSourceRequest) (*Empty, error)
-	// DeleteCloudSource removes a cloud source.
+	// DeleteCloudSource removes the cloud source with the given ID.
+	//
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	DeleteCloudSource(context.Context, *DeleteCloudSourceRequest) (*Empty, error)
-	// TestCloudSource tests a cloud source.
+	// TestCloudSource verifies connectivity for the given cloud source
+	// configuration using a short timeout (8 seconds) and no retries.
+	//
+	// When update_credentials is false, the stored credentials for the existing
+	// cloud source are used. When update_credentials is true, the credentials in
+	// the request are used directly.
+	//
+	// Returns INVALID_ARGUMENT if the cloud source is empty, if credential
+	// reconciliation fails, or if the connectivity test fails.
 	TestCloudSource(context.Context, *TestCloudSourceRequest) (*Empty, error)
 }
 

@@ -104,9 +104,11 @@ func (x *GetNotifiersResponse) GetNotifiers() []*storage.Notifier {
 }
 
 type DeleteNotifierRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Force         bool                   `protobuf:"varint,2,opt,name=force,proto3" json:"force,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the unique identifier of the notifier configuration to delete.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// force, when true, removes the notifier even if it is still referenced by policies.
+	Force         bool `protobuf:"varint,2,opt,name=force,proto3" json:"force,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

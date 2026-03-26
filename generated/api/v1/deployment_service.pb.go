@@ -23,10 +23,14 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// DeploymentLabelsResponse contains label keys and their possible values
+// across all deployments visible to the caller.
 type DeploymentLabelsResponse struct {
-	state         protoimpl.MessageState                           `protogen:"open.v1"`
-	Labels        map[string]*DeploymentLabelsResponse_LabelValues `protobuf:"bytes,1,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Values        []string                                         `protobuf:"bytes,2,rep,name=values,proto3" json:"values,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// labels maps each label key to its observed set of values.
+	Labels map[string]*DeploymentLabelsResponse_LabelValues `protobuf:"bytes,1,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// values is the sorted union of all label values across all keys.
+	Values        []string `protobuf:"bytes,2,rep,name=values,proto3" json:"values,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -75,6 +79,7 @@ func (x *DeploymentLabelsResponse) GetValues() []string {
 	return nil
 }
 
+// ListDeploymentsResponse wraps the slim deployment list returned by ListDeployments.
 type ListDeploymentsResponse struct {
 	state         protoimpl.MessageState    `protogen:"open.v1"`
 	Deployments   []*storage.ListDeployment `protobuf:"bytes,1,rep,name=deployments,proto3" json:"deployments,omitempty"`
@@ -119,9 +124,11 @@ func (x *ListDeploymentsResponse) GetDeployments() []*storage.ListDeployment {
 	return nil
 }
 
+// CountDeploymentsResponse holds the count of deployments matching a query.
 type CountDeploymentsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Count         int32                  `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// count is the number of deployments that match the request query.
+	Count         int32 `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -163,6 +170,8 @@ func (x *CountDeploymentsResponse) GetCount() int32 {
 	return 0
 }
 
+// ListDeploymentsWithProcessInfoResponse pairs each deployment with its
+// per-container process baseline statuses.
 type ListDeploymentsWithProcessInfoResponse struct {
 	state         protoimpl.MessageState                                              `protogen:"open.v1"`
 	Deployments   []*ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo `protobuf:"bytes,1,rep,name=deployments,proto3" json:"deployments,omitempty"`
@@ -207,10 +216,15 @@ func (x *ListDeploymentsWithProcessInfoResponse) GetDeployments() []*ListDeploym
 	return nil
 }
 
+// GetDeploymentWithRiskResponse holds a full deployment object together with
+// its computed risk score and contributing factors.
 type GetDeploymentWithRiskResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Deployment    *storage.Deployment    `protobuf:"bytes,1,opt,name=deployment,proto3" json:"deployment,omitempty"`
-	Risk          *storage.Risk          `protobuf:"bytes,2,opt,name=risk,proto3" json:"risk,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// deployment is the full deployment object.
+	Deployment *storage.Deployment `protobuf:"bytes,1,opt,name=deployment,proto3" json:"deployment,omitempty"`
+	// risk is the risk record for this deployment, including the aggregate score
+	// and the individual risk factors that contributed to it.
+	Risk          *storage.Risk `protobuf:"bytes,2,opt,name=risk,proto3" json:"risk,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -259,10 +273,18 @@ func (x *GetDeploymentWithRiskResponse) GetRisk() *storage.Risk {
 	return nil
 }
 
+// ExportDeploymentRequest specifies the filter and timeout for a streaming
+// deployment export.
 type ExportDeploymentRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Timeout       int32                  `protobuf:"varint,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
-	Query         string                 `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// timeout is an optional deadline in seconds for the streaming export.
+	// If zero, no deadline is applied. If positive, the stream will be
+	// cancelled after this many seconds.
+	Timeout int32 `protobuf:"varint,1,opt,name=timeout,proto3" json:"timeout,omitempty"`
+	// query filters exported deployments using StackRox search syntax.
+	// If empty, all deployments visible to the caller are exported.
+	// Example: "Cluster:production+Namespace:payments"
+	Query         string `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -311,9 +333,12 @@ func (x *ExportDeploymentRequest) GetQuery() string {
 	return ""
 }
 
+// ExportDeploymentResponse is one streamed message in the export response,
+// containing a single full deployment object.
 type ExportDeploymentResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Deployment    *storage.Deployment    `protobuf:"bytes,1,opt,name=deployment,proto3" json:"deployment,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// deployment is a full deployment object from the export stream.
+	Deployment    *storage.Deployment `protobuf:"bytes,1,opt,name=deployment,proto3" json:"deployment,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -355,9 +380,11 @@ func (x *ExportDeploymentResponse) GetDeployment() *storage.Deployment {
 	return nil
 }
 
+// LabelValues holds the set of observed values for a single label key.
 type DeploymentLabelsResponse_LabelValues struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Values        []string               `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// values is the sorted list of distinct values seen for the label key.
+	Values        []string `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -399,9 +426,16 @@ func (x *DeploymentLabelsResponse_LabelValues) GetValues() []string {
 	return nil
 }
 
+// DeploymentWithProcessInfo combines a slim deployment summary with
+// the process baseline evaluation result for each of its containers.
 type ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo struct {
-	state            protoimpl.MessageState                    `protogen:"open.v1"`
-	Deployment       *storage.ListDeployment                   `protobuf:"bytes,1,opt,name=deployment,proto3" json:"deployment,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// deployment is the slim deployment summary (same as ListDeployments).
+	Deployment *storage.ListDeployment `protobuf:"bytes,1,opt,name=deployment,proto3" json:"deployment,omitempty"`
+	// baseline_statuses holds one entry per container in the deployment,
+	// indicating whether its process baseline is locked, unlocked, or not yet
+	// generated, and whether anomalous processes have been observed.
+	// Only populated when the caller also has View(DeploymentExtension) permission.
 	BaselineStatuses []*storage.ContainerNameAndBaselineStatus `protobuf:"bytes,3,rep,name=baseline_statuses,json=baselineStatuses,proto3" json:"baseline_statuses,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache

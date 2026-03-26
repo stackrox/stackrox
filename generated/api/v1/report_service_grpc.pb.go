@@ -25,7 +25,31 @@ const (
 // ReportServiceClient is the client API for ReportService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ReportService triggers on-demand execution of vulnerability reports (v1 reporting).
+//
+// Reports are configured via ReportConfigurationService and can run on a schedule
+// or be triggered manually through this service. The only supported report type
+// is VULNERABILITY, which scans images in the configured scope and delivers results
+// via email notifier.
+//
+// This service manages v1 report configurations only. V2 report configurations
+// (identified by a non-nil resource_scope field) are handled by a separate API.
+//
+// Authentication: all endpoints require a valid API token with view access to
+// WorkflowAdministration, Integration, and Image resources.
 type ReportServiceClient interface {
+	// RunReport queues an on-demand execution of the report configuration with the given ID.
+	//
+	// The report is queued for asynchronous generation and delivered to the configured
+	// email recipients once complete. The call returns immediately after the report is
+	// enqueued; it does not wait for generation to finish.
+	//
+	// Only v1 report configurations are accepted. Passing a v2 configuration ID returns
+	// INVALID_ARGUMENT.
+	//
+	// Returns NOT_FOUND if no report configuration with the given ID exists.
+	// Returns INVALID_ARGUMENT if the configuration belongs to reporting version 2.0.
 	RunReport(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -50,7 +74,31 @@ func (c *reportServiceClient) RunReport(ctx context.Context, in *ResourceByID, o
 // ReportServiceServer is the server API for ReportService service.
 // All implementations should embed UnimplementedReportServiceServer
 // for forward compatibility.
+//
+// ReportService triggers on-demand execution of vulnerability reports (v1 reporting).
+//
+// Reports are configured via ReportConfigurationService and can run on a schedule
+// or be triggered manually through this service. The only supported report type
+// is VULNERABILITY, which scans images in the configured scope and delivers results
+// via email notifier.
+//
+// This service manages v1 report configurations only. V2 report configurations
+// (identified by a non-nil resource_scope field) are handled by a separate API.
+//
+// Authentication: all endpoints require a valid API token with view access to
+// WorkflowAdministration, Integration, and Image resources.
 type ReportServiceServer interface {
+	// RunReport queues an on-demand execution of the report configuration with the given ID.
+	//
+	// The report is queued for asynchronous generation and delivered to the configured
+	// email recipients once complete. The call returns immediately after the report is
+	// enqueued; it does not wait for generation to finish.
+	//
+	// Only v1 report configurations are accepted. Passing a v2 configuration ID returns
+	// INVALID_ARGUMENT.
+	//
+	// Returns NOT_FOUND if no report configuration with the given ID exists.
+	// Returns INVALID_ARGUMENT if the configuration belongs to reporting version 2.0.
 	RunReport(context.Context, *ResourceByID) (*Empty, error)
 }
 

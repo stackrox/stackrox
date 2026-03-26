@@ -43,37 +43,190 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// PolicyService APIs can be used to manage policies.
+// PolicyService manages security policies that define violation criteria and
+// enforcement actions for workloads running in monitored clusters.
+//
+// Policies are evaluated against deployments at one or more lifecycle stages
+// (BUILD, DEPLOY, RUNTIME). When a deployment violates an active policy,
+// Central creates an alert and optionally enforces the policy (e.g. scaling
+// the deployment to zero or blocking the Kubernetes admission request).
+//
+// Key concepts:
+//   - Dry-run: evaluate a policy against current deployments without saving or
+//     enforcing it. Runtime-stage policies are excluded from dry-run results
+//     because they are detected through the process event pipeline, not the
+//     deployment snapshot evaluated here.
+//   - Enable/disable: a disabled policy is stored but does not fire alerts or
+//     trigger enforcement. Default policies (is_default=true) can be disabled
+//     but not deleted.
+//   - Import/export: policies can be exported as JSON and imported into another
+//     Central instance. Internal sort fields are stripped on export. On import,
+//     conflicts can be resolved by setting overwrite=true in the metadata.
+//   - PolicyFromSearch: converts a StackRox alert search query into a draft
+//     policy for use as a starting point; the draft is not persisted.
+//
+// Authentication: read operations require View permission on WorkflowAdministration.
+// Write operations (create, update, delete, import, dry-run) require Modify
+// permission on WorkflowAdministration.
 type PolicyServiceClient interface {
-	// GetPolicy returns the requested policy by ID.
+	// GetPolicy returns the full policy definition for the given ID.
+	//
+	// Returns INVALID_ARGUMENT if the ID is empty.
+	// Returns NOT_FOUND if no policy with that ID exists.
 	GetPolicy(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.Policy, error)
-	// GetMitreVectorsForPolicy returns the requested policy by ID.
+	// GetPolicyMitreVectors returns the MITRE ATT&CK tactic and technique vectors
+	// associated with the policy identified by the given ID.
+	//
+	// The vectors are expanded from the policy's stored mitre_attack_vectors using
+	// the MITRE ATT&CK knowledge base. Set options.exclude_policy to omit the
+	// full policy object from the response and return only the vectors.
+	//
+	// Returns NOT_FOUND if no policy with that ID exists.
 	GetPolicyMitreVectors(ctx context.Context, in *GetPolicyMitreVectorsRequest, opts ...grpc.CallOption) (*GetPolicyMitreVectorsResponse, error)
-	// ListPolicies returns the list of policies.
+	// ListPolicies returns a paginated, filterable summary list of policies.
+	//
+	// Accepts a StackRox search query (e.g. "Severity:HIGH+Disabled:false").
+	// Returns up to 1000 policies per request. Results include summary fields
+	// only (id, name, description, severity, disabled, lifecycle_stages, etc.);
+	// use GetPolicy to retrieve the full policy definition including criteria.
+	//
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	ListPolicies(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListPoliciesResponse, error)
-	// PostPolicy creates a new policy.
+	// PostPolicy creates a new policy and activates it immediately.
+	//
+	// The policy.id field must be empty; Central assigns a UUID on creation and
+	// returns the full policy with the assigned ID. After creation the policy is
+	// added to the active detection engine and synced to all connected Sensors.
+	//
+	// Set enable_strict_validation to apply additional validation rules (e.g.
+	// restrictions on environment variable source values) beyond the defaults.
+	//
+	// Returns INVALID_ARGUMENT if the policy definition is invalid or if id is non-empty.
 	PostPolicy(ctx context.Context, in *PostPolicyRequest, opts ...grpc.CallOption) (*storage.Policy, error)
-	// PutPolicy modifies an existing policy.
+	// PutPolicy replaces an existing policy with the supplied definition.
+	//
+	// The full policy object must be supplied, including all fields that should
+	// be retained. Unlike PatchPolicy, this is not a partial update. After the
+	// update the policy is re-added to the detection engine and synced to Sensors.
+	//
+	// Returns INVALID_ARGUMENT if the policy definition is invalid.
+	// Returns NOT_FOUND if no policy with the given ID exists.
 	PutPolicy(ctx context.Context, in *storage.Policy, opts ...grpc.CallOption) (*Empty, error)
-	// PatchPolicy edits an existing policy.
+	// PatchPolicy applies a partial update to an existing policy.
+	//
+	// Currently supports toggling the disabled state only. To enable a policy,
+	// set disabled=false; to disable it, set disabled=true. A disabled policy
+	// remains stored but does not fire alerts or enforce actions.
+	//
+	// Internally calls PutPolicy after applying the patch, so the full
+	// policy re-sync with Sensors is triggered.
+	//
+	// Returns NOT_FOUND if no policy with the given ID exists.
 	PatchPolicy(ctx context.Context, in *PatchPolicyRequest, opts ...grpc.CallOption) (*Empty, error)
-	// DeletePolicy removes a policy by ID.
+	// DeletePolicy permanently removes a custom policy by ID.
+	//
+	// Default policies (is_default=true) cannot be deleted; use PatchPolicy to
+	// disable them instead. Deleting an already-absent policy is idempotent and
+	// returns success. After deletion the policy is removed from the detection
+	// engine and the change is synced to all connected Sensors.
+	//
+	// Returns INVALID_ARGUMENT if the ID is empty or if the policy is a default policy.
 	DeletePolicy(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
-	// EnableDisablePolicyNotification enables or disables notifications for a policy by ID.
+	// EnableDisablePolicyNotification adds or removes notifiers from a policy.
+	//
+	// When disable=false, the listed notifier IDs are added to the policy's
+	// notifier list. Notifiers that are already present are silently skipped.
+	// When disable=true, the listed notifier IDs are removed from the policy's
+	// notifier list. IDs not currently attached are silently skipped.
+	//
+	// Returns INVALID_ARGUMENT if policy_id or notifier_ids are empty (for enable).
+	// Returns NOT_FOUND if the policy does not exist.
 	EnableDisablePolicyNotification(ctx context.Context, in *EnableDisablePolicyNotificationRequest, opts ...grpc.CallOption) (*Empty, error)
-	// ReassessPolicies reevaluates all the policies.
+	// ReassessPolicies triggers immediate re-enrichment of all deployments and
+	// re-evaluation of all active policies against the updated data.
+	//
+	// This invalidates cached image scan metadata and signals the reprocessor
+	// loop to run immediately rather than waiting for the next scheduled cycle.
+	// Use this after updating integrations or policies to force timely re-detection.
 	ReassessPolicies(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
-	// DryRunPolicy evaluates the given policy and returns any alerts without creating the policy.
+	// DryRunPolicy evaluates a policy against all current deployments and returns
+	// the list of would-be violations, without saving or enforcing the policy.
+	//
+	// Only DEPLOY and BUILD lifecycle stages are evaluated; RUNTIME policies are
+	// excluded because runtime detection runs through the process event pipeline,
+	// not the deployment snapshot. Up to 8 deployments are evaluated in parallel.
+	//
+	// The returned alerts list each deployment name and the associated violation
+	// messages. No alerts are created, no enforcement actions are taken, and the
+	// policy is not persisted.
+	//
+	// For large environments, prefer the async SubmitDryRunPolicyJob / QueryDryRunJobStatus
+	// workflow to avoid request timeouts.
+	//
+	// Returns INVALID_ARGUMENT if the policy definition fails validation.
 	DryRunPolicy(ctx context.Context, in *storage.Policy, opts ...grpc.CallOption) (*DryRunResponse, error)
+	// SubmitDryRunPolicyJob enqueues an asynchronous dry-run evaluation job and
+	// returns a job ID that can be polled with QueryDryRunJobStatus.
+	//
+	// Use this for large environments where a synchronous DryRunPolicy call may
+	// time out. The job is scoped to the submitting user; other users cannot
+	// query or cancel it.
+	//
+	// Returns INVALID_ARGUMENT if the policy definition fails validation.
 	SubmitDryRunPolicyJob(ctx context.Context, in *storage.Policy, opts ...grpc.CallOption) (*JobId, error)
+	// QueryDryRunJobStatus returns the current status of an asynchronous dry-run job.
+	//
+	// While the job is running, pending=true and result is not set. Once complete,
+	// pending=false and result contains the dry-run output.
+	//
+	// Only the user who submitted the job can query its status.
+	//
+	// Returns NOT_FOUND (via the job manager) if the job ID is unknown.
 	QueryDryRunJobStatus(ctx context.Context, in *JobId, opts ...grpc.CallOption) (*DryRunJobStatusResponse, error)
+	// CancelDryRunJob cancels a running asynchronous dry-run job.
+	//
+	// Only the user who submitted the job can cancel it.
+	//
+	// Returns INVALID_ARGUMENT if the job ID is unknown or the job cannot be cancelled.
 	CancelDryRunJob(ctx context.Context, in *JobId, opts ...grpc.CallOption) (*Empty, error)
-	// GetPolicyCategories returns the policy categories.
+	// GetPolicyCategories returns the sorted list of all distinct category names
+	// currently assigned to at least one policy in Central.
 	GetPolicyCategories(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PolicyCategoriesResponse, error)
-	// ExportPolicies takes a list of policy IDs and returns either the entire list of policies or an error message
+	// ExportPolicies serializes the requested policies for transfer to another
+	// Central instance via ImportPolicies.
+	//
+	// Internal sort fields (SORT_name, SORT_lifecycleStage, SORT_enforcement) are
+	// stripped from exported policies. All supplied IDs must refer to existing
+	// policies; if any ID is missing the entire request fails.
+	//
+	// Returns INVALID_ARGUMENT with error details (PolicyOperationErrorList) if
+	// any of the requested policy IDs cannot be found.
 	ExportPolicies(ctx context.Context, in *ExportPoliciesRequest, opts ...grpc.CallOption) (*storage.ExportPoliciesResponse, error)
+	// PolicyFromSearch converts a StackRox search query string into a draft policy
+	// definition that can be reviewed and then saved with PostPolicy.
+	//
+	// Search terms that have no direct policy criteria equivalent (e.g. free-text
+	// fields) are listed in the response's altered_search_terms. Cluster, namespace,
+	// and deployment-label search terms are converted to policy scopes rather than
+	// policy criteria. The resulting policy is not persisted.
+	//
+	// Returns INVALID_ARGUMENT if the search string is empty or cannot be parsed.
 	PolicyFromSearch(ctx context.Context, in *PolicyFromSearchRequest, opts ...grpc.CallOption) (*PolicyFromSearchResponse, error)
-	// ImportPolicies accepts a list of Policies and returns a list of the policies which could not be imported
+	// ImportPolicies imports a batch of policies exported from another Central instance.
+	//
+	// Each policy is validated independently. Valid policies are upserted; invalid
+	// ones are reported in the per-policy errors without affecting the rest of the
+	// batch. When metadata.overwrite=true, an existing policy with the same name or
+	// ID is replaced; otherwise a conflict causes that policy's import to fail with
+	// a duplicate_name error.
+	//
+	// After a successful import, each imported policy is added to the detection engine
+	// and synced to all connected Sensors. Internal sort fields are stripped from
+	// returned policies.
+	//
+	// The response includes one ImportPolicyResponse per submitted policy plus the
+	// all_succeeded summary flag. A partial failure does not return a gRPC error;
+	// inspect each response's succeeded field and errors list instead.
 	ImportPolicies(ctx context.Context, in *ImportPoliciesRequest, opts ...grpc.CallOption) (*ImportPoliciesResponse, error)
 }
 
@@ -259,37 +412,190 @@ func (c *policyServiceClient) ImportPolicies(ctx context.Context, in *ImportPoli
 // All implementations should embed UnimplementedPolicyServiceServer
 // for forward compatibility.
 //
-// PolicyService APIs can be used to manage policies.
+// PolicyService manages security policies that define violation criteria and
+// enforcement actions for workloads running in monitored clusters.
+//
+// Policies are evaluated against deployments at one or more lifecycle stages
+// (BUILD, DEPLOY, RUNTIME). When a deployment violates an active policy,
+// Central creates an alert and optionally enforces the policy (e.g. scaling
+// the deployment to zero or blocking the Kubernetes admission request).
+//
+// Key concepts:
+//   - Dry-run: evaluate a policy against current deployments without saving or
+//     enforcing it. Runtime-stage policies are excluded from dry-run results
+//     because they are detected through the process event pipeline, not the
+//     deployment snapshot evaluated here.
+//   - Enable/disable: a disabled policy is stored but does not fire alerts or
+//     trigger enforcement. Default policies (is_default=true) can be disabled
+//     but not deleted.
+//   - Import/export: policies can be exported as JSON and imported into another
+//     Central instance. Internal sort fields are stripped on export. On import,
+//     conflicts can be resolved by setting overwrite=true in the metadata.
+//   - PolicyFromSearch: converts a StackRox alert search query into a draft
+//     policy for use as a starting point; the draft is not persisted.
+//
+// Authentication: read operations require View permission on WorkflowAdministration.
+// Write operations (create, update, delete, import, dry-run) require Modify
+// permission on WorkflowAdministration.
 type PolicyServiceServer interface {
-	// GetPolicy returns the requested policy by ID.
+	// GetPolicy returns the full policy definition for the given ID.
+	//
+	// Returns INVALID_ARGUMENT if the ID is empty.
+	// Returns NOT_FOUND if no policy with that ID exists.
 	GetPolicy(context.Context, *ResourceByID) (*storage.Policy, error)
-	// GetMitreVectorsForPolicy returns the requested policy by ID.
+	// GetPolicyMitreVectors returns the MITRE ATT&CK tactic and technique vectors
+	// associated with the policy identified by the given ID.
+	//
+	// The vectors are expanded from the policy's stored mitre_attack_vectors using
+	// the MITRE ATT&CK knowledge base. Set options.exclude_policy to omit the
+	// full policy object from the response and return only the vectors.
+	//
+	// Returns NOT_FOUND if no policy with that ID exists.
 	GetPolicyMitreVectors(context.Context, *GetPolicyMitreVectorsRequest) (*GetPolicyMitreVectorsResponse, error)
-	// ListPolicies returns the list of policies.
+	// ListPolicies returns a paginated, filterable summary list of policies.
+	//
+	// Accepts a StackRox search query (e.g. "Severity:HIGH+Disabled:false").
+	// Returns up to 1000 policies per request. Results include summary fields
+	// only (id, name, description, severity, disabled, lifecycle_stages, etc.);
+	// use GetPolicy to retrieve the full policy definition including criteria.
+	//
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	ListPolicies(context.Context, *RawQuery) (*ListPoliciesResponse, error)
-	// PostPolicy creates a new policy.
+	// PostPolicy creates a new policy and activates it immediately.
+	//
+	// The policy.id field must be empty; Central assigns a UUID on creation and
+	// returns the full policy with the assigned ID. After creation the policy is
+	// added to the active detection engine and synced to all connected Sensors.
+	//
+	// Set enable_strict_validation to apply additional validation rules (e.g.
+	// restrictions on environment variable source values) beyond the defaults.
+	//
+	// Returns INVALID_ARGUMENT if the policy definition is invalid or if id is non-empty.
 	PostPolicy(context.Context, *PostPolicyRequest) (*storage.Policy, error)
-	// PutPolicy modifies an existing policy.
+	// PutPolicy replaces an existing policy with the supplied definition.
+	//
+	// The full policy object must be supplied, including all fields that should
+	// be retained. Unlike PatchPolicy, this is not a partial update. After the
+	// update the policy is re-added to the detection engine and synced to Sensors.
+	//
+	// Returns INVALID_ARGUMENT if the policy definition is invalid.
+	// Returns NOT_FOUND if no policy with the given ID exists.
 	PutPolicy(context.Context, *storage.Policy) (*Empty, error)
-	// PatchPolicy edits an existing policy.
+	// PatchPolicy applies a partial update to an existing policy.
+	//
+	// Currently supports toggling the disabled state only. To enable a policy,
+	// set disabled=false; to disable it, set disabled=true. A disabled policy
+	// remains stored but does not fire alerts or enforce actions.
+	//
+	// Internally calls PutPolicy after applying the patch, so the full
+	// policy re-sync with Sensors is triggered.
+	//
+	// Returns NOT_FOUND if no policy with the given ID exists.
 	PatchPolicy(context.Context, *PatchPolicyRequest) (*Empty, error)
-	// DeletePolicy removes a policy by ID.
+	// DeletePolicy permanently removes a custom policy by ID.
+	//
+	// Default policies (is_default=true) cannot be deleted; use PatchPolicy to
+	// disable them instead. Deleting an already-absent policy is idempotent and
+	// returns success. After deletion the policy is removed from the detection
+	// engine and the change is synced to all connected Sensors.
+	//
+	// Returns INVALID_ARGUMENT if the ID is empty or if the policy is a default policy.
 	DeletePolicy(context.Context, *ResourceByID) (*Empty, error)
-	// EnableDisablePolicyNotification enables or disables notifications for a policy by ID.
+	// EnableDisablePolicyNotification adds or removes notifiers from a policy.
+	//
+	// When disable=false, the listed notifier IDs are added to the policy's
+	// notifier list. Notifiers that are already present are silently skipped.
+	// When disable=true, the listed notifier IDs are removed from the policy's
+	// notifier list. IDs not currently attached are silently skipped.
+	//
+	// Returns INVALID_ARGUMENT if policy_id or notifier_ids are empty (for enable).
+	// Returns NOT_FOUND if the policy does not exist.
 	EnableDisablePolicyNotification(context.Context, *EnableDisablePolicyNotificationRequest) (*Empty, error)
-	// ReassessPolicies reevaluates all the policies.
+	// ReassessPolicies triggers immediate re-enrichment of all deployments and
+	// re-evaluation of all active policies against the updated data.
+	//
+	// This invalidates cached image scan metadata and signals the reprocessor
+	// loop to run immediately rather than waiting for the next scheduled cycle.
+	// Use this after updating integrations or policies to force timely re-detection.
 	ReassessPolicies(context.Context, *Empty) (*Empty, error)
-	// DryRunPolicy evaluates the given policy and returns any alerts without creating the policy.
+	// DryRunPolicy evaluates a policy against all current deployments and returns
+	// the list of would-be violations, without saving or enforcing the policy.
+	//
+	// Only DEPLOY and BUILD lifecycle stages are evaluated; RUNTIME policies are
+	// excluded because runtime detection runs through the process event pipeline,
+	// not the deployment snapshot. Up to 8 deployments are evaluated in parallel.
+	//
+	// The returned alerts list each deployment name and the associated violation
+	// messages. No alerts are created, no enforcement actions are taken, and the
+	// policy is not persisted.
+	//
+	// For large environments, prefer the async SubmitDryRunPolicyJob / QueryDryRunJobStatus
+	// workflow to avoid request timeouts.
+	//
+	// Returns INVALID_ARGUMENT if the policy definition fails validation.
 	DryRunPolicy(context.Context, *storage.Policy) (*DryRunResponse, error)
+	// SubmitDryRunPolicyJob enqueues an asynchronous dry-run evaluation job and
+	// returns a job ID that can be polled with QueryDryRunJobStatus.
+	//
+	// Use this for large environments where a synchronous DryRunPolicy call may
+	// time out. The job is scoped to the submitting user; other users cannot
+	// query or cancel it.
+	//
+	// Returns INVALID_ARGUMENT if the policy definition fails validation.
 	SubmitDryRunPolicyJob(context.Context, *storage.Policy) (*JobId, error)
+	// QueryDryRunJobStatus returns the current status of an asynchronous dry-run job.
+	//
+	// While the job is running, pending=true and result is not set. Once complete,
+	// pending=false and result contains the dry-run output.
+	//
+	// Only the user who submitted the job can query its status.
+	//
+	// Returns NOT_FOUND (via the job manager) if the job ID is unknown.
 	QueryDryRunJobStatus(context.Context, *JobId) (*DryRunJobStatusResponse, error)
+	// CancelDryRunJob cancels a running asynchronous dry-run job.
+	//
+	// Only the user who submitted the job can cancel it.
+	//
+	// Returns INVALID_ARGUMENT if the job ID is unknown or the job cannot be cancelled.
 	CancelDryRunJob(context.Context, *JobId) (*Empty, error)
-	// GetPolicyCategories returns the policy categories.
+	// GetPolicyCategories returns the sorted list of all distinct category names
+	// currently assigned to at least one policy in Central.
 	GetPolicyCategories(context.Context, *Empty) (*PolicyCategoriesResponse, error)
-	// ExportPolicies takes a list of policy IDs and returns either the entire list of policies or an error message
+	// ExportPolicies serializes the requested policies for transfer to another
+	// Central instance via ImportPolicies.
+	//
+	// Internal sort fields (SORT_name, SORT_lifecycleStage, SORT_enforcement) are
+	// stripped from exported policies. All supplied IDs must refer to existing
+	// policies; if any ID is missing the entire request fails.
+	//
+	// Returns INVALID_ARGUMENT with error details (PolicyOperationErrorList) if
+	// any of the requested policy IDs cannot be found.
 	ExportPolicies(context.Context, *ExportPoliciesRequest) (*storage.ExportPoliciesResponse, error)
+	// PolicyFromSearch converts a StackRox search query string into a draft policy
+	// definition that can be reviewed and then saved with PostPolicy.
+	//
+	// Search terms that have no direct policy criteria equivalent (e.g. free-text
+	// fields) are listed in the response's altered_search_terms. Cluster, namespace,
+	// and deployment-label search terms are converted to policy scopes rather than
+	// policy criteria. The resulting policy is not persisted.
+	//
+	// Returns INVALID_ARGUMENT if the search string is empty or cannot be parsed.
 	PolicyFromSearch(context.Context, *PolicyFromSearchRequest) (*PolicyFromSearchResponse, error)
-	// ImportPolicies accepts a list of Policies and returns a list of the policies which could not be imported
+	// ImportPolicies imports a batch of policies exported from another Central instance.
+	//
+	// Each policy is validated independently. Valid policies are upserted; invalid
+	// ones are reported in the per-policy errors without affecting the rest of the
+	// batch. When metadata.overwrite=true, an existing policy with the same name or
+	// ID is replaced; otherwise a conflict causes that policy's import to fail with
+	// a duplicate_name error.
+	//
+	// After a successful import, each imported policy is added to the detection engine
+	// and synced to all connected Sensors. Internal sort fields are stripped from
+	// returned policies.
+	//
+	// The response includes one ImportPolicyResponse per submitted policy plus the
+	// all_succeeded summary flag. A partial failure does not return a gRPC error;
+	// inspect each response's succeeded field and errors list instead.
 	ImportPolicies(context.Context, *ImportPoliciesRequest) (*ImportPoliciesResponse, error)
 }
 

@@ -18,7 +18,8 @@
   "paths": {
     "/v1/policies": {
       "get": {
-        "summary": "ListPolicies returns the list of policies.",
+        "summary": "ListPolicies returns a paginated, filterable summary list of policies.",
+        "description": "Accepts a StackRox search query (e.g. \"Severity:HIGH+Disabled:false\").\nReturns up to 1000 policies per request. Results include summary fields\nonly (id, name, description, severity, disabled, lifecycle_stages, etc.);\nuse GetPolicy to retrieve the full policy definition including criteria.\n\nReturns INVALID_ARGUMENT if the query syntax is malformed.",
         "operationId": "PolicyService_ListPolicies",
         "responses": {
           "200": {
@@ -37,6 +38,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -92,7 +94,8 @@
         ]
       },
       "post": {
-        "summary": "PostPolicy creates a new policy.",
+        "summary": "PostPolicy creates a new policy and activates it immediately.",
+        "description": "The policy.id field must be empty; Central assigns a UUID on creation and\nreturns the full policy with the assigned ID. After creation the policy is\nadded to the active detection engine and synced to all connected Sensors.\n\nSet enable_strict_validation to apply additional validation rules (e.g.\nrestrictions on environment variable source values) beyond the defaults.\n\nReturns INVALID_ARGUMENT if the policy definition is invalid or if id is non-empty.",
         "operationId": "PolicyService_PostPolicy",
         "responses": {
           "200": {
@@ -111,6 +114,7 @@
         "parameters": [
           {
             "name": "policy",
+            "description": "policy is the full policy definition to create. The id field must be empty;\nCentral assigns the ID on creation and returns the populated policy.",
             "in": "body",
             "required": true,
             "schema": {
@@ -119,6 +123,7 @@
           },
           {
             "name": "enableStrictValidation",
+            "description": "enable_strict_validation enables additional validation rules, such as\nrestrictions on environment variable source values. Use this when\nimporting policies from external sources to ensure stricter correctness.",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -131,7 +136,8 @@
     },
     "/v1/policies/dryrun": {
       "post": {
-        "summary": "DryRunPolicy evaluates the given policy and returns any alerts without creating the policy.",
+        "summary": "DryRunPolicy evaluates a policy against all current deployments and returns\nthe list of would-be violations, without saving or enforcing the policy.",
+        "description": "Only DEPLOY and BUILD lifecycle stages are evaluated; RUNTIME policies are\nexcluded because runtime detection runs through the process event pipeline,\nnot the deployment snapshot. Up to 8 deployments are evaluated in parallel.\n\nThe returned alerts list each deployment name and the associated violation\nmessages. No alerts are created, no enforcement actions are taken, and the\npolicy is not persisted.\n\nFor large environments, prefer the async SubmitDryRunPolicyJob / QueryDryRunJobStatus\nworkflow to avoid request timeouts.\n\nReturns INVALID_ARGUMENT if the policy definition fails validation.",
         "operationId": "PolicyService_DryRunPolicy",
         "responses": {
           "200": {
@@ -164,6 +170,8 @@
     },
     "/v1/policies/dryrunjob": {
       "post": {
+        "summary": "SubmitDryRunPolicyJob enqueues an asynchronous dry-run evaluation job and\nreturns a job ID that can be polled with QueryDryRunJobStatus.",
+        "description": "Use this for large environments where a synchronous DryRunPolicy call may\ntime out. The job is scoped to the submitting user; other users cannot\nquery or cancel it.\n\nReturns INVALID_ARGUMENT if the policy definition fails validation.",
         "operationId": "PolicyService_SubmitDryRunPolicyJob",
         "responses": {
           "200": {
@@ -196,6 +204,8 @@
     },
     "/v1/policies/dryrunjob/{jobId}": {
       "get": {
+        "summary": "QueryDryRunJobStatus returns the current status of an asynchronous dry-run job.",
+        "description": "While the job is running, pending=true and result is not set. Once complete,\npending=false and result contains the dry-run output.\n\nOnly the user who submitted the job can query its status.\n\nReturns NOT_FOUND (via the job manager) if the job ID is unknown.",
         "operationId": "PolicyService_QueryDryRunJobStatus",
         "responses": {
           "200": {
@@ -214,6 +224,7 @@
         "parameters": [
           {
             "name": "jobId",
+            "description": "job_id is the opaque identifier returned by SubmitDryRunPolicyJob.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -224,6 +235,8 @@
         ]
       },
       "delete": {
+        "summary": "CancelDryRunJob cancels a running asynchronous dry-run job.",
+        "description": "Only the user who submitted the job can cancel it.\n\nReturns INVALID_ARGUMENT if the job ID is unknown or the job cannot be cancelled.",
         "operationId": "PolicyService_CancelDryRunJob",
         "responses": {
           "200": {
@@ -242,6 +255,7 @@
         "parameters": [
           {
             "name": "jobId",
+            "description": "job_id is the opaque identifier returned by SubmitDryRunPolicyJob.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -254,7 +268,8 @@
     },
     "/v1/policies/export": {
       "post": {
-        "summary": "ExportPolicies takes a list of policy IDs and returns either the entire list of policies or an error message",
+        "summary": "ExportPolicies serializes the requested policies for transfer to another\nCentral instance via ImportPolicies.",
+        "description": "Internal sort fields (SORT_name, SORT_lifecycleStage, SORT_enforcement) are\nstripped from exported policies. All supplied IDs must refer to existing\npolicies; if any ID is missing the entire request fails.\n\nReturns INVALID_ARGUMENT with error details (PolicyOperationErrorList) if\nany of the requested policy IDs cannot be found.",
         "operationId": "PolicyService_ExportPolicies",
         "responses": {
           "200": {
@@ -273,6 +288,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "ExportPoliciesRequest selects a set of policies to export by ID.",
             "in": "body",
             "required": true,
             "schema": {
@@ -287,6 +303,8 @@
     },
     "/v1/policies/from-search": {
       "post": {
+        "summary": "PolicyFromSearch converts a StackRox search query string into a draft policy\ndefinition that can be reviewed and then saved with PostPolicy.",
+        "description": "Search terms that have no direct policy criteria equivalent (e.g. free-text\nfields) are listed in the response's altered_search_terms. Cluster, namespace,\nand deployment-label search terms are converted to policy scopes rather than\npolicy criteria. The resulting policy is not persisted.\n\nReturns INVALID_ARGUMENT if the search string is empty or cannot be parsed.",
         "operationId": "PolicyService_PolicyFromSearch",
         "responses": {
           "200": {
@@ -305,6 +323,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "PolicyFromSearchRequest converts a StackRox search query string into a draft policy.",
             "in": "body",
             "required": true,
             "schema": {
@@ -319,7 +338,8 @@
     },
     "/v1/policies/import": {
       "post": {
-        "summary": "ImportPolicies accepts a list of Policies and returns a list of the policies which could not be imported",
+        "summary": "ImportPolicies imports a batch of policies exported from another Central instance.",
+        "description": "Each policy is validated independently. Valid policies are upserted; invalid\nones are reported in the per-policy errors without affecting the rest of the\nbatch. When metadata.overwrite=true, an existing policy with the same name or\nID is replaced; otherwise a conflict causes that policy's import to fail with\na duplicate_name error.\n\nAfter a successful import, each imported policy is added to the detection engine\nand synced to all connected Sensors. Internal sort fields are stripped from\nreturned policies.\n\nThe response includes one ImportPolicyResponse per submitted policy plus the\nall_succeeded summary flag. A partial failure does not return a gRPC error;\ninspect each response's succeeded field and errors list instead.",
         "operationId": "PolicyService_ImportPolicies",
         "responses": {
           "200": {
@@ -338,6 +358,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "ImportPoliciesRequest submits one or more policies for import into Central.",
             "in": "body",
             "required": true,
             "schema": {
@@ -352,7 +373,8 @@
     },
     "/v1/policies/reassess": {
       "post": {
-        "summary": "ReassessPolicies reevaluates all the policies.",
+        "summary": "ReassessPolicies triggers immediate re-enrichment of all deployments and\nre-evaluation of all active policies against the updated data.",
+        "description": "This invalidates cached image scan metadata and signals the reprocessor\nloop to run immediately rather than waiting for the next scheduled cycle.\nUse this after updating integrations or policies to force timely re-detection.",
         "operationId": "PolicyService_ReassessPolicies",
         "responses": {
           "200": {
@@ -375,7 +397,8 @@
     },
     "/v1/policies/{id}": {
       "get": {
-        "summary": "GetPolicy returns the requested policy by ID.",
+        "summary": "GetPolicy returns the full policy definition for the given ID.",
+        "description": "Returns INVALID_ARGUMENT if the ID is empty.\nReturns NOT_FOUND if no policy with that ID exists.",
         "operationId": "PolicyService_GetPolicy",
         "responses": {
           "200": {
@@ -404,7 +427,8 @@
         ]
       },
       "delete": {
-        "summary": "DeletePolicy removes a policy by ID.",
+        "summary": "DeletePolicy permanently removes a custom policy by ID.",
+        "description": "Default policies (is_default=true) cannot be deleted; use PatchPolicy to\ndisable them instead. Deleting an already-absent policy is idempotent and\nreturns success. After deletion the policy is removed from the detection\nengine and the change is synced to all connected Sensors.\n\nReturns INVALID_ARGUMENT if the ID is empty or if the policy is a default policy.",
         "operationId": "PolicyService_DeletePolicy",
         "responses": {
           "200": {
@@ -433,7 +457,8 @@
         ]
       },
       "put": {
-        "summary": "PutPolicy modifies an existing policy.",
+        "summary": "PutPolicy replaces an existing policy with the supplied definition.",
+        "description": "The full policy object must be supplied, including all fields that should\nbe retained. Unlike PatchPolicy, this is not a partial update. After the\nupdate the policy is re-added to the detection engine and synced to Sensors.\n\nReturns INVALID_ARGUMENT if the policy definition is invalid.\nReturns NOT_FOUND if no policy with the given ID exists.",
         "operationId": "PolicyService_PutPolicy",
         "responses": {
           "200": {
@@ -470,7 +495,8 @@
         ]
       },
       "patch": {
-        "summary": "PatchPolicy edits an existing policy.",
+        "summary": "PatchPolicy applies a partial update to an existing policy.",
+        "description": "Currently supports toggling the disabled state only. To enable a policy,\nset disabled=false; to disable it, set disabled=true. A disabled policy\nremains stored but does not fire alerts or enforce actions.\n\nInternally calls PutPolicy after applying the patch, so the full\npolicy re-sync with Sensors is triggered.\n\nReturns NOT_FOUND if no policy with the given ID exists.",
         "operationId": "PolicyService_PatchPolicy",
         "responses": {
           "200": {
@@ -489,6 +515,7 @@
         "parameters": [
           {
             "name": "id",
+            "description": "id is the UUID of the policy to patch.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -509,7 +536,8 @@
     },
     "/v1/policies/{id}/mitrevectors": {
       "get": {
-        "summary": "GetMitreVectorsForPolicy returns the requested policy by ID.",
+        "summary": "GetPolicyMitreVectors returns the MITRE ATT&CK tactic and technique vectors\nassociated with the policy identified by the given ID.",
+        "description": "The vectors are expanded from the policy's stored mitre_attack_vectors using\nthe MITRE ATT&CK knowledge base. Set options.exclude_policy to omit the\nfull policy object from the response and return only the vectors.\n\nReturns NOT_FOUND if no policy with that ID exists.",
         "operationId": "PolicyService_GetPolicyMitreVectors",
         "responses": {
           "200": {
@@ -528,6 +556,7 @@
         "parameters": [
           {
             "name": "id",
+            "description": "id is the UUID of the policy whose MITRE ATT&CK vectors to retrieve.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -547,7 +576,8 @@
     },
     "/v1/policies/{policyId}/notifiers": {
       "patch": {
-        "summary": "EnableDisablePolicyNotification enables or disables notifications for a policy by ID.",
+        "summary": "EnableDisablePolicyNotification adds or removes notifiers from a policy.",
+        "description": "When disable=false, the listed notifier IDs are added to the policy's\nnotifier list. Notifiers that are already present are silently skipped.\nWhen disable=true, the listed notifier IDs are removed from the policy's\nnotifier list. IDs not currently attached are silently skipped.\n\nReturns INVALID_ARGUMENT if policy_id or notifier_ids are empty (for enable).\nReturns NOT_FOUND if the policy does not exist.",
         "operationId": "PolicyService_EnableDisablePolicyNotification",
         "responses": {
           "200": {
@@ -566,6 +596,7 @@
         "parameters": [
           {
             "name": "policyId",
+            "description": "policy_id is the UUID of the policy to update.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -586,7 +617,7 @@
     },
     "/v1/policyCategories": {
       "get": {
-        "summary": "GetPolicyCategories returns the policy categories.",
+        "summary": "GetPolicyCategories returns the sorted list of all distinct category names\ncurrently assigned to at least one policy in Central.",
         "operationId": "PolicyService_GetPolicyCategories",
         "responses": {
           "200": {
@@ -613,15 +644,18 @@
       "type": "object",
       "properties": {
         "deployment": {
-          "type": "string"
+          "type": "string",
+          "description": "deployment is the name of the deployment that would violate the policy."
         },
         "violations": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "violations is the list of human-readable violation messages for this deployment."
         }
-      }
+      },
+      "description": "Alert represents a single deployment that would violate the policy."
     },
     "ExclusionDeployment": {
       "type": "object",
@@ -663,20 +697,25 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "notifier_ids is the list of notifier UUIDs to enable or disable."
         },
         "disable": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "disable controls the direction: if true, the specified notifiers are removed\nfrom the policy; if false, they are added."
         }
-      }
+      },
+      "description": "EnableDisablePolicyNotificationRequest enables or disables specific notifiers on a policy."
     },
     "PolicyServicePatchPolicyBody": {
       "type": "object",
       "properties": {
         "disabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "disabled sets whether the policy is enabled (false) or disabled (true).\nWhen disabled, the policy does not fire alerts or enforce actions."
         }
-      }
+      },
+      "description": "PatchPolicyRequest is used to make partial updates to a policy, currently\nlimited to toggling the enabled/disabled state."
     },
     "PolicyServicePutPolicyBody": {
       "type": "object",
@@ -1249,12 +1288,15 @@
       "type": "object",
       "properties": {
         "pending": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "pending is true if the job is still running and result is not yet available."
         },
         "result": {
-          "$ref": "#/definitions/v1DryRunResponse"
+          "$ref": "#/definitions/v1DryRunResponse",
+          "description": "result is populated once pending is false and contains the dry-run output."
         }
-      }
+      },
+      "description": "DryRunJobStatusResponse reports the current state of an async dry-run job."
     },
     "v1DryRunResponse": {
       "type": "object",
@@ -1264,9 +1306,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/DryRunResponseAlert"
-          }
+          },
+          "description": "alerts lists each deployment that would violate the policy, along with\nthe specific violation messages for each."
         }
-      }
+      },
+      "description": "DryRunResponse contains the results of evaluating a policy against current\ndeployments without persisting or enforcing the policy."
     },
     "v1Empty": {
       "type": "object"
@@ -1278,9 +1322,11 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "policy_ids is the list of UUIDs of the policies to export.\nAll IDs must exist; if any are missing the request returns INVALID_ARGUMENT."
         }
-      }
+      },
+      "description": "ExportPoliciesRequest selects a set of policies to export by ID."
     },
     "v1GetPolicyMitreVectorsRequestOptions": {
       "type": "object",
@@ -1295,39 +1341,47 @@
       "type": "object",
       "properties": {
         "policy": {
-          "$ref": "#/definitions/storagePolicy"
+          "$ref": "#/definitions/storagePolicy",
+          "description": "policy is the full policy object. Omitted if options.exclude_policy is true."
         },
         "vectors": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageMitreAttackVector"
-          }
+          },
+          "description": "vectors is the list of MITRE ATT&CK tactic/technique pairs associated with\nthe policy, expanded from the policy's mitre_attack_vectors field using the\nMITRE ATT&CK knowledge base."
         }
-      }
+      },
+      "description": "GetPolicyMitreVectorsResponse returns a policy and its expanded MITRE ATT&CK vectors."
     },
     "v1ImportPoliciesMetadata": {
       "type": "object",
       "properties": {
         "overwrite": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "overwrite controls conflict resolution: if true, an imported policy whose\nname or ID already exists in Central will replace the existing policy.\nIf false, a conflict causes that policy's import to fail."
         }
-      }
+      },
+      "description": "ImportPoliciesMetadata controls how conflicts are resolved during import."
     },
     "v1ImportPoliciesRequest": {
       "type": "object",
       "properties": {
         "metadata": {
-          "$ref": "#/definitions/v1ImportPoliciesMetadata"
+          "$ref": "#/definitions/v1ImportPoliciesMetadata",
+          "description": "metadata controls import behavior such as overwrite semantics."
         },
         "policies": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storagePolicy"
-          }
+          },
+          "description": "policies is the list of policy definitions to import."
         }
-      }
+      },
+      "description": "ImportPoliciesRequest submits one or more policies for import into Central."
     },
     "v1ImportPoliciesResponse": {
       "type": "object",
@@ -1337,55 +1391,69 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1ImportPolicyResponse"
-          }
+          },
+          "description": "responses contains one entry per submitted policy, in the same order."
         },
         "allSucceeded": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "all_succeeded is true only when every policy in the batch was imported\nsuccessfully. Use this as a quick summary check."
         }
-      }
+      },
+      "description": "ImportPoliciesResponse reports the overall outcome of an import batch."
     },
     "v1ImportPolicyError": {
       "type": "object",
       "properties": {
         "message": {
-          "type": "string"
+          "type": "string",
+          "description": "message is a human-readable summary of the error."
         },
         "type": {
-          "type": "string"
+          "type": "string",
+          "description": "type is a machine-readable error category (e.g. \"duplicate_name\", \"validation_error\")."
         },
         "duplicateName": {
-          "type": "string"
+          "type": "string",
+          "description": "duplicate_name is set when the import failed because a policy with\nthe same name already exists and overwrite was not requested."
         },
         "validationError": {
-          "type": "string"
+          "type": "string",
+          "description": "validation_error is set when the policy failed schema or semantic validation."
         }
-      }
+      },
+      "description": "ImportPolicyError describes why a single policy failed to import."
     },
     "v1ImportPolicyResponse": {
       "type": "object",
       "properties": {
         "succeeded": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "succeeded is true when the policy was imported without errors."
         },
         "policy": {
-          "$ref": "#/definitions/storagePolicy"
+          "$ref": "#/definitions/storagePolicy",
+          "description": "policy is the policy as it was processed (post-validation, with internal\nfields stripped). Returned whether or not the import succeeded."
         },
         "errors": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1ImportPolicyError"
-          }
+          },
+          "description": "errors lists all errors encountered for this policy. Non-empty only when\nsucceeded is false."
         }
-      }
+      },
+      "description": "ImportPolicyResponse reports the outcome for a single policy in an import batch."
     },
     "v1JobId": {
       "type": "object",
       "properties": {
         "jobId": {
-          "type": "string"
+          "type": "string",
+          "description": "job_id is the opaque identifier returned by SubmitDryRunPolicyJob."
         }
-      }
+      },
+      "description": "JobId identifies an asynchronous dry-run job."
     },
     "v1ListPoliciesResponse": {
       "type": "object",
@@ -1395,9 +1463,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageListPolicy"
-          }
+          },
+          "description": "policies is the list of matching policies in ListPolicy (summary) form."
         }
-      }
+      },
+      "description": "ListPoliciesResponse contains a lightweight summary of each matching policy."
     },
     "v1Pagination": {
       "type": "object",
@@ -1430,34 +1500,42 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "categories is the sorted list of all category names assigned to at least one policy."
         }
-      }
+      },
+      "description": "PolicyCategoriesResponse holds the distinct set of policy categories in use."
     },
     "v1PolicyFromSearchRequest": {
       "type": "object",
       "properties": {
         "searchParams": {
-          "type": "string"
+          "type": "string",
+          "description": "search_params is a StackRox search query string\n(e.g. \"Image Registry:docker.io+CVE:CVE-2021-44228\").\nSearch terms that cannot be represented as policy criteria are reported\nin the response's altered_search_terms field."
         }
-      }
+      },
+      "description": "PolicyFromSearchRequest converts a StackRox search query string into a draft policy."
     },
     "v1PolicyFromSearchResponse": {
       "type": "object",
       "properties": {
         "policy": {
-          "$ref": "#/definitions/storagePolicy"
+          "$ref": "#/definitions/storagePolicy",
+          "description": "policy is the draft policy generated from the search parameters.\nIt is not persisted; use PostPolicy to save it."
         },
         "alteredSearchTerms": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "altered_search_terms lists search field names that were dropped or\npartially converted because they have no direct policy criteria equivalent."
         },
         "hasNestedFields": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "has_nested_fields indicates whether any generated policy criteria use\nnested field evaluation, which may affect how violations are detected."
         }
-      }
+      },
+      "description": "PolicyFromSearchResponse contains a draft policy built from a search query,\nalong with metadata about search terms that could not be converted."
     },
     "v1SortOption": {
       "type": "object",

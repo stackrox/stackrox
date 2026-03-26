@@ -19,6 +19,7 @@
     "/v1/report-configurations-count": {
       "get": {
         "summary": "CountReportConfigurations returns the number of report configurations.",
+        "description": "Applies the same v1-only filter as GetReportConfigurations, so v2 configurations\nare excluded from the count. Supports StackRox search query syntax.\n\nRequires View access to WorkflowAdministration.",
         "operationId": "ReportConfigurationService_CountReportConfigurations",
         "responses": {
           "200": {
@@ -37,6 +38,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -94,6 +96,8 @@
     },
     "/v1/report/configurations": {
       "get": {
+        "summary": "GetReportConfigurations returns all v1 report configurations matching the query.",
+        "description": "Supports StackRox search query syntax to filter results. Only v1 report\nconfigurations are returned; v2 configurations are excluded automatically.\nSupports pagination via the query's pagination field.\n\nRequires View access to WorkflowAdministration.",
         "operationId": "ReportConfigurationService_GetReportConfigurations",
         "responses": {
           "200": {
@@ -112,6 +116,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -168,6 +173,7 @@
       },
       "post": {
         "summary": "PostReportConfiguration creates a report configuration",
+        "description": "Validates the configuration (notifiers, schedule, resource collection) before\npersisting it and registering it with the report scheduler.\n\nReturns INVALID_ARGUMENT if the configuration fails validation.\nRequires Modify access to WorkflowAdministration and View access to Integration.",
         "operationId": "ReportConfigurationService_PostReportConfiguration",
         "responses": {
           "200": {
@@ -200,6 +206,8 @@
     },
     "/v1/report/configurations/{id}": {
       "get": {
+        "summary": "GetReportConfiguration returns the v1 report configuration with the given ID.",
+        "description": "Returns NOT_FOUND if no configuration with the given ID exists.\nReturns INVALID_ARGUMENT if the ID refers to a v2 report configuration.\n\nRequires View access to WorkflowAdministration.",
         "operationId": "ReportConfigurationService_GetReportConfiguration",
         "responses": {
           "200": {
@@ -229,6 +237,7 @@
       },
       "delete": {
         "summary": "DeleteReportConfiguration removes a report configuration given its id",
+        "description": "Also removes the configuration from the report scheduler. Only v1 configurations\ncan be deleted via this endpoint.\n\nReturns NOT_FOUND if no configuration with the given ID exists.\nReturns INVALID_ARGUMENT if the id is empty or refers to a v2 configuration.\nRequires Modify access to WorkflowAdministration.",
         "operationId": "ReportConfigurationService_DeleteReportConfiguration",
         "responses": {
           "200": {
@@ -258,6 +267,7 @@
       },
       "put": {
         "summary": "UpdateReportConfiguration updates a report configuration",
+        "description": "Validates the updated configuration before persisting and re-registering it\nwith the report scheduler. Only v1 configurations can be updated via this endpoint.\n\nReturns INVALID_ARGUMENT if validation fails or the ID refers to a v2 configuration.\nRequires Modify access to WorkflowAdministration and View access to Integration.",
         "operationId": "ReportConfigurationService_UpdateReportConfiguration",
         "responses": {
           "200": {
@@ -276,6 +286,7 @@
         "parameters": [
           {
             "name": "id",
+            "description": "id is the ID of the report configuration to update.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -307,7 +318,8 @@
       "type": "object",
       "properties": {
         "reportConfig": {
-          "$ref": "#/definitions/storageReportConfiguration"
+          "$ref": "#/definitions/storageReportConfiguration",
+          "description": "report_config is the updated configuration. Must be a v1 (non-v2) report configuration."
         }
       }
     },
@@ -728,7 +740,8 @@
       "properties": {
         "count": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "count is the total number of report configurations matching the query."
         }
       }
     },
@@ -783,7 +796,8 @@
       "type": "object",
       "properties": {
         "reportConfig": {
-          "$ref": "#/definitions/storageReportConfiguration"
+          "$ref": "#/definitions/storageReportConfiguration",
+          "description": "report_config is the configuration to create. The id field is ignored and assigned by the server."
         }
       }
     },
@@ -791,7 +805,8 @@
       "type": "object",
       "properties": {
         "reportConfig": {
-          "$ref": "#/definitions/storageReportConfiguration"
+          "$ref": "#/definitions/storageReportConfiguration",
+          "description": "report_config is the created configuration as stored, including its assigned ID."
         }
       }
     },

@@ -22,11 +22,16 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// PolicyCategory represents a named grouping for security policies.
 type PolicyCategory struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	IsDefault     bool                   `protobuf:"varint,3,opt,name=isDefault,proto3" json:"isDefault,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the unique identifier for this policy category.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// name is the human-readable display name for this category.
+	// Must be between 5 and 128 characters and must not contain newlines or dollar signs.
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// isDefault indicates that this category is a built-in StackRox category and cannot be deleted.
+	IsDefault     bool `protobuf:"varint,3,opt,name=isDefault,proto3" json:"isDefault,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -82,9 +87,12 @@ func (x *PolicyCategory) GetIsDefault() bool {
 	return false
 }
 
+// PostPolicyCategoryRequest is the request message for PostPolicyCategory.
 type PostPolicyCategoryRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	PolicyCategory *PolicyCategory        `protobuf:"bytes,1,opt,name=policyCategory,proto3" json:"policyCategory,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// policyCategory is the category to create. The name must be between 5 and 128 characters
+	// and must not contain newlines or dollar signs.
+	PolicyCategory *PolicyCategory `protobuf:"bytes,1,opt,name=policyCategory,proto3" json:"policyCategory,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -126,9 +134,11 @@ func (x *PostPolicyCategoryRequest) GetPolicyCategory() *PolicyCategory {
 	return nil
 }
 
+// GetPolicyCategoriesResponse is the response message for GetPolicyCategories.
 type GetPolicyCategoriesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Categories    []*PolicyCategory      `protobuf:"bytes,1,rep,name=categories,proto3" json:"categories,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// categories is the list of policy categories matching the query.
+	Categories    []*PolicyCategory `protobuf:"bytes,1,rep,name=categories,proto3" json:"categories,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -170,10 +180,14 @@ func (x *GetPolicyCategoriesResponse) GetCategories() []*PolicyCategory {
 	return nil
 }
 
+// RenamePolicyCategoryRequest is the request message for RenamePolicyCategory.
 type RenamePolicyCategoryRequest struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	NewCategoryName string                 `protobuf:"bytes,2,opt,name=new_category_name,json=newCategoryName,proto3" json:"new_category_name,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the UUID of the policy category to rename.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// new_category_name is the new name for the category. Must be between 5 and 128 characters
+	// and must not contain newlines or dollar signs.
+	NewCategoryName string `protobuf:"bytes,2,opt,name=new_category_name,json=newCategoryName,proto3" json:"new_category_name,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -222,9 +236,11 @@ func (x *RenamePolicyCategoryRequest) GetNewCategoryName() string {
 	return ""
 }
 
+// DeletePolicyCategoryRequest is the request message for DeletePolicyCategory.
 type DeletePolicyCategoryRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the UUID of the policy category to delete.
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

@@ -18,6 +18,7 @@
   "paths": {
     "/v2/virtualmachines": {
       "get": {
+        "summary": "ListVirtualMachines returns virtual machines matching the specified query.",
         "operationId": "VirtualMachineService_ListVirtualMachines",
         "responses": {
           "200": {
@@ -93,6 +94,7 @@
     },
     "/v2/virtualmachines/{id}": {
       "get": {
+        "summary": "GetVirtualMachine returns the virtual machine with the specified ID, including its latest scan results.",
         "operationId": "VirtualMachineService_GetVirtualMachine",
         "responses": {
           "200": {

@@ -73,12 +73,19 @@ func (NetworkBaselinePeerStatus_Status) EnumDescriptor() ([]byte, []int) {
 	return file_api_v1_network_baseline_service_proto_rawDescGZIP(), []int{2, 0}
 }
 
+// NetworkBaselinePeerEntity identifies a network entity (deployment, external
+// source, etc.) as a peer in a baseline connection check.
 type NetworkBaselinePeerEntity struct {
-	state         protoimpl.MessageState         `protogen:"open.v1"`
-	Id            string                         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Type          storage.NetworkEntityInfo_Type `protobuf:"varint,2,opt,name=type,proto3,enum=storage.NetworkEntityInfo_Type" json:"type,omitempty"`
-	Name          string                         `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	Discovered    bool                           `protobuf:"varint,4,opt,name=discovered,proto3" json:"discovered,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the unique identifier of the peer entity.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// type is the entity type (DEPLOYMENT, EXTERNAL_SOURCE, INTERNET, etc.).
+	Type storage.NetworkEntityInfo_Type `protobuf:"varint,2,opt,name=type,proto3,enum=storage.NetworkEntityInfo_Type" json:"type,omitempty"`
+	// name is the display name of the peer entity.
+	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	// discovered is true if this entity was automatically discovered (e.g. a
+	// discovered external CIDR block) rather than user-defined.
+	Discovered    bool `protobuf:"varint,4,opt,name=discovered,proto3" json:"discovered,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -141,6 +148,8 @@ func (x *NetworkBaselinePeerEntity) GetDiscovered() bool {
 	return false
 }
 
+// NetworkBaselineStatusPeer describes a single peer connection to be checked
+// against a deployment's network baseline.
 type NetworkBaselineStatusPeer struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The peer entity of the connection. This can be constructed from the
@@ -219,6 +228,8 @@ func (x *NetworkBaselineStatusPeer) GetIngress() bool {
 	return false
 }
 
+// NetworkBaselinePeerStatus pairs a peer connection with its baseline status
+// (BASELINE or ANOMALOUS) relative to the deployment's network baseline.
 type NetworkBaselinePeerStatus struct {
 	state         protoimpl.MessageState           `protogen:"open.v1"`
 	Peer          *NetworkBaselineStatusPeer       `protobuf:"bytes,1,opt,name=peer,proto3" json:"peer,omitempty"`
@@ -271,9 +282,13 @@ func (x *NetworkBaselinePeerStatus) GetStatus() NetworkBaselinePeerStatus_Status
 	return NetworkBaselinePeerStatus_BASELINE
 }
 
+// NetworkBaselineStatusRequest describes a batch of peer connections to check
+// against a deployment's network baseline.
 type NetworkBaselineStatusRequest struct {
-	state         protoimpl.MessageState       `protogen:"open.v1"`
-	DeploymentId  string                       `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// deployment_id is the ID of the deployment whose baseline to check against. Required.
+	DeploymentId string `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
+	// peers is the list of peer connections to classify as BASELINE or ANOMALOUS.
 	Peers         []*NetworkBaselineStatusPeer `protobuf:"bytes,2,rep,name=peers,proto3" json:"peers,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -324,7 +339,8 @@ func (x *NetworkBaselineStatusRequest) GetPeers() []*NetworkBaselineStatusPeer {
 }
 
 type NetworkBaselineStatusResponse struct {
-	state         protoimpl.MessageState       `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// statuses contains the classification result for each input peer, in the same order.
 	Statuses      []*NetworkBaselinePeerStatus `protobuf:"bytes,1,rep,name=statuses,proto3" json:"statuses,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -367,12 +383,19 @@ func (x *NetworkBaselineStatusResponse) GetStatuses() []*NetworkBaselinePeerStat
 	return nil
 }
 
+// NetworkBaselineExternalStatusRequest retrieves the baseline status of
+// observed external network flows for a deployment within a time window.
 type NetworkBaselineExternalStatusRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	DeploymentId  string                 `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
-	Query         string                 `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
-	Since         *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=since,proto3" json:"since,omitempty"`
-	Pagination    *Pagination            `protobuf:"bytes,4,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// deployment_id is the ID of the deployment to query. Required.
+	DeploymentId string `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
+	// query additionally filters external entities using StackRox search syntax.
+	Query string `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	// since restricts flows to those observed after this timestamp.
+	// Defaults to 1 hour before the current time if unset.
+	Since *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=since,proto3" json:"since,omitempty"`
+	// pagination controls offset and limit for both the anomalous and baseline result lists.
+	Pagination    *Pagination `protobuf:"bytes,4,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -435,14 +458,20 @@ func (x *NetworkBaselineExternalStatusRequest) GetPagination() *Pagination {
 	return nil
 }
 
+// NetworkBaselineExternalStatusResponse classifies observed external flows for
+// a deployment as anomalous or baseline, with pagination.
 type NetworkBaselineExternalStatusResponse struct {
-	state          protoimpl.MessageState       `protogen:"open.v1"`
-	Anomalous      []*NetworkBaselinePeerStatus `protobuf:"bytes,1,rep,name=anomalous,proto3" json:"anomalous,omitempty"`
-	TotalAnomalous int32                        `protobuf:"varint,2,opt,name=total_anomalous,json=totalAnomalous,proto3" json:"total_anomalous,omitempty"`
-	Baseline       []*NetworkBaselinePeerStatus `protobuf:"bytes,3,rep,name=baseline,proto3" json:"baseline,omitempty"`
-	TotalBaseline  int32                        `protobuf:"varint,4,opt,name=total_baseline,json=totalBaseline,proto3" json:"total_baseline,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// anomalous is the paginated list of external peer connections not in the baseline.
+	Anomalous []*NetworkBaselinePeerStatus `protobuf:"bytes,1,rep,name=anomalous,proto3" json:"anomalous,omitempty"`
+	// total_anomalous is the total number of anomalous peers before pagination.
+	TotalAnomalous int32 `protobuf:"varint,2,opt,name=total_anomalous,json=totalAnomalous,proto3" json:"total_anomalous,omitempty"`
+	// baseline is the paginated list of external peer connections that match the baseline.
+	Baseline []*NetworkBaselinePeerStatus `protobuf:"bytes,3,rep,name=baseline,proto3" json:"baseline,omitempty"`
+	// total_baseline is the total number of baseline peers before pagination.
+	TotalBaseline int32 `protobuf:"varint,4,opt,name=total_baseline,json=totalBaseline,proto3" json:"total_baseline,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *NetworkBaselineExternalStatusResponse) Reset() {
@@ -503,9 +532,14 @@ func (x *NetworkBaselineExternalStatusResponse) GetTotalBaseline() int32 {
 	return 0
 }
 
+// ModifyBaselineStatusForPeersRequest adds or removes peer connections from a
+// deployment's network baseline.
 type ModifyBaselineStatusForPeersRequest struct {
-	state         protoimpl.MessageState       `protogen:"open.v1"`
-	DeploymentId  string                       `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// deployment_id is the ID of the deployment whose baseline to modify. Required.
+	DeploymentId string `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
+	// peers is the list of peer connections with their desired status
+	// (BASELINE to add, ANOMALOUS to remove from baseline).
 	Peers         []*NetworkBaselinePeerStatus `protobuf:"bytes,2,rep,name=peers,proto3" json:"peers,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

@@ -18,6 +18,8 @@
   "paths": {
     "/v1/cluster-defaults": {
       "get": {
+        "summary": "GetClusterDefaultValues returns environment-level defaults used when creating a new Secured Cluster.",
+        "description": "Returns the default image repositories for the main StackRox component and Collector,\nand whether kernel probe support (eBPF/CORE_BPF collection) is available from this Central.\nThese values are derived from Central's deployment configuration and probe source availability.",
         "operationId": "ClustersService_GetClusterDefaultValues",
         "responses": {
           "200": {
@@ -40,6 +42,8 @@
     },
     "/v1/clusters": {
       "get": {
+        "summary": "GetClusters returns all Secured Clusters visible to the caller, optionally filtered by query.",
+        "description": "Clusters can be filtered using StackRox search query syntax (e.g. \"Cluster:prod\",\n\"Sensor Status:HEALTHY\"). An empty query returns all clusters. The response includes\ndecommission retention info for any UNHEALTHY clusters if a retention policy is configured.\n\nReturns INVALID_ARGUMENT if the query syntax is malformed.",
         "operationId": "ClustersService_GetClusters",
         "responses": {
           "200": {
@@ -58,6 +62,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query filters clusters using StackRox search syntax.\nExample: \"Cluster:production\" or \"Cluster Status:UNHEALTHY\".\nIf empty, all clusters visible to the caller are returned.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -68,6 +73,8 @@
         ]
       },
       "post": {
+        "summary": "PostCluster registers a new Secured Cluster with Central.",
+        "description": "The request body must be a storage.Cluster with the id field left empty; Central assigns\nthe ID upon creation. After creation, the cluster record must be used to generate Sensor\ndeployment manifests (Helm chart or kubectl manifests) which are applied to the target cluster.\nSensor then connects back to Central and begins populating health status and runtime data.\n\nReturns INVALID_ARGUMENT if the id field is non-empty.",
         "operationId": "ClustersService_PostCluster",
         "responses": {
           "200": {
@@ -123,6 +130,8 @@
     },
     "/v1/clusters/{id}": {
       "get": {
+        "summary": "GetCluster returns the Secured Cluster with the given ID, including decommission retention info\nif the cluster's sensor health is UNHEALTHY and a retention policy is configured.",
+        "description": "Returns NOT_FOUND if no cluster with the given ID exists.\nReturns INVALID_ARGUMENT if the ID is empty.",
         "operationId": "ClustersService_GetCluster",
         "responses": {
           "200": {
@@ -151,6 +160,8 @@
         ]
       },
       "delete": {
+        "summary": "DeleteCluster removes a Secured Cluster record from Central and initiates cleanup of\nassociated data (network graph, alerts, deployments, etc.) asynchronously.",
+        "description": "This does NOT uninstall Sensor or other StackRox components from the target cluster.\nSensor will attempt to reconnect after deletion and the cluster can be re-registered.\n\nReturns INVALID_ARGUMENT if the id field is empty.",
         "operationId": "ClustersService_DeleteCluster",
         "responses": {
           "200": {
@@ -179,6 +190,8 @@
         ]
       },
       "put": {
+        "summary": "PutCluster updates an existing Secured Cluster record.",
+        "description": "The request body must be a storage.Cluster with a non-empty id field identifying the cluster\nto update. Dynamic configuration fields (e.g. admission controller config, registry override)\nare propagated to Sensor over the gRPC connection without requiring a Sensor restart. Static\nconfiguration changes (e.g. collection method, image references) take effect on next Sensor restart.\n\nReturns INVALID_ARGUMENT if the id field is empty.",
         "operationId": "ClustersService_PutCluster",
         "responses": {
           "200": {
@@ -998,15 +1011,19 @@
       "type": "object",
       "properties": {
         "mainImageRepository": {
-          "type": "string"
+          "type": "string",
+          "description": "main_image_repository is the default container image repository for the main StackRox component,\nderived from the Central deployment's image flavor environment variable."
         },
         "collectorImageRepository": {
-          "type": "string"
+          "type": "string",
+          "description": "collector_image_repository is the default container image repository for the Collector DaemonSet,\nderived from the Central deployment's image flavor environment variable."
         },
         "kernelSupportAvailable": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "kernel_support_available indicates whether eBPF/kernel probe sources are reachable from Central,\nwhich determines the runtime collection methods available to Secured Clusters."
         }
-      }
+      },
+      "description": "ClusterDefaultsResponse contains environment-level defaults used when registering new Secured Clusters."
     },
     "v1ClusterResponse": {
       "type": "object",
@@ -1015,9 +1032,11 @@
           "$ref": "#/definitions/storageCluster"
         },
         "clusterRetentionInfo": {
-          "$ref": "#/definitions/v1DecommissionedClusterRetentionInfo"
+          "$ref": "#/definitions/v1DecommissionedClusterRetentionInfo",
+          "description": "cluster_retention_info describes automatic-deletion scheduling for this cluster.\nOnly present when sensor health is UNHEALTHY and a retention policy is configured."
         }
-      }
+      },
+      "description": "ClusterResponse wraps a single cluster with optional decommissioning retention information.\nThe retention info is only populated when the cluster's sensor health is UNHEALTHY and\nthe system decommissioned-cluster retention policy is enabled."
     },
     "v1ClustersList": {
       "type": "object",
@@ -1034,21 +1053,22 @@
           "additionalProperties": {
             "$ref": "#/definitions/v1DecommissionedClusterRetentionInfo"
           },
-          "title": "Maps 'UNHEALTHY' clusters' IDs to their retention info"
+          "description": "cluster_id_to_retention_info maps UNHEALTHY cluster IDs to their decommission retention info.\nOnly clusters whose sensor health status is UNHEALTHY and for which a retention policy is\nconfigured will appear in this map."
         }
-      }
+      },
+      "description": "ClustersList is the response for listing multiple Secured Clusters."
     },
     "v1DecommissionedClusterRetentionInfo": {
       "type": "object",
       "properties": {
         "isExcluded": {
           "type": "boolean",
-          "title": "indicates whether a cluster is protected from deletion"
+          "description": "is_excluded indicates whether a cluster is protected from automatic deletion\ndue to a matching label in the decommissioned cluster retention configuration."
         },
         "daysUntilDeletion": {
           "type": "integer",
           "format": "int32",
-          "title": "days after which cluster will be deleted if sensor health remains UNHEALTHY"
+          "description": "days_until_deletion is the number of days remaining before Central automatically\ndeletes this cluster if its sensor health remains UNHEALTHY. Only present when\nretention is configured and the cluster is not excluded."
         }
       },
       "title": "next available tag: 3"
@@ -1062,7 +1082,8 @@
         "kernelSupportAvailable": {
           "type": "boolean"
         }
-      }
+      },
+      "description": "KernelSupportAvailableResponse is deprecated. Use ClusterDefaultsResponse instead."
     }
   }
 }

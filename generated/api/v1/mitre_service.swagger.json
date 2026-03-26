@@ -19,6 +19,7 @@
     "/v1/mitreattackvectors": {
       "get": {
         "summary": "ListMitreAttackVectors returns all MITRE ATT&CK vectors.",
+        "description": "Each vector represents a tactic (e.g. \"Initial Access\") and includes all its associated\ntechniques. The response is approximately 1 MB. Requires an authenticated session.",
         "operationId": "MitreAttackService_ListMitreAttackVectors",
         "responses": {
           "200": {
@@ -42,6 +43,7 @@
     "/v1/mitreattackvectors/{id}": {
       "get": {
         "summary": "GetMitreAttackVector returns the full MITRE ATT&CK vector for a tactic with all its techniques.",
+        "description": "The id field must be a valid MITRE ATT&CK tactic ID (e.g. \"TA0001\").\nReturns NOT_FOUND if no tactic with the given ID exists in the local knowledge base.",
         "operationId": "MitreAttackService_GetMitreAttackVector",
         "responses": {
           "200": {
@@ -149,9 +151,11 @@
       "type": "object",
       "properties": {
         "mitreAttackVector": {
-          "$ref": "#/definitions/storageMitreAttackVector"
+          "$ref": "#/definitions/storageMitreAttackVector",
+          "description": "mitre_attack_vector is the requested MITRE ATT&CK tactic with all its associated techniques."
         }
-      }
+      },
+      "description": "GetMitreVectorResponse is the response message for GetMitreAttackVector."
     },
     "v1ListMitreAttackVectorsResponse": {
       "type": "object",
@@ -161,9 +165,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageMitreAttackVector"
-          }
+          },
+          "description": "mitre_attack_vectors is the full list of MITRE ATT&CK vectors (tactics with their techniques).\nThe response is approximately 1 MB in size."
         }
-      }
+      },
+      "description": "ListMitreAttackVectorsResponse is the response message for ListMitreAttackVectors."
     }
   }
 }

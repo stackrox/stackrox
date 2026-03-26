@@ -23,10 +23,12 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// GetUsersResponse contains all users known to Central.
 // Next Tag: 2
 type GetUsersResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Users         []*storage.User        `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// users is the list of all users who have previously authenticated to Central.
+	Users         []*storage.User `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -68,15 +70,18 @@ func (x *GetUsersResponse) GetUsers() []*storage.User {
 	return nil
 }
 
-// UserAttributeTuple descript the auth:key:value tuple that decides group membership.
+// UserAttributeTuple describes an auth-provider:key:value triple that drives group membership resolution.
 // Next Tag: 4
 type UserAttributeTuple struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	AuthProviderId string                 `protobuf:"bytes,1,opt,name=auth_provider_id,json=authProviderId,proto3" json:"auth_provider_id,omitempty"`
-	Key            string                 `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
-	Value          string                 `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// auth_provider_id is the ID of the auth provider that supplied this attribute.
+	AuthProviderId string `protobuf:"bytes,1,opt,name=auth_provider_id,json=authProviderId,proto3" json:"auth_provider_id,omitempty"`
+	// key is the attribute name (e.g. "groups", "email") as returned by the identity provider.
+	Key string `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
+	// value is one value for this attribute key.
+	Value         string `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UserAttributeTuple) Reset() {
@@ -130,10 +135,13 @@ func (x *UserAttributeTuple) GetValue() string {
 	return ""
 }
 
+// GetUsersAttributesResponse contains the deduplicated set of attribute tuples across all known users.
 // Next Tag: 2
 type GetUsersAttributesResponse struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	UsersAttributes []*UserAttributeTuple  `protobuf:"bytes,1,rep,name=users_attributes,json=usersAttributes,proto3" json:"users_attributes,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// users_attributes is the deduplicated list of (auth_provider_id, key, value) tuples
+	// derived from all users' identity provider attributes. Used to populate group mapping UIs.
+	UsersAttributes []*UserAttributeTuple `protobuf:"bytes,1,rep,name=users_attributes,json=usersAttributes,proto3" json:"users_attributes,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }

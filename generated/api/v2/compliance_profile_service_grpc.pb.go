@@ -27,12 +27,37 @@ const (
 // ComplianceProfileServiceClient is the client API for ComplianceProfileService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// ComplianceProfileService provides access to compliance profiles sourced from the Compliance Operator.
+//
+// Profiles define the rules and benchmarks evaluated during a compliance scan. They are
+// discovered from each cluster's installed Compliance Operator and may include both
+// standard Profiles and TailoredProfiles.
+//
+// Authentication: all endpoints require View access to both the Compliance and Cluster resources.
 type ComplianceProfileServiceClient interface {
-	// GetComplianceProfile retrieves the specified compliance profile
+	// GetComplianceProfile retrieves the specified compliance profile by ID.
+	//
+	// Returns the full profile including its rules and associated benchmark standards.
+	//
+	// Returns NOT_FOUND if no profile with the given ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	GetComplianceProfile(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ComplianceProfile, error)
 	// ListComplianceProfiles returns profiles matching given request
+	//
+	// Returns all compliance profiles available on the specified cluster, including
+	// their full rule lists and benchmark mappings. The cluster_id is required.
+	// Supports pagination and search query filtering.
+	//
+	// Returns INVALID_ARGUMENT if cluster_id is empty or the query is malformed.
 	ListComplianceProfiles(ctx context.Context, in *ProfilesForClusterRequest, opts ...grpc.CallOption) (*ListComplianceProfilesResponse, error)
 	// ListProfileSummaries returns profiles matching each cluster and the given query
+	//
+	// Returns a deduplicated list of profile summaries across the specified clusters.
+	// Results are sorted by profile name. At least one cluster ID is required.
+	// Supports pagination; total_count reflects distinct profile names, not raw rows.
+	//
+	// Returns INVALID_ARGUMENT if no cluster IDs are provided or the query is malformed.
 	ListProfileSummaries(ctx context.Context, in *ClustersProfileSummaryRequest, opts ...grpc.CallOption) (*ListComplianceProfileSummaryResponse, error)
 }
 
@@ -77,12 +102,37 @@ func (c *complianceProfileServiceClient) ListProfileSummaries(ctx context.Contex
 // ComplianceProfileServiceServer is the server API for ComplianceProfileService service.
 // All implementations should embed UnimplementedComplianceProfileServiceServer
 // for forward compatibility.
+//
+// ComplianceProfileService provides access to compliance profiles sourced from the Compliance Operator.
+//
+// Profiles define the rules and benchmarks evaluated during a compliance scan. They are
+// discovered from each cluster's installed Compliance Operator and may include both
+// standard Profiles and TailoredProfiles.
+//
+// Authentication: all endpoints require View access to both the Compliance and Cluster resources.
 type ComplianceProfileServiceServer interface {
-	// GetComplianceProfile retrieves the specified compliance profile
+	// GetComplianceProfile retrieves the specified compliance profile by ID.
+	//
+	// Returns the full profile including its rules and associated benchmark standards.
+	//
+	// Returns NOT_FOUND if no profile with the given ID exists.
+	// Returns INVALID_ARGUMENT if the ID is empty.
 	GetComplianceProfile(context.Context, *ResourceByID) (*ComplianceProfile, error)
 	// ListComplianceProfiles returns profiles matching given request
+	//
+	// Returns all compliance profiles available on the specified cluster, including
+	// their full rule lists and benchmark mappings. The cluster_id is required.
+	// Supports pagination and search query filtering.
+	//
+	// Returns INVALID_ARGUMENT if cluster_id is empty or the query is malformed.
 	ListComplianceProfiles(context.Context, *ProfilesForClusterRequest) (*ListComplianceProfilesResponse, error)
 	// ListProfileSummaries returns profiles matching each cluster and the given query
+	//
+	// Returns a deduplicated list of profile summaries across the specified clusters.
+	// Results are sorted by profile name. At least one cluster ID is required.
+	// Supports pagination; total_count reflects distinct profile names, not raw rows.
+	//
+	// Returns INVALID_ARGUMENT if no cluster IDs are provided or the query is malformed.
 	ListProfileSummaries(context.Context, *ClustersProfileSummaryRequest) (*ListComplianceProfileSummaryResponse, error)
 }
 

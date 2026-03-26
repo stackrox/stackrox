@@ -18,6 +18,8 @@
   "paths": {
     "/v1/featureflags": {
       "get": {
+        "summary": "GetFeatureFlags returns all known feature flags and their current enabled state.",
+        "description": "The response is sorted alphabetically by flag name. This endpoint is anonymous\n(no authentication required) and is used by the UI at startup.",
         "operationId": "FeatureFlagService_GetFeatureFlags",
         "responses": {
           "200": {
@@ -74,15 +76,19 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name is the human-readable name of the feature flag."
         },
         "envVar": {
-          "type": "string"
+          "type": "string",
+          "description": "env_var is the environment variable that controls this flag (e.g. \"ROX_SOME_FEATURE\")."
         },
         "enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "enabled indicates whether the feature flag is currently active."
         }
-      }
+      },
+      "description": "FeatureFlag represents a single runtime feature flag and its current state."
     },
     "v1GetFeatureFlagsResponse": {
       "type": "object",
@@ -92,9 +98,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1FeatureFlag"
-          }
+          },
+          "description": "feature_flags is the list of all known feature flags, sorted alphabetically by name."
         }
-      }
+      },
+      "description": "GetFeatureFlagsResponse is the response message for GetFeatureFlags."
     }
   }
 }

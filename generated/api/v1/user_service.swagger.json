@@ -18,6 +18,8 @@
   "paths": {
     "/v1/users": {
       "get": {
+        "summary": "GetUsers returns all users who have previously authenticated to Central.",
+        "description": "Requires read access to the Access resource.",
         "operationId": "UserService_GetUsers",
         "responses": {
           "200": {
@@ -40,6 +42,8 @@
     },
     "/v1/users/{id}": {
       "get": {
+        "summary": "GetUser returns the user with the given ID.",
+        "description": "Returns NOT_FOUND if no user with the specified ID exists.\nRequires read access to the Access resource.",
         "operationId": "UserService_GetUser",
         "responses": {
           "200": {
@@ -70,6 +74,8 @@
     },
     "/v1/usersattributes": {
       "get": {
+        "summary": "GetUsersAttributes returns the deduplicated set of identity-provider attribute tuples\nacross all known users.",
+        "description": "Each tuple contains the auth provider ID, attribute key, and attribute value. Duplicates\nacross users are collapsed. This endpoint is used to populate group mapping configuration UIs.\nRequires read access to the Access resource.",
         "operationId": "UserService_GetUsersAttributes",
         "responses": {
           "200": {
@@ -163,10 +169,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1UserAttributeTuple"
-          }
+          },
+          "description": "users_attributes is the deduplicated list of (auth_provider_id, key, value) tuples\nderived from all users' identity provider attributes. Used to populate group mapping UIs."
         }
       },
-      "title": "Next Tag: 2"
+      "title": "GetUsersAttributesResponse contains the deduplicated set of attribute tuples across all known users.\nNext Tag: 2"
     },
     "v1GetUsersResponse": {
       "type": "object",
@@ -176,25 +183,29 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageUser"
-          }
+          },
+          "description": "users is the list of all users who have previously authenticated to Central."
         }
       },
-      "title": "Next Tag: 2"
+      "title": "GetUsersResponse contains all users known to Central.\nNext Tag: 2"
     },
     "v1UserAttributeTuple": {
       "type": "object",
       "properties": {
         "authProviderId": {
-          "type": "string"
+          "type": "string",
+          "description": "auth_provider_id is the ID of the auth provider that supplied this attribute."
         },
         "key": {
-          "type": "string"
+          "type": "string",
+          "description": "key is the attribute name (e.g. \"groups\", \"email\") as returned by the identity provider."
         },
         "value": {
-          "type": "string"
+          "type": "string",
+          "description": "value is one value for this attribute key."
         }
       },
-      "title": "UserAttributeTuple descript the auth:key:value tuple that decides group membership.\nNext Tag: 4"
+      "title": "UserAttributeTuple describes an auth-provider:key:value triple that drives group membership resolution.\nNext Tag: 4"
     }
   }
 }

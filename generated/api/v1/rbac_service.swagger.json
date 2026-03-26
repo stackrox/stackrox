@@ -18,6 +18,8 @@
   "paths": {
     "/v1/rbac/bindings": {
       "get": {
+        "summary": "ListRoleBindings returns all Kubernetes role bindings matching the search query.",
+        "description": "Uses StackRox search query syntax. An empty query returns all role bindings.\nReturns INVALID_ARGUMENT if the query syntax is malformed.\nRequires read access to the K8sRoleBinding resource.",
         "operationId": "RbacService_ListRoleBindings",
         "responses": {
           "200": {
@@ -36,6 +38,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -93,6 +96,8 @@
     },
     "/v1/rbac/bindings/{id}": {
       "get": {
+        "summary": "GetRoleBinding returns the Kubernetes role binding with the given ID.",
+        "description": "Returns NOT_FOUND if no K8s role binding with the specified ID exists.\nRequires read access to the K8sRoleBinding resource.",
         "operationId": "RbacService_GetRoleBinding",
         "responses": {
           "200": {
@@ -123,6 +128,8 @@
     },
     "/v1/rbac/roles": {
       "get": {
+        "summary": "ListRoles returns all Kubernetes roles matching the search query.",
+        "description": "Uses StackRox search query syntax. An empty query returns all roles.\nReturns INVALID_ARGUMENT if the query syntax is malformed.\nRequires read access to the K8sRole resource.",
         "operationId": "RbacService_ListRoles",
         "responses": {
           "200": {
@@ -141,6 +148,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -198,6 +206,8 @@
     },
     "/v1/rbac/roles/{id}": {
       "get": {
+        "summary": "GetRole returns the Kubernetes role with the given ID.",
+        "description": "Returns NOT_FOUND if no K8s role with the specified ID exists.\nRequires read access to the K8sRole resource.",
         "operationId": "RbacService_GetRole",
         "responses": {
           "200": {
@@ -228,7 +238,8 @@
     },
     "/v1/rbac/subject/{id}": {
       "get": {
-        "summary": "Subjects served from this API are Groups and Users only.\nId in this case is the Name field, since for users and groups, that is unique, and subjects do not have IDs.",
+        "summary": "GetSubject returns the Kubernetes subject (user or group) identified by the given name,\ntogether with their cluster-wide and namespace-scoped role bindings.",
+        "description": "Subjects served from this API are Groups and Users only.\nThe id in this case is the Name field, since for users and groups that is unique,\nand subjects do not have IDs.\nRequires read access to the K8sSubject resource.",
         "operationId": "RbacService_GetSubject",
         "responses": {
           "200": {
@@ -259,6 +270,8 @@
     },
     "/v1/rbac/subjects": {
       "get": {
+        "summary": "ListSubjects returns all Kubernetes subjects (users and groups) bound to roles matching\nthe search query, along with the roles they are bound to.",
+        "description": "Only role-binding-specific search fields in the query are used to filter bindings.\nAdditional subject-level filtering is applied on the aggregated results.\nUses StackRox search query syntax. An empty query returns all subjects.\nRequires read access to the K8sSubject resource.",
         "operationId": "RbacService_ListSubjects",
         "responses": {
           "200": {
@@ -277,6 +290,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -560,7 +574,8 @@
         "binding": {
           "$ref": "#/definitions/storageK8sRoleBinding"
         }
-      }
+      },
+      "description": "GetRoleBindingResponse contains a single Kubernetes role binding."
     },
     "v1GetRoleResponse": {
       "type": "object",
@@ -568,29 +583,34 @@
         "role": {
           "$ref": "#/definitions/storageK8sRole"
         }
-      }
+      },
+      "description": "GetRoleResponse contains a single Kubernetes role."
     },
     "v1GetSubjectResponse": {
       "type": "object",
       "properties": {
         "subject": {
-          "$ref": "#/definitions/storageSubject"
+          "$ref": "#/definitions/storageSubject",
+          "description": "subject is the Kubernetes user or group."
         },
         "clusterRoles": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageK8sRole"
-          }
+          },
+          "description": "cluster_roles is the list of K8s roles bound to this subject at the cluster scope."
         },
         "scopedRoles": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1ScopedRoles"
-          }
+          },
+          "description": "scoped_roles groups the namespace-scoped role bindings of this subject by namespace."
         }
-      }
+      },
+      "description": "GetSubjectResponse contains a subject with its cluster-wide and namespace-scoped role bindings."
     },
     "v1ListRoleBindingsResponse": {
       "type": "object",
@@ -600,7 +620,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageK8sRoleBinding"
-          }
+          },
+          "description": "bindings is the list of Kubernetes role bindings matching the search query."
         }
       },
       "title": "A list of k8s role bindings (free of scoped information)\nNext Tag: 2"
@@ -613,7 +634,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageK8sRole"
-          }
+          },
+          "description": "roles is the list of Kubernetes roles matching the search query."
         }
       },
       "title": "A list of k8s roles (free of scoped information)\nNext Tag: 2"
@@ -626,7 +648,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1SubjectAndRoles"
-          }
+          },
+          "description": "subject_and_roles pairs each matching subject with the K8s roles it is bound to."
         }
       },
       "title": "A list of k8s subjects (users and groups only, for service accounts, try the service account service)\nNext Tag: 2"
@@ -659,16 +682,19 @@
       "type": "object",
       "properties": {
         "namespace": {
-          "type": "string"
+          "type": "string",
+          "description": "namespace is the Kubernetes namespace in which these role bindings exist."
         },
         "roles": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageK8sRole"
-          }
+          },
+          "description": "roles is the list of K8s roles bound to the subject in this namespace."
         }
-      }
+      },
+      "description": "ScopedRoles groups K8s roles bound to a subject within a specific namespace."
     },
     "v1SortOption": {
       "type": "object",
@@ -689,16 +715,19 @@
       "type": "object",
       "properties": {
         "subject": {
-          "$ref": "#/definitions/storageSubject"
+          "$ref": "#/definitions/storageSubject",
+          "description": "subject is the Kubernetes user or group."
         },
         "roles": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageK8sRole"
-          }
+          },
+          "description": "roles is the list of K8s roles the subject is bound to across all namespaces."
         }
-      }
+      },
+      "description": "SubjectAndRoles pairs a Kubernetes subject (user or group) with the K8s roles it is bound to."
     }
   }
 }

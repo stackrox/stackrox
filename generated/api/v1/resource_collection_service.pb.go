@@ -23,9 +23,11 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// ListCollectionSelectorsResponse is the response message for ListCollectionSelectors.
 type ListCollectionSelectorsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Selectors     []string               `protobuf:"bytes,1,rep,name=selectors,proto3" json:"selectors,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// selectors is the list of supported field selector labels (e.g. "Cluster", "Namespace", "Deployment Label").
+	Selectors     []string `protobuf:"bytes,1,rep,name=selectors,proto3" json:"selectors,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -67,9 +69,12 @@ func (x *ListCollectionSelectorsResponse) GetSelectors() []string {
 	return nil
 }
 
+// GetCollectionRequest is the request message for GetCollection.
 type GetCollectionRequest struct {
-	state         protoimpl.MessageState            `protogen:"open.v1"`
-	Id            string                            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the UUID of the collection to retrieve.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// options controls whether matching deployments are included in the response.
 	Options       *CollectionDeploymentMatchOptions `protobuf:"bytes,2,opt,name=options,proto3" json:"options,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -119,10 +124,14 @@ func (x *GetCollectionRequest) GetOptions() *CollectionDeploymentMatchOptions {
 	return nil
 }
 
+// CollectionDeploymentMatchOptions controls whether the response includes matching deployments.
 type CollectionDeploymentMatchOptions struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	WithMatches   bool                   `protobuf:"varint,1,opt,name=with_matches,json=withMatches,proto3" json:"with_matches,omitempty"`
-	FilterQuery   *RawQuery              `protobuf:"bytes,2,opt,name=filter_query,json=filterQuery,proto3" json:"filter_query,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// with_matches, when true, resolves the collection's selectors and returns all deployments that match.
+	WithMatches bool `protobuf:"varint,1,opt,name=with_matches,json=withMatches,proto3" json:"with_matches,omitempty"`
+	// filter_query is an optional search query to further filter the matched deployments.
+	// Uses StackRox search syntax (e.g. "Namespace:production"). Only used when with_matches is true.
+	FilterQuery   *RawQuery `protobuf:"bytes,2,opt,name=filter_query,json=filterQuery,proto3" json:"filter_query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -171,10 +180,14 @@ func (x *CollectionDeploymentMatchOptions) GetFilterQuery() *RawQuery {
 	return nil
 }
 
+// GetCollectionResponse is the response message for GetCollection.
 type GetCollectionResponse struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
-	Collection    *storage.ResourceCollection `protobuf:"bytes,1,opt,name=collection,proto3" json:"collection,omitempty"`
-	Deployments   []*storage.ListDeployment   `protobuf:"bytes,2,rep,name=deployments,proto3" json:"deployments,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// collection is the requested resource collection.
+	Collection *storage.ResourceCollection `protobuf:"bytes,1,opt,name=collection,proto3" json:"collection,omitempty"`
+	// deployments contains deployments matching the collection's selectors, populated only when
+	// CollectionDeploymentMatchOptions.with_matches is true.
+	Deployments   []*storage.ListDeployment `protobuf:"bytes,2,rep,name=deployments,proto3" json:"deployments,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -223,9 +236,12 @@ func (x *GetCollectionResponse) GetDeployments() []*storage.ListDeployment {
 	return nil
 }
 
+// GetCollectionCountRequest is the request message for GetCollectionCount.
 type GetCollectionCountRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Query         *RawQuery              `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// query is an optional search query to filter collections before counting.
+	// Uses StackRox search syntax. Matches all collections if empty.
+	Query         *RawQuery `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -267,9 +283,11 @@ func (x *GetCollectionCountRequest) GetQuery() *RawQuery {
 	return nil
 }
 
+// GetCollectionCountResponse is the response message for GetCollectionCount.
 type GetCollectionCountResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Count         int32                  `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// count is the number of collections matching the query.
+	Count         int32 `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -311,12 +329,19 @@ func (x *GetCollectionCountResponse) GetCount() int32 {
 	return 0
 }
 
+// CreateCollectionRequest is the request message for CreateCollection.
 type CreateCollectionRequest struct {
-	state                 protoimpl.MessageState      `protogen:"open.v1"`
-	Name                  string                      `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Description           string                      `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
-	ResourceSelectors     []*storage.ResourceSelector `protobuf:"bytes,3,rep,name=resource_selectors,json=resourceSelectors,proto3" json:"resource_selectors,omitempty"`
-	EmbeddedCollectionIds []string                    `protobuf:"bytes,4,rep,name=embedded_collection_ids,json=embeddedCollectionIds,proto3" json:"embedded_collection_ids,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// name is the display name for the new collection. Must be non-empty after trimming whitespace.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// description is an optional human-readable explanation of the collection's purpose.
+	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	// resource_selectors define the rules that match deployments into this collection.
+	// At least one resource selector or embedded collection ID must be provided.
+	ResourceSelectors []*storage.ResourceSelector `protobuf:"bytes,3,rep,name=resource_selectors,json=resourceSelectors,proto3" json:"resource_selectors,omitempty"`
+	// embedded_collection_ids are IDs of existing collections whose members are included in this collection.
+	// At least one resource selector or embedded collection ID must be provided.
+	EmbeddedCollectionIds []string `protobuf:"bytes,4,rep,name=embedded_collection_ids,json=embeddedCollectionIds,proto3" json:"embedded_collection_ids,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -379,8 +404,10 @@ func (x *CreateCollectionRequest) GetEmbeddedCollectionIds() []string {
 	return nil
 }
 
+// CreateCollectionResponse is the response message for CreateCollection.
 type CreateCollectionResponse struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// collection is the newly created resource collection with its assigned ID.
 	Collection    *storage.ResourceCollection `protobuf:"bytes,1,opt,name=collection,proto3" json:"collection,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -423,13 +450,19 @@ func (x *CreateCollectionResponse) GetCollection() *storage.ResourceCollection {
 	return nil
 }
 
+// UpdateCollectionRequest is the request message for UpdateCollection.
 type UpdateCollectionRequest struct {
-	state                 protoimpl.MessageState      `protogen:"open.v1"`
-	Id                    string                      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name                  string                      `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Description           string                      `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	ResourceSelectors     []*storage.ResourceSelector `protobuf:"bytes,4,rep,name=resource_selectors,json=resourceSelectors,proto3" json:"resource_selectors,omitempty"`
-	EmbeddedCollectionIds []string                    `protobuf:"bytes,5,rep,name=embedded_collection_ids,json=embeddedCollectionIds,proto3" json:"embedded_collection_ids,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// id is the UUID of the collection to update.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// name is the new display name for the collection. Must be non-empty after trimming whitespace.
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// description is the new human-readable explanation of the collection's purpose.
+	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	// resource_selectors replaces the current set of rules that match deployments into this collection.
+	ResourceSelectors []*storage.ResourceSelector `protobuf:"bytes,4,rep,name=resource_selectors,json=resourceSelectors,proto3" json:"resource_selectors,omitempty"`
+	// embedded_collection_ids replaces the current set of embedded collection references.
+	EmbeddedCollectionIds []string `protobuf:"bytes,5,rep,name=embedded_collection_ids,json=embeddedCollectionIds,proto3" json:"embedded_collection_ids,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -499,8 +532,10 @@ func (x *UpdateCollectionRequest) GetEmbeddedCollectionIds() []string {
 	return nil
 }
 
+// UpdateCollectionResponse is the response message for UpdateCollection.
 type UpdateCollectionResponse struct {
-	state         protoimpl.MessageState      `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// collection is the updated resource collection.
 	Collection    *storage.ResourceCollection `protobuf:"bytes,1,opt,name=collection,proto3" json:"collection,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -543,16 +578,24 @@ func (x *UpdateCollectionResponse) GetCollection() *storage.ResourceCollection {
 	return nil
 }
 
+// DryRunCollectionRequest is the request message for DryRunCollection.
 type DryRunCollectionRequest struct {
-	state                 protoimpl.MessageState            `protogen:"open.v1"`
-	Name                  string                            `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Id                    string                            `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"` // set if dryrun on existing collections
-	Description           string                            `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	ResourceSelectors     []*storage.ResourceSelector       `protobuf:"bytes,4,rep,name=resource_selectors,json=resourceSelectors,proto3" json:"resource_selectors,omitempty"`
-	EmbeddedCollectionIds []string                          `protobuf:"bytes,5,rep,name=embedded_collection_ids,json=embeddedCollectionIds,proto3" json:"embedded_collection_ids,omitempty"`
-	Options               *CollectionDeploymentMatchOptions `protobuf:"bytes,6,opt,name=options,proto3" json:"options,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// name is the display name of the collection being dry-run.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// id is the UUID of an existing collection; set when dry-running an update to an existing collection.
+	// Leave empty when simulating a new collection.
+	Id string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"` // set if dryrun on existing collections
+	// description is the description for the collection being dry-run.
+	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	// resource_selectors define the rules to evaluate for this dry run.
+	ResourceSelectors []*storage.ResourceSelector `protobuf:"bytes,4,rep,name=resource_selectors,json=resourceSelectors,proto3" json:"resource_selectors,omitempty"`
+	// embedded_collection_ids are IDs of collections to include in this dry run.
+	EmbeddedCollectionIds []string `protobuf:"bytes,5,rep,name=embedded_collection_ids,json=embeddedCollectionIds,proto3" json:"embedded_collection_ids,omitempty"`
+	// options controls whether matching deployments are returned in the response.
+	Options       *CollectionDeploymentMatchOptions `protobuf:"bytes,6,opt,name=options,proto3" json:"options,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DryRunCollectionRequest) Reset() {
@@ -627,8 +670,11 @@ func (x *DryRunCollectionRequest) GetOptions() *CollectionDeploymentMatchOptions
 	return nil
 }
 
+// DryRunCollectionResponse is the response message for DryRunCollection.
 type DryRunCollectionResponse struct {
-	state         protoimpl.MessageState    `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// deployments contains deployments that would match the collection without persisting it.
+	// Only populated when CollectionDeploymentMatchOptions.with_matches is true.
 	Deployments   []*storage.ListDeployment `protobuf:"bytes,1,rep,name=deployments,proto3" json:"deployments,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -671,9 +717,13 @@ func (x *DryRunCollectionResponse) GetDeployments() []*storage.ListDeployment {
 	return nil
 }
 
+// ListCollectionsRequest is the request message for ListCollections.
 type ListCollectionsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Query         *RawQuery              `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// query is an optional search query to filter collections.
+	// Uses StackRox search syntax. Matches all collections if empty.
+	// Results are paginated with a default page size of 1000, sorted by collection name.
+	Query         *RawQuery `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -715,8 +765,10 @@ func (x *ListCollectionsRequest) GetQuery() *RawQuery {
 	return nil
 }
 
+// ListCollectionsResponse is the response message for ListCollections.
 type ListCollectionsResponse struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// collections is the list of resource collections matching the query, sorted by name ascending.
 	Collections   []*storage.ResourceCollection `protobuf:"bytes,1,rep,name=collections,proto3" json:"collections,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

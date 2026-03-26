@@ -23,17 +23,25 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// BuildDetectionRequest is the request message for DetectBuildTime.
 type BuildDetectionRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Resource:
 	//
 	//	*BuildDetectionRequest_Image
 	//	*BuildDetectionRequest_ImageName
-	Resource           isBuildDetectionRequest_Resource `protobuf_oneof:"Resource"`
-	NoExternalMetadata bool                             `protobuf:"varint,2,opt,name=no_external_metadata,json=noExternalMetadata,proto3" json:"no_external_metadata,omitempty"`
-	SendNotifications  bool                             `protobuf:"varint,4,opt,name=send_notifications,json=sendNotifications,proto3" json:"send_notifications,omitempty"`
-	Force              bool                             `protobuf:"varint,6,opt,name=force,proto3" json:"force,omitempty"`
-	PolicyCategories   []string                         `protobuf:"bytes,5,rep,name=policy_categories,json=policyCategories,proto3" json:"policy_categories,omitempty"`
+	Resource isBuildDetectionRequest_Resource `protobuf_oneof:"Resource"`
+	// no_external_metadata disables fetching vulnerability and metadata from external registries
+	// and scanners. Detection runs against previously cached data only. Mutually exclusive with force.
+	NoExternalMetadata bool `protobuf:"varint,2,opt,name=no_external_metadata,json=noExternalMetadata,proto3" json:"no_external_metadata,omitempty"`
+	// send_notifications triggers configured notification integrations for each generated alert.
+	SendNotifications bool `protobuf:"varint,4,opt,name=send_notifications,json=sendNotifications,proto3" json:"send_notifications,omitempty"`
+	// force forces re-fetching image metadata from external sources even if cached data exists.
+	// Mutually exclusive with no_external_metadata.
+	Force bool `protobuf:"varint,6,opt,name=force,proto3" json:"force,omitempty"`
+	// policy_categories restricts detection to policies belonging to the specified categories.
+	// Returns INVALID_ARGUMENT if any category does not match any existing policy category.
+	PolicyCategories []string `protobuf:"bytes,5,rep,name=policy_categories,json=policyCategories,proto3" json:"policy_categories,omitempty"`
 	// Cluster to delegate scan to, may be the cluster's name or ID.
 	Cluster string `protobuf:"bytes,7,opt,name=cluster,proto3" json:"cluster,omitempty"`
 	// Namespace on the secured cluster from which to read context information
@@ -146,10 +154,13 @@ type isBuildDetectionRequest_Resource interface {
 }
 
 type BuildDetectionRequest_Image struct {
+	// image is a fully-populated container image object to check.
 	Image *storage.ContainerImage `protobuf:"bytes,1,opt,name=image,proto3,oneof"`
 }
 
 type BuildDetectionRequest_ImageName struct {
+	// image_name is a container image reference string (e.g. "nginx:latest").
+	// Used when the full image object is not available. Mutually exclusive with image.
 	ImageName string `protobuf:"bytes,3,opt,name=image_name,json=imageName,proto3,oneof"`
 }
 
@@ -157,9 +168,11 @@ func (*BuildDetectionRequest_Image) isBuildDetectionRequest_Resource() {}
 
 func (*BuildDetectionRequest_ImageName) isBuildDetectionRequest_Resource() {}
 
+// BuildDetectionResponse is the response message for DetectBuildTime.
 type BuildDetectionResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Alerts        []*storage.Alert       `protobuf:"bytes,1,rep,name=alerts,proto3" json:"alerts,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// alerts contains all policy violations found for the given image.
+	Alerts        []*storage.Alert `protobuf:"bytes,1,rep,name=alerts,proto3" json:"alerts,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -201,17 +214,23 @@ func (x *BuildDetectionResponse) GetAlerts() []*storage.Alert {
 	return nil
 }
 
+// DeployDetectionRequest is the request message for DetectDeployTime.
 type DeployDetectionRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Resource:
 	//
 	//	*DeployDetectionRequest_Deployment
-	Resource           isDeployDetectionRequest_Resource `protobuf_oneof:"Resource"`
-	NoExternalMetadata bool                              `protobuf:"varint,2,opt,name=no_external_metadata,json=noExternalMetadata,proto3" json:"no_external_metadata,omitempty"`
-	EnforcementOnly    bool                              `protobuf:"varint,3,opt,name=enforcement_only,json=enforcementOnly,proto3" json:"enforcement_only,omitempty"`
-	ClusterId          string                            `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	Resource isDeployDetectionRequest_Resource `protobuf_oneof:"Resource"`
+	// no_external_metadata disables fetching external image metadata. Detection runs on cached data only.
+	NoExternalMetadata bool `protobuf:"varint,2,opt,name=no_external_metadata,json=noExternalMetadata,proto3" json:"no_external_metadata,omitempty"`
+	// enforcement_only limits detection to policies that have deploy-time enforcement actions configured
+	// (scale-to-zero or unsatisfiable node constraint). When no enforcement policies exist, returns empty results.
+	EnforcementOnly bool `protobuf:"varint,3,opt,name=enforcement_only,json=enforcementOnly,proto3" json:"enforcement_only,omitempty"`
+	// cluster_id is the ID of the cluster the deployment belongs to. Used to resolve cluster name
+	// and scope label-based policy matching.
+	ClusterId     string `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeployDetectionRequest) Reset() {
@@ -286,20 +305,31 @@ type isDeployDetectionRequest_Resource interface {
 }
 
 type DeployDetectionRequest_Deployment struct {
+	// deployment is the deployment object to evaluate against deploy-time policies.
 	Deployment *storage.Deployment `protobuf:"bytes,1,opt,name=deployment,proto3,oneof"`
 }
 
 func (*DeployDetectionRequest_Deployment) isDeployDetectionRequest_Resource() {}
 
+// DeployYAMLDetectionRequest is the request message for DetectDeployTimeFromYAML.
 type DeployYAMLDetectionRequest struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	Yaml               string                 `protobuf:"bytes,1,opt,name=yaml,proto3" json:"yaml,omitempty"`
-	NoExternalMetadata bool                   `protobuf:"varint,2,opt,name=no_external_metadata,json=noExternalMetadata,proto3" json:"no_external_metadata,omitempty"`
-	EnforcementOnly    bool                   `protobuf:"varint,3,opt,name=enforcement_only,json=enforcementOnly,proto3" json:"enforcement_only,omitempty"`
-	Force              bool                   `protobuf:"varint,5,opt,name=force,proto3" json:"force,omitempty"`
-	PolicyCategories   []string               `protobuf:"bytes,4,rep,name=policy_categories,json=policyCategories,proto3" json:"policy_categories,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// yaml contains one or more Kubernetes workload manifests in YAML format (multi-document YAML is supported).
+	Yaml string `protobuf:"bytes,1,opt,name=yaml,proto3" json:"yaml,omitempty"`
+	// no_external_metadata disables fetching external image metadata. Detection runs on cached data only.
+	NoExternalMetadata bool `protobuf:"varint,2,opt,name=no_external_metadata,json=noExternalMetadata,proto3" json:"no_external_metadata,omitempty"`
+	// enforcement_only limits detection to policies that have deploy-time enforcement actions configured.
+	EnforcementOnly bool `protobuf:"varint,3,opt,name=enforcement_only,json=enforcementOnly,proto3" json:"enforcement_only,omitempty"`
+	// force forces re-fetching image metadata from external sources even if cached data exists.
+	// Mutually exclusive with no_external_metadata.
+	Force bool `protobuf:"varint,5,opt,name=force,proto3" json:"force,omitempty"`
+	// policy_categories restricts detection to policies belonging to the specified categories.
+	// Returns INVALID_ARGUMENT if any category does not match any existing policy category.
+	PolicyCategories []string `protobuf:"bytes,4,rep,name=policy_categories,json=policyCategories,proto3" json:"policy_categories,omitempty"`
 	// Cluster to delegate scan to, may be the cluster's name or ID.
-	Cluster       string `protobuf:"bytes,6,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	Cluster string `protobuf:"bytes,6,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	// namespace is the Kubernetes namespace used as context when resolving pull secrets for delegated scans.
+	// Defaults to "default" if not specified.
 	Namespace     string `protobuf:"bytes,7,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -384,14 +414,20 @@ func (x *DeployYAMLDetectionRequest) GetNamespace() string {
 	return ""
 }
 
+// DeployDetectionResponse is the response message for DetectDeployTime and DetectDeployTimeFromYAML.
 type DeployDetectionResponse struct {
-	state protoimpl.MessageState         `protogen:"open.v1"`
-	Runs  []*DeployDetectionResponse_Run `protobuf:"bytes,1,rep,name=runs,proto3" json:"runs,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// runs contains one entry per workload resource evaluated.
+	Runs []*DeployDetectionResponse_Run `protobuf:"bytes,1,rep,name=runs,proto3" json:"runs,omitempty"`
 	// The reference will be in the format: namespace/name[<group>/<version>, Kind=<kind>].
-	IgnoredObjectRefs []string                 `protobuf:"bytes,2,rep,name=ignored_object_refs,json=ignoredObjectRefs,proto3" json:"ignored_object_refs,omitempty"`
-	Remarks           []*DeployDetectionRemark `protobuf:"bytes,3,rep,name=remarks,proto3" json:"remarks,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// ignored_object_refs lists YAML resources that were skipped because their schema is not registered
+	// (e.g. custom resources). Each entry uses the format: namespace/name[group/version, Kind=kind].
+	IgnoredObjectRefs []string `protobuf:"bytes,2,rep,name=ignored_object_refs,json=ignoredObjectRefs,proto3" json:"ignored_object_refs,omitempty"`
+	// remarks contains per-deployment contextual information such as permission level and applied
+	// network policies. Only populated when a cluster is specified in the request.
+	Remarks       []*DeployDetectionRemark `protobuf:"bytes,3,rep,name=remarks,proto3" json:"remarks,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeployDetectionResponse) Reset() {
@@ -445,11 +481,18 @@ func (x *DeployDetectionResponse) GetRemarks() []*DeployDetectionRemark {
 	return nil
 }
 
+// DeployDetectionRemark contains contextual Kubernetes information for a single deployment,
+// enriched from the target cluster when a cluster is specified in the request.
 type DeployDetectionRemark struct {
-	state                  protoimpl.MessageState `protogen:"open.v1"`
-	Name                   string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	PermissionLevel        string                 `protobuf:"bytes,2,opt,name=permission_level,json=permissionLevel,proto3" json:"permission_level,omitempty"`
-	AppliedNetworkPolicies []string               `protobuf:"bytes,3,rep,name=applied_network_policies,json=appliedNetworkPolicies,proto3" json:"applied_network_policies,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// name is the Kubernetes resource name of the deployment.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// permission_level is the service account permission level for the deployment
+	// (e.g. "CLUSTER_ADMIN", "ELEVATED_IN_NAMESPACE").
+	PermissionLevel string `protobuf:"bytes,2,opt,name=permission_level,json=permissionLevel,proto3" json:"permission_level,omitempty"`
+	// applied_network_policies lists the names of Kubernetes NetworkPolicy objects
+	// that apply to this deployment in its namespace.
+	AppliedNetworkPolicies []string `protobuf:"bytes,3,rep,name=applied_network_policies,json=appliedNetworkPolicies,proto3" json:"applied_network_policies,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -505,6 +548,8 @@ func (x *DeployDetectionRemark) GetAppliedNetworkPolicies() []string {
 	return nil
 }
 
+// ResultAggregation is a helper message for the roxctl JSON report.
+// jsonpb can only serialize protobuf messages, so this wraps alerts and remarks together.
 // This is a helper message for the roxctl JSON report, as jsonpb can only serialize protobuf messages
 type ResultAggregation struct {
 	state         protoimpl.MessageState   `protogen:"open.v1"`
@@ -558,11 +603,15 @@ func (x *ResultAggregation) GetRemarks() []*DeployDetectionRemark {
 	return nil
 }
 
+// Run holds detection results for a single workload resource.
 type DeployDetectionResponse_Run struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Type          string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
-	Alerts        []*storage.Alert       `protobuf:"bytes,3,rep,name=alerts,proto3" json:"alerts,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// name is the Kubernetes resource name of the workload.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// type is the Kubernetes resource kind (e.g. "Deployment", "DaemonSet").
+	Type string `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
+	// alerts contains all policy violations found for this workload.
+	Alerts        []*storage.Alert `protobuf:"bytes,3,rep,name=alerts,proto3" json:"alerts,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

@@ -31,12 +31,62 @@ const (
 // NetworkBaselineServiceClient is the client API for NetworkBaselineService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// NetworkBaselineService manages network baselines for deployments.
+//
+// A network baseline is the set of peer connections (port, protocol, direction,
+// and peer entity) that are expected for a deployment. Connections that do not
+// match the baseline are classified as anomalous and may trigger alerts.
+//
+// Baselines are created automatically on first access if they do not exist.
+// They can be locked to prevent further automatic updates, and modified
+// manually to add or remove peer connections.
+//
+// Authentication: read endpoints require View access to the DeploymentExtension
+// resource. Write endpoints (modify, lock, unlock) require Modify access to
+// DeploymentExtension.
 type NetworkBaselineServiceClient interface {
+	// GetNetworkBaselineStatusForFlows classifies a batch of peer connections
+	// as BASELINE or ANOMALOUS relative to the given deployment's network baseline.
+	//
+	// If no baseline exists for the deployment, one is created automatically
+	// before classification. Discovered external peers (e.g. dynamic CIDR blocks)
+	// are anonymized to the INTERNET entity for comparison purposes.
 	GetNetworkBaselineStatusForFlows(ctx context.Context, in *NetworkBaselineStatusRequest, opts ...grpc.CallOption) (*NetworkBaselineStatusResponse, error)
+	// GetNetworkBaselineStatusForExternalFlows returns the baseline status of
+	// observed external network flows for a deployment, paginated and split into
+	// anomalous and baseline groups.
+	//
+	// Flows are fetched from the network graph for the given time window (default:
+	// last 1 hour). Results are sorted by peer entity name before pagination.
+	//
+	// If no baseline exists for the deployment, one is created automatically.
 	GetNetworkBaselineStatusForExternalFlows(ctx context.Context, in *NetworkBaselineExternalStatusRequest, opts ...grpc.CallOption) (*NetworkBaselineExternalStatusResponse, error)
+	// GetNetworkBaseline returns the network baseline for the given deployment ID.
+	//
+	// If no baseline exists, one is created automatically. The baseline contains
+	// all peer connections (port, protocol, direction) currently marked as expected.
+	//
+	// Returns INVALID_ARGUMENT if the deployment ID is empty.
+	// Returns NOT_FOUND if the deployment does not exist and a baseline cannot
+	// be created.
 	GetNetworkBaseline(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.NetworkBaseline, error)
+	// ModifyBaselineStatusForPeers adds or removes peer connections from a
+	// deployment's network baseline.
+	//
+	// Peers with status BASELINE are added to the baseline; peers with status
+	// ANOMALOUS are removed. Changes are persisted and propagated to Sensor so
+	// that new observations are classified correctly.
 	ModifyBaselineStatusForPeers(ctx context.Context, in *ModifyBaselineStatusForPeersRequest, opts ...grpc.CallOption) (*Empty, error)
+	// LockNetworkBaseline locks a deployment's network baseline to prevent
+	// further automatic updates.
+	//
+	// Once locked, new observed connections are not automatically added to the
+	// baseline and will be classified as anomalous. The baseline can still be
+	// modified manually via ModifyBaselineStatusForPeers.
 	LockNetworkBaseline(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
+	// UnlockNetworkBaseline unlocks a deployment's network baseline, allowing
+	// new observed connections to be added automatically.
 	UnlockNetworkBaseline(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -111,12 +161,62 @@ func (c *networkBaselineServiceClient) UnlockNetworkBaseline(ctx context.Context
 // NetworkBaselineServiceServer is the server API for NetworkBaselineService service.
 // All implementations should embed UnimplementedNetworkBaselineServiceServer
 // for forward compatibility.
+//
+// NetworkBaselineService manages network baselines for deployments.
+//
+// A network baseline is the set of peer connections (port, protocol, direction,
+// and peer entity) that are expected for a deployment. Connections that do not
+// match the baseline are classified as anomalous and may trigger alerts.
+//
+// Baselines are created automatically on first access if they do not exist.
+// They can be locked to prevent further automatic updates, and modified
+// manually to add or remove peer connections.
+//
+// Authentication: read endpoints require View access to the DeploymentExtension
+// resource. Write endpoints (modify, lock, unlock) require Modify access to
+// DeploymentExtension.
 type NetworkBaselineServiceServer interface {
+	// GetNetworkBaselineStatusForFlows classifies a batch of peer connections
+	// as BASELINE or ANOMALOUS relative to the given deployment's network baseline.
+	//
+	// If no baseline exists for the deployment, one is created automatically
+	// before classification. Discovered external peers (e.g. dynamic CIDR blocks)
+	// are anonymized to the INTERNET entity for comparison purposes.
 	GetNetworkBaselineStatusForFlows(context.Context, *NetworkBaselineStatusRequest) (*NetworkBaselineStatusResponse, error)
+	// GetNetworkBaselineStatusForExternalFlows returns the baseline status of
+	// observed external network flows for a deployment, paginated and split into
+	// anomalous and baseline groups.
+	//
+	// Flows are fetched from the network graph for the given time window (default:
+	// last 1 hour). Results are sorted by peer entity name before pagination.
+	//
+	// If no baseline exists for the deployment, one is created automatically.
 	GetNetworkBaselineStatusForExternalFlows(context.Context, *NetworkBaselineExternalStatusRequest) (*NetworkBaselineExternalStatusResponse, error)
+	// GetNetworkBaseline returns the network baseline for the given deployment ID.
+	//
+	// If no baseline exists, one is created automatically. The baseline contains
+	// all peer connections (port, protocol, direction) currently marked as expected.
+	//
+	// Returns INVALID_ARGUMENT if the deployment ID is empty.
+	// Returns NOT_FOUND if the deployment does not exist and a baseline cannot
+	// be created.
 	GetNetworkBaseline(context.Context, *ResourceByID) (*storage.NetworkBaseline, error)
+	// ModifyBaselineStatusForPeers adds or removes peer connections from a
+	// deployment's network baseline.
+	//
+	// Peers with status BASELINE are added to the baseline; peers with status
+	// ANOMALOUS are removed. Changes are persisted and propagated to Sensor so
+	// that new observations are classified correctly.
 	ModifyBaselineStatusForPeers(context.Context, *ModifyBaselineStatusForPeersRequest) (*Empty, error)
+	// LockNetworkBaseline locks a deployment's network baseline to prevent
+	// further automatic updates.
+	//
+	// Once locked, new observed connections are not automatically added to the
+	// baseline and will be classified as anomalous. The baseline can still be
+	// modified manually via ModifyBaselineStatusForPeers.
 	LockNetworkBaseline(context.Context, *ResourceByID) (*Empty, error)
+	// UnlockNetworkBaseline unlocks a deployment's network baseline, allowing
+	// new observed connections to be added automatically.
 	UnlockNetworkBaseline(context.Context, *ResourceByID) (*Empty, error)
 }
 

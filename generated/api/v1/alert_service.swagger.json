@@ -18,7 +18,8 @@
   "paths": {
     "/v1/alerts": {
       "get": {
-        "summary": "List returns the slim list version of the alerts.",
+        "summary": "ListAlerts returns a paginated list of slim alert summaries matching the query.",
+        "description": "Results are sorted by violation time (descending) by default. When no pagination\nis specified, up to 1000 alerts are returned. Use the pagination field to\nretrieve additional pages.\n\nReturns INVALID_ARGUMENT if the query syntax is malformed.",
         "operationId": "AlertService_ListAlerts",
         "responses": {
           "200": {
@@ -37,6 +38,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query filters alerts using StackRox search syntax.\nSupports fields such as Severity, Cluster, Namespace, Policy, Violation State,\nLifecycle Stage, and Category.\nExample: \"Severity:CRITICAL+Cluster:production\"\nIf empty, matches all alerts.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -92,6 +94,8 @@
         ]
       },
       "delete": {
+        "summary": "DeleteAlerts permanently removes resolved alerts matching a search query.",
+        "description": "The query must include \"Violation State:RESOLVED\"; attempting to delete\nnon-resolved alerts returns INVALID_ARGUMENT. A scoping query is required;\nomitting query returns an error.\n\nSet confirm=false (or omit it) to perform a dry run that reports how many\nalerts would be deleted without removing any. Set confirm=true to execute\nthe deletion.\n\nReturns INVALID_ARGUMENT if the query is missing, unparseable, or targets\nnon-resolved alerts.",
         "operationId": "AlertService_DeleteAlerts",
         "responses": {
           "200": {
@@ -110,6 +114,7 @@
         "parameters": [
           {
             "name": "query.query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -161,6 +166,7 @@
           },
           {
             "name": "confirm",
+            "description": "confirm must be set to true to perform the deletion.\nWhen false (or omitted), the response reflects a dry run showing how many\nalerts would be deleted without actually removing them.",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -173,7 +179,8 @@
     },
     "/v1/alerts/resolve": {
       "patch": {
-        "summary": "ResolveAlertsByQuery marks alerts matching search query as resolved.",
+        "summary": "ResolveAlerts resolves all runtime alerts matching a search query in bulk.",
+        "description": "Only alerts in the RUNTIME lifecycle stage are resolved; alerts from other\nlifecycle stages that match the query are silently skipped.\nAlerts are resolved in batches of 100 and notifiers are triggered for each.\n\nReturns INVALID_ARGUMENT if the query syntax is malformed.",
         "operationId": "AlertService_ResolveAlerts",
         "responses": {
           "200": {
@@ -206,7 +213,8 @@
     },
     "/v1/alerts/summary/counts": {
       "get": {
-        "summary": "GetAlertsCounts returns the number of alerts in the requested cluster or category.",
+        "summary": "GetAlertsCounts returns alert counts broken down by severity, optionally grouped by category or cluster.",
+        "description": "Use group_by=CATEGORY to segment counts by policy category, or group_by=CLUSTER to segment\nby cluster name. group_by=UNSET (default) returns a single aggregated bucket.\nCounts reflect all alerts matching the embedded query filter.\n\nReturns INVALID_ARGUMENT if the query syntax is malformed or group_by is unrecognized.",
         "operationId": "AlertService_GetAlertsCounts",
         "responses": {
           "200": {
@@ -225,6 +233,7 @@
         "parameters": [
           {
             "name": "request.query",
+            "description": "query filters alerts using StackRox search syntax.\nSupports fields such as Severity, Cluster, Namespace, Policy, Violation State,\nLifecycle Stage, and Category.\nExample: \"Severity:CRITICAL+Cluster:production\"\nIf empty, matches all alerts.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -276,6 +285,7 @@
           },
           {
             "name": "groupBy",
+            "description": "group_by controls how alert counts are aggregated in the response.\n\n - UNSET: UNSET returns all alert counts in a single ungrouped bucket.\n - CATEGORY: CATEGORY groups alert counts by policy category (e.g. \"Vulnerability Management\").\n - CLUSTER: CLUSTER groups alert counts by cluster name.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -294,7 +304,8 @@
     },
     "/v1/alerts/summary/groups": {
       "get": {
-        "summary": "GetAlertsGroup returns alerts grouped by policy.",
+        "summary": "GetAlertsGroup returns active alert counts grouped by policy.",
+        "description": "Each entry in the response lists a policy alongside the number of active\nalerts currently triggered by that policy. Results are sorted by policy name.\nUseful for building a policy-centric view of the alert landscape.\n\nReturns INVALID_ARGUMENT if the query syntax is malformed.",
         "operationId": "AlertService_GetAlertsGroup",
         "responses": {
           "200": {
@@ -313,6 +324,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query filters alerts using StackRox search syntax.\nSupports fields such as Severity, Cluster, Namespace, Policy, Violation State,\nLifecycle Stage, and Category.\nExample: \"Severity:CRITICAL+Cluster:production\"\nIf empty, matches all alerts.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -370,7 +382,8 @@
     },
     "/v1/alerts/summary/timeseries": {
       "get": {
-        "summary": "GetAlertTimeseries returns the alerts sorted by time.",
+        "summary": "GetAlertTimeseries returns alert creation and resolution events as a timeseries, grouped by cluster and severity.",
+        "description": "Each event records a Unix millisecond timestamp and whether the alert was\nCREATED (became active) or REMOVED (resolved) at that moment. Events within\neach severity bucket are sorted chronologically. Useful for rendering alert\ntrend charts over time.\n\nReturns INVALID_ARGUMENT if the query syntax is malformed.",
         "operationId": "AlertService_GetAlertTimeseries",
         "responses": {
           "200": {
@@ -389,6 +402,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query filters alerts using StackRox search syntax.\nSupports fields such as Severity, Cluster, Namespace, Policy, Violation State,\nLifecycle Stage, and Category.\nExample: \"Severity:CRITICAL+Cluster:production\"\nIf empty, matches all alerts.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -446,7 +460,8 @@
     },
     "/v1/alerts/{id}": {
       "get": {
-        "summary": "GetAlert returns the alert given its id.",
+        "summary": "GetAlert returns the full alert detail for a single alert by ID.",
+        "description": "Returns NOT_FOUND if no alert with the given ID exists.",
         "operationId": "AlertService_GetAlert",
         "responses": {
           "200": {
@@ -477,7 +492,8 @@
     },
     "/v1/alerts/{id}/resolve": {
       "patch": {
-        "summary": "ResolveAlert marks the given alert (by ID) as resolved.",
+        "summary": "ResolveAlert marks a single alert as RESOLVED.",
+        "description": "Optionally, setting add_to_baseline=true adds the processes that triggered\nthe alert to the deployment's process baseline and syncs the updated baseline\nto the cluster, suppressing future alerts for those processes.\n\nOnly runtime and attempted alerts can be resolved; deploy-time alerts transition\nto resolved state automatically when the violation is remediated.\n\nReturns NOT_FOUND if no alert with the given ID exists.",
         "operationId": "AlertService_ResolveAlert",
         "responses": {
           "200": {
@@ -496,6 +512,7 @@
         "parameters": [
           {
             "name": "id",
+            "description": "id is the unique identifier of the alert to resolve.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -516,7 +533,8 @@
     },
     "/v1/alertscount": {
       "get": {
-        "summary": "CountAlerts counts how many alerts match the get request.",
+        "summary": "CountAlerts returns the total number of alerts matching a search query.",
+        "description": "Uses StackRox search syntax (e.g. \"Severity:CRITICAL+Cluster:production\").\nAn empty query counts all alerts. Returns INVALID_ARGUMENT if the query\ncannot be parsed.",
         "operationId": "AlertService_CountAlerts",
         "responses": {
           "200": {
@@ -535,6 +553,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\"",
             "in": "query",
             "required": false,
             "type": "string"
@@ -618,11 +637,13 @@
       "type": "object",
       "properties": {
         "severity": {
-          "$ref": "#/definitions/storageSeverity"
+          "$ref": "#/definitions/storageSeverity",
+          "description": "severity is the alert severity level for this count bucket."
         },
         "count": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "count is the number of alerts at this severity within the group."
         }
       }
     },
@@ -681,7 +702,8 @@
           "type": "boolean"
         },
         "addToBaseline": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "add_to_baseline adds the processes that triggered this alert to the deployment's\nprocess baseline, preventing future alerts for the same process activity.\nOnly applies to runtime alerts with process violations."
         }
       }
     },
@@ -726,14 +748,16 @@
       "type": "object",
       "properties": {
         "severity": {
-          "$ref": "#/definitions/storageSeverity"
+          "$ref": "#/definitions/storageSeverity",
+          "description": "severity is the severity level shared by all events in this group."
         },
         "events": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1AlertEvent"
-          }
+          },
+          "description": "events is the chronologically sorted list of alert lifecycle events at this severity."
         }
       }
     },
@@ -795,14 +819,16 @@
       "type": "object",
       "properties": {
         "cluster": {
-          "type": "string"
+          "type": "string",
+          "description": "cluster is the name of the cluster these alert events belong to."
         },
         "severities": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/ClusterAlertsAlertEvents"
-          }
+          },
+          "description": "severities groups alert events by severity within this cluster, sorted by severity level."
         }
       }
     },
@@ -813,20 +839,23 @@
         "CATEGORY",
         "CLUSTER"
       ],
-      "default": "UNSET"
+      "default": "UNSET",
+      "description": " - UNSET: UNSET returns all alert counts in a single ungrouped bucket.\n - CATEGORY: CATEGORY groups alert counts by policy category (e.g. \"Vulnerability Management\").\n - CLUSTER: CLUSTER groups alert counts by cluster name."
     },
     "GetAlertsCountsResponseAlertGroup": {
       "type": "object",
       "properties": {
         "group": {
-          "type": "string"
+          "type": "string",
+          "description": "group is the name of the grouping key (category name or cluster name),\nor an empty string when group_by is UNSET."
         },
         "counts": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/AlertGroupAlertCounts"
-          }
+          },
+          "description": "counts breaks down the alert count by severity within this group."
         }
       }
     },
@@ -1814,13 +1843,16 @@
       "properties": {
         "time": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "time is the Unix timestamp in milliseconds when this event occurred."
         },
         "type": {
-          "$ref": "#/definitions/v1Type"
+          "$ref": "#/definitions/v1Type",
+          "description": "type indicates whether the alert was created or resolved at this point in time."
         },
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "id is the unique identifier of the alert this event belongs to."
         }
       }
     },
@@ -1829,7 +1861,8 @@
       "properties": {
         "count": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "Total number of alerts matching the query."
         }
       }
     },
@@ -1838,10 +1871,12 @@
       "properties": {
         "numDeleted": {
           "type": "integer",
-          "format": "int64"
+          "format": "int64",
+          "description": "num_deleted is the number of alerts deleted (or that would be deleted in a dry run)."
         },
         "dryRun": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "dry_run is true when confirm was not set; no alerts were actually deleted."
         }
       }
     },
@@ -1856,7 +1891,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/GetAlertTimeseriesResponseClusterAlerts"
-          }
+          },
+          "description": "clusters contains per-cluster timeseries data, sorted alphabetically by cluster name."
         }
       }
     },
@@ -1868,7 +1904,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/GetAlertsCountsResponseAlertGroup"
-          }
+          },
+          "description": "groups contains one entry per distinct group (category or cluster), each\nwith a per-severity breakdown of alert counts. Groups are sorted alphabetically."
         }
       }
     },
@@ -1880,7 +1917,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1GetAlertsGroupResponsePolicyGroup"
-          }
+          },
+          "description": "alerts_by_policies groups active alert counts by policy, sorted by policy name."
         }
       }
     },
@@ -1888,11 +1926,13 @@
       "type": "object",
       "properties": {
         "policy": {
-          "$ref": "#/definitions/storageListAlertPolicy"
+          "$ref": "#/definitions/storageListAlertPolicy",
+          "description": "policy summarizes the policy that triggered the grouped alerts."
         },
         "numAlerts": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "num_alerts is the count of active alerts for this policy."
         }
       }
     },
@@ -1900,10 +1940,12 @@
       "type": "object",
       "properties": {
         "query": {
-          "type": "string"
+          "type": "string",
+          "description": "query filters alerts using StackRox search syntax.\nSupports fields such as Severity, Cluster, Namespace, Policy, Violation State,\nLifecycle Stage, and Category.\nExample: \"Severity:CRITICAL+Cluster:production\"\nIf empty, matches all alerts."
         },
         "pagination": {
-          "$ref": "#/definitions/v1Pagination"
+          "$ref": "#/definitions/v1Pagination",
+          "description": "pagination controls the page size, offset, and sort order of results.\nIf omitted, ListAlerts defaults to a limit of 1000 results sorted by violation time descending."
         }
       }
     },
@@ -1915,7 +1957,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageListAlert"
-          }
+          },
+          "description": "alerts is the list of slim alert summaries matching the request."
         }
       }
     },
@@ -1947,10 +1990,12 @@
       "type": "object",
       "properties": {
         "query": {
-          "type": "string"
+          "type": "string",
+          "title": "query is a StackRox search query string. Multiple field:value pairs are\njoined with \"+\" (AND). Multiple values for one field are joined with \",\"\n(OR). Example: \"Severity:CRITICAL+Cluster:production\""
         },
         "pagination": {
-          "$ref": "#/definitions/v1Pagination"
+          "$ref": "#/definitions/v1Pagination",
+          "description": "pagination controls page size and sort order for list results."
         }
       },
       "description": "RawQuery represents the search query string.\nThe format of the query string is \"<field name>:<value,value,...>+<field name>:<value, value,...>+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
@@ -1959,7 +2004,8 @@
       "type": "object",
       "properties": {
         "query": {
-          "type": "string"
+          "type": "string",
+          "description": "query filters which alerts to resolve using StackRox search syntax.\nOnly runtime-lifecycle alerts matching the query are resolved; alerts in\nother lifecycle stages (deploy-time, build-time) are ignored.\nReturns INVALID_ARGUMENT if the query cannot be parsed."
         }
       }
     },
@@ -1984,7 +2030,8 @@
         "CREATED",
         "REMOVED"
       ],
-      "default": "CREATED"
+      "default": "CREATED",
+      "description": "Type classifies a timeseries alert event as a creation or removal.\n\n - CREATED: CREATED indicates the alert became active at the recorded time.\n - REMOVED: REMOVED indicates the alert was resolved at the recorded time."
     }
   }
 }

@@ -18,8 +18,8 @@
   "paths": {
     "/v1/computeeffectiveaccessscope": {
       "post": {
-        "summary": "ComputeEffectiveAccessScope",
-        "description": "Returns effective access scope based on the rules in the request. Does\nnot persist anything; not idempotent due to possible changes to clusters\nand namespaces. POST is chosen due to potentially large payload.\n\nThere are advantages in both keeping the response slim and detailed. If\nonly IDs of selected clusters and namespaces are included, response\nlatency and processing time are lower but the caller shall overlay the\nresponse with its view of the world which is susceptible to consistency\nissues. Listing all clusters and namespaces with related metadata is\nconvenient for the caller but bloat the message with secondary data.\n\nWe let the caller decide what level of detail they would like to have:\n\n  - Minimal, when only roots of included subtrees are listed by their\n    IDs. Clusters can be either INCLUDED (its namespaces are included but\n    are not listed) or PARTIAL (at least one namespace is explicitly\n    included). Namespaces can only be INCLUDED.\n\n  - Standard [default], when all known clusters and namespaces are listed\n    with their IDs and names. Clusters can be INCLUDED (all its\n    namespaces are explicitly listed as INCLUDED), PARTIAL (all its\n    namespaces are explicitly listed, some as INCLUDED and some as\n    EXCLUDED), and EXCLUDED (all its namespaces are explicitly listed as\n    EXCLUDED). Namespaces can be either INCLUDED or EXCLUDED.\n\n  - High, when every cluster and namespace is augmented with metadata.",
+        "summary": "ComputeEffectiveAccessScope evaluates access scope rules against the current cluster and\nnamespace inventory and returns the resulting effective access scope.",
+        "description": "Does not persist anything; not idempotent due to possible changes to clusters\nand namespaces. POST is chosen due to potentially large payload.\n\nThere are advantages in both keeping the response slim and detailed. If\nonly IDs of selected clusters and namespaces are included, response\nlatency and processing time are lower but the caller shall overlay the\nresponse with its view of the world which is susceptible to consistency\nissues. Listing all clusters and namespaces with related metadata is\nconvenient for the caller but bloat the message with secondary data.\n\nWe let the caller decide what level of detail they would like to have:\n\n  - Minimal, when only roots of included subtrees are listed by their\n    IDs. Clusters can be either INCLUDED (its namespaces are included but\n    are not listed) or PARTIAL (at least one namespace is explicitly\n    included). Namespaces can only be INCLUDED.\n\n  - Standard [default], when all known clusters and namespaces are listed\n    with their IDs and names. Clusters can be INCLUDED (all its\n    namespaces are explicitly listed as INCLUDED), PARTIAL (all its\n    namespaces are explicitly listed, some as INCLUDED and some as\n    EXCLUDED), and EXCLUDED (all its namespaces are explicitly listed as\n    EXCLUDED). Namespaces can be either INCLUDED or EXCLUDED.\n\n  - High, when every cluster and namespace is augmented with metadata.\n\nRequires read access to the Access, Cluster, and Namespace resources.",
         "operationId": "RoleService_ComputeEffectiveAccessScope",
         "responses": {
           "200": {
@@ -38,6 +38,7 @@
         "parameters": [
           {
             "name": "accessScope",
+            "description": "access_scope holds the rules to evaluate against the current cluster/namespace inventory.",
             "in": "body",
             "required": true,
             "schema": {
@@ -46,6 +47,7 @@
           },
           {
             "name": "detail",
+            "description": "detail controls how much information is returned per cluster/namespace. Defaults to STANDARD.\n\n - STANDARD: STANDARD lists all known clusters and namespaces with INCLUDED/PARTIAL/EXCLUDED state and their names.\n - MINIMAL: MINIMAL lists only the roots of included subtrees by ID; useful for low-latency checks.\n - HIGH: HIGH augments every cluster and namespace with additional metadata.",
             "in": "query",
             "required": false,
             "type": "string",
@@ -64,6 +66,8 @@
     },
     "/v1/mypermissions": {
       "get": {
+        "summary": "GetMyPermissions returns the aggregated permissions of the authenticated caller.",
+        "description": "Permissions are aggregated across all roles assigned to the caller. For each resource,\nthe highest access level across all roles is returned.\nRequires any authenticated session (no specific resource permission needed).",
         "operationId": "RoleService_GetMyPermissions",
         "responses": {
           "200": {
@@ -86,6 +90,8 @@
     },
     "/v1/permissionsets": {
       "get": {
+        "summary": "ListPermissionSets returns all non-ephemeral permission sets, sorted alphabetically by name.",
+        "description": "Requires read access to the Access resource.",
         "operationId": "RoleService_ListPermissionSets",
         "responses": {
           "200": {
@@ -106,8 +112,8 @@
         ]
       },
       "post": {
-        "summary": "PostPermissionSet",
-        "description": "PermissionSet.id is disallowed in request and set in response.",
+        "summary": "PostPermissionSet creates a new permission set.",
+        "description": "PermissionSet.id is disallowed in request and set in response.\nEphemeral permission sets cannot be created via this API.\nReturns INVALID_ARGUMENT if id is set or validation fails.\nRequires write access to the Access resource.",
         "operationId": "RoleService_PostPermissionSet",
         "responses": {
           "200": {
@@ -141,6 +147,8 @@
     },
     "/v1/permissionsets/{id}": {
       "get": {
+        "summary": "GetPermissionSet returns the permission set with the given ID.",
+        "description": "Returns NOT_FOUND if no permission set with the specified ID exists.\nRequires read access to the Access resource.",
         "operationId": "RoleService_GetPermissionSet",
         "responses": {
           "200": {
@@ -169,6 +177,8 @@
         ]
       },
       "delete": {
+        "summary": "DeletePermissionSet removes the permission set with the given ID.",
+        "description": "Requires write access to the Access resource.",
         "operationId": "RoleService_DeletePermissionSet",
         "responses": {
           "200": {
@@ -197,6 +207,8 @@
         ]
       },
       "put": {
+        "summary": "PutPermissionSet replaces an existing permission set.",
+        "description": "Ephemeral permission sets cannot be modified via this API.\nReturns INVALID_ARGUMENT if validation fails.\nRequires write access to the Access resource.",
         "operationId": "RoleService_PutPermissionSet",
         "responses": {
           "200": {
@@ -236,6 +248,8 @@
     },
     "/v1/resources": {
       "get": {
+        "summary": "GetResources returns the list of all ACS resource names that can be referenced in permission sets.",
+        "description": "Requires any authenticated session.",
         "operationId": "RoleService_GetResources",
         "responses": {
           "200": {
@@ -258,6 +272,8 @@
     },
     "/v1/roles": {
       "get": {
+        "summary": "GetRoles returns all non-ephemeral roles, sorted alphabetically by name.",
+        "description": "Requires read access to the Access resource.",
         "operationId": "RoleService_GetRoles",
         "responses": {
           "200": {
@@ -280,6 +296,8 @@
     },
     "/v1/roles/{id}": {
       "get": {
+        "summary": "GetRole returns the role with the given ID.",
+        "description": "Returns NOT_FOUND if no role with the specified ID exists.\nRequires read access to the Access resource.",
         "operationId": "RoleService_GetRole",
         "responses": {
           "200": {
@@ -308,6 +326,8 @@
         ]
       },
       "delete": {
+        "summary": "DeleteRole removes the role with the given ID.",
+        "description": "Requires write access to the Access resource.",
         "operationId": "RoleService_DeleteRole",
         "responses": {
           "200": {
@@ -338,6 +358,8 @@
     },
     "/v1/roles/{name}": {
       "post": {
+        "summary": "CreateRole creates a new role with the given name.",
+        "description": "The name in the URL path must match role.name if role.name is provided.\nEphemeral roles cannot be created via this API.\nReturns INVALID_ARGUMENT if the name is mismatched or the role already exists.\nRequires write access to the Access resource.",
         "operationId": "RoleService_CreateRole",
         "responses": {
           "200": {
@@ -356,12 +378,14 @@
         "parameters": [
           {
             "name": "name",
+            "description": "name is the role name taken from the URL path; it must match role.name if role.name is set.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "role",
+            "description": "role is the role definition to create.",
             "in": "body",
             "required": true,
             "schema": {
@@ -374,6 +398,8 @@
         ]
       },
       "put": {
+        "summary": "UpdateRole replaces an existing role definition.",
+        "description": "Ephemeral roles cannot be modified via this API.\nReturns INVALID_ARGUMENT if validation fails or the role does not exist.\nRequires write access to the Access resource.",
         "operationId": "RoleService_UpdateRole",
         "responses": {
           "200": {
@@ -413,8 +439,8 @@
     },
     "/v1/sac/clusters": {
       "get": {
-        "summary": "GetClustersForPermissions",
-        "description": "Returns the list of cluster ID and cluster name pairs that have at least read allowed\nby the scope of the requesting user for the list of requested permissions.\nEffective access scopes are only considered for input permissions that have\ncluster scope or narrower (i.e. global permissions from the input are ignored).\n\nIf the input only contains permissions at global level, the output will be an empty list.\n\nIf no permission is given in input, all clusters allowed by the requester scope for\nany permission with cluster scope or narrower will be part of the response.",
+        "summary": "GetClustersForPermissions returns the cluster ID/name pairs accessible to the caller\nfor the specified permissions.",
+        "description": "Returns the list of cluster ID and cluster name pairs that have at least read allowed\nby the scope of the requesting user for the list of requested permissions.\nEffective access scopes are only considered for input permissions that have\ncluster scope or narrower (i.e. global permissions from the input are ignored).\n\nIf the input only contains permissions at global level, the output will be an empty list.\n\nIf no permission is given in input, all clusters allowed by the requester scope for\nany permission with cluster scope or narrower will be part of the response.\nRequires any authenticated session.",
         "operationId": "RoleService_GetClustersForPermissions",
         "responses": {
           "200": {
@@ -478,6 +504,7 @@
           },
           {
             "name": "permissions",
+            "description": "permissions is the list of ACS resource names to check. Only permissions with cluster scope\nor narrower are considered; global-scoped permissions are ignored.\nIf empty, all cluster-scoped permissions are considered.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -494,8 +521,8 @@
     },
     "/v1/sac/clusters/{clusterId}/namespaces": {
       "get": {
-        "summary": "GetNamespacesForClusterAndPermissions",
-        "description": "Returns the list of namespace ID and namespace name pairs that belong to the requested\ncluster and for which the user has at least read access granted for the list of\nrequested permissions that have namespace scope or narrower (i.e. global and cluster\npermissions from the input are ignored).\n\nIf the input only contains permissions at global or cluster level, the output will be\nan empty list.\n\nIf no permission is given in input, all namespaces allowed by the requester scope for\nany permission with namespace scope or narrower will be part of the response.",
+        "summary": "GetNamespacesForClusterAndPermissions returns the namespace ID/name pairs within a cluster\nthat are accessible to the caller for the specified permissions.",
+        "description": "Returns the list of namespace ID and namespace name pairs that belong to the requested\ncluster and for which the user has at least read access granted for the list of\nrequested permissions that have namespace scope or narrower (i.e. global and cluster\npermissions from the input are ignored).\n\nIf the input only contains permissions at global or cluster level, the output will be\nan empty list.\n\nIf no permission is given in input, all namespaces allowed by the requester scope for\nany permission with namespace scope or narrower will be part of the response.\nRequires any authenticated session.",
         "operationId": "RoleService_GetNamespacesForClusterAndPermissions",
         "responses": {
           "200": {
@@ -514,12 +541,14 @@
         "parameters": [
           {
             "name": "clusterId",
+            "description": "cluster_id is the ID of the cluster whose namespaces to filter.",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
             "name": "permissions",
+            "description": "permissions is the list of ACS resource names to check. Only permissions with namespace scope\nor narrower are considered; global and cluster-scoped permissions are ignored.\nIf empty, all namespace-scoped permissions are considered.",
             "in": "query",
             "required": false,
             "type": "array",
@@ -536,6 +565,8 @@
     },
     "/v1/simpleaccessscopes": {
       "get": {
+        "summary": "ListSimpleAccessScopes returns all non-ephemeral simple access scopes, sorted alphabetically by name.",
+        "description": "Requires read access to the Access resource.",
         "operationId": "RoleService_ListSimpleAccessScopes",
         "responses": {
           "200": {
@@ -556,8 +587,8 @@
         ]
       },
       "post": {
-        "summary": "PostSimpleAccessScope",
-        "description": "SimpleAccessScope.id is disallowed in request and set in response.",
+        "summary": "PostSimpleAccessScope creates a new simple access scope.",
+        "description": "SimpleAccessScope.id is disallowed in request and set in response.\nEphemeral access scopes cannot be created via this API.\nReturns INVALID_ARGUMENT if id is set or validation fails.\nRequires write access to the Access resource.",
         "operationId": "RoleService_PostSimpleAccessScope",
         "responses": {
           "200": {
@@ -591,6 +622,8 @@
     },
     "/v1/simpleaccessscopes/{id}": {
       "get": {
+        "summary": "GetSimpleAccessScope returns the simple access scope with the given ID.",
+        "description": "Returns NOT_FOUND if no access scope with the specified ID exists.\nRequires read access to the Access resource.",
         "operationId": "RoleService_GetSimpleAccessScope",
         "responses": {
           "200": {
@@ -619,6 +652,8 @@
         ]
       },
       "delete": {
+        "summary": "DeleteSimpleAccessScope removes the simple access scope with the given ID.",
+        "description": "Requires write access to the Access resource.",
         "operationId": "RoleService_DeleteSimpleAccessScope",
         "responses": {
           "200": {
@@ -647,6 +682,8 @@
         ]
       },
       "put": {
+        "summary": "PutSimpleAccessScope replaces an existing simple access scope.",
+        "description": "Ephemeral access scopes cannot be modified via this API.\nReturns INVALID_ARGUMENT if validation fails.\nRequires write access to the Access resource.",
         "operationId": "RoleService_PutSimpleAccessScope",
         "responses": {
           "200": {
@@ -693,15 +730,18 @@
         "MINIMAL",
         "HIGH"
       ],
-      "default": "STANDARD"
+      "default": "STANDARD",
+      "description": "Detail controls the verbosity of the computed effective access scope response.\n\n - STANDARD: STANDARD lists all known clusters and namespaces with INCLUDED/PARTIAL/EXCLUDED state and their names.\n - MINIMAL: MINIMAL lists only the roots of included subtrees by ID; useful for low-latency checks.\n - HIGH: HIGH augments every cluster and namespace with additional metadata."
     },
     "ComputeEffectiveAccessScopeRequestPayload": {
       "type": "object",
       "properties": {
         "simpleRules": {
-          "$ref": "#/definitions/SimpleAccessScopeRules"
+          "$ref": "#/definitions/SimpleAccessScopeRules",
+          "description": "simple_rules defines cluster and namespace label selectors for the access scope."
         }
-      }
+      },
+      "description": "Payload holds the access scope rules to evaluate."
     },
     "EffectiveAccessScopeCluster": {
       "type": "object",
@@ -1134,9 +1174,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1ScopeObject"
-          }
+          },
+          "description": "clusters is the list of (id, name) pairs for clusters the caller can read\nfor at least one of the requested permissions."
         }
-      }
+      },
+      "description": "GetClustersForPermissionsResponse contains clusters accessible to the caller."
     },
     "v1GetNamespacesForClusterAndPermissionsResponse": {
       "type": "object",
@@ -1146,9 +1188,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1ScopeObject"
-          }
+          },
+          "description": "namespaces is the list of (id, name) pairs for namespaces the caller can read\nfor at least one of the requested permissions within the specified cluster."
         }
-      }
+      },
+      "description": "GetNamespacesForClusterAndPermissionsResponse contains namespaces accessible to the caller."
     },
     "v1GetPermissionsResponse": {
       "type": "object",
@@ -1157,7 +1201,8 @@
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/storageAccess"
-          }
+          },
+          "description": "resource_to_access maps each ACS resource name to the highest access level\nthe caller holds across all their assigned roles."
         }
       },
       "description": "GetPermissionsResponse is wire-compatible with the old format of the Role\nmessage and represents a collection of aggregated permissions."
@@ -1169,9 +1214,11 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "resources is the complete list of ACS resource names that can be referenced in permission sets."
         }
-      }
+      },
+      "description": "GetResourcesResponse lists all resource names recognised by the RBAC system."
     },
     "v1GetRolesResponse": {
       "type": "object",
@@ -1181,9 +1228,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageRole"
-          }
+          },
+          "description": "roles is the list of roles, sorted alphabetically by name. Ephemeral (internal) roles are excluded."
         }
-      }
+      },
+      "description": "GetRolesResponse contains all non-ephemeral roles defined in Central."
     },
     "v1ListPermissionSetsResponse": {
       "type": "object",
@@ -1193,9 +1242,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storagePermissionSet"
-          }
+          },
+          "description": "permission_sets is the list of permission sets, sorted alphabetically by name.\nEphemeral (internal) permission sets are excluded."
         }
-      }
+      },
+      "description": "ListPermissionSetsResponse contains all non-ephemeral permission sets."
     },
     "v1ListSimpleAccessScopesResponse": {
       "type": "object",
@@ -1205,9 +1256,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageSimpleAccessScope"
-          }
+          },
+          "description": "access_scopes is the list of simple access scopes, sorted alphabetically by name.\nEphemeral (internal) access scopes are excluded."
         }
-      }
+      },
+      "description": "ListSimpleAccessScopesResponse contains all non-ephemeral access scopes."
     },
     "v1Pagination": {
       "type": "object",
@@ -1237,10 +1290,12 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "id is the unique identifier of the cluster or namespace."
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "name is the display name of the cluster or namespace."
         }
       },
       "description": "ScopeObject represents an ID, name pair, which can apply to any\nentity that takes part in an access scope (so far Cluster and Namespace)."

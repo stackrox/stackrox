@@ -29,10 +29,29 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// storage.Node represents information about a node in the cluster.
+// NodeService provides access to Kubernetes nodes observed by StackRox across secured clusters.
+//
+// Node data includes OS, kernel version, container runtime, and vulnerability information
+// gathered by the StackRox scanner. Nodes can be listed per-cluster, retrieved individually,
+// or exported in bulk as a stream.
+//
+// Authentication: all endpoints require a valid API token with read access to the Node resource.
 type NodeServiceClient interface {
+	// ListNodes returns all nodes belonging to the specified cluster.
+	//
+	// Returns INVALID_ARGUMENT if cluster_id is empty or does not match a known cluster.
 	ListNodes(ctx context.Context, in *ListNodesRequest, opts ...grpc.CallOption) (*ListNodesResponse, error)
+	// GetNode returns the node identified by node_id.
+	//
+	// The cluster_id field is retained for API compatibility but is not used to look up the node;
+	// node IDs are unique across all clusters.
+	// Returns NOT_FOUND if no node with the given node_id exists.
 	GetNode(ctx context.Context, in *GetNodeRequest, opts ...grpc.CallOption) (*storage.Node, error)
+	// ExportNodes streams all nodes matching the optional query as a sequence of ExportNodeResponse messages.
+	//
+	// Supports StackRox search query syntax for filtering. A timeout in seconds may be specified;
+	// if the stream is not completed within that time the request is cancelled.
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	ExportNodes(ctx context.Context, in *ExportNodeRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExportNodeResponse], error)
 }
 
@@ -87,10 +106,29 @@ type NodeService_ExportNodesClient = grpc.ServerStreamingClient[ExportNodeRespon
 // All implementations should embed UnimplementedNodeServiceServer
 // for forward compatibility.
 //
-// storage.Node represents information about a node in the cluster.
+// NodeService provides access to Kubernetes nodes observed by StackRox across secured clusters.
+//
+// Node data includes OS, kernel version, container runtime, and vulnerability information
+// gathered by the StackRox scanner. Nodes can be listed per-cluster, retrieved individually,
+// or exported in bulk as a stream.
+//
+// Authentication: all endpoints require a valid API token with read access to the Node resource.
 type NodeServiceServer interface {
+	// ListNodes returns all nodes belonging to the specified cluster.
+	//
+	// Returns INVALID_ARGUMENT if cluster_id is empty or does not match a known cluster.
 	ListNodes(context.Context, *ListNodesRequest) (*ListNodesResponse, error)
+	// GetNode returns the node identified by node_id.
+	//
+	// The cluster_id field is retained for API compatibility but is not used to look up the node;
+	// node IDs are unique across all clusters.
+	// Returns NOT_FOUND if no node with the given node_id exists.
 	GetNode(context.Context, *GetNodeRequest) (*storage.Node, error)
+	// ExportNodes streams all nodes matching the optional query as a sequence of ExportNodeResponse messages.
+	//
+	// Supports StackRox search query syntax for filtering. A timeout in seconds may be specified;
+	// if the stream is not completed within that time the request is cancelled.
+	// Returns INVALID_ARGUMENT if the query syntax is malformed.
 	ExportNodes(*ExportNodeRequest, grpc.ServerStreamingServer[ExportNodeResponse]) error
 }
 

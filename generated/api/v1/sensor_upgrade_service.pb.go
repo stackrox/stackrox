@@ -23,11 +23,15 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// SensorAutoUpgradeFeatureStatus indicates whether the auto-upgrade feature is available
+// in the current Central deployment.
 type GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus int32
 
 const (
+	// NOT_SUPPORTED means the auto-upgrade feature is unavailable (upgrader is not enabled).
 	GetSensorUpgradeConfigResponse_NOT_SUPPORTED GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus = 0
-	GetSensorUpgradeConfigResponse_SUPPORTED     GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus = 1
+	// SUPPORTED means the auto-upgrade feature is available and can be enabled.
+	GetSensorUpgradeConfigResponse_SUPPORTED GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus = 1
 )
 
 // Enum value maps for GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus.
@@ -69,8 +73,10 @@ func (GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus) EnumDescrip
 	return file_api_v1_sensor_upgrade_service_proto_rawDescGZIP(), []int{1, 0}
 }
 
+// UpdateSensorUpgradeConfigRequest is the request to update the sensor auto-upgrade configuration.
 type UpdateSensorUpgradeConfigRequest struct {
-	state         protoimpl.MessageState       `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// config contains the new auto-upgrade settings to persist.
 	Config        *storage.SensorUpgradeConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -113,6 +119,7 @@ func (x *UpdateSensorUpgradeConfigRequest) GetConfig() *storage.SensorUpgradeCon
 	return nil
 }
 
+// GetSensorUpgradeConfigResponse is the response containing the current sensor upgrade configuration.
 type GetSensorUpgradeConfigResponse struct {
 	state         protoimpl.MessageState                        `protogen:"open.v1"`
 	Config        *GetSensorUpgradeConfigResponse_UpgradeConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
@@ -157,9 +164,12 @@ func (x *GetSensorUpgradeConfigResponse) GetConfig() *GetSensorUpgradeConfigResp
 	return nil
 }
 
+// UpgradeConfig holds the current auto-upgrade settings.
 type GetSensorUpgradeConfigResponse_UpgradeConfig struct {
-	state              protoimpl.MessageState                                        `protogen:"open.v1"`
-	EnableAutoUpgrade  bool                                                          `protobuf:"varint,1,opt,name=enable_auto_upgrade,json=enableAutoUpgrade,proto3" json:"enable_auto_upgrade,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// enable_auto_upgrade indicates whether sensors are automatically upgraded when Central detects a version mismatch.
+	EnableAutoUpgrade bool `protobuf:"varint,1,opt,name=enable_auto_upgrade,json=enableAutoUpgrade,proto3" json:"enable_auto_upgrade,omitempty"`
+	// auto_upgrade_feature reports whether the auto-upgrade feature is supported in this deployment.
 	AutoUpgradeFeature GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus `protobuf:"varint,2,opt,name=auto_upgrade_feature,json=autoUpgradeFeature,proto3,enum=v1.GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus" json:"auto_upgrade_feature,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache

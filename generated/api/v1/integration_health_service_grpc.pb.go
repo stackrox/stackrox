@@ -29,11 +29,35 @@ const (
 // IntegrationHealthServiceClient is the client API for IntegrationHealthService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// IntegrationHealthService provides health status for all configured
+// integrations and scanner vulnerability definition metadata.
+//
+// Each endpoint returns the last-known health status recorded by Central for
+// integrations of a given category (image integrations, notifiers, backup
+// plugins, or declarative configs). Status is updated asynchronously as
+// integrations attempt their operations.
+//
+// Authentication: image integration, notifier, backup plugin, and declarative
+// config health endpoints require the Integration resource with View access.
+// Vulnerability definitions info requires the Administration resource with
+// View access.
 type IntegrationHealthServiceClient interface {
+	// GetImageIntegrations returns the health status for all configured image
+	// registry and scanner integrations.
 	GetImageIntegrations(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetIntegrationHealthResponse, error)
+	// GetNotifiers returns the health status for all configured notifier
+	// integrations (e.g. Slack, email, PagerDuty).
 	GetNotifiers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetIntegrationHealthResponse, error)
+	// GetBackupPlugins returns the health status for all configured external
+	// backup integrations.
 	GetBackupPlugins(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetIntegrationHealthResponse, error)
+	// GetDeclarativeConfigs returns the health status for all declarative
+	// configuration sources (e.g. config maps used for GitOps-style management).
 	GetDeclarativeConfigs(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetIntegrationHealthResponse, error)
+	// GetVulnDefinitionsInfo returns metadata about the vulnerability definitions
+	// database for the specified scanner component (Scanner or Scanner V4),
+	// including the timestamp of the last successful update.
 	GetVulnDefinitionsInfo(ctx context.Context, in *VulnDefinitionsInfoRequest, opts ...grpc.CallOption) (*VulnDefinitionsInfo, error)
 }
 
@@ -98,11 +122,35 @@ func (c *integrationHealthServiceClient) GetVulnDefinitionsInfo(ctx context.Cont
 // IntegrationHealthServiceServer is the server API for IntegrationHealthService service.
 // All implementations should embed UnimplementedIntegrationHealthServiceServer
 // for forward compatibility.
+//
+// IntegrationHealthService provides health status for all configured
+// integrations and scanner vulnerability definition metadata.
+//
+// Each endpoint returns the last-known health status recorded by Central for
+// integrations of a given category (image integrations, notifiers, backup
+// plugins, or declarative configs). Status is updated asynchronously as
+// integrations attempt their operations.
+//
+// Authentication: image integration, notifier, backup plugin, and declarative
+// config health endpoints require the Integration resource with View access.
+// Vulnerability definitions info requires the Administration resource with
+// View access.
 type IntegrationHealthServiceServer interface {
+	// GetImageIntegrations returns the health status for all configured image
+	// registry and scanner integrations.
 	GetImageIntegrations(context.Context, *Empty) (*GetIntegrationHealthResponse, error)
+	// GetNotifiers returns the health status for all configured notifier
+	// integrations (e.g. Slack, email, PagerDuty).
 	GetNotifiers(context.Context, *Empty) (*GetIntegrationHealthResponse, error)
+	// GetBackupPlugins returns the health status for all configured external
+	// backup integrations.
 	GetBackupPlugins(context.Context, *Empty) (*GetIntegrationHealthResponse, error)
+	// GetDeclarativeConfigs returns the health status for all declarative
+	// configuration sources (e.g. config maps used for GitOps-style management).
 	GetDeclarativeConfigs(context.Context, *Empty) (*GetIntegrationHealthResponse, error)
+	// GetVulnDefinitionsInfo returns metadata about the vulnerability definitions
+	// database for the specified scanner component (Scanner or Scanner V4),
+	// including the timestamp of the last successful update.
 	GetVulnDefinitionsInfo(context.Context, *VulnDefinitionsInfoRequest) (*VulnDefinitionsInfo, error)
 }
 

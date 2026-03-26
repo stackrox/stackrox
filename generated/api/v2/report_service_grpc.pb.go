@@ -66,8 +66,11 @@ type ReportServiceClient interface {
 	CancelReport(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 	// Deletes a generated report for the given report id
 	DeleteReport(ctx context.Context, in *DeleteReportRequest, opts ...grpc.CallOption) (*Empty, error)
+	// PostViewBasedReport submits a view-based vulnerability report for generation.
 	PostViewBasedReport(ctx context.Context, in *ReportRequestViewBased, opts ...grpc.CallOption) (*RunReportResponseViewBased, error)
+	// GetViewBasedMyReportHistory returns the report generation history for the calling user's view-based reports.
 	GetViewBasedMyReportHistory(ctx context.Context, in *GetViewBasedReportHistoryRequest, opts ...grpc.CallOption) (*ReportHistoryResponse, error)
+	// GetViewBasedReportHistory returns the report generation history for all view-based reports.
 	GetViewBasedReportHistory(ctx context.Context, in *GetViewBasedReportHistoryRequest, opts ...grpc.CallOption) (*ReportHistoryResponse, error)
 }
 
@@ -259,8 +262,11 @@ type ReportServiceServer interface {
 	CancelReport(context.Context, *ResourceByID) (*Empty, error)
 	// Deletes a generated report for the given report id
 	DeleteReport(context.Context, *DeleteReportRequest) (*Empty, error)
+	// PostViewBasedReport submits a view-based vulnerability report for generation.
 	PostViewBasedReport(context.Context, *ReportRequestViewBased) (*RunReportResponseViewBased, error)
+	// GetViewBasedMyReportHistory returns the report generation history for the calling user's view-based reports.
 	GetViewBasedMyReportHistory(context.Context, *GetViewBasedReportHistoryRequest) (*ReportHistoryResponse, error)
+	// GetViewBasedReportHistory returns the report generation history for all view-based reports.
 	GetViewBasedReportHistory(context.Context, *GetViewBasedReportHistoryRequest) (*ReportHistoryResponse, error)
 }
 
