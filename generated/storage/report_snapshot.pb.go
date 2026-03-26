@@ -237,7 +237,7 @@ type ReportSnapshot struct {
 	// fields related to view based reports
 	// area_of_concern refers to view from which report is generated - user workload, platform component etc
 	AreaOfConcern string         `protobuf:"bytes,13,opt,name=area_of_concern,json=areaOfConcern,proto3" json:"area_of_concern,omitempty" search:"Area Of Concern"` // @gotags: search:"Area Of Concern"
-	ResourceScope *ResourceScope `protobuf:"bytes,14,opt,name=resource_scope,json=resourceScope,proto3" json:"resource_scope,omitempty"`   // User cannot set this value to nil. If scoping method is collection it defaults to system-defined "All" collection. If scoping method is entity scope then scope defaults to empty list.
+	ResourceScope *ResourceScope `protobuf:"bytes,14,opt,name=resource_scope,json=resourceScope,proto3" json:"resource_scope,omitempty"`   // ResourceScope stores the scoping method
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

@@ -213,11 +213,11 @@ func (m *ResourceScope_EntityScope) CloneVT() isResourceScope_ScopeReference {
 	return r
 }
 
-func (m *EntiityScope) CloneVT() *EntiityScope {
+func (m *EntityScope) CloneVT() *EntityScope {
 	if m == nil {
-		return (*EntiityScope)(nil)
+		return (*EntityScope)(nil)
 	}
-	r := new(EntiityScope)
+	r := new(EntityScope)
 	if rhs := m.Rules; rhs != nil {
 		tmpContainer := make([]*EntityScopeRule, len(rhs))
 		for k, v := range rhs {
@@ -232,7 +232,7 @@ func (m *EntiityScope) CloneVT() *EntiityScope {
 	return r
 }
 
-func (m *EntiityScope) CloneMessageVT() proto.Message {
+func (m *EntityScope) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -648,10 +648,10 @@ func (this *ResourceScope_EntityScope) EqualVT(thatIface isResourceScope_ScopeRe
 	}
 	if p, q := this.EntityScope, that.EntityScope; p != q {
 		if p == nil {
-			p = &EntiityScope{}
+			p = &EntityScope{}
 		}
 		if q == nil {
-			q = &EntiityScope{}
+			q = &EntityScope{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -660,7 +660,7 @@ func (this *ResourceScope_EntityScope) EqualVT(thatIface isResourceScope_ScopeRe
 	return true
 }
 
-func (this *EntiityScope) EqualVT(that *EntiityScope) bool {
+func (this *EntityScope) EqualVT(that *EntityScope) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -686,8 +686,8 @@ func (this *EntiityScope) EqualVT(that *EntiityScope) bool {
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *EntiityScope) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*EntiityScope)
+func (this *EntityScope) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*EntityScope)
 	if !ok {
 		return false
 	}
@@ -1304,7 +1304,7 @@ func (m *ResourceScope_EntityScope) MarshalToSizedBufferVT(dAtA []byte) (int, er
 	}
 	return len(dAtA) - i, nil
 }
-func (m *EntiityScope) MarshalVT() (dAtA []byte, err error) {
+func (m *EntityScope) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1317,12 +1317,12 @@ func (m *EntiityScope) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *EntiityScope) MarshalToVT(dAtA []byte) (int, error) {
+func (m *EntityScope) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *EntiityScope) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *EntityScope) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -1690,7 +1690,7 @@ func (m *ResourceScope_EntityScope) SizeVT() (n int) {
 	}
 	return n
 }
-func (m *EntiityScope) SizeVT() (n int) {
+func (m *EntityScope) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2931,7 +2931,7 @@ func (m *ResourceScope) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &EntiityScope{}
+				v := &EntityScope{}
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -2960,7 +2960,7 @@ func (m *ResourceScope) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *EntiityScope) UnmarshalVT(dAtA []byte) error {
+func (m *EntityScope) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2983,10 +2983,10 @@ func (m *EntiityScope) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: EntiityScope: wiretype end group for non-group")
+			return fmt.Errorf("proto: EntityScope: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: EntiityScope: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: EntityScope: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -3088,7 +3088,7 @@ func (m *EntityScopeRule) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Entity |= ScopeEntity(b&0x7F) << shift
+				m.Entity |= EntityType(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -3107,7 +3107,7 @@ func (m *EntityScopeRule) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Field |= ScopeField(b&0x7F) << shift
+				m.Field |= EntityField(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -4496,7 +4496,7 @@ func (m *ResourceScope) UnmarshalVTUnsafe(dAtA []byte) error {
 					return err
 				}
 			} else {
-				v := &EntiityScope{}
+				v := &EntityScope{}
 				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -4525,7 +4525,7 @@ func (m *ResourceScope) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *EntiityScope) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *EntityScope) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4548,10 +4548,10 @@ func (m *EntiityScope) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: EntiityScope: wiretype end group for non-group")
+			return fmt.Errorf("proto: EntityScope: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: EntiityScope: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: EntityScope: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -4653,7 +4653,7 @@ func (m *EntityScopeRule) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Entity |= ScopeEntity(b&0x7F) << shift
+				m.Entity |= EntityType(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -4672,7 +4672,7 @@ func (m *EntityScopeRule) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.Field |= ScopeField(b&0x7F) << shift
+				m.Field |= EntityField(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

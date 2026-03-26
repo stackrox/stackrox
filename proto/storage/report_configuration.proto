@@ -80,35 +80,35 @@ message VulnerabilityReportFilters {
 message ResourceScope {
   oneof scope_reference {
     string collection_id = 1; // @gotags: search:"Collection ID"
-    EntiityScope entity_scope = 2;
+    EntityScope entity_scope = 2;
   }
 }
 
-// EntityScope is a new scoping method using ns,deployments,clusters filter introduced in 4.11
-message EntiityScope {
+// EntityScope is a new scoping method using ns,deployments,clusters filters introduced in 4.11
+message EntityScope {
   repeated EntityScopeRule rules = 1;
 }
 
-// EntityScopeRule stores filter value as entity field pair and values to be used in the filter
+// EntityScopeRule stores the filter as an entity field pair along with a list of values
 message EntityScopeRule {
-  ScopeEntity entity = 1;
-  ScopeField field = 2;
+  EntityType entity = 1;
+  EntityField field = 2;
   repeated RuleValue values = 3;
 }
 
-enum ScopeEntity {
-  SCOPE_ENTITY_UNSET = 0;
-  SCOPE_ENTITY_DEPLOYMENT = 1;
-  SCOPE_ENTITY_NAMESPACE = 2;
-  SCOPE_ENTITY_CLUSTER = 3;
+enum EntityType {
+  ENTITY_TYPE_UNSET = 0;
+  ENTITY_TYPE_DEPLOYMENT = 1;
+  ENTITY_TYPE_NAMESPACE = 2;
+  ENTITY_TYPE_CLUSTER = 3;
 }
 
-enum ScopeField {
-  SCOPE_FIELD_UNSET = 0;
-  SCOPE_FIELD_ID = 1;
-  SCOPE_FIELD_NAME = 2;
-  SCOPE_FIELD_LABEL = 3;
-  SCOPE_FIELD_ANNOTATION = 4;
+enum EntityField {
+  FIELD_UNSET = 0;
+  FIELD_ID = 1;
+  FIELD_NAME = 2;
+  FIELD_LABEL = 3;
+  FIELD_ANNOTATION = 4;
 }
 
 // filter for view based reports
