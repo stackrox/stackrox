@@ -27,22 +27,18 @@ func ScanPartsFromV1Scan(vmID string, scan *storage.VirtualMachineScan) *common.
 
 	for _, comp := range sourceComponents {
 		componentID := uuid.NewV4().String()
-		var componentCVEs []*storage.VirtualMachineCVEV2
+		var compTopCvss float32
+		var compCveCount int32
 
 		for _, vuln := range comp.GetVulnerabilities() {
 			cve := convertVulnerability(vmID, componentID, vuln)
-			componentCVEs = append(componentCVEs, cve)
+			cves = append(cves, cve)
+			compCveCount++
 			if cve.GetPreferredCvss() > topCvss {
 				topCvss = cve.GetPreferredCvss()
 			}
-		}
-
-		cves = append(cves, componentCVEs...)
-
-		var compTopCvss float32
-		for _, c := range componentCVEs {
-			if c.GetPreferredCvss() > compTopCvss {
-				compTopCvss = c.GetPreferredCvss()
+			if cve.GetPreferredCvss() > compTopCvss {
+				compTopCvss = cve.GetPreferredCvss()
 			}
 		}
 
@@ -57,7 +53,7 @@ func ScanPartsFromV1Scan(vmID string, scan *storage.VirtualMachineScan) *common.
 				TopCvss: compTopCvss,
 			},
 			FixedBy:  highestFixedBy(comp.GetVulnerabilities()),
-			CveCount: int32(len(componentCVEs)),
+			CveCount: compCveCount,
 		})
 	}
 
