@@ -241,6 +241,35 @@ func (mr *MockDataStoreMockRecorder) SearchRawDeployments(ctx, q any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawDeployments", reflect.TypeOf((*MockDataStore)(nil).SearchRawDeployments), ctx, q)
 }
 
+// SearchTombstonedDeployments mocks base method.
+func (m *MockDataStore) SearchTombstonedDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchTombstonedDeployments", ctx, q)
+	ret0, _ := ret[0].([]*storage.Deployment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchTombstonedDeployments indicates an expected call of SearchTombstonedDeployments.
+func (mr *MockDataStoreMockRecorder) SearchTombstonedDeployments(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchTombstonedDeployments", reflect.TypeOf((*MockDataStore)(nil).SearchTombstonedDeployments), ctx, q)
+}
+
+// TombstoneDeployment mocks base method.
+func (m *MockDataStore) TombstoneDeployment(ctx context.Context, clusterID, deploymentID string, expiresAt time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TombstoneDeployment", ctx, clusterID, deploymentID, expiresAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TombstoneDeployment indicates an expected call of TombstoneDeployment.
+func (mr *MockDataStoreMockRecorder) TombstoneDeployment(ctx, clusterID, deploymentID, expiresAt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TombstoneDeployment", reflect.TypeOf((*MockDataStore)(nil).TombstoneDeployment), ctx, clusterID, deploymentID, expiresAt)
+}
+
 // UpsertDeployment mocks base method.
 func (m *MockDataStore) UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error {
 	m.ctrl.T.Helper()
@@ -267,33 +296,4 @@ func (m *MockDataStore) WalkByQuery(ctx context.Context, query *v1.Query, fn fun
 func (mr *MockDataStoreMockRecorder) WalkByQuery(ctx, query, fn any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkByQuery", reflect.TypeOf((*MockDataStore)(nil).WalkByQuery), ctx, query, fn)
-}
-
-// TombstoneDeployment mocks base method.
-func (m *MockDataStore) TombstoneDeployment(ctx context.Context, clusterID, deploymentID string, expiresAt time.Time) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TombstoneDeployment", ctx, clusterID, deploymentID, expiresAt)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// TombstoneDeployment indicates an expected call of TombstoneDeployment.
-func (mr *MockDataStoreMockRecorder) TombstoneDeployment(ctx, clusterID, deploymentID, expiresAt any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TombstoneDeployment", reflect.TypeOf((*MockDataStore)(nil).TombstoneDeployment), ctx, clusterID, deploymentID, expiresAt)
-}
-
-// SearchTombstonedDeployments mocks base method.
-func (m *MockDataStore) SearchTombstonedDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchTombstonedDeployments", ctx, q)
-	ret0, _ := ret[0].([]*storage.Deployment)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// SearchTombstonedDeployments indicates an expected call of SearchTombstonedDeployments.
-func (mr *MockDataStoreMockRecorder) SearchTombstonedDeployments(ctx, q any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchTombstonedDeployments", reflect.TypeOf((*MockDataStore)(nil).SearchTombstonedDeployments), ctx, q)
 }

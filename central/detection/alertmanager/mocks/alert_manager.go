@@ -43,20 +43,6 @@ func (m *MockAlertManager) EXPECT() *MockAlertManagerMockRecorder {
 	return m.recorder
 }
 
-// AlertAndNotifyTombstoned mocks base method.
-func (m *MockAlertManager) AlertAndNotifyTombstoned(ctx context.Context, deploymentID string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AlertAndNotifyTombstoned", ctx, deploymentID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AlertAndNotifyTombstoned indicates an expected call of AlertAndNotifyTombstoned.
-func (mr *MockAlertManagerMockRecorder) AlertAndNotifyTombstoned(ctx, deploymentID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AlertAndNotifyTombstoned", reflect.TypeOf((*MockAlertManager)(nil).AlertAndNotifyTombstoned), ctx, deploymentID)
-}
-
 // AlertAndNotify mocks base method.
 func (m *MockAlertManager) AlertAndNotify(ctx context.Context, alerts []*storage.Alert, oldAlertFilters ...alertmanager.AlertFilterOption) (set.StringSet, error) {
 	m.ctrl.T.Helper()
@@ -75,4 +61,18 @@ func (mr *MockAlertManagerMockRecorder) AlertAndNotify(ctx, alerts any, oldAlert
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, alerts}, oldAlertFilters...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AlertAndNotify", reflect.TypeOf((*MockAlertManager)(nil).AlertAndNotify), varargs...)
+}
+
+// AlertAndNotifyTombstoned mocks base method.
+func (m *MockAlertManager) AlertAndNotifyTombstoned(ctx context.Context, deploymentID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AlertAndNotifyTombstoned", ctx, deploymentID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AlertAndNotifyTombstoned indicates an expected call of AlertAndNotifyTombstoned.
+func (mr *MockAlertManagerMockRecorder) AlertAndNotifyTombstoned(ctx, deploymentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AlertAndNotifyTombstoned", reflect.TypeOf((*MockAlertManager)(nil).AlertAndNotifyTombstoned), ctx, deploymentID)
 }

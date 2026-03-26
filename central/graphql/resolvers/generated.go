@@ -601,6 +601,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"serviceAccountPermissionLevel: PermissionLevel!",
 		"stateTimestamp: Int!",
 		"tolerations: [Toleration]!",
+		"tombstone: Tombstone",
 		"type: String!",
 	}))
 	utils.Must(builder.AddType("DynamicClusterConfig", []string{
@@ -1492,6 +1493,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Toleration_Operator(0)))
 	utils.Must(builder.AddType("TolerationsConfig", []string{
 		"disabled: Boolean!",
+	}))
+	utils.Must(builder.AddType("Tombstone", []string{
+		"deletedAt: Time",
+		"expiresAt: Time",
 	}))
 	utils.Must(builder.AddType("Traits", []string{
 		"expiresAt: Time",
@@ -7298,6 +7303,12 @@ func (resolver *deploymentResolver) Tolerations(ctx context.Context) ([]*tolerat
 	resolver.ensureData(ctx)
 	value := resolver.data.GetTolerations()
 	return resolver.root.wrapTolerations(value, nil)
+}
+
+func (resolver *deploymentResolver) Tombstone(ctx context.Context) (*tombstoneResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetTombstone()
+	return resolver.root.wrapTombstone(value, true, nil)
 }
 
 func (resolver *deploymentResolver) Type(ctx context.Context) string {
@@ -16087,6 +16098,58 @@ func (resolver *Resolver) wrapTolerationsConfigsWithContext(ctx context.Context,
 func (resolver *tolerationsConfigResolver) Disabled(ctx context.Context) bool {
 	value := resolver.data.GetDisabled()
 	return value
+}
+
+type tombstoneResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Tombstone
+}
+
+func (resolver *Resolver) wrapTombstone(value *storage.Tombstone, ok bool, err error) (*tombstoneResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &tombstoneResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapTombstones(values []*storage.Tombstone, err error) ([]*tombstoneResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*tombstoneResolver, len(values))
+	for i, v := range values {
+		output[i] = &tombstoneResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapTombstoneWithContext(ctx context.Context, value *storage.Tombstone, ok bool, err error) (*tombstoneResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &tombstoneResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapTombstonesWithContext(ctx context.Context, values []*storage.Tombstone, err error) ([]*tombstoneResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*tombstoneResolver, len(values))
+	for i, v := range values {
+		output[i] = &tombstoneResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *tombstoneResolver) DeletedAt(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetDeletedAt()
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
+}
+
+func (resolver *tombstoneResolver) ExpiresAt(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetExpiresAt()
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 type traitsResolver struct {
