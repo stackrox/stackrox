@@ -3,8 +3,8 @@ import FileSaver from 'file-saver';
 import type { GenerateClusterInitBundleResponse } from 'services/ClustersService';
 
 export const installationOptions = {
-    Operator: 'Operator (recommended)',
-    Helm: 'Helm chart',
+    Operator: 'Operator',
+    Helm: 'Helm chart (deprecated)',
 } as const;
 
 export type InstallationKey = keyof typeof installationOptions;
