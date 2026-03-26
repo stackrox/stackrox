@@ -60,32 +60,6 @@ func NewClient(cfg *models.Config) (COClient, error) {
 	}, nil
 }
 
-// NewClientForKubeconfig creates a COClient from a specific kubeconfig file.
-func NewClientForKubeconfig(kubeconfigPath string, namespace string, allNamespaces bool) (COClient, error) {
-	loadingRules := &clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeconfigPath}
-	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, &clientcmd.ConfigOverrides{})
-
-	restConfig, err := kubeConfig.ClientConfig()
-	if err != nil {
-		return nil, fmt.Errorf("build kubeconfig from %q: %w", kubeconfigPath, err)
-	}
-
-	dynClient, err := dynamic.NewForConfig(restConfig)
-	if err != nil {
-		return nil, fmt.Errorf("create dynamic client from %q: %w", kubeconfigPath, err)
-	}
-
-	ns := namespace
-	if allNamespaces {
-		ns = ""
-	}
-
-	return &k8sClient{
-		dynamic:   dynClient,
-		namespace: ns,
-	}, nil
-}
-
 // NewClientForContext creates a COClient for a specific context in the active kubeconfig.
 func NewClientForContext(contextName string, namespace string, allNamespaces bool) (COClient, error) {
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()

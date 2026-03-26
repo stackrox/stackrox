@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
 	"time"
 
@@ -17,9 +16,6 @@ import (
 // ErrHelpRequested is returned by ParseAndValidate when --help is passed.
 // Callers should treat this as a successful exit (code 0).
 var ErrHelpRequested = errors.New("help requested")
-
-// uuidPattern matches a standard UUID (8-4-4-4-12 hex).
-var uuidPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
 const (
 	defaultTimeout     = 30 * time.Second
@@ -92,23 +88,12 @@ func ParseAndValidate(args []string) (*models.Config, error) {
 	insecureSkipVerify := fs.Bool("insecure-skip-verify", false,
 		"Skip TLS certificate verification. Not recommended for production.")
 
-	// --- Multi-cluster mode ---
-	var kubeconfigs []string
-	var kubecontexts []string
-	var clusterValues []string
-	fs.Var(&repeatableStringFlag{values: &kubeconfigs}, "kubeconfig",
-		"Path to a kubeconfig file (repeatable). Each file represents one source cluster.\n"+
-			"The current context in each file is used. Mutually exclusive with --kubecontext.")
-	fs.Var(&repeatableStringFlag{values: &kubecontexts}, "kubecontext",
-		"Kubernetes context name (repeatable). Use \"all\" to iterate every context.\n"+
-			"Operates on the active kubeconfig (set via KUBECONFIG env var or ~/.kube/config).\n"+
-			"Mutually exclusive with --kubeconfig.")
-	fs.Var(&repeatableStringFlag{values: &clusterValues}, "cluster",
-		"ACS cluster identification (repeatable). Accepts three forms:\n"+
-			"  UUID: used directly as the ACS cluster ID (single-cluster).\n"+
-			"  name: resolved via GET /v1/clusters (single-cluster).\n"+
-			"  ctx=name-or-uuid: maps a kubeconfig context to an ACS cluster (multi-cluster).\n"+
-			"Omit to auto-discover the ACS cluster ID.")
+	// --- Context filter ---
+	var contexts []string
+	fs.Var(&repeatableStringFlag{values: &contexts}, "context",
+		"Kubernetes context name to process (repeatable).\n"+
+			"By default all contexts from the merged kubeconfig are used.\n"+
+			"Use --context to limit processing to specific contexts.")
 
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -138,13 +123,7 @@ func ParseAndValidate(args []string) (*models.Config, error) {
 		CACertFile:         *caCertFile,
 		InsecureSkipVerify: *insecureSkipVerify,
 		OverwriteExisting:  *overwriteExisting,
-		Kubeconfigs:        kubeconfigs,
-		Kubecontexts:       kubecontexts,
-	}
-
-	// Classify --cluster values into overrides vs single-cluster shorthand.
-	if err := classifyClusterValues(clusterValues, cfg); err != nil {
-		return nil, err
+		Contexts:           contexts,
 	}
 
 	// IMP-CLI-002: auto-infer auth mode from env vars.
@@ -156,40 +135,6 @@ func ParseAndValidate(args []string) (*models.Config, error) {
 		return nil, err
 	}
 	return cfg, nil
-}
-
-// classifyClusterValues processes --cluster flag values:
-//   - ctx=value → ClusterOverrides (for multi-cluster mode)
-//   - UUID → ACSClusterID (single-cluster shorthand)
-//   - name → ClusterNameLookup (single-cluster shorthand, resolved at runtime)
-func classifyClusterValues(values []string, cfg *models.Config) error {
-	var overrides []string
-	var shorthands []string
-
-	for _, v := range values {
-		if strings.Contains(v, "=") {
-			overrides = append(overrides, v)
-		} else {
-			shorthands = append(shorthands, v)
-		}
-	}
-
-	if len(shorthands) > 1 {
-		return fmt.Errorf("at most one --cluster shorthand (UUID or name) allowed, got %d: %v", len(shorthands), shorthands)
-	}
-
-	cfg.ClusterOverrides = overrides
-
-	if len(shorthands) == 1 {
-		v := shorthands[0]
-		if uuidPattern.MatchString(v) {
-			cfg.ACSClusterID = v
-		} else {
-			cfg.ClusterNameLookup = v
-		}
-	}
-
-	return nil
 }
 
 // inferAuthMode sets cfg.AuthMode based on which env vars are present (IMP-CLI-002).
@@ -259,16 +204,6 @@ func validate(cfg *models.Config) error {
 		cfg.CONamespace = "" // --co-all-namespaces overrides any namespace setting
 	}
 
-	if len(cfg.Kubeconfigs) > 0 && len(cfg.Kubecontexts) > 0 {
-		return errors.New("--kubeconfig and --kubecontext are mutually exclusive")
-	}
-
-	// In single-cluster mode without explicit --cluster, enable auto-discovery.
-	isMultiClusterMode := len(cfg.Kubeconfigs) > 0 || len(cfg.Kubecontexts) > 0
-	if !isMultiClusterMode && cfg.ACSClusterID == "" && cfg.ClusterNameLookup == "" {
-		cfg.AutoDiscoverClusterID = true
-	}
-
 	if cfg.MaxRetries < 0 {
 		return fmt.Errorf("--max-retries must be >= 0 (got %d)", cfg.MaxRetries)
 	}
@@ -282,40 +217,32 @@ func printUsage(fs *flag.FlagSet) {
 	fmt.Fprint(w, `co-acs-scan-importer - Import Compliance Operator scan schedules into ACS
 
 DESCRIPTION
-  Reads ScanSettingBinding resources from one or more Kubernetes clusters
-  running the Compliance Operator and creates equivalent scan configurations
-  in Red Hat Advanced Cluster Security (ACS) via the v2 API.
+  Reads ScanSettingBinding resources from Kubernetes clusters running the
+  Compliance Operator and creates equivalent scan configurations in Red Hat
+  Advanced Cluster Security (ACS) via the v2 API.
 
-  The importer auto-discovers the ACS cluster ID for each source cluster
-  by reading the admission-control ConfigMap, falling back to OpenShift
-  ClusterVersion metadata or the Helm effective cluster name secret.
+  By default, all contexts in the merged kubeconfig are processed. The ACS
+  cluster ID for each context is auto-discovered via the admission-control
+  ConfigMap, OpenShift ClusterVersion, or Helm cluster name secret.
 
 USAGE
-  # Single cluster (current kubeconfig context, auto-discovers ACS cluster ID):
+  # All clusters in kubeconfig (dry-run):
   co-acs-scan-importer \
     --endpoint central.example.com \
     --dry-run
 
-  # Multi-cluster with separate kubeconfig files:
+  # Specific clusters only:
   co-acs-scan-importer \
-    --kubeconfig /path/to/cluster-a.kubeconfig \
-    --kubeconfig /path/to/cluster-b.kubeconfig \
-    --endpoint central.example.com
+    --endpoint central.example.com \
+    --context cluster-a \
+    --context cluster-b
 
-  # Multi-cluster with merged kubeconfig and named contexts:
-  KUBECONFIG=a.yaml:b.yaml:c.yaml co-acs-scan-importer \
-    --kubecontext cluster-a \
-    --kubecontext cluster-b \
-    --endpoint central.example.com
-
-  # All contexts in a merged kubeconfig:
-  co-acs-scan-importer \
-    --kubecontext all \
+  # Multiple kubeconfig files merged:
+  KUBECONFIG=a.yaml:b.yaml co-acs-scan-importer \
     --endpoint central.example.com
 
   # Update existing ACS scan configs instead of skipping them:
   co-acs-scan-importer \
-    --kubeconfig /path/to/cluster.kubeconfig \
     --endpoint central.example.com \
     --overwrite-existing
 
@@ -332,15 +259,10 @@ AUTHENTICATION
   - Setting both is an error (ambiguous).
   - Setting neither is an error.
 
-MULTI-CLUSTER NOTES
-  When clusters are spread across multiple kubeconfig files, use the
-  --kubeconfig flag once per file. Each file's current context is used.
-
-  When a single merged kubeconfig contains all clusters with unique context
-  names, use --kubecontext to select them (or "all" to use every context).
-  Merge kubeconfigs via: KUBECONFIG=a.yaml:b.yaml:c.yaml
-
-  --kubeconfig and --kubecontext are mutually exclusive.
+MULTI-CLUSTER
+  The importer processes all contexts in the merged kubeconfig by default.
+  Use --context (repeatable) to limit processing to specific contexts.
+  Merge kubeconfig files via: KUBECONFIG=a.yaml:b.yaml:c.yaml
 
   ScanSettingBindings with the same name across multiple clusters are merged
   into a single ACS scan configuration targeting all matched clusters. The
@@ -348,15 +270,12 @@ MULTI-CLUSTER NOTES
   reports an error if they differ.
 
 AUTO-DISCOVERY
-  In multi-cluster mode, the ACS cluster ID is auto-discovered for each
-  source cluster using the following chain (first success wins):
+  The ACS cluster ID is auto-discovered for each context using the
+  following chain (first success wins):
 
   1. admission-control ConfigMap "cluster-id" key (namespace: stackrox)
   2. OpenShift ClusterVersion spec.clusterID matched against ACS provider metadata
   3. helm-effective-cluster-name secret matched against ACS cluster name
-
-  Use --cluster ctx=name-or-uuid to override auto-discovery for a
-  specific context.
 
 EXIT CODES
   0  All bindings processed successfully (or nothing to do).

@@ -156,7 +156,7 @@ Procedure (overwrite):
 ### A9 - Auto-discovery
 
 - **IMP-ACC-017**: importer MUST auto-discover the ACS cluster ID from the admission-control
-  ConfigMap's `cluster-id` key when no `--cluster` override is given.
+  ConfigMap's `cluster-id` key.
 
 ### A7 - Failure paths
 

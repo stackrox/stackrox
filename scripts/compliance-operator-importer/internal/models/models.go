@@ -15,25 +15,20 @@ const (
 
 // Config holds all resolved configuration for a single importer run.
 type Config struct {
-	ACSEndpoint           string   // from --endpoint or ROX_ENDPOINT
-	AuthMode              AuthMode // auto-inferred from env vars (ROX_API_TOKEN / ROX_ADMIN_PASSWORD)
-	Username              string   // from --username or ROX_ADMIN_USER (default "admin")
-	CONamespace           string   // empty when COAllNamespaces=true
-	COAllNamespaces       bool
-	ACSClusterID          string // resolved from --cluster UUID or auto-discovered
-	ClusterNameLookup     string // non-UUID --cluster value for runtime resolution via ACS API
-	DryRun                bool
-	ReportJSON            string
-	RequestTimeout        time.Duration
-	MaxRetries            int
-	CACertFile            string
-	InsecureSkipVerify    bool
-	OverwriteExisting     bool
-	AutoDiscoverClusterID bool // set by validate() when no --cluster in single-cluster mode
-	// Multi-cluster mode fields
-	Kubeconfigs      []string // repeatable --kubeconfig paths
-	Kubecontexts     []string // repeatable --kubecontext names
-	ClusterOverrides []string // repeatable --cluster ctx=acs-name-or-uuid
+	ACSEndpoint        string   // from --endpoint or ROX_ENDPOINT
+	AuthMode           AuthMode // auto-inferred from env vars (ROX_API_TOKEN / ROX_ADMIN_PASSWORD)
+	Username           string   // from --username or ROX_ADMIN_USER (default "admin")
+	CONamespace        string   // empty when COAllNamespaces=true
+	COAllNamespaces    bool
+	ACSClusterID       string // auto-discovered per context; set at runtime during iteration
+	DryRun             bool
+	ReportJSON         string
+	RequestTimeout     time.Duration
+	MaxRetries         int
+	CACertFile         string
+	InsecureSkipVerify bool
+	OverwriteExisting  bool
+	Contexts           []string // opt-in --context filter; empty means all contexts
 }
 
 // Severity classifies how severe a Problem is.

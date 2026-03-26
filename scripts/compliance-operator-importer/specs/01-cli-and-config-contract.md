@@ -8,42 +8,26 @@ Define the importer interface so it can be implemented and tested predictably.
 
 ### Required inputs
 
-Note: flag names and environment variables are aligned with `roxctl` conventions.
-
 - **IMP-CLI-001**: importer MUST accept Central endpoint (`--endpoint` or `ROX_ENDPOINT`).
   - if the value does not contain a scheme, importer MUST prepend `https://`.
   - if the value starts with `http://`, importer MUST error.
 - **IMP-CLI-002**: importer MUST support auth modes, auto-inferred from available credentials
-  (aligned with `roxctl` behavior — no explicit `--auth-mode` flag, no env-var-name indirection):
+  (no explicit `--auth-mode` flag, no env-var-name indirection):
   - token mode: when `ROX_API_TOKEN` is set,
   - basic mode: when `ROX_ADMIN_PASSWORD` is set,
   - if both are set: error ("ambiguous auth"),
   - if neither is set: error with help text listing both options.
-- **IMP-CLI-003**: importer MUST support multi-cluster source selection via two mechanisms:
-  - `--kubeconfig <path>` (repeatable): each path is a separate source cluster, using that file's
-    current context. This is the primary mechanism for users with one kubeconfig file per cluster.
-  - `--kubecontext <name>` (repeatable): selects contexts within the active kubeconfig
-    (set via `KUBECONFIG` env var or `~/.kube/config`). Use when a single merged kubeconfig
-    contains unique context names for all clusters.
-  - `--kubecontext all`: iterates all contexts in the active kubeconfig.
-  - `--kubeconfig` and `--kubecontext` are mutually exclusive (error if both given).
-  - when neither `--kubeconfig` nor `--kubecontext` is given, importer MUST use
-    the current kubeconfig context (single-cluster mode, backward compatible).
-  - help text MUST suggest:
-    - using `--kubeconfig` (repeatable) when clusters have separate kubeconfig files, or
-    - merging kubeconfigs (`KUBECONFIG=a.yaml:b.yaml`) with unique context names
-      and using `--kubecontext`.
+- **IMP-CLI-003**: importer MUST use all contexts from the merged kubeconfig:
+  - kubeconfig loading follows standard kubectl rules: `KUBECONFIG` env var (colon-separated
+    paths) or `~/.kube/config`.
+  - by default, the importer iterates **all contexts** in the merged kubeconfig, treating
+    each context as a separate source cluster.
+  - `--context <name>` (repeatable, optional): filters which contexts to use. When given,
+    only the named contexts are processed; all others are skipped.
+  - for each context, the ACS cluster ID is auto-discovered (see IMP-MAP-016..018).
 - **IMP-CLI-004**: importer MUST support namespace scope:
   - `--co-namespace <ns>` (default `openshift-compliance`) for single namespace, or
   - `--co-all-namespaces` for cluster-wide scan.
-- **IMP-CLI-005**: importer MUST support ACS cluster identification via `--cluster`:
-  - by default (no `--cluster` flag), auto-discover the ACS cluster ID for each source
-    cluster (see IMP-MAP-016..018).
-  - `--cluster <value>` accepts three forms:
-    - UUID: used directly as the ACS cluster ID (single-cluster shorthand).
-    - name: resolved to an ACS cluster ID via `GET /v1/clusters` (single-cluster shorthand).
-    - `<kubecontext>=<name-or-uuid>` (repeatable): maps a specific kubeconfig context to
-      an ACS cluster, overriding auto-discovery for that context.
 
 ### Optional inputs
 
@@ -54,10 +38,9 @@ Note: flag names and environment variables are aligned with `roxctl` conventions
 - **IMP-CLI-010**: `--max-retries <int>` default `5`, min `0`.
 - **IMP-CLI-011**: `--ca-cert-file <path>` optional.
 - **IMP-CLI-012**: `--insecure-skip-verify` default false; MUST require explicit flag.
-- **IMP-CLI-023**: (removed — auth mode is auto-inferred, see IMP-CLI-002).
 - **IMP-CLI-024**: for basic mode:
   - username is read from `--username` flag or `ROX_ADMIN_USER` env var (default `admin`).
-  - password is read from `ROX_ADMIN_PASSWORD` env var (no flag; aligned with roxctl).
+  - password is read from `ROX_ADMIN_PASSWORD` env var (no flag).
 - **IMP-CLI-025**: importer MUST reject ambiguous auth config:
   - both `ROX_API_TOKEN` and `ROX_ADMIN_PASSWORD` are set → error,
   - neither is set → error with help text.
@@ -80,7 +63,6 @@ Note: flag names and environment variables are aligned with `roxctl` conventions
   - using selected auth mode,
   - success only on HTTP 200.
 - **IMP-CLI-016**: HTTP 401/403 at preflight MUST fail-fast with remediation message.
-- **IMP-CLI-026**: (removed — auth mode is auto-inferred, see IMP-CLI-002).
 
 ## Output contract
 

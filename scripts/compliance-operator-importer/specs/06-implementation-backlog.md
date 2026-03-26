@@ -22,7 +22,7 @@ Provide a reliable entrypoint with strict validation and preflight checks.
 ### A Requirement IDs
 
 - `IMP-CLI-001..016`
-- `IMP-CLI-023..026`
+- `IMP-CLI-024..025`
 
 ### A Implementation targets (suggested)
 
@@ -44,7 +44,7 @@ Provide a reliable entrypoint with strict validation and preflight checks.
 
 ### A Agent prompt seed
 
-- "Implement Slice A for create-only importer. Start with tests for IMP-CLI-001..016 and IMP-CLI-023..026, then implement CLI/config/preflight with HTTPS and both token/basic auth mode support."
+- "Implement Slice A for create-only importer. Start with tests for IMP-CLI-001..016 and IMP-CLI-024..025, then implement CLI/config/preflight with HTTPS and both token/basic auth mode support."
 
 ## Slice B - CO discovery and mapping core
 
@@ -145,13 +145,13 @@ Support multiple source clusters, auto-discover ACS cluster IDs, merge SSBs acro
 
 ### E Requirement IDs
 
-- `IMP-CLI-003` (updated), `IMP-CLI-005` (updated), `IMP-CLI-027`
+- `IMP-CLI-003`, `IMP-CLI-027`
 - `IMP-MAP-016..021`
 - `IMP-ACC-015..017`
 
 ### E Implementation targets (suggested)
 
-- `scripts/compliance-operator-importer/internal/config/config.go` (new flags)
+- `scripts/compliance-operator-importer/internal/config/config.go` (--context filter)
 - `scripts/compliance-operator-importer/internal/discover/discover.go` (new package: ACS cluster ID auto-discovery)
 - `scripts/compliance-operator-importer/internal/cofetch/client.go` (multi-context support)
 - `scripts/compliance-operator-importer/internal/merge/merge.go` (new package: SSB merging + mismatch detection)
@@ -172,7 +172,7 @@ Support multiple source clusters, auto-discover ACS cluster IDs, merge SSBs acro
 
 ### E Agent prompt seed
 
-- "Implement Slice E: multi-cluster support. Add --kubecontext (repeatable), auto-discover ACS cluster ID via admission-control ConfigMap (fallback: ClusterVersion, helm-effective-cluster-name), merge SSBs by name across clusters, error on profile/schedule mismatch."
+- "Implement Slice E: multi-cluster support. Iterate all contexts from merged kubeconfig, auto-discover ACS cluster ID via admission-control ConfigMap (fallback: ClusterVersion, helm-effective-cluster-name), merge SSBs by name across clusters, error on profile/schedule mismatch."
 
 ## Slice F - Overwrite-existing mode (PUT support)
 
@@ -235,57 +235,46 @@ Make real-cluster validation repeatable and scriptable.
 
 - "Implement Slice G automation helpers for IMP-ACC-001..017 and produce run artifacts paths for dry-run/apply/second-run/multi-cluster/overwrite checks."
 
-## Slice H - UX alignment with roxctl conventions
+## Slice H - UX conventions -- DONE
 
 ### H Goal
 
-Rename all flags and env vars to match roxctl conventions. Remove unnecessary
-indirection flags. Simplify auth inference and endpoint handling.
+Ensure all flags and env vars follow consistent conventions. Auth mode is
+auto-inferred from available credentials. Endpoint handling prepends `https://`
+when no scheme is provided.
 
 ### H Requirement IDs
 
-- `IMP-CLI-001` (updated: `--endpoint` / `ROX_ENDPOINT`, auto-prepend `https://`)
-- `IMP-CLI-002` (updated: auto-infer auth from env vars, no `--auth-mode`)
-- `IMP-CLI-005` (updated: unified `--cluster` flag accepting UUID, name, or ctx=value)
-- `IMP-CLI-013` (updated: bare hostnames get `https://` prepended)
-- `IMP-CLI-023` (removed: `--auth-mode`)
-- `IMP-CLI-024` (updated: `--username` / `ROX_ADMIN_USER`, default `admin`; password from `ROX_ADMIN_PASSWORD`)
-- `IMP-CLI-025` (updated: ambiguous = both token+password set)
-- `IMP-CLI-026` (removed: auth mode inferred)
-- `IMP-MAP-022..023` (new: `--cluster` single-value shorthand with name or UUID)
+- `IMP-CLI-001`
+- `IMP-CLI-002`
+- `IMP-CLI-013`
+- `IMP-CLI-024`
+- `IMP-CLI-025`
 
-### H Changes summary
+## Slice I - Simplify cluster access model
 
-| Old | New | Notes |
-|-----|-----|-------|
-| `--acs-endpoint` / `ACS_ENDPOINT` | `--endpoint` / `ROX_ENDPOINT` | aligned with roxctl |
-| `--acs-auth-mode` | (removed) | auto-inferred |
-| `--acs-token-env` | (removed) | always reads `ROX_API_TOKEN` |
-| `--acs-password-env` | (removed) | always reads `ROX_ADMIN_PASSWORD` |
-| `--acs-username` / `ACS_USERNAME` | `--username` / `ROX_ADMIN_USER` (default `admin`) | aligned with roxctl |
-| `--acs-cluster-id` | `--cluster` (UUID, name, or ctx=value) | unified |
-| `--source-kubecontext` | (removed) | redundant with `--kubecontext` |
+### I Goal
 
-### H Implementation targets
+Iterate all contexts from the merged kubeconfig by default, with an
+opt-in `--context` filter. ACS cluster ID is always auto-discovered.
 
-- `internal/config/config.go` (flag renames, auth inference, endpoint normalization)
-- `internal/models/models.go` (remove AuthMode, TokenEnv, PasswordEnv fields)
-- `internal/preflight/preflight.go` (auth inference)
-- `internal/acs/client.go` (read from fixed env vars)
-- `internal/run/cluster_source.go` (unified `--cluster` parsing)
-- `cmd/importer/main.go`
+### I Requirement IDs
 
-### H Tests to update
+- `IMP-CLI-003`
 
+### I Implementation targets
+
+- `internal/models/models.go` (remove Kubeconfigs, Kubecontexts, ClusterOverrides, ClusterNameLookup, AutoDiscoverClusterID; add Contexts)
+- `internal/config/config.go` (remove old flags, add --context, remove classifyClusterValues)
+- `internal/run/cluster_source.go` (simplify: always load all contexts, filter by Contexts)
+- `internal/cofetch/client.go` (remove NewClientForKubeconfig)
+- `cmd/importer/main.go` (simplify: always BuildClusterSources + RunMultiCluster)
 - `internal/config/config_test.go`
 - `internal/config/config_multicluster_test.go`
-- `internal/preflight/preflight_test.go`
-- `internal/acs/client_test.go`
-- `internal/run/run_test.go`
 
-### H Agent prompt seed
+### I Agent prompt seed
 
-- "Implement Slice H: rename all ACS-prefixed flags/env vars to roxctl conventions per the table above. Remove --auth-mode, --token-env, --password-env, --source-kubecontext. Auto-infer auth from env vars. Auto-prepend https:// for bare hostnames. Unify --cluster to accept UUID, name, or ctx=value."
+- "Implement Slice I: drop --kubeconfig, --kubecontext, --cluster. Default to all contexts from merged kubeconfig. Add --context (repeatable) as opt-in filter. Always auto-discover ACS cluster ID. Simplify BuildClusterSources and main.go accordingly."
 
 ## Cross-slice conventions
 
@@ -303,9 +292,11 @@ indirection flags. Simplify auth inference and endpoint handling.
 2. Slice B (domain mapping) -- DONE
 3. Slice C (ACS reconciliation) -- DONE
 4. Slice D (reporting + run orchestration) -- DONE
-5. Slice E (multi-cluster + auto-discovery)
-6. Slice F (overwrite-existing / PUT support)
-7. Slice G (acceptance automation)
+5. Slice E (multi-cluster + auto-discovery) -- DONE
+6. Slice F (overwrite-existing / PUT support) -- DONE
+7. Slice G (acceptance automation) -- DONE
+8. Slice H (UX conventions) -- DONE
+9. Slice I (simplify cluster access model)
 
 Slices E and F are independent and can be implemented in parallel.
 One agent per slice is ideal; if sequential, complete one slice fully before next.
