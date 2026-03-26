@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -203,4 +204,53 @@ func TestCreateScanConfiguration_UsesPOSTAndReturnsID(t *testing.T) {
 func TestNoPUTMethodOnInterface(t *testing.T) {
 	// IMP-IDEM-003: This test documents the invariant.
 	t.Log("IMP-IDEM-003: ACSClient interface has no PUT method - enforced by interface definition")
+}
+
+// TestCreateScanConfiguration_400_IncludesResponseBody verifies that HTTP 400
+// errors include the server's response body in the error message.
+func TestCreateScanConfiguration_400_IncludesResponseBody(t *testing.T) {
+	const apiError = "Unable to find all profiles for scan configuration named \"cis-weekly\"."
+	srv, _ := startTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{"message": apiError})
+	}))
+	defer srv.Close()
+
+	t.Setenv("ROX_API_TOKEN", "test-token")
+	cfg := newTestConfig(srv.URL)
+	client, err := acs.NewClient(cfg)
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+
+	payload := models.ACSCreatePayload{
+		ScanName: "cis-weekly",
+		ScanConfig: models.ACSBaseScanConfig{
+			Profiles:    []string{"ocp4-cis"},
+			Description: "test",
+		},
+		Clusters: []string{"cluster-a"},
+	}
+
+	_, err = client.CreateScanConfiguration(context.Background(), payload)
+	if err == nil {
+		t.Fatal("expected error for HTTP 400, got nil")
+	}
+
+	// Verify the error message contains the API error text.
+	errMsg := err.Error()
+	if !strings.Contains(errMsg, apiError) {
+		t.Errorf("error message should contain API error %q, got: %s", apiError, errMsg)
+	}
+
+	// Verify it's an HTTPError with correct status code.
+	type statusCoder interface{ StatusCode() int }
+	sc, ok := err.(statusCoder)
+	if !ok {
+		t.Fatal("expected error to satisfy StatusCode() interface")
+	}
+	if sc.StatusCode() != 400 {
+		t.Errorf("expected status code 400, got %d", sc.StatusCode())
+	}
 }

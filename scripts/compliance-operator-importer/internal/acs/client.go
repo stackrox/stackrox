@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -196,7 +197,7 @@ func (c *client) CreateScanConfiguration(ctx context.Context, payload models.ACS
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		return "", &HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("POST /v2/compliance/scan/configurations returned HTTP %d", resp.StatusCode)}
+		return "", &HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("POST /v2/compliance/scan/configurations returned HTTP %d: %s", resp.StatusCode, readBodySnippet(resp))}
 	}
 
 	var created complianceScanConfigurationResponse
@@ -237,7 +238,7 @@ func (c *client) UpdateScanConfiguration(ctx context.Context, id string, payload
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		return &HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("PUT /v2/compliance/scan/configurations/%s returned HTTP %d", id, resp.StatusCode)}
+		return &HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("PUT /v2/compliance/scan/configurations/%s returned HTTP %d: %s", id, resp.StatusCode, readBodySnippet(resp))}
 	}
 
 	return nil
@@ -304,6 +305,30 @@ func (c *client) ListClusters(ctx context.Context) ([]models.ACSClusterInfo, err
 		})
 	}
 	return result, nil
+}
+
+// readBodySnippet reads up to 512 bytes from the response body for error reporting.
+func readBodySnippet(resp *http.Response) string {
+	const maxBytes = 512
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBytes))
+	if err != nil || len(body) == 0 {
+		return "(no response body)"
+	}
+	snippet := string(body)
+	// Try to extract a cleaner message from JSON error responses.
+	var parsed struct {
+		Message string `json:"message"`
+		Error   string `json:"error"`
+	}
+	if json.Unmarshal(body, &parsed) == nil {
+		if parsed.Message != "" {
+			return parsed.Message
+		}
+		if parsed.Error != "" {
+			return parsed.Error
+		}
+	}
+	return snippet
 }
 
 // HTTPError is returned by CreateScanConfiguration and UpdateScanConfiguration when the server responds with
