@@ -236,7 +236,8 @@ type ReportSnapshot struct {
 	Requester    *SlimUser               `protobuf:"bytes,11,opt,name=requester,proto3" json:"requester,omitempty"`
 	// fields related to view based reports
 	// area_of_concern refers to view from which report is generated - user workload, platform component etc
-	AreaOfConcern string `protobuf:"bytes,13,opt,name=area_of_concern,json=areaOfConcern,proto3" json:"area_of_concern,omitempty" search:"Area Of Concern"` // @gotags: search:"Area Of Concern"
+	AreaOfConcern string         `protobuf:"bytes,13,opt,name=area_of_concern,json=areaOfConcern,proto3" json:"area_of_concern,omitempty" search:"Area Of Concern"` // @gotags: search:"Area Of Concern"
+	ResourceScope *ResourceScope `protobuf:"bytes,14,opt,name=resource_scope,json=resourceScope,proto3" json:"resource_scope,omitempty"`   // User cannot set this value to nil. If scoping method is collection it defaults to system-defined "All" collection. If scoping method is entity scope then scope defaults to empty list.
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -371,6 +372,13 @@ func (x *ReportSnapshot) GetAreaOfConcern() string {
 		return x.AreaOfConcern
 	}
 	return ""
+}
+
+func (x *ReportSnapshot) GetResourceScope() *ResourceScope {
+	if x != nil {
+		return x.ResourceScope
+	}
+	return nil
 }
 
 type isReportSnapshot_Filter interface {
@@ -603,7 +611,7 @@ var File_storage_report_snapshot_proto protoreflect.FileDescriptor
 
 const file_storage_report_snapshot_proto_rawDesc = "" +
 	"\n" +
-	"\x1dstorage/report_snapshot.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"storage/report_configuration.proto\x1a+storage/report_notifier_configuration.proto\x1a\x16storage/schedule.proto\x1a\x12storage/user.proto\"\x83\x06\n" +
+	"\x1dstorage/report_snapshot.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"storage/report_configuration.proto\x1a+storage/report_notifier_configuration.proto\x1a\x16storage/schedule.proto\x1a\x12storage/user.proto\"\xc2\x06\n" +
 	"\x0eReportSnapshot\x12\x1b\n" +
 	"\treport_id\x18\x01 \x01(\tR\breportId\x126\n" +
 	"\x17report_configuration_id\x18\x02 \x01(\tR\x15reportConfigurationId\x12\x12\n" +
@@ -620,7 +628,8 @@ const file_storage_report_snapshot_proto_rawDesc = "" +
 	"\tnotifiers\x18\n" +
 	" \x03(\v2\x19.storage.NotifierSnapshotR\tnotifiers\x12/\n" +
 	"\trequester\x18\v \x01(\v2\x11.storage.SlimUserR\trequester\x12&\n" +
-	"\x0farea_of_concern\x18\r \x01(\tR\rareaOfConcern\"\x1f\n" +
+	"\x0farea_of_concern\x18\r \x01(\tR\rareaOfConcern\x12=\n" +
+	"\x0eresource_scope\x18\x0e \x01(\v2\x16.storage.ResourceScopeR\rresourceScope\"\x1f\n" +
 	"\n" +
 	"ReportType\x12\x11\n" +
 	"\rVULNERABILITY\x10\x00B\b\n" +
@@ -682,8 +691,9 @@ var file_storage_report_snapshot_proto_goTypes = []any{
 	(*ViewBasedVulnerabilityReportFilters)(nil), // 9: storage.ViewBasedVulnerabilityReportFilters
 	(*Schedule)(nil),                            // 10: storage.Schedule
 	(*SlimUser)(nil),                            // 11: storage.SlimUser
-	(*EmailNotifierConfiguration)(nil),          // 12: storage.EmailNotifierConfiguration
-	(*timestamppb.Timestamp)(nil),               // 13: google.protobuf.Timestamp
+	(*ResourceScope)(nil),                       // 12: storage.ResourceScope
+	(*EmailNotifierConfiguration)(nil),          // 13: storage.EmailNotifierConfiguration
+	(*timestamppb.Timestamp)(nil),               // 14: google.protobuf.Timestamp
 }
 var file_storage_report_snapshot_proto_depIdxs = []int32{
 	0,  // 0: storage.ReportSnapshot.type:type_name -> storage.ReportSnapshot.ReportType
@@ -694,17 +704,18 @@ var file_storage_report_snapshot_proto_depIdxs = []int32{
 	7,  // 5: storage.ReportSnapshot.report_status:type_name -> storage.ReportStatus
 	6,  // 6: storage.ReportSnapshot.notifiers:type_name -> storage.NotifierSnapshot
 	11, // 7: storage.ReportSnapshot.requester:type_name -> storage.SlimUser
-	12, // 8: storage.NotifierSnapshot.email_config:type_name -> storage.EmailNotifierConfiguration
-	1,  // 9: storage.ReportStatus.run_state:type_name -> storage.ReportStatus.RunState
-	13, // 10: storage.ReportStatus.queued_at:type_name -> google.protobuf.Timestamp
-	13, // 11: storage.ReportStatus.completed_at:type_name -> google.protobuf.Timestamp
-	3,  // 12: storage.ReportStatus.report_request_type:type_name -> storage.ReportStatus.RunMethod
-	2,  // 13: storage.ReportStatus.report_notification_method:type_name -> storage.ReportStatus.NotificationMethod
-	14, // [14:14] is the sub-list for method output_type
-	14, // [14:14] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	12, // 8: storage.ReportSnapshot.resource_scope:type_name -> storage.ResourceScope
+	13, // 9: storage.NotifierSnapshot.email_config:type_name -> storage.EmailNotifierConfiguration
+	1,  // 10: storage.ReportStatus.run_state:type_name -> storage.ReportStatus.RunState
+	14, // 11: storage.ReportStatus.queued_at:type_name -> google.protobuf.Timestamp
+	14, // 12: storage.ReportStatus.completed_at:type_name -> google.protobuf.Timestamp
+	3,  // 13: storage.ReportStatus.report_request_type:type_name -> storage.ReportStatus.RunMethod
+	2,  // 14: storage.ReportStatus.report_notification_method:type_name -> storage.ReportStatus.NotificationMethod
+	15, // [15:15] is the sub-list for method output_type
+	15, // [15:15] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_storage_report_snapshot_proto_init() }

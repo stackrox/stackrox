@@ -505,6 +505,46 @@
         }
       }
     },
+    "storageEntiityScope": {
+      "type": "object",
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageEntityScopeRule"
+          }
+        }
+      },
+      "title": "EntityScope is a new scoping method using ns,deployments,clusters filter introduced in 4.11"
+    },
+    "storageEntityScopeRule": {
+      "type": "object",
+      "properties": {
+        "entity": {
+          "$ref": "#/definitions/storageScopeEntity"
+        },
+        "field": {
+          "$ref": "#/definitions/storageScopeField"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageRuleValue"
+          }
+        }
+      },
+      "title": "EntityScopeRule stores filter value as entity field pair and values ot be used in the filter"
+    },
+    "storageMatchType": {
+      "type": "string",
+      "enum": [
+        "EXACT",
+        "REGEX"
+      ],
+      "default": "EXACT"
+    },
     "storageNotifierConfiguration": {
       "type": "object",
       "properties": {
@@ -590,6 +630,20 @@
       "properties": {
         "collectionId": {
           "type": "string"
+        },
+        "entityScope": {
+          "$ref": "#/definitions/storageEntiityScope"
+        }
+      }
+    },
+    "storageRuleValue": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string"
+        },
+        "matchType": {
+          "$ref": "#/definitions/storageMatchType"
         }
       }
     },
@@ -617,6 +671,27 @@
           "$ref": "#/definitions/ScheduleDaysOfMonth"
         }
       }
+    },
+    "storageScopeEntity": {
+      "type": "string",
+      "enum": [
+        "SCOPE_ENTITY_UNSET",
+        "SCOPE_ENTITY_DEPLOYMENT",
+        "SCOPE_ENTITY_NAMESPACE",
+        "SCOPE_ENTITY_CLUSTER"
+      ],
+      "default": "SCOPE_ENTITY_UNSET"
+    },
+    "storageScopeField": {
+      "type": "string",
+      "enum": [
+        "SCOPE_FIELD_UNSET",
+        "SCOPE_FIELD_ID",
+        "SCOPE_FIELD_NAME",
+        "SCOPE_FIELD_LABEL",
+        "SCOPE_FIELD_ANNOTATION"
+      ],
+      "default": "SCOPE_FIELD_UNSET"
     },
     "storageSetBasedLabelSelector": {
       "type": "object",
@@ -688,6 +763,10 @@
         },
         "includeAdvisory": {
           "type": "boolean"
+        },
+        "query": {
+          "type": "string",
+          "title": "this field stores enhanced filters related to image, cve etc for non collection based scopes"
         }
       }
     },
