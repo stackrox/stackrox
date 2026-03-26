@@ -88,7 +88,8 @@ func imageOSPrinter(fieldMap map[string][]string) ([]string, error) {
 }
 
 const (
-	imageDetailsTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' has image with{{else}}Image has{{end}} {{.ImageDetails}}`
+	imageDetailsTemplate     = `{{if .ContainerName}}Container '{{.ContainerName}}' has image with{{else}}Image has{{end}} {{.ImageDetails}}`
+	emptyImageTagSubTemplate = `an empty tag{{if .Digest}}, digest {{.Digest}}{{end}}`
 )
 
 func imageDetailsPrinter(fieldMap map[string][]string) ([]string, error) {
@@ -101,10 +102,17 @@ func imageDetailsPrinter(fieldMap map[string][]string) ([]string, error) {
 	var imageDetails []string
 	if imageTag, err := getSingleValueFromFieldMap(search.ImageTag.String(), fieldMap); err == nil {
 		if imageTag == "" {
-			imageDetails = append(imageDetails, "an empty tag,")
-			imageDigest := maybeGetSingleValueFromFieldMap(search.ImageSHA.String(), fieldMap)
-			if imageDigest != "" {
-				imageDetails = append(imageDetails, fmt.Sprintf("digest '%s'", imageDigest))
+			type DigestHolder struct {
+				Digest string
+			}
+			d := DigestHolder{}
+			d.Digest = maybeGetSingleValueFromFieldMap(search.ImageSHA.String(), fieldMap)
+			emptyTagMessage, err := executeTemplate(emptyImageTagSubTemplate, d)
+			if err != nil {
+				return nil, err
+			}
+			if len(emptyTagMessage) > 0 {
+				imageDetails = append(imageDetails, emptyTagMessage[0])
 			}
 		} else {
 			imageDetails = append(imageDetails, fmt.Sprintf("tag '%s'", imageTag))
