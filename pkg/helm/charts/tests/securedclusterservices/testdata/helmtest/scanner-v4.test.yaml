@@ -9,9 +9,9 @@ defs: |
     getVolume("scanner-v4-db"; "disk");
 server:
   visibleSchemas:
-  - openshift-4.1.0
+  - openshift-4.18
   availableSchemas:
-  - openshift-4.1.0
+  - openshift-4.18
 tests:
 - name: "scanner v4 indexer mounts additional-ca-sensor secret"
   set:
@@ -32,9 +32,6 @@ tests:
   - name: "on openshift 4"
     set:
       env.openshift: 4
-  - name: "on openshift 3"
-    set:
-      env.openshift: 3
 
 - name: "scanner V4 should be installed by default for new installations"
   release: { "isInstall": true, "isUpgrade": false }
