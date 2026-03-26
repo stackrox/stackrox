@@ -59,11 +59,11 @@ func (w *WorkloadManager) getNodes(workload NodeWorkload, ids []string) []*corev
 			Status: corev1.NodeStatus{
 				Addresses: []corev1.NodeAddress{
 					{
-					Address: nodeIP(10, i),
-					Type:    "InternalIP",
-				},
-				{
-					Address: nodeIP(35, i),
+						Address: nodeIP(10, i),
+						Type:    "InternalIP",
+					},
+					{
+						Address: nodeIP(35, i),
 						Type:    "ExternalIP",
 					},
 					{
