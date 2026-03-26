@@ -156,12 +156,15 @@ func run() error {
 		return errors.Wrap(err, "unable to create bootstrap client for TLS profile")
 	}
 
-	clusterTLSProfile := tlsprofile.FetchProfile(context.Background(), bootstrapClient)
+	clusterTLSProfile, err := tlsprofile.FetchProfile(context.Background(), bootstrapClient)
+	if err != nil {
+		return errors.Wrap(err, "unable to fetch cluster TLS profile")
+	}
 	workloadTLSProfile := tlsprofile.ConvertProfile(clusterTLSProfile, forceOpenShiftTLSProfile.BooleanSetting())
 
 	var tlsOpts []func(c *tls.Config)
-	if workloadTLSProfile != nil && clusterTLSProfile.ProfileSpec != nil {
-		tlsConfigFn, unsupported := tlspkg.NewTLSConfigFromProfile(*clusterTLSProfile.ProfileSpec)
+	if workloadTLSProfile != nil {
+		tlsConfigFn, unsupported := tlspkg.NewTLSConfigFromProfile(clusterTLSProfile.ProfileSpec)
 		if len(unsupported) > 0 {
 			setupLog.Info("some ciphers from cluster TLS profile are not supported by Go, skipping them", "ciphers", unsupported)
 		}
@@ -295,7 +298,7 @@ func run() error {
 	defer cancel()
 
 	if clusterTLSProfile != nil {
-		if err = tlsprofile.SetupTLSProfileWatcher(mgr, clusterTLSProfile, cancel); err != nil {
+		if err = tlsprofile.SetupTLSProfileWatcher(mgr, *clusterTLSProfile, cancel); err != nil {
 			return errors.Wrap(err, "unable to set up TLS profile watcher")
 		}
 	}

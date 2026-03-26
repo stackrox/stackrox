@@ -2,6 +2,7 @@ package tlsprofile
 
 import (
 	"context"
+	"fmt"
 
 	configv1 "github.com/openshift/api/config/v1"
 	tlspkg "github.com/openshift/controller-runtime-common/pkg/tls"
@@ -22,7 +23,7 @@ const apiserverClusterName = "cluster"
 // means the Operator is not running on OpenShift.
 type ClusterTLSProfile struct {
 	// ProfileSpec is the concrete TLS profile spec (ciphers + min version).
-	ProfileSpec *configv1.TLSProfileSpec
+	ProfileSpec configv1.TLSProfileSpec
 	// Adherence is the current TLS adherence policy from the APIServer resource.
 	Adherence configv1.TLSAdherencePolicy
 }
@@ -46,23 +47,23 @@ type TLSProfile struct {
 // Returns nil on non-OpenShift clusters (APIServer resource absent).
 // On OpenShift, ProfileSpec and Adherence are populated so the watcher can
 // detect changes even when enforcement is not active yet.
-func FetchProfile(ctx context.Context, c ctrlClient.Reader) *ClusterTLSProfile {
+func FetchProfile(ctx context.Context, c ctrlClient.Reader) (*ClusterTLSProfile, error) {
 	apiServer := &configv1.APIServer{}
 	if err := c.Get(ctx, types.NamespacedName{Name: apiserverClusterName}, apiServer); err != nil {
-		if !k8serrors.IsNotFound(err) {
-			log.Error(err, "failed to read APIServer cluster config, using TLS defaults")
+		if k8serrors.IsNotFound(err) {
+			log.Info("APIServer cluster config not found, using TLS defaults")
+			return nil, nil
 		}
-		return nil
+		return nil, fmt.Errorf("reading APIServer cluster config: %w", err)
 	}
 
 	adherence := apiServer.Spec.TLSAdherence
 	spec, err := tlspkg.GetTLSProfileSpec(apiServer.Spec.TLSSecurityProfile)
 	if err != nil {
-		log.Error(err, "failed to resolve TLS profile spec, using TLS defaults")
-		return &ClusterTLSProfile{Adherence: adherence}
+		return nil, fmt.Errorf("getting TLS profile spec: %w", err)
 	}
 
-	return &ClusterTLSProfile{ProfileSpec: &spec, Adherence: adherence}
+	return &ClusterTLSProfile{ProfileSpec: spec, Adherence: adherence}, nil
 }
 
 // ConvertProfile converts a ClusterTLSProfile to a TLSProfile for environment
@@ -70,11 +71,10 @@ func FetchProfile(ctx context.Context, c ctrlClient.Reader) *ClusterTLSProfile {
 //
 // Returns nil when:
 //   - clusterTLS is nil (not on OpenShift)
-//   - ProfileSpec is nil
 //   - forceProfile is false and the adherence policy does not require honoring
 //     the cluster TLS profile
 func ConvertProfile(clusterTLS *ClusterTLSProfile, forceProfile bool) *TLSProfile {
-	if clusterTLS == nil || clusterTLS.ProfileSpec == nil {
+	if clusterTLS == nil {
 		return nil
 	}
 

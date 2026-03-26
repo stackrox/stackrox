@@ -14,18 +14,11 @@ import (
 // adherence policy changes, it cancels ctx, causing the Operator process to
 // exit and be restarted by Kubernetes with the new TLS configuration applied
 // to its metrics server and the updated profile propagated to managed workloads.
-//
-// The caller is responsible for only calling this on OpenShift clusters
-func SetupTLSProfileWatcher(mgr ctrl.Manager, clusterTLS *ClusterTLSProfile, cancel context.CancelFunc) error {
-	var initialSpec configv1.TLSProfileSpec
-	if clusterTLS.ProfileSpec != nil {
-		initialSpec = *clusterTLS.ProfileSpec
-	}
-
+func SetupTLSProfileWatcher(mgr ctrl.Manager, clusterTLS ClusterTLSProfile, cancel context.CancelFunc) error {
 	logger := mgr.GetLogger()
 	watcher := &tlspkg.SecurityProfileWatcher{
 		Client:                    mgr.GetClient(),
-		InitialTLSProfileSpec:     initialSpec,
+		InitialTLSProfileSpec:     clusterTLS.ProfileSpec,
 		InitialTLSAdherencePolicy: clusterTLS.Adherence,
 		OnProfileChange: func(_ context.Context, oldSpec, newSpec configv1.TLSProfileSpec) {
 			logger.Info(

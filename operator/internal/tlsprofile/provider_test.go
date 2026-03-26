@@ -39,7 +39,9 @@ func TestFetchProfile_NotFound(t *testing.T) {
 		},
 	}
 	client := fake.NewClientBuilder().WithScheme(configv1Scheme()).WithInterceptorFuncs(funcs).Build()
-	assert.Nil(t, FetchProfile(context.Background(), client))
+	clusterTLS, err := FetchProfile(context.Background(), client)
+	require.NoError(t, err)
+	assert.Nil(t, clusterTLS)
 }
 
 func TestFetchProfile_GetError(t *testing.T) {
@@ -49,7 +51,9 @@ func TestFetchProfile_GetError(t *testing.T) {
 		},
 	}
 	client := fake.NewClientBuilder().WithScheme(configv1Scheme()).WithInterceptorFuncs(funcs).Build()
-	assert.Nil(t, FetchProfile(context.Background(), client))
+	clusterTLS, err := FetchProfile(context.Background(), client)
+	assert.Error(t, err)
+	assert.Nil(t, clusterTLS)
 }
 
 func TestFetchProfile_LegacyAdherence(t *testing.T) {
@@ -67,8 +71,9 @@ func TestFetchProfile_LegacyAdherence(t *testing.T) {
 					},
 				},
 			}
-			clusterTLS := FetchProfile(context.Background(), fakeClientWithAPIServer(apiServer))
-			assert.NotNil(t, clusterTLS.ProfileSpec, "spec should always be resolved on OpenShift for the watcher")
+			clusterTLS, err := FetchProfile(context.Background(), fakeClientWithAPIServer(apiServer))
+			require.NoError(t, err)
+			require.NotNil(t, clusterTLS)
 			assert.Nil(t, ConvertProfile(clusterTLS, false), "profile should not be enforced")
 		})
 	}
@@ -85,9 +90,9 @@ func TestFetchProfile_StrictWithIntermediateProfile(t *testing.T) {
 		},
 	}
 
-	clusterTLS := FetchProfile(context.Background(), fakeClientWithAPIServer(apiServer))
+	clusterTLS, err := FetchProfile(context.Background(), fakeClientWithAPIServer(apiServer))
+	require.NoError(t, err)
 	require.NotNil(t, clusterTLS)
-	require.NotNil(t, clusterTLS.ProfileSpec)
 	profile := ConvertProfile(clusterTLS, false)
 	require.NotNil(t, profile)
 	assert.Equal(t, "TLSv1.2", profile.MinVersion)
@@ -108,7 +113,8 @@ func TestFetchProfile_StrictWithModernProfile(t *testing.T) {
 		},
 	}
 
-	clusterTLS := FetchProfile(context.Background(), fakeClientWithAPIServer(apiServer))
+	clusterTLS, err := FetchProfile(context.Background(), fakeClientWithAPIServer(apiServer))
+	require.NoError(t, err)
 	profile := ConvertProfile(clusterTLS, false)
 	require.NotNil(t, profile)
 	assert.Equal(t, "TLSv1.3", profile.MinVersion)
@@ -136,7 +142,8 @@ func TestFetchProfile_StrictWithCustomProfile(t *testing.T) {
 		},
 	}
 
-	clusterTLS := FetchProfile(context.Background(), fakeClientWithAPIServer(apiServer))
+	clusterTLS, err := FetchProfile(context.Background(), fakeClientWithAPIServer(apiServer))
+	require.NoError(t, err)
 	profile := ConvertProfile(clusterTLS, false)
 	require.NotNil(t, profile)
 	assert.Equal(t, "TLSv1.2", profile.MinVersion)
@@ -152,7 +159,8 @@ func TestFetchProfile_StrictWithNilTLSSecurityProfile(t *testing.T) {
 		},
 	}
 
-	clusterTLS := FetchProfile(context.Background(), fakeClientWithAPIServer(apiServer))
+	clusterTLS, err := FetchProfile(context.Background(), fakeClientWithAPIServer(apiServer))
+	require.NoError(t, err)
 	profile := ConvertProfile(clusterTLS, false)
 	require.NotNil(t, profile)
 	assert.Equal(t, "TLSv1.2", profile.MinVersion)
@@ -168,7 +176,8 @@ func TestConvertProfile_ForceOverridesLegacyAdherence(t *testing.T) {
 			},
 		},
 	}
-	clusterTLS := FetchProfile(context.Background(), fakeClientWithAPIServer(apiServer))
+	clusterTLS, err := FetchProfile(context.Background(), fakeClientWithAPIServer(apiServer))
+	require.NoError(t, err)
 	profile := ConvertProfile(clusterTLS, true)
 	require.NotNil(t, profile)
 }
