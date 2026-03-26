@@ -97,11 +97,13 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         }
 
         log.info "Starting conversion of ACS violations to Splunk alerts"
-        // This conversion job is run by the Splunk Cronjob every 5 minutes. We need the created alerts.
-        // This forces an out of schedule run to minimize waiting time for its results.
+        // The conversion job normally runs on a 5-minute cron with dispatch.earliest_time=-5m.
+        // Test setup (deploy, boot, configure, trigger violations) can exceed that window,
+        // so we override earliest_time to -30m to cover the entire test duration.
         postToSplunk(port, "/services/saved/searches/" + SPLUNK_TA_CONVERSION_JOB_NAME + "/dispatch", [
                 "dispatch.now": "true",
                 "force_dispatch": "true",
+                "dispatch.earliest_time": "-30m",
         ])
 
         // Check for Alerts
