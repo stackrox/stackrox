@@ -55,10 +55,15 @@ func Run(ctx context.Context, cfg *models.Config) error {
 
 	resp, err := client.Do(req)
 	if err != nil {
+		fix := "Fix: check network connectivity and that --endpoint is correct"
+		var certErr *tls.CertificateVerificationError
+		if errors.As(err, &certErr) {
+			fix = "Fix: if ACS uses a self-signed certificate, supply the CA with --ca-cert-file " +
+				"or pass --insecure-skip-verify to disable TLS verification"
+		}
 		return fmt.Errorf(
-			"preflight failed: could not reach ACS at %s: %w\n"+
-				"Fix: check network connectivity and that --endpoint is correct",
-			cfg.ACSEndpoint, err,
+			"preflight failed: could not reach ACS at %s: %w\n%s",
+			cfg.ACSEndpoint, err, fix,
 		)
 	}
 	defer resp.Body.Close()

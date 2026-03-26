@@ -63,6 +63,9 @@ Define the importer interface so it can be implemented and tested predictably.
   - using selected auth mode,
   - success only on HTTP 200.
 - **IMP-CLI-016**: HTTP 401/403 at preflight MUST fail-fast with remediation message.
+- **IMP-CLI-016a**: TLS certificate verification failures at preflight MUST hint at
+  `--ca-cert-file` and `--insecure-skip-verify` (not generic network connectivity),
+  since the most common cause is a self-signed or internal CA certificate.
 
 ## Output contract
 

@@ -96,6 +96,36 @@ func TestIMP_CLI_016_403ReturnsRemediationError(t *testing.T) {
 	}
 }
 
+// TestTLSCertErrorHintsSelfSigned verifies that when the server presents a
+// certificate not trusted by the client, the error message hints at
+// --ca-cert-file and --insecure-skip-verify rather than network connectivity.
+func TestTLSCertErrorHintsSelfSigned(t *testing.T) {
+	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	t.Setenv("ROX_API_TOKEN", "tok")
+
+	cfg := minimalTokenConfig(srv.URL)
+	// InsecureSkipVerify defaults to false — the self-signed cert will fail.
+
+	err := Run(context.Background(), cfg)
+	if err == nil {
+		t.Fatal("expected TLS error, got nil")
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, "--ca-cert-file") {
+		t.Errorf("expected hint about --ca-cert-file, got: %q", msg)
+	}
+	if !strings.Contains(msg, "--insecure-skip-verify") {
+		t.Errorf("expected hint about --insecure-skip-verify, got: %q", msg)
+	}
+	if strings.Contains(msg, "check network connectivity") {
+		t.Errorf("should not suggest network connectivity for TLS cert error, got: %q", msg)
+	}
+}
+
 // TestIMP_CLI_013_NonHTTPSEndpointRejected verifies that a non-https endpoint
 // is rejected before any network call is made (IMP-CLI-013).
 func TestIMP_CLI_013_NonHTTPSEndpointRejected(t *testing.T) {
