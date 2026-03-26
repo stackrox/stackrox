@@ -35,7 +35,7 @@ message ReportSnapshot {
   // fields related to view based reports
   // area_of_concern refers to view from which report is generated - user workload, platform component etc
   string area_of_concern = 13; // @gotags: search:"Area Of Concern"
-  ResourceScope resource_scope = 14; // User cannot set this value to nil. If scoping method is collection it defaults to system-defined "All" collection. If scoping method is entity scope then scope defaults to empty list.
+  ResourceScope resource_scope = 14; // ResourceScope stores the scoping method
 }
 
 message CollectionSnapshot {

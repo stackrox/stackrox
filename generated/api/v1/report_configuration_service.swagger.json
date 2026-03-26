@@ -505,7 +505,18 @@
         }
       }
     },
-    "storageEntiityScope": {
+    "storageEntityField": {
+      "type": "string",
+      "enum": [
+        "FIELD_UNSET",
+        "FIELD_ID",
+        "FIELD_NAME",
+        "FIELD_LABEL",
+        "FIELD_ANNOTATION"
+      ],
+      "default": "FIELD_UNSET"
+    },
+    "storageEntityScope": {
       "type": "object",
       "properties": {
         "rules": {
@@ -516,16 +527,16 @@
           }
         }
       },
-      "title": "EntityScope is a new scoping method using ns,deployments,clusters filter introduced in 4.11"
+      "title": "EntityScope is a new scoping method using ns,deployments,clusters filters introduced in 4.11"
     },
     "storageEntityScopeRule": {
       "type": "object",
       "properties": {
         "entity": {
-          "$ref": "#/definitions/storageScopeEntity"
+          "$ref": "#/definitions/storageEntityType"
         },
         "field": {
-          "$ref": "#/definitions/storageScopeField"
+          "$ref": "#/definitions/storageEntityField"
         },
         "values": {
           "type": "array",
@@ -535,7 +546,17 @@
           }
         }
       },
-      "title": "EntityScopeRule stores filter value as entity field pair and values ot be used in the filter"
+      "title": "EntityScopeRule stores the filter as an entity field pair along with a list of values"
+    },
+    "storageEntityType": {
+      "type": "string",
+      "enum": [
+        "ENTITY_TYPE_UNSET",
+        "ENTITY_TYPE_DEPLOYMENT",
+        "ENTITY_TYPE_NAMESPACE",
+        "ENTITY_TYPE_CLUSTER"
+      ],
+      "default": "ENTITY_TYPE_UNSET"
     },
     "storageMatchType": {
       "type": "string",
@@ -632,7 +653,7 @@
           "type": "string"
         },
         "entityScope": {
-          "$ref": "#/definitions/storageEntiityScope"
+          "$ref": "#/definitions/storageEntityScope"
         }
       }
     },
@@ -671,27 +692,6 @@
           "$ref": "#/definitions/ScheduleDaysOfMonth"
         }
       }
-    },
-    "storageScopeEntity": {
-      "type": "string",
-      "enum": [
-        "SCOPE_ENTITY_UNSET",
-        "SCOPE_ENTITY_DEPLOYMENT",
-        "SCOPE_ENTITY_NAMESPACE",
-        "SCOPE_ENTITY_CLUSTER"
-      ],
-      "default": "SCOPE_ENTITY_UNSET"
-    },
-    "storageScopeField": {
-      "type": "string",
-      "enum": [
-        "SCOPE_FIELD_UNSET",
-        "SCOPE_FIELD_ID",
-        "SCOPE_FIELD_NAME",
-        "SCOPE_FIELD_LABEL",
-        "SCOPE_FIELD_ANNOTATION"
-      ],
-      "default": "SCOPE_FIELD_UNSET"
     },
     "storageSetBasedLabelSelector": {
       "type": "object",

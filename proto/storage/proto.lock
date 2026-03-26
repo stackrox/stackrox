@@ -15326,6 +15326,50 @@
                 "integer": 1
               }
             ]
+          },
+          {
+            "name": "EntityType",
+            "enum_fields": [
+              {
+                "name": "ENTITY_TYPE_UNSET"
+              },
+              {
+                "name": "ENTITY_TYPE_DEPLOYMENT",
+                "integer": 1
+              },
+              {
+                "name": "ENTITY_TYPE_NAMESPACE",
+                "integer": 2
+              },
+              {
+                "name": "ENTITY_TYPE_CLUSTER",
+                "integer": 3
+              }
+            ]
+          },
+          {
+            "name": "EntityField",
+            "enum_fields": [
+              {
+                "name": "FIELD_UNSET"
+              },
+              {
+                "name": "FIELD_ID",
+                "integer": 1
+              },
+              {
+                "name": "FIELD_NAME",
+                "integer": 2
+              },
+              {
+                "name": "FIELD_LABEL",
+                "integer": 3
+              },
+              {
+                "name": "FIELD_ANNOTATION",
+                "integer": 4
+              }
+            ]
           }
         ],
         "messages": [
@@ -15490,6 +15534,11 @@
                 "id": 11,
                 "name": "include_advisory",
                 "type": "bool"
+              },
+              {
+                "id": 12,
+                "name": "query",
+                "type": "string"
               }
             ]
           },
@@ -15501,6 +15550,44 @@
                 "name": "collection_id",
                 "type": "string",
                 "oneof_parent": "scope_reference"
+              },
+              {
+                "id": 2,
+                "name": "entity_scope",
+                "type": "EntityScope",
+                "oneof_parent": "scope_reference"
+              }
+            ]
+          },
+          {
+            "name": "EntityScope",
+            "fields": [
+              {
+                "id": 1,
+                "name": "rules",
+                "type": "EntityScopeRule",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "EntityScopeRule",
+            "fields": [
+              {
+                "id": 1,
+                "name": "entity",
+                "type": "EntityType"
+              },
+              {
+                "id": 2,
+                "name": "field",
+                "type": "EntityField"
+              },
+              {
+                "id": 3,
+                "name": "values",
+                "type": "RuleValue",
+                "is_repeated": true
               }
             ]
           },
@@ -15530,6 +15617,9 @@
           },
           {
             "path": "storage/report_notifier_configuration.proto"
+          },
+          {
+            "path": "storage/resource_collection.proto"
           },
           {
             "path": "storage/role.proto"
@@ -15755,6 +15845,11 @@
                 "id": 13,
                 "name": "area_of_concern",
                 "type": "string"
+              },
+              {
+                "id": 14,
+                "name": "resource_scope",
+                "type": "ResourceScope"
               }
             ]
           },

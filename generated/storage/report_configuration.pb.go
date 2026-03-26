@@ -22,110 +22,110 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type ScopeEntity int32
+type EntityType int32
 
 const (
-	ScopeEntity_SCOPE_ENTITY_UNSET      ScopeEntity = 0
-	ScopeEntity_SCOPE_ENTITY_DEPLOYMENT ScopeEntity = 1
-	ScopeEntity_SCOPE_ENTITY_NAMESPACE  ScopeEntity = 2
-	ScopeEntity_SCOPE_ENTITY_CLUSTER    ScopeEntity = 3
+	EntityType_ENTITY_TYPE_UNSET      EntityType = 0
+	EntityType_ENTITY_TYPE_DEPLOYMENT EntityType = 1
+	EntityType_ENTITY_TYPE_NAMESPACE  EntityType = 2
+	EntityType_ENTITY_TYPE_CLUSTER    EntityType = 3
 )
 
-// Enum value maps for ScopeEntity.
+// Enum value maps for EntityType.
 var (
-	ScopeEntity_name = map[int32]string{
-		0: "SCOPE_ENTITY_UNSET",
-		1: "SCOPE_ENTITY_DEPLOYMENT",
-		2: "SCOPE_ENTITY_NAMESPACE",
-		3: "SCOPE_ENTITY_CLUSTER",
+	EntityType_name = map[int32]string{
+		0: "ENTITY_TYPE_UNSET",
+		1: "ENTITY_TYPE_DEPLOYMENT",
+		2: "ENTITY_TYPE_NAMESPACE",
+		3: "ENTITY_TYPE_CLUSTER",
 	}
-	ScopeEntity_value = map[string]int32{
-		"SCOPE_ENTITY_UNSET":      0,
-		"SCOPE_ENTITY_DEPLOYMENT": 1,
-		"SCOPE_ENTITY_NAMESPACE":  2,
-		"SCOPE_ENTITY_CLUSTER":    3,
+	EntityType_value = map[string]int32{
+		"ENTITY_TYPE_UNSET":      0,
+		"ENTITY_TYPE_DEPLOYMENT": 1,
+		"ENTITY_TYPE_NAMESPACE":  2,
+		"ENTITY_TYPE_CLUSTER":    3,
 	}
 )
 
-func (x ScopeEntity) Enum() *ScopeEntity {
-	p := new(ScopeEntity)
+func (x EntityType) Enum() *EntityType {
+	p := new(EntityType)
 	*p = x
 	return p
 }
 
-func (x ScopeEntity) String() string {
+func (x EntityType) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (ScopeEntity) Descriptor() protoreflect.EnumDescriptor {
+func (EntityType) Descriptor() protoreflect.EnumDescriptor {
 	return file_storage_report_configuration_proto_enumTypes[0].Descriptor()
 }
 
-func (ScopeEntity) Type() protoreflect.EnumType {
+func (EntityType) Type() protoreflect.EnumType {
 	return &file_storage_report_configuration_proto_enumTypes[0]
 }
 
-func (x ScopeEntity) Number() protoreflect.EnumNumber {
+func (x EntityType) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use ScopeEntity.Descriptor instead.
-func (ScopeEntity) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use EntityType.Descriptor instead.
+func (EntityType) EnumDescriptor() ([]byte, []int) {
 	return file_storage_report_configuration_proto_rawDescGZIP(), []int{0}
 }
 
-type ScopeField int32
+type EntityField int32
 
 const (
-	ScopeField_SCOPE_FIELD_UNSET      ScopeField = 0
-	ScopeField_SCOPE_FIELD_ID         ScopeField = 1
-	ScopeField_SCOPE_FIELD_NAME       ScopeField = 2
-	ScopeField_SCOPE_FIELD_LABEL      ScopeField = 3
-	ScopeField_SCOPE_FIELD_ANNOTATION ScopeField = 4
+	EntityField_FIELD_UNSET      EntityField = 0
+	EntityField_FIELD_ID         EntityField = 1
+	EntityField_FIELD_NAME       EntityField = 2
+	EntityField_FIELD_LABEL      EntityField = 3
+	EntityField_FIELD_ANNOTATION EntityField = 4
 )
 
-// Enum value maps for ScopeField.
+// Enum value maps for EntityField.
 var (
-	ScopeField_name = map[int32]string{
-		0: "SCOPE_FIELD_UNSET",
-		1: "SCOPE_FIELD_ID",
-		2: "SCOPE_FIELD_NAME",
-		3: "SCOPE_FIELD_LABEL",
-		4: "SCOPE_FIELD_ANNOTATION",
+	EntityField_name = map[int32]string{
+		0: "FIELD_UNSET",
+		1: "FIELD_ID",
+		2: "FIELD_NAME",
+		3: "FIELD_LABEL",
+		4: "FIELD_ANNOTATION",
 	}
-	ScopeField_value = map[string]int32{
-		"SCOPE_FIELD_UNSET":      0,
-		"SCOPE_FIELD_ID":         1,
-		"SCOPE_FIELD_NAME":       2,
-		"SCOPE_FIELD_LABEL":      3,
-		"SCOPE_FIELD_ANNOTATION": 4,
+	EntityField_value = map[string]int32{
+		"FIELD_UNSET":      0,
+		"FIELD_ID":         1,
+		"FIELD_NAME":       2,
+		"FIELD_LABEL":      3,
+		"FIELD_ANNOTATION": 4,
 	}
 )
 
-func (x ScopeField) Enum() *ScopeField {
-	p := new(ScopeField)
+func (x EntityField) Enum() *EntityField {
+	p := new(EntityField)
 	*p = x
 	return p
 }
 
-func (x ScopeField) String() string {
+func (x EntityField) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (ScopeField) Descriptor() protoreflect.EnumDescriptor {
+func (EntityField) Descriptor() protoreflect.EnumDescriptor {
 	return file_storage_report_configuration_proto_enumTypes[1].Descriptor()
 }
 
-func (ScopeField) Type() protoreflect.EnumType {
+func (EntityField) Type() protoreflect.EnumType {
 	return &file_storage_report_configuration_proto_enumTypes[1]
 }
 
-func (x ScopeField) Number() protoreflect.EnumNumber {
+func (x EntityField) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use ScopeField.Descriptor instead.
-func (ScopeField) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use EntityField.Descriptor instead.
+func (EntityField) EnumDescriptor() ([]byte, []int) {
 	return file_storage_report_configuration_proto_rawDescGZIP(), []int{1}
 }
 
@@ -794,7 +794,7 @@ func (x *ResourceScope) GetCollectionId() string {
 	return ""
 }
 
-func (x *ResourceScope) GetEntityScope() *EntiityScope {
+func (x *ResourceScope) GetEntityScope() *EntityScope {
 	if x != nil {
 		if x, ok := x.ScopeReference.(*ResourceScope_EntityScope); ok {
 			return x.EntityScope
@@ -812,35 +812,35 @@ type ResourceScope_CollectionId struct {
 }
 
 type ResourceScope_EntityScope struct {
-	EntityScope *EntiityScope `protobuf:"bytes,2,opt,name=entity_scope,json=entityScope,proto3,oneof"`
+	EntityScope *EntityScope `protobuf:"bytes,2,opt,name=entity_scope,json=entityScope,proto3,oneof"`
 }
 
 func (*ResourceScope_CollectionId) isResourceScope_ScopeReference() {}
 
 func (*ResourceScope_EntityScope) isResourceScope_ScopeReference() {}
 
-// EntityScope is a new scoping method using ns,deployments,clusters filter introduced in 4.11
-type EntiityScope struct {
+// EntityScope is a new scoping method using ns,deployments,clusters filters introduced in 4.11
+type EntityScope struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Rules         []*EntityScopeRule     `protobuf:"bytes,1,rep,name=rules,proto3" json:"rules,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *EntiityScope) Reset() {
-	*x = EntiityScope{}
+func (x *EntityScope) Reset() {
+	*x = EntityScope{}
 	mi := &file_storage_report_configuration_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *EntiityScope) String() string {
+func (x *EntityScope) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*EntiityScope) ProtoMessage() {}
+func (*EntityScope) ProtoMessage() {}
 
-func (x *EntiityScope) ProtoReflect() protoreflect.Message {
+func (x *EntityScope) ProtoReflect() protoreflect.Message {
 	mi := &file_storage_report_configuration_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -852,23 +852,23 @@ func (x *EntiityScope) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EntiityScope.ProtoReflect.Descriptor instead.
-func (*EntiityScope) Descriptor() ([]byte, []int) {
+// Deprecated: Use EntityScope.ProtoReflect.Descriptor instead.
+func (*EntityScope) Descriptor() ([]byte, []int) {
 	return file_storage_report_configuration_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *EntiityScope) GetRules() []*EntityScopeRule {
+func (x *EntityScope) GetRules() []*EntityScopeRule {
 	if x != nil {
 		return x.Rules
 	}
 	return nil
 }
 
-// EntityScopeRule stores filter value as entity field pair and values ot be used in the filter
+// EntityScopeRule stores the filter as an entity field pair along with a list of values
 type EntityScopeRule struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Entity        ScopeEntity            `protobuf:"varint,1,opt,name=entity,proto3,enum=storage.ScopeEntity" json:"entity,omitempty"`
-	Field         ScopeField             `protobuf:"varint,2,opt,name=field,proto3,enum=storage.ScopeField" json:"field,omitempty"`
+	Entity        EntityType             `protobuf:"varint,1,opt,name=entity,proto3,enum=storage.EntityType" json:"entity,omitempty"`
+	Field         EntityField            `protobuf:"varint,2,opt,name=field,proto3,enum=storage.EntityField" json:"field,omitempty"`
 	Values        []*RuleValue           `protobuf:"bytes,3,rep,name=values,proto3" json:"values,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -904,18 +904,18 @@ func (*EntityScopeRule) Descriptor() ([]byte, []int) {
 	return file_storage_report_configuration_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *EntityScopeRule) GetEntity() ScopeEntity {
+func (x *EntityScopeRule) GetEntity() EntityType {
 	if x != nil {
 		return x.Entity
 	}
-	return ScopeEntity_SCOPE_ENTITY_UNSET
+	return EntityType_ENTITY_TYPE_UNSET
 }
 
-func (x *EntityScopeRule) GetField() ScopeField {
+func (x *EntityScopeRule) GetField() EntityField {
 	if x != nil {
 		return x.Field
 	}
-	return ScopeField_SCOPE_FIELD_UNSET
+	return EntityField_FIELD_UNSET
 }
 
 func (x *EntityScopeRule) GetValues() []*RuleValue {
@@ -1039,32 +1039,33 @@ const file_storage_report_configuration_proto_rawDesc = "" +
 	"\bDEPLOYED\x10\x00\x12\v\n" +
 	"\aWATCHED\x10\x01B\f\n" +
 	"\n" +
-	"cves_since\"\x85\x01\n" +
+	"cves_since\"\x84\x01\n" +
 	"\rResourceScope\x12%\n" +
-	"\rcollection_id\x18\x01 \x01(\tH\x00R\fcollectionId\x12:\n" +
-	"\fentity_scope\x18\x02 \x01(\v2\x15.storage.EntiityScopeH\x00R\ventityScopeB\x11\n" +
-	"\x0fscope_reference\">\n" +
-	"\fEntiityScope\x12.\n" +
+	"\rcollection_id\x18\x01 \x01(\tH\x00R\fcollectionId\x129\n" +
+	"\fentity_scope\x18\x02 \x01(\v2\x14.storage.EntityScopeH\x00R\ventityScopeB\x11\n" +
+	"\x0fscope_reference\"=\n" +
+	"\vEntityScope\x12.\n" +
 	"\x05rules\x18\x01 \x03(\v2\x18.storage.EntityScopeRuleR\x05rules\"\x96\x01\n" +
-	"\x0fEntityScopeRule\x12,\n" +
-	"\x06entity\x18\x01 \x01(\x0e2\x14.storage.ScopeEntityR\x06entity\x12)\n" +
-	"\x05field\x18\x02 \x01(\x0e2\x13.storage.ScopeFieldR\x05field\x12*\n" +
+	"\x0fEntityScopeRule\x12+\n" +
+	"\x06entity\x18\x01 \x01(\x0e2\x13.storage.EntityTypeR\x06entity\x12*\n" +
+	"\x05field\x18\x02 \x01(\x0e2\x14.storage.EntityFieldR\x05field\x12*\n" +
 	"\x06values\x18\x03 \x03(\v2\x12.storage.RuleValueR\x06values\"\x8b\x01\n" +
 	"#ViewBasedVulnerabilityReportFilters\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12N\n" +
-	"\x12access_scope_rules\x18\x02 \x03(\v2 .storage.SimpleAccessScope.RulesR\x10accessScopeRules*x\n" +
-	"\vScopeEntity\x12\x16\n" +
-	"\x12SCOPE_ENTITY_UNSET\x10\x00\x12\x1b\n" +
-	"\x17SCOPE_ENTITY_DEPLOYMENT\x10\x01\x12\x1a\n" +
-	"\x16SCOPE_ENTITY_NAMESPACE\x10\x02\x12\x18\n" +
-	"\x14SCOPE_ENTITY_CLUSTER\x10\x03*\x80\x01\n" +
+	"\x12access_scope_rules\x18\x02 \x03(\v2 .storage.SimpleAccessScope.RulesR\x10accessScopeRules*s\n" +
 	"\n" +
-	"ScopeField\x12\x15\n" +
-	"\x11SCOPE_FIELD_UNSET\x10\x00\x12\x12\n" +
-	"\x0eSCOPE_FIELD_ID\x10\x01\x12\x14\n" +
-	"\x10SCOPE_FIELD_NAME\x10\x02\x12\x15\n" +
-	"\x11SCOPE_FIELD_LABEL\x10\x03\x12\x1a\n" +
-	"\x16SCOPE_FIELD_ANNOTATION\x10\x04B.\n" +
+	"EntityType\x12\x15\n" +
+	"\x11ENTITY_TYPE_UNSET\x10\x00\x12\x1a\n" +
+	"\x16ENTITY_TYPE_DEPLOYMENT\x10\x01\x12\x19\n" +
+	"\x15ENTITY_TYPE_NAMESPACE\x10\x02\x12\x17\n" +
+	"\x13ENTITY_TYPE_CLUSTER\x10\x03*c\n" +
+	"\vEntityField\x12\x0f\n" +
+	"\vFIELD_UNSET\x10\x00\x12\f\n" +
+	"\bFIELD_ID\x10\x01\x12\x0e\n" +
+	"\n" +
+	"FIELD_NAME\x10\x02\x12\x0f\n" +
+	"\vFIELD_LABEL\x10\x03\x12\x14\n" +
+	"\x10FIELD_ANNOTATION\x10\x04B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
@@ -1082,8 +1083,8 @@ func file_storage_report_configuration_proto_rawDescGZIP() []byte {
 var file_storage_report_configuration_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
 var file_storage_report_configuration_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_storage_report_configuration_proto_goTypes = []any{
-	(ScopeEntity)(0),                            // 0: storage.ScopeEntity
-	(ScopeField)(0),                             // 1: storage.ScopeField
+	(EntityType)(0),                             // 0: storage.EntityType
+	(EntityField)(0),                            // 1: storage.EntityField
 	(ReportConfiguration_ReportType)(0),         // 2: storage.ReportConfiguration.ReportType
 	(ReportLastRunStatus_RunStatus)(0),          // 3: storage.ReportLastRunStatus.RunStatus
 	(VulnerabilityReportFilters_Fixability)(0),  // 4: storage.VulnerabilityReportFilters.Fixability
@@ -1092,7 +1093,7 @@ var file_storage_report_configuration_proto_goTypes = []any{
 	(*ReportLastRunStatus)(nil),                 // 7: storage.ReportLastRunStatus
 	(*VulnerabilityReportFilters)(nil),          // 8: storage.VulnerabilityReportFilters
 	(*ResourceScope)(nil),                       // 9: storage.ResourceScope
-	(*EntiityScope)(nil),                        // 10: storage.EntiityScope
+	(*EntityScope)(nil),                         // 10: storage.EntityScope
 	(*EntityScopeRule)(nil),                     // 11: storage.EntityScopeRule
 	(*ViewBasedVulnerabilityReportFilters)(nil), // 12: storage.ViewBasedVulnerabilityReportFilters
 	(*EmailNotifierConfiguration)(nil),          // 13: storage.EmailNotifierConfiguration
@@ -1121,10 +1122,10 @@ var file_storage_report_configuration_proto_depIdxs = []int32{
 	5,  // 13: storage.VulnerabilityReportFilters.image_types:type_name -> storage.VulnerabilityReportFilters.ImageType
 	15, // 14: storage.VulnerabilityReportFilters.since_start_date:type_name -> google.protobuf.Timestamp
 	19, // 15: storage.VulnerabilityReportFilters.access_scope_rules:type_name -> storage.SimpleAccessScope.Rules
-	10, // 16: storage.ResourceScope.entity_scope:type_name -> storage.EntiityScope
-	11, // 17: storage.EntiityScope.rules:type_name -> storage.EntityScopeRule
-	0,  // 18: storage.EntityScopeRule.entity:type_name -> storage.ScopeEntity
-	1,  // 19: storage.EntityScopeRule.field:type_name -> storage.ScopeField
+	10, // 16: storage.ResourceScope.entity_scope:type_name -> storage.EntityScope
+	11, // 17: storage.EntityScope.rules:type_name -> storage.EntityScopeRule
+	0,  // 18: storage.EntityScopeRule.entity:type_name -> storage.EntityType
+	1,  // 19: storage.EntityScopeRule.field:type_name -> storage.EntityField
 	20, // 20: storage.EntityScopeRule.values:type_name -> storage.RuleValue
 	19, // 21: storage.ViewBasedVulnerabilityReportFilters.access_scope_rules:type_name -> storage.SimpleAccessScope.Rules
 	22, // [22:22] is the sub-list for method output_type
