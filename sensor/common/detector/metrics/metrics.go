@@ -404,6 +404,9 @@ func RemoveScanAndSetCall(reason string) {
 
 var scannerConfigMu sync.Mutex
 
+// scannerMode returns the active scanner version label based on whether local
+// scanning is enabled and whether Central advertises Scanner V4 support.
+// Returns ModeNone, ModeV4, or ModeV2.
 func scannerMode(localEnabled bool) string {
 	if !localEnabled {
 		return ModeNone
@@ -414,6 +417,9 @@ func scannerMode(localEnabled bool) string {
 	return ModeV2
 }
 
+// isDelegatedEffective returns true when delegated scanning is both locally
+// enabled (local scanner present and ROX_DELEGATED_SCANNING_DISABLED is not
+// set) and Central's config has an active delegation mode (not NONE).
 func isDelegatedEffective(localEnabled bool, config *central.DelegatedRegistryConfig) bool {
 	envEnabled := localEnabled && !env.DelegatedScanningDisabled.BooleanSetting()
 	if !envEnabled {
@@ -422,6 +428,11 @@ func isDelegatedEffective(localEnabled bool, config *central.DelegatedRegistryCo
 	return config.GetEnabledFor() != central.DelegatedRegistryConfig_NONE
 }
 
+// nonClusterLocalIndexer determines which indexer handles images that do not
+// originate from the cluster's own local registry. When delegated scanning is
+// off, Central's scanner is used. When enabled for ALL registries, the local
+// scanner handles everything. When enabled for SPECIFIC registries, a mixed
+// mode label is returned (some images go local, some go to Central).
 func nonClusterLocalIndexer(localEnabled bool, config *central.DelegatedRegistryConfig) string {
 	if !isDelegatedEffective(localEnabled, config) {
 		return IndexerCentralScanner
