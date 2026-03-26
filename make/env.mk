@@ -47,12 +47,15 @@ endif
 TAG := # make sure tag is never injectable as an env var
 RELEASE_GOTAGS := release
 
-# Use a release go -tag when CI is targeting a release tag (not development tags with .x)
+# GOTAGS is set by the workflow (via define-job-matrix output) for CI builds.
+# Fallback logic for local builds or other CI systems:
+ifndef GOTAGS
 ifdef CI
-ifneq ($(BUILD_TAG),)
-ifeq ($(findstring .x,$(BUILD_TAG)),)
-# Preserve existing GOTAGS and append release tags
-GOTAGS := $(if $(GOTAGS),$(GOTAGS)$(comma))$(RELEASE_GOTAGS)
+ifdef GITHUB_REF
+ifeq ($(findstring refs/tags/,$(GITHUB_REF)),refs/tags/)
+# Building from a git tag (release or nightly) - use release GOTAGS
+GOTAGS := $(RELEASE_GOTAGS)
+endif
 endif
 endif
 endif
