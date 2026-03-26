@@ -518,6 +518,10 @@ func main() {
 	go s.Start()
 
 	durationExpired := false
+	if workloadManager != nil {
+		startOfflineModeCycle(ctx, workloadManager.OfflineModeInterval(), s)
+	}
+
 	if spyCentral != nil {
 		select {
 		case <-spyCentral.ConnectionStarted.Done():
@@ -648,4 +652,23 @@ func setupCentralWithFakeConnection(localConfig localSensorConfig) (centralclien
 	fakeConnectionFactory := centralDebug.MakeFakeConnectionFactory(conn)
 
 	return fakeConnectionFactory, centralclient.EmptyCertLoader(), spyCentral
+}
+
+func startOfflineModeCycle(ctx context.Context, interval time.Duration, sensor *commonSensor.Sensor) {
+	if interval <= 0 || sensor == nil {
+		return
+	}
+	log.Printf("Offline mode cycle enabled every %s", interval)
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				sensor.TriggerOfflineMode("workload offlineModeInterval")
+			}
+		}
+	}()
 }
