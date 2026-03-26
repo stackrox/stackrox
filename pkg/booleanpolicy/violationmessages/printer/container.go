@@ -100,7 +100,15 @@ func imageDetailsPrinter(fieldMap map[string][]string) ([]string, error) {
 	r.ContainerName = maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
 	var imageDetails []string
 	if imageTag, err := getSingleValueFromFieldMap(search.ImageTag.String(), fieldMap); err == nil {
-		imageDetails = append(imageDetails, fmt.Sprintf("tag '%s'", imageTag))
+		if imageTag == "" {
+			imageDetails = append(imageDetails, "an empty tag,")
+			imageDigest := maybeGetSingleValueFromFieldMap(search.ImageSHA.String(), fieldMap)
+			if imageDigest != "" {
+				imageDetails = append(imageDetails, fmt.Sprintf("digest '%s'", imageDigest))
+			}
+		} else {
+			imageDetails = append(imageDetails, fmt.Sprintf("tag '%s'", imageTag))
+		}
 	}
 	if imageRemote, err := getSingleValueFromFieldMap(search.ImageRemote.String(), fieldMap); err == nil {
 		imageDetails = append(imageDetails, fmt.Sprintf("remote '%s'", imageRemote))
