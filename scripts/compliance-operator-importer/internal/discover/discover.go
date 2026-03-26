@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/stackrox/co-acs-importer/internal/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -113,38 +114,58 @@ func DiscoverClusterID(
 	k8s k8sResourceReader,
 	acs models.ACSClient,
 ) (string, error) {
+	var errs []error
+
 	// IMP-MAP-016: admission-control ConfigMap.
-	if clusterID, err := k8s.getAdmissionControlClusterID(ctx); err == nil {
+	clusterID, err := k8s.getAdmissionControlClusterID(ctx)
+	if err == nil {
 		return clusterID, nil
 	}
+	errs = append(errs, fmt.Errorf("admission-control ConfigMap: %w", err))
 
 	// IMP-MAP-017: OpenShift ClusterVersion.
-	if ocpClusterID, err := k8s.getOpenShiftClusterID(ctx); err == nil {
-		clusters, err := acs.ListClusters(ctx)
-		if err != nil {
-			return "", fmt.Errorf("list ACS clusters for OpenShift ID match: %w", err)
+	ocpClusterID, err := k8s.getOpenShiftClusterID(ctx)
+	if err == nil {
+		clusters, listErr := acs.ListClusters(ctx)
+		if listErr != nil {
+			return "", fmt.Errorf("list ACS clusters for OpenShift ID match: %w", listErr)
 		}
 		for _, c := range clusters {
 			if c.ProviderClusterID == ocpClusterID {
 				return c.ID, nil
 			}
 		}
-		return "", fmt.Errorf("OpenShift cluster ID %q not found in ACS clusters", ocpClusterID)
+		errs = append(errs, fmt.Errorf("OpenShift cluster ID %q not found in ACS clusters", ocpClusterID))
+	} else {
+		errs = append(errs, fmt.Errorf("OpenShift ClusterVersion: %w", err))
 	}
 
 	// IMP-MAP-018: helm-effective-cluster-name secret.
-	if clusterName, err := k8s.getHelmSecretClusterName(ctx); err == nil {
-		clusters, err := acs.ListClusters(ctx)
-		if err != nil {
-			return "", fmt.Errorf("list ACS clusters for helm cluster name match: %w", err)
+	clusterName, err := k8s.getHelmSecretClusterName(ctx)
+	if err == nil {
+		clusters, listErr := acs.ListClusters(ctx)
+		if listErr != nil {
+			return "", fmt.Errorf("list ACS clusters for helm cluster name match: %w", listErr)
 		}
 		for _, c := range clusters {
 			if c.Name == clusterName {
 				return c.ID, nil
 			}
 		}
-		return "", fmt.Errorf("helm cluster name %q not found in ACS clusters", clusterName)
+		errs = append(errs, fmt.Errorf("helm cluster name %q not found in ACS clusters", clusterName))
+	} else {
+		errs = append(errs, fmt.Errorf("helm-effective-cluster-name Secret: %w", err))
 	}
 
-	return "", errors.New("all discovery methods failed to resolve ACS cluster ID")
+	return "", fmt.Errorf("all discovery methods failed to resolve ACS cluster ID:\n  - %s",
+		joinErrors(errs))
+}
+
+// joinErrors formats a slice of errors as a newline+bullet list.
+func joinErrors(errs []error) string {
+	parts := make([]string, len(errs))
+	for i, e := range errs {
+		parts[i] = e.Error()
+	}
+	return strings.Join(parts, "\n  - ")
 }

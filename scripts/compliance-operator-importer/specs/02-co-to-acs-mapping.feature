@@ -72,6 +72,15 @@ Feature: Map Compliance Operator scheduled scan resources to ACS scan configurat
     When the importer resolves the ACS cluster ID for "ctx-c"
     Then the resolved ACS cluster ID MUST be "acs-uuid-c"              # IMP-MAP-018
 
+  @mapping @clusters
+  Scenario: All discovery methods fail with detailed per-method errors
+    Given kubecontext "ctx-d" points to a cluster
+    And ConfigMap "admission-control" is not readable (returns "Unauthorized")
+    And ClusterVersion is not available (returns "Unauthorized")
+    And Secret "helm-effective-cluster-name" is not readable (returns "Unauthorized")
+    When the importer resolves the ACS cluster ID for "ctx-d"
+    Then the error MUST list each method's failure reason                  # IMP-MAP-016a
+
   @mapping @clusters @multicluster
   Scenario: Merge SSBs with same name across clusters
     Given kubecontext "ctx-a" has ScanSettingBinding "cis-weekly" with profiles ["ocp4-cis"] and schedule "0 2 * * 0"
