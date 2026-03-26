@@ -32,7 +32,9 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/securedcluster"
 	"github.com/stackrox/rox/sensor/kubernetes/helm"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 )
@@ -213,9 +215,20 @@ func centralHandshake(ctx context.Context, k8sClient kubernetes.Interface, centr
 
 	hdr := metautils.MD(rawHdr)
 	if hdr.Get(centralsensor.SensorHelloMetadataKey) != "true" {
-		log.Error("Central did not send the SensorHello metadata key after connection attempt using a cluster registration secret.")
-		log.Error("Possible reason: central does not support CRS-based cluster registration.")
-		return nil, errors.New("central headers are missing the SensorHello metadata key ")
+		// Probe for the actual server-side error via Recv(). When central's auth
+		// interceptor rejects the connection (e.g., due to revoked credentials),
+		// the Communicate handler never runs, so the SensorHello metadata key is
+		// never echoed back.
+		if _, recvErr := stream.Recv(); recvErr != nil {
+			if st, ok := status.FromError(recvErr); ok && st.Code() == codes.Unauthenticated {
+				return nil, errors.Errorf("central rejected the connection, possibly because the cluster registration secret"+
+					" has been revoked in central. Check central logs for details. Server message: %s", st.Message())
+			}
+			return nil, errors.Wrap(recvErr, "central rejected the connection")
+		}
+		return nil, errors.New("central did not echo the SensorHello metadata key." +
+			" Possible reasons: central does not support CRS-based cluster registration," +
+			" or a networking/TLS issue is preventing proper communication")
 	}
 
 	err = stream.Send(&central.MsgFromSensor{Msg: &central.MsgFromSensor_Hello{Hello: sensorHello}})

@@ -120,6 +120,59 @@ func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
 	}
 }
 
+func (c *centralCommunicationSuite) Test_HelloMissingSensorHelloKey() {
+	testCases := map[string]struct {
+		recvMsg *central.MsgToSensor
+		recvErr error
+		wantMsg string
+	}{
+		"Unauthenticated error suggests revoked credentials": {
+			recvErr: status.Error(codes.Unauthenticated, "credentials not found: client certificate validation failed: init bundle is revoked"),
+			wantMsg: "credentials have been revoked",
+		},
+		"Other gRPC error is surfaced": {
+			recvErr: status.Error(codes.Internal, "could not fetch cluster for sensor: cluster does not exist"),
+			wantMsg: "central rejected the connection",
+		},
+		"No error from Recv falls back to networking suggestion": {
+			recvMsg: &central.MsgToSensor{},
+			recvErr: nil,
+			wantMsg: "likely due to a networking or TLS configuration issue",
+		},
+	}
+
+	for name, tc := range testCases {
+		c.Run(name, func() {
+			_, closeFn := c.createCentralCommunication(false)
+			defer closeFn()
+
+			// Return empty headers (no SensorHello key)
+			c.mockService.client.EXPECT().Header().Return(metadata.MD{}, nil)
+			// Probe Recv returns the test error
+			c.mockService.client.EXPECT().Recv().Return(tc.recvMsg, tc.recvErr)
+
+			comm := c.comm.(*centralCommunicationImpl)
+			err := comm.hello(c.mockService.client, &central.SensorHello{})
+
+			c.Require().Error(err)
+			c.Assert().Contains(err.Error(), tc.wantMsg)
+		})
+	}
+}
+
+func (c *centralCommunicationSuite) Test_CommunicateWithAutoSensedEncodingAuthError() {
+	_, closeFn := c.createCentralCommunication(false)
+	defer closeFn()
+
+	authErr := status.Error(codes.Unauthenticated, "credentials not found: init bundle is revoked")
+	c.mockService.client.EXPECT().Header().Return(nil, authErr)
+
+	_, err := CommunicateWithAutoSensedEncoding(context.Background(), c.mockService)
+
+	c.Require().Error(err)
+	c.Assert().Contains(err.Error(), "credentials may be revoked")
+}
+
 func (c *centralCommunicationSuite) Test_StopCentralCommunication() {
 	goleak.AssertNoGoroutineLeaks(c.T())
 
