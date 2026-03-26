@@ -249,7 +249,7 @@ func (s *centralCommunicationImpl) hello(stream central.SensorService_Communicat
 	centralid.Set(centralHello.GetCentralId())
 	centralCaps := centralHello.GetCapabilities()
 	centralcaps.Set(sliceutils.FromStringSlice[centralsensor.CentralCapability](centralCaps...))
-	detectormetrics.UpdateScannerConfigurationInfo()
+	detectormetrics.UpdateScannerConfigurationInfo(nil)
 
 	if centralcaps.Has(centralsensor.CentralProxyPathFiltering) {
 		allowedpaths.Set(centralHello.GetAllowedProxyPaths())

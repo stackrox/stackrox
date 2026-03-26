@@ -6,12 +6,27 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+)
+
+const (
+	ForImagesClusterLocal    = "cluster_local"
+	ForImagesNonClusterLocal = "non_cluster_local"
+
+	IndexerLocalScanner   = "local_scanner"
+	IndexerCentralScanner = "central_scanner"
+	IndexerMixed          = "local_scanner_or_central_scanner"
+
+	ModeNone = "none"
+	ModeV2   = "v2"
+	ModeV4   = "v4"
 )
 
 // AckOrigin tells what entity issued the Ack message
@@ -242,39 +257,55 @@ var (
 		Help:      "A counter that tracks the operations in scan and set",
 	}, []string{"Operation", "Reason"})
 
-	// Intended scanner configuration for Sensor. Labels indicate whether local image scanning is enabled, which local scanner mode is selected, and whether delegated scanning is enabled.
+	// Effective scanner configuration for Sensor, updated on Central handshake
+	// and when delegated registry config changes.
 	/*
 		Labels:
 		- `local`: `true|false` (whether local image scanning is enabled in Sensor)
-		- `mode`: `none|v2|v4` (Sensor local scanner mode)
-		- `delegated`: `true|false` (delegated scanning enabled status)
+		- `mode`: `none|v2|v4` (configured local scanner mode based on feature
+		   flags and Central capabilities; does not verify scanner pod availability)
+		- `delegated`: `true|false` (delegated scanning effectively active:
+		   env vars enable it AND Central config has EnabledFor != NONE)
 	*/
-
 	scannerConfigurationInfo = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "scanner_configuration_info",
-		Help:      "Intended scanner configuration for Sensor. Labels indicate whether local image scanning is enabled, which local scanner mode is selected, and whether delegated scanning is enabled.",
+		Help: "Effective scanner configuration for Sensor. " +
+			"`local` indicates whether local image scanning is enabled. " +
+			"`mode` is the configured local scanner type (none/v2/v4) based on feature flags and Central capabilities " +
+			"(does not verify scanner pod availability). " +
+			"`delegated` is true only when both Sensor env vars enable delegated scanning AND " +
+			"Central has sent a DelegatedRegistryConfig with EnabledFor != NONE.",
 	}, []string{"local", "mode", "delegated"})
 
-	// Intended image indexing route in Sensor by image locality.
+	// Effective image indexing route in Sensor, reflecting delegated scanning
+	// config from Central.
 	/*
 		Labels:
 		- `for_images`: `cluster_local|non_cluster_local`
-		- `indexer`: `local_scanner|central_scanner`
+		- `indexer`: `local_scanner|central_scanner|local_scanner_or_central_scanner`
 
 		Meaning:
-		- `cluster_local` means the image registry is recognized by Sensor as local to
-		  the secured cluster.
-		- `non_cluster_local` means all other images.
-		- This metric describes intended indexing route in Sensor for each class.
+		- `cluster_local`: image registry is recognized as local to the secured cluster
+		  (e.g. OCP internal registry). Uses local scanner when local scanning is enabled.
+		- `non_cluster_local`: all other images. Indexer depends on delegated scanning config:
+		  - `central_scanner` when delegated scanning is inactive
+		  - `local_scanner` when delegated for ALL registries
+		  - `local_scanner_or_central_scanner` when delegated for SPECIFIC registries
 		- Vulnerability matching is always performed in Central.
 	*/
 	imageIndexingRouteInfo = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "image_indexing_route_info",
-		Help:      `Intended image indexing route in Sensor by image locality. "cluster_local" means the image registry is recognized by Sensor as local to the secured cluster, so indexing uses local scanner when local image scanning is enabled. "non_cluster_local" means all other images and indexing uses central scanner path. Vulnerability matching is always performed in Central.`,
+		Help: `Effective image indexing route in Sensor. ` +
+			`"cluster_local" images use local scanner when local scanning is enabled. ` +
+			`"non_cluster_local" indexer depends on the DelegatedRegistryConfig from Central: ` +
+			`"central_scanner" when delegated scanning is inactive, ` +
+			`"local_scanner" when delegated for ALL registries, ` +
+			`"local_scanner_or_central_scanner" when delegated for SPECIFIC registries. ` +
+			`Vulnerability matching is always performed in Central.`,
 	}, []string{"for_images", "indexer"})
 )
 
@@ -371,41 +402,71 @@ func RemoveScanAndSetCall(reason string) {
 	}).Inc()
 }
 
+var scannerConfigMu sync.Mutex
+
 func scannerMode(localEnabled bool) string {
 	if !localEnabled {
-		return "none"
+		return ModeNone
 	}
 	if features.ScannerV4.Enabled() && centralcaps.Has(centralsensor.ScannerV4Supported) {
-		return "v4"
+		return ModeV4
 	}
-	return "v2"
+	return ModeV2
 }
 
-// UpdateScannerConfigurationInfo updates static info metrics that describe Sensor scanner topology.
-func UpdateScannerConfigurationInfo() {
+func isDelegatedEffective(localEnabled bool, config *central.DelegatedRegistryConfig) bool {
+	envEnabled := localEnabled && !env.DelegatedScanningDisabled.BooleanSetting()
+	if !envEnabled {
+		return false
+	}
+	return config.GetEnabledFor() != central.DelegatedRegistryConfig_NONE
+}
+
+func nonClusterLocalIndexer(localEnabled bool, config *central.DelegatedRegistryConfig) string {
+	if !isDelegatedEffective(localEnabled, config) {
+		return IndexerCentralScanner
+	}
+	switch config.GetEnabledFor() {
+	case central.DelegatedRegistryConfig_ALL:
+		return IndexerLocalScanner
+	case central.DelegatedRegistryConfig_SPECIFIC:
+		return IndexerMixed
+	default:
+		return IndexerCentralScanner
+	}
+}
+
+// UpdateScannerConfigurationInfo updates info metrics that describe Sensor
+// scanner topology. It is safe for concurrent use.
+//
+// config is the current DelegatedRegistryConfig from Central (may be nil
+// when no config has been received yet, e.g. right after the hello handshake).
+func UpdateScannerConfigurationInfo(config *central.DelegatedRegistryConfig) {
+	scannerConfigMu.Lock()
+	defer scannerConfigMu.Unlock()
+
 	localEnabled := env.LocalImageScanningEnabled.BooleanSetting()
-	delegatedEnabled := localEnabled && !env.DelegatedScanningDisabled.BooleanSetting()
 
 	scannerConfigurationInfo.Reset()
 	scannerConfigurationInfo.With(prometheus.Labels{
 		"local":     strconv.FormatBool(localEnabled),
 		"mode":      scannerMode(localEnabled),
-		"delegated": strconv.FormatBool(delegatedEnabled),
+		"delegated": strconv.FormatBool(isDelegatedEffective(localEnabled, config)),
 	}).Set(1)
 
-	clusterLocalIndexer := "central_scanner"
+	clusterLocalIndexer := IndexerCentralScanner
 	if localEnabled {
-		clusterLocalIndexer = "local_scanner"
+		clusterLocalIndexer = IndexerLocalScanner
 	}
 
 	imageIndexingRouteInfo.Reset()
 	imageIndexingRouteInfo.With(prometheus.Labels{
-		"for_images": "cluster_local",
+		"for_images": ForImagesClusterLocal,
 		"indexer":    clusterLocalIndexer,
 	}).Set(1)
 	imageIndexingRouteInfo.With(prometheus.Labels{
-		"for_images": "non_cluster_local",
-		"indexer":    "central_scanner",
+		"for_images": ForImagesNonClusterLocal,
+		"indexer":    nonClusterLocalIndexer(localEnabled, config),
 	}).Set(1)
 }
 
