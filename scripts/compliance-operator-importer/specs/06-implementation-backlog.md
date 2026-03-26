@@ -276,6 +276,27 @@ opt-in `--context` filter. ACS cluster ID is always auto-discovered.
 
 - "Implement Slice I: drop --kubeconfig, --kubecontext, --cluster. Default to all contexts from merged kubeconfig. Add --context (repeatable) as opt-in filter. Always auto-discover ACS cluster ID. Simplify BuildClusterSources and main.go accordingly."
 
+## Slice J - Container image packaging
+
+### J Goal
+
+Package the importer as a minimal, multi-arch container image for distribution.
+
+### J Requirement IDs
+
+- `IMP-IMG-001..005`
+
+### J Implementation targets
+
+- `scripts/compliance-operator-importer/Dockerfile`
+- `scripts/compliance-operator-importer/Makefile` (image, image-multiarch, image-push targets)
+- `scripts/compliance-operator-importer/.dockerignore`
+
+### J Acceptance signal
+
+- `make image` builds and `docker run --rm $IMAGE --help` prints usage.
+- `make image-push` builds per-arch images and creates manifest list.
+
 ## Cross-slice conventions
 
 - Requirement IDs must appear in test names or comments.
@@ -296,7 +317,8 @@ opt-in `--context` filter. ACS cluster ID is always auto-discovered.
 6. Slice F (overwrite-existing / PUT support) -- DONE
 7. Slice G (acceptance automation) -- DONE
 8. Slice H (UX conventions) -- DONE
-9. Slice I (simplify cluster access model)
+9. Slice I (simplify cluster access model) -- DONE
+10. Slice J (container image packaging)
 
 Slices E and F are independent and can be implemented in parallel.
 One agent per slice is ideal; if sequential, complete one slice fully before next.
