@@ -2,12 +2,14 @@ package cofetch
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/stackrox/co-acs-importer/internal/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -201,6 +203,26 @@ func parseScanSetting(obj map[string]interface{}) (*ScanSetting, error) {
 		Name:      name,
 		Schedule:  schedule,
 	}, nil
+}
+
+// PatchSSBSettingsRef patches the settingsRef.name of a ScanSettingBinding.
+func (c *k8sClient) PatchSSBSettingsRef(ctx context.Context, namespace, ssbName, newSettingsRefName string) error {
+	patch := map[string]interface{}{
+		"settingsRef": map[string]interface{}{
+			"name": newSettingsRefName,
+		},
+	}
+	patchData, err := json.Marshal(patch)
+	if err != nil {
+		return fmt.Errorf("marshal patch: %w", err)
+	}
+	_, err = c.dynamic.Resource(scanSettingBindingGVR).Namespace(namespace).Patch(
+		ctx, ssbName, types.MergePatchType, patchData, metav1.PatchOptions{},
+	)
+	if err != nil {
+		return fmt.Errorf("patch SSB %q settingsRef in namespace %q: %w", ssbName, namespace, err)
+	}
+	return nil
 }
 
 // stringField safely extracts a string value from an unstructured map.

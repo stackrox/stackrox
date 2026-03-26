@@ -45,10 +45,11 @@ type ScanSetting struct {
 }
 
 // COClient abstracts Compliance Operator resource discovery.
-// All methods are context-aware and must not mutate cluster state.
 type COClient interface {
 	// ListScanSettingBindings returns all ScanSettingBindings in the configured namespace(s).
 	ListScanSettingBindings(ctx context.Context) ([]ScanSettingBinding, error)
 	// GetScanSetting fetches a named ScanSetting from the given namespace.
 	GetScanSetting(ctx context.Context, namespace, name string) (*ScanSetting, error)
+	// PatchSSBSettingsRef patches the settingsRef.name of a ScanSettingBinding.
+	PatchSSBSettingsRef(ctx context.Context, namespace, ssbName, newSettingsRefName string) error
 }

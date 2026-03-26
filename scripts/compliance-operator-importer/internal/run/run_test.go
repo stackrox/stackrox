@@ -85,6 +85,10 @@ func (m *mockCOClient) GetScanSetting(_ context.Context, _, _ string) (*cofetch.
 	return m.scanSetting, nil
 }
 
+func (m *mockCOClient) PatchSSBSettingsRef(_ context.Context, _, _, _ string) error {
+	return nil
+}
+
 // Compile-time check: mockCOClient satisfies cofetch.COClient.
 var _ cofetch.COClient = (*mockCOClient)(nil)
 
@@ -487,6 +491,10 @@ func (s *selectiveCOClientByOrder) GetScanSetting(ctx context.Context, namespace
 		return nil, s.failErr
 	}
 	return s.base.GetScanSetting(ctx, namespace, name)
+}
+
+func (s *selectiveCOClientByOrder) PatchSSBSettingsRef(_ context.Context, _, _, _ string) error {
+	return nil
 }
 
 // ---------------------------------------------------------------------------

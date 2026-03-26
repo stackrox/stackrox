@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/stackrox/co-acs-importer/internal/adopt"
 	"github.com/stackrox/co-acs-importer/internal/cofetch"
 	"github.com/stackrox/co-acs-importer/internal/mapping"
 	"github.com/stackrox/co-acs-importer/internal/models"
@@ -104,8 +105,23 @@ func (r *Runner) Run(ctx context.Context) int {
 
 	// Step 3: process each binding independently.
 	r.status.Stage("Reconcile", "applying scan configurations to ACS")
+	var adoptRequests []adopt.Request
 	for _, binding := range bindings {
-		r.processBinding(ctx, binding, existingNames, rec, collector, builder)
+		action := r.processBinding(ctx, binding, existingNames, rec, collector, builder)
+		if action == "create" && !r.cfg.DryRun {
+			adoptRequests = append(adoptRequests, adopt.Request{
+				SSBName:       binding.Name,
+				SSBNamespace:  binding.Namespace,
+				OldSettingRef: binding.ScanSettingName,
+				ClusterLabel:  "default",
+				COClient:      r.coClient,
+			})
+		}
+	}
+
+	// Step 3b: adopt SSBs whose scan configs were just created.
+	if len(adoptRequests) > 0 {
+		r.runAdoption(ctx, adoptRequests)
 	}
 
 	// Step 4: build the final report.
@@ -135,6 +151,7 @@ func (r *Runner) Run(ctx context.Context) int {
 // processBinding handles a single ScanSettingBinding: fetches its ScanSetting,
 // maps it to an ACS payload, and calls the reconciler. All failures are recorded
 // as problems and do not abort processing of remaining bindings.
+// Returns the action type ("create", "update", "skip", "fail", or "" on early return).
 func (r *Runner) processBinding(
 	ctx context.Context,
 	binding cofetch.ScanSettingBinding,
@@ -142,7 +159,7 @@ func (r *Runner) processBinding(
 	rec *reconcile.Reconciler,
 	collector *problems.Collector,
 	builder *report.Builder,
-) {
+) string {
 	// Derive a stable resource reference for problem entries.
 	resourceRef := fmt.Sprintf("%s/%s", binding.Namespace, binding.Name)
 
@@ -171,7 +188,7 @@ func (r *Runner) processBinding(
 			Reason: "ScanSetting not found",
 			Error:  err.Error(),
 		})
-		return
+		return ""
 	}
 
 	// Map the CO resources to an ACS create payload.
@@ -185,7 +202,7 @@ func (r *Runner) processBinding(
 			Reason: "mapping error",
 			Error:  result.Problem.Description,
 		})
-		return
+		return ""
 	}
 
 	// Reconcile: create, update, or skip.
@@ -199,7 +216,11 @@ func (r *Runner) processBinding(
 	case "skip":
 		r.status.Detailf("%s → skipped (already exists)", binding.Name)
 	case "fail":
-		r.status.Failf("%s → %s", binding.Name, action.Reason)
+		if action.Err != nil {
+			r.status.Failf("%s → %s", binding.Name, action.Err)
+		} else {
+			r.status.Failf("%s → %s", binding.Name, action.Reason)
+		}
 	}
 
 	item := models.ReportItem{
@@ -216,6 +237,26 @@ func (r *Runner) processBinding(
 
 	if action.Problem != nil {
 		collector.Add(*action.Problem)
+	}
+	return action.ActionType
+}
+
+// runAdoption runs the SSB adoption step for all requests, logging results.
+func (r *Runner) runAdoption(ctx context.Context, requests []adopt.Request) {
+	r.status.Stage("Adopt", "patching SSB settingsRef to ACS-managed ScanSettings")
+	adopter := adopt.New()
+	results := adopter.Adopt(ctx, requests)
+	for _, res := range results {
+		switch {
+		case res.Adopted:
+			r.status.OKf("%s", res.Message)
+		case res.Skipped:
+			r.status.Detailf("%s", res.Message)
+		case res.TimedOut:
+			r.status.Warnf("%s", res.Message)
+		case res.Err != nil:
+			r.status.Warnf("%s", res.Message)
+		}
 	}
 }
 
