@@ -9,8 +9,8 @@ import {
 import { Field } from 'formik';
 
 type RenamePolicySectionProps = {
-    changeRadio: (handler, name, value) => () => void;
-    changeText: (handler, name) => (_, value) => void;
+    changeRadio: (handler, name: string, value: string) => () => void;
+    changeText: (handler, name: string) => (_, value) => void;
 };
 
 const RenamePolicySection = ({ changeRadio, changeText }: RenamePolicySectionProps) => {
