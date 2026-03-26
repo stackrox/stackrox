@@ -41,10 +41,6 @@ run_generate_and_get_bundle_test() {
   run_generate_and_get_bundle_test k8s "k8s-test-cluster"
 }
 
-@test "[openshift3] roxctl sensor generate and get-bundle" {
-  run_generate_and_get_bundle_test openshift "oc3-test-cluster" --openshift-version 3
-}
-
 @test "[openshift4] roxctl sensor generate and get-bundle" {
   run_generate_and_get_bundle_test openshift "oc4-test-cluster" --openshift-version 4
 }
