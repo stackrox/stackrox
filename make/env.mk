@@ -47,8 +47,11 @@ endif
 TAG := # make sure tag is never injectable as an env var
 RELEASE_GOTAGS := release
 
-# GOTAGS is set by the workflow (via define-job-matrix output) for CI builds.
-# Fallback logic for local builds or other CI systems:
+# GOTAGS is set by:
+#   - GitHub Actions workflow (via define-job-matrix output) for CI builds
+#   - Konflux builds (via ENV in konflux.Dockerfile files)
+# The ifndef guard prevents duplication when GOTAGS is already set externally.
+# Fallback logic for local builds or other CI systems without GOTAGS:
 ifndef GOTAGS
 ifdef CI
 ifdef GITHUB_REF
