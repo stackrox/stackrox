@@ -133,7 +133,7 @@ spec:
 					},
 				},
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 	}
 
