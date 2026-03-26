@@ -13,6 +13,9 @@ export type ListDeployment = {
     namespace: string;
     created: string; // ISO 8601 date string
     priority: string; // int64
+    // tombstoneDeletedAt is set when the deployment has been soft-deleted.
+    // A non-empty value indicates a tombstoned (deleted) deployment.
+    tombstoneDeletedAt?: string; // ISO 8601 date string
 };
 
 export type Deployment = {

@@ -1,4 +1,4 @@
-import { Pagination, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
+import { Label, Pagination, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
@@ -27,6 +27,7 @@ type RiskTablePanelProps = {
     searchFilter: SearchFilter;
     onSearchFilterChange: (newSearchFilter: SearchFilter) => void;
     pagination: UseURLPaginationResult;
+    showDeleted: boolean;
 };
 
 function RiskTablePanel({
@@ -35,6 +36,7 @@ function RiskTablePanel({
     searchFilter,
     onSearchFilterChange,
     pagination,
+    showDeleted,
 }: RiskTablePanelProps) {
     const { page, perPage, setPage, setPerPage } = pagination;
 
@@ -43,10 +45,12 @@ function RiskTablePanel({
         sortOption,
         page,
         perPage,
+        showDeleted,
     });
 
     const { data: deploymentCount = 0 } = useDeploymentsCount({
         searchFilter,
+        showDeleted,
     });
 
     const tableState = getTableUIState({ isLoading, data, error, searchFilter });
@@ -90,6 +94,7 @@ function RiskTablePanel({
                     renderer={({ data }) =>
                         data.map((deploymentWithProcessInfo) => {
                             const { deployment } = deploymentWithProcessInfo;
+                            const isTombstoned = Boolean(deployment.tombstoneDeletedAt);
 
                             const priorityAsInt = parseInt(deployment.priority, 10);
                             const priorityDisplay =
@@ -104,6 +109,16 @@ function RiskTablePanel({
                                             <DeploymentNameColumn
                                                 original={deploymentWithProcessInfo}
                                             />
+                                            {isTombstoned && deployment.tombstoneDeletedAt && (
+                                                <Label
+                                                    color="grey"
+                                                    isCompact
+                                                    className="pf-v6-u-ml-sm"
+                                                    title={`Deleted at ${getDateTime(deployment.tombstoneDeletedAt)}`}
+                                                >
+                                                    Deleted
+                                                </Label>
+                                            )}
                                         </Td>
                                         <Td dataLabel="Created">
                                             {getDateTime(deployment.created)}

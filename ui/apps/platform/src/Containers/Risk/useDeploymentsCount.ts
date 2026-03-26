@@ -8,10 +8,12 @@ import { ORCHESTRATOR_COMPONENTS_KEY } from 'utils/orchestratorComponents';
 
 type UseDeploymentsCountParams = {
     searchFilter: SearchFilter;
+    showDeleted: boolean;
 };
 
 export default function useDeploymentsCount({
     searchFilter,
+    showDeleted,
 }: UseDeploymentsCountParams): UseRestQueryReturn<number> {
     const shouldHideOrchestratorComponents =
         localStorage.getItem(ORCHESTRATOR_COMPONENTS_KEY) !== 'true';
@@ -20,10 +22,11 @@ export default function useDeploymentsCount({
         const effectiveSearchFilter = {
             ...searchFilter,
             ...(shouldHideOrchestratorComponents ? { 'Orchestrator Component': 'false' } : {}),
+            ...(showDeleted ? { 'Tombstone Deleted At': '*' } : {}),
         };
 
         return fetchDeploymentsCount(effectiveSearchFilter);
-    }, [searchFilter, shouldHideOrchestratorComponents]);
+    }, [searchFilter, shouldHideOrchestratorComponents, showDeleted]);
 
     return useRestQuery(requestFn);
 }

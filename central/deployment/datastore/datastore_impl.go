@@ -44,6 +44,17 @@ func excludeTombstonedFilter() *v1.Query {
 	return pkgSearch.NewQueryBuilder().AddNullField(pkgSearch.TombstoneDeletedAt).ProtoQuery()
 }
 
+// withTombstoneExclusion returns the query with the tombstone exclusion filter applied,
+// unless the caller has already explicitly referenced the TombstoneDeletedAt field.
+// This allows callers to opt into seeing tombstoned deployments by including
+// "Tombstone Deleted At:*" in their query.
+func withTombstoneExclusion(q *v1.Query) *v1.Query {
+	if pkgSearch.QueryMentionsField(q, pkgSearch.TombstoneDeletedAt) {
+		return q
+	}
+	return pkgSearch.ConjunctionQuery(excludeTombstonedFilter(), q)
+}
+
 type datastoreImpl struct {
 	deploymentStore deploymentStore.Store
 
@@ -143,7 +154,7 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.R
 	if q == nil {
 		q = pkgSearch.EmptyQuery()
 	}
-	return ds.deploymentStore.Search(ctx, pkgSearch.ConjunctionQuery(excludeTombstonedFilter(), q))
+	return ds.deploymentStore.Search(ctx, withTombstoneExclusion(q))
 }
 
 // Count returns the number of search results from the query.
@@ -151,7 +162,7 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	if q == nil {
 		q = pkgSearch.EmptyQuery()
 	}
-	return ds.deploymentStore.Count(ctx, pkgSearch.ConjunctionQuery(excludeTombstonedFilter(), q))
+	return ds.deploymentStore.Count(ctx, withTombstoneExclusion(q))
 }
 
 func (ds *datastoreImpl) ListDeployment(ctx context.Context, id string) (*storage.ListDeployment, bool, error) {
@@ -173,7 +184,7 @@ func (ds *datastoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query)
 	if q == nil {
 		q = pkgSearch.EmptyQuery()
 	}
-	listDeployments, err := ds.deploymentStore.SearchListDeployments(ctx, pkgSearch.ConjunctionQuery(excludeTombstonedFilter(), q))
+	listDeployments, err := ds.deploymentStore.SearchListDeployments(ctx, withTombstoneExclusion(q))
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +200,7 @@ func (ds *datastoreImpl) SearchDeployments(ctx context.Context, q *v1.Query) ([]
 		q = pkgSearch.EmptyQuery()
 	}
 	// Apply the tombstone exclusion filter before constructing the select query.
-	filteredQ := pkgSearch.ConjunctionQuery(excludeTombstonedFilter(), q)
+	filteredQ := withTombstoneExclusion(q)
 	// Clone the filtered query and add select fields for SearchResult construction.
 	clonedQuery := filteredQ.CloneVT()
 	selectSelects := []*v1.QuerySelect{
@@ -221,7 +232,7 @@ func (ds *datastoreImpl) SearchRawDeployments(ctx context.Context, q *v1.Query) 
 		q = pkgSearch.EmptyQuery()
 	}
 	var deployments []*storage.Deployment
-	err := ds.deploymentStore.WalkByQuery(ctx, pkgSearch.ConjunctionQuery(excludeTombstonedFilter(), q), func(deployment *storage.Deployment) error {
+	err := ds.deploymentStore.WalkByQuery(ctx, withTombstoneExclusion(q), func(deployment *storage.Deployment) error {
 		deployments = append(deployments, deployment)
 		return nil
 	})
@@ -281,7 +292,7 @@ func (ds *datastoreImpl) WalkByQuery(ctx context.Context, query *v1.Query, fn fu
 		ds.updateDeploymentPriority(deployment)
 		return fn(deployment)
 	}
-	return ds.deploymentStore.WalkByQuery(ctx, pkgSearch.ConjunctionQuery(excludeTombstonedFilter(), query), wrappedFn)
+	return ds.deploymentStore.WalkByQuery(ctx, withTombstoneExclusion(query), wrappedFn)
 }
 
 // UpsertDeployment inserts a deployment into deploymentStore
