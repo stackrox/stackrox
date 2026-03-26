@@ -39,6 +39,7 @@ image-push: image-multiarch ## Push multi-arch images and create manifest
 	@for arch in $(ARCHS); do \
 		$(CONTAINER) push $(IMAGE):$(TAG)-$$arch ; \
 	done
+	$(CONTAINER) manifest rm $(IMAGE):$(TAG) 2>/dev/null || true
 	$(CONTAINER) manifest create $(IMAGE):$(TAG) \
 		$(foreach arch,$(ARCHS),$(IMAGE):$(TAG)-$(arch))
 	$(CONTAINER) manifest push $(IMAGE):$(TAG)
