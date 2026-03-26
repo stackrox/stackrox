@@ -109,8 +109,7 @@ func convertRulesToSelectors(scopeRules *storage.SimpleAccessScope_Rules) (*sele
 	}
 	output.clustersByLabel = clusterSelectors
 
-	includedClusterNames := scopeRules.GetIncludedClusters()
-	output.clustersByName = set.NewStringSet(includedClusterNames...)
+	output.clustersByName = set.NewStringSet(scopeRules.GetIncludedClusters()...)
 
 	// Convert each selector to labels.Selector.
 	namespaceSelectors, namespaceSelectorErr := convertEachSetBasedLabelSelectorToK8sLabelSelector(scopeRules.GetNamespaceLabelSelectors())
