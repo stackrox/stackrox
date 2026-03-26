@@ -38,6 +38,7 @@ func TestEnricher_UserValuesOverrideInjected(t *testing.T) {
 		"customize": map[string]interface{}{
 			"envVars": map[string]interface{}{
 				"ROX_TLS_MIN_VERSION": "TLSv1.3",
+				"MY_CUSTOM_VAR":       "keep-me",
 			},
 		},
 	}
@@ -51,6 +52,8 @@ func TestEnricher_UserValuesOverrideInjected(t *testing.T) {
 		"user-specified value should take precedence over injected value")
 	assert.Contains(t, envVars["ROX_TLS_CIPHER_SUITES"], "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
 		"non-overridden values should still be injected")
+	assert.Equal(t, "keep-me", envVars["MY_CUSTOM_VAR"],
+		"unrelated user env vars should be preserved")
 }
 
 func TestEnricher_NilProfileNoInjection(t *testing.T) {

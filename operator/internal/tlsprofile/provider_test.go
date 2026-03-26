@@ -164,6 +164,8 @@ func TestFetchProfile_StrictWithNilTLSSecurityProfile(t *testing.T) {
 	profile := ConvertProfile(clusterTLS, false)
 	require.NotNil(t, profile)
 	assert.Equal(t, "TLSv1.2", profile.MinVersion)
+	assert.NotEmpty(t, profile.CipherSuites)
+	assert.NotEmpty(t, profile.OpenSSLCiphers)
 }
 
 func TestConvertProfile_ForceOverridesLegacyAdherence(t *testing.T) {
