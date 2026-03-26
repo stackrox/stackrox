@@ -379,36 +379,27 @@ banner "Step 5: Simulate Schedule Drift"
 narrate "After the initial import, each SSB was adopted — its settingsRef now"
 narrate "points to an ACS-managed ScanSetting (same name as the scan config)."
 narrate ""
-narrate "Let's simulate a real-world scenario: a cluster admin changes the"
-narrate "schedule on the Kubernetes side.  We'll:"
-narrate "  1. Update the original ScanSetting schedule from 02:00 → 05:00"
-narrate "  2. Patch the CIS SSB's settingsRef back to the original ScanSetting"
-narrate ""
-narrate "Now the cluster says DAILY 05:00 but ACS still has DAILY 02:00."
+narrate "Let's simulate a real-world scenario: someone edits the ACS-managed"
+narrate "ScanSetting directly on the cluster (e.g. via kubectl).  ACS does NOT"
+narrate "detect this change — the UI still shows the original schedule, but"
+narrate "scans actually run on the new schedule.  A silent drift."
 
 pause
 
-section "Updating ScanSetting schedule on the cluster"
-info "Changing schedule: 0 2 * * * → 0 5 * * * (daily at 05:00)"
+section "Editing ACS-managed ScanSetting directly on the cluster"
+info "ScanSetting '${SSB_CIS}' was created by ACS with schedule 0 2 * * *"
+info "Patching it to 0 5 * * * (daily at 05:00)"
 
-run_cmd kubectl patch scansetting "${DEMO_PREFIX}-setting" -n "$CO_NS" \
+run_cmd kubectl patch scansetting "${SSB_CIS}" -n "$CO_NS" \
     --type merge -p '{"schedule": "0 5 * * *"}'
-
-section "Pointing CIS SSB back to the original ScanSetting"
-info "Changing settingsRef: ${SSB_CIS} → ${DEMO_PREFIX}-setting"
-
-run_cmd kubectl patch scansettingbinding "${SSB_CIS}" -n "$CO_NS" \
-    --type merge -p "{\"settingsRef\": {\"name\": \"${DEMO_PREFIX}-setting\"}}"
 
 section "Verify: cluster vs ACS"
 echo ""
-echo -e "${BOLD}On the cluster:${RESET}"
-kubectl get scansettingbinding "${SSB_CIS}" -n "$CO_NS" \
-    -o custom-columns='SSB:.metadata.name,SETTINGS_REF:.settingsRef.name' --no-headers
-kubectl get scansetting "${DEMO_PREFIX}-setting" -n "$CO_NS" \
+echo -e "${BOLD}On the cluster (actual behaviour):${RESET}"
+kubectl get scansetting "${SSB_CIS}" -n "$CO_NS" \
     -o custom-columns='SCANSETTING:.metadata.name,SCHEDULE:.schedule' --no-headers
 echo ""
-echo -e "${BOLD}In ACS:${RESET}"
+echo -e "${BOLD}In ACS (what the UI shows):${RESET}"
 acs_api GET "/v2/compliance/scan/configurations?pagination.limit=1000" 2> /dev/null | python3 -c "
 import sys, json
 data = json.load(sys.stdin)
@@ -420,8 +411,8 @@ for c in data.get('configurations', []):
 " 2> /dev/null
 echo ""
 
-narrate "The cluster admin changed the schedule to 05:00, but ACS still has 02:00."
-narrate "This is schedule drift — the importer can detect and fix it."
+narrate "The cluster now scans at 05:00, but ACS still thinks it's 02:00."
+narrate "This silent drift is exactly what the importer can detect and fix."
 
 pause
 
