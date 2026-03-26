@@ -62,6 +62,7 @@ func (ds *datastoreImpl) EnsureVirtualMachineExists(ctx context.Context, vmID st
 		return nil
 	}
 
+	// VM not found; create a minimal record with only ID and cluster association.
 	return ds.store.UpsertVM(ctx, &storage.VirtualMachineV2{
 		Id:        vmID,
 		ClusterId: clusterID,
