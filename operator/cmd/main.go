@@ -160,10 +160,8 @@ func run() error {
 	if err != nil {
 		return errors.Wrap(err, "unable to fetch cluster TLS profile")
 	}
-	workloadTLSProfile := tlsprofile.ConvertProfile(clusterTLSProfile, forceOpenShiftTLSProfile.BooleanSetting())
-
 	var tlsOpts []func(c *tls.Config)
-	if workloadTLSProfile != nil {
+	if clusterTLSProfile != nil {
 		tlsConfigFn, unsupported := tlspkg.NewTLSConfigFromProfile(clusterTLSProfile.ProfileSpec)
 		if len(unsupported) > 0 {
 			setupLog.Info("some ciphers from cluster TLS profile are not supported by Go, skipping them", "ciphers", unsupported)
@@ -249,8 +247,10 @@ func run() error {
 	// The following comment marks the place where `operator-sdk` inserts new scaffolded code.
 	//+kubebuilder:scaffold:builder
 
+	operandTLSProfile := tlsprofile.ConvertProfile(clusterTLSProfile, forceOpenShiftTLSProfile.BooleanSetting())
+
 	if centralReconcilerEnabled.BooleanSetting() {
-		if err = centralReconciler.RegisterNewReconciler(mgr, centralLabelSelector, workloadTLSProfile); err != nil {
+		if err = centralReconciler.RegisterNewReconciler(mgr, centralLabelSelector, operandTLSProfile); err != nil {
 			return errors.Wrap(err, "unable to set up Central reconciler")
 		}
 
@@ -268,7 +268,7 @@ func run() error {
 	}
 
 	if securedClusterReconcilerEnabled.BooleanSetting() {
-		if err = securedClusterReconciler.RegisterNewReconciler(mgr, securedClusterLabelSelector, workloadTLSProfile); err != nil {
+		if err = securedClusterReconciler.RegisterNewReconciler(mgr, securedClusterLabelSelector, operandTLSProfile); err != nil {
 			return errors.Wrap(err, "unable to set up SecuredCluster reconciler")
 		}
 
