@@ -126,6 +126,7 @@ type Workload struct {
 	ServiceWorkload        ServiceWorkload         `yaml:"serviceWorkload"`
 	SecretWorkload         SecretWorkload          `yaml:"secretWorkload"`
 	VirtualMachineWorkload VirtualMachineWorkload  `yaml:"virtualMachineWorkload"`
+	OfflineModeInterval    time.Duration           `yaml:"offlineModeInterval"`
 	NumNamespaces          int                     `yaml:"numNamespaces"`
 	MatchLabels            bool                    `yaml:"matchLabels"`
 }
