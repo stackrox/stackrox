@@ -26,6 +26,8 @@ generated/**/*.pb.go
 generated/**/*.pb.gw.go
 generated/**/*.swagger.json
 go.sum
+image/rhel/docs/api/v1/swagger.json
+image/rhel/docs/api/v2/swagger.json
 operator/bundle/manifests/*.yaml
 operator/config/crd/bases/*.yaml
 operator/config/manifests/bases/*.yaml
