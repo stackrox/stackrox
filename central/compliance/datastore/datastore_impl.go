@@ -28,7 +28,7 @@ type datastoreImpl struct {
 	filter  SacFilter
 
 	storedAggregationMutex    sync.RWMutex
-	aggregationSequenceNumber uint64
+	aggregationSequenceNumber atomic.Uint64
 }
 
 func (ds *datastoreImpl) GetSpecificRunResults(ctx context.Context, clusterID, standardID, runID string, flags types.GetFlags) (types.ResultsWithStatus, error) {
@@ -145,7 +145,7 @@ func (ds *datastoreImpl) StoreRunResults(ctx context.Context, results *storage.C
 
 	defer func() {
 		// Atomic because it will be atomically read outside the mutex
-		atomic.AddUint64(&ds.aggregationSequenceNumber, 1)
+		ds.aggregationSequenceNumber.Add(1)
 	}()
 
 	if err := ds.storage.ClearAggregationResults(ctx); err != nil {
@@ -185,7 +185,7 @@ func (ds *datastoreImpl) PerformStoredAggregation(ctx context.Context, args *Sto
 	}
 
 	// Get the aggregation sequence number before performing the aggregation.  We don't need to be in a lock here.
-	aggregationSequenceNumber := atomic.LoadUint64(&ds.aggregationSequenceNumber)
+	aggregationSequenceNumber := ds.aggregationSequenceNumber.Load()
 	// This performs the actual aggregation.  It must occur after getting the sequence number.
 	results, sources, domainMap, err = args.AggregationFunc()
 	if err != nil {
@@ -198,7 +198,7 @@ func (ds *datastoreImpl) PerformStoredAggregation(ctx context.Context, args *Sto
 		// storing the aggregation result
 		ds.storedAggregationMutex.RLock()
 		defer ds.storedAggregationMutex.RUnlock()
-		curAggSeqNum := atomic.LoadUint64(&ds.aggregationSequenceNumber)
+		curAggSeqNum := ds.aggregationSequenceNumber.Load()
 		// Storing aggregation results is only permitted if the compliance data hasn't changed
 		if aggregationSequenceNumber != curAggSeqNum {
 			return
