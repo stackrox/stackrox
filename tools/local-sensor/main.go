@@ -12,7 +12,6 @@ import (
 	"os/signal"
 	"path"
 	"runtime"
-	"runtime/debug"
 	"runtime/pprof"
 	"syscall"
 	"time"
@@ -213,48 +212,6 @@ func stopSensorAndWorkload(workloadManager *fake.WorkloadManager, sensor *common
 	}
 }
 
-func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.FakeService, writeMemProfile bool, dumpCentralOutput bool, outfile string, outputFormat string, cancelFunc context.CancelFunc, sensor *commonSensor.Sensor, workloadManager *fake.WorkloadManager, pipeline sensor.ProcessPipelineHandle) {
-	sigCh := make(chan os.Signal, 2)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-	defer signal.Stop(sigCh)
-
-	firstSignal := <-sigCh
-	log.Printf("Received %s, starting graceful shutdown (press Ctrl-C again to force exit)", firstSignal)
-
-	gracefulDone := make(chan struct{})
-	go func() {
-		defer close(gracefulDone)
-		// Recover must be deferred after close so it runs first (LIFO).
-		// Without this, a panic during shutdown would close the channel during
-		// unwinding, letting the parent goroutine call os.Exit(0) and masking
-		// the panic with a clean exit code.
-		defer func() {
-			if r := recover(); r != nil {
-				fmt.Fprintf(os.Stderr, "panic during graceful shutdown: %v\n", r)
-				debug.PrintStack()
-				os.Exit(1)
-			}
-		}()
-		cancelFunc()
-		if writeMemProfile {
-			writeMemoryProfile()
-		}
-		stopSensorAndWorkload(workloadManager, sensor, pipeline)
-		pprof.StopCPUProfile()
-		if fakeCentral != nil && dumpCentralOutput {
-			fakeCentral.DumpAllMessages(startTime, time.Now(), outfile, outputFormat)
-		}
-	}()
-
-	select {
-	case secondSignal := <-sigCh:
-		log.Printf("Received %s during graceful shutdown, exiting immediately", secondSignal)
-		os.Exit(130)
-	case <-gracefulDone:
-		os.Exit(0)
-	}
-}
-
 // local-sensor adds three new flags to sensor:
 // -duration: specifies how long should the scenario run for (e.g. 10m)
 // -output: once the scenario finishes (or gets killed) all messages sent to the fake central will be stored in this file.
@@ -429,8 +386,14 @@ func main() {
 		panic(err)
 	}
 
+	sigCh := make(chan os.Signal, 2)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	// Prevent SIGPIPE from killing the process when stdout/stderr is a broken pipe
+	// (e.g. running with "| tee"). Without this, tee dying from SIGINT breaks the
+	// pipe and the next log write terminates the process before graceful shutdown.
+	signal.Ignore(syscall.SIGPIPE)
+
 	go s.Start()
-	go registerHostKillSignals(startTime, spyCentral, !localConfig.NoMemProfile, !localConfig.SkipCentralOutput, localConfig.CentralOutput, localConfig.OutputFormat, cancelFunc, s, workloadManager, processPipeline)
 
 	if spyCentral != nil {
 		spyCentral.ConnectionStarted.Wait()
@@ -446,12 +409,22 @@ func main() {
 	log.Printf("Running scenario for %f minutes\n", localConfig.Duration.Minutes())
 	select {
 	case <-time.Tick(localConfig.Duration):
-		stopSensorAndWorkload(workloadManager, s, processPipeline)
-		break
 	case <-s.Stopped().Done():
-		break
+	case sig := <-sigCh:
+		log.Printf("Received %s, starting graceful shutdown (press Ctrl-C again to force exit)", sig)
+		go func() {
+			forceSig := <-sigCh
+			log.Printf("Received %s during graceful shutdown, exiting immediately", forceSig)
+			os.Exit(130)
+		}()
 	}
 
+	cancelFunc()
+	if !localConfig.NoMemProfile {
+		writeMemoryProfile()
+	}
+	stopSensorAndWorkload(workloadManager, s, processPipeline)
+	pprof.StopCPUProfile()
 	if spyCentral != nil {
 		if !localConfig.SkipCentralOutput {
 			spyCentral.DumpAllMessages(startTime, time.Now(), localConfig.CentralOutput, localConfig.OutputFormat)
