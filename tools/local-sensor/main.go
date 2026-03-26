@@ -423,8 +423,10 @@ func main() {
 	if !localConfig.NoMemProfile {
 		writeMemoryProfile()
 	}
+	log.Printf("Stopping sensor and workload manager...")
 	stopSensorAndWorkload(workloadManager, s, processPipeline)
 	pprof.StopCPUProfile()
+	log.Printf("Stopping spyCentral")
 	if spyCentral != nil {
 		if !localConfig.SkipCentralOutput {
 			spyCentral.DumpAllMessages(startTime, time.Now(), localConfig.CentralOutput, localConfig.OutputFormat)

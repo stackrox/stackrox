@@ -191,9 +191,7 @@ func (a *apiImpl) Stop() bool {
 		return false
 	}
 
-	log.Info("Starting stop procedure")
 	a.grpcServer.GracefulStop()
-	log.Info("gRPC server fully stopped")
 
 	a.listenersLock.Lock()
 	defer a.listenersLock.Unlock()
