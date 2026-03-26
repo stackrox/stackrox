@@ -328,6 +328,39 @@ func TestIMP_ADOPT_DelayedScanSetting(t *testing.T) {
 	}
 }
 
+// TestIMP_ADOPT_PreExistingScanSettingSkip verifies that adoption is skipped
+// when a ScanSetting with the target name already existed before reconciliation.
+func TestIMP_ADOPT_PreExistingScanSettingSkip(t *testing.T) {
+	client := newMockCOClient()
+	// The ScanSetting exists on the cluster (pre-existing).
+	client.addScanSetting("openshift-compliance", "cis-weekly")
+
+	adopter := &Adopter{PollInterval: 10 * time.Millisecond, PollTimeout: 1 * time.Second}
+	results := adopter.Adopt(context.Background(), []Request{{
+		SSBName:       "cis-weekly",
+		SSBNamespace:  "openshift-compliance",
+		OldSettingRef: "my-old-setting",
+		ClusterLabel:  "ctx-a",
+		COClient:      client,
+		// Mark the ScanSetting as pre-existing.
+		PreExistingScanSettings: map[string]bool{"cis-weekly": true},
+	}})
+
+	r := results[0]
+	if !r.Skipped {
+		t.Errorf("expected Skipped=true for pre-existing ScanSetting; message: %s", r.Message)
+	}
+	if r.Adopted {
+		t.Error("expected Adopted=false when pre-existing ScanSetting conflicts")
+	}
+	if len(client.patches) != 0 {
+		t.Errorf("expected 0 patch calls, got %d", len(client.patches))
+	}
+	if !containsStr(r.Message, "pre-existing") {
+		t.Errorf("message should mention pre-existing, got %q", r.Message)
+	}
+}
+
 func containsStr(s, substr string) bool {
 	return len(s) >= len(substr) && searchStr(s, substr)
 }

@@ -67,8 +67,13 @@ var _ models.ACSClient = (*mockACSClient)(nil)
 type mockCOClient struct {
 	bindings    []cofetch.ScanSettingBinding
 	listErr     error
-	scanSetting *cofetch.ScanSetting
+	scanSetting *cofetch.ScanSetting // returned for any name not in scanSettingsByName
 	settingErr  error
+	// scanSettingsByName provides name-aware lookups. When set, only names
+	// present in this map (plus the primary scanSetting's own name) return
+	// a result.  When nil, the primary scanSetting is returned for any name
+	// (legacy behaviour).
+	scanSettingsByName map[string]*cofetch.ScanSetting
 }
 
 func (m *mockCOClient) ListScanSettingBindings(_ context.Context) ([]cofetch.ScanSettingBinding, error) {
@@ -78,10 +83,17 @@ func (m *mockCOClient) ListScanSettingBindings(_ context.Context) ([]cofetch.Sca
 	return m.bindings, nil
 }
 
-func (m *mockCOClient) GetScanSetting(_ context.Context, _, _ string) (*cofetch.ScanSetting, error) {
+func (m *mockCOClient) GetScanSetting(_ context.Context, _, name string) (*cofetch.ScanSetting, error) {
 	if m.settingErr != nil {
 		return nil, m.settingErr
 	}
+	if m.scanSettingsByName != nil {
+		if ss, ok := m.scanSettingsByName[name]; ok {
+			return ss, nil
+		}
+		return nil, fmt.Errorf("ScanSetting %q not found", name)
+	}
+	// Legacy: return the primary scan setting for any name.
 	return m.scanSetting, nil
 }
 
@@ -449,10 +461,11 @@ func TestIMP_ERR_004_MissingScanSettingRecordedAsProblem(t *testing.T) {
 		scanSetting: goodScanSetting(),
 	}
 
-	// Fail GetScanSetting on the first call (for "broken"), succeed on the second ("ok").
+	// Fail GetScanSetting on the third call (for "broken" binding's ScanSetting lookup).
+	// The first 2 calls are pre-existence snapshot probes (one per binding).
 	coClient2 := &selectiveCOClientByOrder{
 		base:       coClient,
-		failAtCall: 1,
+		failAtCall: 3,
 		failErr:    errors.New("ScanSetting not found"),
 	}
 

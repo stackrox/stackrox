@@ -49,6 +49,7 @@ func (r *Runner) RunMultiCluster(ctx context.Context, sources []ClusterSource) i
 		oldSettingRef string
 		clusterLabel  string
 		coClient      cofetch.COClient
+		preExistingSS map[string]bool
 	}
 	// Key: SSB name, value: list of cluster infos (one per cluster that has the SSB).
 	ssbAdoptionMap := make(map[string][]ssbClusterInfo)
@@ -74,6 +75,15 @@ func (r *Runner) RunMultiCluster(ctx context.Context, sources []ClusterSource) i
 		}
 
 		r.status.OKf("found %d ScanSettingBindings", len(bindings))
+
+		// Snapshot which ScanSettings (named after SSBs) already exist on
+		// this cluster before reconciliation, for the adoption pre-existence check.
+		preExistingSS := make(map[string]bool)
+		for _, b := range bindings {
+			if _, err := source.COClient.GetScanSetting(ctx, b.Namespace, b.Name); err == nil {
+				preExistingSS[b.Name] = true
+			}
+		}
 
 		for _, binding := range bindings {
 			// Fetch the ScanSetting.
@@ -109,6 +119,7 @@ func (r *Runner) RunMultiCluster(ctx context.Context, sources []ClusterSource) i
 				oldSettingRef: binding.ScanSettingName,
 				clusterLabel:  source.Label,
 				coClient:      source.COClient,
+				preExistingSS: preExistingSS,
 			})
 
 			// Add to the cluster's SSB list for merging.
@@ -186,11 +197,12 @@ func (r *Runner) RunMultiCluster(ctx context.Context, sources []ClusterSource) i
 		if action.ActionType == "create" && !r.cfg.DryRun {
 			for _, info := range ssbAdoptionMap[merged.Name] {
 				adoptRequests = append(adoptRequests, adopt.Request{
-					SSBName:       merged.Name,
-					SSBNamespace:  info.namespace,
-					OldSettingRef: info.oldSettingRef,
-					ClusterLabel:  info.clusterLabel,
-					COClient:      info.coClient,
+					SSBName:                 merged.Name,
+					SSBNamespace:            info.namespace,
+					OldSettingRef:           info.oldSettingRef,
+					ClusterLabel:            info.clusterLabel,
+					COClient:                info.coClient,
+					PreExistingScanSettings: info.preExistingSS,
 				})
 			}
 		}

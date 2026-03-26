@@ -103,6 +103,16 @@ func (r *Runner) Run(ctx context.Context) int {
 	}
 	rec := reconcile.NewReconciler(r.acsClient, maxRetries, r.cfg.DryRun, r.cfg.OverwriteExisting)
 
+	// Snapshot which ScanSettings (named after SSBs) already exist on the
+	// cluster before reconciliation.  Used during adoption to avoid patching
+	// an SSB onto a pre-existing ScanSetting that ACS doesn't control.
+	preExistingSS := make(map[string]bool)
+	for _, binding := range bindings {
+		if _, err := r.coClient.GetScanSetting(ctx, binding.Namespace, binding.Name); err == nil {
+			preExistingSS[binding.Name] = true
+		}
+	}
+
 	// Step 3: process each binding independently.
 	r.status.Stage("Reconcile", "applying scan configurations to ACS")
 	var adoptRequests []adopt.Request
@@ -110,11 +120,12 @@ func (r *Runner) Run(ctx context.Context) int {
 		action := r.processBinding(ctx, binding, existingNames, rec, collector, builder)
 		if action == "create" && !r.cfg.DryRun {
 			adoptRequests = append(adoptRequests, adopt.Request{
-				SSBName:       binding.Name,
-				SSBNamespace:  binding.Namespace,
-				OldSettingRef: binding.ScanSettingName,
-				ClusterLabel:  "default",
-				COClient:      r.coClient,
+				SSBName:                 binding.Name,
+				SSBNamespace:            binding.Namespace,
+				OldSettingRef:           binding.ScanSettingName,
+				ClusterLabel:            "default",
+				COClient:                r.coClient,
+				PreExistingScanSettings: preExistingSS,
 			})
 		}
 	}

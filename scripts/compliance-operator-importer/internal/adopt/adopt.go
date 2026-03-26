@@ -26,6 +26,12 @@ type Request struct {
 	OldSettingRef string           // current settingsRef.name on the SSB
 	ClusterLabel  string           // kubeconfig context name, for logging
 	COClient      cofetch.COClient // k8s client scoped to this cluster
+
+	// PreExistingScanSettings is the set of ScanSetting names that existed
+	// on this cluster before reconciliation.  If the target name is in this
+	// set, adoption is skipped to avoid patching the SSB onto a resource
+	// that ACS doesn't control.
+	PreExistingScanSettings map[string]bool
 }
 
 // Result records the outcome for one adoption request.
@@ -73,6 +79,20 @@ func (a *Adopter) adoptOne(ctx context.Context, req Request) Result {
 			ClusterLabel: req.ClusterLabel,
 			Skipped:      true,
 			Message:      fmt.Sprintf("SSB %s/%s already references ScanSetting %q, no patch needed", req.SSBNamespace, req.SSBName, newSettingName),
+		}
+	}
+
+	// IMP-ADOPT-007: if a ScanSetting with the target name already existed
+	// on the cluster before reconciliation, it's a pre-existing resource
+	// that would conflict with the ACS-managed one.  Skip adoption to
+	// avoid patching the SSB onto a ScanSetting that ACS doesn't control.
+	if req.PreExistingScanSettings[newSettingName] {
+		return Result{
+			SSBName:      req.SSBName,
+			ClusterLabel: req.ClusterLabel,
+			Skipped:      true,
+			Message: fmt.Sprintf("ScanSetting %q already exists on cluster %s but SSB %s/%s references %q; skipping adoption to avoid conflict with pre-existing resource",
+				newSettingName, req.ClusterLabel, req.SSBNamespace, req.SSBName, req.OldSettingRef),
 		}
 	}
 
