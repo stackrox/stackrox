@@ -17,13 +17,20 @@ Define the importer interface so it can be implemented and tested predictably.
   - basic mode: when `ROX_ADMIN_PASSWORD` is set,
   - if both are set: error ("ambiguous auth"),
   - if neither is set: error with help text listing both options.
-- **IMP-CLI-003**: importer MUST use all contexts from the merged kubeconfig:
-  - kubeconfig loading follows standard kubectl rules: `KUBECONFIG` env var (colon-separated
+- **IMP-CLI-003**: importer MUST load each kubeconfig file independently (no merging):
+  - file discovery follows standard kubectl rules: `KUBECONFIG` env var (colon-separated
     paths) or `~/.kube/config`.
-  - by default, the importer iterates **all contexts** in the merged kubeconfig, treating
+  - each file in the `KUBECONFIG` path is loaded in isolation. Contexts, users, and
+    clusters defined in one file never interact with entries in another file. This
+    prevents credential collisions when multiple files define the same user name
+    (e.g. `admin`) with different certificates.
+  - by default, the importer iterates **all contexts** across all files, treating
     each context as a separate source cluster.
-  - `--context <name>` (repeatable, optional): filters which contexts to use. When given,
-    only the named contexts are processed; all others are skipped.
+  - when the same context name appears in multiple files, both are processed
+    independently with their own credentials.
+  - `--context <name>` (repeatable, optional): filters which contexts to use. Matches
+    against context names across all files. When given, only matching contexts are
+    processed; all others are skipped.
   - for each context, the ACS cluster ID is auto-discovered (see IMP-MAP-016..018).
 - **IMP-CLI-004**: importer MUST support namespace scope:
   - `--co-namespace <ns>` (default `openshift-compliance`) for single namespace, or

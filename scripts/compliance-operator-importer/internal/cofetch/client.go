@@ -9,6 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -71,9 +72,16 @@ func NewClientForContext(contextName string, namespace string, allNamespaces boo
 		return nil, fmt.Errorf("build kubeconfig for context %q: %w", contextName, err)
 	}
 
+	return NewClientFromRestConfig(restConfig, namespace, allNamespaces)
+}
+
+// NewClientFromRestConfig creates a COClient from an existing rest.Config.
+// This avoids kubeconfig merging, preventing credential collisions when
+// multiple kubeconfig files define the same user name.
+func NewClientFromRestConfig(restConfig *rest.Config, namespace string, allNamespaces bool) (COClient, error) {
 	dynClient, err := dynamic.NewForConfig(restConfig)
 	if err != nil {
-		return nil, fmt.Errorf("create dynamic client for context %q: %w", contextName, err)
+		return nil, fmt.Errorf("create dynamic client: %w", err)
 	}
 
 	ns := namespace
