@@ -5,6 +5,7 @@ import (
 
 	configv1 "github.com/openshift/api/config/v1"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/utils/ptr"
 )
 
 func TestConvertMinVersion(t *testing.T) {
@@ -33,54 +34,84 @@ func TestConvertMinVersion(t *testing.T) {
 }
 
 func TestConvertCiphersToIANA(t *testing.T) {
-	t.Run("intermediate profile ciphers", func(t *testing.T) {
-		input := []string{
-			"TLS_AES_128_GCM_SHA256",
-			"TLS_AES_256_GCM_SHA384",
-			"TLS_CHACHA20_POLY1305_SHA256",
-			"ECDHE-ECDSA-AES128-GCM-SHA256",
-			"ECDHE-RSA-AES128-GCM-SHA256",
-			"ECDHE-ECDSA-AES256-GCM-SHA384",
-			"ECDHE-RSA-AES256-GCM-SHA384",
-			"ECDHE-ECDSA-CHACHA20-POLY1305",
-			"ECDHE-RSA-CHACHA20-POLY1305",
-			"DHE-RSA-AES128-GCM-SHA256",
-			"DHE-RSA-AES256-GCM-SHA384",
-		}
-		result := convertCiphersToIANA(input)
+	tests := map[string]struct {
+		input     []string
+		contains  []string
+		excludes  []string
+		wantExact *string
+	}{
+		"intermediate profile ciphers": {
+			input: []string{
+				"TLS_AES_128_GCM_SHA256",
+				"TLS_AES_256_GCM_SHA384",
+				"TLS_CHACHA20_POLY1305_SHA256",
+				"ECDHE-ECDSA-AES128-GCM-SHA256",
+				"ECDHE-RSA-AES128-GCM-SHA256",
+				"ECDHE-ECDSA-AES256-GCM-SHA384",
+				"ECDHE-RSA-AES256-GCM-SHA384",
+				"ECDHE-ECDSA-CHACHA20-POLY1305",
+				"ECDHE-RSA-CHACHA20-POLY1305",
+				"DHE-RSA-AES128-GCM-SHA256",
+				"DHE-RSA-AES256-GCM-SHA384",
+			},
+			contains: []string{
+				"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+				"TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+				"TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+			},
+			excludes: []string{
+				"TLS_AES_128_GCM_SHA256",
+				"DHE-RSA",
+			},
+		},
+		"unknown ciphers are skipped": {
+			input:     []string{"ECDHE-ECDSA-AES128-GCM-SHA256", "UNKNOWN-CIPHER"},
+			wantExact: ptr.To("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"),
+		},
+		"empty input": {
+			input:     nil,
+			wantExact: ptr.To(""),
+		},
+	}
 
-		assert.NotContains(t, result, "TLS_AES_128_GCM_SHA256", "TLS 1.3 ciphers should be excluded")
-		assert.Contains(t, result, "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256")
-		assert.Contains(t, result, "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384")
-		assert.Contains(t, result, "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256")
-		assert.NotContains(t, result, "DHE-RSA", "DHE ciphers not supported by Go should be excluded")
-	})
-
-	t.Run("unknown ciphers are skipped", func(t *testing.T) {
-		input := []string{"ECDHE-ECDSA-AES128-GCM-SHA256", "UNKNOWN-CIPHER"}
-		result := convertCiphersToIANA(input)
-		assert.Equal(t, "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", result)
-	})
-
-	t.Run("empty input", func(t *testing.T) {
-		result := convertCiphersToIANA(nil)
-		assert.Equal(t, "", result)
-	})
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := convertCiphersToIANA(tt.input)
+			if tt.wantExact != nil {
+				assert.Equal(t, *tt.wantExact, result)
+			}
+			for _, c := range tt.contains {
+				assert.Contains(t, result, c)
+			}
+			for _, c := range tt.excludes {
+				assert.NotContains(t, result, c)
+			}
+		})
+	}
 }
 
 func TestConvertCiphersToOpenSSL(t *testing.T) {
-	t.Run("skips TLS 1.3 ciphers", func(t *testing.T) {
-		input := []string{
-			"TLS_AES_128_GCM_SHA256",
-			"ECDHE-ECDSA-AES128-GCM-SHA256",
-			"ECDHE-RSA-AES256-GCM-SHA384",
-		}
-		result := convertCiphersToOpenSSL(input)
-		assert.Equal(t, "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384", result)
-	})
+	tests := map[string]struct {
+		input []string
+		want  string
+	}{
+		"skips TLS 1.3 ciphers": {
+			input: []string{
+				"TLS_AES_128_GCM_SHA256",
+				"ECDHE-ECDSA-AES128-GCM-SHA256",
+				"ECDHE-RSA-AES256-GCM-SHA384",
+			},
+			want: "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384",
+		},
+		"empty input": {
+			input: nil,
+			want:  "",
+		},
+	}
 
-	t.Run("empty input", func(t *testing.T) {
-		result := convertCiphersToOpenSSL(nil)
-		assert.Equal(t, "", result)
-	})
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tt.want, convertCiphersToOpenSSL(tt.input))
+		})
+	}
 }
