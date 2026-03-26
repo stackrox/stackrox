@@ -8,7 +8,9 @@ import (
 	tlspkg "github.com/openshift/controller-runtime-common/pkg/tls"
 	libgocrypto "github.com/openshift/library-go/pkg/crypto"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/discovery"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -44,14 +46,15 @@ type TLSProfile struct {
 
 // FetchProfile reads the cluster TLS profile from the APIServer resource.
 //
-// Returns nil on non-OpenShift clusters (APIServer resource absent).
+// Returns nil on non-OpenShift clusters (APIServer resource absent or
+// config.openshift.io API group not available).
 // On OpenShift, ProfileSpec and Adherence are populated so the watcher can
 // detect changes even when enforcement is not active yet.
 func FetchProfile(ctx context.Context, c ctrlClient.Reader) (*ClusterTLSProfile, error) {
 	apiServer := &configv1.APIServer{}
 	if err := c.Get(ctx, types.NamespacedName{Name: apiserverClusterName}, apiServer); err != nil {
-		if k8serrors.IsNotFound(err) {
-			log.Info("APIServer cluster config not found, using TLS defaults")
+		if k8serrors.IsNotFound(err) || meta.IsNoMatchError(err) || discovery.IsGroupDiscoveryFailedError(err) {
+			log.Info("APIServer cluster config not available, using TLS defaults")
 			return nil, nil
 		}
 		return nil, fmt.Errorf("reading APIServer cluster config: %w", err)
