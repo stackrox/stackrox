@@ -41,5 +41,6 @@ type Manager interface {
 // New creates a new admission control manager
 func New(conn *grpc.ClientConn, namespace string) Manager {
 	cacheSize := int64(env.AdmissionControlImageCacheMaxSizeMB.IntegerSetting())
-	return NewManager(namespace, cacheSize*size.MB, sensor.NewImageServiceClient(conn), sensor.NewDeploymentServiceClient(conn))
+	imageNameCacheEnabled := env.AdmissionControlImageNameCacheEnabled.BooleanSetting()
+	return NewManager(namespace, cacheSize*size.MB, imageNameCacheEnabled, sensor.NewImageServiceClient(conn), sensor.NewDeploymentServiceClient(conn))
 }

@@ -7,6 +7,7 @@ import { Button } from '@patternfly/react-core';
 import { Modal } from '@patternfly/react-core/deprecated';
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
+import usePermissions from 'hooks/usePermissions';
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
 import { getIsAuthProviderImmutable } from 'services/AuthService';
@@ -40,6 +41,9 @@ function AuthProvidersList({ authProviders }: AuthProvidersListProps): ReactElem
     const [idToDelete, setIdToDelete] = useState('');
     const dispatch = useDispatch();
     const { currentUser, availableProviderTypes } = useSelector(authProviderState);
+
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForPage = hasReadWriteAccess('Access');
 
     function onClickDelete(name: string, id: string) {
         setIdToDelete(id);
@@ -98,6 +102,7 @@ function AuthProvidersList({ authProviders }: AuthProvidersListProps): ReactElem
                                 </Td>
                                 <Td isActionCell>
                                     <ActionsColumn
+                                        isDisabled={!hasWriteAccessForPage || idToDelete === id}
                                         items={[
                                             {
                                                 title: 'Delete auth provider',

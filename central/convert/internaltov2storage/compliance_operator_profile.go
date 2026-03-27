@@ -36,6 +36,51 @@ func ComplianceOperatorProfileV2(internalMsg *central.ComplianceOperatorProfileV
 	}
 }
 
+// StorageToCentralProfileKind converts a storage profile OperatorKind to the internal API
+// equivalent for sending to Sensor (e.g. when building scan config sync messages).
+func StorageToCentralProfileKind(kind storage.ComplianceOperatorProfileV2_OperatorKind) central.ComplianceOperatorProfileV2_OperatorKind {
+	switch kind {
+	case storage.ComplianceOperatorProfileV2_PROFILE:
+		return central.ComplianceOperatorProfileV2_PROFILE
+	case storage.ComplianceOperatorProfileV2_TAILORED_PROFILE:
+		return central.ComplianceOperatorProfileV2_TAILORED_PROFILE
+	case storage.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED:
+		// ROX-31229: Profiles stored by older Central versions may have UNSPECIFIED kind.
+		// These are always regular profiles; treat as PROFILE. Mirrors centralToStorageProfileKind.
+		// This fallback can be removed once Central versions that pre-date kind tracking are not supported.
+		return central.ComplianceOperatorProfileV2_PROFILE
+	default:
+		return central.ComplianceOperatorProfileV2_OPERATOR_KIND_UNSPECIFIED
+	}
+}
+
+// ProfileV2ToScanConfigRefs extracts name and kind from a slice of stored profiles into
+// the scan configuration's ProfileReference storage type. Used when persisting profile_refs
+// alongside a scan config so the startup sync path has correct kinds on reconnect.
+func ProfileV2ToScanConfigRefs(profiles []*storage.ComplianceOperatorProfileV2) []*storage.ComplianceOperatorScanConfigurationV2_ProfileReference {
+	refs := make([]*storage.ComplianceOperatorScanConfigurationV2_ProfileReference, 0, len(profiles))
+	for _, p := range profiles {
+		refs = append(refs, &storage.ComplianceOperatorScanConfigurationV2_ProfileReference{
+			Name: p.GetName(),
+			Kind: p.GetOperatorKind(),
+		})
+	}
+	return refs
+}
+
+// ScanConfigRefsToCentral converts storage scan config ProfileReferences to the internal API
+// equivalent for scan config messages sent to Sensor.
+func ScanConfigRefsToCentral(refs []*storage.ComplianceOperatorScanConfigurationV2_ProfileReference) []*central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference {
+	centralRefs := make([]*central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference, 0, len(refs))
+	for _, ref := range refs {
+		centralRefs = append(centralRefs, &central.ApplyComplianceScanConfigRequest_BaseScanSettings_ProfileReference{
+			Name: ref.GetName(),
+			Kind: StorageToCentralProfileKind(ref.GetKind()),
+		})
+	}
+	return centralRefs
+}
+
 func centralToStorageProfileKind(kind central.ComplianceOperatorProfileV2_OperatorKind) storage.ComplianceOperatorProfileV2_OperatorKind {
 	switch kind {
 	case central.ComplianceOperatorProfileV2_PROFILE:

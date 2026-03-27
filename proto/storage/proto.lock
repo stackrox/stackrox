@@ -4072,22 +4072,6 @@
             ]
           },
           {
-            "name": "ComplianceOperatorRuleV2.OperatorKind",
-            "enum_fields": [
-              {
-                "name": "OPERATOR_KIND_UNSPECIFIED"
-              },
-              {
-                "name": "RULE",
-                "integer": 1
-              },
-              {
-                "name": "CUSTOM_RULE",
-                "integer": 2
-              }
-            ]
-          },
-          {
             "name": "ComplianceOperatorProfileV2.OperatorKind",
             "enum_fields": [
               {
@@ -4099,6 +4083,22 @@
               },
               {
                 "name": "TAILORED_PROFILE",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "ComplianceOperatorRuleV2.OperatorKind",
+            "enum_fields": [
+              {
+                "name": "OPERATOR_KIND_UNSPECIFIED"
+              },
+              {
+                "name": "RULE",
+                "integer": 1
+              },
+              {
+                "name": "CUSTOM_RULE",
                 "integer": 2
               }
             ]
@@ -4507,6 +4507,12 @@
                 "is_repeated": true
               },
               {
+                "id": 18,
+                "name": "profile_refs",
+                "type": "ProfileReference",
+                "is_repeated": true
+              },
+              {
                 "id": 9,
                 "name": "node_roles",
                 "type": "NodeRole",
@@ -4581,6 +4587,21 @@
                     "id": 1,
                     "name": "profile_name",
                     "type": "string"
+                  }
+                ]
+              },
+              {
+                "name": "ProfileReference",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "kind",
+                    "type": "ComplianceOperatorProfileV2.OperatorKind"
                   }
                 ]
               },

@@ -2,7 +2,7 @@ module github.com/stackrox/rox/operator/tools/operator-sdk
 
 go 1.25.7
 
-require github.com/operator-framework/operator-sdk v1.42.1
+require github.com/operator-framework/operator-sdk v1.42.2
 
 require (
 	cel.dev/expr v0.25.1 // indirect
@@ -147,7 +147,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/opencontainers/runtime-spec v1.3.0 // indirect
-	github.com/operator-framework/ansible-operator-plugins v1.42.1 // indirect
+	github.com/operator-framework/ansible-operator-plugins v1.42.2 // indirect
 	github.com/operator-framework/api v0.39.0 // indirect
 	github.com/operator-framework/operator-manifest-tools v0.10.0 // indirect
 	github.com/operator-framework/operator-registry v1.63.0 // indirect

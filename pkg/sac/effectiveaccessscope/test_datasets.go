@@ -22,6 +22,9 @@ import (
 //   Bene Gesserit { region: dune_universe, alias: witches }                  //
 //   Fremen        { }                                                        //
 //                                                                            //
+// Giedi=Prime { focus: melange }                                             //
+//   Harkonnen     { focus: melange }
+//                                                                            //
 
 // storage.Cluster objects
 var (
@@ -37,13 +40,22 @@ var (
 			"focus": "melange",
 		},
 	}
+
+	clusterGiediPrime = &storage.Cluster{
+		Id:   "planet.giedi=prime",
+		Name: "Giedi=Prime",
+		Labels: map[string]string{
+			"focus": "melange",
+		},
+	}
 )
 
 // Cluster helpers
 var (
 	clusterIDs = map[string]string{
-		clusterEarth.GetId():   clusterEarth.GetName(),
-		clusterArrakis.GetId(): clusterArrakis.GetName(),
+		clusterEarth.GetId():      clusterEarth.GetName(),
+		clusterArrakis.GetId():    clusterArrakis.GetName(),
+		clusterGiediPrime.GetId(): clusterGiediPrime.GetName(),
 	}
 
 	arrakisAttributes = treeNodeAttributes{
@@ -55,6 +67,12 @@ var (
 	earthAttributes = treeNodeAttributes{
 		ID:   "planet.earth",
 		Name: "Earth",
+	}
+
+	giediPrimeAttributes = treeNodeAttributes{
+		ID:     "planet.giedi=prime",
+		Name:   "Giedi=Prime",
+		Labels: map[string]string{"focus": "melange"},
 	}
 
 	notFoundCluster = &clustersScopeSubTree{
@@ -131,6 +149,16 @@ var (
 		Name:        "Harkonnen",
 		ClusterId:   "planet.arrakis",
 		ClusterName: "Arrakis",
+		Labels: map[string]string{
+			"focus": "melange",
+		},
+	}
+
+	nsHarkonnenAtHome = &storage.NamespaceMetadata{
+		Id:          "house.harkonnen",
+		Name:        "Harkonnen",
+		ClusterId:   "planet.giedi=prime",
+		ClusterName: "Giedi=Prime",
 		Labels: map[string]string{
 			"focus": "melange",
 		},

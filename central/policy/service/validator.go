@@ -372,8 +372,8 @@ func (s *policyValidator) compilesForRunTime(policy *storage.Policy, options ...
 		return errors.New("A runtime policy must contain at least one policy criterion from process, network flow, audit log events, or Kubernetes events criteria categories")
 	}
 
-	if !booleanpolicy.ContainsDiscreteRuntimeFieldCategorySections(policy) {
-		return errors.New("A runtime policy section must contain only one criterion from process, network flow, audit log events, or Kubernetes events criteria categories")
+	if !booleanpolicy.ContainsValidRuntimeFieldCategorySections(policy) {
+		return errors.New("A runtime policy must not mix incompatible runtime criteria: process and file criteria must be in the same section, and cannot coexist with network flow or Kubernetes events criteria")
 	}
 
 	if err := s.validateNodeEventPolicy(policy); err != nil {
@@ -472,6 +472,13 @@ func (s *policyValidator) validateNodeEventPolicy(policy *storage.Policy) error 
 
 	if !booleanpolicy.HasDiscreteEventSource(policy, storage.EventSource_NODE_EVENT) {
 		return errors.New("Node event policies must contain only node fields")
+	}
+
+	for _, section := range policy.GetPolicySections() {
+		if booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.Process) &&
+			!booleanpolicy.SectionContainsFieldOfType(section, booleanpolicy.FileAccess) {
+			return errors.New("Node event policies with process criteria must include file access criteria in the same section")
+		}
 	}
 
 	return nil

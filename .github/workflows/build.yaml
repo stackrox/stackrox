@@ -209,6 +209,8 @@ jobs:
         env:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
+        with:
+          key-suffix: ${{ matrix.name }}
 
       - uses: ./.github/actions/handle-tagged-build
 
@@ -633,6 +635,8 @@ jobs:
         env:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
+        with:
+          key-suffix: ${{ matrix.name }}
 
       - uses: ./.github/actions/handle-tagged-build
 
@@ -666,11 +670,6 @@ jobs:
           matrix.name != 'STACKROX_BRANDING'
         run: |
           make -C operator/ bundle bundle-build
-
-      - name: Operator unit tests
-        if: matrix.arch == 'amd64'
-        run: |
-          scripts/lib.sh retry 2 true make -C operator/ test
 
       - name: Build Operator image
         run: |

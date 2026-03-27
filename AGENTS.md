@@ -165,6 +165,18 @@ When working on specific areas, refer to these detailed guides:
 - `image/templates/CHART_TEMPLATING.md` - Meta-templating system, feature flags, and chart instantiation
 - `image/templates/CHANGING_CHARTS.md` - How to add/modify Helm values fields and cluster config
 
+## Development
+
+### Style and Conventions
+- Go code follows golangci-lint standards
+- Additional project specific style guide in `.github/go-coding-style.md`
+- Protocol buffers have enforced style guidelines
+- Shell scripts are checked with shellcheck
+- UI code uses TypeScript with React conventions
+- All generated code should not be manually edited
+- Table-driven tests are defined as maps with the test name as the key.
+- Tests use `assert` or `require` provided by `github.com/stretchr/testify`.
+
 ### Development Workflow
 1. Use `make install-dev-tools` to set up development environment
 2. Run `make proto-generated-srcs` when protobuf files change
@@ -185,10 +197,4 @@ When working on specific areas, refer to these detailed guides:
 - Integration tests in `/qa-tests-backend/` use Groovy/Spock framework
 - Tests marked with `//go:build sql_integration` require database connectivity
 
-### Style and Conventions
-- Go code follows golangci-lint standards
-- Additional project specific style guide in `.github/go-coding-style.md`
-- Protocol buffers have enforced style guidelines
-- Shell scripts are checked with shellcheck
-- UI code uses TypeScript with React conventions
-- All generated code should not be manually edited
+

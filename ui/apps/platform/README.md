@@ -75,57 +75,59 @@ You need
 
 **Architecture**
 
-A plugin development environment has a handful of network components that can be configured in a variety of ways to talk to one another:
+A plugin development environment has the following network components:
 
-1. A running OpenShift installation
+1. A running OpenShift installation with StackRox secured cluster services installed
 2. A local OpenShift console container
 3. A local development server for the plugin
-4. An API server for the `central` component
+4. An exposed `sensor-proxy` service via LoadBalancer
 
-> When using the plugin via the console web UI, all requests for data to `central` will first be proxied through the console backend. The console _may_ inject authorization
-> headers into each request, overwriting any `Authorization` header that is initially sent in the request. The token injected into this header is the current OpenShift user's opaque
-> access token, and must be handled correctly by the backend for this to succeed. **As of today, `central` is unable to do this and all requests will fail.** In other words, the default
-> behavior of the commands in the **Running the plugin** section below will not work without additional configuration. After the backend is developed, we should be able to revert
-> to the bare commands and removed the need for overrides.
+The plugin uses OpenShift user authentication and proxies all API requests through the `sensor-proxy` service, which handles authentication/authorization and forwards requests to Central. This matches the production flow where the console plugin communicates through sensor-proxy rather than directly to Central.
 
 **Running the plugin**
 
-First, we need to generate an API token against the `central` instance that is intended to be used for development. If `central` was installed through the local `deploy` scripts and the current admin password is available in `../../../deploy/k8s/central-deploy/password` this can be done with the included script:
-
-```sh
-UI_API_TOKEN_NAME=ocp-console-dev UI_API_TOKEN_ROLE=Analyst ./scripts/get-auth-token.sh
-```
-
-Otherwise, generate a new API token via the UI and save it somewhere secure.
-
-Next, start the webpack dev server to make the plugin configuration files and js bundles available. Pass the token obtained above
-to the command:
+First, start the webpack dev server to make the plugin configuration files and js bundles available:
 
 ```sh
 # In a new terminal
-ACS_PROXY_BASE_PATH='/' ACS_CONSOLE_DEV_TOKEN=<your-token> npm run start:ocp-plugin
+npm run start:ocp-plugin
 ```
 
-This will run a webpack development server on http://localhost:9001 serving the plugin files and ensure the UI passes the token in the `Authorization` header of API requests.
-
-Note that the full end-to-end stack will proxy through sensor to central, and append `/proxy/central` to all API requests. The value of `ACS_PROXY_BASE_PATH` allows us to keep the URL bare, which is required in development environments when connecting directly to central. This variable must be set both in the terminal that runs webpack as well as the terminal that runs the console container, as shown below.
+This will run a webpack development server on http://localhost:9001 serving the plugin files.
 
 Next, start a local development version of the console in another terminal:
 
+**Note: running the below `./scripts/start-ocp-console.sh` script will create a LoadBalancer that exposes `sensor-proxy` to the internet. Ensure you are only connected to a development cluster before proceeding.**
+
+
 ```sh
-# With kubectx pointing to your openshift cluster, login via web browser
+# With kubectx pointing to your OpenShift cluster, login via web browser
 oc login --web
 
-# Run the following script to start a local instance of the OCP console as a bridge for plugin development. Disable the console
-# token injection to ensure our API token from above is passed in all requests.
-ACS_PROXY_BASE_PATH='/' ACS_INJECT_OCP_AUTH_TOKEN=false ./scripts/start-ocp-console.sh
-
-# By default, requests will be proxied to the detected central running in the cluster. If you wish to use an alternative central, instead run:
-ACS_PROXY_BASE_PATH='/' ACS_INJECT_OCP_AUTH_TOKEN=false ACS_API_SERVICE_URL=<central-service-url> ./scripts/start-ocp-console.sh
+# Run the following script to start a local instance of the OCP console.
+# This will automatically:
+# - Expose sensor-proxy via a LoadBalancer with NetworkPolicy
+# - Configure the console to use the sensor-proxy endpoint
+# - Clean up resources when the defined expiration time has elapsed
+./scripts/start-ocp-console.sh
 ```
 
-This will start the console on http://localhost:9000 with user authentication disabled; you will be logged in automatically as kubeadmin using the token retrieved via `oc login --web` above. With token injection disabled, all requests will include the central API token specified when running the plugin server. Visit http://localhost:9000 in
-your browser to develop and test the plugin.
+This will start the console on http://localhost:9000 with user authentication disabled; you will be logged in automatically using the token retrieved via `oc login --web` above. The script handles all backend connectivity automatically. Visit http://localhost:9000 in your browser to develop and test the plugin.
+
+**Configuration options**
+
+The console startup script supports the following environment variables:
+
+- `SENSOR_PROXY_NAMESPACE` - Namespace containing sensor-proxy (default: `stackrox`)
+- `SENSOR_PROXY_EXPIRY_HOURS` - Hours until LoadBalancer auto-cleanup (default: `8`)
+- `CONSOLE_PORT` - Local console port (default: `9000`)
+- `CONSOLE_IMAGE` - Console container image (default: `quay.io/openshift/origin-console:latest`)
+
+Example with custom configuration:
+
+```sh
+SENSOR_PROXY_EXPIRY_HOURS=12 ./scripts/start-ocp-console.sh
+```
 
 _Note: At this time https is not supported for local plugin development._
 
@@ -272,7 +274,7 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
         customize_envVars+=$'\n        value: "true"'
         ```
 
-    The value of feature flags for **demo** and **release** builds is in pkg/features/list.go 
+    The value of feature flags for **demo** and **release** builds is in pkg/features/list.go
 
 5. To turn on a feature flag for **local deployment**, do either or both of the following:
 
@@ -379,7 +381,6 @@ Read and obey comments to add strings or properties **in alphabetical order to m
 1. Edit ui/apps/platform/src/routePaths.ts file.
 
     * Add a path **without** params for link from sidebar navigation and, if needed, path **with** param for the `Route` element.
-
         * Use a **plural** noun for something like **clusters**.
         * Use a **singular** noun for something like **compliance**.
 
