@@ -1,3 +1,6 @@
+# Reproducible builds support
+ARG SOURCE_DATE_EPOCH
+
 # Labels for operator certification https://redhat-connect.gitbook.io/certified-operator-guide/ocp-deployment/operator-metadata/bundle-directory
 LABEL com.redhat.delivery.operator.bundle=true
 
