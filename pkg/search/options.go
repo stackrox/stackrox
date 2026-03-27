@@ -243,6 +243,22 @@ var (
 	ProcessNoSerializedPath               = newFieldLabel("Process No Serialized Path")
 	ProcessNoSerializedUID                = newFieldLabel("Process No Serialized UID")
 
+	// ProcessIndicatorJsonb Search fields (test type for --jsonb)
+	ProcessJsonbID                 = newFieldLabel("Process Jsonb ID")
+	DeploymentJsonbID              = newFieldLabel("Deployment Jsonb ID")
+	ContainerJsonbName             = newFieldLabel("Container Jsonb Name")
+	PodJsonbID                     = newFieldLabel("Pod Jsonb ID")
+	PodJsonbUID                    = newFieldLabel("Pod Jsonb UID")
+	ClusterJsonbID                 = newFieldLabel("Cluster Jsonb ID")
+	NamespaceJsonb                 = newFieldLabel("Namespace Jsonb")
+	ProcessContainerJsonbStartTime = newFieldLabel("Process Container Jsonb Start Time")
+	ContainerJsonbSignalID         = newFieldLabel("Container Jsonb Signal ID")
+	ProcessJsonbCreationTime       = newFieldLabel("Process Jsonb Creation Time")
+	ProcessJsonbName               = newFieldLabel("Process Jsonb Name")
+	ProcessJsonbArguments          = newFieldLabel("Process Jsonb Arguments")
+	ProcessJsonbPath               = newFieldLabel("Process Jsonb Path")
+	ProcessJsonbUID                = newFieldLabel("Process Jsonb UID")
+
 	// FileActivity Search fields
 	EffectivePath = newFieldLabel("Effective Path")
 	ActualPath    = newFieldLabel("Actual Path")
