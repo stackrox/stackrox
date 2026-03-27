@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -40,7 +42,14 @@ func GetRawName(doc chartutil.Values) (string, error) {
 // PatchCSV modifies the CSV document in-place according to options
 func PatchCSV(doc chartutil.Values, opts PatchOptions) error {
 	// Update createdAt timestamp
-	if err := values.CoalesceValue(doc, "metadata.annotations.createdAt", time.Now().UTC().Format(time.RFC3339)); err != nil {
+	// Use SOURCE_DATE_EPOCH if set (for reproducible builds), otherwise use current time
+	createdAt := time.Now().UTC()
+	if epoch := os.Getenv("SOURCE_DATE_EPOCH"); epoch != "" {
+		if timestamp, err := strconv.ParseInt(epoch, 10, 64); err == nil {
+			createdAt = time.Unix(timestamp, 0).UTC()
+		}
+	}
+	if err := values.CoalesceValue(doc, "metadata.annotations.createdAt", createdAt.Format(time.RFC3339)); err != nil {
 		return fmt.Errorf("failed to set createdAt: %w", err)
 	}
 
@@ -172,7 +181,11 @@ func setRelatedImages(spec chartutil.Values, managerImage string) error {
 	relatedImages := make([]map[string]any, 0)
 
 	// Collect all RELATED_IMAGE_* env vars
-	for _, envVar := range os.Environ() {
+	// Sort environment variables for deterministic order
+	envVars := os.Environ()
+	sort.Strings(envVars)
+
+	for _, envVar := range envVars {
 		if strings.HasPrefix(envVar, "RELATED_IMAGE_") {
 			parts := strings.SplitN(envVar, "=", 2)
 			if len(parts) != 2 {

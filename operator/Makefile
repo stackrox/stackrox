@@ -501,6 +501,10 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
        bundle/manifests/rhacs-operator.clusterserviceversion.yaml
 	$(OPERATOR_SDK) bundle validate ./bundle --select-optional suite=operatorframework
 
+# Use git commit timestamp for reproducible builds
+SOURCE_DATE_EPOCH ?= $(shell git log -1 --format=%ct)
+export SOURCE_DATE_EPOCH
+
 .PHONY: bundle-post-process
 bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file to include correct operator versions, etc.
 # Note: Python venv is always needed because dispatch.sh may use yaml-normalizer.py
@@ -532,7 +536,7 @@ bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file t
 
 .PHONY: bundle-build
 bundle-build: bundle.Dockerfile bundle-post-process ## Build the bundle image.
-	docker build $(if $(DOCKER_BUILD_LOAD),--load) -f $< -t $(BUNDLE_IMG) .
+	docker build $(if $(DOCKER_BUILD_LOAD),--load) --build-arg SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) -f $< -t $(BUNDLE_IMG) .
 
 .PHONY: bundle-test
 bundle-test: operator-sdk bundle-post-process ## Run scorecard tests against bundle files.
