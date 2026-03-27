@@ -837,13 +837,15 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "included_cluster_ids contains a list of clusters to which\nfull access is granted, identified by their IDs."
         },
         "includedClusters": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "included_clusters contains a list of clusters to which\nfull access is granted, identified by their names."
         },
         "includedNamespaces": {
           "type": "array",

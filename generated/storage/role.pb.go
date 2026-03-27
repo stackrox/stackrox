@@ -444,8 +444,12 @@ func (x *EffectiveAccessScope) GetClusters() []*EffectiveAccessScope_Cluster {
 // joined by logical OR: if there exists a rule allowing resource `x`,
 // `x` is in the access scope.
 type SimpleAccessScope_Rules struct {
-	state                   protoimpl.MessageState               `protogen:"open.v1"`
-	IncludedClusterIds      []string                             `protobuf:"bytes,5,rep,name=included_cluster_ids,json=includedClusterIds,proto3" json:"included_cluster_ids,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// included_cluster_ids contains a list of clusters to which
+	// full access is granted, identified by their IDs.
+	IncludedClusterIds []string `protobuf:"bytes,5,rep,name=included_cluster_ids,json=includedClusterIds,proto3" json:"included_cluster_ids,omitempty"`
+	// included_clusters contains a list of clusters to which
+	// full access is granted, identified by their names.
 	IncludedClusters        []string                             `protobuf:"bytes,1,rep,name=included_clusters,json=includedClusters,proto3" json:"included_clusters,omitempty"`
 	IncludedNamespaces      []*SimpleAccessScope_Rules_Namespace `protobuf:"bytes,2,rep,name=included_namespaces,json=includedNamespaces,proto3" json:"included_namespaces,omitempty"`
 	ClusterLabelSelectors   []*SetBasedLabelSelector             `protobuf:"bytes,3,rep,name=cluster_label_selectors,json=clusterLabelSelectors,proto3" json:"cluster_label_selectors,omitempty"`

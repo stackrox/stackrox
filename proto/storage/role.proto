@@ -72,7 +72,11 @@ message SimpleAccessScope {
       // Next ID: 4
     }
 
+    // included_cluster_ids contains a list of clusters to which
+    // full access is granted, identified by their IDs.
     repeated string included_cluster_ids = 5;
+    // included_clusters contains a list of clusters to which
+    // full access is granted, identified by their names.
     repeated string included_clusters = 1;
     repeated Namespace included_namespaces = 2;
 
