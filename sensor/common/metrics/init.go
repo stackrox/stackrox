@@ -45,5 +45,6 @@ func init() {
 		InformersRegisteredCurrent,
 		InformersPendingCurrent,
 		informerSyncDurationMs,
+		informerInitialObjectPopulationDurationSeconds,
 	)
 }
