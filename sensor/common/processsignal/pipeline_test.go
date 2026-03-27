@@ -3,6 +3,7 @@ package processsignal
 import (
 	"context"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/pkg/errors"
@@ -322,47 +323,48 @@ func newTestDispatcher(t *testing.T) common.PubSubDispatcher {
 func TestPubSubPipelineEnrichesAndDeliversIndicator(t *testing.T) {
 	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
 
-	sensorEvents := make(chan *message.ExpiringMessage, 10)
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
+	synctest.Test(t, func(t *testing.T) {
+		sensorEvents := make(chan *message.ExpiringMessage, 1)
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
 
-	mockStore := clusterentities.NewStore(0, nil, false)
-	mockDetector := mocks.NewMockDetector(mockCtrl)
-	dispatcher := newTestDispatcher(t)
+		mockStore := clusterentities.NewStore(0, nil, false)
+		mockDetector := mocks.NewMockDetector(mockCtrl)
+		dispatcher := newTestDispatcher(t)
 
-	p, err := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
-		mockDetector, dispatcher)
-	require.NoError(t, err)
-	t.Cleanup(p.Shutdown)
+		p, err := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
+			mockDetector, dispatcher)
+		require.NoError(t, err)
+		t.Cleanup(p.Shutdown)
 
-	containerID := "pubsub-container"
-	deploymentID := "pubsub-deployment"
-	containerMetadata := clusterentities.ContainerMetadata{
-		DeploymentID: deploymentID,
-		ContainerID:  containerID,
-	}
-	updateStore(containerID, deploymentID, containerMetadata, mockStore)
+		containerID := "pubsub-container"
+		deploymentID := "pubsub-deployment"
+		containerMetadata := clusterentities.ContainerMetadata{
+			DeploymentID: deploymentID,
+			ContainerID:  containerID,
+		}
+		updateStore(containerID, deploymentID, containerMetadata, mockStore)
 
-	mockDetector.EXPECT().ProcessIndicator(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, ind *storage.ProcessIndicator) {
-		assert.Equal(t, deploymentID, ind.GetDeploymentId())
-	})
+		mockDetector.EXPECT().ProcessIndicator(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, ind *storage.ProcessIndicator) {
+			assert.Equal(t, deploymentID, ind.GetDeploymentId())
+		})
 
-	p.Process(&storage.ProcessSignal{ContainerId: containerID})
+		p.Process(&storage.ProcessSignal{ContainerId: containerID})
 
-	select {
-	case msg := <-sensorEvents:
+		// Wait for all goroutines in the bubble to settle.
+		synctest.Wait()
+
+		msg := <-sensorEvents
 		require.NotNil(t, msg)
 		assert.Equal(t, deploymentID, msg.GetEvent().GetProcessIndicator().GetDeploymentId())
 		assert.Equal(t, containerID, msg.GetEvent().GetProcessIndicator().GetSignal().GetContainerId())
-	case <-time.After(2 * time.Second):
-		t.Fatal("Timeout waiting for enriched indicator via pub/sub")
-	}
+	})
 }
 
 func TestPubSubPipelineFailsOnRegistrationError(t *testing.T) {
 	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
 
-	sensorEvents := make(chan *message.ExpiringMessage, 10)
+	sensorEvents := make(chan *message.ExpiringMessage, 1)
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
@@ -379,38 +381,43 @@ func TestPubSubPipelineFailsOnRegistrationError(t *testing.T) {
 func TestPubSubPipelineDropsSignalOnPublishFailure(t *testing.T) {
 	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
 
-	sensorEvents := make(chan *message.ExpiringMessage, 10)
-	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
+	synctest.Test(t, func(t *testing.T) {
+		sensorEvents := make(chan *message.ExpiringMessage, 1)
+		mockCtrl := gomock.NewController(t)
+		defer mockCtrl.Finish()
 
-	mockStore := clusterentities.NewStore(0, nil, false)
-	mockDetector := mocks.NewMockDetector(mockCtrl)
-	failingDispatcher := &fakeDispatcher{publishErr: errors.New("publish failed")}
+		mockStore := clusterentities.NewStore(0, nil, false)
+		mockDetector := mocks.NewMockDetector(mockCtrl)
+		failingDispatcher := &fakeDispatcher{publishErr: errors.New("publish failed")}
 
-	p, err := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
-		mockDetector, failingDispatcher)
-	require.NoError(t, err)
-	t.Cleanup(p.Shutdown)
+		p, err := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
+			mockDetector, failingDispatcher)
+		require.NoError(t, err)
+		t.Cleanup(p.Shutdown)
 
-	containerID := "fail-container"
-	containerMetadata := clusterentities.ContainerMetadata{
-		DeploymentID: "fail-deployment",
-		ContainerID:  containerID,
-	}
-	updateStore(containerID, "fail-deployment", containerMetadata, mockStore)
+		containerID := "fail-container"
+		containerMetadata := clusterentities.ContainerMetadata{
+			DeploymentID: "fail-deployment",
+			ContainerID:  containerID,
+		}
+		updateStore(containerID, "fail-deployment", containerMetadata, mockStore)
 
-	// Process should not panic; the signal should be dropped.
-	require.NotPanics(t, func() {
-		p.Process(&storage.ProcessSignal{ContainerId: containerID})
+		// Process should not panic; the signal should be dropped.
+		require.NotPanics(t, func() {
+			p.Process(&storage.ProcessSignal{ContainerId: containerID})
+		})
+
+		// Wait for all goroutines to settle — if the signal were
+		// delivered it would be in the channel by now.
+		synctest.Wait()
+
+		select {
+		case msg := <-sensorEvents:
+			t.Errorf("Expected no message after publish failure, got: %v", msg)
+		default:
+			// Expected: nothing delivered.
+		}
 	})
-
-	// No message should arrive since publish failed.
-	select {
-	case msg := <-sensorEvents:
-		t.Errorf("Expected no message after publish failure, got: %v", msg)
-	case <-time.After(500 * time.Millisecond):
-		// Expected: nothing delivered.
-	}
 }
 
 // TestProcessPipelineShutdownRace tests that Process() does not panic when called after Shutdown()

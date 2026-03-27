@@ -59,7 +59,7 @@ func (cw *containerWrap) fetchAndClearProcesses() []*storage.ProcessIndicator {
 	return processes
 }
 
-func newEnricher(ctx context.Context, clusterEntities *clusterentities.Store, pubSubDispatcher common.PubSubDispatcher) *enricher {
+func newEnricher(ctx context.Context, clusterEntities *clusterentities.Store, pubSubDispatcher common.PubSubDispatcher) (*enricher, error) {
 	evictfunc := func(key string, value *containerWrap) {
 		metrics.IncrementProcessEnrichmentDrops()
 	}
@@ -89,12 +89,12 @@ func newEnricher(ctx context.Context, clusterEntities *clusterentities.Store, pu
 			pubsub.UnenrichedProcessIndicatorLane,
 			e.processUnenrichedIndicator,
 		); err != nil {
-			log.Errorf("Failed to register consumer for unenriched process indicators in enricher: %v", err)
+			return nil, errors.Wrap(err, "failed to register unenriched indicators consumer")
 		}
 	}
 
 	go e.processLoop(ctx)
-	return e
+	return e, nil
 }
 
 func (e *enricher) getEnrichedC() <-chan *storage.ProcessIndicator {

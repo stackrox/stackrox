@@ -240,7 +240,10 @@ type Pipeline struct {
 // NewProcessPipeline defines how to process a ProcessIndicator
 func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntities *clusterentities.Store, processFilter filter.Filter, detector detector.Detector, pubSubDispatcher common.PubSubDispatcher) (*Pipeline, error) {
 	enricherCtx, cancelEnricherCtx := context.WithCancelCause(context.Background())
-	en := newEnricher(enricherCtx, clusterEntities, pubSubDispatcher)
+	en, err := newEnricher(enricherCtx, clusterEntities, pubSubDispatcher)
+	if err != nil {
+		return nil, err
+	}
 
 	stopper := concurrency.NewStopper()
 	base := newBasePipeline(indicators, en, processFilter, detector, stopper, cancelEnricherCtx)
