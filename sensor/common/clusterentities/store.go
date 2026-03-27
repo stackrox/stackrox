@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/clusterentities/metrics"
 	"github.com/stackrox/rox/sensor/common/heritage"
 )
 
@@ -474,4 +475,12 @@ func prettyPrintHistoricalData[M ~map[K1]map[K2]*entityStatus, K1 comparable, K2
 		}
 	}
 	return strings.Join(fragments, "\n")
+}
+
+// deferUnlock captures the lock-held duration before releasing the lock, then records the metric.
+// Usage: defer deferUnlock(mu.Unlock, time.Now(), store, op)
+func deferUnlock(unlock func(), start time.Time, store, operation string) {
+	duration := time.Since(start)
+	unlock()
+	metrics.ObserveStoreLockHeldDurationWithOperation(store, operation, duration)
 }

@@ -66,7 +66,7 @@ func (e *containerIDsStore) historyEnabled() bool {
 // RecordTick records a tick
 func (e *containerIDsStore) RecordTick() {
 	e.mutex.Lock()
-	defer unlockWithMetric(&e.mutex, time.Now(), "container_ids", "record_tick")
+	defer deferUnlock(e.mutex.Unlock, time.Now(), "container_ids", "record_tick")
 	for id, metaMap := range e.historicalContainerIDs {
 		for metadata, status := range metaMap {
 			status.recordTick()
@@ -81,7 +81,7 @@ func (e *containerIDsStore) RecordTick() {
 
 func (e *containerIDsStore) Apply(updates map[string]*EntityData, incremental bool) []ContainerMetadata {
 	e.mutex.Lock()
-	defer unlockWithMetric(&e.mutex, time.Now(), "container_ids", "apply")
+	defer deferUnlock(e.mutex.Unlock, time.Now(), "container_ids", "apply")
 	var metadata []ContainerMetadata
 	if !incremental {
 		for deploymentID := range updates {
