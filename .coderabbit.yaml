@@ -126,4 +126,4 @@ knowledge_base:
   pull_requests:
     scope: auto
   web_search:
-    enabled: true
+    enabled: false
