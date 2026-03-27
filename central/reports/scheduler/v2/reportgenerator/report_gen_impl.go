@@ -547,7 +547,6 @@ func getSelectsDeployedImages() []*v1.QuerySelect {
 	ret := []*v1.QuerySelect{
 		search.NewQuerySelect(search.ImageName).Proto(),
 		search.NewQuerySelect(search.Component).Proto(),
-		search.NewQuerySelect(search.ComponentVersion).Proto(),
 		search.NewQuerySelect(search.CVEID).Proto(),
 		search.NewQuerySelect(search.CVE).Proto(),
 		search.NewQuerySelect(search.Fixable).Proto(),
