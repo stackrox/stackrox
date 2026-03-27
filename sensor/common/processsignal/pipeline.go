@@ -71,7 +71,7 @@ func (p *basePipeline) sendToCentral(msg *message.ExpiringMessage) {
 		return
 	default:
 		metrics.IncrementProcessSignalDroppedCount()
-		log.Errorf("The output channel is full. Dropping process indicator event for deployment %s with id %s and process name %s",
+		log.Infof("The output channel is full. Dropping process indicator event for deployment %s with id %s and process name %s",
 			msg.GetEvent().GetProcessIndicator().GetDeploymentId(),
 			msg.GetEvent().GetProcessIndicator().GetId(),
 			msg.GetEvent().GetProcessIndicator().GetSignal().GetName())
@@ -238,9 +238,7 @@ type Pipeline struct {
 }
 
 // NewProcessPipeline defines how to process a ProcessIndicator
-func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntities *clusterentities.Store, processFilter filter.Filter, detector detector.Detector, pubSubDispatcher common.PubSubDispatcher) *Pipeline {
-	log.Debug("Calling NewProcessPipeline")
-
+func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntities *clusterentities.Store, processFilter filter.Filter, detector detector.Detector, pubSubDispatcher common.PubSubDispatcher) (*Pipeline, error) {
 	enricherCtx, cancelEnricherCtx := context.WithCancelCause(context.Background())
 	en := newEnricher(enricherCtx, clusterEntities, pubSubDispatcher)
 
@@ -248,22 +246,30 @@ func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntitie
 	base := newBasePipeline(indicators, en, processFilter, detector, stopper, cancelEnricherCtx)
 
 	var inner processPipeline
+	var pipelineMode string
 	if features.SensorInternalPubSub.Enabled() && pubSubDispatcher != nil {
 		log.Info("Process pipeline using pub/sub mode")
 		inner = newPubSubPipeline(base, pubSubDispatcher)
+		pipelineMode = metrics.ProcessPipelineModePubSub
 	} else {
 		log.Info("Process pipeline using legacy channel mode")
 		inner = newChannelPipeline(base, clusterEntities)
+		pipelineMode = metrics.ProcessPipelineModeLegacy
 	}
 
 	if err := inner.Start(); err != nil {
-		log.Error("Failed to start process pipeline:", err)
+		// Ideally each constructor would defer goroutine creation to
+		// Start() and clean up its own resources on failure, but calling
+		// Stop() here ensures cleanup regardless of implementation.
+		_ = inner.Stop()
+		return nil, errors.Wrap(err, "failed to start process pipeline")
 	}
 
+	metrics.SetProcessPipelineMode(pipelineMode)
 	return &Pipeline{
 		inner:   inner,
 		stopper: stopper,
-	}
+	}, nil
 }
 
 // PopulateIndicatorFromCachedContainer sets deployment and container metadata

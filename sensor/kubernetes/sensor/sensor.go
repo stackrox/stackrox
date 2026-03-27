@@ -155,7 +155,10 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	// Create Process Pipeline
 	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
-	processPipeline := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector, internalMessageDispatcher)
+	processPipeline, err := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector, internalMessageDispatcher)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating process pipeline")
+	}
 	if cfg.processPipelineObserver != nil {
 		cfg.processPipelineObserver(processPipeline)
 	}

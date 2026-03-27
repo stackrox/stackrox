@@ -5,12 +5,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/detector/mocks"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/pubsub"
+	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
+	"github.com/stackrox/rox/sensor/common/pubsub/lane"
+	componentMocks "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -96,9 +102,10 @@ func TestProcessPipelineOfflineV3(t *testing.T) {
 			sensorEvents := make(chan *message.ExpiringMessage, outputChannelSize)
 			mockStore := clusterentities.NewStore(0, nil, false)
 			mockDetector := mocks.NewMockDetector(mockCtrl)
-			pipeline := NewProcessPipeline(sensorEvents, mockStore,
+			pipeline, err := NewProcessPipeline(sensorEvents, mockStore,
 				filter.NewFilter(5, 5, []int{3, 3, 3}),
 				mockDetector, nil)
+			require.NoError(t, err)
 			t.Cleanup(func() {
 				pipeline.Shutdown()
 				for _, entity := range tc.entities {
@@ -180,8 +187,9 @@ func TestProcessPipelineOnline(t *testing.T) {
 	mockStore := clusterentities.NewStore(0, nil, false)
 	mockDetector := mocks.NewMockDetector(mockCtrl)
 
-	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
+	p, err := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
 		mockDetector, nil)
+	require.NoError(t, err)
 	p.Notify(common.SensorComponentEventCentralReachable)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -278,6 +286,146 @@ func deleteStore(deploymentID string, mockStore *clusterentities.Store) {
 	mockStore.Apply(updates, false)
 }
 
+// mockDispatcherWithStop wraps the generated MockPubSubDispatcher which is
+// missing Stop() because it was generated from the duplicate interface in
+// component.go rather than common.PubSubDispatcher.
+type mockDispatcherWithStop struct {
+	*componentMocks.MockPubSubDispatcher
+}
+
+func (m *mockDispatcherWithStop) Stop() {}
+
+func newTestDispatcher(t *testing.T) common.PubSubDispatcher {
+	t.Helper()
+	d, err := pubsubDispatcher.NewDispatcher(pubsubDispatcher.WithLaneConfigs(
+		[]pubsub.LaneConfig{
+			lane.NewBlockingLane(pubsub.UnenrichedProcessIndicatorLane),
+			lane.NewBlockingLane(pubsub.EnrichedProcessIndicatorLane),
+		},
+	))
+	require.NoError(t, err)
+	t.Cleanup(d.Stop)
+	return d
+}
+
+func TestPubSubPipelineEnrichesAndDeliversIndicator(t *testing.T) {
+	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+
+	sensorEvents := make(chan *message.ExpiringMessage, 10)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockStore := clusterentities.NewStore(0, nil, false)
+	mockDetector := mocks.NewMockDetector(mockCtrl)
+	dispatcher := newTestDispatcher(t)
+
+	p, err := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
+		mockDetector, dispatcher)
+	require.NoError(t, err)
+	t.Cleanup(p.Shutdown)
+
+	containerID := "pubsub-container"
+	deploymentID := "pubsub-deployment"
+	containerMetadata := clusterentities.ContainerMetadata{
+		DeploymentID: deploymentID,
+		ContainerID:  containerID,
+	}
+	updateStore(containerID, deploymentID, containerMetadata, mockStore)
+
+	mockDetector.EXPECT().ProcessIndicator(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, ind *storage.ProcessIndicator) {
+		assert.Equal(t, deploymentID, ind.GetDeploymentId())
+	})
+
+	p.Process(&storage.ProcessSignal{ContainerId: containerID})
+
+	select {
+	case msg := <-sensorEvents:
+		require.NotNil(t, msg)
+		assert.Equal(t, deploymentID, msg.GetEvent().GetProcessIndicator().GetDeploymentId())
+		assert.Equal(t, containerID, msg.GetEvent().GetProcessIndicator().GetSignal().GetContainerId())
+	case <-time.After(2 * time.Second):
+		t.Fatal("Timeout waiting for enriched indicator via pub/sub")
+	}
+}
+
+func TestPubSubPipelineFailsOnRegistrationError(t *testing.T) {
+	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+
+	sensorEvents := make(chan *message.ExpiringMessage, 10)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockStore := clusterentities.NewStore(0, nil, false)
+	mockDetector := mocks.NewMockDetector(mockCtrl)
+	mockDispatcher := &mockDispatcherWithStop{componentMocks.NewMockPubSubDispatcher(mockCtrl)}
+
+	// The enricher registers for unenriched indicators first (during newEnricher).
+	mockDispatcher.EXPECT().RegisterConsumerToLane(
+		pubsub.UnenrichedProcessConsumer,
+		pubsub.UnenrichedProcessIndicatorTopic,
+		pubsub.UnenrichedProcessIndicatorLane,
+		gomock.Any(),
+	).Return(nil)
+
+	// The pub/sub pipeline registers for enriched indicators during Start().
+	// Simulate a registration failure.
+	mockDispatcher.EXPECT().RegisterConsumerToLane(
+		pubsub.EnrichedProcessConsumer,
+		pubsub.EnrichedProcessIndicatorTopic,
+		pubsub.EnrichedProcessIndicatorLane,
+		gomock.Any(),
+	).Return(errors.New("registration failed"))
+
+	_, err := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
+		mockDetector, mockDispatcher)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "registration failed")
+}
+
+func TestPubSubPipelineDropsSignalOnPublishFailure(t *testing.T) {
+	t.Setenv(features.SensorInternalPubSub.EnvVar(), "true")
+
+	sensorEvents := make(chan *message.ExpiringMessage, 10)
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mockStore := clusterentities.NewStore(0, nil, false)
+	mockDetector := mocks.NewMockDetector(mockCtrl)
+	mockDispatcher := &mockDispatcherWithStop{componentMocks.NewMockPubSubDispatcher(mockCtrl)}
+
+	// Allow all registrations to succeed.
+	mockDispatcher.EXPECT().RegisterConsumerToLane(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil).Times(2)
+
+	// Publish will fail.
+	mockDispatcher.EXPECT().Publish(gomock.Any()).Return(errors.New("publish failed"))
+
+	p, err := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
+		mockDetector, mockDispatcher)
+	require.NoError(t, err)
+	t.Cleanup(p.Shutdown)
+
+	containerID := "fail-container"
+	containerMetadata := clusterentities.ContainerMetadata{
+		DeploymentID: "fail-deployment",
+		ContainerID:  containerID,
+	}
+	updateStore(containerID, "fail-deployment", containerMetadata, mockStore)
+
+	// Process should not panic; the signal should be dropped.
+	require.NotPanics(t, func() {
+		p.Process(&storage.ProcessSignal{ContainerId: containerID})
+	})
+
+	// No message should arrive since publish failed.
+	select {
+	case msg := <-sensorEvents:
+		t.Errorf("Expected no message after publish failure, got: %v", msg)
+	case <-time.After(500 * time.Millisecond):
+		// Expected: nothing delivered.
+	}
+}
+
 // TestProcessPipelineShutdownRace tests that Process() does not panic when called after Shutdown()
 // This prevents the "send on closed channel" panic that occurs when fake workload goroutines
 // continue sending signals after the pipeline has been shut down.
@@ -290,8 +438,9 @@ func TestProcessPipelineShutdownRace(t *testing.T) {
 	mockStore := clusterentities.NewStore(0, nil, false)
 	mockDetector := mocks.NewMockDetector(mockCtrl)
 
-	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
+	p, err := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
 		mockDetector, nil)
+	require.NoError(t, err)
 
 	containerID := "test-container-id"
 	containerMetadata := clusterentities.ContainerMetadata{
