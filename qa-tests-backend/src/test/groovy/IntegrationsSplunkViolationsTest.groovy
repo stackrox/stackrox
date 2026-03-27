@@ -76,8 +76,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
 
         when:
         "Search for violations in Splunk"
-        // Splunk search for violations is volatile for some reason.
-        // We added retries to make this test less flaky.
+        // The TA polls Central every 5s (input interval). Violations may not be indexed yet.
         List<Map<String, String>> results = Collections.emptyList()
         boolean hasNetworkViolation = false
         boolean hasProcessViolation = false
@@ -96,24 +95,30 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
             assert hasNetworkViolation && hasProcessViolation
         }
 
-        log.info "Starting conversion of ACS violations to Splunk alerts"
-        // The conversion job normally runs on a 5-minute cron with dispatch.earliest_time=-5m.
-        // Test setup (deploy, boot, configure, trigger violations) can exceed that window,
-        // so we override earliest_time to -30m to cover the entire test duration.
-        postToSplunk(port, "/services/saved/searches/" + SPLUNK_TA_CONVERSION_JOB_NAME + "/dispatch", [
-                "dispatch.now": "true",
-                "force_dispatch": "true",
-                "dispatch.earliest_time": "-30m",
-        ])
-
         // Check for Alerts
+        // The conversion job (savedsearches.conf) is async — dispatch returns immediately
+        // while the search runs in the background. We re-dispatch on each retry because:
+        //   1. The default search window is -5m which test setup can exceed (overridden to -30m)
+        //   2. If the job ran before violations were fully indexed, it produces zero notables
+        //   3. Re-dispatching with force_dispatch creates a fresh run each time
+        // We query via the Alerts data model (not index=notable directly) because
+        // CIM field extractions (app, severity, dest, etc.) are only applied by the data model.
         List<Map<String, String>> alerts = Collections.emptyList()
         boolean hasNetworkAlert = false
         boolean hasProcessAlert = false
         withRetry(40, 15) {
-            def vSearchId = SplunkUtil.createSearch(port, "| from datamodel Alerts.Alerts", "-30m")
+            log.info "Dispatching conversion job to create Splunk alerts from ACS violations"
+            postToSplunk(port, "/services/saved/searches/" + SPLUNK_TA_CONVERSION_JOB_NAME + "/dispatch", [
+                    "dispatch.now": "true",
+                    "force_dispatch": "true",
+                    "dispatch.earliest_time": "-30m",
+            ])
+
+            // "| from datamodel" is a generating command that ignores the search job's
+            // earliest_time, so we pipe to a where clause to filter by time.
+            def vSearchId = SplunkUtil.createSearch(port,
+                    "| from datamodel Alerts.Alerts | where _time>relative_time(now(),\"-30m\")")
             Response vResponse = SplunkUtil.getSearchResults(port, vSearchId)
-            // We should have at least one violation in the response
             assert vResponse != null
             alerts = vResponse.getBody().jsonPath().getList("results")
             assert !alerts.isEmpty()

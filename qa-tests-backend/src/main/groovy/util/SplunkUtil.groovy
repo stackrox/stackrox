@@ -108,6 +108,9 @@ class SplunkUtil {
         withRetry(20, 3) {
             response = splunkAdminRequest()
                     .param("output_mode", "json")
+                    // Splunk defaults to returning 100 events. count=0 removes the limit
+                    // so searches don't silently miss results beyond the first page.
+                    .param("count", "0")
                     .get("https://127.0.0.1:" + port + "/services/search/jobs/" + searchId + "/events")
             assert response.statusCode() == 200 :
                     "GET search results for " + searchId + " failed with status " +
