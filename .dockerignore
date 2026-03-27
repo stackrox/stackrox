@@ -1,6 +1,7 @@
 **/node_modules/
 /.git/
 /bin/
+!/bin/linux_*/stackrox-operator
 /image/bin/
 /image/rhel/bin/
 /linux-gocache/

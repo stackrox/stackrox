@@ -627,6 +627,7 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - define-job-matrix
+      - pre-build-go-binaries
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
       volumes:
@@ -643,6 +644,7 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
+      ROX_OPERATOR_SKIP_PROTO_GENERATED_SRCS: true
       BUILD_TAG: ${{ needs.define-job-matrix.outputs.build-tag }}
       SHORTCOMMIT: ${{ needs.define-job-matrix.outputs.short-commit }}
       GOTAGS: ${{ needs.define-job-matrix.outputs.gotags }}
@@ -660,15 +662,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      - name: Cache Go dependencies
-        env:
-          GOARCH: ${{ matrix.arch }}
-        uses: ./.github/actions/cache-go-dependencies
+      - name: Download prebuilt operator binaries
+        uses: ./.github/actions/download-artifact-with-retry
         with:
-          key-suffix: ${{ matrix.name }}
+          name: go-binaries-build-${{ matrix.arch }}-default
+          path: .
 
-      - name: Resolve mods for protos
-        run: go mod tidy
+      - name: Extract prebuilt binaries
+        run: tar xzf go-binaries-build.tgz
 
       - name: PR labels
         uses: joerick/pr-labels-action@v1.0.9
@@ -700,16 +701,7 @@ jobs:
 
       - name: Build Operator image
         run: |
-          # The first invocation builds native architecture dependencies, which helps avoid the following error,
-          # which otherwise happens when cross-building. It also needlessly builds the operator binary for the
-          # native architecture, but this is quick and more robust than trying to repeat the dependencies here
-          # or in a separate intermediate target.
-          #   + protoc-gen-go
-          #   go: cannot install cross-compiled binaries when GOBIN is set
-          CGO_ENABLED=0                           scripts/lib.sh retry 6 true make -C operator/ build
-          # Once the native architecture dependencies are installed by the above command, the following one
-          # simply builds the actual operator binary for the correct target architecture.
-          CGO_ENABLED=0 GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ build docker-build
+          GOARCH=${{ matrix.arch }} scripts/lib.sh retry 6 true make -C operator/ docker-build-prebuilt
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
         uses: docker/login-action@v4
