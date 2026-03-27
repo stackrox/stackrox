@@ -218,7 +218,7 @@ func (s *centralCommunicationImpl) hello(stream central.SensorService_Communicat
 
 	if metautils.MD(rawHdr).Get(centralsensor.SensorHelloMetadataKey) != "true" {
 		return ProbeStreamForConnectionError(stream,
-			"the init bundle credentials",
+			"the init bundle credentials have been revoked",
 			"central did not acknowledge SensorHello,"+
 				" likely due to a networking or TLS configuration issue"+
 				" (e.g., re-encrypt routes or TLS termination)"+
