@@ -62,6 +62,16 @@ else
 		printf >&2 "%s\n" "${x_def_errors[@]}"
 		exit 1
 	fi
+
+	# Write per-commit version info as untracked files for go:embed.
+	# These are NOT in ldflags so that link ActionIDs stay stable.
+	VERSION_DIR="${REPO_ROOT}/pkg/version/internal"
+	if [[ -n "${BUILD_TAG:-}" ]]; then
+		printf '%s' "${BUILD_TAG}" > "${VERSION_DIR}/MAIN_VERSION"
+	else
+		printf '%s' "$(cd "${REPO_ROOT}"; git describe --tags --abbrev=10 --long --exclude '*-nightly-*')" > "${VERSION_DIR}/MAIN_VERSION"
+	fi
+	printf '%s' "${status_STABLE_GIT_SHORT_SHA}" > "${VERSION_DIR}/GIT_SHORT_SHA_VERSION"
 fi
 
 ldflags=("${x_defs[@]}")
@@ -75,13 +85,19 @@ if [[ "${CGO_ENABLED}" != 0 ]]; then
 fi
 
 function invoke_go() {
-  tool="$1"
+  local tool="${1:?"invoke_go tool argument required"}"
   shift
+  local args=()
+  local CGO_ENABLED
+
+  args+=("-buildvcs=false")
+  args+=(-ldflags="${ldflags[*]}")
+  args+=(-tags "$(tr , ' ' <<<"$GOTAGS")")
   if [[ "$RACE" == "true" ]]; then
-    CGO_ENABLED=1 go "$tool" -race -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" "$@"
-  else
-    go "$tool" -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" "$@"
+    export CGO_ENABLED=1
+    args+=("-race")
   fi
+  go "$tool" "${args[@]}" "$@"
 }
 
 function go_build() (

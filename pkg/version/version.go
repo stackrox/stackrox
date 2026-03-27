@@ -21,7 +21,7 @@ var (
 
 // GetMainVersion returns the tag of Rox.
 func GetMainVersion() string {
-	return internal.MainVersion
+	return internal.GetMainVersion()
 }
 
 // getCollectorVersion returns the current Collector tag.
@@ -65,7 +65,7 @@ type Versions struct {
 func GetAllVersionsDevelopment() Versions {
 	return Versions{
 		CollectorVersion: getCollectorVersion(),
-		GitCommit:        internal.GitShortSha,
+		GitCommit:        internal.GetGitShortSha(),
 		GoVersion:        runtime.Version(),
 		MainVersion:      GetMainVersion(),
 		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
