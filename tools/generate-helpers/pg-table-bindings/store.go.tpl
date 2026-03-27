@@ -483,46 +483,39 @@ func bulkInsertInto{{ .Schema.Table|upperCamelCase }}(batch *pgx.Batch, objs []*
     return nil
 }
 
-func buildFromScan(
-    {{- range $index, $field := .Schema.DBColumnFields }}
-    {{ scanVarName $field }} {{ scanVarType $field }},
-    {{- end }}
-) *storeType {
+func scanRow(row pgx.Row) (*storeType, error) {
     obj := &storeType{}
     {{- range $sub := .Schema.InlinedSubMessages }}
     obj.{{ $sub.FieldName }} = &{{ $sub.TypeName }}{}
     {{- end }}
-    {{- range $field := .Schema.DBColumnFields }}
-    {{- $setter := fieldSetterExpr $field }}
-    {{- if $setter }}
-    {{- if needsTypeConversion $field }}
-    {{ $setter }} = {{ typeConversionExpr $field (scanVarName $field) }}
-    {{- else }}
-    {{ $setter }} = {{ scanVarName $field }}
-    {{- end }}
-    {{- end }}
-    {{- end }}
-    return obj
-}
 
-func scanRow(row pgx.Row) (*storeType, error) {
+    {{- /* Declare temp vars only for fields that need type conversion */}}
     {{- range $field := .Schema.DBColumnFields }}
+    {{- if not (canScanDirect $field) }}
     var {{ scanVarName $field }} {{ scanVarType $field }}
+    {{- end }}
     {{- end }}
 
     if err := row.Scan(
         {{- range $field := .Schema.DBColumnFields }}
+        {{- if canScanDirect $field }}
+        &{{ fieldSetterExpr $field }},
+        {{- else }}
         &{{ scanVarName $field }},
+        {{- end }}
         {{- end }}
     ); err != nil {
         return nil, err
     }
 
-    return buildFromScan(
-        {{- range $field := .Schema.DBColumnFields }}
-        {{ scanVarName $field }},
-        {{- end }}
-    ), nil
+    {{- /* Apply type conversions for fields that needed temp vars */}}
+    {{- range $field := .Schema.DBColumnFields }}
+    {{- if and (not (canScanDirect $field)) (fieldSetterExpr $field) }}
+    {{ fieldSetterExpr $field }} = {{ typeConversionExpr $field (scanVarName $field) }}
+    {{- end }}
+    {{- end }}
+
+    return obj, nil
 }
 
 {{- if .Schema.Children }}
@@ -549,6 +542,7 @@ func FetchChildren(ctx context.Context, db postgres.DB, objs []*storeType) error
         }
         defer rows.Close()
         for rows.Next() {
+            {{- /* Child rows: variable fields (parent FK, idx) always need temp vars */}}
             {{- range $field := $child.DBColumnFields }}
             var {{ scanVarName $field }} {{ scanVarType $field }}
             {{- end }}
@@ -595,23 +589,36 @@ func FetchChildren(ctx context.Context, db postgres.DB, objs []*storeType) error
 {{- end }}
 
 func scanRows(rows pgx.Rows) (*storeType, error) {
+    obj := &storeType{}
+    {{- range $sub := .Schema.InlinedSubMessages }}
+    obj.{{ $sub.FieldName }} = &{{ $sub.TypeName }}{}
+    {{- end }}
+
     {{- range $field := .Schema.DBColumnFields }}
+    {{- if not (canScanDirect $field) }}
     var {{ scanVarName $field }} {{ scanVarType $field }}
+    {{- end }}
     {{- end }}
 
     if err := rows.Scan(
         {{- range $field := .Schema.DBColumnFields }}
+        {{- if canScanDirect $field }}
+        &{{ fieldSetterExpr $field }},
+        {{- else }}
         &{{ scanVarName $field }},
+        {{- end }}
         {{- end }}
     ); err != nil {
         return nil, err
     }
 
-    return buildFromScan(
-        {{- range $field := .Schema.DBColumnFields }}
-        {{ scanVarName $field }},
-        {{- end }}
-    ), nil
+    {{- range $field := .Schema.DBColumnFields }}
+    {{- if and (not (canScanDirect $field)) (fieldSetterExpr $field) }}
+    {{ fieldSetterExpr $field }} = {{ typeConversionExpr $field (scanVarName $field) }}
+    {{- end }}
+    {{- end }}
+
+    return obj, nil
 }
 {{- end }}
 
