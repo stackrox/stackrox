@@ -41,6 +41,23 @@ func TestNewClient_release(t *testing.T) {
 		assert.Equal(t, remoteKey, c.GetStorageKey(), "should fetch the key")
 	})
 
+	t.Run("explicit key preserved", func(t *testing.T) {
+		// When a key is explicitly provided via ROX_TELEMETRY_STORAGE_KEY_V1,
+		// it must not be overwritten by the remote configuration.
+		const explicitKey = "explicit-key"
+		c := NewClient("test", "Test", "0.0.0",
+			WithStorageKey(explicitKey),
+			WithEndpoint(server.URL),
+			WithConfigURL(server.URL),
+			WithConfigureCallback(func(rc *RuntimeConfig) {
+				t.Logf("reconfigured with %v", rc)
+			}),
+		)
+		assert.True(t, c.IsEnabled())
+		assert.Equal(t, explicitKey, c.GetStorageKey(),
+			"explicit key must not be overwritten by remote key")
+	})
+
 	t.Run("DISABLED key", func(t *testing.T) {
 		// This is release CI and infra clusters case.
 		c := NewClient("test", "Test", "0.0.0",
