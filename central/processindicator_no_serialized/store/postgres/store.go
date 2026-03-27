@@ -356,122 +356,48 @@ func bulkInsertIntoProcessIndicatorNoSerializeds(batch *pgx.Batch, objs []*store
 	return nil
 }
 
-func buildFromScan(
-	col_Id string,
-	col_DeploymentId string,
-	col_ContainerName string,
-	col_PodId string,
-	col_PodUid string,
-	col_Signal_Id string,
-	col_Signal_ContainerId string,
-	col_Signal_Time *time.Time,
-	col_Signal_Name string,
-	col_Signal_Args string,
-	col_Signal_ExecFilePath string,
-	col_Signal_Pid uint32,
-	col_Signal_Uid uint32,
-	col_Signal_Gid uint32,
-	col_Signal_Lineage []string,
-	col_Signal_Scraped bool,
-	col_ClusterId string,
-	col_Namespace string,
-	col_ContainerStartTime *time.Time,
-	col_ImageId string,
-) *storeType {
+func scanRow(row pgx.Row) (*storeType, error) {
 	obj := &storeType{}
 	obj.Signal = &storage.ProcessSignalNoSerialized{}
-	obj.Id = col_Id
-	obj.DeploymentId = col_DeploymentId
-	obj.ContainerName = col_ContainerName
-	obj.PodId = col_PodId
-	obj.PodUid = col_PodUid
-	obj.Signal.Id = col_Signal_Id
-	obj.Signal.ContainerId = col_Signal_ContainerId
-	obj.Signal.Time = protocompat.ConvertTimeToTimestampOrNil(col_Signal_Time)
-	obj.Signal.Name = col_Signal_Name
-	obj.Signal.Args = col_Signal_Args
-	obj.Signal.ExecFilePath = col_Signal_ExecFilePath
-	obj.Signal.Pid = col_Signal_Pid
-	obj.Signal.Uid = col_Signal_Uid
-	obj.Signal.Gid = col_Signal_Gid
-	obj.Signal.Lineage = col_Signal_Lineage
-	obj.Signal.Scraped = col_Signal_Scraped
-	obj.ClusterId = col_ClusterId
-	obj.Namespace = col_Namespace
-	obj.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(col_ContainerStartTime)
-	obj.ImageId = col_ImageId
-	return obj
-}
-
-func scanRow(row pgx.Row) (*storeType, error) {
 	var col_Id string
 	var col_DeploymentId string
-	var col_ContainerName string
-	var col_PodId string
 	var col_PodUid string
-	var col_Signal_Id string
-	var col_Signal_ContainerId string
 	var col_Signal_Time *time.Time
-	var col_Signal_Name string
-	var col_Signal_Args string
-	var col_Signal_ExecFilePath string
-	var col_Signal_Pid uint32
-	var col_Signal_Uid uint32
-	var col_Signal_Gid uint32
-	var col_Signal_Lineage []string
-	var col_Signal_Scraped bool
 	var col_ClusterId string
-	var col_Namespace string
 	var col_ContainerStartTime *time.Time
-	var col_ImageId string
 
 	if err := row.Scan(
 		&col_Id,
 		&col_DeploymentId,
-		&col_ContainerName,
-		&col_PodId,
+		&obj.ContainerName,
+		&obj.PodId,
 		&col_PodUid,
-		&col_Signal_Id,
-		&col_Signal_ContainerId,
+		&obj.Signal.Id,
+		&obj.Signal.ContainerId,
 		&col_Signal_Time,
-		&col_Signal_Name,
-		&col_Signal_Args,
-		&col_Signal_ExecFilePath,
-		&col_Signal_Pid,
-		&col_Signal_Uid,
-		&col_Signal_Gid,
-		&col_Signal_Lineage,
-		&col_Signal_Scraped,
+		&obj.Signal.Name,
+		&obj.Signal.Args,
+		&obj.Signal.ExecFilePath,
+		&obj.Signal.Pid,
+		&obj.Signal.Uid,
+		&obj.Signal.Gid,
+		&obj.Signal.Lineage,
+		&obj.Signal.Scraped,
 		&col_ClusterId,
-		&col_Namespace,
+		&obj.Namespace,
 		&col_ContainerStartTime,
-		&col_ImageId,
+		&obj.ImageId,
 	); err != nil {
 		return nil, err
 	}
+	obj.Id = col_Id
+	obj.DeploymentId = col_DeploymentId
+	obj.PodUid = col_PodUid
+	obj.Signal.Time = protocompat.ConvertTimeToTimestampOrNil(col_Signal_Time)
+	obj.ClusterId = col_ClusterId
+	obj.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(col_ContainerStartTime)
 
-	return buildFromScan(
-		col_Id,
-		col_DeploymentId,
-		col_ContainerName,
-		col_PodId,
-		col_PodUid,
-		col_Signal_Id,
-		col_Signal_ContainerId,
-		col_Signal_Time,
-		col_Signal_Name,
-		col_Signal_Args,
-		col_Signal_ExecFilePath,
-		col_Signal_Pid,
-		col_Signal_Uid,
-		col_Signal_Gid,
-		col_Signal_Lineage,
-		col_Signal_Scraped,
-		col_ClusterId,
-		col_Namespace,
-		col_ContainerStartTime,
-		col_ImageId,
-	), nil
+	return obj, nil
 }
 
 // FetchChildren populates child table data (repeated message fields) for the given objects.
@@ -527,74 +453,47 @@ func FetchChildren(ctx context.Context, db postgres.DB, objs []*storeType) error
 }
 
 func scanRows(rows pgx.Rows) (*storeType, error) {
+	obj := &storeType{}
+	obj.Signal = &storage.ProcessSignalNoSerialized{}
 	var col_Id string
 	var col_DeploymentId string
-	var col_ContainerName string
-	var col_PodId string
 	var col_PodUid string
-	var col_Signal_Id string
-	var col_Signal_ContainerId string
 	var col_Signal_Time *time.Time
-	var col_Signal_Name string
-	var col_Signal_Args string
-	var col_Signal_ExecFilePath string
-	var col_Signal_Pid uint32
-	var col_Signal_Uid uint32
-	var col_Signal_Gid uint32
-	var col_Signal_Lineage []string
-	var col_Signal_Scraped bool
 	var col_ClusterId string
-	var col_Namespace string
 	var col_ContainerStartTime *time.Time
-	var col_ImageId string
 
 	if err := rows.Scan(
 		&col_Id,
 		&col_DeploymentId,
-		&col_ContainerName,
-		&col_PodId,
+		&obj.ContainerName,
+		&obj.PodId,
 		&col_PodUid,
-		&col_Signal_Id,
-		&col_Signal_ContainerId,
+		&obj.Signal.Id,
+		&obj.Signal.ContainerId,
 		&col_Signal_Time,
-		&col_Signal_Name,
-		&col_Signal_Args,
-		&col_Signal_ExecFilePath,
-		&col_Signal_Pid,
-		&col_Signal_Uid,
-		&col_Signal_Gid,
-		&col_Signal_Lineage,
-		&col_Signal_Scraped,
+		&obj.Signal.Name,
+		&obj.Signal.Args,
+		&obj.Signal.ExecFilePath,
+		&obj.Signal.Pid,
+		&obj.Signal.Uid,
+		&obj.Signal.Gid,
+		&obj.Signal.Lineage,
+		&obj.Signal.Scraped,
 		&col_ClusterId,
-		&col_Namespace,
+		&obj.Namespace,
 		&col_ContainerStartTime,
-		&col_ImageId,
+		&obj.ImageId,
 	); err != nil {
 		return nil, err
 	}
+	obj.Id = col_Id
+	obj.DeploymentId = col_DeploymentId
+	obj.PodUid = col_PodUid
+	obj.Signal.Time = protocompat.ConvertTimeToTimestampOrNil(col_Signal_Time)
+	obj.ClusterId = col_ClusterId
+	obj.ContainerStartTime = protocompat.ConvertTimeToTimestampOrNil(col_ContainerStartTime)
 
-	return buildFromScan(
-		col_Id,
-		col_DeploymentId,
-		col_ContainerName,
-		col_PodId,
-		col_PodUid,
-		col_Signal_Id,
-		col_Signal_ContainerId,
-		col_Signal_Time,
-		col_Signal_Name,
-		col_Signal_Args,
-		col_Signal_ExecFilePath,
-		col_Signal_Pid,
-		col_Signal_Uid,
-		col_Signal_Gid,
-		col_Signal_Lineage,
-		col_Signal_Scraped,
-		col_ClusterId,
-		col_Namespace,
-		col_ContainerStartTime,
-		col_ImageId,
-	), nil
+	return obj, nil
 }
 
 // endregion Helper functions

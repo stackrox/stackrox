@@ -236,6 +236,15 @@ func typeConversionExpr(f walker.Field, varName string) string {
 	return varName
 }
 
+// canScanDirect returns whether a field can be scanned directly into the proto
+// struct field, without needing an intermediate variable and type conversion.
+func canScanDirect(f walker.Field) bool {
+	if f.ObjectGetter.IsVariable() {
+		return false
+	}
+	return !needsTypeConversion(f)
+}
+
 // canUnnest returns whether a field type can be used in a multi-arg unnest().
 // 2D arrays (stringarray, enumarray, intarray) and maps don't work with unnest's
 // parallel-array iteration because unnest flattens them instead of producing subarrays.
@@ -353,6 +362,7 @@ var funcMap = template.FuncMap{
 		}
 		return out
 	},
+	"canScanDirect":                canScanDirect,
 	"needsTypeConversion":          needsTypeConversion,
 	"typeConversionExpr":           typeConversionExpr,
 	"pgArrayCast":                  pgArrayCast,
