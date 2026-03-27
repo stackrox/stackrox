@@ -16,6 +16,7 @@ reviews:
   sequence_diagrams: true
   auto_review:
     enabled: false
+    drafts: true
     base_branches:
       - master
       - "release-.*"
