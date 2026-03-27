@@ -30,6 +30,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Technical Changes
 
+- OpenShift 3 support removed from Helm charts and roxctl manifest bundle generation.
+
 ## [4.10.0]
 
 
