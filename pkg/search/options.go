@@ -230,6 +230,22 @@ var (
 	ProcessCreationTime       = newFieldLabel("Process Creation Time")
 	ProcessContainerStartTime = newFieldLabel("Process Container Start Time")
 
+	// ProcessIndicatorNoSerialized Search fields (test type for --no-serialized)
+	ProcessNoSerializedID                 = newFieldLabel("Process No Serialized ID")
+	DeploymentNoSerializedID              = newFieldLabel("Deployment No Serialized ID")
+	ContainerNoSerializedName             = newFieldLabel("Container No Serialized Name")
+	PodNoSerializedID                     = newFieldLabel("Pod No Serialized ID")
+	PodNoSerializedUID                    = newFieldLabel("Pod No Serialized UID")
+	ClusterNoSerializedID                 = newFieldLabel("Cluster No Serialized ID")
+	NamespaceNoSerialized                 = newFieldLabel("Namespace No Serialized")
+	ProcessContainerNoSerializedStartTime = newFieldLabel("Process Container No Serialized Start Time")
+	ContainerNoSerializedSignalID         = newFieldLabel("Container No Serialized Signal ID")
+	ProcessNoSerializedCreationTime       = newFieldLabel("Process No Serialized Creation Time")
+	ProcessNoSerializedName               = newFieldLabel("Process No Serialized Name")
+	ProcessNoSerializedArguments          = newFieldLabel("Process No Serialized Arguments")
+	ProcessNoSerializedPath               = newFieldLabel("Process No Serialized Path")
+	ProcessNoSerializedUID                = newFieldLabel("Process No Serialized UID")
+
 	// FileActivity Search fields
 	EffectivePath = newFieldLabel("Effective Path")
 	ActualPath    = newFieldLabel("Actual Path")
