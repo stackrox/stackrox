@@ -2,8 +2,8 @@ FROM registry.access.redhat.com/ubi9/ubi-micro:latest AS ubi-micro-base
 
 FROM registry.access.redhat.com/ubi9/ubi:latest AS package_installer
 
-# Copy ubi-micro base to /out/ to preserve its rpmdb
-COPY --from=ubi-micro-base / /out/
+# Copy only rpmdb to preserve package state, not entire filesystem
+COPY --from=ubi-micro-base /var/lib/rpm /out/var/lib/rpm
 
 # Install packages directly to /out/ using --installroot
 RUN dnf install -y \
