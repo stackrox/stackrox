@@ -105,16 +105,16 @@ func imageDetailsPrinter(fieldMap map[string][]string) ([]string, error) {
 			Tag    string
 			Digest string
 		}
-		tagFields := imageTagDetailFields{}
+		tagFields := imageTagDetailFields{
+			Tag:    imageTag,
+			Digest: maybeGetSingleValueFromFieldMap(search.ImageSHA.String(), fieldMap),
+		}
 		tagFields.Tag = imageTag
-		tagFields.Digest = maybeGetSingleValueFromFieldMap(search.ImageSHA.String(), fieldMap)
 		tagMessage, err := executeTemplate(imageTagDetailTemplate, tagFields)
 		if err != nil {
 			return nil, err
 		}
-		if len(tagMessage) > 0 {
-			imageDetails = append(imageDetails, tagMessage[0])
-		}
+		imageDetails = append(imageDetails, tagMessage...)
 	}
 	if imageRemote, err := getSingleValueFromFieldMap(search.ImageRemote.String(), fieldMap); err == nil {
 		imageDetails = append(imageDetails, fmt.Sprintf("remote '%s'", imageRemote))
