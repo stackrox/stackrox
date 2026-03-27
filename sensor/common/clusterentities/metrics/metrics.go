@@ -45,7 +45,10 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "clusterentities_store_lock_held_duration_seconds",
 		Help:      "Duration for which cluster entities store mutexes are held",
-		Buckets:   []float64{0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 2, 5, 10, 30, 60, 120},
+		// Normal operation (healthy contention): ~10 ms
+		// High load (degraded, worth investigating): ~50–500 ms
+		// Critical (severely degraded or near-deadlock): 2–30 s
+		Buckets: []float64{0.01, 0.05, 0.2, 0.5, 2, 10, 30},
 	}, []string{"store", "operation"})
 )
 
