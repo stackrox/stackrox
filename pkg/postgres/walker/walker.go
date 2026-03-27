@@ -151,6 +151,12 @@ func WithNoSerialized() WalkOption {
 	return func(s *Schema) { s.NoSerialized = true }
 }
 
+// WithJsonb returns a WalkOption that sets Jsonb on the schema,
+// storing the serialized column as jsonb instead of bytea.
+func WithJsonb() WalkOption {
+	return func(s *Schema) { s.Jsonb = true }
+}
+
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
 func Walk(obj reflect.Type, table string, opts ...WalkOption) *Schema {
 	schema := &Schema{

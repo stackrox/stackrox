@@ -28,6 +28,10 @@ var (
 )
 
 func getSerializedField(s *Schema) Field {
+	sqlType := "bytea"
+	if s.Jsonb {
+		sqlType = "jsonb"
+	}
 	return Field{
 		ObjectGetter: ObjectGetter{
 			variable: true,
@@ -35,7 +39,7 @@ func getSerializedField(s *Schema) Field {
 		},
 		Name:       "serialized",
 		ColumnName: "serialized",
-		SQLType:    "bytea",
+		SQLType:    sqlType,
 		Type:       "[]byte",
 		ModelType:  "[]byte",
 		Schema:     s,
@@ -126,6 +130,11 @@ type Schema struct {
 	// bytea column. When true, all proto fields become DB columns, and reads
 	// reconstruct the proto from columns instead of unmarshaling a blob.
 	NoSerialized bool
+
+	// Jsonb indicates that the serialized column should use jsonb type instead
+	// of bytea. The data is marshaled/unmarshaled using protojson instead of
+	// binary vtproto, making it human-readable and SQL-queryable.
+	Jsonb bool
 
 	// InlinedSubMessages tracks sub-message fields that were flattened into this schema's columns.
 	// Only populated when NoSerialized is true. Used by scanner code generation.
