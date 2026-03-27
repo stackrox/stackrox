@@ -111,7 +111,7 @@ const config = {
                     WorkloadSecurityTab: './ConsolePlugin/WorkloadSecurityTab/WorkloadSecurityTab',
                 },
                 dependencies: {
-                    '@console/pluginAPI': '>=4.19.0',
+                    '@console/pluginAPI': '>=4.19.0 <4.22.0',
                 },
             },
             extensions: [
