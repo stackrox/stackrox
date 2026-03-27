@@ -3,8 +3,8 @@ package clusterentities
 import (
 	"fmt"
 	"strings"
+	"time"
 
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/set"
@@ -30,9 +30,9 @@ type endpointsStore struct {
 
 func newEndpointsStoreWithMemory(numTicks uint16) *endpointsStore {
 	store := &endpointsStore{memorySize: numTicks}
-	concurrency.WithLock(&store.mutex, func() {
-		store.initMapsNoLock()
-	})
+	store.mutex.Lock()
+	defer deferUnlock(store.mutex.Unlock, time.Now(), "endpoints", "init")
+	store.initMapsNoLock()
 	return store
 }
 
@@ -46,7 +46,7 @@ func (e *endpointsStore) initMapsNoLock() {
 
 func (e *endpointsStore) resetMaps() {
 	e.mutex.Lock()
-	defer e.mutex.Unlock()
+	defer deferUnlock(e.mutex.Unlock, time.Now(), "endpoints", "reset_maps")
 	// Maps holding historical data must not be wiped on reset! Instead, all entities must be marked as historical.
 	// Must be called before the respective source maps are wiped!
 	// Performance optimization: no need to handle history if history is disabled
@@ -78,7 +78,7 @@ func (e *endpointsStore) updateMetricsNoLock() {
 // there was any endpoint in the history expired in this tick with public IP address.
 func (e *endpointsStore) RecordTick() bool {
 	e.mutex.Lock()
-	defer e.mutex.Unlock()
+	defer deferUnlock(e.mutex.Unlock, time.Now(), "endpoints", "record_tick")
 	removedPublic := false
 	for endpoint, m1 := range e.historicalEndpoints {
 		for deploymentID, m2 := range m1 {
@@ -91,12 +91,13 @@ func (e *endpointsStore) RecordTick() bool {
 			removedPublic = removedPublic || removed && endpoint.IPAndPort.Address.IsPublic()
 		}
 	}
+	e.updateMetricsNoLock()
 	return removedPublic
 }
 
 func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool) {
 	e.mutex.Lock()
-	defer e.mutex.Unlock()
+	defer deferUnlock(e.mutex.Unlock, time.Now(), "endpoints", "apply")
 	e.applyNoLock(updates, incremental)
 }
 
@@ -168,7 +169,7 @@ type netAddrLookupper interface {
 
 func (e *endpointsStore) lookupEndpoint(endpoint net.NumericEndpoint, netLookup netAddrLookupper) (current, historical, ipLookup, ipLookupHistorical []LookupResult) {
 	e.mutex.RLock()
-	defer e.mutex.RUnlock()
+	defer deferUnlock(e.mutex.RUnlock, time.Now(), "endpoints", "lookup_endpoint")
 	// Phase 1: Search in the current map
 	current = doLookupEndpoint(endpoint, e.endpointMap)
 	// Phase 2: Search in the historical map
@@ -285,7 +286,7 @@ func (e *endpointsStore) addToHistory(deploymentID string, ep net.NumericEndpoin
 
 func (e *endpointsStore) String() string {
 	e.mutex.RLock()
-	defer e.mutex.RUnlock()
+	defer deferUnlock(e.mutex.RUnlock, time.Now(), "endpoints", "string")
 	currentStr := "map is empty"
 	if len(e.endpointMap) > 0 {
 		fragments1 := make([]string, 0, len(e.endpointMap))
