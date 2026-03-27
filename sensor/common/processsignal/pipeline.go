@@ -242,6 +242,7 @@ func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntitie
 	enricherCtx, cancelEnricherCtx := context.WithCancelCause(context.Background())
 	en, err := newEnricher(enricherCtx, clusterEntities, pubSubDispatcher)
 	if err != nil {
+		cancelEnricherCtx(err)
 		return nil, err
 	}
 
