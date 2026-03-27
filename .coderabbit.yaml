@@ -1,0 +1,130 @@
+
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# CodeRabbit configuration for stackrox/stackrox
+#
+# This config inherits org-level defaults from stackrox/coderabbit and adds
+# repo-specific review guidance. It is intentionally kept simple so that
+# new contributors can understand it at a glance. Refine path_instructions
+# and tool settings as the team identifies recurring review patterns.
+
+inheritance: true
+
+reviews:
+  profile: assertive
+  high_level_summary: true
+  sequence_diagrams: true
+  auto_review:
+    enabled: false
+    drafts: true
+    base_branches:
+      - master
+      - "release-.*"
+
+  # ── Language and domain guidance ──────────────────────────────────────
+  #
+  # Each entry tells CodeRabbit what to watch for in a given file type.
+  # Add new entries as the team discovers recurring review themes.
+
+  path_instructions:
+    - path: "**/*.go"
+      instructions: >
+        Go is the primary backend language. Review for:
+        - Proper error wrapping with pkg/errox or errors.Wrap
+        - Context propagation (context.Context as first param)
+        - Correct SAC (Scoped Access Control) checks on API endpoints
+        - No direct fmt.Print or os.Stdout usage (use logging)
+        - Protobuf field access via .GetField() not .Field
+        - Testify assert/require usage in tests
+        - Deferred mutex unlocks instead of manual Unlock calls
+
+    - path: "**/*.{ts,tsx}"
+      instructions: >
+        React/TypeScript frontend. Review for:
+        - Type safety (no unnecessary 'any' or type assertions)
+        - Proper hook dependency arrays
+        - Accessible markup (ARIA attributes, semantic HTML)
+        - No direct DOM manipulation
+
+    - path: "**/*.proto"
+      instructions: >
+        Protobuf definitions for gRPC and storage schemas. Review for:
+        - Backward compatibility (no renumbered or removed fields)
+        - API proto files (proto/api/) must NOT import from storage or internalapi
+        - Consistent naming conventions (CamelCase messages, snake_case fields)
+
+    - path: "**/*.{yml,yaml}"
+      instructions: >
+        YAML files span GitHub Actions, Ansible, Helm charts, and config.
+        For CI workflows: pin action versions to SHA, minimize token
+        permissions, avoid script injection from untrusted inputs.
+        For Ansible: check idempotency and secure credential handling.
+        For Helm: validate template correctness and default values.
+
+    - path: "**/*.sh"
+      instructions: >
+        Shell scripts for build and CI. Review for:
+        - set -euo pipefail at the top
+        - Proper variable quoting
+        - No hardcoded credentials or paths
+        - Correct exit code propagation
+
+    - path: "**/*.py"
+      instructions: >
+        Python is used in OpenShift CI test infrastructure. Review for
+        clear error handling, no hardcoded credentials, and clean
+        test assertions.
+
+    - path: "**/*.groovy"
+      instructions: >
+        Groovy/Spock integration tests in qa-tests-backend/. Review for
+        clear test structure (given/when/then), proper cleanup of test
+        resources, and meaningful assertion messages.
+
+    - path: "**/{Dockerfile,Dockerfile.*,*.Dockerfile}"
+      instructions: >
+        Container images. Review for minimal base images, correct layer
+        ordering for cache efficiency, no secrets in build args, and
+        minimal attack surface in the final stage.
+
+    - path: "**/migrations/**"
+      instructions: >
+        Database migrations MUST be backward compatible (rollback safe).
+        No feature flags in migration code. Schema changes should use
+        non-breaking additions only. Verify frozen schemas are used
+        for data access, not current schemas.
+
+  # ── Static analysis tools ─────────────────────────────────────────────
+  #
+  # These complement the project's own linting (golangci-lint, eslint,
+  # shellcheck) by running during PR review. Disable any that produce
+  # too much noise and refine over time.
+
+  tools:
+    golangci-lint:
+      enabled: true
+    shellcheck:
+      enabled: true
+    yamllint:
+      enabled: true
+    hadolint:
+      enabled: true
+    semgrep:
+      enabled: true
+    gitleaks:
+      enabled: true
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  code_guidelines:
+    enabled: true
+  learnings:
+    scope: auto
+  issues:
+    scope: auto
+  pull_requests:
+    scope: auto
+  web_search:
+    enabled: false
