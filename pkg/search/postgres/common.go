@@ -224,6 +224,13 @@ func (q *query) getPortionBeforeFromClause() string {
 		}
 		return fmt.Sprintf("select count(%s)", countOn)
 	case GET:
+		if q.Schema != nil && q.Schema.NoSerialized {
+			var cols []string
+			for _, f := range q.Schema.DBColumnFields() {
+				cols = append(cols, qualifyColumn(q.From, f.ColumnName, ""))
+			}
+			return "select " + strings.Join(cols, ", ")
+		}
 		// For GET queries with joins, we use GROUP BY for distinctness, so no need for DISTINCT ON
 		return fmt.Sprintf("select %s.serialized", q.From)
 	case SEARCH:
@@ -316,7 +323,7 @@ func (q *query) AsSQL() string {
 		querySB.WriteString(" group by ")
 		querySB.WriteString(strings.Join(groupByClauses, ", "))
 	} else if q.QueryType == GET && len(q.Joins) > 0 {
-		// For GET with joins, group by primary keys and serialized to ensure distinctness
+		// For GET with joins, group by primary keys and selected columns to ensure distinctness
 		var groupByParts []string
 		groupByFields := set.NewStringSet() // Track added fields to avoid duplicates
 
@@ -328,10 +335,20 @@ func (q *query) AsSQL() string {
 			}
 		}
 
-		// Add serialized column to GROUP BY (required since we're selecting it)
-		serializedPath := fmt.Sprintf("%s.serialized", q.From)
-		if groupByFields.Add(serializedPath) {
-			groupByParts = append(groupByParts, serializedPath)
+		if q.Schema.NoSerialized {
+			// Add all selected columns to GROUP BY
+			for _, f := range q.Schema.DBColumnFields() {
+				colPath := qualifyColumn(q.From, f.ColumnName, "")
+				if groupByFields.Add(colPath) {
+					groupByParts = append(groupByParts, colPath)
+				}
+			}
+		} else {
+			// Add serialized column to GROUP BY (required since we're selecting it)
+			serializedPath := fmt.Sprintf("%s.serialized", q.From)
+			if groupByFields.Add(serializedPath) {
+				groupByParts = append(groupByParts, serializedPath)
+			}
 		}
 
 		// Add ordering fields from the primary table to GROUP BY (they're identical for same PK)
@@ -1323,6 +1340,131 @@ func getAggregateFunction(_ postgres.DataType, descending bool) string {
 		return "MAX"
 	}
 	return "MIN"
+}
+
+// RowScanner is a function type that scans a single row into an object.
+type RowScanner[T any] func(row pgx.Row) (*T, error)
+
+// RowsScanner is a function type that scans rows into objects.
+type RowsScanner[T any] func(rows pgx.Rows) (*T, error)
+
+// RunGetQueryForSchemaWithScanner executes a GET query using a custom scanner instead of proto unmarshal.
+func RunGetQueryForSchemaWithScanner[T any](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, scanner RowScanner[T]) (*T, error) {
+	if q == nil {
+		q = searchPkg.EmptyQuery()
+	}
+
+	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, GET)
+	if err != nil {
+		return nil, err
+	}
+	if query == nil {
+		return nil, emptyQueryErr
+	}
+	queryStr := query.AsSQL()
+
+	var pool postgres.Queryable
+	pool = db
+	if tx, parentTxExists := postgres.TxFromContext(ctx); parentTxExists {
+		pool = tx
+	}
+
+	return pgutils.Retry2(ctx, func() (*T, error) {
+		row := tracedQueryRow(ctx, pool, queryStr, query.Data...)
+		return scanner(row)
+	})
+}
+
+func handleRowsWithScanner[T any](ctx context.Context, rows pgx.Rows, scanner RowsScanner[T], callback func(obj *T) error) (int64, error) {
+	var count int64
+	defer rows.Close()
+	for rows.Next() {
+		if ctx.Err() != nil {
+			return count, errors.Wrap(ctx.Err(), "iterating over rows")
+		}
+		obj, err := scanner(rows)
+		if err != nil {
+			return count, err
+		}
+		if err := callback(obj); err != nil {
+			return count, err
+		}
+		count++
+	}
+	return count, rows.Err()
+}
+
+// RunQueryForSchemaFnWithScanner executes a query using a custom scanner and calls callback for each row.
+func RunQueryForSchemaFnWithScanner[T any](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.Queryable, scanner RowsScanner[T], callback func(obj *T) error) error {
+	var pool postgres.Queryable
+	pool = db
+	if tx, parentTxExists := postgres.TxFromContext(ctx); parentTxExists {
+		pool = tx
+	}
+
+	rows, err := pgutils.Retry2(ctx, func() (*tracedRows, error) {
+		return retryableGetRows(ctx, schema, q, pool)
+	})
+	if err != nil {
+		return err
+	}
+
+	if rows == nil {
+		return nil
+	}
+	_, err = handleRowsWithScanner(ctx, rows, scanner, callback)
+	if err != nil {
+		return errors.Wrap(err, "processing rows")
+	}
+
+	return nil
+}
+
+// RunCursorQueryForSchemaFnWithScanner executes a cursor-based query using a custom scanner.
+func RunCursorQueryForSchemaFnWithScanner[T any](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, scanner RowsScanner[T], callback func(obj *T) error) error {
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, cursorDefaultTimeout)
+	defer cancel()
+
+	cursor, err := pgutils.Retry2(ctx, func() (*cursorSession, error) {
+		return retryableGetCursorSession(ctx, schema, q, db)
+	})
+	if err != nil {
+		return errors.Wrap(err, "prepare cursor")
+	}
+	if cursor == nil {
+		return nil
+	}
+	defer cursor.close()
+
+	rowsData := make([]*T, 0, cursorBatchSize)
+	for {
+		rowsData = rowsData[:0]
+		rows, err := cursor.tx.Query(ctx, fmt.Sprintf("FETCH %d FROM %s", cursorBatchSize, cursor.id))
+		if err != nil {
+			return errors.Wrap(err, "advancing in cursor")
+		}
+
+		rowsAffected, err := handleRowsWithScanner(ctx, rows, scanner, func(obj *T) error {
+			rowsData = append(rowsData, obj)
+			return nil
+		})
+		if err != nil {
+			return errors.Wrap(err, "reading rows from cursor")
+		}
+
+		for _, obj := range rowsData {
+			if ctx.Err() != nil {
+				return errors.Wrap(ctx.Err(), "iterating over rows")
+			}
+			if err := callback(obj); err != nil {
+				return errors.Wrap(err, "processing rows")
+			}
+		}
+
+		if rowsAffected != cursorBatchSize {
+			return ctx.Err()
+		}
+	}
 }
 
 func validateDerivedFieldDataType(queryFields map[string]searchFieldMetadata) error {

@@ -54,6 +54,13 @@ func (c walkerContext) childContext(name string, searchDisabled bool, opts Postg
 }
 
 func removeTablesWithNoSearchableFields(schema *Schema) (shouldInclude bool) {
+	// When NoSerialized is set, keep all child tables since all fields become columns.
+	if schema.Root().NoSerialized {
+		for _, child := range schema.Children {
+			removeTablesWithNoSearchableFields(child)
+		}
+		return true
+	}
 	includedChildren := schema.Children[:0]
 	for _, child := range schema.Children {
 		if shouldIncludeChild := removeTablesWithNoSearchableFields(child); shouldIncludeChild {
@@ -75,9 +82,9 @@ func removeTablesWithNoSearchableFields(schema *Schema) (shouldInclude bool) {
 }
 
 func addCommonFields(s *Schema, parentPrimaryKeys ...Field) {
-	if len(parentPrimaryKeys) == 0 {
+	if len(parentPrimaryKeys) == 0 && !s.NoSerialized {
 		s.Fields = append(s.Fields, getSerializedField(s))
-	} else {
+	} else if len(parentPrimaryKeys) > 0 {
 		// Collect additional fields separately so we can put them in front of the field list
 		// (since these are primary keys, that is cleaner).
 		var additionalFields []Field
@@ -136,12 +143,23 @@ func postProcessSchema(s *Schema) {
 	addCommonFields(s)
 }
 
+// WalkOption is a functional option for Walk.
+type WalkOption func(*Schema)
+
+// WithNoSerialized returns a WalkOption that sets NoSerialized on the schema.
+func WithNoSerialized() WalkOption {
+	return func(s *Schema) { s.NoSerialized = true }
+}
+
 // Walk iterates over the obj and creates a search.Map object from the found struct tags
-func Walk(obj reflect.Type, table string) *Schema {
+func Walk(obj reflect.Type, table string, opts ...WalkOption) *Schema {
 	schema := &Schema{
 		Table:    table,
 		Type:     obj.String(),
 		TypeName: obj.Elem().Name(),
+	}
+	for _, opt := range opts {
+		opt(schema)
 	}
 	handleStruct(walkerContext{}, schema, obj.Elem())
 
@@ -394,6 +412,14 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 				}
 				schema.AddFieldWithType(field, dt, opts)
 				continue
+			}
+			// Track inlined sub-messages for NoSerialized scanner generation
+			if schema.Root().NoSerialized {
+				schema.Root().InlinedSubMessages = append(schema.Root().InlinedSubMessages, InlinedSubMessage{
+					FieldName:    structField.Name,
+					TypeName:     structField.Type.Elem().String(),
+					GetterPrefix: ctx.Getter(structField.Name),
+				})
 			}
 			handleStruct(ctx.childContext(field.Name, searchOpts.Ignored, opts), schema, structField.Type.Elem())
 		case reflect.Slice:

@@ -117,6 +117,10 @@ type properties struct {
 
 	// Generates helper functions to create/destroy tables and store
 	GenerateDataModelHelpers bool
+
+	// NoSerialized indicates that the store should not use a serialized bytea column.
+	// All proto fields become DB columns, reads reconstruct the proto from columns.
+	NoSerialized bool
 }
 
 type parsedReference struct {
@@ -158,6 +162,7 @@ func main() {
 	c.Flags().BoolVar(&props.ConversionFuncs, "conversion-funcs", false, "indicates that we should generate conversion functions between protobuf types to/from Gorm model")
 
 	c.Flags().BoolVar(&props.GenerateDataModelHelpers, "generate-data-model-helpers", false, "if true, generates CreateTableAndNewStore and Destroy functions")
+	c.Flags().BoolVar(&props.NoSerialized, "no-serialized", false, "if true, the store does not use a serialized bytea column; all fields become columns")
 	c.RunE = func(*cobra.Command, []string) error {
 		typ := stringutils.OrDefault(props.RegisteredType, props.Type)
 		fmt.Println(readable.Time(time.Now()), "Generating for", typ)
@@ -169,7 +174,11 @@ func main() {
 		if props.Table == "" {
 			props.Table = pgutils.NamingStrategy.TableName(trimmedType)
 		}
-		schema := walker.Walk(mt, props.Table)
+		var walkOpts []walker.WalkOption
+		if props.NoSerialized {
+			walkOpts = append(walkOpts, walker.WithNoSerialized())
+		}
+		schema := walker.Walk(mt, props.Table, walkOpts...)
 		if schema.NoPrimaryKey() && !props.SingletonStore {
 			log.Fatal("No primary key defined, please check relevant proto file and ensure a primary key is specified using the \"sql:\"pk\"\" tag")
 		}
@@ -247,6 +256,7 @@ func main() {
 			"Singleton":            props.SingletonStore,
 
 			"GenerateDataModelHelpers": props.GenerateDataModelHelpers,
+			"NoSerialized":             props.NoSerialized,
 		}
 
 		if err := common.RenderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {
