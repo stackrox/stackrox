@@ -25,7 +25,12 @@ SUPPORTS_PSP=$(${KUBE_COMMAND} api-resources | grep "podsecuritypolicies" -c || 
 ${KUBE_COMMAND} get namespace stackrox &>/dev/null || ${KUBE_COMMAND} create namespace stackrox
 ${KUBE_COMMAND} -n stackrox annotate namespace/stackrox --overwrite openshift.io/node-selector=""
 
-${KUBE_COMMAND} project "stackrox"
+# Switch to stackrox namespace/project
+if [[ "${KUBE_COMMAND}" == *"oc"* ]]; then
+  ${KUBE_COMMAND} project "stackrox"
+else
+  ${KUBE_COMMAND} config set-context --current --namespace=stackrox
+fi
 
 echo "Creating sensor secrets..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor-secret.yaml"
@@ -73,7 +78,12 @@ type: kubernetes.io/dockerconfigjson
 EOF
 fi
 
-${KUBE_COMMAND} secrets link serviceaccount/sensor secrets/stackrox --for=pull
+# Link pull secret to service account
+if [[ "${KUBE_COMMAND}" == *"oc"* ]]; then
+  ${KUBE_COMMAND} secrets link serviceaccount/sensor secrets/stackrox --for=pull
+else
+  ${KUBE_COMMAND} patch serviceaccount sensor -n stackrox -p '{"imagePullSecrets":[{"name":"stackrox"}]}'
+fi
 
 if ! ${KUBE_COMMAND} get secret/collector-stackrox -n stackrox &>/dev/null; then
   registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{ required "" .CollectorRegistry }}")"
