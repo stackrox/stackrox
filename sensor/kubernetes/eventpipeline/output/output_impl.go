@@ -74,7 +74,11 @@ func (q *outputQueueImpl) runOutputQueue() {
 			for _, resourceUpdates := range msg.ForwardMessages {
 				expiringMessage := message.NewExpiring(msg.Context, wrapSensorEvent(resourceUpdates))
 				if !expiringMessage.IsExpired() {
-					q.forwardQueue <- expiringMessage
+					select {
+					case q.forwardQueue <- expiringMessage:
+					case <-q.stopper.Flow().StopRequested():
+						return
+					}
 				}
 			}
 
