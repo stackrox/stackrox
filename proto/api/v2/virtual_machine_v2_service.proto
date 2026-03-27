@@ -1,0 +1,324 @@
+syntax = "proto3";
+
+package v2;
+
+import "api/v2/scan_component.proto";
+import "api/v2/search_query.proto";
+import "api/v2/vulnerability.proto";
+import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./api/v2;v2";
+option java_package = "io.stackrox.proto.api.v2";
+
+// ─── Shared Aggregation Messages ───
+
+// Counts for a single severity level, split by fixability.
+message VulnFixableCount {
+  int32 total = 1;
+  int32 fixable = 2;
+}
+
+// Vulnerability counts by severity level. Used for summary cards and inline columns.
+message VulnCountBySeverity {
+  VulnFixableCount critical = 1;
+  VulnFixableCount important = 2;
+  VulnFixableCount moderate = 3;
+  VulnFixableCount low = 4;
+  VulnFixableCount unknown = 5;
+}
+
+// Scanned vs total component counts (for "15/518 scanned packages" display).
+message ComponentScanCount {
+  int32 scanned = 1;
+  int32 total = 2;
+}
+
+// ─── VM State Enum ───
+
+enum VirtualMachineV2State {
+  VM_STATE_UNKNOWN = 0;
+  VM_STATE_STOPPED = 1;
+  VM_STATE_RUNNING = 2;
+}
+
+// ─── Endpoint 1: ListVMs ───
+
+message VMListItem {
+  string id = 1;
+  string name = 2;
+  string namespace = 3;
+  string cluster_id = 4;
+  string cluster_name = 5;
+  string guest_os = 6;
+  VirtualMachineV2State state = 7;
+  google.protobuf.Timestamp scan_time = 8;
+  google.protobuf.Timestamp last_updated = 9;
+  VulnCountBySeverity cve_severity_counts = 10;
+  ComponentScanCount component_scan_count = 11;
+}
+
+message ListVMsRequest {
+  RawQuery query = 1;
+}
+
+message ListVMsResponse {
+  repeated VMListItem vms = 1;
+  int32 total_count = 2;
+}
+
+// ─── Endpoint 2: ListVMCVEs ───
+
+message VMCVEListItem {
+  string cve = 1;
+  VulnCountBySeverity vm_severity_counts = 2;
+  float top_cvss = 3;
+  string cvss_version = 4;
+  int32 affected_vm_count = 5;
+  int32 total_vm_count = 6;
+  float epss_probability = 7;
+  google.protobuf.Timestamp published_on = 8;
+}
+
+message ListVMCVEsRequest {
+  RawQuery query = 1;
+}
+
+message ListVMCVEsResponse {
+  repeated VMCVEListItem cves = 1;
+  int32 total_count = 2;
+}
+
+// ─── Endpoint 3: GetVMDashboardCounts ───
+
+message VMDashboardCountsRequest {
+  RawQuery query = 1;
+}
+
+message VMDashboardCountsResponse {
+  int32 vm_count = 1;
+  int32 cve_count = 2;
+}
+
+// ─── Endpoint 4: GetVM ───
+
+message VMScanInfo {
+  string scan_id = 1;
+  string scan_os = 2;
+  google.protobuf.Timestamp scan_time = 3;
+  float top_cvss = 4;
+  repeated string scan_notes = 5;
+}
+
+// Agent status enriched from a separate data source (not on VirtualMachineV2 storage).
+enum AgentStatus {
+  AGENT_STATUS_UNKNOWN = 0;
+  AGENT_STATUS_ACTIVE = 1;
+}
+
+message VMDetail {
+  string id = 1;
+  string name = 2;
+  string namespace = 3;
+  string cluster_id = 4;
+  string cluster_name = 5;
+  string guest_os = 6;
+  VirtualMachineV2State state = 7;
+  google.protobuf.Timestamp last_updated = 8;
+  // Contains KubeVirt facts. Labels and annotations are added by the sensor pipeline.
+  map<string, string> facts = 9;
+  map<string, string> annotations = 10;
+  map<string, string> labels = 11;
+  int32 vsock_cid = 12;
+  repeated string notes = 13;
+  VMScanInfo latest_scan = 14;
+  AgentStatus agent_status = 15;
+}
+
+message GetVMRequest {
+  string id = 1;
+}
+
+// ─── Endpoint 5: GetVMVulnSummary ───
+
+message VMVulnSummary {
+  VulnCountBySeverity severity_counts = 1;
+  int32 fixable_count = 2;
+  int32 not_fixable_count = 3;
+}
+
+message GetVMVulnSummaryRequest {
+  string id = 1;
+  RawQuery query = 2;
+}
+
+// ─── Endpoint 6: ListVMCVEsByVM ───
+
+message VMCVERow {
+  string cve = 1;
+  VulnerabilitySeverity severity = 2;
+  bool is_fixable = 3;
+  float cvss = 4;
+  float nvd_cvss = 5;
+  float epss_probability = 6;
+  int32 affected_component_count = 7;
+  google.protobuf.Timestamp published_on = 8;
+  string summary = 9;
+  string link = 10;
+  Advisory advisory = 11;
+}
+
+message ListVMCVEsByVMRequest {
+  string vm_id = 1;
+  RawQuery query = 2;
+}
+
+message ListVMCVEsByVMResponse {
+  repeated VMCVERow cves = 1;
+  int32 total_count = 2;
+}
+
+// ─── Endpoint 7: GetVMCVEComponents ───
+
+message VMCVEComponentRow {
+  string component_name = 1;
+  string component_version = 2;
+  SourceType source = 3;
+  string fixed_by = 4;
+  Advisory advisory = 5;
+}
+
+message GetVMCVEComponentsRequest {
+  string vm_id = 1;
+  string id = 2;
+}
+
+message GetVMCVEComponentsResponse {
+  repeated VMCVEComponentRow components = 1;
+}
+
+// ─── Endpoint 8: ListVMComponents ───
+
+enum ScanStatus {
+  NOT_SCANNED = 0;
+  SCAN_PENDING = 1;
+  CPE_MISSING = 2;
+  REPO_UNKNOWN = 3;
+  SCANNED = 4;
+}
+
+message VMComponentRow {
+  string id = 1;
+  string name = 2;
+  string version = 3;
+  SourceType source = 4;
+  ScanStatus scan_status = 5;
+  google.protobuf.Timestamp last_scanned = 6;
+  int32 cve_count = 7;
+}
+
+message ListVMComponentsRequest {
+  string vm_id = 1;
+  RawQuery query = 2;
+}
+
+message ListVMComponentsResponse {
+  repeated VMComponentRow components = 1;
+  int32 total_count = 2;
+}
+
+// ─── Endpoint 9: GetVMCVEDetail ───
+
+message VMCVEDetail {
+  string cve = 1;
+  string summary = 2;
+  string link = 3;
+  float epss_probability = 4;
+  google.protobuf.Timestamp published_on = 5;
+  google.protobuf.Timestamp first_discovered = 6;
+  int32 affected_vm_count = 7;
+  int32 total_vm_count = 8;
+  int32 affected_guest_os_count = 9;
+  VulnCountBySeverity vm_severity_counts = 10;
+  float top_cvss = 11;
+}
+
+message GetVMCVEDetailRequest {
+  string id = 1;
+}
+
+// ─── Endpoint 10: ListVMCVEAffectedVMs ───
+
+message VMCVEAffectedVMRow {
+  string vm_id = 1;
+  string vm_name = 2;
+  VulnerabilitySeverity severity = 3;
+  bool is_fixable = 4;
+  float cvss = 5;
+  string guest_os = 6;
+  int32 affected_component_count = 7;
+}
+
+message ListVMCVEAffectedVMsRequest {
+  string id = 1;
+  RawQuery query = 2;
+}
+
+message ListVMCVEAffectedVMsResponse {
+  repeated VMCVEAffectedVMRow vms = 1;
+  int32 total_count = 2;
+}
+
+// ─── Service Definition ───
+
+service VirtualMachineV2Service {
+  // VM List View
+  rpc ListVMs(ListVMsRequest) returns (ListVMsResponse) {
+    option (google.api.http) = {get: "/v2/virtualmachines/vms"};
+  }
+
+  // CVE List View
+  rpc ListVMCVEs(ListVMCVEsRequest) returns (ListVMCVEsResponse) {
+    option (google.api.http) = {get: "/v2/virtualmachines/cves"};
+  }
+
+  // Dashboard tab counts
+  rpc GetVMDashboardCounts(VMDashboardCountsRequest) returns (VMDashboardCountsResponse) {
+    option (google.api.http) = {get: "/v2/virtualmachines/summary"};
+  }
+
+  // Single VM detail
+  rpc GetVM(GetVMRequest) returns (VMDetail) {
+    option (google.api.http) = {get: "/v2/virtualmachines/{id}"};
+  }
+
+  // Single VM vulnerability summary cards
+  rpc GetVMVulnSummary(GetVMVulnSummaryRequest) returns (VMVulnSummary) {
+    option (google.api.http) = {get: "/v2/virtualmachines/{id}/vuln-summary"};
+  }
+
+  // Single VM CVE list
+  rpc ListVMCVEsByVM(ListVMCVEsByVMRequest) returns (ListVMCVEsByVMResponse) {
+    option (google.api.http) = {get: "/v2/virtualmachines/{vm_id}/cves"};
+  }
+
+  // Components for a specific CVE on a specific VM (expanded row)
+  rpc GetVMCVEComponents(GetVMCVEComponentsRequest) returns (GetVMCVEComponentsResponse) {
+    option (google.api.http) = {get: "/v2/virtualmachines/{vm_id}/cves/{id}/components"};
+  }
+
+  // Single VM component list
+  rpc ListVMComponents(ListVMComponentsRequest) returns (ListVMComponentsResponse) {
+    option (google.api.http) = {get: "/v2/virtualmachines/{vm_id}/components"};
+  }
+
+  // Single CVE detail (across all VMs)
+  rpc GetVMCVEDetail(GetVMCVEDetailRequest) returns (VMCVEDetail) {
+    option (google.api.http) = {get: "/v2/virtualmachines/cves/{id}"};
+  }
+
+  // VMs affected by a specific CVE
+  rpc ListVMCVEAffectedVMs(ListVMCVEAffectedVMsRequest) returns (ListVMCVEAffectedVMsResponse) {
+    option (google.api.http) = {get: "/v2/virtualmachines/cves/{id}/vms"};
+  }
+}

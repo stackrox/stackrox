@@ -1,0 +1,1340 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "api/v2/virtual_machine_v2_service.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "VirtualMachineV2Service"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v2/virtualmachines/cves": {
+      "get": {
+        "summary": "CVE List View",
+        "operationId": "VirtualMachineV2Service_ListVMCVEs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListVMCVEsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "VirtualMachineV2Service"
+        ]
+      }
+    },
+    "/v2/virtualmachines/cves/{id}": {
+      "get": {
+        "summary": "Single CVE detail (across all VMs)",
+        "operationId": "VirtualMachineV2Service_GetVMCVEDetail",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2VMCVEDetail"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "VirtualMachineV2Service"
+        ]
+      }
+    },
+    "/v2/virtualmachines/cves/{id}/vms": {
+      "get": {
+        "summary": "VMs affected by a specific CVE",
+        "operationId": "VirtualMachineV2Service_ListVMCVEAffectedVMs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListVMCVEAffectedVMsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "VirtualMachineV2Service"
+        ]
+      }
+    },
+    "/v2/virtualmachines/summary": {
+      "get": {
+        "summary": "Dashboard tab counts",
+        "operationId": "VirtualMachineV2Service_GetVMDashboardCounts",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2VMDashboardCountsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "VirtualMachineV2Service"
+        ]
+      }
+    },
+    "/v2/virtualmachines/vms": {
+      "get": {
+        "summary": "VM List View",
+        "operationId": "VirtualMachineV2Service_ListVMs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListVMsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "VirtualMachineV2Service"
+        ]
+      }
+    },
+    "/v2/virtualmachines/{id}": {
+      "get": {
+        "summary": "Single VM detail",
+        "operationId": "VirtualMachineV2Service_GetVM",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2VMDetail"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "VirtualMachineV2Service"
+        ]
+      }
+    },
+    "/v2/virtualmachines/{id}/vuln-summary": {
+      "get": {
+        "summary": "Single VM vulnerability summary cards",
+        "operationId": "VirtualMachineV2Service_GetVMVulnSummary",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2VMVulnSummary"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "VirtualMachineV2Service"
+        ]
+      }
+    },
+    "/v2/virtualmachines/{vmId}/components": {
+      "get": {
+        "summary": "Single VM component list",
+        "operationId": "VirtualMachineV2Service_ListVMComponents",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListVMComponentsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "vmId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "VirtualMachineV2Service"
+        ]
+      }
+    },
+    "/v2/virtualmachines/{vmId}/cves": {
+      "get": {
+        "summary": "Single VM CVE list",
+        "operationId": "VirtualMachineV2Service_ListVMCVEsByVM",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ListVMCVEsByVMResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "vmId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "VirtualMachineV2Service"
+        ]
+      }
+    },
+    "/v2/virtualmachines/{vmId}/cves/{id}/components": {
+      "get": {
+        "summary": "Components for a specific CVE on a specific VM (expanded row)",
+        "operationId": "VirtualMachineV2Service_GetVMCVEComponents",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2GetVMCVEComponentsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "vmId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "VirtualMachineV2Service"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v2Advisory": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        }
+      }
+    },
+    "v2AgentStatus": {
+      "type": "string",
+      "enum": [
+        "AGENT_STATUS_UNKNOWN",
+        "AGENT_STATUS_ACTIVE"
+      ],
+      "default": "AGENT_STATUS_UNKNOWN",
+      "description": "Agent status enriched from a separate data source (not on VirtualMachineV2 storage)."
+    },
+    "v2AggregateBy": {
+      "type": "object",
+      "properties": {
+        "aggrFunc": {
+          "$ref": "#/definitions/v2Aggregation"
+        },
+        "distinct": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v2Aggregation": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COUNT",
+        "MIN",
+        "MAX"
+      ],
+      "default": "UNSET"
+    },
+    "v2ComponentScanCount": {
+      "type": "object",
+      "properties": {
+        "scanned": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "Scanned vs total component counts (for \"15/518 scanned packages\" display)."
+    },
+    "v2GetVMCVEComponentsResponse": {
+      "type": "object",
+      "properties": {
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2VMCVEComponentRow"
+          }
+        }
+      }
+    },
+    "v2ListVMCVEAffectedVMsResponse": {
+      "type": "object",
+      "properties": {
+        "vms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2VMCVEAffectedVMRow"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v2ListVMCVEsByVMResponse": {
+      "type": "object",
+      "properties": {
+        "cves": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2VMCVERow"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v2ListVMCVEsResponse": {
+      "type": "object",
+      "properties": {
+        "cves": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2VMCVEListItem"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v2ListVMComponentsResponse": {
+      "type": "object",
+      "properties": {
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2VMComponentRow"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v2ListVMsResponse": {
+      "type": "object",
+      "properties": {
+        "vms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2VMListItem"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v2Pagination": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sortOption": {
+          "$ref": "#/definitions/v2SortOption"
+        },
+        "sortOptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2SortOption"
+          },
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v2RawQuery": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "pagination": {
+          "$ref": "#/definitions/v2Pagination"
+        }
+      },
+      "description": "RawQuery represents the search query string.\nThe format of the query string is \"<field name>:<value,value,...>+<field name>:<value, value,...>+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
+    },
+    "v2ScanStatus": {
+      "type": "string",
+      "enum": [
+        "NOT_SCANNED",
+        "SCAN_PENDING",
+        "CPE_MISSING",
+        "REPO_UNKNOWN",
+        "SCANNED"
+      ],
+      "default": "NOT_SCANNED"
+    },
+    "v2SortOption": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "reversed": {
+          "type": "boolean"
+        },
+        "aggregateBy": {
+          "$ref": "#/definitions/v2AggregateBy",
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v2SourceType": {
+      "type": "string",
+      "enum": [
+        "OS",
+        "PYTHON",
+        "JAVA",
+        "RUBY",
+        "NODEJS",
+        "GO",
+        "DOTNETCORERUNTIME",
+        "INFRASTRUCTURE"
+      ],
+      "default": "OS"
+    },
+    "v2VMCVEAffectedVMRow": {
+      "type": "object",
+      "properties": {
+        "vmId": {
+          "type": "string"
+        },
+        "vmName": {
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/definitions/v2VulnerabilitySeverity"
+        },
+        "isFixable": {
+          "type": "boolean"
+        },
+        "cvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "guestOs": {
+          "type": "string"
+        },
+        "affectedComponentCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v2VMCVEComponentRow": {
+      "type": "object",
+      "properties": {
+        "componentName": {
+          "type": "string"
+        },
+        "componentVersion": {
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/definitions/v2SourceType"
+        },
+        "fixedBy": {
+          "type": "string"
+        },
+        "advisory": {
+          "$ref": "#/definitions/v2Advisory"
+        }
+      }
+    },
+    "v2VMCVEDetail": {
+      "type": "object",
+      "properties": {
+        "cve": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        },
+        "epssProbability": {
+          "type": "number",
+          "format": "float"
+        },
+        "publishedOn": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "firstDiscovered": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "affectedVmCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalVmCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "affectedGuestOsCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "vmSeverityCounts": {
+          "$ref": "#/definitions/v2VulnCountBySeverity"
+        },
+        "topCvss": {
+          "type": "number",
+          "format": "float"
+        }
+      }
+    },
+    "v2VMCVEListItem": {
+      "type": "object",
+      "properties": {
+        "cve": {
+          "type": "string"
+        },
+        "vmSeverityCounts": {
+          "$ref": "#/definitions/v2VulnCountBySeverity"
+        },
+        "topCvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "cvssVersion": {
+          "type": "string"
+        },
+        "affectedVmCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalVmCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "epssProbability": {
+          "type": "number",
+          "format": "float"
+        },
+        "publishedOn": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v2VMCVERow": {
+      "type": "object",
+      "properties": {
+        "cve": {
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/definitions/v2VulnerabilitySeverity"
+        },
+        "isFixable": {
+          "type": "boolean"
+        },
+        "cvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "nvdCvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "epssProbability": {
+          "type": "number",
+          "format": "float"
+        },
+        "affectedComponentCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "publishedOn": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        },
+        "advisory": {
+          "$ref": "#/definitions/v2Advisory"
+        }
+      }
+    },
+    "v2VMComponentRow": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/definitions/v2SourceType"
+        },
+        "scanStatus": {
+          "$ref": "#/definitions/v2ScanStatus"
+        },
+        "lastScanned": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "cveCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v2VMDashboardCountsResponse": {
+      "type": "object",
+      "properties": {
+        "vmCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "cveCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v2VMDetail": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "guestOs": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/definitions/v2VirtualMachineV2State"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "facts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Contains KubeVirt facts. Labels and annotations are added by the sensor pipeline."
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "vsockCid": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "latestScan": {
+          "$ref": "#/definitions/v2VMScanInfo"
+        },
+        "agentStatus": {
+          "$ref": "#/definitions/v2AgentStatus"
+        }
+      }
+    },
+    "v2VMListItem": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        },
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "guestOs": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/definitions/v2VirtualMachineV2State"
+        },
+        "scanTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "cveSeverityCounts": {
+          "$ref": "#/definitions/v2VulnCountBySeverity"
+        },
+        "componentScanCount": {
+          "$ref": "#/definitions/v2ComponentScanCount"
+        }
+      }
+    },
+    "v2VMScanInfo": {
+      "type": "object",
+      "properties": {
+        "scanId": {
+          "type": "string"
+        },
+        "scanOs": {
+          "type": "string"
+        },
+        "scanTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "topCvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "scanNotes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "v2VMVulnSummary": {
+      "type": "object",
+      "properties": {
+        "severityCounts": {
+          "$ref": "#/definitions/v2VulnCountBySeverity"
+        },
+        "fixableCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "notFixableCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v2VirtualMachineV2State": {
+      "type": "string",
+      "enum": [
+        "VM_STATE_UNKNOWN",
+        "VM_STATE_STOPPED",
+        "VM_STATE_RUNNING"
+      ],
+      "default": "VM_STATE_UNKNOWN"
+    },
+    "v2VulnCountBySeverity": {
+      "type": "object",
+      "properties": {
+        "critical": {
+          "$ref": "#/definitions/v2VulnFixableCount"
+        },
+        "important": {
+          "$ref": "#/definitions/v2VulnFixableCount"
+        },
+        "moderate": {
+          "$ref": "#/definitions/v2VulnFixableCount"
+        },
+        "low": {
+          "$ref": "#/definitions/v2VulnFixableCount"
+        },
+        "unknown": {
+          "$ref": "#/definitions/v2VulnFixableCount"
+        }
+      },
+      "description": "Vulnerability counts by severity level. Used for summary cards and inline columns."
+    },
+    "v2VulnFixableCount": {
+      "type": "object",
+      "properties": {
+        "total": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "fixable": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "Counts for a single severity level, split by fixability."
+    },
+    "v2VulnerabilitySeverity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN_VULNERABILITY_SEVERITY",
+        "LOW_VULNERABILITY_SEVERITY",
+        "MODERATE_VULNERABILITY_SEVERITY",
+        "IMPORTANT_VULNERABILITY_SEVERITY",
+        "CRITICAL_VULNERABILITY_SEVERITY"
+      ],
+      "default": "UNKNOWN_VULNERABILITY_SEVERITY"
+    }
+  }
+}
