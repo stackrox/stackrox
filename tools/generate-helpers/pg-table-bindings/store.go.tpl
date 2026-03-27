@@ -30,6 +30,9 @@ import (
     "github.com/stackrox/rox/pkg/protocompat"
     "github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+    {{- if .Jsonb }}
+    "google.golang.org/protobuf/encoding/protojson"
+    {{- end }}
     "github.com/stackrox/rox/pkg/search"
     pgSearch "github.com/stackrox/rox/pkg/search/postgres"
     "github.com/stackrox/rox/pkg/utils"
@@ -53,7 +56,7 @@ type (
     callback  = func(obj *storeType) error
 )
 
-{{- if .NoSerialized }}
+{{- if or .NoSerialized .Jsonb }}
 // Store is the interface to interact with the storage for {{ .Type }}
 type Store = pgSearch.NoSerializedStore[storeType]
 {{- else }}
@@ -108,14 +111,18 @@ type Store interface {
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-    {{- if .NoSerialized }}
+    {{- if or .NoSerialized .Jsonb }}
     return pgSearch.NewNoSerializedStore[storeType](
             db,
             schema,
             pkGetter,
             {{- if not .JoinTable }}
             {{ template "insertFunctionName" .Schema }},
+            {{- if and (not .NoCopyFrom) (not .Jsonb) }}
             nil,
+            {{- else }}
+            nil,
+            {{- end }}
             {{- else }}
             nil,
             nil,
@@ -130,9 +137,11 @@ func New(db postgres.DB) Store {
             nil,
             {{- end }}
             targetResource,
+            {{- if .NoSerialized }}
             pgSearch.NoSerializedStoreOpts[storeType]{
                 BulkInsert: bulkInsertInto{{ .Schema.Table|upperCamelCase }},
             },
+            {{- end }}
     )
     {{- else }}
     {{ if .CachedStore -}}
@@ -247,7 +256,11 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
 {{- $schema := .schema }}
 func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
     {{if and (not $schema.Parent) (not $schema.NoSerialized) }}
+    {{- if $schema.Jsonb }}
+    serialized, marshalErr := protojson.Marshal(obj)
+    {{- else }}
     serialized, marshalErr := obj.MarshalVT()
+    {{- end }}
     if marshalErr != nil {
         return marshalErr
     }
@@ -324,7 +337,11 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
         idx++
 
         {{if and (not $schema.Parent) (not $schema.NoSerialized) }}
+        {{- if $schema.Jsonb }}
+        serialized, marshalErr := protojson.Marshal(obj)
+        {{- else }}
         serialized, marshalErr := obj.MarshalVT()
+        {{- end }}
         if marshalErr != nil {
             return nil, marshalErr
         }
@@ -357,6 +374,33 @@ func {{ template "copyFunctionName" $schema }}(ctx context.Context, s pgSearch.D
 {{- if not .NoCopyFrom }}
 {{ template "copyObject" dict "schema" .Schema }}
 {{- end }}
+{{- end }}
+
+{{- if .Jsonb }}
+
+func scanRow(row pgx.Row) (*storeType, error) {
+    var data []byte
+    if err := row.Scan(&data); err != nil {
+        return nil, err
+    }
+    msg := &storeType{}
+    if err := protojson.Unmarshal(data, msg); err != nil {
+        return nil, err
+    }
+    return msg, nil
+}
+
+func scanRows(rows pgx.Rows) (*storeType, error) {
+    var data []byte
+    if err := rows.Scan(&data); err != nil {
+        return nil, err
+    }
+    msg := &storeType{}
+    if err := protojson.Unmarshal(data, msg); err != nil {
+        return nil, err
+    }
+    return msg, nil
+}
 {{- end }}
 
 {{- if .NoSerialized }}
