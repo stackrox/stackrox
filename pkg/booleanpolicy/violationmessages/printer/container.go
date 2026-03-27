@@ -88,9 +88,8 @@ func imageOSPrinter(fieldMap map[string][]string) ([]string, error) {
 }
 
 const (
-	imageDetailsTemplate     = `{{if .ContainerName}}Container '{{.ContainerName}}' has image with{{else}}Image has{{end}} {{.ImageDetails}}`
-	imageTagDetailTemplate   = `{{if .Tag}}tag '{{.Tag}}'{{else}}an empty tag{{if .Digest}}, digest {{.Digest}}{{end}}{{end}}`
-	emptyImageTagSubTemplate = `an empty tag{{if .Digest}}, digest {{.Digest}}{{end}}`
+	imageDetailsTemplate   = `{{if .ContainerName}}Container '{{.ContainerName}}' has image with{{else}}Image has{{end}} {{.ImageDetails}}`
+	imageTagDetailTemplate = `{{if .Tag}}tag '{{.Tag}}'{{else}}an empty tag{{if .Digest}}, digest {{.Digest}}{{end}}{{end}}`
 )
 
 func imageDetailsPrinter(fieldMap map[string][]string) ([]string, error) {
