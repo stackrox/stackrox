@@ -52,9 +52,9 @@ var (
         if schema != nil {
             return schema
         }
-        schema = walker.Walk(reflect.TypeOf(({{.Schema.Type}})(nil)), "{{.Schema.Table}}")
+        schema = walker.Walk(reflect.TypeOf(({{.Schema.Type}})(nil)), "{{.Schema.Table}}"{{if .NoSerialized}}, walker.WithNoSerialized(){{end}})
         {{- else}}
-        schema := walker.Walk(reflect.TypeOf(({{.Schema.Type}})(nil)), "{{.Schema.Table}}")
+        schema := walker.Walk(reflect.TypeOf(({{.Schema.Type}})(nil)), "{{.Schema.Table}}"{{if .NoSerialized}}, walker.WithNoSerialized(){{end}})
         {{- end}}
 
         {{- if gt (len .References) 0 }}
