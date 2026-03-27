@@ -1,6 +1,7 @@
 package tokens
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -259,6 +260,124 @@ func TestInternalRoleGetAccessScope(t *testing.T) {
 	} {
 		t.Run(name, func(it *testing.T) {
 			protoassert.Equal(it, tc.expectedScope, tc.role.GetAccessScope())
+		})
+	}
+}
+
+func TestInternalRoleJSONEncoding(t *testing.T) {
+	const clusterName1 = "production-cluster"
+	const clusterName2 = "staging-cluster"
+	const namespaceA = "namespace-a"
+	const namespaceB = "namespace-b"
+	const deploymentResource = "Deployment"
+	const imageResource = "Image"
+
+	for name, tc := range map[string]struct {
+		role         *InternalRole
+		expectedJSON string
+	}{
+		"Nil role": {
+			role:         nil,
+			expectedJSON: "null",
+		},
+		"Empty role": {
+			role:         &InternalRole{},
+			expectedJSON: "{}",
+		},
+		"Role with only name": {
+			role: &InternalRole{
+				RoleName: "test-role",
+			},
+			expectedJSON: `{"name":"test-role"}`,
+		},
+		"Role with read permissions": {
+			role: &InternalRole{
+				RoleName: "reader-role",
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_ACCESS: {deploymentResource, imageResource},
+				},
+			},
+			expectedJSON: `{"name":"reader-role","permissions":{"read":["Deployment","Image"]}}`,
+		},
+		"Role with read and write permissions": {
+			role: &InternalRole{
+				RoleName: "admin-role",
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_ACCESS:       {deploymentResource},
+					storage.Access_READ_WRITE_ACCESS: {imageResource},
+				},
+			},
+			expectedJSON: `{"name":"admin-role","permissions":{"read":["Deployment"],"read-write":["Image"]}}`,
+		},
+		"Role with cluster scopes": {
+			role: &InternalRole{
+				RoleName: "scoped-role",
+				ClustersByName: ClusterScopes{
+					clusterName1: {namespaceA, namespaceB},
+					clusterName2: {"*"},
+				},
+			},
+			expectedJSON: `{"name":"scoped-role","named_clusters":{"production-cluster":["namespace-a","namespace-b"],"staging-cluster":["*"]}}`,
+		},
+		"Complete role with all fields": {
+			role: &InternalRole{
+				RoleName: "complete-role",
+				Permissions: map[storage.Access][]string{
+					storage.Access_READ_ACCESS:       {deploymentResource},
+					storage.Access_READ_WRITE_ACCESS: {imageResource},
+				},
+				ClustersByName: ClusterScopes{
+					clusterName1: {namespaceA},
+				},
+			},
+			expectedJSON: `{"name":"complete-role","permissions":{"read":["Deployment"],"read-write":["Image"]},"named_clusters":{"production-cluster":["namespace-a"]}}`,
+		},
+		"Role with NO_ACCESS permission normalizes to NO_ACCESS": {
+			role: &InternalRole{
+				RoleName: "no-access-role",
+				Permissions: map[storage.Access][]string{
+					storage.Access_NO_ACCESS: {deploymentResource},
+				},
+			},
+			expectedJSON: `{"name":"no-access-role","permissions":{"none":["Deployment"]}}`,
+		},
+		"Role with unknown access level normalizes to NO_ACCESS": {
+			role: &InternalRole{
+				RoleName: "unknown-access-role",
+				Permissions: map[storage.Access][]string{
+					storage.Access(-1): {deploymentResource},
+				},
+			},
+			expectedJSON: `{"name":"unknown-access-role","permissions":{"none":["Deployment"]}}`,
+		},
+	} {
+		t.Run(name, func(it *testing.T) {
+			// Test marshaling
+			jsonBytes, err := json.Marshal(tc.role)
+			assert.NoError(it, err)
+
+			// Verify JSON structure matches expected (order-independent comparison for maps)
+			var actualJSON map[string]interface{}
+			var expectedJSON map[string]interface{}
+
+			if tc.role == nil {
+				assert.Equal(it, "null", string(jsonBytes))
+				return
+			}
+
+			err = json.Unmarshal(jsonBytes, &actualJSON)
+			assert.NoError(it, err)
+			err = json.Unmarshal([]byte(tc.expectedJSON), &expectedJSON)
+			assert.NoError(it, err)
+			assert.Equal(it, expectedJSON, actualJSON)
+
+			// Test round-trip: unmarshal back and verify it matches original
+			var unmarshaledRole InternalRole
+			err = json.Unmarshal(jsonBytes, &unmarshaledRole)
+			assert.NoError(it, err)
+			assert.Equal(it, tc.role.RoleName, unmarshaledRole.RoleName)
+			assert.Equal(it, tc.role.GetPermissions(), unmarshaledRole.GetPermissions())
+			protoassert.Equal(it, tc.role.GetAccessScope(), unmarshaledRole.GetAccessScope())
 		})
 	}
 }

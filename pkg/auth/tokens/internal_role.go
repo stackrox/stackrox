@@ -17,11 +17,25 @@ import (
 // by the map entry for the cluster ID. The map entry is a list
 // of namespace names. If the list contains the wildcard value ("*"),
 // then all namespaces within that cluster should be accessible.
+//
+// Assuming an environment with two clusters (dev and prod), each
+// containing two namespaces (backend and frontend), the expression
+// of full access to the dev cluster and access to the frontend
+// namespace only in the prod cluster would result in the following
+// ClusterScopes object:
+//
+//	{
+//	  "prod_cluster_id": []string{"frontend"},
+//	  "dev_cluster_id":  []string{"*"},
+//	}
 type ClusterScopes map[string][]string
 
 var _ permissions.ResolvedRole = (*InternalRole)(nil)
 
 // InternalRole represents claims that materialize a negotiated ephemeral role for internal use.
+// Internal use means that the claims are set for token requests originating from rox services
+// (possibly on behalf of users). The APIs that set these claims are either not exposed publicly
+// or the access to these APIs is restricted to rox services.
 type InternalRole struct {
 	RoleName    string                      `json:"name,omitempty"`
 	Permissions map[storage.Access][]string `json:"permissions,omitempty"`
@@ -35,7 +49,11 @@ type InternalRole struct {
 // MarshalJSON implements json.Marshaler for InternalRole.
 // This is necessary because go-jose doesn't support map[storage.Access][]string directly.
 func (r *InternalRole) MarshalJSON() ([]byte, error) {
-	// Create a temporary struct with string-keyed permissions map
+	// Create a temporary struct with string-keyed permissions map.
+	//
+	// The Alias type allows to stop the type recursion during encoding.
+	// Using InternalRole directly in the struct would end in infinite
+	// recursion loop and stack overflow.
 	type Alias InternalRole
 	aux := &struct {
 		Permissions map[string][]string `json:"permissions,omitempty"`
