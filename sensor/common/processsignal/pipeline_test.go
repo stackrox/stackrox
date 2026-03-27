@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/pubsub"
 	pubsubDispatcher "github.com/stackrox/rox/sensor/common/pubsub/dispatcher"
 	"github.com/stackrox/rox/sensor/common/pubsub/lane"
-	componentMocks "github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -286,14 +285,26 @@ func deleteStore(deploymentID string, mockStore *clusterentities.Store) {
 	mockStore.Apply(updates, false)
 }
 
-// mockDispatcherWithStop wraps the generated MockPubSubDispatcher which is
-// missing Stop() because it was generated from the duplicate interface in
-// component.go rather than common.PubSubDispatcher.
-type mockDispatcherWithStop struct {
-	*componentMocks.MockPubSubDispatcher
+// fakeDispatcher is a test-local implementation of common.PubSubDispatcher
+// that allows injecting errors for RegisterConsumerToLane and Publish.
+type fakeDispatcher struct {
+	registerErr error
+	publishErr  error
 }
 
-func (m *mockDispatcherWithStop) Stop() {}
+func (f *fakeDispatcher) RegisterConsumer(_ pubsub.ConsumerID, _ pubsub.Topic, _ pubsub.EventCallback) error {
+	return f.registerErr
+}
+
+func (f *fakeDispatcher) RegisterConsumerToLane(_ pubsub.ConsumerID, _ pubsub.Topic, _ pubsub.LaneID, _ pubsub.EventCallback) error {
+	return f.registerErr
+}
+
+func (f *fakeDispatcher) Publish(_ pubsub.Event) error {
+	return f.publishErr
+}
+
+func (f *fakeDispatcher) Stop() {}
 
 func newTestDispatcher(t *testing.T) common.PubSubDispatcher {
 	t.Helper()
@@ -357,27 +368,10 @@ func TestPubSubPipelineFailsOnRegistrationError(t *testing.T) {
 
 	mockStore := clusterentities.NewStore(0, nil, false)
 	mockDetector := mocks.NewMockDetector(mockCtrl)
-	mockDispatcher := &mockDispatcherWithStop{componentMocks.NewMockPubSubDispatcher(mockCtrl)}
-
-	// The enricher registers for unenriched indicators first (during newEnricher).
-	mockDispatcher.EXPECT().RegisterConsumerToLane(
-		pubsub.UnenrichedProcessConsumer,
-		pubsub.UnenrichedProcessIndicatorTopic,
-		pubsub.UnenrichedProcessIndicatorLane,
-		gomock.Any(),
-	).Return(nil)
-
-	// The pub/sub pipeline registers for enriched indicators during Start().
-	// Simulate a registration failure.
-	mockDispatcher.EXPECT().RegisterConsumerToLane(
-		pubsub.EnrichedProcessConsumer,
-		pubsub.EnrichedProcessIndicatorTopic,
-		pubsub.EnrichedProcessIndicatorLane,
-		gomock.Any(),
-	).Return(errors.New("registration failed"))
+	failingDispatcher := &fakeDispatcher{registerErr: errors.New("registration failed")}
 
 	_, err := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
-		mockDetector, mockDispatcher)
+		mockDetector, failingDispatcher)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "registration failed")
 }
@@ -391,17 +385,10 @@ func TestPubSubPipelineDropsSignalOnPublishFailure(t *testing.T) {
 
 	mockStore := clusterentities.NewStore(0, nil, false)
 	mockDetector := mocks.NewMockDetector(mockCtrl)
-	mockDispatcher := &mockDispatcherWithStop{componentMocks.NewMockPubSubDispatcher(mockCtrl)}
-
-	// Allow all registrations to succeed.
-	mockDispatcher.EXPECT().RegisterConsumerToLane(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		Return(nil).Times(2)
-
-	// Publish will fail.
-	mockDispatcher.EXPECT().Publish(gomock.Any()).Return(errors.New("publish failed"))
+	failingDispatcher := &fakeDispatcher{publishErr: errors.New("publish failed")}
 
 	p, err := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
-		mockDetector, mockDispatcher)
+		mockDetector, failingDispatcher)
 	require.NoError(t, err)
 	t.Cleanup(p.Shutdown)
 
