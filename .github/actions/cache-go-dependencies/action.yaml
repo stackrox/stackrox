@@ -41,8 +41,9 @@ runs:
         key: go-mod-v1-${{ hashFiles('**/go.sum') }}
         restore-keys: go-mod-v1-
 
+    # Temporarily always save for testing cache effectiveness on PR branches.
     - name: Cache Go Build (save)
-      if: inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
+      if: inputs.save == 'true'
       uses: actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
@@ -50,7 +51,7 @@ runs:
         restore-keys: go-build-v1-${{ github.job }}${{ steps.cache-paths.outputs.KEY_SUFFIX }}-${{ steps.cache-paths.outputs.GOARCH }}-
 
     - name: Cache Go Build (restore)
-      if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
+      if: ${{ !(inputs.save == 'true') }}
       uses: actions/cache/restore@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOCACHE }}
