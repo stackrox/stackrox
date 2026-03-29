@@ -124,9 +124,6 @@ jobs:
         go-version-file: go.mod
         cache: false
 
-    - name: Override GOTOOLCHAIN
-      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
-
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -138,6 +135,45 @@ jobs:
 
     - name: Go Integration Unit Tests
       run: ${{ matrix.gotags }} make integration-unit-tests
+
+    - name: Generate junit report
+      if: always()
+      run: make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/report.xml'
+
+  go-operator-integration:
+    strategy:
+      fail-fast: false
+      matrix:
+        gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
+
+    - name: Override GOTOOLCHAIN
+      run: echo "GOTOOLCHAIN=auto" >> "$GITHUB_ENV"
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+      with:
+        key-suffix: ${{ matrix.gotags }}-operator-integration
 
     - name: Go Operator Integration Tests
       run: ${{ matrix.gotags }} make -C operator/ test-integration

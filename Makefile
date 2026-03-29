@@ -606,7 +606,7 @@ test: go-unit-tests ui-test shell-unit-tests
 .PHONY: integration-unit-tests
 integration-unit-tests: build-prep test-prep
 	set -o pipefail ; \
-	GOTAGS=$(GOTAGS),test,integration scripts/go-test.sh -count=1 -v \
+	GOTAGS=$(GOTAGS),test,integration scripts/go-test.sh -v \
 		$(shell go list ./... | grep  "registries\|scanners\|notifiers") \
 		| tee $(GO_TEST_OUTPUT_PATH)
 
