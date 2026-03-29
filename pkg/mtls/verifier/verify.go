@@ -87,7 +87,7 @@ func (NonCA) TLSConfig() (*tls.Config, error) {
 // When these are unset the compiled-in defaults are used (TLS 1.2 with
 // AES-256-GCM preferred over AES-128-GCM).
 func DefaultTLSServerConfig(certPool *x509.CertPool, certs []tls.Certificate) *tls.Config {
-	cfg := &tls.Config{
+	cfg := &tls.Config{ //nolint:gosec // G402: MinVersion governed by TLS profile configuration
 		MinVersion:               tlsprofile.MinVersion(),
 		PreferServerCipherSuites: true,
 		CipherSuites:             tlsprofile.CipherSuites(),

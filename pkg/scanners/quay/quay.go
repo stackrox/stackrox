@@ -61,7 +61,7 @@ func newScanner(protoImageIntegration *storage.ImageIntegration) (*quay, error) 
 	client := &http.Client{
 		Timeout: requestTimeout,
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{ //#nosec G402 -- InsecureSkipVerify is user-configurable for Quay scanner
+			TLSClientConfig: &tls.Config{ //nolint:gosec // G402: InsecureSkipVerify is user-configurable for Quay scanner
 				InsecureSkipVerify: config.GetInsecure(),
 			},
 			Proxy: proxy.FromConfig(),
