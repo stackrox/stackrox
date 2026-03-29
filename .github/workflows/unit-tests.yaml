@@ -121,7 +121,6 @@ jobs:
     - name: Run Postgres
       run: |
         docker run --rm -d --name postgres \
-          -e POSTGRES_USER="$USER" \
           -e POSTGRES_HOST_AUTH_METHOD=trust \
           -p 5432:5432 \
           docker.io/library/postgres:${{ matrix.pg }}
@@ -187,7 +186,6 @@ jobs:
     - name: Run Postgres
       run: |
         docker run --rm -d --name postgres \
-          -e POSTGRES_USER="$USER" \
           -e POSTGRES_HOST_AUTH_METHOD=trust \
           -p 5432:5432 \
           docker.io/library/postgres:15
@@ -317,6 +315,8 @@ jobs:
         go-version-file: go.mod
         cache: false
 
+    - uses: bats-core/bats-action@5b1e60c2ee94cb1b44a616ea4b1f466f9d6e38ef # v4.0.0
+
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -357,6 +357,8 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
+    - uses: bats-core/bats-action@5b1e60c2ee94cb1b44a616ea4b1f466f9d6e38ef # v4.0.0
+
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -383,6 +385,8 @@ jobs:
 
   openshift-ci-unit-tests:
     runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     steps:
       - name: Checkout
         uses: actions/checkout@v6
