@@ -22,6 +22,13 @@ jobs:
       fail-fast: false
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+        shard:
+          - name: pkg
+            packages: ./pkg/...
+          - name: central
+            packages: ./central/...
+          - name: rest
+            packages: ./roxctl/... ./sensor/... ./operator/... ./migrator/... ./compliance/... ./scanner/... ./tools/... ./config-controller/... ./scale/... ./govulncheck/... ./image/...
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
@@ -49,10 +56,18 @@ jobs:
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
       with:
-        key-suffix: ${{ matrix.gotags }}
+        key-suffix: ${{ matrix.gotags }}-${{ matrix.shard.name }}
 
     - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
+      run: |
+        ${{ matrix.gotags }} make build-prep test-prep
+        set -o pipefail
+        mkdir -p test-output
+        GOTAGS="${GOTAGS:+$GOTAGS,}test" CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 \
+          scripts/go-test.sh -timeout 25m -race -cover \
+          -coverprofile test-output/coverage.out -v \
+          ${{ matrix.shard.packages }} \
+          | tee test-output/test.log
 
     - uses: codecov/codecov-action@v3
       with:
@@ -70,9 +85,11 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Go Integration Unit Tests
+      if: matrix.shard.name == 'central' || matrix.shard.name == 'pkg'
       run: ${{ matrix.gotags }} make integration-unit-tests
 
     - name: Go Operator Integration Tests
+      if: matrix.shard.name == 'rest'
       run: ${{ matrix.gotags }} make -C operator/ test-integration
 
     - name: Go Operator Helm Tests
