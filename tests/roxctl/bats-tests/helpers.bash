@@ -9,6 +9,12 @@ fi
 load "${bats_helpers_root}/bats-support/load.bash"
 load "${bats_helpers_root}/bats-assert/load.bash"
 
+# yq_multidoc runs yq and strips --- document separators from output.
+# yq 4.x adds separators between multi-doc results which shift assert_line indices.
+yq_multidoc() {
+  yq "$@" | grep -v '^---$'
+}
+
 # luname outputs uname in lowercase
 luname() {
   uname | tr '[:upper:]' '[:lower:]'
