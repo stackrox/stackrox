@@ -122,6 +122,7 @@ jobs:
       run: |
         docker run --rm -d --name postgres \
           -e POSTGRES_HOST_AUTH_METHOD=trust \
+          -e POSTGRES_INITDB_ARGS="--locale=C" \
           -p 5432:5432 \
           docker.io/library/postgres:${{ matrix.pg }}
 
@@ -187,6 +188,7 @@ jobs:
       run: |
         docker run --rm -d --name postgres \
           -e POSTGRES_HOST_AUTH_METHOD=trust \
+          -e POSTGRES_INITDB_ARGS="--locale=C" \
           -p 5432:5432 \
           docker.io/library/postgres:15
 
