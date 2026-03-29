@@ -2335,12 +2335,13 @@ _EO_SUITE_HEADER_
         local result="${lines[1]}"
         local details="${lines[2]}"
 
-        # XML escape description
-        description="${description//&/&amp;}"
-        description="${description//\"/&quot;}"
-        description="${description//\'/&#39;}"
-        description="${description//</&lt;}"
-        description="${description//>/&gt;}"
+        # XML escape description (\ before & needed for bash 5.2+ where
+        # & in replacement refers to the matched pattern)
+        description="${description//&/\&amp;}"
+        description="${description//\"/\&quot;}"
+        description="${description//\'/\&#39;}"
+        description="${description//</\&lt;}"
+        description="${description//>/\&gt;}"
 
         cat << _EO_CASE_HEADER_ >> "${junit_file}"
         <testcase name="${description}" classname="${class}">
