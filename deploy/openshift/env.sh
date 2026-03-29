@@ -2,7 +2,7 @@
 set -e
 
 export ORCH="openshift"
-export ORCH_CMD="oc"
+export ORCH_CMD="${KUBE_COMMAND:-oc}"
 export ORCH_FULLNAME="openshift"
 
 export ADMISSION_CONTROLLER_POD_EVENTS="${ADMISSION_CONTROLLER_POD_EVENTS:-false}"
