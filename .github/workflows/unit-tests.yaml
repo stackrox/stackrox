@@ -25,16 +25,16 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@v6
       with:
         fetch-depth: 0
+
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -103,20 +103,16 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
-    - name: Set Postgres version
-      run: |
-        echo "/usr/pgsql-${{ matrix.pg }}/bin" >> "${GITHUB_PATH}"
-
     - name: Checkout
       uses: actions/checkout@v6
       with:
         fetch-depth: 0
+
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -124,8 +120,11 @@ jobs:
 
     - name: Run Postgres
       run: |
-        su postgres -c 'initdb -D /tmp/data'
-        su postgres -c 'pg_ctl -D /tmp/data start'
+        docker run --rm -d --name postgres \
+          -e POSTGRES_USER="$USER" \
+          -e POSTGRES_HOST_AUTH_METHOD=trust \
+          -p 5432:5432 \
+          docker.io/library/postgres:${{ matrix.pg }}
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
@@ -133,7 +132,11 @@ jobs:
         key-suffix: ${{ matrix.gotags }}
 
     - name: Is Postgres ready
-      run: pg_isready -h 127.0.0.1
+      run: |
+        for i in $(seq 1 30); do
+          docker exec postgres pg_isready -h 127.0.0.1 && break
+          sleep 1
+        done
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} make go-postgres-unit-tests
@@ -166,20 +169,16 @@ jobs:
 
   go-bench:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
-    - name: Set Postgres version
-      run: |
-        echo "/usr/pgsql-15/bin" >> "${GITHUB_PATH}"
-
     - name: Checkout
       uses: actions/checkout@v6
       with:
         fetch-depth: 0
+
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -187,14 +186,21 @@ jobs:
 
     - name: Run Postgres
       run: |
-        su postgres -c 'initdb -D /tmp/data'
-        su postgres -c 'pg_ctl -D /tmp/data start'
+        docker run --rm -d --name postgres \
+          -e POSTGRES_USER="$USER" \
+          -e POSTGRES_HOST_AUTH_METHOD=trust \
+          -p 5432:5432 \
+          docker.io/library/postgres:15
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
 
     - name: Is Postgres ready
-      run: pg_isready -h 127.0.0.1
+      run: |
+        for i in $(seq 1 30); do
+          docker exec postgres pg_isready -h 127.0.0.1 && break
+          sleep 1
+        done
 
     - name: Go Bench Tests
       run: make go-postgres-bench-tests
@@ -216,11 +222,13 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     steps:
     - name: Checkout
       uses: actions/checkout@v6
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -297,17 +305,17 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+        cache: false
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -342,8 +350,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -377,8 +383,6 @@ jobs:
 
   openshift-ci-unit-tests:
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
     steps:
       - name: Checkout
         uses: actions/checkout@v6
