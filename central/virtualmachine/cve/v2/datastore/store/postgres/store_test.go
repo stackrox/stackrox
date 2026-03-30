@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -22,6 +23,10 @@ type VirtualMachineCvev2StoreSuite struct {
 }
 
 func TestVirtualMachineCvev2Store(t *testing.T) {
+	t.Setenv(features.VirtualMachinesEnhancedDataModel.EnvVar(), "true")
+	if !features.VirtualMachinesEnhancedDataModel.Enabled() {
+		t.Skip("VM enhanced data model is not enabled")
+	}
 	suite.Run(t, new(VirtualMachineCvev2StoreSuite))
 }
 
