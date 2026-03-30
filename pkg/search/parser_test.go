@@ -243,3 +243,123 @@ func TestQueryFromFieldValuesMaxParametersExceeded(t *testing.T) {
 		}, "Expected queryFromFieldValues to not panic on release builds")
 	}
 }
+
+func FuzzParseQuery(f *testing.F) {
+	// Seed corpus from existing tests
+	f.Add("Deployment:attempted-alerts-dep-6+Policy:Kubernetes Actions: Exec into Pod")
+	f.Add("Deployment:attempted-alerts-dep-6+Policy:Kubernetes Actions: Exec into Pod,hello+hi+New Deployment Label:value")
+	f.Add("Deployment:field1,\"field12+some:thing\",field13+Category:\"field2+something\"")
+	f.Add("Deployment:field1,\"field12+some,thi:ng\",field13+Category:\"field2+some,thing\"")
+	f.Add("Deployment Label:label")
+	f.Add("Deployment Label:label,label")
+	f.Add("Deployment Label:label+label")
+	f.Add("Deployment Label:")
+	f.Add("")
+	f.Add("INVALIDQUERY")
+	f.Add("Deployment Name:field1,field12+Category:field2")
+	f.Add("  Deployment Label :  label+label  ")
+	f.Add("Deployment Label:attempted-alerts-dep-6+Policy:Kubernetes Actions: Exec into Pod")
+	f.Add("Deployment Label:label1,label2,")
+
+	f.Fuzz(func(t *testing.T, query string) {
+		// Test ParseQuery with default options - should never panic
+		assert.NotPanics(t, func() {
+			_, _ = ParseQuery(query)
+		})
+
+		// Test ParseQuery with MatchAllIfEmpty option - should never panic
+		assert.NotPanics(t, func() {
+			_, _ = ParseQuery(query, MatchAllIfEmpty())
+		})
+
+		// Test ParseQuery with ExcludeFieldLabel option - should never panic
+		assert.NotPanics(t, func() {
+			_, _ = ParseQuery(query, ExcludeFieldLabel(DeploymentName))
+		})
+	})
+}
+
+func FuzzParseQueryForAutocomplete(f *testing.F) {
+	// Seed corpus from existing tests
+	f.Add("Deployment Name:field1,field12+Category:field2")
+	f.Add("")
+	f.Add("INVALIDQUERY")
+	f.Add("Deployment:field1,\"field12+some:thing\",field13 + Category:\"field2+something\"")
+	f.Add("Deployment:field1,\"field12+some,thi:ng\",field13 + Category:\"field2+some,thing\"")
+	f.Add("Deployment Label:label")
+	f.Add("Deployment Label:label,label")
+	f.Add("Deployment:attempted-alerts-dep-6+Policy:Kubernetes Actions: Exec into Pod")
+	f.Add("Category:test+Deployment:value")
+
+	f.Fuzz(func(t *testing.T, query string) {
+		// Should never panic on arbitrary input
+		assert.NotPanics(t, func() {
+			_, _, _ = ParseQueryForAutocomplete(query)
+		})
+	})
+}
+
+func FuzzGetValueAndModifiersFromString(f *testing.F) {
+	// Seed corpus from existing tests and known patterns
+	f.Add("test")
+	f.Add("\"test\"")
+	f.Add("\"\"")
+	f.Add("\"")
+	f.Add("\"test")
+	f.Add("!negated")
+	f.Add("!!atleastone")
+	f.Add("r/regex")
+	f.Add("!r/negated-regex")
+	f.Add("!!r/atleastone-regex")
+	f.Add("\"exact\"")
+	f.Add("!\"negated-exact\"")
+	f.Add("!!\"atleastone-exact\"")
+	f.Add("r/test.*pattern")
+	f.Add("!!!")
+	f.Add("r/")
+	f.Add("!")
+	f.Add("!!")
+
+	f.Fuzz(func(t *testing.T, value string) {
+		// Should never panic on arbitrary input
+		assert.NotPanics(t, func() {
+			resultValue, modifiers := GetValueAndModifiersFromString(value)
+			// Basic sanity checks
+			_ = resultValue
+			_ = modifiers
+
+			// Verify modifiers are valid
+			for _, mod := range modifiers {
+				assert.True(t, mod >= AtLeastOne && mod <= Equality,
+					"modifier %v is out of valid range", mod)
+			}
+
+			// Verify modifier rules are followed
+			hasNegation := false
+			hasAtLeastOne := false
+			hasRegex := false
+			hasEquality := false
+
+			for _, mod := range modifiers {
+				switch mod {
+				case Negation:
+					hasNegation = true
+				case AtLeastOne:
+					hasAtLeastOne = true
+				case Regex:
+					hasRegex = true
+				case Equality:
+					hasEquality = true
+				}
+			}
+
+			// Can't have both negation and at-least-one
+			assert.False(t, hasNegation && hasAtLeastOne,
+				"cannot have both Negation and AtLeastOne modifiers")
+
+			// Regex and Equality are mutually exclusive (last one wins)
+			assert.False(t, hasRegex && hasEquality,
+				"cannot have both Regex and Equality modifiers")
+		})
+	})
+}
