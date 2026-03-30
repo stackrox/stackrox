@@ -181,7 +181,6 @@ func TestPipelineRun(t *testing.T) {
 
 func TestPipelineReconcile(t *testing.T) {
 	testClusterID := fixtureconsts.Cluster1
-	otherClusterID := fixtureconsts.Cluster2
 	tests := []struct {
 		name          string
 		setupStoreMap func(*reconciliation.StoreMap)
@@ -209,21 +208,18 @@ func TestPipelineReconcile(t *testing.T) {
 				m.Add((*central.SensorEvent_VirtualMachine)(nil), "existing-vm")
 			},
 			setupMock: func(m *virtualMachineDSMocks.MockDataStore) {
+				// Query is now cluster-scoped, so only VMs from testClusterID are returned.
 				m.EXPECT().SearchRawVirtualMachines(gomock.Any(), gomock.Any()).
 					Return([]*storage.VirtualMachine{
 						{
 							Id:        "existing-vm",
 							ClusterId: testClusterID,
 						},
-						{
-							Id:        "existing-vm-in-other-cluster",
-							ClusterId: otherClusterID,
-						},
 					}, nil)
 			},
 		},
 		{
-			name: "reconciliation does not remove virtual machines from other clusters",
+			name: "reconciliation removes stale virtual machines",
 			setupStoreMap: func(m *reconciliation.StoreMap) {
 				m.Add((*central.SensorEvent_VirtualMachine)(nil), "existing-vm")
 			},
@@ -374,7 +370,6 @@ func TestPipelineRunV2(t *testing.T) {
 
 func TestPipelineReconcileV2(t *testing.T) {
 	testClusterID := fixtureconsts.Cluster1
-	otherClusterID := fixtureconsts.Cluster2
 	tests := []struct {
 		name          string
 		setupStoreMap func(*reconciliation.StoreMap)
@@ -402,15 +397,12 @@ func TestPipelineReconcileV2(t *testing.T) {
 				m.Add((*central.SensorEvent_VirtualMachine)(nil), "existing-vm")
 			},
 			setupMock: func(m *vmV2DSMocks.MockDataStore) {
+				// Query is now cluster-scoped, so only VMs from testClusterID are returned.
 				m.EXPECT().SearchRawVirtualMachines(gomock.Any(), gomock.Any()).
 					Return([]*storage.VirtualMachineV2{
 						{
 							Id:        "existing-vm",
 							ClusterId: testClusterID,
-						},
-						{
-							Id:        "existing-vm-in-other-cluster",
-							ClusterId: otherClusterID,
 						},
 					}, nil)
 			},

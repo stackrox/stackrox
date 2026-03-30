@@ -3,6 +3,7 @@ package virtualmachines
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	virtualMachineDataStore "github.com/stackrox/rox/central/virtualmachine/datastore"
 	vmV2DataStore "github.com/stackrox/rox/central/virtualmachine/v2/datastore"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -65,15 +67,15 @@ func (p *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 }
 
 func (p *pipelineImpl) reconcileV1(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
-	virtualMachines, err := p.virtualMachineStore.SearchRawVirtualMachines(ctx, search.EmptyQuery())
+	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	query.Pagination = &v1.QueryPagination{Limit: math.MaxInt32}
+	virtualMachines, err := p.virtualMachineStore.SearchRawVirtualMachines(ctx, query)
 	if err != nil {
 		return errors.Wrap(err, "retrieving virtual machines for reconciliation")
 	}
 	clusterVMIDs := set.NewStringSet()
 	for _, vm := range virtualMachines {
-		if vm.GetClusterId() == clusterID {
-			clusterVMIDs.Add(vm.GetId())
-		}
+		clusterVMIDs.Add(vm.GetId())
 	}
 
 	store := storeMap.Get((*central.SensorEvent_VirtualMachine)(nil))
@@ -83,15 +85,15 @@ func (p *pipelineImpl) reconcileV1(ctx context.Context, clusterID string, storeM
 }
 
 func (p *pipelineImpl) reconcileV2(ctx context.Context, clusterID string, storeMap *reconciliation.StoreMap) error {
-	virtualMachines, err := p.vmV2Store.SearchRawVirtualMachines(ctx, search.EmptyQuery())
+	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	query.Pagination = &v1.QueryPagination{Limit: math.MaxInt32}
+	virtualMachines, err := p.vmV2Store.SearchRawVirtualMachines(ctx, query)
 	if err != nil {
 		return errors.Wrap(err, "retrieving v2 virtual machines for reconciliation")
 	}
 	clusterVMIDs := set.NewStringSet()
 	for _, vm := range virtualMachines {
-		if vm.GetClusterId() == clusterID {
-			clusterVMIDs.Add(vm.GetId())
-		}
+		clusterVMIDs.Add(vm.GetId())
 	}
 
 	store := storeMap.Get((*central.SensorEvent_VirtualMachine)(nil))

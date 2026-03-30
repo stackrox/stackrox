@@ -657,6 +657,46 @@ func TestPipelineRunV2_NACKOnEnsureError(t *testing.T) {
 	assert.Equal(t, centralsensor.SensorACKReasonStorageFailed, ack.GetReason())
 }
 
+func TestPipelineRunV2_NilScanNoUpsert(t *testing.T) {
+	t.Setenv(features.VirtualMachines.EnvVar(), "true")
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	enricher := vmEnricherMocks.NewMockVirtualMachineEnricher(ctrl)
+	vmV2Store := vmV2DSMocks.NewMockDataStore(ctrl)
+
+	pipeline := &pipelineImpl{
+		enricher:  enricher,
+		vmV2Store: vmV2Store,
+	}
+
+	vmID := "vm-v2-nil-scan"
+	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
+
+	// Enricher succeeds but does NOT set vm.Scan (leaves it nil).
+	enricher.EXPECT().
+		EnrichVirtualMachineWithVulnerabilities(gomock.Any(), gomock.Any()).
+		Return(nil)
+	vmV2Store.EXPECT().
+		EnsureVirtualMachineExists(gomock.Any(), vmID, testClusterID).
+		Return(nil)
+	// UpsertScan should NOT be called because ScanPartsFromV1Scan returns nil for a nil scan.
+
+	injector := &mockInjector{
+		capabilities: map[centralsensor.SensorCapability]bool{
+			centralsensor.SensorACKSupport: true,
+		},
+	}
+
+	err := pipeline.Run(ctx, testClusterID, msg, injector)
+	assert.NoError(t, err)
+
+	assert.Len(t, injector.messages, 1)
+	ack := injector.messages[0].GetSensorAck()
+	assert.NotNil(t, ack)
+	assert.Equal(t, central.SensorACK_ACK, ack.GetAction())
+}
+
 func TestPipelineRunV2_NACKOnUpsertScanError(t *testing.T) {
 	t.Setenv(features.VirtualMachines.EnvVar(), "true")
 	ctrl := gomock.NewController(t)

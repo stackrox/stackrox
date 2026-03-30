@@ -14,6 +14,11 @@ import (
 //
 //go:generate mockgen-wrapper
 type Store interface {
+	// EnsureExists atomically inserts a minimal VM record (id + clusterId)
+	// if one does not already exist. Uses INSERT ... ON CONFLICT DO NOTHING
+	// to avoid overwriting richer metadata from the VM pipeline.
+	EnsureExists(ctx context.Context, vmID, clusterID string) error
+
 	// UpsertVM upserts a VM. Hash-comparison determines whether a full write
 	// or timestamp-only update is performed.
 	// NOTE: Mutates vm in-place (LastUpdated, Hash).

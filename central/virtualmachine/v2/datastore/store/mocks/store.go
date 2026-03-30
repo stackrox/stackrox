@@ -59,6 +59,20 @@ func (mr *MockStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockStore)(nil).Count), ctx, q)
 }
 
+// EnsureExists mocks base method.
+func (m *MockStore) EnsureExists(ctx context.Context, vmID, clusterID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnsureExists", ctx, vmID, clusterID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnsureExists indicates an expected call of EnsureExists.
+func (mr *MockStoreMockRecorder) EnsureExists(ctx, vmID, clusterID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnsureExists", reflect.TypeOf((*MockStore)(nil).EnsureExists), ctx, vmID, clusterID)
+}
+
 // Delete mocks base method.
 func (m *MockStore) Delete(ctx context.Context, id string) error {
 	m.ctrl.T.Helper()
