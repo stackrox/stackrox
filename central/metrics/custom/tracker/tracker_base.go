@@ -101,6 +101,10 @@ func (g *gatherer[F]) trySetRunning() bool {
 // TrackerBase implements a generic finding tracker.
 // Configured with a finding generator and other arguments, it runs a goroutine
 // that periodically aggregates gathered values and updates the gauge values.
+//
+// A tracker can be scoped, in which case it creates a separate registry for
+// each scrape user ID, or global, where it reuses the same global registry for
+// all users.
 type TrackerBase[F Finding] struct {
 	metricPrefix string
 	description  string
