@@ -555,6 +555,37 @@ func TestServeHTTP_RequiresAuthentication(t *testing.T) {
 	})
 }
 
+func TestServeHTTP_ConsoleUserContext(t *testing.T) {
+	t.Run("authenticated username is set in request context", func(t *testing.T) {
+		setupCentralCapsForTest(t)
+
+		var capturedUsername string
+		mockTransport := pkghttputil.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			capturedUsername = consoleUserFromContext(req.Context())
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"ok":true}`)),
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+			}, nil
+		})
+
+		baseURL, err := url.Parse("https://central:443")
+		require.NoError(t, err)
+
+		h := newTestHandler(t, baseURL, mockTransport, newAllowingAuthorizer(t), "test-token")
+		h.centralReachable.Store(true)
+
+		req := httptest.NewRequest(http.MethodGet, "/v1/alerts", nil)
+		req.Header.Set("Authorization", "Bearer test-token")
+		w := httptest.NewRecorder()
+
+		h.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, "test-user", capturedUsername, "console user should be set from authenticated username")
+	})
+}
+
 func TestServeHTTP_PathFiltering(t *testing.T) {
 	t.Run("disallowed path returns 403", func(t *testing.T) {
 		f := newProxyTestFixture(t, newAllowingAuthorizer(t))

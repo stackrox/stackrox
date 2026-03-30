@@ -1,6 +1,7 @@
 package centralproxy
 
 import (
+	"context"
 	"crypto/x509"
 	"fmt"
 	"net/http"
@@ -22,6 +23,22 @@ import (
 	"google.golang.org/grpc"
 	"k8s.io/client-go/kubernetes"
 )
+
+// consoleUserKeyType is the context key for passing the authenticated console username.
+type consoleUserKeyType struct{}
+
+var consoleUserKey consoleUserKeyType
+
+// contextWithConsoleUser returns a new context with the console username attached.
+func contextWithConsoleUser(ctx context.Context, username string) context.Context {
+	return context.WithValue(ctx, consoleUserKey, username)
+}
+
+// consoleUserFromContext extracts the console username from the context, or returns empty string.
+func consoleUserFromContext(ctx context.Context) string {
+	username, _ := ctx.Value(consoleUserKey).(string)
+	return username
+}
 
 var (
 	log            = logging.LoggerForModule()
@@ -188,6 +205,9 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, err.Error(), pkghttputil.StatusFromError(err))
 		return
 	}
+
+	// Pass the authenticated console user to the transport layer via context.
+	request = request.WithContext(contextWithConsoleUser(request.Context(), userInfo.Username))
 
 	if err := h.authorizer.authorize(request.Context(), userInfo, request); err != nil {
 		result = requestResultAuthzError

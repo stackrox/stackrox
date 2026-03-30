@@ -119,6 +119,8 @@ func (t *scopedTokenTransport) SetClient(conn grpc.ClientConnInterface) {
 // is retried once with a fresh token.
 func (t *scopedTokenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	scope := req.Header.Get(stackroxNamespaceHeader)
+	username := consoleUserFromContext(req.Context())
+	key := tokenCacheKey{scope: scope, username: username}
 
 	// Buffer the request body upfront so we can replay it on retry.
 	var bodyBytes []byte
@@ -131,7 +133,7 @@ func (t *scopedTokenTransport) RoundTrip(req *http.Request) (*http.Response, err
 		req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 	}
 
-	resp, err := t.doRoundTrip(req, scope)
+	resp, err := t.doRoundTrip(req, key)
 	if err != nil {
 		return nil, err
 	}
@@ -150,16 +152,16 @@ func (t *scopedTokenTransport) RoundTrip(req *http.Request) (*http.Response, err
 			req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 		}
 
-		t.tokenProvider.invalidateToken(scope)
-		return t.doRoundTrip(req, scope)
+		t.tokenProvider.invalidateToken(key)
+		return t.doRoundTrip(req, key)
 	}
 
 	return resp, nil
 }
 
 // doRoundTrip performs a single round trip with token injection.
-func (t *scopedTokenTransport) doRoundTrip(req *http.Request, scope string) (*http.Response, error) {
-	token, err := t.tokenProvider.getTokenForScope(req.Context(), scope)
+func (t *scopedTokenTransport) doRoundTrip(req *http.Request, key tokenCacheKey) (*http.Response, error) {
+	token, err := t.tokenProvider.getTokenForScope(req.Context(), key)
 	if err != nil {
 		return nil, errors.Wrap(err, "obtaining authorization token")
 	}
@@ -167,8 +169,24 @@ func (t *scopedTokenTransport) doRoundTrip(req *http.Request, scope string) (*ht
 	// Clone the request to avoid modifying the original.
 	reqCopy := req.Clone(req.Context())
 	reqCopy.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	// Strip the internal namespace scope header before forwarding to Central.
+	reqCopy.Header.Del(stackroxNamespaceHeader)
 
 	return t.base.RoundTrip(reqCopy) //nolint:wrapcheck
+}
+
+// tokenCacheKey combines namespace scope and username for cache isolation.
+// Different users requesting the same scope get separate cache entries and tokens.
+type tokenCacheKey struct {
+	scope    string
+	username string
+}
+
+// cacheKeyString returns a string representation for coalescer keys.
+// Components are URL-escaped so the "|" delimiter cannot appear in encoded values,
+// preventing collisions even if scope or username formats change.
+func (k tokenCacheKey) cacheKeyString() string {
+	return url.QueryEscape(k.scope) + "|" + url.QueryEscape(k.username)
 }
 
 // tokenProvider manages dynamic token acquisition from Central.
@@ -177,8 +195,8 @@ type tokenProvider struct {
 	// against data races.
 	client          atomic.Pointer[centralv1.TokenServiceClient]
 	clusterIDGetter clusterIDGetter
-	tokenCache      expiringcache.Cache[string, string]
-	// tokenGroup coalesces concurrent token requests for the same namespace scope.
+	tokenCache      expiringcache.Cache[tokenCacheKey, string]
+	// tokenGroup coalesces concurrent token requests for the same namespace scope and user.
 	tokenGroup *coalescer.Coalescer[string]
 }
 
@@ -186,7 +204,7 @@ type tokenProvider struct {
 func newTokenProvider(clusterIDGetter clusterIDGetter) *tokenProvider {
 	return &tokenProvider{
 		clusterIDGetter: clusterIDGetter,
-		tokenCache:      expiringcache.NewExpiringCache[string, string](tokenCacheTTL),
+		tokenCache:      expiringcache.NewExpiringCache[tokenCacheKey, string](tokenCacheTTL),
 		tokenGroup:      coalescer.New[string](),
 	}
 }
@@ -201,14 +219,14 @@ func (p *tokenProvider) setClient(conn grpc.ClientConnInterface) {
 	p.client.Store(&client)
 }
 
-// getTokenForScope returns a token for the given namespace scope.
+// getTokenForScope returns a token for the given namespace scope and console user.
 // Scope values:
 //   - "" (empty): Token with empty access scope (authentication only)
 //   - "<namespace>": Token scoped to the specific namespace
 //   - FullClusterAccessScope ("*"): Token with full cluster access
 //
-// Concurrent requests for the same scope are coalesced to reduce load on Central.
-func (p *tokenProvider) getTokenForScope(ctx context.Context, namespaceScope string) (string, error) {
+// Concurrent requests for the same scope and user are coalesced to reduce load on Central.
+func (p *tokenProvider) getTokenForScope(ctx context.Context, key tokenCacheKey) (string, error) {
 	client := p.client.Load()
 	if client == nil {
 		incrementTokenRequest(tokenResultError)
@@ -216,69 +234,71 @@ func (p *tokenProvider) getTokenForScope(ctx context.Context, namespaceScope str
 	}
 
 	// Fast path: check cache first.
-	if token, ok := p.tokenCache.Get(namespaceScope); ok {
+	if token, ok := p.tokenCache.Get(key); ok {
 		incrementTokenRequest(tokenResultCacheHit)
 		return token, nil
 	}
 
-	// Slow path: coalesce concurrent requests for the same scope.
-	return p.tokenGroup.Coalesce(ctx, namespaceScope, func() (string, error) { //nolint:wrapcheck
+	coalescerKey := key.cacheKeyString()
+
+	// Slow path: coalesce concurrent requests for the same scope and user.
+	return p.tokenGroup.Coalesce(ctx, coalescerKey, func() (string, error) { //nolint:wrapcheck
 		// Double-check cache inside coalesce to avoid redundant API calls.
-		if token, ok := p.tokenCache.Get(namespaceScope); ok {
+		if token, ok := p.tokenCache.Get(key); ok {
 			incrementTokenRequest(tokenResultCacheHit)
 			return token, nil
 		}
 
-		log.Debugf("Token cache miss for namespace scope %q, requesting from Central", namespaceScope)
+		log.Debugf("Token cache miss for namespace scope %q, requesting from Central", key.scope)
 
 		// Use a background context with timeout to ensure the shared function is independent
 		// of the initial request context while still having a bounded lifetime.
 		ctx, cancel := context.WithTimeout(context.Background(), tokenRequestTimeout)
 		defer cancel()
-		token, err := p.requestToken(ctx, *client, namespaceScope)
+		token, err := p.requestToken(ctx, *client, key)
 		if err != nil {
 			incrementTokenRequest(tokenResultError)
 			return "", err
 		}
 
-		p.tokenCache.Add(namespaceScope, token)
+		p.tokenCache.Add(key, token)
 		incrementTokenRequest(tokenResultSuccess)
 		return token, nil
 	})
 }
 
-// requestToken performs the RPC call to Central to generate a token for the given scope.
-func (p *tokenProvider) requestToken(ctx context.Context, client centralv1.TokenServiceClient, namespaceScope string) (string, error) {
-	req, err := p.buildTokenRequest(namespaceScope)
+// requestToken performs the RPC call to Central to generate a token for the given scope and user.
+func (p *tokenProvider) requestToken(ctx context.Context, client centralv1.TokenServiceClient, key tokenCacheKey) (string, error) {
+	req, err := p.buildTokenRequest(key.scope, key.username)
 	if err != nil {
 		return "", errors.Wrap(err, "building token request")
 	}
 	resp, err := client.GenerateTokenForPermissionsAndScope(ctx, req)
 	if err != nil {
-		return "", errors.Wrapf(err, "requesting token from Central for scope %q", namespaceScope)
+		return "", errors.Wrapf(err, "requesting token from Central for scope %q", key.scope)
 	}
 
 	token := resp.GetToken()
 	if token == "" {
-		return "", errors.Errorf("received empty token from Central for scope %q", namespaceScope)
+		return "", errors.Errorf("received empty token from Central for scope %q", key.scope)
 	}
 
 	return token, nil
 }
 
-// invalidateToken removes the cached token for the given scope.
+// invalidateToken removes the cached token for the given scope and user.
 // It also removes the coalescer key so subsequent callers will
 // trigger a fresh token request rather than joining any in-progress request.
 // Note: This does not cancel already running requests; they will complete
 // normally but their results will not be used by new callers.
-func (p *tokenProvider) invalidateToken(scope string) {
-	p.tokenCache.Remove(scope)
-	p.tokenGroup.Forget(scope)
+func (p *tokenProvider) invalidateToken(key tokenCacheKey) {
+	p.tokenCache.Remove(key)
+	p.tokenGroup.Forget(key.cacheKeyString())
 }
 
-// buildTokenRequest creates the token request based on the namespace scope.
+// buildTokenRequest creates the token request based on the namespace scope and username.
 // Returns an error if the cluster ID is not available yet.
-func (p *tokenProvider) buildTokenRequest(namespaceScope string) (*centralv1.GenerateTokenForPermissionsAndScopeRequest, error) {
+func (p *tokenProvider) buildTokenRequest(namespaceScope string, username string) (*centralv1.GenerateTokenForPermissionsAndScopeRequest, error) {
 	clusterID := p.clusterIDGetter.GetNoWait()
 	if clusterID == "" {
 		return nil, errors.Wrap(errServiceUnavailable, "cluster ID not available")
@@ -287,6 +307,7 @@ func (p *tokenProvider) buildTokenRequest(namespaceScope string) (*centralv1.Gen
 	req := &centralv1.GenerateTokenForPermissionsAndScopeRequest{
 		Permissions: tokenPermissions,
 		Lifetime:    durationpb.New(tokenTTL),
+		Requester:   username,
 	}
 
 	switch namespaceScope {
