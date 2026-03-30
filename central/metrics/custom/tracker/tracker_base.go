@@ -300,6 +300,10 @@ func (tracker *TrackerBase[F]) setConfiguration(config *Configuration) *Configur
 
 // Gather the data not more often then maxAge.
 func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
+	cfg := tracker.getConfiguration()
+	if !cfg.isEnabled() {
+		return
+	}
 	id := globalScopeID
 	if tracker.scoped {
 		userID, err := authn.IdentityFromContext(ctx)
@@ -308,10 +312,6 @@ func (tracker *TrackerBase[F]) Gather(ctx context.Context) {
 			return
 		}
 		id = userID.UID()
-	}
-	cfg := tracker.getConfiguration()
-	if !cfg.isEnabled() {
-		return
 	}
 	// Pass the cfg so that the same configuration is used there and here.
 	gatherer := tracker.getGatherer(id, cfg)
