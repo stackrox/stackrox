@@ -123,25 +123,25 @@ func TestCampaignFulfilled(t *testing.T) {
 				Codes:   []int32{200, 400},
 				Method:  glob.Pattern("{GET,POST}").Ptr(),
 				Path:    glob.Pattern("{/v1/test*,/v2/test*}").Ptr(),
-				Headers: map[string]glob.Pattern{"User-Agent": "*test*"},
+				Headers: map[glob.Pattern]glob.Pattern{"User-Agent": "*test*"},
 			},
 			{
 				Codes:   []int32{200, 400},
 				Method:  glob.Pattern("{GET,POST}").Ptr(),
 				Path:    glob.Pattern("{/v1/test*,/v2/test*}").Ptr(),
-				Headers: map[string]glob.Pattern{"User-Agent": "*toast*"},
+				Headers: map[glob.Pattern]glob.Pattern{"User-Agent": "*toast*"},
 			},
 			{
 				Codes:   []int32{300, 500},
 				Method:  glob.Pattern("{DELETE,OPTIONS}").Ptr(),
 				Path:    glob.Pattern("{/v3/test*,/v4/test*}").Ptr(),
-				Headers: map[string]glob.Pattern{"User-Agent": "{*tooth*,*teeth*}"},
+				Headers: map[glob.Pattern]glob.Pattern{"User-Agent": "{*tooth*,*teeth*}"},
 			},
 			{
 				Codes:  []int32{100},
 				Method: glob.Pattern("PUT").Ptr(),
 				Path:   glob.Pattern("/v5/*").Ptr(),
-				Headers: map[string]glob.Pattern{
+				Headers: map[glob.Pattern]glob.Pattern{
 					"User-Agent": "*another*",
 					"header":     "val*",
 				},

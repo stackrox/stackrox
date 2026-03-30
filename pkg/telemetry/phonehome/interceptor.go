@@ -77,16 +77,18 @@ func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 				}
 				return Headers(ri.HTTPRequest.Headers).Get(key)
 			},
+			HeadersFilter: Headers(ri.HTTPRequest.Headers).GetAll,
 		}
 	}
 
 	return &RequestParams{
-		UserID:  id,
-		Method:  grpcFullMethod,
-		Path:    grpcFullMethod,
-		Code:    int(erroxGRPC.RoxErrorToGRPCCode(err)),
-		GRPCReq: req,
-		Headers: ri.Metadata.Get,
+		UserID:        id,
+		Method:        grpcFullMethod,
+		Path:          grpcFullMethod,
+		Code:          int(erroxGRPC.RoxErrorToGRPCCode(err)),
+		GRPCReq:       req,
+		Headers:       ri.Metadata.Get,
+		HeadersFilter: Headers(ri.Metadata).GetAll,
 	}
 }
 
@@ -97,11 +99,12 @@ func getHTTPRequestDetails(ctx context.Context, r *http.Request, status int) *Re
 	}
 
 	return &RequestParams{
-		UserID:  id,
-		Method:  r.Method,
-		Path:    r.URL.Path,
-		Code:    status,
-		HTTPReq: r,
-		Headers: Headers(r.Header).Get,
+		UserID:        id,
+		Method:        r.Method,
+		Path:          r.URL.Path,
+		Code:          status,
+		HTTPReq:       r,
+		Headers:       Headers(r.Header).Get,
+		HeadersFilter: Headers(r.Header).GetAll,
 	}
 }

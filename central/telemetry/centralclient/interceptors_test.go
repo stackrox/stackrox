@@ -10,6 +10,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// The header is set by the RHACS ServiceNow integration.
+// See https://github.com/stackrox/service-now/blob/9d1df943f5f0b3052df97c6272814e2303f17685/52616ff6938a1a50c52a72856aba10fd/update/sys_script_include_2b362bbe938a1a50c52a72856aba10b3.xml#L80.
+const snowIntegrationHeader = "Rh-Servicenow-Integration"
+
 func withUserAgent(_ *testing.T, headers map[string][]string, ua string) func(string) []string {
 	return func(key string) []string {
 		if http.CanonicalHeaderKey(key) == userAgentHeaderKey {
@@ -88,9 +92,10 @@ func Test_apiCall(t *testing.T) {
 		},
 		"ServiceNow from integration": {
 			rp: &phonehome.RequestParams{
-				Headers: withUserAgent(t, map[string][]string{
+				HeadersFilter: phonehome.Headers(http.Header{
 					snowIntegrationHeader: {"v1.0.3"},
-				}, "RHACS Integration ServiceNow client"),
+					"User-Agent":          {"RHACS Integration ServiceNow client"},
+				}).GetAll,
 				Method: "GET",
 				Path:   "/v1/clusters",
 				Code:   200,
@@ -158,12 +163,10 @@ func Test_addCustomHeaders(t *testing.T) {
 			Method: "GET",
 			Path:   "/v1/clusters",
 			Code:   200,
-			Headers: func(h string) []string {
-				return map[string][]string{
-					userAgentHeaderKey:    {"RHACS Integration ServiceNow client"},
-					snowIntegrationHeader: {"v1.0.3", "beta"},
-				}[h]
-			},
+			HeadersFilter: phonehome.Headers(http.Header{
+				userAgentHeaderKey:    {"RHACS Integration ServiceNow client"},
+				snowIntegrationHeader: {"v1.0.3", "beta"},
+			}).GetAll,
 		}
 		props := map[string]any{}
 		addCustomHeaders(rp, tc[1], props)

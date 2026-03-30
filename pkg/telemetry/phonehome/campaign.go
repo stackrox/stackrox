@@ -11,10 +11,10 @@ import (
 // telemetry campaign. Requests parameters need to match all fields for the
 // request to be tracked. Any request matches empty criterion.
 type APICallCampaignCriterion struct {
-	Path    *glob.Pattern           `json:"path,omitempty"`
-	Method  *glob.Pattern           `json:"method,omitempty"`
-	Codes   []int32                 `json:"codes,omitempty"`
-	Headers map[string]glob.Pattern `json:"headers,omitempty"`
+	Path    *glob.Pattern                 `json:"path,omitempty"`
+	Method  *glob.Pattern                 `json:"method,omitempty"`
+	Codes   []int32                       `json:"codes,omitempty"`
+	Headers map[glob.Pattern]glob.Pattern `json:"headers,omitempty"`
 }
 
 // APICallCampaign defines an API interception telemetry campaign as a list of
@@ -89,8 +89,8 @@ func PathPattern(pattern string) *APICallCampaignCriterion {
 // HeaderPattern builds a header pattern criterion.
 func HeaderPattern(header string, pattern string) *APICallCampaignCriterion {
 	return &APICallCampaignCriterion{
-		Headers: map[string]glob.Pattern{
-			header: glob.Pattern(pattern),
+		Headers: map[glob.Pattern]glob.Pattern{
+			glob.Pattern(header): glob.Pattern(pattern),
 		},
 	}
 }

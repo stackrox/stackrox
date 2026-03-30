@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/glob"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/metadata"
 )
@@ -54,4 +55,36 @@ func TestGetFirst(t *testing.T) {
 	assert.Equal(t, "value1", GetFirst(Headers(h).Get, "key"))
 	assert.Equal(t, "", GetFirst(Headers(h).Get, "nokey"))
 	assert.Equal(t, "", GetFirst(nil, "nokey"))
+}
+
+func TestGetAll(t *testing.T) {
+	h := make(http.Header)
+	h.Add("key-1", "value 1")
+	h.Add("key-2", "value 2")
+	h.Add("key-2", "value 1")
+	h.Add("something-else", "value 2")
+	h.Add("something-else", "value 3")
+
+	headers := Headers(h)
+	matching, err := headers.GetAll(glob.Pattern("Key-*"), glob.Pattern("value 1"))
+	assert.NoError(t, err)
+	assert.Equal(t, map[string][]string{"Key-1": {"value 1"}, "Key-2": {"value 1"}}, matching)
+
+	matching, err = headers.GetAll(glob.Pattern("nope"), glob.Pattern("value 1"))
+	assert.NoError(t, err)
+	assert.Empty(t, matching)
+
+	matching, err = headers.GetAll(glob.Pattern("Key-1"), glob.Pattern("nope"))
+	assert.NoError(t, err)
+	assert.Empty(t, matching)
+
+	matching, err = headers.GetAll(glob.Pattern("Key-[1-]"), glob.Pattern("nope"))
+	assert.Error(t, err)
+
+	matching, err = headers.GetAll(glob.Pattern("Key-1"), glob.Pattern("value [1-]"))
+	assert.Error(t, err)
+
+	matching, err = headers.GetAll(glob.Pattern("*"), glob.Pattern("value [2-3]"))
+	assert.NoError(t, err)
+	assert.Equal(t, map[string][]string{"Something-Else": {"value 2", "value 3"}, "Key-2": {"value 2"}}, matching)
 }
