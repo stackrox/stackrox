@@ -62,7 +62,6 @@ jobs:
       uses: ./.github/actions/cache-go-dependencies
       with:
         key-suffix: ${{ matrix.gotags }}-${{ matrix.shard.name }}
-        skip-mod-cache: 'true'
 
     - name: Cache timing debug
       run: |
@@ -145,7 +144,6 @@ jobs:
       uses: ./.github/actions/cache-go-dependencies
       with:
         key-suffix: ${{ matrix.gotags }}-integration
-        skip-mod-cache: 'true'
 
     - name: Go Integration Unit Tests
       run: |
@@ -191,7 +189,7 @@ jobs:
       uses: ./.github/actions/cache-go-dependencies
       with:
         key-suffix: ${{ matrix.gotags }}-operator-integration
-        skip-mod-cache: 'false'
+        cache-mod: 'true'
 
     - name: Go Operator Integration Tests
       run: ${{ matrix.gotags }} make -C operator/ test-integration
@@ -240,7 +238,6 @@ jobs:
       uses: ./.github/actions/cache-go-dependencies
       with:
         key-suffix: ${{ matrix.gotags }}-${{ matrix.shard.name }}
-        skip-mod-cache: 'true'
 
     - name: Is Postgres ready
       run: |
@@ -474,7 +471,6 @@ jobs:
       uses: ./.github/actions/cache-go-dependencies
       with:
         key-suffix: roxctl-${{ matrix.variant.name }}
-        skip-mod-cache: 'true'
 
     - uses: ./.github/actions/handle-tagged-build
 
