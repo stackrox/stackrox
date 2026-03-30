@@ -78,6 +78,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 			[]pubsub.LaneConfig{
 				lane.NewBlockingLane(pubsub.KubernetesDispatcherEventLane),
 				lane.NewBlockingLane(pubsub.FromCentralResolverEventLane),
+				lane.NewBlockingLane(pubsub.EnrichedProcessIndicatorLane),
+				lane.NewBlockingLane(pubsub.UnenrichedProcessIndicatorLane),
 			},
 		))
 		if err != nil {
@@ -153,7 +155,10 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	// Create Process Pipeline
 	indicators := make(chan *message.ExpiringMessage, queue.ScaleSizeOnNonDefault(env.ProcessIndicatorBufferSize))
-	processPipeline := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector)
+	processPipeline, err := processsignal.NewProcessPipeline(indicators, storeProvider.Entities(), processfilter.Singleton(), policyDetector, internalMessageDispatcher)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating process pipeline")
+	}
 	if cfg.processPipelineObserver != nil {
 		cfg.processPipelineObserver(processPipeline)
 	}
