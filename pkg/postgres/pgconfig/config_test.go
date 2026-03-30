@@ -23,22 +23,22 @@ func TestParseSource(t *testing.T) {
 			},
 		},
 		"connection string with password": {
-			input: "host=localhost port=5432 user=postgres password=secret dbname=test",
+			input: "host=localhost port=5432 user=postgres password=testonly dbname=test",
 			expected: map[string]string{
 				"host":     "localhost",
 				"port":     "5432",
 				"user":     "postgres",
-				"password": "secret",
+				"password": "testonly",
 				"dbname":   "test",
 			},
 		},
 		"password with equals sign": {
-			input: "host=localhost port=5432 user=postgres password=secret=value dbname=test",
+			input: "host=localhost port=5432 user=postgres password=testonly=value dbname=test",
 			expected: map[string]string{
 				"host":     "localhost",
 				"port":     "5432",
 				"user":     "postgres",
-				"password": "secret=value",
+				"password": "testonly=value",
 				"dbname":   "test",
 			},
 		},
@@ -128,10 +128,10 @@ func TestParseSource(t *testing.T) {
 func FuzzParseSource(f *testing.F) {
 	// Seed with valid PostgreSQL connection string examples
 	f.Add("host=localhost port=5432 user=postgres dbname=test")
-	f.Add("host=localhost port=5432 user=postgres password=secret dbname=test")
+	f.Add("host=localhost port=5432 user=postgres password=testonly dbname=test")
 	f.Add("host=central-db.stackrox port=5432 user=postgres sslmode=verify-full statement_timeout=600000")
 	f.Add("host=localhost port=5432 database=postgres user=who password=password sslmode=disable statement_timeout=600000 pool_min_conns=1 pool_max_conns=90")
-	f.Add("user=jack password=secret host=pg.example.com port=5432 dbname=mydb sslmode=verify-ca pool_max_conns=10")
+	f.Add("user=jack password=testonly host=pg.example.com port=5432 dbname=mydb sslmode=verify-ca pool_max_conns=10")
 	f.Add("host=testHost port=5432 database=testDB sensitiveField=testSensitive")
 	f.Add("host=127.0.0.1 port=5432 user=postgres sslmode=disable")
 
@@ -152,7 +152,7 @@ func FuzzParseSource(f *testing.F) {
 	f.Add("=value")
 
 	// Special characters
-	f.Add("password=p@ssw0rd! host=localhost")
+	f.Add("password=t3st! host=localhost")
 	f.Add("host=localhost password=with spaces")
 	f.Add("host=localhost user=user@domain.com")
 
