@@ -342,9 +342,15 @@ config-controller-gen:
 .PHONY: generated-srcs
 generated-srcs: go-generated-srcs config-controller-gen
 
+ifdef SKIP_DEPS
+deps:
+	@echo "+ $@ (skipped via SKIP_DEPS)"
+	$(SILENT)touch deps
+else
 deps: $(shell find $(BASE_DIR) -name "go.sum")
 	@echo "+ $@"
 	$(SILENT)touch deps
+endif
 
 %/go.sum: %/go.mod
 	$(SILENT)cd $*
