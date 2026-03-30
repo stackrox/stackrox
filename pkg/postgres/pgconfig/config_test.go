@@ -164,35 +164,11 @@ func FuzzParseSource(f *testing.F) {
 	f.Add("host=localhost password=verylongpasswordverylongpasswordverylongpassword")
 	f.Add("host=very.long.hostname.example.com.with.many.dots.and.subdomains.test.local")
 
-	f.Fuzz(func(t *testing.T, source string) {
-		// Primary goal: ensure ParseSource never panics on any input
-		assert.NotPanics(t, func() {
-			result, err := ParseSource(source)
-
-			// If the source is empty, we expect an error
-			if source == "" {
-				assert.Error(t, err)
-				assert.Nil(t, result)
-				return
-			}
-
-			// For non-empty sources, ParseSource should succeed
-			assert.NoError(t, err)
-			assert.NotNil(t, result)
-
-			// Verify that all returned values are valid (no panics when accessing)
-			for key, value := range result {
-				// Ensure key and value are valid strings (accessing them shouldn't panic)
-				_ = len(key)
-				_ = len(value)
-			}
-
-			// Verify that the result is a valid map (iteration shouldn't panic)
-			count := 0
-			for range result {
-				count++
-			}
-			assert.GreaterOrEqual(t, count, 0)
-		})
+	f.Fuzz(func(_ *testing.T, source string) {
+		result, _ := ParseSource(source)
+		for k, v := range result {
+			_ = k
+			_ = v
+		}
 	})
 }

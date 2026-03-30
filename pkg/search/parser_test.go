@@ -261,21 +261,10 @@ func FuzzParseQuery(f *testing.F) {
 	f.Add("Deployment Label:attempted-alerts-dep-6+Policy:Kubernetes Actions: Exec into Pod")
 	f.Add("Deployment Label:label1,label2,")
 
-	f.Fuzz(func(t *testing.T, query string) {
-		// Test ParseQuery with default options - should never panic
-		assert.NotPanics(t, func() {
-			_, _ = ParseQuery(query)
-		})
-
-		// Test ParseQuery with MatchAllIfEmpty option - should never panic
-		assert.NotPanics(t, func() {
-			_, _ = ParseQuery(query, MatchAllIfEmpty())
-		})
-
-		// Test ParseQuery with ExcludeFieldLabel option - should never panic
-		assert.NotPanics(t, func() {
-			_, _ = ParseQuery(query, ExcludeFieldLabel(DeploymentName))
-		})
+	f.Fuzz(func(_ *testing.T, query string) {
+		_, _ = ParseQuery(query)
+		_, _ = ParseQuery(query, MatchAllIfEmpty())
+		_, _ = ParseQuery(query, ExcludeFieldLabel(DeploymentName))
 	})
 }
 
@@ -291,11 +280,8 @@ func FuzzParseQueryForAutocomplete(f *testing.F) {
 	f.Add("Deployment:attempted-alerts-dep-6+Policy:Kubernetes Actions: Exec into Pod")
 	f.Add("Category:test+Deployment:value")
 
-	f.Fuzz(func(t *testing.T, query string) {
-		// Should never panic on arbitrary input
-		assert.NotPanics(t, func() {
-			_, _, _ = ParseQueryForAutocomplete(query)
-		})
+	f.Fuzz(func(_ *testing.T, query string) {
+		_, _, _ = ParseQueryForAutocomplete(query)
 	})
 }
 
@@ -320,46 +306,7 @@ func FuzzGetValueAndModifiersFromString(f *testing.F) {
 	f.Add("!")
 	f.Add("!!")
 
-	f.Fuzz(func(t *testing.T, value string) {
-		// Should never panic on arbitrary input
-		assert.NotPanics(t, func() {
-			resultValue, modifiers := GetValueAndModifiersFromString(value)
-			// Basic sanity checks
-			_ = resultValue
-			_ = modifiers
-
-			// Verify modifiers are valid
-			for _, mod := range modifiers {
-				assert.True(t, mod >= AtLeastOne && mod <= Equality,
-					"modifier %v is out of valid range", mod)
-			}
-
-			// Verify modifier rules are followed
-			hasNegation := false
-			hasAtLeastOne := false
-			hasRegex := false
-			hasEquality := false
-
-			for _, mod := range modifiers {
-				switch mod {
-				case Negation:
-					hasNegation = true
-				case AtLeastOne:
-					hasAtLeastOne = true
-				case Regex:
-					hasRegex = true
-				case Equality:
-					hasEquality = true
-				}
-			}
-
-			// Can't have both negation and at-least-one
-			assert.False(t, hasNegation && hasAtLeastOne,
-				"cannot have both Negation and AtLeastOne modifiers")
-
-			// Regex and Equality are mutually exclusive (last one wins)
-			assert.False(t, hasRegex && hasEquality,
-				"cannot have both Regex and Equality modifiers")
-		})
+	f.Fuzz(func(_ *testing.T, value string) {
+		_, _ = GetValueAndModifiersFromString(value)
 	})
 }

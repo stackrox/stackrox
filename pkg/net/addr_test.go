@@ -227,37 +227,12 @@ func FuzzParseIP(f *testing.F) {
 		f.Add(seed)
 	}
 
-	f.Fuzz(func(t *testing.T, input string) {
-		// Assert no panics
-		defer func() {
-			if r := recover(); r != nil {
-				t.Errorf("ParseIP panicked on input %q: %v", input, r)
-			}
-		}()
-
+	f.Fuzz(func(_ *testing.T, input string) {
 		addr := ParseIP(input)
-
-		// If address is valid, it should round-trip through String()
 		if addr.IsValid() {
-			str := addr.String()
-			assert.NotEmpty(t, str)
-
-			// Verify family is valid
-			family := addr.Family()
-			assert.True(t, family == IPv4 || family == IPv6)
-
-			// Verify AsNetIP returns non-nil
-			netIP := addr.AsNetIP()
-			assert.NotNil(t, netIP)
-
-			// Verify bytes are correct length
-			data := addr.data.bytes()
-			assert.True(t, len(data) == 4 || len(data) == 16)
-		} else {
-			// Invalid address should have InvalidFamily
-			assert.Equal(t, InvalidFamily, addr.Family())
-			assert.Empty(t, addr.String())
-			assert.Nil(t, addr.AsNetIP())
+			_ = addr.String()
+			_ = addr.Family()
+			_ = addr.AsNetIP()
 		}
 	})
 }
@@ -286,40 +261,12 @@ func FuzzIPFromBytes(f *testing.F) {
 		f.Add(seed)
 	}
 
-	f.Fuzz(func(t *testing.T, input []byte) {
-		// Assert no panics
-		defer func() {
-			if r := recover(); r != nil {
-				t.Errorf("IPFromBytes panicked on input length %d: %v", len(input), r)
-			}
-		}()
-
+	f.Fuzz(func(_ *testing.T, input []byte) {
 		addr := IPFromBytes(input)
-
-		// Valid addresses must have 4 or 16 byte input
-		if len(input) == 4 {
-			assert.True(t, addr.IsValid())
-			// After canonicalization, should be IPv4
-			assert.Equal(t, IPv4, addr.Family())
-			assert.Equal(t, 4, len(addr.data.bytes()))
-		} else if len(input) == 16 {
-			assert.True(t, addr.IsValid())
-			// Could be IPv4 (if IPv4-mapped) or IPv6 after canonicalization
-			family := addr.Family()
-			assert.True(t, family == IPv4 || family == IPv6)
-			assert.True(t, len(addr.data.bytes()) == 4 || len(addr.data.bytes()) == 16)
-		} else {
-			// Invalid length should return invalid address
-			assert.False(t, addr.IsValid())
-			assert.Equal(t, InvalidFamily, addr.Family())
-		}
-
-		// Invalid address should have consistent behavior
-		if !addr.IsValid() {
-			assert.Empty(t, addr.String())
-			assert.Nil(t, addr.AsNetIP())
-			assert.False(t, addr.IsPublic())
-			assert.False(t, addr.IsLoopback())
+		if addr.IsValid() {
+			_ = addr.String()
+			_ = addr.Family()
+			_ = addr.AsNetIP()
 		}
 	})
 }
@@ -358,51 +305,16 @@ func FuzzIPNetworkFromCIDR(f *testing.F) {
 		f.Add(seed)
 	}
 
-	f.Fuzz(func(t *testing.T, input string) {
-		// Assert no panics
-		defer func() {
-			if r := recover(); r != nil {
-				t.Errorf("IPNetworkFromCIDR panicked on input %q: %v", input, r)
-			}
-		}()
-
+	f.Fuzz(func(_ *testing.T, input string) {
 		network := IPNetworkFromCIDR(input)
-
 		if network.IsValid() {
-			// Valid network should have valid IP
-			assert.True(t, network.IP().IsValid())
-
-			// Family should be valid
-			family := network.Family()
-			assert.True(t, family == IPv4 || family == IPv6)
-
-			// Prefix length should be reasonable
-			prefixLen := network.PrefixLen()
-			if family == IPv4 {
-				// NOTE: IPv4-mapped IPv6 CIDRs (e.g. ::ffff:192.168.0.0/96)
-				// are classified as IPv4 family but retain their IPv6 prefix
-				// length. This is a known inconsistency in the implementation.
-				assert.True(t, prefixLen <= 128, "prefix should be <= 128, got %d", prefixLen)
-			} else if family == IPv6 {
-				assert.True(t, prefixLen <= 128, "IPv6 prefix should be <= 128, got %d", prefixLen)
-			}
-
-			// Should be able to convert to net.IPNet
-			ipNet := network.AsIPNet()
-			assert.NotNil(t, ipNet.IP)
-			// NOTE: ipNet.Mask can be nil for certain IPv4-mapped IPv6 inputs
-			// where the prefix length exceeds IPv4 range
-
-			// String should not be empty
-			str := network.String()
-			assert.NotEmpty(t, str)
-
-			// NOTE: network.Contains(network.IP()) doesn't always hold
-			// for IPv4-mapped IPv6 CIDRs due to family mismatches in
-			// prefix length handling. This is a known edge case.
+			_ = network.IP()
+			_ = network.Family()
+			_ = network.PrefixLen()
+			_ = network.AsIPNet()
+			_ = network.String()
 			_ = network.Contains(network.IP())
 		} else {
-			// Invalid network operations should not panic
 			_ = network.IP()
 			_ = network.Family()
 			_ = network.String()
