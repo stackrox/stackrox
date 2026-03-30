@@ -3,9 +3,11 @@ import type { ComplianceBenchmark, ComplianceProfileSummary } from 'services/Com
 import {
     NON_STANDARD_TAB,
     TAILORED_PROFILES_TAB,
+    getDefaultProfile,
     getFirstStandardShortName,
     getProfileTab,
-    getStandardTabs,
+    getProfilesByTab,
+    getTabsFromProfiles,
 } from './ProfilesToggleGroup.utils';
 
 function createComplianceStandard(shortName: string): ComplianceBenchmark {
@@ -116,9 +118,9 @@ describe('ProfilesToggleGroup.utils', () => {
         });
     });
 
-    describe('getStandardTabs', () => {
+    describe('getTabsFromProfiles', () => {
         test('empty profile list yields no tabs', () => {
-            expect(getStandardTabs([])).toEqual([]);
+            expect(getTabsFromProfiles([])).toEqual([]);
         });
 
         test('only tailored profiles: Tailored tab, no standard shortName tabs or Other', () => {
@@ -128,7 +130,7 @@ describe('ProfilesToggleGroup.utils', () => {
                     standards: [createComplianceStandard('CIS')],
                 }),
             ];
-            expect(getStandardTabs(profiles)).toEqual([TAILORED_PROFILES_TAB]);
+            expect(getTabsFromProfiles(profiles)).toEqual([TAILORED_PROFILES_TAB]);
         });
 
         test('tailored profiles do not create standard shortName tabs from embedded standards', () => {
@@ -142,7 +144,7 @@ describe('ProfilesToggleGroup.utils', () => {
                     standards: [createComplianceStandard('CIS')],
                 }),
             ];
-            expect(getStandardTabs(profiles)).toEqual(['CIS', TAILORED_PROFILES_TAB]);
+            expect(getTabsFromProfiles(profiles)).toEqual(['CIS', TAILORED_PROFILES_TAB]);
         });
 
         test('PROFILE with standard: standard shortName tab rendered', () => {
@@ -152,14 +154,14 @@ describe('ProfilesToggleGroup.utils', () => {
                     standards: [createComplianceStandard('CIS-OCP')],
                 }),
             ];
-            expect(getStandardTabs(profiles)).toEqual(['CIS-OCP']);
+            expect(getTabsFromProfiles(profiles)).toEqual(['CIS-OCP']);
         });
 
         test('PROFILE without standard: Other tab only when something maps there', () => {
             const profiles = [
                 createProfile('other-only-profile', { operatorKind: 'PROFILE', standards: [] }),
             ];
-            expect(getStandardTabs(profiles)).toEqual([NON_STANDARD_TAB]);
+            expect(getTabsFromProfiles(profiles)).toEqual([NON_STANDARD_TAB]);
         });
 
         test('Other is omitted when no profile maps to Other', () => {
@@ -168,8 +170,8 @@ describe('ProfilesToggleGroup.utils', () => {
                     standards: [createComplianceStandard('PCI')],
                 }),
             ];
-            expect(getStandardTabs(profiles)).toEqual(['PCI']);
-            expect(getStandardTabs(profiles)).not.toContain(NON_STANDARD_TAB);
+            expect(getTabsFromProfiles(profiles)).toEqual(['PCI']);
+            expect(getTabsFromProfiles(profiles)).not.toContain(NON_STANDARD_TAB);
         });
 
         test('Tailored tab omitted when no tailored profiles', () => {
@@ -178,7 +180,7 @@ describe('ProfilesToggleGroup.utils', () => {
                     standards: [createComplianceStandard('PCI')],
                 }),
             ];
-            expect(getStandardTabs(profiles)).not.toContain(TAILORED_PROFILES_TAB);
+            expect(getTabsFromProfiles(profiles)).not.toContain(TAILORED_PROFILES_TAB);
         });
 
         test('mixed list: sorted standard shortName tabs, then Tailored, then Other when applicable', () => {
@@ -191,7 +193,7 @@ describe('ProfilesToggleGroup.utils', () => {
                 createProfile('profile-bsi', { standards: [createComplianceStandard('BSI')] }),
                 createProfile('profile-other-bucket', { standards: [] }),
             ];
-            expect(getStandardTabs(profiles)).toEqual([
+            expect(getTabsFromProfiles(profiles)).toEqual([
                 'BSI',
                 'CIS',
                 TAILORED_PROFILES_TAB,
@@ -208,7 +210,7 @@ describe('ProfilesToggleGroup.utils', () => {
                     standards: [createComplianceStandard('NIST')],
                 }),
             ];
-            expect(getStandardTabs(profiles)).toEqual(['NIST']);
+            expect(getTabsFromProfiles(profiles)).toEqual(['NIST']);
         });
 
         test('OPERATOR_KIND_UNSPECIFIED with shortName contributes to standard shortName tabs', () => {
@@ -218,7 +220,7 @@ describe('ProfilesToggleGroup.utils', () => {
                     standards: [createComplianceStandard('HIPAA')],
                 }),
             ];
-            expect(getStandardTabs(profiles)).toEqual(['HIPAA']);
+            expect(getTabsFromProfiles(profiles)).toEqual(['HIPAA']);
         });
 
         test('only Other profiles: single tab labeled Other', () => {
@@ -226,7 +228,7 @@ describe('ProfilesToggleGroup.utils', () => {
                 createProfile('other-one', { standards: [] }),
                 createProfile('other-two', { standards: [createComplianceStandard('')] }),
             ];
-            expect(getStandardTabs(profiles)).toEqual([NON_STANDARD_TAB]);
+            expect(getTabsFromProfiles(profiles)).toEqual([NON_STANDARD_TAB]);
         });
 
         test('only profiles with standard shortNames: no Tailored or Other', () => {
@@ -234,7 +236,7 @@ describe('ProfilesToggleGroup.utils', () => {
                 createProfile('profile-nist', { standards: [createComplianceStandard('NIST')] }),
                 createProfile('profile-cis', { standards: [createComplianceStandard('CIS')] }),
             ];
-            expect(getStandardTabs(profiles)).toEqual(['CIS', 'NIST']);
+            expect(getTabsFromProfiles(profiles)).toEqual(['CIS', 'NIST']);
         });
 
         test('only tailored: single Tailored tab', () => {
@@ -242,7 +244,36 @@ describe('ProfilesToggleGroup.utils', () => {
                 createProfile('tailored-one', { operatorKind: 'TAILORED_PROFILE' }),
                 createProfile('tailored-two', { operatorKind: 'TAILORED_PROFILE' }),
             ];
-            expect(getStandardTabs(profiles)).toEqual([TAILORED_PROFILES_TAB]);
+            expect(getTabsFromProfiles(profiles)).toEqual([TAILORED_PROFILES_TAB]);
+        });
+    });
+
+    describe('getProfilesByTab', () => {
+        test('filters and sorts by name', () => {
+            const profiles = [
+                createProfile('z-nist', { standards: [createComplianceStandard('NIST')] }),
+                createProfile('a-nist', { standards: [createComplianceStandard('NIST')] }),
+                createProfile('cis-only', { standards: [createComplianceStandard('CIS')] }),
+            ];
+            expect(getProfilesByTab(profiles, 'NIST').map((p) => p.name)).toEqual([
+                'a-nist',
+                'z-nist',
+            ]);
+        });
+    });
+
+    describe('getDefaultProfile', () => {
+        test('empty profiles yields undefined', () => {
+            expect(getDefaultProfile([])).toBeUndefined();
+        });
+
+        test('uses first getTabsFromProfiles tab and first profile by name there', () => {
+            const profiles = [
+                createProfile('z-cis', { standards: [createComplianceStandard('CIS')] }),
+                createProfile('a-cis', { standards: [createComplianceStandard('CIS')] }),
+                createProfile('b-nist', { standards: [createComplianceStandard('NIST')] }),
+            ];
+            expect(getDefaultProfile(profiles)?.name).toBe('a-cis');
         });
     });
 });

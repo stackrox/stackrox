@@ -12,6 +12,7 @@ import ComplianceProfilesProvider, {
 } from './ComplianceProfilesProvider';
 import CoverageEmptyState from './CoverageEmptyState';
 import CoveragesPage from './CoveragesPage';
+import { getDefaultProfile } from './ProfilesToggleGroup/ProfilesToggleGroup.utils';
 import ScanConfigurationsProvider from './ScanConfigurationsProvider';
 
 function CoveragePage() {
@@ -56,7 +57,7 @@ function CoverageContent() {
 
 function ProfilesRedirectHandler() {
     const { scanConfigProfilesResponse, isLoading } = useContext(ComplianceProfilesContext);
-    const firstProfile = scanConfigProfilesResponse.profiles[0];
+    const defaultProfile = getDefaultProfile(scanConfigProfilesResponse.profiles);
 
     if (isLoading) {
         return (
@@ -66,11 +67,11 @@ function ProfilesRedirectHandler() {
         );
     }
 
-    if (!firstProfile) {
+    if (!defaultProfile) {
         return <CoverageEmptyState />;
     }
 
-    return <Navigate to={`profiles/${firstProfile.name}/checks`} replace />;
+    return <Navigate to={`profiles/${defaultProfile.name}/checks`} replace />;
 }
 
 export default CoveragePage;
