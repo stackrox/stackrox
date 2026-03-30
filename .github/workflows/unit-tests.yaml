@@ -29,14 +29,18 @@ jobs:
           - name: pkg-other
             packages: ./pkg/...
             exclude-pattern: /helm/
+            skip-mod-cache: 'true'
           - name: central-1
             packages: ./central/...
             exclude-pattern: /central/[o-z]
+            skip-mod-cache: 'true'
           - name: central-2
             packages: ./central/...
             exclude-pattern: /central/[a-n]
+            skip-mod-cache: 'true'
           - name: rest
             packages: ./roxctl/... ./sensor/... ./operator/... ./migrator/... ./compliance/... ./scanner/... ./tools/... ./config-controller/... ./scale/... ./govulncheck/... ./image/...
+            skip-mod-cache: 'true'
     runs-on: ubuntu-latest
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
