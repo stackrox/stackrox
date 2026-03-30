@@ -1,27 +1,103 @@
-# `--jsonb` Store Generator Option
+# Store Generator Options: `--no-serialized` and `--jsonb`
 
-## Problem
+## Motivation
 
 The existing postgres stores serialize the full proto as a binary vtproto blob
-into a `serialized bytea` column. This is fast but opaque — the data can't be
-queried, inspected, or debugged directly in SQL. Meanwhile, the `--no-serialized`
-option goes to the other extreme: every proto field becomes a DB column, which
-enables full SQL queryability but introduces child tables, complex scanners, and
-slower writes.
+into a `serialized bytea` column. This is fast and battle-tested, but it creates
+several problems:
 
-A middle ground is needed: human-readable, SQL-queryable data without the
-architectural complexity of full column decomposition.
+- **Opaque data** — the serialized column is binary gibberish in `psql`, making
+  debugging and ad-hoc analysis difficult
+- **Migration burden** — the most common migration pattern in this project is
+  promoting a blob field to an indexed column, which requires deserializing
+  every row to backfill. This is expensive and error-prone
+- **Memory cost** — marshaling and unmarshaling the full proto on every
+  read/write consumes CPU and heap, especially at scale
+- **No SQL filtering** — blob contents cannot be queried, indexed, or filtered
+  at the SQL level
 
-## Solution
+For some objects, keeping a serialized blob makes sense. For others — where
+fields are frequently promoted to columns, or where SQL-level inspection is
+valuable — alternatives are needed.
+
+## Overview of the Three Approaches
+
+| | **bytea** (default) | **`--no-serialized`** | **`--jsonb`** |
+|---|---|---|---|
+| Serialized column | `bytea` blob | None — all fields are columns | `jsonb` blob |
+| Marshal | `obj.MarshalVT()` | n/a | `protojson.Marshal(obj)` |
+| Unmarshal | `UnmarshalVTUnsafe(data)` | Scanner-based field reconstruction | `protojson.Unmarshal(data, msg)` |
+| Store type | `genericStore` | `NoSerializedStore` | `NoSerializedStore` (reused) |
+| Child tables | Unchanged | Separate queries for repeated fields | Unchanged |
+| Search framework | Unchanged | GET path selects individual columns | Unchanged |
+| Schema evolution | Blob absorbs changes | Every field change = migration | Blob absorbs changes |
+
+## `--no-serialized` Design
+
+The `--no-serialized` flag eliminates the serialized blob entirely. Every proto
+field becomes a database column, making all data immediately queryable and
+indexable without migration.
+
+### Generator usage
+
+```go
+//go:generate pg-table-bindings-wrapper --type=storage.ProcessIndicatorNoSerialized --no-serialized --search-category 85 --schema-directory=pkg/postgres/schema
+```
+
+### Writes
+
+- **Bulk INSERT**: Uses PostgreSQL's `unnest()` function for efficient batch
+  inserts. All scalar columns are passed as arrays and unnested in a single
+  statement
+- **UPDATE fallback**: Columns that cannot be unnested (string arrays, maps)
+  fall back to per-row UPDATE statements after the bulk insert
+- No marshal step — field values are passed directly as SQL parameters
+
+### Reads
+
+- **Scanner-based**: Generated `scanRow`/`scanRows` functions reconstruct the
+  proto from individual column values
+- **Direct proto field scanning** (optimization): Where possible, `pgx.Scan`
+  writes directly into proto struct fields, eliminating intermediate variables
+  and a second copy step
+- **Search framework GET path**: Selects individual columns instead of a
+  single serialized blob
+
+### Store type
+
+Uses `NoSerializedStore` from `pkg/search/postgres/no_serialized_store.go`,
+which accepts scanner functions instead of requiring `UnmarshalVTUnsafe`.
+Supports `FetchChildren` opt-in for child table reconstruction.
+
+### Files modified
+
+| File | Changes |
+|------|---------|
+| `pkg/postgres/walker/schema.go` | `NoSerialized bool` on Schema, skip serialized field generation |
+| `pkg/postgres/walker/walker.go` | `WithNoSerialized()` WalkOption |
+| `tools/generate-helpers/pg-table-bindings/main.go` | `--no-serialized` CLI flag, template data |
+| `tools/generate-helpers/pg-table-bindings/funcs.go` | `canScanDirect()` helper for direct proto field scanning |
+| `tools/generate-helpers/pg-table-bindings/store.go.tpl` | Scanner generation, NoSerializedStore construction, write templates |
+| `tools/generate-helpers/pg-table-bindings/schema.go.tpl` | Pass `WithNoSerialized()` to walker |
+| `pkg/search/postgres/common.go` | `RunGetQueryForSchemaWithScanner` and related functions |
+| `pkg/search/postgres/no_serialized_store.go` | `NoSerializedStore` type |
+
+## `--jsonb` Design
 
 The `--jsonb` flag stores the same single-column blob as `jsonb` instead of
 `bytea`, using `protojson` marshaling. This preserves the simple single-column
 read/write pattern of existing stores while making the data human-readable and
 SQL-queryable.
 
-### What changes
+### Generator usage
 
-| | bytea (default) | jsonb (new) |
+```go
+//go:generate pg-table-bindings-wrapper --type=storage.ProcessIndicatorJsonb --jsonb --search-category 86 --schema-directory=pkg/postgres/schema
+```
+
+### What changes from bytea
+
+| | bytea (default) | jsonb |
 |---|---|---|
 | Column type | `serialized bytea` | `serialized jsonb` |
 | Marshal | `obj.MarshalVT()` | `protojson.Marshal(obj)` |
@@ -31,47 +107,43 @@ SQL-queryable.
 | Search framework | unchanged | unchanged |
 | Child tables | unchanged | unchanged |
 
-### What doesn't change
+### Architecture
 
-- Column count (indexed columns + 1 serialized blob)
-- The search framework's GET path (`SELECT {table}.serialized`)
-- GROUP BY logic (still groups on `{table}.serialized` since `NoSerialized=false`)
-- Child table handling
-- COUNT, SEARCH, DELETE, SELECT query types
+The `--jsonb` store reuses `NoSerializedStore` infrastructure because the
+`genericStore` requires `UnmarshalVTUnsafe`, which parses binary protobuf and
+would fail on JSON bytes. Instead, the jsonb store provides trivial scanners
+that scan a single `[]byte` column and call `protojson.Unmarshal`:
 
-## Architecture
+```go
+func scanRow(row pgx.Row) (*storeType, error) {
+    var data []byte
+    if err := row.Scan(&data); err != nil {
+        return nil, err
+    }
+    msg := &storeType{}
+    if err := protojson.Unmarshal(data, msg); err != nil {
+        return nil, err
+    }
+    return msg, nil
+}
+```
 
-### Key Reuse
+The GET query `SELECT {table}.serialized` works for both `bytea` and `jsonb`
+columns — `pgx` scans a `jsonb` column into `[]byte` just like `bytea`. No
+search framework changes are needed.
 
-- **`NoSerializedStore`** — reused as the store type since it doesn't require
-  `UnmarshalVTUnsafe`. The jsonb store passes `scanRow`/`scanRows` functions that
-  scan a single `[]byte` column and call `protojson.Unmarshal`.
-- **`RunGetQueryForSchemaWithScanner`** — reused for scanner-based reads.
-- **Existing `insertValues` template** — unchanged, still iterates DBColumnFields.
-- **Existing `copyObject` template** — only the marshal call changes.
-
-### Files Modified
+### Files modified
 
 | File | Changes |
 |------|---------|
 | `pkg/postgres/walker/schema.go` | `Jsonb bool` on Schema, `getSerializedField()` returns jsonb SQL type |
 | `pkg/postgres/walker/walker.go` | `WithJsonb()` WalkOption |
 | `tools/generate-helpers/pg-table-bindings/main.go` | `--jsonb` CLI flag, template data |
-| `tools/generate-helpers/pg-table-bindings/funcs.go` | `canScanDirect()` helper for direct proto field scanning |
 | `tools/generate-helpers/pg-table-bindings/store.go.tpl` | Jsonb marshal/unmarshal, scanRow/scanRows, Store type alias |
 | `tools/generate-helpers/pg-table-bindings/schema.go.tpl` | Pass `WithJsonb()` to walker |
 | `tools/generate-helpers/pg-table-bindings/list.go` | Register ProcessIndicatorJsonb |
-| `pkg/search/options.go` | Register new search field labels |
 
-### Files Created
-
-| File | Purpose |
-|------|---------|
-| `proto/storage/process_indicator_jsonb.proto` | Copy of ProcessIndicator as ProcessIndicatorJsonb |
-| `central/processindicator_jsonb/store/postgres/` | Generated store, tests, and benchmarks |
-| `pkg/postgres/schema/process_indicator_jsonbs.go` | Generated schema (jsonb column) |
-
-## Performance Analysis
+## Benchmark Results
 
 All benchmarks run on Apple M3 Pro with local PostgreSQL 15, 3s benchtime.
 
@@ -123,64 +195,63 @@ always client-side: marshaling, network transfer, and GC pressure from allocatio
 
 ## Tradeoff Summary
 
-### Serialized (bytea) -- the current default
+### Serialized (bytea) — the current default
 
 **Pros:**
-- Fastest across the board -- vtproto's `unsafe.String` achieves near-zero-copy
+- Fastest across the board — vtproto's `unsafe.String` achieves near-zero-copy
   deserialization (98 allocs for GetSingle)
 - Smallest blob (304 B avg), compact on disk and wire, fewest buffer page reads
-- Battle-tested -- every production store uses this
-- Schema evolution is free -- blob absorbs proto field changes with no migration
-- Best batch read scaling -- GetMany/500 at 1.72 ms and 5.6K allocs
+- Battle-tested — every production store uses this
+- Schema evolution is free — blob absorbs proto field changes with no migration
+- Best batch read scaling — GetMany/500 at 1.72 ms and 5.6K allocs
 
 **Cons:**
-- Opaque data -- binary gibberish in `psql`
-- Making a field queryable requires a migration -- the most common migration
-  pattern in this project is promoting a blob field to an indexed column, which
-  requires deserializing every row to backfill
+- Opaque data — binary gibberish in `psql`
+- Making a field queryable requires a migration (add column + deserialize all
+  rows to backfill)
 - No SQL-level filtering on blob contents
 
 ### Jsonb
 
 **Pros:**
-- Human-readable in SQL -- `SELECT serialized->>'deploymentId'` works in `psql`
-- SQL-queryable -- `WHERE serialized @> '{"namespace":"stackrox"}'` with GIN
+- Human-readable in SQL — `SELECT serialized->>'deploymentId'` works in `psql`
+- SQL-queryable — `WHERE serialized @> '{"namespace":"stackrox"}'` with GIN
   index support
-- Same architecture as bytea -- simplest possible change from the default
-- Good single-row write performance -- only 11% slower than bytea
-- Schema evolution is free -- same as bytea
+- Same architecture as bytea — simplest possible change from the default
+- Good single-row write performance — only 11% slower than bytea
+- Schema evolution is free — same as bytea
 - Postgres validates JSON on insert
 
 **Cons:**
-- Batch reads are the weakest point -- GetMany/500 is 120% slower than bytea
+- Batch reads are the weakest point — GetMany/500 is 120% slower than bytea
   (3.78 ms vs 1.72 ms), driven by `protojson.Unmarshal` doing per-field
   reflection: 89 allocs/row vs 11 for bytea
-- 2.2x larger blobs -- 66% more heap space and buffer page reads
-- Largest memory footprint on writes -- 5.9 MB for UpsertMany/500 vs 2.2 MB
+- 2.2x larger blobs — 66% more heap space and buffer page reads
+- Largest memory footprint on writes — 5.9 MB for UpsertMany/500 vs 2.2 MB
 - 39% more total disk space
 - Making a field queryable still requires a migration (same as bytea)
 
-### NoSerialized -- all columns, no blob
+### NoSerialized — all columns, no blob
 
 **Pros:**
-- Every field is immediately a column -- no migration to promote from a blob.
+- Every field is immediately a column — no migration to promote from a blob.
   Adding a proto field = `ALTER TABLE ADD COLUMN` with a default; no
   deserialize-and-backfill step
 - Smallest rows (226 B avg), fewest buffer page reads (295 vs 334)
 - Fastest Postgres-side scans (0.30 ms for 5K rows vs 0.51 ms for bytea)
-- Competitive batch reads after direct-scan optimization -- GetMany/500 at
+- Competitive batch reads after direct-scan optimization — GetMany/500 at
   2.57 ms is only 49% slower than bytea, and 32% faster than jsonb
 - Fewest allocations on writes (unnest-based bulk INSERT)
 
 **Cons:**
-- Slowest writes at scale -- UpsertMany/100 takes 16.9 ms (3.2x bytea) due to
+- Slowest writes at scale — UpsertMany/100 takes 16.9 ms (3.2x bytea) due to
   per-row UPDATE fallback for non-unnestable columns (string arrays, maps)
 - Every proto field change requires a migration (even non-queryable fields)
 - Child tables add complexity (separate queries for repeated fields)
 - Higher per-read memory for single objects (33 KB vs 6 KB for bytea)
 - More generated code to maintain
 
-### Migration comparison
+### Migration Comparison
 
 The most common migration in this project is making a field queryable. The
 approaches differ in when and how that migration happens:
@@ -188,7 +259,7 @@ approaches differ in when and how that migration happens:
 | | bytea / jsonb | NoSerialized |
 |---|---|---|
 | **Add a proto field (not queryable)** | No migration | Migration required |
-| **Make a field queryable** | Migration required (add column + deserialize all rows to backfill) | Already done -- field is already a column |
+| **Make a field queryable** | Migration required (add column + deserialize all rows to backfill) | Already done — field is already a column |
 | **Migration complexity** | Higher (must deserialize blob per row) | Lower (simple `ALTER TABLE ADD COLUMN`) |
 
 ### When to Use What
@@ -205,8 +276,8 @@ approaches differ in when and how that migration happens:
 
 ## Read-Path Optimization: Direct Proto Field Scanning
 
-As part of this work, the NoSerialized read path was optimized to scan directly
-into proto struct fields instead of using intermediate variables.
+As part of the `--no-serialized` work, the read path was optimized to scan
+directly into proto struct fields instead of using intermediate variables.
 
 ### Before
 
