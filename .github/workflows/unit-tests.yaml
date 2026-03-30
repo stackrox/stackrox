@@ -244,7 +244,6 @@ jobs:
       uses: ./.github/actions/cache-go-dependencies
       with:
         key-suffix: ${{ matrix.gotags }}-${{ matrix.shard.name }}
-        skip-mod-cache: 'true'
 
     - name: Is Postgres ready
       run: |
@@ -254,20 +253,7 @@ jobs:
         done
 
     - name: Go Unit Tests
-      run: |
-        mkdir -p test-output
-        set -o pipefail
-        if [[ "${{ matrix.shard.name }}" == "migrator" ]]; then
-          PACKAGES=$(git grep -rl "//go:build sql_integration" migrator | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -Ev 'sensor/tests|operator/tests|/scanner/e2etests')
-          ${{ matrix.gotags }} GOTAGS="${GOTAGS:+$GOTAGS,}test,sql_integration" CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 \
-            scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/migrator-coverage.out -v \
-            $PACKAGES | tee test-output/test.log
-        else
-          PACKAGES=$(git grep -rl "//go:build sql_integration" central pkg tools | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -Ev 'sensor/tests|operator/tests|/scanner/e2etests')
-          ${{ matrix.gotags }} GOTAGS="${GOTAGS:+$GOTAGS,}test,sql_integration" CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 \
-            scripts/go-test.sh -timeout 15m -race -cover -coverprofile test-output/coverage.out -v \
-            $PACKAGES | tee test-output/test.log
-        fi
+      run: ${{ matrix.gotags }} make ${{ matrix.shard.make-target }}
 
     - uses: codecov/codecov-action@v3
       with:
@@ -434,6 +420,7 @@ jobs:
     - name: Report junit failures in jira
       if: (!cancelled())
       id: junit2jira
+      continue-on-error: true
       uses: ./.github/actions/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
