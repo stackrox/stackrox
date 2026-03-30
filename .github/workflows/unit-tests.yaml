@@ -390,11 +390,16 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Cache UI dependencies
-      uses: ./.github/actions/cache-ui-dependencies
-
     - name: UI Component Tests
-      run: make ui-component-tests
+      uses: cypress-io/github-action@v7
+      with:
+        component: true
+        working-directory: ui/apps/platform
+        reporter: mocha-multi-reporters
+        reporter-options: configFile=cypress/mocha.config.js
+      env:
+        TZ: UTC
+        CYPRESS_COMPONENT_TEST: 'true'
 
     - name: Upload Cypress test result artifacts
       uses: ./.github/actions/upload-artifact-with-retry
