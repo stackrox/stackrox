@@ -13,6 +13,7 @@ import type { TableUIState } from 'utils/getTableUIState';
 import ExpandRowTh from 'Components/ExpandRowTh';
 import { generateVisibilityForColumns, getHiddenColumnCount } from 'hooks/useManagedColumns';
 import type { ManagedColumns } from 'hooks/useManagedColumns';
+import TombstonedDeploymentLabel from '../components/TombstonedDeploymentLabel';
 import DeploymentComponentVulnerabilitiesTable, {
     deploymentComponentVulnerabilitiesFragment,
     imageMetadataContextFragment,
@@ -66,6 +67,7 @@ export type DeploymentForCve = {
     type: string;
     clusterName: string;
     created: string | null;
+    tombstoneDeletedAt?: string;
     unknownImageCount: number;
     lowImageCount: number;
     moderateImageCount: number;
@@ -84,6 +86,7 @@ export const deploymentsForCveFragment = gql`
         type
         clusterName
         created
+        tombstoneDeletedAt
         unknownImageCount: imageCount(query: $unknownImageCountQuery)
         lowImageCount: imageCount(query: $lowImageCountQuery)
         moderateImageCount: imageCount(query: $moderateImageCountQuery)
@@ -171,6 +174,7 @@ function AffectedDeploymentsTable({
                             namespace,
                             type,
                             clusterName,
+                            tombstoneDeletedAt,
                             unknownImageCount,
                             lowImageCount,
                             moderateImageCount,
@@ -213,6 +217,13 @@ function AffectedDeploymentsTable({
                                             >
                                                 <Truncate position="middle" content={name} />
                                             </Link>
+                                            {tombstoneDeletedAt && (
+                                                <TombstonedDeploymentLabel
+                                                    deletedAt={tombstoneDeletedAt}
+                                                    isCompact
+                                                    variant="outline"
+                                                />
+                                            )}
                                         </Flex>
                                     </Td>
                                     <Td

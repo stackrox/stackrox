@@ -1,4 +1,7 @@
-import { ToolbarItem } from '@patternfly/react-core';
+import { useState } from 'react';
+import { Switch, ToolbarItem } from '@patternfly/react-core';
+
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import type useURLSort from 'hooks/useURLSort';
 import type useURLPagination from 'hooks/useURLPagination';
@@ -39,10 +42,20 @@ function DeploymentsTableContainer({
     isFiltered,
     deploymentTableColumnOverrides,
 }: DeploymentsTableContainerProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isTombstonesEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_TOMBSTONES');
+
+    const [showDeleted, setShowDeleted] = useState(false);
+
     const { sortOption, getSortParams } = sort;
 
+    const deploymentsQueryString =
+        isTombstonesEnabled && showDeleted
+            ? [workloadCvesScopedQueryString, 'Tombstone Deleted At:*'].filter(Boolean).join('+')
+            : workloadCvesScopedQueryString;
+
     const { error, loading, data } = useDeployments({
-        query: workloadCvesScopedQueryString,
+        query: deploymentsQueryString,
         pagination,
         sortOption,
     });
@@ -70,6 +83,19 @@ function DeploymentsTableContainer({
                 tableRowCount={rowCount}
                 isFiltered={isFiltered}
             >
+                {isTombstonesEnabled && (
+                    <ToolbarItem>
+                        <Switch
+                            id="vm-show-deleted-deployments"
+                            label="Show deleted"
+                            isChecked={showDeleted}
+                            onChange={(_event, checked) => {
+                                setShowDeleted(checked);
+                                pagination.setPage(1);
+                            }}
+                        />
+                    </ToolbarItem>
+                )}
                 <ToolbarItem align={{ default: 'alignEnd' }}>
                     <ColumnManagementButton
                         columnConfig={columnConfig}

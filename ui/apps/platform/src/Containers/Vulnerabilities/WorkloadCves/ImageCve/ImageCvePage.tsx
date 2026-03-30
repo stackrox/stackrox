@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { gql, useQuery } from '@apollo/client';
 import {
     Breadcrumb,
@@ -10,6 +10,7 @@ import {
     Skeleton,
     Split,
     SplitItem,
+    Switch,
 } from '@patternfly/react-core';
 import { useParams } from 'react-router-dom-v5-compat';
 
@@ -17,6 +18,7 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import PageTitle from 'Components/PageTitle';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
@@ -190,6 +192,10 @@ function ImageCvePage({
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isTombstonesEnabled = isFeatureFlagEnabled('ROX_DEPLOYMENT_TOMBSTONES');
+    const [showDeleted, setShowDeleted] = useState(false);
+
     const { urlBuilder, pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
 
     const urlParams = useParams();
@@ -259,7 +265,10 @@ function ImageCvePage({
         if (severity) {
             filters.SEVERITY = [severity];
         }
-        return getVulnStateScopedQueryString(filters, vulnerabilityState);
+        const baseQuery = getVulnStateScopedQueryString(filters, vulnerabilityState);
+        return isTombstonesEnabled && showDeleted
+            ? [baseQuery, 'Tombstone Deleted At:*'].filter(Boolean).join('+')
+            : baseQuery;
     }
 
     const deploymentDataRequest = useQuery<
@@ -490,6 +499,19 @@ function ImageCvePage({
                             />
                         )}
                     </SplitItem>
+                    {entityTab === 'Deployment' && isTombstonesEnabled && (
+                        <SplitItem>
+                            <Switch
+                                id="cve-show-deleted-deployments"
+                                label="Show deleted"
+                                isChecked={showDeleted}
+                                onChange={(_event, checked) => {
+                                    setShowDeleted(checked);
+                                    setPage(1);
+                                }}
+                            />
+                        </SplitItem>
+                    )}
                     <SplitItem>
                         <Pagination
                             itemCount={tableRowCount}
