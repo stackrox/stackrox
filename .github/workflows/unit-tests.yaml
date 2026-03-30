@@ -404,10 +404,12 @@ jobs:
       env:
         TZ: UTC
         CYPRESS_COMPONENT_TEST: 'true'
+        CYPRESS_VIDEO: 'false'
+        CYPRESS_SCREENSHOT_ON_RUN_FAILURE: 'true'
 
     - name: Upload Cypress test result artifacts
       uses: ./.github/actions/upload-artifact-with-retry
-      if: always()
+      if: failure()
       with:
         name: Cypress test results
         path: ui/apps/platform/cypress/test-results/
