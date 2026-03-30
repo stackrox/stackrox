@@ -4,7 +4,6 @@ import (
 	"compress/gzip"
 	"testing"
 
-	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stretchr/testify/assert"
@@ -40,56 +39,4 @@ func TestDecompressAndUnmarshalPolicies_InvalidData(t *testing.T) {
 	// This is expected behavior - the function is only called when data exists
 	_, err := decompressAndUnmarshalPolicies([]byte{})
 	assert.Error(t, err, "should error on empty data")
-}
-
-func TestDecompressAndUnmarshalClusterLabels(t *testing.T) {
-	clusterLabels := &sensor.ClusterLabels{
-		Labels: map[string]string{
-			"env":    "prod",
-			"region": "us-east-1",
-			"team":   "platform",
-		},
-	}
-
-	data, err := clusterLabels.MarshalVT()
-	require.NoError(t, err)
-
-	compressed, err := gziputil.Compress(data, gzip.BestCompression)
-	require.NoError(t, err)
-
-	result, err := decompressAndUnmarshalClusterLabels(compressed)
-	require.NoError(t, err)
-	require.NotNil(t, result)
-	assert.Equal(t, map[string]string{
-		"env":    "prod",
-		"region": "us-east-1",
-		"team":   "platform",
-	}, result.GetLabels())
-}
-
-func TestDecompressAndUnmarshalClusterLabels_EmptyData(t *testing.T) {
-	result, err := decompressAndUnmarshalClusterLabels(nil)
-	require.NoError(t, err)
-	assert.Nil(t, result)
-
-	result, err = decompressAndUnmarshalClusterLabels([]byte{})
-	require.NoError(t, err)
-	assert.Nil(t, result)
-}
-
-func TestDecompressAndUnmarshalClusterLabels_EmptyLabels(t *testing.T) {
-	clusterLabels := &sensor.ClusterLabels{
-		Labels: map[string]string{},
-	}
-
-	data, err := clusterLabels.MarshalVT()
-	require.NoError(t, err)
-
-	compressed, err := gziputil.Compress(data, gzip.BestCompression)
-	require.NoError(t, err)
-
-	result, err := decompressAndUnmarshalClusterLabels(compressed)
-	require.NoError(t, err)
-	require.NotNil(t, result)
-	assert.Empty(t, result.GetLabels())
 }

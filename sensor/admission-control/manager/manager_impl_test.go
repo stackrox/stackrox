@@ -15,37 +15,20 @@ import (
 func TestManager_GetClusterLabels(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("nil state returns nil", func(t *testing.T) {
-		m := &manager{}
-		labels, err := m.GetClusterLabels(ctx, "cluster-id")
-		require.NoError(t, err)
-		assert.Nil(t, labels)
-	})
-
 	t.Run("nil cluster labels returns nil", func(t *testing.T) {
 		m := &manager{}
-		m.state.Store(&state{
-			AdmissionControlSettings: &sensor.AdmissionControlSettings{
-				ClusterLabels: nil,
-			},
-		})
 		labels, err := m.GetClusterLabels(ctx, "cluster-id")
 		require.NoError(t, err)
 		assert.Nil(t, labels)
 	})
 
-	t.Run("returns cluster labels from state", func(t *testing.T) {
+	t.Run("returns cluster labels", func(t *testing.T) {
 		m := &manager{}
-		m.state.Store(&state{
-			AdmissionControlSettings: &sensor.AdmissionControlSettings{
-				ClusterLabels: &sensor.ClusterLabels{
-					Labels: map[string]string{
-						"env":    "prod",
-						"region": "us-east-1",
-					},
-				},
-			},
-		})
+		clusterLabels := map[string]string{
+			"env":    "prod",
+			"region": "us-east-1",
+		}
+		m.clusterLabels.Store(&clusterLabels)
 		labels, err := m.GetClusterLabels(ctx, "cluster-id")
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{

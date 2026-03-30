@@ -28,7 +28,4 @@ const (
 
 	// ClusterIDDataKey is the key in the config map under which the cluster ID is stored.
 	ClusterIDDataKey = `cluster-id`
-
-	// ClusterLabelsGZDataKey is the key in the config map under which the serialized cluster labels are stored.
-	ClusterLabelsGZDataKey = `cluster-labels.pb.gz`
 )

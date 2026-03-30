@@ -160,18 +160,6 @@ func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigM
 		return nil, errors.Wrap(err, "compressing run-time policies")
 	}
 
-	var clusterLabelsBytesGZ []byte
-	if clusterLabels := settings.GetClusterLabels(); clusterLabels != nil {
-		clusterLabelsBytes, err := clusterLabels.MarshalVT()
-		if err != nil {
-			return nil, errors.Wrap(err, "encoding cluster labels")
-		}
-		clusterLabelsBytesGZ, err = gziputil.Compress(clusterLabelsBytes, gzip.BestCompression)
-		if err != nil {
-			return nil, errors.Wrap(err, "compressing cluster labels")
-		}
-	}
-
 	return &v1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -193,7 +181,6 @@ func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigM
 			admissioncontrol.ConfigGZDataKey:             configBytesGZ,
 			admissioncontrol.DeployTimePoliciesGZDataKey: deployTimePoliciesBytesGZ,
 			admissioncontrol.RunTimePoliciesGZDataKey:    runTimePoliciesBytesGZ,
-			admissioncontrol.ClusterLabelsGZDataKey:      clusterLabelsBytesGZ,
 		},
 	}, nil
 }

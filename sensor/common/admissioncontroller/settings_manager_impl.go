@@ -24,6 +24,7 @@ type settingsManager struct {
 	sensorEventsStream            *concurrency.ValueStream[*sensor.AdmCtrlUpdateResourceRequest]
 	hasClusterConfig, hasPolicies bool
 	centralEndpoint               string
+	lastClusterLabels             map[string]string
 
 	clusterID     clusterIDWaiter
 	clusterLabels clusterLabelsGetter
@@ -68,9 +69,6 @@ func (p *settingsManager) newSettingsNoLock() *sensor.AdmissionControlSettings {
 	if centralcaps.Has(centralsensor.FlattenImageData) {
 		settings.FlattenImageData = true
 	}
-	if p.clusterLabels != nil {
-		settings.ClusterLabels = &sensor.ClusterLabels{Labels: p.clusterLabels.Get()}
-	}
 	return settings
 }
 
@@ -103,6 +101,7 @@ func (p *settingsManager) UpdatePolicies(policies []*storage.Policy) {
 	}
 
 	p.currSettings = newSettings
+	p.pushClusterLabelsIfChangedNoLock()
 }
 
 func (p *settingsManager) UpdateConfig(config *storage.DynamicClusterConfig) {
@@ -120,6 +119,7 @@ func (p *settingsManager) UpdateConfig(config *storage.DynamicClusterConfig) {
 		p.settingsStream.Push(newSettings)
 	}
 	p.currSettings = newSettings
+	p.pushClusterLabelsIfChangedNoLock()
 }
 
 func (p *settingsManager) FlushCache() {
@@ -133,6 +133,51 @@ func (p *settingsManager) FlushCache() {
 		p.settingsStream.Push(newSettings)
 	}
 	p.currSettings = newSettings
+	p.pushClusterLabelsIfChangedNoLock()
+}
+
+// pushClusterLabelsIfChangedNoLock pushes cluster labels to admission control if they've changed.
+// Must be called with p.mutex held.
+func (p *settingsManager) pushClusterLabelsIfChangedNoLock() {
+	if p.clusterLabels == nil {
+		return
+	}
+
+	currentLabels := p.clusterLabels.Get()
+	if mapsEqual(p.lastClusterLabels, currentLabels) {
+		return
+	}
+
+	p.lastClusterLabels = copyMap(currentLabels)
+	p.sensorEventsStream.Push(&sensor.AdmCtrlUpdateResourceRequest{
+		Action: central.ResourceAction_SYNC_RESOURCE,
+		Resource: &sensor.AdmCtrlUpdateResourceRequest_ClusterLabels{
+			ClusterLabels: &sensor.ClusterLabels{Labels: currentLabels},
+		},
+	})
+}
+
+func mapsEqual(a, b map[string]string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for k, v := range a {
+		if b[k] != v {
+			return false
+		}
+	}
+	return true
+}
+
+func copyMap(m map[string]string) map[string]string {
+	if m == nil {
+		return nil
+	}
+	result := make(map[string]string, len(m))
+	for k, v := range m {
+		result[k] = v
+	}
+	return result
 }
 
 func (p *settingsManager) SettingsStream() concurrency.ReadOnlyValueStream[*sensor.AdmissionControlSettings] {
@@ -173,6 +218,16 @@ func (p *settingsManager) GetResourcesForSync() []*sensor.AdmCtrlUpdateResourceR
 			})
 		}
 	}
+
+	if p.clusterLabels != nil {
+		ret = append(ret, &sensor.AdmCtrlUpdateResourceRequest{
+			Action: central.ResourceAction_SYNC_RESOURCE,
+			Resource: &sensor.AdmCtrlUpdateResourceRequest_ClusterLabels{
+				ClusterLabels: &sensor.ClusterLabels{Labels: p.clusterLabels.Get()},
+			},
+		})
+	}
+
 	return ret
 }
 

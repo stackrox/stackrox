@@ -121,7 +121,8 @@ type manager struct {
 
 	syncC chan *concurrency.Signal
 
-	state atomic.Pointer[state]
+	state         atomic.Pointer[state]
+	clusterLabels atomic.Pointer[map[string]string]
 
 	cacheVersion string
 
@@ -180,11 +181,11 @@ func (m *manager) SettingsStream() concurrency.ReadOnlyValueStream[*sensor.Admis
 
 // GetClusterLabels implements scopecomp.ClusterLabelProvider interface.
 func (m *manager) GetClusterLabels(_ context.Context, _ string) (map[string]string, error) {
-	state := m.currentState()
-	if state == nil || state.GetClusterLabels() == nil {
+	labels := m.clusterLabels.Load()
+	if labels == nil {
 		return nil, nil
 	}
-	return state.GetClusterLabels().GetLabels(), nil
+	return *labels, nil
 }
 
 // GetNamespaceLabels implements scopecomp.NamespaceLabelProvider interface.
@@ -504,6 +505,10 @@ func (m *manager) processUpdateResourceRequest(req *sensor.AdmCtrlUpdateResource
 		m.pods.ProcessEvent(req.GetAction(), req.GetPod())
 	case *sensor.AdmCtrlUpdateResourceRequest_Namespace:
 		m.namespaces.ProcessEvent(req.GetAction(), req.GetNamespace())
+	case *sensor.AdmCtrlUpdateResourceRequest_ClusterLabels:
+		labels := req.GetClusterLabels().GetLabels()
+		m.clusterLabels.Store(&labels)
+		log.Infof("Updated cluster labels: %v", labels)
 	default:
 		log.Warnf("Received message of unknown type %T from sensor, not sure what to do with it ...", m)
 	}

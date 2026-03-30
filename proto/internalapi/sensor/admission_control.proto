@@ -22,7 +22,6 @@ message AdmissionControlSettings {
   string cluster_id = 6;
   storage.PolicyList runtime_policies = 7;
   bool flatten_image_data = 8;
-  ClusterLabels cluster_labels = 9;
 }
 
 // ClusterLabels is a simple wrapper for cluster labels map to enable serialization.
@@ -44,5 +43,6 @@ message AdmCtrlUpdateResourceRequest {
     storage.NamespaceMetadata namespace = 4;
 
     ResourcesSynced synced = 5;
+    ClusterLabels cluster_labels = 6;
   }
 }

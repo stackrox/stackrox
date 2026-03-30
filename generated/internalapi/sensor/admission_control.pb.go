@@ -34,7 +34,6 @@ type AdmissionControlSettings struct {
 	ClusterId                  string                        `protobuf:"bytes,6,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	RuntimePolicies            *storage.PolicyList           `protobuf:"bytes,7,opt,name=runtime_policies,json=runtimePolicies,proto3" json:"runtime_policies,omitempty"`
 	FlattenImageData           bool                          `protobuf:"varint,8,opt,name=flatten_image_data,json=flattenImageData,proto3" json:"flatten_image_data,omitempty"`
-	ClusterLabels              *ClusterLabels                `protobuf:"bytes,9,opt,name=cluster_labels,json=clusterLabels,proto3" json:"cluster_labels,omitempty"`
 	unknownFields              protoimpl.UnknownFields
 	sizeCache                  protoimpl.SizeCache
 }
@@ -123,13 +122,6 @@ func (x *AdmissionControlSettings) GetFlattenImageData() bool {
 		return x.FlattenImageData
 	}
 	return false
-}
-
-func (x *AdmissionControlSettings) GetClusterLabels() *ClusterLabels {
-	if x != nil {
-		return x.ClusterLabels
-	}
-	return nil
 }
 
 // ClusterLabels is a simple wrapper for cluster labels map to enable serialization.
@@ -230,6 +222,7 @@ type AdmCtrlUpdateResourceRequest struct {
 	//	*AdmCtrlUpdateResourceRequest_Pod
 	//	*AdmCtrlUpdateResourceRequest_Namespace
 	//	*AdmCtrlUpdateResourceRequest_Synced
+	//	*AdmCtrlUpdateResourceRequest_ClusterLabels
 	Resource      isAdmCtrlUpdateResourceRequest_Resource `protobuf_oneof:"resource"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -315,6 +308,15 @@ func (x *AdmCtrlUpdateResourceRequest) GetSynced() *AdmCtrlUpdateResourceRequest
 	return nil
 }
 
+func (x *AdmCtrlUpdateResourceRequest) GetClusterLabels() *ClusterLabels {
+	if x != nil {
+		if x, ok := x.Resource.(*AdmCtrlUpdateResourceRequest_ClusterLabels); ok {
+			return x.ClusterLabels
+		}
+	}
+	return nil
+}
+
 type isAdmCtrlUpdateResourceRequest_Resource interface {
 	isAdmCtrlUpdateResourceRequest_Resource()
 }
@@ -335,6 +337,10 @@ type AdmCtrlUpdateResourceRequest_Synced struct {
 	Synced *AdmCtrlUpdateResourceRequest_ResourcesSynced `protobuf:"bytes,5,opt,name=synced,proto3,oneof"`
 }
 
+type AdmCtrlUpdateResourceRequest_ClusterLabels struct {
+	ClusterLabels *ClusterLabels `protobuf:"bytes,6,opt,name=cluster_labels,json=clusterLabels,proto3,oneof"`
+}
+
 func (*AdmCtrlUpdateResourceRequest_Deployment) isAdmCtrlUpdateResourceRequest_Resource() {}
 
 func (*AdmCtrlUpdateResourceRequest_Pod) isAdmCtrlUpdateResourceRequest_Resource() {}
@@ -342,6 +348,8 @@ func (*AdmCtrlUpdateResourceRequest_Pod) isAdmCtrlUpdateResourceRequest_Resource
 func (*AdmCtrlUpdateResourceRequest_Namespace) isAdmCtrlUpdateResourceRequest_Resource() {}
 
 func (*AdmCtrlUpdateResourceRequest_Synced) isAdmCtrlUpdateResourceRequest_Resource() {}
+
+func (*AdmCtrlUpdateResourceRequest_ClusterLabels) isAdmCtrlUpdateResourceRequest_Resource() {}
 
 type AdmCtrlUpdateResourceRequest_ResourcesSynced struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -383,7 +391,7 @@ var File_internalapi_sensor_admission_control_proto protoreflect.FileDescriptor
 
 const file_internalapi_sensor_admission_control_proto_rawDesc = "" +
 	"\n" +
-	"*internalapi/sensor/admission_control.proto\x12\x06sensor\x1a\x1fgoogle/protobuf/timestamp.proto\x1a'internalapi/central/sensor_events.proto\x1a\x15storage/cluster.proto\x1a\x18storage/deployment.proto\x1a storage/namespace_metadata.proto\x1a\x14storage/policy.proto\"\x8d\x04\n" +
+	"*internalapi/sensor/admission_control.proto\x12\x06sensor\x1a\x1fgoogle/protobuf/timestamp.proto\x1a'internalapi/central/sensor_events.proto\x1a\x15storage/cluster.proto\x1a\x18storage/deployment.proto\x1a storage/namespace_metadata.proto\x1a\x14storage/policy.proto\"\xcf\x03\n" +
 	"\x18AdmissionControlSettings\x12D\n" +
 	"\x0ecluster_config\x18\x01 \x01(\v2\x1d.storage.DynamicClusterConfigR\rclusterConfig\x12V\n" +
 	"\x1denforced_deploy_time_policies\x18\x02 \x01(\v2\x13.storage.PolicyListR\x1aenforcedDeployTimePolicies\x128\n" +
@@ -393,15 +401,14 @@ const file_internalapi_sensor_admission_control_proto_rawDesc = "" +
 	"\n" +
 	"cluster_id\x18\x06 \x01(\tR\tclusterId\x12>\n" +
 	"\x10runtime_policies\x18\a \x01(\v2\x13.storage.PolicyListR\x0fruntimePolicies\x12,\n" +
-	"\x12flatten_image_data\x18\b \x01(\bR\x10flattenImageData\x12<\n" +
-	"\x0ecluster_labels\x18\t \x01(\v2\x15.sensor.ClusterLabelsR\rclusterLabels\"\x85\x01\n" +
+	"\x12flatten_image_data\x18\b \x01(\bR\x10flattenImageData\"\x85\x01\n" +
 	"\rClusterLabels\x129\n" +
 	"\x06labels\x18\x01 \x03(\v2!.sensor.ClusterLabels.LabelsEntryR\x06labels\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"T\n" +
 	"\x16AdmissionControlAlerts\x12:\n" +
-	"\ralert_results\x18\x01 \x03(\v2\x15.central.AlertResultsR\falertResults\"\xd3\x02\n" +
+	"\ralert_results\x18\x01 \x03(\v2\x15.central.AlertResultsR\falertResults\"\x93\x03\n" +
 	"\x1cAdmCtrlUpdateResourceRequest\x12/\n" +
 	"\x06action\x18\x01 \x01(\x0e2\x17.central.ResourceActionR\x06action\x125\n" +
 	"\n" +
@@ -409,7 +416,8 @@ const file_internalapi_sensor_admission_control_proto_rawDesc = "" +
 	"deployment\x12 \n" +
 	"\x03pod\x18\x03 \x01(\v2\f.storage.PodH\x00R\x03pod\x12:\n" +
 	"\tnamespace\x18\x04 \x01(\v2\x1a.storage.NamespaceMetadataH\x00R\tnamespace\x12N\n" +
-	"\x06synced\x18\x05 \x01(\v24.sensor.AdmCtrlUpdateResourceRequest.ResourcesSyncedH\x00R\x06synced\x1a\x11\n" +
+	"\x06synced\x18\x05 \x01(\v24.sensor.AdmCtrlUpdateResourceRequest.ResourcesSyncedH\x00R\x06synced\x12>\n" +
+	"\x0ecluster_labels\x18\x06 \x01(\v2\x15.sensor.ClusterLabelsH\x00R\rclusterLabels\x1a\x11\n" +
 	"\x0fResourcesSyncedB\n" +
 	"\n" +
 	"\bresourceB\x1dZ\x1b./internalapi/sensor;sensorb\x06proto3"
@@ -448,14 +456,14 @@ var file_internalapi_sensor_admission_control_proto_depIdxs = []int32{
 	7,  // 1: sensor.AdmissionControlSettings.enforced_deploy_time_policies:type_name -> storage.PolicyList
 	8,  // 2: sensor.AdmissionControlSettings.timestamp:type_name -> google.protobuf.Timestamp
 	7,  // 3: sensor.AdmissionControlSettings.runtime_policies:type_name -> storage.PolicyList
-	1,  // 4: sensor.AdmissionControlSettings.cluster_labels:type_name -> sensor.ClusterLabels
-	4,  // 5: sensor.ClusterLabels.labels:type_name -> sensor.ClusterLabels.LabelsEntry
-	9,  // 6: sensor.AdmissionControlAlerts.alert_results:type_name -> central.AlertResults
-	10, // 7: sensor.AdmCtrlUpdateResourceRequest.action:type_name -> central.ResourceAction
-	11, // 8: sensor.AdmCtrlUpdateResourceRequest.deployment:type_name -> storage.Deployment
-	12, // 9: sensor.AdmCtrlUpdateResourceRequest.pod:type_name -> storage.Pod
-	13, // 10: sensor.AdmCtrlUpdateResourceRequest.namespace:type_name -> storage.NamespaceMetadata
-	5,  // 11: sensor.AdmCtrlUpdateResourceRequest.synced:type_name -> sensor.AdmCtrlUpdateResourceRequest.ResourcesSynced
+	4,  // 4: sensor.ClusterLabels.labels:type_name -> sensor.ClusterLabels.LabelsEntry
+	9,  // 5: sensor.AdmissionControlAlerts.alert_results:type_name -> central.AlertResults
+	10, // 6: sensor.AdmCtrlUpdateResourceRequest.action:type_name -> central.ResourceAction
+	11, // 7: sensor.AdmCtrlUpdateResourceRequest.deployment:type_name -> storage.Deployment
+	12, // 8: sensor.AdmCtrlUpdateResourceRequest.pod:type_name -> storage.Pod
+	13, // 9: sensor.AdmCtrlUpdateResourceRequest.namespace:type_name -> storage.NamespaceMetadata
+	5,  // 10: sensor.AdmCtrlUpdateResourceRequest.synced:type_name -> sensor.AdmCtrlUpdateResourceRequest.ResourcesSynced
+	1,  // 11: sensor.AdmCtrlUpdateResourceRequest.cluster_labels:type_name -> sensor.ClusterLabels
 	12, // [12:12] is the sub-list for method output_type
 	12, // [12:12] is the sub-list for method input_type
 	12, // [12:12] is the sub-list for extension type_name
@@ -473,6 +481,7 @@ func file_internalapi_sensor_admission_control_proto_init() {
 		(*AdmCtrlUpdateResourceRequest_Pod)(nil),
 		(*AdmCtrlUpdateResourceRequest_Namespace)(nil),
 		(*AdmCtrlUpdateResourceRequest_Synced)(nil),
+		(*AdmCtrlUpdateResourceRequest_ClusterLabels)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

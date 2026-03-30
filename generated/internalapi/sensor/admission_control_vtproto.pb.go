@@ -34,7 +34,6 @@ func (m *AdmissionControlSettings) CloneVT() *AdmissionControlSettings {
 	r.CentralEndpoint = m.CentralEndpoint
 	r.ClusterId = m.ClusterId
 	r.FlattenImageData = m.FlattenImageData
-	r.ClusterLabels = m.ClusterLabels.CloneVT()
 	if rhs := m.ClusterConfig; rhs != nil {
 		if vtpb, ok := interface{}(rhs).(interface {
 			CloneVT() *storage.DynamicClusterConfig
@@ -213,6 +212,15 @@ func (m *AdmCtrlUpdateResourceRequest_Synced) CloneVT() isAdmCtrlUpdateResourceR
 	return r
 }
 
+func (m *AdmCtrlUpdateResourceRequest_ClusterLabels) CloneVT() isAdmCtrlUpdateResourceRequest_Resource {
+	if m == nil {
+		return (*AdmCtrlUpdateResourceRequest_ClusterLabels)(nil)
+	}
+	r := new(AdmCtrlUpdateResourceRequest_ClusterLabels)
+	r.ClusterLabels = m.ClusterLabels.CloneVT()
+	return r
+}
+
 func (this *AdmissionControlSettings) EqualVT(that *AdmissionControlSettings) bool {
 	if this == that {
 		return true
@@ -259,9 +267,6 @@ func (this *AdmissionControlSettings) EqualVT(that *AdmissionControlSettings) bo
 		return false
 	}
 	if this.FlattenImageData != that.FlattenImageData {
-		return false
-	}
-	if !this.ClusterLabels.EqualVT(that.ClusterLabels) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -504,6 +509,31 @@ func (this *AdmCtrlUpdateResourceRequest_Synced) EqualVT(thatIface isAdmCtrlUpda
 	return true
 }
 
+func (this *AdmCtrlUpdateResourceRequest_ClusterLabels) EqualVT(thatIface isAdmCtrlUpdateResourceRequest_Resource) bool {
+	that, ok := thatIface.(*AdmCtrlUpdateResourceRequest_ClusterLabels)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.ClusterLabels, that.ClusterLabels; p != q {
+		if p == nil {
+			p = &ClusterLabels{}
+		}
+		if q == nil {
+			q = &ClusterLabels{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
 func (m *AdmissionControlSettings) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -533,16 +563,6 @@ func (m *AdmissionControlSettings) MarshalToSizedBufferVT(dAtA []byte) (int, err
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
-	}
-	if m.ClusterLabels != nil {
-		size, err := m.ClusterLabels.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x4a
 	}
 	if m.FlattenImageData {
 		i--
@@ -971,6 +991,29 @@ func (m *AdmCtrlUpdateResourceRequest_Synced) MarshalToSizedBufferVT(dAtA []byte
 	}
 	return len(dAtA) - i, nil
 }
+func (m *AdmCtrlUpdateResourceRequest_ClusterLabels) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *AdmCtrlUpdateResourceRequest_ClusterLabels) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.ClusterLabels != nil {
+		size, err := m.ClusterLabels.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x32
+	} else {
+		i = protohelpers.EncodeVarint(dAtA, i, 0)
+		i--
+		dAtA[i] = 0x32
+	}
+	return len(dAtA) - i, nil
+}
 func (m *AdmissionControlSettings) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -1025,10 +1068,6 @@ func (m *AdmissionControlSettings) SizeVT() (n int) {
 	}
 	if m.FlattenImageData {
 		n += 2
-	}
-	if m.ClusterLabels != nil {
-		l = m.ClusterLabels.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1168,6 +1207,20 @@ func (m *AdmCtrlUpdateResourceRequest_Synced) SizeVT() (n int) {
 	_ = l
 	if m.Synced != nil {
 		l = m.Synced.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	} else {
+		n += 2
+	}
+	return n
+}
+func (m *AdmCtrlUpdateResourceRequest_ClusterLabels) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.ClusterLabels != nil {
+		l = m.ClusterLabels.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
 		n += 2
@@ -1487,42 +1540,6 @@ func (m *AdmissionControlSettings) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.FlattenImageData = bool(v != 0)
-		case 9:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClusterLabels", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.ClusterLabels == nil {
-				m.ClusterLabels = &ClusterLabels{}
-			}
-			if err := m.ClusterLabels.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2127,6 +2144,47 @@ func (m *AdmCtrlUpdateResourceRequest) UnmarshalVT(dAtA []byte) error {
 				m.Resource = &AdmCtrlUpdateResourceRequest_Synced{Synced: v}
 			}
 			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterLabels", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Resource.(*AdmCtrlUpdateResourceRequest_ClusterLabels); ok {
+				if err := oneof.ClusterLabels.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &ClusterLabels{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Resource = &AdmCtrlUpdateResourceRequest_ClusterLabels{ClusterLabels: v}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2474,42 +2532,6 @@ func (m *AdmissionControlSettings) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.FlattenImageData = bool(v != 0)
-		case 9:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClusterLabels", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.ClusterLabels == nil {
-				m.ClusterLabels = &ClusterLabels{}
-			}
-			if err := m.ClusterLabels.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -3120,6 +3142,47 @@ func (m *AdmCtrlUpdateResourceRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 					return err
 				}
 				m.Resource = &AdmCtrlUpdateResourceRequest_Synced{Synced: v}
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterLabels", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Resource.(*AdmCtrlUpdateResourceRequest_ClusterLabels); ok {
+				if err := oneof.ClusterLabels.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &ClusterLabels{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Resource = &AdmCtrlUpdateResourceRequest_ClusterLabels{ClusterLabels: v}
 			}
 			iNdEx = postIndex
 		default:
