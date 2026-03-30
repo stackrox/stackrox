@@ -44,7 +44,10 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string, repor
 	} else {
 		csvHeaderClone = addOptionalColumnstoHeader(csvHeaderClone, reportFilters)
 	}
+	// add header for component version
+	csvHeaderClone = append(csvHeaderClone, "Component Version")
 	csvWriter := csv.NewGenericWriter(csvHeaderClone, true)
+
 	for _, r := range cveResponses {
 		row := csv.Value{
 			r.GetCluster(),
