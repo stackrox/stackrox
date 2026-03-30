@@ -10,7 +10,7 @@ inputs:
     required: false
     default: ''
   skip-mod-cache:
-    description: Skip GOMODCACHE restore (for testing lazy module loading).
+    description: Skip GOMODCACHE restore. Test jobs with warm GOCACHE don't need modules (Go lazy-downloads if needed). Build/style jobs should keep this false.
     required: false
     default: 'false'
 runs:
