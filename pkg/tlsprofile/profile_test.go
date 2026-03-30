@@ -29,6 +29,8 @@ func (s *profileSuite) TestParseMinVersion() {
 		want    uint16
 		wantErr bool
 	}{
+		{"TLSv1.0", tls.VersionTLS10, false},
+		{"TLSv1.1", tls.VersionTLS11, false},
 		{"TLSv1.2", tls.VersionTLS12, false},
 		{"TLSv1.3", tls.VersionTLS13, false},
 		{" TLSv1.3 ", tls.VersionTLS13, false},
