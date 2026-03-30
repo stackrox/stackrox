@@ -100,16 +100,6 @@ jobs:
       with:
         paths: 'junit-reports/report.xml'
 
-    - name: Generate junit report
-      if: always()
-      run: make generate-junit-reports
-
-    - name: Publish Test Report
-      uses: test-summary/action@v2
-      if: always()
-      with:
-        paths: 'junit-reports/report.xml'
-
     - name: Report test failures to Jira
       if: (!cancelled())
       id: junit2jira
@@ -193,6 +183,9 @@ jobs:
 
     - name: Go Operator Integration Tests
       run: ${{ matrix.gotags }} make -C operator/ test-integration
+
+    - name: Go Operator Helm Tests
+      run: ${{ matrix.gotags }} make -C operator/ test-helm
 
   go-postgres:
     strategy:
