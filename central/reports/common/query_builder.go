@@ -27,17 +27,20 @@ type queryBuilder struct {
 	collection              *storage.ResourceCollection
 	collectionQueryResolver collectionDataStore.QueryResolver
 	dataStartTime           time.Time
+	entityScope             *storage.EntityScope
 }
 
 // NewVulnReportQueryBuilder builds a query builder to build scope and cve filtering queries for vuln reporting
-func NewVulnReportQueryBuilder(collection *storage.ResourceCollection, vulnFilters *storage.VulnerabilityReportFilters,
+func NewVulnReportQueryBuilder(collection *storage.ResourceCollection, entityScope *storage.EntityScope, vulnFilters *storage.VulnerabilityReportFilters,
 	collectionQueryRes collectionDataStore.QueryResolver, dataStartTime time.Time) *queryBuilder {
 	return &queryBuilder{
-		vulnFilters:             vulnFilters,
 		collection:              collection,
+		entityScope:             entityScope,
+		vulnFilters:             vulnFilters,
 		collectionQueryResolver: collectionQueryRes,
 		dataStartTime:           dataStartTime,
 	}
+
 }
 
 // BuildQuery builds scope and cve filtering queries for vuln reporting
@@ -46,10 +49,22 @@ func (q *queryBuilder) BuildQuery(
 	clusters []effectiveaccessscope.Cluster,
 	namespaces []effectiveaccessscope.Namespace,
 ) (*ReportQuery, error) {
-	deploymentsQuery, err := q.collectionQueryResolver.ResolveCollectionQuery(ctx, q.collection)
-	if err != nil {
-		return nil, err
+	deploymentsQuery := search.MatchNoneQuery()
+	var err error
+	if q.collection != nil {
+		deploymentsQuery, err = q.collectionQueryResolver.ResolveCollectionQuery(ctx, q.collection)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+
+		entityScopeQueryString, err := q.buildEntityScopeQueryString()
+		if err != nil {
+			return nil, err
+		}
+		deploymentsQuery, err = search.ParseQuery(entityScopeQueryString, search.MatchAllIfEmpty())
 	}
+
 	scopeQuery, err := q.buildAccessScopeQuery(clusters, namespaces)
 	if err != nil {
 		return nil, err
@@ -64,6 +79,90 @@ func (q *queryBuilder) BuildQuery(
 		CveFieldsQuery:   cveQuery,
 		DeploymentsQuery: deploymentsQuery,
 	}, nil
+}
+
+func (q *queryBuilder) buildEntityScopeQueryString() (string, error) {
+	rules := q.entityScope.GetRules()
+	if len(rules) == 0 {
+		return "", nil
+	}
+
+	var conjuncts []string
+	for _, rule := range rules {
+		fieldLabel, err := entityScopeRuleToFieldLabel(rule)
+		if err != nil {
+			return "", err
+		}
+		isLabel := fieldLabel == search.DeploymentLabel ||
+			fieldLabel == search.NamespaceLabel ||
+			fieldLabel == search.ClusterLabel
+
+		values := make([]string, 0, len(rule.GetValues()))
+		for _, rv := range rule.GetValues() {
+			val := rv.GetValue()
+			if rv.GetMatchType() == storage.MatchType_REGEX {
+				val = search.RegexPrefix + val
+			}
+			values = append(values, val)
+		}
+
+		if len(values) == 0 {
+			continue
+		}
+
+		var qb *search.QueryBuilder
+		if isLabel {
+			for _, v := range values {
+				key, value := splitLabelValue(v)
+				qb = search.NewQueryBuilder().AddMapQuery(fieldLabel, key, value)
+				conjuncts = append(conjuncts, qb.Query())
+			}
+		} else {
+			qb = search.NewQueryBuilder().AddExactMatches(fieldLabel, values...)
+			conjuncts = append(conjuncts, qb.Query())
+		}
+	}
+
+	return strings.Join(conjuncts, "+"), nil
+}
+
+func entityScopeRuleToFieldLabel(rule *storage.EntityScopeRule) (search.FieldLabel, error) {
+	switch rule.GetEntity() {
+	case storage.EntityType_ENTITY_TYPE_DEPLOYMENT:
+		switch rule.GetField() {
+		case storage.EntityField_FIELD_NAME:
+			return search.DeploymentName, nil
+		case storage.EntityField_FIELD_LABEL:
+			return search.DeploymentLabel, nil
+		case storage.EntityField_FIELD_ANNOTATION:
+			return search.DeploymentAnnotation, nil
+		}
+	case storage.EntityType_ENTITY_TYPE_NAMESPACE:
+		switch rule.GetField() {
+		case storage.EntityField_FIELD_NAME:
+			return search.Namespace, nil
+		case storage.EntityField_FIELD_LABEL:
+			return search.NamespaceLabel, nil
+		case storage.EntityField_FIELD_ANNOTATION:
+			return search.NamespaceAnnotation, nil
+		}
+	case storage.EntityType_ENTITY_TYPE_CLUSTER:
+		switch rule.GetField() {
+		case storage.EntityField_FIELD_NAME:
+			return search.Cluster, nil
+		case storage.EntityField_FIELD_LABEL:
+			return search.ClusterLabel, nil
+		}
+	}
+	return "", fmt.Errorf("unsupported entity/field combination: %s/%s", rule.GetEntity(), rule.GetField())
+}
+
+func splitLabelValue(labelVal string) (string, string) {
+	parts := strings.SplitN(labelVal, "=", 2)
+	if len(parts) == 2 {
+		return fmt.Sprintf("%q", parts[0]), fmt.Sprintf("%q", parts[1])
+	}
+	return fmt.Sprintf("%q", labelVal), fmt.Sprintf("%q", "")
 }
 
 func (q *queryBuilder) buildCVEAttributesQuery() (string, error) {
