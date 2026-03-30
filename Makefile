@@ -573,7 +573,7 @@ go-postgres-unit-tests-migrator: build-prep test-prep
 	set -o pipefail ; \
 	CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 GOTAGS=$(GOTAGS),test,sql_integration scripts/go-test.sh -p 1 -race -cover -coverprofile test-output/migrator-coverage.out -v \
 		$(shell git grep -rl "//go:build sql_integration" migrator | sed -e 's@^@./@g' | xargs -n 1 dirname | sort | uniq | xargs go list -tags sql_integration | grep -v '^github.com/stackrox/rox/tests$$' | grep -Ev $(UNIT_TEST_IGNORE)) \
-		| tee $(GO_TEST_OUTPUT_PATH)
+		| tee -a $(GO_TEST_OUTPUT_PATH)
 
 .PHONY: go-postgres-bench-tests
 go-postgres-bench-tests: build-prep test-prep
