@@ -2335,8 +2335,11 @@ _EO_SUITE_HEADER_
         local result="${lines[1]}"
         local details="${lines[2]}"
 
-        # XML escape description (\ before & needed for bash 5.2+ where
-        # & in replacement refers to the matched pattern)
+        # XML escape description.
+        # \& is required: bash 5.2+ treats & in ${var//pat/repl} as the
+        # matched text (like sed), so without \& the & is replaced by the
+        # match itself. \& works on all bash versions (4.4–5.3 verified).
+        # CI container had bash 5.1 (UBI9); ubuntu-latest has bash 5.2+.
         description="${description//&/\&amp;}"
         description="${description//\"/\&quot;}"
         description="${description//\'/\&#39;}"
