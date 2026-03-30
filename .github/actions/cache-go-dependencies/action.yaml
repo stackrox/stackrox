@@ -9,6 +9,10 @@ inputs:
     description: Extra suffix for cache keys (use to distinguish matrix entries that share github.job).
     required: false
     default: ''
+  skip-mod-cache:
+    description: Skip GOMODCACHE restore (for testing lazy module loading).
+    required: false
+    default: 'false'
 runs:
   using: composite
   steps:
@@ -26,7 +30,7 @@ runs:
     # Save caches only on pushes to the default branch.
     # All other events (PRs, etc.) restore only.
     - name: Cache Go Dependencies (save)
-      if: inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
+      if: inputs.skip-mod-cache != 'true' && inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
       uses: actions/cache@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOMODCACHE }}
@@ -34,7 +38,7 @@ runs:
         restore-keys: go-mod-v1-
 
     - name: Cache Go Dependencies (restore)
-      if: ${{ !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)) }}
+      if: inputs.skip-mod-cache != 'true' && !(inputs.save == 'true' && (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch))
       uses: actions/cache/restore@v5
       with:
         path: ${{ steps.cache-paths.outputs.GOMODCACHE }}
@@ -93,6 +97,7 @@ runs:
           echo "GOCACHE trimmed: ${before:-0}MB -> ${after:-0}MB (removed $((${before:-0} - ${after:-0}))MB)"
 
     - name: Download Go modules
+      if: inputs.skip-mod-cache != 'true'
       run: make deps --always-make
       shell: bash
 
