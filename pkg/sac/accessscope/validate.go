@@ -32,10 +32,10 @@ func ValidateSimpleAccessScopeRules(rules *storage.SimpleAccessScope_Rules) erro
 		validationErrs = multierror.Append(validationErrs, errox.InvalidArgs.New("rules field must be set"))
 	}
 	for _, ns := range rules.GetIncludedNamespaces() {
-		if ns.GetClusterName() == "" || ns.GetNamespaceName() == "" {
+		if !referencesParentCluster(ns) || ns.GetNamespaceName() == "" {
 			validationErrs = multierror.Append(validationErrs, errox.InvalidArgs.Newf(
-				"both cluster_name and namespace_name fields must be set in namespace rule <%s, %s>",
-				ns.GetClusterName(), ns.GetNamespaceName()))
+				"namespace_name and at least one of cluster_id or cluster_name fields must be set in namespace rule <%s|%s, %s>",
+				ns.GetClusterId(), ns.GetClusterName(), ns.GetNamespaceName()))
 		}
 	}
 	for _, labelSelector := range rules.GetClusterLabelSelectors() {
@@ -51,6 +51,10 @@ func ValidateSimpleAccessScopeRules(rules *storage.SimpleAccessScope_Rules) erro
 		}
 	}
 	return validationErrs.ErrorOrNil()
+}
+
+func referencesParentCluster(namespaceRule *storage.SimpleAccessScope_Rules_Namespace) bool {
+	return namespaceRule.GetClusterId() != "" || namespaceRule.GetClusterName() != ""
 }
 
 func validateSelectorRequirement(labelSelector *storage.SetBasedLabelSelector) error {
