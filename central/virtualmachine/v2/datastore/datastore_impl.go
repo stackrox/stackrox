@@ -53,12 +53,16 @@ func (ds *datastoreImpl) EnsureVirtualMachineExists(ctx context.Context, vmID st
 	if vmID == "" {
 		return errors.New("cannot ensure VM exists without an id")
 	}
+	if clusterID == "" {
+		return errors.New("cannot ensure VM exists without a cluster id")
+	}
 
-	_, exists, err := ds.store.Get(ctx, vmID)
+	query := search.NewQueryBuilder().AddExactMatches(search.VirtualMachineID, vmID).AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	count, err := ds.store.Count(ctx, query)
 	if err != nil {
 		return err
 	}
-	if exists {
+	if count > 0 {
 		return nil
 	}
 
