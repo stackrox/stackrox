@@ -452,6 +452,8 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
+      with:
+        skip-mod-cache: 'true'
 
     - uses: ./.github/actions/handle-tagged-build
 
