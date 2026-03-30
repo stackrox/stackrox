@@ -23,10 +23,17 @@ jobs:
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
         shard:
-          - name: pkg
+          - name: pkg-helm
+            packages: ./pkg/helm/...
+          - name: pkg-other
             packages: ./pkg/...
-          - name: central
+            exclude-pattern: /helm/
+          - name: central-1
             packages: ./central/...
+            exclude-pattern: /central/[o-z]
+          - name: central-2
+            packages: ./central/...
+            exclude-pattern: /central/[a-n]
           - name: rest
             packages: ./roxctl/... ./sensor/... ./operator/... ./migrator/... ./compliance/... ./scanner/... ./tools/... ./config-controller/... ./scale/... ./govulncheck/... ./image/...
     runs-on: ubuntu-latest
@@ -64,7 +71,11 @@ jobs:
         set -o pipefail
         mkdir -p test-output
         # Build package list, filtering out packages that have their own dedicated jobs
-        PACKAGES=$(go list ${{ matrix.shard.packages }} | grep -Ev 'sensor/tests|operator/tests|/scanner/e2etests')
+        EXCLUDE='sensor/tests|operator/tests|/scanner/e2etests'
+        if [[ -n '${{ matrix.shard.exclude-pattern }}' ]]; then
+          EXCLUDE="${EXCLUDE}|${{ matrix.shard.exclude-pattern }}"
+        fi
+        PACKAGES=$(go list ${{ matrix.shard.packages }} | grep -Ev "$EXCLUDE")
         GOTAGS="${GOTAGS:+$GOTAGS,}test" CGO_ENABLED=1 GOEXPERIMENT=cgocheck2 MUTEX_WATCHDOG_TIMEOUT_SECS=30 \
           scripts/go-test.sh -timeout 25m -race -cover \
           -coverprofile test-output/coverage.out -v \
