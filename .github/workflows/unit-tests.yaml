@@ -17,7 +17,85 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  go:
+  go-unit-tests:
+    name: "Go Unit Tests (${{ matrix.component.name }}, ${{ matrix.gotags }})"
+    strategy:
+      fail-fast: false
+      matrix:
+        gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
+        component:
+          - name: central
+            pkg_include: 'stackrox/rox/central/'
+            pkg_exclude: '^$'
+          - name: pkg
+            pkg_include: 'stackrox/rox/pkg/'
+            pkg_exclude: '^$'
+          - name: sensor
+            pkg_include: 'stackrox/rox/(sensor|compliance)/'
+            pkg_exclude: '^$'
+          - name: other
+            pkg_include: '.'
+            pkg_exclude: 'stackrox/rox/(central|pkg|sensor|compliance)/'
+    runs-on: ubuntu-latest
+    outputs:
+      new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.5.3
+      volumes:
+        - /usr:/mnt/usr
+        - /opt:/mnt/opt
+    env:
+      UNIT_TEST_PKG_INCLUDE: ${{ matrix.component.pkg_include }}
+      UNIT_TEST_PKG_EXCLUDE: ${{ matrix.component.pkg_exclude }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        fetch-depth: 0
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+        free-disk-space: 30
+
+    - name: Cache Go dependencies
+      uses: ./.github/actions/cache-go-dependencies
+
+    - name: Go Unit Tests (${{ matrix.component.name }})
+      run: ${{ matrix.gotags }} make go-unit-tests
+
+    - uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        flags: go-unit-tests
+
+    - name: Go Log Level Tests
+      if: matrix.component.name == 'pkg'
+      run: ${{ matrix.gotags }} make go-log-level-tests
+
+    - name: Generate junit report
+      if: always()
+      run: make generate-junit-reports
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/report.xml'
+
+    - name: Report test failures to Jira
+      if: (!cancelled())
+      id: junit2jira
+      uses: ./.github/actions/junit2jira
+      with:
+        create-jiras: ${{ github.event_name == 'push' }}
+        jira-user: ${{ secrets.JIRA_USER }}
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+        directory: 'junit-reports'
+
+  go-extra-tests:
+    name: "Go Extra Tests (${{ matrix.gotags }})"
     strategy:
       fail-fast: false
       matrix:
@@ -43,24 +121,6 @@ jobs:
 
     - name: Cache Go dependencies
       uses: ./.github/actions/cache-go-dependencies
-
-    - name: Go Unit Tests
-      run: ${{ matrix.gotags }} make go-unit-tests
-
-    - uses: codecov/codecov-action@v3
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        flags: go-unit-tests
-
-    - name: Generate junit report
-      if: always()
-      run: make generate-junit-reports
-
-    - name: Publish Test Report
-      uses: test-summary/action@v2
-      if: always()
-      with:
-        paths: 'junit-reports/report.xml'
 
     - name: Go Integration Unit Tests
       run: ${{ matrix.gotags }} make integration-unit-tests
@@ -481,7 +541,8 @@ jobs:
     name: Post failure message to Slack
     runs-on: ubuntu-latest
     needs:
-      - go
+      - go-unit-tests
+      - go-extra-tests
       - go-bench
       - go-postgres
       - local-roxctl-tests
@@ -499,7 +560,7 @@ jobs:
     - name: Slack message
       env:
         GITHUB_CONTEXT: ${{ toJSON(github) }}
-        mention_author: ${{ needs.go.outputs.new-jiras || needs.go-postgres.outputs.new-jiras || needs.local-roxctl-tests.outputs.new-jiras || needs.ui.outputs.new-jiras || needs.go.outputs.new-jiras || needs.shell-unit-tests.outputs.new-jiras || needs.sensor-integration-tests.outputs.new-jiras }}
+        mention_author: ${{ needs.go-unit-tests.outputs.new-jiras || needs.go-extra-tests.outputs.new-jiras || needs.go-postgres.outputs.new-jiras || needs.local-roxctl-tests.outputs.new-jiras || needs.ui.outputs.new-jiras || needs.shell-unit-tests.outputs.new-jiras || needs.sensor-integration-tests.outputs.new-jiras }}
       run: |
         source scripts/ci/lib.sh
         slack_workflow_failure
