@@ -636,13 +636,12 @@ func (s *storeImpl) Get(ctx context.Context, id string) (*storage.VirtualMachine
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "VirtualMachineV2")
 
 	return pgutils.Retry3(ctx, func() (*storage.VirtualMachineV2, bool, error) {
-		tx, ctx, err := s.begin(ctx)
-		if err != nil {
-			return nil, false, err
-		}
-		defer postgres.FinishReadOnlyTransaction(tx)
-
-		vm, err := s.getVirtualMachine(ctx, tx, id)
+		q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
+		var vm *storage.VirtualMachineV2
+		err := pgSearch.RunQueryForSchemaFn[storage.VirtualMachineV2](ctx, schema, q, s.db, func(v *storage.VirtualMachineV2) error {
+			vm = v
+			return nil
+		})
 		if err != nil {
 			return nil, false, err
 		}
