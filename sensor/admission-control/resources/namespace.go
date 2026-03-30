@@ -42,6 +42,9 @@ func (m *NamespaceStore) ProcessEvent(action central.ResourceAction, obj interfa
 		m.lock.Lock()
 		defer m.lock.Unlock()
 		m.namespaces[ns.GetName()] = ns
+		if action == central.ResourceAction_CREATE_RESOURCE || action == central.ResourceAction_SYNC_RESOURCE {
+			log.Infof("Synced namespace %q to admission control", ns.GetName())
+		}
 	case central.ResourceAction_REMOVE_RESOURCE:
 		// Namespace remove event contains full namespace metadata.
 		m.lock.Lock()
@@ -61,7 +64,7 @@ func (m *NamespaceStore) GetNamespaceLabels(_ context.Context, _ string, namespa
 
 	metadata, found := m.namespaces[namespaceName]
 	if !found {
-		log.Debugf("Namespace %q not found in store, labels unavailable for policy evaluation", namespaceName)
+		logging.GetRateLimitedLogger().WarnL(namespaceName, "Namespace %q not found in store, labels unavailable for policy evaluation. Namespace metadata may not have synced from Sensor yet.", namespaceName)
 		return nil, nil
 	}
 	return metadata.GetLabels(), nil

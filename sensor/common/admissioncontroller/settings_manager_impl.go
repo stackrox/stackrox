@@ -30,15 +30,11 @@ type settingsManager struct {
 
 	deployments store.DeploymentStore
 	pods        store.PodStore
-	namespaces  namespaceGetter
+	namespaces  store.NamespaceStore
 }
 
 type clusterLabelsGetter interface {
 	Get() map[string]string
-}
-
-type namespaceGetter interface {
-	GetAll() []*storage.NamespaceMetadata
 }
 
 type clusterIDWaiter interface {
@@ -46,7 +42,7 @@ type clusterIDWaiter interface {
 }
 
 // NewSettingsManager creates a new settings manager for admission control settings.
-func NewSettingsManager(clusterID clusterIDWaiter, clusterLabels clusterLabelsGetter, deployments store.DeploymentStore, pods store.PodStore, namespaces namespaceGetter) SettingsManager {
+func NewSettingsManager(clusterID clusterIDWaiter, clusterLabels clusterLabelsGetter, deployments store.DeploymentStore, pods store.PodStore, namespaces store.NamespaceStore) SettingsManager {
 	return &settingsManager{
 		settingsStream:     concurrency.NewValueStream[*sensor.AdmissionControlSettings](nil),
 		sensorEventsStream: concurrency.NewValueStream[*sensor.AdmCtrlUpdateResourceRequest](nil),

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/admission-control/resources"
@@ -74,7 +75,7 @@ func TestManager_GetNamespaceLabels(t *testing.T) {
 				"tier": "app",
 			},
 		}
-		nsStore.ProcessEvent(1, ns) // CREATE_RESOURCE = 1
+		nsStore.ProcessEvent(central.ResourceAction_CREATE_RESOURCE, ns)
 
 		labels, err := m.GetNamespaceLabels(ctx, "cluster-id", "test-namespace")
 		require.NoError(t, err)
