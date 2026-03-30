@@ -68,7 +68,7 @@ func (n *namespaceStore) GetAll() []*storage.NamespaceMetadata {
 	n.lock.RLock()
 	defer n.lock.RUnlock()
 
-	var ret []*storage.NamespaceMetadata
+	ret := make([]*storage.NamespaceMetadata, 0, len(n.namespaces))
 	for _, ns := range n.namespaces {
 		ret = append(ret, ns)
 	}
