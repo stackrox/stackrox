@@ -109,7 +109,6 @@ func imageDetailsPrinter(fieldMap map[string][]string) ([]string, error) {
 			Tag:    imageTag,
 			Digest: maybeGetSingleValueFromFieldMap(search.ImageSHA.String(), fieldMap),
 		}
-		tagFields.Tag = imageTag
 		tagMessage, err := executeTemplate(imageTagDetailTemplate, tagFields)
 		if err != nil {
 			return nil, err
