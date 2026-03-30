@@ -15,7 +15,7 @@
     "strict": true,
     "noImplicitAny": false,
     "forceConsistentCasingInFileNames": true,
-    "module": "es2020",
+    "module": "preserve",
     "moduleResolution": "bundler",
     "paths": {
       "Components/*": ["./src/Components/*"],
