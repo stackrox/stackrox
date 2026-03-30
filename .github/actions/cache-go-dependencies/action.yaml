@@ -98,7 +98,6 @@ runs:
           after=$(du -sm "$gocache" 2>/dev/null | cut -f1);
           echo "GOCACHE trimmed: ${before:-0}MB -> ${after:-0}MB (removed $((${before:-0} - ${after:-0}))MB)"
 
-    - name: Download Go modules
-      if: inputs.cache-mod == 'true'
-      run: make deps --always-make
-      shell: bash
+    # Go lazy-downloads modules from the proxy as needed during build/test.
+    # No explicit download step required — GOMODCACHE (when restored) or
+    # the Go module proxy provides modules on demand.
