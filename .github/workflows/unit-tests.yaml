@@ -185,7 +185,7 @@ jobs:
       run: ${{ matrix.gotags }} make -C operator/ test-integration
 
     - name: Go Operator Helm Tests
-      run: ${{ matrix.gotags }} make -C operator/ test-helm
+      run: ${{ matrix.gotags }} BUILD_TAG=0.0.0-test make -C operator/ test-helm
 
   go-postgres:
     strategy:
