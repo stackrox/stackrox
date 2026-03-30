@@ -47,19 +47,11 @@ endif
 TAG := # make sure tag is never injectable as an env var
 RELEASE_GOTAGS := release
 
-# GOTAGS is set by:
-#   - GitHub Actions workflow (via define-job-matrix output) for CI builds
-#   - Konflux builds (via ENV in konflux.Dockerfile files)
-# The ifndef guard prevents duplication when GOTAGS is already set externally.
-# Fallback logic for local builds or other CI systems without GOTAGS:
-ifndef GOTAGS
+# Use a release go -tag when CI is targeting a tag
 ifdef CI
-ifdef GITHUB_REF
-ifeq ($(findstring refs/tags/,$(GITHUB_REF)),refs/tags/)
-# Building from a git tag (release or nightly) - use release GOTAGS
-GOTAGS := $(RELEASE_GOTAGS)
-endif
-endif
+ifneq ($(BUILD_TAG),)
+# Preserve existing GOTAGS and append release tags
+GOTAGS := $(if $(GOTAGS),$(GOTAGS)$(comma))$(RELEASE_GOTAGS)
 endif
 endif
 
