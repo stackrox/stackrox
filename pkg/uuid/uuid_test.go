@@ -1,6 +1,7 @@
 package uuid
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -89,4 +90,130 @@ func TestNewTestUUID(t *testing.T) {
 	test = NewTestUUID(10000)
 	require.NotNil(t, test)
 	assert.Equal(t, "00000000-0000-0000-0000-000000000000", test.String())
+}
+
+func FuzzFromString(f *testing.F) {
+	// Seed with valid UUID formats according to UnmarshalText documentation
+	f.Add("6ba7b810-9dad-11d1-80b4-00c04fd430c8")            // canonical format
+	f.Add("{6ba7b810-9dad-11d1-80b4-00c04fd430c8}")          // with braces
+	f.Add("urn:uuid:6ba7b810-9dad-11d1-80b4-00c04fd430c8")   // URN format
+	f.Add("b455a167-2302-4d37-b41e-f1b4092da5e9")            // from test constant
+	f.Add("")                                                // empty string
+	f.Add("invalid")                                         // invalid format
+	f.Add("00000000-0000-0000-0000-000000000000")            // nil UUID
+	f.Add("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF")            // max UUID
+	f.Add("6ba7b810-9dad-11d1-80b4-00c04fd430c8-extra")      // extra characters
+	f.Add("6ba7b810_9dad_11d1_80b4_00c04fd430c8")            // wrong separator
+	f.Add("{6ba7b810-9dad-11d1-80b4-00c04fd430c8")           // unbalanced brace
+	f.Add("6ba7b810-9dad-11d1-80b4-00c04fd430c8}")           // unbalanced brace
+	f.Add("urn:uuid:{6ba7b810-9dad-11d1-80b4-00c04fd430c8}") // mixed formats
+	f.Add("6ba7b810-9dad-11d1-80b4-00c04fd430c")             // too short
+	f.Add("6ba7b810-9dad-11d1-80b4-00c04fd430c88")           // too long
+	f.Add(NewV4().String())                                  // random valid UUID
+	f.Add(NewDummy().String())                               // dummy test UUID
+	f.Add(strings.Repeat("a", 1000))                         // very long string
+
+	f.Fuzz(func(t *testing.T, input string) {
+		// The test should never panic
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("FromString panicked with input %q: %v", input, r)
+			}
+		}()
+
+		u, err := FromString(input)
+
+		// If parsing succeeded, verify round-trip consistency
+		if err == nil {
+			// String representation should be parseable again
+			u2, err2 := FromString(u.String())
+			require.NoError(t, err2, "round-trip parsing failed for input %q", input)
+			assert.Equal(t, u, u2, "round-trip UUID mismatch for input %q", input)
+
+			// Verify the string format is canonical
+			str := u.String()
+			assert.Len(t, str, 36, "UUID string should be 36 characters")
+
+			// Bytes should be 16 bytes
+			assert.Len(t, u.Bytes(), 16, "UUID bytes should be 16 bytes")
+		}
+	})
+}
+
+func FuzzUnmarshalBinary(f *testing.F) {
+	// Seed with valid binary UUIDs
+	validUUID, _ := FromString("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
+	f.Add(validUUID.Bytes()) // valid 16-byte UUID
+	f.Add(Nil.Bytes())       // nil UUID
+	f.Add(NewV4().Bytes())   // random UUID
+	f.Add([]byte{})          // empty
+	f.Add([]byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}) // all bits set
+	f.Add([]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15})         // sequential
+	f.Add([]byte{1, 2, 3})                                                      // too short
+	f.Add([]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17}) // too long
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		// The test should never panic
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("UnmarshalBinary panicked with %d bytes: %v", len(data), r)
+			}
+		}()
+
+		var u UUID
+		err := u.UnmarshalBinary(data)
+
+		// If unmarshaling succeeded, verify properties
+		if err == nil {
+			// Should only succeed with exactly 16 bytes according to documentation
+			assert.Len(t, data, 16, "UnmarshalBinary should only succeed with 16 bytes")
+
+			// Verify round-trip consistency
+			marshaled, err2 := u.MarshalBinary()
+			require.NoError(t, err2, "MarshalBinary failed after successful UnmarshalBinary")
+			assert.Equal(t, data, marshaled, "round-trip binary mismatch")
+
+			// Bytes should return the same data
+			assert.Equal(t, data, u.Bytes(), "Bytes() should match input data")
+		} else {
+			// If it failed, it should be because length is not 16
+			assert.NotEqual(t, 16, len(data), "UnmarshalBinary failed with valid 16-byte input")
+		}
+	})
+}
+
+func FuzzUnmarshalText(f *testing.F) {
+	// Seed with valid text formats
+	f.Add([]byte("6ba7b810-9dad-11d1-80b4-00c04fd430c8"))
+	f.Add([]byte("{6ba7b810-9dad-11d1-80b4-00c04fd430c8}"))
+	f.Add([]byte("urn:uuid:6ba7b810-9dad-11d1-80b4-00c04fd430c8"))
+	f.Add([]byte(""))
+	f.Add([]byte("invalid"))
+	f.Add([]byte("00000000-0000-0000-0000-000000000000"))
+
+	f.Fuzz(func(t *testing.T, text []byte) {
+		// The test should never panic
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("UnmarshalText panicked with input %q: %v", string(text), r)
+			}
+		}()
+
+		var u UUID
+		err := u.UnmarshalText(text)
+
+		// If unmarshaling succeeded, verify round-trip consistency
+		if err == nil {
+			// MarshalText should produce valid output
+			marshaled, err2 := u.MarshalText()
+			require.NoError(t, err2, "MarshalText failed after successful UnmarshalText")
+
+			// Should be able to unmarshal again
+			var u2 UUID
+			err3 := u2.UnmarshalText(marshaled)
+			require.NoError(t, err3, "round-trip UnmarshalText failed")
+			assert.Equal(t, u, u2, "round-trip UUID mismatch")
+		}
+	})
 }
