@@ -64,9 +64,11 @@ func (n *namespacesScopeSubTree) copy() *namespacesScopeSubTree {
 }
 
 type selectors struct {
+	clustersByID    map[string]bool
 	clustersByName  set.StringSet
 	clustersByLabel []labels.Selector
 
+	namespacesByClusterID   map[string]map[string]bool
 	namespacesByClusterName map[string]set.StringSet
 	namespacesByLabel       []labels.Selector
 }
@@ -74,6 +76,11 @@ type selectors struct {
 func (s *selectors) matchCluster(cluster Cluster) scopeState {
 	if s == nil {
 		return Excluded
+	}
+
+	clusterID := cluster.GetId()
+	if s.clustersByID != nil && s.clustersByID[clusterID] {
+		return Included
 	}
 
 	clusterName := cluster.GetName()
@@ -92,6 +99,11 @@ func (s *selectors) matchNamespace(namespace Namespace) scopeState {
 	}
 
 	namespaceName := namespace.GetName()
+
+	clusterID := namespace.GetClusterId()
+	if clusterID != "" && matchNamespaceByClusterKey(s.namespacesByClusterID, clusterID, namespaceName) {
+		return Included
+	}
 
 	clusterName := namespace.GetClusterName()
 	if clusterName != "" && matchNamespaceByClusterKey(s.namespacesByClusterName, clusterName, namespaceName) {
@@ -116,6 +128,7 @@ var _ Cluster = (*storage.Cluster)(nil)
 
 // Namespace is the interface for namespaces in the access scope computation
 type Namespace interface {
+	GetClusterId() string
 	GetClusterName() string
 	GetId() string
 	GetName() string

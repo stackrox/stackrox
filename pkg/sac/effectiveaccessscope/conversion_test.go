@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/labels"
@@ -100,6 +101,31 @@ func TestConvertRulesToSelectors(t *testing.T) {
 			},
 			expected: selectOnlyClustersByName([]string{clusterName1}),
 		},
+		// cluster selection by ID
+		"empty included cluster ID rules leave the clustersByID part of the selector empty": {
+			rules: &storage.SimpleAccessScope_Rules{
+				IncludedClusterIds: make([]string, 0),
+			},
+			expected: emptySelector(),
+		},
+		"included cluster ID rules fill in the clustersByID part of the selector": {
+			rules: &storage.SimpleAccessScope_Rules{
+				IncludedClusterIds: []string{
+					fixtureconsts.Cluster1,
+					fixtureconsts.Cluster2,
+				},
+			},
+			expected: selectOnlyClustersByID([]string{fixtureconsts.Cluster1, fixtureconsts.Cluster2}),
+		},
+		"included cluster ID rules get deduplicated in the clustersByID part of the selector": {
+			rules: &storage.SimpleAccessScope_Rules{
+				IncludedClusterIds: []string{
+					fixtureconsts.Cluster1,
+					fixtureconsts.Cluster1,
+				},
+			},
+			expected: selectOnlyClustersByID([]string{fixtureconsts.Cluster1}),
+		},
 		// namespace selection by labels
 		// namespace selection by cluster name and namespace name
 		"empty namespace selection rules leave the namespaces parts of the selector empty": {
@@ -122,6 +148,7 @@ func TestConvertRulesToSelectors(t *testing.T) {
 				},
 			},
 			expected: selectNamespacesByCluster(
+				nil,
 				map[string][]string{
 					clusterName1: {namespaceName1},
 					clusterName2: {namespaceName2},
@@ -142,9 +169,50 @@ func TestConvertRulesToSelectors(t *testing.T) {
 				},
 			},
 			expected: selectNamespacesByCluster(
+				nil,
 				map[string][]string{
 					clusterName1: {namespaceName1},
 				},
+			),
+		},
+		// namespace selection by cluster id and namespace name
+		"namespace selection rules by cluster ID fill in the selector namespacesByClusterID": {
+			rules: &storage.SimpleAccessScope_Rules{
+				IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+					{
+						ClusterId:     fixtureconsts.Cluster1,
+						NamespaceName: namespaceName1,
+					},
+					{
+						ClusterId:     fixtureconsts.Cluster2,
+						NamespaceName: namespaceName2,
+					},
+				},
+			},
+			expected: selectNamespacesByCluster(
+				map[string][]string{
+					fixtureconsts.Cluster1: {namespaceName1},
+					fixtureconsts.Cluster2: {namespaceName2},
+				},
+				nil,
+			),
+		},
+		"namespace selection rules by cluster ID get deduplicated in the selector namespacesByClusterID": {
+			rules: &storage.SimpleAccessScope_Rules{
+				IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+					{
+						ClusterId:     fixtureconsts.Cluster1,
+						NamespaceName: namespaceName1,
+					},
+					{
+						ClusterId:     fixtureconsts.Cluster1,
+						NamespaceName: namespaceName1,
+					},
+				},
+			},
+			expected: selectNamespacesByCluster(
+				map[string][]string{fixtureconsts.Cluster1: {namespaceName1}},
+				nil,
 			),
 		},
 		// namespace explicit selection with missing cluster or namespace identification are ignored
@@ -155,16 +223,44 @@ func TestConvertRulesToSelectors(t *testing.T) {
 						NamespaceName: namespaceName1,
 					},
 					{
+						ClusterId: fixtureconsts.Cluster1,
+					},
+					{
 						ClusterName: clusterName2,
 					},
 				},
 			},
 			expected: emptySelector(),
 		},
+		// namespace explicit selection favors cluster ID over cluster name when both are available
+		"namespace selection rules by cluster ID and name fill in the selector namespacesByClusterID": {
+			rules: &storage.SimpleAccessScope_Rules{
+				IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+					{
+						ClusterId:     fixtureconsts.Cluster1,
+						ClusterName:   clusterName1,
+						NamespaceName: namespaceName1,
+					},
+					{
+						ClusterId:     fixtureconsts.Cluster2,
+						ClusterName:   clusterName2,
+						NamespaceName: namespaceName2,
+					},
+				},
+			},
+			expected: selectNamespacesByCluster(
+				map[string][]string{
+					fixtureconsts.Cluster1: {namespaceName1},
+					fixtureconsts.Cluster2: {namespaceName2},
+				},
+				nil,
+			),
+		},
 		// mix of multiple rules
 		"mix of selection rules": {
 			rules: &storage.SimpleAccessScope_Rules{
-				IncludedClusters: []string{clusterName2, clusterName1, clusterName2},
+				IncludedClusterIds: []string{fixtureconsts.Cluster1, fixtureconsts.Cluster2, fixtureconsts.Cluster1},
+				IncludedClusters:   []string{clusterName2, clusterName1, clusterName2},
 				IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
 					nil,
 					{},
@@ -172,13 +268,30 @@ func TestConvertRulesToSelectors(t *testing.T) {
 						ClusterName:   clusterName1,
 						NamespaceName: namespaceName1,
 					},
+					{
+						ClusterId:     fixtureconsts.Cluster2,
+						NamespaceName: namespaceName1,
+					},
+					{
+						ClusterId:     fixtureconsts.Cluster1,
+						ClusterName:   clusterName1,
+						NamespaceName: namespaceName2,
+					},
 				},
 				ClusterLabelSelectors:   nil,
 				NamespaceLabelSelectors: nil,
 			},
 			expected: &selectors{
+				clustersByID: map[string]bool{
+					fixtureconsts.Cluster1: true,
+					fixtureconsts.Cluster2: true,
+				},
 				clustersByName:  set.NewStringSet(clusterName1, clusterName2),
 				clustersByLabel: make([]labels.Selector, 0),
+				namespacesByClusterID: map[string]map[string]bool{
+					fixtureconsts.Cluster1: {namespaceName2: true},
+					fixtureconsts.Cluster2: {namespaceName1: true},
+				},
 				namespacesByClusterName: map[string]set.StringSet{
 					clusterName1: set.NewStringSet(namespaceName1),
 				},
@@ -196,11 +309,21 @@ func TestConvertRulesToSelectors(t *testing.T) {
 
 func emptySelector() *selectors {
 	return &selectors{
+		clustersByID:            make(map[string]bool),
 		clustersByName:          set.NewStringSet(),
 		clustersByLabel:         make([]labels.Selector, 0),
+		namespacesByClusterID:   make(map[string]map[string]bool),
 		namespacesByClusterName: make(map[string]set.StringSet),
 		namespacesByLabel:       make([]labels.Selector, 0),
 	}
+}
+
+func selectOnlyClustersByID(clusterIDs []string) *selectors {
+	selector := emptySelector()
+	for _, clusterID := range clusterIDs {
+		selector.clustersByID[clusterID] = true
+	}
+	return selector
 }
 
 func selectOnlyClustersByName(clusterNames []string) *selectors {
@@ -210,9 +333,16 @@ func selectOnlyClustersByName(clusterNames []string) *selectors {
 }
 
 func selectNamespacesByCluster(
+	namespacesByClusterID map[string][]string,
 	namespacesByClusterName map[string][]string,
 ) *selectors {
 	selector := emptySelector()
+	for clusterID, clusterNamespaces := range namespacesByClusterID {
+		selector.namespacesByClusterID[clusterID] = make(map[string]bool)
+		for _, ns := range clusterNamespaces {
+			selector.namespacesByClusterID[clusterID][ns] = true
+		}
+	}
 	for clusterName, clusterNamespaces := range namespacesByClusterName {
 		selector.namespacesByClusterName[clusterName] = set.NewStringSet(clusterNamespaces...)
 	}

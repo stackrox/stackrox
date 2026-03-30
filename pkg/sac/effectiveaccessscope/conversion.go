@@ -93,8 +93,9 @@ func sortScopesInEffectiveAccessScope(msg *storage.EffectiveAccessScope) {
 }
 
 // convertRulesToSelectors:
+//   - converts included_cluster_ids rules to a cluster ID matching map,
 //   - converts included_clusters rules to a cluster name matching map,
-//   - converts included_namespaces rules to a namespace matching map (parent cluster is identified by name),
+//   - converts included_namespaces rules to namespace matching maps (parent cluster is identified by either name or ID),
 //   - converts all label selectors to standard ones with matching support.
 func convertRulesToSelectors(scopeRules *storage.SimpleAccessScope_Rules) (*selectors, error) {
 	output := &selectors{}
@@ -111,6 +112,12 @@ func convertRulesToSelectors(scopeRules *storage.SimpleAccessScope_Rules) (*sele
 
 	output.clustersByName = set.NewStringSet(scopeRules.GetIncludedClusters()...)
 
+	includedClusterIDs := scopeRules.GetIncludedClusterIds()
+	output.clustersByID = make(map[string]bool, len(includedClusterIDs))
+	for _, clusterID := range includedClusterIDs {
+		output.clustersByID[clusterID] = true
+	}
+
 	// Convert each selector to labels.Selector.
 	namespaceSelectors, namespaceSelectorErr := convertEachSetBasedLabelSelectorToK8sLabelSelector(scopeRules.GetNamespaceLabelSelectors())
 	if namespaceSelectorErr != nil {
@@ -119,14 +126,20 @@ func convertRulesToSelectors(scopeRules *storage.SimpleAccessScope_Rules) (*sele
 	output.namespacesByLabel = namespaceSelectors
 
 	includedNamespaces := scopeRules.GetIncludedNamespaces()
+	output.namespacesByClusterID = make(map[string]map[string]bool)
 	output.namespacesByClusterName = make(map[string]set.StringSet, len(includedNamespaces))
 	for _, namespace := range includedNamespaces {
+		clusterID := namespace.GetClusterId()
 		clusterName := namespace.GetClusterName()
 		namespaceName := namespace.GetNamespaceName()
-		if clusterName == "" {
+		if clusterID == "" && clusterName == "" {
 			continue
 		}
 		if namespaceName == "" {
+			continue
+		}
+		if clusterID != "" {
+			addToNamespaceMap(output.namespacesByClusterID, clusterID, namespaceName)
 			continue
 		}
 		addToNamespaceMap(output.namespacesByClusterName, clusterName, namespaceName)
