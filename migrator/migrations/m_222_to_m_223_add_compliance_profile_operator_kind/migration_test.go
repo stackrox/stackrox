@@ -33,7 +33,9 @@ func (s *migrationTestSuite) SetupSuite() {
 }
 
 func (s *migrationTestSuite) TestMigration() {
+	origBatchSize := batchSize
 	batchSize = 2 // Force multiple batches
+	defer func() { batchSize = origBatchSize }()
 
 	dbs := &types.Databases{
 		GormDB:     s.db.GetGormDB(),
