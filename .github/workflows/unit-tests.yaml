@@ -234,10 +234,13 @@ jobs:
 
     - name: Is Postgres ready
       run: |
-        for i in $(seq 1 30); do
-          docker exec postgres pg_isready -h 127.0.0.1 && break
+        for i in $(seq 1 60); do
+          docker exec postgres pg_isready -h 127.0.0.1 && exit 0
           sleep 1
         done
+        echo "Postgres failed to become ready"
+        docker logs postgres
+        exit 1
 
     - name: Go Unit Tests
       run: ${{ matrix.gotags }} SKIP_DEPS=1 make ${{ matrix.shard.make-target }}
@@ -304,10 +307,13 @@ jobs:
 
     - name: Is Postgres ready
       run: |
-        for i in $(seq 1 30); do
-          docker exec postgres pg_isready -h 127.0.0.1 && break
+        for i in $(seq 1 60); do
+          docker exec postgres pg_isready -h 127.0.0.1 && exit 0
           sleep 1
         done
+        echo "Postgres failed to become ready"
+        docker logs postgres
+        exit 1
 
     - name: Go Bench Tests
       run: make go-postgres-bench-tests

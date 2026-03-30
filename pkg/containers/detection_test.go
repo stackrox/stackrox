@@ -4,8 +4,10 @@ import (
 	"testing"
 )
 
-// Verify container detection runs without error. The result depends on the
-// environment (container vs host runner) and both are valid CI configurations.
+// Smoke test: IsRunningInContainer should not panic regardless of environment.
+// The result depends on whether CI runs in a container or on a host runner —
+// both are valid configurations.
 func TestContainerDetection(t *testing.T) {
-	t.Logf("IsRunningInContainer() = %v", IsRunningInContainer())
+	result := IsRunningInContainer()
+	t.Logf("IsRunningInContainer() = %v", result)
 }
